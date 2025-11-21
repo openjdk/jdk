@@ -326,7 +326,7 @@ private:
   static void restore_archived_method_handle_intrinsics_impl(TRAPS) NOT_CDS_RETURN;
 
 protected:
-  // Used by SystemDictionaryShared and LambdaProxyClassDictionary
+  // Used by AOTLinkedClassBulkLoader, LambdaProxyClassDictionary, and SystemDictionaryShared
 
   static bool add_loader_constraint(Symbol* name, Klass* klass_being_linked,  Handle loader1,
                                     Handle loader2);
@@ -337,6 +337,7 @@ protected:
                                           const ClassFileStream *cfs,
                                           PackageEntry* pkg_entry,
                                           TRAPS);
+  static void preload_class(Handle class_loader, InstanceKlass* ik, TRAPS);
   static Handle get_loader_lock_or_null(Handle class_loader);
   static InstanceKlass* find_or_define_instance_class(Symbol* class_name,
                                                       Handle class_loader,

@@ -55,7 +55,7 @@ public final class Parameter implements AnnotatedElement {
      * absent, however, then {@code Executable} uses this constructor
      * to synthesize them.
      *
-     * @param name The name of the parameter.
+     * @param name The name of the parameter, or {@code null} if absent
      * @param modifiers The modifier flags for the parameter.
      * @param executable The executable which defines this parameter.
      * @param index The index of the parameter.
@@ -104,7 +104,7 @@ public final class Parameter implements AnnotatedElement {
      * to the class file.
      */
     public boolean isNamePresent() {
-        return executable.hasRealParameterData() && name != null;
+        return name != null;
     }
 
     /**

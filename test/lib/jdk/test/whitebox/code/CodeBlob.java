@@ -46,18 +46,22 @@ public class CodeBlob {
     return new CodeBlob(obj);
   }
   protected CodeBlob(Object[] obj) {
-    assert obj.length == 4;
+    assert obj.length == 6;
     name = (String) obj[0];
     size = (Integer) obj[1];
     int blob_type_index = (Integer) obj[2];
     code_blob_type = BlobType.values()[blob_type_index];
     assert code_blob_type.id == (Integer) obj[2];
     address = (Long) obj[3];
+    code_begin = (Long) obj[4];
+    isNMethod = (Boolean) obj[5];
   }
   public final String name;
   public final int size;
   public final BlobType code_blob_type;
   public final long address;
+  public final long code_begin;
+  public final boolean isNMethod;
   @Override
   public String toString() {
     return "CodeBlob{"
@@ -65,6 +69,7 @@ public class CodeBlob {
         + ", size=" + size
         + ", code_blob_type=" + code_blob_type
         + ", address=" + address
+        + ", code_begin=" + code_begin
         + '}';
   }
 }

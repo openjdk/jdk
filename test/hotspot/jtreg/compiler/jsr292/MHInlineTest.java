@@ -51,7 +51,8 @@ public class MHInlineTest {
                 "-XX:+IgnoreUnrecognizedVMOptions", "-showversion",
                 "-XX:-TieredCompilation", "-Xbatch",
                 "-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintInlining",
-                "-XX:CompileCommand=dontinline,compiler.jsr292.MHInlineTest::test*",
+                "-XX:CompileCommand=quiet",
+                "-XX:CompileCommand=compileonly,compiler.jsr292.MHInlineTest::test*",
                  Launcher.class.getName());
 
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
@@ -60,13 +61,17 @@ public class MHInlineTest {
 
         // The test is applicable only to C2 (present in Server VM).
         if (analyzer.getStderr().contains("Server VM")) {
+            analyzer.shouldContain("compiler.jsr292.MHInlineTest$A::package_final_x (3 bytes)   inline (hot)");
+            analyzer.shouldContain("compiler.jsr292.MHInlineTest$A::private_x (3 bytes)   inline (hot)");
+            analyzer.shouldContain("compiler.jsr292.MHInlineTest$A::package_static_x (3 bytes)   inline (hot)");
+
             analyzer.shouldContain("compiler.jsr292.MHInlineTest$B::public_x (3 bytes)   inline (hot)");
             analyzer.shouldContain("compiler.jsr292.MHInlineTest$B::protected_x (3 bytes)   inline (hot)");
             analyzer.shouldContain("compiler.jsr292.MHInlineTest$B::package_x (3 bytes)   inline (hot)");
-            analyzer.shouldContain("compiler.jsr292.MHInlineTest$A::package_final_x (3 bytes)   inline (hot)");
             analyzer.shouldContain("compiler.jsr292.MHInlineTest$B::private_x (3 bytes)   inline (hot)");
             analyzer.shouldContain("compiler.jsr292.MHInlineTest$B::private_static_x (3 bytes)   inline (hot)");
-            analyzer.shouldContain("compiler.jsr292.MHInlineTest$A::package_static_x (3 bytes)   inline (hot)");
+
+            analyzer.shouldNotContain("failed to inline");
         } else {
             throw new SkippedException("The test is applicable only to C2 (present in Server VM)");
         }
@@ -75,23 +80,24 @@ public class MHInlineTest {
     static class A {
         public static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
-        public Class<?>         public_x() { return A.class; }
-        protected Class<?>   protected_x() { return A.class; }
-        Class<?>               package_x() { return A.class; }
-        final Class<?>   package_final_x() { return A.class; }
+        public            Class<?>        public_x() { return A.class; }
+        protected         Class<?>     protected_x() { return A.class; }
+        /*package*/       Class<?>       package_x() { return A.class; }
+        /*package*/ final Class<?> package_final_x() { return A.class; }
+        private           Class<?>       private_x() { return A.class; }
 
-        static Class<?> package_static_x() { return A.class; }
+        /*package*/ static Class<?> package_static_x() { return A.class; }
     }
 
     static class B extends A {
         public static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
-        @Override public    Class<?>    public_x() { return B.class; }
-        @Override protected Class<?> protected_x() { return B.class; }
-        @Override Class<?>             package_x() { return B.class; }
+        @Override public      Class<?>    public_x() { return B.class; }
+        @Override protected   Class<?> protected_x() { return B.class; }
+        @Override /*package*/ Class<?>   package_x() { return B.class; }
 
-        private   Class<?>             private_x() { return B.class; }
-        static    Class<?>      private_static_x() { return B.class; }
+        private           Class<?>       private_x()    { return B.class; }
+        private static Class<?>      private_static_x() { return B.class; }
     }
 
     static final MethodHandle A_PUBLIC_X;
@@ -99,6 +105,7 @@ public class MHInlineTest {
     static final MethodHandle A_PACKAGE_X;
     static final MethodHandle A_PACKAGE_STATIC_X;
     static final MethodHandle A_PACKAGE_FINAL_X;
+    static final MethodHandle A_PRIVATE_X;
 
     static final MethodHandle B_PRIVATE_X;
     static final MethodHandle B_PRIVATE_STATIC_X;
@@ -117,6 +124,8 @@ public class MHInlineTest {
                     A.class, "package_final_x", MethodType.methodType(Class.class));
             A_PACKAGE_STATIC_X = LOOKUP.findStatic(
                     A.class, "package_static_x", MethodType.methodType(Class.class));
+            A_PRIVATE_X = LOOKUP.findVirtual(
+                    A.class, "private_x", MethodType.methodType(Class.class));
 
             B_PRIVATE_X = B.LOOKUP.findVirtual(
                     B.class, "private_x", MethodType.methodType(Class.class));
@@ -129,7 +138,18 @@ public class MHInlineTest {
 
     static final A a = new B();
 
-    private static void testPublicMH() {
+    /* ============== public Class<?> public_x() ============== */
+
+    private static void testPublicMH(A recv) {
+        try {
+            Class<?> r = (Class<?>)A_PUBLIC_X.invokeExact(recv);
+            assertEquals(r, B.class);
+        } catch (Throwable throwable) {
+            throw new Error(throwable);
+        }
+    }
+
+    private static void testPublicMHConst() {
         try {
             Class<?> r = (Class<?>)A_PUBLIC_X.invokeExact(a);
             assertEquals(r, B.class);
@@ -138,7 +158,18 @@ public class MHInlineTest {
         }
     }
 
-    private static void testProtectedMH() {
+    /* ============== protected Class<?> protected_x() ============== */
+
+    private static void testProtectedMH(A recv) {
+        try {
+            Class<?> r = (Class<?>)A_PROTECTED_X.invokeExact(recv);
+            assertEquals(r, B.class);
+        } catch (Throwable throwable) {
+            throw new Error(throwable);
+        }
+    }
+
+    private static void testProtectedMHConst() {
         try {
             Class<?> r = (Class<?>)A_PROTECTED_X.invokeExact(a);
             assertEquals(r, B.class);
@@ -147,7 +178,18 @@ public class MHInlineTest {
         }
     }
 
-    private static void testPackageMH() {
+    /* ============== Class<?> package_x() ============== */
+
+    private static void testPackageMH(A recv) {
+        try {
+            Class<?> r = (Class<?>)A_PACKAGE_X.invokeExact(recv);
+            assertEquals(r, B.class);
+        } catch (Throwable throwable) {
+            throw new Error(throwable);
+        }
+    }
+
+    private static void testPackageMHConst() {
         try {
             Class<?> r = (Class<?>)A_PACKAGE_X.invokeExact(a);
             assertEquals(r, B.class);
@@ -156,7 +198,9 @@ public class MHInlineTest {
         }
     }
 
-    private static void testPackageFinalMH() {
+    /* ============== final Class<?> package_final_x() ============== */
+
+    private static void testPackageFinalMH(A recv) {
         try {
             Class<?> r = (Class<?>)A_PACKAGE_FINAL_X.invokeExact(a);
             assertEquals(r, A.class);
@@ -165,16 +209,45 @@ public class MHInlineTest {
         }
     }
 
-    private static void testPackageStaticMH() {
+    private static void testPackageFinalMHConst() {
         try {
-            Class<?> r = (Class<?>)A_PACKAGE_STATIC_X.invokeExact();
+            Class<?> r = (Class<?>)A_PACKAGE_FINAL_X.invokeExact(a);
             assertEquals(r, A.class);
         } catch (Throwable throwable) {
             throw new Error(throwable);
         }
     }
 
-    private static void testPrivateMH() {
+    /* ============== private Class<?> private_x() ============== */
+
+    private static void testPrivateA_MH(A recv) {
+        try {
+            Class<?> r = (Class<?>)A_PRIVATE_X.invokeExact(recv);
+            assertEquals(r, A.class);
+        } catch (Throwable throwable) {
+            throw new Error(throwable);
+        }
+    }
+
+    private static void testPrivateA_MHConst() {
+        try {
+            Class<?> r = (Class<?>)A_PRIVATE_X.invokeExact(a);
+            assertEquals(r, A.class);
+        } catch (Throwable throwable) {
+            throw new Error(throwable);
+        }
+    }
+
+    private static void testPrivateB_MH(B recv) {
+        try {
+            Class<?> r = (Class<?>)B_PRIVATE_X.invokeExact(recv);
+            assertEquals(r, B.class);
+        } catch (Throwable throwable) {
+            throw new Error(throwable);
+        }
+    }
+
+    private static void testPrivateB_MHConst() {
         try {
             Class<?> r = (Class<?>)B_PRIVATE_X.invokeExact((B)a);
             assertEquals(r, B.class);
@@ -183,7 +256,19 @@ public class MHInlineTest {
         }
     }
 
-    private static void testPrivateStaticMH() {
+    /* ============== static ============== */
+
+    private static void testPackageStaticMHConst() {
+        try {
+            Class<?> r = (Class<?>)A_PACKAGE_STATIC_X.invokeExact();
+            assertEquals(r, A.class);
+        } catch (Throwable throwable) {
+            throw new Error(throwable);
+        }
+    }
+
+
+    private static void testPrivateStaticMHConst() {
         try {
             Class<?> r = (Class<?>)B_PRIVATE_STATIC_X.invokeExact();
             assertEquals(r, B.class);
@@ -192,28 +277,20 @@ public class MHInlineTest {
         }
     }
 
+    /* ====================================================================== */
+
     static class Launcher {
         public static void main(String[] args) throws Exception {
             for (int i = 0; i < 20_000; i++) {
-                testPublicMH();
-            }
-            for (int i = 0; i < 20_000; i++) {
-                testProtectedMH();
-            }
-            for (int i = 0; i < 20_000; i++) {
-                testPackageMH();
-            }
-            for (int i = 0; i < 20_000; i++) {
-                testPackageFinalMH();
-            }
-            for (int i = 0; i < 20_000; i++) {
-                testPackageStaticMH();
-            }
-            for (int i = 0; i < 20_000; i++) {
-                testPrivateMH();
-            }
-            for (int i = 0; i < 20_000; i++) {
-                testPrivateStaticMH();
+                testPublicMH(a);       testPublicMHConst();
+                testProtectedMH(a);    testProtectedMHConst();
+                testPackageMH(a);      testPackageMHConst();
+                testPackageFinalMH(a); testPackageFinalMHConst();
+                testPrivateA_MH(a);    testPrivateA_MHConst();
+                testPrivateB_MH((B)a); testPrivateB_MHConst();
+
+                testPackageStaticMHConst();
+                testPrivateStaticMHConst();
             }
         }
     }

@@ -35,6 +35,7 @@ import jdk.test.lib.Asserts;
  * @library /test/lib /
  * @summary test combining vector not operation with compare
  * @modules jdk.incubator.vector
+ * @requires vm.opt.final.MaxVectorSize == "null" | vm.opt.final.MaxVectorSize >= 16
  *
  * @run driver compiler.vectorapi.VectorMaskCompareNotTest
  */

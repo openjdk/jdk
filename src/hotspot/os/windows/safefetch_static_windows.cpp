@@ -1,0 +1,64 @@
+/*
+ * Copyright (c) 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+
+#include "os_windows.hpp"
+#include "runtime/os.hpp"
+#include "runtime/safefetch.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+#ifdef SAFEFETCH_METHOD_STATIC_ASSEMBLY
+
+// SafeFetch handling, static assembly style:
+//
+// SafeFetch32 and SafeFetchN are implemented via static assembly
+// and live in os_cpu/xx_xx/safefetch_xx_xx.S
+
+extern "C" char _SafeFetch32_continuation[];
+extern "C" char _SafeFetch32_fault[];
+
+#ifdef _LP64
+extern "C" char _SafeFetchN_continuation[];
+extern "C" char _SafeFetchN_fault[];
+#endif // _LP64
+
+bool handle_safefetch(int exception_code, address pc, void* context) {
+  CONTEXT* ctx = (CONTEXT*)context;
+  if (exception_code == EXCEPTION_ACCESS_VIOLATION && ctx != nullptr) {
+    if (pc == (address)_SafeFetch32_fault) {
+      os::win32::context_set_pc(ctx, (address)_SafeFetch32_continuation);
+      return true;
+    }
+#ifdef _LP64
+    if (pc == (address)_SafeFetchN_fault) {
+      os::win32::context_set_pc(ctx, (address)_SafeFetchN_continuation);
+      return true;
+    }
+#endif
+  }
+  return false;
+}
+
+#endif // SAFEFETCH_METHOD_STATIC_ASSEMBLY

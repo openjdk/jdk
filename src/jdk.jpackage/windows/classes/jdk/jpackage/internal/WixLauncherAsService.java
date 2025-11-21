@@ -111,7 +111,7 @@ class WixLauncherAsService extends LauncherAsService {
                 sources.add(new DOMSource(n));
             }
 
-            XmlUtils.mergeXmls(xml, sources);
+            XmlUtils.concatXml(xml, sources);
 
         } catch (SAXException ex) {
             throw new IOException(ex);

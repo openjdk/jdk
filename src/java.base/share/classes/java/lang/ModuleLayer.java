@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package java.lang;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ResolvedModule;
+import java.lang.reflect.Field;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -252,6 +253,12 @@ public final class ModuleLayer {
          * module {@code target}. This method is a no-op if {@code source}
          * already exports the package to at least {@code target}.
          *
+         * <p> Exporting a package with this method does not allow the target module to
+         * {@linkplain Field#set(Object, Object) reflectively set} or {@linkplain
+         * java.lang.invoke.MethodHandles.Lookup#unreflectSetter(Field) obtain a method
+         * handle with write access} to a public final field declared in a public class
+         * in the package.
+         *
          * @param  source
          *         The source module
          * @param  pn
@@ -277,6 +284,11 @@ public final class ModuleLayer {
          * Updates module {@code source} in the layer to open a package to
          * module {@code target}. This method is a no-op if {@code source}
          * already opens the package to at least {@code target}.
+         *
+         * <p> Opening a package with this method does not allow the target module
+         * to {@linkplain Field#set(Object, Object) reflectively set} or {@linkplain
+         * java.lang.invoke.MethodHandles.Lookup#unreflectSetter(Field) obtain a method
+         * handle with write access} to a final field declared in a class in the package.
          *
          * @param  source
          *         The source module

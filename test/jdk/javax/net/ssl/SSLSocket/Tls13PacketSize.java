@@ -107,5 +107,10 @@ public class Tls13PacketSize extends SSLSocketTemplate {
             throw new Exception(
                     "Server record plaintext exceeds 2^14 octets: " + extra);
         }
+
+        int drained = 1;
+        while (drained < appData.length) {
+            drained += sslIS.read(appData, drained, appData.length - drained);
+        }
     }
 }

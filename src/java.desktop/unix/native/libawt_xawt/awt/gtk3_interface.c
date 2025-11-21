@@ -276,10 +276,7 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
         fp_gtk_check_version = dl_symbol("gtk_check_version");
 
         /* GLib */
-        fp_glib_check_version = dlsym(gtk3_libhandle, "glib_check_version");
-        if (!fp_glib_check_version) {
-            dlerror();
-        }
+        fp_glib_check_version = dl_symbol("glib_check_version");
         fp_g_free = dl_symbol("g_free");
         fp_g_object_unref = dl_symbol("g_object_unref");
 

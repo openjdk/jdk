@@ -26,6 +26,7 @@
 #define SHARE_OPTO_ESCAPE_HPP
 
 #include "opto/addnode.hpp"
+#include "opto/idealGraphPrinter.hpp"
 #include "opto/node.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -235,6 +236,7 @@ public:
   NodeType node_type() const { return (NodeType)_type;}
   void dump(bool print_state=true, outputStream* out=tty, bool newline=true) const;
   void dump_header(bool print_state=true, outputStream* out=tty) const;
+  const char* esc_name() const;
 #endif
 
 };
@@ -321,6 +323,7 @@ public:
 class ConnectionGraph: public ArenaObj {
   friend class PointsToNode; // to access _compile
   friend class FieldNode;
+  friend class IdealGraphPrinter;
 private:
   GrowableArray<PointsToNode*>  _nodes; // Map from ideal nodes to
                                         // ConnectionGraph nodes.
@@ -467,7 +470,8 @@ private:
   // Propagate GlobalEscape and ArgEscape escape states to all nodes
   // and check that we still have non-escaping java objects.
   bool find_non_escaped_objects(GrowableArray<PointsToNode*>& ptnodes_worklist,
-                                GrowableArray<JavaObjectNode*>& non_escaped_worklist);
+                                GrowableArray<JavaObjectNode*>& non_escaped_worklist,
+                                bool print_method = true);
 
   // Adjust scalar_replaceable state after Connection Graph is built.
   void adjust_scalar_replaceable_state(JavaObjectNode* jobj, Unique_Node_List &reducible_merges);
@@ -563,8 +567,10 @@ private:
                         // Memory Phi    - most recent unique Phi split out
                         //                 from this Phi
                         // MemNode       - new memory input for this node
-                        // ChecCastPP    - allocation that this is a cast of
+                        // CheckCastPP   - allocation that this is a cast of
                         // allocation    - CheckCastPP of the allocation
+                        // NarrowMem     - newly created projection (type includes instance_id) from projection created
+                        //                 before EA
 
   // manage entries in _node_map
 
@@ -609,11 +615,11 @@ private:
   bool can_reduce_phi_check_inputs(PhiNode* ophi) const;
 
   void reduce_phi_on_field_access(Node* previous_addp, GrowableArray<Node *>  &alloc_worklist);
-  void reduce_phi_on_castpp_field_load(Node* castpp, GrowableArray<Node *>  &alloc_worklist, GrowableArray<Node *>  &memnode_worklist);
+  void reduce_phi_on_castpp_field_load(Node* castpp, GrowableArray<Node*> &alloc_worklist);
   void reduce_phi_on_cmp(Node* cmp);
   bool reduce_phi_on_safepoints(PhiNode* ophi);
   bool reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, Node* selector, Unique_Node_List& safepoints);
-  void reduce_phi(PhiNode* ophi, GrowableArray<Node *>  &alloc_worklist, GrowableArray<Node *>  &memnode_worklist);
+  void reduce_phi(PhiNode* ophi, GrowableArray<Node*> &alloc_worklist);
 
   void set_not_scalar_replaceable(PointsToNode* ptn NOT_PRODUCT(COMMA const char* reason)) const {
 #ifndef PRODUCT

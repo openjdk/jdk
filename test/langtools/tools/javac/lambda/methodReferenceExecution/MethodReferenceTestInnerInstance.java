@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,24 +25,24 @@
  * @test
  * @bug 8003639
  * @summary convert lambda testng tests to jtreg and add them
- * @run testng MethodReferenceTestInnerInstance
+ * @run junit MethodReferenceTestInnerInstance
  */
 
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Robert Field
  */
 
-@Test
 public class MethodReferenceTestInnerInstance {
 
+    @Test
     public void testMethodReferenceInnerInstance() {
         cia().cib().testMethodReferenceInstance();
     }
 
+    @Test
     public void testMethodReferenceInnerExternal() {
         cia().cib().testMethodReferenceExternal();
     }
@@ -63,14 +63,14 @@ public class MethodReferenceTestInnerInstance {
                 SI q;
 
                 q = CIA.this::xI;
-                assertEquals(q.m(55), "xI:55");
+                assertEquals("xI:55", q.m(55));
             }
 
             public void testMethodReferenceExternal() {
                 SI q;
 
                 q = (new E())::xI;
-                assertEquals(q.m(77), "ExI:77");
+                assertEquals("ExI:77", q.m(77));
             }
         }
 

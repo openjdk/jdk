@@ -757,9 +757,9 @@ void MacroAssembler::clobber_nonvolatile_registers() {
       R31
   };
   Register bad = regs[0];
-  load_const_optimized(bad, 0xbad0101babe11111);
-  for (uint32_t i = 1; i < (sizeof(regs) / sizeof(Register)); i++) {
-    mr(regs[i], bad);
+  load_const_optimized(bad, 0xbad0101babe00000);
+  for (int i = (sizeof(regs) / sizeof(Register)) - 1; i >= 0; i--) {
+    addi(regs[i], bad, regs[i]->encoding());
   }
   BLOCK_COMMENT("} clobber nonvolatile registers");
 }
@@ -2671,8 +2671,8 @@ address MacroAssembler::emit_trampoline_stub(int destination_toc_offset,
 }
 
 // "The box" is the space on the stack where we copy the object mark.
-void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister flag, Register obj, Register box,
-                                                           Register tmp1, Register tmp2, Register tmp3) {
+void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register obj, Register box,
+                                               Register tmp1, Register tmp2, Register tmp3) {
   assert_different_registers(obj, box, tmp1, tmp2, tmp3);
   assert(UseObjectMonitorTable || tmp3 == noreg, "tmp3 not needed");
   assert(flag == CR0, "bad condition register");
@@ -2699,7 +2699,7 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
 
   Register mark = tmp1;
 
-  { // Lightweight locking
+  { // Fast locking
 
     // Push lock to the lock stack and finish successfully. MUST reach to with flag == EQ
     Label push;
@@ -2847,8 +2847,8 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
   // C2 uses the value of flag (NE vs EQ) to determine the continuation.
 }
 
-void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister flag, Register obj, Register box,
-                                                             Register tmp1, Register tmp2, Register tmp3) {
+void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Register obj, Register box,
+                                                 Register tmp1, Register tmp2, Register tmp3) {
   assert_different_registers(obj, tmp1, tmp2, tmp3);
   assert(flag == CR0, "bad condition register");
 
@@ -2863,7 +2863,7 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
   const Register top = tmp2;
   const Register t = tmp3;
 
-  { // Lightweight unlock
+  { // Fast unlock
     Label push_and_slow;
 
     // Check if obj is top of lock-stack.
@@ -2904,7 +2904,7 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
     Label not_unlocked;
     andi_(t, mark, markWord::unlocked_value);
     beq(CR0, not_unlocked);
-    stop("lightweight_unlock already unlocked");
+    stop("fast_unlock already unlocked");
     bind(not_unlocked);
 #endif
 
@@ -4341,21 +4341,36 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen,
   bind(L_done);
 }   // multiply_to_len
 
-void MacroAssembler::asm_assert(bool check_equal, const char *msg) {
 #ifdef ASSERT
+void MacroAssembler::asm_assert(AsmAssertCond cond, const char *msg) {
   Label ok;
-  if (check_equal) {
+  switch (cond) {
+  case eq:
     beq(CR0, ok);
-  } else {
+    break;
+  case ne:
     bne(CR0, ok);
+    break;
+  case ge:
+    bge(CR0, ok);
+    break;
+  case gt:
+    bgt(CR0, ok);
+    break;
+  case lt:
+    blt(CR0, ok);
+    break;
+  case le:
+    ble(CR0, ok);
+    break;
+  default:
+    assert(false, "unknown cond:%d", cond);
   }
   stop(msg);
   bind(ok);
-#endif
 }
 
-#ifdef ASSERT
-void MacroAssembler::asm_assert_mems_zero(bool check_equal, int size, int mem_offset,
+void MacroAssembler::asm_assert_mems_zero(AsmAssertCond cond, int size, int mem_offset,
                                           Register mem_base, const char* msg) {
   switch (size) {
     case 4:
@@ -4369,7 +4384,7 @@ void MacroAssembler::asm_assert_mems_zero(bool check_equal, int size, int mem_of
     default:
       ShouldNotReachHere();
   }
-  asm_assert(check_equal, msg);
+  asm_assert(cond, msg);
 }
 #endif // ASSERT
 
@@ -4573,11 +4588,11 @@ void MacroAssembler::atomically_flip_locked_state(bool is_unlock, Register obj, 
   }
 }
 
-// Implements lightweight-locking.
+// Implements fast-locking.
 //
 //  - obj: the object to be locked
 //  - t1, t2: temporary register
-void MacroAssembler::lightweight_lock(Register box, Register obj, Register t1, Register t2, Label& slow) {
+void MacroAssembler::fast_lock(Register box, Register obj, Register t1, Register t2, Label& slow) {
   assert_different_registers(box, obj, t1, t2, R0);
 
   Label push;
@@ -4629,11 +4644,11 @@ void MacroAssembler::lightweight_lock(Register box, Register obj, Register t1, R
   stw(top, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
 }
 
-// Implements lightweight-unlocking.
+// Implements fast-unlocking.
 //
 // - obj: the object to be unlocked
 //  - t1: temporary register
-void MacroAssembler::lightweight_unlock(Register obj, Register t1, Label& slow) {
+void MacroAssembler::fast_unlock(Register obj, Register t1, Label& slow) {
   assert_different_registers(obj, t1);
 
 #ifdef ASSERT
@@ -4691,7 +4706,7 @@ void MacroAssembler::lightweight_unlock(Register obj, Register t1, Label& slow) 
   Label not_unlocked;
   andi_(t, mark, markWord::unlocked_value);
   beq(CR0, not_unlocked);
-  stop("lightweight_unlock already unlocked");
+  stop("fast_unlock already unlocked");
   bind(not_unlocked);
 #endif
 

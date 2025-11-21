@@ -21,12 +21,14 @@
  * questions.
  */
 
-import java.nio.file.Path;
+import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 
-import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Annotations.Parameter;
+import java.nio.file.Path;
 import jdk.jpackage.test.AdditionalLauncher;
+import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.MacSign;
 
 /**
  * Tests generation of app image with --mac-sign and related arguments. Test will
@@ -68,13 +70,19 @@ public class SigningAppImageTest {
     // Unsigned
     @Parameter({"false", "true", "INVALID_INDEX"})
     public void test(boolean doSign, boolean signingKey, SigningBase.CertIndex certEnum) throws Exception {
+        MacSign.withKeychain(toConsumer(keychain -> {
+            test(keychain, doSign, signingKey, certEnum);
+        }), SigningBase.StandardKeychain.MAIN.keychain());
+    }
+
+    private void test(MacSign.ResolvedKeychain keychain, boolean doSign, boolean signingKey, SigningBase.CertIndex certEnum) throws Exception {
         final var certIndex = certEnum.value();
 
         JPackageCommand cmd = JPackageCommand.helloAppImage();
         if (doSign) {
             cmd.addArguments("--mac-sign",
                     "--mac-signing-keychain",
-                    SigningBase.getKeyChain());
+                    keychain.name());
             if (signingKey) {
                 cmd.addArguments("--mac-signing-key-user-name",
                         SigningBase.getDevName(certIndex));

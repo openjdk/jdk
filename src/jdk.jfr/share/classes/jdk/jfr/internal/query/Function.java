@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,46 +34,51 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 abstract class Function {
+    private static final long NANOS_PER_SECOND = 1_000_000_000L;
+
+    interface FunctionFactory {
+        Function newFunction();
+    }
 
     public abstract void add(Object value);
 
     public abstract Object result();
 
-    public static Function create(Field field) {
+    public static FunctionFactory createFactory(Field field) {
         Aggregator aggregator = field.aggregator;
 
         if (field.grouper != null || aggregator == Aggregator.MISSING) {
-            return new FirstNonNull();
+            return () -> new FirstNonNull();
         }
         if (aggregator == Aggregator.LIST) {
-            return new Container(new ArrayList<>());
+            return () -> new Container(new ArrayList<>());
         }
 
         if (aggregator == Aggregator.SET) {
-            return new Container(new LinkedHashSet<>());
+            return () -> new Container(new LinkedHashSet<>());
         }
 
         if (aggregator == Aggregator.DIFFERENCE) {
             if (field.timestamp) {
-                return new TimeDifference();
+                return () -> new TimeDifference();
             } else {
-                return new Difference();
+                return () -> new Difference();
             }
         }
 
         if (aggregator == Aggregator.STANDARD_DEVIATION) {
             if (field.timespan) {
-                return new TimespanFunction(new StandardDeviation());
+                return () -> new TimespanFunction(new StandardDeviation());
             } else {
-                return new StandardDeviation();
+                return () -> new StandardDeviation();
             }
         }
 
         if (aggregator == Aggregator.MEDIAN) {
             if (field.timespan) {
-                return new TimespanFunction(new Median());
+                return () -> new TimespanFunction(new Median());
             } else {
-                return new Median();
+                return () -> new Median();
             }
         }
 
@@ -83,7 +88,6 @@ abstract class Function {
 
         if (aggregator == Aggregator.P95) {
             return createPercentile(field, 0.95);
-
         }
         if (aggregator == Aggregator.P99) {
             return createPercentile(field, 0.99);
@@ -92,46 +96,46 @@ abstract class Function {
             return createPercentile(field, 0.999);
         }
         if (aggregator == Aggregator.MAXIMUM) {
-            return new Maximum();
+            return () -> new Maximum();
         }
         if (aggregator == Aggregator.MINIMUM) {
-            return new Minimum();
+            return () -> new Minimum();
         }
         if (aggregator == Aggregator.SUM) {
             if (field.timespan) {
-                return new SumDuration();
+                return () -> new SumDuration();
             }
             if (field.fractionalType) {
-                return new SumDouble();
+                return () -> new SumDouble();
             }
             if (field.integralType) {
-                return new SumLong();
+                return () -> new SumLong();
             }
         }
 
         if (aggregator == Aggregator.FIRST) {
-            return new First();
+            return () -> new First();
         }
         if (aggregator == Aggregator.LAST_BATCH) {
-            return new LastBatch(field);
+            return () -> new LastBatch(field);
         }
         if (aggregator == Aggregator.LAST) {
-            return new Last();
+            return () -> new Last();
         }
         if (aggregator == Aggregator.AVERAGE) {
             if (field.timespan) {
-                return new AverageDuration();
+                return () -> new AverageDuration();
             } else {
-                return new Average();
+                return () -> new Average();
             }
         }
         if (aggregator == Aggregator.COUNT) {
-            return new Count();
+            return () -> new Count();
         }
         if (aggregator == Aggregator.UNIQUE) {
-            return new Unique();
+            return () -> new Unique();
         }
-        return new Null();
+        return () -> new Null();
     }
 
     // **** AVERAGE ****
@@ -161,14 +165,30 @@ abstract class Function {
     private static final class AverageDuration extends Function {
         private long seconds;
         private long nanos;
-        private int count;
+        private long count;
+        private boolean hasOverflowed;
 
         @Override
         public void add(Object value) {
-            if (value instanceof Duration duration) {
-                seconds += duration.getSeconds();
-                nanos += duration.getNano();
-                count++;
+            if (hasOverflowed) {
+                return;
+            }
+            if (value instanceof Duration d) {
+                try {
+                    // Code copied from Duration::plus
+                    long secondsToAdd = d.getSeconds();
+                    long nanosToAdd = d.getNano();
+                    if ((secondsToAdd | nanosToAdd) == 0) {
+                        return;
+                    }
+                    long s = Math.addExact(seconds, secondsToAdd);
+                    seconds = Math.addExact(s, nanosToAdd / NANOS_PER_SECOND);
+                    nanos = nanos + nanosToAdd % NANOS_PER_SECOND;
+                    count++;
+                } catch (ArithmeticException ae) {
+                    hasOverflowed = true;
+                    count = 0;
+                }
             }
         }
 
@@ -342,13 +362,29 @@ abstract class Function {
         private long seconds;
         private long nanos;
         private boolean hasValue;
+        private boolean hasOverflowed;
 
         @Override
         public void add(Object value) {
+            if (hasOverflowed) {
+                return;
+            }
             if (value instanceof Duration n) {
-                seconds += n.getSeconds();
-                nanos += n.getNano();
-                hasValue = true;
+                try {
+                    // Code copied from Duration::plus
+                    long secondsToAdd = n.getSeconds();
+                    long nanosToAdd = n.getNano();
+                    if ((secondsToAdd | nanosToAdd) == 0) {
+                        return;
+                    }
+                    long s = Math.addExact(seconds, secondsToAdd);
+                    seconds = Math.addExact(s, nanosToAdd / NANOS_PER_SECOND);
+                    nanos = nanos + nanosToAdd % NANOS_PER_SECOND;
+                    hasValue = true;
+                } catch (ArithmeticException ae) {
+                    hasOverflowed = true;
+                    hasValue = false;
+                }
             }
         }
 
@@ -360,13 +396,22 @@ abstract class Function {
 
     private static final class SumLong extends Function {
         private boolean hasValue = false;
+        private boolean hasOverflowed;
         private long sum = 0;
 
         @Override
         public void add(Object value) {
+            if (hasOverflowed) {
+                return;
+            }
             if (value instanceof Number n) {
-                sum += n.longValue();
-                hasValue = true;
+                try {
+                    sum = Math.addExact(sum, n.longValue());
+                    hasValue = true;
+                } catch (ArithmeticException ae) {
+                    hasOverflowed = true;
+                    hasValue = false;
+                }
             }
         }
 
@@ -433,7 +478,11 @@ abstract class Function {
                 return null;
             }
             if (isIntegral(first) && isIntegral(last)) {
-                return last.longValue() - first.longValue();
+                try {
+                    return Math.subtractExact(last.longValue(), first.longValue());
+                } catch (ArithmeticException ae) {
+                    return null;
+                }
             }
             if (first instanceof Float f && last instanceof Float l) {
                 return l - f;
@@ -507,12 +556,11 @@ abstract class Function {
     }
 
     // **** PERCENTILE ****
-    private static Function createPercentile(Field field, double percentile) {
-        Percentile p = new Percentile(percentile);
+    private static FunctionFactory createPercentile(Field field, double percentile) {
         if (field.timespan) {
-            return new TimespanFunction(p);
+            return () -> new TimespanFunction(new Percentile(percentile));
         } else {
-            return p;
+            return () -> new Percentile(percentile);
         }
     }
 
@@ -526,7 +574,7 @@ abstract class Function {
         @Override
         public void add(Object value) {
             if (value instanceof Duration duration) {
-                long nanos = 1_000_000_000L * duration.getSeconds() + duration.getNano();
+                double nanos = 1_000_000_000.0 * duration.getSeconds() + duration.getNano();
                 function.add(nanos);
             }
         }

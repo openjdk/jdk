@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,22 +30,29 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 import javax.net.ssl.SSLContext;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+
+import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpClient.Version.valueOf;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 
 /**
  * @test
@@ -55,7 +62,7 @@ import static java.net.http.HttpClient.Version.HTTP_2;
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.httpclient.test.lib.http2.Http2TestServer
  * @run testng/othervm -Djdk.internal.httpclient.debug=true
- * *                   -Djdk.httpclient.HttpClient.log=headers,requests,responses,errors Response1xxTest
+ *                    -Djdk.httpclient.HttpClient.log=headers,requests,responses,errors Response1xxTest
  */
 public class Response1xxTest implements HttpServerAdapters {
     private static final String EXPECTED_RSP_BODY = "Hello World";
@@ -73,6 +80,9 @@ public class Response1xxTest implements HttpServerAdapters {
     private HttpTestServer https2Server;  // h2
     private String https2RequestURIBase;
 
+    private HttpTestServer http3Server;  // h3
+    private String http3RequestURIBase;
+
     private final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
 
     @BeforeClass
@@ -81,7 +91,7 @@ public class Response1xxTest implements HttpServerAdapters {
         server = new Http11Server(serverSocket);
         new Thread(server).start();
         http1RequestURIBase = URIBuilder.newBuilder().scheme("http").loopback()
-                .port(serverSocket.getLocalPort()).build().toString();
+                .port(serverSocket.getLocalPort()).path("/http1").build().toString();
 
         http2Server = HttpTestServer.create(HTTP_2);
         http2Server.addHandler(new Http2Handler(), "/http2/102");
@@ -109,6 +119,19 @@ public class Response1xxTest implements HttpServerAdapters {
         https2Server.start();
         System.out.println("Started (https) HTTP2 server at " + https2Server.getAddress());
 
+        http3Server = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
+        http3Server.addHandler(new Http3Handler(), "/http3/102");
+        http3Server.addHandler(new Http3Handler(), "/http3/103");
+        http3Server.addHandler(new Http3Handler(), "/http3/100");
+        http3Server.addHandler(new Http3Handler(), "/http3/101");
+        http3Server.addHandler(new OKHandler(), "/http3/200");
+        http3Server.addHandler(new OnlyInformationalHandler(), "/http3/only-informational");
+        http3RequestURIBase = URIBuilder.newBuilder().scheme("https").loopback()
+                .port(http3Server.getAddress().getPort())
+                .path("/http3").build().toString();
+        http3Server.start();
+        System.out.println("Started (https) HTTP3 server at " + http3Server.getAddress());
+
     }
 
     @AfterClass
@@ -132,6 +155,10 @@ public class Response1xxTest implements HttpServerAdapters {
                 https2Server.stop();
                 System.out.println("Stopped (https) HTTP2 server");
             }
+            if (http3Server != null) {
+                http3Server.stop();
+                System.out.println("Stopped (https) HTTP3 server");
+            }
         }
     }
 
@@ -142,10 +169,11 @@ public class Response1xxTest implements HttpServerAdapters {
                 "Content-Length: " + CONTENT_LENGTH + "\r\n\r\n" +
                 EXPECTED_RSP_BODY;
 
-        private static final String REQ_LINE_FOO = "GET /test/foo HTTP/1.1\r\n";
-        private static final String REQ_LINE_BAR = "GET /test/bar HTTP/1.1\r\n";
-        private static final String REQ_LINE_HELLO = "GET /test/hello HTTP/1.1\r\n";
-        private static final String REQ_LINE_BYE = "GET /test/bye HTTP/1.1\r\n";
+        private static final String REQ_LINE_102 = "GET /http1/102 HTTP/1.1\r\n";
+        private static final String REQ_LINE_103 = "GET /http1/103 HTTP/1.1\r\n";
+        private static final String REQ_LINE_100 = "GET /http1/100 HTTP/1.1\r\n";
+        private static final String REQ_LINE_101 = "GET /http1/101 HTTP/1.1\r\n";
+        private static final String REQ_LINE_ONLY_INFO = "GET /http1/only-informational HTTP/1.1\r\n";
 
 
         private final ServerSocket serverSocket;
@@ -160,6 +188,7 @@ public class Response1xxTest implements HttpServerAdapters {
             System.out.println("Server running at " + serverSocket);
             while (!stop) {
                 Socket socket = null;
+                boolean onlyInfo = false;
                 try {
                     // accept a connection
                     socket = serverSocket.accept();
@@ -180,18 +209,22 @@ public class Response1xxTest implements HttpServerAdapters {
                     System.out.println("Received following request line from client " + socket
                             + " :\n" + requestLine);
                     final int informationalResponseCode;
-                    if (requestLine.startsWith(REQ_LINE_FOO)) {
+                    if (requestLine.startsWith(REQ_LINE_102)) {
                         // we will send intermediate/informational 102 response
                         informationalResponseCode = 102;
-                    } else if (requestLine.startsWith(REQ_LINE_BAR)) {
+                    } else if (requestLine.startsWith(REQ_LINE_103)) {
                         // we will send intermediate/informational 103 response
                         informationalResponseCode = 103;
-                    } else if (requestLine.startsWith(REQ_LINE_HELLO)) {
+                    } else if (requestLine.startsWith(REQ_LINE_100)) {
                         // we will send intermediate/informational 100 response
                         informationalResponseCode = 100;
-                    } else if (requestLine.startsWith(REQ_LINE_BYE)) {
+                     } else if (requestLine.startsWith(REQ_LINE_101)) {
                         // we will send intermediate/informational 101 response
                         informationalResponseCode = 101;
+                    } else if (requestLine.startsWith(REQ_LINE_ONLY_INFO)) {
+                        // we will send intermediate/informational 102 response
+                        informationalResponseCode = 102;
+                        onlyInfo = true;
                     } else {
                         // unexpected client. ignore and close the client
                         System.err.println("Ignoring unexpected request from client " + socket);
@@ -215,6 +248,10 @@ public class Response1xxTest implements HttpServerAdapters {
                             os.flush();
                             System.out.println("Sent response code " + informationalResponseCode
                                     + " to client " + socket);
+                            if (onlyInfo) {
+                                Thread.sleep(2000);
+                                i = 1;
+                            }
                         }
                         // now send a final response
                         System.out.println("Now sending 200 response code to client " + socket);
@@ -226,8 +263,10 @@ public class Response1xxTest implements HttpServerAdapters {
                     // close the client connection
                     safeClose(socket);
                     // continue accepting any other client connections until we are asked to stop
-                    System.err.println("Ignoring exception in server:");
-                    t.printStackTrace();
+                    if (!onlyInfo) {
+                        System.err.println("Ignoring exception in server:");
+                        t.printStackTrace();
+                    }
                 }
             }
         }
@@ -261,6 +300,8 @@ public class Response1xxTest implements HttpServerAdapters {
         @Override
         public void handle(final HttpTestExchange exchange) throws IOException {
             final URI requestURI = exchange.getRequestURI();
+            final Version version = exchange.getServerVersion();
+
             final int informationResponseCode;
             if (requestURI.getPath().endsWith("/102")) {
                 informationResponseCode = 102;
@@ -281,23 +322,27 @@ public class Response1xxTest implements HttpServerAdapters {
             // be sent multiple times)
             for (int i = 0; i < 3; i++) {
                 exchange.sendResponseHeaders(informationResponseCode, -1);
-                System.out.println("Sent " + informationResponseCode + " response code from H2 server");
+                System.out.println("Sent " + informationResponseCode + " response code from " + version + " server");
             }
             // now send 200 response
             try {
                 final byte[] body = EXPECTED_RSP_BODY.getBytes(StandardCharsets.UTF_8);
                 exchange.sendResponseHeaders(200, body.length);
-                System.out.println("Sent 200 response from H2 server");
+                System.out.println("Sent 200 response from " + version + " server");
                 try (OutputStream os = exchange.getResponseBody()) {
                     os.write(body);
                 }
-                System.out.println("Sent response body from H2 server");
+                System.out.println("Sent response body from " + version + " server");
             } catch (Throwable e) {
-                System.err.println("Failed to send response from HTTP2 handler:");
+                System.err.println("Failed to send response from " + version + " handler:");
                 e.printStackTrace();
                 throw e;
             }
         }
+    }
+
+    private static final class Http3Handler extends Http2Handler {
+
     }
 
     private static class OnlyInformationalHandler implements HttpTestHandler {
@@ -338,20 +383,7 @@ public class Response1xxTest implements HttpServerAdapters {
                 .version(HttpClient.Version.HTTP_1_1)
                 .proxy(HttpClient.Builder.NO_PROXY).build();
         TRACKER.track(client);
-        final URI[] requestURIs = new URI[]{
-                new URI(http1RequestURIBase + "/test/foo"),
-                new URI(http1RequestURIBase + "/test/bar"),
-                new URI(http1RequestURIBase + "/test/hello")};
-        for (final URI requestURI : requestURIs) {
-            final HttpRequest request = HttpRequest.newBuilder(requestURI).build();
-            System.out.println("Issuing request to " + requestURI);
-            final HttpResponse<String> response = client.send(request,
-                    HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-            Assert.assertEquals(response.version(), HttpClient.Version.HTTP_1_1,
-                    "Unexpected HTTP version in response");
-            Assert.assertEquals(response.statusCode(), 200, "Unexpected response code");
-            Assert.assertEquals(response.body(), EXPECTED_RSP_BODY, "Unexpected response body");
-        }
+        test1xxFor(client, HTTP_1_1, http1RequestURIBase);
     }
 
     /**
@@ -364,21 +396,56 @@ public class Response1xxTest implements HttpServerAdapters {
         final HttpClient client = HttpClient.newBuilder()
                 .version(HTTP_2)
                 .proxy(HttpClient.Builder.NO_PROXY).build();
+        test1xxFor(client, HTTP_2, http2RequestURIBase);
+    }
+
+    /**
+     * Tests that when a HTTP3 server sends intermediate 1xx response codes and then the final
+     * response, the client (internally) will ignore those intermediate informational response codes
+     * and only return the final response to the application
+     */
+    @Test
+    public void test1xxForHTTP3() throws Exception {
+        final HttpClient client = newClientBuilderForH3()
+                .sslContext(sslContext)
+                .version(HTTP_3)
+                .proxy(HttpClient.Builder.NO_PROXY).build();
+        test1xxFor(client, HTTP_3, http3RequestURIBase);
+    }
+
+    private void test1xxFor(HttpClient client, Version version, String baseURI) throws Exception {
         TRACKER.track(client);
         final URI[] requestURIs = new URI[]{
-                new URI(http2RequestURIBase + "/102"),
-                new URI(http2RequestURIBase + "/103"),
-                new URI(http2RequestURIBase + "/100")};
+                new URI(baseURI + "/102"),
+                new URI(baseURI + "/103"),
+                new URI(baseURI + "/100")};
+        var requestBuilder = HttpRequest.newBuilder();
+        if (version == HTTP_3) {
+            requestBuilder.setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
+        }
         for (final URI requestURI : requestURIs) {
-            final HttpRequest request = HttpRequest.newBuilder(requestURI).build();
+            final HttpRequest request = requestBuilder.copy().uri(requestURI).build();
             System.out.println("Issuing request to " + requestURI);
             final HttpResponse<String> response = client.send(request,
-                    HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-            Assert.assertEquals(response.version(), HTTP_2,
+                    BodyHandlers.ofString(StandardCharsets.UTF_8));
+            Assert.assertEquals(response.version(), version,
                     "Unexpected HTTP version in response");
             Assert.assertEquals(response.statusCode(), 200, "Unexpected response code");
             Assert.assertEquals(response.body(), EXPECTED_RSP_BODY, "Unexpected response body");
         }
+    }
+
+    /**
+     * Tests that when a request is issued with a specific request timeout and the server
+     * responds with intermediate 1xx response code but doesn't respond with a final response within
+     * the timeout duration, then the application fails with a request timeout
+     */
+    @Test
+    public void test1xxRequestTimeoutH1() throws Exception {
+        final HttpClient client = HttpClient.newBuilder()
+                .version(HTTP_1_1)
+                .proxy(HttpClient.Builder.NO_PROXY).build();
+        test1xxRequestTimeout(client, HTTP_1_1, http1RequestURIBase);
     }
 
 
@@ -388,21 +455,44 @@ public class Response1xxTest implements HttpServerAdapters {
      * the timeout duration, then the application fails with a request timeout
      */
     @Test
-    public void test1xxRequestTimeout() throws Exception {
+    public void test1xxRequestTimeoutH2() throws Exception {
         final HttpClient client = HttpClient.newBuilder()
                 .version(HTTP_2)
                 .proxy(HttpClient.Builder.NO_PROXY).build();
+        test1xxRequestTimeout(client, HTTP_2, http2RequestURIBase);
+    }
+
+    /**
+     * Tests that when a request is issued with a specific request timeout and the server
+     * responds with intermediate 1xx response code but doesn't respond with a final response within
+     * the timeout duration, then the application fails with a request timeout
+     */
+    @Test
+    public void test1xxRequestTimeoutH3() throws Exception {
+        final HttpClient client = newClientBuilderForH3()
+                .version(HTTP_3)
+                .sslContext(sslContext)
+                .proxy(HttpClient.Builder.NO_PROXY).build();
+        test1xxRequestTimeout(client, HTTP_3, http3RequestURIBase);
+    }
+
+    private void test1xxRequestTimeout(HttpClient client, Version version, String uriBase) throws Exception {
         TRACKER.track(client);
-        final URI requestURI = new URI(http2RequestURIBase + "/only-informational");
+        final URI requestURI = new URI(uriBase + "/only-informational");
         final Duration requestTimeout = Duration.ofSeconds(2);
-        final HttpRequest request = HttpRequest.newBuilder(requestURI).timeout(requestTimeout)
+        var requestBuilder = HttpRequest.newBuilder(requestURI);
+        if (version == HTTP_3) {
+            requestBuilder.setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
+        }
+        final HttpRequest request = requestBuilder.timeout(requestTimeout)
                 .build();
         System.out.println("Issuing request to " + requestURI);
         // we expect the request to timeout
         Assert.assertThrows(HttpTimeoutException.class, () -> {
-            client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            client.send(request, BodyHandlers.ofString(StandardCharsets.UTF_8));
         });
     }
+
 
     /**
      * Tests that when the HTTP/1.1 server sends a 101 response when the request hasn't asked
@@ -413,13 +503,7 @@ public class Response1xxTest implements HttpServerAdapters {
         final HttpClient client = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1)
                 .proxy(HttpClient.Builder.NO_PROXY).build();
-        TRACKER.track(client);
-        final URI requestURI = new URI(http1RequestURIBase + "/test/bye");
-        final HttpRequest request = HttpRequest.newBuilder(requestURI).build();
-        System.out.println("Issuing request to " + requestURI);
-        // we expect the request to fail because the server sent an unexpected 101
-        Assert.assertThrows(ProtocolException.class,
-                () -> client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)));
+        testUnexpected101(client, HTTP_1_1, http1RequestURIBase);
     }
 
 
@@ -433,13 +517,20 @@ public class Response1xxTest implements HttpServerAdapters {
                 .version(HTTP_2)
                 .sslContext(sslContext)
                 .proxy(HttpClient.Builder.NO_PROXY).build();
-        TRACKER.track(client);
-        final URI requestURI = new URI(https2RequestURIBase + "/101");
-        final HttpRequest request = HttpRequest.newBuilder(requestURI).build();
-        System.out.println("Issuing request to " + requestURI);
-        // we expect the request to fail because the server sent an unexpected 101
-        Assert.assertThrows(ProtocolException.class,
-                () -> client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)));
+        testUnexpected101(client, HTTP_2, https2RequestURIBase);
+    }
+
+    /**
+     * Tests that when the HTTP2 server (over HTTPS) sends a 101 response when the request
+     * hasn't asked for an "Upgrade" then the request fails.
+     */
+    @Test
+    public void testHTT3Unexpected101() throws Exception {
+        final HttpClient client = newClientBuilderForH3()
+                .version(HTTP_3)
+                .sslContext(sslContext)
+                .proxy(HttpClient.Builder.NO_PROXY).build();
+        testUnexpected101(client, HTTP_3, http3RequestURIBase);
     }
 
     /**
@@ -451,7 +542,6 @@ public class Response1xxTest implements HttpServerAdapters {
         final HttpClient client = HttpClient.newBuilder()
                 .version(HTTP_2)
                 .proxy(HttpClient.Builder.NO_PROXY).build();
-        TRACKER.track(client);
         // when using HTTP2 version against a "http://" (non-secure) URI
         // the HTTP client (implementation) internally initiates a HTTP/1.1 connection
         // and then does an "Upgrade:" to "h2c". This it does when there isn't already a
@@ -462,12 +552,21 @@ public class Response1xxTest implements HttpServerAdapters {
         // start our testing
         warmupH2Client(client);
         // start the actual testing
-        final URI requestURI = new URI(http2RequestURIBase + "/101");
-        final HttpRequest request = HttpRequest.newBuilder(requestURI).build();
+        testUnexpected101(client, HTTP_2, http2RequestURIBase);
+    }
+
+    private void testUnexpected101(HttpClient client, Version version, String baseUri) throws Exception {
+        TRACKER.track(client);
+        final URI requestURI = new URI(baseUri + "/101");
+        var requestBuilder = HttpRequest.newBuilder(requestURI);
+        if (version == HTTP_3) {
+            requestBuilder.setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
+        }
+        final HttpRequest request = requestBuilder.build();
         System.out.println("Issuing request to " + requestURI);
         // we expect the request to fail because the server sent an unexpected 101
         Assert.assertThrows(ProtocolException.class,
-                () -> client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)));
+                () -> client.send(request, BodyHandlers.ofString(StandardCharsets.UTF_8)));
     }
 
     // sends a request and expects a 200 response back

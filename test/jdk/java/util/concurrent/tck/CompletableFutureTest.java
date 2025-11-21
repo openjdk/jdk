@@ -58,6 +58,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
+import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -5133,4 +5134,46 @@ public class CompletableFutureTest extends JSR166TestCase {
         checkCompletedWithWrappedException(g.toCompletableFuture(), r.ex);
         r.assertInvoked();
     }}
+
+    public void testOnlyHelpsIfInTheSamePool() throws Exception {
+        class Logic {
+            interface Extractor { ForkJoinPool pool(CompletableFuture<ForkJoinPool> cf) throws Exception; }
+            static final List<ForkJoinPool> executeInnerOuter(
+                ForkJoinPool outer, ForkJoinPool inner, Logic.Extractor extractor
+            ) throws Exception {
+                return CompletableFuture.supplyAsync(() ->
+                    Stream.iterate(1, i -> i + 1)
+                        .limit(64)
+                        .map(i -> CompletableFuture.supplyAsync(
+                            () -> Thread.currentThread() instanceof ForkJoinWorkerThread wt ? wt.getPool() : null, inner)
+                        )
+                        .map(cf -> {
+                            try {
+                                return extractor.pool(cf);
+                            } catch (Exception ex) {
+                                throw new AssertionError("Unexpected", ex);
+                            }
+                        })
+                        .toList()
+                , outer).join();
+            }
+        }
+
+        List<Logic.Extractor> extractors =
+            List.of(
+                c -> c.get(60, SECONDS),
+                CompletableFuture::get,
+                CompletableFuture::join
+            );
+
+        try (var pool = new ForkJoinPool(2)) {
+            for (var extractor : extractors) {
+                for (var p : Logic.executeInnerOuter(pool, ForkJoinPool.commonPool(), extractor))
+                    assertTrue(p != pool); // The inners should have all been executed by commonPool
+
+                for (var p : Logic.executeInnerOuter(pool, pool, extractor))
+                    assertTrue(p == pool); // The inners could have been helped by the outer
+            }
+        }
+    }
 }

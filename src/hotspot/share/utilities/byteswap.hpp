@@ -25,13 +25,13 @@
 #ifndef SHARE_UTILITIES_BYTESWAP_HPP
 #define SHARE_UTILITIES_BYTESWAP_HPP
 
+#include "cppstdlib/cstddef.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#include <cstddef>
 #include <cstdint>
-#include <type_traits>
 
 template <typename T, size_t N = sizeof(T)>
 struct ByteswapImpl;

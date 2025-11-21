@@ -77,7 +77,7 @@ public class TestJFRWithJMX {
             throw new SkippedException("Docker is not supported on this host");
         }
 
-        if (isPodman() & !Platform.isRoot()) {
+        if (DockerTestUtils.isPodman() & !Platform.isRoot()) {
             throw new SkippedException("test cannot be run under rootless podman configuration");
         }
 
@@ -222,10 +222,4 @@ public class TestJFRWithJMX {
         }
     }
 
-    static boolean isPodman() {
-        String[] parts = Container.ENGINE_COMMAND
-            .toLowerCase()
-            .split(File.pathSeparator);
-        return "podman".equals(parts[parts.length - 1]);
-    }
 }

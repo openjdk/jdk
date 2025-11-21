@@ -26,7 +26,6 @@ package jdk.jpackage.internal;
 
 import java.util.Objects;
 import java.util.Optional;
-import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.LinuxDebPackage;
 import jdk.jpackage.internal.model.LinuxDebPackageMixin;
 
@@ -36,7 +35,7 @@ final class LinuxDebPackageBuilder {
         this.pkgBuilder = Objects.requireNonNull(pkgBuilder);
     }
 
-    LinuxDebPackage create() throws ConfigException {
+    LinuxDebPackage create() {
         if (pkgBuilder.category().isEmpty()) {
             pkgBuilder.category(DEFAULTS.category());
         }

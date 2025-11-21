@@ -24,22 +24,39 @@
 package jdk.httpclient.test.lib.http2;
 
 import java.io.IOException;
-import java.net.*;
-import java.util.*;
+import java.net.BindException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 
 import javax.net.ServerSocketFactory;
+import javax.net.ssl.SNIMatcher;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
 
+import jdk.httpclient.test.lib.common.RequestPathMatcherUtil;
+import jdk.httpclient.test.lib.common.RequestPathMatcherUtil.Resolved;
+import jdk.httpclient.test.lib.common.ServerNameMatcher;
+import jdk.httpclient.test.lib.http3.Http3TestServer;
 import jdk.internal.net.http.frame.ErrorFrame;
+import jdk.internal.net.http.http3.Http3Error;
+import jdk.internal.net.quic.QuicVersion;
+import jdk.httpclient.test.lib.quic.QuicServer;
 
 /**
  * Waits for incoming TCP connections from a client and establishes
@@ -48,7 +65,10 @@ import jdk.internal.net.http.frame.ErrorFrame;
  * Http2Handler on additional threads. All threads
  * obtained from the supplied ExecutorService.
  */
-public class Http2TestServer implements AutoCloseable {
+public final class Http2TestServer implements AutoCloseable {
+
+    record AltSvcAddr(String host, int port, InetSocketAddress original) {}
+
     static final AtomicLong IDS = new AtomicLong();
     final long id = IDS.incrementAndGet();
     final ServerSocket server;
@@ -61,7 +81,12 @@ public class Http2TestServer implements AutoCloseable {
     final String serverName;
     final Set<Http2TestServerConnection> connections;
     final Properties properties;
+    volatile Http3TestServer h3Server;
+    volatile AltSvcAddr h3AltSvcAddr;
     final String name;
+    private final SNIMatcher sniMatcher;
+    volatile boolean altSvcAsRespHeader;
+    private final ReentrantLock serverLock = new ReentrantLock();
     // request approver which takes the server connection key as the input
     private volatile Predicate<String> newRequestApprover;
 
@@ -179,7 +204,6 @@ public class Http2TestServer implements AutoCloseable {
         throws Exception
     {
         this.name = "TestServer(%d)".formatted(id);
-        this.serverName = serverName;
         this.supportsHTTP11 = supportsHTTP11;
         if (secure) {
            if (context != null)
@@ -192,10 +216,164 @@ public class Http2TestServer implements AutoCloseable {
             server = initPlaintext(port, backlog);
         }
         this.secure = secure;
+        this.serverName = serverName;
+        this.sniMatcher = serverName == null
+                ? new ServerNameMatcher(localAddr.getHostName())
+                : new ServerNameMatcher(this.serverName);
         this.exec = exec == null ? createExecutor(name) : exec;
         this.handlers = Collections.synchronizedMap(new HashMap<>());
         this.properties = properties == null ? new Properties() : properties;
         this.connections = ConcurrentHashMap.newKeySet();
+    }
+
+    /**
+     * {@return the {@link SNIMatcher} configured for this server. Returns {@code null}
+     * if none is configured}
+     */
+    public SNIMatcher getSniMatcher() {
+        return this.sniMatcher;
+    }
+
+    /**
+     * Creates a H3 server which will attempt to use the same host/port as the one used
+     * by this current H2 server (except that the H3 server will use UDP). If that host/port
+     * isn't available for the H3 server then it uses an ephemeral port on loopback address.
+     * That H3 server then acts as the alternate service for this H2 server and will be advertised
+     * as such when this H2 server responds to any HTTP requests.
+     */
+    public Http2TestServer enableH3AltServiceOnSamePort() throws IOException {
+        this.enableH3AltService(false);
+        return this;
+    }
+
+    /**
+     * Creates a H3 server that acts as the alternate service for this H2 server and will be advertised
+     * as such when this H2 server responds to any HTTP requests.
+     * <p>
+     * The H3 server will be created using an ephemeral port on loopback address.
+     * </p>
+     */
+    public Http2TestServer enableH3AltServiceOnEphemeralPort() throws IOException {
+        return enableH3AltService(true);
+    }
+
+    /**
+     * Creates a H3 server that acts as the alternate service for this H2 server and will be advertised
+     * as such when this H2 server responds to any HTTP requests.
+     * <p>
+     * The H3 server will be created using an ephemeral port on loopback address.
+     * </p>
+     * The server will switch to selected QUIC version using compatible or incompatible negotiation.
+     */
+    public Http2TestServer enableH3AltServiceOnEphemeralPortWithVersion(QuicVersion version, boolean compatible) throws IOException {
+        return enableH3AltService(0, new QuicVersion[]{version}, compatible);
+    }
+
+    public Http2TestServer enableH3AltServiceOnPort(int port) throws IOException {
+        return enableH3AltService(port, new QuicVersion[]{QuicVersion.QUIC_V1});
+    }
+
+    /**
+     * Creates a H3 server that acts as the alternate service for this H2 server and will be advertised
+     * as such when this H2 server responds to any HTTP requests.
+     * <p>
+     * If {@code useEphemeralAddr} is {@code true} then the H3 server will be created using an
+     * ephemeral port on loopback address. Otherwise, an attempt will be made by this current H2
+     * server (except that the H3 server will use UDP). If that attempt fails then this method
+     * implementation will fallback to using an ephemeral port for creating the H3 server.
+     * </p>
+     * @param useEphemeralAddr If true then the H3 server will be created using an ephemeral port
+     */
+     Http2TestServer enableH3AltService(final boolean useEphemeralAddr) throws IOException {
+         return enableH3AltService(useEphemeralAddr ? 0 : getAddress().getPort(), new QuicVersion[]{QuicVersion.QUIC_V1});
+     }
+
+     Http2TestServer enableH3AltService(final int port, QuicVersion[] quicVersions) throws IOException {
+         return enableH3AltService(port, quicVersions, false);
+     }
+
+     Http2TestServer enableH3AltService(final int port, QuicVersion[] quicVersions, boolean compatible) throws IOException {
+        if (this.h3Server != null) {
+            // already enabled
+            // TODO: throw exception instead?
+            return this;
+        }
+        if (!secure) {
+            throw new IllegalStateException("Cannot enable H3 alt service for a non-secure H2 server");
+        }
+        serverLock.lock();
+        try {
+            if (this.h3Server != null) {
+                return this;
+            }
+            QuicServer.Builder quicServerBuilder = Http3TestServer.quicServerBuilder();
+            quicServerBuilder.sslContext(this.sslContext).serverId("h2-server-" + id)
+                    .executor(this.exec)
+                    .sniMatcher(this.sniMatcher)
+                    .availableVersions(quicVersions)
+                    .compatibleNegotiation(compatible)
+                    .appErrorCodeToString(Http3Error::stringForCode)
+                    .bindAddress(new InetSocketAddress(InetAddress.getLoopbackAddress(), port));
+            try {
+                this.h3Server = new Http3TestServer(quicServerBuilder.build(), this::getHandlerFor);
+            } catch (BindException be) {
+                if (port == 0) {
+                    // this means that we already attempted to bind with an ephemeral port
+                    // and it failed, so no need to attempt again. Just throw back the original
+                    // exception
+                    throw be;
+                }
+                // try with an ephemeral port
+                quicServerBuilder.bindAddress(new InetSocketAddress(
+                        InetAddress.getLoopbackAddress(), 0));
+                this.h3Server = new Http3TestServer(quicServerBuilder.build(), this::getHandlerFor);
+            }
+            // we keep track of the InetSocketAddress.getHostString() when the alt service address
+            // was created and keep using the same host string irrespective of whether the
+            // underlying/original InetSocketAddress' hostname resolution could potentially have
+            // changed the value returned by getHostString(). This allows us to use a consistent
+            // host in the alt-svc that we advertise.
+            this.h3AltSvcAddr = new AltSvcAddr(h3Server.getAddress().getHostString(),
+                    h3Server.getAddress().getPort(), h3Server.getAddress());
+        } finally {
+            serverLock.unlock();
+        }
+        return this;
+    }
+
+    public Optional<Http3TestServer> getH3AltService() {
+        return Optional.ofNullable(h3Server);
+    }
+
+    /**
+     * {@return true if this H2 server is configured with an H3 alternate service and that
+     * H3 alternate service listens on the same host and port as that of this H2 server (except
+     * that H3 uses UDP). Returns false otherwise}
+     */
+    public boolean supportsH3DirectConnection() {
+        final AltSvcAddr h3Addr = this.h3AltSvcAddr;
+        if (h3Addr == null) {
+            return false;
+        }
+        final InetSocketAddress h2Addr = this.getAddress();
+        return h2Addr.equals(h3Addr.original);
+    }
+
+    /**
+     * Controls whether this H2 server sends a alt-svc response header or an AltSvc frame
+     * when H3 alternate service is enable on this server. The alt-svc header or the frame
+     * will be sent whenever this server responds next to an HTTP request.
+     *
+     * @param enable If {@code true} then the alt-svc response header is sent. Else AltSvc frame
+     *               is sent.
+     * @return The current Http2TestServer
+     */
+    public Http2TestServer advertiseAltSvcResponseHeader(final boolean enable) {
+        // TODO: this is only set as a flag currently. We need to implement the logic
+        // which sends the alt-svc response header. we currently send a alt-svc frame
+        // whenever a alt-svc is present.
+        this.altSvcAsRespHeader = enable;
+        return this;
     }
 
     /**
@@ -218,24 +396,14 @@ public class Http2TestServer implements AutoCloseable {
     }
 
     Http2Handler getHandlerFor(String path) {
-        if (path == null || path.equals(""))
-            path = "/";
-
-        final String fpath = path;
-        AtomicReference<String> bestMatch = new AtomicReference<>("");
-        AtomicReference<Http2Handler> href = new AtomicReference<>();
-
-        handlers.forEach((key, value) -> {
-            if (fpath.startsWith(key) && key.length() > bestMatch.get().length()) {
-                bestMatch.set(key);
-                href.set(value);
-            }
-        });
-        Http2Handler handler = href.get();
-        if (handler == null)
-            throw new RuntimeException("No handler found for path " + path);
-        System.err.println(name + ": Using handler for: " + bestMatch.get());
-        return handler;
+        final Optional<Resolved<Http2Handler>> match = RequestPathMatcherUtil.findHandler(path, handlers);
+        if (match.isEmpty()) {
+            // no handler available for the path
+            return null;
+        }
+        final Resolved<Http2Handler> resolved = match.get();
+        System.err.println(name + ": Using handler for: " + resolved.bestMatchedPath());
+        return resolved.handler();
     }
 
     final ServerSocket initPlaintext(int port, int backlog) throws Exception {
@@ -245,7 +413,16 @@ public class Http2TestServer implements AutoCloseable {
         return ss;
     }
 
-    public synchronized void stop() {
+    public void stop() {
+        serverLock.lock();
+        try {
+            implStop();
+        } finally {
+            serverLock.unlock();
+        }
+    }
+
+    private void implStop() {
         // TODO: clean shutdown GoAway
         stopping = true;
         System.err.printf("%s: stopping %d connections\n", name, connections.size());
@@ -254,6 +431,12 @@ public class Http2TestServer implements AutoCloseable {
         }
         try {
             server.close();
+        } catch (IOException e) {}
+        try {
+            var h3Server = this.h3Server;
+            if (h3Server != null) {
+                h3Server.close();
+            }
         } catch (IOException e) {}
         exec.shutdownNow();
     }
@@ -284,6 +467,16 @@ public class Http2TestServer implements AutoCloseable {
         return serverName;
     }
 
+    private void putConnection(InetSocketAddress addr, Http2TestServerConnection c) {
+        serverLock.lock();
+        try {
+            if (!stopping)
+                connections.add(c);
+        } finally {
+            serverLock.unlock();
+        }
+    }
+
     public void setRequestApprover(final Predicate<String> approver) {
         this.newRequestApprover = approver;
     }
@@ -292,13 +485,13 @@ public class Http2TestServer implements AutoCloseable {
         return this.newRequestApprover;
     }
 
-    private synchronized void putConnection(InetSocketAddress addr, Http2TestServerConnection c) {
-        if (!stopping)
-            connections.add(c);
-    }
-
-    private synchronized void removeConnection(InetSocketAddress addr, Http2TestServerConnection c) {
-        connections.remove(c);
+    private void removeConnection(InetSocketAddress addr, Http2TestServerConnection c) {
+        serverLock.lock();
+        try {
+            connections.remove(c);
+        } finally {
+            serverLock.unlock();
+        }
     }
 
     record AcceptedConnection(Http2TestServer server,
@@ -350,6 +543,10 @@ public class Http2TestServer implements AutoCloseable {
      * Starts a thread which waits for incoming connections.
      */
     public void start() {
+        var h3Server = this.h3Server;
+        if (h3Server != null) {
+            h3Server.start();
+        }
         exec.submit(() -> {
             try {
                 while (!stopping) {

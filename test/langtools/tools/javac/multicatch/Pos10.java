@@ -25,7 +25,6 @@
  * @test
  * @bug 7039822
  * @summary Verify lub of an exception parameter can be an intersection type
- * @author Joseph D. Darcy
  */
 
 public class Pos10 {

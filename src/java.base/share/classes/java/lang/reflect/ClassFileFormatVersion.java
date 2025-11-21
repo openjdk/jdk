@@ -433,6 +433,7 @@ public enum ClassFileFormatVersion {
      * ClassFileFormatVersion.valueOf(Runtime.Version.parse("17"))}
      *
      * @param rv runtime version to map to a class file format version
+     * @throws NullPointerException if {@code rv} is {@code null}
      * @throws IllegalArgumentException if the feature of version
      * argument is greater than the feature of the platform version.
      */

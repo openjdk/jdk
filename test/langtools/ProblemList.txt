@@ -52,8 +52,6 @@ jdk/jshell/UserJdiUserRemoteTest.java                                           
 jdk/jshell/UserInputTest.java                                                   8169536    generic-all
 jdk/jshell/ToolBasicTest.java                                                   8265357    macosx-aarch64
 jdk/jshell/HighlightUITest.java                                                 8284144    generic-all
-jdk/jshell/ToolSimpleTest.java                                                  8366582    generic-all
-jdk/jshell/ToolLocalSimpleTest.java                                             8366582    generic-all
 
 ###########################################################################
 #

@@ -129,7 +129,7 @@ final class SettingsManager {
         }
     }
 
-   private Map<String, InternalSetting> availableSettings = new LinkedHashMap<>();
+    private volatile Map<String, InternalSetting> availableSettings = new LinkedHashMap<>();
 
     void setSettings(List<Map<String, String>> activeSettings, boolean writeSettingEvents) {
         // store settings so they are available if a new event class is loaded

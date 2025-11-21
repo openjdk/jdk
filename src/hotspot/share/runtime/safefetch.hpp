@@ -31,8 +31,8 @@
 // Safefetch allows to load a value from a location that's not known
 // to be valid. If the load causes a fault, the error value is returned.
 
-#ifdef _WIN32
-  // Windows uses Structured Exception Handling
+#if defined(_WIN32) && !defined(_M_ARM64)
+  // Windows x86_64 uses Structured Exception Handling
   #include "safefetch_windows.hpp"
 #elif defined(ZERO) || defined (_AIX)
   // These platforms implement safefetch via Posix sigsetjmp/longjmp.

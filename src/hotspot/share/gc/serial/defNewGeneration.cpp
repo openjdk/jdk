@@ -45,7 +45,6 @@
 #include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/space.hpp"
 #include "gc/shared/spaceDecorator.hpp"
-#include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.inline.hpp"
@@ -226,15 +225,11 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
     _promo_failure_drain_in_progress(false),
     _string_dedup_requests()
 {
-  MemRegion cmr((HeapWord*)_virtual_space.low(),
-                (HeapWord*)_virtual_space.high());
-  SerialHeap* gch = SerialHeap::heap();
-
-  gch->rem_set()->resize_covered_region(cmr);
-
   _eden_space = new ContiguousSpace();
   _from_space = new ContiguousSpace();
   _to_space   = new ContiguousSpace();
+
+  init_spaces();
 
   // Compute the maximum eden and survivor space sizes. These sizes
   // are computed assuming the entire reserved space is committed.
@@ -257,7 +252,6 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
   _to_counters = new CSpaceCounters("s1", 2, _max_survivor_size, _to_space,
                                     _gen_counters);
 
-  compute_space_boundaries(0, SpaceDecorator::Clear, SpaceDecorator::Mangle);
   update_counters();
   _old_gen = nullptr;
   _tenuring_threshold = MaxTenuringThreshold;
@@ -269,74 +263,51 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
   _gc_tracer = new DefNewTracer();
 }
 
-void DefNewGeneration::compute_space_boundaries(uintx minimum_eden_size,
-                                                bool clear_space,
-                                                bool mangle_space) {
-  // If the spaces are being cleared (only done at heap initialization
-  // currently), the survivor spaces need not be empty.
-  // Otherwise, no care is taken for used areas in the survivor spaces
-  // so check.
-  assert(clear_space || (to()->is_empty() && from()->is_empty()),
-    "Initialization of the survivor spaces assumes these are empty");
+void DefNewGeneration::init_spaces() {
+  // Using layout: from, to, eden, so only from can be non-empty.
+  assert(eden()->is_empty(), "precondition");
+  assert(to()->is_empty(), "precondition");
+
+  if (!from()->is_empty()) {
+    assert((char*) from()->bottom() == _virtual_space.low(), "inv");
+  }
 
   // Compute sizes
-  uintx size = _virtual_space.committed_size();
-  uintx survivor_size = compute_survivor_size(size, SpaceAlignment);
-  uintx eden_size = size - (2*survivor_size);
-  if (eden_size > max_eden_size()) {
-    // Need to reduce eden_size to satisfy the max constraint. The delta needs
-    // to be 2*SpaceAlignment aligned so that both survivors are properly
-    // aligned.
-    uintx eden_delta = align_up(eden_size - max_eden_size(), 2*SpaceAlignment);
-    eden_size     -= eden_delta;
-    survivor_size += eden_delta/2;
-  }
+  size_t size = _virtual_space.committed_size();
+  size_t survivor_size = compute_survivor_size(size, SpaceAlignment);
+  assert(survivor_size >= from()->used(), "inv");
+  assert(size > 2 * survivor_size, "inv");
+  size_t eden_size = size - (2 * survivor_size);
   assert(eden_size > 0 && survivor_size <= eden_size, "just checking");
 
-  if (eden_size < minimum_eden_size) {
-    // May happen due to 64Kb rounding, if so adjust eden size back up
-    minimum_eden_size = align_up(minimum_eden_size, SpaceAlignment);
-    uintx maximum_survivor_size = (size - minimum_eden_size) / 2;
-    uintx unaligned_survivor_size =
-      align_down(maximum_survivor_size, SpaceAlignment);
-    survivor_size = MAX2(unaligned_survivor_size, SpaceAlignment);
-    eden_size = size - (2*survivor_size);
-    assert(eden_size > 0 && survivor_size <= eden_size, "just checking");
-    assert(eden_size >= minimum_eden_size, "just checking");
-  }
+  // layout: from, to, eden
+  char* from_start = _virtual_space.low();
+  char* to_start = from_start + survivor_size;
+  char* eden_start = to_start + survivor_size;
+  char* eden_end = eden_start + eden_size;
 
-  char *eden_start = _virtual_space.low();
-  char *from_start = eden_start + eden_size;
-  char *to_start   = from_start + survivor_size;
-  char *to_end     = to_start   + survivor_size;
-
-  assert(to_end == _virtual_space.high(), "just checking");
-  assert(is_aligned(eden_start, SpaceAlignment), "checking alignment");
+  assert(eden_end == _virtual_space.high(), "just checking");
   assert(is_aligned(from_start, SpaceAlignment), "checking alignment");
   assert(is_aligned(to_start, SpaceAlignment),   "checking alignment");
+  assert(is_aligned(eden_start, SpaceAlignment), "checking alignment");
+  assert(is_aligned(eden_end, SpaceAlignment), "checking alignment");
 
-  MemRegion edenMR((HeapWord*)eden_start, (HeapWord*)from_start);
   MemRegion fromMR((HeapWord*)from_start, (HeapWord*)to_start);
-  MemRegion toMR  ((HeapWord*)to_start, (HeapWord*)to_end);
-
-  // A minimum eden size implies that there is a part of eden that
-  // is being used and that affects the initialization of any
-  // newly formed eden.
-  bool live_in_eden = minimum_eden_size > 0;
+  MemRegion toMR  ((HeapWord*)to_start, (HeapWord*)eden_start);
+  MemRegion edenMR((HeapWord*)eden_start, (HeapWord*)eden_end);
 
   // Reset the spaces for their new regions.
-  eden()->initialize(edenMR,
-                     clear_space && !live_in_eden,
-                     SpaceDecorator::Mangle);
-  // If clear_space and live_in_eden, we will not have cleared any
-  // portion of eden above its top. This can cause newly
-  // expanded space not to be mangled if using ZapUnusedHeapArea.
-  // We explicitly do such mangling here.
-  if (ZapUnusedHeapArea && clear_space && live_in_eden && mangle_space) {
-    eden()->mangle_unused_area();
-  }
-  from()->initialize(fromMR, clear_space, mangle_space);
-  to()->initialize(toMR, clear_space, mangle_space);
+  from()->initialize(fromMR, from()->is_empty());
+  to()->initialize(toMR, true);
+  eden()->initialize(edenMR, true);
+
+  post_resize();
+}
+
+void DefNewGeneration::post_resize() {
+  MemRegion cmr((HeapWord*)_virtual_space.low(),
+                (HeapWord*)_virtual_space.high());
+  SerialHeap::heap()->rem_set()->resize_covered_region(cmr);
 }
 
 void DefNewGeneration::swap_spaces() {
@@ -352,18 +323,26 @@ void DefNewGeneration::swap_spaces() {
 }
 
 bool DefNewGeneration::expand(size_t bytes) {
-  HeapWord* prev_high = (HeapWord*) _virtual_space.high();
+  assert(bytes != 0, "precondition");
+  assert(is_aligned(bytes, SpaceAlignment), "precondition");
+
   bool success = _virtual_space.expand_by(bytes);
-  if (success && ZapUnusedHeapArea) {
-    // Mangle newly committed space immediately because it
-    // can be done here more simply that after the new
-    // spaces have been computed.
-    HeapWord* new_high = (HeapWord*) _virtual_space.high();
-    MemRegion mangle_region(prev_high, new_high);
-    SpaceMangler::mangle_region(mangle_region);
+  if (!success) {
+    log_info(gc)("Failed to expand young-gen by %zu bytes", bytes);
   }
 
   return success;
+}
+
+void DefNewGeneration::expand_eden_by(size_t delta_bytes) {
+  if (!expand(delta_bytes)) {
+    return;
+  }
+
+  MemRegion eden_mr{eden()->bottom(), (HeapWord*)_virtual_space.high()};
+  eden()->initialize(eden_mr, eden()->is_empty());
+
+  post_resize();
 }
 
 size_t DefNewGeneration::calculate_thread_increase_size(int threads_count) const {
@@ -398,18 +377,8 @@ size_t DefNewGeneration::adjust_for_thread_increase(size_t new_size_candidate,
   return desired_new_size;
 }
 
-void DefNewGeneration::compute_new_size() {
-  // This is called after a GC that includes the old generation, so from-space
-  // will normally be empty.
-  // Note that we check both spaces, since if scavenge failed they revert roles.
-  // If not we bail out (otherwise we would have to relocate the objects).
-  if (!from()->is_empty() || !to()->is_empty()) {
-    return;
-  }
-
-  SerialHeap* gch = SerialHeap::heap();
-
-  size_t old_size = gch->old_gen()->capacity();
+size_t DefNewGeneration::calculate_desired_young_gen_bytes() const {
+  size_t old_size = SerialHeap::heap()->old_gen()->capacity();
   size_t new_size_before = _virtual_space.committed_size();
   size_t min_new_size = NewSize;
   size_t max_new_size = reserved().byte_size();
@@ -430,46 +399,82 @@ void DefNewGeneration::compute_new_size() {
 
   // Adjust new generation size
   desired_new_size = clamp(desired_new_size, min_new_size, max_new_size);
-  assert(desired_new_size <= max_new_size, "just checking");
+  if (!from()->is_empty()) {
+    // Mininum constraint to hold all live objs inside from-space.
+    size_t min_survivor_size = align_up(from()->used(), alignment);
 
-  bool changed = false;
-  if (desired_new_size > new_size_before) {
-    size_t change = desired_new_size - new_size_before;
-    assert(change % alignment == 0, "just checking");
-    if (expand(change)) {
-       changed = true;
+    // SurvivorRatio := eden_size / survivor_size
+    // young-gen-size = eden_size                     + 2 * survivor_size
+    //                = SurvivorRatio * survivor_size + 2 * survivor_size
+    //                = (SurvivorRatio + 2) * survivor_size
+    size_t min_young_gen_size = min_survivor_size * (SurvivorRatio + 2);
+
+    desired_new_size = MAX2(min_young_gen_size, desired_new_size);
+  }
+  assert(is_aligned(desired_new_size, alignment), "postcondition");
+
+  return desired_new_size;
+}
+
+void DefNewGeneration::resize_inner() {
+  assert(eden()->is_empty(), "precondition");
+  assert(to()->is_empty(), "precondition");
+
+  size_t current_young_gen_size_bytes = _virtual_space.committed_size();
+  size_t desired_young_gen_size_bytes = calculate_desired_young_gen_bytes();
+  if (current_young_gen_size_bytes == desired_young_gen_size_bytes) {
+    return;
+  }
+
+  // Commit/uncommit
+  if (desired_young_gen_size_bytes > current_young_gen_size_bytes) {
+    size_t delta_bytes = desired_young_gen_size_bytes - current_young_gen_size_bytes;
+    if (!expand(delta_bytes)) {
+      return;
     }
-    // If the heap failed to expand to the desired size,
-    // "changed" will be false.  If the expansion failed
-    // (and at this point it was expected to succeed),
-    // ignore the failure (leaving "changed" as false).
+  } else {
+    size_t delta_bytes = current_young_gen_size_bytes - desired_young_gen_size_bytes;
+    _virtual_space.shrink_by(delta_bytes);
   }
-  if (desired_new_size < new_size_before && eden()->is_empty()) {
-    // bail out of shrinking if objects in eden
-    size_t change = new_size_before - desired_new_size;
-    assert(change % alignment == 0, "just checking");
-    _virtual_space.shrink_by(change);
-    changed = true;
-  }
-  if (changed) {
-    // The spaces have already been mangled at this point but
-    // may not have been cleared (set top = bottom) and should be.
-    // Mangling was done when the heap was being expanded.
-    compute_space_boundaries(eden()->used(),
-                             SpaceDecorator::Clear,
-                             SpaceDecorator::DontMangle);
-    MemRegion cmr((HeapWord*)_virtual_space.low(),
-                  (HeapWord*)_virtual_space.high());
-    gch->rem_set()->resize_covered_region(cmr);
 
-    log_debug(gc, ergo, heap)(
-        "New generation size %zuK->%zuK [eden=%zuK,survivor=%zuK]",
-        new_size_before/K, _virtual_space.committed_size()/K,
-        eden()->capacity()/K, from()->capacity()/K);
-    log_trace(gc, ergo, heap)(
-        "  [allowed %zuK extra for %d threads]",
-          thread_increase_size/K, threads_count);
-      }
+  assert(desired_young_gen_size_bytes == _virtual_space.committed_size(), "inv");
+
+  init_spaces();
+
+  log_debug(gc, ergo, heap)("New generation size %zuK->%zuK [eden=%zuK,survivor=%zuK]",
+    current_young_gen_size_bytes/K, _virtual_space.committed_size()/K,
+    eden()->capacity()/K, from()->capacity()/K);
+}
+
+void DefNewGeneration::resize_after_young_gc() {
+  // Called only after successful young-gc.
+  assert(eden()->is_empty(), "precondition");
+  assert(to()->is_empty(), "precondition");
+
+  if ((char*)to()->bottom() == _virtual_space.low()) {
+    // layout: to, from, eden; can't resize.
+    return;
+  }
+
+  assert((char*)from()->bottom() == _virtual_space.low(), "inv");
+  resize_inner();
+}
+
+void DefNewGeneration::resize_after_full_gc() {
+  if (eden()->is_empty() && from()->is_empty() && to()->is_empty()) {
+    resize_inner();
+    return;
+  }
+
+  // Usually the young-gen is empty after full-gc.
+  // This is the extreme case; expand young-gen to its max size.
+  if (_virtual_space.uncommitted_size() == 0) {
+    // Already at its max size.
+    return;
+  }
+
+  // Keep from/to and expand eden.
+  expand_eden_by(_virtual_space.uncommitted_size());
 }
 
 void DefNewGeneration::ref_processor_init() {
@@ -484,12 +489,10 @@ size_t DefNewGeneration::capacity() const {
        + from()->capacity();  // to() is only used during scavenge
 }
 
-
 size_t DefNewGeneration::used() const {
   return eden()->used()
        + from()->used();      // to() is only used during scavenge
 }
-
 
 size_t DefNewGeneration::free() const {
   return eden()->free()
@@ -498,7 +501,8 @@ size_t DefNewGeneration::free() const {
 
 size_t DefNewGeneration::max_capacity() const {
   const size_t reserved_bytes = reserved().byte_size();
-  return reserved_bytes - compute_survivor_size(reserved_bytes, SpaceAlignment);
+  const size_t min_survivor_bytes = SpaceAlignment;
+  return reserved_bytes - min_survivor_bytes;
 }
 
 bool DefNewGeneration::is_in(const void* p) const {
@@ -590,7 +594,6 @@ bool DefNewGeneration::collect(bool clear_all_soft_refs) {
   IsAliveClosure is_alive(this);
 
   age_table()->clear();
-  to()->clear(SpaceDecorator::Mangle);
 
   YoungGenScanClosure young_gen_cl(this);
   OldGenScanClosure   old_gen_cl(this);
@@ -807,7 +810,7 @@ void DefNewGeneration::reset_scratch() {
   }
 }
 
-void DefNewGeneration::gc_epilogue(bool full) {
+void DefNewGeneration::gc_epilogue() {
   assert(!GCLocker::is_active(), "We should not be executing here");
   // update the generation and space performance counters
   update_counters();
@@ -840,13 +843,17 @@ void DefNewGeneration::print_on(outputStream* st) const {
   to()->print_on(st, "to   ");
 }
 
-HeapWord* DefNewGeneration::allocate(size_t word_size) {
-  // This is the slow-path allocation for the DefNewGeneration.
-  // Most allocations are fast-path in compiled code.
-  // We try to allocate from the eden.  If that works, we are happy.
-  // Note that since DefNewGeneration supports lock-free allocation, we
-  // have to use it here, as well.
-  HeapWord* result = eden()->par_allocate(word_size);
+HeapWord* DefNewGeneration::expand_and_allocate(size_t word_size) {
+  assert(Heap_lock->is_locked(), "precondition");
+
+  size_t eden_free_bytes = eden()->free();
+  size_t requested_bytes = word_size * HeapWordSize;
+  if (eden_free_bytes < requested_bytes) {
+    size_t expand_bytes = requested_bytes - eden_free_bytes;
+    expand_eden_by(align_up(expand_bytes, SpaceAlignment));
+  }
+
+  HeapWord* result = eden()->allocate(word_size);
   return result;
 }
 

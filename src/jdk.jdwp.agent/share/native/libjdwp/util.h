@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,12 +91,6 @@ typedef struct {
     jboolean modifiedUtf8;
     jboolean quiet;
     jboolean jvmti_data_dump; /* If true, then support JVMTI DATA_DUMP_REQUEST events. */
-
-    /* Debug flags (bit mask) */
-    int      debugflags;
-
-    /* Possible debug flags */
-    #define USE_ITERATE_THROUGH_HEAP 0X001
 
     char * options;
 

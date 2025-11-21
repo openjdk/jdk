@@ -45,7 +45,6 @@ class G1MonotonicArenaMemoryStats;
 class G1NewTracer;
 class G1ParScanThreadStateSet;
 class G1Policy;
-class G1RedirtyCardsQueueSet;
 class G1RemSet;
 class G1SurvivorRegions;
 class G1YoungGCAllocationFailureInjector;

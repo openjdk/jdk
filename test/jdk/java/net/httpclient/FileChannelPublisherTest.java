@@ -531,9 +531,8 @@ class FileChannelPublisherTest {
 
             // Verifying the client failure
             LOGGER.log("Verifying the client failure");
-            Exception requestFailure0 = assertThrows(ExecutionException.class, () -> responseFutureRef.get().get());
-            Exception requestFailure1 = assertInstanceOf(UncheckedIOException.class, requestFailure0.getCause());
-            assertInstanceOf(ClosedChannelException.class, requestFailure1.getCause());
+            Exception requestFailure = assertThrows(ExecutionException.class, () -> responseFutureRef.get().get());
+            assertInstanceOf(ClosedChannelException.class, requestFailure.getCause());
 
             verifyServerIncompleteRead(pair, fileLength);
 
@@ -578,9 +577,8 @@ class FileChannelPublisherTest {
                 // Verifying the client failure
                 LOGGER.log("Verifying the client failure");
                 Exception requestFailure0 = assertThrows(ExecutionException.class, responseFuture::get);
-                Exception requestFailure1 = assertInstanceOf(UncheckedIOException.class, requestFailure0.getCause());
-                Exception requestFailure2 = assertInstanceOf(IOException.class, requestFailure1.getCause());
-                String requestFailure2Message = requestFailure2.getMessage();
+                Exception requestFailure1 = assertInstanceOf(IOException.class, requestFailure0.getCause());
+                String requestFailure2Message = requestFailure1.getMessage();
                 assertTrue(
                         requestFailure2Message.contains("Unexpected EOF"),
                         "unexpected message: " + requestFailure2Message);

@@ -77,6 +77,12 @@ class NativeInstruction {
   }
 #endif
 
+  bool is_sigtrap_nmethod_entry_barrier() {
+    assert(UseSIGTRAP && TrapBasedNMethodEntryBarriers, "precondition");
+    return Assembler::is_tw(long_at(0), Assembler::traptoLessThanUnsigned | Assembler::traptoGreaterThanUnsigned,
+                            0, -1);
+  }
+
   bool is_safepoint_poll() {
     // The current arguments of the instruction are not checked!
     if (USE_POLL_BIT_ONLY) {

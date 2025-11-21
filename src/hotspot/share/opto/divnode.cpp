@@ -938,15 +938,11 @@ const Type* DivDNode::Value(PhaseGVN* phase) const {
   if( t2 == TypeD::ONE )
     return t1;
 
-  // IA32 would only execute this for non-strict FP, which is never the
-  // case now.
-#if ! defined(IA32)
   // If divisor is a constant and not zero, divide them numbers
   if( t1->base() == Type::DoubleCon &&
       t2->base() == Type::DoubleCon &&
       t2->getd() != 0.0 ) // could be negative zero
     return TypeD::make( t1->getd()/t2->getd() );
-#endif
 
   // If the dividend is a constant zero
   // Note: if t1 and t2 are zero then result is NaN (JVMS page 213)
@@ -1206,6 +1202,11 @@ static const Type* mod_value(const PhaseGVN* phase, const Node* in1, const Node*
   if (t1 == Type::TOP) { return Type::TOP; }
   if (t2 == Type::TOP) { return Type::TOP; }
 
+  // Mod by zero?  Throw exception at runtime!
+  if (t2 == TypeInteger::zero(bt)) {
+    return Type::TOP;
+  }
+
   // We always generate the dynamic check for 0.
   // 0 MOD X is 0
   if (t1 == TypeInteger::zero(bt)) { return t1; }
@@ -1213,11 +1214,6 @@ static const Type* mod_value(const PhaseGVN* phase, const Node* in1, const Node*
   // X MOD X is 0
   if (in1 == in2) {
     return TypeInteger::zero(bt);
-  }
-
-  // Mod by zero?  Throw exception at runtime!
-  if (t2 == TypeInteger::zero(bt)) {
-    return Type::TOP;
   }
 
   const TypeInteger* i1 = t1->is_integer(bt);
@@ -1668,10 +1664,10 @@ Node *DivModINode::match( const ProjNode *proj, const Matcher *match ) {
   uint ideal_reg = proj->ideal_reg();
   RegMask rm;
   if (proj->_con == div_proj_num) {
-    rm = match->divI_proj_mask();
+    rm.assignFrom(match->divI_proj_mask());
   } else {
     assert(proj->_con == mod_proj_num, "must be div or mod projection");
-    rm = match->modI_proj_mask();
+    rm.assignFrom(match->modI_proj_mask());
   }
   return new MachProjNode(this, proj->_con, rm, ideal_reg);
 }
@@ -1683,10 +1679,10 @@ Node *DivModLNode::match( const ProjNode *proj, const Matcher *match ) {
   uint ideal_reg = proj->ideal_reg();
   RegMask rm;
   if (proj->_con == div_proj_num) {
-    rm = match->divL_proj_mask();
+    rm.assignFrom(match->divL_proj_mask());
   } else {
     assert(proj->_con == mod_proj_num, "must be div or mod projection");
-    rm = match->modL_proj_mask();
+    rm.assignFrom(match->modL_proj_mask());
   }
   return new MachProjNode(this, proj->_con, rm, ideal_reg);
 }
@@ -1721,10 +1717,10 @@ Node* UDivModINode::match( const ProjNode *proj, const Matcher *match ) {
   uint ideal_reg = proj->ideal_reg();
   RegMask rm;
   if (proj->_con == div_proj_num) {
-    rm = match->divI_proj_mask();
+    rm.assignFrom(match->divI_proj_mask());
   } else {
     assert(proj->_con == mod_proj_num, "must be div or mod projection");
-    rm = match->modI_proj_mask();
+    rm.assignFrom(match->modI_proj_mask());
   }
   return new MachProjNode(this, proj->_con, rm, ideal_reg);
 }
@@ -1736,10 +1732,10 @@ Node* UDivModLNode::match( const ProjNode *proj, const Matcher *match ) {
   uint ideal_reg = proj->ideal_reg();
   RegMask rm;
   if (proj->_con == div_proj_num) {
-    rm = match->divL_proj_mask();
+    rm.assignFrom(match->divL_proj_mask());
   } else {
     assert(proj->_con == mod_proj_num, "must be div or mod projection");
-    rm = match->modL_proj_mask();
+    rm.assignFrom(match->modL_proj_mask());
   }
   return new MachProjNode(this, proj->_con, rm, ideal_reg);
 }

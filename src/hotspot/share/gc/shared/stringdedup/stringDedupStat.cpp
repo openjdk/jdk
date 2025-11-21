@@ -23,6 +23,7 @@
  */
 
 #include "gc/shared/stringdedup/stringDedupStat.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -91,13 +92,6 @@ static double strdedup_elapsed_param_ms(Tickspan t) {
 }
 
 void StringDedup::Stat::log_summary(const Stat* last_stat, const Stat* total_stat) {
-  double total_deduped_bytes_percent = 0.0;
-
-  if (total_stat->_new_bytes > 0) {
-    // Avoid division by zero
-    total_deduped_bytes_percent = percent_of(total_stat->_deduped_bytes, total_stat->_new_bytes);
-  }
-
   log_info(stringdedup)(
     "Concurrent String Deduplication "
     "%zu/" STRDEDUP_BYTES_FORMAT_NS " (new), "
@@ -106,7 +100,7 @@ void StringDedup::Stat::log_summary(const Stat* last_stat, const Stat* total_sta
     STRDEDUP_ELAPSED_FORMAT_MS " of " STRDEDUP_ELAPSED_FORMAT_MS,
     last_stat->_new, STRDEDUP_BYTES_PARAM(last_stat->_new_bytes),
     last_stat->_deduped, STRDEDUP_BYTES_PARAM(last_stat->_deduped_bytes),
-    total_deduped_bytes_percent,
+    percent_of(total_stat->_deduped_bytes, total_stat->_new_bytes),
     strdedup_elapsed_param_ms(last_stat->_process_elapsed),
     strdedup_elapsed_param_ms(last_stat->_active_elapsed));
 }
@@ -208,7 +202,7 @@ void StringDedup::Stat::log_times(const char* prefix) const {
   }
 }
 
-void StringDedup::Stat::log_statistics(bool total) const {
+void StringDedup::Stat::log_statistics() const {
   double known_percent               = percent_of(_known, _inspected);
   double known_shared_percent        = percent_of(_known_shared, _inspected);
   double new_percent                 = percent_of(_new, _inspected);
@@ -216,7 +210,6 @@ void StringDedup::Stat::log_statistics(bool total) const {
   double deduped_bytes_percent       = percent_of(_deduped_bytes, _new_bytes);
   double replaced_percent            = percent_of(_replaced, _new);
   double deleted_percent             = percent_of(_deleted, _new);
-  log_times(total ? "Total" : "Last");
   log_debug(stringdedup)("    Inspected:    %12zu", _inspected);
   log_debug(stringdedup)("      Known:      %12zu(%5.1f%%)", _known, known_percent);
   log_debug(stringdedup)("      Shared:     %12zu(%5.1f%%)", _known_shared, known_shared_percent);
@@ -228,4 +221,41 @@ void StringDedup::Stat::log_statistics(bool total) const {
                          _deduped, deduped_percent, STRDEDUP_BYTES_PARAM(_deduped_bytes), deduped_bytes_percent);
   log_debug(stringdedup)("    Skipped: %zu (dead), %zu (incomplete), %zu (shared)",
                          _skipped_dead, _skipped_incomplete, _skipped_shared);
+}
+
+void StringDedup::Stat::emit_statistics(bool total) const {
+  if (log_is_enabled(Debug, stringdedup)) {
+    log_times(total ? "Total" : "Last");
+    log_statistics();
+  }
+
+  if (total) {
+    // Send only JFR events about the last stats
+    return;
+  }
+
+  EventStringDeduplication e;
+  if (e.should_commit()) {
+    e.set_starttime(_active_start);
+    Ticks active_end = _active_start;
+    active_end += _active_elapsed;
+    e.set_endtime(active_end);
+
+    e.set_inspected(_inspected);
+    e.set_known(_known);
+    e.set_shared(_known_shared);
+    e.set_newStrings(_new);
+    e.set_newSize(_new_bytes);
+    e.set_replaced(_replaced);
+    e.set_deleted(_deleted);
+    e.set_deduplicated(_deduped);
+    e.set_deduplicatedSize(_deduped_bytes);
+    e.set_skippedDead(_skipped_dead);
+    e.set_skippedIncomplete(_skipped_incomplete);
+    e.set_skippedShared(_skipped_shared);
+    e.set_processing(_process_elapsed);
+    e.set_tableResize(_resize_table_elapsed);
+    e.set_tableCleanup(_cleanup_table_elapsed);
+    e.commit();
+  }
 }

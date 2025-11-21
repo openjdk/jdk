@@ -1,2 +1,2 @@
-BadTwrSyntax.java:13:43: compiler.err.illegal.start.of.expr
+BadTwrSyntax.java:12:43: compiler.err.illegal.start.of.expr
 1 error

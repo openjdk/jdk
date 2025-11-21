@@ -313,6 +313,7 @@ class Thread: public ThreadShadow {
   virtual bool is_JfrRecorder_thread() const         { return false; }
   virtual bool is_AttachListener_thread() const      { return false; }
   virtual bool is_monitor_deflation_thread() const   { return false; }
+  virtual bool is_aot_thread() const                 { return false; }
 
   // Convenience cast functions
   CompilerThread* as_Compiler_thread() const {
@@ -522,7 +523,6 @@ protected:
   // Support for stack overflow handling, get_thread, etc.
   address          _stack_base;
   size_t           _stack_size;
-  int              _lgrp_id;
 
  public:
   // Stack overflow support
@@ -536,9 +536,6 @@ protected:
   void    record_stack_base_and_size();
   void    register_thread_stack_with_NMT();
   void    unregister_thread_stack_with_NMT();
-
-  int     lgrp_id() const        { return _lgrp_id; }
-  void    set_lgrp_id(int value) { _lgrp_id = value; }
 
   // Printing
   void print_on(outputStream* st, bool print_extended_info) const;

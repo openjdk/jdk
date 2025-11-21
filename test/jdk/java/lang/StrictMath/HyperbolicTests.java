@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -340,6 +340,10 @@ public class HyperbolicTests {
             {0x1.fffffffffff68p4,       0x1.1f43fcc4b5b83p45},
             {0x1.fffffffffffd4p4,       0x1.1f43fcc4b6316p45},
             {0x1.0p5,                   0x1.1f43fcc4b662cp45},
+
+             // Julia worst-case input
+            {-0x1.633c654fee2bap9,      -0x1.fdf25fc26e7cp1023},
+
             // Empirical worst-case points in other libraries with
             // larger worst-case errors than FDLIBM
             {-0x1.633c654fee2bap+9,    -0x1.fdf25fc26e7cp1023},
@@ -386,6 +390,10 @@ public class HyperbolicTests {
             {0x1.0p4,                   0x1.0f2ebd0a8005cp22},
             {0x1.fffffffffffd4p4,       0x1.1f43fcc4b6316p45},
             {0x1.0p5,                   0x1.1f43fcc4b662cp45},
+
+             // Julia worst-case input
+            {-0x1.633c654fee2bap9,      0x1.fdf25fc26e7cp1023},
+
             // Empirical worst-case points in other libraries with
             // larger worst-case errors than FDLIBM
             {-0x1.633c654fee2bap+9,     0x1.fdf25fc26e7cp1023},
@@ -462,6 +470,10 @@ public class HyperbolicTests {
             {0x1.fffffffffffe1p0,       0x1.ed9505e1bc3cfp-1},
             {0x1.ffffffffffed8p1,       0x1.ffa81708a0b4p-1},
             {0x1.fffffffffff92p1,       0x1.ffa81708a0b41p-1},
+
+             // Julia worst-case input
+            {0x1.0108b83c4bbc8p-1,      0x1.dad53a45da5b0p-2},
+
             // Empirical worst-case points in other libraries with
             // larger worst-case errors than FDLIBM
             {-0x1.c41e527b70f43p-3,    -0x1.bcea047cc736cp-3},

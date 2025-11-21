@@ -37,7 +37,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -236,6 +236,7 @@ public class Modules extends JCTree.Visitor {
                 setupAllModules(); //initialize the module graph
                 Assert.checkNonNull(allModules);
                 inInitModules = false;
+                return allModules;
             }, null);
         } finally {
             inInitModules = false;
@@ -249,10 +250,11 @@ public class Modules extends JCTree.Visitor {
             //the next steps may query if the current module participates in preview,
             //and that requires a completed java.base:
             syms.java_base.complete();
+            return modules;
         }, c);
     }
 
-    private boolean enter(List<JCCompilationUnit> trees, Consumer<Set<ModuleSymbol>> init, ClassSymbol c) {
+    private boolean enter(List<JCCompilationUnit> trees, Function<Set<ModuleSymbol>, Set<ModuleSymbol>> init, ClassSymbol c) {
         if (!allowModules) {
             for (JCCompilationUnit tree: trees) {
                 tree.modle = syms.noModule;
@@ -270,10 +272,13 @@ public class Modules extends JCTree.Visitor {
 
             setCompilationUnitModules(trees, roots, c);
 
-            init.accept(roots);
+            Set<ModuleSymbol> initialized = init.apply(roots);
 
-            for (ModuleSymbol msym: roots) {
-                msym.complete();
+            for (ModuleSymbol msym : initialized) {
+                if (msym != syms.unnamedModule ||
+                    roots.contains(syms.unnamedModule)) {
+                    msym.complete();
+                }
             }
         } catch (CompletionFailure ex) {
             chk.completionError(null, ex);

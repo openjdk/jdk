@@ -50,7 +50,7 @@ public class PlatformInfo {
 
   public static boolean knownCPU(String cpu) {
     final String[] KNOWN =
-        new String[] {"i386", "x86", "x86_64", "amd64", "ppc64", "ppc64le", "aarch64", "riscv64"};
+        new String[] {"x86_64", "amd64", "ppc64", "ppc64le", "aarch64", "riscv64"};
 
     for(String s : KNOWN) {
       if(s.equals(cpu))
@@ -60,8 +60,8 @@ public class PlatformInfo {
     return false;
   }
 
-  /* Returns "x86" for x86 based platforms and x86_64 for 64bit x86
-     based platform. Otherwise returns the value of os.arch. If the
+  /* Returns "amd64" for x86_64 based platforms.
+     Otherwise returns the value of os.arch. If the
      value is not recognized as supported, an exception is thrown
      instead. */
 
@@ -74,9 +74,6 @@ public class PlatformInfo {
     }
 
     // Tweeks
-    if (cpu.equals("i386"))
-      return "x86";
-
     if (cpu.equals("x86_64"))
       return "amd64";
 

@@ -526,7 +526,7 @@ public final class OSXOffScreenSurfaceData extends OSXSurfaceData // implements 
      * Only used by compositor code (private API)
      */
     @Override
-    public BufferedImage copyArea(SunGraphics2D sg2d, int x, int y, int w, int h, BufferedImage dstImage) {
+    public synchronized BufferedImage copyArea(SunGraphics2D sg2d, int x, int y, int w, int h, BufferedImage dstImage) {
         // create the destination image if needed
         if (dstImage == null) {
             dstImage = getDeviceConfiguration().createCompatibleImage(w, h);
@@ -541,7 +541,7 @@ public final class OSXOffScreenSurfaceData extends OSXSurfaceData // implements 
     }
 
     @Override
-    public boolean xorSurfacePixels(SunGraphics2D sg2d, BufferedImage srcPixels, int x, int y, int w, int h, int colorXOR) {
+    public synchronized boolean xorSurfacePixels(SunGraphics2D sg2d, BufferedImage srcPixels, int x, int y, int w, int h, int colorXOR) {
 
         int type = this.bim.getType();
 
@@ -553,7 +553,7 @@ public final class OSXOffScreenSurfaceData extends OSXSurfaceData // implements 
     native boolean xorSurfacePixels(SurfaceData src, int colorXOR, int x, int y, int w, int h);
 
     @Override
-    public void clearRect(BufferedImage bim, int w, int h) {
+    public synchronized void clearRect(BufferedImage bim, int w, int h) {
         OSXOffScreenSurfaceData offsd = (OSXOffScreenSurfaceData) (OSXOffScreenSurfaceData.createData(bim));
         // offsd.clear();
         if (offsd.clearSurfacePixels(w, h) == false) {

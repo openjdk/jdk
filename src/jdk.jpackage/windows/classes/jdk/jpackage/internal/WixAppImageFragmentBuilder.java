@@ -248,7 +248,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
         String of(Path path) {
             if (this == Folder && KNOWN_DIRS.contains(path)) {
-                return IOUtils.getFileName(path).toString();
+                return path.getFileName().toString();
             }
 
             String result = of(path, prefix, name());
@@ -525,7 +525,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         }
 
         String launcherBasename = PathUtils.replaceSuffix(
-                IOUtils.getFileName(launcherPath), "").toString();
+                launcherPath.getFileName(), "").toString();
 
         Path shortcutPath = folder.getPath(this).resolve(launcherBasename);
         return addComponent(xml, shortcutPath, Component.Shortcut, unused -> {
@@ -712,7 +712,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             xml.writeAttribute("Id", Id.Folder.of(dir.getParent()));
             xml.writeStartElement("Directory");
             xml.writeAttribute("Id", Id.Folder.of(dir));
-            xml.writeAttribute("Name", IOUtils.getFileName(dir).toString());
+            xml.writeAttribute("Name", dir.getFileName().toString());
             xml.writeEndElement();
             xml.writeEndElement();
         }
@@ -818,7 +818,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         appImagePathGroup.transform(installedAppImagePathGroup, new PathGroup.TransformHandler() {
             @Override
             public void copyFile(Path src, Path dst) throws IOException {
-                if (IOUtils.getFileName(src).toString().endsWith(".ico")) {
+                if (src.getFileName().toString().endsWith(".ico")) {
                     icoFiles.add(Map.entry(src, dst));
                 }
             }

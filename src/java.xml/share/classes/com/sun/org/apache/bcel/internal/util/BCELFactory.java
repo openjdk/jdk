@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -63,9 +63,9 @@ import com.sun.org.apache.bcel.internal.generic.Type;
  * Factory creates il.append() statements, and sets instruction targets. A helper class for BCELifier.
  *
  * @see BCELifier
- * @LastModified: Feb 2023
+ * @LastModified: Sept 2025
  */
-class BCELFactory extends EmptyVisitor {
+final class BCELFactory extends EmptyVisitor {
 
     private static final String CONSTANT_PREFIX = Const.class.getSimpleName() + ".";
     private final MethodGen methodGen;
@@ -88,7 +88,7 @@ class BCELFactory extends EmptyVisitor {
         if (value instanceof String) {
             embed = '"' + Utility.convertString(embed) + '"';
         } else if (value instanceof Character) {
-            embed = "(char)0x" + Integer.toHexString(((Character) value).charValue());
+            embed = "(char) 0x" + Integer.toHexString(((Character) value).charValue());
         } else if (value instanceof Float) {
             final Float f = (Float) value;
             if (Float.isNaN(f)) {

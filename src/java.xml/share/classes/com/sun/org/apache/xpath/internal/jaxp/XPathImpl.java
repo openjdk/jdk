@@ -36,6 +36,7 @@ import javax.xml.xpath.XPathVariableResolver;
 import jdk.xml.internal.JdkXmlConfig;
 import jdk.xml.internal.JdkXmlFeatures;
 import jdk.xml.internal.XMLSecurityManager;
+import jdk.xml.internal.XMLSecurityPropertyManager;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
@@ -50,7 +51,7 @@ import org.xml.sax.InputSource;
  * New methods: evaluateExpression
  * Refactored to share code with XPathExpressionImpl.
  *
- * @LastModified: May 2025
+ * @LastModified: June 2025
  */
 public class XPathImpl extends XPathImplUtil implements javax.xml.xpath.XPath {
 
@@ -62,12 +63,13 @@ public class XPathImpl extends XPathImplUtil implements javax.xml.xpath.XPath {
     XPathImpl(XPathVariableResolver vr, XPathFunctionResolver fr) {
         this(vr, fr, false,
                 JdkXmlConfig.getInstance(false).getXMLFeatures(false),
-                JdkXmlConfig.getInstance(false).getXMLSecurityManager(false));
+                JdkXmlConfig.getInstance(false).getXMLSecurityManager(false),
+                JdkXmlConfig.getInstance(false).getXMLSecurityPropertyManager(false));
     }
 
     XPathImpl(XPathVariableResolver vr, XPathFunctionResolver fr,
             boolean featureSecureProcessing, JdkXmlFeatures featureManager,
-            XMLSecurityManager xmlSecMgr) {
+            XMLSecurityManager xmlSecMgr, XMLSecurityPropertyManager xmlSecPropMgr) {
         this.origVariableResolver = this.variableResolver = vr;
         this.origFunctionResolver = this.functionResolver = fr;
         this.featureSecureProcessing = featureSecureProcessing;
@@ -75,6 +77,7 @@ public class XPathImpl extends XPathImplUtil implements javax.xml.xpath.XPath {
         overrideDefaultParser = featureManager.getFeature(
                 JdkXmlFeatures.XmlFeature.JDK_OVERRIDE_PARSER);
         this.xmlSecMgr = xmlSecMgr;
+        this.xmlSecPropMgr = xmlSecPropMgr;
     }
 
 

@@ -175,7 +175,8 @@ void ConstantPoolCache::set_direct_or_vtable_call(Bytecodes::Code invoke_code,
     }
     if (invoke_code == Bytecodes::_invokestatic) {
       assert(method->method_holder()->is_initialized() ||
-             method->method_holder()->is_reentrant_initialization(JavaThread::current()),
+             method->method_holder()->is_reentrant_initialization(JavaThread::current()) ||
+             (CDSConfig::is_dumping_archive() && VM_Version::supports_fast_class_init_checks()),
              "invalid class initialization state for invoke_static");
 
       if (!VM_Version::supports_fast_class_init_checks() && method->needs_clinit_barrier()) {
@@ -428,28 +429,33 @@ void ConstantPoolCache::remove_resolved_field_entries_if_non_deterministic() {
     ResolvedFieldEntry* rfi = _resolved_field_entries->adr_at(i);
     int cp_index = rfi->constant_pool_index();
     bool archived = false;
-    bool resolved = rfi->is_resolved(Bytecodes::_getfield)  ||
-                    rfi->is_resolved(Bytecodes::_putfield);
-    if (resolved && AOTConstantPoolResolver::is_resolution_deterministic(src_cp, cp_index)) {
+    bool resolved = false;
+
+    if (rfi->is_resolved(Bytecodes::_getfield) || rfi->is_resolved(Bytecodes::_putfield) ||
+        ((rfi->is_resolved(Bytecodes::_getstatic) || rfi->is_resolved(Bytecodes::_putstatic)) && VM_Version::supports_fast_class_init_checks())) {
+      resolved = true;
+    }
+
+    if (resolved && !CDSConfig::is_dumping_preimage_static_archive()
+        && AOTConstantPoolResolver::is_resolution_deterministic(src_cp, cp_index)) {
       rfi->mark_and_relocate();
       archived = true;
     } else {
       rfi->remove_unshareable_info();
     }
-    if (resolved) {
-      LogStreamHandle(Trace, aot, resolve) log;
-      if (log.is_enabled()) {
-        ResourceMark rm;
-        int klass_cp_index = cp->uncached_klass_ref_index_at(cp_index);
-        Symbol* klass_name = cp->klass_name_at(klass_cp_index);
-        Symbol* name = cp->uncached_name_ref_at(cp_index);
-        Symbol* signature = cp->uncached_signature_ref_at(cp_index);
-        log.print("%s field  CP entry [%3d]: %s => %s.%s:%s",
-                  (archived ? "archived" : "reverted"),
-                  cp_index,
-                  cp->pool_holder()->name()->as_C_string(),
-                  klass_name->as_C_string(), name->as_C_string(), signature->as_C_string());
-      }
+    LogStreamHandle(Trace, aot, resolve) log;
+    if (log.is_enabled()) {
+      ResourceMark rm;
+      int klass_cp_index = cp->uncached_klass_ref_index_at(cp_index);
+      Symbol* klass_name = cp->klass_name_at(klass_cp_index);
+      Symbol* name = cp->uncached_name_ref_at(cp_index);
+      Symbol* signature = cp->uncached_signature_ref_at(cp_index);
+      log.print("%s field  CP entry [%3d]: %s => %s.%s:%s%s",
+                (archived ? "archived" : "reverted"),
+                cp_index,
+                cp->pool_holder()->name()->as_C_string(),
+                klass_name->as_C_string(), name->as_C_string(), signature->as_C_string(),
+                rfi->is_resolved(Bytecodes::_getstatic) || rfi->is_resolved(Bytecodes::_putstatic) ? " *** static" : "");
     }
     ArchiveBuilder::alloc_stats()->record_field_cp_entry(archived, resolved && !archived);
   }
@@ -465,40 +471,37 @@ void ConstantPoolCache::remove_resolved_method_entries_if_non_deterministic() {
     bool resolved = rme->is_resolved(Bytecodes::_invokevirtual)   ||
                     rme->is_resolved(Bytecodes::_invokespecial)   ||
                     rme->is_resolved(Bytecodes::_invokeinterface) ||
-                    rme->is_resolved(Bytecodes::_invokehandle);
+                    rme->is_resolved(Bytecodes::_invokehandle)    ||
+                    (rme->is_resolved(Bytecodes::_invokestatic) && VM_Version::supports_fast_class_init_checks());
 
-    // Just for safety -- this should not happen, but do not archive if we ever see this.
-    resolved &= !(rme->is_resolved(Bytecodes::_invokestatic));
-
-    if (resolved && can_archive_resolved_method(src_cp, rme)) {
+    if (resolved && !CDSConfig::is_dumping_preimage_static_archive()
+        && can_archive_resolved_method(src_cp, rme)) {
       rme->mark_and_relocate(src_cp);
       archived = true;
     } else {
       rme->remove_unshareable_info();
     }
-    if (resolved) {
-      LogStreamHandle(Trace, aot, resolve) log;
-      if (log.is_enabled()) {
-        ResourceMark rm;
-        int klass_cp_index = cp->uncached_klass_ref_index_at(cp_index);
-        Symbol* klass_name = cp->klass_name_at(klass_cp_index);
-        Symbol* name = cp->uncached_name_ref_at(cp_index);
-        Symbol* signature = cp->uncached_signature_ref_at(cp_index);
-        log.print("%s%s method CP entry [%3d]: %s %s.%s:%s",
-                  (archived ? "archived" : "reverted"),
-                  (rme->is_resolved(Bytecodes::_invokeinterface) ? " interface" : ""),
-                  cp_index,
-                  cp->pool_holder()->name()->as_C_string(),
-                  klass_name->as_C_string(), name->as_C_string(), signature->as_C_string());
-        if (archived) {
-          Klass* resolved_klass = cp->resolved_klass_at(klass_cp_index);
-          log.print(" => %s%s",
-                    resolved_klass->name()->as_C_string(),
-                    (rme->is_resolved(Bytecodes::_invokestatic) ? " *** static" : ""));
-        }
+    LogStreamHandle(Trace, aot, resolve) log;
+    if (log.is_enabled()) {
+      ResourceMark rm;
+      int klass_cp_index = cp->uncached_klass_ref_index_at(cp_index);
+      Symbol* klass_name = cp->klass_name_at(klass_cp_index);
+      Symbol* name = cp->uncached_name_ref_at(cp_index);
+      Symbol* signature = cp->uncached_signature_ref_at(cp_index);
+      log.print("%s%s method CP entry [%3d]: %s %s.%s:%s",
+                (archived ? "archived" : "reverted"),
+                (rme->is_resolved(Bytecodes::_invokeinterface) ? " interface" : ""),
+                cp_index,
+                cp->pool_holder()->name()->as_C_string(),
+                klass_name->as_C_string(), name->as_C_string(), signature->as_C_string());
+      if (archived) {
+        Klass* resolved_klass = cp->resolved_klass_at(klass_cp_index);
+        log.print(" => %s%s",
+                  resolved_klass->name()->as_C_string(),
+                  (rme->is_resolved(Bytecodes::_invokestatic) ? " *** static" : ""));
       }
-      ArchiveBuilder::alloc_stats()->record_method_cp_entry(archived, resolved && !archived);
     }
+    ArchiveBuilder::alloc_stats()->record_method_cp_entry(archived, resolved && !archived);
   }
 }
 
@@ -510,33 +513,33 @@ void ConstantPoolCache::remove_resolved_indy_entries_if_non_deterministic() {
     int cp_index = rei->constant_pool_index();
     bool archived = false;
     bool resolved = rei->is_resolved();
-    if (resolved && AOTConstantPoolResolver::is_resolution_deterministic(src_cp, cp_index)) {
+    if (resolved && !CDSConfig::is_dumping_preimage_static_archive()
+        && AOTConstantPoolResolver::is_resolution_deterministic(src_cp, cp_index)) {
       rei->mark_and_relocate();
       archived = true;
     } else {
       rei->remove_unshareable_info();
     }
-    if (resolved) {
-      LogStreamHandle(Trace, aot, resolve) log;
-      if (log.is_enabled()) {
-        ResourceMark rm;
-        int bsm = cp->bootstrap_method_ref_index_at(cp_index);
-        int bsm_ref = cp->method_handle_index_at(bsm);
-        Symbol* bsm_name = cp->uncached_name_ref_at(bsm_ref);
-        Symbol* bsm_signature = cp->uncached_signature_ref_at(bsm_ref);
-        Symbol* bsm_klass = cp->klass_name_at(cp->uncached_klass_ref_index_at(bsm_ref));
-        log.print("%s indy   CP entry [%3d]: %s (%d)",
-                  (archived ? "archived" : "reverted"),
-                  cp_index, cp->pool_holder()->name()->as_C_string(), i);
-        log.print(" %s %s.%s:%s", (archived ? "=>" : "  "), bsm_klass->as_C_string(),
-                  bsm_name->as_C_string(), bsm_signature->as_C_string());
-      }
-      ArchiveBuilder::alloc_stats()->record_indy_cp_entry(archived, resolved && !archived);
+    LogStreamHandle(Trace, aot, resolve) log;
+    if (log.is_enabled()) {
+      ResourceMark rm;
+      int bsm = cp->bootstrap_method_ref_index_at(cp_index);
+      int bsm_ref = cp->method_handle_index_at(bsm);
+      Symbol* bsm_name = cp->uncached_name_ref_at(bsm_ref);
+      Symbol* bsm_signature = cp->uncached_signature_ref_at(bsm_ref);
+      Symbol* bsm_klass = cp->klass_name_at(cp->uncached_klass_ref_index_at(bsm_ref));
+      log.print("%s indy   CP entry [%3d]: %s (%d)",
+                (archived ? "archived" : "reverted"),
+                cp_index, cp->pool_holder()->name()->as_C_string(), i);
+      log.print(" %s %s.%s:%s", (archived ? "=>" : "  "), bsm_klass->as_C_string(),
+                bsm_name->as_C_string(), bsm_signature->as_C_string());
     }
+    ArchiveBuilder::alloc_stats()->record_indy_cp_entry(archived, resolved && !archived);
   }
 }
 
 bool ConstantPoolCache::can_archive_resolved_method(ConstantPool* src_cp, ResolvedMethodEntry* method_entry) {
+  LogStreamHandle(Trace, aot, resolve) log;
   InstanceKlass* pool_holder = constant_pool()->pool_holder();
   if (pool_holder->defined_by_other_loaders()) {
     // Archiving resolved cp entries for classes from non-builtin loaders
@@ -557,6 +560,12 @@ bool ConstantPoolCache::can_archive_resolved_method(ConstantPool* src_cp, Resolv
     if (method_entry->method()->is_continuation_native_intrinsic()) {
       return false; // FIXME: corresponding stub is generated on demand during method resolution (see LinkResolver::resolve_static_call).
     }
+    if (method_entry->is_resolved(Bytecodes::_invokehandle) && !CDSConfig::is_dumping_method_handles()) {
+      return false;
+    }
+    if (method_entry->method()->is_method_handle_intrinsic() && !CDSConfig::is_dumping_method_handles()) {
+      return false;
+    }
   }
 
   int cp_index = method_entry->constant_pool_index();
@@ -565,21 +574,7 @@ bool ConstantPoolCache::can_archive_resolved_method(ConstantPool* src_cp, Resolv
   if (!AOTConstantPoolResolver::is_resolution_deterministic(src_cp, cp_index)) {
     return false;
   }
-
-  if (method_entry->is_resolved(Bytecodes::_invokeinterface) ||
-      method_entry->is_resolved(Bytecodes::_invokevirtual) ||
-      method_entry->is_resolved(Bytecodes::_invokespecial)) {
-    return true;
-  } else if (method_entry->is_resolved(Bytecodes::_invokehandle)) {
-    if (CDSConfig::is_dumping_method_handles()) {
-      // invokehandle depends on archived MethodType and LambdaForms.
-      return true;
-    } else {
-      return false;
-    }
-  } else {
-    return false;
-  }
+  return true;
 }
 #endif // INCLUDE_CDS
 

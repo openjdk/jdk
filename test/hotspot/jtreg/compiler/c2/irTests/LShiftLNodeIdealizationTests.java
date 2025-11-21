@@ -52,6 +52,18 @@ public class LShiftLNodeIdealizationTests {
             "testDoubleShift8",
             "testDoubleShift9",
             "testRandom",
+            "testShiftValue",
+            "testShiftValueOverflow",
+            "testShiftMultiple64",
+            "testShiftOfAddSameInput",
+            "testLargeShiftOfAddSameInput",
+            "testShiftOfAddConstant",
+            "testLShiftOfAndOfRShiftSameCon",
+            "testLShiftOfAndOfURShiftSameCon",
+            "testLShiftOfAndOfRShift",
+            "testLShiftOfAndOfURShift",
+            "testLShiftOfAndOfCon",
+            "testShiftOfSubConstant",
     })
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
@@ -69,6 +81,29 @@ public class LShiftLNodeIdealizationTests {
         assertResult(d);
         assertResult(min);
         assertResult(max);
+
+        Asserts.assertEQ(42L << 1, testShiftValue(42));
+        Asserts.assertEQ(Long.MAX_VALUE << 1, testShiftValueOverflow(Long.MAX_VALUE));
+        Asserts.assertEQ((Long.MAX_VALUE-1) << 1, testShiftValueOverflow(Long.MAX_VALUE-1));
+
+        assertResult(a, b);
+        assertResult(c, d);
+        assertResult(a, min);
+        assertResult(a, max);
+        assertResult(min, a);
+        assertResult(max, a);
+        assertResult(min, max);
+        assertResult(max, min);
+        assertResult(min, min);
+        assertResult(max, max);
+    }
+
+    private void assertResult(long a, long b) {
+        otherInput = b;
+        Asserts.assertEQ(((a >> 4) & b) << 4, testLShiftOfAndOfRShiftSameCon(a));
+        Asserts.assertEQ(((a >>> 4) & b) << 4, testLShiftOfAndOfURShiftSameCon(a));
+        Asserts.assertEQ(((a >> 4) & b) << 8, testLShiftOfAndOfRShift(a));
+        Asserts.assertEQ(((a >>> 4) & b) << 8, testLShiftOfAndOfURShift(a));
     }
 
     @DontCompile
@@ -79,6 +114,12 @@ public class LShiftLNodeIdealizationTests {
         Asserts.assertEQ((a >>> 8L) << 4L, test6(a));
         Asserts.assertEQ(((a >> 4L) & 0xFFL) << 8L, test7(a));
         Asserts.assertEQ(((a >>> 4L) & 0xFFL) << 8L, test8(a));
+        Asserts.assertEQ(a, testShiftMultiple64(a));
+        Asserts.assertEQ((a + a) << 1, testShiftOfAddSameInput(a));
+        Asserts.assertEQ((a + a) << 63, testLargeShiftOfAddSameInput(a));
+        Asserts.assertEQ(((a + 1) << 1) + 1, testShiftOfAddConstant(a));
+        Asserts.assertEQ((a & ((1L << (64 - 10)) -1)) << 10, testLShiftOfAndOfCon(a));
+        Asserts.assertEQ(((1L - a) << 1) + 1, testShiftOfSubConstant(a));
 
         assertDoubleShiftResult(a);
     }
@@ -232,5 +273,97 @@ public class LShiftLNodeIdealizationTests {
     @IR(counts = {IRNode.LSHIFT, "<= 1"})
     public long testRandom(long x) {
         return (x << CON0) << CON1;
+    }
+
+    @Test
+    @IR(counts = {IRNode.LSHIFT, "1"}, failOn = { IRNode.IF } )
+    public long testShiftValue(long x) {
+        x = Long.min(Long.max(x, 10), 100);
+        long shift = x << 1;
+        if (shift > 200 || shift < 20) {
+            throw new RuntimeException("never taken");
+        }
+        return shift;
+    }
+
+    @Test
+    @IR(counts = {IRNode.LSHIFT, "1", IRNode.IF, "2" } )
+    public long testShiftValueOverflow(long x) {
+        x = Long.max(x, Long.MAX_VALUE - 1);
+        long shift = x << 1;
+        if (shift != -2 && shift != -4) {
+            throw new RuntimeException("never taken");
+        }
+        return shift;
+    }
+
+    @Test
+    @IR(failOn = { IRNode.LSHIFT_L } )
+    public long testShiftMultiple64(long x) {
+        return x << 128;
+    }
+
+    @Test
+    @IR(counts = { IRNode.LSHIFT_L, "1" }, failOn = { IRNode.ADD_L } )
+    public long testShiftOfAddSameInput(long x) {
+        return (x + x) << 1;
+    }
+
+    @Test
+    @IR(counts = { IRNode.LSHIFT_L, "1", IRNode.ADD_L, "1" } )
+    public long testLargeShiftOfAddSameInput(long x) {
+        return (x + x) << 63;
+    }
+
+    @Test
+    @IR(counts = { IRNode.LSHIFT_L, "1",  IRNode.ADD_L, "1" } )
+    public long testShiftOfAddConstant(long x) {
+        return ((x + 1) << 1) + 1;
+    }
+
+    static long otherInput;
+
+    @Test
+    @IR(counts = { IRNode.AND_L, "1", IRNode.LSHIFT_L, "1" } , failOn = { IRNode.RSHIFT_L } )
+    public long testLShiftOfAndOfRShiftSameCon(long x) {
+        long shift = x >> 4;
+        long y = otherInput;
+        return (shift & y) << 4;
+    }
+
+    @Test
+    @IR(counts = { IRNode.AND_L, "1", IRNode.LSHIFT_L, "1" } , failOn = { IRNode.URSHIFT_L } )
+    public long testLShiftOfAndOfURShiftSameCon(long x) {
+        long shift = x >>> 4;
+        long y = otherInput;
+        return (shift & y) << 4;
+    }
+
+    @Test
+    @IR(counts = { IRNode.AND_L, "2", IRNode.LSHIFT_L, "2" } , failOn = { IRNode.RSHIFT_L } )
+    public long testLShiftOfAndOfRShift(long x) {
+        long shift = x >> 4;
+        long y = otherInput;
+        return (shift & y) << 8;
+    }
+
+    @Test
+    @IR(counts = { IRNode.AND_L, "2", IRNode.LSHIFT_L, "2" } , failOn = { IRNode.URSHIFT_L } )
+    public long testLShiftOfAndOfURShift(long x) {
+        long shift = x >>> 4;
+        long y = otherInput;
+        return (shift & y) << 8;
+    }
+
+    @Test
+    @IR(counts = { IRNode.LSHIFT_L, "1" } , failOn = { IRNode.AND_L } )
+    public long testLShiftOfAndOfCon(long x) {
+        return (x & ((1L << (64 - 10)) -1)) << 10;
+    }
+
+    @Test
+    @IR(counts = { IRNode.LSHIFT_L, "1",  IRNode.SUB_L, "1" }, failOn =  { IRNode.ADD_L })
+    public long testShiftOfSubConstant(long x) {
+        return ((1 - x) << 1) + 1;
     }
 }

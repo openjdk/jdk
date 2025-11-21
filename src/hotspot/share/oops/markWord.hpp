@@ -25,12 +25,11 @@
 #ifndef SHARE_OOPS_MARKWORD_HPP
 #define SHARE_OOPS_MARKWORD_HPP
 
+#include "cppstdlib/type_traits.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
 #include "oops/compressedKlass.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/globals.hpp"
-
-#include <type_traits>
 
 // The markWord describes the header of an object.
 //
@@ -212,7 +211,7 @@ class markWord {
   }
   ObjectMonitor* monitor() const {
     assert(has_monitor(), "check");
-    assert(!UseObjectMonitorTable, "Lightweight locking with OM table does not use markWord for monitors");
+    assert(!UseObjectMonitorTable, "Locking with OM table does not use markWord for monitors");
     // Use xor instead of &~ to provide one extra tag-bit check.
     return (ObjectMonitor*) (value() ^ monitor_value);
   }
@@ -238,7 +237,7 @@ class markWord {
     return from_pointer(lock);
   }
   static markWord encode(ObjectMonitor* monitor) {
-    assert(!UseObjectMonitorTable, "Lightweight locking with OM table does not use markWord for monitors");
+    assert(!UseObjectMonitorTable, "Locking with OM table does not use markWord for monitors");
     uintptr_t tmp = (uintptr_t) monitor;
     return markWord(tmp | monitor_value);
   }

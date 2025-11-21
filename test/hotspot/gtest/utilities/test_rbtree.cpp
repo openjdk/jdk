@@ -1200,6 +1200,46 @@ TEST_VM_F(RBTreeTest, VerifyItThroughStressTest) {
   }
 }
 
+TEST_VM_F(RBTreeTest, TestCopyInto) {
+  {
+    RBTreeInt rbtree1;
+    RBTreeInt rbtree2;
+
+    rbtree1.copy_into(rbtree2);
+    rbtree2.verify_self();
+  }
+
+  RBTreeInt rbtree1;
+  RBTreeInt rbtree2;
+
+  int size = 1000;
+  for (int i = 0; i < size; i++) {
+    rbtree1.upsert(i, i);
+  }
+
+  rbtree1.copy_into(rbtree2);
+  rbtree2.verify_self();
+
+  ResourceMark rm;
+  GrowableArray<int> allocations(size);
+  int size1 = 0;
+  rbtree1.visit_in_order([&](RBTreeIntNode* node) {
+    size1++;
+    allocations.append(node->key());
+    return true;
+  });
+
+  int size2 = 0;
+  rbtree2.visit_in_order([&](RBTreeIntNode* node) {
+    EXPECT_EQ(node->key(), allocations.at(size2++));
+    return true;
+  });
+
+  EXPECT_EQ(size1, size2);
+  EXPECT_EQ(rbtree1.size(), rbtree2.size());
+  EXPECT_EQ(size2, static_cast<int>(rbtree2.size()));
+}
+
 struct OomAllocator {
   void* allocate(size_t sz) {
     return nullptr;

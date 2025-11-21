@@ -30,6 +30,7 @@
 #include "nmt/memTag.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "runtime/atomicAccess.hpp"
+#include "utilities/deferredStatic.hpp"
 #include "utilities/nativeCallStack.hpp"
 
 class outputStream;
@@ -204,7 +205,7 @@ class MallocMemorySnapshot {
 class MallocMemorySummary : AllStatic {
  private:
   // Reserve memory for placement of MallocMemorySnapshot object
-  static MallocMemorySnapshot _snapshot;
+  static DeferredStatic<MallocMemorySnapshot> _snapshot;
   static bool _have_limits;
 
   // Called when a total limit break was detected.
@@ -251,7 +252,7 @@ class MallocMemorySummary : AllStatic {
    }
 
   static MallocMemorySnapshot* as_snapshot() {
-    return &_snapshot;
+    return _snapshot.get();
   }
 
   // MallocLimit: returns true if allocating s bytes on f would trigger

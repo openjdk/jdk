@@ -45,8 +45,6 @@ class ShenandoahOldHeuristics;
  * sleep time.
  */
 class ShenandoahRegulatorThread: public ConcurrentGCThread {
-  friend class VMStructs;
-
  public:
   explicit ShenandoahRegulatorThread(ShenandoahGenerationalControlThread* control_thread);
 

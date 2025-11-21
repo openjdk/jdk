@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -721,6 +721,9 @@ public class Log10Tests {
             {0x1.3fffffffffadfp25,      0x1.e7d9a8edb474dp2},
             {0x1.3fffffffffebdp25,      0x1.e7d9a8edb47a2p2},
             {0x1.4p25,                  0x1.e7d9a8edb47bfp2},
+
+            // Julia worst-case
+            {0x1.10f12374877e3p0,       0x1.c7f8d2e32f5e9p-6},
 
             // Empirical worst-case points in other libraries with
             // larger worst-case errors than FDLIBM

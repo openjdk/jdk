@@ -29,20 +29,16 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
-import java.awt.Insets;
 import java.awt.Rectangle;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.util.Enumeration;
 
-import javax.swing.AbstractButton;
-import javax.swing.ButtonGroup;
 import javax.swing.ButtonModel;
-import javax.swing.DefaultButtonModel;
 import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.UIResource;
@@ -132,27 +128,6 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
         menuItem.addPropertyChangeListener(changeListener);
     }
 
-    protected void installDefaults() {
-        super.installDefaults();
-        String prefix = getPropertyPrefix();
-
-        if (acceleratorSelectionForeground == null ||
-                acceleratorSelectionForeground instanceof UIResource) {
-            acceleratorSelectionForeground =
-                    UIManager.getColor(prefix + ".acceleratorSelectionForeground");
-        }
-        if (acceleratorForeground == null ||
-                acceleratorForeground instanceof UIResource) {
-            acceleratorForeground =
-                    UIManager.getColor(prefix + ".acceleratorForeground");
-        }
-        if (disabledForeground == null ||
-                disabledForeground instanceof UIResource) {
-            disabledForeground =
-                    UIManager.getColor(prefix + ".disabledForeground");
-        }
-    }
-
     /**
      * {@inheritDoc}
      */
@@ -165,15 +140,19 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
         changeListener = null;
     }
 
+    @Override
     protected void paintMenuItem(Graphics g, JComponent c,
                                  Icon checkIcon, Icon arrowIcon,
                                  Color background, Color foreground,
                                  int defaultTextIconGap) {
         if (WindowsMenuItemUI.isVistaPainting()) {
-            WindowsMenuItemUI.paintMenuItem(accessor, g, c, checkIcon,
-                                            arrowIcon, background, foreground,
-                                            disabledForeground, acceleratorSelectionForeground,
-                                            acceleratorForeground, defaultTextIconGap, menuItem,
+            WindowsMenuItemUI.paintMenuItem(accessor, g, c,
+                                            checkIcon, arrowIcon,
+                                            background, foreground,
+                                            disabledForeground,
+                                            acceleratorSelectionForeground,
+                                            acceleratorForeground,
+                                            defaultTextIconGap, menuItem,
                                             getPropertyPrefix());
             return;
         }
@@ -182,12 +161,16 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
     }
 
     static void paintMenuItem(WindowsMenuItemUIAccessor accessor, Graphics g,
-                              JComponent c, Icon checkIcon, Icon arrowIcon,
+                              JComponent c,
+                              Icon checkIcon, Icon arrowIcon,
                               Color background, Color foreground,
                               Color disabledForeground,
                               Color acceleratorSelectionForeground,
                               Color acceleratorForeground,
-                              int defaultTextIconGap, JMenuItem menuItem, String prefix) {
+                              int defaultTextIconGap, JMenuItem menuItem,
+                              String prefix) {
+        assert c == menuItem : "menuItem passed as 'c' must be the same";
+
         // Save original graphics font and color
         Font holdf = g.getFont();
         Color holdc = g.getColor();
@@ -219,8 +202,17 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
 
         if (lh.getCheckIcon() != null && lh.useCheckAndArrow()) {
             Rectangle rect = lr.getTextRect();
-
-            rect.x += lh.getAfterCheckIconGap();
+            if (menuItem.getComponentOrientation().isLeftToRight()) {
+                if (menuItem.getHorizontalTextPosition() != SwingConstants.LEADING
+                    && menuItem.getHorizontalTextPosition() != SwingConstants.LEFT) {
+                    rect.x += lh.getAfterCheckIconGap();
+                }
+            } else {
+                if (menuItem.getHorizontalTextPosition() != SwingConstants.LEADING
+                    && menuItem.getHorizontalTextPosition() != SwingConstants.RIGHT) {
+                    rect.x -= lh.getAfterCheckIconGap();
+                }
+            }
 
             lr.setTextRect(rect);
         }
@@ -236,7 +228,11 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
         }
         if (lh.getCheckIcon() != null && lh.useCheckAndArrow()) {
             Rectangle rect = lr.getAccRect();
-            rect.x += lh.getAfterCheckIconGap();
+            if (menuItem.getComponentOrientation().isLeftToRight()) {
+                rect.x += lh.getAfterCheckIconGap();
+            } else {
+                rect.x -= lh.getAfterCheckIconGap();
+            }
             lr.setAccRect(rect);
         }
         SwingUtilities3.paintAccText(g, lh, lr, disabledForeground,

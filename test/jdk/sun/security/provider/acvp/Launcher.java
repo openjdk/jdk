@@ -24,7 +24,9 @@
 import jdk.test.lib.artifacts.Artifact;
 import jdk.test.lib.artifacts.ArtifactResolver;
 import jdk.test.lib.json.JSONValue;
+import jtreg.SkippedException;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.security.Provider;
@@ -35,15 +37,17 @@ import java.util.zip.ZipFile;
 /*
  * @test
  * @bug 8342442 8345057
+ * @summary Test default implementation. Use othervm because
+ *      ML_DSA_Impls.version might be modified
  * @library /test/lib
  * @modules java.base/sun.security.provider
- * @run main/timeout=480 Launcher
+ * @run main/othervm/timeout=480 Launcher
  */
 
 /*
  * @test
- * @summary Test verifying the intrinsic implementation.
  * @bug 8342442 8345057
+ * @summary Test verifying the intrinsic implementation.
  * @library /test/lib
  * @modules java.base/sun.security.provider
  * @run main/othervm/timeout=480 -Xcomp Launcher
@@ -114,7 +118,14 @@ public class Launcher {
 
     public static void main(String[] args) throws Exception {
 
-        Path archivePath = ArtifactResolver.fetchOne(ACVP_SERVER_TESTS.class);
+        Path archivePath = null;
+        try {
+            archivePath = ArtifactResolver.fetchOne(ACVP_SERVER_TESTS.class);
+        } catch (IOException e) {
+            if (e.getMessage().contains("Cannot find the artifact ACVP-Server")) {
+                throw new SkippedException("ACVP-Server not available.");
+            }
+        }
         System.out.println("Data path: " + archivePath);
 
         if (PROVIDER != null) {

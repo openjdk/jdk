@@ -50,8 +50,8 @@ public class SignedJar {
 
         String skipMsg = "Skipping Hello: Signed JAR";
         String lambdaInArchive = "klasses.*=.*app.*Hello[$][$]Lambda.*hidden";
-        String loadFromJar = ".class,load. Hello source: file:.*signed_hello.jar";
-        String lambdaLoadFromHello = ".class.load. Hello[$][$]Lambda.*/0x.*source.*Hello";
+        String loadFromJar = ".class,load\s*. Hello source: file:.*signed_hello.jar";
+        String lambdaLoadFromHello = ".class.load\s*. Hello[$][$]Lambda.*/0x.*source.*Hello";
 
         for (String mainArg : mainArgs) {
             output = TestCommon.dump(signedJar, TestCommon.list(mainClass),

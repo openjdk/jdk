@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,10 @@ innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang
 
 class name javax/xml/bind/JAXBContext
 -field name JAXB_CONTEXT_FACTORY descriptor Ljava/lang/String;
-field name JAXB_CONTEXT_FACTORY descriptor Ljava/lang/String; constantValue javax.xml.bind.JAXBContextFactory flags 19
 -method name newInstance descriptor ([Ljava/lang/Class;)Ljavax/xml/bind/JAXBContext;
 -method name newInstance descriptor ([Ljava/lang/Class;Ljava/util/Map;)Ljavax/xml/bind/JAXBContext;
 -method name createValidator descriptor ()Ljavax/xml/bind/Validator;
+field name JAXB_CONTEXT_FACTORY descriptor Ljava/lang/String; constantValue javax.xml.bind.JAXBContextFactory flags 19
 method name newInstance descriptor ([Ljava/lang/Class;)Ljavax/xml/bind/JAXBContext; thrownTypes javax/xml/bind/JAXBException flags 89 signature ([Ljava/lang/Class<*>;)Ljavax/xml/bind/JAXBContext;
 method name newInstance descriptor ([Ljava/lang/Class;Ljava/util/Map;)Ljavax/xml/bind/JAXBContext; thrownTypes javax/xml/bind/JAXBException flags 9 signature ([Ljava/lang/Class<*>;Ljava/util/Map<Ljava/lang/String;*>;)Ljavax/xml/bind/JAXBContext;
 method name createValidator descriptor ()Ljavax/xml/bind/Validator; thrownTypes javax/xml/bind/JAXBException flags 401 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;

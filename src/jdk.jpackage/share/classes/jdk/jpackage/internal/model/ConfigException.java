@@ -46,7 +46,7 @@ import jdk.jpackage.internal.util.StringBundle;
  *         .create();
  * }
  */
-public class ConfigException extends Exception {
+public class ConfigException extends JPackageException {
     private static final long serialVersionUID = 1L;
     private final String advice;
 
@@ -60,9 +60,8 @@ public class ConfigException extends Exception {
         this.advice = advice;
     }
 
-    public ConfigException(Throwable cause) {
-        super(cause);
-        this.advice = null;
+    public ConfigException(String msg, Throwable cause) {
+        this(msg, null, cause);
     }
 
     public String getAdvice() {
@@ -104,24 +103,5 @@ public class ConfigException extends Exception {
         }
 
         private String advice;
-    }
-
-    /**
-     * Throws the cause of the given {@link RuntimeException} exception
-     * as {@link ConfigException} if the cause is of this type or re-throws the given
-     * {@link RuntimeException} exception as-is otherwise.
-     * <p>
-     * Never return a value. It always throws some exception object.
-     *
-     * @param ex exception to re-throw
-     * @return doesn't return value
-     * @throws ConfigException
-     */
-    public static RuntimeException rethrowConfigException(RuntimeException ex) throws ConfigException {
-        if (ex.getCause() instanceof ConfigException configEx) {
-            throw configEx;
-        } else {
-            throw ex;
-        }
     }
 }

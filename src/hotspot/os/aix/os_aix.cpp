@@ -169,7 +169,7 @@ static void vmembk_print_on(outputStream* os);
 ////////////////////////////////////////////////////////////////////////////////
 // global variables (for a description see os_aix.hpp)
 
-size_t    os::Aix::_physical_memory = 0;
+physical_memory_size_type    os::Aix::_physical_memory = 0;
 
 pthread_t os::Aix::_main_thread = ((pthread_t)0);
 
@@ -254,43 +254,43 @@ static bool is_close_to_brk(address a) {
   return false;
 }
 
-bool os::free_memory(size_t& value) {
+bool os::free_memory(physical_memory_size_type& value) {
   return Aix::available_memory(value);
 }
 
-bool os::available_memory(size_t& value) {
+bool os::available_memory(physical_memory_size_type& value) {
   return Aix::available_memory(value);
 }
 
-bool os::Aix::available_memory(size_t& value) {
+bool os::Aix::available_memory(physical_memory_size_type& value) {
   os::Aix::meminfo_t mi;
   if (os::Aix::get_meminfo(&mi)) {
-    value = static_cast<size_t>(mi.real_free);
+    value = static_cast<physical_memory_size_type>(mi.real_free);
     return true;
   } else {
     return false;
   }
 }
 
-bool os::total_swap_space(size_t& value) {
+bool os::total_swap_space(physical_memory_size_type& value) {
   perfstat_memory_total_t memory_info;
   if (libperfstat::perfstat_memory_total(nullptr, &memory_info, sizeof(perfstat_memory_total_t), 1) == -1) {
     return false;
   }
-  value = static_cast<size_t>(memory_info.pgsp_total * 4 * K);
+  value = static_cast<physical_memory_size_type>(memory_info.pgsp_total * 4 * K);
   return true;
 }
 
-bool os::free_swap_space(size_t& value) {
+bool os::free_swap_space(physical_memory_size_type& value) {
   perfstat_memory_total_t memory_info;
   if (libperfstat::perfstat_memory_total(nullptr, &memory_info, sizeof(perfstat_memory_total_t), 1) == -1) {
     return false;
   }
-  value = static_cast<size_t>(memory_info.pgsp_free * 4 * K);
+  value = static_cast<physical_memory_size_type>(memory_info.pgsp_free * 4 * K);
   return true;
 }
 
-size_t os::physical_memory() {
+physical_memory_size_type os::physical_memory() {
   return Aix::physical_memory();
 }
 
@@ -329,7 +329,7 @@ void os::Aix::initialize_system_info() {
   if (!os::Aix::get_meminfo(&mi)) {
     assert(false, "os::Aix::get_meminfo failed.");
   }
-  _physical_memory = static_cast<size_t>(mi.real_total);
+  _physical_memory = static_cast<physical_memory_size_type>(mi.real_total);
 }
 
 // Helper function for tracing page sizes.
@@ -1054,7 +1054,7 @@ static void* dll_load_library(const char *filename, int *eno, char *ebuf, int eb
       error_report = "dlerror returned no error description";
     }
     if (ebuf != nullptr && ebuflen > 0) {
-      os::snprintf_checked(ebuf, ebuflen - 1, "%s, LIBPATH=%s, LD_LIBRARY_PATH=%s : %s",
+      os::snprintf_checked(ebuf, ebuflen, "%s, LIBPATH=%s, LD_LIBRARY_PATH=%s : %s",
                            filename, ::getenv("LIBPATH"), ::getenv("LD_LIBRARY_PATH"), error_report);
     }
     Events::log_dll_message(nullptr, "Loading shared library %s failed, %s", filename, error_report);
@@ -2192,7 +2192,7 @@ jint os::init_2(void) {
   os::Posix::init_2();
 
   trcVerbose("processor count: %d", os::_processor_count);
-  trcVerbose("physical memory: %zu", Aix::_physical_memory);
+  trcVerbose("physical memory: " PHYS_MEM_TYPE_FORMAT, Aix::_physical_memory);
 
   // Initially build up the loaded dll map.
   LoadedLibraries::reload();

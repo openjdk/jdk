@@ -107,10 +107,7 @@ public class PostImageScriptTest {
                     });
                 }
                 case EXTERNAL_APP_IMAGE -> {
-                    test.addInitializer(cmd -> {
-                        cmd.removeArgumentWithValue("--input");
-                        cmd.addArguments("--app-image", appImageCmd.outputBundle());
-                    });
+                    test.usePredefinedAppImage(appImageCmd);
                 }
             }
 
@@ -143,7 +140,7 @@ public class PostImageScriptTest {
                         runtimeDir = Path.of("");
                     }
 
-                    final Path runtimeBinDir = runtimeDir.resolve("bin");
+                    final Path runtimeLibDir = runtimeDir.resolve("lib");
 
                     if (TKit.isWindows()) {
                         final List<String> script = new ArrayList<>();
@@ -151,16 +148,16 @@ public class PostImageScriptTest {
                         script.addAll(WinGlobals.JS_FS.expr());
                         script.addAll(List.of(
                                 "WScript.Echo('PWD: ' + fs.GetFolder(shell.CurrentDirectory).Path)",
-                                String.format("WScript.Echo('Probe directory: %s')", runtimeBinDir),
-                                String.format("fs.GetFolder('%s')", runtimeBinDir.toString().replace('\\', '/'))
+                                String.format("WScript.Echo('Probe directory: %s')", runtimeLibDir),
+                                String.format("fs.GetFolder('%s')", runtimeLibDir.toString().replace('\\', '/'))
                         ));
                         JPackageUserScript.POST_IMAGE.create(cmd, script);
                     } else {
                         JPackageUserScript.POST_IMAGE.create(cmd, List.of(
                                 "set -e",
                                 "printf 'PWD: %s\\n' \"$PWD\"",
-                                String.format("printf 'Probe directory: %%s\\n' '%s'", runtimeBinDir),
-                                String.format("[ -d '%s' ]", runtimeBinDir)
+                                String.format("printf 'Probe directory: %%s\\n' '%s'", runtimeLibDir),
+                                String.format("[ -d '%s' ]", runtimeLibDir)
                         ));
                     }
                 });

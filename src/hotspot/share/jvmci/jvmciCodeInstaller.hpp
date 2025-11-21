@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -411,10 +411,10 @@ protected:
   void record_oop_patch(HotSpotCompiledCodeStream* stream, address dest, u1 read_tag, bool narrow, JVMCI_TRAPS);
 
   // full_info: if false, only BytecodePosition is in stream otherwise all DebugInfo is in stream
-  void record_scope(jint pc_offset, HotSpotCompiledCodeStream* stream, u1 debug_info_flags, bool full_info, bool is_mh_invoke, bool return_oop, JVMCI_TRAPS);
+  void record_scope(jint pc_offset, HotSpotCompiledCodeStream* stream, u1 debug_info_flags, bool full_info, bool return_oop, JVMCI_TRAPS);
 
   void record_scope(jint pc_offset, HotSpotCompiledCodeStream* stream, u1 debug_info_flags, bool full_info, JVMCI_TRAPS) {
-    record_scope(pc_offset, stream, debug_info_flags, full_info, false /* is_mh_invoke */, false /* return_oop */, JVMCIENV);
+    record_scope(pc_offset, stream, debug_info_flags, full_info, false /* return_oop */, JVMCIENV);
   }
   void record_object_value(ObjectValue* sv, HotSpotCompiledCodeStream* stream, JVMCI_TRAPS);
 

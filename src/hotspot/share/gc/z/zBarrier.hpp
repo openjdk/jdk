@@ -71,8 +71,6 @@ typedef zpointer (*ZBarrierColor)(zaddress, zpointer);
 
 class ZGeneration;
 
-void z_assert_is_barrier_safe();
-
 class ZBarrier : public AllStatic {
   friend class ZContinuation;
   friend class ZStoreBarrierBuffer;

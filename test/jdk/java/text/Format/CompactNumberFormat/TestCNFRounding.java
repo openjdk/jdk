@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,21 +20,28 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  * @test
  * @bug 8177552
  * @summary Checks the rounding of formatted number in compact number formatting
- * @run testng/othervm TestCNFRounding
+ * @run junit/othervm TestCNFRounding
  */
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.math.RoundingMode;
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.Locale;
-import static org.testng.Assert.*;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestCNFRounding {
 
     private static final List<RoundingMode> MODES = List.of(
@@ -46,7 +53,6 @@ public class TestCNFRounding {
             RoundingMode.CEILING,
             RoundingMode.FLOOR);
 
-    @DataProvider(name = "roundingData")
     Object[][] roundingData() {
         return new Object[][]{
             // Number, half_even, half_up, half_down, up, down, ceiling, floor
@@ -70,7 +76,6 @@ public class TestCNFRounding {
             {-4500, new String[]{"-4K", "-5K", "-4K", "-5K", "-4K", "-4K", "-5K"}},};
     }
 
-    @DataProvider(name = "roundingFract")
     Object[][] roundingFract() {
         return new Object[][]{
             // Number, half_even, half_up, half_down, up, down, ceiling, floor
@@ -94,7 +99,6 @@ public class TestCNFRounding {
             {-4500, new String[]{"-4.5K", "-4.5K", "-4.5K", "-4.5K", "-4.5K", "-4.5K", "-4.5K"}},};
     }
 
-    @DataProvider(name = "rounding2Fract")
     Object[][] rounding2Fract() {
         return new Object[][]{
             // Number, half_even, half_up, half_down
@@ -118,37 +122,42 @@ public class TestCNFRounding {
             {4686, new String[]{"4.69K", "4.69K", "4.69K"}},};
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testNullMode() {
-        NumberFormat fmt = NumberFormat
-                .getCompactNumberInstance(Locale.US, NumberFormat.Style.SHORT);
-        fmt.setRoundingMode(null);
+    @Test
+    void testNullMode() {
+        assertThrows(NullPointerException.class, () -> {
+            NumberFormat fmt = NumberFormat
+                    .getCompactNumberInstance(Locale.US, NumberFormat.Style.SHORT);
+            fmt.setRoundingMode(null);
+        });
     }
 
     @Test
-    public void testDefaultRoundingMode() {
+    void testDefaultRoundingMode() {
         NumberFormat fmt = NumberFormat
                 .getCompactNumberInstance(Locale.US, NumberFormat.Style.SHORT);
-        assertEquals(fmt.getRoundingMode(), RoundingMode.HALF_EVEN,
+        assertEquals(RoundingMode.HALF_EVEN, fmt.getRoundingMode(),
                 "Default RoundingMode should be " + RoundingMode.HALF_EVEN);
     }
 
-    @Test(dataProvider = "roundingData")
-    public void testRounding(Object number, String[] expected) {
+    @ParameterizedTest
+    @MethodSource("roundingData")
+    void testRounding(Object number, String[] expected) {
         for (int index = 0; index < MODES.size(); index++) {
             testRoundingMode(number, expected[index], 0, MODES.get(index));
         }
     }
 
-    @Test(dataProvider = "roundingFract")
-    public void testRoundingFract(Object number, String[] expected) {
+    @ParameterizedTest
+    @MethodSource("roundingFract")
+    void testRoundingFract(Object number, String[] expected) {
         for (int index = 0; index < MODES.size(); index++) {
             testRoundingMode(number, expected[index], 1, MODES.get(index));
         }
     }
 
-    @Test(dataProvider = "rounding2Fract")
-    public void testRounding2Fract(Object number, String[] expected) {
+    @ParameterizedTest
+    @MethodSource("rounding2Fract")
+    void testRounding2Fract(Object number, String[] expected) {
         List<RoundingMode> rModes = List.of(RoundingMode.HALF_EVEN,
                 RoundingMode.HALF_UP, RoundingMode.HALF_DOWN);
         for (int index = 0; index < rModes.size(); index++) {
@@ -161,12 +170,12 @@ public class TestCNFRounding {
         NumberFormat fmt = NumberFormat
                 .getCompactNumberInstance(Locale.US, NumberFormat.Style.SHORT);
         fmt.setRoundingMode(rounding);
-        assertEquals(fmt.getRoundingMode(), rounding,
+        assertEquals(rounding, fmt.getRoundingMode(),
                 "RoundingMode set is not returned by getRoundingMode");
 
         fmt.setMinimumFractionDigits(fraction);
         String result = fmt.format(number);
-        assertEquals(result, expected, "Incorrect formatting of number "
+        assertEquals(expected, result, "Incorrect formatting of number "
                 + number + " using rounding mode: " + rounding);
     }
 

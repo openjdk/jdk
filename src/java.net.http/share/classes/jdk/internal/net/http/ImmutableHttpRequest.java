@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,9 @@ package jdk.internal.net.http;
 import java.net.URI;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
+import java.net.http.HttpOption;
 import java.time.Duration;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.net.http.HttpClient.Version;
@@ -43,6 +45,8 @@ final class ImmutableHttpRequest extends HttpRequest {
     private final boolean expectContinue;
     private final Optional<Duration> timeout;
     private final Optional<Version> version;
+    // An alternative would be to have one field per supported option
+    private final Map<HttpOption<?>, Object> options;
 
     /** Creates an ImmutableHttpRequest from the given builder. */
     ImmutableHttpRequest(HttpRequestBuilderImpl builder) {
@@ -53,6 +57,7 @@ final class ImmutableHttpRequest extends HttpRequest {
         this.expectContinue = builder.expectContinue();
         this.timeout = Optional.ofNullable(builder.timeout());
         this.version = Objects.requireNonNull(builder.version());
+        this.options = Map.copyOf(builder.options());
     }
 
     @Override
@@ -79,7 +84,16 @@ final class ImmutableHttpRequest extends HttpRequest {
     public Optional<Version> version() { return version; }
 
     @Override
+    public <T> Optional<T> getOption(HttpOption<T> option) {
+        return Optional.ofNullable(option.type().cast(options.get(option)));
+    }
+
+    @Override
     public String toString() {
         return uri.toString() + " " + method;
+    }
+
+    public Map<HttpOption<?>, Object> options() {
+        return options;
     }
 }

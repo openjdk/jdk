@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Tests for exceptions
- * @bug 8198801 8212167 8210527
+ * @bug 8198801 8212167 8210527 8370175
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
@@ -318,6 +318,16 @@ public class ExceptionsTest extends KullaTesting {
     public void stackOverflow() {
         assertEval("void f() { f(); }");
         assertExecuteException("f();", StackOverflowError.class);
+    }
+
+    @Test
+    public void recursiveCauses() {
+        assertEval("var one = new Throwable();");
+        assertEval("var two = new Error();");
+        assertEval("one.initCause(two);");
+        assertEval("two.initCause(one);");
+        assertExecuteException("throw one;", Throwable.class);
+        assertExecuteException("throw two;", Error.class);
     }
 
     private StackTraceElement newStackTraceElement(String className, String methodName, Snippet key, int lineNumber) {

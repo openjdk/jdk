@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jtreg.SkippedException;
 
 public class Lookup {
     private static final String HOST = "icann.org";
@@ -91,8 +92,7 @@ public class Lookup {
         String tmp = lookupWithIPv4Prefer();
         System.out.println("IPv4 lookup results: [" + tmp + "]");
         if (SKIP.equals(tmp)) {
-            System.out.println(HOST + " can't be resolved - test skipped.");
-            return;
+            throw new SkippedException(HOST + " can't be resolved - test skipped.");
         }
 
         String[] strs = tmp.split(":");
@@ -104,8 +104,7 @@ public class Lookup {
         tmp = reverseWithIPv4Prefer(addr);
         System.out.println("IPv4 reverse lookup results: [" + tmp + "]");
         if (SKIP.equals(tmp)) {
-            System.out.println(addr + " can't be resolved with preferIPv4 - test skipped.");
-            return;
+            throw new SkippedException(addr + " can't be resolved with preferIPv4 - test skipped.");
         }
 
         strs = tmp.split(":");

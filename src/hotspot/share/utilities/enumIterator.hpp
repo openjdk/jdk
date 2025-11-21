@@ -25,13 +25,12 @@
 #ifndef SHARE_UTILITIES_ENUMITERATOR_HPP
 #define SHARE_UTILITIES_ENUMITERATOR_HPP
 
+#include "cppstdlib/limits.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "memory/allStatic.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
 #include "utilities/debug.hpp"
-
-#include <limits>
-#include <type_traits>
 
 // Iteration support for enums.
 //

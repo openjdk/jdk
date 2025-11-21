@@ -21,10 +21,13 @@
  * questions.
  */
 
+import static java.util.Map.entry;
 import static jdk.jpackage.test.JPackageStringBundle.MAIN;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.FileAssociations;
@@ -114,9 +117,9 @@ public class FileAssociationsTest {
         final Path propFile = TKit.workDir().resolve("fa.properties");
 
         initPackageTest().addRunOnceInitializer(() -> {
-            TKit.createPropertiesFile(propFile, Map.of(
-                "extension", "foo",
-                "description", "bar"
+            TKit.createPropertiesFile(propFile, List.of(
+                    entry("extension", "foo"),
+                    entry("description", "bar")
             ));
         }).addInitializer(cmd -> {
             cmd.addArguments("--file-associations", propFile);
@@ -131,10 +134,10 @@ public class FileAssociationsTest {
         final Path propFile = TKit.workDir().resolve("fa.properties");
 
         initPackageTest().addRunOnceInitializer(() -> {
-            TKit.createPropertiesFile(propFile, Map.of(
-                "mime-type", "application/x-jpackage-foo, application/x-jpackage-bar",
-                "extension", "foo",
-                "description", "bar"
+            TKit.createPropertiesFile(propFile, List.of(
+                    entry("mime-type", "application/x-jpackage-foo, application/x-jpackage-bar"),
+                    entry("extension", "foo"),
+                    entry("description", "bar")
             ));
         }).addInitializer(cmd -> {
             cmd.addArguments("--file-associations", propFile);

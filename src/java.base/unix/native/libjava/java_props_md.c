@@ -388,8 +388,12 @@ GetJavaProperties(JNIEnv *env)
     /* supported instruction sets */
     {
         char list[258];
-        sysinfo(SI_ISALIST, list, sizeof(list));
-        sprops.cpu_isalist = strdup(list);
+        int ret = sysinfo(SI_ISALIST, list, sizeof(list));
+        if (ret == 0) {
+            sprops.cpu_isalist = strdup(list);
+        } else {
+            sprops.cpu_isalist = NULL;
+        }
     }
 #else
     sprops.cpu_isalist = NULL;

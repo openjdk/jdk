@@ -714,8 +714,7 @@ JvmtiVTSuspender::register_all_vthreads_resume() {
 }
 
 void
-JvmtiVTSuspender::register_vthread_suspend(oop vt) {
-  int64_t id = java_lang_Thread::thread_id(vt);
+JvmtiVTSuspender::register_vthread_suspend(int64_t id) {
   MutexLocker ml(JvmtiVThreadSuspend_lock, Mutex::_no_safepoint_check_flag);
 
   if (_SR_mode == SR_all) {
@@ -728,6 +727,12 @@ JvmtiVTSuspender::register_vthread_suspend(oop vt) {
     _SR_mode = SR_ind;
     _suspended_list->append(id);
   }
+}
+
+void
+JvmtiVTSuspender::register_vthread_suspend(oop vt) {
+  int64_t id = java_lang_Thread::thread_id(vt);
+  register_vthread_suspend(id);
 }
 
 void

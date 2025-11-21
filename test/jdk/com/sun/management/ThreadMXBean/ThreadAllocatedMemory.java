@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug     6173675 8231209 8304074 8313081
  * @summary Basic test of ThreadMXBean.getThreadAllocatedBytes
  * @requires vm.gc.G1
+ * @requires test.thread.factory != "Virtual"
  * @run main/othervm -XX:+UseG1GC ThreadAllocatedMemory
  */
 
@@ -34,6 +35,7 @@
  * @bug     6173675 8231209 8304074 8313081
  * @summary Basic test of ThreadMXBean.getThreadAllocatedBytes
  * @requires vm.gc.Serial
+ * @requires test.thread.factory != "Virtual"
  * @run main/othervm -XX:+UseSerialGC ThreadAllocatedMemory
  */
 

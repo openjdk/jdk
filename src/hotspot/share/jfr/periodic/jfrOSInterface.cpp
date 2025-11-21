@@ -32,8 +32,6 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/ostream.hpp"
 
-#include <stdlib.h> // for environment variables
-
 static JfrOSInterface* _instance = nullptr;
 
 JfrOSInterface& JfrOSInterface::instance() {
@@ -81,10 +79,7 @@ class JfrOSInterface::JfrOSInterfaceImpl : public JfrCHeapObj {
   // os information
   int os_version(char** os_version) const;
 
-  // environment information
-  void generate_environment_variables_events();
-
-   // system processes information
+  // system processes information
   int system_processes(SystemProcess** system_processes, int* no_of_sys_processes);
 
   int network_utilization(NetworkInterface** network_interfaces);

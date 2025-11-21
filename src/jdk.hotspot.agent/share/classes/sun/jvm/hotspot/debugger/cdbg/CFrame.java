@@ -36,6 +36,11 @@ public interface CFrame {
   /** Returns null when no more frames on stack */
   public CFrame sender(ThreadProxy th);
 
+  /** Find sender frame with given FP and PC */
+  public default CFrame sender(ThreadProxy th, Address fp, Address pc) {
+    return sender(th);
+  }
+
   /** Get the program counter of this frame */
   public Address pc();
 
@@ -59,7 +64,7 @@ public interface CFrame {
 
   /** Gets the base pointer in this frame from which local variable
       offsets in the debug info are based. Typically this is the
-      base-of-frame pointer (EBP on x86, FP/I6 on SPARC). */
+      base-of-frame pointer (RBP on amd64, FP/I6 on SPARC). */
   public Address localVariableBase();
 
   /** Visit all local variables in this frame if debug information is

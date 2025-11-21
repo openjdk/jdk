@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,18 +53,18 @@ enum freeze_result {
   freeze_ok_bottom = 1,
   freeze_pinned_cs = 2,
   freeze_pinned_native = 3,
-  freeze_pinned_monitor = 4,
-  freeze_exception = 5,
-  freeze_not_mounted = 6,
-  freeze_unsupported = 7
+  freeze_exception = 4,
+  freeze_not_mounted = 5,
+  freeze_unsupported = 6
 };
 
 class Continuation : AllStatic {
 public:
 
   enum preempt_kind {
-    freeze_on_monitorenter,
-    freeze_on_wait
+    monitorenter,
+    object_wait,
+    object_locker
   };
 
   enum thaw_kind {

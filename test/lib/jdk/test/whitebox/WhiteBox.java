@@ -78,6 +78,8 @@ public class WhiteBox {
   public native long getHeapSpaceAlignment();
   public native long getHeapAlignment();
 
+  public native boolean  hasExternalSymbolsStripped();
+
   private native boolean isObjectInOldGen0(Object o);
   public         boolean isObjectInOldGen(Object o) {
     Objects.requireNonNull(o);
@@ -122,7 +124,7 @@ public class WhiteBox {
 
   public native int getLockStackCapacity();
 
-  public native boolean supportsRecursiveLightweightLocking();
+  public native boolean supportsRecursiveFastLocking();
 
   public native void forceSafepoint();
 
@@ -490,6 +492,12 @@ public class WhiteBox {
     Objects.requireNonNull(method);
     return getNMethod0(method, isOsr);
   }
+  private native void     relocateNMethodFromMethod0(Executable method, int type);
+  public         void     relocateNMethodFromMethod(Executable method, int type) {
+    Objects.requireNonNull(method);
+    relocateNMethodFromMethod0(method, type);
+  }
+  public native void    relocateNMethodFromAddr(long address, int type);
   public native long    allocateCodeBlob(int size, int type);
   public        long    allocateCodeBlob(long size, int type) {
       int intSize = (int) size;
@@ -791,6 +799,8 @@ public class WhiteBox {
   public native boolean isJFRIncluded();
   public native boolean isDTraceIncluded();
   public native boolean canWriteJavaHeapArchive();
+  public native boolean canWriteMappedJavaHeapArchive();
+  public native boolean canWriteStreamedJavaHeapArchive();
   public native void    linkClass(Class<?> c);
   public native boolean areOpenArchiveHeapObjectsMapped();
 
@@ -841,12 +851,11 @@ public class WhiteBox {
 
   public native void waitUnsafe(int time_ms);
 
-  public native void busyWait(int cpuTimeMs);
+  public native void busyWaitCPUTime(int cpuTimeMs);
+
 
   // returns true if supported, false if not
   public native boolean cpuSamplerSetOutOfStackWalking(boolean enable);
-
-  public native long cpuSamplerOutOfStackWalkingIterations();
 
   public native void pinObject(Object o);
 

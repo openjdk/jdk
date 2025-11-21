@@ -55,7 +55,7 @@
 #include "runtime/osThread.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
-#include "runtime/synchronizer.inline.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/vframe.inline.hpp"

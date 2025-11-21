@@ -25,6 +25,7 @@
 /*
  * @test id=generational
  * @summary Test that growth of old-gen triggers old-gen marking
+ * @key intermittent
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @run driver TestOldGrowthTriggers

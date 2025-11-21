@@ -145,38 +145,409 @@ public class TestVectorConditionalMove {
     }
 
     // Extension: Compare 2 ILFD values, and pick from 2 ILFD values
+    // Signed comparison: I/L
+    //    I for I
+    private int cmoveIEQforI(int a, int b, int c, int d) {
+        return (a == b) ? c : d;
+    }
+
+    private int cmoveINEforI(int a, int b, int c, int d) {
+        return (a != b) ? c : d;
+    }
+
     private int cmoveIGTforI(int a, int b, int c, int d) {
         return (a > b) ? c : d;
+    }
+
+    private int cmoveIGEforI(int a, int b, int c, int d) {
+        return (a >= b) ? c : d;
+    }
+
+    private int cmoveILTforI(int a, int b, int c, int d) {
+        return (a < b) ? c : d;
+    }
+
+    private int cmoveILEforI(int a, int b, int c, int d) {
+        return (a <= b) ? c : d;
+    }
+
+    //    I for L
+    private long cmoveIEQforL(int a, int b, long c, long d) {
+        return (a == b) ? c : d;
+    }
+
+    private long cmoveINEforL(int a, int b, long c, long d) {
+        return (a != b) ? c : d;
     }
 
     private long cmoveIGTforL(int a, int b, long c, long d) {
         return (a > b) ? c : d;
     }
 
+    private long cmoveIGEforL(int a, int b, long c, long d) {
+        return (a >= b) ? c : d;
+    }
+
+    private long cmoveILTforL(int a, int b, long c, long d) {
+        return (a < b) ? c : d;
+    }
+
+    private long cmoveILEforL(int a, int b, long c, long d) {
+        return (a <= b) ? c : d;
+    }
+
+    //    I for F
+    private float cmoveIEQforF(int a, int b, float c, float d) {
+        return (a == b) ? c : d;
+    }
+
+    private float cmoveINEforF(int a, int b, float c, float d) {
+        return (a != b) ? c : d;
+    }
+
     private float cmoveIGTforF(int a, int b, float c, float d) {
         return (a > b) ? c : d;
+    }
+
+    private float cmoveIGEforF(int a, int b, float c, float d) {
+        return (a >= b) ? c : d;
+    }
+
+    private float cmoveILTforF(int a, int b, float c, float d) {
+        return (a < b) ? c : d;
+    }
+
+    private float cmoveILEforF(int a, int b, float c, float d) {
+        return (a <= b) ? c : d;
+    }
+
+    //    I for D
+    private double cmoveIEQforD(int a, int b, double c, double d) {
+        return (a == b) ? c : d;
+    }
+
+    private double cmoveINEforD(int a, int b, double c, double d) {
+        return (a != b) ? c : d;
     }
 
     private double cmoveIGTforD(int a, int b, double c, double d) {
         return (a > b) ? c : d;
     }
 
+    private double cmoveIGEforD(int a, int b, double c, double d) {
+        return (a >= b) ? c : d;
+    }
+
+    private double cmoveILTforD(int a, int b, double c, double d) {
+        return (a < b) ? c : d;
+    }
+
+    private double cmoveILEforD(int a, int b, double c, double d) {
+        return (a <= b) ? c : d;
+    }
+
+    //    L for I
+    private int cmoveLEQforI(long a, long b, int c, int d) {
+        return (a == b) ? c : d;
+    }
+
+    private int cmoveLNEforI(long a, long b, int c, int d) {
+        return (a != b) ? c : d;
+    }
+
     private int cmoveLGTforI(long a, long b, int c, int d) {
         return (a > b) ? c : d;
+    }
+
+    private int cmoveLGEforI(long a, long b, int c, int d) {
+        return (a >= b) ? c : d;
+    }
+
+    private int cmoveLLTforI(long a, long b, int c, int d) {
+        return (a < b) ? c : d;
+    }
+
+    private int cmoveLLEforI(long a, long b, int c, int d) {
+        return (a <= b) ? c : d;
+    }
+
+    //    L for L
+    private long cmoveLEQforL(long a, long b, long c, long d) {
+        return (a == b) ? c : d;
+    }
+
+    private long cmoveLNEforL(long a, long b, long c, long d) {
+        return (a != b) ? c : d;
     }
 
     private long cmoveLGTforL(long a, long b, long c, long d) {
         return (a > b) ? c : d;
     }
 
+    private long cmoveLGEforL(long a, long b, long c, long d) {
+        return (a >= b) ? c : d;
+    }
+
+    private long cmoveLLTforL(long a, long b, long c, long d) {
+        return (a < b) ? c : d;
+    }
+
+    private long cmoveLLEforL(long a, long b, long c, long d) {
+        return (a <= b) ? c : d;
+    }
+
+    //    L for F
+    private float cmoveLEQforF(long a, long b, float c, float d) {
+        return (a == b) ? c : d;
+    }
+
+    private float cmoveLNEforF(long a, long b, float c, float d) {
+        return (a != b) ? c : d;
+    }
+
     private float cmoveLGTforF(long a, long b, float c, float d) {
         return (a > b) ? c : d;
+    }
+
+    private float cmoveLGEforF(long a, long b, float c, float d) {
+        return (a >= b) ? c : d;
+    }
+
+    private float cmoveLLTforF(long a, long b, float c, float d) {
+        return (a < b) ? c : d;
+    }
+
+    private float cmoveLLEforF(long a, long b, float c, float d) {
+        return (a <= b) ? c : d;
+    }
+
+    //    L for D
+    private double cmoveLEQforD(long a, long b, double c, double d) {
+        return (a == b) ? c : d;
+    }
+
+    private double cmoveLNEforD(long a, long b, double c, double d) {
+        return (a != b) ? c : d;
     }
 
     private double cmoveLGTforD(long a, long b, double c, double d) {
         return (a > b) ? c : d;
     }
 
+    private double cmoveLGEforD(long a, long b, double c, double d) {
+        return (a >= b) ? c : d;
+    }
+
+    private double cmoveLLTforD(long a, long b, double c, double d) {
+        return (a < b) ? c : d;
+    }
+
+    private double cmoveLLEforD(long a, long b, double c, double d) {
+        return (a <= b) ? c : d;
+    }
+
+    // Unsigned comparison: I/L
+    //    I for I
+    private int cmoveUIEQforI(int a, int b, int c, int d) {
+        return Integer.compareUnsigned(a, b) == 0 ? c : d;
+    }
+
+    private int cmoveUINEforI(int a, int b, int c, int d) {
+        return Integer.compareUnsigned(a, b) != 0 ? c : d;
+    }
+
+    private int cmoveUIGTforI(int a, int b, int c, int d) {
+        return Integer.compareUnsigned(a, b) > 0 ? c : d;
+    }
+
+    private int cmoveUIGEforI(int a, int b, int c, int d) {
+        return Integer.compareUnsigned(a, b) >= 0 ? c : d;
+    }
+
+    private int cmoveUILTforI(int a, int b, int c, int d) {
+        return Integer.compareUnsigned(a, b) < 0 ? c : d;
+    }
+
+    private int cmoveUILEforI(int a, int b, int c, int d) {
+        return Integer.compareUnsigned(a, b) <= 0 ? c : d;
+    }
+
+    //    I for L
+    private long cmoveUIEQforL(int a, int b, long c, long d) {
+        return Integer.compareUnsigned(a, b) == 0 ? c : d;
+    }
+
+    private long cmoveUINEforL(int a, int b, long c, long d) {
+        return Integer.compareUnsigned(a, b) != 0 ? c : d;
+    }
+
+    private long cmoveUIGTforL(int a, int b, long c, long d) {
+        return Integer.compareUnsigned(a, b) > 0 ? c : d;
+    }
+
+    private long cmoveUIGEforL(int a, int b, long c, long d) {
+        return Integer.compareUnsigned(a, b) >= 0 ? c : d;
+    }
+
+    private long cmoveUILTforL(int a, int b, long c, long d) {
+        return Integer.compareUnsigned(a, b) < 0 ? c : d;
+    }
+
+    private long cmoveUILEforL(int a, int b, long c, long d) {
+        return Integer.compareUnsigned(a, b) <= 0 ? c : d;
+    }
+
+    //    I for F
+    private float cmoveUIEQforF(int a, int b, float c, float d) {
+        return Integer.compareUnsigned(a, b) == 0 ? c : d;
+    }
+
+    private float cmoveUINEforF(int a, int b, float c, float d) {
+        return Integer.compareUnsigned(a, b) != 0 ? c : d;
+    }
+
+    private float cmoveUIGTforF(int a, int b, float c, float d) {
+        return Integer.compareUnsigned(a, b) > 0 ? c : d;
+    }
+
+    private float cmoveUIGEforF(int a, int b, float c, float d) {
+        return Integer.compareUnsigned(a, b) >= 0 ? c : d;
+    }
+
+    private float cmoveUILTforF(int a, int b, float c, float d) {
+        return Integer.compareUnsigned(a, b) < 0 ? c : d;
+    }
+
+    private float cmoveUILEforF(int a, int b, float c, float d) {
+        return Integer.compareUnsigned(a, b) <= 0 ? c : d;
+    }
+
+    //    I for D
+    private double cmoveUIEQforD(int a, int b, double c, double d) {
+        return Integer.compareUnsigned(a, b) == 0 ? c : d;
+    }
+
+    private double cmoveUINEforD(int a, int b, double c, double d) {
+        return Integer.compareUnsigned(a, b) != 0 ? c : d;
+    }
+
+    private double cmoveUIGTforD(int a, int b, double c, double d) {
+        return Integer.compareUnsigned(a, b) > 0 ? c : d;
+    }
+
+    private double cmoveUIGEforD(int a, int b, double c, double d) {
+        return Integer.compareUnsigned(a, b) >= 0 ? c : d;
+    }
+
+    private double cmoveUILTforD(int a, int b, double c, double d) {
+        return Integer.compareUnsigned(a, b) < 0 ? c : d;
+    }
+
+    private double cmoveUILEforD(int a, int b, double c, double d) {
+        return Integer.compareUnsigned(a, b) <= 0 ? c : d;
+    }
+
+    //    L for I
+    private int cmoveULEQforI(long a, long b, int c, int d) {
+        return Long.compareUnsigned(a, b) == 0 ? c : d;
+    }
+
+    private int cmoveULNEforI(long a, long b, int c, int d) {
+        return Long.compareUnsigned(a, b) != 0 ? c : d;
+    }
+
+    private int cmoveULGTforI(long a, long b, int c, int d) {
+        return Long.compareUnsigned(a, b) > 0 ? c : d;
+    }
+
+    private int cmoveULGEforI(long a, long b, int c, int d) {
+        return Long.compareUnsigned(a, b) >= 0 ? c : d;
+    }
+
+    private int cmoveULLTforI(long a, long b, int c, int d) {
+        return Long.compareUnsigned(a, b) < 0 ? c : d;
+    }
+
+    private int cmoveULLEforI(long a, long b, int c, int d) {
+        return Long.compareUnsigned(a, b) <= 0 ? c : d;
+    }
+
+    //    L for L
+    private long cmoveULEQforL(long a, long b, long c, long d) {
+        return Long.compareUnsigned(a, b) == 0 ? c : d;
+    }
+
+    private long cmoveULNEforL(long a, long b, long c, long d) {
+        return Long.compareUnsigned(a, b) != 0 ? c : d;
+    }
+
+    private long cmoveULGTforL(long a, long b, long c, long d) {
+        return Long.compareUnsigned(a, b) > 0 ? c : d;
+    }
+
+    private long cmoveULGEforL(long a, long b, long c, long d) {
+        return Long.compareUnsigned(a, b) >= 0 ? c : d;
+    }
+
+    private long cmoveULLTforL(long a, long b, long c, long d) {
+        return Long.compareUnsigned(a, b) < 0 ? c : d;
+    }
+
+    private long cmoveULLEforL(long a, long b, long c, long d) {
+        return Long.compareUnsigned(a, b) <= 0 ? c : d;
+    }
+
+    //    L for F
+    private float cmoveULEQforF(long a, long b, float c, float d) {
+        return Long.compareUnsigned(a, b) == 0 ? c : d;
+    }
+
+    private float cmoveULNEforF(long a, long b, float c, float d) {
+        return Long.compareUnsigned(a, b) != 0 ? c : d;
+    }
+
+    private float cmoveULGTforF(long a, long b, float c, float d) {
+        return Long.compareUnsigned(a, b) > 0 ? c : d;
+    }
+
+    private float cmoveULGEforF(long a, long b, float c, float d) {
+        return Long.compareUnsigned(a, b) >= 0 ? c : d;
+    }
+
+    private float cmoveULLTforF(long a, long b, float c, float d) {
+        return Long.compareUnsigned(a, b) < 0 ? c : d;
+    }
+
+    private float cmoveULLEforF(long a, long b, float c, float d) {
+        return Long.compareUnsigned(a, b) <= 0 ? c : d;
+    }
+
+    //    L for D
+    private double cmoveULEQforD(long a, long b, double c, double d) {
+        return Long.compareUnsigned(a, b) == 0 ? c : d;
+    }
+
+    private double cmoveULNEforD(long a, long b, double c, double d) {
+        return Long.compareUnsigned(a, b) != 0 ? c : d;
+    }
+
+    private double cmoveULGTforD(long a, long b, double c, double d) {
+        return Long.compareUnsigned(a, b) > 0 ? c : d;
+    }
+
+    private double cmoveULGEforD(long a, long b, double c, double d) {
+        return Long.compareUnsigned(a, b) >= 0 ? c : d;
+    }
+
+    private double cmoveULLTforD(long a, long b, double c, double d) {
+        return Long.compareUnsigned(a, b) < 0 ? c : d;
+    }
+
+    private double cmoveULLEforD(long a, long b, double c, double d) {
+        return Long.compareUnsigned(a, b) <= 0 ? c : d;
+    }
+
+    // Float comparison
     private int cmoveFGTforI(float a, float b, int c, int d) {
         return (a > b) ? c : d;
     }
@@ -595,6 +966,30 @@ public class TestVectorConditionalMove {
     //   do not float down into the branches, I compute a value, and store it to r2 (same as r, except that the
     //   compilation does not know that).
     //   So far, vectorization only works for CMoveF/D, with same data-width comparison (F/I for F, D/L for D).
+    // Signed comparison: I/L
+    //     I fo I
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveIEQforI(int[] a, int[] b, int[] c, int[] d, int[] r, int[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            int cc = c[i];
+            int dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] == b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveINEforI(int[] a, int[] b, int[] c, int[] d, int[] r, int[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            int cc = c[i];
+            int dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] != b[i]) ? cc : dd;
+        }
+    }
+
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
     private static void testCMoveIGTforI(int[] a, int[] b, int[] c, int[] d, int[] r, int[] r2) {
@@ -608,12 +1003,134 @@ public class TestVectorConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveIGEforI(int[] a, int[] b, int[] c, int[] d, int[] r, int[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            int cc = c[i];
+            int dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] >= b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveILTforI(int[] a, int[] b, int[] c, int[] d, int[] r, int[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            int cc = c[i];
+            int dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] < b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveILEforI(int[] a, int[] b, int[] c, int[] d, int[] r, int[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            int cc = c[i];
+            int dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] <= b[i]) ? cc : dd;
+        }
+    }
+
+    //     I fo L
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveIEQforL(int[] a, int[] b, long[] c, long[] d, long[] r, long[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            long cc = c[i];
+            long dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] == b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveINEforL(int[] a, int[] b, long[] c, long[] d, long[] r, long[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            long cc = c[i];
+            long dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] != b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
     private static void testCMoveIGTforL(int[] a, int[] b, long[] c, long[] d, long[] r, long[] r2) {
         for (int i = 0; i < a.length; i++) {
             long cc = c[i];
             long dd = d[i];
             r2[i] = cc + dd;
             r[i] = (a[i] > b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveIGEforL(int[] a, int[] b, long[] c, long[] d, long[] r, long[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            long cc = c[i];
+            long dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] >= b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveILTforL(int[] a, int[] b, long[] c, long[] d, long[] r, long[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            long cc = c[i];
+            long dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] < b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveILEforL(int[] a, int[] b, long[] c, long[] d, long[] r, long[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            long cc = c[i];
+            long dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] <= b[i]) ? cc : dd;
+        }
+    }
+
+    //     I fo F
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    private static void testCMoveIEQforF(int[] a, int[] b, float[] c, float[] d, float[] r, float[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            float cc = c[i];
+            float dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] == b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    private static void testCMoveINEforF(int[] a, int[] b, float[] c, float[] d, float[] r, float[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            float cc = c[i];
+            float dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] != b[i]) ? cc : dd;
         }
     }
 
@@ -634,6 +1151,77 @@ public class TestVectorConditionalMove {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    private static void testCMoveIGEforF(int[] a, int[] b, float[] c, float[] d, float[] r, float[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            float cc = c[i];
+            float dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] >= b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    private static void testCMoveILTforF(int[] a, int[] b, float[] c, float[] d, float[] r, float[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            float cc = c[i];
+            float dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] < b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    private static void testCMoveILEforF(int[] a, int[] b, float[] c, float[] d, float[] r, float[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            float cc = c[i];
+            float dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] <= b[i]) ? cc : dd;
+        }
+    }
+
+    //     I fo D
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveIEQforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            double cc = c[i];
+            double dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] == b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveINEforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            double cc = c[i];
+            double dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] != b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
     private static void testCMoveIGTforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
@@ -641,6 +1229,62 @@ public class TestVectorConditionalMove {
             double dd = d[i];
             r2[i] = cc + dd;
             r[i] = (a[i] > b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveIGEforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            double cc = c[i];
+            double dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] >= b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveILTforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            double cc = c[i];
+            double dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] < b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveILEforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            double cc = c[i];
+            double dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] <= b[i]) ? cc : dd;
+        }
+    }
+
+    //     L fo I
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveLEQforI(long[] a, long[] b, int[] c, int[] d, int[] r, int[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            int cc = c[i];
+            int dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] == b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveLNEforI(long[] a, long[] b, int[] c, int[] d, int[] r, int[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            int cc = c[i];
+            int dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] != b[i]) ? cc : dd;
         }
     }
 
@@ -657,6 +1301,62 @@ public class TestVectorConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveLGEforI(long[] a, long[] b, int[] c, int[] d, int[] r, int[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            int cc = c[i];
+            int dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] >= b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveLLTforI(long[] a, long[] b, int[] c, int[] d, int[] r, int[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            int cc = c[i];
+            int dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] < b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveLLEforI(long[] a, long[] b, int[] c, int[] d, int[] r, int[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            int cc = c[i];
+            int dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] <= b[i]) ? cc : dd;
+        }
+    }
+
+    //     L fo L
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveLEQforL(long[] a, long[] b, long[] c, long[] d, long[] r, long[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            long cc = c[i];
+            long dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] == b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveLNEforL(long[] a, long[] b, long[] c, long[] d, long[] r, long[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            long cc = c[i];
+            long dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] != b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
     private static void testCMoveLGTforL(long[] a, long[] b, long[] c, long[] d, long[] r, long[] r2) {
         for (int i = 0; i < a.length; i++) {
             long cc = c[i];
@@ -668,12 +1368,136 @@ public class TestVectorConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveLGEforL(long[] a, long[] b, long[] c, long[] d, long[] r, long[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            long cc = c[i];
+            long dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] >= b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveLLTforL(long[] a, long[] b, long[] c, long[] d, long[] r, long[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            long cc = c[i];
+            long dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] < b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveLLEforL(long[] a, long[] b, long[] c, long[] d, long[] r, long[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            long cc = c[i];
+            long dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] <= b[i]) ? cc : dd;
+        }
+    }
+
+    //     L fo F
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveLEQforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            float cc = c[i];
+            float dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] == b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveLNEforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            float cc = c[i];
+            float dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] != b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
     private static void testCMoveLGTforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
             float dd = d[i];
             r2[i] = cc + dd;
             r[i] = (a[i] > b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveLGEforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            float cc = c[i];
+            float dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] >= b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveLLTforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            float cc = c[i];
+            float dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] < b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveLLEforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            float cc = c[i];
+            float dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] <= b[i]) ? cc : dd;
+        }
+    }
+
+    //     L fo D
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    // Requires avx2, else L is restricted to 16 byte, and D has 32. That leads to a vector elements mismatch of 2 to 4.
+    private static void testCMoveLEQforD(long[] a, long[] b, double[] c, double[] d, double[] r, double[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            double cc = c[i];
+            double dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] == b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    // Requires avx2, else L is restricted to 16 byte, and D has 32. That leads to a vector elements mismatch of 2 to 4.
+    private static void testCMoveLNEforD(long[] a, long[] b, double[] c, double[] d, double[] r, double[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            double cc = c[i];
+            double dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] != b[i]) ? cc : dd;
         }
     }
 
@@ -691,6 +1515,660 @@ public class TestVectorConditionalMove {
             double dd = d[i];
             r2[i] = cc + dd;
             r[i] = (a[i] > b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    // Requires avx2, else L is restricted to 16 byte, and D has 32. That leads to a vector elements mismatch of 2 to 4.
+    private static void testCMoveLGEforD(long[] a, long[] b, double[] c, double[] d, double[] r, double[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            double cc = c[i];
+            double dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] >= b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    // Requires avx2, else L is restricted to 16 byte, and D has 32. That leads to a vector elements mismatch of 2 to 4.
+    private static void testCMoveLLTforD(long[] a, long[] b, double[] c, double[] d, double[] r, double[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            double cc = c[i];
+            double dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] < b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    // Requires avx2, else L is restricted to 16 byte, and D has 32. That leads to a vector elements mismatch of 2 to 4.
+    private static void testCMoveLLEforD(long[] a, long[] b, double[] c, double[] d, double[] r, double[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            double cc = c[i];
+            double dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] <= b[i]) ? cc : dd;
+        }
+    }
+
+    // Unsigned comparison: I/L
+    //     I fo I
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveUIEQforI(int[] a, int[] b, int[] c, int[] d, int[] r, int[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            int cc = c[i];
+            int dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Integer.compareUnsigned(a[i], b[i]) == 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveUINEforI(int[] a, int[] b, int[] c, int[] d, int[] r, int[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            int cc = c[i];
+            int dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Integer.compareUnsigned(a[i], b[i]) != 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveUIGTforI(int[] a, int[] b, int[] c, int[] d, int[] r, int[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            int cc = c[i];
+            int dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Integer.compareUnsigned(a[i], b[i]) > 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveUIGEforI(int[] a, int[] b, int[] c, int[] d, int[] r, int[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            int cc = c[i];
+            int dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Integer.compareUnsigned(a[i], b[i]) >= 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveUILTforI(int[] a, int[] b, int[] c, int[] d, int[] r, int[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            int cc = c[i];
+            int dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Integer.compareUnsigned(a[i], b[i]) < 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveUILEforI(int[] a, int[] b, int[] c, int[] d, int[] r, int[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            int cc = c[i];
+            int dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Integer.compareUnsigned(a[i], b[i]) <= 0 ? cc : dd;
+        }
+    }
+
+    //     I fo L
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveUIEQforL(int[] a, int[] b, long[] c, long[] d, long[] r, long[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            long cc = c[i];
+            long dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Integer.compareUnsigned(a[i], b[i]) == 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveUINEforL(int[] a, int[] b, long[] c, long[] d, long[] r, long[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            long cc = c[i];
+            long dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Integer.compareUnsigned(a[i], b[i]) != 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveUIGTforL(int[] a, int[] b, long[] c, long[] d, long[] r, long[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            long cc = c[i];
+            long dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Integer.compareUnsigned(a[i], b[i]) > 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveUIGEforL(int[] a, int[] b, long[] c, long[] d, long[] r, long[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            long cc = c[i];
+            long dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Integer.compareUnsigned(a[i], b[i]) >= 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveUILTforL(int[] a, int[] b, long[] c, long[] d, long[] r, long[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            long cc = c[i];
+            long dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Integer.compareUnsigned(a[i], b[i]) < 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveUILEforL(int[] a, int[] b, long[] c, long[] d, long[] r, long[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            long cc = c[i];
+            long dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Integer.compareUnsigned(a[i], b[i]) <= 0 ? cc : dd;
+        }
+    }
+
+    //     I fo F
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    private static void testCMoveUIEQforF(int[] a, int[] b, float[] c, float[] d, float[] r, float[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            float cc = c[i];
+            float dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Integer.compareUnsigned(a[i], b[i]) == 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    private static void testCMoveUINEforF(int[] a, int[] b, float[] c, float[] d, float[] r, float[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            float cc = c[i];
+            float dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Integer.compareUnsigned(a[i], b[i]) != 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    private static void testCMoveUIGTforF(int[] a, int[] b, float[] c, float[] d, float[] r, float[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            float cc = c[i];
+            float dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Integer.compareUnsigned(a[i], b[i]) > 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    private static void testCMoveUIGEforF(int[] a, int[] b, float[] c, float[] d, float[] r, float[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            float cc = c[i];
+            float dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Integer.compareUnsigned(a[i], b[i]) >= 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    private static void testCMoveUILTforF(int[] a, int[] b, float[] c, float[] d, float[] r, float[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            float cc = c[i];
+            float dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Integer.compareUnsigned(a[i], b[i]) < 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    private static void testCMoveUILEforF(int[] a, int[] b, float[] c, float[] d, float[] r, float[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            float cc = c[i];
+            float dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Integer.compareUnsigned(a[i], b[i]) <= 0 ? cc : dd;
+        }
+    }
+
+    //     I fo D
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveUIEQforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            double cc = c[i];
+            double dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Integer.compareUnsigned(a[i], b[i]) == 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveUINEforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            double cc = c[i];
+            double dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Integer.compareUnsigned(a[i], b[i]) != 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveUIGTforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            double cc = c[i];
+            double dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Integer.compareUnsigned(a[i], b[i]) > 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveUIGEforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            double cc = c[i];
+            double dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Integer.compareUnsigned(a[i], b[i]) >= 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveUILTforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            double cc = c[i];
+            double dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Integer.compareUnsigned(a[i], b[i]) < 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveUILEforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            double cc = c[i];
+            double dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Integer.compareUnsigned(a[i], b[i]) <= 0 ? cc : dd;
+        }
+    }
+
+    //     L fo I
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveULEQforI(long[] a, long[] b, int[] c, int[] d, int[] r, int[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            int cc = c[i];
+            int dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Long.compareUnsigned(a[i], b[i]) == 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveULNEforI(long[] a, long[] b, int[] c, int[] d, int[] r, int[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            int cc = c[i];
+            int dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Long.compareUnsigned(a[i], b[i]) != 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveULGTforI(long[] a, long[] b, int[] c, int[] d, int[] r, int[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            int cc = c[i];
+            int dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Long.compareUnsigned(a[i], b[i]) > 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveULGEforI(long[] a, long[] b, int[] c, int[] d, int[] r, int[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            int cc = c[i];
+            int dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Long.compareUnsigned(a[i], b[i]) >= 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveULLTforI(long[] a, long[] b, int[] c, int[] d, int[] r, int[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            int cc = c[i];
+            int dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Long.compareUnsigned(a[i], b[i]) < 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveULLEforI(long[] a, long[] b, int[] c, int[] d, int[] r, int[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            int cc = c[i];
+            int dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Long.compareUnsigned(a[i], b[i]) <= 0 ? cc : dd;
+        }
+    }
+
+    //     L fo L
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveULEQforL(long[] a, long[] b, long[] c, long[] d, long[] r, long[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            long cc = c[i];
+            long dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Long.compareUnsigned(a[i], b[i]) == 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveULNEforL(long[] a, long[] b, long[] c, long[] d, long[] r, long[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            long cc = c[i];
+            long dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Long.compareUnsigned(a[i], b[i]) != 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveULGTforL(long[] a, long[] b, long[] c, long[] d, long[] r, long[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            long cc = c[i];
+            long dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Long.compareUnsigned(a[i], b[i]) > 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveULGEforL(long[] a, long[] b, long[] c, long[] d, long[] r, long[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            long cc = c[i];
+            long dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Long.compareUnsigned(a[i], b[i]) >= 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveULLTforL(long[] a, long[] b, long[] c, long[] d, long[] r, long[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            long cc = c[i];
+            long dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Long.compareUnsigned(a[i], b[i]) < 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveULLEforL(long[] a, long[] b, long[] c, long[] d, long[] r, long[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            long cc = c[i];
+            long dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Long.compareUnsigned(a[i], b[i]) <= 0 ? cc : dd;
+        }
+    }
+
+    //     L fo F
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveULEQforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            float cc = c[i];
+            float dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Long.compareUnsigned(a[i], b[i]) == 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveULNEforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            float cc = c[i];
+            float dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Long.compareUnsigned(a[i], b[i]) != 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveULGTforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            float cc = c[i];
+            float dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Long.compareUnsigned(a[i], b[i]) > 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveULGEforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            float cc = c[i];
+            float dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Long.compareUnsigned(a[i], b[i]) >= 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveULLTforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            float cc = c[i];
+            float dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Long.compareUnsigned(a[i], b[i]) < 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    private static void testCMoveULLEforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            float cc = c[i];
+            float dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Long.compareUnsigned(a[i], b[i]) <= 0 ? cc : dd;
+        }
+    }
+
+    //     L fo D
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    // Requires avx2, else L is restricted to 16 byte, and D has 32. That leads to a vector elements mismatch of 2 to 4.
+    private static void testCMoveULEQforD(long[] a, long[] b, double[] c, double[] d, double[] r, double[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            double cc = c[i];
+            double dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Long.compareUnsigned(a[i], b[i]) == 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    // Requires avx2, else L is restricted to 16 byte, and D has 32. That leads to a vector elements mismatch of 2 to 4.
+    private static void testCMoveULNEforD(long[] a, long[] b, double[] c, double[] d, double[] r, double[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            double cc = c[i];
+            double dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Long.compareUnsigned(a[i], b[i]) != 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    // Requires avx2, else L is restricted to 16 byte, and D has 32. That leads to a vector elements mismatch of 2 to 4.
+    private static void testCMoveULGTforD(long[] a, long[] b, double[] c, double[] d, double[] r, double[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            double cc = c[i];
+            double dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Long.compareUnsigned(a[i], b[i]) > 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    // Requires avx2, else L is restricted to 16 byte, and D has 32. That leads to a vector elements mismatch of 2 to 4.
+    private static void testCMoveULGEforD(long[] a, long[] b, double[] c, double[] d, double[] r, double[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            double cc = c[i];
+            double dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Long.compareUnsigned(a[i], b[i]) >= 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    // Requires avx2, else L is restricted to 16 byte, and D has 32. That leads to a vector elements mismatch of 2 to 4.
+    private static void testCMoveULLTforD(long[] a, long[] b, double[] c, double[] d, double[] r, double[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            double cc = c[i];
+            double dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Long.compareUnsigned(a[i], b[i]) < 0 ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    // Requires avx2, else L is restricted to 16 byte, and D has 32. That leads to a vector elements mismatch of 2 to 4.
+    private static void testCMoveULLEforD(long[] a, long[] b, double[] c, double[] d, double[] r, double[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            double cc = c[i];
+            double dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = Long.compareUnsigned(a[i], b[i]) <= 0 ? cc : dd;
         }
     }
 
@@ -977,14 +2455,121 @@ public class TestVectorConditionalMove {
     }
 
     @Warmup(0)
-    @Run(test = {"testCMoveIGTforI",
+    @Run(test = {// Signed
+                 //     I for I
+                 "testCMoveIEQforI",
+                 "testCMoveINEforI",
+                 "testCMoveIGTforI",
+                 "testCMoveIGEforI",
+                 "testCMoveILTforI",
+                 "testCMoveILEforI",
+                 //     I for L
+                 "testCMoveIEQforL",
+                 "testCMoveINEforL",
                  "testCMoveIGTforL",
+                 "testCMoveIGEforL",
+                 "testCMoveILTforL",
+                 "testCMoveILEforL",
+                 //     I for F
+                 "testCMoveIEQforF",
+                 "testCMoveINEforF",
                  "testCMoveIGTforF",
+                 "testCMoveIGEforF",
+                 "testCMoveILTforF",
+                 "testCMoveILEforF",
+                 //     I for D
+                 "testCMoveIEQforD",
+                 "testCMoveINEforD",
                  "testCMoveIGTforD",
+                 "testCMoveIGEforD",
+                 "testCMoveILTforD",
+                 "testCMoveILEforD",
+                 //     L for I
+                 "testCMoveLEQforI",
+                 "testCMoveLNEforI",
                  "testCMoveLGTforI",
+                 "testCMoveLGEforI",
+                 "testCMoveLLTforI",
+                 "testCMoveLLEforI",
+                 //     L for L
+                 "testCMoveLEQforL",
+                 "testCMoveLNEforL",
                  "testCMoveLGTforL",
+                 "testCMoveLGEforL",
+                 "testCMoveLLTforL",
+                 "testCMoveLLEforL",
+                 //     L for F
+                 "testCMoveLEQforF",
+                 "testCMoveLNEforF",
                  "testCMoveLGTforF",
+                 "testCMoveLGEforF",
+                 "testCMoveLLTforF",
+                 "testCMoveLLEforF",
+                 //     L for D
+                 "testCMoveLEQforD",
+                 "testCMoveLNEforD",
                  "testCMoveLGTforD",
+                 "testCMoveLGEforD",
+                 "testCMoveLLTforD",
+                 "testCMoveLLEforD",
+                 // Unsigned
+                 //     I for I
+                 "testCMoveUIEQforI",
+                 "testCMoveUINEforI",
+                 "testCMoveUIGTforI",
+                 "testCMoveUIGEforI",
+                 "testCMoveUILTforI",
+                 "testCMoveUILEforI",
+                 //     I for L
+                 "testCMoveUIEQforL",
+                 "testCMoveUINEforL",
+                 "testCMoveUIGTforL",
+                 "testCMoveUIGEforL",
+                 "testCMoveUILTforL",
+                 "testCMoveUILEforL",
+                 //     I for F
+                 "testCMoveUIEQforF",
+                 "testCMoveUINEforF",
+                 "testCMoveUIGTforF",
+                 "testCMoveUIGEforF",
+                 "testCMoveUILTforF",
+                 "testCMoveUILEforF",
+                 //     I for D
+                 "testCMoveUIEQforD",
+                 "testCMoveUINEforD",
+                 "testCMoveUIGTforD",
+                 "testCMoveUIGEforD",
+                 "testCMoveUILTforD",
+                 "testCMoveUILEforD",
+                 //     L for I
+                 "testCMoveULEQforI",
+                 "testCMoveULNEforI",
+                 "testCMoveULGTforI",
+                 "testCMoveULGEforI",
+                 "testCMoveULLTforI",
+                 "testCMoveULLEforI",
+                 //     L for L
+                 "testCMoveULEQforL",
+                 "testCMoveULNEforL",
+                 "testCMoveULGTforL",
+                 "testCMoveULGEforL",
+                 "testCMoveULLTforL",
+                 "testCMoveULLEforL",
+                 //     L for F
+                 "testCMoveULEQforF",
+                 "testCMoveULNEforF",
+                 "testCMoveULGTforF",
+                 "testCMoveULGEforF",
+                 "testCMoveULLTforF",
+                 "testCMoveULLEforF",
+                 //     L for D
+                 "testCMoveULEQforD",
+                 "testCMoveULNEforD",
+                 "testCMoveULGTforD",
+                 "testCMoveULGEforD",
+                 "testCMoveULLTforD",
+                 "testCMoveULLEforD",
+                 // Float
                  "testCMoveFGTforI",
                  "testCMoveFGTforL",
                  "testCMoveFGTforF",
@@ -1034,9 +2619,47 @@ public class TestVectorConditionalMove {
         init(cD);
         init(dD);
 
+        // Signed
+        //     I for I
+        testCMoveIEQforI(aI, bI, cI, dI, rI, rI);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rI[i], cmoveIEQforI(aI[i], bI[i], cI[i], dI[i]));
+        }
+
+        testCMoveINEforI(aI, bI, cI, dI, rI, rI);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rI[i], cmoveINEforI(aI[i], bI[i], cI[i], dI[i]));
+        }
+
         testCMoveIGTforI(aI, bI, cI, dI, rI, rI);
         for (int i = 0; i < SIZE; i++) {
             Asserts.assertEquals(rI[i], cmoveIGTforI(aI[i], bI[i], cI[i], dI[i]));
+        }
+
+        testCMoveIGEforI(aI, bI, cI, dI, rI, rI);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rI[i], cmoveIGEforI(aI[i], bI[i], cI[i], dI[i]));
+        }
+
+        testCMoveILTforI(aI, bI, cI, dI, rI, rI);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rI[i], cmoveILTforI(aI[i], bI[i], cI[i], dI[i]));
+        }
+
+        testCMoveILEforI(aI, bI, cI, dI, rI, rI);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rI[i], cmoveILEforI(aI[i], bI[i], cI[i], dI[i]));
+        }
+
+        //     I for L
+        testCMoveIEQforL(aI, bI, cL, dL, rL, rL);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rL[i], cmoveIEQforL(aI[i], bI[i], cL[i], dL[i]));
+        }
+
+        testCMoveINEforL(aI, bI, cL, dL, rL, rL);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rL[i], cmoveINEforL(aI[i], bI[i], cL[i], dL[i]));
         }
 
         testCMoveIGTforL(aI, bI, cL, dL, rL, rL);
@@ -1044,9 +2667,61 @@ public class TestVectorConditionalMove {
             Asserts.assertEquals(rL[i], cmoveIGTforL(aI[i], bI[i], cL[i], dL[i]));
         }
 
+        testCMoveIGEforL(aI, bI, cL, dL, rL, rL);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rL[i], cmoveIGEforL(aI[i], bI[i], cL[i], dL[i]));
+        }
+
+        testCMoveILTforL(aI, bI, cL, dL, rL, rL);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rL[i], cmoveILTforL(aI[i], bI[i], cL[i], dL[i]));
+        }
+
+        testCMoveILEforL(aI, bI, cL, dL, rL, rL);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rL[i], cmoveILEforL(aI[i], bI[i], cL[i], dL[i]));
+        }
+
+        //     I for F
+        testCMoveIEQforF(aI, bI, cF, dF, rF, rF);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rF[i], cmoveIEQforF(aI[i], bI[i], cF[i], dF[i]));
+        }
+
+        testCMoveINEforF(aI, bI, cF, dF, rF, rF);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rF[i], cmoveINEforF(aI[i], bI[i], cF[i], dF[i]));
+        }
+
         testCMoveIGTforF(aI, bI, cF, dF, rF, rF);
         for (int i = 0; i < SIZE; i++) {
             Asserts.assertEquals(rF[i], cmoveIGTforF(aI[i], bI[i], cF[i], dF[i]));
+        }
+
+        testCMoveIGEforF(aI, bI, cF, dF, rF, rF);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rF[i], cmoveIGEforF(aI[i], bI[i], cF[i], dF[i]));
+        }
+
+        testCMoveILTforF(aI, bI, cF, dF, rF, rF);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rF[i], cmoveILTforF(aI[i], bI[i], cF[i], dF[i]));
+        }
+
+        testCMoveILEforF(aI, bI, cF, dF, rF, rF);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rF[i], cmoveILEforF(aI[i], bI[i], cF[i], dF[i]));
+        }
+
+        //     I for D
+        testCMoveIEQforD(aI, bI, cD, dD, rD, rD);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rD[i], cmoveIEQforD(aI[i], bI[i], cD[i], dD[i]));
+        }
+
+        testCMoveINEforD(aI, bI, cD, dD, rD, rD);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rD[i], cmoveINEforD(aI[i], bI[i], cD[i], dD[i]));
         }
 
         testCMoveIGTforD(aI, bI, cD, dD, rD, rD);
@@ -1054,9 +2729,61 @@ public class TestVectorConditionalMove {
             Asserts.assertEquals(rD[i], cmoveIGTforD(aI[i], bI[i], cD[i], dD[i]));
         }
 
+        testCMoveIGEforD(aI, bI, cD, dD, rD, rD);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rD[i], cmoveIGEforD(aI[i], bI[i], cD[i], dD[i]));
+        }
+
+        testCMoveILTforD(aI, bI, cD, dD, rD, rD);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rD[i], cmoveILTforD(aI[i], bI[i], cD[i], dD[i]));
+        }
+
+        testCMoveILEforD(aI, bI, cD, dD, rD, rD);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rD[i], cmoveILEforD(aI[i], bI[i], cD[i], dD[i]));
+        }
+
+        //     L for I
+        testCMoveLEQforI(aL, bL, cI, dI, rI, rI);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rI[i], cmoveLEQforI(aL[i], bL[i], cI[i], dI[i]));
+        }
+
+        testCMoveLNEforI(aL, bL, cI, dI, rI, rI);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rI[i], cmoveLNEforI(aL[i], bL[i], cI[i], dI[i]));
+        }
+
         testCMoveLGTforI(aL, bL, cI, dI, rI, rI);
         for (int i = 0; i < SIZE; i++) {
             Asserts.assertEquals(rI[i], cmoveLGTforI(aL[i], bL[i], cI[i], dI[i]));
+        }
+
+        testCMoveLGEforI(aL, bL, cI, dI, rI, rI);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rI[i], cmoveLGEforI(aL[i], bL[i], cI[i], dI[i]));
+        }
+
+        testCMoveLLTforI(aL, bL, cI, dI, rI, rI);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rI[i], cmoveLLTforI(aL[i], bL[i], cI[i], dI[i]));
+        }
+
+        testCMoveLLEforI(aL, bL, cI, dI, rI, rI);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rI[i], cmoveLLEforI(aL[i], bL[i], cI[i], dI[i]));
+        }
+
+        //     L for L
+        testCMoveLEQforL(aL, bL, cL, dL, rL, rL);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rL[i], cmoveLEQforL(aL[i], bL[i], cL[i], dL[i]));
+        }
+
+        testCMoveLNEforL(aL, bL, cL, dL, rL, rL);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rL[i], cmoveLNEforL(aL[i], bL[i], cL[i], dL[i]));
         }
 
         testCMoveLGTforL(aL, bL, cL, dL, rL, rL);
@@ -1064,9 +2791,61 @@ public class TestVectorConditionalMove {
             Asserts.assertEquals(rL[i], cmoveLGTforL(aL[i], bL[i], cL[i], dL[i]));
         }
 
+        testCMoveLGEforL(aL, bL, cL, dL, rL, rL);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rL[i], cmoveLGEforL(aL[i], bL[i], cL[i], dL[i]));
+        }
+
+        testCMoveLLTforL(aL, bL, cL, dL, rL, rL);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rL[i], cmoveLLTforL(aL[i], bL[i], cL[i], dL[i]));
+        }
+
+        testCMoveLLEforL(aL, bL, cL, dL, rL, rL);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rL[i], cmoveLLEforL(aL[i], bL[i], cL[i], dL[i]));
+        }
+
+        //     L for F
+        testCMoveLEQforF(aL, bL, cF, dF, rF, rF);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rF[i], cmoveLEQforF(aL[i], bL[i], cF[i], dF[i]));
+        }
+
+        testCMoveLNEforF(aL, bL, cF, dF, rF, rF);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rF[i], cmoveLNEforF(aL[i], bL[i], cF[i], dF[i]));
+        }
+
         testCMoveLGTforF(aL, bL, cF, dF, rF, rF);
         for (int i = 0; i < SIZE; i++) {
             Asserts.assertEquals(rF[i], cmoveLGTforF(aL[i], bL[i], cF[i], dF[i]));
+        }
+
+        testCMoveLGEforF(aL, bL, cF, dF, rF, rF);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rF[i], cmoveLGEforF(aL[i], bL[i], cF[i], dF[i]));
+        }
+
+        testCMoveLLTforF(aL, bL, cF, dF, rF, rF);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rF[i], cmoveLLTforF(aL[i], bL[i], cF[i], dF[i]));
+        }
+
+        testCMoveLLEforF(aL, bL, cF, dF, rF, rF);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rF[i], cmoveLLEforF(aL[i], bL[i], cF[i], dF[i]));
+        }
+
+        //     L for D
+        testCMoveLEQforD(aL, bL, cD, dD, rD, rD);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rD[i], cmoveLEQforD(aL[i], bL[i], cD[i], dD[i]));
+        }
+
+        testCMoveLNEforD(aL, bL, cD, dD, rD, rD);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rD[i], cmoveLNEforD(aL[i], bL[i], cD[i], dD[i]));
         }
 
         testCMoveLGTforD(aL, bL, cD, dD, rD, rD);
@@ -1074,6 +2853,271 @@ public class TestVectorConditionalMove {
             Asserts.assertEquals(rD[i], cmoveLGTforD(aL[i], bL[i], cD[i], dD[i]));
         }
 
+        testCMoveLGEforD(aL, bL, cD, dD, rD, rD);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rD[i], cmoveLGEforD(aL[i], bL[i], cD[i], dD[i]));
+        }
+
+        testCMoveLLTforD(aL, bL, cD, dD, rD, rD);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rD[i], cmoveLLTforD(aL[i], bL[i], cD[i], dD[i]));
+        }
+
+        testCMoveLLEforD(aL, bL, cD, dD, rD, rD);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rD[i], cmoveLLEforD(aL[i], bL[i], cD[i], dD[i]));
+        }
+
+        // Unsigned
+        //     I for I
+        testCMoveUIEQforI(aI, bI, cI, dI, rI, rI);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rI[i], cmoveUIEQforI(aI[i], bI[i], cI[i], dI[i]));
+        }
+
+        testCMoveUINEforI(aI, bI, cI, dI, rI, rI);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rI[i], cmoveUINEforI(aI[i], bI[i], cI[i], dI[i]));
+        }
+
+        testCMoveUIGTforI(aI, bI, cI, dI, rI, rI);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rI[i], cmoveUIGTforI(aI[i], bI[i], cI[i], dI[i]));
+        }
+
+        testCMoveUIGEforI(aI, bI, cI, dI, rI, rI);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rI[i], cmoveUIGEforI(aI[i], bI[i], cI[i], dI[i]));
+        }
+
+        testCMoveUILTforI(aI, bI, cI, dI, rI, rI);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rI[i], cmoveUILTforI(aI[i], bI[i], cI[i], dI[i]));
+        }
+
+        testCMoveUILEforI(aI, bI, cI, dI, rI, rI);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rI[i], cmoveUILEforI(aI[i], bI[i], cI[i], dI[i]));
+        }
+
+        //     I for L
+        testCMoveUIEQforL(aI, bI, cL, dL, rL, rL);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rL[i], cmoveUIEQforL(aI[i], bI[i], cL[i], dL[i]));
+        }
+
+        testCMoveUINEforL(aI, bI, cL, dL, rL, rL);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rL[i], cmoveUINEforL(aI[i], bI[i], cL[i], dL[i]));
+        }
+
+        testCMoveUIGTforL(aI, bI, cL, dL, rL, rL);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rL[i], cmoveUIGTforL(aI[i], bI[i], cL[i], dL[i]));
+        }
+
+        testCMoveUIGEforL(aI, bI, cL, dL, rL, rL);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rL[i], cmoveUIGEforL(aI[i], bI[i], cL[i], dL[i]));
+        }
+
+        testCMoveUILTforL(aI, bI, cL, dL, rL, rL);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rL[i], cmoveUILTforL(aI[i], bI[i], cL[i], dL[i]));
+        }
+
+        testCMoveUILEforL(aI, bI, cL, dL, rL, rL);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rL[i], cmoveUILEforL(aI[i], bI[i], cL[i], dL[i]));
+        }
+
+        //     I for F
+        testCMoveUIEQforF(aI, bI, cF, dF, rF, rF);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rF[i], cmoveUIEQforF(aI[i], bI[i], cF[i], dF[i]));
+        }
+
+        testCMoveUINEforF(aI, bI, cF, dF, rF, rF);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rF[i], cmoveUINEforF(aI[i], bI[i], cF[i], dF[i]));
+        }
+
+        testCMoveUIGTforF(aI, bI, cF, dF, rF, rF);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rF[i], cmoveUIGTforF(aI[i], bI[i], cF[i], dF[i]));
+        }
+
+        testCMoveUIGEforF(aI, bI, cF, dF, rF, rF);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rF[i], cmoveUIGEforF(aI[i], bI[i], cF[i], dF[i]));
+        }
+
+        testCMoveUILTforF(aI, bI, cF, dF, rF, rF);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rF[i], cmoveUILTforF(aI[i], bI[i], cF[i], dF[i]));
+        }
+
+        testCMoveUILEforF(aI, bI, cF, dF, rF, rF);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rF[i], cmoveUILEforF(aI[i], bI[i], cF[i], dF[i]));
+        }
+
+        //     I for D
+        testCMoveUIEQforD(aI, bI, cD, dD, rD, rD);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rD[i], cmoveUIEQforD(aI[i], bI[i], cD[i], dD[i]));
+        }
+
+        testCMoveUINEforD(aI, bI, cD, dD, rD, rD);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rD[i], cmoveUINEforD(aI[i], bI[i], cD[i], dD[i]));
+        }
+
+        testCMoveUIGTforD(aI, bI, cD, dD, rD, rD);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rD[i], cmoveUIGTforD(aI[i], bI[i], cD[i], dD[i]));
+        }
+
+        testCMoveUIGEforD(aI, bI, cD, dD, rD, rD);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rD[i], cmoveUIGEforD(aI[i], bI[i], cD[i], dD[i]));
+        }
+
+        testCMoveUILTforD(aI, bI, cD, dD, rD, rD);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rD[i], cmoveUILTforD(aI[i], bI[i], cD[i], dD[i]));
+        }
+
+        testCMoveUILEforD(aI, bI, cD, dD, rD, rD);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rD[i], cmoveUILEforD(aI[i], bI[i], cD[i], dD[i]));
+        }
+
+        //     L for I
+        testCMoveULEQforI(aL, bL, cI, dI, rI, rI);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rI[i], cmoveULEQforI(aL[i], bL[i], cI[i], dI[i]));
+        }
+
+        testCMoveULNEforI(aL, bL, cI, dI, rI, rI);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rI[i], cmoveULNEforI(aL[i], bL[i], cI[i], dI[i]));
+        }
+
+        testCMoveULGTforI(aL, bL, cI, dI, rI, rI);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rI[i], cmoveULGTforI(aL[i], bL[i], cI[i], dI[i]));
+        }
+
+        testCMoveULGEforI(aL, bL, cI, dI, rI, rI);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rI[i], cmoveULGEforI(aL[i], bL[i], cI[i], dI[i]));
+        }
+
+        testCMoveULLTforI(aL, bL, cI, dI, rI, rI);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rI[i], cmoveULLTforI(aL[i], bL[i], cI[i], dI[i]));
+        }
+
+        testCMoveULLEforI(aL, bL, cI, dI, rI, rI);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rI[i], cmoveULLEforI(aL[i], bL[i], cI[i], dI[i]));
+        }
+
+        //     L for L
+        testCMoveULEQforL(aL, bL, cL, dL, rL, rL);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rL[i], cmoveULEQforL(aL[i], bL[i], cL[i], dL[i]));
+        }
+
+        testCMoveULNEforL(aL, bL, cL, dL, rL, rL);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rL[i], cmoveULNEforL(aL[i], bL[i], cL[i], dL[i]));
+        }
+
+        testCMoveULGTforL(aL, bL, cL, dL, rL, rL);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rL[i], cmoveULGTforL(aL[i], bL[i], cL[i], dL[i]));
+        }
+
+        testCMoveULGEforL(aL, bL, cL, dL, rL, rL);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rL[i], cmoveULGEforL(aL[i], bL[i], cL[i], dL[i]));
+        }
+
+        testCMoveULLTforL(aL, bL, cL, dL, rL, rL);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rL[i], cmoveULLTforL(aL[i], bL[i], cL[i], dL[i]));
+        }
+
+        testCMoveULLEforL(aL, bL, cL, dL, rL, rL);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rL[i], cmoveULLEforL(aL[i], bL[i], cL[i], dL[i]));
+        }
+
+        //     L for F
+        testCMoveULEQforF(aL, bL, cF, dF, rF, rF);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rF[i], cmoveULEQforF(aL[i], bL[i], cF[i], dF[i]));
+        }
+
+        testCMoveULNEforF(aL, bL, cF, dF, rF, rF);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rF[i], cmoveULNEforF(aL[i], bL[i], cF[i], dF[i]));
+        }
+
+        testCMoveULGTforF(aL, bL, cF, dF, rF, rF);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rF[i], cmoveULGTforF(aL[i], bL[i], cF[i], dF[i]));
+        }
+
+        testCMoveULGEforF(aL, bL, cF, dF, rF, rF);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rF[i], cmoveULGEforF(aL[i], bL[i], cF[i], dF[i]));
+        }
+
+        testCMoveULLTforF(aL, bL, cF, dF, rF, rF);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rF[i], cmoveULLTforF(aL[i], bL[i], cF[i], dF[i]));
+        }
+
+        testCMoveULLEforF(aL, bL, cF, dF, rF, rF);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rF[i], cmoveULLEforF(aL[i], bL[i], cF[i], dF[i]));
+        }
+
+        //     L for D
+        testCMoveULEQforD(aL, bL, cD, dD, rD, rD);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rD[i], cmoveULEQforD(aL[i], bL[i], cD[i], dD[i]));
+        }
+
+        testCMoveULNEforD(aL, bL, cD, dD, rD, rD);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rD[i], cmoveULNEforD(aL[i], bL[i], cD[i], dD[i]));
+        }
+
+        testCMoveULGTforD(aL, bL, cD, dD, rD, rD);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rD[i], cmoveULGTforD(aL[i], bL[i], cD[i], dD[i]));
+        }
+
+        testCMoveULGEforD(aL, bL, cD, dD, rD, rD);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rD[i], cmoveULGEforD(aL[i], bL[i], cD[i], dD[i]));
+        }
+
+        testCMoveULLTforD(aL, bL, cD, dD, rD, rD);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rD[i], cmoveULLTforD(aL[i], bL[i], cD[i], dD[i]));
+        }
+
+        testCMoveULLEforD(aL, bL, cD, dD, rD, rD);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rD[i], cmoveULLEforD(aL[i], bL[i], cD[i], dD[i]));
+        }
+
+        // Float
         testCMoveFGTforI(aF, bF, cI, dI, rI, rI);
         for (int i = 0; i < SIZE; i++) {
             Asserts.assertEquals(rI[i], cmoveFGTforI(aF[i], bF[i], cI[i], dI[i]));

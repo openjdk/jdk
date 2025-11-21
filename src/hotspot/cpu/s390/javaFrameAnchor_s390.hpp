@@ -35,38 +35,32 @@
   //  3 - restoring an old state (javaCalls).
 
   inline void clear(void) {
+    // No hardware barriers are necessary. All members are volatile and the profiler
+    // is run from a signal handler and only observers the thread its running on.
+
     // Clearing _last_Java_sp must be first.
-    OrderAccess::release();
+
     _last_Java_sp = nullptr;
-    // Fence?
-    OrderAccess::fence();
 
     _last_Java_pc = nullptr;
   }
 
   inline void set(intptr_t* sp, address pc) {
     _last_Java_pc = pc;
-
-    OrderAccess::release();
     _last_Java_sp = sp;
   }
 
   void copy(JavaFrameAnchor* src) {
-    // In order to make sure the transition state is valid for "this"
+    // No hardware barriers are necessary. All members are volatile and the profiler
+    // is run from a signal handler and only observers the thread its running on.
+
     // we must clear _last_Java_sp before copying the rest of the new data.
-    // Hack Alert: Temporary bugfix for 4717480/4721647
-    // To act like previous version (pd_cache_state) don't null _last_Java_sp
-    // unless the value is changing.
-    //
     if (_last_Java_sp != src->_last_Java_sp) {
-      OrderAccess::release();
       _last_Java_sp = nullptr;
-      OrderAccess::fence();
     }
     _last_Java_pc = src->_last_Java_pc;
     // Must be last so profiler will always see valid frame if has_last_frame() is true.
 
-    OrderAccess::release();
     _last_Java_sp = src->_last_Java_sp;
   }
 
@@ -80,7 +74,7 @@
   intptr_t* last_Java_fp(void)        { return nullptr; }
 
   intptr_t* last_Java_sp() const      { return _last_Java_sp; }
-  void set_last_Java_sp(intptr_t* sp) { OrderAccess::release(); _last_Java_sp = sp; }
+  void set_last_Java_sp(intptr_t* sp) { _last_Java_sp = sp; }
 
   address last_Java_pc(void)          { return _last_Java_pc; }
 

@@ -70,8 +70,13 @@ record MacBundle(Path root) {
         return contentsDir().resolve("Info.plist");
     }
 
-    static boolean isDirectoryMacBundle(Path dir) {
-        return new MacBundle(dir).isValid();
+    static Optional<MacBundle> fromPath(Path path) {
+        var bundle = new MacBundle(path);
+        if (bundle.isValid()) {
+            return Optional.of(bundle);
+        } else {
+            return Optional.empty();
+        }
     }
 
     static Optional<MacBundle> fromAppImageLayout(AppImageLayout layout) {

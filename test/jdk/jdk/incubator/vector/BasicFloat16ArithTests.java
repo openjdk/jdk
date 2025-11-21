@@ -408,11 +408,10 @@ public class BasicFloat16ArithTests {
         for(var testCase : testCases) {
             float arg =      testCase[0];
             float expected = testCase[1];
-            // Exponents are in-range for Float16
-            Float16 result =  valueOfExact(getExponent(valueOfExact(arg)));
+            float result =  (float)getExponent(valueOfExact(arg));
 
-            if (Float.compare(expected, result.floatValue()) != 0) {
-                checkFloat16(result, expected, "getExponent(" + arg + ")");
+            if (Float.compare(expected, result) != 0) {
+                checkFloat16(Float16.valueOf(result), expected, "getExponent(" + arg + ")");
             }
         }
         return;
@@ -444,8 +443,7 @@ public class BasicFloat16ArithTests {
         for(var testCase : testCases) {
             float arg =      testCase[0];
             float expected = testCase[1];
-            // Exponents are in-range for Float16
-            Float16 result =  ulp(valueOfExact(arg));
+            Float16 result = ulp(valueOfExact(arg));
 
             if (Float.compare(expected, result.floatValue()) != 0) {
                 checkFloat16(result, expected, "ulp(" + arg + ")");

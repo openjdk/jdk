@@ -38,6 +38,8 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
@@ -57,7 +59,7 @@ public final class CaptureStateUtil {
     // of combinators needed to form an adapted method handle.
     // The function is lazily computed.
     //
-    private static final Function<SegmentExtractorKey, MethodHandle> SEGMENT_EXTRACTION_HANDLE_CACHE;
+    private static final Map<SegmentExtractorKey, MethodHandle> SEGMENT_EXTRACTION_HANDLE_CACHE;
 
     static {
         final Set<SegmentExtractorKey> inputs = new HashSet<>();
@@ -77,7 +79,7 @@ public final class CaptureStateUtil {
             }
         };
 
-        SEGMENT_EXTRACTION_HANDLE_CACHE = StableValue.function(inputs, segmentExtractionHandle);
+        SEGMENT_EXTRACTION_HANDLE_CACHE = Map.ofLazy(inputs, segmentExtractionHandle);
     }
 
     // A key that holds both the `returnType` and the `stateName` needed to look up a
@@ -188,7 +190,10 @@ public final class CaptureStateUtil {
         final SegmentExtractorKey key = new SegmentExtractorKey(target, stateName);
 
         // ((int | long), MemorySegment)(int | long)
-        final MethodHandle segmentExtractor = SEGMENT_EXTRACTION_HANDLE_CACHE.apply(key);
+        final MethodHandle segmentExtractor = SEGMENT_EXTRACTION_HANDLE_CACHE.get(key);
+        if (segmentExtractor == null) {
+            throw new IllegalArgumentException("Input not allowed: " + key);
+        }
 
         // Make `target` specific adaptations of the basic handle
 
@@ -208,7 +213,7 @@ public final class CaptureStateUtil {
 
         // Use an `Arena` for the first argument instead and extract a segment from it.
         // (C0=Arena, C1-Cn)(int|long)
-        innerAdapted = MethodHandles.collectArguments(innerAdapted, 0, HANDLES_CACHE.apply(ALLOCATE));
+        innerAdapted = MethodHandles.collectArguments(innerAdapted, 0, HANDLES_CACHE.get(ALLOCATE));
 
         // Add an identity function for the result of the cleanup action.
         // ((int|long))(int|long)
@@ -221,7 +226,7 @@ public final class CaptureStateUtil {
         // cleanup action and invoke `Arena::close` when it is run. The `cleanup` handle
         // does not have to have all parameters. It can have zero or more.
         // (Throwable, (int|long), Arena)(int|long)
-        cleanup = MethodHandles.collectArguments(cleanup, 2, HANDLES_CACHE.apply(ARENA_CLOSE));
+        cleanup = MethodHandles.collectArguments(cleanup, 2, HANDLES_CACHE.get(ARENA_CLOSE));
 
         // Combine the `innerAdapted` and `cleanup` action into a try/finally block.
         // (Arena, C1-Cn)(int|long)
@@ -230,7 +235,7 @@ public final class CaptureStateUtil {
         // Acquire the arena from the global pool.
         // With this, we finally arrive at the intended method handle:
         // (C1-Cn)(int|long)
-        return MethodHandles.collectArguments(tryFinally, 0, HANDLES_CACHE.apply(ACQUIRE_ARENA));
+        return MethodHandles.collectArguments(tryFinally, 0, HANDLES_CACHE.get(ACQUIRE_ARENA));
     }
 
     private static MethodHandle makeSegmentExtractionHandle(SegmentExtractorKey segmentExtractorKey) {
@@ -260,15 +265,15 @@ public final class CaptureStateUtil {
         if (segmentExtractorKey.returnType().equals(int.class)) {
             // (int, MemorySegment)int
             return MethodHandles.guardWithTest(
-                    HANDLES_CACHE.apply(NON_NEGATIVE_INT),
-                    HANDLES_CACHE.apply(SUCCESS_INT),
-                    HANDLES_CACHE.apply(ERROR_INT).bindTo(intExtractor));
+                    HANDLES_CACHE.get(NON_NEGATIVE_INT),
+                    HANDLES_CACHE.get(SUCCESS_INT),
+                    HANDLES_CACHE.get(ERROR_INT).bindTo(intExtractor));
         } else {
             // (long, MemorySegment)long
             return MethodHandles.guardWithTest(
-                    HANDLES_CACHE.apply(NON_NEGATIVE_LONG),
-                    HANDLES_CACHE.apply(SUCCESS_LONG),
-                    HANDLES_CACHE.apply(ERROR_LONG).bindTo(intExtractor));
+                    HANDLES_CACHE.get(NON_NEGATIVE_LONG),
+                    HANDLES_CACHE.get(SUCCESS_LONG),
+                    HANDLES_CACHE.get(ERROR_LONG).bindTo(intExtractor));
         }
     }
 
@@ -341,8 +346,8 @@ public final class CaptureStateUtil {
         }
     };
 
-    private static final IntFunction<MethodHandle> HANDLES_CACHE =
-            StableValue.intFunction(ARENA_CLOSE + 1, UNDERLYING_MAKE_HANDLE);
+    private static final List<MethodHandle> HANDLES_CACHE =
+            List.ofLazy(ARENA_CLOSE + 1, UNDERLYING_MAKE_HANDLE);
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 

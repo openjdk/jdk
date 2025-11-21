@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2025 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="kek"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="kek">Qʼeqchiʼ</language>
+		</languages>
+		<territories>
+			<territory type="001">Ruchichʼochʼ</territory>
+			<territory type="UN">Molam Rehebʼ Ninqi Tenamit</territory>
+			<territory type="ZZ">Ebʼ li Naʼajej Moko Nawbʼilebʼ Ta</territory>
+		</territories>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a {aa} {bʼ} c {ch} {ch’} e {ee} h i {ii} j k {k’} l m n o {oo} p q {q’} r s t {t’} {tz} {tz’} u {uu} w x y]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[d f g v z]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‑ , ; \: ! ? . … ’ “” ( ) \[ \] \{ \} /]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1">Xbʼeen Po</month>
+							<month type="2">Xkabʼ Po</month>
+							<month type="3">Rox Po</month>
+							<month type="4">Xkaa Po</month>
+							<month type="5">Roʼ Po</month>
+							<month type="6">Xwaq Po</month>
+							<month type="7">Xwuuq Po</month>
+							<month type="8">Xwaqxaq Po</month>
+							<month type="9">Xbʼelee Po</month>
+							<month type="10">Xlajee Po</month>
+							<month type="11">Xjunlaj Po</month>
+							<month type="12">Xkabʼlaj Po</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="wide">
+							<day type="sun">Doʼkutan</day>
+							<day type="mon">LuʼKutan</day>
+							<day type="tue">MarʼKutan</day>
+							<day type="wed">MerʼKutan</day>
+							<day type="thu">JueʼKutan</day>
+							<day type="fri">VierʼKutan</day>
+							<day type="sat">SabʼKutan</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">Eqʼela</dayPeriod>
+							<dayPeriod type="pm">Ewu</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="yMd">dd-MM-y</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+	</dates>
+</ldml>

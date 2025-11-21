@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,21 +59,38 @@ public class Kernel implements Cloneable {
      * @param width         width of the kernel
      * @param height        height of the kernel
      * @param data          kernel data in row major order
+     * @throws IllegalArgumentException if {@code data} is null
+     * @throws IllegalArgumentException if {@code width} or {@code height}
+     *         is not positive
+     * @throws IllegalArgumentException if product of {@code width} and
+     *         {@code height} overflows an int
      * @throws IllegalArgumentException if the length of {@code data}
      *         is less than the product of {@code width} and
      *         {@code height}
      */
     public Kernel(int width, int height, float[] data) {
-        this.width  = width;
-        this.height = height;
-        this.xOrigin  = (width-1)>>1;
-        this.yOrigin  = (height-1)>>1;
-        int len = width*height;
+        if (data == null) {
+            throw new IllegalArgumentException("Data must not be null");
+        }
+        if ((width <= 0) || (height <= 0)) {
+            throw new IllegalArgumentException("Invalid width or height");
+        }
+        int len = 0;
+        try {
+            len = Math.multiplyExact(width, height);
+        } catch (ArithmeticException e) {
+            throw new IllegalArgumentException("width * height results in" +
+                " integer overflow");
+        }
         if (data.length < len) {
             throw new IllegalArgumentException("Data array too small "+
                                                "(is "+data.length+
                                                " and should be "+len);
         }
+        this.width  = width;
+        this.height = height;
+        this.xOrigin  = (width - 1) >> 1;
+        this.yOrigin  = (height - 1) >> 1;
         this.data = new float[len];
         System.arraycopy(data, 0, this.data, 0, len);
 

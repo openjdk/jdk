@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import jdk.internal.misc.CDS;
 
 /**
  * This class extends {@code ClassLoader} with additional support for defining
@@ -243,6 +244,20 @@ public class SecureClassLoader extends ClassLoader {
      * Called by the VM, during -Xshare:dump
      */
     private void resetArchivedStates() {
-        pdcache.clear();
+        if (CDS.isDumpingAOTLinkedClasses()) {
+            for (CodeSourceKey key : pdcache.keySet()) {
+                if (key.cs.getCodeSigners() != null) {
+                    // We don't archive any signed classes, so we don't need to cache their ProtectionDomains.
+                    pdcache.remove(key);
+                }
+            }
+            if (System.getProperty("cds.debug.archived.protection.domains") != null) {
+                for (CodeSourceKey key : pdcache.keySet()) {
+                    System.out.println("Archiving ProtectionDomain " + key.cs + " for " + this);
+                }
+            }
+        } else {
+            pdcache.clear();
+        }
     }
 }

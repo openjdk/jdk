@@ -22,9 +22,8 @@
  *
  */
 
-#include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsEnumKlass.hpp"
-#include "cds/heapShared.hpp"
+#include "cds/heapShared.inline.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "memory/resourceArea.hpp"
@@ -40,7 +39,9 @@ bool CDSEnumKlass::is_enum_obj(oop orig_obj) {
          InstanceKlass::cast(k)->is_enum_subclass();
 }
 
-// -- Handling of Enum objects
+// !!! This is legacy support for enum classes before JEP 483. This file is not used when
+// !!! CDSConfig::is_initing_classes_at_dump_time()==true.
+//
 // Java Enum classes have synthetic <clinit> methods that look like this
 //     enum MyEnum {FOO, BAR}
 //     MyEnum::<clinint> {
@@ -62,6 +63,7 @@ bool CDSEnumKlass::is_enum_obj(oop orig_obj) {
 void CDSEnumKlass::handle_enum_obj(int level,
                                    KlassSubGraphInfo* subgraph_info,
                                    oop orig_obj) {
+  assert(!CDSConfig::is_initing_classes_at_dump_time(), "only for legacy support of enums");
   assert(level > 1, "must never be called at the first (outermost) level");
   assert(is_enum_obj(orig_obj), "must be");
 
@@ -106,7 +108,7 @@ void CDSEnumKlass::archive_static_field(int level, KlassSubGraphInfo* subgraph_i
 }
 
 bool CDSEnumKlass::initialize_enum_klass(InstanceKlass* k, TRAPS) {
-  if (!ArchiveHeapLoader::is_in_use()) {
+  if (!HeapShared::is_archived_heap_in_use()) {
     return false;
   }
 
@@ -118,14 +120,14 @@ bool CDSEnumKlass::initialize_enum_klass(InstanceKlass* k, TRAPS) {
     log_info(aot, heap)("Initializing Enum class: %s", k->external_name());
   }
 
-  oop mirror = k->java_mirror();
   int i = 0;
   for (JavaFieldStream fs(k); !fs.done(); fs.next()) {
     if (fs.access_flags().is_static()) {
       int root_index = info->enum_klass_static_field_root_index_at(i++);
       fieldDescriptor& fd = fs.field_descriptor();
       assert(fd.field_type() == T_OBJECT || fd.field_type() == T_ARRAY, "must be");
-      mirror->obj_field_put(fd.offset(), HeapShared::get_root(root_index, /*clear=*/true));
+      oop root_object = HeapShared::get_root(root_index, /*clear=*/true);
+      k->java_mirror()->obj_field_put(fd.offset(), root_object);
     }
   }
   return true;

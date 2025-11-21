@@ -224,12 +224,15 @@ CompileTaskWrapper::CompileTaskWrapper(CompileTask* task) {
 
 CompileTaskWrapper::~CompileTaskWrapper() {
   CompilerThread* thread = CompilerThread::current();
+
+  // First, disarm the timeout. This still relies on the underlying task.
+  thread->timeout()->disarm();
+
   CompileTask* task = thread->task();
   CompileLog*  log  = thread->log();
   if (log != nullptr && !task->is_unloaded())  task->log_task_done(log);
   thread->set_task(nullptr);
   thread->set_env(nullptr);
-  thread->timeout()->disarm();
   if (task->is_blocking()) {
     bool free_task = false;
     {
@@ -1061,7 +1064,7 @@ void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
   if (new_c2_count <= old_c2_count && new_c1_count <= old_c1_count) return;
 
   // Now, we do the more expensive operations.
-  size_t free_memory = 0;
+  physical_memory_size_type free_memory = 0;
   // Return value ignored - defaulting to 0 on failure.
   (void)os::free_memory(free_memory);
   // If SegmentedCodeCache is off, both values refer to the single heap (with type CodeBlobType::All).
@@ -2346,6 +2349,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       while (repeat_compilation_count > 0) {
         ResourceMark rm(thread);
         task->print_ul("NO CODE INSTALLED");
+        thread->timeout()->reset();
         comp->compile_method(&ci_env, target, osr_bci, false, directive);
         repeat_compilation_count--;
       }

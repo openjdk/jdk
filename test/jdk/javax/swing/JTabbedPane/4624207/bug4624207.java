@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,25 +25,26 @@
  * @test
  * @key headful
  * @bug 4624207
+ * @requires (os.family != "mac")
  * @summary JTabbedPane mnemonics don't work from outside the tabbed pane
- * @author Oleg Mokhovikov
- * @library /test/lib
- * @library ../../regtesthelpers
- * @build Util jdk.test.lib.Platform
  * @run main bug4624207
  */
-import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import java.awt.*;
+
+import java.awt.BorderLayout;
+import java.awt.Robot;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
 
-import jdk.test.lib.Platform;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JTabbedPane;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 public class bug4624207 implements ChangeListener, FocusListener {
-
     private static volatile boolean stateChanged = false;
     private static volatile boolean focusGained = false;
     private static JTextField txtField;
@@ -71,51 +72,39 @@ public class bug4624207 implements ChangeListener, FocusListener {
             Robot robot = new Robot();
             robot.setAutoDelay(50);
 
-            SwingUtilities.invokeAndWait(new Runnable() {
-
-                public void run() {
-                    createAndShowGUI();
-                }
-            });
-
+            SwingUtilities.invokeAndWait(() -> createAndShowGUI());
             robot.waitForIdle();
-
-            SwingUtilities.invokeAndWait(new Runnable() {
-
-                public void run() {
-                    txtField.requestFocus();
-                }
-            });
-
+            SwingUtilities.invokeAndWait(() -> txtField.requestFocus());
             robot.waitForIdle();
 
             if (!focusGained) {
                 throw new RuntimeException("Couldn't gain focus for text field");
             }
 
-            SwingUtilities.invokeAndWait(new Runnable() {
-
-                public void run() {
-                    tab.addChangeListener((ChangeListener) listener);
-                    txtField.removeFocusListener((FocusListener) listener);
-                }
+            SwingUtilities.invokeAndWait(() -> {
+                tab.addChangeListener((ChangeListener) listener);
+                txtField.removeFocusListener((FocusListener) listener);
             });
 
             robot.waitForIdle();
 
-            if (Platform.isOSX()) {
-                Util.hitKeys(robot, KeyEvent.VK_CONTROL, KeyEvent.VK_ALT, KeyEvent.VK_B);
-            } else {
-                Util.hitKeys(robot, KeyEvent.VK_ALT, KeyEvent.VK_B);
-            }
+            robot.keyPress(KeyEvent.VK_ALT);
+            robot.keyPress(KeyEvent.VK_B);
+            robot.keyRelease(KeyEvent.VK_B);
+            robot.keyRelease(KeyEvent.VK_ALT);
 
             robot.waitForIdle();
 
             if (!stateChanged || tab.getSelectedIndex() != 1) {
-                throw new RuntimeException("JTabbedPane mnemonics don't work from outside the tabbed pane");
+                throw new RuntimeException("JTabbedPane mnemonics don't " +
+                        "work from outside the tabbed pane");
             }
         } finally {
-            if (frame != null) SwingUtilities.invokeAndWait(() ->  frame.dispose());
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
     }
 

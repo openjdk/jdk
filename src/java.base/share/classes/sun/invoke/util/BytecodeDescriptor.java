@@ -37,38 +37,50 @@ public class BytecodeDescriptor {
 
     private BytecodeDescriptor() { }  // cannot instantiate
 
-    /**
-     * @param loader the class loader in which to look up the types (null means
-     *               bootstrap class loader)
-     */
-    public static List<Class<?>> parseMethod(String bytecodeSignature, ClassLoader loader) {
-        return parseMethod(bytecodeSignature, 0, bytecodeSignature.length(), loader);
+    /// Parses and validates a field descriptor string in the {@code loader} context.
+    ///
+    /// @param descriptor a field descriptor string
+    /// @param loader the class loader in which to look up the types (null means
+    ///               bootstrap class loader)
+    /// @throws IllegalArgumentException if the descriptor is invalid
+    /// @throws TypeNotPresentException if the descriptor is valid, but
+    ///         the class cannot be found by the loader
+    public static Class<?> parseClass(String descriptor, ClassLoader loader) {
+        int[] i = {0};
+        var ret = parseSig(descriptor, i, descriptor.length(), loader);
+        if (i[0] != descriptor.length() || ret == null) {
+            parseError("not a class descriptor", descriptor);
+        }
+        return ret;
     }
 
-    /**
-     * @param loader the class loader in which to look up the types (null means
-     *               bootstrap class loader)
-     */
-    static List<Class<?>> parseMethod(String bytecodeSignature,
-            int start, int end, ClassLoader loader) {
-        String str = bytecodeSignature;
-        int[] i = {start};
+    /// Parses and validates a method descriptor string in the {@code loader} context.
+    ///
+    /// @param descriptor a method descriptor string
+    /// @param loader the class loader in which to look up the types (null means
+    ///               bootstrap class loader)
+    /// @throws IllegalArgumentException if the descriptor is invalid
+    /// @throws TypeNotPresentException if a reference type cannot be found by
+    ///         the loader (before the descriptor is found invalid)
+    public static List<Class<?>> parseMethod(String descriptor, ClassLoader loader) {
+        int end = descriptor.length(); // implicit null check
+        int[] i = {0};
         var ptypes = new ArrayList<Class<?>>();
-        if (i[0] < end && str.charAt(i[0]) == '(') {
+        if (i[0] < end && descriptor.charAt(i[0]) == '(') {
             ++i[0];  // skip '('
-            while (i[0] < end && str.charAt(i[0]) != ')') {
-                Class<?> pt = parseSig(str, i, end, loader);
+            while (i[0] < end && descriptor.charAt(i[0]) != ')') {
+                Class<?> pt = parseSig(descriptor, i, end, loader);
                 if (pt == null || pt == void.class)
-                    parseError(str, "bad argument type");
+                    parseError(descriptor, "bad argument type");
                 ptypes.add(pt);
             }
             ++i[0];  // skip ')'
         } else {
-            parseError(str, "not a method type");
+            parseError(descriptor, "not a method type");
         }
-        Class<?> rtype = parseSig(str, i, end, loader);
+        Class<?> rtype = parseSig(descriptor, i, end, loader);
         if (rtype == null || i[0] != end)
-            parseError(str, "bad return type");
+            parseError(descriptor, "bad return type");
         ptypes.add(rtype);
         return ptypes;
     }
@@ -77,16 +89,39 @@ public class BytecodeDescriptor {
         throw new IllegalArgumentException("bad signature: "+str+": "+msg);
     }
 
-    /**
-     * @param loader the class loader in which to look up the types (null means
-     *               bootstrap class loader)
-     */
+    /// Parse a single type in a descriptor. Results can be:
+    ///
+    /// - A `Class` for successful parsing
+    /// - `null` for malformed descriptor format
+    /// - Throwing a [TypeNotPresentException] for valid class name,
+    ///   but class cannot be found
+    ///
+    /// @param str contains the string to parse
+    /// @param i cursor for the next token in the string, modified in-place
+    /// @param end the limit for parsing
+    /// @param loader the class loader in which to look up the types (null means
+    ///               bootstrap class loader)
+    ///
     private static Class<?> parseSig(String str, int[] i, int end, ClassLoader loader) {
         if (i[0] == end)  return null;
         char c = str.charAt(i[0]++);
         if (c == 'L') {
-            int begc = i[0], endc = str.indexOf(';', begc);
-            if (endc < 0)  return null;
+            int begc = i[0];
+            int identifierStart = begc;
+            int endc;
+            while (true) {
+                int next = nextNonIdentifier(str, identifierStart, end);
+                if (identifierStart == next || next >= end) return null;  // Empty name segment, or the end
+                char ch = str.charAt(next);
+                if (ch == ';') {
+                    endc = next;
+                    break;
+                } else if (ch == '/') {
+                    identifierStart = next + 1;  // Next name segment
+                } else {
+                    return null;  // Bad char [ or .
+                }
+            }
             i[0] = endc+1;
             String name = str.substring(begc, endc).replace('/', '.');
             try {
@@ -107,8 +142,32 @@ public class BytecodeDescriptor {
             }
             return t;
         } else {
-            return Wrapper.forBasicType(c).primitiveType();
+            Wrapper w;
+            try {
+                w = Wrapper.forBasicType(c);
+            } catch (IllegalArgumentException ex) {
+                // Our reporting has better error message
+                return null;
+            }
+            return w.primitiveType();
         }
+    }
+
+    private static final int CHECK_OFFSET = 32;
+    private static final long NON_IDENTIFIER_MASK = (1L << ('.' - CHECK_OFFSET))
+            | (1L << ('/' - CHECK_OFFSET))
+            | (1L << (';' - CHECK_OFFSET))
+            | (1L << ('[' - CHECK_OFFSET));
+
+    private static int nextNonIdentifier(String str, int index, int end) {
+        while (index < end) {
+            int check = str.charAt(index) - CHECK_OFFSET;
+            if ((check & -Long.SIZE) == 0 && (NON_IDENTIFIER_MASK & (1L << check)) != 0) {
+                break;
+            }
+            index++;
+        }
+        return index;
     }
 
     public static String unparse(Class<?> type) {

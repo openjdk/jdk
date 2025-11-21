@@ -189,6 +189,12 @@ class LinkInfo : public StackObj {
   void         print()  PRODUCT_RETURN;
 };
 
+enum class ClassInitMode {
+  dont_init,
+  init,
+  init_preemptable
+};
+
 // Link information for getfield/putfield & getstatic/putstatic bytecodes
 // is represented using a fieldDescriptor.
 
@@ -267,7 +273,7 @@ class LinkResolver: AllStatic {
 
   // runtime resolving from constant pool
   static void resolve_invokestatic   (CallInfo& result,
-                                      const constantPoolHandle& pool, int index, TRAPS);
+                                      const constantPoolHandle& pool, int index, ClassInitMode mode, TRAPS);
   static void resolve_invokespecial  (CallInfo& result, Handle recv,
                                       const constantPoolHandle& pool, int index, TRAPS);
   static void resolve_invokevirtual  (CallInfo& result, Handle recv,
@@ -295,22 +301,21 @@ class LinkResolver: AllStatic {
                                    int index,
                                    const methodHandle& method,
                                    Bytecodes::Code byte,
-                                   bool initialize_class, TRAPS);
+                                   ClassInitMode mode, TRAPS);
   static void resolve_field_access(fieldDescriptor& result,
                                    const constantPoolHandle& pool,
                                    int index,
                                    const methodHandle& method,
                                    Bytecodes::Code byte, TRAPS) {
-    resolve_field_access(result, pool, index, method, byte,
-                         /* initialize_class*/true, THREAD);
+    resolve_field_access(result, pool, index, method, byte, ClassInitMode::init, THREAD);
   }
   static void resolve_field(fieldDescriptor& result, const LinkInfo& link_info,
                             Bytecodes::Code access_kind,
-                            bool initialize_class, TRAPS);
+                            ClassInitMode mode, TRAPS);
 
   static void resolve_static_call   (CallInfo& result,
                                      const LinkInfo& link_info,
-                                     bool initialize_klass, TRAPS);
+                                     ClassInitMode mode, TRAPS);
   static void resolve_special_call  (CallInfo& result,
                                      Handle recv,
                                      const LinkInfo& link_info,
@@ -328,6 +333,7 @@ class LinkResolver: AllStatic {
 
   static void cds_resolve_virtual_call  (CallInfo& result, const LinkInfo& link_info, TRAPS);
   static void cds_resolve_interface_call(CallInfo& result, const LinkInfo& link_info, TRAPS);
+  static void cds_resolve_static_call(CallInfo& result, const LinkInfo& link_info, TRAPS);
   static void cds_resolve_special_call  (CallInfo& result, const LinkInfo& link_info, TRAPS);
 
   // same as above for compile-time resolution; but returns null handle instead of throwing
@@ -352,7 +358,12 @@ class LinkResolver: AllStatic {
   // runtime resolving from constant pool
   static void resolve_invoke(CallInfo& result, Handle recv,
                              const constantPoolHandle& pool, int index,
-                             Bytecodes::Code byte, TRAPS);
+                             Bytecodes::Code byte, ClassInitMode static_mode, TRAPS);
+  static void resolve_invoke(CallInfo& result, Handle recv,
+                             const constantPoolHandle& pool, int index,
+                             Bytecodes::Code byte, TRAPS) {
+    resolve_invoke(result, recv, pool, index, byte, ClassInitMode::init, THREAD);
+  }
 
   // runtime resolving from attached method
   static void resolve_invoke(CallInfo& result, Handle& recv,

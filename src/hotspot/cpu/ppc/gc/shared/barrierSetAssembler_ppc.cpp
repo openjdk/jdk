@@ -193,14 +193,19 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register t
 
   // Low order half of 64 bit value is currently used.
   __ ld(R0, in_bytes(bs_nm->thread_disarmed_guard_value_offset()), R16_thread);
-  __ cmpw(CR0, R0, tmp);
 
-  // Load stub address using toc (fixed instruction size, unlike load_const_optimized)
-  __ calculate_address_from_global_toc(tmp, StubRoutines::method_entry_barrier(),
-                                       true, true, false); // 2 instructions
-  __ mtctr(tmp);
+  if (TrapBasedNMethodEntryBarriers) {
+    __ tw(Assembler::traptoLessThanUnsigned | Assembler::traptoGreaterThanUnsigned, R0, tmp);
+  } else {
+    __ cmpw(CR0, R0, tmp);
 
-  __ bnectrl(CR0);
+    // Load stub address using toc (fixed instruction size, unlike load_const_optimized)
+    __ calculate_address_from_global_toc(tmp, StubRoutines::method_entry_barrier(),
+                                         true, true, false); // 2 instructions
+    __ mtctr(tmp);
+
+    __ bnectrl(CR0);
+  }
 
   // Oops may have been changed. Make those updates observable.
   // "isync" can serve both, data and instruction patching.

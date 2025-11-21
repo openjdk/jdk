@@ -55,8 +55,8 @@ CompiledICLocker::~CompiledICLocker() {
   }
 }
 
-bool CompiledICLocker::is_safe(nmethod* method) {
-  return CompiledICProtectionBehaviour::current()->is_safe(method);
+bool CompiledICLocker::is_safe(nmethod* nm) {
+  return CompiledICProtectionBehaviour::current()->is_safe(nm);
 }
 
 bool CompiledICLocker::is_safe(address code) {

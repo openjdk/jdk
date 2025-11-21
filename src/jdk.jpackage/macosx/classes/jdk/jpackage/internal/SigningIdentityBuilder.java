@@ -82,7 +82,7 @@ final class SigningIdentityBuilder {
         return this;
     }
 
-    Optional<SigningConfig> create() throws ConfigException {
+    Optional<SigningConfig> create() {
         if (signingIdentity == null && certificateSelector == null) {
             return Optional.empty();
         } else {
@@ -90,11 +90,11 @@ final class SigningIdentityBuilder {
         }
     }
 
-    private Optional<Keychain> validatedKeychain() throws ConfigException {
+    private Optional<Keychain> validatedKeychain() {
         return Optional.ofNullable(keychain).map(Keychain::new);
     }
 
-    private SigningIdentity validatedSigningIdentity() throws ConfigException {
+    private SigningIdentity validatedSigningIdentity() {
         if (signingIdentity != null) {
             return new SigningIdentityImpl(signingIdentity);
         }
@@ -113,14 +113,16 @@ final class SigningIdentityBuilder {
 
         final var signingIdentityNames = certificateSelector.signingIdentities();
 
+        // Look up for the exact match.
         var matchingCertificates = mappedCertficates.stream().filter(e -> {
             return signingIdentityNames.contains(e.getKey());
         }).map(Map.Entry::getValue).toList();
 
         if (matchingCertificates.isEmpty()) {
+            // No exact matches found, look up for substrings.
             matchingCertificates = mappedCertficates.stream().filter(e -> {
                 return signingIdentityNames.stream().anyMatch(filter -> {
-                    return filter.startsWith(e.getKey());
+                    return e.getKey().startsWith(filter);
                 });
             }).map(Map.Entry::getValue).toList();
         }
@@ -140,7 +142,7 @@ final class SigningIdentityBuilder {
     }
 
     private static X509Certificate selectSigningIdentity(List<X509Certificate> certs,
-            CertificateSelector certificateSelector, Optional<Keychain> keychain) throws ConfigException {
+            CertificateSelector certificateSelector, Optional<Keychain> keychain) {
         Objects.requireNonNull(certificateSelector);
         Objects.requireNonNull(keychain);
         switch (certs.size()) {
@@ -154,9 +156,10 @@ final class SigningIdentityBuilder {
                 return certs.getFirst();
             }
             default -> {
-                Log.error(I18N.format("error.multiple.certs.found", certificateSelector.signingIdentities().getFirst(),
-                        keychain.map(Keychain::name).orElse("")));
-                return certs.getFirst();
+                throw I18N.buildConfigException("error.multiple.certs.found",
+                        certificateSelector.signingIdentities().getFirst(),
+                        keychain.map(Keychain::name).orElse("")
+                ).create();
             }
         }
     }

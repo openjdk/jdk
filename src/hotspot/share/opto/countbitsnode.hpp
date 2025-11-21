@@ -80,6 +80,7 @@ class PopCountINode : public CountBitsNode {
   public:
   PopCountINode(Node* in1) : CountBitsNode(in1) {}
   virtual int Opcode() const;
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //---------- PopCountLNode -----------------------------------------------------
@@ -88,6 +89,7 @@ class PopCountLNode : public CountBitsNode {
   public:
   PopCountLNode(Node* in1) : CountBitsNode(in1) {}
   virtual int Opcode() const;
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 

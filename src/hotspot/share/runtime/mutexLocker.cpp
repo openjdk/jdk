@@ -79,6 +79,7 @@ Monitor* CompileThread_lock           = nullptr;
 Monitor* Compilation_lock             = nullptr;
 Mutex*   CompileStatistics_lock       = nullptr;
 Mutex*   DirectivesStack_lock         = nullptr;
+Monitor* AOTHeapLoading_lock          = nullptr;
 Monitor* Terminator_lock              = nullptr;
 Monitor* InitCompleted_lock           = nullptr;
 Monitor* BeforeExit_lock              = nullptr;
@@ -98,15 +99,15 @@ Mutex*   PerfDataManager_lock         = nullptr;
 
 #if INCLUDE_G1GC
 Monitor* G1CGC_lock                   = nullptr;
-Mutex*   G1DetachedRefinementStats_lock = nullptr;
 Mutex*   G1FreeList_lock              = nullptr;
 Mutex*   G1MarkStackChunkList_lock    = nullptr;
 Mutex*   G1MarkStackFreeList_lock     = nullptr;
 Monitor* G1OldGCCount_lock            = nullptr;
 Mutex*   G1OldSets_lock               = nullptr;
-Mutex*   G1Uncommit_lock              = nullptr;
+Mutex*   G1ReviseYoungLength_lock     = nullptr;
 Monitor* G1RootRegionScan_lock        = nullptr;
 Mutex*   G1RareEvent_lock             = nullptr;
+Mutex*   G1Uncommit_lock              = nullptr;
 #endif
 
 Mutex*   Management_lock              = nullptr;
@@ -211,7 +212,6 @@ void mutex_init() {
 #if INCLUDE_G1GC
   if (UseG1GC) {
     MUTEX_DEFN(G1CGC_lock                    , PaddedMonitor, nosafepoint);
-    MUTEX_DEFN(G1DetachedRefinementStats_lock, PaddedMutex  , nosafepoint-2);
     MUTEX_DEFN(G1FreeList_lock               , PaddedMutex  , service-1);
     MUTEX_DEFN(G1MarkStackChunkList_lock     , PaddedMutex  , nosafepoint);
     MUTEX_DEFN(G1MarkStackFreeList_lock      , PaddedMutex  , nosafepoint);
@@ -331,7 +331,9 @@ void mutex_init() {
 
   MUTEX_DEFL(Threads_lock                   , PaddedMonitor, CompileThread_lock, true);
   MUTEX_DEFL(Compile_lock                   , PaddedMutex  , MethodCompileQueue_lock);
-  MUTEX_DEFL(JNICritical_lock               , PaddedMonitor, AdapterHandlerLibrary_lock); // used for JNI critical regions
+  MUTEX_DEFL(Module_lock                    , PaddedMutex  , AdapterHandlerLibrary_lock);
+  MUTEX_DEFL(AOTHeapLoading_lock            , PaddedMonitor, Module_lock);
+  MUTEX_DEFL(JNICritical_lock               , PaddedMonitor, AOTHeapLoading_lock); // used for JNI critical regions
   MUTEX_DEFL(Heap_lock                      , PaddedMonitor, JNICritical_lock);
 
   MUTEX_DEFL(PerfDataMemAlloc_lock          , PaddedMutex  , Heap_lock);
@@ -341,8 +343,9 @@ void mutex_init() {
 
 #if INCLUDE_G1GC
   if (UseG1GC) {
-    MUTEX_DEFL(G1OldGCCount_lock             , PaddedMonitor, Threads_lock, true);
-    MUTEX_DEFL(G1RareEvent_lock              , PaddedMutex  , Threads_lock, true);
+    MUTEX_DEFL(G1OldGCCount_lock            , PaddedMonitor, Threads_lock, true);
+    MUTEX_DEFL(G1RareEvent_lock             , PaddedMutex  , Threads_lock, true);
+    MUTEX_DEFL(G1ReviseYoungLength_lock     , PaddedMutex  , Threads_lock, true);
   }
 #endif
 
@@ -353,7 +356,6 @@ void mutex_init() {
     MUTEX_DEFL(PSOldGenExpand_lock          , PaddedMutex  , Heap_lock, true);
   }
 #endif
-  MUTEX_DEFL(Module_lock                    , PaddedMutex  ,  ClassLoaderDataGraph_lock);
   MUTEX_DEFL(SystemDictionary_lock          , PaddedMonitor, Module_lock);
 #if INCLUDE_JVMCI
   // JVMCIRuntime_lock must be acquired before JVMCI_lock to avoid deadlock

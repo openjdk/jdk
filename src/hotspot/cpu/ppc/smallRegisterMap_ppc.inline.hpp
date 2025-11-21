@@ -28,18 +28,18 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/registerMap.hpp"
 
+class SmallRegisterMap;
+
 // Java frames don't have callee saved registers, so we can use a smaller RegisterMap
-class SmallRegisterMap {
-  constexpr SmallRegisterMap() = default;
-  ~SmallRegisterMap() = default;
-  NONCOPYABLE(SmallRegisterMap);
+template <bool IncludeArgs>
+class SmallRegisterMapType {
+  friend SmallRegisterMap;
 
-public:
-  static const SmallRegisterMap* instance() {
-    static constexpr SmallRegisterMap the_instance{};
-    return &the_instance;
-  }
+  constexpr SmallRegisterMapType() = default;
+  ~SmallRegisterMapType() = default;
+  NONCOPYABLE(SmallRegisterMapType);
 
+ public:
   // as_RegisterMap is used when we didn't want to templatize and abstract over RegisterMap type to support SmallRegisterMap
   // Consider enhancing SmallRegisterMap to support those cases
   const RegisterMap* as_RegisterMap() const { return nullptr; }
@@ -61,14 +61,14 @@ public:
 
   JavaThread* thread() const {
   #ifndef ASSERT
-    guarantee (false, "");
+    guarantee (false, "unreachable");
   #endif
     return nullptr;
   }
 
   bool update_map()    const { return false; }
   bool walk_cont()     const { return false; }
-  bool include_argument_oops() const { return false; }
+  bool include_argument_oops() const { return IncludeArgs; }
   void set_include_argument_oops(bool f)  {}
   bool in_cont()       const { return false; }
   stackChunkHandle stack_chunk() const { return stackChunkHandle(); }
@@ -76,7 +76,7 @@ public:
 #ifdef ASSERT
   bool should_skip_missing() const  { return false; }
   VMReg find_register_spilled_here(void* p, intptr_t* sp) {
-    Unimplemented();
+    assert(false, "Shouldn't reach here! p:" PTR_FORMAT " sp:" PTR_FORMAT, p2i(p), p2i(p));
     return nullptr;
   }
   void print() const { print_on(tty); }

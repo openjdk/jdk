@@ -43,8 +43,10 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 
+import jdk.internal.net.http.common.Utils;
 import org.testng.annotations.Test;
 
+import static java.net.http.HttpClient.Version.HTTP_3;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
@@ -59,6 +61,9 @@ public class NoBodyPartTwo extends AbstractNoBody {
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null) {
                 client = newHttpClient(sameClient);
+                if (!sameClient && version(uri) == HTTP_3) {
+                    headRequest(client);
+                }
             }
             try (var cl = new CloseableClient(client, sameClient)) {
                 HttpRequest req = newRequestBuilder(uri)
@@ -67,7 +72,7 @@ public class NoBodyPartTwo extends AbstractNoBody {
                 Consumer<Optional<byte[]>> consumer = oba -> {
                     consumerHasBeenCalled = true;
                     oba.ifPresent(ba -> fail("Unexpected non-empty optional: "
-                            + asString(ByteBuffer.wrap(ba))));
+                            + Utils.asString(ByteBuffer.wrap(ba))));
                 };
                 consumerHasBeenCalled = false;
                 client.send(req, BodyHandlers.ofByteArrayConsumer(consumer));
@@ -83,6 +88,9 @@ public class NoBodyPartTwo extends AbstractNoBody {
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null) {
                 client = newHttpClient(sameClient);
+                if (!sameClient && version(uri) == HTTP_3) {
+                    headRequest(client);
+                }
             }
             try (var cl = new CloseableClient(client, sameClient)) {
                 HttpRequest req = newRequestBuilder(uri)
@@ -102,6 +110,9 @@ public class NoBodyPartTwo extends AbstractNoBody {
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null) {
                 client = newHttpClient(sameClient);
+                if (!sameClient && version(uri) == HTTP_3) {
+                    headRequest(client);
+                }
             }
             try (var cl = new CloseableClient(client, sameClient)) {
                 HttpRequest req = newRequestBuilder(uri)
@@ -122,6 +133,9 @@ public class NoBodyPartTwo extends AbstractNoBody {
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null) {
                 client = newHttpClient(sameClient);
+                if (!sameClient && version(uri) == HTTP_3) {
+                    headRequest(client);
+                }
             }
             try (var cl = new CloseableClient(client, sameClient)) {
                 HttpRequest req = newRequestBuilder(uri)

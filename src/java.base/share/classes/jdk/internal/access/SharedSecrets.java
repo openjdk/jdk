@@ -25,6 +25,7 @@
 
 package jdk.internal.access;
 
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.Stable;
 
 import javax.crypto.SealedObject;
@@ -58,8 +59,20 @@ import javax.security.auth.x500.X500Principal;
  * increased complexity and lack of sustainability.
  * Use this only as a last resort!
  * </strong>
+ *
+ * <p> Notes on the @AOTSafeClassInitializer annotation:
+ *
+ * <p>All static fields in SharedSecrets that are initialized in the AOT
+ * assembly phase must be stateless (as checked by the HotSpot C++ class
+ * CDSHeapVerifier::SharedSecretsAccessorFinder) so they can be safely
+ * stored in the AOT cache.
+ *
+ * <p>Static fields such as javaObjectInputFilterAccess point to a Lambda
+ * which is not stateless. The AOT assembly phase must not execute any Java
+ * code that would lead to the initialization of such fields, or else the AOT
+ * cache creation will fail.
  */
-
+@AOTSafeClassInitializer
 public class SharedSecrets {
     // This field is not necessarily stable
     private static JavaAWTFontAccess javaAWTFontAccess;

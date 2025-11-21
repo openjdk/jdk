@@ -39,7 +39,8 @@
 
 /*
  * @test id=DumpThreadsBeforeDetach
- * @requires os.family != "windows" & os.family != "aix"
+ * @comment Temporarily exclude on Musl-C debug until JDK-8366133 is fixed.
+ * @requires os.family != "windows" & os.family != "aix" & (!vm.musl | !vm.debug)
  * @run main/othervm/native MonitorWithDeadObjectTest 1
  */
 

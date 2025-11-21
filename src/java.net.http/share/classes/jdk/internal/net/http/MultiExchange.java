@@ -29,7 +29,9 @@ import java.io.IOError;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.ConnectException;
+import java.net.http.HttpClient.Version;
 import java.net.http.HttpConnectTimeoutException;
+import java.net.http.StreamLimitException;
 import java.time.Duration;
 import java.util.List;
 import java.util.ListIterator;
@@ -38,8 +40,6 @@ import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -62,6 +62,8 @@ import jdk.internal.net.http.common.ConnectionExpiredException;
 import jdk.internal.net.http.common.Utils;
 import static jdk.internal.net.http.common.MinimalFuture.completedFuture;
 import static jdk.internal.net.http.common.MinimalFuture.failedFuture;
+import static jdk.internal.net.http.AltSvcProcessor.processAltSvcHeader;
+
 
 /**
  * Encapsulates multiple Exchanges belonging to one HttpRequestImpl.
@@ -76,6 +78,16 @@ class MultiExchange<T> implements Cancelable {
     static final Logger debug =
             Utils.getDebugLogger("MultiExchange"::toString, Utils.DEBUG);
 
+    private record RetryContext(Throwable requestFailureCause,
+                                boolean shouldRetry,
+                                AtomicInteger reqAttemptCounter,
+                                boolean shouldResetConnectTimer) {
+        private static RetryContext doNotRetry(Throwable requestFailureCause) {
+            return new RetryContext(requestFailureCause, false, null, false);
+        }
+    }
+
+    private static final AtomicLong IDS = new AtomicLong();
     private final HttpRequest userRequest; // the user request
     private final HttpRequestImpl request; // a copy of the user request
     private final ConnectTimeoutTracker connectTimeout; // null if no timeout
@@ -83,12 +95,11 @@ class MultiExchange<T> implements Cancelable {
     final HttpResponse.BodyHandler<T> responseHandler;
     final HttpClientImpl.DelegatingExecutor executor;
     final AtomicInteger attempts = new AtomicInteger();
+    final long id = IDS.incrementAndGet();
     HttpRequestImpl currentreq; // used for retries & redirect
     HttpRequestImpl previousreq; // used for retries & redirect
     Exchange<T> exchange; // the current exchange
     Exchange<T> previous;
-    volatile Throwable retryCause;
-    volatile boolean retriedOnce;
     volatile HttpResponse<T> response;
 
     // Maximum number of times a request will be retried/redirected
@@ -96,6 +107,12 @@ class MultiExchange<T> implements Cancelable {
     static final int DEFAULT_MAX_ATTEMPTS = 5;
     static final int max_attempts = Utils.getIntegerNetProperty(
             "jdk.httpclient.redirects.retrylimit", DEFAULT_MAX_ATTEMPTS
+    );
+
+    // Maximum number of times a request should be retried when
+    // max streams limit is reached
+    static final int max_stream_limit_attempts = Utils.getIntegerNetProperty(
+            "jdk.httpclient.retryOnStreamlimit", max_attempts
     );
 
     private final List<HeaderFilter> filters;
@@ -113,20 +130,22 @@ class MultiExchange<T> implements Cancelable {
     volatile AuthenticationFilter.AuthInfo serverauth, proxyauth;
     // RedirectHandler
     volatile int numberOfRedirects = 0;
+    // StreamLimit
+    private final AtomicInteger streamLimitRetries = new AtomicInteger();
 
     // This class is used to keep track of the connection timeout
     // across retries, when a ConnectException causes a retry.
     // In that case - we will retry the connect, but we don't
     // want to double the timeout by starting a new timer with
     // the full connectTimeout again.
-    // Instead we use the ConnectTimeoutTracker to return a new
+    // Instead, we use the ConnectTimeoutTracker to return a new
     // duration that takes into account the time spent in the
     // first connect attempt.
     // If however, the connection gets connected, but we later
     // retry the whole operation, then we reset the timer before
     // retrying (since the connection used for the second request
     // will not necessarily be the same: it could be a new
-    // unconnected connection) - see getExceptionalCF().
+    // unconnected connection) - see checkRetryEligible().
     private static final class ConnectTimeoutTracker {
         final Duration max;
         final AtomicLong startTime = new AtomicLong();
@@ -199,8 +218,22 @@ class MultiExchange<T> implements Cancelable {
 
     HttpClient.Version version() {
         HttpClient.Version vers = request.version().orElse(client.version());
-        if (vers == HttpClient.Version.HTTP_2 && !request.secure() && request.proxy() != null)
+        if (vers != Version.HTTP_1_1
+                && !request.secure() && request.proxy() != null
+                && !request.isHttp3Only(vers)) {
+            // downgrade to HTTP_1_1 unless HTTP_3_URI_ONLY.
+            // if HTTP_3_URI_ONLY and not secure it will fail down the road, so
+            // we don't downgrade here.
             vers = HttpClient.Version.HTTP_1_1;
+        }
+        if (vers == Version.HTTP_3 && request.secure() && !client.client3().isPresent()) {
+            if (!request.isHttp3Only(vers)) {
+                // HTTP/3 not supported with the client config.
+                // Downgrade to HTTP/2, unless HTTP_3_URI_ONLY is specified
+                vers = Version.HTTP_2;
+                if (debug.on()) debug.log("HTTP_3 downgraded to " + vers);
+            }
+        }
         return vers;
     }
 
@@ -229,28 +262,28 @@ class MultiExchange<T> implements Cancelable {
     }
 
     private void requestFilters(HttpRequestImpl r) throws IOException {
-        Log.logTrace("Applying request filters");
+        if (Log.trace()) Log.logTrace("Applying request filters");
         for (HeaderFilter filter : filters) {
-            Log.logTrace("Applying {0}", filter);
+            if (Log.trace()) Log.logTrace("Applying {0}", filter);
             filter.request(r, this);
         }
-        Log.logTrace("All filters applied");
+        if (Log.trace()) Log.logTrace("All filters applied");
     }
 
     private HttpRequestImpl responseFilters(Response response) throws IOException
     {
-        Log.logTrace("Applying response filters");
+        if (Log.trace()) Log.logTrace("Applying response filters");
         ListIterator<HeaderFilter> reverseItr = filters.listIterator(filters.size());
         while (reverseItr.hasPrevious()) {
             HeaderFilter filter = reverseItr.previous();
-            Log.logTrace("Applying {0}", filter);
+            if (Log.trace()) Log.logTrace("Applying {0}", filter);
             HttpRequestImpl newreq = filter.response(response);
             if (newreq != null) {
-                Log.logTrace("New request: stopping filters");
+                if (Log.trace()) Log.logTrace("New request: stopping filters");
                 return newreq;
             }
         }
-        Log.logTrace("All filters applied");
+        if (Log.trace()) Log.logTrace("All filters applied");
         return null;
     }
 
@@ -293,9 +326,13 @@ class MultiExchange<T> implements Cancelable {
             return true;
         } else {
             if (cancelled) {
-                debug.log("multi exchange already cancelled: " + interrupted.get());
+                if (debug.on()) {
+                    debug.log("multi exchange already cancelled: " + interrupted.get());
+                }
             } else {
-                debug.log("multi exchange mayInterruptIfRunning=" + mayInterruptIfRunning);
+                if (debug.on()) {
+                    debug.log("multi exchange mayInterruptIfRunning=" + mayInterruptIfRunning);
+                }
             }
         }
         return false;
@@ -316,7 +353,7 @@ class MultiExchange<T> implements Cancelable {
     // and therefore doesn't have to include header information which indicates no
     // body is present. This is distinct from responses that also do not contain
     // response bodies (possibly ever) but which are required to have content length
-    // info in the header (eg 205). Those cases do not have to be handled specially
+    // info in the header (e.g. 205). Those cases do not have to be handled specially
 
     private static boolean bodyNotPermitted(Response r) {
         return r.statusCode == 204;
@@ -344,19 +381,27 @@ class MultiExchange<T> implements Cancelable {
             if (exception != null)
                 result.completeExceptionally(exception);
             else {
-                this.response =
-                        new HttpResponseImpl<>(r.request(), r, this.response, nullBody, exch);
-                result.complete(this.response);
+                result.complete(setNewResponse(r.request(), r, nullBody, exch));
             }
         });
         // ensure that the connection is closed or returned to the pool.
         return result.whenComplete(exch::nullBody);
     }
 
+    // creates a new HttpResponseImpl object and assign it to this.response
+    private HttpResponse<T> setNewResponse(HttpRequest request, Response r, T body, Exchange<T> exch) {
+        HttpResponse<T> previousResponse = this.response;
+        return this.response = new HttpResponseImpl<>(request, r, previousResponse, body, exch);
+    }
+
     private CompletableFuture<HttpResponse<T>>
     responseAsync0(CompletableFuture<Void> start) {
-        return start.thenCompose( v -> responseAsyncImpl())
-                    .thenCompose((Response r) -> {
+        return start.thenCompose( _ -> {
+                    // this is the first attempt to have the request processed by the server
+                    attempts.set(1);
+                    return responseAsyncImpl(true);
+                }).thenCompose((Response r) -> {
+                        processAltSvcHeader(r, client(), currentreq);
                         Exchange<T> exch = getExchange();
                         if (bodyNotPermitted(r)) {
                             if (bodyIsPresent(r)) {
@@ -368,15 +413,11 @@ class MultiExchange<T> implements Cancelable {
                                 return handleNoBody(r, exch);
                         }
                         return exch.readBodyAsync(responseHandler)
-                            .thenApply((T body) -> {
-                                this.response =
-                                    new HttpResponseImpl<>(r.request(), r, this.response, body, exch);
-                                return this.response;
-                            });
+                            .thenApply((T body) -> setNewResponse(r.request, r, body, exch));
                     }).exceptionallyCompose(this::whenCancelled);
     }
 
-    // returns a CancellationExcpetion that wraps the given cause
+    // returns a CancellationException that wraps the given cause
     // if cancel(boolean) was called, the given cause otherwise
     private Throwable wrapIfCancelled(Throwable cause) {
         CancellationException interrupt = interrupted.get();
@@ -412,79 +453,100 @@ class MultiExchange<T> implements Cancelable {
         }
     }
 
-    private CompletableFuture<Response> responseAsyncImpl() {
-        CompletableFuture<Response> cf;
-        if (attempts.incrementAndGet() > max_attempts) {
-            cf = failedFuture(new IOException("Too many retries", retryCause));
-        } else {
-            if (currentreq.timeout().isPresent()) {
-                responseTimerEvent = ResponseTimerEvent.of(this);
-                client.registerTimer(responseTimerEvent);
-            }
-            try {
-                // 1. apply request filters
-                // if currentreq == previousreq the filters have already
-                // been applied once. Applying them a second time might
-                // cause some headers values to be added twice: for
-                // instance, the same cookie might be added again.
-                if (currentreq != previousreq) {
-                    requestFilters(currentreq);
-                }
-            } catch (IOException e) {
-                return failedFuture(e);
-            }
-            Exchange<T> exch = getExchange();
-            // 2. get response
-            cf = exch.responseAsync()
-                     .thenCompose((Response response) -> {
-                        HttpRequestImpl newrequest;
-                        try {
-                            // 3. apply response filters
-                            newrequest = responseFilters(response);
-                        } catch (Throwable t) {
-                            IOException e = t instanceof IOException io ? io : new IOException(t);
-                            exch.exchImpl.cancel(e);
-                            return failedFuture(e);
-                        }
-                        // 4. check filter result and repeat or continue
-                        if (newrequest == null) {
-                            if (attempts.get() > 1) {
-                                Log.logError("Succeeded on attempt: " + attempts);
-                            }
-                            return completedFuture(response);
-                        } else {
-                            cancelTimer();
-                            this.response =
-                                new HttpResponseImpl<>(currentreq, response, this.response, null, exch);
-                            Exchange<T> oldExch = exch;
-                            if (currentreq.isWebSocket()) {
-                                // need to close the connection and open a new one.
-                                exch.exchImpl.connection().close();
-                            }
-                            return exch.ignoreBody().handle((r,t) -> {
-                                previousreq = currentreq;
-                                currentreq = newrequest;
-                                retriedOnce = false;
-                                setExchange(new Exchange<>(currentreq, this));
-                                return responseAsyncImpl();
-                            }).thenCompose(Function.identity());
-                        } })
-                     .handle((response, ex) -> {
-                        // 5. handle errors and cancel any timer set
-                        cancelTimer();
-                        if (ex == null) {
-                            assert response != null;
-                            return completedFuture(response);
-                        }
-                        // all exceptions thrown are handled here
-                        CompletableFuture<Response> errorCF = getExceptionalCF(ex, exch.exchImpl);
-                        if (errorCF == null) {
-                            return responseAsyncImpl();
-                        } else {
-                            return errorCF;
-                        } })
-                     .thenCompose(Function.identity());
+    // we call this only when a request is being retried
+    private CompletableFuture<Response> retryRequest() {
+        // maintain state indicating a request being retried
+        previousreq = currentreq;
+        // request is being retried, so the filters have already
+        // been applied once. Applying them a second time might
+        // cause some headers values to be added twice: for
+        // instance, the same cookie might be added again.
+        final boolean applyReqFilters = false;
+        return responseAsyncImpl(applyReqFilters);
+    }
+
+    private CompletableFuture<Response> responseAsyncImpl(final boolean applyReqFilters) {
+        if (currentreq.timeout().isPresent()) {
+            responseTimerEvent = ResponseTimerEvent.of(this);
+            client.registerTimer(responseTimerEvent);
         }
+        try {
+            // 1. apply request filters
+            if (applyReqFilters) {
+                requestFilters(currentreq);
+            }
+        } catch (IOException e) {
+            return failedFuture(e);
+        }
+        final Exchange<T> exch = getExchange();
+        // 2. get response
+        final CompletableFuture<Response> cf = exch.responseAsync()
+                .thenCompose((Response response) -> {
+                    HttpRequestImpl newrequest;
+                    try {
+                        // 3. apply response filters
+                        newrequest = responseFilters(response);
+                    } catch (Throwable t) {
+                        IOException e = t instanceof IOException io ? io : new IOException(t);
+                        exch.exchImpl.cancel(e);
+                        return failedFuture(e);
+                    }
+                    // 4. check filter result and repeat or continue
+                    if (newrequest == null) {
+                        if (attempts.get() > 1) {
+                            if (Log.requests()) {
+                                Log.logResponse(() -> String.format(
+                                        "%s #%s Succeeded on attempt %s: statusCode=%s",
+                                        request, id, attempts, response.statusCode));
+                            }
+                        }
+                        return completedFuture(response);
+                    } else {
+                        cancelTimer();
+                        setNewResponse(currentreq, response, null, exch);
+                        if (currentreq.isWebSocket()) {
+                            // need to close the connection and open a new one.
+                            exch.exchImpl.connection().close();
+                        }
+                        return exch.ignoreBody().handle((r,t) -> {
+                            previousreq = currentreq;
+                            currentreq = newrequest;
+                            // this is the first attempt to have the new request
+                            // processed by the server
+                            attempts.set(1);
+                            setExchange(new Exchange<>(currentreq, this));
+                            return responseAsyncImpl(true);
+                        }).thenCompose(Function.identity());
+                    } })
+                .handle((response, ex) -> {
+                    // 5. handle errors and cancel any timer set
+                    cancelTimer();
+                    if (ex == null) {
+                        assert response != null;
+                        return completedFuture(response);
+                    }
+                    // all exceptions thrown are handled here
+                    final RetryContext retryCtx = checkRetryEligible(ex, exch);
+                    assert retryCtx != null : "retry context is null";
+                    if (retryCtx.shouldRetry()) {
+                        // increment the request attempt counter and retry the request
+                        assert retryCtx.reqAttemptCounter != null : "request attempt counter is null";
+                        final int numAttempt = retryCtx.reqAttemptCounter.incrementAndGet();
+                        if (debug.on()) {
+                            debug.log("Retrying request: " + currentreq + " id: " + id
+                                    + " attempt: " + numAttempt + " due to: "
+                                    + retryCtx.requestFailureCause);
+                        }
+                        // reset the connect timer if necessary
+                        if (retryCtx.shouldResetConnectTimer && this.connectTimeout != null) {
+                            this.connectTimeout.reset();
+                        }
+                        return retryRequest();
+                    } else {
+                        assert retryCtx.requestFailureCause != null : "missing request failure cause";
+                        return MinimalFuture.<Response>failedFuture(retryCtx.requestFailureCause);
+                    } })
+                .thenCompose(Function.identity());
         return cf;
     }
 
@@ -492,14 +554,14 @@ class MultiExchange<T> implements Cancelable {
         String s = Utils.getNetProperty("jdk.httpclient.enableAllMethodRetry");
         if (s == null)
             return false;
-        return s.isEmpty() ? true : Boolean.parseBoolean(s);
+        return s.isEmpty() || Boolean.parseBoolean(s);
     }
 
     private static boolean disableRetryConnect() {
         String s = Utils.getNetProperty("jdk.httpclient.disableRetryConnect");
         if (s == null)
             return false;
-        return s.isEmpty() ? true : Boolean.parseBoolean(s);
+        return s.isEmpty() || Boolean.parseBoolean(s);
     }
 
     /** True if ALL ( even non-idempotent ) requests can be automatic retried. */
@@ -517,7 +579,7 @@ class MultiExchange<T> implements Cancelable {
     }
 
     /** Returns true if the given request can be automatically retried. */
-    private static boolean canRetryRequest(HttpRequest request) {
+    private static boolean isHttpMethodRetriable(HttpRequest request) {
         if (RETRY_ALWAYS)
             return true;
         if (isIdempotentRequest(request))
@@ -534,70 +596,125 @@ class MultiExchange<T> implements Cancelable {
         return interrupted.get() != null;
     }
 
-    private boolean retryOnFailure(Throwable t) {
-        if (requestCancelled()) return false;
-        return t instanceof ConnectionExpiredException
-                || (RETRY_CONNECT && (t instanceof ConnectException));
-    }
-
-    private Throwable retryCause(Throwable t) {
-        Throwable cause = t instanceof ConnectionExpiredException ? t.getCause() : t;
-        return cause == null ? t : cause;
+    String streamLimitState() {
+        return id + " attempt:" + streamLimitRetries.get();
     }
 
     /**
-     * Takes a Throwable and returns a suitable CompletableFuture that is
-     * completed exceptionally, or null.
+     * This method determines if a failed request can be retried. The returned RetryContext
+     * will contain the {@linkplain RetryContext#shouldRetry() retry decision} and the
+     * {@linkplain RetryContext#requestFailureCause() underlying
+     * cause} (computed out of the given {@code requestFailureCause}) of the request failure.
+     *
+     * @param requestFailureCause the exception that caused the request to fail
+     * @param exchg               the Exchange
+     * @return a non-null RetryContext which contains the result of retry eligibility
      */
-    private CompletableFuture<Response> getExceptionalCF(Throwable t, ExchangeImpl<?> exchImpl) {
-        if ((t instanceof CompletionException) || (t instanceof ExecutionException)) {
-            if (t.getCause() != null) {
-                t = t.getCause();
+    private RetryContext checkRetryEligible(final Throwable requestFailureCause,
+                                            final Exchange<?> exchg) {
+        assert requestFailureCause != null : "request failure cause is missing";
+        assert exchg != null : "exchange cannot be null";
+        // determine the underlying cause for the request failure
+        final Throwable t = Utils.getCompletionCause(requestFailureCause);
+        final Throwable underlyingCause = switch (t) {
+            case IOException ioe -> {
+                if (cancelled && !requestCancelled() && !(ioe instanceof HttpTimeoutException)) {
+                    yield toTimeoutException(ioe);
+                }
+                yield ioe;
             }
+            default -> {
+                yield t;
+            }
+        };
+        if (requestCancelled()) {
+            // request has been cancelled, do not retry
+            return RetryContext.doNotRetry(underlyingCause);
         }
-        final boolean retryAsUnprocessed = exchImpl != null && exchImpl.isUnprocessedByPeer();
-        if (cancelled && !requestCancelled() && t instanceof IOException) {
-            if (!(t instanceof HttpTimeoutException)) {
-                t = toTimeoutException((IOException)t);
+        // check if retry limited is reached. if yes then don't retry.
+        record Limit(int numAttempts, int maxLimit) {
+            boolean retryLimitReached() {
+                return Limit.this.numAttempts >= Limit.this.maxLimit;
             }
-        } else if (retryAsUnprocessed || retryOnFailure(t)) {
-            Throwable cause = retryCause(t);
-
-            if (!(t instanceof ConnectException)) {
-                // we may need to start a new connection, and if so
-                // we want to start with a fresh connect timeout again.
-                if (connectTimeout != null) connectTimeout.reset();
-                if (!retryAsUnprocessed && !canRetryRequest(currentreq)) {
-                    // a (peer) processed request which cannot be retried, fail with
-                    // the original cause
-                    return failedFuture(cause);
-                }
-            } // ConnectException: retry, but don't reset the connectTimeout.
-
-            // allow the retry mechanism to do its work
-            retryCause = cause;
-            if (!retriedOnce) {
-                if (debug.on()) {
-                    debug.log(t.getClass().getSimpleName()
-                            + " (async): retrying " + currentreq + " due to: ", t);
-                }
-                retriedOnce = true;
-                // The connection was abruptly closed.
-                // We return null to retry the same request a second time.
-                // The request filters have already been applied to the
-                // currentreq, so we set previousreq = currentreq to
-                // prevent them from being applied again.
-                previousreq = currentreq;
-                return null;
-            } else {
-                if (debug.on()) {
-                    debug.log(t.getClass().getSimpleName()
-                            + " (async): already retried once " + currentreq, t);
-                }
-                t = cause;
+        };
+        final Limit limit = switch (underlyingCause) {
+            case StreamLimitException _ -> {
+                yield new Limit(streamLimitRetries.get(), max_stream_limit_attempts);
             }
+            case ConnectException _ -> {
+                // for ConnectException (i.e. inability to establish a connection to the server)
+                // we currently retry the request only once and don't honour the
+                // "jdk.httpclient.redirects.retrylimit" configuration value.
+                yield new Limit(attempts.get(), 2);
+            }
+            default -> {
+                yield new Limit(attempts.get(), max_attempts);
+            }
+        };
+        if (limit.retryLimitReached()) {
+            if (debug.on()) {
+                debug.log("request already attempted "
+                        + limit.numAttempts + " times, won't be retried again "
+                        + currentreq + " " + id, underlyingCause);
+            }
+            final var x = underlyingCause instanceof ConnectionExpiredException cee
+                    ? cee.getCause() == null ? cee : cee.getCause()
+                    : underlyingCause;
+            // do not retry anymore
+            return RetryContext.doNotRetry(x);
         }
-        return failedFuture(t);
+        return switch (underlyingCause) {
+            case ConnectException _ -> {
+                // connection attempt itself failed, so the request hasn't reached the server.
+                // check if retry on connection failure is enabled, if not then we don't retry
+                // the request.
+                if (!RETRY_CONNECT) {
+                    // do not retry
+                    yield RetryContext.doNotRetry(underlyingCause);
+                }
+                // OK to retry. Since the failure is due to a connection/stream being unavailable
+                // we mark the retry context to not allow the connect timer to be reset
+                // when the retry is actually attempted.
+                yield new RetryContext(underlyingCause, true, attempts, false);
+            }
+            case StreamLimitException sle -> {
+                // make a note that the stream limit was reached for a particular HTTP version
+                exchg.streamLimitReached(true);
+                // OK to retry. Since the failure is due to a connection/stream being unavailable
+                // we mark the retry context to not allow the connect timer to be reset
+                // when the retry is actually attempted.
+                yield new RetryContext(underlyingCause, true, streamLimitRetries, false);
+            }
+            case ConnectionExpiredException cee -> {
+                final Throwable cause = cee.getCause() == null ? cee : cee.getCause();
+                // check if the request was explicitly marked as unprocessed, in which case
+                // we retry
+                if (exchg.isUnprocessedByPeer()) {
+                    // OK to retry and allow for the connect timer to be reset
+                    yield new RetryContext(cause, true, attempts, true);
+                }
+                // the request which failed hasn't been marked as unprocessed which implies that
+                // it could be processed by the server. check if the request's METHOD allows
+                // for retry.
+                if (!isHttpMethodRetriable(currentreq)) {
+                    // request METHOD doesn't allow for retry
+                    yield RetryContext.doNotRetry(cause);
+                }
+                // OK to retry and allow for the connect timer to be reset
+                yield new RetryContext(cause, true, attempts, true);
+            }
+            default -> {
+                // some other exception that caused the request to fail.
+                // we check if the request has been explicitly marked as "unprocessed",
+                // which implies the server hasn't processed the request and is thus OK to retry.
+                if (exchg.isUnprocessedByPeer()) {
+                    // OK to retry and allow for resetting the connect timer
+                    yield new RetryContext(underlyingCause, true, attempts, false);
+                }
+                // some other cause of failure, do not retry.
+                yield RetryContext.doNotRetry(underlyingCause);
+            }
+        };
     }
 
     private HttpTimeoutException toTimeoutException(IOException ioe) {

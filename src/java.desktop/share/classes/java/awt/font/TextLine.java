@@ -1020,7 +1020,7 @@ final class TextLine {
                 }
 
                 TextLineComponent nextComponent =
-                    factory.createExtended(font, cm, decorator, startPos, startPos + lmCount);
+                    factory.createTextLabel(font, cm, decorator, startPos, startPos + lmCount);
 
                 ++numComponents;
                 if (numComponents > components.length) {

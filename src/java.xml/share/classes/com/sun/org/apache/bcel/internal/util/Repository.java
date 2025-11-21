@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -25,8 +25,8 @@ import com.sun.org.apache.bcel.internal.classfile.JavaClass;
  * Abstract definition of a class repository. Instances may be used to load classes from different sources and may be
  * used in the Repository.setRepository method.
  *
- * @see org.apache.bcel.Repository
- * @LastModified: Feb 2023
+ * @see com.sun.org.apache.bcel.internal.Repository
+ * @LastModified: Sept 2025
  */
 public interface Repository {
 

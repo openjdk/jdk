@@ -55,6 +55,7 @@
  * @requires vm.cds.default.archive.available
  * @requires vm.cds.write.archived.java.heap
  * @requires vm.bits == 64
+ * @requires !vm.gc.Z
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -68,6 +69,7 @@
  * @requires vm.cds.default.archive.available
  * @requires vm.cds.write.archived.java.heap
  * @requires vm.bits == 64
+ * @requires !vm.gc.Z
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

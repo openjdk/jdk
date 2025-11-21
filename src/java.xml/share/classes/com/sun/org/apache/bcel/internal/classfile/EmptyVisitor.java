@@ -315,6 +315,15 @@ public class EmptyVisitor implements Visitor {
     public void visitStackMapEntry(final StackMapEntry obj) {
     }
 
+    /**
+     * Visits a {@link StackMapType} object.
+     * @param obj object to visit
+     * @since 6.8.0
+     */
+    @Override
+    public void visitStackMapType(final StackMapType obj) {
+    }
+
     @Override
     public void visitSynthetic(final Synthetic obj) {
     }

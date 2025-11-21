@@ -227,7 +227,7 @@ int LIR_Assembler::emit_unwind_handler() {
   MonitorExitStub* stub = nullptr;
   if (method()->is_synchronized()) {
     monitor_address(0, FrameMap::R4_opr);
-    stub = new MonitorExitStub(FrameMap::R4_opr, true, 0);
+    stub = new MonitorExitStub(FrameMap::R4_opr, 0);
     __ unlock_object(R5, R6, R4, *stub->entry());
     __ bind(*stub->continuation());
   }
@@ -2614,7 +2614,6 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   // Obj may not be an oop.
   if (op->code() == lir_lock) {
     MonitorEnterStub* stub = (MonitorEnterStub*)op->stub();
-    assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
     // Add debug info for NullPointerException only if one is possible.
     if (op->info() != nullptr) {
       if (!os::zero_page_read_protected() || !ImplicitNullChecks) {
@@ -2626,7 +2625,6 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
     __ lock_object(hdr, obj, lock, op->scratch_opr()->as_register(), *op->stub()->entry());
   } else {
     assert (op->code() == lir_unlock, "Invalid code, expected lir_unlock");
-    assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
     __ unlock_object(hdr, obj, lock, *op->stub()->entry());
   }
   __ bind(*op->stub()->continuation());

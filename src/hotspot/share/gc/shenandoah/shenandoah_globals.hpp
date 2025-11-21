@@ -34,6 +34,20 @@
                             range,                                          \
                             constraint)                                     \
                                                                             \
+  product(uintx, ShenandoahGenerationalMinPIPUsage, 30, EXPERIMENTAL,       \
+          "(Generational mode only) What percent of a heap region "         \
+          "should be used before we consider promoting a region in "        \
+          "place?  Regions with less than this amount of used will "        \
+          "promoted by evacuation.  A benefit of promoting in place "       \
+          "is that less work is required by the GC at the time the "        \
+          "region is promoted.  A disadvantage of promoting in place "      \
+          "is that this introduces fragmentation of old-gen memory, "       \
+          "with old-gen regions scattered throughout the heap.  Regions "   \
+          "that have been promoted in place may need to be evacuated at "   \
+          "a later time in order to compact old-gen memory to enable "      \
+          "future humongous allocations.")                                  \
+          range(0,100)                                                      \
+                                                                            \
   product(uintx, ShenandoahGenerationalHumongousReserve, 0, EXPERIMENTAL,   \
           "(Generational mode only) What percent of the heap should be "    \
           "reserved for humongous objects if possible.  Old-generation "    \
@@ -165,7 +179,7 @@
           "collector accepts. In percents of heap region size.")            \
           range(0,100)                                                      \
                                                                             \
-  product(uintx, ShenandoahOldGarbageThreshold, 15, EXPERIMENTAL,           \
+  product(uintx, ShenandoahOldGarbageThreshold, 25, EXPERIMENTAL,           \
           "How much garbage an old region has to contain before it would "  \
           "be taken for collection.")                                       \
           range(0,100)                                                      \
@@ -373,13 +387,13 @@
                                                                             \
   product(uintx, ShenandoahOldEvacRatioPercent, 75, EXPERIMENTAL,           \
           "The maximum proportion of evacuation from old-gen memory, "      \
-          "expressed as a percentage. The default value 75 denotes that no" \
-          "more than 75% of the collection set evacuation workload may be " \
-          "towards evacuation of old-gen heap regions. This limits both the"\
-          "promotion of aged regions and the compaction of existing old "   \
-          "regions.  A value of 75 denotes that the total evacuation work"  \
-          "may increase to up to four times the young gen evacuation work." \
-          "A larger value allows quicker promotion and allows"              \
+          "expressed as a percentage. The default value 75 denotes that "   \
+          "no more than 75% of the collection set evacuation workload may " \
+          "be towards evacuation of old-gen heap regions. This limits both "\
+          "the promotion of aged regions and the compaction of existing "   \
+          "old regions. A value of 75 denotes that the total evacuation "   \
+          "work may increase to up to four times the young gen evacuation " \
+          "work. A larger value allows quicker promotion and allows "       \
           "a smaller number of mixed evacuations to process "               \
           "the entire list of old-gen collection candidates at the cost "   \
           "of an increased disruption of the normal cadence of young-gen "  \
@@ -387,12 +401,19 @@
           "focus entirely on old-gen memory, allowing no young-gen "        \
           "regions to be collected, likely resulting in subsequent "        \
           "allocation failures because the allocation pool is not "         \
-          "replenished.  A value of 0 allows a mixed evacuation to"         \
+          "replenished.  A value of 0 allows a mixed evacuation to "        \
           "focus entirely on young-gen memory, allowing no old-gen "        \
           "regions to be collected, likely resulting in subsequent "        \
           "promotion failures and triggering of stop-the-world full GC "    \
           "events.")                                                        \
           range(0,100)                                                      \
+                                                                            \
+  product(bool, ShenandoahEvacTracking, false, DIAGNOSTIC,                  \
+          "Collect additional metrics about evacuations. Enabling this "    \
+          "tracks how many objects and how many bytes were evacuated, and " \
+          "how many were abandoned. The information will be categorized "   \
+          "by thread type (worker or mutator) and evacuation type (young, " \
+          "old, or promotion.")                                             \
                                                                             \
   product(uintx, ShenandoahMinYoungPercentage, 20, EXPERIMENTAL,            \
           "The minimum percentage of the heap to use for the young "        \

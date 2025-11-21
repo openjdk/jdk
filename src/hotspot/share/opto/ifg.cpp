@@ -54,7 +54,8 @@ void PhaseIFG::init( uint maxlrg ) {
   // Init all to empty
   for( uint i = 0; i < maxlrg; i++ ) {
     _adjs[i].initialize(maxlrg);
-    _lrgs[i].Set_All();
+    _lrgs[i].init_mask(_arena);
+    _lrgs[i].set_all();
   }
 }
 
@@ -652,8 +653,9 @@ bool PhaseChaitin::remove_node_if_not_used(Block* b, uint location, Node* n, uin
  * block. If we find a low to high transition, we record it.
  */
 void PhaseChaitin::check_for_high_pressure_transition_at_fatproj(uint& block_reg_pressure, uint location, LRG& lrg, Pressure& pressure, const int op_regtype) {
-  RegMask mask_tmp = lrg.mask();
-  mask_tmp.AND(*Matcher::idealreg2regmask[op_regtype]);
+  ResourceMark rm(C->regmask_arena());
+  RegMask mask_tmp(lrg.mask(), C->regmask_arena());
+  mask_tmp.and_with(*Matcher::idealreg2regmask[op_regtype]);
   pressure.check_pressure_at_fatproj(location, mask_tmp);
 }
 
@@ -709,7 +711,10 @@ void PhaseChaitin::remove_interference_from_copy(Block* b, uint location, uint l
 void PhaseChaitin::remove_bound_register_from_interfering_live_ranges(LRG& lrg, IndexSet* liveout, uint& must_spill) {
   if (liveout->is_empty()) return;
   // Check for common case
-  const RegMask& rm = lrg.mask();
+  const RegMask& mask = lrg.mask();
+  ResourceMark rm(C->regmask_arena());
+  RegMask old(C->regmask_arena());
+  RegMask r2mask(C->regmask_arena());
   int r_size = lrg.num_regs();
   // Smear odd bits
   IndexSetIterator elements(liveout);
@@ -724,30 +729,30 @@ void PhaseChaitin::remove_bound_register_from_interfering_live_ranges(LRG& lrg, 
     }
 
     // Remove bound register(s) from 'l's choices
-    RegMask old = interfering_lrg.mask();
+    old.assignFrom(interfering_lrg.mask());
     uint old_size = interfering_lrg.mask_size();
 
-    // Remove the bits from LRG 'rm' from LRG 'l' so 'l' no
-    // longer interferes with 'rm'.  If 'l' requires aligned
+    // Remove the bits from LRG 'mask' from LRG 'l' so 'l' no
+    // longer interferes with 'mask'.  If 'l' requires aligned
     // adjacent pairs, subtract out bit pairs.
     assert(!interfering_lrg._is_vector || !interfering_lrg._fat_proj, "sanity");
 
     if (interfering_lrg.num_regs() > 1 && !interfering_lrg._fat_proj) {
-      RegMask r2mask = rm;
+      r2mask.assignFrom(mask);
       // Leave only aligned set of bits.
       r2mask.smear_to_sets(interfering_lrg.num_regs());
       // It includes vector case.
-      interfering_lrg.SUBTRACT(r2mask);
+      interfering_lrg.subtract(r2mask);
       interfering_lrg.compute_set_mask_size();
     } else if (r_size != 1) {
       // fat proj
-      interfering_lrg.SUBTRACT(rm);
+      interfering_lrg.subtract(mask);
       interfering_lrg.compute_set_mask_size();
     } else {
       // Common case: size 1 bound removal
-      OptoReg::Name r_reg = rm.find_first_elem();
-      if (interfering_lrg.mask().Member(r_reg)) {
-        interfering_lrg.Remove(r_reg);
+      OptoReg::Name r_reg = mask.find_first_elem();
+      if (interfering_lrg.mask().member(r_reg)) {
+        interfering_lrg.remove(r_reg);
         interfering_lrg.set_mask_size(interfering_lrg.mask().is_infinite_stack() ? LRG::INFINITE_STACK_SIZE : old_size - 1);
       }
     }
@@ -928,7 +933,7 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
         // Since rematerializable DEFs are not bound but the live range is,
         // some uses must be bound. If we spill live range 'r', it can
         // rematerialize at each use site according to its bindings.
-        if (lrg.is_bound() && !n->rematerialize() && lrg.mask().is_NotEmpty()) {
+        if (lrg.is_bound() && !n->rematerialize() && !lrg.mask().is_empty()) {
           remove_bound_register_from_interfering_live_ranges(lrg, &liveout, must_spill);
         }
         interfere_with_live(lid, &liveout);

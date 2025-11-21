@@ -113,6 +113,8 @@ bool VirtualSpaceNode::commit_range(MetaWord* p, size_t word_size) {
     vm_exit_out_of_memory(word_size * BytesPerWord, OOM_MMAP_ERROR, "Failed to commit metaspace.");
   }
 
+  ASAN_UNPOISON_MEMORY_REGION((char*)p, word_size * BytesPerWord);
+
   if (AlwaysPreTouch) {
     os::pretouch_memory(p, p + word_size);
   }
@@ -193,6 +195,8 @@ void VirtualSpaceNode::uncommit_range(MetaWord* p, size_t word_size) {
     fatal("Failed to uncommit metaspace.");
   }
 
+  ASAN_POISON_MEMORY_REGION((char*)p, word_size * BytesPerWord);
+
   UL2(debug, "... uncommitted %zu words.", committed_words_in_range);
 
   // ... tell commit limiter...
@@ -237,10 +241,6 @@ VirtualSpaceNode::VirtualSpaceNode(ReservedSpace rs, bool owns_rs, CommitLimiter
 
   assert_is_aligned(_base, chunklevel::MAX_CHUNK_BYTE_SIZE);
   assert_is_aligned(_word_size, chunklevel::MAX_CHUNK_WORD_SIZE);
-
-  // Poison the memory region. It will be unpoisoned later on a per-chunk base for chunks that are
-  // handed to arenas.
-  ASAN_POISON_MEMORY_REGION(rs.base(), rs.size());
 
   // Register memory region related to Metaspace. The Metaspace contains lots of pointers to malloc
   // memory.
@@ -289,10 +289,6 @@ VirtualSpaceNode::~VirtualSpaceNode() {
 
   // Unregister memory region related to Metaspace.
   LSAN_UNREGISTER_ROOT_REGION(_rs.base(), _rs.size());
-
-  // Undo the poisoning before potentially unmapping memory. This ensures that future mappings at
-  // the same address do not unexpectedly fail with use-after-poison.
-  ASAN_UNPOISON_MEMORY_REGION(_rs.base(), _rs.size());
 
   UL(debug, ": dies.");
 

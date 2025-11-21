@@ -21,24 +21,23 @@
  * questions.
  */
 
+#include "cppstdlib/new.hpp"
 #include "memory/allocation.inline.hpp"
-#include "runtime/atomicAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/lockFreeStack.hpp"
 #include "threadHelper.inline.hpp"
 #include "unittest.hpp"
 
-#include <new>
-
 class LockFreeStackTestElement {
   typedef LockFreeStackTestElement Element;
 
-  Element* volatile _entry;
-  Element* volatile _entry1;
+  Atomic<Element*> _entry;
+  Atomic<Element*> _entry1;
   size_t _id;
 
-  static Element* volatile* entry_ptr(Element& e) { return &e._entry; }
-  static Element* volatile* entry1_ptr(Element& e) { return &e._entry1; }
+  static Atomic<Element*>* entry_ptr(Element& e) { return &e._entry; }
+  static Atomic<Element*>* entry1_ptr(Element& e) { return &e._entry1; }
 
 public:
   LockFreeStackTestElement(size_t id = 0) : _entry(), _entry1(), _id(id) {}
@@ -202,17 +201,17 @@ class LockFreeStackTestThread : public JavaTestThread {
   uint _id;
   TestStack* _from;
   TestStack* _to;
-  volatile size_t* _processed;
+  Atomic<size_t>* _processed;
   size_t _process_limit;
   size_t _local_processed;
-  volatile bool _ready;
+  Atomic<bool> _ready;
 
 public:
   LockFreeStackTestThread(Semaphore* post,
                           uint id,
                           TestStack* from,
                           TestStack* to,
-                          volatile size_t* processed,
+                          Atomic<size_t>* processed,
                           size_t process_limit) :
     JavaTestThread(post),
     _id(id),
@@ -225,21 +224,21 @@ public:
   {}
 
   virtual void main_run() {
-    AtomicAccess::release_store_fence(&_ready, true);
+    _ready.release_store_fence(true);
     while (true) {
       Element* e = _from->pop();
       if (e != nullptr) {
         _to->push(*e);
-        AtomicAccess::inc(_processed);
+        _processed->fetch_then_add(1u);
         ++_local_processed;
-      } else if (AtomicAccess::load_acquire(_processed) == _process_limit) {
+      } else if (_processed->load_acquire() == _process_limit) {
         tty->print_cr("thread %u processed %zu", _id, _local_processed);
         return;
       }
     }
   }
 
-  bool ready() const { return AtomicAccess::load_acquire(&_ready); }
+  bool ready() const { return _ready.load_acquire(); }
 };
 
 TEST_VM(LockFreeStackTest, stress) {
@@ -248,8 +247,8 @@ TEST_VM(LockFreeStackTest, stress) {
   TestStack start_stack;
   TestStack middle_stack;
   TestStack final_stack;
-  volatile size_t stage1_processed = 0;
-  volatile size_t stage2_processed = 0;
+  Atomic<size_t> stage1_processed{0};
+  Atomic<size_t> stage2_processed{0};
 
   const size_t nelements = 10000;
   Element* elements = NEW_C_HEAP_ARRAY(Element, nelements, mtOther);
@@ -272,7 +271,7 @@ TEST_VM(LockFreeStackTest, stress) {
   for (uint i = 0; i < ARRAY_SIZE(threads); ++i) {
     TestStack* from = &start_stack;
     TestStack* to = &middle_stack;
-    volatile size_t* processed = &stage1_processed;
+    Atomic<size_t>* processed = &stage1_processed;
     if (i >= stage1_threads) {
       from = &middle_stack;
       to = &final_stack;
@@ -293,8 +292,8 @@ TEST_VM(LockFreeStackTest, stress) {
   }
 
   // Verify expected state.
-  ASSERT_EQ(nelements, stage1_processed);
-  ASSERT_EQ(nelements, stage2_processed);
+  ASSERT_EQ(nelements, stage1_processed.load_relaxed());
+  ASSERT_EQ(nelements, stage2_processed.load_relaxed());
   ASSERT_EQ(0u, initial_stack.length());
   ASSERT_EQ(0u, start_stack.length());
   ASSERT_EQ(0u, middle_stack.length());

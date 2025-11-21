@@ -25,11 +25,22 @@
 #ifndef SHARE_GC_SHARED_C1_CARDTABLEBARRIERSETC1_HPP
 #define SHARE_GC_SHARED_C1_CARDTABLEBARRIERSETC1_HPP
 
-#include "gc/shared/c1/modRefBarrierSetC1.hpp"
+#include "gc/shared/c1/barrierSetC1.hpp"
 
-class CardTableBarrierSetC1 : public ModRefBarrierSetC1 {
+class CardTableBarrierSetC1 : public BarrierSetC1 {
 protected:
+  virtual void pre_barrier(LIRAccess& access, LIR_Opr addr_opr,
+                         LIR_Opr pre_val, CodeEmitInfo* info) {}
+
   virtual void post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Opr new_val);
+
+  virtual LIR_Opr resolve_address(LIRAccess& access, bool resolve_in_register);
+
+  virtual void store_at_resolved(LIRAccess& access, LIR_Opr value);
+
+  virtual LIR_Opr atomic_cmpxchg_at_resolved(LIRAccess& access, LIRItem& cmp_value, LIRItem& new_value);
+
+  virtual LIR_Opr atomic_xchg_at_resolved(LIRAccess& access, LIRItem& value);
 };
 
 #endif // SHARE_GC_SHARED_C1_CARDTABLEBARRIERSETC1_HPP

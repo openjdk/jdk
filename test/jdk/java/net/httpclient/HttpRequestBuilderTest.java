@@ -23,11 +23,14 @@
 
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpOption.Http3DiscoveryMode;
+import java.net.http.HttpOption;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -36,6 +39,8 @@ import java.util.stream.Stream;
 import java.net.http.HttpRequest;
 import static java.net.http.HttpRequest.BodyPublishers.ofString;
 import static java.net.http.HttpRequest.BodyPublishers.noBody;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 
 /*
  * @test
@@ -206,6 +211,15 @@ public class HttpRequestBuilderTest {
         builder = test2("method", builder, builder::method, null,
                         ofString("foo"),
                         NullPointerException.class);
+
+        builder = test2("setOption", builder, builder::setOption,
+                (HttpOption<Http3DiscoveryMode>)null, (Http3DiscoveryMode) null,
+                NullPointerException.class);
+
+        builder = test2("setOption", builder, builder::setOption,
+                (HttpOption<Http3DiscoveryMode>)null, HTTP_3_URI_ONLY,
+                NullPointerException.class);
+
 // see JDK-8170093
 //
 //        builder = test2("method", builder, builder::method, "foo",
@@ -268,6 +282,20 @@ public class HttpRequestBuilderTest {
         HttpRequest defaultHeadReq = new NotOverriddenHEADImpl().HEAD().uri(TEST_URI).build();
         assertEquals("HEAD", defaultHeadReq.method(), "Method");
         assertEquals(false, defaultHeadReq.bodyPublisher().isEmpty(), "Body publisher absence");
+        HttpRequest defaultReqWithoutOption = new NotOverriddenHEADImpl().HEAD().uri(TEST_URI).build();
+        assertEquals(Optional.empty(), defaultReqWithoutOption.getOption(H3_DISCOVERY), "default without options");
+        HttpRequest defaultReqWithOption = new NotOverriddenHEADImpl().HEAD().uri(TEST_URI)
+                .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY).build();
+        assertEquals(Optional.empty(), defaultReqWithOption.getOption(H3_DISCOVERY), "default with options");
+        HttpRequest reqWithoutOption = HttpRequest.newBuilder().HEAD().uri(TEST_URI).build();
+        assertEquals(Optional.empty(), reqWithoutOption.getOption(H3_DISCOVERY), "req without options");
+        HttpRequest reqWithOption = HttpRequest.newBuilder().HEAD().uri(TEST_URI)
+                .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY).build();
+        assertEquals(Optional.of(HTTP_3_URI_ONLY), reqWithOption.getOption(H3_DISCOVERY), "req with options");
+        HttpRequest resetReqWithOption = HttpRequest.newBuilder().HEAD().uri(TEST_URI)
+                .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
+                .setOption(H3_DISCOVERY, null).build();
+        assertEquals(Optional.empty(), resetReqWithOption.getOption(H3_DISCOVERY), "req with option reset");
 
         verifyCopy();
 
@@ -383,6 +411,7 @@ public class HttpRequestBuilderTest {
                 .method("GET", noBody())
                 .expectContinue(true)
                 .timeout(Duration.ofSeconds(0xBEEF))
+                .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
                 .version(HttpClient.Version.HTTP_2);
 
         // Create the original and the _copy_ requests
@@ -399,6 +428,8 @@ public class HttpRequestBuilderTest {
         assertEquals(request.expectContinue(), copiedRequest.expectContinue(), "Expect continue setting");
         assertEquals(request.timeout(), copiedRequest.timeout(), "Timeout");
         assertEquals(request.version(), copiedRequest.version(), "Version");
+        assertEquals(request.getOption(H3_DISCOVERY), copiedRequest.getOption(H3_DISCOVERY), "H3_DISCOVERY option");
+        assertEquals(Optional.of(HTTP_3_URI_ONLY), copiedRequest.getOption(H3_DISCOVERY), "copied H3_DISCOVERY option");
 
         // Verify headers
         assertEquals(request.headers().map(), Map.of("X-Foo", List.of("1")), "Request headers");
@@ -415,66 +446,85 @@ public class HttpRequestBuilderTest {
 
     // doesn't override the default HEAD() method
     private static final class NotOverriddenHEADImpl implements HttpRequest.Builder {
-        private final HttpRequest.Builder underlying = HttpRequest.newBuilder();
+        private final HttpRequest.Builder underlying;
+
+        NotOverriddenHEADImpl() {
+            this(HttpRequest.newBuilder());
+        }
+
+        NotOverriddenHEADImpl(HttpRequest.Builder underlying) {
+            this.underlying = underlying;
+        }
 
         @Override
         public HttpRequest.Builder uri(URI uri) {
-            return this.underlying.uri(uri);
+            underlying.uri(uri);
+            return this;
         }
 
         @Override
         public HttpRequest.Builder expectContinue(boolean enable) {
-            return this.underlying.expectContinue(enable);
+            underlying.expectContinue(enable); return this;
         }
 
         @Override
         public HttpRequest.Builder version(HttpClient.Version version) {
-            return this.underlying.version(version);
+            this.underlying.version(version);
+            return this;
         }
 
         @Override
         public HttpRequest.Builder header(String name, String value) {
-            return this.underlying.header(name, value);
+            this.underlying.header(name, value);
+            return this;
         }
 
         @Override
         public HttpRequest.Builder headers(String... headers) {
-            return this.underlying.headers(headers);
+            underlying.headers(headers);
+            return this;
         }
 
         @Override
         public HttpRequest.Builder timeout(Duration duration) {
-            return this.underlying.timeout(duration);
+            this.underlying.timeout(duration);
+            return this;
         }
 
         @Override
         public HttpRequest.Builder setHeader(String name, String value) {
-            return this.underlying.setHeader(name, value);
+            underlying.setHeader(name, value);
+            return this;
         }
 
         @Override
         public HttpRequest.Builder GET() {
-            return this.underlying.GET();
+            this.underlying.GET();
+            return this;
         }
 
         @Override
         public HttpRequest.Builder POST(HttpRequest.BodyPublisher bodyPublisher) {
-            return this.underlying.POST(bodyPublisher);
+            this.underlying.POST(bodyPublisher);
+            return this;
         }
 
         @Override
         public HttpRequest.Builder PUT(HttpRequest.BodyPublisher bodyPublisher) {
-            return this.underlying.PUT(bodyPublisher);
+            this.underlying.PUT(bodyPublisher);
+            return this;
         }
 
         @Override
         public HttpRequest.Builder DELETE() {
-            return this.underlying.DELETE();
+            this.underlying.DELETE();
+            return this;
         }
 
         @Override
         public HttpRequest.Builder method(String method, HttpRequest.BodyPublisher bodyPublisher) {
-            return this.underlying.method(method, bodyPublisher);
+            this.underlying.method(method, bodyPublisher);
+            return this;
         }
 
         @Override
@@ -484,7 +534,7 @@ public class HttpRequestBuilderTest {
 
         @Override
         public HttpRequest.Builder copy() {
-            return this.underlying.copy();
+            return new NotOverriddenHEADImpl(underlying.copy());
         }
     }
 }

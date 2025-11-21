@@ -272,7 +272,7 @@ public class StatusResponseManagerTests {
             CertStatusRequest oReq = OCSPStatusRequest.EMPTY_OCSP;
 
             try {
-                // Force the interrupt flag to be set on the thread that
+                // Force the interrupted flag to be set on the thread that
                 // performs the invokeAll in the SRM.
                 Thread.currentThread().interrupt();
 

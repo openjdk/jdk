@@ -223,13 +223,13 @@ void ShenandoahRefProcThreadLocal::set_discovered_list_head<oop>(oop head) {
 
 AlwaysClearPolicy ShenandoahReferenceProcessor::_always_clear_policy;
 
-ShenandoahReferenceProcessor::ShenandoahReferenceProcessor(uint max_workers) :
+ShenandoahReferenceProcessor::ShenandoahReferenceProcessor(ShenandoahGeneration* generation, uint max_workers) :
   _soft_reference_policy(&_always_clear_policy),
   _ref_proc_thread_locals(NEW_C_HEAP_ARRAY(ShenandoahRefProcThreadLocal, max_workers, mtGC)),
   _pending_list(nullptr),
   _pending_list_tail(&_pending_list),
   _iterate_discovered_list_id(0U),
-  _stats() {
+  _generation(generation) {
   for (size_t i = 0; i < max_workers; i++) {
     _ref_proc_thread_locals[i].reset();
   }
@@ -311,7 +311,7 @@ bool ShenandoahReferenceProcessor::should_discover(oop reference, ReferenceType 
     return false;
   }
 
-  if (!heap->is_in_active_generation(referent)) {
+  if (!_generation->contains(referent)) {
     log_trace(gc,ref)("Referent outside of active generation: " PTR_FORMAT, p2i(referent));
     return false;
   }
@@ -329,13 +329,11 @@ bool ShenandoahReferenceProcessor::should_drop(oop reference, ReferenceType type
     return true;
   }
 
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  // Check if the referent is still alive, in which case we should
-  // drop the reference.
+  // Check if the referent is still alive, in which case we should drop the reference.
   if (type == REF_PHANTOM) {
-    return heap->active_generation()->complete_marking_context()->is_marked(raw_referent);
+    return _generation->complete_marking_context()->is_marked(raw_referent);
   } else {
-    return heap->active_generation()->complete_marking_context()->is_marked_strong(raw_referent);
+    return _generation->complete_marking_context()->is_marked_strong(raw_referent);
   }
 }
 
@@ -347,7 +345,7 @@ void ShenandoahReferenceProcessor::make_inactive(oop reference, ReferenceType ty
     // next field. An application can't call FinalReference.enqueue(), so there is
     // no race to worry about when setting the next field.
     assert(reference_next<T>(reference) == nullptr, "Already inactive");
-    assert(ShenandoahHeap::heap()->active_generation()->complete_marking_context()->is_marked(reference_referent_raw<T>(reference)), "only make inactive final refs with alive referents");
+    assert(_generation->complete_marking_context()->is_marked(reference_referent_raw<T>(reference)), "only make inactive final refs with alive referents");
     reference_set_next(reference, reference);
   } else {
     // Clear referent
@@ -437,7 +435,7 @@ oop ShenandoahReferenceProcessor::drop(oop reference, ReferenceType type) {
   HeapWord* raw_referent = reference_referent_raw<T>(reference);
 
 #ifdef ASSERT
-  assert(raw_referent == nullptr || ShenandoahHeap::heap()->active_generation()->complete_marking_context()->is_marked(raw_referent),
+  assert(raw_referent == nullptr || _generation->complete_marking_context()->is_marked(raw_referent),
          "only drop references with alive referents");
 #endif
 

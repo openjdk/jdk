@@ -1092,40 +1092,40 @@ RegMask _NO_SPECIAL_NO_FP_PTR_REG_mask;
 
 void reg_mask_init() {
 
-  _ANY_REG32_mask = _ALL_REG32_mask;
-  _ANY_REG32_mask.Remove(OptoReg::as_OptoReg(x0->as_VMReg()));
+  _ANY_REG32_mask.assignFrom(_ALL_REG32_mask);
+  _ANY_REG32_mask.remove(OptoReg::as_OptoReg(x0->as_VMReg()));
 
-  _ANY_REG_mask = _ALL_REG_mask;
-  _ANY_REG_mask.SUBTRACT(_ZR_REG_mask);
+  _ANY_REG_mask.assignFrom(_ALL_REG_mask);
+  _ANY_REG_mask.subtract(_ZR_REG_mask);
 
-  _PTR_REG_mask = _ALL_REG_mask;
-  _PTR_REG_mask.SUBTRACT(_ZR_REG_mask);
+  _PTR_REG_mask.assignFrom(_ALL_REG_mask);
+  _PTR_REG_mask.subtract(_ZR_REG_mask);
 
-  _NO_SPECIAL_REG32_mask = _ALL_REG32_mask;
-  _NO_SPECIAL_REG32_mask.SUBTRACT(_NON_ALLOCATABLE_REG32_mask);
+  _NO_SPECIAL_REG32_mask.assignFrom(_ALL_REG32_mask);
+  _NO_SPECIAL_REG32_mask.subtract(_NON_ALLOCATABLE_REG32_mask);
 
-  _NO_SPECIAL_REG_mask = _ALL_REG_mask;
-  _NO_SPECIAL_REG_mask.SUBTRACT(_NON_ALLOCATABLE_REG_mask);
+  _NO_SPECIAL_REG_mask.assignFrom(_ALL_REG_mask);
+  _NO_SPECIAL_REG_mask.subtract(_NON_ALLOCATABLE_REG_mask);
 
-  _NO_SPECIAL_PTR_REG_mask = _ALL_REG_mask;
-  _NO_SPECIAL_PTR_REG_mask.SUBTRACT(_NON_ALLOCATABLE_REG_mask);
+  _NO_SPECIAL_PTR_REG_mask.assignFrom(_ALL_REG_mask);
+  _NO_SPECIAL_PTR_REG_mask.subtract(_NON_ALLOCATABLE_REG_mask);
 
   // x27 is not allocatable when compressed oops is on
   if (UseCompressedOops) {
-    _NO_SPECIAL_REG32_mask.Remove(OptoReg::as_OptoReg(x27->as_VMReg()));
-    _NO_SPECIAL_REG_mask.Remove(OptoReg::as_OptoReg(x27->as_VMReg()));
-    _NO_SPECIAL_PTR_REG_mask.Remove(OptoReg::as_OptoReg(x27->as_VMReg()));
+    _NO_SPECIAL_REG32_mask.remove(OptoReg::as_OptoReg(x27->as_VMReg()));
+    _NO_SPECIAL_REG_mask.remove(OptoReg::as_OptoReg(x27->as_VMReg()));
+    _NO_SPECIAL_PTR_REG_mask.remove(OptoReg::as_OptoReg(x27->as_VMReg()));
   }
 
   // x8 is not allocatable when PreserveFramePointer is on
   if (PreserveFramePointer) {
-    _NO_SPECIAL_REG32_mask.Remove(OptoReg::as_OptoReg(x8->as_VMReg()));
-    _NO_SPECIAL_REG_mask.Remove(OptoReg::as_OptoReg(x8->as_VMReg()));
-    _NO_SPECIAL_PTR_REG_mask.Remove(OptoReg::as_OptoReg(x8->as_VMReg()));
+    _NO_SPECIAL_REG32_mask.remove(OptoReg::as_OptoReg(x8->as_VMReg()));
+    _NO_SPECIAL_REG_mask.remove(OptoReg::as_OptoReg(x8->as_VMReg()));
+    _NO_SPECIAL_PTR_REG_mask.remove(OptoReg::as_OptoReg(x8->as_VMReg()));
   }
 
-  _NO_SPECIAL_NO_FP_PTR_REG_mask = _NO_SPECIAL_PTR_REG_mask;
-  _NO_SPECIAL_NO_FP_PTR_REG_mask.Remove(OptoReg::as_OptoReg(x8->as_VMReg()));
+  _NO_SPECIAL_NO_FP_PTR_REG_mask.assignFrom(_NO_SPECIAL_PTR_REG_mask);
+  _NO_SPECIAL_NO_FP_PTR_REG_mask.remove(OptoReg::as_OptoReg(x8->as_VMReg()));
 }
 
 void PhaseOutput::pd_perform_mach_node_analysis() {
@@ -1183,6 +1183,8 @@ bool is_CAS(int opcode, bool maybe_volatile)
       return false;
   }
 }
+
+constexpr uint64_t MAJIK_DWORD = 0xabbaabbaabbaabbaull;
 
 // predicate controlling translation of CAS
 //
@@ -1269,6 +1271,26 @@ int CallDynamicJavaDirectNode::compute_padding(int current_offset) const
   return align_up(current_offset, alignment_required()) - current_offset;
 }
 
+int CallRuntimeDirectNode::compute_padding(int current_offset) const
+{
+  return align_up(current_offset, alignment_required()) - current_offset;
+}
+
+int CallLeafDirectNode::compute_padding(int current_offset) const
+{
+  return align_up(current_offset, alignment_required()) - current_offset;
+}
+
+int CallLeafDirectVectorNode::compute_padding(int current_offset) const
+{
+  return align_up(current_offset, alignment_required()) - current_offset;
+}
+
+int CallLeafNoFPDirectNode::compute_padding(int current_offset) const
+{
+  return align_up(current_offset, alignment_required()) - current_offset;
+}
+
 //=============================================================================
 
 #ifndef PRODUCT
@@ -1306,7 +1328,7 @@ uint MachBreakpointNode::size(PhaseRegAlloc *ra_) const {
   }
 
 //=============================================================================
-const RegMask& MachConstantBaseNode::_out_RegMask = RegMask::Empty;
+const RegMask& MachConstantBaseNode::_out_RegMask = RegMask::EMPTY;
 
 int ConstantTable::calculate_table_base_offset() const {
   return 0;  // absolute addressing, no offset
@@ -1343,10 +1365,15 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
     st->print("# stack bang size=%d\n\t", framesize);
   }
 
-  st->print("sd  fp, [sp, #%d]\n\t", - 2 * wordSize);
-  st->print("sd  ra, [sp, #%d]\n\t", - wordSize);
-  if (PreserveFramePointer) { st->print("sub  fp, sp, #%d\n\t", 2 * wordSize); }
   st->print("sub sp, sp, #%d\n\t", framesize);
+  st->print("sd  fp, [sp, #%d]\n\t", framesize - 2 * wordSize);
+  st->print("sd  ra, [sp, #%d]\n\t", framesize - wordSize);
+  if (PreserveFramePointer) { st->print("add fp, sp, #%d\n\t", framesize); }
+
+  if (VerifyStackAtCalls) {
+    st->print("mv  t2, %ld\n\t", MAJIK_DWORD);
+    st->print("sd  t2, [sp, #%d]\n\t", framesize - 3 * wordSize);
+  }
 
   if (C->stub_function() == nullptr) {
     st->print("ld  t0, [guard]\n\t");
@@ -1388,6 +1415,11 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
 
   __ build_frame(framesize);
 
+  if (VerifyStackAtCalls) {
+    __ mv(t2, MAJIK_DWORD);
+    __ sd(t2, Address(sp, framesize - 3 * wordSize));
+  }
+
   if (C->stub_function() == nullptr) {
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
     // Dummy labels for just measuring the code size
@@ -1407,10 +1439,6 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
     }
     // In the C2 code, we move the non-hot part of nmethod entry barriers out-of-line to a stub.
     bs->nmethod_entry_barrier(masm, slow_path, continuation, guard);
-  }
-
-  if (VerifyStackAtCalls) {
-    Unimplemented();
   }
 
   C->output()->set_frame_complete(__ offset());
@@ -2084,10 +2112,10 @@ uint Matcher::int_pressure_limit()
   // as a spilled LRG. Spilling heuristics(Spill-USE) explicitly skip
   // derived pointers and lastly fail to spill after reaching maximum
   // number of iterations. Lowering the default pressure threshold to
-  // (_NO_SPECIAL_REG32_mask.Size() minus 1) forces CallNode to become
+  // (_NO_SPECIAL_REG32_mask.size() minus 1) forces CallNode to become
   // a high register pressure area of the code so that split_DEF can
   // generate DefinitionSpillCopy for the derived pointer.
-  uint default_int_pressure_threshold = _NO_SPECIAL_REG32_mask.Size() - 1;
+  uint default_int_pressure_threshold = _NO_SPECIAL_REG32_mask.size() - 1;
   if (!PreserveFramePointer) {
     // When PreserveFramePointer is off, frame pointer is allocatable,
     // but different from other SOC registers, it is excluded from
@@ -2102,38 +2130,34 @@ uint Matcher::int_pressure_limit()
 uint Matcher::float_pressure_limit()
 {
   // _FLOAT_REG_mask is generated by adlc from the float_reg register class.
-  return (FLOATPRESSURE == -1) ? _FLOAT_REG_mask.Size() : FLOATPRESSURE;
+  return (FLOATPRESSURE == -1) ? _FLOAT_REG_mask.size() : FLOATPRESSURE;
 }
 
 bool Matcher::use_asm_for_ldiv_by_con(jlong divisor) {
   return false;
 }
 
-RegMask Matcher::divI_proj_mask() {
+const RegMask& Matcher::divI_proj_mask() {
   ShouldNotReachHere();
-  return RegMask();
+  return RegMask::EMPTY;
 }
 
 // Register for MODI projection of divmodI.
-RegMask Matcher::modI_proj_mask() {
+const RegMask& Matcher::modI_proj_mask() {
   ShouldNotReachHere();
-  return RegMask();
+  return RegMask::EMPTY;
 }
 
 // Register for DIVL projection of divmodL.
-RegMask Matcher::divL_proj_mask() {
+const RegMask& Matcher::divL_proj_mask() {
   ShouldNotReachHere();
-  return RegMask();
+  return RegMask::EMPTY;
 }
 
 // Register for MODL projection of divmodL.
-RegMask Matcher::modL_proj_mask() {
+const RegMask& Matcher::modL_proj_mask() {
   ShouldNotReachHere();
-  return RegMask();
-}
-
-const RegMask Matcher::method_handle_invoke_SP_save_mask() {
-  return FP_REG_mask();
+  return RegMask::EMPTY;
 }
 
 bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
@@ -2415,7 +2439,13 @@ encode %{
   enc_class riscv_enc_call_epilog() %{
     if (VerifyStackAtCalls) {
       // Check that stack depth is unchanged: find majik cookie on stack
-      __ call_Unimplemented();
+      int framesize = ra_->reg2offset_unchecked(OptoReg::add(ra_->_matcher._old_SP, -3 * VMRegImpl::slots_per_word));
+      Label stack_ok;
+      __ ld(t1, Address(sp, framesize));
+      __ mv(t2, MAJIK_DWORD);
+      __ beq(t2, t1, stack_ok);
+      __ stop("MAJIK_DWORD not found");
+      __ bind(stack_ok);
     }
   %}
 
@@ -8175,7 +8205,7 @@ instruct unnecessary_membar_volatile_rvtso() %{
   ins_cost(0);
 
   size(0);
- 
+
   format %{ "#@unnecessary_membar_volatile_rvtso (unnecessary so empty encoding)" %}
   ins_encode %{
     __ block_comment("unnecessary_membar_volatile_rvtso");
@@ -10509,6 +10539,7 @@ instruct CallRuntimeDirect(method meth)
   ins_encode(riscv_enc_java_to_runtime(meth));
 
   ins_pipe(pipe_class_call);
+  ins_alignment(4);
 %}
 
 // Call Runtime Instruction
@@ -10526,6 +10557,7 @@ instruct CallLeafDirect(method meth)
   ins_encode(riscv_enc_java_to_runtime(meth));
 
   ins_pipe(pipe_class_call);
+  ins_alignment(4);
 %}
 
 // Call Runtime Instruction without safepoint and with vector arguments
@@ -10543,6 +10575,7 @@ instruct CallLeafDirectVector(method meth)
   ins_encode(riscv_enc_java_to_runtime(meth));
 
   ins_pipe(pipe_class_call);
+  ins_alignment(4);
 %}
 
 // Call Runtime Instruction
@@ -10560,6 +10593,7 @@ instruct CallLeafNoFPDirect(method meth)
   ins_encode(riscv_enc_java_to_runtime(meth));
 
   ins_pipe(pipe_class_call);
+  ins_alignment(4);
 %}
 
 // ============================================================================
@@ -10971,6 +11005,7 @@ instruct arrays_hashcode(iRegP_R11 ary, iRegI_R12 cnt, iRegI_R10 result, immI ba
                          iRegLNoSp tmp3, iRegLNoSp tmp4,
                          iRegLNoSp tmp5, iRegLNoSp tmp6, rFlagsReg cr)
 %{
+  predicate(!UseRVV);
   match(Set result (VectorizedHashCode (Binary ary cnt) (Binary result basic_type)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, TEMP tmp6,
          USE_KILL ary, USE_KILL cnt, USE basic_type, KILL cr);
@@ -11023,36 +11058,36 @@ instruct tlsLoadP(javaThread_RegP dst)
 
 // inlined locking and unlocking
 // using t1 as the 'flag' register to bridge the BoolNode producers and consumers
-instruct cmpFastLockLightweight(rFlagsReg cr, iRegP object, iRegP box,
-                                iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegPNoSp tmp4)
+instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box,
+                     iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegPNoSp tmp4)
 %{
   match(Set cr (FastLock object box));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4);
 
   ins_cost(10 * DEFAULT_COST);
-  format %{ "fastlock $object,$box\t! kills $tmp1,$tmp2,$tmp3,$tmp4 #@cmpFastLockLightweight" %}
+  format %{ "fastlock $object,$box\t! kills $tmp1,$tmp2,$tmp3,$tmp4 #@cmpFastLock" %}
 
   ins_encode %{
-    __ fast_lock_lightweight($object$$Register, $box$$Register,
-                             $tmp1$$Register, $tmp2$$Register, $tmp3$$Register, $tmp4$$Register);
+    __ fast_lock($object$$Register, $box$$Register,
+                 $tmp1$$Register, $tmp2$$Register, $tmp3$$Register, $tmp4$$Register);
   %}
 
   ins_pipe(pipe_serial);
 %}
 
 // using t1 as the 'flag' register to bridge the BoolNode producers and consumers
-instruct cmpFastUnlockLightweight(rFlagsReg cr, iRegP object, iRegP box,
-                                  iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3)
+instruct cmpFastUnlock(rFlagsReg cr, iRegP object, iRegP box,
+                       iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3)
 %{
   match(Set cr (FastUnlock object box));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
   ins_cost(10 * DEFAULT_COST);
-  format %{ "fastunlock $object,$box\t! kills $tmp1,$tmp2,$tmp3 #@cmpFastUnlockLightweight" %}
+  format %{ "fastunlock $object,$box\t! kills $tmp1,$tmp2,$tmp3 #@cmpFastUnlock" %}
 
   ins_encode %{
-    __ fast_unlock_lightweight($object$$Register, $box$$Register,
-                               $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+    __ fast_unlock($object$$Register, $box$$Register,
+                   $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
   ins_pipe(pipe_serial);

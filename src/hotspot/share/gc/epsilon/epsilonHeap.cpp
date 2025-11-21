@@ -52,7 +52,7 @@ jint EpsilonHeap::initialize() {
   initialize_reserved_region(heap_rs);
 
   _space = new ContiguousSpace();
-  _space->initialize(committed_region, /* clear_space = */ true, /* mangle_space = */ true);
+  _space->initialize(committed_region, /* clear_space = */ true);
 
   // Precompute hot fields
   _max_tlab_size = MIN2(CollectedHeap::max_tlab_size(), align_object_size(EpsilonMaxTLABSize / HeapWordSize));
@@ -91,7 +91,7 @@ GrowableArray<MemoryPool*> EpsilonHeap::memory_pools() {
   return memory_pools;
 }
 
-size_t EpsilonHeap::unsafe_max_tlab_alloc(Thread* thr) const {
+size_t EpsilonHeap::unsafe_max_tlab_alloc() const {
   // Return max allocatable TLAB size, and let allocation path figure out
   // the actual allocation size. Note: result should be in bytes.
   return _max_tlab_size * HeapWordSize;

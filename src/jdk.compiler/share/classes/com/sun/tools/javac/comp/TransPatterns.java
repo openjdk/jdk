@@ -921,7 +921,7 @@ public class TransPatterns extends TreeTranslator {
                         JCBindingPattern binding = (JCBindingPattern) instanceofCheck.pattern;
                         hasUnconditional =
                                 (!types.erasure(binding.type).isPrimitive() ? instanceofCheck.allowNull :
-                                types.isUnconditionallyExact(commonNestedExpression.type, types.erasure(binding.type))) &&
+                                types.isUnconditionallyExactTypeBased(commonNestedExpression.type, types.erasure(binding.type))) &&
                                 accList.tail.isEmpty();
                         List<JCCaseLabel> newLabel;
 

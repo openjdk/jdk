@@ -137,6 +137,12 @@ public:
   inline bool preempted() const;
   inline void set_preempted(bool value);
 
+  inline bool at_klass_init() const;
+  inline void set_at_klass_init(bool value);
+
+  inline bool has_args_at_top() const;
+  inline void set_has_args_at_top(bool value);
+
   inline bool has_lockstack() const;
   inline void set_has_lockstack(bool value);
 

@@ -1199,16 +1199,11 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
                                             int comp_args_on_stack,
                                             const BasicType *sig_bt,
                                             const VMRegPair *regs,
-                                            AdapterHandlerEntry* handler) {
-  address i2c_entry;
-  address c2i_unverified_entry;
-  address c2i_entry;
-
-
+                                            address entry_address[AdapterBlob::ENTRY_COUNT]) {
   // entry: i2c
 
   __ align(CodeEntryAlignment);
-  i2c_entry = __ pc();
+  entry_address[AdapterBlob::I2C] = __ pc();
   gen_i2c_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs);
 
 
@@ -1216,7 +1211,7 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
 
   __ align(CodeEntryAlignment);
   BLOCK_COMMENT("c2i unverified entry");
-  c2i_unverified_entry = __ pc();
+  entry_address[AdapterBlob::C2I_Unverified] = __ pc();
 
   // inline_cache contains a CompiledICData
   const Register ic             = R19_inline_cache_reg;
@@ -1244,10 +1239,10 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
 
   // entry: c2i
 
-  c2i_entry = __ pc();
+  entry_address[AdapterBlob::C2I] = __ pc();
 
   // Class initialization barrier for static methods
-  address c2i_no_clinit_check_entry = nullptr;
+  entry_address[AdapterBlob::C2I_No_Clinit_Check] = nullptr;
   if (VM_Version::supports_fast_class_init_checks()) {
     Label L_skip_barrier;
 
@@ -1266,15 +1261,13 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
     __ bctr();
 
     __ bind(L_skip_barrier);
-    c2i_no_clinit_check_entry = __ pc();
+    entry_address[AdapterBlob::C2I_No_Clinit_Check] = __ pc();
   }
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->c2i_entry_barrier(masm, /* tmp register*/ ic_klass, /* tmp register*/ receiver_klass, /* tmp register*/ code);
 
   gen_c2i_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs, call_interpreter, ientry);
-
-  handler->set_entry_points(i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
   return;
 }
 
@@ -1646,7 +1639,6 @@ static void fill_continuation_entry(MacroAssembler* masm, Register reg_cont_obj,
   assert_different_registers(reg_cont_obj, reg_flags);
   Register zero = R8_ARG6;
   Register tmp2 = R9_ARG7;
-  Register tmp3 = R10_ARG8;
 
   DEBUG_ONLY(__ block_comment("fill {"));
 #ifdef ASSERT
@@ -1662,12 +1654,9 @@ static void fill_continuation_entry(MacroAssembler* masm, Register reg_cont_obj,
   __ stw(zero, in_bytes(ContinuationEntry::pin_count_offset()), R1_SP);
 
   __ ld_ptr(tmp2, JavaThread::cont_fastpath_offset(), R16_thread);
-  __ ld(tmp3, in_bytes(JavaThread::held_monitor_count_offset()), R16_thread);
   __ st_ptr(tmp2, ContinuationEntry::parent_cont_fastpath_offset(), R1_SP);
-  __ std(tmp3, in_bytes(ContinuationEntry::parent_held_monitor_count_offset()), R1_SP);
 
   __ st_ptr(zero, JavaThread::cont_fastpath_offset(), R16_thread);
-  __ std(zero, in_bytes(JavaThread::held_monitor_count_offset()), R16_thread);
   DEBUG_ONLY(__ block_comment("} fill"));
 }
 
@@ -1688,7 +1677,6 @@ static void fill_continuation_entry(MacroAssembler* masm, Register reg_cont_obj,
 static void continuation_enter_cleanup(MacroAssembler* masm) {
   Register tmp1 = R8_ARG6;
   Register tmp2 = R9_ARG7;
-  Register tmp3 = R10_ARG8;
 
 #ifdef ASSERT
   __ block_comment("clean {");
@@ -1699,57 +1687,8 @@ static void continuation_enter_cleanup(MacroAssembler* masm) {
 
   __ ld_ptr(tmp1, ContinuationEntry::parent_cont_fastpath_offset(), R1_SP);
   __ st_ptr(tmp1, JavaThread::cont_fastpath_offset(), R16_thread);
-
-  if (CheckJNICalls) {
-    // Check if this is a virtual thread continuation
-    Label L_skip_vthread_code;
-    __ lwz(R0, in_bytes(ContinuationEntry::flags_offset()), R1_SP);
-    __ cmpwi(CR0, R0, 0);
-    __ beq(CR0, L_skip_vthread_code);
-
-    // If the held monitor count is > 0 and this vthread is terminating then
-    // it failed to release a JNI monitor. So we issue the same log message
-    // that JavaThread::exit does.
-    __ ld(R0, in_bytes(JavaThread::jni_monitor_count_offset()), R16_thread);
-    __ cmpdi(CR0, R0, 0);
-    __ beq(CR0, L_skip_vthread_code);
-
-    // Save return value potentially containing the exception oop
-    Register ex_oop = R15_esp;   // nonvolatile register
-    __ mr(ex_oop, R3_RET);
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::log_jni_monitor_still_held));
-    // Restore potental return value
-    __ mr(R3_RET, ex_oop);
-
-    // For vthreads we have to explicitly zero the JNI monitor count of the carrier
-    // on termination. The held count is implicitly zeroed below when we restore from
-    // the parent held count (which has to be zero).
-    __ li(tmp1, 0);
-    __ std(tmp1, in_bytes(JavaThread::jni_monitor_count_offset()), R16_thread);
-
-    __ bind(L_skip_vthread_code);
-  }
-#ifdef ASSERT
-  else {
-    // Check if this is a virtual thread continuation
-    Label L_skip_vthread_code;
-    __ lwz(R0, in_bytes(ContinuationEntry::flags_offset()), R1_SP);
-    __ cmpwi(CR0, R0, 0);
-    __ beq(CR0, L_skip_vthread_code);
-
-    // See comment just above. If not checking JNI calls the JNI count is only
-    // needed for assertion checking.
-    __ li(tmp1, 0);
-    __ std(tmp1, in_bytes(JavaThread::jni_monitor_count_offset()), R16_thread);
-
-    __ bind(L_skip_vthread_code);
-  }
-#endif
-
-  __ ld(tmp2, in_bytes(ContinuationEntry::parent_held_monitor_count_offset()), R1_SP);
-  __ ld_ptr(tmp3, ContinuationEntry::parent_offset(), R1_SP);
-  __ std(tmp2, in_bytes(JavaThread::held_monitor_count_offset()), R16_thread);
-  __ st_ptr(tmp3, JavaThread::cont_entry_offset(), R16_thread);
+  __ ld_ptr(tmp2, ContinuationEntry::parent_offset(), R1_SP);
+  __ st_ptr(tmp2, JavaThread::cont_entry_offset(), R16_thread);
   DEBUG_ONLY(__ block_comment("} clean"));
 }
 
@@ -2448,7 +2387,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     // Try fastpath for locking.
     // fast_lock kills r_temp_1, r_temp_2, r_temp_3.
     Register r_temp_3_or_noreg = UseObjectMonitorTable ? r_temp_3 : noreg;
-    __ compiler_fast_lock_lightweight_object(CR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3_or_noreg);
+    __ compiler_fast_lock_object(CR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3_or_noreg);
     __ beq(CR0, locked);
 
     // None of the above fast optimizations worked so we have to get into the
@@ -2667,7 +2606,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ addi(r_box, R1_SP, lock_offset);
 
     // Try fastpath for unlocking.
-    __ compiler_fast_unlock_lightweight_object(CR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
+    __ compiler_fast_unlock_object(CR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
     __ beq(CR0, done);
 
     // Save and restore any potential method result value around the unlocking operation.

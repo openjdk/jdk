@@ -1,12 +1,12 @@
 {
 	"folders": [
 		{
-			"name": "Source root",
+			"name": "Source root ({{TOPDIR_BASE}})",
 			"path": "{{TOPDIR}}"
 		},
 		// {{EXTRA_WORKSPACE_ROOT}}
 		{
-			"name": "Build artifacts",
+			"name": "Build artifacts ({{OUTPUT_BASE}})",
 			"path": "{{OUTPUTDIR}}"
 		}
 	],
@@ -22,6 +22,7 @@
 		// Java extension
 		"jdk.project.jdkhome": "{{OUTPUTDIR}}/jdk",
 		"jdk.java.onSave.organizeImports": false, // prevents unnecessary changes
+		"jdk.serverVmOptions": ["-Xmx2G"], // prevent out of memory
 
 		// Additional conventions
 		"files.associations": {

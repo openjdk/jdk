@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,8 @@ import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
+import java.io.ObjectStreamClass;
+import java.io.ObjectStreamField;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.Month;
@@ -514,5 +516,19 @@ public class TestLocalDate extends AbstractTest {
                 .minus(quarterYears, ChronoUnit.MONTHS)
                 .minus(quarterYears, ChronoUnit.MONTHS);
         assertEquals(t0, t1);
+    }
+
+    // Verify serialized fields types are backward compatible
+    @Test
+    public void verifySerialFields() {
+        var osc = ObjectStreamClass.lookup(LocalDate.class);
+        for (ObjectStreamField f : osc.getFields()) {
+            switch (f.getName()) {
+                case "year" -> assertEquals(f.getType(), int.class, f.getName());
+                case "month",
+                     "day" -> assertEquals(f.getType(), short.class);
+                default -> fail("unknown field in LocalDate: " + f.getName());
+            }
+        }
     }
 }

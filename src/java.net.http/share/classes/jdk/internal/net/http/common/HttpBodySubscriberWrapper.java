@@ -284,6 +284,7 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
      */
     public final void complete(Throwable t) {
         if (markCompleted()) {
+            logComplete(t);
             tryUnregister();
             t  = withError = Utils.getCompletionCause(t);
             if (t == null) {
@@ -310,6 +311,10 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
                 propagateError(t);
             }
         }
+    }
+
+    protected void logComplete(Throwable error) {
+
     }
 
     /**

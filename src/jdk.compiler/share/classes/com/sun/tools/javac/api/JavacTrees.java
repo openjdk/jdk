@@ -473,6 +473,10 @@ public class JavacTrees extends DocTrees {
             if (memberName == null)
                 return tsym;
 
+            if (tsym.type.isPrimitive()) {
+                return null;
+            }
+
             final List<Type> paramTypes;
             if (ref.paramTypes == null)
                 paramTypes = null;

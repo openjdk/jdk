@@ -48,7 +48,7 @@ public:
   virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
                                   Register src, Register dst, Register count, RegSet saved_regs) {}
   virtual void arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
-                                  Register start, Register count, Register tmp, RegSet saved_regs) {}
+                                  Register start, Register count, Register tmp) {}
 
   virtual void copy_load_at(MacroAssembler* masm,
                             DecoratorSet decorators,

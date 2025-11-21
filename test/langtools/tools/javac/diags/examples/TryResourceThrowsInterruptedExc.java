@@ -22,8 +22,15 @@
  */
 
 // key: compiler.warn.try.resource.throws.interrupted.exc
+// key: compiler.warn.try.resource.can.throw.interrupted.exc
 // options: -Xlint:try
 
 class TryResourceThrowsInterruptedException implements AutoCloseable {
     public void close() throws InterruptedException {}
+    {
+        try (var t = new TryResourceThrowsInterruptedException()) {
+            t.hashCode();
+        } catch (InterruptedException e) {
+        }
+    }
 }

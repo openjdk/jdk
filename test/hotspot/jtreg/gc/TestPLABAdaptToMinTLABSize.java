@@ -24,7 +24,7 @@
 package gc;
 
 /*
- * @test TestPLABAdaptToMinTLABSizeG1
+ * @test id=G1
  * @bug 8289137
  * @summary Make sure that Young/OldPLABSize adapt to MinTLABSize setting.
  * @requires vm.gc.G1
@@ -35,7 +35,7 @@ package gc;
  */
 
 /*
- * @test TestPLABAdaptToMinTLABSizeParallel
+ * @test id=Parallel
  * @bug 8289137
  * @summary Make sure that Young/OldPLABSize adapt to MinTLABSize setting.
  * @requires vm.gc.Parallel

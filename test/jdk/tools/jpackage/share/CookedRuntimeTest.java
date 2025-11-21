@@ -51,10 +51,11 @@ import jdk.jpackage.test.TKit;
 public final class CookedRuntimeTest {
 
     public CookedRuntimeTest(String javaAppDesc, String jlinkOutputSubdir,
-            String runtimeSubdir) {
+            String runtimeSubdir, boolean withNativeCommands) {
         this.javaAppDesc = javaAppDesc;
         this.jlinkOutputSubdir = Path.of(jlinkOutputSubdir);
         this.runtimeSubdir = Path.of(runtimeSubdir);
+        this.withNativeCommands = withNativeCommands;
     }
 
     @Test
@@ -89,6 +90,10 @@ public final class CookedRuntimeTest {
                 "--strip-debug",
                 "--no-header-files",
                 "--no-man-pages");
+
+        if (!withNativeCommands) {
+            jlink.addArgument("--strip-native-commands");
+        }
 
         if (moduleName != null) {
             jlink.addArguments("--add-modules", moduleName, "--module-path",
@@ -127,7 +132,14 @@ public final class CookedRuntimeTest {
         List<Object[]> data = new ArrayList<>();
         for (var javaAppDesc : javaAppDescs) {
             for (var pathCfg : paths) {
-                data.add(new Object[] { javaAppDesc, pathCfg[0], pathCfg[1] });
+                if (TKit.isOSX()) {
+                    // On OSX platform we need to test both runtime root and runtime home
+                    // directories with and without "bin" folder.
+                    data.add(new Object[] { javaAppDesc, pathCfg[0], pathCfg[1], true });
+                    data.add(new Object[] { javaAppDesc, pathCfg[0], pathCfg[1], false });
+                } else {
+                    data.add(new Object[] { javaAppDesc, pathCfg[0], pathCfg[1], true });
+                }
             }
         }
 
@@ -137,4 +149,5 @@ public final class CookedRuntimeTest {
     private final String javaAppDesc;
     private final Path jlinkOutputSubdir;
     private final Path runtimeSubdir;
+    private final boolean withNativeCommands;
 }

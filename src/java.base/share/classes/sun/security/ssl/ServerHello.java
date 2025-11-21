@@ -235,7 +235,8 @@ final class ServerHello {
                 serverVersion.name,
                 Utilities.toHexString(serverRandom.randomBytes),
                 sessionId.toString(),
-                cipherSuite.name + "(" + Utilities.byte16HexString(cipherSuite.id) + ")",
+                cipherSuite.name +
+                        "(" + Utilities.byte16HexString(cipherSuite.id) + ")",
                 HexFormat.of().toHexDigits(compressionMethod),
                 Utilities.indent(extensions.toString(), "    ")
             };
@@ -364,7 +365,7 @@ final class ServerHello {
                 shc.sslConfig.getEnabledExtensions(
                         SSLHandshake.SERVER_HELLO, shc.negotiatedProtocol);
             shm.extensions.produce(shc, serverHelloExtensions);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine("Produced ServerHello handshake message", shm);
             }
 
@@ -439,7 +440,7 @@ final class ServerHello {
                 }
 
                 // The cipher suite has been negotiated.
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("use cipher suite " + cs.name);
                 }
 
@@ -452,7 +453,7 @@ final class ServerHello {
                 if (ke != null) {
                     SSLPossession[] hcds = ke.createPossessions(shc);
                     if ((hcds != null) && (hcds.length != 0)) {
-                        if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                        if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                             SSLLogger.warning(
                                 "use legacy cipher suite " + cs.name);
                         }
@@ -534,8 +535,9 @@ final class ServerHello {
 
                 // consider the handshake extension impact
                 SSLExtension[] enabledExtensions =
-                shc.sslConfig.getEnabledExtensions(
-                SSLHandshake.CLIENT_HELLO, shc.negotiatedProtocol);
+                        shc.sslConfig.getEnabledExtensions(
+                                SSLHandshake.CLIENT_HELLO,
+                                shc.negotiatedProtocol);
                 clientHello.extensions.consumeOnTrade(shc, enabledExtensions);
 
                 shc.negotiatedProtocol =
@@ -568,7 +570,7 @@ final class ServerHello {
                     shc.sslConfig.getEnabledExtensions(
                         SSLHandshake.SERVER_HELLO, shc.negotiatedProtocol);
             shm.extensions.produce(shc, serverHelloExtensions);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine("Produced ServerHello handshake message", shm);
             }
 
@@ -670,6 +672,17 @@ final class ServerHello {
             // Update the context for master key derivation.
             shc.handshakeKeyDerivation = kd;
 
+            if (shc.sslConfig.isQuic) {
+                QuicTLSEngineImpl engine =
+                        (QuicTLSEngineImpl) shc.conContext.transport;
+                try {
+                    engine.deriveHandshakeKeys();
+                } catch (IOException e) {
+                    // unlikely
+                    throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                            "Failed to derive keys", e);
+                }
+            }
             // Check if the server supports stateless resumption
             if (sessionCache.statelessEnabled()) {
                 shc.statelessResumption = true;
@@ -710,14 +723,14 @@ final class ServerHello {
                 }
 
                 // The cipher suite has been negotiated.
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("use cipher suite " + cs.name);
                 }
                 return cs;
             }
 
             if (legacySuite != null) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.warning(
                             "use legacy cipher suite " + legacySuite.name);
                 }
@@ -770,7 +783,7 @@ final class ServerHello {
                 shc.sslConfig.getEnabledExtensions(
                     SSLHandshake.HELLO_RETRY_REQUEST, shc.negotiatedProtocol);
             hhrm.extensions.produce(shc, serverHelloExtensions);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "Produced HelloRetryRequest handshake message", hhrm);
             }
@@ -784,9 +797,9 @@ final class ServerHello {
             // first handshake message. This may either be after
             // a ServerHello or a HelloRetryRequest.
             // (RFC 8446, Appendix D.4)
-            shc.conContext.outputRecord.changeWriteCiphers(
-                SSLWriteCipher.nullTlsWriteCipher(),
-                    (clientHello.sessionId.length() != 0));
+            if (clientHello.sessionId.length() != 0) {
+                shc.conContext.outputRecord.encodeChangeCipherSpec();
+            }
 
             // Stateless, shall we clean up the handshake context as well?
             shc.handshakeHash.finish();     // forgot about the handshake hash
@@ -832,7 +845,7 @@ final class ServerHello {
                     shc.sslConfig.getEnabledExtensions(
                     SSLHandshake.MESSAGE_HASH, shc.negotiatedProtocol);
             hhrm.extensions.produce(shc, serverHelloExtensions);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "Reproduced HelloRetryRequest handshake message", hhrm);
             }
@@ -873,7 +886,7 @@ final class ServerHello {
             }
 
             ServerHelloMessage shm = new ServerHelloMessage(chc, message);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine("Consuming ServerHello handshake message", shm);
             }
 
@@ -918,7 +931,7 @@ final class ServerHello {
             }
 
             chc.negotiatedProtocol = serverVersion;
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "Negotiated protocol version: " + serverVersion.name);
             }
@@ -973,7 +986,7 @@ final class ServerHello {
                 chc.conContext.protocolVersion = chc.negotiatedProtocol;
                 chc.conContext.outputRecord.setVersion(chc.negotiatedProtocol);
             }
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "Negotiated protocol version: " + serverVersion.name);
             }
@@ -1119,7 +1132,7 @@ final class ServerHello {
                     chc.handshakeSession = new SSLSessionImpl(chc,
                             chc.negotiatedCipherSuite, newId);
 
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.fine("Locally assigned Session Id: " +
                                 newId.toString());
                     }
@@ -1191,7 +1204,7 @@ final class ServerHello {
     private static void setUpPskKD(HandshakeContext hc,
             SecretKey psk) throws SSLHandshakeException {
 
-        if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+        if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
             SSLLogger.fine("Using PSK to derive early secret");
         }
 
@@ -1366,9 +1379,20 @@ final class ServerHello {
 
             // Should use resumption_master_secret for TLS 1.3.
             // chc.handshakeSession.setMasterSecret(masterSecret);
-
             // Update the context for master key derivation.
             chc.handshakeKeyDerivation = secretKD;
+
+            if (chc.sslConfig.isQuic) {
+                QuicTLSEngineImpl engine =
+                        (QuicTLSEngineImpl) chc.conContext.transport;
+                try {
+                    engine.deriveHandshakeKeys();
+                } catch (IOException e) {
+                    // unlikely
+                    throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                            "Failed to derive keys", e);
+                }
+            }
 
             // update the consumers and producers
             //

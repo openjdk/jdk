@@ -58,7 +58,6 @@ private:
   size_t    _allocated_before_last_gc;           // total bytes allocated up until the last gc
 
   static size_t   _max_size;                          // maximum size of any TLAB
-  static int      _reserve_for_allocation_prefetch;   // Reserve at the end of the TLAB
   static unsigned _target_refills;                    // expected number of refills between GCs
 
   unsigned  _number_of_refills;

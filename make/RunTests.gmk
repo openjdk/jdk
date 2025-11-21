@@ -206,7 +206,7 @@ $(eval $(call ParseKeywordVariable, JTREG, \
     SINGLE_KEYWORDS := JOBS TIMEOUT_FACTOR FAILURE_HANDLER_TIMEOUT \
         TEST_MODE ASSERT VERBOSE RETAIN TEST_THREAD_FACTORY JVMTI_STRESS_AGENT \
         MAX_MEM RUN_PROBLEM_LISTS RETRY_COUNT REPEAT_COUNT MAX_OUTPUT REPORT \
-        AOT_JDK $(CUSTOM_JTREG_SINGLE_KEYWORDS), \
+        AOT_JDK MANUAL $(CUSTOM_JTREG_SINGLE_KEYWORDS), \
     STRING_KEYWORDS := OPTIONS JAVA_OPTIONS VM_OPTIONS KEYWORDS \
         EXTRA_PROBLEM_LISTS LAUNCHER_OPTIONS \
         $(CUSTOM_JTREG_STRING_KEYWORDS), \
@@ -911,7 +911,13 @@ define SetupRunJtregTestBody
       -vmoption:-Dtest.boot.jdk="$$(BOOT_JDK)" \
       -vmoption:-Djava.io.tmpdir="$$($1_TEST_TMP_DIR)"
 
-  $1_JTREG_BASIC_OPTIONS += -automatic -ignore:quiet
+  $1_JTREG_BASIC_OPTIONS += -ignore:quiet
+
+  ifeq ($$(JTREG_MANUAL), true)
+    $1_JTREG_BASIC_OPTIONS += -manual
+  else
+    $1_JTREG_BASIC_OPTIONS += -automatic
+  endif
 
   # Make it possible to specify the JIB_DATA_DIR for tests using the
   # JIB Artifact resolver
@@ -946,8 +952,8 @@ define SetupRunJtregTestBody
   JTREG_ALL_OPTIONS := $$(JTREG_JAVA_OPTIONS) $$(JTREG_VM_OPTIONS)
 
   JTREG_AUTO_PROBLEM_LISTS :=
-  # Please reach consensus before changing this. It was not easy changing it to a `1`.
-  JTREG_AUTO_TIMEOUT_FACTOR := 1
+  # Please reach consensus before changing this.
+  JTREG_AUTO_TIMEOUT_FACTOR := 4
 
   ifneq ($$(findstring -Xcomp, $$(JTREG_ALL_OPTIONS)), )
     JTREG_AUTO_PROBLEM_LISTS += ProblemList-Xcomp.txt

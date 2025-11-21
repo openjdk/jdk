@@ -61,7 +61,7 @@ public class InterruptibleOrNot {
     }
 
     /**
-     * Call DatagramChannel.receive with the interrupt status set, the DatagramChannel
+     * Call DatagramChannel.receive with the interrupted status set, the DatagramChannel
      * is interruptible.
      */
     @Test
@@ -72,7 +72,7 @@ public class InterruptibleOrNot {
             assertThrows(ClosedByInterruptException.class, () -> dc.receive(buf));
             assertFalse(dc.isOpen());
         } finally {
-            Thread.interrupted();  // clear interrupt status
+            Thread.interrupted();  // clear interrupted status
         }
     }
 
@@ -89,12 +89,12 @@ public class InterruptibleOrNot {
             assertThrows(ClosedByInterruptException.class, () -> dc.receive(buf));
             assertFalse(dc.isOpen());
         } finally {
-            Thread.interrupted();  // clear interrupt status
+            Thread.interrupted();  // clear interrupted status
         }
     }
 
     /**
-     * Call DatagramChannel.receive with the interrupt status set, the DatagramChannel
+     * Call DatagramChannel.receive with the interrupted status set, the DatagramChannel
      * is not interruptible.
      */
     @Test
@@ -111,7 +111,7 @@ public class InterruptibleOrNot {
             assertThrows(AsynchronousCloseException.class, () -> dc.receive(buf));
             assertFalse(dc.isOpen());
         } finally {
-            Thread.interrupted();  // clear interrupt status
+            Thread.interrupted();  // clear interrupted status
         }
     }
 
@@ -136,12 +136,12 @@ public class InterruptibleOrNot {
             assertThrows(AsynchronousCloseException.class, () -> dc.receive(buf));
             assertFalse(dc.isOpen());
         } finally {
-            Thread.interrupted();  // clear interrupt status
+            Thread.interrupted();  // clear interrupted status
         }
     }
 
     /**
-     * Call DatagramChannel.send with the interrupt status set, the DatagramChannel
+     * Call DatagramChannel.send with the interrupted status set, the DatagramChannel
      * is interruptible.
      */
     @Test
@@ -158,7 +158,7 @@ public class InterruptibleOrNot {
     }
 
     /**
-     * Call DatagramChannel.send with the interrupt status set, the DatagramChannel
+     * Call DatagramChannel.send with the interrupted status set, the DatagramChannel
      * is not interruptible.
      */
     @Test
@@ -171,7 +171,7 @@ public class InterruptibleOrNot {
             assertEquals(100, n);
             assertTrue(dc.isOpen());
         } finally {
-            Thread.interrupted();  // clear interrupt status
+            Thread.interrupted();  // clear interrupted status
         }
     }
 

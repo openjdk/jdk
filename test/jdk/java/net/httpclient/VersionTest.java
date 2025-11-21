@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
 
 public class VersionTest {
     static HttpServer s1 ;
@@ -80,6 +81,8 @@ public class VersionTest {
             test(HTTP_1_1, false);
             test(HTTP_2, false);
             test(HTTP_2, true);
+            test(HTTP_3, false);
+            test(HTTP_3, true);
         } finally {
             s1.stop(0);
             executor.shutdownNow();

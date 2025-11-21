@@ -191,7 +191,7 @@ final class KeyUpdate {
             // The consuming happens in client side only.
             PostHandshakeContext hc = (PostHandshakeContext)context;
             KeyUpdateMessage km = new KeyUpdateMessage(hc, message);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "Consuming KeyUpdate post-handshake message", km);
             }
@@ -235,7 +235,7 @@ final class KeyUpdate {
 
                 rc.baseSecret = nplus1;
                 hc.conContext.inputRecord.changeReadCiphers(rc);
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
                     SSLLogger.fine("KeyUpdate: read key updated");
                 }
             } catch (GeneralSecurityException gse) {
@@ -269,8 +269,14 @@ final class KeyUpdate {
                 HandshakeMessage message) throws IOException {
             // The producing happens in server side only.
             PostHandshakeContext hc = (PostHandshakeContext)context;
+            if (hc.sslConfig.isQuic) {
+                // Quic doesn't allow KEY_UPDATE TLS message. It has its own Quic specific
+                // key update mechanism, RFC-9001, section 6:
+                // Endpoints MUST NOT send a TLS KeyUpdate message.
+                return null;
+            }
             KeyUpdateMessage km = (KeyUpdateMessage)message;
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "Produced KeyUpdate post-handshake message", km);
             }
@@ -322,7 +328,7 @@ final class KeyUpdate {
             // changeWriteCiphers() implementation.
             wc.baseSecret = nplus1;
             hc.conContext.outputRecord.changeWriteCiphers(wc, km.status.id);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
                 SSLLogger.fine("KeyUpdate: write key updated");
             }
 

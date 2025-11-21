@@ -66,11 +66,6 @@ void ParallelArguments::initialize() {
     }
   }
 
-  // True in product build, since tests using debug build often stress GC
-  if (FLAG_IS_DEFAULT(UseGCOverheadLimit)) {
-    FLAG_SET_DEFAULT(UseGCOverheadLimit, trueInProduct);
-  }
-
   if (InitialSurvivorRatio < MinSurvivorRatio) {
     if (FLAG_IS_CMDLINE(InitialSurvivorRatio)) {
       if (FLAG_IS_CMDLINE(MinSurvivorRatio)) {
@@ -103,15 +98,10 @@ void ParallelArguments::initialize() {
   FullGCForwarding::initialize_flags(heap_reserved_size_bytes());
 }
 
-// The alignment used for spaces in young gen and old gen
-static size_t default_space_alignment() {
-  return 64 * K * HeapWordSize;
-}
-
 void ParallelArguments::initialize_alignments() {
   // Initialize card size before initializing alignments
   CardTable::initialize_card_size();
-  SpaceAlignment = default_space_alignment();
+  SpaceAlignment = ParallelScavengeHeap::default_space_alignment();
   HeapAlignment = compute_heap_alignment();
 }
 
@@ -123,12 +113,23 @@ void ParallelArguments::initialize_heap_flags_and_sizes_one_pass() {
 void ParallelArguments::initialize_heap_flags_and_sizes() {
   initialize_heap_flags_and_sizes_one_pass();
 
+  if (!UseLargePages) {
+    ParallelScavengeHeap::set_desired_page_size(os::vm_page_size());
+    return;
+  }
+
+  // If using large-page, need to update SpaceAlignment so that spaces are page-size aligned.
   const size_t min_pages = 4; // 1 for eden + 1 for each survivor + 1 for old
   const size_t page_sz = os::page_size_for_region_aligned(MinHeapSize, min_pages);
+  ParallelScavengeHeap::set_desired_page_size(page_sz);
 
-  // Can a page size be something else than a power of two?
-  assert(is_power_of_2((intptr_t)page_sz), "must be a power of 2");
-  size_t new_alignment = align_up(page_sz, SpaceAlignment);
+  if (page_sz == os::vm_page_size()) {
+    log_warning(gc, heap)("MinHeapSize (%zu) must be large enough for 4 * page-size; Disabling UseLargePages for heap", MinHeapSize);
+    return;
+  }
+
+  // Space is largepage-aligned.
+  size_t new_alignment = page_sz;
   if (new_alignment != SpaceAlignment) {
     SpaceAlignment = new_alignment;
     // Redo everything from the start

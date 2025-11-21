@@ -1,5 +1,26 @@
 #
+# Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
 #
 # List of locale data for locale-data test
 #
@@ -2384,15 +2405,15 @@ FormatData/zh_HK/DayAbbreviations/1=週一
 FormatData/zh_HK/DayAbbreviations/2=週二
 FormatData/zh_HK/latn.NumberPatterns/1=¤#,##0.00
 CurrencyNames/zh_HK/HKD=HK$
-FormatData/zh_HK/TimePatterns/0=ah:mm:ss [zzzz]
-FormatData/zh_HK/TimePatterns/1=ah:mm:ss [z]
+FormatData/zh_HK/TimePatterns/0=ah:mm:ss '['zzzz']'
+FormatData/zh_HK/TimePatterns/1=ah:mm:ss '['z']'
 FormatData/zh_HK/TimePatterns/2=ah:mm:ss
 FormatData/zh_HK/TimePatterns/3=ah:mm
 FormatData/zh_HK/DatePatterns/0=y年M月d日EEEE
 FormatData/zh_HK/DatePatterns/1=y年M月d日
 FormatData/zh_HK/DatePatterns/2=y年M月d日
 FormatData/zh_HK/DatePatterns/3=d/M/y
-FormatData/zh_HK/DateTimePatterns/0={1} {0}
+FormatData/zh_HK/DateTimePatterns/0={1}{0}
 
 #bug #4149569
 LocaleNames/tr/TR=Türkiye
@@ -3216,8 +3237,8 @@ LocaleNames/es_US/kk=kazajo
 LocaleNames/es_US/km=jemer
 LocaleNames/es_US/kn=canarés
 LocaleNames/es_US/kr=kanuri
-LocaleNames/es_US/ks=cachemiro
-LocaleNames/es_US/ku=kurdo
+LocaleNames/es_US/ks=cachemir
+LocaleNames/es_US/ku=kurdo kurmanyi
 LocaleNames/es_US/kv=komi
 LocaleNames/es_US/kw=córnico
 LocaleNames/es_US/ky=kirguís
@@ -3249,7 +3270,7 @@ LocaleNames/es_US/sn=shona
 LocaleNames/es_US/ss=siswati
 LocaleNames/es_US/st=sesotho del sur
 LocaleNames/es_US/su=sundanés
-LocaleNames/es_US/sw=swahili
+LocaleNames/es_US/sw=suajili
 LocaleNames/es_US/tg=tayiko
 LocaleNames/es_US/tn=setsuana
 LocaleNames/es_US/to=tongano
@@ -3344,7 +3365,7 @@ LocaleNames/pt/gu=guzerate
 LocaleNames/pt/gv=manx
 LocaleNames/pt/ha=hauçá
 LocaleNames/pt/he=hebraico
-LocaleNames/pt/hi=híndi
+LocaleNames/pt/hi=hindi
 LocaleNames/pt/ho=hiri motu
 LocaleNames/pt/hr=croata
 LocaleNames/pt/ht=haitiano
@@ -3372,7 +3393,7 @@ LocaleNames/pt/kn=canarim
 LocaleNames/pt/ko=coreano
 LocaleNames/pt/kr=canúri
 LocaleNames/pt/ks=caxemira
-LocaleNames/pt/ku=curdo
+LocaleNames/pt/ku=curmânji
 LocaleNames/pt/kv=komi
 LocaleNames/pt/kw=córnico
 LocaleNames/pt/ky=quirguiz
@@ -3859,7 +3880,7 @@ LocaleNames/ga/CD=Poblacht Dhaonlathach an Chongó
 LocaleNames/ga/CF=Poblacht na hAfraice Láir
 LocaleNames/ga/CG=Congó-Brazzaville
 LocaleNames/ga/CH=an Eilvéis
-LocaleNames/ga/CI=An Cósta Eabhair
+LocaleNames/ga/CI=Côte d’Ivoire
 LocaleNames/ga/CK=Oileáin Cook
 LocaleNames/ga/CL=an tSile
 LocaleNames/ga/CM=Camarún
@@ -3867,7 +3888,7 @@ LocaleNames/ga/CN=an tSín
 LocaleNames/ga/CO=an Cholóim
 LocaleNames/ga/CR=Cósta Ríce
 LocaleNames/ga/CU=Cúba
-LocaleNames/ga/CV=Rinn Verde
+LocaleNames/ga/CV=Poblacht Cabo Verde
 LocaleNames/ga/CX=Oileán na Nollag
 LocaleNames/ga/CY=an Chipir
 LocaleNames/ga/CZ=an tSeicia
@@ -3875,11 +3896,11 @@ LocaleNames/ga/DE=an Ghearmáin
 LocaleNames/ga/DK=an Danmhairg
 LocaleNames/ga/DM=Doiminice
 LocaleNames/ga/DO=an Phoblacht Dhoiminiceach
-LocaleNames/ga/DZ=An Ailgéir
+LocaleNames/ga/DZ=an Ailgéir
 LocaleNames/ga/EC=Eacuadór
 LocaleNames/ga/EE=an Eastóin
-LocaleNames/ga/EG=An Éigipt
-LocaleNames/ga/EH=An Sahára Thiar
+LocaleNames/ga/EG=an Éigipt
+LocaleNames/ga/EH=an Sahára Thiar
 LocaleNames/ga/ES=an Spáinn
 LocaleNames/ga/ET=an Aetóip
 LocaleNames/ga/FI=an Fhionlainn
@@ -3895,8 +3916,8 @@ LocaleNames/ga/GF=Guáin na Fraince
 LocaleNames/ga/GH=Gána
 LocaleNames/ga/GI=Giobráltar
 LocaleNames/ga/GL=an Ghraonlainn
-LocaleNames/ga/GM=An Ghaimbia
-LocaleNames/ga/GN=An Ghuine
+LocaleNames/ga/GM=an Ghaimbia
+LocaleNames/ga/GN=an Ghuine
 LocaleNames/ga/GP=Guadalúip
 LocaleNames/ga/GQ=an Ghuine Mheánchiorclach
 LocaleNames/ga/GR=an Ghréig
@@ -3935,12 +3956,12 @@ LocaleNames/ga/KZ=an Chasacstáin
 LocaleNames/ga/LB=an Liobáin
 LocaleNames/ga/LI=Lichtinstéin
 LocaleNames/ga/LK=Srí Lanca
-LocaleNames/ga/LR=An Libéir
+LocaleNames/ga/LR=an Libéir
 LocaleNames/ga/LS=Leosóta
 LocaleNames/ga/LT=an Liotuáin
 LocaleNames/ga/LU=Lucsamburg
 LocaleNames/ga/LV=an Laitvia
-LocaleNames/ga/LY=An Libia
+LocaleNames/ga/LY=an Libia
 LocaleNames/ga/MA=Maracó
 LocaleNames/ga/MC=Monacó
 LocaleNames/ga/MD=an Mholdóiv
@@ -3950,7 +3971,7 @@ LocaleNames/ga/ML=Mailí
 LocaleNames/ga/MM=Maenmar (Burma)
 LocaleNames/ga/MN=an Mhongóil
 LocaleNames/ga/MP=Na hOileáin Mháirianacha Thuaidh
-LocaleNames/ga/MR=An Mháratái
+LocaleNames/ga/MR=an Mháratáin
 LocaleNames/ga/MS=Montsarat
 LocaleNames/ga/MT=Málta
 LocaleNames/ga/MU=Oileán Mhuirís
@@ -3961,9 +3982,9 @@ LocaleNames/ga/MY=an Mhalaeisia
 LocaleNames/ga/MZ=Mósaimbíc
 LocaleNames/ga/NA=an Namaib
 LocaleNames/ga/NC=an Nua-Chaladóin
-LocaleNames/ga/NE=An Nígir
+LocaleNames/ga/NE=an Nígir
 LocaleNames/ga/NF=Oileán Norfolk
-LocaleNames/ga/NG=An Nigéir
+LocaleNames/ga/NG=an Nigéir
 LocaleNames/ga/NI=Nicearagua
 LocaleNames/ga/NL=an Ísiltír
 LocaleNames/ga/NO=an Iorua
@@ -3989,7 +4010,7 @@ LocaleNames/ga/RW=Ruanda
 LocaleNames/ga/SA=an Araib Shádach
 LocaleNames/ga/SB=Oileáin Sholaimh
 LocaleNames/ga/SC=na Séiséil
-LocaleNames/ga/SD=An tSúdáin
+LocaleNames/ga/SD=an tSúdáin
 LocaleNames/ga/SE=an tSualainn
 LocaleNames/ga/SG=Singeapór
 LocaleNames/ga/SH=San Héilin
@@ -3998,13 +4019,13 @@ LocaleNames/ga/SJ=Svalbard agus Jan Mayen
 LocaleNames/ga/SK=an tSlóvaic
 LocaleNames/ga/SL=Siarra Leon
 LocaleNames/ga/SM=San Mairíne
-LocaleNames/ga/SN=An tSeineagáil
+LocaleNames/ga/SN=an tSeineagáil
 LocaleNames/ga/SO=an tSomáil
 LocaleNames/ga/SR=Suranam
 LocaleNames/ga/ST=São Tomé agus Príncipe
 LocaleNames/ga/SV=An tSalvadóir
 LocaleNames/ga/SY=an tSiria
-LocaleNames/ga/SZ=eSuaitíní
+LocaleNames/ga/SZ=Esuaitíní
 LocaleNames/ga/TC=Oileáin na dTurcach agus Caicos
 LocaleNames/ga/TD=Sead
 LocaleNames/ga/TF=Críocha Francacha Dheisceart an Domhain
@@ -4014,7 +4035,7 @@ LocaleNames/ga/TJ=an Táidsíceastáin
 LocaleNames/ga/TK=Tócalá
 LocaleNames/ga/TL=Tíomór Thoir
 LocaleNames/ga/TM=an Tuircméanastáin
-LocaleNames/ga/TN=An Tuinéis
+LocaleNames/ga/TN=an Tuinéis
 LocaleNames/ga/TR=an Tuirc
 LocaleNames/ga/TT=Oileán na Tríonóide agus Tobága
 LocaleNames/ga/TV=Túvalú
@@ -4133,7 +4154,7 @@ LocaleNames/sr/ja=јапански
 LocaleNames/sr/ka=грузијски
 LocaleNames/sr/km=кмерски
 LocaleNames/sr/ko=корејски
-LocaleNames/sr/ku=курдски
+LocaleNames/sr/ku=курманџи
 LocaleNames/sr/ky=киргиски
 LocaleNames/sr/la=латински
 LocaleNames/sr/lt=литвански
@@ -5328,7 +5349,7 @@ LocaleNames/es/kk=kazajo
 LocaleNames/es/km=jemer
 LocaleNames/es/kn=canarés
 LocaleNames/es/ks=cachemir
-LocaleNames/es/ku=kurdo
+LocaleNames/es/ku=kurmanji
 LocaleNames/es/ky=kirguís
 LocaleNames/es/lu=luba-katanga
 LocaleNames/es/mr=maratí
@@ -5447,7 +5468,7 @@ LocaleNames/nl/kn=Kannada
 LocaleNames/nl/ko=Koreaans
 LocaleNames/nl/kr=Kanuri
 LocaleNames/nl/ks=Kasjmiri
-LocaleNames/nl/ku=Koerdisch
+LocaleNames/nl/ku=Kurmanci
 LocaleNames/nl/kv=Komi
 LocaleNames/nl/kw=Cornish
 LocaleNames/nl/ky=Kirgizisch
@@ -6504,7 +6525,7 @@ CurrencyNames/zh_TW/mxn=墨西哥披索
 CurrencyNames/zh_TW/mxv=墨西哥轉換單位 (UDI)
 CurrencyNames/zh_TW/myr=馬來西亞令吉
 CurrencyNames/zh_TW/mzn=莫三比克梅蒂卡爾
-CurrencyNames/zh_TW/nio=尼加拉瓜金科多巴
+CurrencyNames/zh_TW/nio=尼加拉瓜科多巴
 CurrencyNames/zh_TW/rol=舊羅馬尼亞列伊
 CurrencyNames/zh_TW/ron=羅馬尼亞列伊
 CurrencyNames/zh_TW/rsd=塞爾維亞戴納
@@ -6521,9 +6542,9 @@ CurrencyNames/zh_TW/tzs=坦尚尼亞先令
 CurrencyNames/zh_TW/uzs=烏茲別克索姆
 CurrencyNames/zh_TW/veb=委內瑞拉玻利瓦 (1871–2008)
 CurrencyNames/zh_TW/vef=委內瑞拉玻利瓦 (2008–2018)
-CurrencyNames/zh_TW/xaf=法郎 (CFA–BEAC)
+CurrencyNames/zh_TW/xaf=中非法郎
 CurrencyNames/zh_TW/xag=白銀
-CurrencyNames/zh_TW/xof=法郎 (CFA–BCEAO)
+CurrencyNames/zh_TW/xof=西非法郎
 CurrencyNames/zh_TW/xpd=帕拉狄昂
 CurrencyNames/zh_TW/xpt=白金
 CurrencyNames/zh_TW/xts=測試用貨幣代碼
@@ -7867,7 +7888,7 @@ FormatData/nn/latn.NumberElements/0=,
 FormatData/nn/latn.NumberElements/1= 
 
 # CalendarData consolidated to root
-CalendarData//firstDayOfWeek=1: AG AS BD BR BS BT BW BZ CA CO DM DO ET GT GU HK HN ID IL IN JM JP KE KH KR LA MH MM MO MT MX MZ NI NP PA PE PH PK PR PT PY SA SG SV TH TT TW UM US VE VI WS YE ZA ZW;2: 001 AD AE AI AL AM AN AR AT AU AX AZ BA BE BG BM BN BY CH CL CM CN CR CY CZ DE DK EC EE ES FI FJ FO FR GB GE GF GP GR HR HU IE IS IT KG KZ LB LI LK LT LU LV MC MD ME MK MN MQ MY NL NO NZ PL RE RO RS RU SE SI SK SM TJ TM TR UA UY UZ VA VN XK;6: MV;7: AF BH DJ DZ EG IQ IR JO KW LY OM QA SD SY
+CalendarData//firstDayOfWeek=1: AG AS BD BR BS BT BW BZ CA CO DM DO ET GT GU HK HN ID IL IN IS JM JP KE KH KR LA MH MM MO MT MX MZ NI NP PA PE PH PK PR PT PY SA SG SV TH TT TW UM US VE VI WS YE ZA ZW;2: 001 AD AE AI AL AM AN AR AT AU AX AZ BA BE BG BM BN BY CH CL CM CN CR CY CZ DE DK EC EE ES FI FJ FO FR GB GE GF GP GR HR HU IE IT KG KZ LB LI LK LT LU LV MC MD ME MK MN MQ MY NL NO NZ PL RE RO RS RU SE SI SK SM TJ TM TR UA UY UZ VA VN XK;6: MV;7: AF BH DJ DZ EG IQ IR JO KW LY OM QA SD SY
 CalendarData//minimalDaysInFirstWeek=1: 001 GU UM US VI;4: AD AN AT AX BE BG CH CZ DE DK EE ES FI FJ FO FR GB GF GG GI GP GR HU IE IM IS IT JE LI LT LU MC MQ NL NO PL PT RE RU SE SJ SK SM VA
 
 # tzdata2022f
@@ -7876,3 +7897,9 @@ TimeZoneNames/en/America\/Chihuahua/1=Central Standard Time
 
 # bug 8303472
 LocaleNames/en/TR=Türkiye
+
+# tok locale has '#' literals. Verify they are correctly escaped
+FormatData/tok/DatePatterns/0='sike' '#'y 'la' MMM 'la' 'suno' '#'d
+FormatData/tok/DatePatterns/1='tenpo' 'sike' '#'y 'la' 'tenpo' MMMM 'la' 'tenpo' 'suno' '#'d
+FormatData/tok/DatePatterns/2='sike' '#'y 'la' MMM 'la' 'suno' '#'d
+FormatData/tok/DatePatterns/3=y-MM-dd

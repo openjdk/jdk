@@ -268,9 +268,10 @@ void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
 
 void MonitorExitStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
-  if (_compute_lock) {
-    ce->monitor_address(_monitor_ix, _lock_reg);
-  }
+
+  // lock_reg was destroyed by fast unlocking attempt => recompute it
+  ce->monitor_address(_monitor_ix, _lock_reg);
+
   address stub = Runtime1::entry_for(ce->compilation()->has_fpu_code() ? StubId::c1_monitorexit_id : StubId::c1_monitorexit_nofpu_id);
   //__ load_const_optimized(R0, stub);
   __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(stub));

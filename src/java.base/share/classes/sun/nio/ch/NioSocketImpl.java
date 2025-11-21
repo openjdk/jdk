@@ -55,7 +55,6 @@ import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.ref.CleanerFactory;
 import sun.net.ConnectionResetException;
-import sun.net.NetHooks;
 import sun.net.PlatformSocketImpl;
 import sun.net.ext.ExtendedSocketOptions;
 import jdk.internal.util.Exceptions;
@@ -501,11 +500,6 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             }
             this.state = ST_CONNECTING;
 
-            // invoke beforeTcpConnect hook if not already bound
-            if (localport == 0) {
-                NetHooks.beforeTcpConnect(fd, address, port);
-            }
-
             // save the remote address/port
             this.address = address;
             this.port = port;
@@ -637,7 +631,6 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             ensureOpen();
             if (localport != 0)
                 throw new SocketException("Already bound");
-            NetHooks.beforeTcpBind(fd, host, port);
             Net.bind(fd, host, port);
             // set the address field to the given host address to
             // maintain long standing behavior. When binding to 0.0.0.0

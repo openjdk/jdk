@@ -41,6 +41,10 @@ public:
   virtual size_t soft_available() const = 0;
   virtual size_t available() const = 0;
   virtual size_t used() const = 0;
+
+  // Return an approximation of the bytes allocated since GC start.  The value returned is monotonically non-decreasing
+  // in time within each GC cycle.  For certain GC cycles, the value returned may include some bytes allocated before
+  // the start of the current GC cycle.
   virtual size_t bytes_allocated_since_gc_start() const = 0;
 };
 

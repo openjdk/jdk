@@ -106,6 +106,7 @@ public:
       PRINTIF(info.swap > 0, "swap");
       PRINTIF(info.ht, "huge");
       PRINTIF(info.anonhugepages > 0, "thp");
+      PRINTIF(info.thpeligible, "thpel");
       PRINTIF(info.hg, "thpad");
       PRINTIF(info.nh, "nothp");
       if (num_printed == 0) {
@@ -135,6 +136,7 @@ public:
     st->print_cr("                       com: mapping committed (swap space reserved)");
     st->print_cr("                      swap: mapping partly or completely swapped out");
     st->print_cr("                       thp: mapping uses THP");
+    st->print_cr("                     thpel: mapping is THP-eligible");
     st->print_cr("                     thpad: mapping is THP-madvised");
     st->print_cr("                     nothp: mapping is forbidden to use THP");
     st->print_cr("                      huge: mapping uses hugetlb pages");

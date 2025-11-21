@@ -86,56 +86,34 @@
 # define OS_X_10_9_0_KERNEL_MAJOR_VERSION 13
 #endif
 
-#ifdef AMD64
 #define SPELL_REG_SP "rsp"
 #define SPELL_REG_FP "rbp"
 #define REG_BCP context_r13
-#else
-#define SPELL_REG_SP "esp"
-#define SPELL_REG_FP "ebp"
-#endif // AMD64
 
 #ifdef __FreeBSD__
 # define context_trapno uc_mcontext.mc_trapno
-# ifdef AMD64
-#  define context_pc uc_mcontext.mc_rip
-#  define context_sp uc_mcontext.mc_rsp
-#  define context_fp uc_mcontext.mc_rbp
-#  define context_rip uc_mcontext.mc_rip
-#  define context_rsp uc_mcontext.mc_rsp
-#  define context_rbp uc_mcontext.mc_rbp
-#  define context_rax uc_mcontext.mc_rax
-#  define context_rbx uc_mcontext.mc_rbx
-#  define context_rcx uc_mcontext.mc_rcx
-#  define context_rdx uc_mcontext.mc_rdx
-#  define context_rsi uc_mcontext.mc_rsi
-#  define context_rdi uc_mcontext.mc_rdi
-#  define context_r8  uc_mcontext.mc_r8
-#  define context_r9  uc_mcontext.mc_r9
-#  define context_r10 uc_mcontext.mc_r10
-#  define context_r11 uc_mcontext.mc_r11
-#  define context_r12 uc_mcontext.mc_r12
-#  define context_r13 uc_mcontext.mc_r13
-#  define context_r14 uc_mcontext.mc_r14
-#  define context_r15 uc_mcontext.mc_r15
-#  define context_flags uc_mcontext.mc_flags
-#  define context_err uc_mcontext.mc_err
-# else
-#  define context_pc uc_mcontext.mc_eip
-#  define context_sp uc_mcontext.mc_esp
-#  define context_fp uc_mcontext.mc_ebp
-#  define context_eip uc_mcontext.mc_eip
-#  define context_esp uc_mcontext.mc_esp
-#  define context_eax uc_mcontext.mc_eax
-#  define context_ebx uc_mcontext.mc_ebx
-#  define context_ecx uc_mcontext.mc_ecx
-#  define context_edx uc_mcontext.mc_edx
-#  define context_ebp uc_mcontext.mc_ebp
-#  define context_esi uc_mcontext.mc_esi
-#  define context_edi uc_mcontext.mc_edi
-#  define context_eflags uc_mcontext.mc_eflags
-#  define context_trapno uc_mcontext.mc_trapno
-# endif
+# define context_pc uc_mcontext.mc_rip
+# define context_sp uc_mcontext.mc_rsp
+# define context_fp uc_mcontext.mc_rbp
+# define context_rip uc_mcontext.mc_rip
+# define context_rsp uc_mcontext.mc_rsp
+# define context_rbp uc_mcontext.mc_rbp
+# define context_rax uc_mcontext.mc_rax
+# define context_rbx uc_mcontext.mc_rbx
+# define context_rcx uc_mcontext.mc_rcx
+# define context_rdx uc_mcontext.mc_rdx
+# define context_rsi uc_mcontext.mc_rsi
+# define context_rdi uc_mcontext.mc_rdi
+# define context_r8  uc_mcontext.mc_r8
+# define context_r9  uc_mcontext.mc_r9
+# define context_r10 uc_mcontext.mc_r10
+# define context_r11 uc_mcontext.mc_r11
+# define context_r12 uc_mcontext.mc_r12
+# define context_r13 uc_mcontext.mc_r13
+# define context_r14 uc_mcontext.mc_r14
+# define context_r15 uc_mcontext.mc_r15
+# define context_flags uc_mcontext.mc_flags
+# define context_err uc_mcontext.mc_err
 #endif
 
 #ifdef __APPLE__
@@ -146,133 +124,82 @@
   #define DU3_PREFIX(s, m) s ## . ## m
 # endif
 
-# ifdef AMD64
-#  define context_pc context_rip
-#  define context_sp context_rsp
-#  define context_fp context_rbp
-#  define context_rip uc_mcontext->DU3_PREFIX(ss,rip)
-#  define context_rsp uc_mcontext->DU3_PREFIX(ss,rsp)
-#  define context_rax uc_mcontext->DU3_PREFIX(ss,rax)
-#  define context_rbx uc_mcontext->DU3_PREFIX(ss,rbx)
-#  define context_rcx uc_mcontext->DU3_PREFIX(ss,rcx)
-#  define context_rdx uc_mcontext->DU3_PREFIX(ss,rdx)
-#  define context_rbp uc_mcontext->DU3_PREFIX(ss,rbp)
-#  define context_rsi uc_mcontext->DU3_PREFIX(ss,rsi)
-#  define context_rdi uc_mcontext->DU3_PREFIX(ss,rdi)
-#  define context_r8  uc_mcontext->DU3_PREFIX(ss,r8)
-#  define context_r9  uc_mcontext->DU3_PREFIX(ss,r9)
-#  define context_r10 uc_mcontext->DU3_PREFIX(ss,r10)
-#  define context_r11 uc_mcontext->DU3_PREFIX(ss,r11)
-#  define context_r12 uc_mcontext->DU3_PREFIX(ss,r12)
-#  define context_r13 uc_mcontext->DU3_PREFIX(ss,r13)
-#  define context_r14 uc_mcontext->DU3_PREFIX(ss,r14)
-#  define context_r15 uc_mcontext->DU3_PREFIX(ss,r15)
-#  define context_flags uc_mcontext->DU3_PREFIX(ss,rflags)
-#  define context_trapno uc_mcontext->DU3_PREFIX(es,trapno)
-#  define context_err uc_mcontext->DU3_PREFIX(es,err)
-# else
-#  define context_pc context_eip
-#  define context_sp context_esp
-#  define context_fp context_ebp
-#  define context_eip uc_mcontext->DU3_PREFIX(ss,eip)
-#  define context_esp uc_mcontext->DU3_PREFIX(ss,esp)
-#  define context_eax uc_mcontext->DU3_PREFIX(ss,eax)
-#  define context_ebx uc_mcontext->DU3_PREFIX(ss,ebx)
-#  define context_ecx uc_mcontext->DU3_PREFIX(ss,ecx)
-#  define context_edx uc_mcontext->DU3_PREFIX(ss,edx)
-#  define context_ebp uc_mcontext->DU3_PREFIX(ss,ebp)
-#  define context_esi uc_mcontext->DU3_PREFIX(ss,esi)
-#  define context_edi uc_mcontext->DU3_PREFIX(ss,edi)
-#  define context_eflags uc_mcontext->DU3_PREFIX(ss,eflags)
-#  define context_trapno uc_mcontext->DU3_PREFIX(es,trapno)
-# endif
+# define context_pc context_rip
+# define context_sp context_rsp
+# define context_fp context_rbp
+# define context_rip uc_mcontext->DU3_PREFIX(ss,rip)
+# define context_rsp uc_mcontext->DU3_PREFIX(ss,rsp)
+# define context_rax uc_mcontext->DU3_PREFIX(ss,rax)
+# define context_rbx uc_mcontext->DU3_PREFIX(ss,rbx)
+# define context_rcx uc_mcontext->DU3_PREFIX(ss,rcx)
+# define context_rdx uc_mcontext->DU3_PREFIX(ss,rdx)
+# define context_rbp uc_mcontext->DU3_PREFIX(ss,rbp)
+# define context_rsi uc_mcontext->DU3_PREFIX(ss,rsi)
+# define context_rdi uc_mcontext->DU3_PREFIX(ss,rdi)
+# define context_r8  uc_mcontext->DU3_PREFIX(ss,r8)
+# define context_r9  uc_mcontext->DU3_PREFIX(ss,r9)
+# define context_r10 uc_mcontext->DU3_PREFIX(ss,r10)
+# define context_r11 uc_mcontext->DU3_PREFIX(ss,r11)
+# define context_r12 uc_mcontext->DU3_PREFIX(ss,r12)
+# define context_r13 uc_mcontext->DU3_PREFIX(ss,r13)
+# define context_r14 uc_mcontext->DU3_PREFIX(ss,r14)
+# define context_r15 uc_mcontext->DU3_PREFIX(ss,r15)
+# define context_flags uc_mcontext->DU3_PREFIX(ss,rflags)
+# define context_trapno uc_mcontext->DU3_PREFIX(es,trapno)
+# define context_err uc_mcontext->DU3_PREFIX(es,err)
 #endif
 
 #ifdef __OpenBSD__
 # define context_trapno sc_trapno
-# ifdef AMD64
-#  define context_pc sc_rip
-#  define context_sp sc_rsp
-#  define context_fp sc_rbp
-#  define context_rip sc_rip
-#  define context_rsp sc_rsp
-#  define context_rbp sc_rbp
-#  define context_rax sc_rax
-#  define context_rbx sc_rbx
-#  define context_rcx sc_rcx
-#  define context_rdx sc_rdx
-#  define context_rsi sc_rsi
-#  define context_rdi sc_rdi
-#  define context_r8  sc_r8
-#  define context_r9  sc_r9
-#  define context_r10 sc_r10
-#  define context_r11 sc_r11
-#  define context_r12 sc_r12
-#  define context_r13 sc_r13
-#  define context_r14 sc_r14
-#  define context_r15 sc_r15
-#  define context_flags sc_rflags
-#  define context_err sc_err
-# else
-#  define context_pc sc_eip
-#  define context_sp sc_esp
-#  define context_fp sc_ebp
-#  define context_eip sc_eip
-#  define context_esp sc_esp
-#  define context_eax sc_eax
-#  define context_ebx sc_ebx
-#  define context_ecx sc_ecx
-#  define context_edx sc_edx
-#  define context_ebp sc_ebp
-#  define context_esi sc_esi
-#  define context_edi sc_edi
-#  define context_eflags sc_eflags
-#  define context_trapno sc_trapno
-# endif
+# define context_pc sc_rip
+# define context_sp sc_rsp
+# define context_fp sc_rbp
+# define context_rip sc_rip
+# define context_rsp sc_rsp
+# define context_rbp sc_rbp
+# define context_rax sc_rax
+# define context_rbx sc_rbx
+# define context_rcx sc_rcx
+# define context_rdx sc_rdx
+# define context_rsi sc_rsi
+# define context_rdi sc_rdi
+# define context_r8  sc_r8
+# define context_r9  sc_r9
+# define context_r10 sc_r10
+# define context_r11 sc_r11
+# define context_r12 sc_r12
+# define context_r13 sc_r13
+# define context_r14 sc_r14
+# define context_r15 sc_r15
+# define context_flags sc_rflags
+# define context_err sc_err
 #endif
 
 #ifdef __NetBSD__
 # define context_trapno uc_mcontext.__gregs[_REG_TRAPNO]
-# ifdef AMD64
-#  define __register_t __greg_t
-#  define context_pc uc_mcontext.__gregs[_REG_RIP]
-#  define context_sp uc_mcontext.__gregs[_REG_URSP]
-#  define context_fp uc_mcontext.__gregs[_REG_RBP]
-#  define context_rip uc_mcontext.__gregs[_REG_RIP]
-#  define context_rsp uc_mcontext.__gregs[_REG_URSP]
-#  define context_rax uc_mcontext.__gregs[_REG_RAX]
-#  define context_rbx uc_mcontext.__gregs[_REG_RBX]
-#  define context_rcx uc_mcontext.__gregs[_REG_RCX]
-#  define context_rdx uc_mcontext.__gregs[_REG_RDX]
-#  define context_rbp uc_mcontext.__gregs[_REG_RBP]
-#  define context_rsi uc_mcontext.__gregs[_REG_RSI]
-#  define context_rdi uc_mcontext.__gregs[_REG_RDI]
-#  define context_r8  uc_mcontext.__gregs[_REG_R8]
-#  define context_r9  uc_mcontext.__gregs[_REG_R9]
-#  define context_r10 uc_mcontext.__gregs[_REG_R10]
-#  define context_r11 uc_mcontext.__gregs[_REG_R11]
-#  define context_r12 uc_mcontext.__gregs[_REG_R12]
-#  define context_r13 uc_mcontext.__gregs[_REG_R13]
-#  define context_r14 uc_mcontext.__gregs[_REG_R14]
-#  define context_r15 uc_mcontext.__gregs[_REG_R15]
-#  define context_flags uc_mcontext.__gregs[_REG_RFL]
-#  define context_err uc_mcontext.__gregs[_REG_ERR]
-# else
-#  define context_pc uc_mcontext.__gregs[_REG_EIP]
-#  define context_sp uc_mcontext.__gregs[_REG_UESP]
-#  define context_fp uc_mcontext.__gregs[_REG_EBP]
-#  define context_eip uc_mcontext.__gregs[_REG_EIP]
-#  define context_esp uc_mcontext.__gregs[_REG_UESP]
-#  define context_eax uc_mcontext.__gregs[_REG_EAX]
-#  define context_ebx uc_mcontext.__gregs[_REG_EBX]
-#  define context_ecx uc_mcontext.__gregs[_REG_ECX]
-#  define context_edx uc_mcontext.__gregs[_REG_EDX]
-#  define context_ebp uc_mcontext.__gregs[_REG_EBP]
-#  define context_esi uc_mcontext.__gregs[_REG_ESI]
-#  define context_edi uc_mcontext.__gregs[_REG_EDI]
-#  define context_eflags uc_mcontext.__gregs[_REG_EFL]
-#  define context_trapno uc_mcontext.__gregs[_REG_TRAPNO]
-# endif
+# define __register_t __greg_t
+# define context_pc uc_mcontext.__gregs[_REG_RIP]
+# define context_sp uc_mcontext.__gregs[_REG_URSP]
+# define context_fp uc_mcontext.__gregs[_REG_RBP]
+# define context_rip uc_mcontext.__gregs[_REG_RIP]
+# define context_rsp uc_mcontext.__gregs[_REG_URSP]
+# define context_rax uc_mcontext.__gregs[_REG_RAX]
+# define context_rbx uc_mcontext.__gregs[_REG_RBX]
+# define context_rcx uc_mcontext.__gregs[_REG_RCX]
+# define context_rdx uc_mcontext.__gregs[_REG_RDX]
+# define context_rbp uc_mcontext.__gregs[_REG_RBP]
+# define context_rsi uc_mcontext.__gregs[_REG_RSI]
+# define context_rdi uc_mcontext.__gregs[_REG_RDI]
+# define context_r8  uc_mcontext.__gregs[_REG_R8]
+# define context_r9  uc_mcontext.__gregs[_REG_R9]
+# define context_r10 uc_mcontext.__gregs[_REG_R10]
+# define context_r11 uc_mcontext.__gregs[_REG_R11]
+# define context_r12 uc_mcontext.__gregs[_REG_R12]
+# define context_r13 uc_mcontext.__gregs[_REG_R13]
+# define context_r14 uc_mcontext.__gregs[_REG_R14]
+# define context_r15 uc_mcontext.__gregs[_REG_R15]
+# define context_flags uc_mcontext.__gregs[_REG_RFL]
+# define context_err uc_mcontext.__gregs[_REG_ERR]
 #endif
 
 address os::current_stack_pointer() {
@@ -468,13 +395,11 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
           }
           stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
         }
-      } else
-#ifdef AMD64
-      if (sig == SIGFPE &&
-          (info->si_code == FPE_INTDIV || info->si_code == FPE_FLTDIV
-           // Workaround for macOS ARM incorrectly reporting FPE_FLTINV for "div by 0"
-           // instead of the expected FPE_FLTDIV when running x86_64 binary under Rosetta emulation
-           MACOS_ONLY(|| (VM_Version::is_cpu_emulated() && info->si_code == FPE_FLTINV)))) {
+      } else if (sig == SIGFPE &&
+                 (info->si_code == FPE_INTDIV || info->si_code == FPE_FLTDIV
+                 // Workaround for macOS ARM incorrectly reporting FPE_FLTINV for "div by 0"
+                 // instead of the expected FPE_FLTDIV when running x86_64 binary under Rosetta emulation
+                 MACOS_ONLY(|| (VM_Version::is_cpu_emulated() && info->si_code == FPE_FLTINV)))) {
         stub =
           SharedRuntime::
           continuation_for_implicit_exception(thread,
@@ -502,34 +427,6 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
           fatal("please update this code.");
         }
 #endif /* __APPLE__ */
-
-#else
-      if (sig == SIGFPE /* && info->si_code == FPE_INTDIV */) {
-        // HACK: si_code does not work on bsd 2.2.12-20!!!
-        int op = pc[0];
-        if (op == 0xDB) {
-          // FIST
-          // TODO: The encoding of D2I in x86_32.ad can cause an exception
-          // prior to the fist instruction if there was an invalid operation
-          // pending. We want to dismiss that exception. From the win_32
-          // side it also seems that if it really was the fist causing
-          // the exception that we do the d2i by hand with different
-          // rounding. Seems kind of weird.
-          // NOTE: that we take the exception at the NEXT floating point instruction.
-          assert(pc[0] == 0xDB, "not a FIST opcode");
-          assert(pc[1] == 0x14, "not a FIST opcode");
-          assert(pc[2] == 0x24, "not a FIST opcode");
-          return true;
-        } else if (op == 0xF7) {
-          // IDIV
-          stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_DIVIDE_BY_ZERO);
-        } else {
-          // TODO: handle more cases if we are using other x86 instructions
-          //   that can generate SIGFPE signal on bsd.
-          tty->print_cr("unknown opcode 0x%X with SIGFPE.", op);
-          fatal("please update this code.");
-        }
-#endif // AMD64
       } else if ((sig == SIGSEGV || sig == SIGBUS) &&
                  MacroAssembler::uses_implicit_null_check(info->si_addr)) {
           // Determination of interpreter/vtable stub/compiled code null exception
@@ -556,81 +453,6 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
     }
   }
 
-#ifndef AMD64
-  // Execution protection violation
-  //
-  // This should be kept as the last step in the triage.  We don't
-  // have a dedicated trap number for a no-execute fault, so be
-  // conservative and allow other handlers the first shot.
-  //
-  // Note: We don't test that info->si_code == SEGV_ACCERR here.
-  // this si_code is so generic that it is almost meaningless; and
-  // the si_code for this condition may change in the future.
-  // Furthermore, a false-positive should be harmless.
-  if (UnguardOnExecutionViolation > 0 &&
-      stub == nullptr &&
-      (sig == SIGSEGV || sig == SIGBUS) &&
-      uc->context_trapno == trap_page_fault) {
-    size_t page_size = os::vm_page_size();
-    address addr = (address) info->si_addr;
-    address pc = os::Posix::ucontext_get_pc(uc);
-    // Make sure the pc and the faulting address are sane.
-    //
-    // If an instruction spans a page boundary, and the page containing
-    // the beginning of the instruction is executable but the following
-    // page is not, the pc and the faulting address might be slightly
-    // different - we still want to unguard the 2nd page in this case.
-    //
-    // 15 bytes seems to be a (very) safe value for max instruction size.
-    bool pc_is_near_addr =
-      (pointer_delta((void*) addr, (void*) pc, sizeof(char)) < 15);
-    bool instr_spans_page_boundary =
-      (align_down((intptr_t) pc ^ (intptr_t) addr,
-                       (intptr_t) page_size) > 0);
-
-    if (pc == addr || (pc_is_near_addr && instr_spans_page_boundary)) {
-      static volatile address last_addr =
-        (address) os::non_memory_address_word();
-
-      // In conservative mode, don't unguard unless the address is in the VM
-      if (addr != last_addr &&
-          (UnguardOnExecutionViolation > 1 || os::address_is_in_vm(addr))) {
-
-        // Set memory to RWX and retry
-        address page_start = align_down(addr, page_size);
-        bool res = os::protect_memory((char*) page_start, page_size,
-                                      os::MEM_PROT_RWX);
-
-        log_debug(os)("Execution protection violation "
-                      "at " INTPTR_FORMAT
-                      ", unguarding " INTPTR_FORMAT ": %s, errno=%d", p2i(addr),
-                      p2i(page_start), (res ? "success" : "failed"), errno);
-        stub = pc;
-
-        // Set last_addr so if we fault again at the same address, we don't end
-        // up in an endless loop.
-        //
-        // There are two potential complications here.  Two threads trapping at
-        // the same address at the same time could cause one of the threads to
-        // think it already unguarded, and abort the VM.  Likely very rare.
-        //
-        // The other race involves two threads alternately trapping at
-        // different addresses and failing to unguard the page, resulting in
-        // an endless loop.  This condition is probably even more unlikely than
-        // the first.
-        //
-        // Although both cases could be avoided by using locks or thread local
-        // last_addr, these solutions are unnecessary complication: this
-        // handler is a best-effort safety net, not a complete solution.  It is
-        // disabled by default and should only be used as a workaround in case
-        // we missed any no-execute-unsafe VM code.
-
-        last_addr = addr;
-      }
-    }
-  }
-#endif // !AMD64
-
   if (stub != nullptr) {
     // save all thread context in case we need to restore it
     if (thread != nullptr) thread->set_saved_exception_pc(pc);
@@ -646,10 +468,6 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 extern "C" void fixcw();
 
 void os::Bsd::init_thread_fpu_state(void) {
-#ifndef AMD64
-  // Set fpu to 53 bit precision. This happens too early to use a stub.
-  fixcw();
-#endif // !AMD64
 }
 
 juint os::cpu_microcode_revision() {
@@ -671,26 +489,12 @@ juint os::cpu_microcode_revision() {
 // HotSpot guard pages is added later.
 size_t os::_compiler_thread_min_stack_allowed = 48 * K;
 size_t os::_java_thread_min_stack_allowed = 48 * K;
-#ifdef _LP64
 size_t os::_vm_internal_thread_min_stack_allowed = 64 * K;
-#else
-size_t os::_vm_internal_thread_min_stack_allowed = (48 DEBUG_ONLY(+ 4)) * K;
-#endif // _LP64
-
-#ifndef AMD64
-#ifdef __GNUC__
-#define GET_GS() ({int gs; __asm__ volatile("movw %%gs, %w0":"=q"(gs)); gs&0xffff;})
-#endif
-#endif // AMD64
 
 // return default stack size for thr_type
 size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
   // default stack size (compiler thread needs larger stack)
-#ifdef AMD64
   size_t s = (thr_type == os::compiler_thread ? 4 * M : 1 * M);
-#else
-  size_t s = (thr_type == os::compiler_thread ? 2 * M : 512 * K);
-#endif // AMD64
   return s;
 }
 
@@ -803,7 +607,6 @@ void os::print_context(outputStream *st, const void *context) {
   const ucontext_t *uc = (const ucontext_t*)context;
 
   st->print_cr("Registers:");
-#ifdef AMD64
   st->print(  "RAX=" INTPTR_FORMAT, (intptr_t)uc->context_rax);
   st->print(", RBX=" INTPTR_FORMAT, (intptr_t)uc->context_rbx);
   st->print(", RCX=" INTPTR_FORMAT, (intptr_t)uc->context_rcx);
@@ -829,26 +632,12 @@ void os::print_context(outputStream *st, const void *context) {
   st->print(", ERR=" INTPTR_FORMAT, (intptr_t)uc->context_err);
   st->cr();
   st->print("  TRAPNO=" INTPTR_FORMAT, (intptr_t)uc->context_trapno);
-#else
-  st->print(  "EAX=" INTPTR_FORMAT, (intptr_t)uc->context_eax);
-  st->print(", EBX=" INTPTR_FORMAT, (intptr_t)uc->context_ebx);
-  st->print(", ECX=" INTPTR_FORMAT, (intptr_t)uc->context_ecx);
-  st->print(", EDX=" INTPTR_FORMAT, (intptr_t)uc->context_edx);
-  st->cr();
-  st->print(  "ESP=" INTPTR_FORMAT, (intptr_t)uc->context_esp);
-  st->print(", EBP=" INTPTR_FORMAT, (intptr_t)uc->context_ebp);
-  st->print(", ESI=" INTPTR_FORMAT, (intptr_t)uc->context_esi);
-  st->print(", EDI=" INTPTR_FORMAT, (intptr_t)uc->context_edi);
-  st->cr();
-  st->print(  "EIP=" INTPTR_FORMAT, (intptr_t)uc->context_eip);
-  st->print(", EFLAGS=" INTPTR_FORMAT, (intptr_t)uc->context_eflags);
-#endif // AMD64
   st->cr();
   st->cr();
 }
 
 void os::print_register_info(outputStream *st, const void *context, int& continuation) {
-  const int register_count = AMD64_ONLY(16) NOT_AMD64(8);
+  const int register_count = 16;
   int n = continuation;
   assert(n >= 0 && n <= register_count, "Invalid continuation value");
   if (context == nullptr || n == register_count) {
@@ -861,7 +650,6 @@ void os::print_register_info(outputStream *st, const void *context, int& continu
     continuation = n + 1;
 # define CASE_PRINT_REG(n, str, id) case n: st->print(str); print_location(st, uc->context_##id);
   switch (n) {
-#ifdef AMD64
     CASE_PRINT_REG( 0, "RAX=", rax); break;
     CASE_PRINT_REG( 1, "RBX=", rbx); break;
     CASE_PRINT_REG( 2, "RCX=", rcx); break;
@@ -878,28 +666,13 @@ void os::print_register_info(outputStream *st, const void *context, int& continu
     CASE_PRINT_REG(13, "R13=", r13); break;
     CASE_PRINT_REG(14, "R14=", r14); break;
     CASE_PRINT_REG(15, "R15=", r15); break;
-#else
-    CASE_PRINT_REG(0, "EAX=", eax); break;
-    CASE_PRINT_REG(1, "EBX=", ebx); break;
-    CASE_PRINT_REG(2, "ECX=", ecx); break;
-    CASE_PRINT_REG(3, "EDX=", edx); break;
-    CASE_PRINT_REG(4, "ESP=", esp); break;
-    CASE_PRINT_REG(5, "EBP=", ebp); break;
-    CASE_PRINT_REG(6, "ESI=", esi); break;
-    CASE_PRINT_REG(7, "EDI=", edi); break;
-#endif // AMD64
-    }
+  }
 # undef CASE_PRINT_REG
     ++n;
   }
 }
 
 void os::setup_fpu() {
-#ifndef AMD64
-  address fpu_cntrl = StubRoutines::addr_fpu_cntrl_wrd_std();
-  __asm__ volatile (  "fldcw (%0)" :
-                      : "r" (fpu_cntrl) : "memory");
-#endif // !AMD64
 }
 
 #ifndef PRODUCT

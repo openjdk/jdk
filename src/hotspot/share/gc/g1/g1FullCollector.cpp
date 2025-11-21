@@ -244,7 +244,7 @@ void G1FullCollector::complete_collection(size_t allocation_word_size) {
 
   _heap->resize_all_tlabs();
 
-  _heap->policy()->record_full_collection_end();
+  _heap->policy()->record_full_collection_end(allocation_word_size);
   _heap->gc_epilogue(true);
 
   _heap->verify_after_full_collection();

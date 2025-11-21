@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,9 @@
  */
 
 package sun.awt.X11;
+
 import java.util.Hashtable;
+import java.util.Map;
 import jdk.internal.misc.Unsafe;
 
 import sun.util.logging.PlatformLogger;
@@ -68,7 +70,12 @@ public final class XKeysym {
     // for robot only it seems to me. After that, we can remove lookup table
     // from XWindow.c altogether.
     // Another use for reverse lookup: query keyboard state, for some keys.
-    static Hashtable<Integer, Long> javaKeycode2KeysymHash = new Hashtable<Integer, Long>();
+    private static final Map<Integer, Long> javaKeycode2KeysymHash = Map.of(
+            java.awt.event.KeyEvent.VK_CAPS_LOCK, XKeySymConstants.XK_Caps_Lock,
+            java.awt.event.KeyEvent.VK_NUM_LOCK, XKeySymConstants.XK_Num_Lock,
+            java.awt.event.KeyEvent.VK_SCROLL_LOCK, XKeySymConstants.XK_Scroll_Lock,
+            java.awt.event.KeyEvent.VK_KANA_LOCK, XKeySymConstants.XK_Kana_Lock
+    );
     static long keysym_lowercase = unsafe.allocateMemory(Native.getLongSize());
     static long keysym_uppercase = unsafe.allocateMemory(Native.getLongSize());
     static Keysym2JavaKeycode kanaLock = new Keysym2JavaKeycode(java.awt.event.KeyEvent.VK_KANA_LOCK,
@@ -289,9 +296,8 @@ public final class XKeysym {
         Keysym2JavaKeycode jkc = getJavaKeycode( keysym );
         return jkc == null ? java.awt.event.KeyEvent.VK_UNDEFINED : jkc.getJavaKeycode();
     }
-    static long javaKeycode2Keysym( int jkey ) {
-        Long ks = javaKeycode2KeysymHash.get( jkey );
-        return  (ks == null ? 0 : ks.longValue());
+    static long javaKeycode2Keysym(int jkey) {
+        return javaKeycode2KeysymHash.getOrDefault(jkey, 0L);
     }
     /**
         Return keysym derived from a keycode and modifiers.
@@ -1716,14 +1722,6 @@ public final class XKeysym {
         keysym2JavaKeycodeHash.put( Long.valueOf(XKeySymConstants.hpXK_mute_asciitilde),     new Keysym2JavaKeycode(java.awt.event.KeyEvent.VK_DEAD_TILDE, java.awt.event.KeyEvent.KEY_LOCATION_STANDARD));
 
         keysym2JavaKeycodeHash.put( Long.valueOf(XConstants.NoSymbol),     new Keysym2JavaKeycode(java.awt.event.KeyEvent.VK_UNDEFINED, java.awt.event.KeyEvent.KEY_LOCATION_UNKNOWN));
-
-        /* Reverse search of keysym by keycode. */
-
-        /* Add keyboard locking codes. */
-        javaKeycode2KeysymHash.put( java.awt.event.KeyEvent.VK_CAPS_LOCK, XKeySymConstants.XK_Caps_Lock);
-        javaKeycode2KeysymHash.put( java.awt.event.KeyEvent.VK_NUM_LOCK, XKeySymConstants.XK_Num_Lock);
-        javaKeycode2KeysymHash.put( java.awt.event.KeyEvent.VK_SCROLL_LOCK, XKeySymConstants.XK_Scroll_Lock);
-        javaKeycode2KeysymHash.put( java.awt.event.KeyEvent.VK_KANA_LOCK, XKeySymConstants.XK_Kana_Lock);
     }
 
 }

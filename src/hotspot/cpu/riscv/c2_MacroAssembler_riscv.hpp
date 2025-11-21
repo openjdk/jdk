@@ -49,11 +49,11 @@
                                   const int STUB_THRESHOLD, Label *STUB, Label *DONE);
 
  public:
-  // Code used by cmpFastLockLightweight and cmpFastUnlockLightweight mach instructions in .ad file.
-  void fast_lock_lightweight(Register object, Register box,
-                             Register tmp1, Register tmp2, Register tmp3, Register tmp4);
-  void fast_unlock_lightweight(Register object, Register box,
-                               Register tmp1, Register tmp2, Register tmp3);
+  // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
+  void fast_lock(Register object, Register box,
+                 Register tmp1, Register tmp2, Register tmp3, Register tmp4);
+  void fast_unlock(Register object, Register box,
+                   Register tmp1, Register tmp2, Register tmp3);
 
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
@@ -92,10 +92,14 @@
                        Register tmp3, Register tmp4,
                        Register tmp5, Register tmp6,
                        BasicType eltype);
-
-  // helper function for arrays_hashcode
   int arrays_hashcode_elsize(BasicType eltype);
   void arrays_hashcode_elload(Register dst, Address src, BasicType eltype);
+
+  void arrays_hashcode_v(Register ary, Register cnt, Register result,
+                         Register tmp1, Register tmp2, Register tmp3,
+                         BasicType eltype);
+  void arrays_hashcode_elload_v(VectorRegister vdst, VectorRegister vtmp,
+                                Register src, BasicType eltype);
 
   void string_equals(Register r1, Register r2,
                      Register result, Register cnt1);

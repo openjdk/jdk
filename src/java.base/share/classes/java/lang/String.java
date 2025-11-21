@@ -914,11 +914,10 @@ public final class String
                 return ba;
             }
 
-            int blen = (coder == LATIN1) ? ae.encodeFromLatin1(val, 0, len, ba)
-                    : ae.encodeFromUTF16(val, 0, len, ba);
-            if (blen != -1) {
-                return trimArray(ba, blen);
-            }
+            int blen = coder == LATIN1
+                    ? ae.encodeFromLatin1(val, 0, len, ba, 0)
+                    : ae.encodeFromUTF16(val, 0, len, ba, 0);
+            return trimArray(ba, blen);
         }
 
         byte[] ba = new byte[en];
@@ -3710,7 +3709,7 @@ public final class String
         if (len < 0L || (len <<= coder) != (int) len) {
             throw new OutOfMemoryError("Requested string length exceeds VM limit");
         }
-        byte[] value = StringConcatHelper.newArray(len);
+        byte[] value = StringConcatHelper.newArray((int) len);
 
         int off = 0;
         prefix.getBytes(value, off, coder); off += prefix.length();

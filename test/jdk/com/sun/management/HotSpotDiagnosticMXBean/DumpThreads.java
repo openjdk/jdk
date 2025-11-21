@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8284161 8287008 8309406 8356870
+ * @bug 8284161 8287008 8309406 8356870 8365057
  * @summary Basic test for com.sun.management.HotSpotDiagnosticMXBean.dumpThreads
  * @requires vm.continuations
  * @modules java.base/jdk.internal.vm jdk.management
@@ -425,7 +425,9 @@ class DumpThreads {
             ThreadFields fields = findThread(tid, lines);
             assertNotNull(fields, "thread not found");
             assertEquals("WAITING", fields.state());
-            assertTrue(contains(lines, "- parking to wait for <java.util.concurrent.locks.ReentrantLock"));
+            String line = find(lines, "- parking to wait for <java.util.concurrent.locks.ReentrantLock");
+            assertNotNull(line, "parking to wait line not found");
+            assertTrue(line.endsWith(" owner #" + Thread.currentThread().threadId()));
 
             // thread dump in JSON format should include thread in root container
             ThreadDump threadDump = dumpThreadsToJson();
@@ -440,6 +442,12 @@ class DumpThreads {
             String parkBlocker = ti.parkBlocker();
             assertNotNull(parkBlocker);
             assertTrue(parkBlocker.contains("java.util.concurrent.locks.ReentrantLock"));
+
+            // the owner of the parkBlocker should be the current thread
+            long ownerTid = ti.parkBlockerOwner().orElse(-1L);
+            assertNotEquals(-1L, ownerTid, "parkBlockerOwner not found");
+            assertEquals(Thread.currentThread().threadId(), ownerTid);
+
             if (pinned) {
                 long carrierTid = ti.carrier().orElse(-1L);
                 assertNotEquals(-1L, carrierTid, "carrier not found");
@@ -682,6 +690,16 @@ class DumpThreads {
     private boolean contains(List<String> lines, String text) {
         return lines.stream().map(String::trim)
                 .anyMatch(l -> l.contains(text));
+    }
+
+    /**
+     * Finds the line of a plain text thread dump containing the given text.
+     */
+    private String find(List<String> lines, String text) {
+        return lines.stream().map(String::trim)
+                .filter(l -> l.contains(text))
+                .findAny()
+                .orElse(null);
     }
 
     /**

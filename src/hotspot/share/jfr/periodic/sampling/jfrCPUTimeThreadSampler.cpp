@@ -230,8 +230,7 @@ class JfrCPUSamplerThread : public NonJavaThread {
   volatile bool _is_async_processing_of_cpu_time_jfr_requests_triggered;
   volatile bool _warned_about_timer_creation_failure;
   volatile bool _signal_handler_installed;
-  DEBUG_ONLY(volatile bool _out_of_stack_walking_enabled;)
-  DEBUG_ONLY(volatile u8 _out_of_stack_walking_iterations;)
+  DEBUG_ONLY(volatile bool _out_of_stack_walking_enabled = true;)
 
   static const u4 STOP_SIGNAL_BIT = 0x80000000;
 
@@ -275,16 +274,13 @@ public:
   void handle_timer_signal(siginfo_t* info, void* context);
   bool init_timers();
   void stop_timer();
+  virtual void print_on(outputStream* st) const;
 
   void trigger_async_processing_of_cpu_time_jfr_requests();
 
   #ifdef ASSERT
   void set_out_of_stack_walking_enabled(bool runnable) {
     AtomicAccess::release_store(&_out_of_stack_walking_enabled, runnable);
-  }
-
-  u8 out_of_stack_walking_iterations() const {
-    return AtomicAccess::load(&_out_of_stack_walking_iterations);
   }
   #endif
 };
@@ -393,7 +389,6 @@ void JfrCPUSamplerThread::run() {
     }
     DEBUG_ONLY(if (AtomicAccess::load_acquire(&_out_of_stack_walking_enabled)) {)
       if (AtomicAccess::cmpxchg(&_is_async_processing_of_cpu_time_jfr_requests_triggered, true, false)) {
-        DEBUG_ONLY(AtomicAccess::inc(&_out_of_stack_walking_iterations);)
         stackwalk_threads_in_native();
       }
     DEBUG_ONLY(})
@@ -587,17 +582,13 @@ void JfrCPUTimeThreadSampling::handle_timer_signal(siginfo_t* info, void* contex
 }
 
 #ifdef ASSERT
-void JfrCPUTimeThreadSampling::set_out_of_stack_walking_enabled(bool runnable) {
+bool JfrCPUTimeThreadSampling::set_out_of_stack_walking_enabled(bool runnable) {
   if (_instance != nullptr && _instance->_sampler != nullptr) {
     _instance->_sampler->set_out_of_stack_walking_enabled(runnable);
+    return true;
+  } else {
+    return false;
   }
-}
-
-u8 JfrCPUTimeThreadSampling::out_of_stack_walking_iterations() {
-  if (_instance != nullptr && _instance->_sampler != nullptr) {
-    return _instance->_sampler->out_of_stack_walking_iterations();
-  }
-  return 0;
 }
 #endif
 
@@ -788,6 +779,12 @@ void JfrCPUSamplerThread::stop_timer() {
   VMThread::execute(&op);
 }
 
+void JfrCPUSamplerThread::print_on(outputStream* st) const {
+  st->print("\"%s\" ", name());
+  Thread::print_on(st);
+  st->cr();
+}
+
 void JfrCPUSamplerThread::recompute_period_if_needed() {
   int64_t current_period = get_sampling_period();
   int64_t period = _throttle.compute_sampling_period();
@@ -865,8 +862,9 @@ void JfrCPUTimeThreadSampling::on_javathread_terminate(JavaThread* thread) {
 }
 
 #ifdef ASSERT
-static void set_out_of_stack_walking_enabled(bool runnable) {
+bool JfrCPUTimeThreadSampling::set_out_of_stack_walking_enabled(bool runnable) {
   warn();
+  return false;
 }
 #endif
 

@@ -76,8 +76,16 @@ void ProcSmapsParser::scan_additional_line(ProcSmapsInfo& out) {
   SCAN("Private_Hugetlb", out.private_hugetlb);
   SCAN("Shared_Hugetlb", out.shared_hugetlb);
   SCAN("Swap", out.swap);
-  int i = 0;
 #undef SCAN
+
+  // scan THPeligible into a bool
+  int thpel = 0;
+  if (::sscanf(_line, "THPeligible: %d", &thpel) == 1) {
+    assert(thpel == 1 || thpel == 0, "Unexpected value %d", thpel);
+    out.thpeligible = (thpel == 1);
+    return;
+  }
+
   // scan some flags too
   if (strncmp(_line, "VmFlags:", 8) == 0) {
 #define SCAN(flag) { out.flag = (::strstr(_line + 8, " " #flag) != nullptr); }

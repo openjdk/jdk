@@ -528,7 +528,23 @@ public:
 
   // Add users of 'n' to worklist
   static void add_users_to_worklist0(Node* n, Unique_Node_List& worklist);
+
+  // Add one or more users of 'use' to the worklist if it appears that a
+  // known optimization could be applied to those users.
+  // Node 'n' is a node that was modified or is about to get replaced,
+  // and 'use' is one use of 'n'.
+  // Certain optimizations have dependencies that extend beyond a node's
+  // direct inputs, so it is necessary to ensure the appropriate
+  // notifications are made here.
   static void add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_List& worklist);
+
+  // Add users of 'n', and any other nodes that could be directly
+  // affected by changes to 'n', to the worklist.
+  // Node 'n' may be a node that is about to get replaced. In this
+  // case, 'n' should not be considered part of the new graph.
+  // Passing the old node (as 'n'), rather than the new node,
+  // prevents unnecessary notifications when the new node already
+  // has other users.
   void add_users_to_worklist(Node* n);
 
   // Replace old node with new one.

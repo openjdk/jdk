@@ -48,8 +48,6 @@ import org.openide.NotifyDescriptor.Message;
  */
 public class NodeQuickSearch implements SearchProvider {
 
-    private static final String DEFAULT_PROPERTY = "label";
-
     /**
      * Method is called by infrastructure when search operation was requested.
      * Implementors should evaluate given request and fill response object with
@@ -72,7 +70,7 @@ public class NodeQuickSearch implements SearchProvider {
         String value;
 
         if (parts.length == 1) {
-            name = DEFAULT_PROPERTY;
+            name = InputNode.LABEL_PROPERTY;
             rawValue = parts[0];
             value = ".*" + Pattern.quote(rawValue) + ".*";
         } else {

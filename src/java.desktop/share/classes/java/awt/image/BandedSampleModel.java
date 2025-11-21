@@ -141,12 +141,9 @@ public final class BandedSampleModel extends ComponentSampleModel
      * @param h the height of the resulting {@code BandedSampleModel}
      * @return a new {@code BandedSampleModel} with the specified
      *         width and height.
-     * @throws IllegalArgumentException if {@code w} or
-     *         {@code h} equals either
-     *         {@code Integer.MAX_VALUE} or
-     *         {@code Integer.MIN_VALUE}
-     * @throws IllegalArgumentException if {@code dataType} is not
-     *         one of the supported data types
+     * @throws IllegalArgumentException if the product of {@code w}
+     *         and {@code h} is greater than {@code Integer.MAX_VALUE}
+     *         or {@code w} or {@code h} is not greater than 0.
      */
     public SampleModel createCompatibleSampleModel(int w, int h) {
         int[] bandOffs;
@@ -172,8 +169,8 @@ public final class BandedSampleModel extends ComponentSampleModel
      * of the original BandedSampleModel/DataBuffer combination.
      * @throws RasterFormatException if the number of bands is greater than
      *                               the number of banks in this sample model.
-     * @throws IllegalArgumentException if {@code dataType} is not
-     *         one of the supported data types
+     * @throws IllegalArgumentException if the number of bands is not greater than 0
+     * @throws ArrayIndexOutOfBoundsException if any of the bank indices is out of bounds
      */
     public SampleModel createSubsetSampleModel(int[] bands) {
         if (bands.length > bankIndices.length)

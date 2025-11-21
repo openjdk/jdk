@@ -33,6 +33,7 @@ import java.lang.invoke.VarHandle;
 import java.net.InetSocketAddress;
 import java.net.ProtocolException;
 import java.net.http.HttpClient;
+import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -70,6 +71,7 @@ import jdk.internal.net.http.common.SequentialScheduler;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.common.ValidatingHeadersConsumer;
 import jdk.internal.net.http.common.ValidatingHeadersConsumer.Context;
+import jdk.internal.net.http.frame.AltSvcFrame;
 import jdk.internal.net.http.frame.ContinuationFrame;
 import jdk.internal.net.http.frame.DataFrame;
 import jdk.internal.net.http.frame.ErrorFrame;
@@ -90,6 +92,7 @@ import jdk.internal.net.http.hpack.Decoder;
 import jdk.internal.net.http.hpack.DecodingCallback;
 import jdk.internal.net.http.hpack.Encoder;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static jdk.internal.net.http.AltSvcProcessor.processAltSvcFrame;
 import static jdk.internal.net.http.frame.SettingsFrame.ENABLE_PUSH;
 import static jdk.internal.net.http.frame.SettingsFrame.HEADER_TABLE_SIZE;
 import static jdk.internal.net.http.frame.SettingsFrame.INITIAL_CONNECTION_WINDOW_SIZE;
@@ -527,6 +530,7 @@ class Http2Connection  {
         AbstractAsyncSSLConnection connection = (AbstractAsyncSSLConnection)
         HttpConnection.getConnection(request.getAddress(),
                                      h2client.client(),
+                                     exchange,
                                      request,
                                      HttpClient.Version.HTTP_2);
 
@@ -633,6 +637,32 @@ class Http2Connection  {
             numReservedServerStreams++;
         }
         return true;
+    }
+
+    void abandonStream() {
+        boolean shouldClose = false;
+        stateLock.lock();
+        try {
+            long reserved = --numReservedClientStreams;
+            assert reserved >= 0;
+            if (finalStream && reserved == 0 && streams.isEmpty()) {
+                shouldClose = true;
+            }
+        } catch (Throwable t) {
+            shutdown(t); // in case the assert fires...
+        } finally {
+            stateLock.unlock();
+        }
+
+        // We should close the connection here if
+        // it's not pooled. If it's not pooled it will
+        // be marked final stream, reserved will be 0
+        // after decrementing it by one, and there should
+        // be no active request-response streams.
+        if (shouldClose) {
+            shutdown(new IOException("HTTP/2 connection abandoned"));
+        }
+
     }
 
     boolean shouldClose() {
@@ -1218,6 +1248,8 @@ class Http2Connection  {
             case PingFrame.TYPE         -> handlePing((PingFrame) frame);
             case GoAwayFrame.TYPE       -> handleGoAway((GoAwayFrame) frame);
             case WindowUpdateFrame.TYPE -> handleWindowUpdate((WindowUpdateFrame) frame);
+            case AltSvcFrame.TYPE -> processAltSvcFrame(0, (AltSvcFrame) frame,
+                    connection, connection.client());
 
             default -> protocolError(ErrorFrame.PROTOCOL_ERROR);
         }
@@ -1323,7 +1355,8 @@ class Http2Connection  {
             try {
                 // idleConnectionTimeoutEvent is always accessed within a lock protected block
                 if (streams.isEmpty() && idleConnectionTimeoutEvent == null) {
-                    idleConnectionTimeoutEvent = client().idleConnectionTimeout()
+                    final HttpClient.Version version = Version.HTTP_2;
+                    idleConnectionTimeoutEvent = client().idleConnectionTimeout(version)
                             .map(IdleConnectionTimeoutEvent::new)
                             .orElse(null);
                     if (idleConnectionTimeoutEvent != null) {
@@ -1367,6 +1400,7 @@ class Http2Connection  {
         String protocolError = "protocol error" + (msg == null?"":(": " + msg));
         ProtocolException protocolException =
                 new ProtocolException(protocolError);
+        this.cause.compareAndSet(null, protocolException);
         if (markHalfClosedLocal()) {
             framesDecoder.close(protocolError);
             subscriber.stop(protocolException);
@@ -1844,8 +1878,16 @@ class Http2Connection  {
             } finally {
                 Throwable x = errorRef.get();
                 if (x != null) {
-                    if (debug.on()) debug.log("Stopping scheduler", x);
                     scheduler.stop();
+                    if (client2.stopping()) {
+                        if (debug.on()) {
+                            debug.log("Stopping scheduler");
+                        }
+                    } else {
+                        if (debug.on()) {
+                            debug.log("Stopping scheduler", x);
+                        }
+                    }
                     Http2Connection.this.shutdown(x);
                 }
             }

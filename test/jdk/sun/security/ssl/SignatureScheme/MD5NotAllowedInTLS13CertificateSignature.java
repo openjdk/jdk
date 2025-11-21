@@ -33,7 +33,6 @@
  * @run main/othervm MD5NotAllowedInTLS13CertificateSignature
  */
 
-import static jdk.test.lib.Asserts.assertEquals;
 import static jdk.test.lib.Asserts.assertTrue;
 import static jdk.test.lib.Utils.runAndCheckException;
 
@@ -99,11 +98,12 @@ public class MD5NotAllowedInTLS13CertificateSignature extends
                 serverEx -> {
                     Throwable clientEx = serverEx.getSuppressed()[0];
                     assertTrue(clientEx instanceof SSLHandshakeException);
-                    assertEquals(clientEx.getMessage(), "(bad_certificate) "
-                            + "PKIX path validation failed: "
-                            + "java.security.cert.CertPathValidatorException: "
-                            + "Algorithm constraints check failed on signature"
-                            + " algorithm: MD5withRSA");
+                    assertTrue(clientEx.getMessage().startsWith(
+                            "(bad_certificate)"
+                                    + " PKIX path validation failed: "
+                                    + "java.security.cert.CertPathValidatorException:"
+                                    + " Algorithm constraints check failed on "
+                                    + "MD5withRSA signature and RSA key"));
                 });
 
         // Should run fine on TLSv1.2.

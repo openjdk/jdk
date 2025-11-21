@@ -101,7 +101,7 @@ public:
   // any purpose.  The "mr" arguments gives the bounds of the space, and
   // the "clear_space" argument should be true unless the memory in "mr" is
   // known to be zeroed.
-  void initialize(MemRegion mr, bool clear_space, bool mangle_space);
+  void initialize(MemRegion mr, bool clear_space);
 
   // The "clear" method must be called on a region that may have
   // had allocation performed in it, but is now to be considered empty.

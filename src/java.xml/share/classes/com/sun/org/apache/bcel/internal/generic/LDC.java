@@ -94,6 +94,8 @@ public class LDC extends CPInstruction implements PushInstruction, ExceptionThro
             return Type.INT;
         case com.sun.org.apache.bcel.internal.Const.CONSTANT_Class:
             return Type.CLASS;
+        case com.sun.org.apache.bcel.internal.Const.CONSTANT_Dynamic:
+            return Type.OBJECT;
         default: // Never reached
             throw new IllegalArgumentException("Unknown or invalid constant type at " + super.getIndex());
         }
@@ -113,7 +115,10 @@ public class LDC extends CPInstruction implements PushInstruction, ExceptionThro
         case com.sun.org.apache.bcel.internal.Const.CONSTANT_Class:
             final int nameIndex = ((com.sun.org.apache.bcel.internal.classfile.ConstantClass) c).getNameIndex();
             c = cpg.getConstantPool().getConstant(nameIndex);
-            return Type.getType(((com.sun.org.apache.bcel.internal.classfile.ConstantUtf8) c).getBytes());
+            return Type.getType(Type.internalTypeNameToSignature(((com.sun.org.apache.bcel.internal.classfile.ConstantUtf8) c).getBytes()));
+        case com.sun.org.apache.bcel.internal.Const.CONSTANT_Dynamic:
+            // Really not sure what to return here, maybe a BootstrapMethod instance but how do we get it?
+            return c;
         default: // Never reached
             throw new IllegalArgumentException("Unknown or invalid constant type at " + super.getIndex());
         }
@@ -129,7 +134,7 @@ public class LDC extends CPInstruction implements PushInstruction, ExceptionThro
     }
 
     /**
-     * Set the index to constant pool and adjust size.
+     * Sets the index to constant pool and adjust size.
      */
     @Override
     public final void setIndex(final int index) {

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8354522 8358880
+ * @bug 8354522 8358880 8367324
  * @summary Check for cloning interference
  * @library /test/lib
  * @run junit/othervm --add-opens=java.base/java.text=ALL-UNNAMED CloneTest
@@ -88,12 +88,6 @@ public class CloneTest {
 
                 Object digits = valFromDigitList(original, "digits");
                 assertNotSame(digits, valFromDigitList(dfClone, "digits"));
-
-
-                Object data = valFromDigitList(original, "data");
-                if (data != null) {
-                    assertNotSame(data, valFromDigitList(dfClone, "data"));
-                }
 
                 assertEquals(digitListField.get(original), digitListField.get(dfClone));
             } catch (ReflectiveOperationException e) {

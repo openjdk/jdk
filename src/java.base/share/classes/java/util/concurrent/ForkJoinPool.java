@@ -875,7 +875,7 @@ public class ForkJoinPool extends AbstractExecutorService
      * ====================
      *
      * Regular ForkJoinTasks manage task cancellation (method cancel)
-     * independently from the interrupt status of threads running
+     * independently from the interrupted status of threads running
      * tasks.  Interrupts are issued internally only while
      * terminating, to wake up workers and cancel queued tasks.  By
      * default, interrupts are cleared only when necessary to ensure
@@ -900,7 +900,7 @@ public class ForkJoinPool extends AbstractExecutorService
      * with results accessed via join() differ from those via get(),
      * which differ from those invoked using pool submit methods by
      * non-workers (which comply with Future.get() specs). Internal
-     * usages of ForkJoinTasks ignore interrupt status when executing
+     * usages of ForkJoinTasks ignore interrupted status when executing
      * or awaiting completion.  Otherwise, reporting task results or
      * exceptions is preferred to throwing InterruptedExceptions,
      * which are in turn preferred to timeouts. Similarly, completion
@@ -4171,7 +4171,7 @@ public class ForkJoinPool extends AbstractExecutorService
      * method stops all executing tasks as if by invoking {@link
      * #shutdownNow()}. It then continues to wait until all actively
      * executing tasks have completed. Tasks that were awaiting
-     * execution are not executed. The interrupt status will be
+     * execution are not executed. The interrupted status will be
      * re-asserted before this method returns.
      *
      * @since 19

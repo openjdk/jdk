@@ -56,6 +56,7 @@ private:
   void build_scalar_vtnodes_for_non_packed_nodes();
   void build_inputs_for_vector_vtnodes(VectorSet& vtn_memory_dependencies);
   void build_inputs_for_scalar_vtnodes(VectorSet& vtn_memory_dependencies);
+  void build_uses_after_loop();
 
   // Helper methods for building VTransform.
   VTransformNode* get_vtnode_or_null(Node* n) const {
@@ -82,6 +83,7 @@ private:
   void init_all_req_with_scalars(Node* n, VTransformNode* vtn);
   void init_all_req_with_vectors(const Node_List* pack, VTransformNode* vtn);
   void add_memory_dependencies_of_node_to_vtnode(Node* n, VTransformNode* vtn, VectorSet& vtn_memory_dependencies);
+  LoadNode::ControlDependency load_control_dependency(const Node_List* pack) const;
 };
 
 #endif // SHARE_OPTO_SUPERWORD_VTRANSFORM_BUILDER_HPP

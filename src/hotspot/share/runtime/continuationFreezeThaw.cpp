@@ -28,16 +28,20 @@
 #include "code/nmethod.inline.hpp"
 #include "code/vmreg.inline.hpp"
 #include "compiler/oopMap.inline.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/memAllocator.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
+#include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterRuntime.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/constantPool.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -63,6 +67,8 @@
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stackOverflow.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
+#include "runtime/vframe.inline.hpp"
+#include "runtime/vframe_hp.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
@@ -73,8 +79,12 @@
 #if INCLUDE_JFR
 #include "jfr/jfr.inline.hpp"
 #endif
-
-#include <type_traits>
+#ifdef COMPILER1
+#include "c1/c1_Runtime1.hpp"
+#endif
+#ifdef COMPILER2
+#include "opto/runtime.hpp"
+#endif
 
 /*
  * This file contains the implementation of continuation freezing (yield) and thawing (run).
@@ -183,8 +193,9 @@ static void verify_continuation(oop continuation) { Continuation::debug_verify_c
 static void do_deopt_after_thaw(JavaThread* thread);
 static bool do_verify_after_thaw(JavaThread* thread, stackChunkOop chunk, outputStream* st);
 static void log_frames(JavaThread* thread);
-static void log_frames_after_thaw(JavaThread* thread, ContinuationWrapper& cont, intptr_t* sp, bool preempted);
+static void log_frames_after_thaw(JavaThread* thread, ContinuationWrapper& cont, intptr_t* sp);
 static void print_frame_layout(const frame& f, bool callee_complete, outputStream* st = tty);
+static void verify_frame_kind(frame& top, Continuation::preempt_kind preempt_kind, Method** m_ptr = nullptr, const char** code_name_ptr = nullptr, int* bci_ptr = nullptr, stackChunkOop chunk = nullptr);
 
 #define assert_pfl(p, ...) \
 do {                                           \
@@ -462,7 +473,7 @@ private:
   inline void patch_pd(frame& callee, const frame& caller);
   inline void patch_pd_unused(intptr_t* sp);
   void adjust_interpreted_frame_unextended_sp(frame& f);
-  static inline void prepare_freeze_interpreted_top_frame(frame& f);
+  inline void prepare_freeze_interpreted_top_frame(frame& f);
   static inline void relativize_interpreted_frame_metadata(const frame& f, const frame& hf);
 
 protected:
@@ -1090,13 +1101,27 @@ freeze_result FreezeBase::finalize_freeze(const frame& callee, frame& caller, in
   assert(!chunk->is_empty() || StackChunkFrameStream<ChunkFrames::Mixed>(chunk).to_frame().is_empty(), "");
 
   if (_preempt) {
-    frame f = _thread->last_frame();
-    if (f.is_interpreted_frame()) {
+    frame top_frame = _thread->last_frame();
+    if (top_frame.is_interpreted_frame()) {
       // Some platforms do not save the last_sp in the top interpreter frame on VM calls.
       // We need it so that on resume we can restore the sp to the right place, since
       // thawing might add an alignment word to the expression stack (see finish_thaw()).
       // We do it now that we know freezing will be successful.
-      prepare_freeze_interpreted_top_frame(f);
+      prepare_freeze_interpreted_top_frame(top_frame);
+    }
+
+    // Do this now so should_process_args_at_top() is set before calling finish_freeze
+    // in case we might need to apply GC barriers to frames in this stackChunk.
+    if (_thread->at_preemptable_init()) {
+      assert(top_frame.is_interpreted_frame(), "only InterpreterRuntime::_new/resolve_from_cache allowed");
+      chunk->set_at_klass_init(true);
+      methodHandle m(_thread, top_frame.interpreter_frame_method());
+      Bytecode_invoke call = Bytecode_invoke_check(m, top_frame.interpreter_frame_bci());
+      assert(!call.is_valid() || call.is_invokestatic(), "only invokestatic allowed");
+      if (call.is_invokestatic() && call.size_of_parameters() > 0) {
+        assert(top_frame.interpreter_frame_expression_stack_size() > 0, "should have parameters in exp stack");
+        chunk->set_has_args_at_top(true);
+      }
     }
   }
 
@@ -1608,6 +1633,25 @@ void FreezeBase::throw_stack_overflow_on_humongous_chunk() {
   Exceptions::_throw_msg(_thread, __FILE__, __LINE__, vmSymbols::java_lang_StackOverflowError(), "Humongous stack chunk");
 }
 
+class AnchorMark : public StackObj {
+  JavaThread* _current;
+  frame& _top_frame;
+  intptr_t* _last_sp_from_frame;
+  bool _is_interpreted;
+
+ public:
+  AnchorMark(JavaThread* current, frame& f) : _current(current), _top_frame(f), _is_interpreted(false) {
+    intptr_t* sp = anchor_mark_set_pd();
+    set_anchor(_current, sp);
+  }
+  ~AnchorMark() {
+    clear_anchor(_current);
+    anchor_mark_clear_pd();
+  }
+  inline intptr_t* anchor_mark_set_pd();
+  inline void anchor_mark_clear_pd();
+};
+
 #if INCLUDE_JVMTI
 static int num_java_frames(ContinuationWrapper& cont) {
   ResourceMark rm; // used for scope traversal in num_java_frames(nmethod*, address)
@@ -1619,44 +1663,43 @@ static int num_java_frames(ContinuationWrapper& cont) {
 }
 
 static void invalidate_jvmti_stack(JavaThread* thread) {
-  if (thread->is_interp_only_mode()) {
-    JvmtiThreadState *state = thread->jvmti_thread_state();
-    if (state != nullptr)
-      state->invalidate_cur_stack_depth();
+  JvmtiThreadState *state = thread->jvmti_thread_state();
+  if (state != nullptr) {
+    state->invalidate_cur_stack_depth();
   }
 }
 
 static void jvmti_yield_cleanup(JavaThread* thread, ContinuationWrapper& cont) {
-  if (JvmtiExport::can_post_frame_pop()) {
-    int num_frames = num_java_frames(cont);
+  if (!cont.entry()->is_virtual_thread()) {
+    if (JvmtiExport::has_frame_pops(thread)) {
+      int num_frames = num_java_frames(cont);
 
-    ContinuationWrapper::SafepointOp so(Thread::current(), cont);
-    JvmtiExport::continuation_yield_cleanup(JavaThread::current(), num_frames);
+      ContinuationWrapper::SafepointOp so(Thread::current(), cont);
+      JvmtiExport::continuation_yield_cleanup(thread, num_frames);
+    }
+    invalidate_jvmti_stack(thread);
   }
-  invalidate_jvmti_stack(thread);
 }
 
-static void jvmti_mount_end(JavaThread* current, ContinuationWrapper& cont, frame top) {
+static void jvmti_mount_end(JavaThread* current, ContinuationWrapper& cont, frame top, Continuation::preempt_kind pk) {
   assert(current->vthread() != nullptr, "must be");
 
-  HandleMarkCleaner hm(current);
+  HandleMarkCleaner hm(current);  // Cleanup all handles (including so._conth) before returning to Java.
   Handle vth(current, current->vthread());
-
   ContinuationWrapper::SafepointOp so(current, cont);
-
-  // Since we might safepoint set the anchor so that the stack can be walked.
-  set_anchor(current, top.sp());
+  AnchorMark am(current, top);  // Set anchor so that the stack is walkable.
 
   JRT_BLOCK
     JvmtiVTMSTransitionDisabler::VTMS_vthread_mount((jthread)vth.raw_value(), false);
 
     if (current->pending_contended_entered_event()) {
-      JvmtiExport::post_monitor_contended_entered(current, current->contended_entered_monitor());
+      // No monitor JVMTI events for ObjectLocker case.
+      if (pk != Continuation::object_locker) {
+        JvmtiExport::post_monitor_contended_entered(current, current->contended_entered_monitor());
+      }
       current->set_contended_entered_monitor(nullptr);
     }
   JRT_BLOCK_END
-
-  clear_anchor(current);
 }
 #endif // INCLUDE_JVMTI
 
@@ -1678,6 +1721,109 @@ bool FreezeBase::check_valid_fast_path() {
     }
   }
   return true;
+}
+
+static void verify_frame_kind(frame& top, Continuation::preempt_kind preempt_kind, Method** m_ptr, const char** code_name_ptr, int* bci_ptr, stackChunkOop chunk) {
+  Method* m;
+  const char* code_name;
+  int bci;
+  if (preempt_kind == Continuation::monitorenter) {
+    assert(top.is_interpreted_frame() || top.is_runtime_frame(), "unexpected %sframe",
+      top.is_compiled_frame() ? "compiled " : top.is_native_frame() ? "native " : "");
+    bool at_sync_method;
+    if (top.is_interpreted_frame()) {
+      m = top.interpreter_frame_method();
+      assert(!m->is_native() || m->is_synchronized(), "invalid method %s", m->external_name());
+      address bcp = top.interpreter_frame_bcp();
+      assert(bcp != 0 || m->is_native(), "");
+      at_sync_method = m->is_synchronized() && (bcp == 0 || bcp == m->code_base());
+      // bcp is advanced on monitorenter before making the VM call, adjust for that.
+      bool at_sync_bytecode = bcp > m->code_base() && Bytecode(m, bcp - 1).code() == Bytecodes::Code::_monitorenter;
+      assert(at_sync_method || at_sync_bytecode, "");
+      bci = at_sync_method ? -1 : top.interpreter_frame_bci();
+    } else {
+      JavaThread* current = JavaThread::current();
+      ResourceMark rm(current);
+      CodeBlob* cb = top.cb();
+      RegisterMap reg_map(current,
+                  RegisterMap::UpdateMap::skip,
+                  RegisterMap::ProcessFrames::skip,
+                  RegisterMap::WalkContinuation::include);
+      if (top.is_heap_frame()) {
+        assert(chunk != nullptr, "");
+        reg_map.set_stack_chunk(chunk);
+        top = chunk->relativize(top);
+        top.set_frame_index(0);
+      }
+      frame fr = top.sender(&reg_map);
+      vframe*  vf  = vframe::new_vframe(&fr, &reg_map, current);
+      compiledVFrame* cvf = compiledVFrame::cast(vf);
+      m = cvf->method();
+      bci = cvf->scope()->bci();
+      at_sync_method = bci == SynchronizationEntryBCI;
+      assert(!at_sync_method || m->is_synchronized(), "bci is %d but method %s is not synchronized", bci, m->external_name());
+      bool is_c1_monitorenter = false, is_c2_monitorenter = false;
+      COMPILER1_PRESENT(is_c1_monitorenter = cb == Runtime1::blob_for(StubId::c1_monitorenter_id) ||
+                                             cb == Runtime1::blob_for(StubId::c1_monitorenter_nofpu_id);)
+      COMPILER2_PRESENT(is_c2_monitorenter = cb == CodeCache::find_blob(OptoRuntime::complete_monitor_locking_Java());)
+      assert(is_c1_monitorenter || is_c2_monitorenter, "wrong runtime stub frame");
+    }
+    code_name = at_sync_method ? "synchronized method" : "monitorenter";
+  } else if (preempt_kind == Continuation::object_wait) {
+    assert(top.is_interpreted_frame() || top.is_native_frame(), "");
+    m  = top.is_interpreted_frame() ? top.interpreter_frame_method() : top.cb()->as_nmethod()->method();
+    assert(m->is_object_wait0(), "");
+    bci = 0;
+    code_name = "";
+  } else {
+    assert(preempt_kind == Continuation::object_locker, "invalid preempt kind");
+    assert(top.is_interpreted_frame(), "");
+    m = top.interpreter_frame_method();
+    Bytecode current_bytecode = Bytecode(m, top.interpreter_frame_bcp());
+    Bytecodes::Code code = current_bytecode.code();
+    assert(code == Bytecodes::Code::_new || code == Bytecodes::Code::_invokestatic ||
+           (code == Bytecodes::Code::_getstatic || code == Bytecodes::Code::_putstatic), "invalid bytecode");
+    bci = top.interpreter_frame_bci();
+    code_name = Bytecodes::name(current_bytecode.code());
+  }
+  assert(bci >= 0 || m->is_synchronized(), "invalid bci:%d at method %s", bci, m->external_name());
+
+  if (m_ptr != nullptr) {
+    *m_ptr = m;
+    *code_name_ptr = code_name;
+    *bci_ptr = bci;
+  }
+}
+
+static void log_preempt_after_freeze(const ContinuationWrapper& cont) {
+  JavaThread* current = cont.thread();
+  int64_t tid = current->monitor_owner_id();
+
+  StackChunkFrameStream<ChunkFrames::Mixed> sfs(cont.tail());
+  frame top_frame = sfs.to_frame();
+  bool at_init = current->at_preemptable_init();
+  bool at_enter = current->current_pending_monitor() != nullptr;
+  bool at_wait = current->current_waiting_monitor() != nullptr;
+  assert((at_enter && !at_wait) || (!at_enter && at_wait), "");
+  Continuation::preempt_kind pk = at_init ? Continuation::object_locker : at_enter ? Continuation::monitorenter : Continuation::object_wait;
+
+  Method* m = nullptr;
+  const char* code_name = nullptr;
+  int bci = InvalidFrameStateBci;
+  verify_frame_kind(top_frame, pk, &m, &code_name, &bci, cont.tail());
+  assert(m != nullptr && code_name != nullptr && bci != InvalidFrameStateBci, "should be set");
+
+  ResourceMark rm(current);
+  if (bci < 0) {
+    log_trace(continuations, preempt)("Preempted " INT64_FORMAT " while synchronizing on %smethod %s", tid, m->is_native() ? "native " : "", m->external_name());
+  } else if (m->is_object_wait0()) {
+    log_trace(continuations, preempt)("Preempted " INT64_FORMAT " at native method %s", tid, m->external_name());
+  } else {
+    Klass* k = current->preempt_init_klass();
+    assert(k != nullptr || !at_init, "");
+    log_trace(continuations, preempt)("Preempted " INT64_FORMAT " at %s(bci:%d) in method %s %s%s", tid, code_name, bci,
+            m->external_name(), at_init ? "trying to initialize klass " : "", at_init ? k->external_name() : "");
+  }
 }
 #endif // ASSERT
 
@@ -1708,9 +1854,10 @@ static freeze_result preempt_epilog(ContinuationWrapper& cont, freeze_result res
     return res;
   }
 
+  // Set up things so that on return to Java we jump to preempt stub.
   patch_return_pc_with_preempt_stub(old_last_frame);
   cont.tail()->set_preempted(true);
-
+  DEBUG_ONLY(log_preempt_after_freeze(cont);)
   return freeze_epilog(cont);
 }
 
@@ -1737,13 +1884,10 @@ static inline freeze_result freeze_internal(JavaThread* current, intptr_t* const
 
   assert(entry->is_virtual_thread() == (entry->scope(current) == java_lang_VirtualThread::vthread_scope()), "");
 
-  assert((current->held_monitor_count() == 0 && current->jni_monitor_count() == 0),
-         "Held monitor count should not be used for lightweight locking: " INT64_FORMAT " JNI: " INT64_FORMAT, (int64_t)current->held_monitor_count(), (int64_t)current->jni_monitor_count());
-
-  if (entry->is_pinned() || current->held_monitor_count() > 0) {
-    log_develop_debug(continuations)("PINNED due to critical section/hold monitor");
+  if (entry->is_pinned()) {
+    log_develop_debug(continuations)("PINNED due to critical section");
     verify_continuation(cont.continuation());
-    freeze_result res = entry->is_pinned() ? freeze_pinned_cs : freeze_pinned_monitor;
+    const freeze_result res = freeze_pinned_cs;
     if (!preempt) {
       JFR_ONLY(current->set_last_freeze_fail_result(res);)
     }
@@ -1800,8 +1944,6 @@ static freeze_result is_pinned0(JavaThread* thread, oop cont_scope, bool safepoi
   }
   if (entry->is_pinned()) {
     return freeze_pinned_cs;
-  } else if (thread->held_monitor_count() > 0) {
-    return freeze_pinned_monitor;
   }
 
   RegisterMap map(thread,
@@ -1837,15 +1979,12 @@ static freeze_result is_pinned0(JavaThread* thread, oop cont_scope, bool safepoi
       if (scope == cont_scope) {
         break;
       }
-      intx monitor_count = entry->parent_held_monitor_count();
       entry = entry->parent();
       if (entry == nullptr) {
         break;
       }
       if (entry->is_pinned()) {
         return freeze_pinned_cs;
-      } else if (monitor_count > 0) {
-        return freeze_pinned_monitor;
       }
     }
   }
@@ -1914,9 +2053,13 @@ protected:
   intptr_t* _fastpath;
   bool _barriers;
   bool _preempted_case;
+  bool _process_args_at_top;
   intptr_t* _top_unextended_sp_before_thaw;
   int _align_size;
   DEBUG_ONLY(intptr_t* _top_stack_address);
+
+  // Only used for preemption on ObjectLocker
+  ObjectMonitor* _init_lock;
 
   StackChunkFrameStream<ChunkFrames::Mixed> _stream;
 
@@ -1944,6 +2087,8 @@ protected:
 
   intptr_t* handle_preempted_continuation(intptr_t* sp, Continuation::preempt_kind preempt_kind, bool fast_case);
   inline intptr_t* push_cleanup_continuation();
+  inline intptr_t* push_preempt_adapter();
+  intptr_t* redo_vmcall(JavaThread* current, frame& top);
   void throw_interrupted_exception(JavaThread* current, frame& top);
 
   void recurse_thaw(const frame& heap_frame, frame& caller, int num_frames, bool top_on_preempt_case);
@@ -1960,12 +2105,12 @@ private:
   inline void patch(frame& f, const frame& caller, bool bottom);
   void clear_bitmap_bits(address start, address end);
 
-  NOINLINE void recurse_thaw_interpreted_frame(const frame& hf, frame& caller, int num_frames);
+  NOINLINE void recurse_thaw_interpreted_frame(const frame& hf, frame& caller, int num_frames, bool is_top);
   void recurse_thaw_compiled_frame(const frame& hf, frame& caller, int num_frames, bool stub_caller);
   void recurse_thaw_stub_frame(const frame& hf, frame& caller, int num_frames);
   void recurse_thaw_native_frame(const frame& hf, frame& caller, int num_frames);
 
-  void push_return_frame(frame& f);
+  void push_return_frame(const frame& f);
   inline frame new_entry_frame();
   template<typename FKind> frame new_stack_frame(const frame& hf, frame& caller, bool bottom);
   inline void patch_pd(frame& f, const frame& sender);
@@ -2060,7 +2205,7 @@ int ThawBase::remove_top_compiled_frame_from_chunk(stackChunkOop chunk, int &arg
     // If we don't thaw the top compiled frame too, after restoring the saved
     // registers back in Java, we would hit the return barrier to thaw one more
     // frame effectively overwriting the restored registers during that call.
-    f.next(SmallRegisterMap::instance(), true /* stop */);
+    f.next(SmallRegisterMap::instance_no_args(), true /* stop */);
     assert(!f.is_done(), "");
 
     f.get_cb();
@@ -2076,7 +2221,7 @@ int ThawBase::remove_top_compiled_frame_from_chunk(stackChunkOop chunk, int &arg
     }
   }
 
-  f.next(SmallRegisterMap::instance(), true /* stop */);
+  f.next(SmallRegisterMap::instance_no_args(), true /* stop */);
   empty = f.is_done();
   assert(!empty || argsize == chunk->argsize(), "");
 
@@ -2208,12 +2353,12 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_fast(stackChunkOop chunk) {
 #endif
 
 #ifdef ASSERT
-  set_anchor(_thread, rs.sp());
-  log_frames(_thread);
   if (LoomDeoptAfterThaw) {
+    frame top(rs.sp());
+    AnchorMark am(_thread, top);
+    log_frames(_thread);
     do_deopt_after_thaw(_thread);
   }
-  clear_anchor(_thread);
 #endif
 
   return rs.sp();
@@ -2236,29 +2381,49 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_slow(stackChunkOop chunk, Continuation::t
   Continuation::preempt_kind preempt_kind;
   bool retry_fast_path = false;
 
+  _process_args_at_top = false;
   _preempted_case = chunk->preempted();
   if (_preempted_case) {
+    ObjectMonitor* mon = nullptr;
     ObjectWaiter* waiter = java_lang_VirtualThread::objectWaiter(_thread->vthread());
     if (waiter != nullptr) {
       // Mounted again after preemption. Resume the pending monitor operation,
       // which will be either a monitorenter or Object.wait() call.
-      ObjectMonitor* mon = waiter->monitor();
-      preempt_kind = waiter->is_wait() ? Continuation::freeze_on_wait : Continuation::freeze_on_monitorenter;
+      mon = waiter->monitor();
+      preempt_kind = waiter->is_wait() ? Continuation::object_wait : Continuation::monitorenter;
 
       bool mon_acquired = mon->resume_operation(_thread, waiter, _cont);
       assert(!mon_acquired || mon->has_owner(_thread), "invariant");
       if (!mon_acquired) {
         // Failed to acquire monitor. Return to enterSpecial to unmount again.
+        log_develop_trace(continuations, preempt)("Failed to acquire monitor, unmounting again");
         return push_cleanup_continuation();
       }
       chunk = _cont.tail();  // reload oop in case of safepoint in resume_operation (if posting JVMTI events).
+      JVMTI_ONLY(assert(_thread->contended_entered_monitor() == nullptr || _thread->contended_entered_monitor() == mon, ""));
     } else {
-      // Preemption cancelled in moniterenter case. We actually acquired
-      // the monitor after freezing all frames so nothing to do.
-      preempt_kind = Continuation::freeze_on_monitorenter;
+      // Preemption cancelled on moniterenter or ObjectLocker case. We
+      // actually acquired the monitor after freezing all frames so no
+      // need to call resume_operation. If this is the ObjectLocker case
+      // we released the monitor already at ~ObjectLocker, so _init_lock
+      // will be set to nullptr below since there is no monitor to release.
+      preempt_kind = Continuation::monitorenter;
     }
+
     // Call this first to avoid racing with GC threads later when modifying the chunk flags.
     relativize_chunk_concurrently(chunk);
+
+    if (chunk->at_klass_init()) {
+      preempt_kind = Continuation::object_locker;
+      chunk->set_at_klass_init(false);
+      _process_args_at_top = chunk->has_args_at_top();
+      if (_process_args_at_top) {
+        // Only needed for the top frame which will be thawed.
+        chunk->set_has_args_at_top(false);
+      }
+      assert(waiter == nullptr || mon != nullptr, "should have a monitor");
+      _init_lock = mon;  // remember monitor since we will need it on handle_preempted_continuation()
+    }
     chunk->set_preempted(false);
     retry_fast_path = true;
   } else {
@@ -2319,7 +2484,7 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_slow(stackChunkOop chunk, Continuation::t
 
   assert(_cont.chunk_invariant(), "");
 
-  JVMTI_ONLY(invalidate_jvmti_stack(_thread));
+  JVMTI_ONLY(if (!_cont.entry()->is_virtual_thread()) invalidate_jvmti_stack(_thread));
 
   _thread->set_cont_fastpath(_fastpath);
 
@@ -2342,7 +2507,7 @@ void ThawBase::recurse_thaw(const frame& heap_frame, frame& caller, int num_fram
   } else if (!heap_frame.is_interpreted_frame()) {
     recurse_thaw_compiled_frame(heap_frame, caller, num_frames, false);
   } else {
-    recurse_thaw_interpreted_frame(heap_frame, caller, num_frames);
+    recurse_thaw_interpreted_frame(heap_frame, caller, num_frames, top_on_preempt_case);
   }
 }
 
@@ -2354,7 +2519,7 @@ bool ThawBase::recurse_thaw_java_frame(frame& caller, int num_frames) {
 
   int argsize = _stream.stack_argsize();
 
-  _stream.next(SmallRegisterMap::instance());
+  _stream.next(SmallRegisterMap::instance_no_args());
   assert(_stream.to_frame().is_empty() == _stream.is_done(), "");
 
   // we never leave a compiled caller of an interpreted frame as the top frame in the chunk
@@ -2459,9 +2624,10 @@ void ThawBase::clear_bitmap_bits(address start, address end) {
 }
 
 intptr_t* ThawBase::handle_preempted_continuation(intptr_t* sp, Continuation::preempt_kind preempt_kind, bool fast_case) {
-  assert(preempt_kind == Continuation::freeze_on_wait || preempt_kind == Continuation::freeze_on_monitorenter, "");
   frame top(sp);
   assert(top.pc() == *(address*)(sp - frame::sender_sp_ret_address_offset()), "");
+  DEBUG_ONLY(verify_frame_kind(top, preempt_kind);)
+  NOT_PRODUCT(int64_t tid = _thread->monitor_owner_id();)
 
 #if INCLUDE_JVMTI
   // Finish the VTMS transition.
@@ -2469,7 +2635,7 @@ intptr_t* ThawBase::handle_preempted_continuation(intptr_t* sp, Continuation::pr
   bool is_vthread = Continuation::continuation_scope(_cont.continuation()) == java_lang_VirtualThread::vthread_scope();
   if (is_vthread) {
     if (JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
-      jvmti_mount_end(_thread, _cont, top);
+      jvmti_mount_end(_thread, _cont, top, preempt_kind);
     } else {
       _thread->set_is_in_VTMS_transition(false);
       java_lang_Thread::set_is_in_VTMS_transition(_thread->vthread(), false);
@@ -2486,36 +2652,103 @@ intptr_t* ThawBase::handle_preempted_continuation(intptr_t* sp, Continuation::pr
     patch_pd(top, sp + fsize);
   }
 
-  if (preempt_kind == Continuation::freeze_on_wait) {
+  if (preempt_kind == Continuation::object_wait) {
     // Check now if we need to throw IE exception.
-    if (_thread->pending_interrupted_exception()) {
+    bool throw_ie = _thread->pending_interrupted_exception();
+    if (throw_ie) {
       throw_interrupted_exception(_thread, top);
       _thread->set_pending_interrupted_exception(false);
     }
-  } else if (top.is_runtime_frame()) {
-    // The continuation might now run on a different platform thread than the previous time so
-    // we need to adjust the current thread saved in the stub frame before restoring registers.
-    JavaThread** thread_addr = frame::saved_thread_address(top);
-    if (thread_addr != nullptr) *thread_addr = _thread;
+    log_develop_trace(continuations, preempt)("Resuming " INT64_FORMAT" after preemption on Object.wait%s", tid, throw_ie ? "(throwing IE)" : "");
+  } else if (preempt_kind == Continuation::monitorenter) {
+    if (top.is_runtime_frame()) {
+      // The continuation might now run on a different platform thread than the previous time so
+      // we need to adjust the current thread saved in the stub frame before restoring registers.
+      JavaThread** thread_addr = frame::saved_thread_address(top);
+      if (thread_addr != nullptr) *thread_addr = _thread;
+    }
+    log_develop_trace(continuations, preempt)("Resuming " INT64_FORMAT " after preemption on monitorenter", tid);
+  } else {
+    // We need to redo the original call into the VM. First though, we need
+    // to exit the monitor we just acquired (except on preemption cancelled
+    // case where it was already released).
+    assert(preempt_kind == Continuation::object_locker, "");
+    if (_init_lock != nullptr) _init_lock->exit(_thread);
+    sp = redo_vmcall(_thread, top);
+  }
+  return sp;
+}
+
+intptr_t* ThawBase::redo_vmcall(JavaThread* current, frame& top) {
+  assert(!current->preempting(), "");
+  NOT_PRODUCT(int64_t tid = current->monitor_owner_id();)
+  intptr_t* sp = top.sp();
+
+  {
+    HandleMarkCleaner hmc(current);  // Cleanup all handles (including so._conth) before returning to Java.
+    ContinuationWrapper::SafepointOp so(current, _cont);
+    AnchorMark am(current, top);    // Set the anchor so that the stack is walkable.
+
+    Method* m = top.interpreter_frame_method();
+    Bytecode current_bytecode = Bytecode(m, top.interpreter_frame_bcp());
+    Bytecodes::Code code = current_bytecode.code();
+    log_develop_trace(continuations, preempt)("Redoing InterpreterRuntime::%s for " INT64_FORMAT, code == Bytecodes::Code::_new ? "_new" : "resolve_from_cache", tid);
+
+    // These InterpreterRuntime entry points use JRT_ENTRY which uses a HandleMarkCleaner.
+    // Create a HandeMark to avoid destroying so._conth.
+    HandleMark hm(current);
+    DEBUG_ONLY(JavaThread::AtRedoVMCall apvmc(current);)
+    if (code == Bytecodes::Code::_new) {
+      InterpreterRuntime::_new(current, m->constants(), current_bytecode.get_index_u2(code));
+    } else {
+      InterpreterRuntime::resolve_from_cache(current, code);
+    }
+  }
+
+  if (current->preempting()) {
+    // Preempted again so we just arrange to return to preempt stub to unmount.
+    sp = push_preempt_adapter();
+    current->set_preempt_alternate_return(nullptr);
+    bool cancelled = current->preemption_cancelled();
+    if (cancelled) {
+      // Since preemption was cancelled, the thread will call thaw again from the preempt
+      // stub. These retries could happen several times due to contention on the init_lock,
+      // so just let the vthread umount to give a chance for other vthreads to run.
+      current->set_preemption_cancelled(false);
+      oop vthread = current->vthread();
+      assert(java_lang_VirtualThread::state(vthread) == java_lang_VirtualThread::RUNNING, "wrong state for vthread");
+      java_lang_VirtualThread::set_state(vthread, java_lang_VirtualThread::YIELDING);
+#if INCLUDE_JVMTI
+      if (current->contended_entered_monitor() != nullptr) {
+        current->set_contended_entered_monitor(nullptr);
+      }
+#endif
+    }
+    log_develop_trace(continuations, preempt)("Preempted " INT64_FORMAT " again%s", tid, cancelled ? "(preemption cancelled, setting state to YIELDING)" : "");
+  } else {
+    log_develop_trace(continuations, preempt)("Call succesful, resuming " INT64_FORMAT, tid);
   }
   return sp;
 }
 
 void ThawBase::throw_interrupted_exception(JavaThread* current, frame& top) {
+  HandleMarkCleaner hm(current);  // Cleanup all handles (including so._conth) before returning to Java.
   ContinuationWrapper::SafepointOp so(current, _cont);
-  // Since we might safepoint set the anchor so that the stack can be walked.
-  set_anchor(current, top.sp());
+  AnchorMark am(current, top);  // Set the anchor so that the stack is walkable.
   JRT_BLOCK
     THROW(vmSymbols::java_lang_InterruptedException());
   JRT_BLOCK_END
-  clear_anchor(current);
 }
 
-NOINLINE void ThawBase::recurse_thaw_interpreted_frame(const frame& hf, frame& caller, int num_frames) {
+NOINLINE void ThawBase::recurse_thaw_interpreted_frame(const frame& hf, frame& caller, int num_frames, bool is_top) {
   assert(hf.is_interpreted_frame(), "");
 
   if (UNLIKELY(seen_by_gc())) {
-    _cont.tail()->do_barriers<stackChunkOopDesc::BarrierType::Store>(_stream, SmallRegisterMap::instance());
+    if (is_top && _process_args_at_top) {
+      _cont.tail()->do_barriers<stackChunkOopDesc::BarrierType::Store>(_stream, SmallRegisterMap::instance_with_args());
+    } else {
+      _cont.tail()->do_barriers<stackChunkOopDesc::BarrierType::Store>(_stream, SmallRegisterMap::instance_no_args());
+    }
   }
 
   const bool is_bottom_frame = recurse_thaw_java_frame<ContinuationHelper::InterpretedFrame>(caller, num_frames);
@@ -2560,7 +2793,7 @@ NOINLINE void ThawBase::recurse_thaw_interpreted_frame(const frame& hf, frame& c
 
   if (!is_bottom_frame) {
     // can only fix caller once this frame is thawed (due to callee saved regs)
-    _cont.tail()->fix_thawed_frame(caller, SmallRegisterMap::instance());
+    _cont.tail()->fix_thawed_frame(caller, SmallRegisterMap::instance_no_args());
   } else if (_cont.tail()->has_bitmap() && locals > 0) {
     assert(hf.is_heap_frame(), "should be");
     address start = (address)(heap_frame_bottom - locals);
@@ -2577,7 +2810,7 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
   assert(_preempted_case || !stub_caller, "stub caller not at preemption");
 
   if (!stub_caller && UNLIKELY(seen_by_gc())) { // recurse_thaw_stub_frame already invoked our barriers with a full regmap
-    _cont.tail()->do_barriers<stackChunkOopDesc::BarrierType::Store>(_stream, SmallRegisterMap::instance());
+    _cont.tail()->do_barriers<stackChunkOopDesc::BarrierType::Store>(_stream, SmallRegisterMap::instance_no_args());
   }
 
   const bool is_bottom_frame = recurse_thaw_java_frame<ContinuationHelper::CompiledFrame>(caller, num_frames);
@@ -2636,7 +2869,7 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
 
   if (!is_bottom_frame) {
     // can only fix caller once this frame is thawed (due to callee saved regs); this happens on the stack
-    _cont.tail()->fix_thawed_frame(caller, SmallRegisterMap::instance());
+    _cont.tail()->fix_thawed_frame(caller, SmallRegisterMap::instance_no_args());
   } else if (_cont.tail()->has_bitmap() && added_argsize > 0) {
     address start = (address)(heap_frame_top + ContinuationHelper::CompiledFrame::size(hf) + frame::metadata_words_at_top);
     int stack_args_slots = f.cb()->as_nmethod()->num_stack_arg_slots(false /* rounded */);
@@ -2662,7 +2895,7 @@ void ThawBase::recurse_thaw_stub_frame(const frame& hf, frame& caller, int num_f
     assert(!_stream.is_done(), "");
     _cont.tail()->do_barriers<stackChunkOopDesc::BarrierType::Store>(_stream, &map);
   } else {
-    _stream.next(SmallRegisterMap::instance());
+    _stream.next(SmallRegisterMap::instance_no_args());
     assert(!_stream.is_done(), "");
   }
 
@@ -2702,7 +2935,7 @@ void ThawBase::recurse_thaw_native_frame(const frame& hf, frame& caller, int num
   assert(_preempted_case && hf.cb()->as_nmethod()->method()->is_object_wait0(), "");
 
   if (UNLIKELY(seen_by_gc())) { // recurse_thaw_stub_frame already invoked our barriers with a full regmap
-    _cont.tail()->do_barriers<stackChunkOopDesc::BarrierType::Store>(_stream, SmallRegisterMap::instance());
+    _cont.tail()->do_barriers<stackChunkOopDesc::BarrierType::Store>(_stream, SmallRegisterMap::instance_no_args());
   }
 
   const bool is_bottom_frame = recurse_thaw_java_frame<ContinuationHelper::NativeFrame>(caller, num_frames);
@@ -2740,7 +2973,7 @@ void ThawBase::recurse_thaw_native_frame(const frame& hf, frame& caller, int num
   assert(!f.cb()->as_nmethod()->is_marked_for_deoptimization(), "");
 
   // can only fix caller once this frame is thawed (due to callee saved regs); this happens on the stack
-  _cont.tail()->fix_thawed_frame(caller, SmallRegisterMap::instance());
+  _cont.tail()->fix_thawed_frame(caller, SmallRegisterMap::instance_no_args());
 
   DEBUG_ONLY(after_thaw_java_frame(f, false /* bottom */);)
   caller = f;
@@ -2767,7 +3000,12 @@ void ThawBase::finish_thaw(frame& f) {
     f.set_sp(align_down(f.sp(), frame::frame_alignment));
   }
   push_return_frame(f);
-  chunk->fix_thawed_frame(f, SmallRegisterMap::instance()); // can only fix caller after push_return_frame (due to callee saved regs)
+   // can only fix caller after push_return_frame (due to callee saved regs)
+  if (_process_args_at_top) {
+    chunk->fix_thawed_frame(f, SmallRegisterMap::instance_with_args());
+  } else {
+    chunk->fix_thawed_frame(f, SmallRegisterMap::instance_no_args());
+  }
 
   assert(_cont.is_empty() == _cont.last_frame().is_empty(), "");
 
@@ -2781,7 +3019,7 @@ void ThawBase::finish_thaw(frame& f) {
   }
 }
 
-void ThawBase::push_return_frame(frame& f) { // see generate_cont_thaw
+void ThawBase::push_return_frame(const frame& f) { // see generate_cont_thaw
   assert(!f.is_compiled_frame() || f.is_deoptimized_frame() == f.cb()->as_nmethod()->is_deopt_pc(f.raw_pc()), "");
   assert(!f.is_compiled_frame() || f.is_deoptimized_frame() == (f.pc() != f.raw_pc()), "");
 
@@ -2829,11 +3067,10 @@ static inline intptr_t* thaw_internal(JavaThread* thread, const Continuation::th
   clear_anchor(thread);
 #endif
 
-  DEBUG_ONLY(bool preempted = cont.tail()->preempted();)
   Thaw<ConfigT> thw(thread, cont);
   intptr_t* const sp = thw.thaw(kind);
   assert(is_aligned(sp, frame::frame_alignment), "");
-  DEBUG_ONLY(log_frames_after_thaw(thread, cont, sp, preempted);)
+  DEBUG_ONLY(log_frames_after_thaw(thread, cont, sp);)
 
   CONT_JFR_ONLY(thw.jfr_info().post_jfr_event(&event, cont.continuation(), thread);)
 
@@ -2975,14 +3212,16 @@ static void log_frames(JavaThread* thread) {
   ls.print_cr("======= end frames =========");
 }
 
-static void log_frames_after_thaw(JavaThread* thread, ContinuationWrapper& cont, intptr_t* sp, bool preempted) {
+static void log_frames_after_thaw(JavaThread* thread, ContinuationWrapper& cont, intptr_t* sp) {
   intptr_t* sp0 = sp;
   address pc0 = *(address*)(sp - frame::sender_sp_ret_address_offset());
 
-  if (preempted && sp0 == cont.entrySP()) {
+  bool preempted = false;
+  stackChunkOop tail = cont.tail();
+  if (tail != nullptr && tail->preempted()) {
     // Still preempted (monitor not acquired) so no frames were thawed.
-    assert(cont.tail()->preempted(), "");
     set_anchor(thread, cont.entrySP(), cont.entryPC());
+    preempted = true;
   } else {
     set_anchor(thread, sp0);
   }
@@ -2991,7 +3230,7 @@ static void log_frames_after_thaw(JavaThread* thread, ContinuationWrapper& cont,
   if (LoomVerifyAfterThaw) {
     assert(do_verify_after_thaw(thread, cont.tail(), tty), "");
   }
-  assert(ContinuationEntry::assert_entry_frame_laid_out(thread), "");
+  assert(preempted || ContinuationEntry::assert_entry_frame_laid_out(thread), "");
   clear_anchor(thread);
 
   LogTarget(Trace, continuations) lt;
@@ -3062,7 +3301,7 @@ private:
         resolve<use_compressed, typename BarrierSet::GetType<BarrierSet::bs_name>::type>(); \
       }                                                                 \
         break;
-      FOR_EACH_CONCRETE_BARRIER_SET_DO(BARRIER_SET_RESOLVE_BARRIER_CLOSURE)
+      FOR_EACH_BARRIER_SET_DO(BARRIER_SET_RESOLVE_BARRIER_CLOSURE)
 #undef BARRIER_SET_RESOLVE_BARRIER_CLOSURE
 
     default:

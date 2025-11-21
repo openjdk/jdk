@@ -408,27 +408,6 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
   AC_MSG_CHECKING([if Boot JDK is 32 or 64 bits])
   AC_MSG_RESULT([$BOOT_JDK_BITS])
 
-  # Try to enable CDS
-  AC_MSG_CHECKING([for local Boot JDK Class Data Sharing (CDS)])
-  BOOT_JDK_CDS_ARCHIVE=$CONFIGURESUPPORT_OUTPUTDIR/classes.jsa
-  UTIL_ADD_JVM_ARG_IF_OK([-XX:+UnlockDiagnosticVMOptions -XX:-VerifySharedSpaces -XX:SharedArchiveFile=$BOOT_JDK_CDS_ARCHIVE],boot_jdk_cds_args,[$JAVA])
-
-  if test "x$boot_jdk_cds_args" != x; then
-    # Try creating a CDS archive
-    $JAVA $boot_jdk_cds_args -Xshare:dump > /dev/null 2>&1
-    if test $? -eq 0; then
-      BOOTJDK_USE_LOCAL_CDS=true
-      AC_MSG_RESULT([yes, created])
-    else
-      # Generation failed, don't use CDS.
-      BOOTJDK_USE_LOCAL_CDS=false
-      AC_MSG_RESULT([no, creation failed])
-    fi
-  else
-    BOOTJDK_USE_LOCAL_CDS=false
-    AC_MSG_RESULT([no, -XX:SharedArchiveFile not supported])
-  fi
-
   BOOTJDK_SETUP_CLASSPATH
 ])
 
@@ -444,13 +423,8 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
   # Force en-US environment
   UTIL_ADD_JVM_ARG_IF_OK([-Duser.language=en -Duser.country=US],boot_jdk_jvmargs,[$JAVA])
 
-  if test "x$BOOTJDK_USE_LOCAL_CDS" = xtrue; then
-    # Use our own CDS archive
-    UTIL_ADD_JVM_ARG_IF_OK([$boot_jdk_cds_args -Xshare:auto],boot_jdk_jvmargs,[$JAVA])
-  else
-    # Otherwise optimistically use the system-wide one, if one is present
-    UTIL_ADD_JVM_ARG_IF_OK([-Xshare:auto],boot_jdk_jvmargs,[$JAVA])
-  fi
+  UTIL_ADD_JVM_ARG_IF_OK([-Xlog:all=off:stdout],boot_jdk_jvmargs,[$JAVA])
+  UTIL_ADD_JVM_ARG_IF_OK([-Xlog:all=warning:stderr],boot_jdk_jvmargs,[$JAVA])
 
   # Finally append user provided options to allow them to override.
   UTIL_ADD_JVM_ARG_IF_OK([$USER_BOOT_JDK_OPTIONS],boot_jdk_jvmargs,[$JAVA])
@@ -597,10 +571,9 @@ AC_DEFUN([BOOTJDK_SETUP_BUILD_JDK],
   AC_ARG_WITH(build-jdk, [AS_HELP_STRING([--with-build-jdk],
       [path to JDK of same version as is being built@<:@the newly built JDK@:>@])])
 
-  CREATE_BUILDJDK=false
-  EXTERNAL_BUILDJDK=false
-  BUILD_JDK_FOUND="no"
+  EXTERNAL_BUILDJDK_PATH=""
   if test "x$with_build_jdk" != "x"; then
+    BUILD_JDK_FOUND=no
     BOOTJDK_CHECK_BUILD_JDK([
       if test "x$with_build_jdk" != x; then
         BUILD_JDK=$with_build_jdk
@@ -608,40 +581,15 @@ AC_DEFUN([BOOTJDK_SETUP_BUILD_JDK],
         AC_MSG_NOTICE([Found potential Build JDK using configure arguments])
       fi
     ])
-    EXTERNAL_BUILDJDK=true
-  else
-    if test "x$COMPILE_TYPE" = "xcross"; then
-      BUILD_JDK="\$(BUILDJDK_OUTPUTDIR)/jdk"
-      BUILD_JDK_FOUND=yes
-      CREATE_BUILDJDK=true
+    if test "x$BUILD_JDK_FOUND" != "xyes"; then
       AC_MSG_CHECKING([for Build JDK])
-      AC_MSG_RESULT([yes, will build it for the host platform])
-    else
-      BUILD_JDK="\$(JDK_OUTPUTDIR)"
-      BUILD_JDK_FOUND=yes
-      AC_MSG_CHECKING([for Build JDK])
-      AC_MSG_RESULT([yes, will use output dir])
+      AC_MSG_RESULT([no])
+      AC_MSG_ERROR([Could not find a suitable Build JDK])
     fi
+    EXTERNAL_BUILDJDK_PATH="$BUILD_JDK"
   fi
 
-  # Since these tools do not yet exist, we cannot use UTIL_FIXUP_EXECUTABLE to
-  # detect the need of fixpath
-  JMOD="$BUILD_JDK/bin/jmod"
-  UTIL_ADD_FIXPATH(JMOD)
-  JLINK="$BUILD_JDK/bin/jlink"
-  UTIL_ADD_FIXPATH(JLINK)
-  AC_SUBST(JMOD)
-  AC_SUBST(JLINK)
-
-  if test "x$BUILD_JDK_FOUND" != "xyes"; then
-    AC_MSG_CHECKING([for Build JDK])
-    AC_MSG_RESULT([no])
-    AC_MSG_ERROR([Could not find a suitable Build JDK])
-  fi
-
-  AC_SUBST(CREATE_BUILDJDK)
-  AC_SUBST(BUILD_JDK)
-  AC_SUBST(EXTERNAL_BUILDJDK)
+  AC_SUBST(EXTERNAL_BUILDJDK_PATH)
 ])
 
 # The docs-reference JDK is used to run javadoc for the docs-reference targets.

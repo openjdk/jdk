@@ -41,7 +41,6 @@ enum StringDedupMode {
 };
 
 class ShenandoahMarkingContext;
-class ShenandoahReferenceProcessor;
 
 // Base class for mark
 // Mark class does not maintain states. Instead, mark states are
@@ -72,7 +71,7 @@ public:
   inline ShenandoahObjToScanQueue* get_queue(uint index) const;
   inline ShenandoahObjToScanQueue* get_old_queue(uint index) const;
 
-  inline ShenandoahGeneration* generation() { return _generation; };
+  ShenandoahGeneration* generation() const { return _generation; };
 
 private:
 // ---------- Marking loop and tasks
@@ -93,7 +92,7 @@ private:
   void mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *t, StringDedup::Requests* const req);
 
   template <ShenandoahGenerationType GENERATION, bool CANCELLABLE, StringDedupMode STRING_DEDUP>
-  void mark_loop_prework(uint worker_id, TaskTerminator *terminator, ShenandoahReferenceProcessor *rp, StringDedup::Requests* const req, bool update_refs);
+  void mark_loop_prework(uint worker_id, TaskTerminator *terminator, StringDedup::Requests* const req, bool update_refs);
 
   template <ShenandoahGenerationType GENERATION>
   static bool in_generation(ShenandoahHeap* const heap, oop obj);
@@ -109,11 +108,11 @@ private:
   inline void dedup_string(oop obj, StringDedup::Requests* const req);
 protected:
   template<bool CANCELLABLE, StringDedupMode STRING_DEDUP>
-  void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor *rp,
-                 ShenandoahGenerationType generation, StringDedup::Requests* const req);
+  void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahGenerationType generation_type,
+                StringDedup::Requests* const req);
 
-  void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor *rp,
-                 ShenandoahGenerationType generation, bool cancellable, StringDedupMode dedup_mode, StringDedup::Requests* const req);
+  void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahGenerationType generation_type,
+                 bool cancellable, StringDedupMode dedup_mode, StringDedup::Requests* const req);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARK_HPP

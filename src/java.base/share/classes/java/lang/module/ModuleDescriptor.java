@@ -54,6 +54,7 @@ import static java.util.Objects.*;
 
 import jdk.internal.module.Checks;
 import jdk.internal.module.ModuleInfo;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 
 
 /**
@@ -91,6 +92,7 @@ import jdk.internal.module.ModuleInfo;
  * @since 9
  */
 
+@AOTSafeClassInitializer
 public final class ModuleDescriptor
     implements Comparable<ModuleDescriptor>
 {

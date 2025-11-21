@@ -188,6 +188,21 @@ public class TypeHarness {
         }
     }
 
+    /** assert that 's' is unconditionally exact to 't' */
+    public void assertIsUnconditionallyExactConstantPrimitives(Type s, Type t) {
+        assertIsUnconditionallyExactConstantPrimitives(s, t, true);
+    }
+
+    /** assert that 's' is/is not unconditionally exact to 't' */
+    public void assertIsUnconditionallyExactConstantPrimitives(Type s, Type t, boolean expected) {
+        if (types.isUnconditionallyExactValueBased(s, t) != expected) {
+            String msg = expected ?
+                    " is not unconditionally exact to " :
+                    " is unconditionally exact to ";
+            error(s + msg + t);
+        }
+    }
+
     /** assert that generic type 't' is well-formed */
     public void assertValidGenericType(Type t) {
         assertValidGenericType(t, true);

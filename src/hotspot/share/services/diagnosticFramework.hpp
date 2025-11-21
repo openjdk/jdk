@@ -26,14 +26,12 @@
 #define SHARE_SERVICES_DIAGNOSTICFRAMEWORK_HPP
 
 #include "classfile/vmSymbols.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/ostream.hpp"
-
-#include <type_traits>
-
 
 enum DCmdSource {
   DCmd_Source_Internal  = 0x01U,  // invocation from the JVM

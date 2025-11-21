@@ -897,7 +897,8 @@ public class Proxy implements java.io.Serializable {
      * of interfaces but in a different order will result in two distinct
      * proxy classes.
      *
-     * @param   loader the class loader to define the proxy class
+     * @param   loader the class loader to define the proxy class, may be
+     *          {@code null} to represent the bootstrap class loader
      * @param   interfaces the list of interfaces for the proxy class
      *          to implement
      * @param   h the invocation handler to dispatch method invocations to

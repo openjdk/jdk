@@ -30,8 +30,6 @@
 // No interaction with application is required for Epsilon, and therefore
 // the barrier set is empty.
 class EpsilonBarrierSet: public BarrierSet {
-  friend class VMStructs;
-
 public:
   EpsilonBarrierSet();
 

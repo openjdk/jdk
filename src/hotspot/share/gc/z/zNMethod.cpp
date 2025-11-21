@@ -314,7 +314,7 @@ oop ZNMethod::oop_load_phantom(const nmethod* nm, int index) {
 
 oop ZNMethod::oop_load(const nmethod* const_nm, int index, bool keep_alive) {
   // The rest of the code is not ready to handle const nmethod, so cast it away
-  // until we are more consistent with our const corectness.
+  // until we are more consistent with our const correctness.
   nmethod* nm = const_cast<nmethod*>(const_nm);
 
   if (!is_armed(nm)) {

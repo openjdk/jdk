@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8014618
+ * @bug 8014618 8368694
  * @summary Need to strip leading zeros in TlsPremasterSecret of DHKeyAgreement
  * @author Pasi Eronen
  */
@@ -86,6 +86,26 @@ public class TestLeadingZeroes {
         }
         if (sharedSecret[0] != 0) {
             throw new Exception("First byte is not zero as expected");
+        }
+
+        // generate generic shared secret
+        aliceKeyAgree.init(alicePrivKey);
+        aliceKeyAgree.doPhase(bobPubKey, true);
+        byte[] genericSecret =
+            aliceKeyAgree.generateSecret("Generic").getEncoded();
+        System.out.println("generic secret:\n" + HEX_FORMATTER.formatHex(genericSecret));
+
+        // verify that leading zero is present
+        if (genericSecret.length != 256) {
+            throw new Exception("Unexpected generic secret length");
+        }
+        if (genericSecret[0] != 0) {
+            throw new Exception("First byte is not zero as expected");
+        }
+        for (int i = 0; i < genericSecret.length; i++) {
+            if (genericSecret[i] != sharedSecret[i]) {
+                throw new Exception("Shared secrets differ");
+            }
         }
 
         // now, test TLS premaster secret

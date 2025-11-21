@@ -1759,25 +1759,43 @@ void StubGenerator::roundDeclast(XMMRegister xmm_reg) {
   __ vaesdeclast(xmm8, xmm8, xmm_reg, Assembler::AVX_512bit);
 }
 
+// Check incoming byte offset against the int[] len. key is the pointer to the int[0].
+// This check happens often, so it is important for it to be very compact.
+void StubGenerator::check_key_offset(Register key, int offset, int load_size) {
+#ifdef ASSERT
+  Address key_length(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT));
+  assert((offset + load_size) % 4 == 0, "Alignment is good: %d + %d", offset, load_size);
+  int end_offset = (offset + load_size) / 4;
+  Label L_good;
+  __ cmpl(key_length, end_offset);
+  __ jccb(Assembler::greaterEqual, L_good);
+  __ hlt();
+  __ bind(L_good);
+#endif
+}
 
 // Utility routine for loading a 128-bit key word in little endian format
 void StubGenerator::load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask) {
+  check_key_offset(key, offset, 16);
   __ movdqu(xmmdst, Address(key, offset));
   __ pshufb(xmmdst, xmm_shuf_mask);
 }
 
 void StubGenerator::load_key(XMMRegister xmmdst, Register key, int offset, Register rscratch) {
+  check_key_offset(key, offset, 16);
   __ movdqu(xmmdst, Address(key, offset));
   __ pshufb(xmmdst, ExternalAddress(key_shuffle_mask_addr()), rscratch);
 }
 
 void StubGenerator::ev_load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask) {
+  check_key_offset(key, offset, 16);
   __ movdqu(xmmdst, Address(key, offset));
   __ pshufb(xmmdst, xmm_shuf_mask);
   __ evshufi64x2(xmmdst, xmmdst, xmmdst, 0x0, Assembler::AVX_512bit);
 }
 
 void StubGenerator::ev_load_key(XMMRegister xmmdst, Register key, int offset, Register rscratch) {
+  check_key_offset(key, offset, 16);
   __ movdqu(xmmdst, Address(key, offset));
   __ pshufb(xmmdst, ExternalAddress(key_shuffle_mask_addr()), rscratch);
   __ evshufi64x2(xmmdst, xmmdst, xmmdst, 0x0, Assembler::AVX_512bit);
@@ -3205,12 +3223,12 @@ void StubGenerator::ghash16_encrypt_parallel16_avx512(Register in, Register out,
 
   //AES round 9
   roundEncode(AESKEY2, B00_03, B04_07, B08_11, B12_15);
-  ev_load_key(AESKEY2, key, 11 * 16, rbx);
   //AES rounds up to 11 (AES192) or 13 (AES256)
   //AES128 is done
   __ cmpl(NROUNDS, 52);
   __ jcc(Assembler::less, last_aes_rnd);
   __ bind(aes_192);
+  ev_load_key(AESKEY2, key, 11 * 16, rbx);
   roundEncode(AESKEY1, B00_03, B04_07, B08_11, B12_15);
   ev_load_key(AESKEY1, key, 12 * 16, rbx);
   roundEncode(AESKEY2, B00_03, B04_07, B08_11, B12_15);
