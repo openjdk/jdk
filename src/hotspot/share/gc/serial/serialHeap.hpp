@@ -94,6 +94,10 @@ private:
   GCMemoryManager* _young_manager;
   GCMemoryManager* _old_manager;
 
+  MemoryPool* _eden_pool;
+  MemoryPool* _survivor_pool;
+  MemoryPool* _old_pool;
+
   // Indicate whether heap is almost or approaching full.
   // Usually, there is some memory headroom for application/gc to run properly.
   // However, in extreme cases, e.g. young-gen is non-empty after a full gc, we
@@ -112,6 +116,19 @@ private:
   void stop() override {};
 
   static void verify_not_in_native_if_java_thread() NOT_DEBUG_RETURN;
+
+  // Try to allocate space by expanding the heap.
+  HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
+
+  HeapWord* mem_allocate_cas_noexpand(size_t size, bool is_tlab);
+  HeapWord* mem_allocate_work(size_t size, bool is_tlab);
+
+  void initialize_serviceability() override;
+
+  // Set the saved marks of generations, if that makes sense.
+  // In particular, if any generation might iterate over the oops
+  // in other generations, it should call this method.
+  void save_marks();
 
 public:
   // Returns JNI_OK on success
@@ -211,26 +228,6 @@ public:
   // generations in a fully generational heap.
   CardTableRS* rem_set() { return _rem_set; }
 
- public:
-  // Set the saved marks of generations, if that makes sense.
-  // In particular, if any generation might iterate over the oops
-  // in other generations, it should call this method.
-  void save_marks();
-
-private:
-  // Try to allocate space by expanding the heap.
-  HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
-
-  HeapWord* mem_allocate_cas_noexpand(size_t size, bool is_tlab);
-  HeapWord* mem_allocate_work(size_t size, bool is_tlab);
-
-  MemoryPool* _eden_pool;
-  MemoryPool* _survivor_pool;
-  MemoryPool* _old_pool;
-
-  void initialize_serviceability() override;
-
-public:
   static SerialHeap* heap();
 
   SerialHeap();
