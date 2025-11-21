@@ -127,13 +127,13 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
   __ bind(next_card);
   __ addptr(addr, sizeof(CardTable::CardValue));
   __ cmpptr(addr, count);
-  __ jcc(Assembler::belowEqual, loop);
+  __ jccb(Assembler::belowEqual, loop);
   __ jmpb(done);
 
   __ bind(is_clean_card);
   // Card was clean. Dirty card and go to next..
   __ movb(Address(addr, 0), G1CardTable::dirty_card_val());
-  __ jmp(next_card);
+  __ jmpb(next_card);
 
   __ bind(done);
 }
