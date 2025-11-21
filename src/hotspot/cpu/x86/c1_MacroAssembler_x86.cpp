@@ -269,33 +269,6 @@ void C1_MacroAssembler::load_parameter(int offset_in_words, Register reg) {
   movptr(reg, Address(rbp, (offset_in_words + 2) * BytesPerWord));
 }
 
-#ifndef PRODUCT
-
-void C1_MacroAssembler::verify_stack_oop(int stack_offset) {
-  if (!VerifyOops) return;
-  verify_oop_addr(Address(rsp, stack_offset));
-}
-
-void C1_MacroAssembler::verify_not_null_oop(Register r) {
-  if (!VerifyOops) return;
-  Label not_null;
-  testptr(r, r);
-  jcc(Assembler::notZero, not_null);
-  stop("non-null oop required");
-  bind(not_null);
-  verify_oop(r);
-}
-
-void C1_MacroAssembler::invalidate_registers(bool inv_rax, bool inv_rbx, bool inv_rcx, bool inv_rdx, bool inv_rsi, bool inv_rdi) {
-#ifdef ASSERT
-  if (inv_rax) movptr(rax, 0xDEAD);
-  if (inv_rbx) movptr(rbx, 0xDEAD);
-  if (inv_rcx) movptr(rcx, 0xDEAD);
-  if (inv_rdx) movptr(rdx, 0xDEAD);
-  if (inv_rsi) movptr(rsi, 0xDEAD);
-  if (inv_rdi) movptr(rdi, 0xDEAD);
-#endif
-}
 
 int baz, barf;
 
@@ -362,6 +335,34 @@ void C1_MacroAssembler::restore_profile_rng() {
   if (ProfileCaptureRatio != 1) {
     movl(r_profile_rng, Address(r15_thread, JavaThread::profile_rng_offset()));
   }
+}
+
+#ifndef PRODUCT
+
+void C1_MacroAssembler::verify_stack_oop(int stack_offset) {
+  if (!VerifyOops) return;
+  verify_oop_addr(Address(rsp, stack_offset));
+}
+
+void C1_MacroAssembler::verify_not_null_oop(Register r) {
+  if (!VerifyOops) return;
+  Label not_null;
+  testptr(r, r);
+  jcc(Assembler::notZero, not_null);
+  stop("non-null oop required");
+  bind(not_null);
+  verify_oop(r);
+}
+
+void C1_MacroAssembler::invalidate_registers(bool inv_rax, bool inv_rbx, bool inv_rcx, bool inv_rdx, bool inv_rsi, bool inv_rdi) {
+#ifdef ASSERT
+  if (inv_rax) movptr(rax, 0xDEAD);
+  if (inv_rbx) movptr(rbx, 0xDEAD);
+  if (inv_rcx) movptr(rcx, 0xDEAD);
+  if (inv_rdx) movptr(rdx, 0xDEAD);
+  if (inv_rsi) movptr(rsi, 0xDEAD);
+  if (inv_rdi) movptr(rdi, 0xDEAD);
+#endif
 }
 
 #endif // ifndef PRODUCT

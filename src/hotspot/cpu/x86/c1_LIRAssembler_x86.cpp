@@ -1358,7 +1358,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     ce->type_profile_helper(mdo, md, data, recv, &update_done);
 
     Address nonprofiled_receiver_count_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()));
-    __ addptr(nonprofiled_receiver_count_addr, DataLayout::counter_increment);
+    __ addptr(nonprofiled_receiver_count_addr, DataLayout::counter_increment * ProfileCaptureRatio);
 
     __ bind(update_done);
 
