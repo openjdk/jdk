@@ -101,8 +101,7 @@ public abstract class IdentitiesBase {
                         CertificateBuilder.KeyUsage.NONREPUDIATION,
                         CertificateBuilder.KeyUsage.KEY_ENCIPHERMENT)
                 .addBasicConstraintsExt(false, false, -1)
-                .addExtension(CertificateBuilder.createIPSubjectAltNameExt(true, "127.0.0.1"))
-                .addExtension(CertificateBuilder.createIPSubjectAltNameExt(true, "::1"))
+                .addExtension(CertificateBuilder.createIPSubjectAltNameExt(true, "127.0.0.1", "::1"))
                 .setOneHourValidity();
         serverCert = customizeServerCert(builder)
                 .build(trustedCert, caKeys.getPrivate(), signatureAlg);
@@ -117,8 +116,7 @@ public abstract class IdentitiesBase {
                         CertificateBuilder.KeyUsage.DIGITAL_SIGNATURE,
                         CertificateBuilder.KeyUsage.NONREPUDIATION,
                         CertificateBuilder.KeyUsage.KEY_ENCIPHERMENT)
-                .addExtension(CertificateBuilder.createIPSubjectAltNameExt(true, "127.0.0.1"))
-                .addExtension(CertificateBuilder.createIPSubjectAltNameExt(true, "::1"))
+                .addExtension(CertificateBuilder.createIPSubjectAltNameExt(true, "127.0.0.1", "::1"))
                 .addBasicConstraintsExt(false, false, -1)
                 .setOneHourValidity();
         builder = customizeClientCert(builder);
