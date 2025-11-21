@@ -146,9 +146,9 @@ public class TestCPUAwareness {
 
 
     // Expected active processor count can not exceed available CPU count
-    private static int adjustExpectedAPCForAvailableCPUs(int expectedAPC) {
-        if (expectedAPC > availableCPUs) {
-            expectedAPC = availableCPUs;
+    private static double adjustExpectedAPCForAvailableCPUs(double expectedAPC) {
+        if (expectedAPC > (double)availableCPUs) {
+            expectedAPC = (double)availableCPUs;
             System.out.println("Adjusted expectedAPC = " + expectedAPC);
         }
         return expectedAPC;
@@ -161,7 +161,7 @@ public class TestCPUAwareness {
         System.out.println("quota = " + quota);
         System.out.println("period = " + period);
 
-        int expectedAPC = (int) Math.ceil((float) quota / (float) period);
+        double expectedAPC = (double) quota / (double) period;
         System.out.println("expectedAPC = " + expectedAPC);
         expectedAPC = adjustExpectedAPCForAvailableCPUs(expectedAPC);
 
@@ -181,7 +181,7 @@ public class TestCPUAwareness {
 
 
     private static void testAPCCombo(String cpuset, int quota, int period, int shares,
-                                     int expectedAPC) throws Exception {
+                                     double expectedAPC) throws Exception {
         Common.logNewTestCase("test APC Combo");
         System.out.println("cpuset = " + cpuset);
         System.out.println("quota = " + quota);
