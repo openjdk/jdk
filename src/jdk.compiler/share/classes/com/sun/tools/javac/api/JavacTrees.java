@@ -417,10 +417,13 @@ public class JavacTrees extends DocTrees {
                 tsym = switch (path.getLeaf().getKind()) {
                     case PACKAGE -> env.toplevel.packge;
                     case MODULE -> env.toplevel.modle;
-                    // Local reference in package.html or a doc-file
-                    case COMPILATION_UNIT -> null;
-                    // Class or class member reference
-                    default -> env.enclClass.sym;
+                    case COMPILATION_UNIT ->
+                        // Treat unqualified reference in legacy package.html as package reference.
+                        // Unqualified references in doc-fiiles only need to work locally, so null is fine.
+                        path.getCompilationUnit().getSourceFile().isNameCompatible("package", JavaFileObject.Kind.HTML)
+                                ? env.toplevel.packge
+                                : null;
+                    default -> env.enclClass.sym;  // Class or class member reference
                 };
                 memberName = (Name) ref.memberName;
             } else {

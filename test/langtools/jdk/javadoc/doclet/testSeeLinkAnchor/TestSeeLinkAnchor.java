@@ -162,9 +162,12 @@ public class TestSeeLinkAnchor extends JavadocTester {
                     <li><a href="#class1-anchor">unqualified local anchor link</a></li>
                     </ul>
                     """);
+        checkOrder("m2/module-summary.html",
+            """
+                    <a href="com/m2/package-summary.html#pkg-heading">Plain link to local anchor</a>.""");
         checkOrder("m2/com/m2/package-summary.html",
             """
-                    <a href="#pkg-heading">Plain link to local anchor</a>.</div>
+                    <a href="#pkg-heading">Plain link to local anchor</a>.
                     """,
             """
                     <ul class="tag-list">
@@ -362,8 +365,9 @@ public class TestSeeLinkAnchor extends JavadocTester {
                     <html>
                     <head><title>Package com.m2</title></head>
                     <body>
-                    <h2 id="pkg-heading">Package com.m2</h2>
                     {@linkplain ##pkg-heading Plain link to local anchor}.
+
+                    <h2 id="pkg-heading">Package com.m2</h2>
 
                     @see ##pkg-heading See local anchor
                     </body>
