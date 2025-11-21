@@ -202,7 +202,6 @@ public:
   bool requires_barriers(stackChunkOop obj) const override;
 
   MemRegion reserved_region() const { return _reserved; }
-  HeapWord* base() const { return _reserved.start(); }
 
   // Memory allocation.
   HeapWord* mem_allocate(size_t size) override;
