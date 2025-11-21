@@ -31,7 +31,6 @@ import java.util.Objects;
 import java.util.Optional;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.Application;
-import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.resources.ResourceLocator;
 
@@ -41,7 +40,7 @@ final class BuildEnvBuilder {
         this.root = Objects.requireNonNull(root);
     }
 
-    BuildEnv create() throws ConfigException {
+    BuildEnv create() {
         var exceptionBuilder = I18N.buildConfigException("ERR_BuildRootInvalid", root);
         if (Files.isDirectory(root)) {
             try (var rootDirContents = Files.list(root)) {

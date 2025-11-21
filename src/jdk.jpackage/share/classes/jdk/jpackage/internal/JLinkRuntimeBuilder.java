@@ -50,7 +50,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.internal.module.ModulePath;
 import jdk.jpackage.internal.model.AppImageLayout;
-import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.LauncherModularStartupInfo;
 import jdk.jpackage.internal.model.LauncherStartupInfo;
@@ -95,7 +94,7 @@ final class JLinkRuntimeBuilder implements RuntimeBuilder {
     }
 
     static RuntimeBuilder createJLinkRuntimeBuilder(List<Path> modulePath, Set<String> addModules,
-            Set<String> limitModules, List<String> options, List<LauncherStartupInfo> startupInfos) throws ConfigException {
+            Set<String> limitModules, List<String> options, List<LauncherStartupInfo> startupInfos) {
         return new JLinkRuntimeBuilder(createJLinkCmdline(modulePath, addModules, limitModules,
                 options, startupInfos));
     }
@@ -147,7 +146,7 @@ final class JLinkRuntimeBuilder implements RuntimeBuilder {
     }
 
     private static List<String> createJLinkCmdline(List<Path> modulePath, Set<String> addModules,
-            Set<String> limitModules, List<String> options, List<LauncherStartupInfo> startupInfos) throws ConfigException {
+            Set<String> limitModules, List<String> options, List<LauncherStartupInfo> startupInfos) {
         List<String> launcherModules = startupInfos.stream().map(si -> {
             if (si instanceof LauncherModularStartupInfo siModular) {
                 return siModular.moduleName();

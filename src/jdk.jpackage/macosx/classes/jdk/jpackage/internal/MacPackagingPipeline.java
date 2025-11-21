@@ -224,10 +224,12 @@ final class MacPackagingPipeline {
         if (!app.sign()) {
             throw new IllegalArgumentException();
         }
-        return toSupplier(() -> {
-            return new PackageBuilder(app, SignAppImagePackageType.VALUE).predefinedAppImage(
-                    Objects.requireNonNull(env.appImageDir())).installDir(Path.of("/foo")).create();
-        }).get();
+        return new PackageBuilder(
+                app,
+                SignAppImagePackageType.VALUE
+        ).predefinedAppImage(
+                Objects.requireNonNull(env.appImageDir())
+        ).installDir(Path.of("/foo")).create();
     }
 
     static final class LayoutUtils {

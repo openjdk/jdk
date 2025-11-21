@@ -104,23 +104,4 @@ public class ConfigException extends JPackageException {
 
         private String advice;
     }
-
-    /**
-     * Throws the cause of the given {@link RuntimeException} exception
-     * as {@link ConfigException} if the cause is of this type or re-throws the given
-     * {@link RuntimeException} exception as-is otherwise.
-     * <p>
-     * Never return a value. It always throws some exception object.
-     *
-     * @param ex exception to re-throw
-     * @return doesn't return value
-     * @throws ConfigException
-     */
-    public static RuntimeException rethrowConfigException(RuntimeException ex) throws ConfigException {
-        if (ex.getCause() instanceof ConfigException configEx) {
-            throw configEx;
-        } else {
-            throw ex;
-        }
-    }
 }
