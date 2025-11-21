@@ -1331,6 +1331,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * sequences with this charset's default replacement string. The {@link
      * java.nio.charset.CharsetDecoder} class should be used when more control
      * over the decoding process is required.
+     * <p>
+     * If the string contains any {@code '\0'} characters, they will be read as well.
      *
      * @param offset  offset in bytes (relative to this segment address) at which this
      *                access operation will occur
@@ -1338,7 +1340,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *                string bytes
      * @param length  length in bytes of the string to read
      * @return a Java string constructed from the bytes read from the given starting
-     *         address reading the given length of bytes
+     *         address up to the given length
      * @throws IllegalArgumentException  if the size of the string is greater than the
      *         largest string supported by the platform
      * @throws IndexOutOfBoundsException if {@code offset < 0}
@@ -2643,10 +2645,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * the string, such as {@link MemorySegment#getString(long)}, the string
      * will appear truncated when read again.
      *
-     * @param src      the Java string to be written into this segment
+     * @param src      the Java string to be written into the destination segment
      * @param dstEncoding the charset used to {@linkplain Charset#newEncoder() encode}
      *                 the string bytes.
-     * @param srcIndex the starting index of the source string
+     * @param srcIndex the starting character index of the source string
      * @param dst      the destination segment
      * @param dstOffset the starting offset, in bytes, of the destination segment
      * @param numChars the number of characters to be copied

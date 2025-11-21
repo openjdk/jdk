@@ -154,8 +154,8 @@ public interface SegmentAllocator {
     }
 
     /**
-     * Converts a Java string into a C string using the provided charset,
-     * and storing the result into a memory segment.
+     * Encodes a Java string using the provided charset and stores the resulting
+     * byte array into a memory segment.
      * <p>
      * This method always replaces malformed-input and unmappable-character
      * sequences with this charset's default replacement byte array. The
@@ -167,12 +167,12 @@ public interface SegmentAllocator {
      * the string, such as {@link MemorySegment#getString(long)}, the string
      * will appear truncated when read again.
      *
-     * @param str      the Java string to be converted into a C string
+     * @param str      the Java string to be encoded
      * @param charset  the charset used to {@linkplain Charset#newEncoder() encode} the
      *                 string bytes
      * @param srcIndex the starting index of the source string
      * @param numChars the number of characters to be copied
-     * @return a new native segment containing the converted C string
+     * @return a new native segment containing the encoded string
      * @throws IndexOutOfBoundsException if either {@code srcIndex} or {@code numChars} are {@code < 0}
      * @throws IndexOutOfBoundsException if {@code srcIndex > str.length() - numChars}
      *
