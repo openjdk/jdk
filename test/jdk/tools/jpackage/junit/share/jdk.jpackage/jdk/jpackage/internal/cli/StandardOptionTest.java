@@ -481,7 +481,7 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
                                 return List.of(I18N.format("error.properties-parameter-not-launcher-shortcut-dir",
                                         optionValue, option.getSpec().name().name(), DUMMY_PROPERTY_FILE));
                             } else {
-                                return List.of(I18N.format("error.parameter-not-launcher-shortcut-dir", 
+                                return List.of(I18N.format("error.parameter-not-launcher-shortcut-dir",
                                         optionValue, option.getSpec().name().formatForCommandLine()));
                             }
                         }), propertyFile, Optional.ofNullable(optionValue));
