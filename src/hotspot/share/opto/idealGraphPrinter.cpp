@@ -79,7 +79,7 @@ void PrintProperties::print_lrg_properties(const LRG &lrg, const char *buffer) {
   print_property(true, "mask", buffer);
   print_property(true, "mask_size", lrg.mask_size());
   if (lrg._degree_valid) {
-    print_property(lrg._degree_valid, "degree", lrg.degree());
+    print_property(true, "degree", lrg.degree());
   }
   print_property(true, "num_regs", lrg.num_regs());
   print_property(true, "reg_pressure", lrg.reg_pressure());
