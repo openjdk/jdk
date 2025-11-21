@@ -2447,6 +2447,47 @@ public final class DateTimeFormatterBuilder {
     }
 
     //-----------------------------------------------------------------------
+    interface DateTimePrinter {
+        /**
+         * Prints the date-time object to the buffer.
+         * <p>
+         * The context holds information to use during the format.
+         * It also contains the date-time information to be printed.
+         * <p>
+         * The buffer must not be mutated beyond the content controlled by the implementation.
+         *
+         * @param context  the context to format using, not null
+         * @param buf  the buffer to append to, not null
+         * @param optional  whether the enclosing formatter is optional.
+         *                  If true and this formatter is nested in an optional formatter
+         *                  and the data is not available, then no error is returned and
+         *                  nothing is appended to the buffer. If false and the data is not available
+         *                  then an exception is thrown or false is returned as appropriate.
+         * @return false if unable to query the value from the date-time, true otherwise
+         * @throws DateTimeException if the date-time cannot be printed successfully
+         */
+        boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional);
+    }
+
+    interface DateTimeParser {
+
+        /**
+         * Parses text into date-time information.
+         * <p>
+         * The context holds information to use during the parse.
+         * It is also used to store the parsed date-time information.
+         *
+         * @param context  the context to use and parse into, not null
+         * @param text  the input text to parse, not null
+         * @param position  the position to start parsing at, from 0 to the text length
+         * @return the new parse position, where negative means an error with the
+         *  error position encoded using the complement ~ operator
+         * @throws NullPointerException if the context or text is null
+         * @throws IndexOutOfBoundsException if the position is invalid
+         */
+        int parse(DateTimeParseContext context, CharSequence text, int position);
+    }
+
     /**
      * Strategy for formatting/parsing date-time information.
      * <p>
@@ -2473,43 +2514,7 @@ public final class DateTimeFormatterBuilder {
      * for each format that occurs. The context must not be stored in an instance
      * variable or shared with any other threads.
      */
-    interface DateTimePrinterParser {
-
-        /**
-         * Prints the date-time object to the buffer.
-         * <p>
-         * The context holds information to use during the format.
-         * It also contains the date-time information to be printed.
-         * <p>
-         * The buffer must not be mutated beyond the content controlled by the implementation.
-         *
-         * @param context  the context to format using, not null
-         * @param buf  the buffer to append to, not null
-         * @param optional  whether the enclosing formatter is optional.
-         *                  If true and this formatter is nested in an optional formatter
-         *                  and the data is not available, then no error is returned and
-         *                  nothing is appended to the buffer. If false and the data is not available
-         *                  then an exception is thrown or false is returned as appropriate.
-         * @return false if unable to query the value from the date-time, true otherwise
-         * @throws DateTimeException if the date-time cannot be printed successfully
-         */
-        boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional);
-
-        /**
-         * Parses text into date-time information.
-         * <p>
-         * The context holds information to use during the parse.
-         * It is also used to store the parsed date-time information.
-         *
-         * @param context  the context to use and parse into, not null
-         * @param text  the input text to parse, not null
-         * @param position  the position to start parsing at, from 0 to the text length
-         * @return the new parse position, where negative means an error with the
-         *  error position encoded using the complement ~ operator
-         * @throws NullPointerException if the context or text is null
-         * @throws IndexOutOfBoundsException if the position is invalid
-         */
-        int parse(DateTimeParseContext context, CharSequence text, int position);
+    interface DateTimePrinterParser extends DateTimePrinter, DateTimeParser {
     }
 
     //-----------------------------------------------------------------------
@@ -2519,6 +2524,8 @@ public final class DateTimeFormatterBuilder {
     static final class CompositePrinterParser implements DateTimePrinterParser {
         private final DateTimePrinterParser[] printerParsers;
         private final boolean optional;
+        private final DateTimePrinter formatter;
+        private final DateTimeParser parser;
 
         private CompositePrinterParser(List<DateTimePrinterParser> printerParsers, boolean optional) {
             this(printerParsers.toArray(new DateTimePrinterParser[0]), optional);
@@ -2527,6 +2534,8 @@ public final class DateTimeFormatterBuilder {
         private CompositePrinterParser(DateTimePrinterParser[] printerParsers, boolean optional) {
             this.printerParsers = printerParsers;
             this.optional = optional;
+            this.formatter = DateTimePrinterParserFactory.createFormatter(printerParsers);
+            this.parser = DateTimePrinterParserFactory.createParser(printerParsers, optional);
         }
 
         /**
@@ -2546,38 +2555,16 @@ public final class DateTimeFormatterBuilder {
         public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
             int length = buf.length();
             boolean effectiveOptional = optional | this.optional;
-            for (DateTimePrinterParser pp : printerParsers) {
-                if (!pp.format(context, buf, effectiveOptional)) {
-                    buf.setLength(length);  // reset buffer
-                    return true;
-                }
+            if (!formatter.format(context, buf, effectiveOptional)) {
+                buf.setLength(length);  // reset buffer
+                return true;
             }
             return true;
         }
 
         @Override
         public int parse(DateTimeParseContext context, CharSequence text, int position) {
-            if (optional) {
-                context.startOptional();
-                int pos = position;
-                for (DateTimePrinterParser pp : printerParsers) {
-                    pos = pp.parse(context, text, pos);
-                    if (pos < 0) {
-                        context.endOptional(false);
-                        return position;  // return original position
-                    }
-                }
-                context.endOptional(true);
-                return pos;
-            } else {
-                for (DateTimePrinterParser pp : printerParsers) {
-                    position = pp.parse(context, text, position);
-                    if (position < 0) {
-                        break;
-                    }
-                }
-                return position;
-            }
+            return parser.parse(context, text, position);
         }
 
         @Override
