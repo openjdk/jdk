@@ -1478,10 +1478,9 @@ void Arguments::set_conservative_max_heap_alignment() {
   // the alignments imposed by several sources: any requirements from the heap
   // itself and the maximum page size we may run the VM with.
   size_t heap_alignment = GCConfig::arguments()->conservative_max_heap_alignment();
-  _conservative_max_heap_alignment = MAX4(heap_alignment,
+  _conservative_max_heap_alignment = MAX3(heap_alignment,
                                           os::vm_allocation_granularity(),
-                                          os::max_page_size(),
-                                          GCArguments::compute_heap_alignment());
+                                          os::max_page_size());
 }
 
 jint Arguments::set_ergonomics_flags() {

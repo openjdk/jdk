@@ -31,8 +31,12 @@ class CollectedHeap;
 
 class SerialArguments : public GenArguments {
 private:
+  size_t conservative_max_heap_alignment();
   virtual void initialize();
+  virtual void initialize_alignments();
   virtual CollectedHeap* create_heap();
+  virtual size_t young_gen_size_lower_bound();
+  virtual size_t old_gen_size_lower_bound();
 };
 
 #endif // SHARE_GC_SERIAL_SERIALARGUMENTS_HPP

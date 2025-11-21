@@ -38,11 +38,7 @@ extern size_t OldSize;
 class GenArguments : public GCArguments {
   friend class TestGenCollectorPolicy; // Testing
 private:
-  virtual void initialize_alignments();
   virtual void initialize_size_info();
-
-  // Return the (conservative) maximum heap alignment
-  virtual size_t conservative_max_heap_alignment();
 
   DEBUG_ONLY(void assert_flags();)
   DEBUG_ONLY(void assert_size_info();)
@@ -51,6 +47,8 @@ private:
 
 protected:
   virtual void initialize_heap_flags_and_sizes();
+  virtual size_t young_gen_size_lower_bound() = 0;
+  virtual size_t old_gen_size_lower_bound() = 0;
 };
 
 #endif // SHARE_GC_SHARED_GENARGUMENTS_HPP
