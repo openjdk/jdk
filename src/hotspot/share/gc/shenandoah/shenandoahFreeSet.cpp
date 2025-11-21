@@ -3258,12 +3258,14 @@ int ShenandoahFreeSet::reserve_alloc_regions_internal(Iter iterator, ShenandoahF
     }
     size_t ac_words = alloc_capacity_words(r);
     if (ac_words >= PLAB::min_size()) {
-      if (r->is_empty() && free_heap_region_count < regions_to_reserve) {
-        free_heap_regions[free_heap_region_count++] = r;
-        assert(r->affiliation() == FREE, "Empty region must be free");
-        if (use_affiliated_first) {
-          // Just temporary put the FREE region in the array, will further process it later.
-          continue;
+      if (r->is_empty()) {
+        if (free_heap_region_count < regions_to_reserve) {
+          free_heap_regions[free_heap_region_count++] = r;
+          assert(r->affiliation() == FREE, "Empty region must be free");
+          if (use_affiliated_first) {
+            // Just temporary put the FREE region in the array, will further process it later.
+            continue;
+          }
         }
       }
       reserved_regions[reserved_regions_count++] = r;
