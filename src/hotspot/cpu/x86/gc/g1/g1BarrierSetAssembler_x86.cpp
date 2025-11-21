@@ -205,12 +205,9 @@ static void generate_pre_barrier_slow_path(MacroAssembler* masm,
                            G1ThreadLocalData::satb_mark_queue_buffer_offset(),
                            L_runtime,
                            thread, pre_val, tmp);
+  // Jump out, or fall through to runtime
   __ bind(L_null);
-
-  // All done, jump out
   __ jmp(done);
-
-  // Fall through to runtime
   __ bind(L_runtime);
 }
 
