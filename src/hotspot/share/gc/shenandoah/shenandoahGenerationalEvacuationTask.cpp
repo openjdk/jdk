@@ -138,7 +138,7 @@ void ShenandoahGenerationalEvacuationTask::evacuate_and_promote_regions() {
 
 
 void ShenandoahGenerationalEvacuationTask::maybe_promote_region(ShenandoahHeapRegion* r) {
-  if (r->is_young() && r->is_active() && _heap->is_tenurable(r)) {
+  if (r->is_young() && r->is_active() && _heap->is_tenurable(r) && !r->is_active_alloc_region()) {
     if (r->is_humongous_start()) {
       // We promote humongous_start regions along with their affiliated continuations during evacuation rather than
       // doing this work during a safepoint.  We cannot put humongous regions into the collection set because that

@@ -647,7 +647,6 @@ public:
          OldCollectorSizeChanged || OldCollectorEmptiesChanged)) {
       _global_affiliated_regions = _young_affiliated_regions + _old_affiliated_regions;
     }
-/* // TODO need to add these sanity back later
 #ifdef ASSERT
     if (ShenandoahHeap::heap()->mode()->is_generational()) {
       assert(_young_affiliated_regions * ShenandoahHeapRegion::region_size_bytes() >= _total_young_used, "sanity");
@@ -655,7 +654,6 @@ public:
     }
     assert(_global_affiliated_regions * ShenandoahHeapRegion::region_size_bytes() >= _total_global_used, "sanity");
 #endif
-*/
   }
 
   inline size_t max_regions() const { return _partitions.max(); }
