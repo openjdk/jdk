@@ -1989,7 +1989,7 @@ void ShenandoahFreeSet::flip_to_gc(ShenandoahHeapRegion* r, bool delay_total_rec
                                                ShenandoahFreeSetPartitionId::Collector, ac);
   if (!delay_total_recomputation) {
     recompute_total_used</* UsedByMutatorChanged */ true,
-                         /* UsedByCollectorChanged */ true, /* UsedByOldCollectorChanged */ false>();
+                         /* UsedByCollectorChanged */ false, /* UsedByOldCollectorChanged */ true>();
     // Transfer only affects unaffiliated regions, which stay in young
     recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ true,
                                /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ true,

@@ -59,7 +59,7 @@ public:
       switch (_partition) {
       case ShenandoahFreeSetPartitionId::Mutator:
         _free_set->recompute_total_used</* UsedByMutatorChanged */ true,
-                                        /* UsedByCollectorChanged */ false, /* UsedByOldCollectorChanged */ false>();
+                                        /* UsedByCollectorChanged */ true, /* UsedByOldCollectorChanged */ true>();
         _free_set->recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ false,
                                               /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ false,
                                               /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ false,
@@ -68,8 +68,8 @@ public:
 
         break;
       case ShenandoahFreeSetPartitionId::Collector:
-        _free_set->recompute_total_used</* UsedByMutatorChanged */ false,
-                                        /* UsedByCollectorChanged */ true, /* UsedByOldCollectorChanged */ false>();
+        _free_set->recompute_total_used</* UsedByMutatorChanged */ true,
+                                        /* UsedByCollectorChanged */ true, /* UsedByOldCollectorChanged */ true>();
         _free_set->recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ true,
                                               /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ true,
                                               /* CollectorSizeChanged */ true, /* OldCollectorSizeChanged */ false,
@@ -77,8 +77,8 @@ public:
                                               /* UnaffiliatedChangesAreYoungNeutral */ false>();
         break;
       case ShenandoahFreeSetPartitionId::OldCollector:
-        _free_set->recompute_total_used</* UsedByMutatorChanged */ false,
-                                        /* UsedByCollectorChanged */ false, /* UsedByOldCollectorChanged */ true>();
+        _free_set->recompute_total_used</* UsedByMutatorChanged */ true,
+                                        /* UsedByCollectorChanged */ true, /* UsedByOldCollectorChanged */ true>();
         _free_set->recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ false,
                                               /* OldCollectorEmptiesChanged */ true, /* MutatorSizeChanged */ true,
                                               /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ true,
@@ -329,6 +329,7 @@ void ShenandoahAllocator::release_alloc_regions() {
       if (free_bytes >= PLAB::min_size_bytes()) {
         total_free_bytes += free_bytes;
         total_regions_to_unretire++;
+        _free_set->partitions()->unretire_to_partition(r, _alloc_partition_id);
         if (!r->has_allocs()) {
           log_debug(gc, alloc)("%sAllocator: Reverting heap region %li to FREE due to no alloc in the region",
             _alloc_partition_name, r->index());
@@ -336,14 +337,13 @@ void ShenandoahAllocator::release_alloc_regions() {
           r->set_affiliation(FREE);
           _free_set->partitions()->increase_empty_region_counts(_alloc_partition_id, 1);
         }
-        _free_set->partitions()->unretire_to_partition(r, _alloc_partition_id);
-        accounting_updater._need_update = true;
       }
     }
     assert(AtomicAccess::load(&alloc_region._address) == nullptr, "Alloc region is set to nullptr after release");
   }
   _free_set->partitions()->decrease_used(_alloc_partition_id, total_free_bytes);
   _free_set->partitions()->increase_region_counts(_alloc_partition_id, total_regions_to_unretire);
+  accounting_updater._need_update = true;
 }
 
 void ShenandoahAllocator::reserve_alloc_regions() {
