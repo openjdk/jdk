@@ -399,20 +399,33 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @ForceInline
     void checkSliceBounds(long offset, long length) {
-        checkBounds(offset, length, BoundPolicy.SLICE);
+        try {
+            checkBounds(offset, length);
+        } catch (IndexOutOfBoundsException e) {
+            String msg = String.format("Out of bound access on segment %s; attempting to get slice of length %d at offset %d " +
+                    "which is outside the valid range 0 <= offset+length < byteSize (=%d)", this, length, offset, this.length);
+            throw new IndexOutOfBoundsException(msg);
+        }
     }
 
     @ForceInline
     void checkAccessBounds(long offset, long length) {
-        checkBounds(offset, length, BoundPolicy.ACCESS);
+        try {
+            checkBounds(offset, length);
+        } catch (IndexOutOfBoundsException e) {
+            String msg = String.format("Out of bound access on segment %s; attempting to access an element of length %d at offset %d " +
+                    "which is outside the valid range 0 <= offset+length < byteSize (=%d)", this, length, offset, this.length);
+            throw new IndexOutOfBoundsException(msg);
+        }
     }
 
     @ForceInline
-    private void checkBounds(long offset, long length, BoundPolicy policy) {
+    private void checkBounds(long offset, long length) {
         if (length > 0) {
-            Preconditions.checkIndex(offset, this.length - length + 1, new BoundsCheckHandler(this, policy));
-        } else if (length < 0 || offset < 0 || offset > this.length - length) {
-            throw policy.outOfBoundException(this, offset, length, this.length);
+            Preconditions.checkIndex(offset, this.length - length + 1, null);
+        } else if (length < 0 || offset < 0 ||
+                offset > this.length - length) {
+            throw new IndexOutOfBoundsException();
         }
     }
 
@@ -502,33 +515,6 @@ public abstract sealed class AbstractMemorySegmentImpl
         @Override
         public int characteristics() {
             return NONNULL | SUBSIZED | SIZED | IMMUTABLE | ORDERED;
-        }
-    }
-
-    private enum BoundPolicy {
-        ACCESS, SLICE;
-
-        private IndexOutOfBoundsException outOfBoundException(AbstractMemorySegmentImpl segment, long offset, long size,
-                                                              long length) {
-            String formatString = switch (this) {
-                case ACCESS -> "Out of bound access on segment %s; attempting to access an element of length %d at offset %d " +
-                        "which is outside the valid range 0 <= offset+length < byteSize (=%d)";
-                case SLICE -> "Out of bound access on segment %s; attempting to get slice of length %d at offset %d " +
-                        "which is outside the valid range 0 <= offset+length < byteSize (=%d)";
-            };
-            String message = formatString.formatted(segment, size, offset, length);
-            return new IndexOutOfBoundsException(message);
-        }
-    }
-
-    private record BoundsCheckHandler(AbstractMemorySegmentImpl segment, BoundPolicy policy)
-            implements BiFunction<String, List<Number>, IndexOutOfBoundsException> {
-        @Override
-        public IndexOutOfBoundsException apply(String s, List<Number> numbers) {
-            long offset = numbers.get(0).longValue();
-            long length = segment.byteSize() - numbers.get(1).longValue() + 1;
-
-            return policy.outOfBoundException(segment, offset, length, segment.byteSize());
         }
     }
 
