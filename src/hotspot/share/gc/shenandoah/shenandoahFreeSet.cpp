@@ -3274,8 +3274,9 @@ int ShenandoahFreeSet::reserve_alloc_regions_internal(Iter iterator, ShenandoahF
     return 0;
   }
 
-  int reserved_free_region_count = 0;
-  if (use_affiliated_first && reserved_regions_count < regions_to_reserve && free_heap_region_count > 0) {
+  int reserved_free_region_count = free_heap_region_count;
+  if (use_affiliated_first) {
+    reserved_free_region_count = 0;
     while (reserved_regions_count < regions_to_reserve && reserved_free_region_count < free_heap_region_count) {
       reserved_regions[reserved_regions_count++] = free_heap_regions[reserved_free_region_count++];
     }
