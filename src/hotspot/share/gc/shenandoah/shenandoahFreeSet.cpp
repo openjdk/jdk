@@ -3234,6 +3234,9 @@ int ShenandoahFreeSet::reserve_alloc_regions_internal(Iter iterator, ShenandoahF
     if (_heap->is_concurrent_weak_root_in_progress() && r->is_trash()) {
       continue;
     }
+    if (use_affiliated_first && r->affiliation() != affiliation && r->affiliation() != FREE) {
+      continue;
+    }
     r->try_recycle_under_lock();
     assert(r->is_affiliated() || r->is_empty(), "Affiliated or empty");
     if (!r->is_empty() && r->affiliation() != affiliation) {
@@ -3242,13 +3245,14 @@ int ShenandoahFreeSet::reserve_alloc_regions_internal(Iter iterator, ShenandoahF
     size_t ac_words = alloc_capacity_words(r);
     if (ac_words >= PLAB::min_size()) {
       if (r->is_empty()) {
-        if (free_heap_region_count < regions_to_reserve) {
-          free_heap_regions[free_heap_region_count++] = r;
-          assert(r->affiliation() == FREE, "Empty region must be free");
-        }
-        if (use_affiliated_first || free_heap_region_count == regions_to_reserve) {
+        assert(r->affiliation() == FREE, "Empty region must be free");
+        if (use_affiliated_first) {
+          if (free_heap_region_count < regions_to_reserve) {
+            free_heap_regions[free_heap_region_count++] = r;
+          }
           continue;
         }
+        free_heap_regions[free_heap_region_count++] = r;
       }
       reserved_regions[reserved_regions_count++] = r;
     }
@@ -3258,9 +3262,8 @@ int ShenandoahFreeSet::reserve_alloc_regions_internal(Iter iterator, ShenandoahF
     return 0;
   }
 
-  int reserved_free_region_count = free_heap_region_count;
-  if (use_affiliated_first) {
-    reserved_free_region_count = 0;
+  int reserved_free_region_count = use_affiliated_first ? 0 : free_heap_region_count;
+  if (use_affiliated_first && reserved_regions_count < regions_to_reserve && free_heap_region_count > 0) {
     while (reserved_regions_count < regions_to_reserve && reserved_free_region_count < free_heap_region_count) {
       reserved_regions[reserved_regions_count++] = free_heap_regions[reserved_free_region_count++];
     }
