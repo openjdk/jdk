@@ -26,7 +26,7 @@
  * @bug 4266589 8031145 8164791 8316696 8368001
  * @summary NumberFormat round trip testing of parsing and formatting.
  *      This test checks 4 factory instances per locale against ~20 numeric inputs.
- *      Samples ~1/4 of the available locales from NumberFormat SPI.
+ *      Samples ~1/4 of the available locales provided by NumberFormat.
  * @key randomness
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
