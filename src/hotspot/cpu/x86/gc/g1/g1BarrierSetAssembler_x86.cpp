@@ -118,7 +118,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
   Label is_clean_card;
   if (UseCondCardMark) {
     __ cmpb(Address(addr, 0), G1CardTable::clean_card_val());
-    __ jcc(Assembler::equal, is_clean_card);
+    __ jccb(Assembler::equal, is_clean_card);
   } else {
    __ movb(Address(addr, 0), G1CardTable::dirty_card_val());
   }
@@ -499,7 +499,7 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
 
   __ movptr(tmp, queue_index);
   __ testptr(tmp, tmp);
-  __ jcc(Assembler::zero, runtime);
+  __ jccb(Assembler::zero, runtime);
   __ subptr(tmp, wordSize);
   __ movptr(queue_index, tmp);
   __ addptr(tmp, buffer);
