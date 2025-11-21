@@ -537,9 +537,7 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @Override
     public String getString(long offset, Charset charset, long length) {
-        if (length < 0) {
-            throw new IllegalArgumentException();
-        }
+        Utils.checkNonNegativeArgument(length, "length");
         Objects.requireNonNull(charset);
         return StringSupport.read(this, offset, charset, length);
     }
