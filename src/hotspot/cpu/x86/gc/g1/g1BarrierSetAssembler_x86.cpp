@@ -157,22 +157,6 @@ void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorator
   }
 }
 
-static void generate_queue_insertion(MacroAssembler* masm, ByteSize index_offset, ByteSize buffer_offset, Label& runtime,
-                                     const Register thread, const Register value, const Register temp) {
-  // This code assumes that buffer index is pointer sized.
-  STATIC_ASSERT(in_bytes(SATBMarkQueue::byte_width_of_index()) == sizeof(intptr_t));
-  // Can we store a value in the given thread's buffer?
-  // (The index field is typed as size_t.)
-  __ movptr(temp, Address(thread, in_bytes(index_offset)));   // temp := *(index address)
-  __ testptr(temp, temp);                                     // index == 0?
-  __ jccb(Assembler::zero, runtime);                          // jump to runtime if index == 0 (full buffer)
-  // The buffer is not full, store value into it.
-  __ subptr(temp, wordSize);                                  // temp := next index
-  __ movptr(Address(thread, in_bytes(index_offset)), temp);   // *(index address) := next index
-  __ addptr(temp, Address(thread, in_bytes(buffer_offset)));  // temp := buffer address + next index
-  __ movptr(Address(temp, 0), value);                         // *(buffer address + next index) := value
-}
-
 static void generate_pre_barrier_fast_path(MacroAssembler* masm,
                                            const Register thread) {
   Address in_progress(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()));
@@ -190,24 +174,39 @@ static void generate_pre_barrier_slow_path(MacroAssembler* masm,
                                            const Register pre_val,
                                            const Register thread,
                                            const Register tmp,
-                                           Label& done) {
+                                           Label& L_done) {
+  Address index_addr(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset()));
+  Address buffer_addr(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset()));
+
+  // This code assumes that buffer index is pointer sized.
+  STATIC_ASSERT(in_bytes(SATBMarkQueue::byte_width_of_index()) == sizeof(intptr_t));
+
   Label L_null, L_runtime;
 
   // Do we need to load the previous value?
   if (obj != noreg) {
     __ load_heap_oop(pre_val, Address(obj, 0), noreg, AS_RAW);
   }
+
   // Is the previous value null?
   __ testptr(pre_val, pre_val);
   __ jccb(Assembler::equal, L_null);
-  generate_queue_insertion(masm,
-                           G1ThreadLocalData::satb_mark_queue_index_offset(),
-                           G1ThreadLocalData::satb_mark_queue_buffer_offset(),
-                           L_runtime,
-                           thread, pre_val, tmp);
-  // Jump out, or fall through to runtime
+
+  // Can we store a value in the given thread's buffer?
+  // (The index field is typed as size_t.)
+  __ movptr(tmp, index_addr);               // temp := *(index address)
+  __ testptr(tmp, tmp);                     // index == 0?
+  __ jccb(Assembler::zero, L_runtime);      // jump to runtime if index == 0 (full buffer)
+
+  // The buffer is not full, store value into it.
+  __ subptr(tmp, wordSize);                 // temp := next index
+  __ movptr(index_addr, tmp);               // *(index address) := next index
+  __ addptr(tmp, buffer_addr);              // temp := buffer address + next index
+  __ movptr(Address(tmp, 0), pre_val);      // *(buffer address + next index) := value
+
+  // Jump out if done, or fall-through to runtime
   __ bind(L_null);
-  __ jmp(done);
+  __ jmp(L_done);
   __ bind(L_runtime);
 }
 
