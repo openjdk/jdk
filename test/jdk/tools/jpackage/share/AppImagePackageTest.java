@@ -120,7 +120,8 @@ public class AppImagePackageTest {
                     StandardAssert.MAIN_JAR_FILE,
                     StandardAssert.MAIN_LAUNCHER_FILES,
                     StandardAssert.MAC_BUNDLE_STRUCTURE,
-                    StandardAssert.RUNTIME_DIRECTORY);
+                    StandardAssert.RUNTIME_DIRECTORY,
+                    StandardAssert.MAC_RUNTIME_PLIST_JDK_KEY);
         })
         .run(Action.CREATE_AND_UNPACK);
     }
@@ -173,7 +174,7 @@ public class AppImagePackageTest {
         final var appImageDir = appImageCmd.outputBundle();
 
         final var expectedError = JPackageStringBundle.MAIN.cannedFormattedString(
-                "error.invalid-app-image", appImageDir, AppImageFile.getPathInAppImage(appImageDir));
+                "error.invalid-app-image-file", AppImageFile.getPathInAppImage(Path.of("")), appImageDir);
 
         configureBadAppImage(appImageDir, expectedError).addRunOnceInitializer(() -> {
             appImageCmd.execute();
@@ -185,8 +186,8 @@ public class AppImagePackageTest {
     }
 
     private static PackageTest configureBadAppImage(Path appImageDir) {
-        return configureBadAppImage(appImageDir,
-                JPackageStringBundle.MAIN.cannedFormattedString("error.foreign-app-image", appImageDir));
+        return configureBadAppImage(appImageDir, JPackageStringBundle.MAIN.cannedFormattedString(
+                "error.missing-app-image-file", AppImageFile.getPathInAppImage(Path.of("")), appImageDir));
     }
 
     private static PackageTest configureBadAppImage(Path appImageDir, CannedFormattedString expectedError) {
