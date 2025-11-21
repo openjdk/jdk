@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import jdk.test.lib.jfr.Events;
  * @run main/othervm jdk.jfr.api.recording.dump.TestDumpOverwrite
  */
 public class TestDumpOverwrite {
-    private static Path DUMP_PATH = Paths.get(".","rec_TestDumpOverwrite.jfr");
+    private static Path DUMP_PATH = Paths.get(".", "rec_TestDumpOverwrite.jfr");
     public static void main(String[] args) throws Exception {
         Recording recording1 = new Recording();
         Recording recording2 = new Recording();

@@ -746,7 +746,7 @@ public final class PlatformRecording implements AutoCloseable {
 
     private void transferChunks(WriteablePath path) throws IOException {
         // Before writing, wipe the file if it already exists.
-        try (ChunksChannel cc = new ChunksChannel(chunks); FileChannel fc = FileChannel.open(path.getReal(), StandardOpenOption.WRITE,  StandardOpenOption.TRUNCATE_EXISTING,  StandardOpenOption.CREATE)) {
+        try (ChunksChannel cc = new ChunksChannel(chunks); FileChannel fc = FileChannel.open(path.getReal(), StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING,  StandardOpenOption.CREATE)) {
             // Mitigate races against other processes
             FileLock l = fc.tryLock();
             if (l == null) {
