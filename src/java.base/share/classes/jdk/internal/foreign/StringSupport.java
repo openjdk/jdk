@@ -365,7 +365,7 @@ public final class StringSupport {
             copyToSegmentRaw(string, segment, offset, srcIndex, numChars);
             return string.length();
         } else {
-            byte[] bytes = string.substring(srcIndex, numChars).getBytes(charset);
+            byte[] bytes = string.substring(srcIndex, srcIndex + numChars).getBytes(charset);
             MemorySegment.copy(bytes, 0, segment, JAVA_BYTE, offset, bytes.length);
             return bytes.length;
         }

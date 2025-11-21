@@ -1347,8 +1347,6 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
      *         such that {@code isAccessibleBy(T) == false}
-     * @throws IllegalArgumentException if {@code charset} is not a
-     *         {@linkplain StandardCharsets standard charset}
      * @throws IllegalArgumentException if {@code length < 0}
      */
     String getString(long offset, Charset charset, long length);
@@ -2658,10 +2656,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         such that {@code dst.isAccessibleBy(T) == false}
      * @throws IndexOutOfBoundsException if either {@code srcIndex}, {@code numChars}, or {@code dstOffset}
      *         are {@code < 0}
-     * @throws IndexOutOfBoundsException if the {@code numChars} is larger than the length of
-     *         this {@code String} object, or {@code srcIndex} is larger than {@code numChars}.
+     * @throws IndexOutOfBoundsException if the {@code numChars + srcIndex} is larger than the length of
+     *         this {@code String} object.
      * @throws IllegalArgumentException if {@code dst} is {@linkplain #isReadOnly() read-only}
-     * @throws IllegalArgumentException if {@code charset} is not a {@linkplain StandardCharsets standard charset}
      * @throws IndexOutOfBoundsException if {@code dstOffset > dstSegment.byteSize() - B} where {@code B} is the size,
      *         in bytes, of the string encoded using the given charset.
      */

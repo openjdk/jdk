@@ -174,8 +174,8 @@ public interface SegmentAllocator {
      * @param numChars the number of characters to be copied
      * @return a new native segment containing the converted C string
      * @throws IndexOutOfBoundsException if either {@code srcIndex} or {@code numChars} are {@code < 0}
-     * @throws IndexOutOfBoundsException  if the {@code numChars} is larger than the length of
-     *         this {@code String} object, or {@code srcIndex} is larger than {@code numChars}.
+     * @throws IndexOutOfBoundsException if the {@code numChars + srcIndex} is larger than the length of
+     *         this {@code String} object.
      *
      * @implSpec The default implementation for this method copies the contents of the
      *           provided Java string into a new memory segment obtained by calling
@@ -192,7 +192,7 @@ public interface SegmentAllocator {
             segment = allocateNoInit(numChars);
             StringSupport.copyToSegmentRaw(str, segment, 0, srcIndex, numChars);
         } else {
-            byte[] bytes = str.substring(srcIndex, numChars).getBytes(charset);
+            byte[] bytes = str.substring(srcIndex, srcIndex + numChars).getBytes(charset);
             segment = allocateNoInit(bytes.length);
             MemorySegment.copy(bytes, 0, segment, ValueLayout.JAVA_BYTE, 0, bytes.length);
         }
