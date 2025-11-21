@@ -9200,18 +9200,9 @@ void MacroAssembler::fill64_masked(uint shift, Register dst, int disp,
   assert(MaxVectorSize >= 32, "vector length should be >= 32");
   const BasicType type[] = { T_BYTE, T_SHORT, T_INT, T_LONG};
   if (!use64byteVector) {
-    Label L32, L_exit;
-    // Check if size > 32B
-    cmpq(length, 32 >> shift);
-    jcc(Assembler::lessEqual, L32);
     fill32(dst, disp, xmm);
     subptr(length, 32 >> shift);
     fill32_masked(shift, dst, disp + 32, xmm, mask, length, temp);
-    jmp(L_exit);
-    // Size <= 32B
-    bind(L32);
-    fill32_masked(shift, dst, disp, xmm, mask, length, temp);
-    bind(L_exit);
   } else {
     assert(MaxVectorSize == 64, "vector length != 64");
     fill_masked(type[shift], Address(dst, disp), xmm, mask, length, temp, Assembler::AVX_512bit);
