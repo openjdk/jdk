@@ -83,7 +83,7 @@ public class TestGCMSplitBound {
 
     private byte[] gcmDecrypt(final byte[] key, final byte[] ciphertext, final byte[] aad)
         throws Exception {
-        byte[] nonce = randBytes(IV_SIZE_IN_BYTES);
+        byte[] nonce = new byte[IV_SIZE_IN_BYTES];
         System.arraycopy(ciphertext, 0, nonce, 0, IV_SIZE_IN_BYTES);
         Cipher cipher = getCipher(key, aad, nonce, Cipher.DECRYPT_MODE);
         return cipher.doFinal(ciphertext, IV_SIZE_IN_BYTES, ciphertext.length - IV_SIZE_IN_BYTES);
