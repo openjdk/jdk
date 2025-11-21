@@ -108,7 +108,6 @@ size_t os::_os_min_stack_allowed = PTHREAD_STACK_MIN;
 
 // Check core dump limit and report possible place where core can be found
 void os::check_core_dump_prerequisites(char* buffer, size_t bufferSize, bool check_only) {
-  // We can wrap the buffer in a fixed stringStream, this won't free buffer once buf goes out of scope.
   stringStream buf(buffer, bufferSize);
   if (!FLAG_IS_DEFAULT(CreateCoredumpOnCrash) && !CreateCoredumpOnCrash) {
     buf.print("CreateCoredumpOnCrash is disabled from command line");
@@ -121,21 +120,23 @@ void os::check_core_dump_prerequisites(char* buffer, size_t bufferSize, bool che
     if (get_core_path(core_path, PATH_MAX) <= 0) {
       // In the warning message, let the user know.
       if (check_only) {
-        buf.print("core path is unknown, trying ");
+        buf.print("the core path couldn't be determined. It commonly defaults to ");
       }
-      buf.print("core.%d (may not exist)", current_process_id());
+      buf.print("core.%d%s", current_process_id(), check_only ? "" : " (may not exist)");
 #ifdef LINUX
     } else if (core_path[0] == '"') { // redirect to user process
       if (check_only) {
-        buf.print("core dumps may be processed with ");
+        buf.print("core dumps are further processed the following: ");
+      } else {
+        buf.print("Determined by the following: ");
       }
       buf.print("%s", core_path);
 #endif
     } else if (getrlimit(RLIMIT_CORE, &rlim) != 0) {
       if (check_only) {
-        buf.print("couldn't deduce rlim, trying ");
+        buf.print("the rlimit couldn't be determined. If resource limits permit, the core dump will be located at ");
       }
-      buf.print("%s (may not exist)", core_path);
+      buf.print("%s%s", core_path, check_only ? "" : " (may not exist)");
     } else {
       switch(rlim.rlim_cur) {
         case RLIM_INFINITY:
