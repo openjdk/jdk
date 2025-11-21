@@ -22,40 +22,61 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.internal;
+package jdk.jpackage.test;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.util.function.Predicate;
-import jdk.jpackage.internal.model.RuntimeLayout;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.stream.Collectors;
 
-final class MacRuntimeValidator {
+public final class PropertyFile {
 
-    static void validateRuntimeHasJliLib(RuntimeLayout runtimeLayout) {
-        final var jliName = Path.of("libjli.dylib");
-        try (var walk = Files.walk(runtimeLayout.runtimeDirectory().resolve("lib"))) {
-            if (walk.map(Path::getFileName).anyMatch(Predicate.isEqual(jliName))) {
-                return;
-            }
-        } catch (NoSuchFileException ex) {
+    PropertyFile(Map<String, String> data) {
+        this.data = new Properties();
+        this.data.putAll(data);
+        path = Optional.empty();
+    }
+
+    PropertyFile(Path path) {
+        data = new Properties();
+        try (var reader = Files.newBufferedReader(path)) {
+            data.load(reader);
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
-
-        throw I18N.buildConfigException("error.invalid-runtime-image-missing-file",
-                runtimeLayout.rootDirectory(),
-                runtimeLayout.unresolve().runtimeDirectory().resolve("lib/**").resolve(jliName)).create();
+        this.path = Optional.of(path);
     }
 
-    static void validateRuntimeHasNoBinDir(RuntimeLayout runtimeLayout) {
-        if (Files.isDirectory(runtimeLayout.runtimeDirectory().resolve("bin"))) {
-            throw I18N.buildConfigException()
-                    .message("error.invalid-runtime-image-bin-dir", runtimeLayout.rootDirectory())
-                    .advice("error.invalid-runtime-image-bin-dir.advice", "--mac-app-store")
-                    .create();
-        }
+    public Optional<String> findProperty(String name) {
+        Objects.requireNonNull(name);
+        return Optional.ofNullable(data.getProperty(name));
     }
+
+    public Optional<Boolean> findBooleanProperty(String name) {
+        return findProperty(name).map(Boolean::parseBoolean);
+    }
+
+    public Optional<Path> path() {
+        return path;
+    }
+
+    public Path getPath() {
+        return path().orElseThrow();
+    }
+
+    public Map<String, String> toMap() {
+        return data.entrySet().stream().collect(Collectors.toUnmodifiableMap(e -> {
+            return (String)e.getKey();
+        }, e -> {
+            return (String)e.getValue();
+        }));
+    }
+
+    private final Properties data;
+    private final Optional<Path> path;
 }

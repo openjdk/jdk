@@ -24,7 +24,8 @@
 /* @test
  * @summary Basic tests for lazy list methods
  * @enablePreview
- * @run junit/othervm --add-opens java.base/java.util=ALL-UNNAMED LazyListTest
+ * @modules java.base/java.util:+open
+ * @run junit LazyListTest
  */
 
 import org.junit.jupiter.api.Test;

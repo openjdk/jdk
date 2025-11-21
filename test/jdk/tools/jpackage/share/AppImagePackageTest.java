@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.Predicate;
+import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.util.XmlUtils;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Test;
@@ -183,6 +184,24 @@ public class AppImagePackageTest {
                 xml.writeEndElement();
             });
         }).run(Action.CREATE);
+    }
+
+    /**
+     * Test building Linux package from the predefined app image with installation
+     * directory in the "/usr" subtree.
+     */
+    @Test(ifOS = OperatingSystem.LINUX)
+    public static void testUsrInstallDir() {
+        final var appImageCmd = createAppImageCommand();
+
+        new PackageTest()
+        .addRunOnceInitializer(appImageCmd::execute)
+        .usePredefinedAppImage(appImageCmd)
+        .addBundleDesktopIntegrationVerifier(false)
+        .addInitializer(cmd -> {
+            cmd.addArguments("--install-dir", "/usr");
+        })
+        .run();
     }
 
     private static PackageTest configureBadAppImage(Path appImageDir) {
