@@ -771,11 +771,11 @@ public:
   void decrement(Register reg, int value = 1);
   void decrement(Address dst, int value = 1);
 
-  void incrementw(Address dst, int value = 1);
+  void incrementw(Address dst, int value = 1, Register result = rscratch1);
   void incrementw(Register reg, int value = 1);
 
   void increment(Register reg, int value = 1);
-  void increment(Address dst, int value = 1);
+  void increment(Address dst, int value = 1, Register result = rscratch1);
 
 
   // Alignment

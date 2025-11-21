@@ -2639,7 +2639,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr counter_addr, LI
         case T_INT: {
           Address dest_adr = __ legitimize_address(raw_dest_adr, sizeof (jint), rscratch2);
           inc *= ProfileCaptureRatio;
-          __ incrementw(dest_adr, inc);
+          __ incrementw(dest_adr, inc, temp);
           if (dest->is_register())  __ movw(dest->as_register(), temp);
 
           break;
@@ -2647,7 +2647,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr counter_addr, LI
         case T_LONG: {
           Address dest_adr = __ legitimize_address(raw_dest_adr, sizeof (jlong), rscratch2);
           inc *= ProfileCaptureRatio;
-          __ increment(dest_adr, inc);
+          __ increment(dest_adr, inc, temp);
           if (dest->is_register())  __ mov(dest->as_register_lo(), temp);
 
           break;
