@@ -206,7 +206,7 @@ void ZNMethod::register_nmethod(nmethod* nm) {
     ICacheInvalidationContext icic(nm);
 
     // Patch nmethod barriers
-    nmethod_patch_barriers(nm, icic.deferred_invalidation());
+    nmethod_patch_barriers(nm);
   }
 
   // Register nmethod
@@ -249,11 +249,11 @@ void ZNMethod::set_guard_value(nmethod* nm, int value) {
   bs->guard_with(nm, value);
 }
 
-void ZNMethod::nmethod_patch_barriers(nmethod* nm, bool defer_icache_invalidation) {
+void ZNMethod::nmethod_patch_barriers(nmethod* nm) {
   ZBarrierSetAssembler* const bs_asm = ZBarrierSet::assembler();
   ZArrayIterator<ZNMethodDataBarrier> iter(gc_data(nm)->barriers());
   for (ZNMethodDataBarrier barrier; iter.next(&barrier);) {
-    bs_asm->patch_barrier_relocation(barrier._reloc_addr, barrier._reloc_format AARCH64_ONLY(COMMA defer_icache_invalidation));
+    bs_asm->patch_barrier_relocation(barrier._reloc_addr, barrier._reloc_format);
   }
 }
 
@@ -262,7 +262,7 @@ void ZNMethod::nmethod_oops_do(nmethod* nm, OopClosure* cl) {
   ZNMethod::nmethod_oops_do_inner(nm, cl);
 }
 
-void ZNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl, bool defer_icache_invalidation) {
+void ZNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl) {
   // Process oops table
   {
     oop* const begin = nm->oops_begin();
@@ -288,7 +288,7 @@ void ZNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl, bool defer_ica
 
   // Process non-immediate oops
   if (data->has_non_immediate_oops()) {
-    nm->fix_oop_relocations(defer_icache_invalidation);
+    nm->fix_oop_relocations();
   }
 }
 
@@ -375,7 +375,7 @@ public:
           ICacheInvalidationContext icic(nm);
           // Heal oops and potentially mark young objects if there is a concurrent young collection.
           ZUncoloredRootProcessOopClosure cl(prev_color);
-          ZNMethod::nmethod_oops_do_inner(nm, &cl, icic.deferred_invalidation());
+          ZNMethod::nmethod_oops_do_inner(nm, &cl);
         }
 
         // Disarm for marking and relocation, but leave the remset bits so this isn't store good.

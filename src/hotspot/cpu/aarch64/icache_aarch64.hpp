@@ -36,6 +36,7 @@
 inline void ICacheInvalidationContext::pd_init(nmethod* nm) {
   if (NeoverseN1Errata1542419) {
     _nm = nm;
+    _deferred_icache_invalidation = (_nm != nullptr);
   }
 }
 
@@ -62,7 +63,12 @@ inline void ICacheInvalidationContext::pd_invalidate_icache() {
     //
     // As the address for icache invalidation is not relevant, we use the nmethod's code start address.
     ICache::invalidate_word(_nm->code_begin());
+    _deferred_icache_invalidation = false;
   }
+}
+
+inline bool ICacheInvalidationContext::deferred_invalidation() {
+  return _deferred_icache_invalidation;
 }
 
 #endif // CPU_AARCH64_ICACHE_AARCH64_HPP

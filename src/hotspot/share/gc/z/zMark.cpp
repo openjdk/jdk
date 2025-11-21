@@ -722,11 +722,11 @@ public:
       {
          ICacheInvalidationContext icic(nm);
          // Heal barriers
-         ZNMethod::nmethod_patch_barriers(nm, icic.deferred_invalidation());
+         ZNMethod::nmethod_patch_barriers(nm);
 
          // Heal oops
          ZUncoloredRootMarkOopClosure cl(ZNMethod::color(nm));
-         ZNMethod::nmethod_oops_do_inner(nm, &cl, icic.deferred_invalidation());
+         ZNMethod::nmethod_oops_do_inner(nm, &cl);
       }
 
       // CodeCache unloading support
@@ -772,12 +772,12 @@ public:
 
         if (complete_disarm) {
           // We are about to completely disarm the nmethod, must take responsibility to patch all barriers before disarming
-          ZNMethod::nmethod_patch_barriers(nm, icic.deferred_invalidation());
+          ZNMethod::nmethod_patch_barriers(nm);
         }
 
         // Heal oops
         ZUncoloredRootMarkYoungOopClosure cl(prev_color);
-        ZNMethod::nmethod_oops_do_inner(nm, &cl, icic.deferred_invalidation());
+        ZNMethod::nmethod_oops_do_inner(nm, &cl);
       }
 
       _bs_nm->guard_with(nm, (int)untype(new_disarm_value_ptr));

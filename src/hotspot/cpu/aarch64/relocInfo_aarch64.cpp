@@ -55,7 +55,7 @@ void Relocation::pd_set_data_value(address x, bool verify_only) {
     break;
   }
 
-  if (binding() != nullptr && binding()->deferred_icache_invalidation()) {
+  if (ICacheInvalidationContext::deferred_invalidation()) {
     // Instruction cache invalidation per relocation can be expensive, e.g. on Neoverse N1 having erratum 1542419.
     // Defer the ICache invalidation to a later point where multiple patches can be handled together.
     return;

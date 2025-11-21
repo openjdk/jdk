@@ -1438,11 +1438,11 @@ public:
       {
         ICacheInvalidationContext icic(nm);
         // Heal barriers
-        ZNMethod::nmethod_patch_barriers(nm, icic.deferred_invalidation());
+        ZNMethod::nmethod_patch_barriers(nm);
 
         // Heal oops
         ZUncoloredRootProcessOopClosure cl(ZNMethod::color(nm));
-        ZNMethod::nmethod_oops_do_inner(nm, &cl, icic.deferred_invalidation());
+        ZNMethod::nmethod_oops_do_inner(nm, &cl);
       }
 
       log_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by old remapping", p2i(nm));

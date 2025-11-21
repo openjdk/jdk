@@ -862,7 +862,7 @@ static void change_immediate(uint32_t& instr, uint32_t imm, uint32_t start, uint
   instr |= imm << start;
 }
 
-void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format, bool defer_icache_invalidation) {
+void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
   const uint16_t value = patch_barrier_relocation_value(format);
   uint32_t* const patch_addr = (uint32_t*)addr;
 
@@ -879,9 +879,13 @@ void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format, bo
     ShouldNotReachHere();
   }
 
-  if (defer_icache_invalidation) {
-    // Instruction cache invalidation per barrier can be expensive, e.g. on Neoverse N1 having erratum 1542419.
+  if (NeoverseN1Errata1542419) {
+    // Instruction cache invalidation per barrier is expensive on Neoverse N1 having erratum 1542419.
     // Defer the ICache invalidation to a later point where multiple patches can be handled together.
+    //
+    // Note: We rely on the fact that this function is only called from places where deferred invalidation
+    // is safe. This assumption helps to avoid overhead of accessing thread-local data here.
+    assert(ICacheInvalidationContext::deferred_invalidation(), "ICache invalidation should be deferred");
     return;
   }
 

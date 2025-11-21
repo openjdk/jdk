@@ -77,6 +77,8 @@ class ICacheInvalidationContext : StackObj {
   NONCOPYABLE(ICacheInvalidationContext);
 
 private:
+  static THREAD_LOCAL bool _deferred_icache_invalidation;
+
   nmethod* _nm;
 
   void pd_init(nmethod* nm);
@@ -88,14 +90,10 @@ public:
   }
 
   ~ICacheInvalidationContext() {
-    if (_nm != nullptr) {
-      pd_invalidate_icache();
-    }
+    pd_invalidate_icache();
   }
 
-  bool deferred_invalidation() const {
-    return _nm != nullptr;
-  }
+  static bool deferred_invalidation();
 };
 
 // Must be included before the definition of ICacheStubGenerator
@@ -159,6 +157,9 @@ class ICacheStubGenerator : public StubCodeGenerator {
   // Default implementation: do nothing
   inline void ICacheInvalidationContext::pd_init(nmethod*) {}
   inline void ICacheInvalidationContext::pd_invalidate_icache() {}
+  inline bool ICacheInvalidationContext::deferred_invalidation() {
+    return false;
+  }
 #endif
 
 #endif // SHARE_RUNTIME_ICACHE_HPP

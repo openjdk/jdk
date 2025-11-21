@@ -125,3 +125,5 @@ void icache_init() {
 void icache_init2() {
   ICache::initialize(2);
 }
+
+THREAD_LOCAL bool ICacheInvalidationContext::_deferred_icache_invalidation = false;
