@@ -38,10 +38,13 @@ import com.sun.crypto.provider.DHKEM;
 import javax.crypto.Cipher;
 import javax.crypto.spec.HPKEParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HexFormat;
+
+import jtreg.SkippedException;
 
 /// This test is based on Appendix A (Test Vectors) of
 /// [RFC 9180](https://datatracker.ietf.org/doc/html/rfc9180#name-test-vectors)
@@ -67,7 +70,14 @@ public class KAT9180 {
 
     public static void main(String[] args) throws Exception {
         var h = HexFormat.of();
-        Path archivePath = ArtifactResolver.fetchOne(RFC_9180_KAT.class);
+        Path archivePath = null;
+        try {
+            archivePath = ArtifactResolver.fetchOne(RFC_9180_KAT.class);
+        } catch (IOException e) {
+            if (e.getMessage().contains("Cannot find the artifact")) {
+                throw new SkippedException("RFC_9180_KAT test vectors are not available.");
+            }
+        }
         System.out.println("Data path: " + archivePath);
         var c1 = Cipher.getInstance("HPKE");
         var c2 = Cipher.getInstance("HPKE");
