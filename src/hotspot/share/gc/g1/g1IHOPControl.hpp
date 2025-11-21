@@ -55,7 +55,11 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   // Most recent time from the end of the concurrent start to the start of the first
   // mixed gc.
   virtual double last_marking_length_s() const = 0;
- public:
+
+  virtual void print_log(size_t non_young_occupancy);
+  virtual void send_trace_event(G1NewTracer* tracer, size_t non_young_occupancy);
+
+public:
   virtual ~G1IHOPControl() { }
 
   // Get the current non-young occupancy at which concurrent marking should start.
@@ -76,8 +80,7 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   // the first mixed gc.
   virtual void update_marking_length(double marking_length_s) = 0;
 
-  virtual void print();
-  virtual void send_trace_event(G1NewTracer* tracer);
+  void report_statistics(G1NewTracer* tracer, size_t non_young_occupancy);
 };
 
 // The returned concurrent mark starting occupancy threshold is a fixed value
@@ -139,6 +142,10 @@ class G1AdaptiveIHOPControl : public G1IHOPControl {
   double last_mutator_period_old_allocation_rate() const;
  protected:
   virtual double last_marking_length_s() const { return _marking_times_s.last(); }
+
+  virtual void print_log(size_t non_young_occupancy);
+  virtual void send_trace_event(G1NewTracer* tracer, size_t non_young_occupancy);
+
  public:
   G1AdaptiveIHOPControl(double ihop_percent,
                         G1OldGenAllocationTracker const* old_gen_alloc_tracker,
@@ -150,9 +157,6 @@ class G1AdaptiveIHOPControl : public G1IHOPControl {
 
   virtual void update_allocation_info(double allocation_time_s, size_t additional_buffer_size);
   virtual void update_marking_length(double marking_length_s);
-
-  virtual void print();
-  virtual void send_trace_event(G1NewTracer* tracer);
 };
 
 #endif // SHARE_GC_G1_G1IHOPCONTROL_HPP
