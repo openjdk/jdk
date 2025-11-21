@@ -96,8 +96,8 @@ public:
 
 HeapWord* ShenandoahAllocator::attempt_allocation(ShenandoahAllocRequest& req, bool& in_new_region) {
   if (_alloc_region_count == 0u) {
-    ShenandoahHeapAccountingUpdater accounting_updater(_free_set, _alloc_partition_id);
     ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), _yield_to_safepoint);
+    ShenandoahHeapAccountingUpdater accounting_updater(_free_set, _alloc_partition_id);
     HeapWord* obj = attempt_allocation_from_free_set(req, in_new_region);
     if (obj != nullptr) {
       accounting_updater._need_update = true;
