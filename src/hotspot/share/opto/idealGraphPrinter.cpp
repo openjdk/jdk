@@ -62,12 +62,13 @@ void PrintProperties::print_node_properties(Node* node) {
   print_property((flags & Node::Flag_may_be_short_branch), "may_be_short_branch");
   print_property((flags & Node::Flag_has_call), "has_call");
   print_property((flags & Node::Flag_has_swapped_edges), "has_swapped_edges");
-  if (_printer->C->matcher() != nullptr) {
-    print_property(_printer->C->matcher()->is_shared(node),"is_shared");
-    print_property(!(_printer->C->matcher()->is_shared(node)), "is_shared", IdealGraphPrinter::FALSE_VALUE);
-    print_property(_printer->C->matcher()->is_dontcare(node), "is_dontcare");
-    print_property(!(_printer->C->matcher()->is_dontcare(node)),"is_dontcare", IdealGraphPrinter::FALSE_VALUE);
-    Node* old = _printer->C->matcher()->find_old_node(node);
+  Matcher* matcher = _printer->C->matcher();
+  if (matcher != nullptr) {
+    print_property(matcher->is_shared(node),"is_shared");
+    print_property(!(matcher->is_shared(node)), "is_shared", IdealGraphPrinter::FALSE_VALUE);
+    print_property(matcher->is_dontcare(node), "is_dontcare");
+    print_property(!(matcher->is_dontcare(node)),"is_dontcare", IdealGraphPrinter::FALSE_VALUE);
+    Node* old = matcher->find_old_node(node);
     if (old != nullptr) {
       print_property(true, "old_node_idx", old->_idx);
     }
