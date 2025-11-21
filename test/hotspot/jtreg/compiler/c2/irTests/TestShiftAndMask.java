@@ -31,6 +31,7 @@ import java.util.Objects;
 /*
  * @test
  * @bug 8277850 8278949 8285793 8346664
+ * @key randomness
  * @summary C2: optimize mask checks in counted loops
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestShiftAndMask

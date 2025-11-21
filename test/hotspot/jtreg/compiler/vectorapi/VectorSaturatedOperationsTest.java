@@ -24,6 +24,7 @@
 /**
 * @test
 * @bug 8338021 8342677 8349522
+* @key randomness
 * @summary Add IR validation tests for newly added saturated vector add / sub operations
 * @modules jdk.incubator.vector
 * @library /test/lib /
