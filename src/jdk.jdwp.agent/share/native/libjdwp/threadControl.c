@@ -534,8 +534,7 @@ removeResumed(JNIEnv *env, ThreadList *list)
 static void
 removeVThreads(JNIEnv *env)
 {
-    ThreadList *list = &runningVThreads;
-    ThreadNode *node = list->first;
+    ThreadNode *node = runningVThreads.first;
     while (node != NULL) {
         ThreadNode *temp = node->next;
         removeNode(node);
@@ -579,7 +578,7 @@ freeUnusedVThreadNode(JNIEnv *env, ThreadNode* node)
     } else {
         /*
          * Although at first it might seem that a non-zero suspendCount would require
-         * keeping the node, we don't have too if node->suspendCount == suspendAllCount,
+         * keeping the node, we don't have to if node->suspendCount == suspendAllCount,
          * because when the node is recreated it will get suspendAllCount assigned to it.
          * So we only worry about keeping the node around if the two counts are not equal.
          */
@@ -589,7 +588,7 @@ freeUnusedVThreadNode(JNIEnv *env, ThreadNode* node)
 
     }
 
-    // All of the following conditions must pass if we are to free this node. Note
+    // All of the following conditions must be met to free this node. Note
     // suspendCount checks were already made above, so are not included below. If
     // we got here, then suspendCount checks passed w.r.t. being able to free the node.
     // Also note we don't need to check node->toBeResumed. If it is set, that implies
@@ -624,8 +623,7 @@ freeUnusedVThreadNodes(JNIEnv *env)
         return;
     }
 
-    ThreadList *list = &runningVThreads;
-    ThreadNode *node = list->first;
+    ThreadNode *node = runningVThreads.first;
     while (node != NULL) {
         ThreadNode *temp = node->next;
         freeUnusedVThreadNode(env, node);
