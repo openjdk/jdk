@@ -205,7 +205,7 @@ static void generate_pre_barrier_slow_path(MacroAssembler* masm,
   __ movptr(Address(tmp, 0), pre_val);      // *(buffer address + next index) := value
 
   // Jump out if done, or fall-through to runtime.
-  // "Done" is far away, so jump cannot be short.
+  // "L_done" is far away, so jump cannot be short.
   __ bind(L_null);
   __ jmp(L_done);
   __ bind(L_runtime);
