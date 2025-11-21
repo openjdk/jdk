@@ -27,7 +27,6 @@ import static jdk.internal.util.OperatingSystem.LINUX;
 import static jdk.internal.util.OperatingSystem.MACOS;
 import static jdk.internal.util.OperatingSystem.WINDOWS;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
-import static jdk.jpackage.test.CannedFormattedString.cannedAbsolutePath;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -46,6 +45,7 @@ import jdk.jpackage.internal.util.TokenReplace;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.CannedArgument;
 import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageStringBundle;
@@ -141,7 +141,7 @@ public final class ErrorTest {
         private final TokenReplace tokenReplace = new TokenReplace(token());
     }
 
-    record PackageTypeSpec(Optional<PackageType> type, boolean anyNativeType) implements CannedFormattedString.CannedArgument {
+    record PackageTypeSpec(Optional<PackageType> type, boolean anyNativeType) implements CannedArgument {
         PackageTypeSpec {
             Objects.requireNonNull(type);
             if (type.isPresent() && anyNativeType) {
@@ -166,7 +166,7 @@ public final class ErrorTest {
         }
 
         @Override
-        public String value() {
+        public String getValue() {
             return resolvedType().getType();
         }
 

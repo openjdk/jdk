@@ -246,19 +246,13 @@ public final class LauncherAsServiceVerifier {
                     PropertyFinder.nop()
             ).map(Boolean::parseBoolean).orElse(false);
         } else {
-            var mainLauncherValue = PropertyFinder.findLauncherProperty(cmd, null,
-                    PropertyFinder.cmdlineBooleanOption("--launcher-as-service"),
-                    PropertyFinder.nop(),
-                    PropertyFinder.nop()
-            ).map(Boolean::parseBoolean).orElse(false);
-
-            var value = PropertyFinder.findLauncherProperty(cmd, launcherName,
+            return PropertyFinder.findLauncherProperty(cmd, launcherName,
                     PropertyFinder.nop(),
                     PropertyFinder.launcherPropertyFile("launcher-as-service"),
                     PropertyFinder.appImageFileLauncher(cmd, launcherName, "service").defaultValue(Boolean.FALSE.toString())
-            ).map(Boolean::parseBoolean);
-
-            return value.orElse(mainLauncherValue);
+            ).map(Boolean::parseBoolean).orElseGet(() -> {
+                return launcherAsService(cmd, null);
+            });
         }
     }
 
