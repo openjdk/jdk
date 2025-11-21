@@ -143,6 +143,9 @@ abstract class QuicBaseCongestionController implements QuicCongestionController 
     public void packetAcked(int packetBytes, Deadline sentTime) {
         lock.lock();
         try {
+            long oldWindow = congestionWindow;
+            assert oldWindow >= minimumWindow :
+                    "Congestion window lower than minimum: %s < %s".formatted(oldWindow, minimumWindow);
             bytesInFlight -= packetBytes;
             // RFC 9002 says we should not increase cwnd when application limited.
             // The concept itself is poorly defined.
@@ -174,6 +177,8 @@ abstract class QuicBaseCongestionController implements QuicCongestionController 
                             ", new cwnd:" + congestionWindow);
                 }
             }
+            assert congestionWindow >= oldWindow :
+                    "Window size decreased on ACK: %s to %s".formatted(oldWindow, congestionWindow);
         } finally {
             lock.unlock();
         }
@@ -200,6 +205,8 @@ abstract class QuicBaseCongestionController implements QuicCongestionController 
                             ", cwnd:" + congestionWindow);
                 }
             }
+            assert congestionWindow >= minimumWindow :
+                    "Congestion window lower than minimum: %s < %s".formatted(congestionWindow, minimumWindow);
         } finally {
             lock.unlock();
         }
