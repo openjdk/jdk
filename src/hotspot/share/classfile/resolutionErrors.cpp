@@ -85,7 +85,9 @@ void ResolutionErrorTable::add_entry(const constantPoolHandle& pool, int cp_inde
 
   ResolutionErrorKey key(pool(), cp_index);
   ResolutionErrorEntry *entry = new ResolutionErrorEntry(message);
-  _resolution_error_table->put(key, entry);
+  bool created = false;
+  _resolution_error_table->put_if_absent(key, entry, &created);
+  assert(created, "should be created not updated");
 }
 
 // find entry in the table
