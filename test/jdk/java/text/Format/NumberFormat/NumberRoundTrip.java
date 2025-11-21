@@ -28,6 +28,8 @@
  *      This test checks 4 factory instances per locale against ~20 numeric inputs.
  *      Samples ~1/4 of the available locales from NumberFormat SPI.
  * @key randomness
+ * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run junit NumberRoundTrip
  */
 
@@ -35,8 +37,10 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Stream;
 
+import jdk.test.lib.RandomFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -51,6 +55,8 @@ import org.junit.jupiter.params.provider.MethodSource;
  * should extend to the few least-significant bits.
  */
 public class NumberRoundTrip {
+
+    private static final Random RND = RandomFactory.getRandom();
 
     @ParameterizedTest
     @MethodSource
@@ -95,7 +101,7 @@ public class NumberRoundTrip {
                 // ~1000 locales returned from provider.
                 // Too expensive to test all locales, so sample a reasonable amount
                 Arrays.stream(NumberFormat.getAvailableLocales())
-                        .filter(_ -> Math.random() < .25)
+                        .filter(_ -> RND.nextDouble() < .25)
                         .flatMap(loc -> Stream.of(
                         Arguments.of(NumberFormat.getInstance(loc)),
                         Arguments.of(NumberFormat.getNumberInstance(loc)),
@@ -140,8 +146,7 @@ public class NumberRoundTrip {
 
     // Return a random value from -range..+range.
     private static double randomDouble(double range) {
-        double a = Math.random();
-        return (2.0 * range * a) - range;
+        return RND.nextDouble(-range, range);
     }
 
     private static double proportionalError(Number a, Number b) {
