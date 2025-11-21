@@ -438,19 +438,9 @@ class JImageTask {
                 }
             } catch (IOException ioe) {
                 // Handle specific errors for which better advice can be given.
-                if (ioe instanceof BasicImageReader.ImageError err) {
-                    if (err.getReason() == Reason.BAD_VERSION) {
-                        Path p = file.toPath();
-                        if (p.endsWith(Path.of("lib", "modules"))) {
-                            // Looks like jimage tool is in the standard JDK directory.
-                            p = p.subpath(0, p.getNameCount() - 2).resolve("bin", "jimage");
-                            if (Files.isRegularFile(p)) {
-                                // Suggest what we hope is the correct tool path.
-                                throw TASK_HELPER.newBadArgs("err.bad.version.suggest", file, p);
-                            }
-                        }
-                        throw TASK_HELPER.newBadArgs("err.bad.version", file);
-                    }
+                if (ioe instanceof BasicImageReader.ImageError err
+                        && err.getReason() == Reason.BAD_VERSION) {
+                    throw TASK_HELPER.newBadArgs("err.bad.version", file);
                 }
                 // Non-specific error during processing.
                 throw TASK_HELPER.newBadArgs("err.invalid.jimage", file, ioe.getMessage());
