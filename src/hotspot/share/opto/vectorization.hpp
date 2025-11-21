@@ -257,6 +257,17 @@ public:
     return is_before_pre_loop(early);
   }
 
+  bool is_available_for_speculative_check(Node* n) const {
+    assert(are_speculative_checks_possible(), "meaningless without speculative check");
+    ParsePredicateSuccessProj* parse_predicate_proj = auto_vectorization_parse_predicate_proj();
+    // Find the control of the predicate:
+    ProjNode* proj = (parse_predicate_proj != nullptr) ? parse_predicate_proj : multiversioning_fast_proj();
+    Node* check_ctrl = proj->in(0)->as_If()->in(0);
+    // The control of n must dominate that of the predicate.
+    Node* n_ctrl = phase()->get_ctrl(n);
+    return phase()->is_dominator(n_ctrl, check_ctrl);
+  }
+
   // Check if the loop passes some basic preconditions for vectorization.
   // Return indicates if analysis succeeded.
   bool check_preconditions();
