@@ -392,26 +392,9 @@ public abstract class AtomicLongFieldUpdater<T> {
                 throw new RuntimeException(ex);
             }
 
-            if (field.getType() != long.class)
-                throw new IllegalArgumentException("Must be long type");
+            FieldUpdaterUtil.validateField(field, long.class);
 
-            if (!Modifier.isVolatile(modifiers))
-                throw new IllegalArgumentException("Must be volatile type");
-
-            if (Modifier.isStatic(modifiers))
-                throw new IllegalArgumentException("Must not be a static field");
-
-            // Access to protected field members is restricted to receivers only
-            // of the accessing class, or one of its subclasses, and the
-            // accessing class must in turn be a subclass (or package sibling)
-            // of the protected member's defining class.
-            // If the updater refers to a protected field of a declaring class
-            // outside the current package, the receiver argument will be
-            // narrowed to the type of the accessing class.
-            this.cclass = (Modifier.isProtected(modifiers) &&
-                           tclass.isAssignableFrom(caller) &&
-                           !isSamePackage(tclass, caller))
-                          ? caller : tclass;
+            this.cclass = FieldUpdaterUtil.computeAccessClass(tclass, caller, modifiers);
             this.tclass = tclass;
             this.offset = U.objectFieldOffset(field);
         }
@@ -499,28 +482,4 @@ public abstract class AtomicLongFieldUpdater<T> {
         }
     }
 
-    /**
-     * Returns true if the second classloader can be found in the first
-     * classloader's delegation chain.
-     * Equivalent to the inaccessible: first.isAncestor(second).
-     */
-    static boolean isAncestor(ClassLoader first, ClassLoader second) {
-        ClassLoader acl = first;
-        do {
-            acl = acl.getParent();
-            if (second == acl) {
-                return true;
-            }
-        } while (acl != null);
-        return false;
-    }
-
-    /**
-     * Returns true if the two classes have the same class loader and
-     * package qualifier
-     */
-    static boolean isSamePackage(Class<?> class1, Class<?> class2) {
-        return class1.getClassLoader() == class2.getClassLoader()
-               && class1.getPackageName() == class2.getPackageName();
-    }
 }
