@@ -60,12 +60,24 @@ public class UMulHiLNodeValueTests {
         assertResult(maxLong, maxLong);
     }
 
+    @Run(test = "givenUint32RangeFolded")
+    public void runWithUint32Inputs() {
+        assertUint32Result(LONGS.next(), LONGS.next());
+    }
+
     @DontCompile
     public void assertResult(long a, long b) {
         Asserts.assertEquals(Math.unsignedMultiplyHigh(C1, C2), givenTwoConstant());
         Asserts.assertEquals(Math.unsignedMultiplyHigh(0, b), givenLeftZero(b));
         Asserts.assertEquals(Math.unsignedMultiplyHigh(a, 0), givenRightZero(a));
         Asserts.assertEquals(Math.unsignedMultiplyHigh(a, b), givenTwoLong(a, b));
+    }
+
+    @DontCompile
+    public void assertUint32Result(long a, long b) {
+        long x = toUint32(a);
+        long y = toUint32(b);
+        Asserts.assertEquals(Math.unsignedMultiplyHigh(x, y), givenUint32RangeFolded(a, b));
     }
 
     /**
@@ -102,5 +114,22 @@ public class UMulHiLNodeValueTests {
     @IR(counts = {IRNode.UMUL_HI_L, "1"})
     public long givenTwoLong(long a, long b) {
         return Math.unsignedMultiplyHigh(a, b);
+    }
+
+    /**
+     * Both operands are in [0, 0xffffffff] so high word is always zero.
+     */
+    @Test
+    @IR(failOn = {IRNode.UMUL_HI_L})
+    @IR(counts = {IRNode.CON_L, "1"})
+    public long givenUint32RangeFolded(long a, long b) {
+        long x = toUint32(a);
+        long y = toUint32(b);
+        return Math.unsignedMultiplyHigh(x, y);
+    }
+
+    @ForceInline
+    private static long toUint32(long v) {
+        return v & 0xffffffffL;
     }
 }

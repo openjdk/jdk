@@ -22,6 +22,7 @@
  *
  */
 
+#include "jni_md.h"
 #include "opto/addnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
@@ -29,10 +30,13 @@
 #include "opto/mulnode.hpp"
 #include "opto/node.hpp"
 #include "opto/phaseX.hpp"
+#include "opto/rangeinference.hpp"
 #include "opto/subnode.hpp"
 #include "opto/type.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include <cstdint>
+#include <type_traits>
 
 // Portions of code courtesy of Clifford Click
 
@@ -616,6 +620,18 @@ const Type* MulHiLNode::Value(PhaseGVN* phase) const {
     return TypeLong::make(highResult);
   }
 
+  // If the 64-bit product cannot overflow and its sign is known, the result is constant.
+  const IntegerTypeMultiplication<jlong> multiplication(longType1, longType2);
+  if (!multiplication.does_overflow()) {
+    const TypeLong* result = multiplication.compute()->is_long();
+    if (result->_lo >= 0) {
+      return TypeLong::ZERO;
+    }
+    if (result->_hi < 0) {
+      return TypeLong::MINUS_1;
+    }
+  }
+
   return bottom_type();
 }
 
@@ -635,11 +651,18 @@ const Type* UMulHiLNode::Value(PhaseGVN* phase) const {
 
   const TypeLong* longType1 = t1->is_long();
   const TypeLong* longType2 = t2->is_long();
+  const int widen = MIN2(longType1->_widen, longType2->_widen);
 
   // Both are constant, directly computed the result
   if (longType1->is_con() && longType2->is_con()) {
-    jlong highResult = multiply_high_unsigned(longType1->get_con(), longType2->get_con());
-    return TypeLong::make(highResult);
+    julong highResult = multiply_high_unsigned(longType1->get_con(), longType2->get_con());
+    TypeIntPrototype<jlong, julong> proto{{min_jlong, max_jlong}, {highResult, highResult}, {0, 0}};
+    return TypeLong::make_or_top(proto, widen);
+  }
+
+  // If both operands are within the unsigned 32-bit range, the upper 64 bits of the 128-bit product are always zero.
+  if (longType1->_uhi <= max_juint && longType2->_uhi <= max_juint) {
+    return TypeLong::ZERO;
   }
 
   return bottom_type();

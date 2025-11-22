@@ -31,7 +31,7 @@ import jdk.test.lib.Asserts;
 /*
  * @test
  * @bug 8370196
- * @summary Test that Value method of NulHiLNode is working as expected.
+ * @summary Test that Value method of MulHiLNode is working as expected.
  * @key randomness
  * @library /test/lib /
  * @run driver compiler.c2.gvn.MulHiLNodeValueTests
@@ -45,36 +45,50 @@ public class MulHiLNodeValueTests {
     }
 
     @Run(test = {
-            "givenTwoConstant", "givenLeftZero",
+            "givenConstants", "givenLeftZero",
             "givenRightZero", "givenTwoLong"
     })
-    public void run() {
+    public void runWithLongInputs() {
         long aLong = LONGS.next();
         long bLong = LONGS.next();
         long minLong = Long.MIN_VALUE;
         long maxLong = Long.MAX_VALUE;
 
-        assertResult(0, 0);
-        assertResult(aLong, bLong);
-        assertResult(minLong, minLong);
-        assertResult(maxLong, maxLong);
+        assertLongInputsResult(0, 0);
+        assertLongInputsResult(aLong, bLong);
+        assertLongInputsResult(minLong, minLong);
+        assertLongInputsResult(maxLong, maxLong);
     }
 
     @DontCompile
-    public void assertResult(long a, long b) {
-        Asserts.assertEquals(Math.multiplyHigh(C1, C2), givenTwoConstant());
+    public void assertLongInputsResult(long a, long b) {
+        Asserts.assertEquals(Math.multiplyHigh(C1, C2), givenConstants());
         Asserts.assertEquals(Math.multiplyHigh(0, b), givenLeftZero(b));
         Asserts.assertEquals(Math.multiplyHigh(a, 0), givenRightZero(a));
         Asserts.assertEquals(Math.multiplyHigh(a, b), givenTwoLong(a, b));
+    }
+
+    @Run(test = {
+            "givenNoOverflowPositiveInt", "givenNoOverflowNegativeInt"
+    })
+    public void runWithIntInputs() {
+        assertIntInputsResult(LONGS.next(), LONGS.next());
+    }
+
+    @DontCompile
+    public void assertIntInputsResult(long a, long b) {
+        long x = nonZeroPositiveInt(a);
+        long y = (a * b > 0) ? nonZeroPositiveInt(b) : negativeInt(b);
+        long expected = Math.multiplyHigh(x, y);
+        Asserts.assertEquals(expected, (a * b > 0) ? givenNoOverflowPositiveInt(x, y) : givenNoOverflowNegativeInt(x, y));
     }
 
     /**
      * If two parameters are constant, folding to constant node
      */
     @Test
-    @IR(failOn = {IRNode.MUL_HI_L})
-    @IR(counts = {IRNode.CON_L, "1"})
-    public long givenTwoConstant() {
+    @IR(failOn = {IRNode.MUL_HI_L}, counts = {IRNode.CON_L, "1"})
+    public long givenConstants() {
         return Math.multiplyHigh(C1, C2);
     }
 
@@ -82,8 +96,7 @@ public class MulHiLNodeValueTests {
      * One of parameters is zero, the result always zero
      */
     @Test
-    @IR(failOn = {IRNode.MUL_HI_L})
-    @IR(counts = {IRNode.CON_L, "1"})
+    @IR(failOn = {IRNode.MUL_HI_L}, counts = {IRNode.CON_L, "1"})
     public long givenLeftZero(long b) {
         return Math.multiplyHigh(0, b);
     }
@@ -92,8 +105,7 @@ public class MulHiLNodeValueTests {
      * One of parameters is zero, the result always zero
      */
     @Test
-    @IR(failOn = {IRNode.MUL_HI_L})
-    @IR(counts = {IRNode.CON_L, "1"})
+    @IR(failOn = {IRNode.MUL_HI_L}, counts = {IRNode.CON_L, "1"})
     public long givenRightZero(long a) {
         return Math.multiplyHigh(a, 0);
     }
@@ -103,4 +115,37 @@ public class MulHiLNodeValueTests {
     public long givenTwoLong(long a, long b) {
         return Math.multiplyHigh(a, b);
     }
+
+    /**
+     * Product is always non-negative and fits into 64 bits -> high word is zero
+     */
+    @Test
+    @IR(failOn = {IRNode.MUL_HI_L}, counts = {IRNode.CON_L, "1"})
+    public long givenNoOverflowPositiveInt(long a, long b) {
+        long x = nonZeroPositiveInt(a);
+        long y = nonZeroPositiveInt(b);
+        return Math.multiplyHigh(x, y);
+    }
+
+    /**
+     * Product is always negative (non-negative * negative) and fits into 64 bits -> high word is -1
+     */
+    @Test
+    @IR(failOn = {IRNode.MUL_HI_L}, counts = {IRNode.CON_L, "1"})
+    public long givenNoOverflowNegativeInt(long a, long b) {
+        long x = nonZeroPositiveInt(a);
+        long y = negativeInt(b);
+        return Math.multiplyHigh(x, y);
+    }
+
+    @ForceInline
+    private static long nonZeroPositiveInt(long v) {
+        return (v & 0x7fffffffL) + 1L;
+    }
+
+    @ForceInline
+    private static long negativeInt(long v) {
+        return -((v & 0x7fffffffL) + 1L);
+    }
+
 }

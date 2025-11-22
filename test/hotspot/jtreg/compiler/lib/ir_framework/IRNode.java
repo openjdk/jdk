@@ -1473,6 +1473,16 @@ public class IRNode {
         beforeMatchingNameRegex(MUL_L, "MulL");
     }
 
+    public static final String MUL_HI_L = PREFIX + "MUL_HI_L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MUL_HI_L, "MulHiL");
+    }
+
+    public static final String UMUL_HI_L = PREFIX + "UMUL_HI_L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(UMUL_HI_L, "UMulHiL");
+    }
+
     public static final String MUL_VL = VECTOR_PREFIX + "MUL_VL" + POSTFIX;
     static {
         vectorNode(MUL_VL, "MulVL", TYPE_LONG);
@@ -1526,16 +1536,6 @@ public class IRNode {
     public static final String MUL_REDUCTION_VL = PREFIX + "MUL_REDUCTION_VL" + POSTFIX;
     static {
         superWordNodes(MUL_REDUCTION_VL, "MulReductionVL");
-    }
-
-    public static final String MUL_HI_L = PREFIX + "MUL_HI_L" + POSTFIX;
-    static {
-        superWordNodes(MUL_HI_L, "MulHiL");
-    }
-
-    public static final String UMUL_HI_L = PREFIX + "UMUL_HI_L" + POSTFIX;
-    static {
-        superWordNodes(UMUL_HI_L, "UMulHiL");
     }
 
     public static final String MIN_REDUCTION_V = PREFIX + "MIN_REDUCTION_V" + POSTFIX;
