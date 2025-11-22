@@ -413,9 +413,10 @@ public class TestStringEncoding {
                             String substring = testString.substring(srcIndex, srcIndex + numChars);
                             long length = substring.getBytes(charset).length;
                             MemorySegment text = arena.allocate(JAVA_BYTE, length);
-                            MemorySegment.copy(testString, charset, srcIndex, text, 0, numChars);
+                            long copied = MemorySegment.copy(testString, charset, srcIndex, text, 0, numChars);
                             String roundTrip = text.getString(0, charset, length);
                             assertEquals(roundTrip, substring);
+                            assertEquals(copied, length);
                         }
                     }
                 }

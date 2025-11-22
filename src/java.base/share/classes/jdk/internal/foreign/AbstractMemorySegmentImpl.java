@@ -694,13 +694,13 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     @ForceInline
-    public static void copy(String src, Charset dstEncoding, int srcIndex, MemorySegment dst, long dstOffset, int numChars) {
+    public static long copy(String src, Charset dstEncoding, int srcIndex, MemorySegment dst, long dstOffset, int numChars) {
         Objects.requireNonNull(src);
         Objects.requireNonNull(dstEncoding);
         Objects.requireNonNull(dst);
 
         AbstractMemorySegmentImpl destImpl = (AbstractMemorySegmentImpl)dst;
-        StringSupport.copyBytes(src, destImpl, dstEncoding, dstOffset, srcIndex, numChars);
+        return StringSupport.copyBytes(src, destImpl, dstEncoding, dstOffset, srcIndex, numChars);
     }
 
     // accessors

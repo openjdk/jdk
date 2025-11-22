@@ -353,20 +353,13 @@ public final class StringSupport {
     }
 
     public static int copyBytes(String string, MemorySegment segment, Charset charset, long offset) {
-        if (bytesCompatible(string, charset, 0, string.length())) {
-            copyToSegmentRaw(string, segment, offset, 0, string.length());
-            return string.length();
-        } else {
-            byte[] bytes = string.getBytes(charset);
-            MemorySegment.copy(bytes, 0, segment, JAVA_BYTE, offset, bytes.length);
-            return bytes.length;
-        }
+        return copyBytes(string, segment, charset, offset, 0, string.length());
     }
 
     public static int copyBytes(String string, MemorySegment segment, Charset charset, long offset, int srcIndex, int numChars) {
         if (bytesCompatible(string, charset, srcIndex, numChars)) {
             copyToSegmentRaw(string, segment, offset, srcIndex, numChars);
-            return string.length();
+            return numChars;
         } else {
             byte[] bytes = string.substring(srcIndex, srcIndex + numChars).getBytes(charset);
             MemorySegment.copy(bytes, 0, segment, JAVA_BYTE, offset, bytes.length);

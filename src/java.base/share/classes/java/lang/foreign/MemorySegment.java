@@ -2662,15 +2662,16 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code dst} is {@linkplain #isReadOnly() read-only}
      * @throws IndexOutOfBoundsException if {@code dstOffset > dstSegment.byteSize() - B} where {@code B} is the size,
      *         in bytes, of the string encoded using the given charset.
+     * @return the number of copied bytes.
      */
     @ForceInline
-    static void copy(String src, Charset dstEncoding, int srcIndex, MemorySegment dst, long dstOffset, int numChars) {
+    static long copy(String src, Charset dstEncoding, int srcIndex, MemorySegment dst, long dstOffset, int numChars) {
         Objects.requireNonNull(src);
         Objects.requireNonNull(dstEncoding);
         Objects.requireNonNull(dst);
         Objects.checkFromIndexSize(srcIndex, numChars, src.length());
 
-        AbstractMemorySegmentImpl.copy(src, dstEncoding, srcIndex, dst, dstOffset, numChars);
+        return AbstractMemorySegmentImpl.copy(src, dstEncoding, srcIndex, dst, dstOffset, numChars);
     }
 
     /**
