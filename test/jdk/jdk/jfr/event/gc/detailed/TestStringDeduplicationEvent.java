@@ -125,6 +125,9 @@ import jdk.test.whitebox.WhiteBox;
 public class TestStringDeduplicationEvent {
     private static Field valueField;
 
+    static volatile String string;
+    static volatile String duplicateString;
+
     static {
         try {
             valueField = String.class.getDeclaredField("value");
@@ -142,8 +145,8 @@ public class TestStringDeduplicationEvent {
             recording.onEvent(EventNames.StringDeduplication, e -> recording.close());
             recording.startAsync();
 
-            String base = TestStringDeduplicationEvent.class.getSimpleName();
-            String duplicate = new StringBuilder(base).toString();
+            string = TestStringDeduplicationEvent.class.getSimpleName();
+            duplicateString = new StringBuilder(string).toString();
 
             if (zgc) {
                 // ZGC only triggers string deduplications from major collections
