@@ -154,6 +154,7 @@ void ShenandoahOldGeneration::reset_promoted_expended() {
 }
 
 size_t ShenandoahOldGeneration::expend_promoted(size_t increment) {
+  shenandoah_assert_heaplocked_or_safepoint();
   assert(get_promoted_expended() + increment <= get_promoted_reserve(), "Do not expend more promotion than budgeted");
   return AtomicAccess::add(&_promoted_expended, increment);
 }
