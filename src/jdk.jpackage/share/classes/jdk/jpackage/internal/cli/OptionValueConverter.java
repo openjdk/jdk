@@ -48,8 +48,9 @@ interface OptionValueConverter<T> {
      * @param optionName  the option name
      * @param optionValue the string value of the option to convert
      * @return the conversion result
+     * @throws ConverterException if internal converter error occurs
      */
-    Result<T> convert(OptionName optionName, StringToken optionValue);
+    Result<T> convert(OptionName optionName, StringToken optionValue) throws ConverterException;
 
     /**
      * Gives the class of the type of values this converter converts to.
