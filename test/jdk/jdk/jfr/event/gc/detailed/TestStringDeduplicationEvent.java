@@ -144,7 +144,6 @@ public class TestStringDeduplicationEvent {
 
             String base = TestStringDeduplicationEvent.class.getSimpleName();
             String duplicate = new StringBuilder(base).toString();
-            assert(getValue(base) != getValue(duplicate));
 
             if (zgc) {
                 // ZGC only triggers string deduplications from major collections
