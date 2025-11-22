@@ -40,7 +40,7 @@ public:
                         Symbol* error, const char* error_msg,
                         Symbol* cause, const char* cause_msg);
 
-  static void add_entry(const constantPoolHandle& pool, int cp_index, const char* message);
+  static void add_entry(const constantPoolHandle& pool, int cp_index, const char* nest_host_error);
 
   // find error given the constant pool and constant pool index
   static ResolutionErrorEntry* find_entry(const constantPoolHandle& pool, int cp_index);
@@ -77,8 +77,7 @@ class ResolutionErrorEntry : public CHeapObj<mtClass> {
   // The incoming message and cause_msg are copied to the C-Heap.
   ResolutionErrorEntry(Symbol* error, const char* message,
                        Symbol* cause, const char* cause_msg);
-  ResolutionErrorEntry(const char* message):
-    ResolutionErrorEntry(nullptr, message, nullptr, nullptr) {}
+  ResolutionErrorEntry(const char* nest_host_error);
 
   ~ResolutionErrorEntry();
 
