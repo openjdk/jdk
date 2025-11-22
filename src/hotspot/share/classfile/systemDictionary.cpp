@@ -1867,7 +1867,7 @@ void SystemDictionary::add_nest_host_error(const constantPoolHandle& pool,
     if (entry == nullptr) {
       // Only add a new resolution error if one hasn't been found for this constant pool index. In this case,
       // resolution succeeded but there's an error in this nest host.
-      assert(pool->resolved_klass_at(which) != nullptr, "klass is should be resolved if there is no entry");
+      assert(pool->resolved_klass_at(which) != nullptr, "klass should be resolved if there is no entry");
       ResolutionErrorTable::add_entry(pool, which, message);
     } else if (entry->nest_host_error() == nullptr) {
       // An existing entry means we had a true resolution failure (LinkageError) with our nest host, but we
