@@ -288,7 +288,7 @@ public:
 
   void log_paths(const char* msg, int start_idx, int end_idx);
 
-  FileMapInfo(const char* full_apth, bool is_static);
+  FileMapInfo(const char* full_path, bool is_static);
   ~FileMapInfo();
   static void free_current_info();
 
@@ -363,6 +363,7 @@ public:
   // File manipulation.
   bool  open_as_input() NOT_CDS_RETURN_(false);
   void  open_as_output();
+  void  prepare_for_writing();
   void  write_header();
   void  write_region(int region, char* base, size_t size,
                      bool read_only, bool allow_exec);

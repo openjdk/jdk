@@ -40,6 +40,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 
 import static java.lang.Character.digit;
+import static java.lang.String.COMPACT_STRINGS;
 
 /**
  * The {@code Long} class is the {@linkplain

@@ -106,7 +106,7 @@ public:
     CPU_MOTOROLA  = 'M',
     CPU_NVIDIA    = 'N',
     CPU_AMCC      = 'P',
-    CPU_QUALCOM   = 'Q',
+    CPU_QUALCOMM  = 'Q',
     CPU_MARVELL   = 'V',
     CPU_INTEL     = 'i',
     CPU_APPLE     = 'a',

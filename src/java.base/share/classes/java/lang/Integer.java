@@ -40,6 +40,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static java.lang.Character.digit;
+import static java.lang.String.COMPACT_STRINGS;
 
 /**
  * The {@code Integer} class is the {@linkplain

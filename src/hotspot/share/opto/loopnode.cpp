@@ -463,16 +463,16 @@ Node* PhaseIdealLoop::loop_exit_test(Node* back_control, IdealLoopTree* loop, No
   // need 'loop()' test to tell if limit is loop invariant
   // ---------
 
-  if (!is_member(loop, get_ctrl(incr))) { // Swapped trip counter and limit?
+  if (!ctrl_is_member(loop, incr)) { // Swapped trip counter and limit?
     Node* tmp = incr;            // Then reverse order into the CmpI
     incr = limit;
     limit = tmp;
     bt = BoolTest(bt).commute(); // And commute the exit test
   }
-  if (is_member(loop, get_ctrl(limit))) { // Limit must be loop-invariant
+  if (ctrl_is_member(loop, limit)) { // Limit must be loop-invariant
     return nullptr;
   }
-  if (!is_member(loop, get_ctrl(incr))) { // Trip counter must be loop-variant
+  if (!ctrl_is_member(loop, incr)) { // Trip counter must be loop-variant
     return nullptr;
   }
   return cmp;
@@ -485,7 +485,7 @@ Node* PhaseIdealLoop::loop_iv_incr(Node* incr, Node* x, IdealLoopTree* loop, Nod
     }
     phi_incr = incr;
     incr = phi_incr->in(LoopNode::LoopBackControl); // Assume incr is on backedge of Phi
-    if (!is_member(loop, get_ctrl(incr))) { // Trip counter must be loop-variant
+    if (!ctrl_is_member(loop, incr)) { // Trip counter must be loop-variant
       return nullptr;
     }
   }
@@ -1795,7 +1795,7 @@ bool PhaseIdealLoop::convert_to_long_loop(Node* cmp, Node* phi, IdealLoopTree* l
       if (in == nullptr) {
         continue;
       }
-      if (loop->is_member(get_loop(get_ctrl(in)))) {
+      if (ctrl_is_member(loop, in)) {
         iv_nodes.push(in);
       }
     }
