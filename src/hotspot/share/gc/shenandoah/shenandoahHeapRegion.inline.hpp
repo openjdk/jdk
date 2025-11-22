@@ -236,13 +236,13 @@ inline void ShenandoahHeapRegion::adjust_alloc_metadata(ShenandoahAllocRequest::
       // Counted implicitly by tlab/gclab allocs
       break;
     case ShenandoahAllocRequest::_alloc_tlab:
-      AtomicAccess::add(&_tlab_allocs, size);
+      AtomicAccess::add(&_tlab_allocs, size, memory_order_relaxed);
       break;
     case ShenandoahAllocRequest::_alloc_gclab:
-      AtomicAccess::add(&_gclab_allocs, size);
+      AtomicAccess::add(&_gclab_allocs, size, memory_order_relaxed);
       break;
     case ShenandoahAllocRequest::_alloc_plab:
-      AtomicAccess::add(&_plab_allocs, size);
+      AtomicAccess::add(&_plab_allocs, size, memory_order_relaxed);
       break;
     default:
       ShouldNotReachHere();
