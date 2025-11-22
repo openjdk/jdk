@@ -56,38 +56,38 @@ public:
   ~ShenandoahHeapAccountingUpdater() {
     if (_need_update) {
       switch (_partition) {
-      case ShenandoahFreeSetPartitionId::Mutator:
-        _free_set->recompute_total_used</* UsedByMutatorChanged */ true,
-                                        /* UsedByCollectorChanged */ true, /* UsedByOldCollectorChanged */ true>();
-        _free_set->recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ false,
-                                              /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ false,
-                                              /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ false,
-                                              /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ false,
-                                              /* UnaffiliatedChangesAreYoungNeutral */ false>();
+        case ShenandoahFreeSetPartitionId::Mutator:
+          _free_set->recompute_total_used</* UsedByMutatorChanged */ true,
+                                          /* UsedByCollectorChanged */ true, /* UsedByOldCollectorChanged */ true>();
+          _free_set->recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ false,
+                                                /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ false,
+                                                /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ false,
+                                                /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ false,
+                                                /* UnaffiliatedChangesAreYoungNeutral */ false>();
 
-        break;
-      case ShenandoahFreeSetPartitionId::Collector:
-        _free_set->recompute_total_used</* UsedByMutatorChanged */ true,
-                                        /* UsedByCollectorChanged */ true, /* UsedByOldCollectorChanged */ true>();
-        _free_set->recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ true,
-                                              /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ true,
-                                              /* CollectorSizeChanged */ true, /* OldCollectorSizeChanged */ false,
-                                              /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ false,
-                                              /* UnaffiliatedChangesAreYoungNeutral */ false>();
-        break;
-      case ShenandoahFreeSetPartitionId::OldCollector:
-        _free_set->recompute_total_used</* UsedByMutatorChanged */ true,
-                                        /* UsedByCollectorChanged */ true, /* UsedByOldCollectorChanged */ true>();
-        _free_set->recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ false,
-                                              /* OldCollectorEmptiesChanged */ true, /* MutatorSizeChanged */ true,
-                                              /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ true,
-                                              /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ false,
-                                              /* UnaffiliatedChangesAreYoungNeutral */ false>();
-        break;
-      case ShenandoahFreeSetPartitionId::NotFree:
-      default:
-        assert(false, "won't happen");
-    }
+          break;
+        case ShenandoahFreeSetPartitionId::Collector:
+          _free_set->recompute_total_used</* UsedByMutatorChanged */ true,
+                                          /* UsedByCollectorChanged */ true, /* UsedByOldCollectorChanged */ true>();
+          _free_set->recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ true,
+                                                /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ true,
+                                                /* CollectorSizeChanged */ true, /* OldCollectorSizeChanged */ false,
+                                                /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ false,
+                                                /* UnaffiliatedChangesAreYoungNeutral */ false>();
+          break;
+        case ShenandoahFreeSetPartitionId::OldCollector:
+          _free_set->recompute_total_used</* UsedByMutatorChanged */ true,
+                                          /* UsedByCollectorChanged */ true, /* UsedByOldCollectorChanged */ true>();
+          _free_set->recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ false,
+                                                /* OldCollectorEmptiesChanged */ true, /* MutatorSizeChanged */ true,
+                                                /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ true,
+                                                /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ false,
+                                                /* UnaffiliatedChangesAreYoungNeutral */ false>();
+          break;
+        case ShenandoahFreeSetPartitionId::NotFree:
+        default:
+          assert(false, "won't happen");
+      }
     }
   }
 
