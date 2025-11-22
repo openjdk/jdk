@@ -177,15 +177,12 @@ HeapWord* ShenandoahAllocator::attempt_allocation_in_alloc_regions(ShenandoahAll
                                                                    bool &in_new_region,
                                                                    uint const alloc_start_index,
                                                                    uint &regions_ready_for_refresh) {
-  assert(regions_ready_for_refresh == 0u && in_new_region == false, "Sanity check");
-  HeapWord *obj = nullptr;
-  uint i = 0u;
-  while (i < _alloc_region_count) {
-    uint idx = (alloc_start_index + i) % _alloc_region_count;
-    ShenandoahHeapRegion* r =  nullptr;
-    if ((r = AtomicAccess::load_acquire(&_alloc_regions[idx].address)) != nullptr && r->is_active_alloc_region()) {
+  assert(regions_ready_for_refresh == 0u && in_new_region == false && alloc_start_index < _alloc_region_count, "Sanity check");
+  uint i = alloc_start_index;
+  do {
+    if (ShenandoahHeapRegion* r =  nullptr; (r = _alloc_regions[i].address) != nullptr && r->is_active_alloc_region()) {
       bool ready_for_retire = false;
-      obj = atomic_allocate_in(r, true, req, in_new_region, ready_for_retire);
+      HeapWord* obj = atomic_allocate_in(r, true, req, in_new_region, ready_for_retire);
       if (ready_for_retire) {
         regions_ready_for_refresh++;
       }
@@ -195,8 +192,11 @@ HeapWord* ShenandoahAllocator::attempt_allocation_in_alloc_regions(ShenandoahAll
     } else if (r == nullptr) {
       regions_ready_for_refresh++;
     }
-    i++;
-  }
+    if (++i == _alloc_region_count) {
+      i = 0u;
+    }
+  } while (i != alloc_start_index);
+
   return nullptr;
 }
 
