@@ -39,8 +39,8 @@ class ShenandoahAllocRequest;
 class ShenandoahAllocator : public CHeapObj<mtGC> {
 protected:
   struct ShenandoahAllocRegion {
-    ShenandoahHeapRegion* volatile _address;
-    int                            _alloc_region_index;
+    ShenandoahHeapRegion* volatile  address;
+    int                             alloc_region_index;
   };
 
   PaddedEnd<ShenandoahAllocRegion>* _alloc_regions;
