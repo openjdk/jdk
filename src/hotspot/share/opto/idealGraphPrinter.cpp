@@ -1123,6 +1123,9 @@ void IdealGraphPrinter::print(const char* name, Node* node, GrowableArray<const 
       if (lrg._copy_bias != 0) {
         print_prop("copy_bias", lrg._copy_bias);
       }
+      if (lrg._copy_bias2 != 0) {
+        print_prop("copy_bias2", lrg._copy_bias2);
+      }
       if (lrg.is_singledef()) {
         print_prop("is_singledef", TRUE_VALUE);
       }
