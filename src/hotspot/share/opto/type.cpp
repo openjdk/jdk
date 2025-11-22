@@ -26,15 +26,11 @@
 #include "ci/ciTypeFlow.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/vmSymbols.hpp"
 #include "compiler/compileLog.hpp"
+#include "jni_md.h"
 #include "libadt/dict.hpp"
-#include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/instanceKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
-#include "oops/objArrayKlass.hpp"
-#include "oops/typeArrayKlass.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/matcher.hpp"
@@ -45,8 +41,10 @@
 #include "opto/type.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/checkedCast.hpp"
-#include "utilities/powerOfTwo.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/stringUtils.hpp"
+
+#include <type_traits>
 
 // Portions of code courtesy of Clifford Click
 
@@ -1916,6 +1914,12 @@ const Type* TypeLong::make_or_top(const TypeIntPrototype<jlong, julong>& t, int 
 
 const TypeLong* TypeLong::make(jlong con) {
   julong ucon = con;
+  return (new TypeLong(TypeIntPrototype<jlong, julong>{{con, con}, {ucon, ucon}, {~ucon, ucon}},
+                       WidenMin, false))->hashcons()->is_long();
+}
+
+const TypeLong* TypeLong::make_unsigned(julong ucon) {
+  jlong con = ucon;
   return (new TypeLong(TypeIntPrototype<jlong, julong>{{con, con}, {ucon, ucon}, {~ucon, ucon}},
                        WidenMin, false))->hashcons()->is_long();
 }

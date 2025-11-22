@@ -35,6 +35,7 @@
 #include "opto/type.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
+
 #include <cstdint>
 #include <type_traits>
 
@@ -605,7 +606,6 @@ const Type* MulHiLNode::Value(PhaseGVN* phase) const {
   if (t1 == Type::TOP || t2 == Type::TOP) {
     return Type::TOP;
   }
-
   // Either input is ZERO, the result always ZERO
   if (t1 == TypeLong::ZERO || t2 == TypeLong::ZERO) {
     return TypeLong::ZERO;
@@ -614,13 +614,13 @@ const Type* MulHiLNode::Value(PhaseGVN* phase) const {
   const TypeLong* longType1 = t1->is_long();
   const TypeLong* longType2 = t2->is_long();
 
-  // Both are constant, directly computed the result
+  // Both are constant, directly compute the result.
   if (longType1->is_con() && longType2->is_con()) {
     jlong highResult = multiply_high_signed(longType1->get_con(), longType2->get_con());
     return TypeLong::make(highResult);
   }
 
-  // If the 64-bit product cannot overflow and its sign is known, the result is constant.
+  // If the 64-bit result cannot overflow and its sign is known, the result is constant.
   const IntegerTypeMultiplication<jlong> multiplication(longType1, longType2);
   if (!multiplication.does_overflow()) {
     const TypeLong* result = multiplication.compute()->is_long();
@@ -643,7 +643,6 @@ const Type* UMulHiLNode::Value(PhaseGVN* phase) const {
   if (t1 == Type::TOP || t2 == Type::TOP) {
     return Type::TOP;
   }
-
   // Either input is ZERO, the result always ZERO
   if (t1 == TypeLong::ZERO || t2 == TypeLong::ZERO) {
     return TypeLong::ZERO;
@@ -651,16 +650,15 @@ const Type* UMulHiLNode::Value(PhaseGVN* phase) const {
 
   const TypeLong* longType1 = t1->is_long();
   const TypeLong* longType2 = t2->is_long();
-  const int widen = MIN2(longType1->_widen, longType2->_widen);
 
-  // Both are constant, directly computed the result
+  // Both are constant, directly compute the result.
   if (longType1->is_con() && longType2->is_con()) {
     julong highResult = multiply_high_unsigned(longType1->get_con(), longType2->get_con());
-    TypeIntPrototype<jlong, julong> proto{{min_jlong, max_jlong}, {highResult, highResult}, {0, 0}};
-    return TypeLong::make_or_top(proto, widen);
+    return TypeLong::make_unsigned(highResult);
   }
 
-  // If both operands are within the unsigned 32-bit range, the upper 64 bits of the 128-bit product are always zero.
+  // Range-based fold: if both inputs fit in 32-bit unsigned, high word is guaranteed zero.
+  // If both inputs are within the unsigned 32-bit range, the upper 64 bits of the 128-bit result are always zero.
   if (longType1->_uhi <= max_juint && longType2->_uhi <= max_juint) {
     return TypeLong::ZERO;
   }
