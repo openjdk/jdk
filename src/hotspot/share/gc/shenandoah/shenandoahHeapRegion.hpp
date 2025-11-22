@@ -490,18 +490,15 @@ public:
     const uint current_age = age();
     assert(current_age <= markWord::max_age, "Error");
     if (current_age < markWord::max_age) {
-      const uint old = AtomicAccess::cmpxchg(&_age, current_age, current_age + 1);
+      const uint old = AtomicAccess::cmpxchg(&_age, current_age, current_age + 1, memory_order_relaxed);
       assert(old == current_age || old == 0u, "Only fail when any mutator reset the age.");
     }
   }
 
   void reset_age() {
     uint current = age();
-    uint old;
-    while ((old = current) != 0u &&
-           (current = AtomicAccess::cmpxchg(&_age, old, 0u)) != old &&
-           current != 0u) { }
-    if (current != 0u) {
+    if (current != 0) {
+      AtomicAccess::store(&_age, uint(0));
       CENSUS_NOISE(AtomicAccess::add(&_youth, current, memory_order_relaxed);)
     }
   }
