@@ -113,17 +113,9 @@ ResolutionErrorEntry::~ResolutionErrorEntry() {
   Symbol::maybe_decrement_refcount(_error);
   Symbol::maybe_decrement_refcount(_cause);
 
-  if (_message != nullptr) {
-    FREE_C_HEAP_ARRAY(char, _message);
-  }
-
-  if (_cause_msg != nullptr) {
-    FREE_C_HEAP_ARRAY(char, _cause_msg);
-  }
-
-  if (nest_host_error() != nullptr) {
-    FREE_C_HEAP_ARRAY(char, nest_host_error());
-  }
+  FREE_C_HEAP_ARRAY(char, _message);
+  FREE_C_HEAP_ARRAY(char, _cause_msg);
+  FREE_C_HEAP_ARRAY(char, _nest_host_error);
 }
 
 class ResolutionErrorDeleteIterate : StackObj {
