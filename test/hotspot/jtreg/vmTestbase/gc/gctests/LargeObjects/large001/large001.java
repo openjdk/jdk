@@ -172,12 +172,6 @@ public class large001 extends ThreadedGCTest {
                     log.debug(id + ": Result of uloading "
                             + "class " + name + ": " + result);
                 }
-            } catch (OutOfMemoryError oome) {
-                // just skip if we eat memory in several threads...
-                // rethrow in the case of one thread
-                if (runParams.getNumberOfThreads() == 1) {
-                    throw oome;
-                }
             } catch (Throwable t) {
                 throw new TestFailure("Unexpected exception: ", t);
             }
