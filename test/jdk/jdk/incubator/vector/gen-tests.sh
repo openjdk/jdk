@@ -55,7 +55,7 @@ Log true "done\n"
 #  - type : refers to vector primitive lane type or carrier type.
 #  - Type : refers to vector box lane type.
 # For each type
-for type in byte short int long float double halffloat
+for type in byte short int long float double float16
 do
   Type="$(tr '[:lower:]' '[:upper:]' <<< ${type:0:1})${type:1}"
   TYPE="$(tr '[:lower:]' '[:upper:]' <<< ${type})"
@@ -122,7 +122,7 @@ do
       MaxValue=POSITIVE_INFINITY
       MinValue=NEGATIVE_INFINITY
       ;;
-    halffloat)
+    float16)
       kind=FP
       fpkind=FP16
       bitstype=short
@@ -152,12 +152,12 @@ do
 
   for bits in 64 128 256 512 Max
   do
-    vectortype=${typeprefix}${VectorPrefix}${bits}Vector
-    vectorteststype=${typeprefix}${VectorPrefix}${bits}VectorTests
-    vectorbenchtype=${typeprefix}${VectorPrefix}${bits}Vector
-    masktype=${typeprefix}${Type}${bits}Mask
-    bitsvectortype=${typeprefix}${Bitstype}${bits}Vector
-    fpvectortype=${typeprefix}${Fptype}${bits}Vector
+    vectortype=${typeprefix}${VectorPrefix}$Vector{bits}
+    vectorteststype=${typeprefix}${VectorPrefix}Vector${bits}Tests
+    vectorbenchtype=${typeprefix}${VectorPrefix}Vector${bits}
+    masktype=${typeprefix}${Type}$Mask{bits}
+    bitsvectortype=${typeprefix}${Bitstype}Vector${bits}
+    fpvectortype=${typeprefix}${Fptype}Vector${bits}
     shape=S${bits}Bit
     Shape=S_${bits}_BIT
     if [[ "${vectortype}" == "ByteMaxVector" ]]; then
@@ -227,12 +227,12 @@ do
   # For each size
   for bits in 64 128 256 512 Max
   do
-    vectortype=${typeprefix}${VectorPrefix}${bits}Vector
-    vectorteststype=${typeprefix}${VectorPrefix}${bits}VectorLoadStoreTests
-    vectorbenchtype=${typeprefix}${VectorPrefix}${bits}VectorLoadStore
-    masktype=${typeprefix}${Type}${bits}Mask
-    bitsvectortype=${typeprefix}${Bitstype}${bits}Vector
-    fpvectortype=${typeprefix}${Fptype}${bits}Vector
+    vectortype=${typeprefix}${VectorPrefix}Vector${bits}
+    vectorteststype=${typeprefix}${VectorPrefix}Vector${bits}LoadStoreTests
+    vectorbenchtype=${typeprefix}${VectorPrefix}Vector${bits}LoadStore
+    masktype=${typeprefix}${Type}Mask${bits}
+    bitsvectortype=${typeprefix}${Bitstype}Vector${bits}
+    fpvectortype=${typeprefix}${Fptype}Vector${bits}
     shape=S${bits}Bit
     Shape=S_${bits}_BIT
     if [[ "${vectortype}" == "ByteMaxVector" ]]; then

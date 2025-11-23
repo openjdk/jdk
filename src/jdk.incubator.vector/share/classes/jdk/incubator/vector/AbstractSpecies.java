@@ -304,10 +304,11 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
     abstract Vector<E> fromIntValues(int[] values);
 
     /*package-private*/
-    abstract Class<?> carrierType();
+    abstract int laneBasicType();
 
     /*package-private*/
-    abstract int operType();
+    abstract Class<?> carrierType();
+
 
     /**
      * Do not use a dummy except to call methods on it when you don't
@@ -643,8 +644,8 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
             s = IntVector.species(shape); break;
         case LaneType.SK_LONG:
             s = LongVector.species(shape); break;
-        case LaneType.SK_HALFFLOAT:
-            s = HalffloatVector.species(shape); break;
+        case LaneType.SK_FLOAT16:
+            s = Float16Vector.species(shape); break;
         }
         if (s == null) {
             // NOTE: The result of this method is guaranteed to be
@@ -657,9 +658,9 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
             // bootstrapping.
             throw new AssertionError("bootstrap problem");
         }
-        // FIXME: Remove the additional check for Halffloat laneTypes from following assertion after proper fix.
-        // Currently the incoming laneType does not comply with the laneType of Halffloat species.
-        assert(s.laneType == laneType) || laneType.switchKey == LaneType.SK_HALFFLOAT : s + "!=" + laneType;
+        // FIXME: Remove the additional check for Float16 laneTypes from following assertion after proper fix.
+        // Currently the incoming laneType does not comply with the laneType of Float16 species.
+        assert(s.laneType == laneType) || laneType.switchKey == LaneType.SK_FLOAT16 : s + "!=" + laneType;
         assert(s.vectorShape == shape) : s + "!=" + shape;
         CACHES[laneType.switchKey][shape.switchKey] = s;
         return s;

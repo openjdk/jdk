@@ -73,7 +73,7 @@ abstract class AbstractMask<E> extends VectorMask<E> {
         int laneCount = vsp.laneCount();
         i = VectorIntrinsics.checkFromIndexSize(i, laneCount, bits.length);
         VectorSupport.store(
-            vsp.maskType(), vsp.carrierType(), vsp.operType(), laneCount,
+            vsp.maskType(), vsp.laneBasicType(), laneCount,
             bits, (long) i + Unsafe.ARRAY_BOOLEAN_BASE_OFFSET, false,
             this, bits, i,
             (c, idx, s) -> System.arraycopy(s.getBits(), 0, c, (int)idx, s.length()));

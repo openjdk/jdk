@@ -199,429 +199,433 @@ bool VectorSupport::is_unsigned_op(jint id) {
   }
 }
 
-int VectorSupport::vop2ideal(jint id, BasicType bt, int operType) {
+const char* VectorSupport::lanetype2name(int lane_type) {
+  switch(lane_type) {
+    case VECTOR_LANE_TYPE_BYTE:
+      return "BYTE";
+    case VECTOR_LANE_TYPE_SHORT:
+      return "SHORT";
+    case VECTOR_LANE_TYPE_INT:
+      return "INT";
+    case VECTOR_LANE_TYPE_LONG:
+      return "LONG";
+    case VECTOR_LANE_TYPE_FLOAT16:
+      return "FLOAT16";
+    case VECTOR_LANE_TYPE_FLOAT:
+      return "FLOAT";
+    case VECTOR_LANE_TYPE_DOUBLE:
+      return "DOUBLE";
+    default:
+      fatal("Unexpected lane type");
+  }
+}
+
+int VectorSupport::vop2ideal(jint id, int lane_type) {
   VectorOperation vop = (VectorOperation)id;
   switch (vop) {
     case VECTOR_OP_ADD: {
-      switch (bt) {
-        case T_BYTE:   // fall-through
-        case T_SHORT:
-          if (operType == VECTOR_TYPE_FP16) {
-            return Op_AddHF;
-          }
-          // fall-through
-        case T_INT:    return Op_AddI;
-        case T_LONG:   return Op_AddL;
-        case T_FLOAT:  return Op_AddF;
-        case T_DOUBLE: return Op_AddD;
-        default: fatal("ADD: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_BYTE:     // fall-through
+        case VECTOR_LANE_TYPE_SHORT:    // fall-through
+        case VECTOR_LANE_TYPE_INT:      return Op_AddI;
+        case VECTOR_LANE_TYPE_LONG:     return Op_AddL;
+        case VECTOR_LANE_TYPE_FLOAT16:  return Op_AddHF;
+        case VECTOR_LANE_TYPE_FLOAT:    return Op_AddF;
+        case VECTOR_LANE_TYPE_DOUBLE:   return Op_AddD;
+        default: fatal("ADD: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_SUB: {
-      switch (bt) {
-        case T_BYTE:   // fall-through
-        case T_SHORT:
-          if (operType == VECTOR_TYPE_FP16) {
-            return Op_SubHF;
-          }
-          // fall-through
-        case T_INT:    return Op_SubI;
-        case T_LONG:   return Op_SubL;
-        case T_FLOAT:  return Op_SubF;
-        case T_DOUBLE: return Op_SubD;
-        default: fatal("SUB: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_BYTE:    // fall-through
+        case VECTOR_LANE_TYPE_SHORT:   // fall-through
+        case VECTOR_LANE_TYPE_INT:     return Op_SubI;
+        case VECTOR_LANE_TYPE_LONG:    return Op_SubL;
+        case VECTOR_LANE_TYPE_FLOAT16: return Op_SubHF;
+        case VECTOR_LANE_TYPE_FLOAT:   return Op_SubF;
+        case VECTOR_LANE_TYPE_DOUBLE:  return Op_SubD;
+        default: fatal("SUB: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_MUL: {
-      switch (bt) {
-        case T_BYTE:   // fall-through
-        case T_SHORT:
-          if (operType == VECTOR_TYPE_FP16) {
-            return Op_MulHF;
-          }
-          // fall-through
-        case T_INT:    return Op_MulI;
-        case T_LONG:   return Op_MulL;
-        case T_FLOAT:  return Op_MulF;
-        case T_DOUBLE: return Op_MulD;
-        default: fatal("MUL: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_BYTE:   // fall-through
+        case VECTOR_LANE_TYPE_SHORT:  // fall-through
+        case VECTOR_LANE_TYPE_INT:    return Op_MulI;
+        case VECTOR_LANE_TYPE_LONG:   return Op_MulL;
+        case VECTOR_LANE_TYPE_FLOAT16: return Op_MulHF;
+        case VECTOR_LANE_TYPE_FLOAT:  return Op_MulF;
+        case VECTOR_LANE_TYPE_DOUBLE: return Op_MulD;
+        default: fatal("MUL: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_DIV: {
-      switch (bt) {
-        case T_BYTE:   // fall-through
-        case T_SHORT:
-          if (operType == VECTOR_TYPE_FP16) {
-            return Op_DivHF;
-          }
-          // fall-through
-        case T_INT:    return Op_DivI;
-        case T_LONG:   return Op_DivL;
-        case T_FLOAT:  return Op_DivF;
-        case T_DOUBLE: return Op_DivD;
-        default: fatal("DIV: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_BYTE:    // fall-through
+        case VECTOR_LANE_TYPE_SHORT:   // fall-through
+        case VECTOR_LANE_TYPE_INT:     return Op_DivI;
+        case VECTOR_LANE_TYPE_LONG:    return Op_DivL;
+        case VECTOR_LANE_TYPE_FLOAT16: return Op_DivHF;
+        case VECTOR_LANE_TYPE_FLOAT:   return Op_DivF;
+        case VECTOR_LANE_TYPE_DOUBLE:  return Op_DivD;
+        default: fatal("DIV: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_MIN: {
-      switch (bt) {
-        case T_BYTE:
-        case T_SHORT:
-          if (operType == VECTOR_TYPE_FP16) {
-            return Op_MinHF;
-          }
-          // fall-through
-        case T_INT:    return Op_MinI;
-        case T_LONG:   return Op_MinL;
-        case T_FLOAT:  return Op_MinF;
-        case T_DOUBLE: return Op_MinD;
-        default: fatal("MIN: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_BYTE:    // fall-through
+        case VECTOR_LANE_TYPE_SHORT:   // fall-through
+        case VECTOR_LANE_TYPE_INT:     return Op_MinI;
+        case VECTOR_LANE_TYPE_LONG:    return Op_MinL;
+        case VECTOR_LANE_TYPE_FLOAT16: return Op_MinHF;
+        case VECTOR_LANE_TYPE_FLOAT:   return Op_MinF;
+        case VECTOR_LANE_TYPE_DOUBLE:  return Op_MinD;
+        default: fatal("MIN: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_MAX: {
-      switch (bt) {
-        case T_BYTE:
-        case T_SHORT:
-          if (operType == VECTOR_TYPE_FP16) {
-            return Op_MaxHF;
-          }
-          // fall-through
-        case T_INT:    return Op_MaxI;
-        case T_LONG:   return Op_MaxL;
-        case T_FLOAT:  return Op_MaxF;
-        case T_DOUBLE: return Op_MaxD;
-        default: fatal("MAX: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_BYTE:   // fall-through
+        case VECTOR_LANE_TYPE_SHORT:  // fall-through
+        case VECTOR_LANE_TYPE_INT:     return Op_MaxI;
+        case VECTOR_LANE_TYPE_LONG:    return Op_MaxL;
+        case VECTOR_LANE_TYPE_FLOAT16: return Op_MaxHF;
+        case VECTOR_LANE_TYPE_FLOAT:   return Op_MaxF;
+        case VECTOR_LANE_TYPE_DOUBLE:  return Op_MaxD;
+        default: fatal("MAX: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_UMIN: {
-      switch (bt) {
-        case T_BYTE:
-        case T_SHORT:
-        case T_INT:
-        case T_LONG:   return Op_UMinV;
-        default: fatal("MIN: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_BYTE:
+        case VECTOR_LANE_TYPE_SHORT:
+        case VECTOR_LANE_TYPE_INT:
+        case VECTOR_LANE_TYPE_LONG:   return Op_UMinV;
+        default: fatal("MIN: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_UMAX: {
-      switch (bt) {
-        case T_BYTE:
-        case T_SHORT:
-        case T_INT:
-        case T_LONG:   return Op_UMaxV;
-        default: fatal("MAX: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_BYTE:
+        case VECTOR_LANE_TYPE_SHORT:
+        case VECTOR_LANE_TYPE_INT:
+        case VECTOR_LANE_TYPE_LONG:   return Op_UMaxV;
+        default: fatal("MAX: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_ABS: {
-      switch (bt) {
-        case T_BYTE:   // fall-through
-        case T_SHORT:  // fall-through
-          if (operType == VECTOR_TYPE_FP16) {
-            return 0;
-          }
-          // fall-through
-        case T_INT:    return Op_AbsI;
-        case T_LONG:   return Op_AbsL;
-        case T_FLOAT:  return Op_AbsF;
-        case T_DOUBLE: return Op_AbsD;
-        default: fatal("ABS: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_BYTE:   // fall-through
+        case VECTOR_LANE_TYPE_SHORT:  // fall-through
+        case VECTOR_LANE_TYPE_INT:     return Op_AbsI;
+        case VECTOR_LANE_TYPE_LONG:    return Op_AbsL;
+        case VECTOR_LANE_TYPE_FLOAT16: return 0;
+        case VECTOR_LANE_TYPE_FLOAT:   return Op_AbsF;
+        case VECTOR_LANE_TYPE_DOUBLE:  return Op_AbsD;
+        default: fatal("ABS: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_NEG: {
-      switch (bt) {
-        case T_BYTE:   // fall-through
-        case T_SHORT:  // fall-through
-          if (operType == VECTOR_TYPE_FP16) {
-            return 0;
-          }
-          // fall-through
-        case T_INT:    return Op_NegI;
-        case T_LONG:   return Op_NegL;
-        case T_FLOAT:  return Op_NegF;
-        case T_DOUBLE: return Op_NegD;
-        default: fatal("NEG: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_BYTE:    // fall-through
+        case VECTOR_LANE_TYPE_SHORT:   // fall-through
+        case VECTOR_LANE_TYPE_INT:     return Op_NegI;
+        case VECTOR_LANE_TYPE_LONG:    return Op_NegL;
+        case VECTOR_LANE_TYPE_FLOAT16: return 0;
+        case VECTOR_LANE_TYPE_FLOAT:   return Op_NegF;
+        case VECTOR_LANE_TYPE_DOUBLE:  return Op_NegD;
+        default: fatal("NEG: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_AND: {
-      switch (bt) {
-        case T_BYTE:   // fall-through
-        case T_SHORT:  // fall-through
-        case T_INT:    return Op_AndI;
-        case T_LONG:   return Op_AndL;
-        default: fatal("AND: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_BYTE:   // fall-through
+        case VECTOR_LANE_TYPE_SHORT:  // fall-through
+        case VECTOR_LANE_TYPE_INT:    return Op_AndI;
+        case VECTOR_LANE_TYPE_LONG:   return Op_AndL;
+        default: fatal("AND: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_OR: {
-      switch (bt) {
-        case T_BYTE:   // fall-through
-        case T_SHORT:  // fall-through
-        case T_INT:    return Op_OrI;
-        case T_LONG:   return Op_OrL;
-        default: fatal("OR: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_BYTE:   // fall-through
+        case VECTOR_LANE_TYPE_SHORT:  // fall-through
+        case VECTOR_LANE_TYPE_INT:    return Op_OrI;
+        case VECTOR_LANE_TYPE_LONG:   return Op_OrL;
+        default: fatal("OR: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_XOR: {
-      switch (bt) {
-        case T_BYTE:   // fall-through
-        case T_SHORT:  // fall-through
-        case T_INT:    return Op_XorI;
-        case T_LONG:   return Op_XorL;
-        default: fatal("XOR: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_BYTE:   // fall-through
+        case VECTOR_LANE_TYPE_SHORT:  // fall-through
+        case VECTOR_LANE_TYPE_INT:    return Op_XorI;
+        case VECTOR_LANE_TYPE_LONG:   return Op_XorL;
+        default: fatal("XOR: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_SQRT: {
-      switch (bt) {
-        case T_SHORT:  return Op_SqrtHF;
-        case T_FLOAT:  return Op_SqrtF;
-        case T_DOUBLE: return Op_SqrtD;
-        default: fatal("SQRT: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_FLOAT16:  return Op_SqrtHF;
+        case VECTOR_LANE_TYPE_FLOAT:    return Op_SqrtF;
+        case VECTOR_LANE_TYPE_DOUBLE:   return Op_SqrtD;
+        default: fatal("SQRT: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_FMA: {
-      switch (bt) {
-        case T_SHORT:  return Op_FmaHF;
-        case T_FLOAT:  return Op_FmaF;
-        case T_DOUBLE: return Op_FmaD;
-        default: fatal("FMA: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_FLOAT16:  return Op_FmaHF;
+        case VECTOR_LANE_TYPE_FLOAT:    return Op_FmaF;
+        case VECTOR_LANE_TYPE_DOUBLE:   return Op_FmaD;
+        default: fatal("FMA: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_LSHIFT: {
-      switch (bt) {
-        case T_BYTE:   // fall-through
-        case T_SHORT:  // fall-through
-        case T_INT:  return Op_LShiftI;
-        case T_LONG: return Op_LShiftL;
-        default: fatal("LSHIFT: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_BYTE:   // fall-through
+        case VECTOR_LANE_TYPE_SHORT:  // fall-through
+        case VECTOR_LANE_TYPE_INT:  return Op_LShiftI;
+        case VECTOR_LANE_TYPE_LONG: return Op_LShiftL;
+        default: fatal("LSHIFT: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_RSHIFT: {
-      switch (bt) {
-        case T_BYTE:   // fall-through
-        case T_SHORT:  // fall-through
-        case T_INT:  return Op_RShiftI;
-        case T_LONG: return Op_RShiftL;
-        default: fatal("RSHIFT: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_BYTE:   // fall-through
+        case VECTOR_LANE_TYPE_SHORT:  // fall-through
+        case VECTOR_LANE_TYPE_INT:  return Op_RShiftI;
+        case VECTOR_LANE_TYPE_LONG: return Op_RShiftL;
+        default: fatal("RSHIFT: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_URSHIFT: {
-      switch (bt) {
-        case T_BYTE:  return Op_URShiftB;
-        case T_SHORT: return Op_URShiftS;
-        case T_INT:   return Op_URShiftI;
-        case T_LONG:  return Op_URShiftL;
-        default: fatal("URSHIFT: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_BYTE:  return Op_URShiftB;
+        case VECTOR_LANE_TYPE_SHORT: return Op_URShiftS;
+        case VECTOR_LANE_TYPE_INT:   return Op_URShiftI;
+        case VECTOR_LANE_TYPE_LONG:  return Op_URShiftL;
+        default: fatal("URSHIFT: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_LROTATE: {
-      switch (bt) {
-        case T_BYTE:   // fall-through
-        case T_SHORT:  // fall-through
-        case T_INT:    // fall-through
-        case T_LONG:  return Op_RotateLeft;
-        default: fatal("LROTATE: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_BYTE:   // fall-through
+        case VECTOR_LANE_TYPE_SHORT:  // fall-through
+        case VECTOR_LANE_TYPE_INT:    // fall-through
+        case VECTOR_LANE_TYPE_LONG:  return Op_RotateLeft;
+        default: fatal("LROTATE: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_RROTATE: {
-      switch (bt) {
-        case T_BYTE:   // fall-through
-        case T_SHORT:  // fall-through
-        case T_INT:    // fall-through
-        case T_LONG:  return Op_RotateRight;
-        default: fatal("RROTATE: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_BYTE:   // fall-through
+        case VECTOR_LANE_TYPE_SHORT:  // fall-through
+        case VECTOR_LANE_TYPE_INT:    // fall-through
+        case VECTOR_LANE_TYPE_LONG:  return Op_RotateRight;
+        default: fatal("RROTATE: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_MASK_LASTTRUE: {
-      switch (bt) {
-        case T_BYTE:  // fall-through
-        case T_SHORT: // fall-through
-        case T_INT:   // fall-through
-        case T_LONG:  // fall-through
-        case T_FLOAT: // fall-through
-        case T_DOUBLE: return Op_VectorMaskLastTrue;
-        default: fatal("MASK_LASTTRUE: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_BYTE:  // fall-through
+        case VECTOR_LANE_TYPE_SHORT: // fall-through
+        case VECTOR_LANE_TYPE_INT:   // fall-through
+        case VECTOR_LANE_TYPE_LONG:  // fall-through
+        case VECTOR_LANE_TYPE_FLOAT16: // fall-through
+        case VECTOR_LANE_TYPE_FLOAT: // fall-through
+        case VECTOR_LANE_TYPE_DOUBLE: return Op_VectorMaskLastTrue;
+        default: fatal("MASK_LASTTRUE: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_MASK_FIRSTTRUE: {
-      switch (bt) {
-        case T_BYTE:  // fall-through
-        case T_SHORT: // fall-through
-        case T_INT:   // fall-through
-        case T_LONG:  // fall-through
-        case T_FLOAT: // fall-through
-        case T_DOUBLE: return Op_VectorMaskFirstTrue;
-        default: fatal("MASK_FIRSTTRUE: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_BYTE:  // fall-through
+        case VECTOR_LANE_TYPE_SHORT: // fall-through
+        case VECTOR_LANE_TYPE_INT:   // fall-through
+        case VECTOR_LANE_TYPE_LONG:  // fall-through
+        case VECTOR_LANE_TYPE_FLOAT16: // fall-through
+        case VECTOR_LANE_TYPE_FLOAT: // fall-through
+        case VECTOR_LANE_TYPE_DOUBLE: return Op_VectorMaskFirstTrue;
+        default: fatal("MASK_FIRSTTRUE: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_MASK_TRUECOUNT: {
-      switch (bt) {
-        case T_BYTE:  // fall-through
-        case T_SHORT: // fall-through
-        case T_INT:   // fall-through
-        case T_LONG:  // fall-through
-        case T_FLOAT: // fall-through
-        case T_DOUBLE: return Op_VectorMaskTrueCount;
-        default: fatal("MASK_TRUECOUNT: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_BYTE:  // fall-through
+        case VECTOR_LANE_TYPE_SHORT: // fall-through
+        case VECTOR_LANE_TYPE_INT:   // fall-through
+        case VECTOR_LANE_TYPE_LONG:  // fall-through
+        case VECTOR_LANE_TYPE_FLOAT16: // fall-through
+        case VECTOR_LANE_TYPE_FLOAT: // fall-through
+        case VECTOR_LANE_TYPE_DOUBLE: return Op_VectorMaskTrueCount;
+        default: fatal("MASK_TRUECOUNT: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_MASK_TOLONG: {
-      switch (bt) {
-        case T_BYTE:  // fall-through
-        case T_SHORT: // fall-through
-        case T_INT:   // fall-through
-        case T_LONG:  // fall-through
-        case T_FLOAT: // fall-through
-        case T_DOUBLE: return Op_VectorMaskToLong;
-        default: fatal("MASK_TOLONG: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_BYTE:  // fall-through
+        case VECTOR_LANE_TYPE_SHORT: // fall-through
+        case VECTOR_LANE_TYPE_INT:   // fall-through
+        case VECTOR_LANE_TYPE_LONG:  // fall-through
+        case VECTOR_LANE_TYPE_FLOAT16: // fall-through
+        case VECTOR_LANE_TYPE_FLOAT: // fall-through
+        case VECTOR_LANE_TYPE_DOUBLE: return Op_VectorMaskToLong;
+        default: fatal("MASK_TOLONG: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_EXPAND: {
-      switch (bt) {
-        case T_BYTE:  // fall-through
-        case T_SHORT: // fall-through
-        case T_INT:   // fall-through
-        case T_LONG:  // fall-through
-        case T_FLOAT: // fall-through
-        case T_DOUBLE: return Op_ExpandV;
-        default: fatal("EXPAND: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_BYTE:  // fall-through
+        case VECTOR_LANE_TYPE_SHORT: // fall-through
+        case VECTOR_LANE_TYPE_INT:   // fall-through
+        case VECTOR_LANE_TYPE_LONG:  // fall-through
+        case VECTOR_LANE_TYPE_FLOAT16: // fall-through
+        case VECTOR_LANE_TYPE_FLOAT: // fall-through
+        case VECTOR_LANE_TYPE_DOUBLE: return Op_ExpandV;
+        default: fatal("EXPAND: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_COMPRESS: {
-      switch (bt) {
-        case T_BYTE:  // fall-through
-        case T_SHORT: // fall-through
-        case T_INT:   // fall-through
-        case T_LONG:  // fall-through
-        case T_FLOAT: // fall-through
-        case T_DOUBLE: return Op_CompressV;
-        default: fatal("COMPRESS: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_BYTE:  // fall-through
+        case VECTOR_LANE_TYPE_SHORT: // fall-through
+        case VECTOR_LANE_TYPE_INT:   // fall-through
+        case VECTOR_LANE_TYPE_LONG:  // fall-through
+        case VECTOR_LANE_TYPE_FLOAT16: // fall-through
+        case VECTOR_LANE_TYPE_FLOAT: // fall-through
+        case VECTOR_LANE_TYPE_DOUBLE: return Op_CompressV;
+        default: fatal("COMPRESS: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_MASK_COMPRESS: {
-      switch (bt) {
-        case T_BYTE:  // fall-through
-        case T_SHORT: // fall-through
-        case T_INT:   // fall-through
-        case T_LONG:  // fall-through
-        case T_FLOAT: // fall-through
-        case T_DOUBLE: return Op_CompressM;
-        default: fatal("MASK_COMPRESS: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_BYTE:  // fall-through
+        case VECTOR_LANE_TYPE_SHORT: // fall-through
+        case VECTOR_LANE_TYPE_INT:   // fall-through
+        case VECTOR_LANE_TYPE_LONG:  // fall-through
+        case VECTOR_LANE_TYPE_FLOAT16: // fall-through
+        case VECTOR_LANE_TYPE_FLOAT: // fall-through
+        case VECTOR_LANE_TYPE_DOUBLE: return Op_CompressM;
+        default: fatal("MASK_COMPRESS: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_BIT_COUNT: {
-      switch (bt) {
-        case T_BYTE:  // Returning Op_PopCountI
-        case T_SHORT: // for byte and short types temporarily
-        case T_INT:   return Op_PopCountI;
-        case T_LONG:  return Op_PopCountL;
-        default: fatal("BIT_COUNT: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_BYTE:  // Returning Op_PopCountI
+        case VECTOR_LANE_TYPE_SHORT: // for byte and short types temporarily
+        case VECTOR_LANE_TYPE_INT:   return Op_PopCountI;
+        case VECTOR_LANE_TYPE_LONG:  return Op_PopCountL;
+        default: fatal("BIVECTOR_LANE_TYPE_COUNT: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_TZ_COUNT: {
-      switch (bt) {
-        case T_BYTE:
-        case T_SHORT:
-        case T_INT:   return Op_CountTrailingZerosI;
-        case T_LONG:  return Op_CountTrailingZerosL;
-        default: fatal("TZ_COUNT: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_BYTE:
+        case VECTOR_LANE_TYPE_SHORT:
+        case VECTOR_LANE_TYPE_INT:   return Op_CountTrailingZerosI;
+        case VECTOR_LANE_TYPE_LONG:  return Op_CountTrailingZerosL;
+        default: fatal("TZ_COUNT: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_LZ_COUNT: {
-      switch (bt) {
-        case T_BYTE:
-        case T_SHORT:
-        case T_INT:   return Op_CountLeadingZerosI;
-        case T_LONG:  return Op_CountLeadingZerosL;
-        default: fatal("LZ_COUNT: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_BYTE:
+        case VECTOR_LANE_TYPE_SHORT:
+        case VECTOR_LANE_TYPE_INT:   return Op_CountLeadingZerosI;
+        case VECTOR_LANE_TYPE_LONG:  return Op_CountLeadingZerosL;
+        default: fatal("LZ_COUNT: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_REVERSE: {
-      switch (bt) {
-        case T_BYTE:  // Temporarily returning
-        case T_SHORT: // Op_ReverseI for byte and short
-        case T_INT:   return Op_ReverseI;
-        case T_LONG:  return Op_ReverseL;
-        default: fatal("REVERSE: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_BYTE:  // Temporarily returning
+        case VECTOR_LANE_TYPE_SHORT: // Op_ReverseI for byte and short
+        case VECTOR_LANE_TYPE_INT:   return Op_ReverseI;
+        case VECTOR_LANE_TYPE_LONG:  return Op_ReverseL;
+        default: fatal("REVERSE: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_REVERSE_BYTES: {
-      switch (bt) {
-        case T_SHORT: return Op_ReverseBytesS;
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_SHORT: return Op_ReverseBytesS;
         // Superword requires type consistency between the ReverseBytes*
         // node and the data. But there's no ReverseBytesB node because
-        // no reverseBytes() method in Java Byte class. T_BYTE can only
+        // no reverseBytes() method in Java Byte class. VECTOR_LANE_TYPE_BYTE can only
         // appear in VectorAPI calls. We reuse Op_ReverseBytesI for this
         // to ensure vector intrinsification succeeds.
-        case T_BYTE:  // Intentionally fall-through
-        case T_INT:   return Op_ReverseBytesI;
-        case T_LONG:  return Op_ReverseBytesL;
-        default: fatal("REVERSE_BYTES: %s", type2name(bt));
+        case VECTOR_LANE_TYPE_BYTE:  // Intentionally fall-through
+        case VECTOR_LANE_TYPE_INT:   return Op_ReverseBytesI;
+        case VECTOR_LANE_TYPE_LONG:  return Op_ReverseBytesL;
+        default: fatal("REVERSE_BYTES: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_SADD:
     case VECTOR_OP_SUADD: {
-      switch(bt) {
-        case T_BYTE:   // fall-through
-        case T_SHORT:  // fall-through
-        case T_INT:    // fall-through
-        case T_LONG:   return Op_SaturatingAddV;
-        default: fatal("S[U]ADD: %s", type2name(bt));
+      switch(lane_type) {
+        case VECTOR_LANE_TYPE_BYTE:   // fall-through
+        case VECTOR_LANE_TYPE_SHORT:  // fall-through
+        case VECTOR_LANE_TYPE_INT:    // fall-through
+        case VECTOR_LANE_TYPE_LONG:   return Op_SaturatingAddV;
+        default: fatal("S[U]ADD: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_SSUB:
     case VECTOR_OP_SUSUB: {
-      switch(bt) {
-        case T_BYTE:   // fall-through
-        case T_SHORT:  // fall-through
-        case T_INT:    // fall-through
-        case T_LONG:   return Op_SaturatingSubV;
-        default: fatal("S[U}SUB: %s", type2name(bt));
+      switch(lane_type) {
+        case VECTOR_LANE_TYPE_BYTE:   // fall-through
+        case VECTOR_LANE_TYPE_SHORT:  // fall-through
+        case VECTOR_LANE_TYPE_INT:    // fall-through
+        case VECTOR_LANE_TYPE_LONG:   return Op_SaturatingSubV;
+        default: fatal("S[U}SUB: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_COMPRESS_BITS: {
-      switch (bt) {
-        case T_INT:
-        case T_LONG: return Op_CompressBits;
-        default: fatal("COMPRESS_BITS: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_INT:
+        case VECTOR_LANE_TYPE_LONG: return Op_CompressBits;
+        default: fatal("COMPRESS_BITS: %s", lanetype2name(lane_type));
       }
       break;
     }
     case VECTOR_OP_EXPAND_BITS: {
-      switch (bt) {
-        case T_INT:
-        case T_LONG: return Op_ExpandBits;
-        default: fatal("EXPAND_BITS: %s", type2name(bt));
+      switch (lane_type) {
+        case VECTOR_LANE_TYPE_INT:
+        case VECTOR_LANE_TYPE_LONG: return Op_ExpandBits;
+        default: fatal("EXPAND_BITS: %s", lanetype2name(lane_type));
       }
       break;
     }

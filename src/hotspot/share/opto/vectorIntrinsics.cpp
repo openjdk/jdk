@@ -69,18 +69,6 @@ static bool check_vbox(const TypeInstPtr* vbox_type) {
 #define non_product_log_if_needed(...)
 #endif
 
-static const char* get_opertype_string(int operType) {
-  switch(operType) {
-    case VectorSupport::VECTOR_TYPE_PRIM:
-      return "VECTOR_TYPE_PRIM";
-    case VectorSupport::VECTOR_TYPE_FP16:
-      return "VECTOR_TYPE_FP16";
-    default:
-      ShouldNotReachHere();
-      return nullptr;
-  }
-}
-
 static bool is_vector_mask(ciKlass* klass) {
   return klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
 }
@@ -299,12 +287,33 @@ static bool is_klass_initialized(const TypeInstPtr* vec_klass) {
   return klass->is_initialized();
 }
 
+static bool is_valid_lane_type(int laneType) {
+  return laneType >= VectorSupport::VECTOR_LANE_TYPE_FLOAT && laneType <= VectorSupport::VECTOR_LANE_TYPE_LONG;
+}
+
+static bool is_primitive_lane_type(int laneType) {
+  return laneType >= T_BOOLEAN && laneType <= T_LONG;
+}
+
+static BasicType get_vector_lane_type(int lane_type) {
+  switch (lane_type) {
+    case VectorSupport::VECTOR_LANE_TYPE_BYTE:    return T_BYTE;
+    case VectorSupport::VECTOR_LANE_TYPE_SHORT:   return T_SHORT;
+    case VectorSupport::VECTOR_LANE_TYPE_INT:     return T_INT;
+    case VectorSupport::VECTOR_LANE_TYPE_LONG:    return T_LONG;
+    case VectorSupport::VECTOR_LANE_TYPE_FLOAT16: return T_SHORT;
+    case VectorSupport::VECTOR_LANE_TYPE_FLOAT:   return T_FLOAT;
+    case VectorSupport::VECTOR_LANE_TYPE_DOUBLE:  return T_DOUBLE;
+    default: ShouldNotReachHere(); return T_ILLEGAL;
+  }
+}
+
 //
 //  <V extends Vector<E>,
 //   M extends VectorMask<E>,
 //   E>
 //  V unaryOp(int oprId,
-//            Class<? extends V> vClass, Class<? extends M> mClass, Class<?> cClass, int operType,
+//            Class<? extends V> vClass, Class<? extends M> mClass, int laneType,
 //            int length,
 //            V v, M m,
 //            UnaryOperation<V, M> defaultImpl) {
@@ -313,7 +322,7 @@ static bool is_klass_initialized(const TypeInstPtr* vec_klass) {
 //   M extends VectorMask<E>,
 //   E>
 //  VM binaryOp(int oprId,
-//              Class<? extends VM> vmClass, Class<? extends M> mClass, Class<?> cClass, int operType,
+//              Class<? extends VM> vmClass, Class<? extends M> mClass, int laneType,
 //              int length,
 //              VM v1, VM v2, M m,
 //              BinaryOperation<VM, M> defaultImpl) {
@@ -323,7 +332,7 @@ static bool is_klass_initialized(const TypeInstPtr* vec_klass) {
 //   M extends VectorMask<E>,
 //   E>
 //  V ternaryOp(int oprId,
-//              Class<? extends V> vClass, Class<? extends M> mClass, Class<?> cClass, int operType,
+//              Class<? extends V> vClass, Class<? extends M> mClass, int laneType,
 //              int length,
 //              V v1, V v2, V v3, M m,
 //              TernaryOperation<V, M> defaultImpl) {
@@ -333,29 +342,22 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
   const TypeInt*     opr          = gvn().type(argument(0))->isa_int();
   const TypeInstPtr* vector_klass = gvn().type(argument(1))->isa_instptr();
   const TypeInstPtr* mask_klass   = gvn().type(argument(2))->isa_instptr();
-  const TypeInstPtr* elem_klass   = gvn().type(argument(3))->isa_instptr();
-  const TypeInt*     operType     = gvn().type(argument(4))->isa_int();
-  const TypeInt*     vlen         = gvn().type(argument(5))->isa_int();
+  const TypeInt*     laneType     = gvn().type(argument(3))->isa_int();
+  const TypeInt*     vlen         = gvn().type(argument(4))->isa_int();
 
   if (opr          == nullptr || !opr->is_con() ||
-      operType     == nullptr || !operType->is_con() ||
+      laneType     == nullptr || !laneType->is_con() ||
       vector_klass == nullptr || vector_klass->const_oop() == nullptr ||
-      elem_klass   == nullptr || elem_klass->const_oop()   == nullptr ||
+      laneType     == nullptr || !laneType->is_con() ||
       vlen         == nullptr || !vlen->is_con()) {
-    log_if_needed("  ** missing constant: opr=%s vclass=%s etype=%s operType=%s vlen=%s",
+    log_if_needed("  ** missing constant: opr=%s vclass=%s etype=%s vlen=%s",
                     NodeClassNames[argument(0)->Opcode()],
                     NodeClassNames[argument(1)->Opcode()],
                     NodeClassNames[argument(3)->Opcode()],
-                    NodeClassNames[argument(4)->Opcode()],
-                    NodeClassNames[argument(5)->Opcode()]);
+                    NodeClassNames[argument(4)->Opcode()]);
     return false; // not enough info for intrinsification
   }
 
-  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
-  if (!elem_type->is_primitive_type()) {
-    log_if_needed("  ** not a primitive bt=%d", elem_type->basic_type());
-    return false; // should be primitive type
-  }
   if (!is_klass_initialized(vector_klass)) {
     log_if_needed("  ** klass argument not initialized");
     return false;
@@ -363,7 +365,7 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
 
   // "argument(n + 5)" should be the mask object. We assume it is "null" when no mask
   // is used to control this operation.
-  const Type* vmask_type = gvn().type(argument(n + 6));
+  const Type* vmask_type = gvn().type(argument(n + 5));
   bool is_masked_op = vmask_type != TypePtr::NULL_PTR;
   if (is_masked_op) {
     if (mask_klass == nullptr || mask_klass->const_oop() == nullptr) {
@@ -382,12 +384,13 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
     }
   }
 
-  BasicType elem_bt = elem_type->basic_type();
   bool has_scalar_op = VectorSupport::has_scalar_op(opr->get_con());
   bool is_unsigned = VectorSupport::is_unsigned_op(opr->get_con());
 
   int num_elem = vlen->get_con();
-  int opc = VectorSupport::vop2ideal(opr->get_con(), elem_bt, operType->get_con());
+  int opc = VectorSupport::vop2ideal(opr->get_con(), laneType->get_con());
+  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
+
   int sopc = has_scalar_op ? VectorNode::opcode(opc, elem_bt) : opc;
   if (sopc == 0 || num_elem == 1) {
     log_if_needed("  ** operation not supported: arity=%d opc=%s[%d] vlen=%d etype=%s",
@@ -422,28 +425,28 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
   Node* opd1 = nullptr; Node* opd2 = nullptr; Node* opd3 = nullptr;
   switch (n) {
     case 3: {
-      opd3 = unbox_vector(argument(8), vbox_type, elem_bt, num_elem);
+      opd3 = unbox_vector(argument(7), vbox_type, elem_bt, num_elem);
       if (opd3 == nullptr) {
         log_if_needed("  ** unbox failed v3=%s",
-                        NodeClassNames[argument(8)->Opcode()]);
-        return false;
-      }
-      // fall-through
-    }
-    case 2: {
-      opd2 = unbox_vector(argument(7), vbox_type, elem_bt, num_elem);
-      if (opd2 == nullptr) {
-        log_if_needed("  ** unbox failed v2=%s",
                         NodeClassNames[argument(7)->Opcode()]);
         return false;
       }
       // fall-through
     }
+    case 2: {
+      opd2 = unbox_vector(argument(6), vbox_type, elem_bt, num_elem);
+      if (opd2 == nullptr) {
+        log_if_needed("  ** unbox failed v2=%s",
+                        NodeClassNames[argument(6)->Opcode()]);
+        return false;
+      }
+      // fall-through
+    }
     case 1: {
-      opd1 = unbox_vector(argument(6), vbox_type, elem_bt, num_elem);
+      opd1 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
       if (opd1 == nullptr) {
         log_if_needed("  ** unbox failed v1=%s",
-                        NodeClassNames[argument(6)->Opcode()]);
+                        NodeClassNames[argument(5)->Opcode()]);
         return false;
       }
       break;
@@ -456,10 +459,10 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
     ciKlass* mbox_klass = mask_klass->const_oop()->as_instance()->java_lang_Class_klass();
     assert(is_vector_mask(mbox_klass), "argument(2) should be a mask class");
     const TypeInstPtr* mbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, mbox_klass);
-    mask = unbox_vector(argument(n + 6), mbox_type, elem_bt, num_elem);
+    mask = unbox_vector(argument(n + 5), mbox_type, elem_bt, num_elem);
     if (mask == nullptr) {
       log_if_needed("  ** unbox failed mask=%s",
-                      NodeClassNames[argument(n + 6)->Opcode()]);
+                      NodeClassNames[argument(n + 5)->Opcode()]);
       return false;
     }
   }
@@ -479,6 +482,7 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
     default: fatal("unsupported arity: %d", n);
   }
 
+  VectorNode::trace_new_vector(operation, "VectorAPI");
   if (is_masked_op && mask != nullptr) {
     if (use_predicate) {
       operation->add_req(mask);
@@ -500,12 +504,12 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
 
 //
 //  <V extends Vector<E>, E>
-//  V libraryUnaryOp(long addr, Class<? extends V> vClass, Class<?> cClass, int operType, int length, String debugName,
+//  V libraryUnaryOp(long addr, Class<? extends V> vClass, int laneType, int length, String debugName,
 //                   V v,
 //                   UnaryOperation<V,?> defaultImpl)
 //
 //  <V extends VectorPayload, E>
-//  V libraryBinaryOp(long addr, Class<? extends V> vClass, Class<?> cClass, int operType, int length, String debugName,
+//  V libraryBinaryOp(long addr, Class<? extends V> vClass, int laneType, int length, String debugName,
 //                    V v1, V v2,
 //                    BinaryOperation<V,?> defaultImpl)
 //
@@ -514,24 +518,21 @@ bool LibraryCallKit::inline_vector_call(int arity) {
 
   const TypeLong*    entry          = gvn().type(argument(0))->isa_long();
   const TypeInstPtr* vector_klass   = gvn().type(argument(2))->isa_instptr();
-  const TypeInstPtr* elem_klass     = gvn().type(argument(3))->isa_instptr();
-  const TypeInt*     operType       = gvn().type(argument(4))->isa_int();
-  const TypeInt*     vlen           = gvn().type(argument(5))->isa_int();
-  const TypeInstPtr* debug_name_oop = gvn().type(argument(6))->isa_instptr();
+  const TypeInt*     laneType       = gvn().type(argument(3))->isa_int();
+  const TypeInt*     vlen           = gvn().type(argument(4))->isa_int();
+  const TypeInstPtr* debug_name_oop = gvn().type(argument(5))->isa_instptr();
 
   if (entry        == nullptr   || !entry->is_con() ||
       vector_klass == nullptr   || vector_klass->const_oop() == nullptr ||
-      elem_klass   == nullptr   || elem_klass->const_oop() == nullptr ||
-      operType     == nullptr   || !operType->is_con() ||
+      laneType     == nullptr   || !laneType->is_con() ||
       vlen  == nullptr   || !vlen->is_con() ||
       debug_name_oop == nullptr || debug_name_oop->const_oop() == nullptr) {
-    log_if_needed("  ** missing constant: opr=%s vclass=%s etype=%s operType=%s vlen=%s debug_name=%s",
+    log_if_needed("  ** missing constant: opr=%s vclass=%s etype=%s vlen=%s debug_name=%s",
                   NodeClassNames[argument(0)->Opcode()],
                   NodeClassNames[argument(2)->Opcode()],
                   NodeClassNames[argument(3)->Opcode()],
                   NodeClassNames[argument(4)->Opcode()],
-                  NodeClassNames[argument(5)->Opcode()],
-                  NodeClassNames[argument(6)->Opcode()]);
+                  NodeClassNames[argument(5)->Opcode()]);
     return false; // not enough info for intrinsification
   }
 
@@ -540,22 +541,22 @@ bool LibraryCallKit::inline_vector_call(int arity) {
     return false;
   }
 
-  if (operType->get_con() != VectorSupport::VECTOR_TYPE_PRIM) {
-    log_if_needed("  ** unhandled operType=%s", get_opertype_string(operType->get_con()));
+  if (!is_valid_lane_type(laneType->get_con())) {
+    log_if_needed("  ** not a primitive lt=%s", VectorSupport::lanetype2name(laneType->get_con()));
+    return false; // should be primitive type
+  }
+
+  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
+  if (!is_primitive_lane_type(elem_bt)) {
+    log_if_needed("  ** unhandled bt=%s", type2name(elem_bt));
     return false;
   }
 
-  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
-  if (!elem_type->is_primitive_type()) {
-    log_if_needed("  ** not a primitive bt=%d", elem_type->basic_type());
-    return false; // should be primitive type
-  }
   if (!is_klass_initialized(vector_klass)) {
     log_if_needed("  ** klass argument not initialized");
     return false;
   }
 
-  BasicType elem_bt = elem_type->basic_type();
   int num_elem = vlen->get_con();
   if (!Matcher::vector_size_supported(elem_bt, num_elem)) {
     log_if_needed("  ** vector size (vlen=%d, etype=%s) is not supported",
@@ -566,17 +567,17 @@ bool LibraryCallKit::inline_vector_call(int arity) {
   ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
 
-  Node* opd1 = unbox_vector(argument(7), vbox_type, elem_bt, num_elem);
+  Node* opd1 = unbox_vector(argument(6), vbox_type, elem_bt, num_elem);
   if (opd1 == nullptr) {
-    log_if_needed("  ** unbox failed v1=%s", NodeClassNames[argument(7)->Opcode()]);
+    log_if_needed("  ** unbox failed v1=%s", NodeClassNames[argument(6)->Opcode()]);
     return false;
   }
 
   Node* opd2 = nullptr;
   if (arity > 1) {
-    opd2 = unbox_vector(argument(8), vbox_type, elem_bt, num_elem);
+    opd2 = unbox_vector(argument(7), vbox_type, elem_bt, num_elem);
     if (opd2 == nullptr) {
-      log_if_needed("  ** unbox failed v2=%s", NodeClassNames[argument(8)->Opcode()]);
+      log_if_needed("  ** unbox failed v2=%s", NodeClassNames[argument(7)->Opcode()]);
       return false;
     }
   }
@@ -612,7 +613,7 @@ bool LibraryCallKit::inline_vector_call(int arity) {
 //  <M extends VectorMask<E>,
 //   E>
 //  long maskReductionCoerced(int oper,
-//                            Class<? extends M> mClass, Class<?> cClass, int operType,
+//                            Class<? extends M> mClass, int laneType,
 //                            int length,
 //                            M m,
 //                            VectorMaskOp<M> defaultImpl)
@@ -620,23 +621,16 @@ bool LibraryCallKit::inline_vector_call(int arity) {
 bool LibraryCallKit::inline_vector_mask_operation() {
   const TypeInt*     oper       = gvn().type(argument(0))->isa_int();
   const TypeInstPtr* mask_klass = gvn().type(argument(1))->isa_instptr();
-  const TypeInstPtr* elem_klass = gvn().type(argument(2))->isa_instptr();
-  const TypeInt*     operType   = gvn().type(argument(3))->isa_int();
-  const TypeInt*     vlen       = gvn().type(argument(4))->isa_int();
-  Node*              mask       = argument(5);
+  const TypeInt*     laneType   = gvn().type(argument(2))->isa_int();
+  const TypeInt*     vlen       = gvn().type(argument(3))->isa_int();
+  Node*              mask       = argument(4);
 
   if (mask_klass == nullptr || mask_klass->const_oop() == nullptr ||
-      elem_klass == nullptr || elem_klass->const_oop() == nullptr ||
-      operType   == nullptr || !operType->is_con() ||
+      laneType   == nullptr || !laneType->is_con() ||
       vlen       == nullptr || !vlen->is_con() ||
       oper       == nullptr || !oper->is_con() ||
       mask->is_top()) {
     return false; // dead code
-  }
-
-  if (operType->get_con() != VectorSupport::VECTOR_TYPE_PRIM) {
-    log_if_needed("  ** unhandled operType=%s", get_opertype_string(operType->get_con()));
-    return false;
   }
 
   if (!is_klass_initialized(mask_klass)) {
@@ -645,14 +639,18 @@ bool LibraryCallKit::inline_vector_mask_operation() {
   }
 
   int num_elem = vlen->get_con();
-  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
-  if (!elem_type->is_primitive_type()) {
+  if (!is_valid_lane_type(laneType->get_con())) {
     if (C->print_intrinsics()) {
-      tty->print_cr("  ** not a primitive bt=%d", elem_type->basic_type());
+      tty->print_cr("  ** not a primitive lt=%s", VectorSupport::lanetype2name(laneType->get_con()));
     }
     return false; // should be primitive type
   }
-  BasicType elem_bt = elem_type->basic_type();
+
+  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
+  if (!is_primitive_lane_type(elem_bt)) {
+    log_if_needed("  ** unhandled bt=%s", type2name(elem_bt));
+    return false;
+  }
 
   int mopc = VectorSupport::vop2ideal(oper->get_con(), elem_bt);
   if (!arch_supports_vector(mopc, num_elem, elem_bt, VecMaskUseLoad)) {
@@ -666,7 +664,7 @@ bool LibraryCallKit::inline_vector_mask_operation() {
   Node* mask_vec = unbox_vector(mask, mask_box_type, elem_bt, num_elem);
   if (mask_vec == nullptr) {
     log_if_needed("  ** unbox failed mask=%s",
-                      NodeClassNames[argument(5)->Opcode()]);
+                      NodeClassNames[argument(4)->Opcode()]);
     return false;
   }
 
@@ -688,41 +686,44 @@ bool LibraryCallKit::inline_vector_mask_operation() {
 //  <VM extends VectorPayload,
 //   S extends VectorSpecies<E>,
 //   E>
-//  VM fromBitsCoerced(Class<? extends VM> vmClass, Class<?> cClass, int operType,
+//  VM fromBitsCoerced(Class<? extends VM> vmClass, int laneType,
 //                     int length,
 //                     long bits, int mode, S s,
 //                     FromBitsCoercedOperation<VM, S> defaultImpl)
 //
 bool LibraryCallKit::inline_vector_frombits_coerced() {
   const TypeInstPtr* vector_klass = gvn().type(argument(0))->isa_instptr();
-  const TypeInstPtr* elem_klass   = gvn().type(argument(1))->isa_instptr();
-  const TypeInt*     operType     = gvn().type(argument(2))->isa_int();
-  const TypeInt*     vlen         = gvn().type(argument(3))->isa_int();
-  const TypeLong*    bits_type    = gvn().type(argument(4))->isa_long();
+  const TypeInt*     laneType     = gvn().type(argument(1))->isa_int();
+  const TypeInt*     vlen         = gvn().type(argument(2))->isa_int();
+  const TypeLong*    bits_type    = gvn().type(argument(3))->isa_long();
   // Mode argument determines the mode of operation it can take following values:-
   // MODE_BROADCAST for vector Vector.broadcast and VectorMask.maskAll operations.
   // MODE_BITS_COERCED_LONG_TO_MASK for VectorMask.fromLong operation.
-  const TypeInt*     mode         = gvn().type(argument(6))->isa_int();
+  const TypeInt*     mode         = gvn().type(argument(5))->isa_int();
 
   if (vector_klass == nullptr || vector_klass->const_oop() == nullptr ||
-      elem_klass   == nullptr || elem_klass->const_oop()   == nullptr ||
-      operType     == nullptr || !operType->is_con() ||
+      laneType     == nullptr || !laneType->is_con() ||
       vlen         == nullptr || !vlen->is_con() ||
       bits_type    == nullptr ||
       mode         == nullptr || !mode->is_con()) {
-    log_if_needed("  ** missing constant: vclass=%s etype=%s operType=%s vlen=%s bitwise=%s",
+    log_if_needed("  ** missing constant: vclass=%s etype=%s vlen=%s bitwise=%s",
                     NodeClassNames[argument(0)->Opcode()],
                     NodeClassNames[argument(1)->Opcode()],
                     NodeClassNames[argument(2)->Opcode()],
-                    NodeClassNames[argument(3)->Opcode()],
-                    NodeClassNames[argument(6)->Opcode()]);
+                    NodeClassNames[argument(5)->Opcode()]);
     return false; // not enough info for intrinsification
   }
 
 
   int  bcast_mode = mode->get_con();
-  if (operType->get_con() != VectorSupport::VECTOR_TYPE_PRIM && bcast_mode != VectorSupport::MODE_BROADCAST) {
-    log_if_needed("  ** unhandled operType=%s", get_opertype_string(operType->get_con()));
+  if (!is_valid_lane_type(laneType->get_con())) {
+    log_if_needed("  ** not a primitive lt=%s", VectorSupport::lanetype2name(laneType->get_con()));
+    return false; // should be primitive type
+  }
+
+  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
+  if (!is_primitive_lane_type(elem_bt) && bcast_mode != VectorSupport::MODE_BROADCAST) {
+    log_if_needed("  ** unhandled bt=%s", type2name(elem_bt));
     return false;
   }
 
@@ -730,12 +731,6 @@ bool LibraryCallKit::inline_vector_frombits_coerced() {
     log_if_needed("  ** klass argument not initialized");
     return false;
   }
-  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
-  if (!elem_type->is_primitive_type()) {
-    log_if_needed("  ** not a primitive bt=%d", elem_type->basic_type());
-    return false; // should be primitive type
-  }
-  BasicType elem_bt = elem_type->basic_type();
   int num_elem = vlen->get_con();
   ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
@@ -762,7 +757,7 @@ bool LibraryCallKit::inline_vector_frombits_coerced() {
   }
 
   Node* broadcast = nullptr;
-  Node* bits = argument(4);
+  Node* bits = argument(3);
   Node* elem = bits;
 
   if (opc == Op_VectorLongToMask) {
@@ -830,7 +825,7 @@ static bool elem_consistent_with_arr(BasicType elem_bt, const TypeAryPtr* arr_ty
 //   VM extends VectorPayload,
 //   E,
 //   S extends VectorSpecies<E>>
-//  VM load(Class<? extends VM> vmClass, Class<?> cClass, int operType,
+//  VM load(Class<? extends VM> vmClass, int laneType,
 //          int length,
 //          Object base, long offset, boolean fromSegment,
 //          C container, long index, S s,
@@ -839,7 +834,7 @@ static bool elem_consistent_with_arr(BasicType elem_bt, const TypeAryPtr* arr_ty
 //
 //  <C,
 //   V extends VectorPayload>
-//  void store(Class<?> vClass, Class<?> cClass, int operType,
+//  void store(Class<?> vClass, int laneType,
 //             int length,
 //             Object base, long offset, boolean fromSegment,
 //             V v, C container, long index,
@@ -847,35 +842,28 @@ static bool elem_consistent_with_arr(BasicType elem_bt, const TypeAryPtr* arr_ty
 //
 bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
   const TypeInstPtr* vector_klass = gvn().type(argument(0))->isa_instptr();
-  const TypeInstPtr* elem_klass   = gvn().type(argument(1))->isa_instptr();
-  const TypeInt*     operType     = gvn().type(argument(2))->isa_int();
-  const TypeInt*     vlen         = gvn().type(argument(3))->isa_int();
-  const TypeInt*     from_ms      = gvn().type(argument(7))->isa_int();
+  const TypeInt*     laneType     = gvn().type(argument(1))->isa_int();
+  const TypeInt*     vlen         = gvn().type(argument(2))->isa_int();
+  const TypeInt*     from_ms      = gvn().type(argument(6))->isa_int();
 
   if (vector_klass == nullptr || vector_klass->const_oop() == nullptr ||
-      elem_klass   == nullptr || elem_klass->const_oop()   == nullptr ||
-      operType     == nullptr || !operType->is_con() ||
+      laneType     == nullptr || !laneType->is_con() ||
       vlen         == nullptr || !vlen->is_con() ||
       from_ms      == nullptr || !from_ms->is_con()) {
-    log_if_needed("  ** missing constant: vclass=%s etype=%s operType=%s vlen=%s from_ms=%s",
+    log_if_needed("  ** missing constant: vclass=%s etype=%s vlen=%s from_ms=%s",
                     NodeClassNames[argument(0)->Opcode()],
                     NodeClassNames[argument(1)->Opcode()],
                     NodeClassNames[argument(2)->Opcode()],
-                    NodeClassNames[argument(3)->Opcode()],
-                    NodeClassNames[argument(7)->Opcode()]);
+                    NodeClassNames[argument(6)->Opcode()]);
     return false; // not enough info for intrinsification
   }
+
   if (!is_klass_initialized(vector_klass)) {
     log_if_needed("  ** klass argument not initialized");
     return false;
   }
 
-  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
-  if (!elem_type->is_primitive_type()) {
-    log_if_needed("  ** not a primitive bt=%d", elem_type->basic_type());
-    return false; // should be primitive type
-  }
-  BasicType elem_bt = elem_type->basic_type();
+  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
   int num_elem = vlen->get_con();
 
   // TODO When mask usage is supported, VecMaskNotUsed needs to be VecMaskUseLoad.
@@ -889,8 +877,8 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
   ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
   bool is_mask = is_vector_mask(vbox_klass);
 
-  Node* base = argument(4);
-  Node* offset = ConvL2X(argument(5));
+  Node* base = argument(3);
+  Node* offset = ConvL2X(argument(4));
 
   // Save state and restore on bailout
   SavedState old_state(this);
@@ -972,7 +960,7 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
   }
 
   if (is_store) {
-    Node* val = unbox_vector(argument(8), vbox_type, elem_bt, num_elem);
+    Node* val = unbox_vector(argument(7), vbox_type, elem_bt, num_elem);
     if (val == nullptr) {
       return false; // operand unboxing failed
     }
@@ -1026,7 +1014,7 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
 //   E,
 //   S extends VectorSpecies<E>,
 //   M extends VectorMask<E>>
-//  V loadMasked(Class<? extends V> vClass, Class<M> mClass, Class<?> cClass, int operType,
+//  V loadMasked(Class<? extends V> vClass, Class<M> mClass, int laneType,
 //               int length, Object base, long offset, boolean fromSegment,
 //               M m, int offsetInRange,
 //               C container, long index, S s,
@@ -1036,7 +1024,7 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
 //   V extends Vector<E>,
 //   M extends VectorMask<E>,
 //   E>
-//  void storeMasked(Class<? extends V> vClass, Class<M> mClass, Class<?> cClass, int operType,
+//  void storeMasked(Class<? extends V> vClass, Class<M> mClass, int laneType,
 //                   int length,
 //                   Object base, long offset, boolean fromSegment,
 //                   V v, M m, C container, long index,
@@ -1046,24 +1034,21 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
 bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
   const TypeInstPtr* vector_klass = gvn().type(argument(0))->isa_instptr();
   const TypeInstPtr* mask_klass   = gvn().type(argument(1))->isa_instptr();
-  const TypeInstPtr* elem_klass   = gvn().type(argument(2))->isa_instptr();
-  const TypeInt*     operType     = gvn().type(argument(3))->isa_int();
-  const TypeInt*     vlen         = gvn().type(argument(4))->isa_int();
-  const TypeInt*     from_ms      = gvn().type(argument(8))->isa_int();
+  const TypeInt*     laneType     = gvn().type(argument(2))->isa_int();
+  const TypeInt*     vlen         = gvn().type(argument(3))->isa_int();
+  const TypeInt*     from_ms      = gvn().type(argument(7))->isa_int();
 
   if (vector_klass == nullptr || vector_klass->const_oop() == nullptr ||
       mask_klass   == nullptr || mask_klass->const_oop()   == nullptr ||
-      elem_klass   == nullptr || elem_klass->const_oop()   == nullptr ||
-      operType     == nullptr || !operType->is_con() ||
+      laneType     == nullptr || !laneType->is_con() ||
       vlen         == nullptr || !vlen->is_con() ||
       from_ms      == nullptr || !from_ms->is_con()) {
-    log_if_needed("  ** missing constant: vclass=%s mclass=%s etype=%s operType=%s vlen=%s from_ms=%s",
+    log_if_needed("  ** missing constant: vclass=%s mclass=%s etype=%s vlen=%s from_ms=%s",
                     NodeClassNames[argument(0)->Opcode()],
                     NodeClassNames[argument(1)->Opcode()],
                     NodeClassNames[argument(2)->Opcode()],
                     NodeClassNames[argument(3)->Opcode()],
-                    NodeClassNames[argument(4)->Opcode()],
-                    NodeClassNames[argument(8)->Opcode()]);
+                    NodeClassNames[argument(7)->Opcode()]);
     return false; // not enough info for intrinsification
   }
 
@@ -1077,17 +1062,11 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
     return false;
   }
 
-  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
-  if (!elem_type->is_primitive_type()) {
-    log_if_needed("  ** not a primitive bt=%d", elem_type->basic_type());
-    return false; // should be primitive type
-  }
-
-  BasicType elem_bt = elem_type->basic_type();
+  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
   int num_elem = vlen->get_con();
 
-  Node* base = argument(5);
-  Node* offset = ConvL2X(argument(6));
+  Node* base = argument(4);
+  Node* offset = ConvL2X(argument(5));
 
   // Save state and restore on bailout
   SavedState old_state(this);
@@ -1120,10 +1099,10 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
       needs_predicate = true;
     } else {
       // Masked vector load with IOOBE always uses the predicated load.
-      const TypeInt* offset_in_range = gvn().type(argument(10))->isa_int();
+      const TypeInt* offset_in_range = gvn().type(argument(9))->isa_int();
       if (!offset_in_range->is_con()) {
         log_if_needed("  ** missing constant: offsetInRange=%s",
-                        NodeClassNames[argument(10)->Opcode()]);
+                        NodeClassNames[argument(8)->Opcode()]);
         return false;
       }
       needs_predicate = (offset_in_range->get_con() == 0);
@@ -1178,19 +1157,19 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
   const TypeInstPtr* mbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, mbox_klass);
 
-  Node* mask = unbox_vector(is_store ? argument(10) : argument(9), mbox_type, elem_bt, num_elem);
+  Node* mask = unbox_vector(is_store ? argument(9) : argument(8), mbox_type, elem_bt, num_elem);
   if (mask == nullptr) {
     log_if_needed("  ** unbox failed mask=%s",
-                    is_store ? NodeClassNames[argument(10)->Opcode()]
-                             : NodeClassNames[argument(9)->Opcode()]);
+                    is_store ? NodeClassNames[argument(9)->Opcode()]
+                             : NodeClassNames[argument(8)->Opcode()]);
     return false;
   }
 
   if (is_store) {
-    Node* val = unbox_vector(argument(9), vbox_type, elem_bt, num_elem);
+    Node* val = unbox_vector(argument(8), vbox_type, elem_bt, num_elem);
     if (val == nullptr) {
       log_if_needed("  ** unbox failed vector=%s",
-                      NodeClassNames[argument(9)->Opcode()]);
+                      NodeClassNames[argument(8)->Opcode()]);
       return false; // operand unboxing failed
     }
     set_all_memory(reset_memory());
@@ -1254,7 +1233,7 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
 //   S extends VectorSpecies<E>,
 //   M extends VectorMask<E>,
 //   E>
-//  V loadWithMap(Class<? extends V> vClass, Class<M> mClass, Class<?> cClass, int operType,
+//  V loadWithMap(Class<? extends V> vClass, Class<M> mClass, int laneType,
 //                int length,
 //                Class<? extends Vector<Integer>> vectorIndexClass,
 //                int indexLength, Object base, long offset,
@@ -1266,7 +1245,7 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
 //   W extends Vector<Integer>,
 //   M extends VectorMask<E>,
 //   E>
-//  void storeWithMap(Class<? extends V> vClass, Class<M> mClass, Class<?> cClass, int operType,
+//  void storeWithMap(Class<? extends V> vClass, Class<M> mClass, int laneType,
 //                    int length,
 //                    Class<? extends Vector<Integer>> vectorIndexClass,
 //                    int indexLength, Object base, long offset,
@@ -1278,25 +1257,22 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
 bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
   const TypeInstPtr* vector_klass     = gvn().type(argument(0))->isa_instptr();
   const TypeInstPtr* mask_klass       = gvn().type(argument(1))->isa_instptr();
-  const TypeInstPtr* elem_klass       = gvn().type(argument(2))->isa_instptr();
-  const TypeInt*     operType         = gvn().type(argument(3))->isa_int();
-  const TypeInt*     vlen             = gvn().type(argument(4))->isa_int();
-  const TypeInstPtr* vector_idx_klass = gvn().type(argument(5))->isa_instptr();
-  const TypeInt*     idx_vlen         = gvn().type(argument(6))->isa_int();
+  const TypeInt*     laneType         = gvn().type(argument(2))->isa_int();
+  const TypeInt*     vlen             = gvn().type(argument(3))->isa_int();
+  const TypeInstPtr* vector_idx_klass = gvn().type(argument(4))->isa_instptr();
+  const TypeInt*     idx_vlen         = gvn().type(argument(5))->isa_int();
 
   if (vector_klass     == nullptr || vector_klass->const_oop()     == nullptr ||
-      elem_klass       == nullptr || elem_klass->const_oop()       == nullptr ||
-      operType         == nullptr || !operType->is_con() ||
+      laneType         == nullptr || !laneType->is_con() ||
       vlen             == nullptr || !vlen->is_con() ||
       vector_idx_klass == nullptr || vector_idx_klass->const_oop() == nullptr ||
       idx_vlen         == nullptr || !idx_vlen->is_con()) {
-    log_if_needed("  ** missing constant: vclass=%s etype=%s operType=%s vlen=%s viclass=%s idx_vlen=%s",
+    log_if_needed("  ** missing constant: vclass=%s etype=%s vlen=%s viclass=%s idx_vlen=%s",
                     NodeClassNames[argument(0)->Opcode()],
                     NodeClassNames[argument(2)->Opcode()],
                     NodeClassNames[argument(3)->Opcode()],
                     NodeClassNames[argument(4)->Opcode()],
-                    NodeClassNames[argument(5)->Opcode()],
-                    NodeClassNames[argument(6)->Opcode()]);
+                    NodeClassNames[argument(5)->Opcode()]);
     return false; // not enough info for intrinsification
   }
 
@@ -1305,17 +1281,16 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
     return false;
   }
 
-  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
-  if (!elem_type->is_primitive_type()) {
-    log_if_needed("  ** not a primitive bt=%d", elem_type->basic_type());
+  if (!is_valid_lane_type(laneType->get_con())) {
+    log_if_needed("  ** not a primitive lt=%s", VectorSupport::lanetype2name(laneType->get_con()));
     return false; // should be primitive type
   }
 
-  BasicType elem_bt = elem_type->basic_type();
+  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
   int num_elem = vlen->get_con();
   int idx_num_elem = idx_vlen->get_con();
 
-  Node* m = is_scatter ? argument(12) : argument(14);
+  Node* m = is_scatter ? argument(11) : argument(13);
   const Type* vmask_type = gvn().type(m);
   bool is_masked_op = vmask_type != TypePtr::NULL_PTR;
   if (is_masked_op) {
@@ -1361,8 +1336,8 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
     return false; // not supported
   }
 
-  Node* base = argument(7);
-  Node* offset = ConvL2X(argument(8));
+  Node* base = argument(6);
+  Node* offset = ConvL2X(argument(7));
 
   // Save state and restore on bailout
   SavedState old_state(this);
@@ -1375,7 +1350,7 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
     uint header = arrayOopDesc::base_offset_in_bytes(elem_bt);
     assert(offset->is_Con() && offset->bottom_type()->is_long()->get_con() == header,
            "offset must be the array base offset");
-    Node* index = argument(16);
+    Node* index = argument(15);
     addr = array_element_address(base, index, elem_bt);
   }
 
@@ -1401,12 +1376,12 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
   Node* indexes = nullptr;
   const TypeInstPtr* vbox_idx_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_idx_klass);
   if (is_subword_type(elem_bt)) {
-    Node* indexMap = argument(17);
-    Node* indexM   = argument(18);
+    Node* indexMap = argument(16);
+    Node* indexM   = argument(17);
     indexes = array_element_address(indexMap, indexM, T_INT);
   } else {
     // Get the first index vector.
-    indexes = unbox_vector(argument(10), vbox_idx_type, T_INT, idx_num_elem);
+    indexes = unbox_vector(argument(9), vbox_idx_type, T_INT, idx_num_elem);
     if (indexes == nullptr) {
       return false;
     }
@@ -1426,7 +1401,7 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
 
   const TypeVect* vector_type = TypeVect::make(elem_bt, num_elem);
   if (is_scatter) {
-    Node* val = unbox_vector(argument(11), vbox_type, elem_bt, num_elem);
+    Node* val = unbox_vector(argument(10), vbox_type, elem_bt, num_elem);
     if (val == nullptr) {
       return false; // operand unboxing failed
     }
@@ -1460,7 +1435,7 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
 //   M extends VectorMask<E>,
 //   E>
 //  long reductionCoerced(int oprId,
-//                        Class<? extends V> vClass, Class<? extends M> mClass, Class<?> cClass, int operType,
+//                        Class<? extends V> vClass, Class<? extends M> mClass, int laneType,
 //                        int length,
 //                        V v, M m,
 //                        ReductionOperation<V, M> defaultImpl)
@@ -1469,37 +1444,37 @@ bool LibraryCallKit::inline_vector_reduction() {
   const TypeInt*     opr          = gvn().type(argument(0))->isa_int();
   const TypeInstPtr* vector_klass = gvn().type(argument(1))->isa_instptr();
   const TypeInstPtr* mask_klass   = gvn().type(argument(2))->isa_instptr();
-  const TypeInstPtr* elem_klass   = gvn().type(argument(3))->isa_instptr();
-  const TypeInt*     operType     = gvn().type(argument(4))->isa_int();
-  const TypeInt*     vlen         = gvn().type(argument(5))->isa_int();
+  const TypeInt*     laneType     = gvn().type(argument(3))->isa_int();
+  const TypeInt*     vlen         = gvn().type(argument(4))->isa_int();
 
-  if (opr          == nullptr || !opr->is_con() || !operType->is_con() ||
+  if (opr          == nullptr || !opr->is_con() ||
       vector_klass == nullptr || vector_klass->const_oop() == nullptr ||
-      elem_klass   == nullptr || elem_klass->const_oop()   == nullptr ||
+      laneType     == nullptr || !laneType->get_con() ||
       vlen         == nullptr || !vlen->is_con()) {
-    log_if_needed("  ** missing constant: opr=%s vclass=%s etype=%s operType=%s vlen=%s",
+    log_if_needed("  ** missing constant: opr=%s vclass=%s etype=%s vlen=%s",
                     NodeClassNames[argument(0)->Opcode()],
                     NodeClassNames[argument(1)->Opcode()],
                     NodeClassNames[argument(3)->Opcode()],
-                    NodeClassNames[argument(4)->Opcode()],
-                    NodeClassNames[argument(5)->Opcode()]);
+                    NodeClassNames[argument(4)->Opcode()]);
     return false; // not enough info for intrinsification
   }
   if (!is_klass_initialized(vector_klass)) {
     log_if_needed("  ** klass argument not initialized");
     return false;
   }
-  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
-  if (!elem_type->is_primitive_type()) {
-    log_if_needed("  ** not a primitive bt=%d", elem_type->basic_type());
+
+  if (!is_valid_lane_type(laneType->get_con())) {
+    log_if_needed("  ** not a primitive lt=%s", VectorSupport::lanetype2name(laneType->get_con()));
     return false; // should be primitive type
   }
-  if (operType->get_con() != VectorSupport::VECTOR_TYPE_PRIM) {
-    log_if_needed("  ** unhandled operType=%s", get_opertype_string(operType->get_con()));
+
+  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
+  if (!is_primitive_lane_type(elem_bt)) {
+    log_if_needed("  ** unhandled bt=%s", type2name(elem_bt));
     return false;
   }
 
-  const Type* vmask_type = gvn().type(argument(7));
+  const Type* vmask_type = gvn().type(argument(6));
   bool is_masked_op = vmask_type != TypePtr::NULL_PTR;
   if (is_masked_op) {
     if (mask_klass == nullptr || mask_klass->const_oop() == nullptr) {
@@ -1518,7 +1493,6 @@ bool LibraryCallKit::inline_vector_reduction() {
     }
   }
 
-  BasicType elem_bt = elem_type->basic_type();
   int num_elem = vlen->get_con();
   int opc  = VectorSupport::vop2ideal(opr->get_con(), elem_bt);
   int sopc = ReductionNode::opcode(opc, elem_bt);
@@ -1542,7 +1516,7 @@ bool LibraryCallKit::inline_vector_reduction() {
   ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
 
-  Node* opd = unbox_vector(argument(6), vbox_type, elem_bt, num_elem);
+  Node* opd = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
   if (opd == nullptr) {
     return false; // operand unboxing failed
   }
@@ -1552,10 +1526,10 @@ bool LibraryCallKit::inline_vector_reduction() {
     ciKlass* mbox_klass = mask_klass->const_oop()->as_instance()->java_lang_Class_klass();
     assert(is_vector_mask(mbox_klass), "argument(2) should be a mask class");
     const TypeInstPtr* mbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, mbox_klass);
-    mask = unbox_vector(argument(7), mbox_type, elem_bt, num_elem);
+    mask = unbox_vector(argument(6), mbox_type, elem_bt, num_elem);
     if (mask == nullptr) {
       log_if_needed("  ** unbox failed mask=%s",
-                      NodeClassNames[argument(7)->Opcode()]);
+                      NodeClassNames[argument(6)->Opcode()]);
       return false;
     }
   }
@@ -1614,7 +1588,7 @@ bool LibraryCallKit::inline_vector_reduction() {
 //  <M extends VectorMask<E>,
 //   E>
 //  boolean test(int cond,
-//               Class<?> mClass, Class<?> cClass, int operType,
+//               Class<?> mClass, int laneType,
 //               int length,
 //               M m1, M m2,
 //               BiFunction<M, M, Boolean> defaultImpl)
@@ -1623,26 +1597,29 @@ bool LibraryCallKit::inline_vector_reduction() {
 bool LibraryCallKit::inline_vector_test() {
   const TypeInt*     cond         = gvn().type(argument(0))->isa_int();
   const TypeInstPtr* vector_klass = gvn().type(argument(1))->isa_instptr();
-  const TypeInstPtr* elem_klass   = gvn().type(argument(2))->isa_instptr();
-  const TypeInt*     operType     = gvn().type(argument(3))->isa_int();
-  const TypeInt*     vlen         = gvn().type(argument(4))->isa_int();
+  const TypeInt*     laneType     = gvn().type(argument(2))->isa_int();
+  const TypeInt*     vlen         = gvn().type(argument(3))->isa_int();
 
   if (cond         == nullptr || !cond->is_con() ||
       vector_klass == nullptr || vector_klass->const_oop() == nullptr ||
-      elem_klass   == nullptr || elem_klass->const_oop()   == nullptr ||
-      operType     == nullptr || !operType->is_con() ||
+      laneType     == nullptr || !laneType->is_con() ||
       vlen         == nullptr || !vlen->is_con()) {
-    log_if_needed("  ** missing constant: cond=%s vclass=%s etype=%s operType=%s vlen=%s",
+    log_if_needed("  ** missing constant: cond=%s vclass=%s etype=%s vlen=%s",
                     NodeClassNames[argument(0)->Opcode()],
                     NodeClassNames[argument(1)->Opcode()],
                     NodeClassNames[argument(2)->Opcode()],
-                    NodeClassNames[argument(3)->Opcode()],
-                    NodeClassNames[argument(4)->Opcode()]);
+                    NodeClassNames[argument(3)->Opcode()]);
     return false; // not enough info for intrinsification
   }
 
-  if (operType->get_con() != VectorSupport::VECTOR_TYPE_PRIM) {
-    log_if_needed("  ** unhandled operType=%s", get_opertype_string(operType->get_con()));
+  if (!is_valid_lane_type(laneType->get_con())) {
+    log_if_needed("  ** not a primitive lt=%s", VectorSupport::lanetype2name(laneType->get_con()));
+    return false; // should be primitive type
+  }
+
+  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
+  if (!is_primitive_lane_type(elem_bt)) {
+    log_if_needed("  ** unhandled bt=%s", type2name(elem_bt));
     return false;
   }
 
@@ -1650,12 +1627,6 @@ bool LibraryCallKit::inline_vector_test() {
     log_if_needed("  ** klass argument not initialized");
     return false;
   }
-  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
-  if (!elem_type->is_primitive_type()) {
-    log_if_needed("  ** not a primitive bt=%d", elem_type->basic_type());
-    return false; // should be primitive type
-  }
-  BasicType elem_bt = elem_type->basic_type();
   int num_elem = vlen->get_con();
   BoolTest::mask booltest = (BoolTest::mask)cond->get_con();
   ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
@@ -1668,11 +1639,11 @@ bool LibraryCallKit::inline_vector_test() {
     return false;
   }
 
-  Node* opd1 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
+  Node* opd1 = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
   Node* opd2;
   if (Matcher::vectortest_needs_second_argument(booltest == BoolTest::overflow,
                                                 opd1->bottom_type()->isa_vectmask())) {
-    opd2 = unbox_vector(argument(6), vbox_type, elem_bt, num_elem);
+    opd2 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
   } else {
     opd2 = opd1;
   }
@@ -1695,7 +1666,7 @@ bool LibraryCallKit::inline_vector_test() {
 //  <V extends Vector<E>,
 //   M extends VectorMask<E>,
 //   E>
-//  V blend(Class<? extends V> vClass, Class<M> mClass, Class<?> cClass, int operType,
+//  V blend(Class<? extends V> vClass, Class<M> mClass, int laneType,
 //          int length,
 //          V v1, V v2, M m,
 //          VectorBlendOp<V, M> defaultImpl)
@@ -1703,34 +1674,32 @@ bool LibraryCallKit::inline_vector_test() {
 bool LibraryCallKit::inline_vector_blend() {
   const TypeInstPtr* vector_klass = gvn().type(argument(0))->isa_instptr();
   const TypeInstPtr* mask_klass   = gvn().type(argument(1))->isa_instptr();
-  const TypeInstPtr* elem_klass   = gvn().type(argument(2))->isa_instptr();
-  const TypeInt*     operType     = gvn().type(argument(3))->isa_int();
-  const TypeInt*     vlen         = gvn().type(argument(4))->isa_int();
+  const TypeInt*     laneType     = gvn().type(argument(2))->isa_int();
+  const TypeInt*     vlen         = gvn().type(argument(3))->isa_int();
 
-  if (mask_klass == nullptr || vector_klass == nullptr || elem_klass == nullptr || vlen == nullptr || operType == nullptr) {
+  if (mask_klass == nullptr || vector_klass == nullptr || vlen == nullptr || laneType == nullptr) {
     return false; // dead code
   }
   if (mask_klass->const_oop() == nullptr || vector_klass->const_oop() == nullptr ||
-      elem_klass->const_oop() == nullptr || !vlen->is_con() || !operType->is_con()) {
-    log_if_needed("  ** missing constant: vclass=%s mclass=%s etype=%s operType=%s vlen=%s",
+      !vlen->is_con() || !laneType->is_con()) {
+    log_if_needed("  ** missing constant: vclass=%s mclass=%s etype=%s vlen=%s",
                     NodeClassNames[argument(0)->Opcode()],
                     NodeClassNames[argument(1)->Opcode()],
                     NodeClassNames[argument(2)->Opcode()],
-                    NodeClassNames[argument(3)->Opcode()],
-                    NodeClassNames[argument(4)->Opcode()]);
+                    NodeClassNames[argument(3)->Opcode()]);
     return false; // not enough info for intrinsification
   }
 
+  if (!is_valid_lane_type(laneType->get_con())) {
+    log_if_needed("  ** not a primitive lt=%s", VectorSupport::lanetype2name(laneType->get_con()));
+    return false; // should be primitive type
+  }
+
+  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
   if (!is_klass_initialized(vector_klass) || !is_klass_initialized(mask_klass)) {
     log_if_needed("  ** klass argument not initialized");
     return false;
   }
-  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
-  if (!elem_type->is_primitive_type()) {
-    log_if_needed("  ** not a primitive bt=%d", elem_type->basic_type());
-    return false; // should be primitive type
-  }
-  BasicType elem_bt = elem_type->basic_type();
   BasicType mask_bt = elem_bt;
   int num_elem = vlen->get_con();
 
@@ -1745,9 +1714,9 @@ bool LibraryCallKit::inline_vector_blend() {
   ciKlass* mbox_klass = mask_klass->const_oop()->as_instance()->java_lang_Class_klass();
   const TypeInstPtr* mbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, mbox_klass);
 
-  Node* v1   = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
-  Node* v2   = unbox_vector(argument(6), vbox_type, elem_bt, num_elem);
-  Node* mask = unbox_vector(argument(7), mbox_type, mask_bt, num_elem);
+  Node* v1   = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
+  Node* v2   = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
+  Node* mask = unbox_vector(argument(6), mbox_type, mask_bt, num_elem);
 
   if (v1 == nullptr || v2 == nullptr || mask == nullptr) {
     return false; // operand unboxing failed
@@ -1767,7 +1736,7 @@ bool LibraryCallKit::inline_vector_blend() {
 //   M extends VectorMask<E>,
 //   E>
 //  M compare(int cond,
-//            Class<? extends V> vectorClass, Class<M> mClass, Class<?> cClass, int operType,
+//            Class<? extends V> vectorClass, Class<M> mClass, int laneType,
 //            int length,
 //            V v1, V v2, M m,
 //            VectorCompareOp<V, M> defaultImpl)
@@ -1776,27 +1745,31 @@ bool LibraryCallKit::inline_vector_compare() {
   const TypeInt*     cond         = gvn().type(argument(0))->isa_int();
   const TypeInstPtr* vector_klass = gvn().type(argument(1))->isa_instptr();
   const TypeInstPtr* mask_klass   = gvn().type(argument(2))->isa_instptr();
-  const TypeInstPtr* elem_klass   = gvn().type(argument(3))->isa_instptr();
-  const TypeInt*     operType     = gvn().type(argument(4))->isa_int();
-  const TypeInt*     vlen         = gvn().type(argument(5))->isa_int();
+  const TypeInt*     laneType     = gvn().type(argument(3))->isa_int();
+  const TypeInt*     vlen         = gvn().type(argument(4))->isa_int();
 
-  if (cond == nullptr || vector_klass == nullptr || mask_klass == nullptr || elem_klass == nullptr || operType == nullptr || vlen == nullptr) {
+  if (cond == nullptr || vector_klass == nullptr || mask_klass == nullptr || laneType == nullptr || vlen == nullptr) {
     return false; // dead code
   }
   if (!cond->is_con() || vector_klass->const_oop() == nullptr || mask_klass->const_oop() == nullptr ||
-      elem_klass->const_oop() == nullptr || !operType->is_con() || !vlen->is_con()) {
-    log_if_needed("  ** missing constant: cond=%s vclass=%s mclass=%s etype=%s operType=%s vlen=%s",
+      !laneType->is_con() || !vlen->is_con()) {
+    log_if_needed("  ** missing constant: cond=%s vclass=%s mclass=%s etype=%s vlen=%s",
                     NodeClassNames[argument(0)->Opcode()],
                     NodeClassNames[argument(1)->Opcode()],
                     NodeClassNames[argument(2)->Opcode()],
                     NodeClassNames[argument(3)->Opcode()],
-                    NodeClassNames[argument(4)->Opcode()],
-                    NodeClassNames[argument(5)->Opcode()]);
+                    NodeClassNames[argument(4)->Opcode()]);
     return false; // not enough info for intrinsification
   }
 
-  if (operType->get_con() != VectorSupport::VECTOR_TYPE_PRIM) {
-    log_if_needed("  ** unhandled operType=%s", get_opertype_string(operType->get_con()));
+  if (!is_valid_lane_type(laneType->get_con())) {
+    log_if_needed("  ** not a primitive lt=%s", VectorSupport::lanetype2name(laneType->get_con()));
+    return false; // should be primitive type
+  }
+
+  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
+  if (!is_primitive_lane_type(elem_bt)) {
+    log_if_needed("  ** unhandled bt=%s", type2name(elem_bt));
     return false;
   }
 
@@ -1804,14 +1777,8 @@ bool LibraryCallKit::inline_vector_compare() {
     log_if_needed("  ** klass argument not initialized");
     return false;
   }
-  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
-  if (!elem_type->is_primitive_type()) {
-    log_if_needed("  ** not a primitive bt=%d", elem_type->basic_type());
-    return false; // should be primitive type
-  }
 
   int num_elem = vlen->get_con();
-  BasicType elem_bt = elem_type->basic_type();
   BasicType mask_bt = elem_bt;
 
   if ((cond->get_con() & BoolTest::unsigned_compare) != 0) {
@@ -1834,11 +1801,11 @@ bool LibraryCallKit::inline_vector_compare() {
   ciKlass* mbox_klass = mask_klass->const_oop()->as_instance()->java_lang_Class_klass();
   const TypeInstPtr* mbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, mbox_klass);
 
-  Node* v1 = unbox_vector(argument(6), vbox_type, elem_bt, num_elem);
-  Node* v2 = unbox_vector(argument(7), vbox_type, elem_bt, num_elem);
+  Node* v1 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
+  Node* v2 = unbox_vector(argument(6), vbox_type, elem_bt, num_elem);
 
-  bool is_masked_op = argument(8)->bottom_type() != TypePtr::NULL_PTR;
-  Node* mask = is_masked_op ? unbox_vector(argument(8), mbox_type, elem_bt, num_elem) : nullptr;
+  bool is_masked_op = argument(7)->bottom_type() != TypePtr::NULL_PTR;
+  Node* mask = is_masked_op ? unbox_vector(argument(7), mbox_type, elem_bt, num_elem) : nullptr;
   if (is_masked_op && mask == nullptr) {
     log_if_needed("  ** not supported: mask = null arity=2 op=comp/%d vlen=%d etype=%s ismask=usestore is_masked_op=1",
                     cond->get_con(), num_elem, type2name(elem_bt));
@@ -1884,7 +1851,7 @@ bool LibraryCallKit::inline_vector_compare() {
 //   SH extends VectorShuffle<E>,
 //   M  extends VectorMask<E>,
 //   E>
-//  V rearrangeOp(Class<? extends V> vClass, Class<SH> shClass, Class<M> mClass, Class<?> cClass, int operType,
+//  V rearrangeOp(Class<? extends V> vClass, Class<SH> shClass, Class<M> mClass, int laneType,
 //                int length,
 //                V v, SH sh, M m,
 //                VectorRearrangeOp<V, SH, M> defaultImpl)
@@ -1893,24 +1860,21 @@ bool LibraryCallKit::inline_vector_rearrange() {
   const TypeInstPtr* vector_klass  = gvn().type(argument(0))->isa_instptr();
   const TypeInstPtr* shuffle_klass = gvn().type(argument(1))->isa_instptr();
   const TypeInstPtr* mask_klass    = gvn().type(argument(2))->isa_instptr();
-  const TypeInstPtr* elem_klass    = gvn().type(argument(3))->isa_instptr();
-  const TypeInt*     operType      = gvn().type(argument(4))->isa_int();
-  const TypeInt*     vlen          = gvn().type(argument(5))->isa_int();
+  const TypeInt*     laneType      = gvn().type(argument(3))->isa_int();
+  const TypeInt*     vlen          = gvn().type(argument(4))->isa_int();
 
-  if (vector_klass == nullptr  || shuffle_klass == nullptr ||  elem_klass == nullptr || operType == nullptr || vlen == nullptr) {
+  if (vector_klass == nullptr  || shuffle_klass == nullptr ||  laneType == nullptr || vlen == nullptr) {
     return false; // dead code
   }
   if (shuffle_klass->const_oop() == nullptr ||
       vector_klass->const_oop()  == nullptr ||
-      elem_klass->const_oop()    == nullptr ||
-      !operType->is_con() ||
+      !laneType->is_con() ||
       !vlen->is_con()) {
-    log_if_needed("  ** missing constant: vclass=%s sclass=%s etype=%s operType=%s vlen=%s",
+    log_if_needed("  ** missing constant: vclass=%s sclass=%s etype=%s vlen=%s",
                     NodeClassNames[argument(0)->Opcode()],
                     NodeClassNames[argument(1)->Opcode()],
                     NodeClassNames[argument(3)->Opcode()],
-                    NodeClassNames[argument(4)->Opcode()],
-                    NodeClassNames[argument(5)->Opcode()]);
+                    NodeClassNames[argument(4)->Opcode()]);
     return false; // not enough info for intrinsification
   }
   if (!is_klass_initialized(vector_klass)  ||
@@ -1918,13 +1882,13 @@ bool LibraryCallKit::inline_vector_rearrange() {
     log_if_needed("  ** klass argument not initialized");
     return false;
   }
-  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
-  if (!elem_type->is_primitive_type()) {
-    log_if_needed("  ** not a primitive bt=%d", elem_type->basic_type());
+
+  if (!is_valid_lane_type(laneType->get_con())) {
+    log_if_needed("  ** not a primitive lt=%s", VectorSupport::lanetype2name(laneType->get_con()));
     return false; // should be primitive type
   }
 
-  BasicType elem_bt = elem_type->basic_type();
+  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
   BasicType shuffle_bt = elem_bt;
   if (shuffle_bt == T_FLOAT) {
     shuffle_bt = T_INT;
@@ -1943,7 +1907,7 @@ bool LibraryCallKit::inline_vector_rearrange() {
     return false; // not supported
   }
 
-  bool is_masked_op = argument(8)->bottom_type() != TypePtr::NULL_PTR;
+  bool is_masked_op = argument(7)->bottom_type() != TypePtr::NULL_PTR;
   bool use_predicate = is_masked_op;
   if (is_masked_op &&
       (mask_klass == nullptr ||
@@ -1974,8 +1938,8 @@ bool LibraryCallKit::inline_vector_rearrange() {
   ciKlass* shbox_klass = shuffle_klass->const_oop()->as_instance()->java_lang_Class_klass();
   const TypeInstPtr* shbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, shbox_klass);
 
-  Node* v1 = unbox_vector(argument(6), vbox_type, elem_bt, num_elem);
-  Node* shuffle = unbox_vector(argument(7), shbox_type, shuffle_bt, num_elem);
+  Node* v1 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
+  Node* shuffle = unbox_vector(argument(6), shbox_type, shuffle_bt, num_elem);
   const TypeVect* st = TypeVect::make(shuffle_bt, num_elem);
 
   if (v1 == nullptr || shuffle == nullptr) {
@@ -1991,7 +1955,7 @@ bool LibraryCallKit::inline_vector_rearrange() {
   if (is_masked_op) {
     ciKlass* mbox_klass = mask_klass->const_oop()->as_instance()->java_lang_Class_klass();
     const TypeInstPtr* mbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, mbox_klass);
-    mask = unbox_vector(argument(8), mbox_type, elem_bt, num_elem);
+    mask = unbox_vector(argument(7), mbox_type, elem_bt, num_elem);
     if (mask == nullptr) {
       log_if_needed("  ** not supported: arity=3 op=shuffle/rearrange vlen=%d etype=%s ismask=useload is_masked_op=1",
                       num_elem, type2name(elem_bt));
@@ -2027,43 +1991,41 @@ bool LibraryCallKit::inline_vector_rearrange() {
 //  <V extends Vector<E>,
 //   M  extends VectorMask<E>,
 //   E>
-//  V selectFromOp(Class<? extends V> vClass, Class<M> mClass, Class<?> cClass, int operType,
+//  V selectFromOp(Class<? extends V> vClass, Class<M> mClass, int laneType,
 //                 int length, V v1, V v2, M m,
 //                 VectorSelectFromOp<V, M> defaultImpl)
 //
 bool LibraryCallKit::inline_vector_select_from() {
   const TypeInstPtr* vector_klass  = gvn().type(argument(0))->isa_instptr();
   const TypeInstPtr* mask_klass    = gvn().type(argument(1))->isa_instptr();
-  const TypeInstPtr* elem_klass    = gvn().type(argument(2))->isa_instptr();
-  const TypeInt*     operType      = gvn().type(argument(3))->isa_int();
-  const TypeInt*     vlen          = gvn().type(argument(4))->isa_int();
+  const TypeInt*     laneType      = gvn().type(argument(2))->isa_int();
+  const TypeInt*     vlen          = gvn().type(argument(3))->isa_int();
 
-  if (vector_klass == nullptr  || elem_klass == nullptr || operType == nullptr || vlen == nullptr ||
+  if (vector_klass == nullptr  || laneType == nullptr || vlen == nullptr ||
       vector_klass->const_oop()  == nullptr ||
-      elem_klass->const_oop()    == nullptr ||
-      !operType->is_con() ||
+      !laneType->is_con() ||
       !vlen->is_con()) {
-    log_if_needed("  ** missing constant: vclass=%s etype=%s operType=%s vlen=%s",
+    log_if_needed("  ** missing constant: vclass=%s etype=%s vlen=%s",
                     NodeClassNames[argument(0)->Opcode()],
                     NodeClassNames[argument(2)->Opcode()],
-                    NodeClassNames[argument(3)->Opcode()],
-                    NodeClassNames[argument(4)->Opcode()]);
+                    NodeClassNames[argument(3)->Opcode()]);
     return false; // not enough info for intrinsification
   }
   if (!is_klass_initialized(vector_klass)) {
     log_if_needed("  ** klass argument not initialized");
     return false;
   }
-  if (operType->get_con() != VectorSupport::VECTOR_TYPE_PRIM) {
-    log_if_needed("  ** unhandled operType=%s", get_opertype_string(operType->get_con()));
-    return false;
-  }
-  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
-  if (!elem_type->is_primitive_type()) {
-    log_if_needed("  ** not a primitive bt=%d", elem_type->basic_type());
+
+  if (!is_valid_lane_type(laneType->get_con())) {
+    log_if_needed("  ** not a primitive lt=%s", VectorSupport::lanetype2name(laneType->get_con()));
     return false; // should be primitive type
   }
-  BasicType elem_bt = elem_type->basic_type();
+
+  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
+  if (!is_primitive_lane_type(elem_bt)) {
+    log_if_needed("  ** unhandled bt=%s", type2name(elem_bt));
+    return false;
+  }
   int num_elem = vlen->get_con();
   if (!is_power_of_2(num_elem)) {
     log_if_needed("  ** vlen not power of two=%d", num_elem);
@@ -2088,7 +2050,7 @@ bool LibraryCallKit::inline_vector_select_from() {
     return false; // not supported
   }
 
-  bool is_masked_op = argument(7)->bottom_type() != TypePtr::NULL_PTR;
+  bool is_masked_op = argument(6)->bottom_type() != TypePtr::NULL_PTR;
   bool use_predicate = is_masked_op;
   if (is_masked_op &&
       (mask_klass == nullptr ||
@@ -2113,17 +2075,17 @@ bool LibraryCallKit::inline_vector_select_from() {
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
 
   // v1 is the index vector
-  Node* v1 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
+  Node* v1 = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
   // v2 is the vector being rearranged
-  Node* v2 = unbox_vector(argument(6), vbox_type, elem_bt, num_elem);
+  Node* v2 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
 
   if (v1 == nullptr) {
-    log_if_needed("  ** unbox failed v1=%s", NodeClassNames[argument(6)->Opcode()]);
+    log_if_needed("  ** unbox failed v1=%s", NodeClassNames[argument(4)->Opcode()]);
     return false; // operand unboxing failed
   }
 
   if (v2 == nullptr) {
-    log_if_needed("  ** unbox failed v2=%s", NodeClassNames[argument(7)->Opcode()]);
+    log_if_needed("  ** unbox failed v2=%s", NodeClassNames[argument(5)->Opcode()]);
     return false; // operand unboxing failed
   }
 
@@ -2131,9 +2093,9 @@ bool LibraryCallKit::inline_vector_select_from() {
   if (is_masked_op) {
     ciKlass* mbox_klass = mask_klass->const_oop()->as_instance()->java_lang_Class_klass();
     const TypeInstPtr* mbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, mbox_klass);
-    mask = unbox_vector(argument(7), mbox_type, elem_bt, num_elem);
+    mask = unbox_vector(argument(6), mbox_type, elem_bt, num_elem);
     if (mask == nullptr) {
-      log_if_needed("  ** unbox failed mask=%s", NodeClassNames[argument(8)->Opcode()]);
+      log_if_needed("  ** unbox failed mask=%s", NodeClassNames[argument(6)->Opcode()]);
       return false;
     }
   }
@@ -2192,7 +2154,7 @@ bool LibraryCallKit::inline_vector_select_from() {
 //     M extends VectorMask<E>,
 //     E>
 //    V broadcastInt(int opr,
-//                   Class<? extends V> vClass, Class<? extends M> mClass, Class<?> cClass, int operType,
+//                   Class<? extends V> vClass, Class<? extends M> mClass, int laneType,
 //                   int length,
 //                   V v, int n, M m,
 //                   VectorBroadcastIntOp<V, M> defaultImpl) {
@@ -2201,18 +2163,18 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
   const TypeInt*     opr          = gvn().type(argument(0))->isa_int();
   const TypeInstPtr* vector_klass = gvn().type(argument(1))->isa_instptr();
   const TypeInstPtr* mask_klass   = gvn().type(argument(2))->isa_instptr();
-  const TypeInstPtr* elem_klass   = gvn().type(argument(3))->isa_instptr();
-  const TypeInt*     vlen         = gvn().type(argument(5))->isa_int();
+  const TypeInt*     laneType     = gvn().type(argument(3))->isa_int();
+  const TypeInt*     vlen         = gvn().type(argument(4))->isa_int();
 
-  if (opr == nullptr || vector_klass == nullptr || elem_klass == nullptr || vlen == nullptr) {
+  if (opr == nullptr || vector_klass == nullptr || laneType == nullptr || vlen == nullptr) {
     return false; // dead code
   }
-  if (!opr->is_con() || vector_klass->const_oop() == nullptr || elem_klass->const_oop() == nullptr || !vlen->is_con()) {
+  if (!opr->is_con() || vector_klass->const_oop() == nullptr || !laneType->is_con() || !vlen->is_con()) {
     log_if_needed("  ** missing constant: opr=%s vclass=%s etype=%s vlen=%s",
                     NodeClassNames[argument(0)->Opcode()],
                     NodeClassNames[argument(1)->Opcode()],
                     NodeClassNames[argument(3)->Opcode()],
-                    NodeClassNames[argument(5)->Opcode()]);
+                    NodeClassNames[argument(4)->Opcode()]);
     return false; // not enough info for intrinsification
   }
   if (!is_klass_initialized(vector_klass)) {
@@ -2220,7 +2182,12 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
     return false;
   }
 
-  const Type* vmask_type = gvn().type(argument(8));
+  if (!is_valid_lane_type(laneType->get_con())) {
+    log_if_needed("  ** not a primitive lt=%s", VectorSupport::lanetype2name(laneType->get_con()));
+    return false; // should be primitive type
+  }
+
+  const Type* vmask_type = gvn().type(argument(7));
   bool is_masked_op = vmask_type != TypePtr::NULL_PTR;
   if (is_masked_op) {
     if (mask_klass == nullptr || mask_klass->const_oop() == nullptr) {
@@ -2239,14 +2206,9 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
     }
   }
 
-  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
-  if (!elem_type->is_primitive_type()) {
-    log_if_needed("  ** not a primitive bt=%d", elem_type->basic_type());
-    return false; // should be primitive type
-  }
 
   int num_elem = vlen->get_con();
-  BasicType elem_bt = elem_type->basic_type();
+  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
   int opc = VectorSupport::vop2ideal(opr->get_con(), elem_bt);
 
   bool is_shift  = VectorNode::is_shift_opcode(opc);
@@ -2263,7 +2225,7 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
     return false; // operation not supported
   }
 
-  Node* cnt  = argument(7);
+  Node* cnt  = argument(6);
   const TypeInt* cnt_type = cnt->bottom_type()->isa_int();
 
   ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
@@ -2289,7 +2251,7 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
     }
   }
 
-  Node* opd1 = unbox_vector(argument(6), vbox_type, elem_bt, num_elem);
+  Node* opd1 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
   Node* opd2 = nullptr;
   if (is_shift) {
     opd2 = vector_shift_count(cnt, opc, elem_bt, num_elem);
@@ -2312,9 +2274,9 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
   if (is_masked_op) {
     ciKlass* mbox_klass = mask_klass->const_oop()->as_instance()->java_lang_Class_klass();
     const TypeInstPtr* mbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, mbox_klass);
-    mask = unbox_vector(argument(8), mbox_type, elem_bt, num_elem);
+    mask = unbox_vector(argument(7), mbox_type, elem_bt, num_elem);
     if (mask == nullptr) {
-      log_if_needed("  ** unbox failed mask=%s", NodeClassNames[argument(8)->Opcode()]);
+      log_if_needed("  ** unbox failed mask=%s", NodeClassNames[argument(7)->Opcode()]);
       return false;
     }
   }
@@ -2534,34 +2496,38 @@ bool LibraryCallKit::inline_vector_convert() {
 //
 //  <V extends Vector<E>,
 //   E>
-//  V insert(Class<? extends V> vClass, Class<?> cClass, int operType,
+//  V insert(Class<? extends V> vClass, int laneType,
 //           int length,
 //           V v, int i, long val,
 //           VecInsertOp<V> defaultImpl)
 //
 bool LibraryCallKit::inline_vector_insert() {
   const TypeInstPtr* vector_klass = gvn().type(argument(0))->isa_instptr();
-  const TypeInstPtr* elem_klass   = gvn().type(argument(1))->isa_instptr();
-  const TypeInt*     operType     = gvn().type(argument(2))->isa_int();
-  const TypeInt*     vlen         = gvn().type(argument(3))->isa_int();
-  const TypeInt*     idx          = gvn().type(argument(5))->isa_int();
+  const TypeInt*     laneType     = gvn().type(argument(1))->isa_int();
+  const TypeInt*     vlen         = gvn().type(argument(2))->isa_int();
+  const TypeInt*     idx          = gvn().type(argument(4))->isa_int();
 
-  if (vector_klass == nullptr || elem_klass == nullptr || operType == nullptr || vlen == nullptr || idx == nullptr) {
+  if (vector_klass == nullptr || laneType == nullptr || vlen == nullptr || idx == nullptr) {
     return false; // dead code
   }
-  if (vector_klass->const_oop() == nullptr || elem_klass->const_oop() == nullptr || !operType->is_con() ||
+  if (vector_klass->const_oop() == nullptr || !laneType->is_con() ||
       !vlen->is_con() || !idx->is_con()) {
-    log_if_needed("  ** missing constant: vclass=%s etype=%s operType=%s vlen=%s idx=%s",
+    log_if_needed("  ** missing constant: vclass=%s etype=%s vlen=%s idx=%s",
                     NodeClassNames[argument(0)->Opcode()],
                     NodeClassNames[argument(1)->Opcode()],
                     NodeClassNames[argument(2)->Opcode()],
-                    NodeClassNames[argument(3)->Opcode()],
-                    NodeClassNames[argument(5)->Opcode()]);
+                    NodeClassNames[argument(4)->Opcode()]);
     return false; // not enough info for intrinsification
   }
 
-  if (operType->get_con() != VectorSupport::VECTOR_TYPE_PRIM) {
-    log_if_needed("  ** unhandled operType=%s", get_opertype_string(operType->get_con()));
+  if (!is_valid_lane_type(laneType->get_con())) {
+    log_if_needed("  ** not a primitive lt=%s", VectorSupport::lanetype2name(laneType->get_con()));
+    return false; // should be primitive type
+  }
+
+  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
+  if (!is_primitive_lane_type(elem_bt)) {
+    log_if_needed("  ** unhandled bt=%s", type2name(elem_bt));
     return false;
   }
 
@@ -2569,12 +2535,6 @@ bool LibraryCallKit::inline_vector_insert() {
     log_if_needed("  ** klass argument not initialized");
     return false;
   }
-  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
-  if (!elem_type->is_primitive_type()) {
-    log_if_needed("  ** not a primitive bt=%d", elem_type->basic_type());
-    return false; // should be primitive type
-  }
-  BasicType elem_bt = elem_type->basic_type();
   int num_elem = vlen->get_con();
   if (!arch_supports_vector(Op_VectorInsert, num_elem, elem_bt, VecMaskNotUsed)) {
     log_if_needed("  ** not supported: arity=1 op=insert vlen=%d etype=%s ismask=no",
@@ -2585,12 +2545,12 @@ bool LibraryCallKit::inline_vector_insert() {
   ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
 
-  Node* opd = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
+  Node* opd = unbox_vector(argument(3), vbox_type, elem_bt, num_elem);
   if (opd == nullptr) {
     return false;
   }
 
-  Node* insert_val = argument(6);
+  Node* insert_val = argument(5);
   assert(gvn().type(insert_val)->isa_long() != nullptr, "expected to be long");
 
   // Convert insert value back to its appropriate type.
@@ -2628,24 +2588,22 @@ bool LibraryCallKit::inline_vector_insert() {
 //
 //  <VM extends VectorPayload,
 //   E>
-//  long extract(Class<? extends VM> vClass, Class<?> cClass, int operType,
+//  long extract(Class<? extends VM> vClass, int laneType,
 //               int length,
 //               VM vm, int i,
 //               VecExtractOp<VM> defaultImpl)
 //
 bool LibraryCallKit::inline_vector_extract() {
   const TypeInstPtr* vector_klass = gvn().type(argument(0))->isa_instptr();
-  const TypeInstPtr* elem_klass   = gvn().type(argument(1))->isa_instptr();
-  const TypeInt*     operType     = gvn().type(argument(2))->isa_int();
-  const TypeInt*     vlen         = gvn().type(argument(3))->isa_int();
-  const TypeInt*     idx          = gvn().type(argument(5))->isa_int();
+  const TypeInt*     laneType     = gvn().type(argument(1))->isa_int();
+  const TypeInt*     vlen         = gvn().type(argument(2))->isa_int();
+  const TypeInt*     idx          = gvn().type(argument(4))->isa_int();
 
   if (vector_klass == nullptr || vector_klass->const_oop() == nullptr ||
-      elem_klass   == nullptr || elem_klass->const_oop()   == nullptr ||
-      operType     == nullptr || !operType->is_con() ||
+      laneType     == nullptr || !laneType->is_con() ||
       vlen         == nullptr || !vlen->is_con() ||
       idx          == nullptr) {
-    log_if_needed("  ** missing constant: vclass=%s etype=%s operType=%s vlen=%s",
+    log_if_needed("  ** missing constant: vclass=%s etype=%s vlen=%s idx=%s",
                     NodeClassNames[argument(0)->Opcode()],
                     NodeClassNames[argument(1)->Opcode()],
                     NodeClassNames[argument(2)->Opcode()],
@@ -2653,8 +2611,14 @@ bool LibraryCallKit::inline_vector_extract() {
     return false; // not enough info for intrinsification
   }
 
-  if (operType->get_con() != VectorSupport::VECTOR_TYPE_PRIM) {
-    log_if_needed("  ** unhandled operType=%s", get_opertype_string(operType->get_con()));
+  if (!is_valid_lane_type(laneType->get_con())) {
+    log_if_needed("  ** not a primitive lt=%s", VectorSupport::lanetype2name(laneType->get_con()));
+    return false; // should be primitive type
+  }
+
+  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
+  if (!is_primitive_lane_type(elem_bt)) {
+    log_if_needed("  ** unhandled bt=%s", type2name(elem_bt));
     return false;
   }
 
@@ -2662,12 +2626,6 @@ bool LibraryCallKit::inline_vector_extract() {
     log_if_needed("  ** klass argument not initialized");
     return false;
   }
-  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
-  if (!elem_type->is_primitive_type()) {
-    log_if_needed("  ** not a primitive bt=%d", elem_type->basic_type());
-    return false; // should be primitive type
-  }
-  BasicType elem_bt = elem_type->basic_type();
   int num_elem = vlen->get_con();
 
   ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
@@ -2678,10 +2636,10 @@ bool LibraryCallKit::inline_vector_extract() {
   if (is_vector_mask(vbox_klass)) {
     // vbox_klass is mask. This is used for VectorMask.laneIsSet(int).
 
-    Node* pos = argument(5); // can be variable
+    Node* pos = argument(4); // can be variable
     if (arch_supports_vector(Op_ExtractUB, num_elem, elem_bt, VecMaskUseAll)) {
       // Transform mask to vector with type of boolean and utilize ExtractUB node.
-      opd = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
+      opd = unbox_vector(argument(3), vbox_type, elem_bt, num_elem);
       if (opd == nullptr) {
         return false;
       }
@@ -2689,7 +2647,7 @@ bool LibraryCallKit::inline_vector_extract() {
       opd = gvn().transform(new ExtractUBNode(opd, pos));
       opd = gvn().transform(new ConvI2LNode(opd));
     } else if (arch_supports_vector(Op_VectorMaskToLong, num_elem, elem_bt, VecMaskUseLoad)) {
-      opd = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
+      opd = unbox_vector(argument(3), vbox_type, elem_bt, num_elem);
       if (opd == nullptr) {
         return false;
       }
@@ -2719,7 +2677,7 @@ bool LibraryCallKit::inline_vector_extract() {
       return false; // not supported
     }
 
-    opd = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
+    opd = unbox_vector(argument(3), vbox_type, elem_bt, num_elem);
     if (opd == nullptr) {
       return false;
     }
@@ -2822,29 +2780,33 @@ static Node* LowerSelectFromTwoVectorOperation(PhaseGVN& phase, Node* index_vec,
 //
 //  <V extends Vector<E>,
 //   E>
-//  V selectFromTwoVectorOp(Class<? extends V> vClass, Class<?> cClass, int operType, int length,
+//  V selectFromTwoVectorOp(Class<? extends V> vClass, int laneType, int length,
 //                          V v1, V v2, V v3,
 //                          SelectFromTwoVector<V> defaultImpl)
 //
 bool LibraryCallKit::inline_vector_select_from_two_vectors() {
   const TypeInstPtr* vector_klass = gvn().type(argument(0))->isa_instptr();
-  const TypeInstPtr* elem_klass = gvn().type(argument(1))->isa_instptr();
-  const TypeInt* operType = gvn().type(argument(2))->isa_int();
-  const TypeInt* vlen = gvn().type(argument(3))->isa_int();
+  const TypeInt* laneType = gvn().type(argument(1))->isa_int();
+  const TypeInt* vlen = gvn().type(argument(2))->isa_int();
 
-  if (vector_klass == nullptr || elem_klass == nullptr || operType == nullptr || vlen == nullptr ||
+  if (vector_klass == nullptr || laneType == nullptr || vlen == nullptr ||
       vector_klass->const_oop() == nullptr ||
-      elem_klass->const_oop() == nullptr || !operType->is_con() || !vlen->is_con()) {
-    log_if_needed("  ** missing constant: vclass=%s etype=%s operType=%s vlen=%s",
+      !laneType->is_con() || !vlen->is_con()) {
+    log_if_needed("  ** missing constant: vclass=%s etype=%s vlen=%s",
                     NodeClassNames[argument(0)->Opcode()],
                     NodeClassNames[argument(1)->Opcode()],
-                    NodeClassNames[argument(2)->Opcode()],
-                    NodeClassNames[argument(3)->Opcode()]);
+                    NodeClassNames[argument(2)->Opcode()]);
     return false; // not enough info for intrinsification
   }
 
-  if (operType->get_con() != VectorSupport::VECTOR_TYPE_PRIM) {
-    log_if_needed("  ** unhandled operType=%s", get_opertype_string(operType->get_con()));
+  if (!is_valid_lane_type(laneType->get_con())) {
+    log_if_needed("  ** not a primitive lt=%s", VectorSupport::lanetype2name(laneType->get_con()));
+    return false; // should be primitive type
+  }
+
+  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
+  if (!is_primitive_lane_type(elem_bt)) {
+    log_if_needed("  ** unhandled bt=%s", type2name(elem_bt));
     return false;
   }
 
@@ -2853,11 +2815,6 @@ bool LibraryCallKit::inline_vector_select_from_two_vectors() {
     return false;
   }
 
-  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
-  if (!elem_type->is_primitive_type()) {
-    log_if_needed("  ** not a primitive bt=%d", elem_type->basic_type());
-    return false; // should be primitive type
-  }
 
   int num_elem = vlen->get_con();
   if (!is_power_of_2(num_elem)) {
@@ -2865,7 +2822,6 @@ bool LibraryCallKit::inline_vector_select_from_two_vectors() {
     return false;
   }
 
-  BasicType elem_bt = elem_type->basic_type();
   BasicType index_elem_bt = elem_bt;
   if (elem_bt == T_FLOAT) {
     index_elem_bt = T_INT;
@@ -2909,22 +2865,22 @@ bool LibraryCallKit::inline_vector_select_from_two_vectors() {
   ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
 
-  Node* opd1 = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
+  Node* opd1 = unbox_vector(argument(3), vbox_type, elem_bt, num_elem);
   if (opd1 == nullptr) {
     log_if_needed("  ** unbox failed v1=%s",
+                  NodeClassNames[argument(3)->Opcode()]);
+    return false;
+  }
+  Node* opd2 = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
+  if (opd2 == nullptr) {
+    log_if_needed("  ** unbox failed v2=%s",
                   NodeClassNames[argument(4)->Opcode()]);
     return false;
   }
-  Node* opd2 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
-  if (opd2 == nullptr) {
-    log_if_needed("  ** unbox failed v2=%s",
-                  NodeClassNames[argument(5)->Opcode()]);
-    return false;
-  }
-  Node* opd3 = unbox_vector(argument(6), vbox_type, elem_bt, num_elem);
+  Node* opd3 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
   if (opd3 == nullptr) {
     log_if_needed("  ** unbox failed v3=%s",
-                  NodeClassNames[argument(6)->Opcode()]);
+                  NodeClassNames[argument(5)->Opcode()]);
     return false;
   }
 
@@ -2942,6 +2898,7 @@ bool LibraryCallKit::inline_vector_select_from_two_vectors() {
     Node* wrap_mask_vec = gvn().transform(VectorNode::scalar2vector(wrap_mask, num_elem, index_elem_bt, false));
     opd1 = gvn().transform(VectorNode::make(Op_AndV, opd1, wrap_mask_vec, opd1->bottom_type()->is_vect()));
     operation = gvn().transform(VectorNode::make(Op_SelectFromTwoVector, opd1, opd2, opd3, vt));
+    VectorNode::trace_new_vector(operation, "VectorAPI");
   }
 
   // Wrap it up in VectorBox to keep object type information.
@@ -2956,7 +2913,7 @@ bool LibraryCallKit::inline_vector_select_from_two_vectors() {
 //   M extends VectorMask<E>,
 //   E>
 //  VectorPayload compressExpandOp(int opr,
-//                                 Class<? extends V> vClass, Class<? extends M> mClass, Class<?> cClass, int operType,
+//                                 Class<? extends V> vClass, Class<? extends M> mClass, int laneType,
 //                                 int length, V v, M m,
 //                                 CompressExpandOperation<V, M> defaultImpl)
 //
@@ -2964,20 +2921,20 @@ bool LibraryCallKit::inline_vector_compress_expand() {
   const TypeInt*     opr          = gvn().type(argument(0))->isa_int();
   const TypeInstPtr* vector_klass = gvn().type(argument(1))->isa_instptr();
   const TypeInstPtr* mask_klass   = gvn().type(argument(2))->isa_instptr();
-  const TypeInstPtr* elem_klass   = gvn().type(argument(3))->isa_instptr();
-  const TypeInt*     vlen         = gvn().type(argument(5))->isa_int();
+  const TypeInt*     laneType     = gvn().type(argument(3))->isa_int();
+  const TypeInt*     vlen         = gvn().type(argument(4))->isa_int();
 
   if (opr          == nullptr || !opr->is_con() ||
       vector_klass == nullptr || vector_klass->const_oop() == nullptr ||
       mask_klass   == nullptr || mask_klass->const_oop()   == nullptr ||
-      elem_klass   == nullptr || elem_klass->const_oop()   == nullptr ||
+      laneType     == nullptr || !laneType->is_con() ||
       vlen         == nullptr || !vlen->is_con()) {
     log_if_needed("  ** missing constant: opr=%s vclass=%s mclass=%s etype=%s vlen=%s",
                     NodeClassNames[argument(0)->Opcode()],
                     NodeClassNames[argument(1)->Opcode()],
                     NodeClassNames[argument(2)->Opcode()],
                     NodeClassNames[argument(3)->Opcode()],
-                    NodeClassNames[argument(5)->Opcode()]);
+                    NodeClassNames[argument(4)->Opcode()]);
     return false; // not enough info for intrinsification
   }
 
@@ -2986,14 +2943,13 @@ bool LibraryCallKit::inline_vector_compress_expand() {
     return false;
   }
 
-  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
-  if (!elem_type->is_primitive_type()) {
-    log_if_needed("  ** not a primitive bt=%d", elem_type->basic_type());
+  if (!is_valid_lane_type(laneType->get_con())) {
+    log_if_needed("  ** not a primitive lt=%s", VectorSupport::lanetype2name(laneType->get_con()));
     return false; // should be primitive type
   }
 
   int num_elem = vlen->get_con();
-  BasicType elem_bt = elem_type->basic_type();
+  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
   int opc = VectorSupport::vop2ideal(opr->get_con(), elem_bt);
 
   if (!arch_supports_vector(opc, num_elem, elem_bt, VecMaskUseLoad)) {
@@ -3007,27 +2963,28 @@ bool LibraryCallKit::inline_vector_compress_expand() {
   if (opc != Op_CompressM) {
     ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
     vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
-    opd1 = unbox_vector(argument(6), vbox_type, elem_bt, num_elem);
+    opd1 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
     if (opd1 == nullptr) {
       log_if_needed("  ** unbox failed vector=%s",
-                      NodeClassNames[argument(6)->Opcode()]);
+                      NodeClassNames[argument(5)->Opcode()]);
       return false;
     }
   }
 
   ciKlass* mbox_klass = mask_klass->const_oop()->as_instance()->java_lang_Class_klass();
-  assert(is_vector_mask(mbox_klass), "argument(7) should be a mask class");
+  assert(is_vector_mask(mbox_klass), "argument(6) should be a mask class");
   const TypeInstPtr* mbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, mbox_klass);
 
-  Node* mask = unbox_vector(argument(7), mbox_type, elem_bt, num_elem);
+  Node* mask = unbox_vector(argument(6), mbox_type, elem_bt, num_elem);
   if (mask == nullptr) {
     log_if_needed("  ** unbox failed mask=%s",
-                    NodeClassNames[argument(7)->Opcode()]);
+                    NodeClassNames[argument(6)->Opcode()]);
     return false;
   }
 
   const TypeVect* vt = TypeVect::make(elem_bt, num_elem, opc == Op_CompressM);
   Node* operation = gvn().transform(VectorNode::make(opc, opd1, mask, vt));
+  VectorNode::trace_new_vector(operation, "VectorAPI");
 
   // Wrap it up in VectorBox to keep object type information.
   const TypeInstPtr* box_type = opc == Op_CompressM ? mbox_type : vbox_type;
@@ -3041,31 +2998,34 @@ bool LibraryCallKit::inline_vector_compress_expand() {
 //  <V extends Vector<E>,
 //   E,
 //   S extends VectorSpecies<E>>
-//  V indexVector(Class<? extends V> vClass, Class<?> cClass, int operType,
+//  V indexVector(Class<? extends V> vClass, int laneType,
 //                int length,
 //                V v, int step, S s,
 //                IndexOperation<V, S> defaultImpl) {
 //
 bool LibraryCallKit::inline_index_vector() {
   const TypeInstPtr* vector_klass = gvn().type(argument(0))->isa_instptr();
-  const TypeInstPtr* elem_klass   = gvn().type(argument(1))->isa_instptr();
-  const TypeInt*     operType     = gvn().type(argument(2))->isa_int();
-  const TypeInt*     vlen         = gvn().type(argument(3))->isa_int();
+  const TypeInt*     laneType     = gvn().type(argument(1))->isa_int();
+  const TypeInt*     vlen         = gvn().type(argument(2))->isa_int();
 
   if (vector_klass == nullptr || vector_klass->const_oop() == nullptr ||
-      elem_klass   == nullptr || elem_klass->const_oop()   == nullptr ||
-      operType     == nullptr || !operType->is_con() ||
+      laneType     == nullptr || !laneType->is_con() ||
       vlen         == nullptr || !vlen->is_con() ) {
-    log_if_needed("  ** missing constant: vclass=%s etype=%s operType=%s vlen=%s",
+    log_if_needed("  ** missing constant: vclass=%s etype=%s vlen=%s",
                     NodeClassNames[argument(0)->Opcode()],
                     NodeClassNames[argument(1)->Opcode()],
-                    NodeClassNames[argument(2)->Opcode()],
-                    NodeClassNames[argument(3)->Opcode()]);
+                    NodeClassNames[argument(2)->Opcode()]);
     return false; // not enough info for intrinsification
   }
 
-  if (operType->get_con() != VectorSupport::VECTOR_TYPE_PRIM) {
-    log_if_needed("  ** unhandled operType=%s", get_opertype_string(operType->get_con()));
+  if (!is_valid_lane_type(laneType->get_con())) {
+    log_if_needed("  ** not a primitive lt=%s", VectorSupport::lanetype2name(laneType->get_con()));
+    return false; // should be primitive type
+  }
+
+  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
+  if (!is_primitive_lane_type(elem_bt)) {
+    log_if_needed("  ** unhandled bt=%s", type2name(elem_bt));
     return false;
   }
 
@@ -3074,14 +3034,7 @@ bool LibraryCallKit::inline_index_vector() {
     return false;
   }
 
-  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
-  if (!elem_type->is_primitive_type()) {
-    log_if_needed("  ** not a primitive bt=%d", elem_type->basic_type());
-    return false; // should be primitive type
-  }
-
   int num_elem = vlen->get_con();
-  BasicType elem_bt = elem_type->basic_type();
 
   // Check whether the iota index generation op is supported by the current hardware
   if (!arch_supports_vector(Op_VectorLoadConst, num_elem, elem_bt, VecMaskNotUsed)) {
@@ -3092,7 +3045,7 @@ bool LibraryCallKit::inline_index_vector() {
   int mul_op = VectorSupport::vop2ideal(VectorSupport::VECTOR_OP_MUL, elem_bt);
   int vmul_op = VectorNode::opcode(mul_op, elem_bt);
   bool needs_mul = true;
-  Node* scale = argument(5);
+  Node* scale = argument(4);
   const TypeInt* scale_type = gvn().type(scale)->isa_int();
   // Multiply is not needed if the scale is a constant "1".
   if (scale_type && scale_type->is_con() && scale_type->get_con() == 1) {
@@ -3118,10 +3071,10 @@ bool LibraryCallKit::inline_index_vector() {
 
   ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
-  Node* opd = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
+  Node* opd = unbox_vector(argument(3), vbox_type, elem_bt, num_elem);
   if (opd == nullptr) {
     log_if_needed("  ** unbox failed vector=%s",
-                    NodeClassNames[argument(4)->Opcode()]);
+                    NodeClassNames[argument(3)->Opcode()]);
     return false;
   }
 
@@ -3185,30 +3138,33 @@ bool LibraryCallKit::inline_index_vector() {
 //
 //  <E,
 //   M extends VectorMask<E>>
-//  M indexPartiallyInUpperRange(Class<? extends M> mClass, Class<?> cClass, int operType,
+//  M indexPartiallyInUpperRange(Class<? extends M> mClass, int laneType,
 //                               int length, long offset, long limit,
 //                               IndexPartiallyInUpperRangeOperation<E, M> defaultImpl)
 //
 bool LibraryCallKit::inline_index_partially_in_upper_range() {
   const TypeInstPtr* mask_klass   = gvn().type(argument(0))->isa_instptr();
-  const TypeInstPtr* elem_klass   = gvn().type(argument(1))->isa_instptr();
-  const TypeInt*     operType     = gvn().type(argument(2))->isa_int();
-  const TypeInt*     vlen         = gvn().type(argument(3))->isa_int();
+  const TypeInt*     laneType     = gvn().type(argument(1))->isa_int();
+  const TypeInt*     vlen         = gvn().type(argument(2))->isa_int();
 
   if (mask_klass == nullptr || mask_klass->const_oop() == nullptr ||
-      elem_klass == nullptr || elem_klass->const_oop() == nullptr ||
-      operType   == nullptr || !operType->is_con() ||
+      laneType   == nullptr || !laneType->is_con() ||
       vlen       == nullptr || !vlen->is_con()) {
-    log_if_needed("  ** missing constant: mclass=%s etype=%s operType=%s vlen=%s",
+    log_if_needed("  ** missing constant: mclass=%s etype=%s vlen=%s",
                     NodeClassNames[argument(0)->Opcode()],
                     NodeClassNames[argument(1)->Opcode()],
-                    NodeClassNames[argument(2)->Opcode()],
-                    NodeClassNames[argument(3)->Opcode()]);
+                    NodeClassNames[argument(2)->Opcode()]);
     return false; // not enough info for intrinsification
   }
 
-  if (operType->get_con() != VectorSupport::VECTOR_TYPE_PRIM) {
-    log_if_needed("  ** unhandled operType=%s", get_opertype_string(operType->get_con()));
+  if (!is_valid_lane_type(laneType->get_con())) {
+    log_if_needed("  ** not a primitive lt=%s", VectorSupport::lanetype2name(laneType->get_con()));
+    return false; // should be primitive type
+  }
+
+  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
+  if (!is_primitive_lane_type(elem_bt)) {
+    log_if_needed("  ** unhandled bt=%s", type2name(elem_bt));
     return false;
   }
 
@@ -3217,14 +3173,8 @@ bool LibraryCallKit::inline_index_partially_in_upper_range() {
     return false;
   }
 
-  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
-  if (!elem_type->is_primitive_type()) {
-    log_if_needed("  ** not a primitive bt=%d", elem_type->basic_type());
-    return false; // should be primitive type
-  }
 
   int num_elem = vlen->get_con();
-  BasicType elem_bt = elem_type->basic_type();
 
   // Check whether the necessary ops are supported by current hardware.
   bool supports_mask_gen = arch_supports_vector(Op_VectorMaskGen, num_elem, elem_bt, VecMaskUseStore);
@@ -3248,8 +3198,8 @@ bool LibraryCallKit::inline_index_partially_in_upper_range() {
     }
   }
 
-  Node* offset = argument(4);
-  Node* limit = argument(6);
+  Node* offset = argument(3);
+  Node* limit = argument(5);
   if (offset == nullptr || limit == nullptr) {
     log_if_needed("  ** offset or limit argument is null");
     return false; // not supported

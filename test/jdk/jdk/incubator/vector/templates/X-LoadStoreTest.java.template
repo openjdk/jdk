@@ -43,7 +43,7 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.ValueLayout;
 #if[FP16]
 import jdk.incubator.vector.Float16;
-import jdk.incubator.vector.HalffloatVector;
+import jdk.incubator.vector.Float16Vector;
 #end[FP16]
 import jdk.incubator.vector.$Type$Vector;
 import jdk.incubator.vector.VectorMask;

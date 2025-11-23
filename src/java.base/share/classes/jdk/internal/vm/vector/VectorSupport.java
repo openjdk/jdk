@@ -149,21 +149,15 @@ public class VectorSupport {
     public static final int MODE_BROADCAST = 0;
     public static final int MODE_BITS_COERCED_LONG_TO_MASK = 1;
 
-    // Vector operation types.
-    public static final int VECTOR_TYPE_PRIM = 1;
-    public static final int VECTOR_TYPE_FP16 = 2;
-    public static final int VECTOR_TYPE_FP8  = 3;
-    public static final int VECTOR_TYPE_INT8 = 4;
-
     // BasicType codes, for primitives only:
     public static final int
-        T_HALFFLOAT = 5,
-        T_FLOAT     = 6,
-        T_DOUBLE    = 7,
-        T_BYTE      = 8,
-        T_SHORT     = 9,
-        T_INT       = 10,
-        T_LONG      = 11;
+        VECTOR_LANE_TYPE_FLOAT     = 6,
+        VECTOR_LANE_TYPE_DOUBLE    = 7,
+        VECTOR_LANE_TYPE_BYTE      = 8,
+        VECTOR_LANE_TYPE_SHORT     = 9,
+        VECTOR_LANE_TYPE_INT       = 10,
+        VECTOR_LANE_TYPE_LONG      = 11,
+        VECTOR_LANE_TYPE_FLOAT16   = 12;
 
     /* ============================================================================ */
 
@@ -210,7 +204,7 @@ public class VectorSupport {
     <VM extends VectorPayload,
      S extends VectorSpecies<E>,
      E>
-    VM fromBitsCoerced(Class<? extends VM> vmClass, Class<?> cClass, int operType,
+    VM fromBitsCoerced(Class<? extends VM> vmClass, int laneType,
                        int length,
                        long bits, int mode, S s,
                        FromBitsCoercedOperation<VM, S> defaultImpl) {
@@ -228,7 +222,7 @@ public class VectorSupport {
     public static
     <E,
      M extends VectorMask<E>>
-    M indexPartiallyInUpperRange(Class<? extends M> mClass, Class<?> cClass, int operType,
+    M indexPartiallyInUpperRange(Class<? extends M> mClass, int laneType,
                                  int length, long offset, long limit,
                                  IndexPartiallyInUpperRangeOperation<E, M> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
@@ -246,7 +240,7 @@ public class VectorSupport {
     <V extends Vector<E>,
      E,
      S extends VectorSpecies<E>>
-    V indexVector(Class<? extends V> vClass, Class<?> cClass, int operType,
+    V indexVector(Class<? extends V> vClass, int laneType,
                   int length,
                   V v, int step, S s,
                   IndexOperation<V, S> defaultImpl) {
@@ -267,7 +261,7 @@ public class VectorSupport {
      M extends VectorMask<E>,
      E>
     long reductionCoerced(int oprId,
-                          Class<? extends V> vClass, Class<? extends M> mClass, Class<?> cClass, int operType,
+                          Class<? extends V> vClass, Class<? extends M> mClass, int laneType,
                           int length,
                           V v, M m,
                           ReductionOperation<V, M> defaultImpl) {
@@ -286,7 +280,7 @@ public class VectorSupport {
     public static
     <VM extends VectorPayload,
      E>
-    long extract(Class<? extends VM> vClass, Class<?> cClass, int operType,
+    long extract(Class<? extends VM> vClass, int laneType,
                  int length,
                  VM vm, int i,
                  VecExtractOp<VM> defaultImpl) {
@@ -304,7 +298,7 @@ public class VectorSupport {
     public static
     <V extends Vector<E>,
      E>
-    V insert(Class<? extends V> vClass, Class<?> cClass, int operType,
+    V insert(Class<? extends V> vClass, int laneType,
              int length,
              V v, int i, long val,
              VecInsertOp<V> defaultImpl) {
@@ -325,7 +319,7 @@ public class VectorSupport {
      M extends VectorMask<E>,
      E>
     V unaryOp(int oprId,
-              Class<? extends V> vClass, Class<? extends M> mClass, Class<?> cClass, int operType,
+              Class<? extends V> vClass, Class<? extends M> mClass, int laneType,
               int length,
               V v, M m,
               UnaryOperation<V, M> defaultImpl) {
@@ -363,7 +357,7 @@ public class VectorSupport {
      M extends VectorMask<E>,
      E>
     VM binaryOp(int oprId,
-                Class<? extends VM> vmClass, Class<? extends M> mClass, Class<?> cClass, int operType,
+                Class<? extends VM> vmClass, Class<? extends M> mClass, int laneType,
                 int length,
                 VM v1, VM v2, M m,
                 BinaryOperation<VM, M> defaultImpl) {
@@ -398,7 +392,7 @@ public class VectorSupport {
     public static
     <V extends Vector<E>,
      E>
-    V selectFromTwoVectorOp(Class<? extends V> vClass, Class<?> cClass, int operType, int length,
+    V selectFromTwoVectorOp(Class<? extends V> vClass, int laneType, int length,
                             V v1, V v2, V v3,
                             SelectFromTwoVector<V> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
@@ -420,7 +414,7 @@ public class VectorSupport {
      M extends VectorMask<E>,
      E>
     V ternaryOp(int oprId,
-                Class<? extends V> vClass, Class<? extends M> mClass, Class<?> cClass, int operType,
+                Class<? extends V> vClass, Class<? extends M> mClass, int laneType,
                 int length,
                 V v1, V v2, V v3, M m,
                 TernaryOperation<V, M> defaultImpl) {
@@ -444,7 +438,7 @@ public class VectorSupport {
      VM extends VectorPayload,
      E,
      S extends VectorSpecies<E>>
-    VM load(Class<? extends VM> vmClass, Class<?> cClass, int operType,
+    VM load(Class<? extends VM> vmClass, int laneType,
             int length,
             Object base, long offset, boolean fromSegment,
             C container, long index, S s,
@@ -469,7 +463,7 @@ public class VectorSupport {
      E,
      S extends VectorSpecies<E>,
      M extends VectorMask<E>>
-    V loadMasked(Class<? extends V> vClass, Class<M> mClass, Class<?> cClass, int operType,
+    V loadMasked(Class<? extends V> vClass, Class<M> mClass, int laneType,
                  int length, Object base, long offset, boolean fromSegment,
                  M m, int offsetInRange,
                  C container, long index, S s,
@@ -495,7 +489,7 @@ public class VectorSupport {
      S extends VectorSpecies<E>,
      M extends VectorMask<E>,
      E>
-    V loadWithMap(Class<? extends V> vClass, Class<M> mClass, Class<?> cClass, int operType,
+    V loadWithMap(Class<? extends V> vClass, Class<M> mClass, int laneType,
                   int length,
                   Class<? extends Vector<Integer>> vectorIndexClass,
                   int indexLength, Object base, long offset,
@@ -517,7 +511,7 @@ public class VectorSupport {
     public static
     <C,
      V extends VectorPayload>
-    void store(Class<?> vClass, Class<?> cClass, int operType,
+    void store(Class<?> vClass, int laneType,
                int length,
                Object base, long offset, boolean fromSegment,
                V v, C container, long index,
@@ -538,7 +532,7 @@ public class VectorSupport {
      V extends Vector<E>,
      M extends VectorMask<E>,
      E>
-    void storeMasked(Class<? extends V> vClass, Class<M> mClass, Class<?> cClass, int operType,
+    void storeMasked(Class<? extends V> vClass, Class<M> mClass, int laneType,
                      int length,
                      Object base, long offset, boolean fromSegment,
                      V v, M m, C container, long index,
@@ -562,7 +556,7 @@ public class VectorSupport {
      W extends Vector<Integer>,
      M extends VectorMask<E>,
      E>
-    void storeWithMap(Class<? extends V> vClass, Class<M> mClass, Class<?> cClass, int operType,
+    void storeWithMap(Class<? extends V> vClass, Class<M> mClass, int laneType,
                       int length,
                       Class<? extends Vector<Integer>> vectorIndexClass,
                       int indexLength, Object base, long offset,
@@ -580,7 +574,7 @@ public class VectorSupport {
     <M extends VectorMask<E>,
      E>
     boolean test(int cond,
-                 Class<?> mClass, Class<?> cClass, int operType,
+                 Class<?> mClass, int laneType,
                  int length,
                  M m1, M m2,
                  BiFunction<M, M, Boolean> defaultImpl) {
@@ -601,7 +595,7 @@ public class VectorSupport {
      M extends VectorMask<E>,
      E>
     M compare(int cond,
-              Class<? extends V> vectorClass, Class<M> mClass, Class<?> cClass, int operType,
+              Class<? extends V> vectorClass, Class<M> mClass, int laneType,
               int length,
               V v1, V v2, M m,
               VectorCompareOp<V, M> defaultImpl) {
@@ -622,7 +616,7 @@ public class VectorSupport {
      SH extends VectorShuffle<E>,
      M  extends VectorMask<E>,
      E>
-    V rearrangeOp(Class<? extends V> vClass, Class<SH> shClass, Class<M> mClass, Class<?> cClass, int operType,
+    V rearrangeOp(Class<? extends V> vClass, Class<SH> shClass, Class<M> mClass, int laneType,
                   int length,
                   V v, SH sh, M m,
                   VectorRearrangeOp<V, SH, M> defaultImpl) {
@@ -640,7 +634,7 @@ public class VectorSupport {
     <V extends Vector<E>,
      M  extends VectorMask<E>,
      E>
-    V selectFromOp(Class<? extends V> vClass, Class<M> mClass, Class<?> cClass, int operType,
+    V selectFromOp(Class<? extends V> vClass, Class<M> mClass, int laneType,
                    int length, V v1, V v2, M m,
                    VectorSelectFromOp<V, M> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
@@ -659,7 +653,7 @@ public class VectorSupport {
     <V extends Vector<E>,
      M extends VectorMask<E>,
      E>
-    V blend(Class<? extends V> vClass, Class<M> mClass, Class<?> cClass, int operType,
+    V blend(Class<? extends V> vClass, Class<M> mClass, int laneType,
             int length,
             V v1, V v2, M m,
             VectorBlendOp<V, M> defaultImpl) {
@@ -680,7 +674,7 @@ public class VectorSupport {
      M extends VectorMask<E>,
      E>
     V broadcastInt(int opr,
-                   Class<? extends V> vClass, Class<? extends M> mClass, Class<?> cClass, int operType,
+                   Class<? extends V> vClass, Class<? extends M> mClass, int laneType,
                    int length,
                    V v, int n, M m,
                    VectorBroadcastIntOp<V, M> defaultImpl) {
@@ -726,7 +720,7 @@ public class VectorSupport {
      M extends VectorMask<E>,
      E>
     VectorPayload compressExpandOp(int opr,
-                                   Class<? extends V> vClass, Class<? extends M> mClass, Class<?> cClass, int operType,
+                                   Class<? extends V> vClass, Class<? extends M> mClass, int laneType,
                                    int length, V v, M m,
                                    CompressExpandOperation<V, M> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
@@ -755,7 +749,7 @@ public class VectorSupport {
     <M extends VectorMask<E>,
      E>
     long maskReductionCoerced(int oper,
-                              Class<? extends M> mClass, Class<?> cClass, int operType,
+                              Class<? extends M> mClass, int laneType,
                               int length,
                               M m,
                               VectorMaskOp<M> defaultImpl) {

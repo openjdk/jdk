@@ -53,14 +53,14 @@ typeprefix=
 globalArgs=""
 #globalArgs="$globalArgs -KextraOverrides"
 
-for type in byte short int long float double halffloat
+for type in byte short int long float double float16
 do
 
   Type="$(tr '[:lower:]' '[:upper:]' <<< ${type:0:1})${type:1}"
   TYPE="$(tr '[:lower:]' '[:upper:]' <<< ${type})"
 
   case $type in
-    halffloat)
+    float16)
        type=short
        TYPE=SHORT
        ;;
@@ -87,19 +87,24 @@ do
   Carriertype=$Type
   elemtype=$type
   FPtype=$type
+  fallbacktype=$type
 
   case $Type in
     Byte)
       Wideboxtype=Integer
       sizeInBytes=1
+      laneType=VECTOR_LANE_TYPE_BYTE
+      lanebitsType=VECTOR_LANE_TYPE_BYTE
       args="$args -KbyteOrShort"
       ;;
     Short)
-      fptype=halffloat
-      Fptype=Halffloat
-      Boxfptype=Halffloat
+      fptype=Float16
+      Fptype=Float16
+      Boxfptype=Float16
       Wideboxtype=Integer
       sizeInBytes=2
+      laneType=VECTOR_LANE_TYPE_SHORT
+      lanebitsType=VECTOR_LANE_TYPE_SHORT
       args="$args -KbyteOrShort"
       ;;
     Int)
@@ -111,6 +116,8 @@ do
       Fptype=Float
       Boxfptype=Float
       sizeInBytes=4
+      laneType=VECTOR_LANE_TYPE_INT
+      lanebitsType=VECTOR_LANE_TYPE_INT
       args="$args -KintOrLong -KintOrFP -KintOrFloat"
       ;;
     Long)
@@ -118,6 +125,8 @@ do
       Fptype=Double
       Boxfptype=Double
       sizeInBytes=8
+      laneType=VECTOR_LANE_TYPE_LONG
+      lanebitsType=VECTOR_LANE_TYPE_LONG
       args="$args -KintOrLong -KlongOrDouble"
       ;;
     Float)
@@ -127,6 +136,8 @@ do
       Bitstype=Int
       Boxbitstype=Integer
       sizeInBytes=4
+      laneType=VECTOR_LANE_TYPE_FLOAT
+      lanebitsType=VECTOR_LANE_TYPE_INT
       args="$args -KintOrFP -KintOrFloat"
       FPtype=FP32
       ;;
@@ -137,10 +148,12 @@ do
       Bitstype=Long
       Boxbitstype=Long
       sizeInBytes=8
+      laneType=VECTOR_LANE_TYPE_DOUBLE
+      lanebitsType=VECTOR_LANE_TYPE_LONG
       args="$args -KintOrFP -KlongOrDouble"
       FPtype=FP64
       ;;
-    Halffloat)
+    Float16)
       kind=FP
       bitstype=short
       maskbitstype=short
@@ -153,19 +166,22 @@ do
       Boxtype=Float16
       elemtype=Float16
       ElemLayout=Short
-      args="$args -KbyteOrShort -KshortOrFP -KshortOrHalffloat"
+      laneType=VECTOR_LANE_TYPE_FLOAT16
+      lanebitsType=VECTOR_LANE_TYPE_SHORT
+      fallbacktype=float
+      args="$args -KbyteOrShort -KshortOrFP -KshortOrFloat16"
       ;;
   esac
 
 
-  args="$args -K$FPtype -K$kind -DBoxtype=$Boxtype -DWideboxtype=$Wideboxtype"
+  args="$args -K$FPtype -K$kind -DlaneType=$laneType -DlanebitsType=$lanebitsType -Dfallbacktype=$fallbacktype -DBoxtype=$Boxtype -DWideboxtype=$Wideboxtype"
   args="$args -DElemLayout=$ElemLayout -Dbitstype=$bitstype -Dmaskbitstype=$maskbitstype -DBitstype=$Bitstype -DBoxbitstype=$Boxbitstype"
   args="$args -Dfptype=$fptype -DFptype=$Fptype -DBoxfptype=$Boxfptype"
   args="$args -DsizeInBytes=$sizeInBytes"
   args="$args -Dcarriertype=$carriertype -Delemtype=$elemtype -DCarriertype=$Carriertype"
 
   abstractvectortype=${typeprefix}${Type}Vector
-  abstractbitsvectortype=${typeprefix}${Bitstype}Vector
+  abstractbitsvectortype=${typeprefix}Vector${Bitstype}
   abstractfpvectortype=${typeprefix}${Fptype}Vector
   args="$args -Dabstractvectortype=$abstractvectortype -Dabstractbitsvectortype=$abstractbitsvectortype -Dabstractfpvectortype=$abstractfpvectortype"
   case $abstractvectortype in
@@ -186,11 +202,11 @@ do
   old_args="$args"
   for bits in 64 128 256 512 Max
   do
-    vectortype=${typeprefix}${Type}${bits}Vector
-    masktype=${typeprefix}${Type}${bits}Mask
-    shuffletype=${typeprefix}${Type}${bits}Shuffle
-    bitsvectortype=${typeprefix}${Bitstype}${bits}Vector
-    fpvectortype=${typeprefix}${Fptype}${bits}Vector
+    vectortype=${typeprefix}${Type}Vector${bits}
+    masktype=${typeprefix}${Type}Mask${bits}
+    shuffletype=${typeprefix}${Type}Shuffle${bits}
+    bitsvectortype=${typeprefix}${Bitstype}Vector${bits}
+    fpvectortype=${typeprefix}${Fptype}Vector${bits}
     vectorindexbits=$((bits * 4 / sizeInBytes))
 
     numLanes=$((bits / (sizeInBytes * 8)))
@@ -213,7 +229,7 @@ do
     if [[ "${bits}" == "Max" ]]; then
         vectorindextype="vix.getClass()"
     else
-        vectorindextype="Int${vectorindexbits}Vector.class"
+        vectorindextype="IntVector${vectorindexbits}.class"
     fi;
 
     BITS=$bits
@@ -227,7 +243,7 @@ do
     Shape=S_${bits}_BIT
     args="$old_args"
     args="$args -K$lanes -K$bits"
-    if [[ "${vectortype}" == "IntMaxVector" ]]; then
+    if [[ "${vectortype}" == "IntVectorMax" ]]; then
       args="$args -KintAndMax"
     fi
     bitargs="$args -Dbits=$bits -DBITS=$BITS -Dvectortype=$vectortype -Dmasktype=$masktype -Dshuffletype=$shuffletype -Dbitsvectortype=$bitsvectortype -Dfpvectortype=$fpvectortype -Dvectorindextype=$vectorindextype -Dshape=$shape -DShape=$Shape"

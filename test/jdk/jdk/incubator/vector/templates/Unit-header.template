@@ -51,7 +51,7 @@ import jdk.incubator.vector.FloatVector;
 #if[FP16]
 import jdk.incubator.vector.Float16;
 import static jdk.incubator.vector.Float16.*;
-import jdk.incubator.vector.HalffloatVector;
+import jdk.incubator.vector.Float16Vector;
 #end[FP16]
 #if[Int]
 import jdk.incubator.vector.IntVector;

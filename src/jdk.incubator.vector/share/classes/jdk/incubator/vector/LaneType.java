@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,13 +35,13 @@ import static jdk.incubator.vector.VectorIntrinsics.*;
  * It caches all sorts of goodies that we can't put on java.lang.Class.
  */
 enum LaneType {
-    FLOAT(float.class, Float.class, float[].class, 'F', 24, Float.SIZE, T_FLOAT),
-    DOUBLE(double.class, Double.class, double[].class, 'F', 53, Double.SIZE, T_DOUBLE),
-    BYTE(byte.class, Byte.class, byte[].class, 'I', -1, Byte.SIZE, T_BYTE),
-    SHORT(short.class, Short.class, short[].class, 'I', -1, Short.SIZE, T_SHORT),
-    INT(int.class, Integer.class, int[].class, 'I', -1, Integer.SIZE, T_INT),
-    LONG(long.class, Long.class, long[].class, 'I', -1, Long.SIZE, T_LONG),
-    HALFFLOAT(Float16.class, Short.class, short[].class, 'F', 11, Float16.SIZE, T_HALFFLOAT);
+    FLOAT(float.class, Float.class, float[].class, 'F', 24, Float.SIZE, VECTOR_LANE_TYPE_FLOAT, false),
+    DOUBLE(double.class, Double.class, double[].class, 'F', 53, Double.SIZE, VECTOR_LANE_TYPE_DOUBLE, false),
+    BYTE(byte.class, Byte.class, byte[].class, 'I', -1, Byte.SIZE, VECTOR_LANE_TYPE_BYTE, false),
+    SHORT(short.class, Short.class, short[].class, 'I', -1, Short.SIZE, VECTOR_LANE_TYPE_SHORT, false),
+    INT(int.class, Integer.class, int[].class, 'I', -1, Integer.SIZE, VECTOR_LANE_TYPE_INT, false),
+    LONG(long.class, Long.class, long[].class, 'I', -1, Long.SIZE, VECTOR_LANE_TYPE_LONG, false),
+    FLOAT16(Float16.class, Short.class, short[].class, 'F', 11, Float16.SIZE, VECTOR_LANE_TYPE_FLOAT16, true);
 
     LaneType(Class<?> elementType,
              Class<?> genericElementType,
@@ -49,7 +49,8 @@ enum LaneType {
              char elementKind,
              int elementPrecision,
              int elementSize,
-             int basicType) {
+             int basicType,
+             boolean syntheticBasicType) {
         if (elementPrecision <= 0)
             elementPrecision += elementSize;
         this.elementType = elementType;
@@ -67,18 +68,16 @@ enum LaneType {
         // printName.  If we do unsigned or vector or bit lane types,
         // report that condition also.
         this.typeChar = genericElementType.getSimpleName().charAt(0);
-        if (basicType == T_HALFFLOAT) {
-          assert("FDBSILS".indexOf(typeChar, "FDBSILS".indexOf(typeChar) + 1) == ordinal()) : this;
+        if (!syntheticBasicType) {
+            assert("FDBSIL".indexOf(typeChar) == ordinal()) : this;
+            // Same as in JVMS, org.objectweb.asm.Opcodes, etc.:
+            assert(basicType ==
+                   ( (elementSizeLog2 - /*lg(Byte.SIZE)*/ 3)
+                     | (elementKind == 'F' ? 4 : 8))) : this;
+            assert("....zcFDBSILoav..".charAt(basicType) == typeChar);
         }
-        else {
-          assert("FDBSILS".indexOf(typeChar) == ordinal()) : this;
-        }
-        // Same as in JVMS, org.objectweb.asm.Opcodes, etc.:
         this.basicType = basicType;
-        assert(basicType ==
-               ( (elementSizeLog2 - /*lg(Byte.SIZE)*/ 3)
-                 | (elementKind == 'F' ? 4 : 8))) : this;
-        assert("....zSFDBSILSoav..".charAt(basicType) == typeChar);
+        this.syntheticBasicType = syntheticBasicType;
     }
 
     final Class<?> elementType;
@@ -92,6 +91,8 @@ enum LaneType {
     final String printName;
     final char typeChar; // one of "BSILFD"
     final int basicType;  // lg(size/8) | (kind=='F'?4:kind=='I'?8)
+    final boolean syntheticBasicType; // type like Float16 use existing 16bit short as carrier.
+                                      // As per JLS they should be assigned T_OBJECT(12) basictype
 
     private @Stable LaneType asIntegral;
     private @Stable LaneType asFloating;
@@ -190,7 +191,7 @@ enum LaneType {
         SK_SHORT     = 4,
         SK_INT       = 5,
         SK_LONG      = 6,
-        SK_HALFFLOAT = 7,
+        SK_FLOAT16   = 7,
         SK_LIMIT     = 8;
 
     /*package-private*/
@@ -215,7 +216,7 @@ enum LaneType {
     @Stable private static final LaneType[] ENUM_FROM_SK;
     @Stable private static final LaneType[] ENUM_FROM_C0;
     @Stable private static final LaneType[] ENUM_FROM_BT;
-    private static final int C0_MASK = 0x0F, BT_MASK = 0x0F;
+    private static final int C0_MASK = 0x0F, BT_MASK = 0x1F;
     static {
         LaneType[] values = values().clone();
         LaneType[] valuesByKey = new LaneType[1+values.length];
@@ -287,11 +288,11 @@ enum LaneType {
     }
 
     static {
-        assert(ofBasicType(T_FLOAT) == FLOAT);
-        assert(ofBasicType(T_DOUBLE) == DOUBLE);
-        assert(ofBasicType(T_BYTE) == BYTE);
-        assert(ofBasicType(T_SHORT) == SHORT);
-        assert(ofBasicType(T_INT) == INT);
-        assert(ofBasicType(T_LONG) == LONG);
+        assert(ofBasicType(VECTOR_LANE_TYPE_FLOAT) == FLOAT);
+        assert(ofBasicType(VECTOR_LANE_TYPE_DOUBLE) == DOUBLE);
+        assert(ofBasicType(VECTOR_LANE_TYPE_BYTE) == BYTE);
+        assert(ofBasicType(VECTOR_LANE_TYPE_SHORT) == SHORT);
+        assert(ofBasicType(VECTOR_LANE_TYPE_INT) == INT);
+        assert(ofBasicType(VECTOR_LANE_TYPE_LONG) == LONG);
     }
 }

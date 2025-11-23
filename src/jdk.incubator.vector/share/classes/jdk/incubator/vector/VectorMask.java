@@ -209,7 +209,7 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
         int laneCount = vsp.laneCount();
         offset = VectorIntrinsics.checkFromIndexSize(offset, laneCount, bits.length);
         return VectorSupport.load(
-                vsp.maskType(), vsp.carrierType(), vsp.operType(), laneCount, bits,
+                vsp.maskType(), vsp.laneBasicType(), laneCount, bits,
                 (long) offset + Unsafe.ARRAY_BOOLEAN_BASE_OFFSET, false,
                 bits, offset, vsp,
                 (c, idx, s)
@@ -242,8 +242,8 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
     public static <E> VectorMask<E> fromLong(VectorSpecies<E> species, long bits) {
         AbstractSpecies<E> vsp = (AbstractSpecies<E>) species;
         bits = bits & (0xFFFFFFFFFFFFFFFFL >>> (64 - vsp.laneCount()));
-        return VectorSupport.fromBitsCoerced(vsp.maskType(), vsp.carrierType(),
-                                             vsp.operType(), vsp.laneCount(), bits,
+        return VectorSupport.fromBitsCoerced(vsp.maskType(), vsp.laneBasicType(),
+                                             vsp.laneCount(), bits,
                                              VectorSupport.MODE_BITS_COERCED_LONG_TO_MASK, vsp,
                                              (m, s) -> {
                                                  if (m == (m >> 1)) {

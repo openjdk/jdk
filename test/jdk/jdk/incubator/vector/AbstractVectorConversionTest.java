@@ -157,15 +157,15 @@ abstract class AbstractVectorConversionTest {
         return a;
     }
 
-    interface ToHalffloatF {
+    interface ToFloat16F {
         short apply(int i);
     }
 
-    static short[] fill_halffloat(int s, ToHalffloatF f) {
-        return fill_halffloat(new short[s], f);
+    static short[] fill_float16(int s, ToFloat16F f) {
+        return fill_float16(new short[s], f);
     }
 
-    static short[] fill_halffloat(short[] a, ToHalffloatF f) {
+    static short[] fill_float16(short[] a, ToFloat16F f) {
         for (int i = 0; i < a.length; i++) {
             a[i] = f.apply(i);
         }
@@ -206,8 +206,8 @@ abstract class AbstractVectorConversionTest {
             withToString("double(i)", (int s) -> fill_double(s, i -> (double) (i * 10 + 0.1)))
     );
 
-    static final List<IntFunction<short[]>> HALFFLOAT_GENERATORS = List.of(
-            withToString("Float16(i)", (int s) -> fill_halffloat(s, i -> (short) (i * 100 + 1)))
+    static final List<IntFunction<short[]>> FLOAT16_GENERATORS = List.of(
+            withToString("Float16(i)", (int s) -> fill_float16(s, i -> (short) (i * 100 + 1)))
     );
 
     static List<?> sourceGenerators(Class<?> src) {
@@ -230,7 +230,7 @@ abstract class AbstractVectorConversionTest {
             return DOUBLE_GENERATORS;
         }
         else if (src == Float16.class) {
-            return HALFFLOAT_GENERATORS;
+            return FLOAT16_GENERATORS;
         }
         else
             throw new IllegalStateException();
