@@ -37,10 +37,10 @@ import jdk.test.whitebox.WhiteBox;
 
 /**
  * The <code>ClassUnloader</code> class allows to force VM to unload class(es)
- * using memory stressing technique.
+ * using WhiteBox.fullGC technique.
  *
- * <p>The method <code>unloadClass()</code> is provided which eats memory
- * to enforce GC to cleanup the heap. So, if all references to a class
+ * <p>The method <code>unloadClass()</code> is provided which call
+ * WhiteBox.fullGC to cleanup the heap. So, if all references to a class
  * and its loader are canceled, this may result in unloading the class.
  *
  * <p>ClassUnloader mainly intends to unload a class which was loaded
