@@ -3524,12 +3524,10 @@ void StubGenerator::aesgcm_avx512(Register in, Register len, Register ct, Regist
                                     false, true, false, false, false, ghashin_offset, aesout_offset, HashKey_32);
 
   ghash16_avx512(false, true, false, false, true, in, pos, avx512_subkeyHtbl, AAD_HASHx, SHUF_MASK, stack_offset, 16 * 16, 0, HashKey_16);
+  __ addl(pos, 16 * 16);
 
   __ bind(MESG_BELOW_32_BLKS);
   __ subl(len, 16 * 16);
-  __ cmpl(len, 16 * 16);
-  __ jcc(Assembler::lessEqual, ENC_DEC_DONE);
-  __ addl(pos, 16 * 16);
   gcm_enc_dec_last_avx512(len, in, pos, AAD_HASHx, SHUF_MASK, avx512_subkeyHtbl, ghashin_offset, HashKey_16, true, true);
 
   __ bind(GHASH_DONE);
