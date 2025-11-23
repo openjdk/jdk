@@ -45,7 +45,6 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #endif
 #if INCLUDE_ZGC
-#include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #endif

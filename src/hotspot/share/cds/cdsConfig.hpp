@@ -80,11 +80,12 @@ class CDSConfig : public AllStatic {
 
 public:
   // Used by jdk.internal.misc.CDS.getCDSConfigStatus();
-  static const int IS_DUMPING_ARCHIVE              = 1 << 0;
-  static const int IS_DUMPING_METHOD_HANDLES       = 1 << 1;
-  static const int IS_DUMPING_STATIC_ARCHIVE       = 1 << 2;
-  static const int IS_LOGGING_LAMBDA_FORM_INVOKERS = 1 << 3;
-  static const int IS_USING_ARCHIVE                = 1 << 4;
+  static const int IS_DUMPING_AOT_LINKED_CLASSES   = 1 << 0;
+  static const int IS_DUMPING_ARCHIVE              = 1 << 1;
+  static const int IS_DUMPING_METHOD_HANDLES       = 1 << 2;
+  static const int IS_DUMPING_STATIC_ARCHIVE       = 1 << 3;
+  static const int IS_LOGGING_LAMBDA_FORM_INVOKERS = 1 << 4;
+  static const int IS_USING_ARCHIVE                = 1 << 5;
 
   static int get_status() NOT_CDS_RETURN_(0);
 
@@ -216,6 +217,7 @@ public:
     ~DumperThreadMark();
   };
 
+  static bool current_thread_is_dumper() NOT_CDS_RETURN_(false);
   static bool current_thread_is_vm_or_dumper() NOT_CDS_RETURN_(false);
 };
 

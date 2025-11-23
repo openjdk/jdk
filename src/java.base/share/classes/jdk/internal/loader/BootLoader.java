@@ -75,9 +75,13 @@ public class BootLoader {
     private static final ConcurrentHashMap<?, ?> CLASS_LOADER_VALUE_MAP
         = new ConcurrentHashMap<>();
 
-    // native libraries loaded by the boot class loader
-    private static final NativeLibraries NATIVE_LIBS
-        = NativeLibraries.newInstance(null);
+    // Holder has the field(s) that need to be initialized during JVM bootstrap even if
+    // the outer is aot-initialized.
+    private static class Holder {
+        // native libraries loaded by the boot class loader
+        private static final NativeLibraries NATIVE_LIBS
+            = NativeLibraries.newInstance(null);
+    }
 
     /**
      * Returns the unnamed module for the boot loader.
@@ -104,7 +108,7 @@ public class BootLoader {
      * Returns NativeLibraries for the boot class loader.
      */
     public static NativeLibraries getNativeLibraries() {
-        return NATIVE_LIBS;
+        return Holder.NATIVE_LIBS;
     }
 
     /**

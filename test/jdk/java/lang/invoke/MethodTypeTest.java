@@ -230,6 +230,11 @@ public class MethodTypeTest {
                 "(" + "[".repeat(256) + "J)I",
                 "(java/lang/Object)V",
                 "()java/lang/Object",
+                "()Lbad.Name;",
+                "()Lbad[Name;",
+                "(L;)V",
+                "(L/Missing;)I",
+                "(Lmissing/;)Z",
         };
     }
 

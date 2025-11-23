@@ -1001,7 +1001,7 @@ InitializedAssertionPredicate CreateAssertionPredicatesVisitor::initialize_from_
 }
 
 bool NodeInSingleLoopBody::check_node_in_loop_body(Node* node) const {
-  return _phase->is_member(_ilt, _phase->get_ctrl(node));
+  return _phase->ctrl_is_member(_ilt, node);
 }
 
 // Clone the provided Template Assertion Predicate and set '_init' as new input for the OpaqueLoopInitNode.

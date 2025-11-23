@@ -62,6 +62,8 @@
 
 class ClassLoaderData;
 
+bool CollectedHeap::_is_shutting_down = false;
+
 size_t CollectedHeap::_lab_alignment_reserve = SIZE_MAX;
 Klass* CollectedHeap::_filler_object_klass = nullptr;
 size_t CollectedHeap::_filler_array_max_size = 0;
@@ -276,7 +278,6 @@ bool CollectedHeap::is_oop(oop object) const {
 CollectedHeap::CollectedHeap() :
   _capacity_at_last_gc(0),
   _used_at_last_gc(0),
-  _soft_ref_policy(),
   _is_stw_gc_active(false),
   _last_whole_heap_examined_time_ns(os::javaTimeNanos()),
   _total_collections(0),
@@ -378,14 +379,14 @@ MetaWord* CollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loa
                                        word_size,
                                        mdtype,
                                        gc_count,
-                                       full_gc_count,
-                                       GCCause::_metadata_GC_threshold);
+                                       full_gc_count);
 
     VMThread::execute(&op);
 
     if (op.gc_succeeded()) {
       return op.result();
     }
+
     loop_count++;
     if ((QueuedAllocationWarningCount > 0) &&
         (loop_count % QueuedAllocationWarningCount == 0)) {
@@ -444,12 +445,6 @@ void CollectedHeap::zap_filler_array_with(HeapWord* start, size_t words, juint v
 }
 
 #ifdef ASSERT
-void CollectedHeap::fill_args_check(HeapWord* start, size_t words)
-{
-  assert(words >= min_fill_size(), "too small to fill");
-  assert(is_object_aligned(words), "unaligned size");
-}
-
 void CollectedHeap::zap_filler_array(HeapWord* start, size_t words, bool zap)
 {
   if (ZapFillerObjects && zap) {
@@ -495,14 +490,16 @@ CollectedHeap::fill_with_object_impl(HeapWord* start, size_t words, bool zap)
 
 void CollectedHeap::fill_with_object(HeapWord* start, size_t words, bool zap)
 {
-  DEBUG_ONLY(fill_args_check(start, words);)
+  assert(words >= min_fill_size(), "too small to fill");
+  assert(is_object_aligned(words), "unaligned size");
   HandleMark hm(Thread::current());  // Free handles before leaving.
   fill_with_object_impl(start, words, zap);
 }
 
 void CollectedHeap::fill_with_objects(HeapWord* start, size_t words, bool zap)
 {
-  DEBUG_ONLY(fill_args_check(start, words);)
+  assert(words >= min_fill_size(), "too small to fill");
+  assert(is_object_aligned(words), "unaligned size");
   HandleMark hm(Thread::current());  // Free handles before leaving.
 
   // Multiple objects may be required depending on the filler array maximum size. Fill
@@ -604,11 +601,24 @@ void CollectedHeap::post_initialize() {
   initialize_serviceability();
 }
 
-void CollectedHeap::before_exit() {
-  print_tracing_info();
+bool CollectedHeap::is_shutting_down() {
+  assert(Heap_lock->owned_by_self(), "Protected by this lock");
+  return _is_shutting_down;
+}
 
-  // Stop any on-going concurrent work and prepare for exit.
-  stop();
+void CollectedHeap::initiate_shutdown() {
+  {
+    // Acquire the Heap_lock to synchronize with VM_Heap_Sync_Operations,
+    // which may depend on the value of _is_shutting_down flag.
+    MutexLocker hl(Heap_lock);
+    _is_shutting_down = true;
+  }
+
+  print_tracing_info();
+}
+
+size_t CollectedHeap::bootstrap_max_memory() const {
+  return MaxNewSize;
 }
 
 #ifndef PRODUCT
