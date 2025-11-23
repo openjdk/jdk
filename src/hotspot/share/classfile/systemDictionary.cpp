@@ -1869,11 +1869,11 @@ void SystemDictionary::add_nest_host_error(const constantPoolHandle& pool,
       // resolution succeeded but there's an error in this nest host.
       assert(pool->resolved_klass_at(which) != nullptr, "klass should be resolved if there is no entry");
       ResolutionErrorTable::add_entry(pool, which, message);
-    } else if (entry->nest_host_error() == nullptr) {
+    } else {
       // An existing entry means we had a true resolution failure (LinkageError) with our nest host, but we
       // still want to add the error message for the higher-level access checks to report. We should
       // only reach here under the same error condition, so we can ignore the potential race with setting
-      // the message. If we see it is already set then we can ignore it.
+      // the message, and set it again.
       entry->set_nest_host_error(message);
     }
   }

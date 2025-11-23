@@ -128,6 +128,15 @@ ResolutionErrorEntry::~ResolutionErrorEntry() {
   }
 }
 
+void ResolutionErrorEntry::set_nest_host_error(const char* message) {
+  // If a message is already set, free it.
+  if (nest_host_error() != nullptr) {
+    FREE_C_HEAP_ARRAY(char, _nest_host_error);
+  }
+  _nest_host_error = message;
+}
+
+
 class ResolutionErrorDeleteIterate : StackObj {
   ConstantPool* p;
 
