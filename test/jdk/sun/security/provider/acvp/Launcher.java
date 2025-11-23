@@ -44,7 +44,6 @@ import java.util.zip.ZipFile;
  *          java.base/sun.security.util
  *          java.base/com.sun.crypto.provider
  * @run main/othervm/timeout=480 Launcher
- * @run main/timeout=480 Launcher
  */
 
 /*
