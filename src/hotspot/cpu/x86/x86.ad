@@ -2633,7 +2633,7 @@ bool Matcher::supports_vector_calling_convention(void) {
   return EnableVectorSupport;
 }
 
-bool Matcher::is_register_biasing_candidate(const MachNode* mdef, int biasing_candidate, int oper_index) {
+bool Matcher::is_register_biasing_candidate(const MachNode* mdef, int oper_index) {
   if (mdef == nullptr) {
     return false;
   }
@@ -2646,12 +2646,9 @@ bool Matcher::is_register_biasing_candidate(const MachNode* mdef, int biasing_ca
     return false;
   }
 
-  // Demotion candidate must be register mask compatible with definition.
-  if (!mdef->in_RegMask(mdef->operand_index(oper_index)).overlap(mdef->out_RegMask())) {
-    return false;
-  }
 
-  switch (biasing_candidate) {
+  bool res = false;
+  switch (oper_index) {
     // First operand of MachNode corresponding to Intel APX NDD selection
     // pattern can share its assigned register with definition operand if
     // their live ranges do not overlap. In such a scenario we can demote
@@ -2659,21 +2656,32 @@ bool Matcher::is_register_biasing_candidate(const MachNode* mdef, int biasing_ca
     // EVEX prefix with shorter REX/REX2 encoding. Demotion candidates
     // are decorated with a special flag by instruction selector.
     case 1: {
-      return (((mdef->flags() & Node::PD::Flag_ndd_demotable) != 0) ||
+      res = (((mdef->flags() & Node::PD::Flag_ndd_demotable) != 0) ||
               ((mdef->flags() & Node::PD::Flag_ndd_demotable_commutative) != 0));
+
     }
+    break;
 
     // Definition operand of commutative operation can be biased towards
     // second operand.
     case 2: {
-      return ((mdef->flags() & Node::PD::Flag_ndd_demotable_commutative) != 0);
+      res = ((mdef->flags() & Node::PD::Flag_ndd_demotable_commutative) != 0);
     }
+    break;
 
     // Current scheme only selects upto two biaising candidates
-    default: return false;
+    default: {
+      assert(false, "unhandled operand index");
+    }
+    break;
   }
 
-  return false;
+  if (res) {
+    // Demotion candidate must be register mask compatible with definition.
+    assert(mdef->in_RegMask(mdef->operand_index(oper_index)).overlap(mdef->out_RegMask()), "sanity");
+  }
+
+  return res;
 }
 
 OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
