@@ -440,10 +440,10 @@ public:
   ShenandoahHeapRegion* humongous_start_region() const;
 
   HeapWord* top() const {
-    return AtomicAccess::load_acquire(&_top);
+    return AtomicAccess::load(&_top);
   }
   void set_top(HeapWord* v) {
-    AtomicAccess::release_store(&_top, v);
+    AtomicAccess::store(&_top, v);
   }
 
   HeapWord* new_top() const     { return _new_top; }
