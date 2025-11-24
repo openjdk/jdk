@@ -992,10 +992,11 @@ class G1MergeHeapRootsTask : public WorkerTask {
     }
   };
 
-  // Closure to make sure that the marking bitmap is clear for any old region in
-  // the collection set.
-  // This is needed to be able to use the bitmap for evacuation failure handling.
-  class G1ClearBitmapClosure : public G1HeapRegionClosure {
+  // Closure to prepare the collection set regions for evacuation failure, i.e. make
+  // sure that the mark bitmap is clear for any old region in the collection set.
+  //
+  // These mark bitmaps record the evacuation failed objects.
+  class G1PrepareRegionsForEvacFailClosure : public G1HeapRegionClosure {
     G1CollectedHeap* _g1h;
     G1RemSetScanState* _scan_state;
     bool _initial_evacuation;
@@ -1023,7 +1024,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
     }
 
   public:
-    G1ClearBitmapClosure(G1CollectedHeap* g1h, G1RemSetScanState* scan_state, bool initial_evacuation) :
+    G1PrepareRegionsForEvacFailClosure(G1CollectedHeap* g1h, G1RemSetScanState* scan_state, bool initial_evacuation) :
       _g1h(g1h),
       _scan_state(scan_state),
       _initial_evacuation(initial_evacuation)
@@ -1172,8 +1173,8 @@ public:
 
     // Preparation for evacuation failure handling.
     {
-      G1ClearBitmapClosure clear(g1h, _scan_state, _initial_evacuation);
-      g1h->collection_set_iterate_increment_from(&clear, &_hr_claimer, worker_id);
+      G1PrepareRegionsForEvacFailClosure prepare_evac_failure(g1h, _scan_state, _initial_evacuation);
+      g1h->collection_set_iterate_increment_from(&prepare_evac_failure, &_hr_claimer, worker_id);
     }
   }
 };
