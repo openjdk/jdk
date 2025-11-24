@@ -53,6 +53,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -125,6 +126,8 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     // Defaults to value used for HTTP/1 Keep-Alive Timeout. Can be overridden by jdk.httpclient.keepalive.timeout.h2 property.
     static final long IDLE_CONNECTION_TIMEOUT_H2 = getTimeoutProp("jdk.httpclient.keepalive.timeout.h2", KEEP_ALIVE_TIMEOUT);
     static final long IDLE_CONNECTION_TIMEOUT_H3 = getTimeoutProp("jdk.httpclient.keepalive.timeout.h3", IDLE_CONNECTION_TIMEOUT_H2);
+    private final boolean hasRequiredH3TLS;
+    private final boolean hasRequiredH2TLS;
 
     // Define the default factory as a static inner class
     // that embeds all the necessary logic to avoid
@@ -466,10 +469,20 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                     "HTTP3 is not supported"));
         }
         sslParams = requireNonNullElseGet(builder.sslParams, sslContext::getDefaultSSLParameters);
-        boolean sslParamsSupportedForH3 = sslParams.getProtocols() == null
-                || sslParams.getProtocols().length == 0
-                || isQuicCompatible(sslParams);
-        if (version == Version.HTTP_3 && !sslParamsSupportedForH3) {
+        String[] protocols = sslParams.getProtocols();
+        if (protocols == null) {
+            protocols = sslContext.getDefaultSSLParameters().getProtocols();
+        }
+        if (protocols == null) {
+            // getDefaultSSLParameters.getProtocols should not return null
+            protocols = new String[0];
+        }
+        // HTTP/3 MUST use TLS version 1.3 or higher
+        hasRequiredH3TLS = Arrays.asList(protocols).contains("TLSv1.3");
+        // HTTP/2 MUST use TLS version 1.2 or higher for HTTP/2 over TLS
+        hasRequiredH2TLS = hasRequiredH3TLS || Arrays.asList(protocols).contains("TLSv1.2");
+
+        if (version == Version.HTTP_3 && !hasRequiredH3TLS) {
             throw new UncheckedIOException(new UnsupportedProtocolVersionException(
                     "HTTP3 is not supported - TLSv1.3 isn't configured on SSLParameters"));
         }
@@ -496,7 +509,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             debug.log("proxySelector is %s (user-supplied=%s)",
                       this.proxySelector, userProxySelector != null);
         authenticator = builder.authenticator;
-        boolean h3Supported = sslCtxSupportedForH3 && sslParamsSupportedForH3;
+        boolean h3Supported = sslCtxSupportedForH3 && hasRequiredH3TLS;
         registry = new AltServicesRegistry(id);
         connections = new ConnectionPool(id);
         client2 = new Http2ClientImpl(this);
@@ -513,6 +526,22 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         filters = new FilterFactory();
         initFilters();
         assert facadeRef.get() != null;
+    }
+
+    /**
+     * Returns true if the SSL parameter protocols contains at
+     * least one TLS version that HTTP/3 requires.
+     */
+    boolean hasRequiredHTTP3TLSVersion() {
+        return hasRequiredH3TLS;
+    }
+
+    /**
+     * Returns true if the SSL parameter protocols contains at
+     * least one TLS version that HTTP/2 requires.
+     */
+    boolean hasRequiredHTTP2TLSVersion() {
+        return hasRequiredH2TLS;
     }
 
     // called when the facade is GC'ed.
