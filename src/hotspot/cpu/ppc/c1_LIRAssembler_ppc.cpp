@@ -264,12 +264,19 @@ int LIR_Assembler::emit_deopt_handler() {
   }
 
   int offset = code_offset();
+  Label start;
+
+  __ bind(start);
   __ bl64_patchable(SharedRuntime::deopt_blob()->unpack(), relocInfo::runtime_call_type);
+  int entry_offset = __ offset();
+  __ b(start);
 
   guarantee(code_offset() - offset <= deopt_handler_size(), "overflow");
+  assert(code_offset() - entry_offset >= NativePostCallNop::first_check_size,
+         "out of bounds read in post-call NOP check");
   __ end_a_stub();
 
-  return offset;
+  return entry_offset;
 }
 
 
