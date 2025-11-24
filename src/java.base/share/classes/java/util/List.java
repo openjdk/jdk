@@ -1207,7 +1207,7 @@ public interface List<E> extends SequencedCollection<E> {
      * The provided computing function is guaranteed to be successfully
      * invoked at most once per list index, even in a multi-threaded environment.
      * Competing threads accessing an element already under computation will block until
-     * an element is computed or the computing function completes abnormally
+     * an element is computed or the computing function completes abnormally.
      * <p>
      * If invoking the provided computing function throws an exception, it is rethrown
      * to the initial caller and no value for the element is recorded.
@@ -1235,7 +1235,7 @@ public interface List<E> extends SequencedCollection<E> {
      * one or more lazy elements.
      * <p>
      * The returned lazy list strongly references its computing
-     * function used to compute elements at least so long as there are uninitialized
+     * function used to compute elements at least as long as there are uninitialized
      * elements.
      * <p>
      * The returned List is <em>not</em> {@linkplain Serializable}.

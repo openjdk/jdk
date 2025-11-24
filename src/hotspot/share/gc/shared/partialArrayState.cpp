@@ -22,6 +22,7 @@
  *
  */
 
+#include "cppstdlib/new.hpp"
 #include "gc/shared/partialArrayState.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/arena.hpp"
@@ -32,8 +33,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-
-#include <new>
 
 PartialArrayState::PartialArrayState(oop src, oop dst,
                                      size_t index, size_t length,
