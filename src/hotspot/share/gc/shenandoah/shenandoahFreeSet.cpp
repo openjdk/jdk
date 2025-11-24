@@ -3195,7 +3195,7 @@ int ShenandoahFreeSet::reserve_alloc_regions(ShenandoahFreeSetPartitionId partit
     update_allocation_bias();
   }
 
-  if (partition == ShenandoahFreeSetPartitionId::Mutator && _partitions.is_empty(partition)) {
+  if (_partitions.is_empty(partition)) {
     return 0;
   }
 
