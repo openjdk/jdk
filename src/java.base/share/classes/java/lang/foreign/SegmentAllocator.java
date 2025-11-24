@@ -111,7 +111,8 @@ public interface SegmentAllocator {
      * If the given string contains any {@code '\0'} characters, they will be
      * copied as well. This means that, depending on the method used to read
      * the string, such as {@link MemorySegment#getString(long)}, the string
-     * will appear truncated when read again.
+     * will appear truncated when read again. The string can be read without
+     * truncation using {@link MemorySegment#getString(long, Charset, long)}.
      *
      * @param str     the Java string to be converted into a C string
      * @param charset the charset used to {@linkplain Charset#newEncoder() encode} the
@@ -165,7 +166,8 @@ public interface SegmentAllocator {
      * If the given string contains any {@code '\0'} characters, they will be
      * copied as well. This means that, depending on the method used to read
      * the string, such as {@link MemorySegment#getString(long)}, the string
-     * will appear truncated when read again.
+     * will appear truncated when read again. The string can be read without
+     * truncation using {@link MemorySegment#getString(long, Charset, long)}.
      *
      * @param str      the Java string to be encoded
      * @param charset  the charset used to {@linkplain Charset#newEncoder() encode} the

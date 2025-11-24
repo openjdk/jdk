@@ -1333,6 +1333,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * over the decoding process is required.
      * <p>
      * If the string contains any {@code '\0'} characters, they will be read as well.
+     * This differs from {@link #getString(long, Charset)}, which will only read up
+     * to the first {@code '\0'}, resulting in truncation for string data that contains
+     * the {@code '\0'} character.
      *
      * @param offset  offset in bytes (relative to this segment address) at which this
      *                access operation will occur
@@ -1391,7 +1394,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * If the given string contains any {@code '\0'} characters, they will be
      * copied as well. This means that, depending on the method used to read
      * the string, such as {@link MemorySegment#getString(long)}, the string
-     * will appear truncated when read again.
+     * will appear truncated when read again. The string can be read without
+     * truncation using {@link #getString(long, Charset, long)}.
      *
      * @param offset  offset in bytes (relative to this segment address) at which this
      *                access operation will occur, the final address of this write
@@ -2643,7 +2647,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * If the given string contains any {@code '\0'} characters, they will be
      * copied as well. This means that, depending on the method used to read
      * the string, such as {@link MemorySegment#getString(long)}, the string
-     * will appear truncated when read again.
+     * will appear truncated when read again. The string can be read without
+     * truncation using {@link #getString(long, Charset, long)}.
      *
      * @param src      the Java string to be written into the destination segment
      * @param dstEncoding the charset used to {@linkplain Charset#newEncoder() encode}
