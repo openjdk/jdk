@@ -164,14 +164,14 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
 
         var ex = assertThrowsExactly(JPackageException.class,
                 spec.converter().orElseThrow().convert(spec.name(), StringToken.of(tempRoot.toString()))::orElseThrow);
-        assertEquals(I18N.format("ERR_BuildRootInvalid", tempRoot), ex.getMessage());
+        assertEquals(I18N.format("error.parameter-not-empty-directory", tempRoot, "--temp"), ex.getMessage());
         assertEquals(NotDirectoryException.class, ex.getCause().getClass());
 
         tempRoot = workDir;
 
         ex = assertThrowsExactly(JPackageException.class,
                 spec.converter().orElseThrow().convert(spec.name(), StringToken.of(tempRoot.toString()))::orElseThrow);
-        assertEquals(I18N.format("ERR_BuildRootInvalid", tempRoot), ex.getMessage());
+        assertEquals(I18N.format("error.parameter-not-empty-directory", tempRoot, "--temp"), ex.getMessage());
         assertEquals(DirectoryNotEmptyException.class, ex.getCause().getClass());
     }
 
@@ -417,8 +417,8 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
                 buildAddLauncherTest().expect("foo", "some.properties"),
                 buildAddLauncherTest().expect("foo", "a/b/some.properties").expect("bar", "="),
                 buildAddLauncherTest().expect("a", "a.properties").expect("a", "b.properties"),
-                buildAddLauncherTest().optionValue("some").expectErrors(I18N.format("ERR_NoAddLauncherName")),
-                buildAddLauncherTest().optionValue("").expectErrors(I18N.format("ERR_NoAddLauncherName")),
+                buildAddLauncherTest().optionValue("some").expectErrors(I18N.format("error.parameter-add-launcher-malformed", "some", "--add-launcher")),
+                buildAddLauncherTest().optionValue("").expectErrors(I18N.format("error.parameter-add-launcher-malformed", "", "--add-launcher")),
                 buildAddLauncherTest().optionValue("=").expectErrors(I18N.format("ERR_InvalidSLName", "")),
                 buildAddLauncherTest().optionValue("a=").expectErrors(I18N.format("error.parameter-add-launcher-not-file", "", "a")),
                 buildAddLauncherTest().optionValue("=a").expectErrors(I18N.format("ERR_InvalidSLName", "")),
@@ -481,7 +481,8 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
                                 return List.of(I18N.format("error.properties-parameter-not-launcher-shortcut-dir",
                                         optionValue, option.getSpec().name().name(), DUMMY_PROPERTY_FILE));
                             } else {
-                                return List.of(I18N.format("error.invalid-option-value", optionValue, option.getSpec().name().formatForCommandLine()));
+                                return List.of(I18N.format("error.parameter-not-launcher-shortcut-dir",
+                                        optionValue, option.getSpec().name().formatForCommandLine()));
                             }
                         }), propertyFile, Optional.ofNullable(optionValue));
             }
