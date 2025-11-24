@@ -96,6 +96,8 @@ class CollectedHeap : public CHeapObj<mtGC> {
   friend class MemAllocator;
 
  private:
+  static bool _is_shutting_down;
+
   GCHeapLog*      _heap_log;
   GCMetaspaceLog* _metaspace_log;
 
@@ -209,10 +211,9 @@ protected:
   // Default implementation does nothing.
   virtual void print_tracing_info() const = 0;
 
+ public:
   // Stop any onging concurrent work and prepare for exit.
   virtual void stop() = 0;
-
- public:
 
   static inline size_t filler_array_max_size() {
     return _filler_array_max_size;
@@ -245,14 +246,9 @@ protected:
   // This is the correct place to place such initialization methods.
   virtual void post_initialize();
 
-  bool is_shutting_down() const;
+  static bool is_shutting_down();
 
-  // If the VM is shutting down, we may have skipped VM_CollectForAllocation.
-  // In this case, stall the allocation request briefly in the hope that
-  // the VM shutdown completes before the allocation request returns.
-  void stall_for_vm_shutdown();
-
-  void before_exit();
+  void initiate_shutdown();
 
   // Stop and resume concurrent GC threads interfering with safepoint operations
   virtual void safepoint_synchronize_begin() {}
@@ -341,21 +337,19 @@ protected:
   virtual void ensure_parsability(bool retire_tlabs);
 
   // The amount of space available for thread-local allocation buffers.
-  virtual size_t tlab_capacity(Thread *thr) const = 0;
+  virtual size_t tlab_capacity() const = 0;
 
-  // The amount of used space for thread-local allocation buffers for the given thread.
-  virtual size_t tlab_used(Thread *thr) const = 0;
+  // The amount of space used for thread-local allocation buffers.
+  virtual size_t tlab_used() const = 0;
 
   virtual size_t max_tlab_size() const;
 
   // An estimate of the maximum allocation that could be performed
   // for thread-local allocation buffers without triggering any
   // collection or expansion activity.
-  virtual size_t unsafe_max_tlab_alloc(Thread *thr) const = 0;
+  virtual size_t unsafe_max_tlab_alloc() const = 0;
 
-  // Perform a collection of the heap; intended for use in implementing
-  // "System.gc".  This probably implies as full a collection as the
-  // "CollectedHeap" supports.
+  // Perform a collection of the heap of a type depending on the given cause.
   virtual void collect(GCCause::Cause cause) = 0;
 
   // Perform a full collection
@@ -500,6 +494,7 @@ protected:
   virtual bool can_load_archived_objects() const { return false; }
   virtual HeapWord* allocate_loaded_archive_space(size_t size) { return nullptr; }
   virtual void complete_loaded_archive_space(MemRegion archive_space) { }
+  virtual size_t bootstrap_max_memory() const;
 
   virtual bool is_oop(oop object) const;
   // Non product verification and debugging.

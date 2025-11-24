@@ -74,7 +74,7 @@ size_t ShenandoahGenerationalHeap::calculate_max_plab() {
 }
 
 // Returns size in bytes
-size_t ShenandoahGenerationalHeap::unsafe_max_tlab_alloc(Thread *thread) const {
+size_t ShenandoahGenerationalHeap::unsafe_max_tlab_alloc() const {
   return MIN2(ShenandoahHeapRegion::max_tlab_size_bytes(), young_generation()->available());
 }
 
@@ -1074,12 +1074,6 @@ void ShenandoahGenerationalHeap::final_update_refs_update_region_states() {
 
 void ShenandoahGenerationalHeap::complete_degenerated_cycle() {
   shenandoah_assert_heaplocked_or_safepoint();
-  if (is_concurrent_old_mark_in_progress()) {
-    // This is still necessary for degenerated cycles because the degeneration point may occur
-    // after final mark of the young generation. See ShenandoahConcurrentGC::op_final_update_refs for
-    // a more detailed explanation.
-    old_generation()->transfer_pointers_from_satb();
-  }
   // In case degeneration interrupted concurrent evacuation or update references, we need to clean up
   // transient state. Otherwise, these actions have no effect.
   reset_generation_reserves();

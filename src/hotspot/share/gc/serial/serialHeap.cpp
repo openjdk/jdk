@@ -337,11 +337,6 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size, bool is_tlab) {
       break;
     }
 
-    if (is_shutting_down()) {
-      stall_for_vm_shutdown();
-      return nullptr;
-    }
-
     // Give a warning if we seem to be looping forever.
     if ((QueuedAllocationWarningCount > 0) &&
         (try_count % QueuedAllocationWarningCount == 0)) {
@@ -660,16 +655,16 @@ bool SerialHeap::block_is_obj(const HeapWord* addr) const {
   return addr < _old_gen->space()->top();
 }
 
-size_t SerialHeap::tlab_capacity(Thread* thr) const {
+size_t SerialHeap::tlab_capacity() const {
   // Only young-gen supports tlab allocation.
   return _young_gen->tlab_capacity();
 }
 
-size_t SerialHeap::tlab_used(Thread* thr) const {
+size_t SerialHeap::tlab_used() const {
   return _young_gen->tlab_used();
 }
 
-size_t SerialHeap::unsafe_max_tlab_alloc(Thread* thr) const {
+size_t SerialHeap::unsafe_max_tlab_alloc() const {
   return _young_gen->unsafe_max_tlab_alloc();
 }
 

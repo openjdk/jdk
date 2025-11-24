@@ -25,7 +25,7 @@
  */
 
 
-#include "cds/archiveHeapWriter.hpp"
+#include "cds/aotMappedHeapWriter.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/fullGCForwarding.hpp"
@@ -1501,7 +1501,7 @@ void ShenandoahHeap::gclabs_retire(bool resize) {
 }
 
 // Returns size in bytes
-size_t ShenandoahHeap::unsafe_max_tlab_alloc(Thread *thread) const {
+size_t ShenandoahHeap::unsafe_max_tlab_alloc() const {
   // Return the max allowed size, and let the allocation path
   // figure out the safe size for current allocation.
   return ShenandoahHeapRegion::max_tlab_size_bytes();
@@ -1641,7 +1641,7 @@ void ShenandoahHeap::verify(VerifyOption vo) {
     }
   }
 }
-size_t ShenandoahHeap::tlab_capacity(Thread *thr) const {
+size_t ShenandoahHeap::tlab_capacity() const {
   return _free_set->capacity();
 }
 
@@ -2020,6 +2020,10 @@ void ShenandoahHeap::prepare_update_heap_references() {
 void ShenandoahHeap::propagate_gc_state_to_all_threads() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at Shenandoah safepoint");
   if (_gc_state_changed) {
+    // If we are only marking old, we do not need to process young pointers
+    ShenandoahBarrierSet::satb_mark_queue_set().set_filter_out_young(
+      is_concurrent_old_mark_in_progress() && !is_concurrent_young_mark_in_progress()
+    );
     ShenandoahGCStatePropagatorHandshakeClosure propagator(_gc_state.raw_value());
     Threads::threads_do(&propagator);
     _gc_state_changed = false;
@@ -2117,7 +2121,7 @@ GCTracer* ShenandoahHeap::tracer() {
   return shenandoah_policy()->tracer();
 }
 
-size_t ShenandoahHeap::tlab_used(Thread* thread) const {
+size_t ShenandoahHeap::tlab_used() const {
   return _free_set->used();
 }
 
@@ -2758,7 +2762,7 @@ HeapWord* ShenandoahHeap::allocate_loaded_archive_space(size_t size) {
   //
   // CDS would guarantee no objects straddle multiple regions, as long as regions are as large
   // as MIN_GC_REGION_ALIGNMENT.
-  guarantee(ShenandoahHeapRegion::region_size_bytes() >= ArchiveHeapWriter::MIN_GC_REGION_ALIGNMENT, "Must be");
+  guarantee(ShenandoahHeapRegion::region_size_bytes() >= AOTMappedHeapWriter::MIN_GC_REGION_ALIGNMENT, "Must be");
 
   ShenandoahAllocRequest req = ShenandoahAllocRequest::for_cds(size);
   return allocate_memory(req);
