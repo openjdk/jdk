@@ -35,7 +35,21 @@
  *      -XX:CompileCommand=compileonly,*TestMissingOptMemBarRemovePrecedentEdge::test*
  *      -XX:VerifyIterativeGVN=1110
  *      -XX:-EliminateAutoBox
+ *      compiler.c2.TestMissingOptMemBarRemovePrecedentEdge
+  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
+ *      -Xcomp -XX:-TieredCompilation
+ *      -XX:CompileCommand=compileonly,*TestMissingOptMemBarRemovePrecedentEdge::test*
+ *      -XX:VerifyIterativeGVN=1110
+ *      -XX:-EliminateAutoBox
  *      -XX:-DoEscapeAnalysis
+ *      compiler.c2.TestMissingOptMemBarRemovePrecedentEdge
+  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
+ *      -Xcomp -XX:-TieredCompilation
+ *      -XX:CompileCommand=compileonly,*TestMissingOptMemBarRemovePrecedentEdge::test*
+ *      -XX:VerifyIterativeGVN=1110
+ *      -XX:-EliminateAutoBox
+ *      -XX:-DoEscapeAnalysis
+ *      -XX:+AlwaysIncrementalInline
  *      compiler.c2.TestMissingOptMemBarRemovePrecedentEdge
  * @run main compiler.c2.TestMissingOptMemBarRemovePrecedentEdge
  *
