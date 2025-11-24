@@ -207,13 +207,8 @@ public class Hybrid {
                                 curve.getCurve()), curve);
                         leftKey = left.generatePublic(ecSpec);
                     } else if (leftname.startsWith("ML-KEM")) {
-                        try {
-                            leftKey = left.generatePublic(new RawKeySpec(
-                                    leftKeyBytes));
-                        } catch (Exception e) {
-                            leftKey = left.generatePublic(new X509EncodedKeySpec(
-                                    leftKeyBytes));
-                        }
+                        leftKey = left.generatePublic(new RawKeySpec(
+                                leftKeyBytes));
                     } else {
                         throw new InvalidKeySpecException("Unsupported left" +
                                 " algorithm" + leftname);
@@ -226,13 +221,8 @@ public class Hybrid {
                                 new BigInteger(1, rightKeyBytes));
                         rightKey = right.generatePublic(xecSpec);
                     } else if (rightname.startsWith("ML-KEM")) {
-                        try {
-                            rightKey = right.generatePublic(new RawKeySpec(
-                                    rightKeyBytes));
-                        } catch (Exception e) {
-                            rightKey = right.generatePublic(new X509EncodedKeySpec(
-                                    rightKeyBytes));
-                        }
+                        rightKey = right.generatePublic(new RawKeySpec(
+                                rightKeyBytes));
                     } else {
                         throw new InvalidKeySpecException("Unsupported right" +
                                 " algorithm: " + rightname);
