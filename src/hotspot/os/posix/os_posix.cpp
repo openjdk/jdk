@@ -126,7 +126,7 @@ void os::check_core_dump_prerequisites(char* buffer, size_t bufferSize, bool che
 #ifdef LINUX
     } else if (core_path[0] == '"') { // redirect to user process
       if (check_only) {
-        buf.print("core dumps are further processed the following: ");
+        buf.print("core dumps may be further processed by the following: ");
       } else {
         buf.print("Determined by the following: ");
       }
