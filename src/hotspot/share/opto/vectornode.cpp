@@ -1151,8 +1151,8 @@ Node* LoadVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         // After loop opts, cast nodes are aggressively removed, if the input is then transformed
         // into a constant that is outside the range of the removed cast, we may encounter it here.
         // This should be a dead node then.
-        assert(Compile::current()->post_loop_opts_phase(), "");
-        return nullptr;
+        assert(Compile::current()->post_loop_opts_phase(), "Unexpected load size");
+        return phase->C->top();
       }
 
       if (load_sz == MaxVectorSize) {
@@ -1175,8 +1175,8 @@ Node* StoreVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       int load_sz = type2aelembytes(mask_bt) * ty->get_con();
       if (load_sz > MaxVectorSize) {
         // See LoadVectorMaskedNode::Ideal
-        assert(Compile::current()->post_loop_opts_phase(), "");
-        return nullptr;
+        assert(Compile::current()->post_loop_opts_phase(), "Unexpected store size");
+        return phase->C->top();
       }
 
       if (load_sz == MaxVectorSize) {
