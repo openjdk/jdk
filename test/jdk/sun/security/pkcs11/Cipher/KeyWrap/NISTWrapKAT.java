@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,16 +29,24 @@
  * @summary Verify that the AES-Key-Wrap and AES-Key-Wrap-Pad ciphers
  * work as expected using NIST test vectors.
  */
+import jtreg.SkippedException;
+
 import java.security.Key;
 import java.security.AlgorithmParameters;
 import java.security.Provider;
-import javax.crypto.*;
-import javax.crypto.spec.*;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.math.BigInteger;
+import java.util.List;
 
 // adapted from com/sun/crypto/provider/Cipher/KeyWrap/NISTWrapKAT.java
 public class NISTWrapKAT extends PKCS11Test {
+
+    private static final List<String> skippedAlgoList = new ArrayList<>();
 
     private static final String KEK =
         "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f";
@@ -256,7 +264,8 @@ public class NISTWrapKAT extends PKCS11Test {
             dataLen + "-byte key with " + 8*keyLen + "-bit KEK");
         int allowed = Cipher.getMaxAllowedKeyLength("AES");
         if (keyLen > allowed) {
-            System.out.println("=> skip, exceeds max allowed size " + allowed);
+            System.err.println("Skip, exceeds max allowed size " + allowed);
+            skippedAlgoList.add(algo);
             return;
         }
         Cipher c1 = Cipher.getInstance(algo,
@@ -319,7 +328,8 @@ public class NISTWrapKAT extends PKCS11Test {
             dataLen + "-byte data with " + 8*keyLen + "-bit KEK");
         int allowed = Cipher.getMaxAllowedKeyLength("AES");
         if (keyLen > allowed) {
-            System.out.println("=> skip, exceeds max allowed size " + allowed);
+            System.err.println("Skip, exceeds max allowed size " + allowed);
+            skippedAlgoList.add(algo);
             return;
         }
         Cipher c1 = Cipher.getInstance(algo,
@@ -388,7 +398,8 @@ public class NISTWrapKAT extends PKCS11Test {
             Object[] td = testDatum[i];
             String algo = (String) td[0];
             if (p.getService("Cipher", algo) == null) {
-                System.out.println("Skip, due to no support:  " + algo);
+                System.err.println("Skip, due to no support:  " + algo);
+                skippedAlgoList.add(algo);
                 continue;
             }
             testKeyWrap(algo, (String)td[1], (int)td[2], (String)td[3],
@@ -396,6 +407,12 @@ public class NISTWrapKAT extends PKCS11Test {
             testEnc(algo, (String)td[1], (int)td[2], (String)td[3],
                     (int)td[4], (String)td[5], p);
         }
-        System.out.println("Test Passed");
+
+        //Check if tests were skipped.
+        if (skippedAlgoList.isEmpty()) {
+            System.out.println("All Tests Passed");
+        } else {
+            throw new SkippedException("Some tests were skipped : " + skippedAlgoList);
+        }
     }
 }
