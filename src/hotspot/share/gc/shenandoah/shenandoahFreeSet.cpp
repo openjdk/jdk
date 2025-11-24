@@ -3202,10 +3202,10 @@ int ShenandoahFreeSet::reserve_alloc_regions(ShenandoahFreeSetPartitionId partit
   int number_of_reserved_regions;;
   if (_partitions.alloc_from_left_bias(partition)) {
     ShenandoahLeftRightIterator iterator(&_partitions, partition);
-    number_of_reserved_regions = reserve_alloc_regions_internal(iterator, partition, regions_to_reserve, reserved_regions);
+    number_of_reserved_regions = reserve_alloc_regions_internal(iterator, partition, regions_to_reserve, min_free_words, reserved_regions);
   } else {
     ShenandoahRightLeftIterator iterator(&_partitions, partition);
-    number_of_reserved_regions = reserve_alloc_regions_internal(iterator, partition, regions_to_reserve, reserved_regions);
+    number_of_reserved_regions = reserve_alloc_regions_internal(iterator, partition, regions_to_reserve, min_free_words, reserved_regions);
   }
   /*
   if (partition != ShenandoahFreeSetPartitionId::Mutator && number_of_reserved_regions == 0) {
