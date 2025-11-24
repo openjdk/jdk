@@ -24,29 +24,28 @@
 /*
  * @test
  * @bug 8370887
- * @summary DelayScheduler.replace method may break the 4-ary heap
+ * @summary Test that cancelling a delayed task doesn't impact the ordering that other
+ *     delayed tasks execute
  */
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
-import java.util.concurrent.*;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedTransferQueue;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class AscendingOrderAfterReplace {
 
-    private static final int BASE_DELAY = 2000;
-    private static final int[] DELAYS = { 0, 400, 900, 800, 700, 600, 430, 420, 310, 500, 200 };
+    private static final int[] DELAYS_IN_MS = { 3000, 3400, 3900, 3800, 3700, 3600, 3430, 3420, 3310, 3500, 3200 };
 
     public static void main(String[] args) throws Exception {
-        String delays = IntStream.of(DELAYS)
-                .mapToObj(i -> Integer.valueOf(i).toString())
-                .collect(Collectors.joining(", "));
-        System.out.println("Delays: " + delays);
-
-        // test cancel doesn't impact the ordering that the remaining delayed tasks execute
-        for (int i = 1; i < DELAYS.length; i++) {
-            while (!testCancel(i)) { }
+        for (int i = 1; i < DELAYS_IN_MS.length; i++) {
+            System.out.println("=== Test " + i + " ===");
+            while (!testCancel(DELAYS_IN_MS, i)) { }
         }
     }
 
@@ -56,39 +55,86 @@ public class AscendingOrderAfterReplace {
      * @return true if the test passed, false if a retry is needed
      * @throws RuntimeException if the test fails
      */
-    private static boolean testCancel(int indexToCancel) throws Exception {
-        System.out.println("=== Test cancel " + DELAYS[indexToCancel] + " ===");
+    private static boolean testCancel(int[] delays, int indexToCancel) throws Exception {
+        log("Delayed tasks: " + toString(delays));
 
+        // delayed tasks add to this queue when they execute
         var queue = new LinkedTransferQueue<Integer>();
 
         // pool with one thread to ensure that delayed tasks don't execute concurrently
         try (var pool = new ForkJoinPool(1)) {
-            Future<?>[] futures = Arrays.stream(DELAYS)
-                    .mapToObj(d -> pool.schedule(() -> queue.add(d),
-                            BASE_DELAY + d, MILLISECONDS))
+            long startNanos = System.nanoTime();
+            Future<?>[] futures = Arrays.stream(delays)
+                    .mapToObj(d -> pool.schedule(() -> {
+                        log("Triggered " + d);
+                        queue.add(d);
+                    }, d, MILLISECONDS))
                     .toArray(Future[]::new);
+            long endNanos = System.nanoTime();
+            log("Delayed tasks submitted");
 
-            // give time for -delayScheduler thread to process pending tasks
-            Thread.sleep(BASE_DELAY / 2);
-            if (futures[0].isDone()) {
-                // delay 0 has already triggered, need to retry test
+            // check submit took < min diffs between two delays
+            long submitTime = Duration.ofNanos(endNanos - startNanos).toMillis();
+            long minDiff = minDifference(delays);
+            if (submitTime >= minDiff) {
+                log("Submit took >= " + minDiff + " ms, need to retry");
                 pool.shutdownNow();
                 return false;
             }
+
+            // give a bit of time for -delayScheduler thread to process pending tasks
+            Thread.sleep(minValue(delays) / 2);
+            log("Cancel " + delays[indexToCancel]);
             futures[indexToCancel].cancel(true);
         }
 
         // delayed tasks should have executed in ascending order of their delay
-        System.out.println(queue);
-        int prev = Integer.MIN_VALUE;
-        for (int delay: queue) {
-            if (prev > delay) {
-                throw new RuntimeException("Not in ascending order!");
-            }
-            prev = delay;
+        int[] executed = queue.stream().mapToInt(Integer::intValue).toArray();
+        log("Executed: " + toString(executed));
+        if (!isAscendingOrder(executed)) {
+            throw new RuntimeException("Not in ascending order!");
         }
-
         return true;
+    }
+
+    /**
+     * Return the minimum element.
+     */
+    private static int minValue(int[] array) {
+        return IntStream.of(array).min().orElseThrow();
+    }
+
+    /**
+     * Return the minimum difference between any two elements.
+     */
+    private static int minDifference(int[] array) {
+        int[] sorted = array.clone();
+        Arrays.sort(sorted);
+        return IntStream.range(1, sorted.length)
+                .map(i -> sorted[i] - sorted[i - 1])
+                .min()
+                .orElse(0);
+    }
+
+    /**
+     * Return true if the array is in ascending order.
+     */
+    private static boolean isAscendingOrder(int[] array) {
+        return IntStream.range(1, array.length)
+                .allMatch(i -> array[i - 1] <= array[i]);
+    }
+
+    /**
+     * Returns a String containing the elements of an array in index order.
+     */
+    private static String toString(int[] array) {
+        return IntStream.of(array)
+                .mapToObj(Integer::toString)
+                .collect(Collectors.joining(", ", "[", "]"));
+    }
+
+    private static void log(String message) {
+        System.out.println(Instant.now() + " " + message);
     }
 }
 
