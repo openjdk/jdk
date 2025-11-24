@@ -346,8 +346,10 @@ final class IdleTimeoutManager {
             }
         }
         // silently close the connection and discard all its state
-        final TerminationCause cause = forSilentTermination("connection idle timed out ("
-                + timeoutMillis + " milli seconds)");
+        var type = connection.isClientConnection() ? "client" : "server";
+        var label = "quic:" + connection.uniqueId();
+        final TerminationCause cause = forSilentTermination(type + " connection idle timed out ("
+                + timeoutMillis + " milli seconds) on " + label);
         connection.terminator.terminate(cause);
     }
 
