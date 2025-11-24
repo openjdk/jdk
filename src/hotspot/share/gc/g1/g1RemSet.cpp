@@ -1018,14 +1018,8 @@ class G1MergeHeapRootsTask : public WorkerTask {
       // the pause occurs during the Concurrent Cleanup for Next Mark phase.
       // Only at that point the region's bitmap may contain marks while being in the collection
       // set at the same time.
-      //
-      // There is one exception: shutdown might have aborted the Concurrent Cleanup for Next
-      // Mark phase midway, which might have also left stale marks in old generation regions.
-      // There might actually have been scheduled multiple collections, but at that point we do
-      // not care that much about performance and just do the work multiple times if needed.
-      return (_g1h->collector_state()->clear_bitmap_in_progress() ||
-              _g1h->is_shutting_down()) &&
-              hr->is_old();
+      return _g1h->collector_state()->clear_bitmap_in_progress() &&
+             hr->is_old();
     }
 
   public:
