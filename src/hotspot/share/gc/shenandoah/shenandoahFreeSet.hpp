@@ -587,14 +587,17 @@ private:
   // log status, assuming lock has already been acquired by the caller.
   void log_status();
 
-  template<typename Iter>
-  int reserve_alloc_regions_internal(Iter iterator, ShenandoahFreeSetPartitionId partition, int regions_to_reserve, size_t min_free_words, ShenandoahHeapRegion** reserved_regions);
+  template<ShenandoahFreeSetPartitionId ALLOC_PARTITION>
+  int reserve_alloc_regions(int regions_to_reserve, size_t min_free_words, ShenandoahHeapRegion** reserved_regions);
 
-  template<typename Iter>
-  ShenandoahHeapRegion* find_heap_region_for_allocation_internal(Iter iterator, ShenandoahFreeSetPartitionId partition, size_t min_free_words, bool is_lab_alloc, bool &new_region);
+  template<ShenandoahFreeSetPartitionId ALLOC_PARTITION, typename Iter>
+  int reserve_alloc_regions_internal(Iter iterator, int regions_to_reserve, size_t min_free_words, ShenandoahHeapRegion** reserved_regions);
 
-  // Steal one FREE region from mutator partition for allocation on Collector/OldCollector partition.
-  ShenandoahHeapRegion* steal_heap_region_from_mutator_for_allocation(ShenandoahFreeSetPartitionId partition);
+  template<ShenandoahFreeSetPartitionId ALLOC_PARTITION>
+  ShenandoahHeapRegion* find_heap_region_for_allocation(size_t min_free_words, bool is_lab_alloc, bool &new_region);
+
+  template<ShenandoahFreeSetPartitionId ALLOC_PARTITION, typename Iter>
+  ShenandoahHeapRegion* find_heap_region_for_allocation_internal(Iter iterator, size_t min_free_words, bool is_lab_alloc, bool &new_region);
 
 public:
   static const size_t FreeSetUnderConstruction = ShenandoahRegionPartitions::FreeSetUnderConstruction;
@@ -847,6 +850,10 @@ public:
   // Find a heap region for allocation, the region must have min_free_words which is the minial needed for the allocation.
   // available_regions_seem_for_alloc is used to record the number of regions which have space for some allocation during the search.
   ShenandoahHeapRegion* find_heap_region_for_allocation(ShenandoahFreeSetPartitionId partition, size_t min_free_words, bool is_lab_alloc, bool &new_region);
+
+  // Steal one FREE region from mutator partition for allocation on Collector/OldCollector partition.
+  template<ShenandoahFreeSetPartitionId ALLOC_PARTITION>
+  ShenandoahHeapRegion* steal_heap_region_from_mutator_for_allocation();
 
   /*
    * Internal fragmentation metric: describes how fragmented the heap regions are.
