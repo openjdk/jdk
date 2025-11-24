@@ -145,9 +145,13 @@ public class MetricsCpuTester {
     private static void testCpuShares(long shares) {
         Metrics metrics = Metrics.systemMetrics();
         if ("cgroupv2".equals(metrics.getProvider()) && shares < 1024) {
-            // Adjust input shares for < 1024 cpu shares as the
-            // impl. rounds up to the next multiple of 1024
-            shares = 1024;
+            // Don't assert for shares values less than 1024 as we don't
+            // have a 1-to-1 mapping from the cgroup v2 value to the OCI
+            // value.
+            System.out.println("Debug: cgv2 - Got CPU shares of: " +
+                               metrics.getCpuShares() + " - Skipping assert.");
+            System.out.println("TEST PASSED!!!");
+            return;
         }
         long newShares = metrics.getCpuShares();
         if (newShares != shares) {

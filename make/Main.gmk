@@ -461,9 +461,9 @@ $(eval $(call SetupTarget, symbols-image, \
     TARGET := symbols, \
 ))
 
-$(eval $(call SetupTarget, static-launcher, \
+$(eval $(call SetupTarget, static-launchers, \
     MAKEFILE := StaticLibs, \
-    TARGET := static-launcher, \
+    TARGET := static-launchers, \
     DEPS := hotspot-static-libs static-libs, \
 ))
 
@@ -1290,7 +1290,7 @@ ifeq ($(call isTargetOs, macosx), true)
   legacy-images: mac-legacy-jre-bundle
 endif
 
-static-exploded-image: static-launcher exploded-image
+static-exploded-image: static-launchers exploded-image
 
 # These targets build the various documentation images
 docs-jdk-image: docs-jdk
