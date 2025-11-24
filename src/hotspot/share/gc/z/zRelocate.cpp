@@ -1129,9 +1129,10 @@ public:
     ZRelocateWork<ZRelocateMediumAllocator> medium(&_medium_allocator, _medium_targets->addr(), _generation);
 
     const uint32_t num_nodes = ZNUMA::count();
-    const uint32_t start_node_id = ZNUMA::id();
-    uint32_t current_node_id = start_node_id;
-    int current_node_affinity = -1;
+    const uint32_t start_node = ZNUMA::id();
+    uint32_t current_node = start_node;
+    bool has_affinity = false;
+    bool has_affinity_current_node = false;
 
     const auto do_forwarding = [&](ZForwarding* forwarding) {
       ZPage* const page = forwarding->page();
@@ -1163,27 +1164,33 @@ public:
 
     const auto do_forwarding_one_from_iter = [&]() {
       ZForwarding* forwarding;
-      if (_iters->get(current_node_id).next_if(&forwarding, check_numa_local, current_node_id)) {
-        if (UseNUMA) {
-          // Set thread affinity for NUMA-local processing (if needed)
-          const int current_node = ZNUMA::numa_id_to_node(current_node_id);
 
-          if (current_node_affinity != current_node) {
-            os::numa_set_thread_affinity(Thread::current(), current_node);
-            current_node_affinity = current_node;
+      while (true) {
+        if (_iters->get(current_node).next_if(&forwarding, check_numa_local, current_node)) {
+          // Set thread affinity for NUMA-local processing (if needed)
+          if (UseNUMA && !has_affinity_current_node) {
+            os::numa_set_thread_affinity(Thread::current(), ZNUMA::numa_id_to_node(current_node));
+            has_affinity = true;
+            has_affinity_current_node = true;
           }
+
+          // Perform the forwarding task
+          claim_and_do_forwarding(forwarding);
+          return true;
         }
 
-        // Perform the forwarding task
-        claim_and_do_forwarding(forwarding);
-        return true;
+        // No work found on the current node, move to the next node
+        current_node = (current_node + 1) % num_nodes;
+        has_affinity_current_node = false;
+
+        // If we've looped back to the starting node there's no more work to do
+        if (current_node == start_node) {
+          return false;
+        }
       }
 
-      // No work found on the current node, move to the next node
-      current_node_id = (current_node_id + 1) % num_nodes;
-
-      // If we wrapped around to the start node there is no more work
-      return current_node_id != start_node_id;
+      // No more work
+      return false;
     };
 
     for (;;) {
@@ -1208,8 +1215,7 @@ public:
 
     _queue->leave();
 
-    if (current_node_affinity != -1) {
-      assert(UseNUMA, "Should only happen with NUMA");
+    if (UseNUMA && has_affinity) {
       // Restore the affinity of the thread so that it isn't bound to a specific
       // node any more
       os::numa_set_thread_affinity(Thread::current(), -1);
