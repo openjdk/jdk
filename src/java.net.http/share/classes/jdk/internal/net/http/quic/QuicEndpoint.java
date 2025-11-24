@@ -62,6 +62,7 @@ import jdk.internal.net.http.common.SequentialScheduler;
 import jdk.internal.net.http.common.TimeLine;
 import jdk.internal.net.http.common.TimeSource;
 import jdk.internal.net.http.common.Utils;
+import jdk.internal.net.http.common.Utils.UseVTForSelector;
 import jdk.internal.net.http.quic.QuicSelector.QuicNioSelector;
 import jdk.internal.net.http.quic.QuicSelector.QuicVirtualThreadPoller;
 import jdk.internal.net.http.quic.packets.QuicPacket.HeadersType;
@@ -116,7 +117,6 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
     static final boolean DGRAM_SEND_ASYNC;
     static final int MAX_BUFFERED_HIGH;
     static final int MAX_BUFFERED_LOW;
-    enum UseVTForSelector { ALWAYS, NEVER, DEFAULT }
     static final UseVTForSelector USE_VT_FOR_SELECTOR;
     static {
         // This default value is the maximum payload size of
@@ -144,11 +144,8 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         if (maxBufferLow >= maxBufferHigh) maxBufferLow = maxBufferHigh >> 1;
         MAX_BUFFERED_HIGH = maxBufferHigh;
         MAX_BUFFERED_LOW = maxBufferLow;
-        String useVtForSelector =
-                System.getProperty("jdk.internal.httpclient.quic.selector.useVirtualThreads", "default");
-        USE_VT_FOR_SELECTOR = Stream.of(UseVTForSelector.values())
-                .filter((v) -> v.name().equalsIgnoreCase(useVtForSelector))
-                .findFirst().orElse(UseVTForSelector.DEFAULT);
+        var property = "jdk.internal.httpclient.quic.selector.useVirtualThreads";
+        USE_VT_FOR_SELECTOR = Utils.useVTForSelector(property, "default");
     }
 
     /**

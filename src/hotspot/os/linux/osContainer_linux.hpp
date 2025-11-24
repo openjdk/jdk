@@ -30,10 +30,29 @@
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 
-#define OSCONTAINER_ERROR (-2)
+// Some cgroup interface files define the value 'max' for unlimited.
+// Define this constant value to indicate this value.
+const uint64_t value_unlimited = std::numeric_limits<uint64_t>::max();
 
 // 20ms timeout between re-reads of memory limit and _active_processor_count.
 #define OSCONTAINER_CACHE_TIMEOUT (NANOSECS_PER_SEC/50)
+
+// Carrier object for print_container_helper()
+class MetricResult: public StackObj {
+  private:
+    static const uint64_t value_unused = 0;
+    bool _success = false;
+    physical_memory_size_type _value = value_unused;
+  public:
+    void set_value(physical_memory_size_type val) {
+      // having a value means success
+      _success = true;
+      _value = val;
+    }
+
+    bool success() { return _success; }
+    physical_memory_size_type value() { return _value; }
+};
 
 class OSContainer: AllStatic {
 
@@ -45,36 +64,38 @@ class OSContainer: AllStatic {
  public:
   static void init();
   static void print_version_specific_info(outputStream* st);
-  static void print_container_helper(outputStream* st, jlong j, const char* metrics);
+  static void print_container_helper(outputStream* st, MetricResult& res, const char* metrics);
 
   static inline bool is_containerized();
   static const char * container_type();
 
-  static bool available_memory_in_container(julong& value);
-  static jlong memory_limit_in_bytes();
-  static jlong memory_and_swap_limit_in_bytes();
-  static jlong memory_and_swap_usage_in_bytes();
-  static jlong memory_soft_limit_in_bytes();
-  static jlong memory_throttle_limit_in_bytes();
-  static jlong memory_usage_in_bytes();
-  static jlong memory_max_usage_in_bytes();
-  static jlong rss_usage_in_bytes();
-  static jlong cache_usage_in_bytes();
+  static bool available_memory_in_bytes(physical_memory_size_type& value);
+  static bool available_swap_in_bytes(physical_memory_size_type host_free_swap,
+                                      physical_memory_size_type& value);
+  static bool memory_limit_in_bytes(physical_memory_size_type& value);
+  static bool memory_and_swap_limit_in_bytes(physical_memory_size_type& value);
+  static bool memory_and_swap_usage_in_bytes(physical_memory_size_type& value);
+  static bool memory_soft_limit_in_bytes(physical_memory_size_type& value);
+  static bool memory_throttle_limit_in_bytes(physical_memory_size_type& value);
+  static bool memory_usage_in_bytes(physical_memory_size_type& value);
+  static bool memory_max_usage_in_bytes(physical_memory_size_type& value);
+  static bool rss_usage_in_bytes(physical_memory_size_type& value);
+  static bool cache_usage_in_bytes(physical_memory_size_type& value);
 
-  static int active_processor_count();
+  static bool active_processor_count(int& value);
 
   static char * cpu_cpuset_cpus();
   static char * cpu_cpuset_memory_nodes();
 
-  static int cpu_quota();
-  static int cpu_period();
+  static bool cpu_quota(int& value);
+  static bool cpu_period(int& value);
 
-  static int cpu_shares();
+  static bool cpu_shares(int& value);
 
-  static jlong cpu_usage_in_micros();
+  static bool cpu_usage_in_micros(uint64_t& value);
 
-  static jlong pids_max();
-  static jlong pids_current();
+  static bool pids_max(uint64_t& value);
+  static bool pids_current(uint64_t& value);
 };
 
 inline bool OSContainer::is_containerized() {
