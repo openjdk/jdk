@@ -194,15 +194,15 @@ static void generate_pre_barrier_slow_path(MacroAssembler* masm,
 
   // Can we store a value in the given thread's buffer?
   // (The index field is typed as size_t.)
-  __ movptr(tmp, index_addr);               // temp := *(index address)
-  __ testptr(tmp, tmp);                     // index == 0?
-  __ jccb(Assembler::zero, L_runtime);      // jump to runtime if index == 0 (full buffer)
+  __ movptr(tmp, index_addr);                 // temp := *(index address)
+  __ testptr(tmp, tmp);                         // index == 0?
+  __ jccb(Assembler::zero, L_runtime);          // jump to runtime if index == 0 (full buffer)
 
   // The buffer is not full, store value into it.
   __ subptr(tmp, wordSize);                 // temp := next index
-  __ movptr(index_addr, tmp);               // *(index address) := next index
-  __ addptr(tmp, buffer_addr);              // temp := buffer address + next index
-  __ movptr(Address(tmp, 0), pre_val);      // *(buffer address + next index) := value
+  __ movptr(index_addr, tmp);                 // *(index address) := next index
+  __ addptr(tmp, buffer_addr);                // temp := buffer address + next index
+  __ movptr(Address(tmp, 0), pre_val);  // *(buffer address + next index) := value
 
   // Jump out if done, or fall-through to runtime.
   // "L_done" is far away, so jump cannot be short.
