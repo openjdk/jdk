@@ -181,7 +181,7 @@ static void generate_pre_barrier_slow_path(MacroAssembler* masm,
   // This code assumes that buffer index is pointer sized.
   STATIC_ASSERT(in_bytes(SATBMarkQueue::byte_width_of_index()) == sizeof(intptr_t));
 
-  Label L_null, L_runtime;
+  Label L_runtime;
 
   // Do we need to load the previous value?
   if (obj != noreg) {
@@ -190,7 +190,7 @@ static void generate_pre_barrier_slow_path(MacroAssembler* masm,
 
   // Is the previous value null?
   __ testptr(pre_val, pre_val);
-  __ jccb(Assembler::equal, L_null);
+  __ jcc(Assembler::equal, L_done);
 
   // Can we store a value in the given thread's buffer?
   // (The index field is typed as size_t.)
@@ -206,7 +206,6 @@ static void generate_pre_barrier_slow_path(MacroAssembler* masm,
 
   // Jump out if done, or fall-through to runtime.
   // "L_done" is far away, so jump cannot be short.
-  __ bind(L_null);
   __ jmp(L_done);
   __ bind(L_runtime);
 }
