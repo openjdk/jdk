@@ -121,8 +121,7 @@ class BurstyRequestsTest {
                      .proxy(NO_PROXY)
                      .version(HTTP_2)
                      .build()) {
-            // our test needs to peek into the internal field of jdk.internal.net.http.HttpClientImpl,
-            // so we skip the test if the HttpClient isn't of the expected type
+            // our test needs to peek into the internal field of jdk.internal.net.http.HttpClientImpl
             final Set<?> openedConnections = HttpClientImplAccess.getOpenedConnections(client);
             assertNotNull(openedConnections, "HttpClientImpl#openedConnections field is null or not available");
 
