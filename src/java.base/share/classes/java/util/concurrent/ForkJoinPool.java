@@ -3330,11 +3330,14 @@ public class ForkJoinPool extends AbstractExecutorService
      * @since 19
      */
     public int setParallelism(int size) {
+        int prevSize;
         if (size < 1 || size > MAX_CAP)
             throw new IllegalArgumentException();
         if ((config & PRESET_SIZE) != 0)
             throw new UnsupportedOperationException("Cannot override System property");
-        return getAndSetParallelism(size);
+        if ((prevSize = getAndSetParallelism(size)) < size)
+            signalWork(null, 0);
+        return prevSize;
     }
 
     /**
