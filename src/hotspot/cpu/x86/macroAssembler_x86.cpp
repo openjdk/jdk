@@ -5621,7 +5621,7 @@ void MacroAssembler::xmm_clear_mem(Register base, Register cnt, Register rtmp, X
   // Copy trailing 64 bytes
   if (use64byteVector) {
     addptr(cnt, 8);
-    jcc(Assembler::equal, L_end);
+    jccb(Assembler::equal, L_end);
     fill64_tail(3, base, 0, xtmp, cnt, rtmp);
     jmp(L_end);
   } else {
