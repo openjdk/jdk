@@ -101,7 +101,6 @@ void ProcSmapsParser::scan_additional_line(ProcSmapsInfo& out) {
   }
 }
 
-// Starts or continues parsing. Returns true iff a mapping was parsed.
 bool ProcSmapsParser::parse_next(ProcSmapsInfo& out) {
 
   // Information about a single mapping reaches across several lines.
