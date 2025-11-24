@@ -26,16 +26,6 @@
 #include "oops/metadata.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
 
-#if defined(__APPLE__)
-extern void* _ZTV8Metadata[];
-
-// avoid code stripping which disturbs the serviceability agent
-__attribute__((used))
- void* dead_strip_helper() {
-  return _ZTV8Metadata[0];
-}
-#endif
-
 void Metadata::set_on_stack(const bool value) {
   // nothing to set for most metadata
   // Can't inline because this materializes the vtable on some C++ compilers.

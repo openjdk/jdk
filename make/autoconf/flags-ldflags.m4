@@ -99,7 +99,9 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
   # Setup OS-dependent LDFLAGS
   if test "x$OPENJDK_TARGET_OS" = xmacosx && test "x$TOOLCHAIN_TYPE" = xclang; then
     if test "x$OPENJDK_TARGET_CPU" = xaarch64; then
-      BASIC_LDFLAGS="$BASIC_LDFLAGS -Wl,-dead_strip"
+      if test x$DEBUG_LEVEL = xrelease; then
+        BASIC_LDFLAGS_JDK_ONLY="$BASIC_LDFLAGS_JDK_ONLY -Wl,-dead_strip"
+      fi
     fi
     # FIXME: We should really generalize SetSharedLibraryOrigin instead.
     OS_LDFLAGS_JVM_ONLY="-Wl,-rpath,@loader_path/. -Wl,-rpath,@loader_path/.."
