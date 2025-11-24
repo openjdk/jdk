@@ -61,14 +61,14 @@ public class ReleaseInfoPluginTest {
         }
         var utf8File = Path.of("release-info-utf-8.txt");
         Files.writeString(utf8File, IMPL + "=\"" + NON_ASCII + "\"", StandardCharsets.UTF_8);
-        var image = helper.generateDefaultImage(
+        Path image = helper.generateDefaultImage(
                              new String[] {
                                "--release-info", utf8File.toString()
                              }, "java.base").assertSuccess();
 
         // release file produced should have IMPLEMENTOR in
         // UTF-8 encoding
-        var release = image.resolve("release");
+        Path release = image.resolve("release");
         Properties props = new Properties();
         try (Reader reader= Files.newBufferedReader(release)) {
             props.load(reader); // Load as UTF-8
