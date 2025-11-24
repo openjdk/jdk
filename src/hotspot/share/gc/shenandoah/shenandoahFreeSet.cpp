@@ -3324,14 +3324,15 @@ ShenandoahHeapRegion* ShenandoahFreeSet::find_heap_region_for_allocation(Shenand
   }
 
   ShenandoahHeapRegion* region = nullptr;
-  if (_partitions.alloc_from_left_bias(partition)) {
-    ShenandoahLeftRightIterator iterator(&_partitions, partition);
-    region = find_heap_region_for_allocation_internal(iterator, partition, min_free_words, is_lab_alloc, new_region);
-  } else {
-    ShenandoahRightLeftIterator iterator(&_partitions, partition);
-    region = find_heap_region_for_allocation_internal(iterator, partition, min_free_words, is_lab_alloc, new_region);
+  if (!_partitions.is_empty(partition)) {
+    if (_partitions.alloc_from_left_bias(partition)) {
+      ShenandoahLeftRightIterator iterator(&_partitions, partition);
+      region = find_heap_region_for_allocation_internal(iterator, partition, min_free_words, is_lab_alloc, new_region);
+    } else {
+      ShenandoahRightLeftIterator iterator(&_partitions, partition);
+      region = find_heap_region_for_allocation_internal(iterator, partition, min_free_words, is_lab_alloc, new_region);
+    }
   }
-
   if (region == nullptr && partition != ShenandoahFreeSetPartitionId::Mutator &&
       _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::Mutator) > 0) {
     // Steal one FREE region from Mutator view for gc
