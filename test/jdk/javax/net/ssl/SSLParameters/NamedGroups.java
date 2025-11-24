@@ -180,7 +180,7 @@ public class NamedGroups extends SSLSocketTemplate {
                         "SecP256r1MLKEM768"
                 },
                 null,
-                false);
+                true);
 
         runTest(new String[] {
                         "X25519MLKEM768",

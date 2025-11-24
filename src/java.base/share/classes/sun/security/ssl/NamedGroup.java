@@ -235,19 +235,19 @@ enum NamedGroup {
             NamedGroupSpec.NAMED_GROUP_KEM,
             ProtocolVersion.PROTOCOLS_OF_13,
             Hybrid.X25519_MLKEM768,
-            "DH"),
+            DH.PROVIDER),
 
     SECP256R1MLKEM768(0x11eb, "SecP256r1MLKEM768",
             NamedGroupSpec.NAMED_GROUP_KEM,
             ProtocolVersion.PROTOCOLS_OF_13,
             Hybrid.SECP256R1_MLKEM768,
-            "DH"),
+            DH.PROVIDER),
 
     SECP384R1MLKEM1024(0x11ed, "SecP384r1MLKEM1024",
             NamedGroupSpec.NAMED_GROUP_KEM,
             ProtocolVersion.PROTOCOLS_OF_13,
             Hybrid.SECP384R1_MLKEM1024,
-            "DH"),
+            DH.PROVIDER),
 
     // Elliptic Curves (RFC 4492)
     //
@@ -269,7 +269,7 @@ enum NamedGroup {
     final AlgorithmParameterSpec keAlgParamSpec;
     final AlgorithmParameters keAlgParams;
     final boolean isAvailable;
-    final String defaultProviderName;
+    final Provider defaultProvider;
 
     // performance optimization
     private static final Set<CryptoPrimitive> KEY_AGREEMENT_PRIMITIVE_SET =
@@ -288,14 +288,14 @@ enum NamedGroup {
             NamedGroupSpec namedGroupSpec,
             ProtocolVersion[] supportedProtocols,
             AlgorithmParameterSpec keAlgParamSpec,
-            String defaultProviderName) {
+            Provider defaultProvider) {
         this.id = id;
         this.name = name;
         this.spec = namedGroupSpec;
         this.algorithm = namedGroupSpec.algorithm;
         this.supportedProtocols = supportedProtocols;
         this.keAlgParamSpec = keAlgParamSpec;
-        this.defaultProviderName = defaultProviderName;
+        this.defaultProvider = defaultProvider;
 
         // Check if it is a supported named group.
         AlgorithmParameters algParams = null;
@@ -365,11 +365,7 @@ enum NamedGroup {
     }
 
     Provider getProvider() {
-        if ("DH".equals(defaultProviderName)) {
-            return DH.PROVIDER;
-        }
-        // no fixed provider
-        return null;
+        return defaultProvider;
     }
 
     //
@@ -907,10 +903,8 @@ enum NamedGroup {
             } else {        // default groups
                 NamedGroup[] groups = new NamedGroup[] {
 
-                        // Hybrid key agreements
+                        // Hybrid key agreement
                         X25519MLKEM768,
-                        SECP256R1MLKEM768,
-                        SECP384R1MLKEM1024,
 
                         // Primary XDH (RFC 7748) curves
                         X25519,
