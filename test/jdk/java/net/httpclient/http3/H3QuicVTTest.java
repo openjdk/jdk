@@ -198,7 +198,7 @@ class H3QuicVTTest implements HttpServerAdapters {
 
     // This method attempts to determine whether the quic selector thread
     // is a platform thread or a virtual thread, and throws if expectations
-    // ar not met.
+    // are not met.
     // Since we don't have access to the quic selector thread, the method
     // uses a roundabout way to figure this out: it enumerates all
     // platform threads, and if it finds a thread whose name matches

@@ -75,7 +75,6 @@ import jdk.jpackage.internal.model.MacFileAssociation;
 import jdk.jpackage.internal.model.MacPackage;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.PackageType;
-import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.util.FileUtils;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
@@ -225,10 +224,12 @@ final class MacPackagingPipeline {
         if (!app.sign()) {
             throw new IllegalArgumentException();
         }
-        return toSupplier(() -> {
-            return new PackageBuilder(app, SignAppImagePackageType.VALUE).predefinedAppImage(
-                    Objects.requireNonNull(env.appImageDir())).installDir(Path.of("/foo")).create();
-        }).get();
+        return new PackageBuilder(
+                app,
+                SignAppImagePackageType.VALUE
+        ).predefinedAppImage(
+                Objects.requireNonNull(env.appImageDir())
+        ).installDir(Path.of("/foo")).create();
     }
 
     static final class LayoutUtils {
@@ -268,7 +269,7 @@ final class MacPackagingPipeline {
         static <T extends AppImageLayout> AppImageTaskAction<MacApplication, T> withBundleLayout(AppImageTaskAction<MacApplication, T> action) {
             return new AppImageTaskAction<>() {
                 @Override
-                public void execute(AppImageBuildEnv<MacApplication, T> env) throws IOException, PackagerException {
+                public void execute(AppImageBuildEnv<MacApplication, T> env) throws IOException {
                     if (!env.envLayout().runtimeDirectory().getName(0).equals(Path.of("Contents"))) {
                         env = LayoutUtils.fromPackagerLayout(env);
                     }
@@ -610,11 +611,20 @@ final class MacPackagingPipeline {
         }
 
         @Override
-        public void execute(TaskAction taskAction) throws IOException, PackagerException {
+        public void execute(TaskAction taskAction) throws IOException {
             delegate.execute(taskAction);
         }
     }
 
+    private static final ApplicationLayout MAC_APPLICATION_LAYOUT = ApplicationLayout.build()
+            .launchersDirectory("Contents/MacOS")
+            .appDirectory("Contents/app")
+            .runtimeDirectory("Contents/runtime/Contents/Home")
+            .desktopIntegrationDirectory("Contents/Resources")
+            .appModsDirectory("Contents/app/mods")
+            .contentDirectory("Contents")
+            .create();
+
     static final MacApplicationLayout APPLICATION_LAYOUT = MacApplicationLayout.create(
-            ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT, Path.of("Contents/runtime"));
+            MAC_APPLICATION_LAYOUT, Path.of("Contents/runtime"));
 }
