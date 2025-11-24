@@ -255,7 +255,7 @@ int ShenandoahAllocator::refresh_alloc_regions(ShenandoahAllocRequest* req, bool
         }
         log_debug(gc, alloc)("%sAllocator: Removing heap region %li from alloc region %i.",
           _alloc_partition_name, region->index(), alloc_region->alloc_region_index);
-        AtomicAccess::release_store(&alloc_region->address, static_cast<ShenandoahHeapRegion*>(nullptr));
+        AtomicAccess::store(&alloc_region->address, static_cast<ShenandoahHeapRegion*>(nullptr));
       }
       log_debug(gc, alloc)("%sAllocator: Adding alloc region %i to refreshable.",
         _alloc_partition_name, alloc_region->alloc_region_index);
@@ -289,7 +289,7 @@ int ShenandoahAllocator::refresh_alloc_regions(ShenandoahAllocRequest* req, bool
         }
         log_debug(gc, alloc)("%sAllocator: Storing heap region %li to alloc region %i",
           _alloc_partition_name, reserved[i]->index(), refreshable[i]->alloc_region_index);
-        AtomicAccess::release_store(&refreshable[i]->address, reserved[i]);
+        AtomicAccess::store(&refreshable[i]->address, reserved[i]);
       }
     }
     return reserved_regions;
