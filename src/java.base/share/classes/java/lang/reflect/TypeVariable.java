@@ -72,7 +72,7 @@ public interface TypeVariable<D extends GenericDeclaration> extends Type, Annota
     Type[] getBounds();
 
     /**
-     * Returns the {@code GenericDeclaration} object representing the
+     * Returns a {@code GenericDeclaration} object representing the
      * generic declaration declared for this type variable.
      *
      * @return the generic declaration declared for this type variable.
