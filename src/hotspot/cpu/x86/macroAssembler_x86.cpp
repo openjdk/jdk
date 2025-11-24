@@ -9352,6 +9352,25 @@ void MacroAssembler::generate_fill_avx3(BasicType type, Register to, Register va
       fatal("Unhandled type: %s\n", type2name(type));
   }
 
+  // Fastpath for fill count <= 4 bytes.
+  if (type == T_BYTE) {
+    Label L_done;
+    cmpq(count, 4);
+    jccb(Assembler::greater, L_done);
+    movb(Address(to, 0), value);
+    cmpq(count, 1);
+    jcc(Assembler::equal, L_exit);
+    movb(Address(to, 1), value);
+    cmpq(count, 2);
+    jcc(Assembler::equal, L_exit);
+    movb(Address(to, 2), value);
+    cmpq(count, 3);
+    jcc(Assembler::equal, L_exit);
+    movb(Address(to, 3), value);
+    jmp(L_exit);
+    bind(L_done);
+  }
+
   if ((avx3threshold != 0)  || (MaxVectorSize == 32)) {
 
     evpbroadcast(type, xtmp, value, Assembler::AVX_256bit);
