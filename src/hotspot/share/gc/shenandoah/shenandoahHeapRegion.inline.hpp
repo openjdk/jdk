@@ -129,6 +129,8 @@ inline void ShenandoahHeapRegion::adjust_alloc_metadata(ShenandoahAllocRequest::
   switch (type) {
     case ShenandoahAllocRequest::_alloc_shared:
     case ShenandoahAllocRequest::_alloc_shared_gc:
+    case ShenandoahAllocRequest::_alloc_shared_gc_old:
+    case ShenandoahAllocRequest::_alloc_shared_gc_promotion:
     case ShenandoahAllocRequest::_alloc_cds:
       // Counted implicitly by tlab/gclab allocs
       break;
