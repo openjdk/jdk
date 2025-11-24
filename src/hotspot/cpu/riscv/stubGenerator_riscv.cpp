@@ -2793,8 +2793,8 @@ class StubGenerator: public StubCodeGenerator {
     const address start = __ pc();
     __ enter();
 
-    Label L_EXIT;
-    __ beqz(input_len, L_EXIT);
+    Label L_exit;
+    __ beqz(input_len, L_exit);
 
     Label L_aes128, L_aes192;
     // Compute #rounds for AES based on the length of the key array
@@ -2815,7 +2815,7 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(L_aes128);
     counterMode_AESCrypt(11, in, out, key, counter, input_len, saved_encrypted_ctr, used_len_ptr);
 
-    __ bind(L_EXIT);
+    __ bind(L_exit);
     __ mv(x10, input_len);
     __ leave();
     __ ret();
