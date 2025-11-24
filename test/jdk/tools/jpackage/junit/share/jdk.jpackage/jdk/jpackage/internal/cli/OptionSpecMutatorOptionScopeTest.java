@@ -75,11 +75,11 @@ public class OptionSpecMutatorOptionScopeTest {
             assertEquals(OptionName.of("foo"), mappedSpec.name());
         }
 
-        assertEquals("731", mappedSpec.converter().orElseThrow().convert(spec.name(), StringToken.of("str")).orElseThrow());
+        assertEquals("731", mappedSpec.convert(spec.name(), StringToken.of("str")).orElseThrow());
 
         assertEquals(OptionName.of("foo"), spec.name());
 
-        assertEquals("123", spec.converter().orElseThrow().convert(spec.name(), StringToken.of("str")).orElseThrow());
+        assertEquals("123", spec.convert(spec.name(), StringToken.of("str")).orElseThrow());
     }
 
     @Test
@@ -99,11 +99,11 @@ public class OptionSpecMutatorOptionScopeTest {
 
         var mappedSpec = new DummyContext(731).mapOptionSpec(spec);
 
-        assertArrayEquals(new String[] {"731"}, mappedSpec.converter().orElseThrow().convert(spec.name(), StringToken.of("str")).orElseThrow());
+        assertArrayEquals(new String[] {"731"}, mappedSpec.convert(spec.name(), StringToken.of("str")).orElseThrow());
 
         assertEquals(OptionName.of("foo"), spec.name());
 
-        assertArrayEquals(new String[] {"123"}, spec.converter().orElseThrow().convert(spec.name(), StringToken.of("str")).orElseThrow());
+        assertArrayEquals(new String[] {"123"}, spec.convert(spec.name(), StringToken.of("str")).orElseThrow());
 
     }
 

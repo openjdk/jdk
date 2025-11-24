@@ -293,7 +293,7 @@ public class OptionSpecTest {
         return toOptionNames(List.of(names));
     }
 
-    private static <T> OptionValueConverter<T> converter(ValueConverter<String, T> conv) {
+    private static <T> OptionValueConverter<String, T> converter(ValueConverter<String, T> conv) {
         return buildConverter(conv).create();
     }
 
@@ -329,7 +329,7 @@ public class OptionSpecTest {
             return this;
         }
 
-        OptionSpecBuilder<T> converter(OptionValueConverter<T> v) {
+        OptionSpecBuilder<T> converter(OptionValueConverter<String, T> v) {
             converter = v;
             return this;
         }
@@ -355,7 +355,7 @@ public class OptionSpecTest {
         }
 
         private List<OptionName> names;
-        private OptionValueConverter<T> converter;
+        private OptionValueConverter<String, T> converter;
         private T defaultOptionalValue;
         private Set<OptionScope> scope = Set.of(new OptionScope() {});
         private MergePolicy mergePolicy = MergePolicy.USE_LAST;

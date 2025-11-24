@@ -25,6 +25,7 @@ package jdk.jpackage.internal.cli;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 import static jdk.jpackage.internal.cli.TestUtils.assertExceptionListEquals;
+import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -113,7 +114,7 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
 
         var spec = StandardOption.ICON.getSpec();
 
-        var result = spec.converter().orElseThrow().convert(spec.name(), StringToken.of(name));
+        var result = spec.convert(spec.name(), StringToken.of(name));
 
         assertEquals(Path.of(name), result.orElseThrow());
     }
@@ -123,7 +124,7 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
 
         var spec = StandardOption.ICON.getSpec();
 
-        var result = spec.converter().orElseThrow().convert(spec.name(), StringToken.of(workDir.toString()));
+        var result = spec.convert(spec.name(), StringToken.of(workDir.toString()));
 
         var ex = assertThrows(JPackageException.class, result::orElseThrow);
 
@@ -137,7 +138,7 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
 
         var spec = new StandardOptionContext().forFile(propertyFile).mapOptionSpec(StandardOption.ICON.getSpec());
 
-        var result = spec.converter().orElseThrow().convert(spec.name(), StringToken.of(workDir.toString()));
+        var result = spec.convert(spec.name(), StringToken.of(workDir.toString()));
 
         var ex = assertThrows(JPackageException.class, result::orElseThrow);
 
@@ -152,7 +153,7 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
 
         var tempRoot = workDir.resolve(dir);
 
-        var value = spec.converter().orElseThrow().convert(spec.name(), StringToken.of(tempRoot.toString())).orElseThrow();
+        var value = spec.convert(spec.name(), StringToken.of(tempRoot.toString())).orElseThrow();
 
         assertEquals(tempRoot, value);
     }
@@ -167,14 +168,14 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
         Files.writeString(tempRoot, "foo");
 
         var ex = assertThrowsExactly(JPackageException.class,
-                spec.converter().orElseThrow().convert(spec.name(), StringToken.of(tempRoot.toString()))::orElseThrow);
+                spec.convert(spec.name(), StringToken.of(tempRoot.toString()))::orElseThrow);
         assertEquals(I18N.format("error.parameter-not-empty-directory", tempRoot, "--temp"), ex.getMessage());
         assertEquals(NotDirectoryException.class, ex.getCause().getClass());
 
         tempRoot = workDir;
 
         ex = assertThrowsExactly(JPackageException.class,
-                spec.converter().orElseThrow().convert(spec.name(), StringToken.of(tempRoot.toString()))::orElseThrow);
+                spec.convert(spec.name(), StringToken.of(tempRoot.toString()))::orElseThrow);
         assertEquals(I18N.format("error.parameter-not-empty-directory", tempRoot, "--temp"), ex.getMessage());
         assertEquals(DirectoryNotEmptyException.class, ex.getCause().getClass());
     }
@@ -202,7 +203,7 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
 
         var spec = StandardOption.TYPE.getSpec();
 
-        var result = spec.converter().orElseThrow().convert(spec.name(), StringToken.of(name));
+        var result = spec.convert(spec.name(), StringToken.of(name));
 
         var ex = assertThrows(JPackageException.class, result::orElseThrow);
 
@@ -354,7 +355,7 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
 
         var spec = StandardOption.ARGUMENTS.getOption().spec();
 
-        var result = spec.converter().orElseThrow().convert(spec.name(), StringToken.of(value));
+        var result = spec.convert(spec.name(), StringToken.of(value));
 
         assertEquals(expectedTokens, List.of(result.map(String[].class::cast).orElseThrow()));
     }
@@ -401,7 +402,7 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
                     || (bundlingOperation.os() == appImageOS);
         }).forEach(bundlingOperation -> {
             var bundleTypeStr = bundlingOperation.bundleTypeValue();
-            var bundleType = spec.converter().orElseThrow().convert(spec.name(), StringToken.of(bundleTypeStr)).orElseThrow();
+            var bundleType = spec.convert(spec.name(), StringToken.of(bundleTypeStr)).orElseThrow();
             assertSame(bundlingOperation.bundleType(), bundleType);
         });
     }
@@ -451,7 +452,7 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
             TEST_PROPERTY_FILE_INVALID;
         }
 
-        OptionMutatorTest(Consumer<OptionSpecBuilder<T>> testee, ValueConverter<T> conv) {
+        OptionMutatorTest(Consumer<OptionSpecBuilder<T>> testee, ValueConverter<String, T> conv) {
             this.testee = Objects.requireNonNull(testee);
             this.conv = Objects.requireNonNull(conv);
         }
@@ -481,11 +482,11 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
                 }
             }
 
-            var result = spec.converter().orElseThrow().convert(spec.name(), token);
+            var result = spec.convert(spec.name(), token);
 
             switch (type) {
                 case TEST_CMDLINE_VALID, TEST_PROPERTY_FILE_VALID -> {
-                    var expected = conv.convert(token.value());
+                    var expected = toFunction(conv::convert).apply(token.value());
                     var actual = result.orElseThrow();
 
                     if (spec.valueType().isArray()) {
@@ -528,7 +529,7 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
         }
 
         private final Consumer<OptionSpecBuilder<T>> testee;
-        private final ValueConverter<T> conv;
+        private final ValueConverter<String, T> conv;
         private List<String> cmdlineErrorFormatKeys;
         private List<String> propertyFileErrorFormatKeys;
         private String validValue;

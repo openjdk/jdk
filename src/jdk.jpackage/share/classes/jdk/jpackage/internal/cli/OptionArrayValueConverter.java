@@ -29,7 +29,7 @@ package jdk.jpackage.internal.cli;
  *
  * @param <T> option value element type
  */
-interface OptionArrayValueConverter<T> extends OptionValueConverter<T[]> {
+interface OptionArrayValueConverter<T> extends OptionValueConverter<String, T[]> {
 
     /**
      * Splits the given string into tokens and returns the result.

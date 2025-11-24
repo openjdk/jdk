@@ -22,6 +22,7 @@
  */
 package jdk.jpackage.internal.cli;
 
+import static jdk.jpackage.internal.cli.OptionValueConverter.convertString;
 import static jdk.jpackage.internal.cli.TestUtils.assertExceptionListEquals;
 import static jdk.jpackage.internal.cli.TestUtils.configureConverter;
 import static jdk.jpackage.internal.cli.TestUtils.configureValidator;
@@ -55,10 +56,10 @@ public class OptionValueConverterTest {
 
         if (positive) {
             final var token = StringToken.of("758");
-            assertEquals(758, converter.convert(OptionName.of("number"), token).orElseThrow());
+            assertEquals(758, convertString(converter, OptionName.of("number"), token).orElseThrow());
         } else {
             final var token = StringToken.of("foo");
-            final var result = converter.convert(OptionName.of("number"), token);
+            final var result = convertString(converter, OptionName.of("number"), token);
 
             assertEquals(1, result.errors().size());
 
@@ -77,7 +78,7 @@ public class OptionValueConverterTest {
                 .converter(ValueConverter.create(Integer::valueOf, Integer.class)).create();
 
         Function<String, Result<Integer>> convertString = (v) -> {
-            return converter.convert(OptionName.of("foo"), StringToken.of(v));
+            return convertString(converter, OptionName.of("foo"), StringToken.of(v));
         };
 
         assertEquals(10, convertString.apply("10").orElseThrow());
@@ -134,7 +135,7 @@ public class OptionValueConverterTest {
                 .tokenizer(str -> str.split(":"))
                 .createArray();
 
-        assertNotEquals(List.of(100, 67, 145), List.of(converter.convert(OptionName.of("foo"), StringToken.of("110:67:145")).orElseThrow()));
+        assertNotEquals(List.of(100, 67, 145), List.of(convertString(converter, OptionName.of("foo"), StringToken.of("110:67:145")).orElseThrow()));
 
         assertEquals(Integer[].class, converter.valueType());
     }
@@ -170,7 +171,7 @@ public class OptionValueConverterTest {
 
         var converter = builder.createArray();
 
-        var result = converter.convert(OptionName.of("foo"), StringToken.of("100:-10:-10:67:str:145:-7"));
+        var result = convertString(converter, OptionName.of("foo"), StringToken.of("100:-10:-10:67:str:145:-7"));
 
         assertExceptionListEquals(Stream.of(
                 new IllegalArgumentException("-10"),
@@ -192,7 +193,7 @@ public class OptionValueConverterTest {
         }, Integer.class)).mutate(configureConverter()).create();
 
         final var token = StringToken.of("foo");
-        final var ex = assertThrowsExactly(ConverterException.class, () -> converter.convert(OptionName.of("number"), token));
+        final var ex = assertThrowsExactly(ConverterException.class, () -> convertString(converter, OptionName.of("number"), token));
 
         assertSame(exception, ex.getCause());
     }
@@ -209,7 +210,7 @@ public class OptionValueConverterTest {
         }).mutate(configureValidator()).create()).create();
 
         final var token = StringToken.of("100");
-        final var ex = assertThrowsExactly(ConverterException.class, () -> converter.convert(OptionName.of("number"), token));
+        final var ex = assertThrowsExactly(ConverterException.class, () -> convertString(converter, OptionName.of("number"), token));
 
         assertSame(exception, ex.getCause());
     }

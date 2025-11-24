@@ -29,6 +29,7 @@ import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
 import static jdk.jpackage.internal.cli.Option.fromOptionSpecPredicate;
+import static jdk.jpackage.internal.cli.OptionValueConverter.convertString;
 import static jdk.jpackage.internal.cli.StandardOption.ADDITIONAL_LAUNCHERS;
 import static jdk.jpackage.internal.cli.StandardOption.platformOption;
 
@@ -380,8 +381,8 @@ final class OptionsProcessor {
         }
 
         @Override
-        public Result<Options[]> convert(OptionName optionName, StringToken optionValue) {
-            return converter.convert(optionName, optionValue).flatMap(arr -> {
+        public Result<Options[]> convert(OptionName optionName, StringToken optionValue, String value) {
+            return convertString(converter, optionName, optionValue).flatMap(arr -> {
                 return Stream.of(arr).map(mapper).reduce(Result.<List<Options>>ofValue(new ArrayList<>()), (result, o) -> {
                     if (Result.allHaveValues(result, o)) {
                         return result.map(v -> {
