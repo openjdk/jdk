@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +26,23 @@
 
 package sun.security.ssl;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.zip.DataFormatException;
+import java.util.zip.Deflater;
+import java.util.zip.Inflater;
 
 /**
- * Enum for (D)TLS certificate compression algorithms.
+ * Enum for TLS certificate compression algorithms.
  */
 enum CompressionAlgorithm {
-    ZLIB                (1,  "zlib"),
-    BROTLI              (2,  "brotli"),
-    ZSTD                (3,  "zstd");
+    ZLIB(1, "zlib"),
+    BROTLI(2, "brotli"),
+    ZSTD(3, "zstd");
 
     final int id;
     final String name;
@@ -68,7 +74,7 @@ enum CompressionAlgorithm {
         return "<UNKNOWN CONTENT TYPE: " + id + ">";
     }
 
-    // Return the size of a SignatureScheme structure in TLS record
+    // Return the size of a compression algorithms structure in TLS record
     static int sizeInRecord() {
         return 2;
     }
@@ -87,6 +93,7 @@ enum CompressionAlgorithm {
 
         Map<Integer, Function<byte[], byte[]>> inflaters =
                 new LinkedHashMap<>(config.certInflaters.size());
+
         for (Map.Entry<String, Function<byte[], byte[]>> entry :
                 config.certInflaters.entrySet()) {
             CompressionAlgorithm ca =
@@ -129,5 +136,55 @@ enum CompressionAlgorithm {
         }
 
         return null;
+    }
+
+    // Default Deflaters and Inflaters.
+    // We currently support only ZLIB internally.
+
+    static Map<String, Function<byte[], byte[]>> getDefaultDeflaters() {
+        return Map.of(ZLIB.name, (input) -> {
+            try (Deflater deflater = new Deflater();
+                    ByteArrayOutputStream outputStream =
+                            new ByteArrayOutputStream(input.length)) {
+
+                deflater.setInput(input);
+                deflater.finish();
+                byte[] buffer = new byte[1024];
+
+                while (!deflater.finished()) {
+                    int compressedSize = deflater.deflate(buffer);
+                    outputStream.write(buffer, 0, compressedSize);
+                }
+
+                return outputStream.toByteArray();
+            } catch (Exception e) {
+                SSLLogger.logWarning("ssl",
+                        "Exception during certificate compression: ", e);
+                return null;
+            }
+        });
+    }
+
+    static Map<String, Function<byte[], byte[]>> getDefaultInflaters() {
+        return Map.of(ZLIB.name, (input) -> {
+            try (Inflater inflater = new Inflater();
+                    ByteArrayOutputStream outputStream =
+                            new ByteArrayOutputStream(input.length)) {
+
+                inflater.setInput(input);
+                byte[] buffer = new byte[1024];
+
+                while (!inflater.finished()) {
+                    int decompressedSize = inflater.inflate(buffer);
+                    outputStream.write(buffer, 0, decompressedSize);
+                }
+
+                return outputStream.toByteArray();
+            } catch (Exception e) {
+                SSLLogger.logWarning("ssl",
+                        "Exception during certificate decompression: ", e);
+                return null;
+            }
+        });
     }
 }

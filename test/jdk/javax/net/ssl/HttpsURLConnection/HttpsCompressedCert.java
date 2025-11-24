@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +22,16 @@
  * questions.
  */
 
-/**
+import static java.net.http.HttpResponse.BodyHandlers.ofString;
+import static jdk.test.lib.Asserts.assertEquals;
+
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import javax.net.ssl.SSLParameters;
+
+/*
  * @test
  * @bug 8273042
  * @summary TLS certificate compression
@@ -30,40 +40,10 @@
  * @run main/othervm HttpsCompressedCert
  */
 
-import static java.net.http.HttpResponse.BodyHandlers.ofString;
-import static jdk.test.lib.Asserts.assertEquals;
-
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.zip.Inflater;
-import javax.net.ssl.SSLParameters;
-
 public class HttpsCompressedCert {
-    private static final Function<byte[], byte[]> certInflater = (input) -> {
-        try {
-            Inflater inflater = new Inflater();
-            inflater.setInput(input);
-            byte[] output = new byte[1024 * 8];
-            int l = inflater.inflate(output);
-            inflater.end();
-
-            byte[] data = new byte[l];
-            System.arraycopy(output, 0, data, 0, l);
-
-            return data;
-        } catch (Exception ex) {
-            // just ignore
-            return null;
-        }
-    };
-
     public static void main(String[] args) throws Exception {
         SSLParameters sslParameters = new SSLParameters();
-        sslParameters.setCertificateInflaters(Map.of("zlib", certInflater));
+        sslParameters.setEnableCertificateCompression(true);
         HttpClient httpClient = HttpClient.newBuilder()
                 .sslContext(SSLClientContext.createClientSSLContext())
                 .version(HttpClient.Version.HTTP_2)
@@ -74,7 +54,8 @@ public class HttpsCompressedCert {
                         new URI("https://www.google.com/"))
                 .GET()
                 .build();
-        HttpResponse<String> response = httpClient.send(httpRequest, ofString());
+        HttpResponse<String> response = httpClient.send(
+                httpRequest, ofString());
         assertEquals(response.statusCode(), 200);
     }
 }

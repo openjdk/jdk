@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +26,22 @@
 
 package sun.security.ssl;
 
-import sun.security.ssl.SSLExtension.ExtensionConsumer;
-import sun.security.ssl.SSLExtension.SSLExtensionSpec;
-import sun.security.ssl.SSLHandshake.HandshakeMessage;
-
-import javax.net.ssl.SSLProtocolException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
+import javax.net.ssl.SSLProtocolException;
+import sun.security.ssl.SSLExtension.ExtensionConsumer;
+import sun.security.ssl.SSLExtension.SSLExtensionSpec;
+import sun.security.ssl.SSLHandshake.HandshakeMessage;
 
 /**
  * Pack of the "compress_certificate" extensions [RFC 5246].
  */
 final class CompressCertExtension {
+
     static final HandshakeProducer chNetworkProducer =
             new CHCompressCertificateProducer();
     static final ExtensionConsumer chOnLoadConsumer =
@@ -58,10 +59,11 @@ final class CompressCertExtension {
      * The "signature_algorithms" extension.
      */
     static final class CertCompressionSpec implements SSLExtensionSpec {
+
         private final int[] compressionAlgorithms;  // non-null
 
         CertCompressionSpec(
-            Map<Integer, Function<byte[], byte[]>> certInflaters) {
+                Map<Integer, Function<byte[], byte[]>> certInflaters) {
             compressionAlgorithms = new int[certInflaters.size()];
             int i = 0;
             for (Integer id : certInflaters.keySet()) {
@@ -70,28 +72,28 @@ final class CompressCertExtension {
         }
 
         CertCompressionSpec(HandshakeContext hc,
-                            ByteBuffer buffer) throws IOException {
+                ByteBuffer buffer) throws IOException {
             if (buffer.remaining() < 2) {      // 2: the length of the list
                 throw hc.conContext.fatal(Alert.DECODE_ERROR,
                         new SSLProtocolException(
-                    "Invalid compress_certificate: insufficient data"));
+                                "Invalid compress_certificate: insufficient data"));
             }
 
             byte[] algs = Record.getBytes8(buffer);
             if (buffer.hasRemaining()) {
                 throw hc.conContext.fatal(Alert.DECODE_ERROR,
                         new SSLProtocolException(
-                    "Invalid compress_certificate: unknown extra data"));
+                                "Invalid compress_certificate: unknown extra data"));
             }
 
             if (algs.length == 0 || (algs.length & 0x01) != 0) {
                 throw hc.conContext.fatal(Alert.DECODE_ERROR,
                         new SSLProtocolException(
-                    "Invalid compress_certificate: incomplete data"));
+                                "Invalid compress_certificate: incomplete data"));
             }
 
             int[] compressionAlgs = new int[algs.length / 2];
-            for (int i = 0, j = 0; i < algs.length;) {
+            for (int i = 0, j = 0; i < algs.length; ) {
                 byte hash = algs[i++];
                 byte sign = algs[i++];
                 compressionAlgs[j++] = ((hash & 0xFF) << 8) | (sign & 0xFF);
@@ -103,12 +105,12 @@ final class CompressCertExtension {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                "\"compression algorithms\": '['{0}']'", Locale.ENGLISH);
+                    "\"compression algorithms\": '['{0}']'", Locale.ENGLISH);
 
             if (compressionAlgorithms.length == 0) {
                 Object[] messageFields = {
                         "<no supported compression algorithms specified>"
-                    };
+                };
                 return messageFormat.format(messageFields);
             } else {
                 StringBuilder builder = new StringBuilder(512);
@@ -125,7 +127,7 @@ final class CompressCertExtension {
 
                 Object[] messageFields = {
                         builder.toString()
-                    };
+                };
 
                 return messageFormat.format(messageFields);
             }
@@ -133,7 +135,8 @@ final class CompressCertExtension {
     }
 
     private static final
-            class CompressCertificateStringizer implements SSLStringizer {
+    class CompressCertificateStringizer implements SSLStringizer {
+
         @Override
         public String toString(HandshakeContext hc, ByteBuffer buffer) {
             try {
@@ -150,7 +153,8 @@ final class CompressCertExtension {
      * the ClientHello handshake message.
      */
     private static final
-            class CHCompressCertificateProducer implements HandshakeProducer {
+    class CHCompressCertificateProducer implements HandshakeProducer {
+
         // Prevent instantiation of this class.
         private CHCompressCertificateProducer() {
             // blank
@@ -160,47 +164,8 @@ final class CompressCertExtension {
         public byte[] produce(ConnectionContext context,
                 HandshakeMessage message) throws IOException {
             // The producing happens in client side only.
-            ClientHandshakeContext chc = (ClientHandshakeContext)context;
-
-            // Is it a supported and enabled extension?
-            if (!chc.sslConfig.isAvailable(
-                    SSLExtension.CH_COMPRESS_CERTIFICATE)) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.fine("Ignore unavailable " +
-                            "compress_certificate extension");
-                }
-                return null;
-            }
-
-            // Produce the extension.
-            if (chc.certInflaters == null) {
-                chc.certInflaters =
-                    CompressionAlgorithm.findInflaters(chc.sslConfig);
-            }
-
-            if (chc.certInflaters.isEmpty()) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.fine("Ignore unsupported " +
-                            "compress_certificate extension");
-                }
-                return null;
-            }
-
-            int vectorLen = CompressionAlgorithm.sizeInRecord() *
-                    chc.certInflaters.size();
-            byte[] extData = new byte[vectorLen + 1];
-            ByteBuffer m = ByteBuffer.wrap(extData);
-            Record.putInt8(m, vectorLen);
-            for (Integer algId : chc.certInflaters.keySet()) {
-                Record.putInt16(m, algId);
-            }
-
-            // Update the context.
-            chc.handshakeExtensions.put(
-                    SSLExtension.CH_COMPRESS_CERTIFICATE,
-                    new CertCompressionSpec(chc.certInflaters));
-
-            return extData;
+            return produceCompCertExt(context,
+                    SSLExtension.CH_COMPRESS_CERTIFICATE);
         }
     }
 
@@ -209,7 +174,8 @@ final class CompressCertExtension {
      * the ClientHello handshake message.
      */
     private static final
-            class CHCompressCertificateConsumer implements ExtensionConsumer {
+    class CHCompressCertificateConsumer implements ExtensionConsumer {
+
         // Prevent instantiation of this class.
         private CHCompressCertificateConsumer() {
             // blank
@@ -217,43 +183,11 @@ final class CompressCertExtension {
 
         @Override
         public void consume(ConnectionContext context,
-            HandshakeMessage message, ByteBuffer buffer) throws IOException {
+                HandshakeMessage message, ByteBuffer buffer)
+                throws IOException {
             // The consuming happens in server side only.
-            ServerHandshakeContext shc = (ServerHandshakeContext)context;
-
-            // Is it a supported and enabled extension?
-            if (!shc.sslConfig.isAvailable(
-                    SSLExtension.CH_COMPRESS_CERTIFICATE)) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.fine("Ignore unavailable " +
-                            "compress_certificate extension");
-                }
-                return;     // ignore the extension
-            }
-
-            if (shc.sslConfig.certDeflaters == null ||
-                    shc.sslConfig.certDeflaters.isEmpty()) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.fine("Ignore unsupported " +
-                            "compress_certificate extension");
-                }
-                return;     // ignore the extension
-            }
-
-            // Parse the extension.
-            CertCompressionSpec spec = new CertCompressionSpec(shc, buffer);
-
-            // Update the context.
-            shc.certDeflater = CompressionAlgorithm.selectDeflater(
-                            shc.sslConfig, spec.compressionAlgorithms);
-            if (shc.certDeflater == null) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.fine("Ignore, no supported " +
-                            "certificate compression algorithms");
-                }
-            }
-
-            // No impact on session resumption.
+            consumeCompCertExt(context, buffer,
+                    SSLExtension.CH_COMPRESS_CERTIFICATE);
         }
     }
 
@@ -262,7 +196,8 @@ final class CompressCertExtension {
      * the CertificateRequest handshake message.
      */
     private static final
-            class CRCompressCertificateProducer implements HandshakeProducer {
+    class CRCompressCertificateProducer implements HandshakeProducer {
+
         // Prevent instantiation of this class.
         private CRCompressCertificateProducer() {
             // blank
@@ -272,47 +207,8 @@ final class CompressCertExtension {
         public byte[] produce(ConnectionContext context,
                 HandshakeMessage message) throws IOException {
             // The producing happens in server side only.
-            ServerHandshakeContext shc = (ServerHandshakeContext)context;
-
-            // Is it a supported and enabled extension?
-            if (!shc.sslConfig.isAvailable(
-                    SSLExtension.CR_COMPRESS_CERTIFICATE)) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.fine("Ignore unavailable " +
-                            "compress_certificate extension");
-                }
-                return null;
-            }
-
-            // Produce the extension.
-            if (shc.certInflaters == null) {
-                shc.certInflaters =
-                    CompressionAlgorithm.findInflaters(shc.sslConfig);
-            }
-
-            if (shc.certInflaters.isEmpty()) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.fine("Ignore unsupported " +
-                            "compress_certificate extension");
-                }
-                return null;
-            }
-
-            int vectorLen = CompressionAlgorithm.sizeInRecord() *
-                    shc.certInflaters.size();
-            byte[] extData = new byte[vectorLen + 1];
-            ByteBuffer m = ByteBuffer.wrap(extData);
-            Record.putInt8(m, vectorLen);
-            for (Integer algId : shc.certInflaters.keySet()) {
-                Record.putInt16(m, algId);
-            }
-
-            // Update the context.
-            shc.handshakeExtensions.put(
-                    SSLExtension.CR_COMPRESS_CERTIFICATE,
-                    new CertCompressionSpec(shc.certInflaters));
-
-            return extData;
+            return produceCompCertExt(context,
+                    SSLExtension.CR_COMPRESS_CERTIFICATE);
         }
     }
 
@@ -321,50 +217,101 @@ final class CompressCertExtension {
      * the CertificateRequest handshake message.
      */
     private static final
-            class CRCompressCertificateConsumer implements ExtensionConsumer {
+    class CRCompressCertificateConsumer implements ExtensionConsumer {
+
         // Prevent instantiation of this class.
         private CRCompressCertificateConsumer() {
             // blank
         }
+
         @Override
         public void consume(ConnectionContext context,
-            HandshakeMessage message, ByteBuffer buffer) throws IOException {
+                HandshakeMessage message, ByteBuffer buffer)
+                throws IOException {
             // The consuming happens in client side only.
-            ClientHandshakeContext chc = (ClientHandshakeContext)context;
-
-            // Is it a supported and enabled extension?
-            if (!chc.sslConfig.isAvailable(
-                    SSLExtension.CR_COMPRESS_CERTIFICATE)) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.fine("Ignore unavailable " +
-                            "compress_certificate extension");
-                }
-                return;     // ignore the extension
-            }
-
-            if (chc.sslConfig.certDeflaters == null ||
-                    chc.sslConfig.certDeflaters.isEmpty()) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.fine("Ignore unsupported " +
-                            "compress_certificate extension");
-                }
-                return;     // ignore the extension
-            }
-
-            // Parse the extension.
-            CertCompressionSpec spec = new CertCompressionSpec(chc, buffer);
-
-            // Update the context.
-            chc.certDeflater = CompressionAlgorithm.selectDeflater(
-                            chc.sslConfig, spec.compressionAlgorithms);
-            if (chc.certDeflater == null) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.fine("Ignore, no supported " +
-                            "certificate compression algorithms");
-                }
-            }
-
-            // No impact on session resumption.
+            consumeCompCertExt(context, buffer,
+                    SSLExtension.CR_COMPRESS_CERTIFICATE);
         }
+    }
+
+    private static byte[] produceCompCertExt(
+            ConnectionContext context, SSLExtension extension)
+            throws IOException {
+
+        HandshakeContext hc = (HandshakeContext) context;
+        // Is it a supported and enabled extension?
+        if (!hc.sslConfig.isAvailable(extension)) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                SSLLogger.fine("Ignore unavailable " +
+                        "compress_certificate extension");
+            }
+            return null;
+        }
+
+        // Produce the extension.
+        if (hc.certInflaters == null) {
+            hc.certInflaters =
+                    CompressionAlgorithm.findInflaters(hc.sslConfig);
+        }
+
+        if (hc.certInflaters.isEmpty()) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                SSLLogger.fine("Ignore unsupported " +
+                        "compress_certificate extension");
+            }
+            return null;
+        }
+
+        int vectorLen = CompressionAlgorithm.sizeInRecord() *
+                hc.certInflaters.size();
+        byte[] extData = new byte[vectorLen + 1];
+        ByteBuffer m = ByteBuffer.wrap(extData);
+        Record.putInt8(m, vectorLen);
+        for (Integer algId : hc.certInflaters.keySet()) {
+            Record.putInt16(m, algId);
+        }
+
+        // Update the context.
+        hc.handshakeExtensions.put(
+                extension, new CertCompressionSpec(hc.certInflaters));
+
+        return extData;
+    }
+
+    private static void consumeCompCertExt(ConnectionContext context,
+            ByteBuffer buffer, SSLExtension extension) throws IOException {
+
+        HandshakeContext hc = (HandshakeContext) context;
+        // Is it a supported and enabled extension?
+        if (!hc.sslConfig.isAvailable(extension)) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                SSLLogger.fine("Ignore unavailable " +
+                        "compress_certificate extension");
+            }
+            return;     // ignore the extension
+        }
+
+        if (hc.sslConfig.certDeflaters == null ||
+                hc.sslConfig.certDeflaters.isEmpty()) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                SSLLogger.fine("Ignore unsupported " +
+                        "compress_certificate extension");
+            }
+            return;     // ignore the extension
+        }
+
+        // Parse the extension.
+        CertCompressionSpec spec = new CertCompressionSpec(hc, buffer);
+
+        // Update the context.
+        hc.certDeflater = CompressionAlgorithm.selectDeflater(
+                hc.sslConfig, spec.compressionAlgorithms);
+        if (hc.certDeflater == null) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                SSLLogger.fine("Ignore, no supported " +
+                        "certificate compression algorithms");
+            }
+        }
+        // No impact on session resumption.
     }
 }

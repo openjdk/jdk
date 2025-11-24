@@ -87,8 +87,7 @@ public class SSLParameters {
     private String[] applicationProtocols = new String[0];
     private String[] signatureSchemes = null;
     private String[] namedGroups = null;
-    private Map<String, Function<byte[], byte[]>> certDeflaters = null;
-    private Map<String, Function<byte[], byte[]>> certInflaters = null;
+    private boolean enableCertificateCompression = true;
 
     /**
      * Constructs SSLParameters.
@@ -965,314 +964,36 @@ public class SSLParameters {
     }
 
     /**
-     * Returns a prioritized map of certificate compression algorithm names
-     * and functions that can be used over the SSL/TLS/DTLS protocols.
+     * Sets whether TLS certificate compression should be enabled.
      * <p>
-     * Note that the standard list of certificate compression algorithm
-     * names are defined in the <a href=
-     * "{@docRoot}/../specs/security/standard-names.html#cert-compression">
-     * Certificate Compression</a> section of the Java Security Standard
-     * Algorithm Names Specification.  Providers may support certificate
-     * compression algorithms not defined in this list or may not use the
-     * recommended name for a certain certificate compression algorithm.
-     * <p>
-     * The set of certificate compression algorithm names and functions
-     * that will be used over the SSL/TLS/DTLS connections is determined by
-     * the returned map of this method and the underlying provider-specific
-     * default certificate compression algorithm names and functions.
-     * <p>
-     * If the returned map is {@code null}, then the underlying
-     * provider-specific default certificate compression algorithm names
-     * and functions will be used over the SSL/TLS/DTLS connections.
-     * <p>
-     * If the returned map is empty (zero-length), then the certificate
-     * compression mechanism is turned off for SSL/TLS/DTLS protocols.
-     * <p>
-     * If the returned map is not {@code null} or empty (zero-length), then
-     * the certificate compression mechanism is turned on for SSL/TLS/DTLS
-     * protocols.  The certificate compression algorithm names and
-     * functions in the returned map will be used over the connections.
-     * <p>
-     * If the {@link #setCertificateDeflaters} method has not been called,
-     * this method should return the default certificate compression
-     * algorithm names and functions for connection populated objects, or
-     * {@code null} for pre-populated objects.
+     * This method only applies to TLSv1.3.
      *
-     * @apiNote
-     * Note that a provider may not have been updated to support this method
-     * and in that case may return {@code null} instead of the default
-     * certificate compression algorithm names and functions for connection
-     * populated objects.
+     * @param   enableCertificateCompression
+     *          {@code true} indicates that TLS certificate compression
+     *          should be enabled; {@code false} indicates that TLS certificate
+     *          compression should be disabled
      *
-     * @implNote
-     * The SunJSSE provider supports this method, but does not define the
-     * default certificate compression algorithm names and functions.  The
-     * certificate compression mechanism is turned off by default for the
-     * SunJSSE provider.  Applications could enable the mechanism in the
-     * SunJSSE provider by calling {@link #setCertificateDeflaters} in
-     * the compression side and {@link #setCertificateInflaters} in the
-     * decompression side.
+     * @see     #getEnableCertificateCompression()
      *
-     * @return an immutable map of certificate compression algorithm names
-     *         {@code String}s and {@link Function}s, or {@code null} if
-     *         none have been set.  Each map entry in the map is non-null, and
-     *         represents the certificate compression algorithm. The key of
-     *         the map entry is a non-null {@code String} object which
-     *         represents the certificate compression algorithm name.  The
-     *         value of the map entry is a non-null {@link Function} object
-     *         which will be applied to the Certificate message byte array,
-     *         and produce Compressed Certificate message byte array.  The
-     *         map entries are ordered based on certificate compression
-     *         algorithm preference, with the first entry being the most
-     *         preferred.  Providers should ignore unknown certificate
-     *         compression algorithm names while establishing the
-     *         SSL/TLS/DTLS connections.
-     *
-     * @see #setCertificateDeflaters
-     *
-     * @since 19
+     * @since 27
      */
-    public Map<String, Function<byte[], byte[]>> getCertificateDeflaters() {
-        return this.certDeflaters;
+    public void setEnableCertificateCompression(
+            boolean enableCertificateCompression) {
+        this.enableCertificateCompression = enableCertificateCompression;
     }
 
     /**
-     * Sets a prioritized map of certificate compression algorithm names and
-     * functions that can be used over the SSL/TLS/DTLS protocols.
+     * Returns whether TLS certificate compression should be enabled
      * <p>
-     * Note that the standard list of certificate compression algorithm
-     * names are defined in the <a href=
-     * "{@docRoot}/../specs/security/standard-names.html#cert-compression">
-     * Certificate Compression</a> section of the Java Security Standard
-     * Algorithm Names Specification.  Providers may support certificate
-     * compression algorithms not defined in this list or may not use the
-     * recommended name for a certain certificate compression algorithm.
-     * <p>
-     * The set of certificate compression algorithm names and functions
-     * that will be used over the SSL/TLS/DTLS connections is determined by
-     * the returned map of this method and the underlying provider-specific
-     * default certificate compression algorithm names and functions.  See
-     * {@link #getCertificateDeflaters} for specific details on how the
-     * parameters are used in SSL/TLS/DTLS connections.
+     * This method only applies to TLSv1.3.
      *
-     * @apiNote
-     * Note that a provider may not have been updated to support this method
-     * and in that case may ignore the certificate compression algorithm
-     * names and functions that are set.
+     * @return  true, if TLS certificate compression should be enabled
      *
-     * @implNote
-     * The SunJSSE provider supports this method.
+     * @see     #setEnableCertificateCompression(boolean)
      *
-     * @param certDeflaters an ordered map of certificate compression
-     *        algorithm names {@code String}s and {@link Function}s with the
-     *        first entry being the most preferred, or {@code null}.  Each
-     *        entry in the map is non-null, and represents the certificate
-     *        compression algorithm.  The key of the map entry is a non-null
-     *        {@code String} object which represents the certificate
-     *        compression algorithm name.  The value of the map entry is a
-     *        non-null {@link Function} object which will be applied to the
-     *        Certificate message byte array, and produce Compressed
-     *        Certificate message byte array.  This method will make a copy of
-     *        this map if necessary to protect against subsequent modification.
-     *        Providers should ignore unknown certificate compression
-     *        algorithm names and the relevant functions while establishing
-     *        the SSL/TLS/DTLS connections.
-     * @throws IllegalArgumentException if any entry, key, or value in the
-     *        {@code certDeflaters} map is {@code null}, or any key is
-     *        {@linkplain String#isBlank() blank}.
-     *
-     * @see #getCertificateDeflaters
-     *
-     * @since 19
+     * @since 27
      */
-    public void setCertificateDeflaters(
-            Map<String, Function<byte[], byte[]>> certDeflaters) {
-        if (this.certDeflaters == certDeflaters) {
-            return;
-        }
-
-        if (certDeflaters == null) {
-            this.certDeflaters = null;
-        } else if (certDeflaters.isEmpty()) {
-            this.certDeflaters = Map.of();
-        } else {
-            @SuppressWarnings({"unchecked", "rawtypes"})
-            Map.Entry<String, Function<byte[], byte[]>>[] entries =
-                    new Map.Entry[certDeflaters.size()];
-            int i = 0;
-            for (Map.Entry<String, Function<byte[], byte[]>> entry :
-                    certDeflaters.entrySet()) {
-                if (entry == null) {
-                    throw new IllegalArgumentException(
-                            "Null entry is not allowed");
-                } else if (entry.getKey() == null || entry.getKey().isBlank()) {
-                    throw new IllegalArgumentException(
-                            "Null or blank compression algorithm " +
-                            "name is not allowed");
-                } else if (entry.getValue() == null) {
-                    throw new IllegalArgumentException(
-                            "Null compression function is not allowed");
-                }
-                entries[i++] = entry;
-            }
-
-            this.certDeflaters = Map.ofEntries(entries);
-        }
-    }
-
-    /**
-     * Returns a prioritized map of certificate decompression algorithm
-     * names and functions that can be used over the SSL/TLS/DTLS protocols.
-     * <p>
-     * Note that the standard list of certificate decompression algorithm
-     * names are defined in the <a href=
-     * "{@docRoot}/../specs/security/standard-names.html#cert-compression">
-     * Certificate Compression</a> section of the Java Security Standard
-     * Algorithm Names Specification.  Providers may support certificate
-     * decompression algorithms not defined in this list or may not use the
-     * recommended name for a certain certificate decompression algorithm.
-     * <p>
-     * The set of certificate decompression algorithm names and functions
-     * that will be used over the SSL/TLS/DTLS connections is determined by
-     * the returned map of this method and the underlying provider-specific
-     * default certificate decompression algorithm names and functions.
-     * <p>
-     * If the returned map is {@code null}, then the underlying
-     * provider-specific default certificate decompression algorithm names
-     * and functions will be used over the connections.
-     * <p>
-     * If the returned map is empty (zero-length), then the certificate
-     * compression mechanism is turned off for SSL/TLS/DTLS protocols.
-     * <p>
-     * If the returned map is not {@code null} or empty (zero-length), then
-     * the certificate compression mechanism is turned on for SSL/TLS/DTLS
-     * protocols.  The certificate decompression algorithm names and
-     * functions in the returned map will be used over the connections.
-     * <p>
-     * If the {@link #setCertificateInflaters} method has not been called,
-     * this method should return the default certificate decompression
-     * algorithm names and functions for connection populated objects, or
-     * {@code null} for pre-populated objects.
-     *
-     * @apiNote
-     * Note that a provider may not have been updated to support this method
-     * and in that case may return {@code null} instead of the default
-     * certificate decompression algorithm names and functions for connection
-     * populated objects.
-     *
-     * @implNote
-     * The SunJSSE provider supports this method, but does not define the
-     * default certificate decompression algorithm names and functions.  The
-     * certificate compression mechanism is turned off by default for the
-     * SunJSSE provider.  Applications could enable the mechanism in the
-     * SunJSSE provider by calling {@link #setCertificateDeflaters} in
-     * the compression side and {@link #setCertificateInflaters} in the
-     * decompression side.
-     *
-     * @return an immutable map of certificate decompression algorithm names
-     *         {@code String}s and {@link Function}s, or {@code null} if
-     *         none have been set.  Each map entry in the map is non-null, and
-     *         represents the certificate decompression algorithm. The key of
-     *         the map entry is a non-null {@code String} object which
-     *         represents the certificate decompression algorithm name.  The
-     *         value of the map entry is a non-null {@link Function} object
-     *         which will be applied to the Compressed Certificate message
-     *         byte array, and produce Certificate message byte array.  The
-     *         map entries are ordered based on certificate decompression
-     *         algorithm preference, with the first entry being the most
-     *         preferred.  Providers should ignore unknown certificate
-     *         decompression algorithm names while establishing the
-     *         SSL/TLS/DTLS connections.
-     *
-     * @see #setCertificateDeflaters
-     *
-     * @since 19
-     */
-    public Map<String, Function<byte[], byte[]>> getCertificateInflaters() {
-        return this.certInflaters;
-    }
-
-    /**
-     * Sets a prioritized map of certificate decompression algorithm names
-     * and functions that can be used over the SSL/TLS/DTLS protocols.
-     * <p>
-     * Note that the standard list of certificate decompression algorithm
-     * names are defined in the <a href=
-     * "{@docRoot}/../specs/security/standard-names.html#cert-compression">
-     * Certificate Compression</a> section of the Java Security Standard
-     * Algorithm Names Specification.  Providers may support certificate
-     * decompression algorithms not defined in this list or may not use the
-     * recommended name for a certain certificate decompression algorithm.
-     * <p>
-     * The set of certificate decompression algorithm names and functions
-     * that will be used over the SSL/TLS/DTLS connections is determined by
-     * the returned map of this method and the underlying provider-specific
-     * default certificate decompression algorithm names and functions.  See
-     * {@link #getCertificateInflaters} for specific details on how the
-     * parameters are used in SSL/TLS/DTLS connections.
-     *
-     * @apiNote
-     * Note that a provider may not have been updated to support this method
-     * and in that case may ignore the certificate decompression algorithm
-     * names and functions that are set.
-     *
-     * @implNote
-     * The SunJSSE provider supports this method.
-     *
-     * @param certInflaters an ordered map of certificate decompression
-     *        algorithm names {@code String}s and {@link Function}s with the
-     *        first entry being the most preferred, or {@code null}.  Each
-     *        entry in the map is non-null, and represents the certificate
-     *        decompression algorithm.  The key of the map entry is a non-null
-     *        {@code String} object which represents the certificate
-     *        decompression algorithm name.  The value of the map entry is a
-     *        non-null {@link Function} object which will be applied to the
-     *        Compressed Certificate message byte array, and produce
-     *        Certificate message byte array.  This method will make a copy of
-     *        this map if necessary to protect against subsequent modification.
-     *        Providers should ignore unknown certificate decompression
-     *        algorithm names and the relevant functions while establishing
-     *        the SSL/TLS/DTLS connections.
-     * @throws IllegalArgumentException if any entry, key, or value in the
-     *        {@code certInflaters} map is {@code null}, or any key is
-     *        {@linkplain String#isBlank() blank}.
-     *
-     * @see #getCertificateInflaters
-     *
-     * @since 19
-     */
-    public void setCertificateInflaters(
-            Map<String, Function<byte[], byte[]>> certInflaters) {
-        if (this.certInflaters == certInflaters) {
-            return;
-        }
-
-        if (certInflaters == null) {
-            this.certInflaters = null;
-        } else if (certInflaters.isEmpty()) {
-            this.certInflaters = Map.of();
-        } else {
-            @SuppressWarnings({"unchecked", "rawtypes"})
-            Map.Entry<String, Function<byte[], byte[]>>[] entries =
-                    new Map.Entry[certInflaters.size()];
-            int i = 0;
-            for (Map.Entry<String, Function<byte[], byte[]>> entry :
-                    certInflaters.entrySet()) {
-                if (entry == null) {
-                    throw new IllegalArgumentException(
-                            "Null entry is not allowed");
-                } else if (entry.getKey() == null || entry.getKey().isBlank()) {
-                    throw new IllegalArgumentException(
-                            "Null or blank decompression algorithm " +
-                            "name is not allowed");
-                } else if (entry.getValue() == null) {
-                    throw new IllegalArgumentException(
-                            "Null decompression function is not allowed");
-                }
-                entries[i++] = entry;
-            }
-
-            this.certInflaters = Map.ofEntries(entries);
-        }
+    public boolean getEnableCertificateCompression() {
+        return this.enableCertificateCompression;
     }
 }
