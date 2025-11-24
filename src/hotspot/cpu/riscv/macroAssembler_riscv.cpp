@@ -1587,9 +1587,9 @@ void MacroAssembler::cmov_fp_cmp_fp_ge(FloatRegister cmp1, FloatRegister cmp2,
   if (cmp_single) {
     // jump if cmp1 < cmp2 or either is NaN
     // not jump (i.e. move src to dst) if cmp1 >= cmp2
-    float_blt(cmp1, cmp2, no_set);
+    float_blt(cmp1, cmp2, no_set, false, true);
   } else {
-    double_blt(cmp1, cmp2, no_set);
+    double_blt(cmp1, cmp2, no_set, false, true);
   }
   if (cmov_single) {
     fmv_s(dst, src);
@@ -1633,9 +1633,9 @@ void MacroAssembler::cmov_fp_cmp_fp_gt(FloatRegister cmp1, FloatRegister cmp2,
   if (cmp_single) {
     // jump if cmp1 <= cmp2 or either is NaN
     // not jump (i.e. move src to dst) if cmp1 > cmp2
-    float_ble(cmp1, cmp2, no_set);
+    float_ble(cmp1, cmp2, no_set, false, true);
   } else {
-    double_ble(cmp1, cmp2, no_set);
+    double_ble(cmp1, cmp2, no_set, false, true);
   }
   if (cmov_single) {
     fmv_s(dst, src);
