@@ -25,11 +25,15 @@
 
 package jdk.jpackage.internal.cli;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.UUID;
+import java.util.function.Function;
 import jdk.jpackage.internal.model.LauncherShortcut;
 import jdk.jpackage.internal.model.ParseUtils;
+import jdk.jpackage.internal.util.RootedPath;
 
 
 final class StandardValueConverter {
@@ -61,6 +65,32 @@ final class StandardValueConverter {
         return ADD_LAUNCHER_SHORTCUT_CONV;
     }
 
+    static ExplodedPathConverterBuilder explodedPathConverter() {
+        return new ExplodedPathConverterBuilder();
+    }
+
+    static final class ExplodedPathConverterBuilder {
+        private ExplodedPathConverterBuilder() {
+        }
+
+        ValueConverter<Path, RootedPath[]> create() {
+            return ValueConverter.create(path -> {
+                return explodePath(path, withPathFileName);
+            }, RootedPath[].class);
+        }
+
+        ExplodedPathConverterBuilder withPathFileName(boolean v) {
+            withPathFileName = v;
+            return this;
+        }
+
+        ExplodedPathConverterBuilder withPathFileName() {
+            return withPathFileName(true);
+        }
+
+        private boolean withPathFileName;
+    }
+
     private static final ValueConverter<String, String> IDENTITY_CONV = ValueConverter.create(x -> x, String.class);
 
     private static final ValueConverter<String, Path> PATH_CONV = ValueConverter.create(str -> {
@@ -80,4 +110,24 @@ final class StandardValueConverter {
 
     private static final ValueConverter<String, LauncherShortcut> ADD_LAUNCHER_SHORTCUT_CONV = ValueConverter.create(
             ParseUtils::parseLauncherShortcutForAddLauncher, LauncherShortcut.class);
+
+    private static RootedPath[] explodePath(Path path, boolean withPathFileName) throws Exception {
+
+        Function<Path, RootedPath> mapper;
+        if (withPathFileName) {
+            mapper = RootedPath.toRootedPath(path.getParent());
+        } else {
+            mapper = RootedPath.toRootedPath(path);
+        }
+
+        RootedPath[] items;
+        try (var walk = Files.walk(path)) {
+            items = walk.map(mapper).toArray(RootedPath[]::new);
+        } catch (IOException ex) {
+            // IOException is not a converter error, it is a converting error, so map it into IAE.
+            throw new IllegalArgumentException(ex);
+        }
+
+        return items;
+    }
 }

@@ -61,7 +61,7 @@ abstract class LinuxPackager<T extends LinuxPackage> implements Consumer<Packagi
 
     @Override
     public void accept(PackagingPipeline.Builder pipelineBuilder) {
-        pipelineBuilder.excludeDirFromCopying(outputDir)
+        pipelineBuilder
                 .task(PackageTaskID.CREATE_CONFIG_FILES)
                         .action(this::buildConfigFiles)
                         .add()

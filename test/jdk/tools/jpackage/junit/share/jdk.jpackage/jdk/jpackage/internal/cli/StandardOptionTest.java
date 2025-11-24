@@ -60,6 +60,7 @@ import jdk.jpackage.internal.model.BundleType;
 import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.LauncherShortcut;
 import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
+import jdk.jpackage.internal.util.RootedPath;
 import jdk.jpackage.internal.util.StringBundle;
 import jdk.jpackage.test.Comm;
 import jdk.jpackage.test.JUnitAdapter;
@@ -210,6 +211,53 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
         assertEquals(I18N.format("ERR_InvalidInstallerType", name), ex.getMessage());
     }
 
+    @Test
+    public void test_APP_CONTENT_valid(@TempDir Path workDir) throws IOException {
+
+        var spec = StandardOption.APP_CONTENT.getSpec();
+
+        var contentDir = workDir.resolve("a");
+        var emptyDir = contentDir.resolve("b/empty-dir");
+        var file = contentDir.resolve("file.txt");
+
+        Files.createDirectories(emptyDir);
+        Files.createDirectories(file.getParent());
+        Files.createFile(file);
+
+        Object convertedValue = spec.convert(
+                spec.name(),
+                StringToken.of(Stream.of(contentDir, file).map(Path::toString).collect(joining(",")))
+        ).orElseThrow();
+
+        var paths = StandardOption.APP_CONTENT.getFrom(Options.of(Map.of(StandardOption.APP_CONTENT, convertedValue)));
+        var sortedPathList = paths.stream().flatMap(Collection::stream).map(RootedPath::branch).sorted().toList();
+
+        var expectedPathList = Stream.of(
+                "a",
+                "a/b",
+                "a/b/empty-dir",
+                "a/file.txt",
+                "file.txt"
+        ).map(Path::of).sorted().toList();
+
+        assertEquals(expectedPathList, sortedPathList);
+    }
+
+    @Test
+    public void test_APP_CONTENT_invalid(@TempDir Path workDir) throws IOException {
+        var spec = StandardOption.APP_CONTENT.getSpec();
+
+        var token = StringToken.of(workDir.resolve("nonexistent").toString());
+        var result = spec.convert(spec.name(), token);
+
+        assertExceptionListEquals(Stream.of(
+                "error.parameter-not-directory",
+                "error.parameter-not-file"
+        ).map(key -> {
+            return new JPackageException(I18N.format(key, token.value(), spec.name().formatForCommandLine()));
+        }).toList(), result.errors());
+    }
+
     @ParameterizedTest
     @EnumSource(OptionMutatorTest.TestType.class)
     public void test_pathOptionMutator(OptionMutatorTest.TestType type) {
@@ -218,6 +266,17 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
                 .invalidValue("\0")
                 .cmdlineErrorFormatKeys("error.parameter-not-path")
                 .propertyFileErrorFormatKeys("error.properties-parameter-not-path")
+                .test(OptionSpecBuilder.create(Path.class), type);
+    }
+
+    @ParameterizedTest
+    @EnumSource(OptionMutatorTest.TestType.class)
+    public void test_existingPathOptionMutator(OptionMutatorTest.TestType type, @TempDir Path workDir) {
+        new OptionMutatorTest<>(StandardOption.existingPathOptionMutator(), StandardValueConverter.pathConv())
+                .validValue(workDir.toString())
+                .invalidValue(workDir.resolve("nonexistent").toString())
+                .cmdlineErrorFormatKeys("error.parameter-not-directory", "error.parameter-not-file")
+                .propertyFileErrorFormatKeys("error.properties-parameter-not-directory", "error.properties-parameter-not-file")
                 .test(OptionSpecBuilder.create(Path.class), type);
     }
 
@@ -250,6 +309,39 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
         }
 
         test.test(OptionSpecBuilder.create(Path.class), type);
+    }
+
+    @ParameterizedTest
+    @EnumSource(OptionMutatorTest.TestType.class)
+    public void test_explodedPathOptionMapper(OptionMutatorTest.TestType type, @TempDir Path workDir) throws IOException {
+
+        var explodePath = StandardValueConverter.explodedPathConverter().withPathFileName().create();
+
+        ValueConverter<String, RootedPath[]> conv = ValueConverter.create(str -> {
+            var path = StandardValueConverter.pathConv().convert(str);
+            return explodePath.convert(path);
+        }, RootedPath[].class);
+
+        var test = new OptionMutatorTest<>(_ -> {}, conv)
+                .invalidValue(workDir.resolve("nonexistent").toString())
+                .cmdlineErrorFormatKeys("error.parameter-not-directory")
+                .propertyFileErrorFormatKeys("error.properties-parameter-not-directory");
+
+        switch (type) {
+            case TEST_CMDLINE_VALID, TEST_PROPERTY_FILE_VALID -> {
+                var dir = workDir.resolve("dir");
+                Files.createDirectories(dir);
+                for (var file : List.of("foo.txt", "bar.txt")) {
+                    Files.createFile(workDir.resolve(file));
+                }
+                test.validValue(dir.toString());
+            }
+            default -> {}
+        }
+
+        test.test(OptionSpecBuilder.create(Path.class)
+                .mutate(StandardOption.directoryOptionMutator())
+                .map(StandardOption.explodedPathOptionMapper(explodePath)), type);
     }
 
     @Test

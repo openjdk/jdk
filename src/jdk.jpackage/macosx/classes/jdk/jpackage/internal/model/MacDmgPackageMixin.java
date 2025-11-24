@@ -25,22 +25,23 @@
 package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
-import java.util.List;
+import java.util.Collection;
 import java.util.Optional;
+import jdk.jpackage.internal.util.RootedPath;
 
 public interface MacDmgPackageMixin {
 
     Optional<Path> icon();
 
     /**
-     * Returns additional top=level content for DMG package.
+     * Returns the source paths that should be copied into the top-level directory of a DMG package.
      * <p>
      * Each item in the list can be a directory or a file.
      *
-     * @return the additional top=level content for DMG package
+     * @return the source paths of additional top-level content for DMG package
      */
-    List<Path> content();
+    Collection<RootedPath> dmgRootDirSources();
 
-    record Stub(Optional<Path> icon, List<Path> content) implements MacDmgPackageMixin {
+    record Stub(Optional<Path> icon, Collection<RootedPath> dmgRootDirSources) implements MacDmgPackageMixin {
     }
 }
