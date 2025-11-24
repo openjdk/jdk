@@ -2091,6 +2091,10 @@ public final class String
         if (bytesCompatible(cs)) {
             return value.length;
         }
+        if (cs instanceof sun.nio.cs.UTF_16LE ||
+            cs instanceof sun.nio.cs.UTF_16BE) {
+            return value.length << (1 - coder());
+        }
         return getBytes(cs).length;
     }
 

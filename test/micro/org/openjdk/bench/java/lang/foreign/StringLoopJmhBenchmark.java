@@ -68,10 +68,11 @@ public class StringLoopJmhBenchmark {
       throw new IllegalArgumentException("Unknown encoding: " + encoding);
     }
 
-    while (stringData.length() < stringLength) {
-      stringData += (char) (Math.random() * 26) + 'a';
+    var stringDataBuilder = new StringBuilder(stringLength + 1);
+    while (stringDataBuilder.length() < stringLength) {
+      stringDataBuilder.append((char) (Math.random() * 26) + 'a');
     }
-    stringData += c;
+    stringData = stringDataBuilder.append(c).toString();
   }
 
   @Benchmark
