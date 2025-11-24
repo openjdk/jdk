@@ -2292,6 +2292,10 @@ bool Matcher::vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen
   return false;
 }
 
+bool Matcher::mask_op_prefers_predicate(int opcode, const TypeVect* vt) {
+  return false;
+}
+
 const RegMask* Matcher::predicate_reg_mask(void) {
   return nullptr;
 }
@@ -6324,36 +6328,8 @@ instruct loadConD_Ex(regD dst, immD src) %{
 // Prefetch instructions.
 // Must be safe to execute with invalid address (cannot fault).
 
-// Special prefetch versions which use the dcbz instruction.
-instruct prefetch_alloc_zero(indirectMemory mem, iRegLsrc src) %{
-  match(PrefetchAllocation (AddP mem src));
-  predicate(AllocatePrefetchStyle == 3);
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "PREFETCH $mem, 2, $src \t// Prefetch write-many with zero" %}
-  size(4);
-  ins_encode %{
-    __ dcbz($src$$Register, $mem$$base$$Register);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
-instruct prefetch_alloc_zero_no_offset(indirectMemory mem) %{
-  match(PrefetchAllocation mem);
-  predicate(AllocatePrefetchStyle == 3);
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "PREFETCH $mem, 2 \t// Prefetch write-many with zero" %}
-  size(4);
-  ins_encode %{
-    __ dcbz($mem$$base$$Register);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
 instruct prefetch_alloc(indirectMemory mem, iRegLsrc src) %{
   match(PrefetchAllocation (AddP mem src));
-  predicate(AllocatePrefetchStyle != 3);
   ins_cost(MEMORY_REF_COST);
 
   format %{ "PREFETCH $mem, 2, $src \t// Prefetch write-many" %}
@@ -6366,7 +6342,6 @@ instruct prefetch_alloc(indirectMemory mem, iRegLsrc src) %{
 
 instruct prefetch_alloc_no_offset(indirectMemory mem) %{
   match(PrefetchAllocation mem);
-  predicate(AllocatePrefetchStyle != 3);
   ins_cost(MEMORY_REF_COST);
 
   format %{ "PREFETCH $mem, 2 \t// Prefetch write-many" %}

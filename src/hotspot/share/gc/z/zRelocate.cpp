@@ -1322,7 +1322,7 @@ private:
 
 public:
   ZFlipAgePagesTask(const ZArray<ZPage*>* pages)
-    : ZTask("ZPromotePagesTask"),
+    : ZTask("ZFlipAgePagesTask"),
       _iter(pages) {}
 
   virtual void work() {
@@ -1337,16 +1337,6 @@ public:
       // Figure out if this is proper promotion
       const bool promotion = to_age == ZPageAge::old;
 
-      if (promotion) {
-        // Before promoting an object (and before relocate start), we must ensure that all
-        // contained zpointers are store good. The marking code ensures that for non-null
-        // pointers, but null pointers are ignored. This code ensures that even null pointers
-        // are made store good, for the promoted objects.
-        prev_page->object_iterate([&](oop obj) {
-          ZIterator::basic_oop_iterate_safe(obj, ZBarrier::promote_barrier_on_young_oop_field);
-        });
-      }
-
       // Logging
       prev_page->log_msg(promotion ? " (flip promoted)" : " (flip survived)");
 
@@ -1360,7 +1350,7 @@ public:
 
       if (promotion) {
         ZGeneration::young()->flip_promote(prev_page, new_page);
-        // Defer promoted page registration times the lock is taken
+        // Defer promoted page registration
         promoted_pages.push(prev_page);
       }
 
@@ -1371,9 +1361,40 @@ public:
   }
 };
 
+class ZPromoteBarrierTask : public ZTask {
+private:
+  ZArrayParallelIterator<ZPage*> _iter;
+
+public:
+  ZPromoteBarrierTask(const ZArray<ZPage*>* pages)
+    : ZTask("ZPromoteBarrierTask"),
+      _iter(pages) {}
+
+  virtual void work() {
+    SuspendibleThreadSetJoiner sts_joiner;
+
+    for (ZPage* page; _iter.next(&page);) {
+      // When promoting an object (and before relocate start), we must ensure that all
+      // contained zpointers are store good. The marking code ensures that for non-null
+      // pointers, but null pointers are ignored. This code ensures that even null pointers
+      // are made store good, for the promoted objects.
+      page->object_iterate([&](oop obj) {
+        ZIterator::basic_oop_iterate_safe(obj, ZBarrier::promote_barrier_on_young_oop_field);
+      });
+
+      SuspendibleThreadSet::yield();
+    }
+  }
+};
+
 void ZRelocate::flip_age_pages(const ZArray<ZPage*>* pages) {
   ZFlipAgePagesTask flip_age_task(pages);
   workers()->run(&flip_age_task);
+}
+
+void ZRelocate::barrier_flip_promoted_pages(const ZArray<ZPage*>* pages) {
+  ZPromoteBarrierTask promote_barrier_task(pages);
+  workers()->run(&promote_barrier_task);
 }
 
 void ZRelocate::synchronize() {
