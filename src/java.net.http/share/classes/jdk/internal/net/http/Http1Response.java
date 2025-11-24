@@ -281,13 +281,13 @@ class Http1Response<T> {
         // Read the `Content-Length` header
         long clen;
         try {
-            clen = readContentLength(headers, "", 0);
+            clen = readContentLength(headers, "", -1);
         } catch (ProtocolException pe) {
             return MinimalFuture.failedFuture(pe);
         }
 
-        // Read if there are and less than `MAX_IGNORE` bytes
-        if (clen > 0 && clen <= MAX_IGNORE) {
+        // Read the body, if it is present and less than `MAX_IGNORE` bytes
+        if (clen != -1 && clen <= MAX_IGNORE) {
             return readBody(discarding(), !request.isWebSocket(), executor);
         } else {
             connection.close();

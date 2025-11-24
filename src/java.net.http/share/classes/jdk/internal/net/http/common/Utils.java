@@ -1346,7 +1346,7 @@ public final class Utils {
     }
     // -- toAsciiString-like support to encode path and query URI segments
 
-    public static Long readContentLength(HttpHeaders headers, String errorPrefix, long defaultIfMissing) throws ProtocolException {
+    public static long readContentLength(HttpHeaders headers, String errorPrefix, long defaultIfMissing) throws ProtocolException {
         var k = "Content-Length";
         var s = headers.firstValue(k).orElse(null);
         if (s == null) {
