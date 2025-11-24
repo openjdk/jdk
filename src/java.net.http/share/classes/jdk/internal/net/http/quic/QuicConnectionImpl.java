@@ -334,7 +334,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         this.connectionId = this.endpoint.idFactory().newConnectionId();
         this.logTag = logTagFormat.formatted(labelId);
         this.dbgTag = dbgTag(quicInstance, logTag);
-        this.congestionController = new QuicRenoCongestionController(dbgTag, rttEstimator);
+        this.congestionController = createCongestionController(dbgTag, rttEstimator);
         this.originalVersion = this.quicVersion = firstFlightVersion == null
                 ? QuicVersion.firstFlightVersion(quicInstance.getAvailableVersions())
                 : firstFlightVersion;
@@ -364,6 +364,16 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 ? new QuicTransportParameters()
                 : quicInstance.getTransportParameters();
         if (debug.on()) debug.log("Quic Connection Created");
+    }
+
+    private static QuicCongestionController createCongestionController
+            (String dbgTag, QuicRttEstimator rttEstimator) {
+        String algo = System.getProperty("jdk.internal.httpclient.quic.congestionController", "cubic");
+        if (algo.equalsIgnoreCase("reno")) {
+            return new QuicRenoCongestionController(dbgTag, rttEstimator);
+        } else {
+            return new QuicCubicCongestionController(dbgTag, rttEstimator);
+        }
     }
 
     @Override

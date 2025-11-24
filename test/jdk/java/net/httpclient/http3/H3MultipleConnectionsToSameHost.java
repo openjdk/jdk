@@ -94,6 +94,31 @@
  *          limit is artificially low, in order to cause concurrent connections
  *          to the same host to be created, with non-blocking IO and selector
  */
+/*
+ * @test id=reno-cc
+ * @bug 8087112
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext
+ *        jdk.httpclient.test.lib.http2.Http2TestServer
+ * @run testng/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
+ *                     -Djdk.httpclient.quic.idleTimeout=120
+ *                     -Djdk.httpclient.keepalive.timeout.h3=120
+ *                     -Djdk.test.server.quic.idleTimeout=90
+ *                     -Djdk.httpclient.quic.minPtoBackoffTime=60
+ *                     -Djdk.httpclient.quic.maxPtoBackoffTime=120
+ *                     -Djdk.httpclient.quic.maxPtoBackoff=9
+ *                     -Djdk.httpclient.http3.maxStreamLimitTimeout=0
+ *                     -Djdk.httpclient.quic.maxEndpoints=1
+ *                     -Djdk.httpclient.quic.maxBidiStreams=2
+ *                     -Djdk.httpclient.retryOnStreamlimit=50
+ *                     -Djdk.httpclient.HttpClient.log=errors,http3,quic:hs:retransmit
+ *                     -Dsimpleget.requests=100
+ *                     -Djdk.internal.httpclient.quic.congestionController=reno
+ *                     H3MultipleConnectionsToSameHost
+ * @summary Send 100 large concurrent requests, with connections whose max stream
+ *          limit is artificially low, in order to cause concurrent connections
+ *          to the same host to be created, with Reno congestion controller
+ */
 
 // Interesting additional settings for debugging and manual testing:
 // -----------------------------------------------------------------
