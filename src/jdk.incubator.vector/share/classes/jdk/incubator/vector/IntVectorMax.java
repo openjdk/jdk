@@ -544,7 +544,7 @@ final class IntVectorMax extends IntVector {
     @ForceInline
     public int laneHelper(int i) {
         return (int) VectorSupport.extract(
-                                VCLASS, VECTOR_LANE_TYPE_INT, VLENGTH,
+                                VCLASS, T_INT, VLENGTH,
                                 this, i,
                                 (vec, ix) -> {
                                     int[] vecarr = vec.vec();
@@ -564,7 +564,7 @@ final class IntVectorMax extends IntVector {
     @ForceInline
     public IntVectorMax withLaneHelper(int i, int e) {
         return VectorSupport.insert(
-                                VCLASS, VECTOR_LANE_TYPE_INT, VLENGTH,
+                                VCLASS, T_INT, VLENGTH,
                                 this, i, (long)e,
                                 (v, ix, bits) -> {
                                     int[] res = v.vec().clone();
@@ -669,8 +669,8 @@ final class IntVectorMax extends IntVector {
                 throw new IllegalArgumentException("VectorMask length and species length differ");
 
             return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                this.getClass(), ETYPE, VLENGTH,
-                species.maskType(), species.elementType(), VLENGTH,
+                this.getClass(), T_INT, VLENGTH,
+                species.maskType(), species.laneBasicType(), VLENGTH,
                 this, species,
                 (m, s) -> s.maskFactory(m.toArray()).check(s));
         }
@@ -680,7 +680,7 @@ final class IntVectorMax extends IntVector {
         /*package-private*/
         IntMaskMax indexPartiallyInUpperRange(long offset, long limit) {
             return (IntMaskMax) VectorSupport.indexPartiallyInUpperRange(
-                IntMaskMax.class, VECTOR_LANE_TYPE_INT, VLENGTH, offset, limit,
+                IntMaskMax.class, T_INT, VLENGTH, offset, limit,
                 (o, l) -> (IntMaskMax) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
@@ -696,7 +696,7 @@ final class IntVectorMax extends IntVector {
         @ForceInline
         public IntMaskMax compress() {
             return (IntMaskMax)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
-                IntVectorMax.class, IntMaskMax.class, VECTOR_LANE_TYPE_INT, VLENGTH, null, this,
+                IntVectorMax.class, IntMaskMax.class, T_INT, VLENGTH, null, this,
                 (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT,
                 m1.trueCount()));
         }
@@ -709,7 +709,7 @@ final class IntVectorMax extends IntVector {
         public IntMaskMax and(VectorMask<Integer> mask) {
             Objects.requireNonNull(mask);
             IntMaskMax m = (IntMaskMax)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_AND, IntMaskMax.class, null, VECTOR_LANE_TYPE_INT, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_AND, IntMaskMax.class, null, T_INT, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a & b));
         }
@@ -719,7 +719,7 @@ final class IntVectorMax extends IntVector {
         public IntMaskMax or(VectorMask<Integer> mask) {
             Objects.requireNonNull(mask);
             IntMaskMax m = (IntMaskMax)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_OR, IntMaskMax.class, null, VECTOR_LANE_TYPE_INT, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_OR, IntMaskMax.class, null, T_INT, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
@@ -729,7 +729,7 @@ final class IntVectorMax extends IntVector {
         public IntMaskMax xor(VectorMask<Integer> mask) {
             Objects.requireNonNull(mask);
             IntMaskMax m = (IntMaskMax)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_XOR, IntMaskMax.class, null, VECTOR_LANE_TYPE_INT, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_XOR, IntMaskMax.class, null, T_INT, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a ^ b));
         }
@@ -739,7 +739,7 @@ final class IntVectorMax extends IntVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, IntMaskMax.class, VECTOR_LANE_TYPE_INT,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, IntMaskMax.class, T_INT,
                                                             VLENGTH, this,
                                                             (m) -> trueCountHelper(m.getBits()));
         }
@@ -747,7 +747,7 @@ final class IntVectorMax extends IntVector {
         @Override
         @ForceInline
         public int firstTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, IntMaskMax.class, VECTOR_LANE_TYPE_INT,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, IntMaskMax.class, T_INT,
                                                             VLENGTH, this,
                                                             (m) -> firstTrueHelper(m.getBits()));
         }
@@ -755,7 +755,7 @@ final class IntVectorMax extends IntVector {
         @Override
         @ForceInline
         public int lastTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, IntMaskMax.class, VECTOR_LANE_TYPE_INT,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, IntMaskMax.class, T_INT,
                                                             VLENGTH, this,
                                                             (m) -> lastTrueHelper(m.getBits()));
         }
@@ -766,7 +766,7 @@ final class IntVectorMax extends IntVector {
             if (length() > Long.SIZE) {
                 throw new UnsupportedOperationException("too many lanes for one long");
             }
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, IntMaskMax.class, VECTOR_LANE_TYPE_INT,
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, IntMaskMax.class, T_INT,
                                                       VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
         }
@@ -777,7 +777,7 @@ final class IntVectorMax extends IntVector {
         @ForceInline
         public boolean laneIsSet(int i) {
             Objects.checkIndex(i, length());
-            return VectorSupport.extract(IntMaskMax.class, VECTOR_LANE_TYPE_INT, VLENGTH,
+            return VectorSupport.extract(IntMaskMax.class, T_INT, VLENGTH,
                                          this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 
@@ -786,7 +786,7 @@ final class IntVectorMax extends IntVector {
         @Override
         @ForceInline
         public boolean anyTrue() {
-            return VectorSupport.test(BT_ne, IntMaskMax.class, VECTOR_LANE_TYPE_INT, VLENGTH,
+            return VectorSupport.test(BT_ne, IntMaskMax.class, T_INT, VLENGTH,
                                       this, vspecies().maskAll(true),
                                       (m, __) -> anyTrueHelper(((IntMaskMax)m).getBits()));
         }
@@ -794,7 +794,7 @@ final class IntVectorMax extends IntVector {
         @Override
         @ForceInline
         public boolean allTrue() {
-            return VectorSupport.test(BT_overflow, IntMaskMax.class, VECTOR_LANE_TYPE_INT, VLENGTH,
+            return VectorSupport.test(BT_overflow, IntMaskMax.class, T_INT, VLENGTH,
                                       this, vspecies().maskAll(true),
                                       (m, __) -> allTrueHelper(((IntMaskMax)m).getBits()));
         }
@@ -802,7 +802,7 @@ final class IntVectorMax extends IntVector {
         @ForceInline
         /*package-private*/
         static IntMaskMax maskAll(boolean bit) {
-            return VectorSupport.fromBitsCoerced(IntMaskMax.class, VECTOR_LANE_TYPE_INT, VLENGTH,
+            return VectorSupport.fromBitsCoerced(IntMaskMax.class, T_INT, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }

@@ -532,7 +532,7 @@ final class DoubleVectorMax extends DoubleVector {
     @ForceInline
     public long laneHelper(int i) {
         return (long) VectorSupport.extract(
-                     VCLASS, VECTOR_LANE_TYPE_DOUBLE, VLENGTH,
+                     VCLASS, T_DOUBLE, VLENGTH,
                      this, i,
                      (vec, ix) -> {
                      double[] vecarr = vec.vec();
@@ -552,7 +552,7 @@ final class DoubleVectorMax extends DoubleVector {
     @ForceInline
     public DoubleVectorMax withLaneHelper(int i, double e) {
         return VectorSupport.insert(
-                                VCLASS, VECTOR_LANE_TYPE_DOUBLE, VLENGTH,
+                                VCLASS, T_DOUBLE, VLENGTH,
                                 this, i, (long)Double.doubleToRawLongBits(e),
                                 (v, ix, bits) -> {
                                     double[] res = v.vec().clone();
@@ -657,8 +657,8 @@ final class DoubleVectorMax extends DoubleVector {
                 throw new IllegalArgumentException("VectorMask length and species length differ");
 
             return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                this.getClass(), ETYPE, VLENGTH,
-                species.maskType(), species.elementType(), VLENGTH,
+                this.getClass(), T_DOUBLE, VLENGTH,
+                species.maskType(), species.laneBasicType(), VLENGTH,
                 this, species,
                 (m, s) -> s.maskFactory(m.toArray()).check(s));
         }
@@ -668,7 +668,7 @@ final class DoubleVectorMax extends DoubleVector {
         /*package-private*/
         DoubleMaskMax indexPartiallyInUpperRange(long offset, long limit) {
             return (DoubleMaskMax) VectorSupport.indexPartiallyInUpperRange(
-                DoubleMaskMax.class, VECTOR_LANE_TYPE_DOUBLE, VLENGTH, offset, limit,
+                DoubleMaskMax.class, T_DOUBLE, VLENGTH, offset, limit,
                 (o, l) -> (DoubleMaskMax) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
@@ -684,7 +684,7 @@ final class DoubleVectorMax extends DoubleVector {
         @ForceInline
         public DoubleMaskMax compress() {
             return (DoubleMaskMax)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
-                DoubleVectorMax.class, DoubleMaskMax.class, VECTOR_LANE_TYPE_DOUBLE, VLENGTH, null, this,
+                DoubleVectorMax.class, DoubleMaskMax.class, T_DOUBLE, VLENGTH, null, this,
                 (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT,
                 m1.trueCount()));
         }
@@ -697,7 +697,7 @@ final class DoubleVectorMax extends DoubleVector {
         public DoubleMaskMax and(VectorMask<Double> mask) {
             Objects.requireNonNull(mask);
             DoubleMaskMax m = (DoubleMaskMax)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_AND, DoubleMaskMax.class, null, VECTOR_LANE_TYPE_LONG, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_AND, DoubleMaskMax.class, null, T_LONG, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a & b));
         }
@@ -707,7 +707,7 @@ final class DoubleVectorMax extends DoubleVector {
         public DoubleMaskMax or(VectorMask<Double> mask) {
             Objects.requireNonNull(mask);
             DoubleMaskMax m = (DoubleMaskMax)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_OR, DoubleMaskMax.class, null, VECTOR_LANE_TYPE_LONG, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_OR, DoubleMaskMax.class, null, T_LONG, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
@@ -717,7 +717,7 @@ final class DoubleVectorMax extends DoubleVector {
         public DoubleMaskMax xor(VectorMask<Double> mask) {
             Objects.requireNonNull(mask);
             DoubleMaskMax m = (DoubleMaskMax)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_XOR, DoubleMaskMax.class, null, VECTOR_LANE_TYPE_LONG, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_XOR, DoubleMaskMax.class, null, T_LONG, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a ^ b));
         }
@@ -727,7 +727,7 @@ final class DoubleVectorMax extends DoubleVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, DoubleMaskMax.class, VECTOR_LANE_TYPE_LONG,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, DoubleMaskMax.class, T_LONG,
                                                             VLENGTH, this,
                                                             (m) -> trueCountHelper(m.getBits()));
         }
@@ -735,7 +735,7 @@ final class DoubleVectorMax extends DoubleVector {
         @Override
         @ForceInline
         public int firstTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, DoubleMaskMax.class, VECTOR_LANE_TYPE_LONG,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, DoubleMaskMax.class, T_LONG,
                                                             VLENGTH, this,
                                                             (m) -> firstTrueHelper(m.getBits()));
         }
@@ -743,7 +743,7 @@ final class DoubleVectorMax extends DoubleVector {
         @Override
         @ForceInline
         public int lastTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, DoubleMaskMax.class, VECTOR_LANE_TYPE_LONG,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, DoubleMaskMax.class, T_LONG,
                                                             VLENGTH, this,
                                                             (m) -> lastTrueHelper(m.getBits()));
         }
@@ -754,7 +754,7 @@ final class DoubleVectorMax extends DoubleVector {
             if (length() > Long.SIZE) {
                 throw new UnsupportedOperationException("too many lanes for one long");
             }
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, DoubleMaskMax.class, VECTOR_LANE_TYPE_LONG,
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, DoubleMaskMax.class, T_LONG,
                                                       VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
         }
@@ -765,7 +765,7 @@ final class DoubleVectorMax extends DoubleVector {
         @ForceInline
         public boolean laneIsSet(int i) {
             Objects.checkIndex(i, length());
-            return VectorSupport.extract(DoubleMaskMax.class, VECTOR_LANE_TYPE_DOUBLE, VLENGTH,
+            return VectorSupport.extract(DoubleMaskMax.class, T_DOUBLE, VLENGTH,
                                          this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 
@@ -774,7 +774,7 @@ final class DoubleVectorMax extends DoubleVector {
         @Override
         @ForceInline
         public boolean anyTrue() {
-            return VectorSupport.test(BT_ne, DoubleMaskMax.class, VECTOR_LANE_TYPE_LONG, VLENGTH,
+            return VectorSupport.test(BT_ne, DoubleMaskMax.class, T_LONG, VLENGTH,
                                       this, vspecies().maskAll(true),
                                       (m, __) -> anyTrueHelper(((DoubleMaskMax)m).getBits()));
         }
@@ -782,7 +782,7 @@ final class DoubleVectorMax extends DoubleVector {
         @Override
         @ForceInline
         public boolean allTrue() {
-            return VectorSupport.test(BT_overflow, DoubleMaskMax.class, VECTOR_LANE_TYPE_LONG, VLENGTH,
+            return VectorSupport.test(BT_overflow, DoubleMaskMax.class, T_LONG, VLENGTH,
                                       this, vspecies().maskAll(true),
                                       (m, __) -> allTrueHelper(((DoubleMaskMax)m).getBits()));
         }
@@ -790,7 +790,7 @@ final class DoubleVectorMax extends DoubleVector {
         @ForceInline
         /*package-private*/
         static DoubleMaskMax maskAll(boolean bit) {
-            return VectorSupport.fromBitsCoerced(DoubleMaskMax.class, VECTOR_LANE_TYPE_LONG, VLENGTH,
+            return VectorSupport.fromBitsCoerced(DoubleMaskMax.class, T_LONG, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }

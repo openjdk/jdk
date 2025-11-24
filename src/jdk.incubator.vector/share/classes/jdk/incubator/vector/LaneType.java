@@ -35,13 +35,13 @@ import static jdk.incubator.vector.VectorIntrinsics.*;
  * It caches all sorts of goodies that we can't put on java.lang.Class.
  */
 enum LaneType {
-    FLOAT(float.class, Float.class, float[].class, 'F', 24, Float.SIZE, VECTOR_LANE_TYPE_FLOAT, false),
-    DOUBLE(double.class, Double.class, double[].class, 'F', 53, Double.SIZE, VECTOR_LANE_TYPE_DOUBLE, false),
-    BYTE(byte.class, Byte.class, byte[].class, 'I', -1, Byte.SIZE, VECTOR_LANE_TYPE_BYTE, false),
-    SHORT(short.class, Short.class, short[].class, 'I', -1, Short.SIZE, VECTOR_LANE_TYPE_SHORT, false),
-    INT(int.class, Integer.class, int[].class, 'I', -1, Integer.SIZE, VECTOR_LANE_TYPE_INT, false),
-    LONG(long.class, Long.class, long[].class, 'I', -1, Long.SIZE, VECTOR_LANE_TYPE_LONG, false),
-    FLOAT16(Float16.class, Short.class, short[].class, 'F', 11, Float16.SIZE, VECTOR_LANE_TYPE_FLOAT16, true);
+    FLOAT(float.class, Float.class, float[].class, 'F', 24, Float.SIZE, T_FLOAT, false),
+    DOUBLE(double.class, Double.class, double[].class, 'F', 53, Double.SIZE, T_DOUBLE, false),
+    BYTE(byte.class, Byte.class, byte[].class, 'I', -1, Byte.SIZE, T_BYTE, false),
+    SHORT(short.class, Short.class, short[].class, 'I', -1, Short.SIZE, T_SHORT, false),
+    INT(int.class, Integer.class, int[].class, 'I', -1, Integer.SIZE, T_INT, false),
+    LONG(long.class, Long.class, long[].class, 'I', -1, Long.SIZE, T_LONG, false),
+    FLOAT16(Float16.class, Short.class, short[].class, 'F', 11, Float16.SIZE, T_FLOAT16, true);
 
     LaneType(Class<?> elementType,
              Class<?> genericElementType,
@@ -288,11 +288,11 @@ enum LaneType {
     }
 
     static {
-        assert(ofBasicType(VECTOR_LANE_TYPE_FLOAT) == FLOAT);
-        assert(ofBasicType(VECTOR_LANE_TYPE_DOUBLE) == DOUBLE);
-        assert(ofBasicType(VECTOR_LANE_TYPE_BYTE) == BYTE);
-        assert(ofBasicType(VECTOR_LANE_TYPE_SHORT) == SHORT);
-        assert(ofBasicType(VECTOR_LANE_TYPE_INT) == INT);
-        assert(ofBasicType(VECTOR_LANE_TYPE_LONG) == LONG);
+        assert(ofBasicType(T_FLOAT) == FLOAT);
+        assert(ofBasicType(T_DOUBLE) == DOUBLE);
+        assert(ofBasicType(T_BYTE) == BYTE);
+        assert(ofBasicType(T_SHORT) == SHORT);
+        assert(ofBasicType(T_INT) == INT);
+        assert(ofBasicType(T_LONG) == LONG);
     }
 }

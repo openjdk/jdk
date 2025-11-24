@@ -533,7 +533,7 @@ final class DoubleVector64 extends DoubleVector {
     @ForceInline
     public long laneHelper(int i) {
         return (long) VectorSupport.extract(
-                     VCLASS, VECTOR_LANE_TYPE_DOUBLE, VLENGTH,
+                     VCLASS, T_DOUBLE, VLENGTH,
                      this, i,
                      (vec, ix) -> {
                      double[] vecarr = vec.vec();
@@ -553,7 +553,7 @@ final class DoubleVector64 extends DoubleVector {
     @ForceInline
     public DoubleVector64 withLaneHelper(int i, double e) {
         return VectorSupport.insert(
-                                VCLASS, VECTOR_LANE_TYPE_DOUBLE, VLENGTH,
+                                VCLASS, T_DOUBLE, VLENGTH,
                                 this, i, (long)Double.doubleToRawLongBits(e),
                                 (v, ix, bits) -> {
                                     double[] res = v.vec().clone();
@@ -658,8 +658,8 @@ final class DoubleVector64 extends DoubleVector {
                 throw new IllegalArgumentException("VectorMask length and species length differ");
 
             return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                this.getClass(), ETYPE, VLENGTH,
-                species.maskType(), species.elementType(), VLENGTH,
+                this.getClass(), T_DOUBLE, VLENGTH,
+                species.maskType(), species.laneBasicType(), VLENGTH,
                 this, species,
                 (m, s) -> s.maskFactory(m.toArray()).check(s));
         }
@@ -669,7 +669,7 @@ final class DoubleVector64 extends DoubleVector {
         /*package-private*/
         DoubleMask64 indexPartiallyInUpperRange(long offset, long limit) {
             return (DoubleMask64) VectorSupport.indexPartiallyInUpperRange(
-                DoubleMask64.class, VECTOR_LANE_TYPE_DOUBLE, VLENGTH, offset, limit,
+                DoubleMask64.class, T_DOUBLE, VLENGTH, offset, limit,
                 (o, l) -> (DoubleMask64) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
@@ -685,7 +685,7 @@ final class DoubleVector64 extends DoubleVector {
         @ForceInline
         public DoubleMask64 compress() {
             return (DoubleMask64)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
-                DoubleVector64.class, DoubleMask64.class, VECTOR_LANE_TYPE_DOUBLE, VLENGTH, null, this,
+                DoubleVector64.class, DoubleMask64.class, T_DOUBLE, VLENGTH, null, this,
                 (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT,
                 m1.trueCount()));
         }
@@ -698,7 +698,7 @@ final class DoubleVector64 extends DoubleVector {
         public DoubleMask64 and(VectorMask<Double> mask) {
             Objects.requireNonNull(mask);
             DoubleMask64 m = (DoubleMask64)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_AND, DoubleMask64.class, null, VECTOR_LANE_TYPE_LONG, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_AND, DoubleMask64.class, null, T_LONG, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a & b));
         }
@@ -708,7 +708,7 @@ final class DoubleVector64 extends DoubleVector {
         public DoubleMask64 or(VectorMask<Double> mask) {
             Objects.requireNonNull(mask);
             DoubleMask64 m = (DoubleMask64)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_OR, DoubleMask64.class, null, VECTOR_LANE_TYPE_LONG, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_OR, DoubleMask64.class, null, T_LONG, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
@@ -718,7 +718,7 @@ final class DoubleVector64 extends DoubleVector {
         public DoubleMask64 xor(VectorMask<Double> mask) {
             Objects.requireNonNull(mask);
             DoubleMask64 m = (DoubleMask64)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_XOR, DoubleMask64.class, null, VECTOR_LANE_TYPE_LONG, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_XOR, DoubleMask64.class, null, T_LONG, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a ^ b));
         }
@@ -728,7 +728,7 @@ final class DoubleVector64 extends DoubleVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, DoubleMask64.class, VECTOR_LANE_TYPE_LONG,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, DoubleMask64.class, T_LONG,
                                                             VLENGTH, this,
                                                             (m) -> trueCountHelper(m.getBits()));
         }
@@ -736,7 +736,7 @@ final class DoubleVector64 extends DoubleVector {
         @Override
         @ForceInline
         public int firstTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, DoubleMask64.class, VECTOR_LANE_TYPE_LONG,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, DoubleMask64.class, T_LONG,
                                                             VLENGTH, this,
                                                             (m) -> firstTrueHelper(m.getBits()));
         }
@@ -744,7 +744,7 @@ final class DoubleVector64 extends DoubleVector {
         @Override
         @ForceInline
         public int lastTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, DoubleMask64.class, VECTOR_LANE_TYPE_LONG,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, DoubleMask64.class, T_LONG,
                                                             VLENGTH, this,
                                                             (m) -> lastTrueHelper(m.getBits()));
         }
@@ -755,7 +755,7 @@ final class DoubleVector64 extends DoubleVector {
             if (length() > Long.SIZE) {
                 throw new UnsupportedOperationException("too many lanes for one long");
             }
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, DoubleMask64.class, VECTOR_LANE_TYPE_LONG,
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, DoubleMask64.class, T_LONG,
                                                       VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
         }
@@ -766,7 +766,7 @@ final class DoubleVector64 extends DoubleVector {
         @ForceInline
         public boolean laneIsSet(int i) {
             Objects.checkIndex(i, length());
-            return VectorSupport.extract(DoubleMask64.class, VECTOR_LANE_TYPE_DOUBLE, VLENGTH,
+            return VectorSupport.extract(DoubleMask64.class, T_DOUBLE, VLENGTH,
                                          this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 
@@ -775,7 +775,7 @@ final class DoubleVector64 extends DoubleVector {
         @Override
         @ForceInline
         public boolean anyTrue() {
-            return VectorSupport.test(BT_ne, DoubleMask64.class, VECTOR_LANE_TYPE_LONG, VLENGTH,
+            return VectorSupport.test(BT_ne, DoubleMask64.class, T_LONG, VLENGTH,
                                       this, vspecies().maskAll(true),
                                       (m, __) -> anyTrueHelper(((DoubleMask64)m).getBits()));
         }
@@ -783,7 +783,7 @@ final class DoubleVector64 extends DoubleVector {
         @Override
         @ForceInline
         public boolean allTrue() {
-            return VectorSupport.test(BT_overflow, DoubleMask64.class, VECTOR_LANE_TYPE_LONG, VLENGTH,
+            return VectorSupport.test(BT_overflow, DoubleMask64.class, T_LONG, VLENGTH,
                                       this, vspecies().maskAll(true),
                                       (m, __) -> allTrueHelper(((DoubleMask64)m).getBits()));
         }
@@ -791,7 +791,7 @@ final class DoubleVector64 extends DoubleVector {
         @ForceInline
         /*package-private*/
         static DoubleMask64 maskAll(boolean bit) {
-            return VectorSupport.fromBitsCoerced(DoubleMask64.class, VECTOR_LANE_TYPE_LONG, VLENGTH,
+            return VectorSupport.fromBitsCoerced(DoubleMask64.class, T_LONG, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }

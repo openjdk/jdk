@@ -536,7 +536,7 @@ final class FloatVector128 extends FloatVector {
     @ForceInline
     public int laneHelper(int i) {
         return (int) VectorSupport.extract(
-                     VCLASS, VECTOR_LANE_TYPE_FLOAT, VLENGTH,
+                     VCLASS, T_FLOAT, VLENGTH,
                      this, i,
                      (vec, ix) -> {
                      float[] vecarr = vec.vec();
@@ -559,7 +559,7 @@ final class FloatVector128 extends FloatVector {
     @ForceInline
     public FloatVector128 withLaneHelper(int i, float e) {
         return VectorSupport.insert(
-                                VCLASS, VECTOR_LANE_TYPE_FLOAT, VLENGTH,
+                                VCLASS, T_FLOAT, VLENGTH,
                                 this, i, (long)Float.floatToRawIntBits(e),
                                 (v, ix, bits) -> {
                                     float[] res = v.vec().clone();
@@ -664,8 +664,8 @@ final class FloatVector128 extends FloatVector {
                 throw new IllegalArgumentException("VectorMask length and species length differ");
 
             return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                this.getClass(), ETYPE, VLENGTH,
-                species.maskType(), species.elementType(), VLENGTH,
+                this.getClass(), T_FLOAT, VLENGTH,
+                species.maskType(), species.laneBasicType(), VLENGTH,
                 this, species,
                 (m, s) -> s.maskFactory(m.toArray()).check(s));
         }
@@ -675,7 +675,7 @@ final class FloatVector128 extends FloatVector {
         /*package-private*/
         FloatMask128 indexPartiallyInUpperRange(long offset, long limit) {
             return (FloatMask128) VectorSupport.indexPartiallyInUpperRange(
-                FloatMask128.class, VECTOR_LANE_TYPE_FLOAT, VLENGTH, offset, limit,
+                FloatMask128.class, T_FLOAT, VLENGTH, offset, limit,
                 (o, l) -> (FloatMask128) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
@@ -691,7 +691,7 @@ final class FloatVector128 extends FloatVector {
         @ForceInline
         public FloatMask128 compress() {
             return (FloatMask128)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
-                FloatVector128.class, FloatMask128.class, VECTOR_LANE_TYPE_FLOAT, VLENGTH, null, this,
+                FloatVector128.class, FloatMask128.class, T_FLOAT, VLENGTH, null, this,
                 (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT,
                 m1.trueCount()));
         }
@@ -704,7 +704,7 @@ final class FloatVector128 extends FloatVector {
         public FloatMask128 and(VectorMask<Float> mask) {
             Objects.requireNonNull(mask);
             FloatMask128 m = (FloatMask128)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_AND, FloatMask128.class, null, VECTOR_LANE_TYPE_INT, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_AND, FloatMask128.class, null, T_INT, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a & b));
         }
@@ -714,7 +714,7 @@ final class FloatVector128 extends FloatVector {
         public FloatMask128 or(VectorMask<Float> mask) {
             Objects.requireNonNull(mask);
             FloatMask128 m = (FloatMask128)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_OR, FloatMask128.class, null, VECTOR_LANE_TYPE_INT, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_OR, FloatMask128.class, null, T_INT, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
@@ -724,7 +724,7 @@ final class FloatVector128 extends FloatVector {
         public FloatMask128 xor(VectorMask<Float> mask) {
             Objects.requireNonNull(mask);
             FloatMask128 m = (FloatMask128)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_XOR, FloatMask128.class, null, VECTOR_LANE_TYPE_INT, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_XOR, FloatMask128.class, null, T_INT, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a ^ b));
         }
@@ -734,7 +734,7 @@ final class FloatVector128 extends FloatVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, FloatMask128.class, VECTOR_LANE_TYPE_INT,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, FloatMask128.class, T_INT,
                                                             VLENGTH, this,
                                                             (m) -> trueCountHelper(m.getBits()));
         }
@@ -742,7 +742,7 @@ final class FloatVector128 extends FloatVector {
         @Override
         @ForceInline
         public int firstTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, FloatMask128.class, VECTOR_LANE_TYPE_INT,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, FloatMask128.class, T_INT,
                                                             VLENGTH, this,
                                                             (m) -> firstTrueHelper(m.getBits()));
         }
@@ -750,7 +750,7 @@ final class FloatVector128 extends FloatVector {
         @Override
         @ForceInline
         public int lastTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, FloatMask128.class, VECTOR_LANE_TYPE_INT,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, FloatMask128.class, T_INT,
                                                             VLENGTH, this,
                                                             (m) -> lastTrueHelper(m.getBits()));
         }
@@ -761,7 +761,7 @@ final class FloatVector128 extends FloatVector {
             if (length() > Long.SIZE) {
                 throw new UnsupportedOperationException("too many lanes for one long");
             }
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, FloatMask128.class, VECTOR_LANE_TYPE_INT,
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, FloatMask128.class, T_INT,
                                                       VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
         }
@@ -772,7 +772,7 @@ final class FloatVector128 extends FloatVector {
         @ForceInline
         public boolean laneIsSet(int i) {
             Objects.checkIndex(i, length());
-            return VectorSupport.extract(FloatMask128.class, VECTOR_LANE_TYPE_FLOAT, VLENGTH,
+            return VectorSupport.extract(FloatMask128.class, T_FLOAT, VLENGTH,
                                          this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 
@@ -781,7 +781,7 @@ final class FloatVector128 extends FloatVector {
         @Override
         @ForceInline
         public boolean anyTrue() {
-            return VectorSupport.test(BT_ne, FloatMask128.class, VECTOR_LANE_TYPE_INT, VLENGTH,
+            return VectorSupport.test(BT_ne, FloatMask128.class, T_INT, VLENGTH,
                                       this, vspecies().maskAll(true),
                                       (m, __) -> anyTrueHelper(((FloatMask128)m).getBits()));
         }
@@ -789,7 +789,7 @@ final class FloatVector128 extends FloatVector {
         @Override
         @ForceInline
         public boolean allTrue() {
-            return VectorSupport.test(BT_overflow, FloatMask128.class, VECTOR_LANE_TYPE_INT, VLENGTH,
+            return VectorSupport.test(BT_overflow, FloatMask128.class, T_INT, VLENGTH,
                                       this, vspecies().maskAll(true),
                                       (m, __) -> allTrueHelper(((FloatMask128)m).getBits()));
         }
@@ -797,7 +797,7 @@ final class FloatVector128 extends FloatVector {
         @ForceInline
         /*package-private*/
         static FloatMask128 maskAll(boolean bit) {
-            return VectorSupport.fromBitsCoerced(FloatMask128.class, VECTOR_LANE_TYPE_INT, VLENGTH,
+            return VectorSupport.fromBitsCoerced(FloatMask128.class, T_INT, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }

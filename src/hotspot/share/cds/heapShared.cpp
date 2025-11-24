@@ -445,7 +445,7 @@ void HeapShared::init_dumping() {
 void HeapShared::init_scratch_objects_for_basic_type_mirrors(TRAPS) {
   for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
     BasicType bt = (BasicType)i;
-    if (!is_reference_type(bt)) {
+    if (!is_reference_type(bt) && !is_custom_basic_type(bt)) {
       oop m = java_lang_Class::create_basic_type_mirror(type2name(bt), bt, CHECK);
       _scratch_basic_type_mirrors[i] = OopHandle(Universe::vm_global(), m);
     }

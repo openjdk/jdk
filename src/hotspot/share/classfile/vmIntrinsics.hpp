@@ -1253,10 +1253,10 @@ class methodHandle;
   do_intrinsic(_VectorConvert, jdk_internal_vm_vector_VectorSupport, vector_convert_name, vector_convert_sig, F_S)                             \
    do_signature(vector_convert_sig, "(I"                                                                                                       \
                                      "Ljava/lang/Class;"                                                                                       \
-                                     "Ljava/lang/Class;"                                                                                       \
+                                     "I"                                                                                                       \
                                      "I"                                                                                                       \
                                      "Ljava/lang/Class;"                                                                                       \
-                                     "Ljava/lang/Class;"                                                                                       \
+                                     "I"                                                                                                       \
                                      "I"                                                                                                       \
                                      "Ljdk/internal/vm/vector/VectorSupport$VectorPayload;"                                                    \
                                      "Ljdk/internal/vm/vector/VectorSupport$VectorSpecies;"                                                    \

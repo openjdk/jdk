@@ -138,13 +138,13 @@ class VectorSupport : AllStatic {
   };
 
   enum {
-    VECTOR_LANE_TYPE_FLOAT     = 6,
-    VECTOR_LANE_TYPE_DOUBLE    = 7,
-    VECTOR_LANE_TYPE_BYTE      = 8,
-    VECTOR_LANE_TYPE_SHORT     = 9,
-    VECTOR_LANE_TYPE_INT       = 10,
-    VECTOR_LANE_TYPE_LONG      = 11,
-    VECTOR_LANE_TYPE_FLOAT16   = 12
+    T_FLOAT     = 6,
+    T_DOUBLE    = 7,
+    T_BYTE      = 8,
+    T_SHORT     = 9,
+    T_INT       = 10,
+    T_LONG      = 11,
+    T_FLOAT16   = 12
   };
 
   enum {

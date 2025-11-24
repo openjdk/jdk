@@ -141,6 +141,13 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         return vectorFactory(res);
     }
 
+    /*package-private*/
+    @Override
+    @ForceInline
+    final int laneBasicType() {
+        return $laneType$;
+    }
+
     @ForceInline
     final
     $abstractvectortype$ vOp(VectorMask<$Boxtype$> m, FVOp f) {

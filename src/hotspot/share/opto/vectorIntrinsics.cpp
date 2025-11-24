@@ -288,24 +288,14 @@ static bool is_klass_initialized(const TypeInstPtr* vec_klass) {
 }
 
 static bool is_valid_lane_type(int laneType) {
-  return laneType >= VectorSupport::VECTOR_LANE_TYPE_FLOAT && laneType <= VectorSupport::VECTOR_LANE_TYPE_LONG;
+  return laneType >= VectorSupport::T_FLOAT && laneType <= VectorSupport::T_LONG;
 }
 
-static bool is_primitive_lane_type(int laneType) {
-  return laneType >= T_BOOLEAN && laneType <= T_LONG;
-}
-
-static BasicType get_vector_lane_type(int lane_type) {
-  switch (lane_type) {
-    case VectorSupport::VECTOR_LANE_TYPE_BYTE:    return T_BYTE;
-    case VectorSupport::VECTOR_LANE_TYPE_SHORT:   return T_SHORT;
-    case VectorSupport::VECTOR_LANE_TYPE_INT:     return T_INT;
-    case VectorSupport::VECTOR_LANE_TYPE_LONG:    return T_LONG;
-    case VectorSupport::VECTOR_LANE_TYPE_FLOAT16: return T_SHORT;
-    case VectorSupport::VECTOR_LANE_TYPE_FLOAT:   return T_FLOAT;
-    case VectorSupport::VECTOR_LANE_TYPE_DOUBLE:  return T_DOUBLE;
-    default: ShouldNotReachHere(); return T_ILLEGAL;
+static BasicType get_vector_primitive_lane_type(int lane_type) {
+  if (lane_type == VectorSupport::T_FLOAT16) {
+    return T_SHORT;
   }
+  return static_cast<BasicType>(lane_type);
 }
 
 //
@@ -389,7 +379,7 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
 
   int num_elem = vlen->get_con();
   int opc = VectorSupport::vop2ideal(opr->get_con(), laneType->get_con());
-  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
+  BasicType elem_bt = get_vector_primitive_lane_type(laneType->get_con());
 
   int sopc = has_scalar_op ? VectorNode::opcode(opc, elem_bt) : opc;
   if (sopc == 0 || num_elem == 1) {
@@ -546,8 +536,8 @@ bool LibraryCallKit::inline_vector_call(int arity) {
     return false; // should be primitive type
   }
 
-  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
-  if (!is_primitive_lane_type(elem_bt)) {
+  BasicType elem_bt = get_vector_primitive_lane_type(laneType->get_con());
+  if (!is_java_primitive(elem_bt)) {
     log_if_needed("  ** unhandled bt=%s", type2name(elem_bt));
     return false;
   }
@@ -646,8 +636,8 @@ bool LibraryCallKit::inline_vector_mask_operation() {
     return false; // should be primitive type
   }
 
-  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
-  if (!is_primitive_lane_type(elem_bt)) {
+  BasicType elem_bt = get_vector_primitive_lane_type(laneType->get_con());
+  if (!is_java_primitive(elem_bt)) {
     log_if_needed("  ** unhandled bt=%s", type2name(elem_bt));
     return false;
   }
@@ -721,8 +711,8 @@ bool LibraryCallKit::inline_vector_frombits_coerced() {
     return false; // should be primitive type
   }
 
-  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
-  if (!is_primitive_lane_type(elem_bt) && bcast_mode != VectorSupport::MODE_BROADCAST) {
+  BasicType elem_bt = get_vector_primitive_lane_type(laneType->get_con());
+  if (!is_java_primitive(elem_bt) && bcast_mode != VectorSupport::MODE_BROADCAST) {
     log_if_needed("  ** unhandled bt=%s", type2name(elem_bt));
     return false;
   }
@@ -863,7 +853,7 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
     return false;
   }
 
-  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
+  BasicType elem_bt = get_vector_primitive_lane_type(laneType->get_con());
   int num_elem = vlen->get_con();
 
   // TODO When mask usage is supported, VecMaskNotUsed needs to be VecMaskUseLoad.
@@ -1062,7 +1052,7 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
     return false;
   }
 
-  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
+  BasicType elem_bt = get_vector_primitive_lane_type(laneType->get_con());
   int num_elem = vlen->get_con();
 
   Node* base = argument(4);
@@ -1286,7 +1276,7 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
     return false; // should be primitive type
   }
 
-  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
+  BasicType elem_bt = get_vector_primitive_lane_type(laneType->get_con());
   int num_elem = vlen->get_con();
   int idx_num_elem = idx_vlen->get_con();
 
@@ -1468,8 +1458,8 @@ bool LibraryCallKit::inline_vector_reduction() {
     return false; // should be primitive type
   }
 
-  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
-  if (!is_primitive_lane_type(elem_bt)) {
+  BasicType elem_bt = get_vector_primitive_lane_type(laneType->get_con());
+  if (!is_java_primitive(elem_bt)) {
     log_if_needed("  ** unhandled bt=%s", type2name(elem_bt));
     return false;
   }
@@ -1617,8 +1607,8 @@ bool LibraryCallKit::inline_vector_test() {
     return false; // should be primitive type
   }
 
-  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
-  if (!is_primitive_lane_type(elem_bt)) {
+  BasicType elem_bt = get_vector_primitive_lane_type(laneType->get_con());
+  if (!is_java_primitive(elem_bt)) {
     log_if_needed("  ** unhandled bt=%s", type2name(elem_bt));
     return false;
   }
@@ -1695,7 +1685,7 @@ bool LibraryCallKit::inline_vector_blend() {
     return false; // should be primitive type
   }
 
-  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
+  BasicType elem_bt = get_vector_primitive_lane_type(laneType->get_con());
   if (!is_klass_initialized(vector_klass) || !is_klass_initialized(mask_klass)) {
     log_if_needed("  ** klass argument not initialized");
     return false;
@@ -1767,8 +1757,8 @@ bool LibraryCallKit::inline_vector_compare() {
     return false; // should be primitive type
   }
 
-  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
-  if (!is_primitive_lane_type(elem_bt)) {
+  BasicType elem_bt = get_vector_primitive_lane_type(laneType->get_con());
+  if (!is_java_primitive(elem_bt)) {
     log_if_needed("  ** unhandled bt=%s", type2name(elem_bt));
     return false;
   }
@@ -1888,7 +1878,7 @@ bool LibraryCallKit::inline_vector_rearrange() {
     return false; // should be primitive type
   }
 
-  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
+  BasicType elem_bt = get_vector_primitive_lane_type(laneType->get_con());
   BasicType shuffle_bt = elem_bt;
   if (shuffle_bt == T_FLOAT) {
     shuffle_bt = T_INT;
@@ -2021,8 +2011,8 @@ bool LibraryCallKit::inline_vector_select_from() {
     return false; // should be primitive type
   }
 
-  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
-  if (!is_primitive_lane_type(elem_bt)) {
+  BasicType elem_bt = get_vector_primitive_lane_type(laneType->get_con());
+  if (!is_java_primitive(elem_bt)) {
     log_if_needed("  ** unhandled bt=%s", type2name(elem_bt));
     return false;
   }
@@ -2208,7 +2198,7 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
 
 
   int num_elem = vlen->get_con();
-  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
+  BasicType elem_bt = get_vector_primitive_lane_type(laneType->get_con());
   int opc = VectorSupport::vop2ideal(opr->get_con(), elem_bt);
 
   bool is_shift  = VectorNode::is_shift_opcode(opc);
@@ -2302,8 +2292,8 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
 //  VIN extends VectorPayload,
 //  S extends VectorSpecies>
 // VOUT convert(int oprId,
-//           Class<?> fromVectorClass, Class<?> fromElementType, int fromVLen,
-//           Class<?>   toVectorClass, Class<?>   toElementType, int   toVLen,
+//           Class<?> fromVectorClass, int fromLaneType, int fromVLen,
+//           Class<?>   toVectorClass, int toLaneType, int toVLen,
 //           VIN v, S s,
 //           VectorConvertOp<VOUT, VIN, S> defaultImpl)
 //
@@ -2311,22 +2301,22 @@ bool LibraryCallKit::inline_vector_convert() {
   const TypeInt*     opr               = gvn().type(argument(0))->isa_int();
 
   const TypeInstPtr* vector_klass_from = gvn().type(argument(1))->isa_instptr();
-  const TypeInstPtr* elem_klass_from   = gvn().type(argument(2))->isa_instptr();
+  const TypeInt*     laneType_from     = gvn().type(argument(2))->isa_int();
   const TypeInt*     vlen_from         = gvn().type(argument(3))->isa_int();
 
   const TypeInstPtr* vector_klass_to   = gvn().type(argument(4))->isa_instptr();
-  const TypeInstPtr* elem_klass_to     = gvn().type(argument(5))->isa_instptr();
+  const TypeInt*     laneType_to       = gvn().type(argument(5))->isa_int();
   const TypeInt*     vlen_to           = gvn().type(argument(6))->isa_int();
 
   if (opr == nullptr ||
-      vector_klass_from == nullptr || elem_klass_from == nullptr || vlen_from == nullptr ||
-      vector_klass_to   == nullptr || elem_klass_to   == nullptr || vlen_to   == nullptr) {
+      vector_klass_from == nullptr || laneType_from == nullptr || vlen_from == nullptr ||
+      vector_klass_to   == nullptr || laneType_to == nullptr || vlen_to   == nullptr) {
     return false; // dead code
   }
   if (!opr->is_con() ||
-      vector_klass_from->const_oop() == nullptr || elem_klass_from->const_oop() == nullptr || !vlen_from->is_con() ||
-      vector_klass_to->const_oop() == nullptr || elem_klass_to->const_oop() == nullptr || !vlen_to->is_con()) {
-    log_if_needed("  ** missing constant: opr=%s vclass_from=%s etype_from=%s vlen_from=%s vclass_to=%s etype_to=%s vlen_to=%s",
+      vector_klass_from->const_oop() == nullptr || !laneType_from->is_con() || !vlen_from->is_con() ||
+      vector_klass_to->const_oop() == nullptr || !laneType_to->is_con() || !vlen_to->is_con()) {
+    log_if_needed("  ** missing constant: opr=%s vclass_from=%s laneType_from=%s vlen_from=%s vclass_to=%s laneType_to=%s vlen_to=%s",
                     NodeClassNames[argument(0)->Opcode()],
                     NodeClassNames[argument(1)->Opcode()],
                     NodeClassNames[argument(2)->Opcode()],
@@ -2352,16 +2342,26 @@ bool LibraryCallKit::inline_vector_convert() {
 
   bool is_mask = is_vector_mask(vbox_klass_from);
 
-  ciType* elem_type_from = elem_klass_from->const_oop()->as_instance()->java_mirror_type();
-  if (!elem_type_from->is_primitive_type()) {
+  if (!is_valid_lane_type(laneType_from->get_con())) {
+    log_if_needed("  ** not a primitive from lt=%s", VectorSupport::lanetype2name(laneType_from->get_con()));
     return false; // should be primitive type
   }
-  BasicType elem_bt_from = elem_type_from->basic_type();
-  ciType* elem_type_to = elem_klass_to->const_oop()->as_instance()->java_mirror_type();
-  if (!elem_type_to->is_primitive_type()) {
+
+  if (!is_valid_lane_type(laneType_to->get_con())) {
+    log_if_needed("  ** not a primitive to lt=%s", VectorSupport::lanetype2name(laneType_to->get_con()));
     return false; // should be primitive type
   }
-  BasicType elem_bt_to = elem_type_to->basic_type();
+
+  BasicType elem_bt_from = get_vector_primitive_lane_type(laneType_from->get_con());
+  if (!is_java_primitive(elem_bt_from)) {
+    log_if_needed("  ** unhandled bt=%s", type2name(elem_bt_from));
+    return false;
+  }
+  BasicType elem_bt_to = get_vector_primitive_lane_type(laneType_to->get_con());
+  if (!is_java_primitive(elem_bt_to)) {
+    log_if_needed("  ** unhandled bt=%s", type2name(elem_bt_to));
+    return false;
+  }
 
   int num_elem_from = vlen_from->get_con();
   int num_elem_to = vlen_to->get_con();
@@ -2525,8 +2525,8 @@ bool LibraryCallKit::inline_vector_insert() {
     return false; // should be primitive type
   }
 
-  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
-  if (!is_primitive_lane_type(elem_bt)) {
+  BasicType elem_bt = get_vector_primitive_lane_type(laneType->get_con());
+  if (!is_java_primitive(elem_bt)) {
     log_if_needed("  ** unhandled bt=%s", type2name(elem_bt));
     return false;
   }
@@ -2616,8 +2616,8 @@ bool LibraryCallKit::inline_vector_extract() {
     return false; // should be primitive type
   }
 
-  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
-  if (!is_primitive_lane_type(elem_bt)) {
+  BasicType elem_bt = get_vector_primitive_lane_type(laneType->get_con());
+  if (!is_java_primitive(elem_bt)) {
     log_if_needed("  ** unhandled bt=%s", type2name(elem_bt));
     return false;
   }
@@ -2804,8 +2804,8 @@ bool LibraryCallKit::inline_vector_select_from_two_vectors() {
     return false; // should be primitive type
   }
 
-  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
-  if (!is_primitive_lane_type(elem_bt)) {
+  BasicType elem_bt = get_vector_primitive_lane_type(laneType->get_con());
+  if (!is_java_primitive(elem_bt)) {
     log_if_needed("  ** unhandled bt=%s", type2name(elem_bt));
     return false;
   }
@@ -2949,7 +2949,7 @@ bool LibraryCallKit::inline_vector_compress_expand() {
   }
 
   int num_elem = vlen->get_con();
-  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
+  BasicType elem_bt = get_vector_primitive_lane_type(laneType->get_con());
   int opc = VectorSupport::vop2ideal(opr->get_con(), elem_bt);
 
   if (!arch_supports_vector(opc, num_elem, elem_bt, VecMaskUseLoad)) {
@@ -3023,8 +3023,8 @@ bool LibraryCallKit::inline_index_vector() {
     return false; // should be primitive type
   }
 
-  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
-  if (!is_primitive_lane_type(elem_bt)) {
+  BasicType elem_bt = get_vector_primitive_lane_type(laneType->get_con());
+  if (!is_java_primitive(elem_bt)) {
     log_if_needed("  ** unhandled bt=%s", type2name(elem_bt));
     return false;
   }
@@ -3162,8 +3162,8 @@ bool LibraryCallKit::inline_index_partially_in_upper_range() {
     return false; // should be primitive type
   }
 
-  BasicType elem_bt = get_vector_lane_type(laneType->get_con());
-  if (!is_primitive_lane_type(elem_bt)) {
+  BasicType elem_bt = get_vector_primitive_lane_type(laneType->get_con());
+  if (!is_java_primitive(elem_bt)) {
     log_if_needed("  ** unhandled bt=%s", type2name(elem_bt));
     return false;
   }

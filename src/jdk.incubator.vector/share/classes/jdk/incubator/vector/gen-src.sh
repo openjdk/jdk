@@ -93,8 +93,8 @@ do
     Byte)
       Wideboxtype=Integer
       sizeInBytes=1
-      laneType=VECTOR_LANE_TYPE_BYTE
-      lanebitsType=VECTOR_LANE_TYPE_BYTE
+      laneType=T_BYTE
+      lanebitsType=T_BYTE
       args="$args -KbyteOrShort"
       ;;
     Short)
@@ -103,8 +103,8 @@ do
       Boxfptype=Float16
       Wideboxtype=Integer
       sizeInBytes=2
-      laneType=VECTOR_LANE_TYPE_SHORT
-      lanebitsType=VECTOR_LANE_TYPE_SHORT
+      laneType=T_SHORT
+      lanebitsType=T_SHORT
       args="$args -KbyteOrShort"
       ;;
     Int)
@@ -116,8 +116,8 @@ do
       Fptype=Float
       Boxfptype=Float
       sizeInBytes=4
-      laneType=VECTOR_LANE_TYPE_INT
-      lanebitsType=VECTOR_LANE_TYPE_INT
+      laneType=T_INT
+      lanebitsType=T_INT
       args="$args -KintOrLong -KintOrFP -KintOrFloat"
       ;;
     Long)
@@ -125,8 +125,8 @@ do
       Fptype=Double
       Boxfptype=Double
       sizeInBytes=8
-      laneType=VECTOR_LANE_TYPE_LONG
-      lanebitsType=VECTOR_LANE_TYPE_LONG
+      laneType=T_LONG
+      lanebitsType=T_LONG
       args="$args -KintOrLong -KlongOrDouble"
       ;;
     Float)
@@ -136,8 +136,8 @@ do
       Bitstype=Int
       Boxbitstype=Integer
       sizeInBytes=4
-      laneType=VECTOR_LANE_TYPE_FLOAT
-      lanebitsType=VECTOR_LANE_TYPE_INT
+      laneType=T_FLOAT
+      lanebitsType=T_INT
       args="$args -KintOrFP -KintOrFloat"
       FPtype=FP32
       ;;
@@ -148,8 +148,8 @@ do
       Bitstype=Long
       Boxbitstype=Long
       sizeInBytes=8
-      laneType=VECTOR_LANE_TYPE_DOUBLE
-      lanebitsType=VECTOR_LANE_TYPE_LONG
+      laneType=T_DOUBLE
+      lanebitsType=T_LONG
       args="$args -KintOrFP -KlongOrDouble"
       FPtype=FP64
       ;;
@@ -166,8 +166,8 @@ do
       Boxtype=Float16
       elemtype=Float16
       ElemLayout=Short
-      laneType=VECTOR_LANE_TYPE_FLOAT16
-      lanebitsType=VECTOR_LANE_TYPE_SHORT
+      laneType=T_FLOAT16
+      lanebitsType=T_SHORT
       fallbacktype=float
       args="$args -KbyteOrShort -KshortOrFP -KshortOrFloat16"
       ;;

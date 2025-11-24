@@ -151,13 +151,13 @@ public class VectorSupport {
 
     // BasicType codes, for primitives only:
     public static final int
-        VECTOR_LANE_TYPE_FLOAT     = 6,
-        VECTOR_LANE_TYPE_DOUBLE    = 7,
-        VECTOR_LANE_TYPE_BYTE      = 8,
-        VECTOR_LANE_TYPE_SHORT     = 9,
-        VECTOR_LANE_TYPE_INT       = 10,
-        VECTOR_LANE_TYPE_LONG      = 11,
-        VECTOR_LANE_TYPE_FLOAT16   = 12;
+        T_FLOAT     = 6,
+        T_DOUBLE    = 7,
+        T_BYTE      = 8,
+        T_SHORT     = 9,
+        T_INT       = 10,
+        T_LONG      = 11,
+        T_FLOAT16   = 12;
 
     /* ============================================================================ */
 
@@ -699,8 +699,8 @@ public class VectorSupport {
                     VIN extends VectorPayload,
                       S extends VectorSpecies<?>>
     VOUT convert(int oprId,
-              Class<?> fromVectorClass, Class<?> fromeClass, int fromVLen,
-              Class<?>   toVectorClass, Class<?>   toeClass, int   toVLen,
+              Class<?> fromVectorClass, int fromLaneType, int fromVLen,
+              Class<?>   toVectorClass, int toLaneType, int   toVLen,
               VIN v, S s,
               VectorConvertOp<VOUT, VIN, S> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
