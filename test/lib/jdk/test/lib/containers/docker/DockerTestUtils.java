@@ -83,6 +83,14 @@ public class DockerTestUtils {
         return isDockerEngineAvailable;
     }
 
+    /**
+     * Checks if the actual engine command is podman.
+     *
+     * @return {@code true} if engine is podman. {@code false} otherwise.
+     */
+    public static boolean isPodman() {
+        return Container.ENGINE_COMMAND.contains("podman");
+    }
 
     /**
      * Convenience method, will check if docker engine is available and usable;
@@ -119,6 +127,26 @@ public class DockerTestUtils {
             return false;
         }
         return true;
+    }
+
+    private static String getEngineInfo(String format) throws Exception {
+        return execute(Container.ENGINE_COMMAND, "info", "-f", format).getStdout();
+    }
+
+    /**
+     * Determine if the engine is running in root-less mode.
+     *
+     * @return {@code true} when running root-less (podman or docker). {@code false}
+     *         otherwise.
+     *
+     * @throws Exception
+     */
+    public static boolean isRootless() throws Exception {
+        // Docker and Podman have different INFO structures.
+        // The node path for Podman is .Host.Security.Rootless, that also holds for
+        // Podman emulating Docker CLI. The node path for Docker is .SecurityOptions.
+        return (getEngineInfo("{{.Host.Security.Rootless}}").contains("true") ||
+                getEngineInfo("{{.SecurityOptions}}").contains("name=rootless"));
     }
 
      /**
@@ -202,6 +230,9 @@ public class DockerTestUtils {
      */
     public static List<String> buildJavaCommand(DockerRunOptions opts) throws Exception {
         List<String> cmd = buildContainerCommand();
+        if (!opts.engineOpts.isEmpty()) {
+            cmd.addAll(opts.engineOpts);
+        }
         cmd.add("run");
         if (opts.tty)
             cmd.add("--tty=true");
