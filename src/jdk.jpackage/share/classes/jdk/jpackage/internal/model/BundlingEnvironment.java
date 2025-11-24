@@ -24,7 +24,10 @@
  */
 package jdk.jpackage.internal.model;
 
-import java.util.Set;
+import java.util.Collection;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 
 /**
  * Bundling environment. Defines available bundling operations.
@@ -32,35 +35,25 @@ import java.util.Set;
 public interface BundlingEnvironment {
 
     /**
-     * Returns the default bundling operation.
-     * <p>
-     * The returned value should be one of the elements in the collection returned by {@link #enabledOperations()} method.
-     * @return the default bundling operation
-     * @throws ConfigException in not a single bundling operation can be performed.
+     * Returns descriptor of the default bundling operation if there is such or an
+     * empty {@link Optional} instance otherwise.
+     *
+     * @return the default bundling operation or an empty {@link Optional} instance
+     *         if there is no such
      */
-    BundlingOperation defaultOperation() throws ConfigException;
+    Optional<BundlingOperationDescriptor> defaultOperation();
 
     /**
-     * Returns supported bundling operations.
-     * @return the supported bundling operations
+     * Returns configuration errors or an empty list if there are no such errors for
+     * the target bundling operation.
+     *
+     * @param op the descriptor of the target bundling operation
+     * @return the list of configuration errors or an empty list if there are no
+     *         such errors for the specified bundling operation
+     * @throws NoSuchElementException if the specified descriptor denotes an
+     *                                unsupported bundling operation
      */
-    Set<BundlingOperation> supportedOperations();
-
-    /**
-     * Returns enabled bundling operations.
-     * <p>
-     * The returned value should be a subset of the set returned by {@link #supportedOperations()} method.
-     * @return the enabled bundling operations
-     */
-    default Set<BundlingOperation> enabledOperations() {
-        return supportedOperations();
+    default Collection<? extends Exception> configurationErrors(BundlingOperationDescriptor op) {
+        return List.of();
     }
-
-    /**
-     * Returns a bundle creator corresponding to the given bundling operation in this bundling environment.
-     * @param op the bundling operation
-     * @return bundle creator corresponding to the given bundling operation in this bundling environment
-     * @throws IllegalArgumentException if the given bundling operation is not enabled in this bundling environment
-     */
-    BundleCreator<?> getBundleCreator(BundlingOperation op);
 }

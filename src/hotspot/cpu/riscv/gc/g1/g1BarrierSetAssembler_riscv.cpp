@@ -91,8 +91,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
                                                              DecoratorSet decorators,
                                                              Register start,
                                                              Register count,
-                                                             Register tmp,
-                                                             RegSet saved_regs) {
+                                                             Register tmp) {
   assert_different_registers(start, count, tmp);
 
   Label loop, next, done;

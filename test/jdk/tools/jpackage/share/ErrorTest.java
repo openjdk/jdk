@@ -27,7 +27,6 @@ import static jdk.internal.util.OperatingSystem.LINUX;
 import static jdk.internal.util.OperatingSystem.MACOS;
 import static jdk.internal.util.OperatingSystem.WINDOWS;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
-import static jdk.jpackage.test.CannedFormattedString.cannedAbsolutePath;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -46,6 +45,7 @@ import jdk.jpackage.internal.util.TokenReplace;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.CannedArgument;
 import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageStringBundle;
@@ -141,7 +141,7 @@ public final class ErrorTest {
         private final TokenReplace tokenReplace = new TokenReplace(token());
     }
 
-    record PackageTypeSpec(Optional<PackageType> type, boolean anyNativeType) implements CannedFormattedString.CannedArgument {
+    record PackageTypeSpec(Optional<PackageType> type, boolean anyNativeType) implements CannedArgument {
         PackageTypeSpec {
             Objects.requireNonNull(type);
             if (type.isPresent() && anyNativeType) {
@@ -166,7 +166,7 @@ public final class ErrorTest {
         }
 
         @Override
-        public String value() {
+        public String getValue() {
             return resolvedType().getType();
         }
 
@@ -401,16 +401,16 @@ public final class ErrorTest {
                     .error("error.main-jar-does-not-exist", "non-existent.jar"),
             // non-existent runtime
             testSpec().addArgs("--runtime-image", "non-existent.runtime")
-                    .error("message.runtime-image-dir-does-not-exist", "runtime-image", "non-existent.runtime"),
+                    .error("error.parameter-not-directory", "non-existent.runtime", "--runtime-image"),
             // non-existent app image
             testSpec().noAppDesc().nativeType().addArgs("--name", "foo", "--app-image", "non-existent.appimage")
                     .error("ERR_AppImageNotExist", "non-existent.appimage"),
             // non-existent resource-dir
             testSpec().addArgs("--resource-dir", "non-existent.dir")
-                    .error("message.resource-dir-does-not-exist", "resource-dir", "non-existent.dir"),
+                    .error("error.parameter-not-directory", "non-existent.dir", "--resource-dir"),
             // non-existent icon
             testSpec().addArgs("--icon", "non-existent.icon")
-                    .error("ERR_IconFileNotExit", cannedAbsolutePath("non-existent.icon")),
+                    .error("error.parameter-not-file", "non-existent.icon", "--icon"),
             // non-existent license file
             testSpec().nativeType().addArgs("--license-file", "non-existent.license")
                     .error("ERR_LicenseFileNotExit"),
@@ -541,7 +541,7 @@ public final class ErrorTest {
             testSpec().addArgs("--add-launcher", Token.ADD_LAUNCHER_PROPERTY_FILE.token())
                     .error("ERR_NoAddLauncherName"),
             testSpec().removeArgs("--name").addArgs("--name", "foo", "--add-launcher", "foo=" + Token.ADD_LAUNCHER_PROPERTY_FILE.token())
-                    .error("ERR_NoUniqueName")
+                    .error("error.launcher-duplicate-name", "foo")
         ));
     }
 
