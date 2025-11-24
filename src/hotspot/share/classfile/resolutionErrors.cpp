@@ -73,7 +73,7 @@ void ResolutionErrorTable::add_entry(const constantPoolHandle& pool, int cp_inde
 
   ResolutionErrorKey key(pool(), cp_index);
   ResolutionErrorEntry *entry = new ResolutionErrorEntry(error, message, cause, cause_msg);
-  _resolution_error_table->put(key, entry);
+  _resolution_error_table->put_when_absent(key, entry);
 }
 
 // create new nest host error entry
@@ -85,9 +85,7 @@ void ResolutionErrorTable::add_entry(const constantPoolHandle& pool, int cp_inde
 
   ResolutionErrorKey key(pool(), cp_index);
   ResolutionErrorEntry *entry = new ResolutionErrorEntry(message);
-  bool created = false;
-  _resolution_error_table->put_if_absent(key, entry, &created);
-  assert(created, "should be created not updated");
+  _resolution_error_table->put_when_absent(key, entry);
 }
 
 // find entry in the table

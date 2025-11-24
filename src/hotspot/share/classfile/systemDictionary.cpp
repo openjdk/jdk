@@ -1874,6 +1874,7 @@ void SystemDictionary::add_nest_host_error(const constantPoolHandle& pool,
       // still want to add the error message for the higher-level access checks to report. We should
       // only reach here under the same error condition, so we can ignore the potential race with setting
       // the message, and set it again.
+      assert(entry->nest_host_error() == nullptr || strcmp(entry->nest_host_error(), message) == 0, "should be the same message");
       entry->set_nest_host_error(message);
     }
   }
