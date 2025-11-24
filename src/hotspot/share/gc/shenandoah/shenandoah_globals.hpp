@@ -550,13 +550,13 @@
          "0 will allow back to back young collections to run during old "   \
          "collections.")                                                    \
                                                                             \
-  product(uintx, ShenandoahMutatorAllocRegions, 4, EXPERIMENTAL,            \
+  product(uintx, ShenandoahMutatorAllocRegions, 8, EXPERIMENTAL,            \
          "Number of alloc regions for mutator allocation.")                 \
-         range(0, 32)                                                      \
+         range(0, 128)                                                      \
                                                                             \
   product(uintx, ShenandoahCollectorAllocRegions, 4, EXPERIMENTAL,          \
          "Number of alloc regions for collector allocation.")               \
-         range(0, 32)                                                      \
+         range(0, 32)                                                       \
 
   // end of GC_SHENANDOAH_FLAGS
 
