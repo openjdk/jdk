@@ -107,8 +107,8 @@ void ParallelArguments::initialize_alignments() {
 
 size_t ParallelArguments::young_gen_size_lower_bound() {
   const size_t num_eden_spaces = UseNUMA
-                               ? os::numa_get_groups_num()
-                               : 1;
+      ? os::numa_get_groups_num()
+      : 1;
 
   // One for each space in eden and two survivors
   return (num_eden_spaces + 2) * SpaceAlignment;
