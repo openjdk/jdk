@@ -190,7 +190,7 @@ HeapWord* ShenandoahAllocator::attempt_allocation_in_alloc_regions(ShenandoahAll
       if (obj != nullptr) {
         return obj;
       }
-    } else if (r == nullptr) {
+    } else if (r == nullptr || !r->is_active_alloc_region()) {
       regions_ready_for_refresh++;
     }
     if (++i == _alloc_region_count) {
