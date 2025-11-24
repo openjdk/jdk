@@ -185,6 +185,10 @@ TypeNode* ConstraintCastNode::dominating_cast(PhaseGVN* gvn, PhaseTransform* pt)
 
 bool ConstraintCastNode::higher_equal_types(PhaseGVN* phase, const Node* other) const {
   const Type* t = phase->type(other);
+  if ((t->isa_rawptr() && type()->isa_oopptr()) || (t->isa_oopptr() && type()->isa_rawptr())) {
+    assert(is_CheckCastPP(), "unrelated types from %s", Name());
+    return false;
+  }
   if (!t->higher_equal_speculative(type())) {
     return false;
   }
