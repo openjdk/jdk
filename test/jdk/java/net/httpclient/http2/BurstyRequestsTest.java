@@ -54,8 +54,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /*
  * @test
@@ -124,8 +124,7 @@ class BurstyRequestsTest {
             // our test needs to peek into the internal field of jdk.internal.net.http.HttpClientImpl,
             // so we skip the test if the HttpClient isn't of the expected type
             final Set<?> openedConnections = HttpClientImplAccess.getOpenedConnections(client);
-            assumeTrue(openedConnections != null,
-                    "skipping test against HttpClient of type " + client.getClass().getName());
+            assertNotNull(openedConnections, "HttpClientImpl#openedConnections field is null or not available");
 
             for (int i = 0; i < numRequests; i++) {
                 final Future<Void> f = executor.submit(new RequestIssuer(startLatch, client, req));
