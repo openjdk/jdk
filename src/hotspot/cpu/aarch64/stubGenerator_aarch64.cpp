@@ -689,9 +689,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     {
-      // Process words with length exceeding the predefined
-      // block size threshold. The loop body will be unrolled based on
-      // the number of STPs calculated below.
+      // Process any remaining blocks not handled by the stub.
       const int unroll = MacroAssembler::zero_words_block_size / 2;
       // Clear the remaining blocks.
       Label loop;

@@ -6230,10 +6230,8 @@ address MacroAssembler::zero_words(Register ptr, Register cnt)
   }
   bind(around);
 
-  // A few words remain to complete.
-  // The zero_blocks routine has already performed the necessary
-  // adjustments to r10 and r11, ensuring they are correctly set
-  // for subsequent processing.
+  // A few words remain. zero_blocks() has adjusted r10 so that it
+  // points to the remaining words and adjusted the count in r11.
   for (int i = zero_words_block_size >> 1; i > 1; i >>= 1) {
     Label l;
     tbz(cnt, exact_log2(i), l);
@@ -6261,11 +6259,9 @@ address MacroAssembler::zero_words(Register base, uint64_t cnt)
 {
   assert(wordSize <= BlockZeroingLowLimit, "increase BlockZeroingLowLimit");
   address result = nullptr;
-  // We do not check UseBlockZeroing here because this is delegated to the
-  // zero_blocks stub function that wraps the core logic of zero_words
-  // and necessary unrolled str/stp expanding when the condition is not met.
-  // This approach also helps prevent sudden increases in code cache size
-  // when zeroing large memory areas in many places.
+  // There is no need to check UseBlockZeroing here because that is
+  // delegated to the zero_blocks stub. The code here is inlined, so
+  // it is important to keep it small.
   if (cnt > (uint64_t)BlockZeroingLowLimit / BytesPerWord) {
     mov(r10, base); mov(r11, cnt);
     result = zero_words(r10, r11);
@@ -6277,8 +6273,7 @@ address MacroAssembler::zero_words(Register base, uint64_t cnt)
       BLOCK_COMMENT(buf);
     }
 #endif
-    // Use 16 words as the block size which is 128 bytes on 64-bit systems.
-    // A complete loop body will be 8 STPs unrolled there.
+    // Use 16 words (128 bytes) as the block size.
     const int block_size = 16;
     if (cnt >= block_size) {
       uint64_t loops = cnt/block_size;
