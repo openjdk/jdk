@@ -49,8 +49,6 @@ class os::Linux {
 
   static void build_numa_affinity_masks();
 
-  static julong available_memory_in_container();
-
  protected:
 
   static physical_memory_size_type _physical_memory;
@@ -121,7 +119,7 @@ class os::Linux {
   static uintptr_t initial_thread_stack_size(void)                  { return _initial_thread_stack_size; }
 
   static physical_memory_size_type physical_memory() { return _physical_memory; }
-  static julong host_swap();
+  static bool host_swap(physical_memory_size_type& value);
 
   static intptr_t* ucontext_get_sp(const ucontext_t* uc);
   static intptr_t* ucontext_get_fp(const ucontext_t* uc);
