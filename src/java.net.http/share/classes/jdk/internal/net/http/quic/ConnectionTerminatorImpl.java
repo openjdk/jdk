@@ -143,8 +143,9 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
             Log.logError("{0}: stateless reset from peer ({1})", connection.logTag(),
                     (peerIsServer ? "server" : "client"));
         }
+        var label = "quic:" + connection.uniqueId();
         final SilentTermination st = forSilentTermination("stateless reset from peer ("
-                + (peerIsServer ? "server" : "client") + ")");
+                + (peerIsServer ? "server" : "client") + ") on " + label);
         terminate(st);
     }
 
