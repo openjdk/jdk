@@ -523,7 +523,6 @@ public:
   }
 
   inline void unset_active_alloc_region() {
-    assert(_active_alloc_region.is_set(), "Must be");
     _active_alloc_region.unset();
   }
 
