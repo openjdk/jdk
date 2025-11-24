@@ -2016,19 +2016,8 @@ public:
   void byte_array_inflate(Register src, Register dst, Register len,
                           XMMRegister tmp1, Register tmp2, KRegister mask = knoreg);
 
-  void fill_masked(BasicType bt, Address dst, XMMRegister xmm, KRegister mask,
-                   Register length, Register temp, int vec_enc);
-
-  void fill64_masked(uint shift, Register dst, int disp,
-                         XMMRegister xmm, KRegister mask, Register length,
-                         Register temp, bool use64byteVector = false);
-
   void fill64_tail(uint shift, Register dst, int disp,
                          XMMRegister xmm, Register length, Register temp);
-
-  void fill32_masked(uint shift, Register dst, int disp,
-                         XMMRegister xmm, KRegister mask, Register length,
-                         Register temp);
 
   void fill32_tail(uint shift, Register dst, int disp,
                          XMMRegister xmm, Register length, Register temp);
