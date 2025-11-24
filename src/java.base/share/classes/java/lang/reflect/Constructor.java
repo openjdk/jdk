@@ -429,9 +429,9 @@ public final class Constructor<T> extends Executable {
      * Uses the constructor represented by this {@code Constructor} object to
      * create and initialize a new instance of the constructor's
      * declaring class, with the specified initialization parameters.
-     * Individual parameters are automatically unwrapped to match
-     * primitive formal parameters, and both primitive and reference
-     * parameters are subject to method invocation conversions as necessary.
+     * Each {@code Object} in the {@code initargs} array is {@linkplain
+     * java.lang.reflect##input-conversions converted} to the type of
+     * the corresponding formal parameter.
      *
      * <p>If the number of formal parameters required by the underlying constructor
      * is 0, the supplied {@code initargs} array may be of length 0 or null.

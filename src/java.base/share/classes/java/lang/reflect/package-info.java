@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,23 +24,117 @@
  */
 
 /**
- * Provides classes and interfaces for obtaining reflective information about
- * classes and objects.  Reflection allows programmatic access to information
- * about the fields, methods, and constructors of loaded classes, and the use
- * of reflected fields, methods, and constructors to operate on their underlying
- * counterparts, within encapsulation and security restrictions.
- *
- * <p>Classes in this package, along with {@code java.lang.Class}
- * accommodate applications such as debuggers, interpreters, object
- * inspectors, class browsers, and services such as Object
- * Serialization and JavaBeans that need access to either the public
- * members of a target object (based on its runtime class) or the
- * members declared by a given class.
+ * Provides classes and interfaces, in addition to {@link Class java.lang.Class},
+ * for obtaining reflective information about Java programs.  Reflection allows
+ * programmatic inspection of Java language declarations (JLS {@jls 6.1}),
+ * represented by <em>reflected objects</em>, in {@linkplain
+ * java.lang.reflect##LanguageJvmModel loaded classes}, which may be
+ * unavailable at compile time.  The reflected objects allow {@linkplain
+ * java.lang.reflect##accessor programmatic use} of these declarations within
+ * encapsulation and security restrictions.
  *
  * <p>{@link Array} provides static methods to dynamically create and
  * access arrays.
  *
- * <h2><a id="LanguageJvmModel">Java programming language and JVM modeling in core reflection</a></h2>
+ * <h2 id="accessor">Using the Declarations</h2>
+ * The reflection classes provide <em>accessors</em> methods to use the
+ * underlying declarations represented by reflected objects.  They are
+ * convenient for single invocation; for repeated invocations, consider using
+ * the {@link java.lang.invoke} library instead.
+ *
+ * <h3 id="access-control">Access Control</h3>
+ * The accessors of a reflected object perform access control against the caller
+ * every time they are used, unless that reflected object {@linkplain
+ * AccessibleObject#setAccessible(boolean) suppresses checks}.  Due to
+ * inheritance, a reflective object is not aware of the class or interface that
+ * the underlying declaration is a member of; access checks assume it to be the
+ * declaring class or interface, which may be inaccurate. (JLS {@jls 6.6.1},
+ * JVMS {@jvms 5.4.4})
+ *
+ * <p>Consider using {@link MethodHandles.Lookup}, which performs a single
+ * accurate access check at resolution, with no overhead for later uses.
+ *
+ * <h3 id="conversions">Value Conversions</h3>
+ * The accessors perform conversions from accessor arguments to values accepted
+ * by their underlying declarations, and from values produced by their underlying
+ * declarations to accessor return values, according to the type of these values.
+ * If the specified conversion does not exist or fails at run-time, these
+ * accessors throw an {@link IllegalArgumentException}.
+ *
+ * <p id="input-conversions">For accessor arguments to underlying values:
+ * <table class="striped">
+ * <caption style="display:none">accessor argument to underlying value</caption>
+ * <thead>
+ * <tr>
+ *     <th scope="col">Accessor Parameter Type</th>
+ *     <th scope="col">Underlying Value Type</th>
+ *     <th scope="col">Conversions</th>
+ * </tr>
+ * </thead>
+ * <tbody>
+ * <tr>
+ *     <th scope="row">{@code Object}</th>
+ *     <th scope="row">A reference type</th>
+ *     <td>A cast (JLS {@jls 5.1.6.3})</td>
+ * </tr>
+ * <tr>
+ *     <th scope="row">{@code Object}</th>
+ *     <th scope="row">A primitive type</th>
+ *     <td>The unboxing conversion (JLS {@jls 5.1.8}) from the argument's
+ *         run-time class, followed by<br>
+ *         an identity or widening primitive (JLS {@jls 5.1.2}) conversion</td>
+ * </tr>
+ * <tr>
+ *     <th scope="row">A primitive type</th>
+ *     <th scope="row">A reference type</th>
+ *     <td>Does not exist</td>
+ * </tr>
+ * <tr>
+ *     <th scope="row">A primitive type</th>
+ *     <th scope="row">A primitive type</th>
+ *     <td>An identity or widening primitive (JLS {@jls 5.1.2}) conversion</td>
+ * </tr>
+ * </tbody>
+ * </table>
+ *
+ * <p id="output-conversions">For underlying values to accessor return values:
+ * <table class="striped">
+ * <caption style="display:none">underlying value to accessor return type</caption>
+ * <thead>
+ * <tr>
+ *     <th scope="col">Underlying Value Type</th>
+ *     <th scope="col">Accessor Return Type</th>
+ *     <th scope="col">Conversions</th>
+ * </tr>
+ * </thead>
+ * <tbody>
+ * <tr>
+ *     <th scope="row">A reference type</th>
+ *     <th scope="row">{@code Object}</th>
+ *     <td>Trivial (JLS {@jls 5.1.5})</td>
+ * </tr>
+ * <tr>
+ *     <th scope="row">A reference type</th>
+ *     <th scope="row">A primitive type</th>
+ *     <td>Does not exist</td>
+ * </tr>
+ * <tr>
+ *     <th scope="row">A primitive type</th>
+ *     <th scope="row">{@code Object}</th>
+ *     <td>The boxing conversion (JLS {@jls 5.1.7}) from the underlying value's
+ *         type</td>
+ * </tr>
+ * <tr>
+ *     <th scope="row">A primitive type</th>
+ *     <th scope="row">A primitive type</th>
+ *     <td>An identity or widening primitive (JLS {@jls 5.1.2}) conversion</td>
+ * </tr>
+ * </tbody>
+ * </table>
+ * The conversions to {@code Object} accessor return value never throw an
+ * {@code IllegalArgumentException}.
+ *
+ * <h2 id="LanguageJvmModel">Java programming language and JVM modeling in core reflection</h2>
  *
  * The components of core reflection, which include types in this
  * package as well as {@link java.lang.Class Class}, {@link
@@ -79,10 +173,10 @@
  *
  * <p>Besides differences in structural representation between the
  * source language and the JVM representation, core reflection also
- * exposes runtime specific information. For example, the {@linkplain
+ * exposes run-time specific information. For example, the {@linkplain
  * java.lang.Class#getClassLoader() class loaders} and {@linkplain
  * java.lang.Class#getProtectionDomain() protection domains} of a
- * {@code Class} are runtime concepts without a direct analogue in
+ * {@code Class} are run-time concepts without a direct analogue in
  * source code.
  *
  * @jls 13.1 The Form of a Binary
@@ -93,3 +187,5 @@
  * @since 1.1
  */
 package java.lang.reflect;
+
+import java.lang.invoke.MethodHandles;
