@@ -244,7 +244,7 @@ public class VectorFPtoIntCastTest {
         applyIfCPUFeatureOr = {"avx512f", "true", "avx10_2", "true"})
     @IR(counts = {IRNode.X86_VCAST_D2X, "> 0"},
         applyIfCPUFeatureAnd = {"avx512f", "true", "avx10_2", "false"})
-    @IR(counts = {IRNode.X86_VCAST_D2X_AVX10, "> 0"},
+    @IR(counts = {IRNode.X86_VCAST_D2X_AVX10_2, "> 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
     public void double2byte() {
         var cvec = (ByteVector)dvec512.convertShape(VectorOperators.D2B, bspec64, 0);
