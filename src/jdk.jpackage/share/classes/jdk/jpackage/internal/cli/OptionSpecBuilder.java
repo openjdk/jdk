@@ -228,7 +228,7 @@ final class OptionSpecBuilder<T> {
         return validatorExceptionFactory(mapper).converterExceptionFactory(mapper);
     }
 
-    OptionSpecBuilder<T> converter(ValueConverter<T> v) {
+    OptionSpecBuilder<T> converter(ValueConverter<String, T> v) {
         converterBuilder.converter(v);
         return this;
     }

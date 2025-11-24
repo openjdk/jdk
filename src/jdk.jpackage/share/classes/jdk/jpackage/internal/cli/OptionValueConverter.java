@@ -115,7 +115,7 @@ interface OptionValueConverter<T> {
             return new DefaultOptionArrayValueConverter<>(create(), tokenizer);
         }
 
-        Builder<T> converter(ValueConverter<T> v) {
+        Builder<T> converter(ValueConverter<String, T> v) {
             converter = v;
             return this;
         }
@@ -145,7 +145,7 @@ interface OptionValueConverter<T> {
             return this;
         }
 
-        Optional<ValueConverter<T>> converter() {
+        Optional<ValueConverter<String, T>> converter() {
             return Optional.ofNullable(converter);
         }
 
@@ -166,7 +166,7 @@ interface OptionValueConverter<T> {
         }
 
 
-        private record DefaultOptionValueConverter<T>(ValueConverter<T> converter, String formatString,
+        private record DefaultOptionValueConverter<T>(ValueConverter<String, T> converter, String formatString,
                 OptionValueExceptionFactory<? extends RuntimeException> exceptionFactory,
                 Optional<Validator<T, ? extends RuntimeException>> validator) implements OptionValueConverter<T> {
 
@@ -264,7 +264,7 @@ interface OptionValueConverter<T> {
             }
         }
 
-        private ValueConverter<T> converter;
+        private ValueConverter<String, T> converter;
         private Validator<T, ? extends RuntimeException> validator;
         private Function<String, String[]> tokenizer;
         private String formatString;

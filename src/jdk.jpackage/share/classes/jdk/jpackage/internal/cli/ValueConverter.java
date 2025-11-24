@@ -27,39 +27,40 @@ package jdk.jpackage.internal.cli;
 import java.util.Objects;
 import java.util.function.Function;
 
-interface ValueConverter<T> {
+interface ValueConverter<T, U> {
 
     /**
-     * Converts the given string value into a Java type.
+     * Converts value of one type into another.
      *
-     * @param value the string to convert
+     * @param value the value to convert
      * @return the converted value
-     * @throws IllegalArgumentException if the given string value can not be
-     *                                  converted to an object of type {@link T}
+     * @throws IllegalArgumentException if the given value can not be converted to
+     *                                  an object of type {@link T}
+     * @throws Exception                if internal converter error occurs
      */
-    T convert(String value) throws IllegalArgumentException;
+    U convert(T value) throws Exception, IllegalArgumentException;
 
     /**
      * Gives the class of the type of values this converter converts to.
      *
      * @return the target class for conversion
      */
-    Class<? extends T> valueType();
+    Class<? extends U> valueType();
 
-    static <T> ValueConverter<T> create(Function<String, T> mapper, Class<? extends T> type) {
+    static <T, U> ValueConverter<T, U> create(Function<T, U> mapper, Class<? extends U> type) {
         Objects.requireNonNull(mapper);
         Objects.requireNonNull(type);
 
         return new ValueConverter<>() {
 
             @Override
-            public T convert(String value) {
+            public U convert(T value) {
                 Objects.requireNonNull(value);
                 return Objects.requireNonNull(mapper.apply(value));
             }
 
             @Override
-            public Class<? extends T> valueType() {
+            public Class<? extends U> valueType() {
                 return type;
             }
 

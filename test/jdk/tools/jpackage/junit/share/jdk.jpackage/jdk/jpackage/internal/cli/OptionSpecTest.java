@@ -293,11 +293,11 @@ public class OptionSpecTest {
         return toOptionNames(List.of(names));
     }
 
-    private static <T> OptionValueConverter<T> converter(ValueConverter<T> conv) {
+    private static <T> OptionValueConverter<T> converter(ValueConverter<String, T> conv) {
         return buildConverter(conv).create();
     }
 
-    private static <T> OptionValueConverter.Builder<T> buildConverter(ValueConverter<T> conv) {
+    private static <T> OptionValueConverter.Builder<T> buildConverter(ValueConverter<String, T> conv) {
         return OptionValueConverter.<T>build().converter(conv);
     }
 

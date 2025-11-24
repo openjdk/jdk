@@ -37,33 +37,33 @@ final class StandardValueConverter {
     private StandardValueConverter() {
     }
 
-    static ValueConverter<String> identityConv() {
+    static ValueConverter<String, String> identityConv() {
         return IDENTITY_CONV;
     }
 
-    static ValueConverter<Path> pathConv() {
+    static ValueConverter<String, Path> pathConv() {
         return PATH_CONV;
     }
 
-    static ValueConverter<UUID> uuidConv() {
+    static ValueConverter<String, UUID> uuidConv() {
         return UUID_CONV;
     }
 
-    static ValueConverter<Boolean> booleanConv() {
+    static ValueConverter<String, Boolean> booleanConv() {
         return BOOLEAN_CONV;
     }
 
-    static ValueConverter<LauncherShortcut> mainLauncherShortcutConv() {
+    static ValueConverter<String, LauncherShortcut> mainLauncherShortcutConv() {
         return MAIN_LAUNCHER_SHORTCUT_CONV;
     }
 
-    static ValueConverter<LauncherShortcut> addLauncherShortcutConv() {
+    static ValueConverter<String, LauncherShortcut> addLauncherShortcutConv() {
         return ADD_LAUNCHER_SHORTCUT_CONV;
     }
 
-    private static final ValueConverter<String> IDENTITY_CONV = ValueConverter.create(x -> x, String.class);
+    private static final ValueConverter<String, String> IDENTITY_CONV = ValueConverter.create(x -> x, String.class);
 
-    private static final ValueConverter<Path> PATH_CONV = ValueConverter.create(str -> {
+    private static final ValueConverter<String, Path> PATH_CONV = ValueConverter.create(str -> {
         try {
             return Path.of(str);
         } catch (InvalidPathException ex) {
@@ -71,13 +71,13 @@ final class StandardValueConverter {
         }
     }, Path.class);
 
-    private static final ValueConverter<UUID> UUID_CONV = ValueConverter.create(UUID::fromString, UUID.class);
+    private static final ValueConverter<String, UUID> UUID_CONV = ValueConverter.create(UUID::fromString, UUID.class);
 
-    private static final ValueConverter<Boolean> BOOLEAN_CONV = ValueConverter.create(Boolean::valueOf, Boolean.class);
+    private static final ValueConverter<String, Boolean> BOOLEAN_CONV = ValueConverter.create(Boolean::valueOf, Boolean.class);
 
-    private static final ValueConverter<LauncherShortcut> MAIN_LAUNCHER_SHORTCUT_CONV = ValueConverter.create(
+    private static final ValueConverter<String, LauncherShortcut> MAIN_LAUNCHER_SHORTCUT_CONV = ValueConverter.create(
             ParseUtils::parseLauncherShortcutForMainLauncher, LauncherShortcut.class);
 
-    private static final ValueConverter<LauncherShortcut> ADD_LAUNCHER_SHORTCUT_CONV = ValueConverter.create(
+    private static final ValueConverter<String, LauncherShortcut> ADD_LAUNCHER_SHORTCUT_CONV = ValueConverter.create(
             ParseUtils::parseLauncherShortcutForAddLauncher, LauncherShortcut.class);
 }
