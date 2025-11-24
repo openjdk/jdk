@@ -138,16 +138,6 @@ class VectorSupport : AllStatic {
   };
 
   enum {
-    T_FLOAT     = 6,
-    T_DOUBLE    = 7,
-    T_BYTE      = 8,
-    T_SHORT     = 9,
-    T_INT       = 10,
-    T_LONG      = 11,
-    T_FLOAT16   = 12
-  };
-
-  enum {
     MODE_BROADCAST = 0,
     MODE_BITS_COERCED_LONG_TO_MASK = 1
   };

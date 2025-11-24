@@ -658,9 +658,7 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
             // bootstrapping.
             throw new AssertionError("bootstrap problem");
         }
-        // FIXME: Remove the additional check for Float16 laneTypes from following assertion after proper fix.
-        // Currently the incoming laneType does not comply with the laneType of Float16 species.
-        assert(s.laneType == laneType) || laneType.switchKey == LaneType.SK_FLOAT16 : s + "!=" + laneType;
+        assert(s.laneType == laneType) : s + "!=" + laneType;
         assert(s.vectorShape == shape) : s + "!=" + shape;
         CACHES[laneType.switchKey][shape.switchKey] = s;
         return s;

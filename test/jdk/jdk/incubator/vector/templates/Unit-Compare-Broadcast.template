@@ -43,11 +43,11 @@
 
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             $abstractvectortype$ av = $abstractvectortype$.fromArray(SPECIES, a, i);
-            VectorMask<$Wideboxtype$> mv = av.compare(VectorOperators.[[TEST]], (long)b[i]);
+            VectorMask<$Wideboxtype$> mv = av.compare(VectorOperators.[[TEST]], {#if[FP16]?shortBitsToFloat16(b[i]).longValue():(long)b[i]});
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                AssertEquals(mv.laneIsSet(j), [[TEST_OP]](a[i + j], ($type$)((long)b[i])));
+                AssertEquals(mv.laneIsSet(j), [[TEST_OP]](a[i + j], {#if[FP16]?float16ToShortBits(Float16.valueOf(shortBitsToFloat16(b[i]).longValue())):($type$)((long)b[i])}));
             }
         }
     }
@@ -63,11 +63,11 @@
 
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             $abstractvectortype$ av = $abstractvectortype$.fromArray(SPECIES, a, i);
-            VectorMask<$Wideboxtype$> mv = av.compare(VectorOperators.[[TEST]], (long)b[i], vmask);
+            VectorMask<$Wideboxtype$> mv = av.compare(VectorOperators.[[TEST]], {#if[FP16]?shortBitsToFloat16(b[i]).longValue():(long)b[i]}, vmask);
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                AssertEquals(mv.laneIsSet(j), mask[j] && ([[TEST_OP]](a[i + j],($type$)((long)b[i]))));
+                AssertEquals(mv.laneIsSet(j), mask[j] && ([[TEST_OP]](a[i + j],{#if[FP16]?float16ToShortBits(Float16.valueOf(shortBitsToFloat16(b[i]).longValue())):($type$)((long)b[i])})));
             }
         }
     }

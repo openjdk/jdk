@@ -200,24 +200,7 @@ bool VectorSupport::is_unsigned_op(jint id) {
 }
 
 const char* VectorSupport::lanetype2name(int lane_type) {
-  switch(lane_type) {
-    case T_BYTE:
-      return "BYTE";
-    case T_SHORT:
-      return "SHORT";
-    case T_INT:
-      return "INT";
-    case T_LONG:
-      return "LONG";
-    case T_FLOAT16:
-      return "FLOAT16";
-    case T_FLOAT:
-      return "FLOAT";
-    case T_DOUBLE:
-      return "DOUBLE";
-    default:
-      fatal("Unexpected lane type");
-  }
+  return type2name(static_cast<BasicType>(lane_type));
 }
 
 int VectorSupport::vop2ideal(jint id, int lane_type) {

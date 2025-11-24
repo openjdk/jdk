@@ -563,10 +563,10 @@ public class Float16Vector512Tests extends AbstractVectorTest {
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                AssertEquals(r[i], f.apply(a[i], (short)((long)b[(i / SPECIES.length()) * SPECIES.length()])));
+                AssertEquals(r[i], f.apply(a[i], float16ToShortBits(Float16.valueOf(shortBitsToFloat16(b[(i / SPECIES.length()) * SPECIES.length()]).longValue()))));
             }
         } catch (AssertionError e) {
-            AssertEquals(r[i], f.apply(a[i], (short)((long)b[(i / SPECIES.length()) * SPECIES.length()])),
+            AssertEquals(r[i], f.apply(a[i], (float16ToShortBits(Float16.valueOf(shortBitsToFloat16(b[(i / SPECIES.length()) * SPECIES.length()]).longValue())))),
                                 "(" + a[i] + ", " + b[(i / SPECIES.length()) * SPECIES.length()] + ") at index #" + i);
         }
     }
@@ -627,10 +627,10 @@ public class Float16Vector512Tests extends AbstractVectorTest {
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                AssertEquals(r[i], f.apply(a[i], (short)((long)b[(i / SPECIES.length()) * SPECIES.length()]), mask[i % SPECIES.length()]));
+                AssertEquals(r[i], f.apply(a[i], float16ToShortBits(Float16.valueOf(shortBitsToFloat16(b[(i / SPECIES.length()) * SPECIES.length()]).longValue())), mask[i % SPECIES.length()]));
             }
         } catch (AssertionError err) {
-            AssertEquals(r[i], f.apply(a[i], (short)((long)b[(i / SPECIES.length()) * SPECIES.length()]),
+            AssertEquals(r[i], f.apply(a[i], float16ToShortBits(Float16.valueOf(shortBitsToFloat16(b[(i / SPECIES.length()) * SPECIES.length()]).longValue())),
                                 mask[i % SPECIES.length()]), "at index #" + i + ", input1 = " + a[i] +
                                 ", input2 = " + b[(i / SPECIES.length()) * SPECIES.length()] + ", mask = " +
                                 mask[i % SPECIES.length()]);
@@ -1199,7 +1199,7 @@ public class Float16Vector512Tests extends AbstractVectorTest {
             }),
             withToString("Float16[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (short)longCornerCaseValue(i));
+                            i -> (short)genValue(longCornerCaseValue(i)));
             })
     );
 
@@ -1832,20 +1832,25 @@ public class Float16Vector512Tests extends AbstractVectorTest {
     @Test
     static void smokeTest1() {
         Float16Vector three = Float16Vector.broadcast(SPECIES, float16ToShortBits(Float16.valueOf(-3)));
-        Float16Vector three2 = (Float16Vector) SPECIES.broadcast(float16ToShortBits(Float16.valueOf(-3)));
+        Float16Vector three2 = (Float16Vector) SPECIES.broadcast(Float16.valueOf(-3).longValue());
         assert(three.eq(three2).allTrue());
-        Float16Vector three3 = three2.broadcast(float16ToShortBits(Float16.valueOf(1))).broadcast(float16ToShortBits(Float16.valueOf(-3)));
+        Float16Vector three3 = three2.broadcast(float16ToShortBits(Float16.valueOf(1))).broadcast(Float16.valueOf(-3).longValue());
         assert(three.eq(three3).allTrue());
         int scale = 2;
+        Class<?> ETYPE = short.class;
+        if (ETYPE == double.class || ETYPE == long.class)
+            scale = 1000000;
+        else if (ETYPE == byte.class && SPECIES.length() >= 64)
+            scale = 1;
         Float16Vector higher = three.addIndex(scale);
         VectorMask<Float16> m = three.compare(VectorOperators.LE, higher);
         assert(m.allTrue());
-        m = higher.min((float16ToShortBits(Float16.valueOf(-1)))).test(VectorOperators.IS_NEGATIVE);
+        m = higher.min((short)-1).test(VectorOperators.IS_NEGATIVE);
         assert(m.allTrue());
         m = higher.test(VectorOperators.IS_FINITE);
         assert(m.allTrue());
         short max = higher.reduceLanes(VectorOperators.MAX);
-        assert((short) Float.float16ToFloat(max) == -3 + scale * (SPECIES.length()-1));
+        assert(max == float16ToShortBits(Float16.add(Float16.valueOf(-3), Float16.multiply(Float16.valueOf(scale), Float16.valueOf((SPECIES.length()-1))))));
     }
 
     private static short[]
@@ -2401,7 +2406,7 @@ public class Float16Vector512Tests extends AbstractVectorTest {
 
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-            av.lanewise(VectorOperators.ADD, (long)b[i]).intoArray(r, i);
+            av.lanewise(VectorOperators.ADD, shortBitsToFloat16(b[i]).longValue()).intoArray(r, i);
         }
 
         assertBroadcastLongArraysEquals(r, a, b, Float16Vector512Tests::ADD);
@@ -2418,7 +2423,7 @@ public class Float16Vector512Tests extends AbstractVectorTest {
 
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-            av.lanewise(VectorOperators.ADD, (long)b[i], vmask).intoArray(r, i);
+            av.lanewise(VectorOperators.ADD, shortBitsToFloat16(b[i]).longValue(), vmask).intoArray(r, i);
         }
 
         assertBroadcastLongArraysEquals(r, a, b, mask, Float16Vector512Tests::ADD);
@@ -3656,11 +3661,11 @@ public class Float16Vector512Tests extends AbstractVectorTest {
 
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-            VectorMask<Float16> mv = av.compare(VectorOperators.LT, (long)b[i]);
+            VectorMask<Float16> mv = av.compare(VectorOperators.LT, shortBitsToFloat16(b[i]).longValue());
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                AssertEquals(mv.laneIsSet(j), lt(a[i + j], (short)((long)b[i])));
+                AssertEquals(mv.laneIsSet(j), lt(a[i + j], float16ToShortBits(Float16.valueOf(shortBitsToFloat16(b[i]).longValue()))));
             }
         }
     }
@@ -3676,11 +3681,11 @@ public class Float16Vector512Tests extends AbstractVectorTest {
 
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-            VectorMask<Float16> mv = av.compare(VectorOperators.LT, (long)b[i], vmask);
+            VectorMask<Float16> mv = av.compare(VectorOperators.LT, shortBitsToFloat16(b[i]).longValue(), vmask);
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                AssertEquals(mv.laneIsSet(j), mask[j] && (lt(a[i + j],(short)((long)b[i]))));
+                AssertEquals(mv.laneIsSet(j), mask[j] && (lt(a[i + j],float16ToShortBits(Float16.valueOf(shortBitsToFloat16(b[i]).longValue())))));
             }
         }
     }
@@ -3728,11 +3733,11 @@ public class Float16Vector512Tests extends AbstractVectorTest {
 
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-            VectorMask<Float16> mv = av.compare(VectorOperators.EQ, (long)b[i]);
+            VectorMask<Float16> mv = av.compare(VectorOperators.EQ, shortBitsToFloat16(b[i]).longValue());
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                AssertEquals(mv.laneIsSet(j), eq(a[i + j], (short)((long)b[i])));
+                AssertEquals(mv.laneIsSet(j), eq(a[i + j], float16ToShortBits(Float16.valueOf(shortBitsToFloat16(b[i]).longValue()))));
             }
         }
     }
@@ -3748,11 +3753,11 @@ public class Float16Vector512Tests extends AbstractVectorTest {
 
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-            VectorMask<Float16> mv = av.compare(VectorOperators.EQ, (long)b[i], vmask);
+            VectorMask<Float16> mv = av.compare(VectorOperators.EQ, shortBitsToFloat16(b[i]).longValue(), vmask);
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                AssertEquals(mv.laneIsSet(j), mask[j] && (eq(a[i + j],(short)((long)b[i]))));
+                AssertEquals(mv.laneIsSet(j), mask[j] && (eq(a[i + j],float16ToShortBits(Float16.valueOf(shortBitsToFloat16(b[i]).longValue())))));
             }
         }
     }
@@ -5176,7 +5181,7 @@ public class Float16Vector512Tests extends AbstractVectorTest {
     static long ADDReduceLong(short[] a, int idx) {
         short res = 0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            res = Float.floatToFloat16(Float.float16ToFloat(res) + Float.float16ToFloat(a[i]));
+            res = scalar_add(res, a[i]);
         }
 
         return (long)res;
@@ -5185,7 +5190,7 @@ public class Float16Vector512Tests extends AbstractVectorTest {
     static long ADDReduceAllLong(short[] a) {
         long res = 0;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-            res = Float.floatToFloat16(Float.float16ToFloat((short)res) + Float.float16ToFloat((short)ADDReduceLong(a, i)));
+            res = (long)scalar_add((short)res, (short)ADDReduceLong(a, i));
         }
 
         return res;
@@ -5204,7 +5209,7 @@ public class Float16Vector512Tests extends AbstractVectorTest {
 
         ra = 0;
         for (int i = 0; i < a.length; i++) {
-            ra = (long)(Float16.float16ToRawShortBits(Float16.add(Float16.shortBitsToFloat16((short)ra), Float16.shortBitsToFloat16((short)r[i]))));
+            ra = (long)scalar_add((short)ra, (short)r[i]);
         }
 
         assertReductionLongArraysEquals(r, ra, a,
@@ -5214,8 +5219,9 @@ public class Float16Vector512Tests extends AbstractVectorTest {
     static long ADDReduceLongMasked(short[] a, int idx, boolean[] mask) {
         short res = 0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            if(mask[i % SPECIES.length()])
-                res = Float.floatToFloat16(Float.float16ToFloat(res) + Float.float16ToFloat(a[i]));
+            if(mask[i % SPECIES.length()]) {
+                res = scalar_add(res, a[i]);
+            }
         }
 
         return (long)res;
@@ -5224,7 +5230,7 @@ public class Float16Vector512Tests extends AbstractVectorTest {
     static long ADDReduceAllLongMasked(short[] a, boolean[] mask) {
         long res = 0;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-            res = Float.floatToFloat16(Float.float16ToFloat((short)res) + Float.float16ToFloat((short)ADDReduceLongMasked(a, i, mask)));
+            res = (long)scalar_add((short)res, (short)ADDReduceLongMasked(a, i, mask));
         }
 
         return res;
@@ -5245,7 +5251,7 @@ public class Float16Vector512Tests extends AbstractVectorTest {
 
         ra = 0;
         for (int i = 0; i < a.length; i++) {
-            ra = (long)(Float16.float16ToRawShortBits(Float16.add(Float16.shortBitsToFloat16((short)ra), Float16.shortBitsToFloat16((short)r[i]))));
+            ra = (long)scalar_add((short)ra, (short)r[i]);
         }
 
         assertReductionLongArraysEqualsMasked(r, ra, a, mask,
@@ -5258,7 +5264,7 @@ public class Float16Vector512Tests extends AbstractVectorTest {
         short[] r = new short[a.length];
 
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-            Float16Vector.broadcast(SPECIES, (long)a[i]).intoArray(r, i);
+            Float16Vector.broadcast(SPECIES, shortBitsToFloat16(a[i]).longValue()).intoArray(r, i);
         }
         assertBroadcastArraysEquals(r, a);
     }
@@ -5275,7 +5281,7 @@ public class Float16Vector512Tests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-                av.blend((long)b[i], vmask).intoArray(r, i);
+                av.blend(shortBitsToFloat16(b[i]).longValue(), vmask).intoArray(r, i);
             }
         }
         assertBroadcastLongArraysEquals(r, a, b, mask, Float16Vector512Tests::blend);

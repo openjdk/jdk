@@ -494,8 +494,8 @@ class methodHandle;
                                                                                                                         \
   do_class(com_sun_crypto_provider_galoisCounterMode, "com/sun/crypto/provider/GaloisCounterMode")                      \
    do_intrinsic(_galoisCounterMode_AESCrypt, com_sun_crypto_provider_galoisCounterMode, gcm_crypt_name, aes_gcm_signature, F_S)   \
-   do_name(gcm_crypt_name, "implGCMCrypt0")                                                                             \
-   do_signature(aes_gcm_signature, "([BII[BI[BILcom/sun/crypto/provider/GCTR;Lcom/sun/crypto/provider/GHASH;)I")        \
+   do_name(gcm_crypt_name, "implGCMCrypt0")                                                                                 \
+   do_signature(aes_gcm_signature, "([BII[BI[BILcom/sun/crypto/provider/GCTR;Lcom/sun/crypto/provider/GHASH;)I")                                                             \
                                                                                                                         \
   /* support for sun.security.provider.MD5 */                                                                           \
   do_class(sun_security_provider_md5,                              "sun/security/provider/MD5")                         \

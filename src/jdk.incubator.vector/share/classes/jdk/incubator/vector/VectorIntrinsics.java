@@ -25,15 +25,12 @@
 package jdk.incubator.vector;
 
 import jdk.internal.vm.annotation.ForceInline;
-import jdk.internal.misc.Unsafe;
 
 import java.util.Objects;
 
 /*non-public*/ class VectorIntrinsics {
     static final int VECTOR_ACCESS_OOB_CHECK =
             Integer.getInteger("jdk.incubator.vector.VECTOR_ACCESS_OOB_CHECK", 2);
-
-    static final Unsafe U = Unsafe.getUnsafe();
 
     @ForceInline
     static void requireLength(int haveLength, int length) {
@@ -150,9 +147,5 @@ import java.util.Objects;
         } else {
             return Math.floorMod(index, Math.abs(size));
         }
-    }
-    static <V> V maybeRebox(V v) {
-        U.loadFence();
-        return v;
     }
 }

@@ -554,10 +554,10 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                AssertEquals(r[i], f.apply(a[i], (double)((long)b[(i / SPECIES.length()) * SPECIES.length()])));
+                AssertEquals(r[i], f.apply(a[i], (double)(long)b[(i / SPECIES.length()) * SPECIES.length()]));
             }
         } catch (AssertionError e) {
-            AssertEquals(r[i], f.apply(a[i], (double)((long)b[(i / SPECIES.length()) * SPECIES.length()])),
+            AssertEquals(r[i], f.apply(a[i], ((double)(long)b[(i / SPECIES.length()) * SPECIES.length()])),
                                 "(" + a[i] + ", " + b[(i / SPECIES.length()) * SPECIES.length()] + ") at index #" + i);
         }
     }
@@ -618,10 +618,10 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                AssertEquals(r[i], f.apply(a[i], (double)((long)b[(i / SPECIES.length()) * SPECIES.length()]), mask[i % SPECIES.length()]));
+                AssertEquals(r[i], f.apply(a[i], (double)(long)b[(i / SPECIES.length()) * SPECIES.length()], mask[i % SPECIES.length()]));
             }
         } catch (AssertionError err) {
-            AssertEquals(r[i], f.apply(a[i], (double)((long)b[(i / SPECIES.length()) * SPECIES.length()]),
+            AssertEquals(r[i], f.apply(a[i], (double)(long)b[(i / SPECIES.length()) * SPECIES.length()],
                                 mask[i % SPECIES.length()]), "at index #" + i + ", input1 = " + a[i] +
                                 ", input2 = " + b[(i / SPECIES.length()) * SPECIES.length()] + ", mask = " +
                                 mask[i % SPECIES.length()]);
@@ -1188,7 +1188,7 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
             }),
             withToString("Double[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (double)longCornerCaseValue(i));
+                            i -> (double)genValue(longCornerCaseValue(i)));
             })
     );
 
@@ -5079,7 +5079,7 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                AssertEquals(mv.laneIsSet(j), a[i + j] < b[i]);
+                AssertEquals(mv.laneIsSet(j), lt(a[i + j], b[i]));
             }
         }
     }
@@ -5095,7 +5095,7 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                AssertEquals(mv.laneIsSet(j), a[i + j] == b[i]);
+                AssertEquals(mv.laneIsSet(j), eq(a[i + j], b[i]));
             }
         }
     }
@@ -5154,7 +5154,7 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
     static long ADDReduceLong(double[] a, int idx) {
         double res = 0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            res += a[i];
+            res = scalar_add(res, a[i]);
         }
 
         return (long)res;
@@ -5163,7 +5163,7 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
     static long ADDReduceAllLong(double[] a) {
         long res = 0;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-            res += ADDReduceLong(a, i);
+            res = (long)scalar_add((double)res, (double)ADDReduceLong(a, i));
         }
 
         return res;
@@ -5182,7 +5182,7 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
 
         ra = 0;
         for (int i = 0; i < a.length; i++) {
-            ra += r[i];
+            ra = (long)scalar_add((double)ra, (double)r[i]);
         }
 
         assertReductionLongArraysEquals(r, ra, a,
@@ -5192,8 +5192,9 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
     static long ADDReduceLongMasked(double[] a, int idx, boolean[] mask) {
         double res = 0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            if(mask[i % SPECIES.length()])
-                res += a[i];
+            if(mask[i % SPECIES.length()]) {
+                res = scalar_add(res, a[i]);
+            }
         }
 
         return (long)res;
@@ -5202,7 +5203,7 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
     static long ADDReduceAllLongMasked(double[] a, boolean[] mask) {
         long res = 0;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-            res += ADDReduceLongMasked(a, i, mask);
+            res = (long)scalar_add((double)res, (double)ADDReduceLongMasked(a, i, mask));
         }
 
         return res;
@@ -5223,7 +5224,7 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
 
         ra = 0;
         for (int i = 0; i < a.length; i++) {
-            ra += r[i];
+            ra = (long)scalar_add((double)ra, (double)r[i]);
         }
 
         assertReductionLongArraysEqualsMasked(r, ra, a, mask,

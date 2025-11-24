@@ -1004,8 +1004,8 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
     public final
     Float16Vector lanewise(VectorOperators.Binary op,
                                   long e) {
-        short e1 = (short) e;
-        if ((long)e1 != e) {
+        short e1 = float16ToShortBits(Float16.valueOf(e));
+        if (shortBitsToFloat16(e1).longValue() != e) {
             vspecies().checkValue(e);  // for exception
         }
         return lanewise(op, e1);
@@ -1025,8 +1025,8 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
     public final
     Float16Vector lanewise(VectorOperators.Binary op,
                                   long e, VectorMask<Float16> m) {
-        short e1 = (short) e;
-        if ((long)e1 != e) {
+        short e1 = float16ToShortBits(Float16.valueOf(e));
+        if (shortBitsToFloat16(e1).longValue() != e) {
             vspecies().checkValue(e);  // for exception
         }
         return lanewise(op, e1, m);
@@ -4140,8 +4140,8 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
         @ForceInline
         long longToElementBits(long value) {
             // Do the conversion, and then test it for failure.
-            short e = (short) value;
-            if ((long) e != value) {
+            short e = float16ToShortBits(Float16.valueOf(value));
+            if (shortBitsToFloat16(e).longValue() != value) {
                 throw badElementBits(value, e);
             }
             return toBits(e);

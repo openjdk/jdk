@@ -676,10 +676,10 @@ public class $vectorteststype$ extends AbstractVectorTest {
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                AssertEquals(r[i], f.apply(a[i], ($type$)((long)b[(i / SPECIES.length()) * SPECIES.length()])));
+                AssertEquals(r[i], f.apply(a[i], {#if[FP16]?float16ToShortBits(Float16.valueOf(shortBitsToFloat16(b[(i / SPECIES.length()) * SPECIES.length()]).longValue())):($type$)(long)b[(i / SPECIES.length()) * SPECIES.length()]}));
             }
         } catch (AssertionError e) {
-            AssertEquals(r[i], f.apply(a[i], ($type$)((long)b[(i / SPECIES.length()) * SPECIES.length()])),
+            AssertEquals(r[i], f.apply(a[i], ({#if[FP16]?float16ToShortBits(Float16.valueOf(shortBitsToFloat16(b[(i / SPECIES.length()) * SPECIES.length()]).longValue())):($type$)(long)b[(i / SPECIES.length()) * SPECIES.length()]})),
                                 "(" + a[i] + ", " + b[(i / SPECIES.length()) * SPECIES.length()] + ") at index #" + i);
         }
     }
@@ -740,10 +740,10 @@ public class $vectorteststype$ extends AbstractVectorTest {
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                AssertEquals(r[i], f.apply(a[i], ($type$)((long)b[(i / SPECIES.length()) * SPECIES.length()]), mask[i % SPECIES.length()]));
+                AssertEquals(r[i], f.apply(a[i], {#if[FP16]?float16ToShortBits(Float16.valueOf(shortBitsToFloat16(b[(i / SPECIES.length()) * SPECIES.length()]).longValue())):($type$)(long)b[(i / SPECIES.length()) * SPECIES.length()]}, mask[i % SPECIES.length()]));
             }
         } catch (AssertionError err) {
-            AssertEquals(r[i], f.apply(a[i], ($type$)((long)b[(i / SPECIES.length()) * SPECIES.length()]),
+            AssertEquals(r[i], f.apply(a[i], {#if[FP16]?float16ToShortBits(Float16.valueOf(shortBitsToFloat16(b[(i / SPECIES.length()) * SPECIES.length()]).longValue())):($type$)(long)b[(i / SPECIES.length()) * SPECIES.length()]},
                                 mask[i % SPECIES.length()]), "at index #" + i + ", input1 = " + a[i] +
                                 ", input2 = " + b[(i / SPECIES.length()) * SPECIES.length()] + ", mask = " +
                                 mask[i % SPECIES.length()]);
@@ -1351,7 +1351,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
             }),
             withToString("$Wideboxtype$[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> ($type$)longCornerCaseValue(i));
+                            i -> ($type$)genValue(longCornerCaseValue(i)));
             })
     );
 #end[FP]
@@ -2532,27 +2532,10 @@ public class $vectorteststype$ extends AbstractVectorTest {
 
     @Test
     static void smokeTest1() {
-#if[FP16]
-        $abstractvectortype$ three = $abstractvectortype$.broadcast(SPECIES, float16ToShortBits(Float16.valueOf(-3)));
-        $abstractvectortype$ three2 = ($abstractvectortype$) SPECIES.broadcast(float16ToShortBits(Float16.valueOf(-3)));
+        $abstractvectortype$ three = $abstractvectortype$.broadcast(SPECIES, {#if[FP16]?float16ToShortBits(Float16.valueOf(-3)):(byte)-3});
+        $abstractvectortype$ three2 = ($abstractvectortype$) SPECIES.broadcast({#if[FP16]?Float16.valueOf(-3).longValue():-3});
         assert(three.eq(three2).allTrue());
-        $abstractvectortype$ three3 = three2.broadcast(float16ToShortBits(Float16.valueOf(1))).broadcast(float16ToShortBits(Float16.valueOf(-3)));
-        assert(three.eq(three3).allTrue());
-        int scale = 2;
-        $abstractvectortype$ higher = three.addIndex(scale);
-        VectorMask<$Wideboxtype$> m = three.compare(VectorOperators.LE, higher);
-        assert(m.allTrue());
-        m = higher.min((float16ToShortBits(Float16.valueOf(-1)))).test(VectorOperators.IS_NEGATIVE);
-        assert(m.allTrue());
-        m = higher.test(VectorOperators.IS_FINITE);
-        assert(m.allTrue());
-        $type$ max = higher.reduceLanes(VectorOperators.MAX);
-        assert((short) Float.float16ToFloat(max) == -3 + scale * (SPECIES.length()-1));
-#else[FP16]
-        $abstractvectortype$ three = $abstractvectortype$.broadcast(SPECIES, (byte)-3);
-        $abstractvectortype$ three2 = ($abstractvectortype$) SPECIES.broadcast(-3);
-        assert(three.eq(three2).allTrue());
-        $abstractvectortype$ three3 = three2.broadcast(1).broadcast(-3);
+        $abstractvectortype$ three3 = three2.broadcast({#if[FP16]?float16ToShortBits(Float16.valueOf(1)):1}).broadcast({#if[FP16]?Float16.valueOf(-3).longValue():-3});
         assert(three.eq(three3).allTrue());
         int scale = 2;
         Class<?> ETYPE = $type$.class;
@@ -2570,6 +2553,9 @@ public class $vectorteststype$ extends AbstractVectorTest {
         assert(m.allTrue());
 #end[FP]
         $type$ max = higher.reduceLanes(VectorOperators.MAX);
+#if[FP16]
+        assert(max == float16ToShortBits(Float16.add(Float16.valueOf(-3), Float16.multiply(Float16.valueOf(scale), Float16.valueOf((SPECIES.length()-1))))));
+#else[FP16]
         assert(max == -3 + scale * (SPECIES.length()-1));
 #end[FP16]
     }

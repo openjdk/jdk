@@ -489,10 +489,10 @@ public class LongVector512Tests extends AbstractVectorTest {
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                AssertEquals(r[i], f.apply(a[i], (long)((long)b[(i / SPECIES.length()) * SPECIES.length()])));
+                AssertEquals(r[i], f.apply(a[i], (long)(long)b[(i / SPECIES.length()) * SPECIES.length()]));
             }
         } catch (AssertionError e) {
-            AssertEquals(r[i], f.apply(a[i], (long)((long)b[(i / SPECIES.length()) * SPECIES.length()])),
+            AssertEquals(r[i], f.apply(a[i], ((long)(long)b[(i / SPECIES.length()) * SPECIES.length()])),
                                 "(" + a[i] + ", " + b[(i / SPECIES.length()) * SPECIES.length()] + ") at index #" + i);
         }
     }
@@ -553,10 +553,10 @@ public class LongVector512Tests extends AbstractVectorTest {
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                AssertEquals(r[i], f.apply(a[i], (long)((long)b[(i / SPECIES.length()) * SPECIES.length()]), mask[i % SPECIES.length()]));
+                AssertEquals(r[i], f.apply(a[i], (long)(long)b[(i / SPECIES.length()) * SPECIES.length()], mask[i % SPECIES.length()]));
             }
         } catch (AssertionError err) {
-            AssertEquals(r[i], f.apply(a[i], (long)((long)b[(i / SPECIES.length()) * SPECIES.length()]),
+            AssertEquals(r[i], f.apply(a[i], (long)(long)b[(i / SPECIES.length()) * SPECIES.length()],
                                 mask[i % SPECIES.length()]), "at index #" + i + ", input1 = " + a[i] +
                                 ", input2 = " + b[(i / SPECIES.length()) * SPECIES.length()] + ", mask = " +
                                 mask[i % SPECIES.length()]);
@@ -6653,7 +6653,7 @@ public class LongVector512Tests extends AbstractVectorTest {
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                AssertEquals(mv.laneIsSet(j), a[i + j] < b[i]);
+                AssertEquals(mv.laneIsSet(j), lt(a[i + j], b[i]));
             }
         }
     }
@@ -6669,7 +6669,7 @@ public class LongVector512Tests extends AbstractVectorTest {
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                AssertEquals(mv.laneIsSet(j), a[i + j] == b[i]);
+                AssertEquals(mv.laneIsSet(j), eq(a[i + j], b[i]));
             }
         }
     }

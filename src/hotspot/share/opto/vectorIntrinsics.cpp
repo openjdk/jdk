@@ -288,11 +288,11 @@ static bool is_klass_initialized(const TypeInstPtr* vec_klass) {
 }
 
 static bool is_valid_lane_type(int laneType) {
-  return laneType >= VectorSupport::T_FLOAT && laneType <= VectorSupport::T_LONG;
+  return laneType >= T_FLOAT && laneType <= T_LONG;
 }
 
 static BasicType get_vector_primitive_lane_type(int lane_type) {
-  if (lane_type == VectorSupport::T_FLOAT16) {
+  if (lane_type == T_FLOAT16) {
     return T_SHORT;
   }
   return static_cast<BasicType>(lane_type);
@@ -706,11 +706,6 @@ bool LibraryCallKit::inline_vector_frombits_coerced() {
 
 
   int  bcast_mode = mode->get_con();
-  if (!is_valid_lane_type(laneType->get_con())) {
-    log_if_needed("  ** not a primitive lt=%s", VectorSupport::lanetype2name(laneType->get_con()));
-    return false; // should be primitive type
-  }
-
   BasicType elem_bt = get_vector_primitive_lane_type(laneType->get_con());
   if (!is_java_primitive(elem_bt) && bcast_mode != VectorSupport::MODE_BROADCAST) {
     log_if_needed("  ** unhandled bt=%s", type2name(elem_bt));

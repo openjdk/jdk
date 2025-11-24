@@ -1238,13 +1238,13 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     public final
     $abstractvectortype$ lanewise(VectorOperators.Binary op,
                                   long e) {
-        $type$ e1 = ($type$) e;
+        $type$ e1 = {#if[FP16]?float16ToShortBits(Float16.valueOf(e)):($type$) e};
 #if[BITWISE]
         if ((long)e1 != e
             // allow shift ops to clip down their int parameters
             && !(opKind(op, VO_SHIFT) && (int)e1 == e)) {
 #else[BITWISE]
-        if ((long)e1 != e) {
+        if ({#if[FP16]?shortBitsToFloat16(e1).longValue():(long)e1} != e) {
 #end[BITWISE]
             vspecies().checkValue(e);  // for exception
         }
@@ -1265,13 +1265,13 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     public final
     $abstractvectortype$ lanewise(VectorOperators.Binary op,
                                   long e, VectorMask<$Boxtype$> m) {
-        $type$ e1 = ($type$) e;
+        $type$ e1 = {#if[FP16]?float16ToShortBits(Float16.valueOf(e)):($type$) e};
 #if[BITWISE]
         if ((long)e1 != e
             // allow shift ops to clip down their int parameters
             && !(opKind(op, VO_SHIFT) && (int)e1 == e)) {
 #else[BITWISE]
-        if ((long)e1 != e) {
+        if ({#if[FP16]?shortBitsToFloat16(e1).longValue():(long)e1} != e) {
 #end[BITWISE]
             vspecies().checkValue(e);  // for exception
         }
@@ -5759,8 +5759,8 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             return value;
 #else[long]
             // Do the conversion, and then test it for failure.
-            $type$ e = ($type$) value;
-            if ((long) e != value) {
+            $type$ e = {#if[FP16]?float16ToShortBits(Float16.valueOf(value)):($type$) value};
+            if ({#if[FP16]?shortBitsToFloat16(e).longValue():(long) e} != value) {
                 throw badElementBits(value, e);
             }
             return toBits(e);

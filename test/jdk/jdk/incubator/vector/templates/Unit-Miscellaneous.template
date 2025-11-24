@@ -10,11 +10,7 @@
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-#if[FP16]
                 AssertEquals(mv.laneIsSet(j), lt(a[i + j], b[i]));
-#else[FP16]
-                AssertEquals(mv.laneIsSet(j), a[i + j] < b[i]);
-#end[FP16]
             }
         }
     }
@@ -30,11 +26,7 @@
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-#if[FP16]
                 AssertEquals(mv.laneIsSet(j), eq(a[i + j], b[i]));
-#else[FP16]
-                AssertEquals(mv.laneIsSet(j), a[i + j] == b[i]);
-#end[FP16]
             }
         }
     }
@@ -131,11 +123,7 @@
     static long ADDReduceLong($type$[] a, int idx) {
         $type$ res = 0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-#if[FP16]
-            res = Float.floatToFloat16(Float.float16ToFloat(res) + Float.float16ToFloat(a[i]));
-#else[FP16]
-            res += a[i];
-#end[FP16]
+            res = scalar_add(res, a[i]);
         }
 
         return (long)res;
@@ -144,11 +132,7 @@
     static long ADDReduceAllLong($type$[] a) {
         long res = 0;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-#if[FP16]
-            res = Float.floatToFloat16(Float.float16ToFloat((short)res) + Float.float16ToFloat((short)ADDReduceLong(a, i)));
-#else[FP16]
-            res += ADDReduceLong(a, i);
-#end[FP16]
+            res = (long)scalar_add(($type$)res, ($type$)ADDReduceLong(a, i));
         }
 
         return res;
@@ -167,11 +151,7 @@
 
         ra = 0;
         for (int i = 0; i < a.length; i++) {
-#if[FP16]
-            ra = (long)(Float16.float16ToRawShortBits(Float16.add(Float16.shortBitsToFloat16((short)ra), Float16.shortBitsToFloat16((short)r[i]))));
-#else[FP16]
-            ra += r[i];
-#end[FP16]
+            ra = (long)scalar_add(($type$)ra, ($type$)r[i]);
         }
 
         assertReductionLongArraysEquals(r, ra, a,
@@ -181,12 +161,9 @@
     static long ADDReduceLongMasked($type$[] a, int idx, boolean[] mask) {
         $type$ res = 0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            if(mask[i % SPECIES.length()])
-#if[FP16]
-                res = Float.floatToFloat16(Float.float16ToFloat(res) + Float.float16ToFloat(a[i]));
-#else[FP16]
-                res += a[i];
-#end[FP16]
+            if(mask[i % SPECIES.length()]) {
+                res = scalar_add(res, a[i]);
+            }
         }
 
         return (long)res;
@@ -195,11 +172,7 @@
     static long ADDReduceAllLongMasked($type$[] a, boolean[] mask) {
         long res = 0;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-#if[FP16]
-            res = Float.floatToFloat16(Float.float16ToFloat((short)res) + Float.float16ToFloat((short)ADDReduceLongMasked(a, i, mask)));
-#else[FP16]
-            res += ADDReduceLongMasked(a, i, mask);
-#end[FP16]
+            res = (long)scalar_add(($type$)res, ($type$)ADDReduceLongMasked(a, i, mask));
         }
 
         return res;
@@ -220,11 +193,7 @@
 
         ra = 0;
         for (int i = 0; i < a.length; i++) {
-#if[FP16]
-            ra = (long)(Float16.float16ToRawShortBits(Float16.add(Float16.shortBitsToFloat16((short)ra), Float16.shortBitsToFloat16((short)r[i]))));
-#else[FP16]
-            ra += r[i];
-#end[FP16]
+            ra = (long)scalar_add(($type$)ra, ($type$)r[i]);
         }
 
         assertReductionLongArraysEqualsMasked(r, ra, a, mask,
@@ -241,7 +210,7 @@
         $type$[] r = new $type$[a.length];
 
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-            $abstractvectortype$.broadcast(SPECIES, (long)a[i]).intoArray(r, i);
+            $abstractvectortype$.broadcast(SPECIES, {#if[FP16]?shortBitsToFloat16(a[i]).longValue():(long)a[i]}).intoArray(r, i);
         }
         assertBroadcastArraysEquals(r, a);
     }
@@ -258,7 +227,7 @@
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 $abstractvectortype$ av = $abstractvectortype$.fromArray(SPECIES, a, i);
-                av.blend((long)b[i], vmask).intoArray(r, i);
+                av.blend({#if[FP16]?shortBitsToFloat16(b[i]).longValue():(long)b[i]}, vmask).intoArray(r, i);
             }
         }
         assertBroadcastLongArraysEquals(r, a, b, mask, $vectorteststype$::blend);
