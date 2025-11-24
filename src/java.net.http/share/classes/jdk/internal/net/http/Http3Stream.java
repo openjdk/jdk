@@ -57,6 +57,7 @@ import jdk.internal.net.http.quic.streams.QuicStreamReader;
 
 import static jdk.internal.net.http.Exchange.MAX_NON_FINAL_RESPONSES;
 import static jdk.internal.net.http.RedirectFilter.HTTP_NOT_MODIFIED;
+import static jdk.internal.net.http.common.Utils.readContentLength;
 
 /**
  * A common super class for the HTTP/3 request/response stream ({@link Http3ExchangeImpl}
@@ -607,7 +608,6 @@ sealed abstract class Http3Stream<T> extends ExchangeImpl<T> permits Http3Exchan
          int responseCode;
          boolean finalResponse = false;
          try {
-             responseHeaders.firstValue(":status");
              responseCode = (int) responseHeaders
                      .firstValueAsLong(":status")
                      .orElseThrow(() -> new IOException("no statuscode in response"));
@@ -653,24 +653,17 @@ sealed abstract class Http3Stream<T> extends ExchangeImpl<T> permits Http3Exchan
                      responseHeaders);
          }
 
-         var clK = "content-length";
-         var clS = responseHeaders.firstValue(clK).orElse(null);
-         if (finalResponse && clS != null) {
+         if (finalResponse) {
              long cl;
              try {
-                 cl = Long.parseLong(clS);
-             } catch (NumberFormatException nfe) {
-                 var pe = new ProtocolException("Invalid " + clK + " value: " + clS);
-                 pe.initCause(nfe);
+                 cl = readContentLength(responseHeaders, "", -1);
+             } catch (ProtocolException pe) {
                  cancelImpl(pe, Http3Error.H3_MESSAGE_ERROR);
                  return;
              }
-             if (cl < 0) {
-                 var pe = new ProtocolException("Invalid " + clK + " value: " + cl);
-                 cancelImpl(pe, Http3Error.H3_MESSAGE_ERROR);
-                 return;
-             }
-             if (!(exchange.request().method().equalsIgnoreCase("HEAD") || responseCode == HTTP_NOT_MODIFIED)) {
+             if (cl != -1 &&
+                     !(exchange.request().method().equalsIgnoreCase("HEAD") ||
+                             responseCode == HTTP_NOT_MODIFIED)) {
                  // HEAD response and 304 response might have a content-length header,
                  // but it carries no meaning
                  contentLength = cl;

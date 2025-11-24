@@ -31,6 +31,7 @@ import java.net.ConnectException;
 import java.net.ProtocolException;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpConnectTimeoutException;
+import java.net.http.HttpHeaders;
 import java.net.http.StreamLimitException;
 import java.time.Duration;
 import java.util.List;
@@ -48,7 +49,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 import java.net.http.HttpClient;
-import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodySubscriber;
@@ -63,6 +63,7 @@ import jdk.internal.net.http.common.Utils;
 import static jdk.internal.net.http.common.MinimalFuture.completedFuture;
 import static jdk.internal.net.http.common.MinimalFuture.failedFuture;
 import static jdk.internal.net.http.AltSvcProcessor.processAltSvcHeader;
+import static jdk.internal.net.http.common.Utils.readContentLength;
 
 
 /**
@@ -359,27 +360,21 @@ class MultiExchange<T> implements Cancelable {
         return r.statusCode == 204;
     }
 
-    private CompletionStage<Boolean> bodyIsPresent(Response r, Exchange<T> exchange) {
+    private void ensureNoBody(HttpHeaders headers) throws ProtocolException {
 
-        // Read the `Content-Length` header
-        var resultFuture = new MinimalFuture<Boolean>();
-        HttpHeaders headers = r.headers();
-        var clK = "Content-length";
-        long cl;
-        try {
-            cl = headers.firstValueAsLong(clK).orElse(0L);
-        } catch (NumberFormatException nfe) {
-            var pe = new ProtocolException("Invalid value in header " + clK);
-            pe.initCause(nfe);
-            exchange.cancel(pe);
-            resultFuture.completeExceptionally(pe);
-            return resultFuture;
+        // Check `Content-Length`
+        var contentLength = readContentLength(headers, "", 0);
+        if (contentLength > 0) {
+            throw new ProtocolException(
+                    "Unexpected \"Content-Length\" header in a 204 response: " + contentLength);
         }
 
-        // Perform the check
-        var result = cl != 0L || headers.firstValue("Transfer-encoding").isPresent();
-        resultFuture.complete(result);
-        return resultFuture;
+        // Check `Transfer-Encoding`
+        var transferEncoding = headers.firstValue("Transfer-Encoding").orElse(null);
+        if (transferEncoding != null) {
+            throw new ProtocolException(
+                    "Unexpected \"Transfer-Encoding\" header in a 204 response: " + transferEncoding);
+        }
 
     }
 
@@ -419,15 +414,13 @@ class MultiExchange<T> implements Cancelable {
                         processAltSvcHeader(r, client(), currentreq);
                         Exchange<T> exch = getExchange();
                         if (bodyNotPermitted(r)) {
-                            return bodyIsPresent(r, exch).thenCompose(bodyIsPresent -> {
-                                if (bodyIsPresent) {
-                                    IOException ioe = new IOException(
-                                            "unexpected content length header with 204 response");
-                                    exch.cancel(ioe);
-                                    return MinimalFuture.failedFuture(ioe);
-                                } else
-                                    return handleNoBody(r, exch);
-                            });
+                            try {
+                                ensureNoBody(r.headers);
+                            } catch (ProtocolException pe) {
+                                exch.cancel(pe);
+                                return MinimalFuture.failedFuture(pe);
+                            }
+                            return handleNoBody(r, exch);
                         }
                         return exch.readBodyAsync(responseHandler)
                             .thenApply((T body) -> setNewResponse(r.request, r, body, exch));

@@ -81,6 +81,8 @@ import jdk.internal.net.http.qpack.writers.HeaderFrameWriter;
 import jdk.internal.net.http.quic.streams.QuicBidiStream;
 import jdk.internal.net.http.quic.streams.QuicStreamReader;
 import jdk.internal.net.http.quic.streams.QuicStreamWriter;
+
+import static jdk.internal.net.http.common.Utils.readContentLength;
 import static jdk.internal.net.http.http3.ConnectionSettings.UNLIMITED_MAX_FIELD_SECTION_SIZE;
 
 /**
@@ -1283,17 +1285,10 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
         }
 
         // Read & validate `Content-Length`
-        var clenK = "Content-Length";
-        long clen;
-        try {
-            clen = promiseHeaders.firstValueAsLong(clenK).orElse(-1);
-        } catch (NumberFormatException nfe) {
-            var pe = new ProtocolException("push headers contain illegal " + clenK);
-            pe.initCause(nfe);
-            throw pe;
-        }
+        long clen = readContentLength(
+                promiseHeaders, "illegal push headers for pushId=%s: ".formatted(pushId), 0);
         if (clen > 0) {
-            throw new ProtocolException("push headers contain non-zero " + clenK + " for pushId=" + pushId);
+            throw new ProtocolException("push headers contain non-zero \"Content-Length\" for pushId=" + pushId);
         }
 
         if (promiseHeaders.firstValue("Transfer-Encoding").isPresent()) {

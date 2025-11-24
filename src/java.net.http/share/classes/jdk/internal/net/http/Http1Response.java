@@ -29,8 +29,8 @@ import java.io.EOFException;
 import java.lang.System.Logger.Level;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.net.ProtocolException;
 import java.net.http.HttpResponse.BodySubscriber;
+import java.net.ProtocolException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -47,6 +47,7 @@ import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.Utils;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpResponse.BodySubscribers.discarding;
+import static jdk.internal.net.http.common.Utils.readContentLength;
 import static jdk.internal.net.http.common.Utils.wrapWithExtraDetail;
 import static jdk.internal.net.http.RedirectFilter.HTTP_NOT_MODIFIED;
 
@@ -278,21 +279,19 @@ class Http1Response<T> {
     public CompletableFuture<Void> ignoreBody(Executor executor) {
 
         // Read the `Content-Length` header
-        int clen;
-        var clenK = "Content-Length";
+        long clen;
         try {
-            clen = (int) headers.firstValueAsLong(clenK).orElse(-1);
-        } catch (NumberFormatException nfe) {
-            var pe = new ProtocolException("Illegal value in header " + clenK);
-            pe.initCause(nfe);
+            clen = readContentLength(headers, "", 0);
+        } catch (ProtocolException pe) {
             return MinimalFuture.failedFuture(pe);
         }
 
-        if (clen == -1 || clen > MAX_IGNORE) {
+        // Read if there are and less than `MAX_IGNORE` bytes
+        if (clen > 0 && clen <= MAX_IGNORE) {
+            return readBody(discarding(), !request.isWebSocket(), executor);
+        } else {
             connection.close();
             return MinimalFuture.completedFuture(null); // not treating as error
-        } else {
-            return readBody(discarding(), !request.isWebSocket(), executor);
         }
 
     }
@@ -324,15 +323,12 @@ class Http1Response<T> {
 
         final CompletableFuture<U> cf = new MinimalFuture<>();
 
-        // Read the `Content-Length` header
-        var clenK = "Content-Length";
+        // Read the content length
         long clen;
         try {
-            long clen0 = headers.firstValueAsLong(clenK).orElse(-1L);
+            long clen0 = readContentLength(headers, "", -1);
             clen = fixupContentLen(clen0);
-        } catch (NumberFormatException nfe) {
-            var pe = new ProtocolException("Invalid value in header " + clenK);
-            pe.initCause(nfe);
+        } catch (ProtocolException pe) {
             cf.completeExceptionally(pe);
             return cf;
         }

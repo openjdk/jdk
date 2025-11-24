@@ -615,28 +615,14 @@ class Stream<T> extends ExchangeImpl<T> {
         return null;
     }
 
-    protected void handleResponse(HeaderFrame hf) throws IOException {
+    protected void handleResponse(HeaderFrame hf) {
         HttpHeaders responseHeaders = responseHeadersBuilder.build();
 
         if (!finalResponseCodeReceived) {
             try {
-                var responseCodeString = responseHeaders.firstValue(":status").orElse(null);
-                if (responseCodeString == null) {
-                    throw new ProtocolException(String.format(
-                            "Stream %s PROTOCOL_ERROR: no status code in response",
-                            streamid));
-                }
-                try {
-                    responseCode = Integer.parseInt(responseCodeString);
-                } catch (NumberFormatException nfe) {
-                    var pe = new ProtocolException(String.format(
-                            "Stream %s PROTOCOL_ERROR: invalid status code in response",
-                            streamid));
-                    pe.initCause(nfe);
-                    throw pe;
-                }
-            } catch (ProtocolException cause) {
-                cancelImpl(cause, ResetFrame.PROTOCOL_ERROR);
+                responseCode = readStatusCode(responseHeaders, "Stream %s PROTOCOL_ERROR: ".formatted(streamid));
+            } catch (ProtocolException pe) {
+                cancelImpl(pe, ResetFrame.PROTOCOL_ERROR);
                 rspHeadersConsumer.reset();
                 return;
             }
@@ -1760,17 +1746,7 @@ class Stream<T> extends ExchangeImpl<T> {
 
             if (!finalPushResponseCodeReceived) {
                 try {
-                    var responseCodeString = responseHeaders.firstValue(":status").orElse(null);
-                    if (responseCodeString == null) {
-                        throw new ProtocolException("No status code");
-                    }
-                    try {
-                        responseCode = Integer.parseInt(responseCodeString);
-                    } catch (NumberFormatException nfe) {
-                        var pe = new ProtocolException("Invalid status code: " + responseCodeString);
-                        pe.initCause(nfe);
-                        throw pe;
-                    }
+                    responseCode = readStatusCode(responseHeaders, "");
                     if (responseCode >= 100 && responseCode < 200) {
                         String protocolErrorMsg = checkInterimResponseCountExceeded();
                         if (protocolErrorMsg != null) {
@@ -1841,6 +1817,26 @@ class Stream<T> extends ExchangeImpl<T> {
                         .formatted(streamid)), ResetFrame.FLOW_CONTROL_ERROR);
             return true;
         }
+    }
+
+    private static int readStatusCode(HttpHeaders headers, String errorPrefix) throws ProtocolException {
+        var s = headers.firstValue(":status").orElse(null);
+        if (s == null) {
+            throw new ProtocolException(errorPrefix + "missing status code");
+        }
+        Throwable t = null;
+        int i = 0;
+        try {
+            i = Integer.parseInt(s);
+        } catch (NumberFormatException nfe) {
+            t = nfe;
+        }
+        if (t != null || i < 0) {
+            var pe = new ProtocolException(errorPrefix + "invalid status code: " + s);
+            pe.initCause(t);
+            throw pe;
+        }
+        return i;
     }
 
     /**
