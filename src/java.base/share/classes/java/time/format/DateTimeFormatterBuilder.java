@@ -2580,6 +2580,23 @@ public final class DateTimeFormatterBuilder {
             }
         }
 
+        /**
+         * Checks whether this composite printer parser only uses ChronoField instances.
+         * This is used to optimize the storage of parsed field values in the Parsed class.
+         *
+         * @return true if all printer parsers in this composite only use ChronoField instances,
+         *         false otherwise
+         */
+        boolean onlyChronoField() {
+            for (DateTimePrinterParser pp : printerParsers) {
+                if ((pp instanceof NumberPrinterParser    npp && !(npp.field instanceof ChronoField))
+                 || (pp instanceof CompositePrinterParser cpp && !cpp.onlyChronoField())) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         @Override
         public String toString() {
             StringBuilder buf = new StringBuilder();

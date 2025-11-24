@@ -544,6 +544,12 @@ public final class DateTimeFormatter {
      */
     private final ZoneId zone;
 
+    /**
+     * Flag indicating whether this formatter only uses ChronoField instances.
+     * This is used to optimize the storage of parsed field values in the Parsed class.
+     */
+    final boolean onlyChronoField;
+
     //-----------------------------------------------------------------------
     /**
      * Creates a formatter using the specified pattern.
@@ -1486,6 +1492,7 @@ public final class DateTimeFormatter {
         this.resolverStyle = Objects.requireNonNull(resolverStyle, "resolverStyle");
         this.chrono = chrono;
         this.zone = zone;
+        this.onlyChronoField = printerParser.onlyChronoField();
     }
 
     //-----------------------------------------------------------------------
