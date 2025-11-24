@@ -557,7 +557,7 @@ static address generate_dilithiumAlmostNtt_avx(StubGenerator *stubgen,
     // apart). For the remaining levels, load 8 registers from consecutive memory
     // (16-, 8-, 4-, 2-, 1-integer apart)
     // Levels 5, 6, 7 (4-, 2-, 1-integer apart) require shuffles within registers.
-    // On the other levels, shuffles can be done by rearanging the register order
+    // On the other levels, shuffles can be done by rearranging the register order
 
     // Four batches of 8 registers each, 128 bytes apart
     for (int i=0; i<4; i++) {
@@ -698,7 +698,7 @@ static address generate_dilithiumAlmostInverseNtt_avx(StubGenerator *stubgen,
   // Java version.
   // In each of these iterations half of the coefficients are added to and
   // subtracted from the other half of the coefficients then the result of
-  // the subtration is (Montgomery) multiplied by the corresponding zetas.
+  // the subtraction is (Montgomery) multiplied by the corresponding zetas.
   // In each level we just shuffle the coefficients so that the results of
   // the additions and subtractions go to the vector registers so that they
   // align with each other and the zetas.
