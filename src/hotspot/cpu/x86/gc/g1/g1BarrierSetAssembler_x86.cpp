@@ -89,10 +89,10 @@ void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm
 
 void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                              Register addr, Register count, Register tmp) {
-  Label done;
+  Label L_done;
 
   __ testptr(count, count);
-  __ jccb(Assembler::zero, done);
+  __ jccb(Assembler::zero, L_done);
 
   // Calculate end address in "count".
   Address::ScaleFactor scale = UseCompressedOops ? Address::times_4 : Address::times_8;
@@ -111,31 +111,31 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
   __ shrptr(count, CardTable::card_shift());
   __ addptr(count, tmp);
 
-  Label loop;
+  Label L_loop;
   // Iterate from start card to end card (inclusive).
-  __ bind(loop);
+  __ bind(L_loop);
 
-  Label is_clean_card;
+  Label L_is_clean_card;
   if (UseCondCardMark) {
     __ cmpb(Address(addr, 0), G1CardTable::clean_card_val());
-    __ jccb(Assembler::equal, is_clean_card);
+    __ jccb(Assembler::equal, L_is_clean_card);
   } else {
    __ movb(Address(addr, 0), G1CardTable::dirty_card_val());
   }
 
-  Label next_card;
-  __ bind(next_card);
+  Label L_next_card;
+  __ bind(L_next_card);
   __ addptr(addr, sizeof(CardTable::CardValue));
   __ cmpptr(addr, count);
-  __ jccb(Assembler::belowEqual, loop);
-  __ jmpb(done);
+  __ jccb(Assembler::belowEqual, L_loop);
+  __ jmpb(L_done);
 
-  __ bind(is_clean_card);
-  // Card was clean. Dirty card and go to next..
+  __ bind(L_is_clean_card);
+  // Card was clean. Dirty card and go to next.
   __ movb(Address(addr, 0), G1CardTable::dirty_card_val());
-  __ jmpb(next_card);
+  __ jmpb(L_next_card);
 
-  __ bind(done);
+  __ bind(L_done);
 }
 
 void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
@@ -279,17 +279,17 @@ static void generate_post_barrier(MacroAssembler* masm,
 
   Register thread = r15_thread;
 
-  Label done;
+  Label L_done;
   // Does store cross heap regions?
   __ movptr(tmp1, store_addr);                                    // tmp1 := store address
   __ xorptr(tmp1, new_val);                                       // tmp1 := store address ^ new value
   __ shrptr(tmp1, G1HeapRegion::LogOfHRGrainBytes);               // ((store address ^ new value) >> LogOfHRGrainBytes) == 0?
-  __ jccb(Assembler::equal, done);
+  __ jccb(Assembler::equal, L_done);
 
   // Crosses regions, storing null?
   if (new_val_may_be_null) {
     __ testptr(new_val, new_val);                                 // new value == null?
-    __ jccb(Assembler::equal, done);
+    __ jccb(Assembler::equal, L_done);
   }
 
   __ movptr(tmp1, store_addr);                                    // tmp1 := store address
@@ -299,12 +299,12 @@ static void generate_post_barrier(MacroAssembler* masm,
   __ addptr(tmp1, card_table_addr);                               // tmp1 := card address
   if (UseCondCardMark) {
     __ cmpb(Address(tmp1, 0), G1CardTable::clean_card_val());     // *(card address) == clean_card_val?
-    __ jccb(Assembler::notEqual, done);
+    __ jccb(Assembler::notEqual, L_done);
   }
   // Storing a region crossing, non-null oop, card is clean.
   // Dirty card.
   __ movb(Address(tmp1, 0), G1CardTable::dirty_card_val());       // *(card address) := dirty_card_val
-  __ bind(done);
+  __ bind(L_done);
 }
 
 void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
