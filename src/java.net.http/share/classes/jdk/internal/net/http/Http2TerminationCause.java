@@ -265,7 +265,7 @@ public abstract sealed class Http2TerminationCause {
 
     private static final class InternalError extends Http2TerminationCause {
         private InternalError(final Throwable cause) {
-            super(ErrorFrame.INTERNAL_ERROR, new Exception(cause));
+            super(ErrorFrame.INTERNAL_ERROR, cause);
         }
 
         @Override
