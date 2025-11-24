@@ -3188,7 +3188,7 @@ void ShenandoahFreeSet::decrease_humongous_waste_for_regular_bypass(ShenandoahHe
   _total_humongous_waste -= waste;
 }
 
-int ShenandoahFreeSet::reserve_alloc_regions(ShenandoahFreeSetPartitionId partition, int regions_to_reserve, ShenandoahHeapRegion** reserved_regions) {
+int ShenandoahFreeSet::reserve_alloc_regions(ShenandoahFreeSetPartitionId partition, int regions_to_reserve, size_t min_free_words, ShenandoahHeapRegion** reserved_regions) {
   assert(0 < regions_to_reserve && regions_to_reserve <= (int) ShenandoahAllocator::MAX_ALLOC_REGION_COUNT, "Sanity check");
   shenandoah_assert_heaplocked();
   if (partition == ShenandoahFreeSetPartitionId::Mutator) {
@@ -3207,7 +3207,7 @@ int ShenandoahFreeSet::reserve_alloc_regions(ShenandoahFreeSetPartitionId partit
     ShenandoahRightLeftIterator iterator(&_partitions, partition);
     number_of_reserved_regions = reserve_alloc_regions_internal(iterator, partition, regions_to_reserve, reserved_regions);
   }
-
+  /*
   if (partition != ShenandoahFreeSetPartitionId::Mutator && number_of_reserved_regions == 0) {
     ShenandoahHeapRegion* region = steal_heap_region_from_mutator_for_allocation(partition);
     if (region != nullptr) {
@@ -3219,11 +3219,12 @@ int ShenandoahFreeSet::reserve_alloc_regions(ShenandoahFreeSetPartitionId partit
       number_of_reserved_regions = 1;
     }
   }
+  */
   return number_of_reserved_regions;
 }
 
 template<typename Iter>
-int ShenandoahFreeSet::reserve_alloc_regions_internal(Iter iterator, ShenandoahFreeSetPartitionId partition, int const regions_to_reserve, ShenandoahHeapRegion** reserved_regions) {
+int ShenandoahFreeSet::reserve_alloc_regions_internal(Iter iterator, ShenandoahFreeSetPartitionId partition, int const regions_to_reserve, size_t min_free_words, ShenandoahHeapRegion** reserved_regions) {
   ShenandoahAffiliation affiliation = partition == ShenandoahFreeSetPartitionId::OldCollector ? OLD_GENERATION : YOUNG_GENERATION;
   bool use_affiliated_first = partition != ShenandoahFreeSetPartitionId::Mutator;
   ShenandoahHeapRegion* free_heap_regions[ShenandoahAllocator::MAX_ALLOC_REGION_COUNT];
@@ -3244,7 +3245,7 @@ int ShenandoahFreeSet::reserve_alloc_regions_internal(Iter iterator, ShenandoahF
       continue;
     }
     size_t ac_words = alloc_capacity_words(r);
-    if (ac_words >= PLAB::min_size()) {
+    if (ac_words >= min_free_words) {
       if (r->is_empty()) {
         assert(r->affiliation() == FREE, "Empty region must be free");
         if (use_affiliated_first) {

@@ -266,7 +266,8 @@ int ShenandoahAllocator::refresh_alloc_regions(ShenandoahAllocRequest* req, bool
   if (refreshable_alloc_regions > 0) {
     // Step 2: allocate region from FreeSets to fill the alloc regions or satisfy the alloc request.
     ShenandoahHeapRegion* reserved[MAX_ALLOC_REGION_COUNT];
-    int reserved_regions = _free_set->reserve_alloc_regions(_alloc_partition_id, refreshable_alloc_regions, reserved);
+    int reserved_regions = _free_set->reserve_alloc_regions(_alloc_partition_id, refreshable_alloc_regions,
+      _alloc_partition_id == ShenandoahFreeSetPartitionId::Mutator ? PLAB::max_size() : PLAB::min_size(), reserved);
     assert(reserved_regions <= refreshable_alloc_regions, "Sanity check");
     log_debug(gc, alloc)("%sAllocator: Reserved %i regions for allocation.", _alloc_partition_name, reserved_regions);
 

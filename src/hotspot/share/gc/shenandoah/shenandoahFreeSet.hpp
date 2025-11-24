@@ -588,7 +588,7 @@ private:
   void log_status();
 
   template<typename Iter>
-  int reserve_alloc_regions_internal(Iter iterator, ShenandoahFreeSetPartitionId partition, int regions_to_reserve, ShenandoahHeapRegion** reserved_regions);
+  int reserve_alloc_regions_internal(Iter iterator, ShenandoahFreeSetPartitionId partition, int regions_to_reserve, size_t min_free_words, ShenandoahHeapRegion** reserved_regions);
 
   template<typename Iter>
   ShenandoahHeapRegion* find_heap_region_for_allocation_internal(Iter iterator, ShenandoahFreeSetPartitionId partition, size_t min_free_words, bool is_lab_alloc, bool &new_region);
@@ -842,7 +842,7 @@ public:
 
   // Reserve number of alloc regions from given partition of FreeSets,
   // it ensures at least one region with sufficient capacity will be reserved.
-  int reserve_alloc_regions(ShenandoahFreeSetPartitionId partition, int regions_to_reserve, ShenandoahHeapRegion** reserved_regions);
+  int reserve_alloc_regions(ShenandoahFreeSetPartitionId partition, int regions_to_reserve, size_t min_free_words, ShenandoahHeapRegion** reserved_regions);
 
   // Find a heap region for allocation, the region must have min_free_words which is the minial needed for the allocation.
   // available_regions_seem_for_alloc is used to record the number of regions which have space for some allocation during the search.
