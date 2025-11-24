@@ -338,7 +338,7 @@ class LibraryCallKit : public GraphKit {
   Node* inline_cipherBlockChaining_AESCrypt_predicate(bool decrypting);
   Node* inline_electronicCodeBook_AESCrypt_predicate(bool decrypting);
   Node* inline_counterMode_AESCrypt_predicate();
-  Node* get_key_start_from_aescrypt_object(Node* aescrypt_object, bool is_decrypt = false);
+  Node* get_key_start_from_aescrypt_object(Node* aescrypt_object, bool is_decrypt);
   bool inline_ghash_processBlocks();
   bool inline_chacha20Block();
   bool inline_kyberNtt();

@@ -7453,7 +7453,7 @@ bool LibraryCallKit::inline_counterMode_AESCrypt(vmIntrinsics::ID id) {
   Node* aescrypt_object = new CheckCastPPNode(control(), embeddedCipherObj, xtype);
   aescrypt_object = _gvn.transform(aescrypt_object);
   // we need to get the start of the aescrypt_object's expanded key array
-  Node* k_start = get_key_start_from_aescrypt_object(aescrypt_object);
+  Node* k_start = get_key_start_from_aescrypt_object(aescrypt_object, /* is_decrypt */ false);
   if (k_start == nullptr) return false;
   // similarly, get the start address of the r vector
   Node* obj_counter = load_field_from_object(counterMode_object, "counter", "[B");
@@ -7492,7 +7492,7 @@ Node* LibraryCallKit::get_key_start_from_aescrypt_object(Node* aescrypt_object, 
   assert(objAESCryptKey != nullptr, "wrong version of com.sun.crypto.provider.AES_Crypt");
   if (objAESCryptKey == nullptr) return (Node *) nullptr;
 
-  // now have the array, need to get the start address of the K array
+  // now have the array, need to get the start address of the selected key array
   Node* k_start = array_element_address(objAESCryptKey, intcon(0), T_INT);
   return k_start;
 }
@@ -8628,7 +8628,7 @@ bool LibraryCallKit::inline_galoisCounterMode_AESCrypt() {
   Node* aescrypt_object = new CheckCastPPNode(control(), embeddedCipherObj, xtype);
   aescrypt_object = _gvn.transform(aescrypt_object);
   // we need to get the start of the aescrypt_object's expanded key array
-  Node* k_start = get_key_start_from_aescrypt_object(aescrypt_object);
+  Node* k_start = get_key_start_from_aescrypt_object(aescrypt_object, /* is_decrypt */ false);
   if (k_start == nullptr) return false;
   // similarly, get the start address of the r vector
   Node* cnt_start = array_element_address(counter, intcon(0), T_BYTE);
