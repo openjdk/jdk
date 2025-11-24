@@ -3336,7 +3336,7 @@ public class ForkJoinPool extends AbstractExecutorService
         if ((config & PRESET_SIZE) != 0)
             throw new UnsupportedOperationException("Cannot override System property");
         if ((prevSize = getAndSetParallelism(size)) < size)
-            signalWork(null, 0);
+            signalWork(null, 0); // trigger worker activation
         return prevSize;
     }
 
