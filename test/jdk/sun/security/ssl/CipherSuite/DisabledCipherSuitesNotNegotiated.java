@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8341964
  * @library /test/lib
  * @run main/othervm DisabledCipherSuitesNotNegotiated client
  * @run main/othervm DisabledCipherSuitesNotNegotiated server
@@ -47,6 +48,7 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.SSLHandshakeException;
 
 public class DisabledCipherSuitesNotNegotiated {
+    private static final String TLS_PROTOCOL = "TLSv1.2";
     private static volatile int serverPort = 0;
     private static volatile Exception serverException = null;
 
@@ -57,7 +59,7 @@ public class DisabledCipherSuitesNotNegotiated {
     private static final String DISABLED_CIPHER_WILDCARD = "TLS_ECDH*WITH_AES_256_GCM_*";
 
     private static void runServer(boolean disabledInClient) throws Exception {
-        SSLContext ctx = SSLContext.getInstance("TLSv1.2");
+        SSLContext ctx = SSLContext.getInstance(TLS_PROTOCOL);
         ctx.init(null, null, null);
         SSLServerSocketFactory factory = ctx.getServerSocketFactory();
         try(SSLServerSocket serverSocket = (SSLServerSocket)factory
@@ -73,9 +75,9 @@ public class DisabledCipherSuitesNotNegotiated {
             try(SSLSocket clientSocket = (SSLSocket) serverSocket.accept()) {
                 try {
                     clientSocket.getInputStream().readAllBytes();
-                    throw new Exception("The expected handshake exception was not thrown.");
+                    throw new Exception("SERVER: The expected handshake exception was not thrown.");
                 } catch (SSLHandshakeException exc) {
-                    System.out.println("Server caught excepted SSLHandshakeException");
+                    System.out.println("Server caught expected SSLHandshakeException");
                     exc.printStackTrace(System.out);
                 }
             }
@@ -83,7 +85,7 @@ public class DisabledCipherSuitesNotNegotiated {
     }
 
     private static void runClient(boolean disableInClient, int portNumber) throws Exception {
-        SSLContext ctx = SSLContext.getInstance("TLSv1.2");
+        SSLContext ctx = SSLContext.getInstance(TLS_PROTOCOL);
         ctx.init(null, null, null);
         SSLSocketFactory factory = ctx.getSocketFactory();
         try(SSLSocket socket = (SSLSocket)factory.createSocket("localhost", portNumber)) {
@@ -93,15 +95,16 @@ public class DisabledCipherSuitesNotNegotiated {
 
             try {
                 socket.getOutputStream().write("hello".getBytes(StandardCharsets.UTF_8));
-                throw new Exception("The expected handshake exception was not thrown.");
+                throw new Exception("CLIENT: The expected handshake exception was not thrown.");
             } catch (SSLHandshakeException exc) {
-                System.out.println("Client caught excepted SSLHandshakeException");
+                System.out.println("Client caught expected SSLHandshakeException");
             }
         }
     }
 
     public static void main(String [] args) throws Exception {
         if (args.length == 1) {
+            // run server-side
             final boolean disabledInClient = args[0].equals("client");
             if (!disabledInClient) {
                 SecurityUtils.addToDisabledTlsAlgs(DISABLED_CIPHER_WILDCARD);
@@ -138,12 +141,17 @@ public class DisabledCipherSuitesNotNegotiated {
                 }
             }
 
-        } else {
+        } else if (args.length == 2) {
+            // run client-side
             boolean disabledInClient = Boolean.parseBoolean(args[0]);
             if (disabledInClient) {
                 SecurityUtils.addToDisabledTlsAlgs(DISABLED_CIPHER_WILDCARD);
             }
             runClient(Boolean.parseBoolean(args[0]), Integer.parseInt(args[1]));
+
+        } else {
+            throw new Exception(
+                    "DisabledCipherSuitesNotNegotiated called with invalid arguments");
         }
     }
 
