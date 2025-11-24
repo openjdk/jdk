@@ -1131,8 +1131,8 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other, 
   Node* pre_limit = pre_limit_opaq->in(1);
   assert(_vloop.is_pre_loop_invariant(pre_init),  "needed for aliasing check before pre-loop");
   assert(_vloop.is_pre_loop_invariant(pre_limit), "needed for aliasing check before pre-loop");
-  assert(phase->is_dominator(phase->get_ctrl(pre_init), ctrl), "need pre_init at ctrl of check");
-  assert(phase->is_dominator(phase->get_ctrl(pre_limit), ctrl), "need pre_limit at ctrl of check");
+  assert(_vloop.is_available_for_speculative_check(pre_init),  "ctrl must be early enough to avoid cycles");
+  assert(_vloop.is_available_for_speculative_check(pre_limit), "ctrl must be early enough to avoid cycles");
 
   Node* pre_initL = new ConvI2LNode(pre_init);
   Node* pre_limitL = new ConvI2LNode(pre_limit);
@@ -1194,7 +1194,7 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other, 
     jint main_iv_stride = _vloop.iv_stride();
     Node* main_limit = _vloop.cl()->limit();
     assert(_vloop.is_pre_loop_invariant(main_limit), "needed for aliasing check before pre-loop");
-    assert(phase->is_dominator(phase->get_ctrl(main_limit), ctrl), "need main_limit at ctrl of check");
+    assert(_vloop.is_available_for_speculative_check(main_limit), "ctrl must be early enough to avoid cycles");
 
     Node* main_limitL = new ConvI2LNode(main_limit);
     phase->register_new_node_with_ctrl_of(main_limitL, pre_init);

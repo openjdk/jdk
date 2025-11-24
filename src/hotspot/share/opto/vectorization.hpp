@@ -263,9 +263,15 @@ public:
     // Find the control of the predicate:
     ProjNode* proj = (parse_predicate_proj != nullptr) ? parse_predicate_proj : multiversioning_fast_proj();
     Node* check_ctrl = proj->in(0)->as_If()->in(0);
-    // The control of n must dominate that of the predicate.
+
+    // Often, the control of n already dominates that of the predicate.
     Node* n_ctrl = phase()->get_ctrl(n);
-    return phase()->is_dominator(n_ctrl, check_ctrl);
+    if (phase()->is_dominator(n_ctrl, check_ctrl)) { return true; }
+
+    // But in some cases, the ctrl of n is after that of the predicate,
+    // but the early ctrl is before the predicate.
+    Node* n_early = phase()->compute_early_ctrl(n, n_ctrl);
+    return phase()->is_dominator(n_early, check_ctrl);
   }
 
   // Check if the loop passes some basic preconditions for vectorization.
