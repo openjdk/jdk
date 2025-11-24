@@ -483,8 +483,7 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
   Address queue_index(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset()));
   Address buffer(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset()));
 
-  Label done;
-  Label runtime;
+  Label L_done, L_runtime;
 
   // Is marking still active?
   if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
@@ -493,13 +492,13 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
     assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
     __ cmpb(queue_active, 0);
   }
-  __ jcc(Assembler::equal, done);
+  __ jcc(Assembler::equal, L_done);
 
   // Can we store original value in the thread's buffer?
 
   __ movptr(tmp, queue_index);
   __ testptr(tmp, tmp);
-  __ jccb(Assembler::zero, runtime);
+  __ jccb(Assembler::zero, L_runtime);
   __ subptr(tmp, wordSize);
   __ movptr(queue_index, tmp);
   __ addptr(tmp, buffer);
@@ -507,9 +506,9 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
   // prev_val (rax)
   __ load_parameter(0, pre_val);
   __ movptr(Address(tmp, 0), pre_val);
-  __ jmp(done);
+  __ jmp(L_done);
 
-  __ bind(runtime);
+  __ bind(L_runtime);
 
   __ push_call_clobbered_registers();
 
@@ -519,7 +518,7 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
 
   __ pop_call_clobbered_registers();
 
-  __ bind(done);
+  __ bind(L_done);
 
   __ pop_ppx(rdx);
   __ pop_ppx(rax);
