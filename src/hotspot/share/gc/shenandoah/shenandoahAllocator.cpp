@@ -184,6 +184,7 @@ HeapWord* ShenandoahAllocator::attempt_allocation_in_alloc_regions(ShenandoahAll
       bool ready_for_retire = false;
       HeapWord* obj = atomic_allocate_in(r, true, req, in_new_region, ready_for_retire);
       if (ready_for_retire) {
+        r->unset_active_alloc_region();
         regions_ready_for_refresh++;
       }
       if (obj != nullptr) {
@@ -241,10 +242,12 @@ int ShenandoahAllocator::refresh_alloc_regions(ShenandoahAllocRequest* req, bool
   for (uint i = 0; i < _alloc_region_count; i++) {
     ShenandoahAllocRegion* alloc_region = &_alloc_regions[i];
     ShenandoahHeapRegion* region = AtomicAccess::load(&alloc_region->address);
-    size_t free_bytes = region == nullptr ? 0 : region->free();
-    if (region == nullptr || free_bytes / HeapWordSize < PLAB::min_size()) {
+    const size_t free_bytes = region == nullptr ? 0 : region->free();
+    if (region == nullptr ||  !region->is_active_alloc_region() || free_bytes / HeapWordSize < PLAB::min_size()) {
       if (region != nullptr) {
-        region->unset_active_alloc_region();
+        if (region->is_active_alloc_region()) {
+          region->unset_active_alloc_region();
+        }
         if (_alloc_partition_id == ShenandoahFreeSetPartitionId::Mutator) {
           if (free_bytes > 0) {
             _free_set->increase_bytes_allocated(free_bytes);
@@ -320,10 +323,11 @@ void ShenandoahAllocator::release_alloc_regions() {
     ShenandoahAllocRegion& alloc_region = _alloc_regions[i];
     ShenandoahHeapRegion* r = AtomicAccess::load(&alloc_region.address);
     if (r != nullptr) {
-      assert(r->is_active_alloc_region(), "Must be");
       log_debug(gc, alloc)("%sAllocator: Releasing heap region %li from alloc region %i",
         _alloc_partition_name, r->index(), i);
-      r->unset_active_alloc_region();
+      if (r->is_active_alloc_region()) {
+        r->unset_active_alloc_region();
+      }
       AtomicAccess::store(&alloc_region.address, static_cast<ShenandoahHeapRegion*>(nullptr));
       size_t free_bytes = r->free();
       if (free_bytes >= PLAB::min_size_bytes()) {
