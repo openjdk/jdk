@@ -43,12 +43,12 @@ protected:
     int                             alloc_region_index;
   };
 
-  PaddedEnd<ShenandoahAllocRegion>* _alloc_regions;
-  uint  const                       _alloc_region_count;
-  ShenandoahFreeSet*                _free_set;
-  ShenandoahFreeSetPartitionId      _alloc_partition_id;
-  const char*                       _alloc_partition_name;
-  bool                              _yield_to_safepoint = false;
+  PaddedEnd<ShenandoahAllocRegion>*  _alloc_regions;
+  uint  const                        _alloc_region_count;
+  ShenandoahFreeSet* const           _free_set;
+  ShenandoahFreeSetPartitionId const _alloc_partition_id;
+  const char*                        _alloc_partition_name;
+  bool                               _yield_to_safepoint = false;
 
   // start index of the shared alloc regions where the allocation will start from.
   virtual uint alloc_start_index() { return 0u; }
@@ -79,7 +79,7 @@ protected:
 #endif
 
 public:
-  static constexpr uint             MAX_ALLOC_REGION_COUNT = 32;
+  static constexpr uint             MAX_ALLOC_REGION_COUNT = 128;
 
   ShenandoahAllocator(uint alloc_region_count, ShenandoahFreeSet* free_set, ShenandoahFreeSetPartitionId alloc_partition_id);
   virtual ~ShenandoahAllocator() { }
