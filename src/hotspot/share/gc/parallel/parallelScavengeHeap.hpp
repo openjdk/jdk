@@ -76,6 +76,9 @@ class ParallelScavengeHeap : public CollectedHeap {
   static PSAdaptiveSizePolicy*       _size_policy;
   static GCPolicyCounters*           _gc_policy_counters;
 
+  // At startup, calculate the desired OS page-size based on heap size and large-page flags.
+  static size_t _desired_page_size;
+
   GCMemoryManager* _young_manager;
   GCMemoryManager* _old_manager;
 
@@ -136,6 +139,11 @@ public:
     constexpr size_t alignment = 64 * K * HeapWordSize;
     static_assert(is_power_of_2(alignment), "inv");
     return alignment;
+  }
+
+  static void set_desired_page_size(size_t page_size) {
+    assert(is_power_of_2(page_size), "precondition");
+    _desired_page_size = page_size;
   }
 
   Name kind() const override {

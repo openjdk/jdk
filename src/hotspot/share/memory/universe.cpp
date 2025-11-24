@@ -72,7 +72,6 @@
 #include "runtime/atomicAccess.hpp"
 #include "runtime/cpuTimeCounters.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
-#include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
@@ -972,7 +971,7 @@ void Universe::initialize_tlab() {
   }
 }
 
-ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
+ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment, size_t desired_page_size) {
 
   assert(alignment <= Arguments::conservative_max_heap_alignment(),
          "actual alignment %zu must be within maximum heap alignment %zu",
@@ -983,9 +982,21 @@ ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
   assert(!UseCompressedOops || (total_reserved <= (OopEncodingHeapMax - os::vm_page_size())),
       "heap size is too big for compressed oops");
 
-  size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
+  size_t page_size;
+  if (desired_page_size == 0) {
+    if (UseLargePages) {
+      page_size = os::large_page_size();
+    } else {
+      page_size = os::vm_page_size();
+    }
+  } else {
+    // Parallel is the only collector that might opt out of using large pages
+    // for the heap.
+    assert(UseParallelGC , "only Parallel");
+    // Use caller provided value.
+    page_size = desired_page_size;
+  }
   assert(is_aligned(heap_size, page_size), "inv");
-
   // Now create the space.
   ReservedHeapSpace rhs = HeapReserver::reserve(total_reserved, alignment, page_size, AllocateHeapAt);
 
