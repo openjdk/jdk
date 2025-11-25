@@ -637,11 +637,11 @@ Node* PhaseIdealLoop::remix_address_expressions(Node* n) {
       if (n->in(3)->Opcode() == Op_AddX) {
         Node* V = n->in(3)->in(1);
         Node* I = n->in(3)->in(2);
-        if (is_member(n_loop,get_ctrl(V))) {
+        if (ctrl_is_member(n_loop, V)) {
         } else {
           Node *tmp = V; V = I; I = tmp;
         }
-        if (!is_member(n_loop,get_ctrl(I))) {
+        if (!ctrl_is_member(n_loop, I)) {
           Node* add1 = new AddPNode(n->in(1), n->in(2), I);
           // Stuff new AddP in the loop preheader
           register_new_node(add1, n_loop->_head->as_Loop()->skip_strip_mined(1)->in(LoopNode::EntryControl));
@@ -937,8 +937,6 @@ Node* PhaseIdealLoop::try_move_store_before_loop(Node* n, Node *n_ctrl) {
     Node* address = n->in(MemNode::Address);
     Node* value = n->in(MemNode::ValueIn);
     Node* mem = n->in(MemNode::Memory);
-    IdealLoopTree* address_loop = get_loop(get_ctrl(address));
-    IdealLoopTree* value_loop = get_loop(get_ctrl(value));
 
     // - address and value must be loop invariant
     // - memory must be a memory Phi for the loop
@@ -957,8 +955,8 @@ Node* PhaseIdealLoop::try_move_store_before_loop(Node* n, Node *n_ctrl) {
     // memory Phi but sometimes is a bottom memory Phi that takes the
     // store as input).
 
-    if (!n_loop->is_member(address_loop) &&
-        !n_loop->is_member(value_loop) &&
+    if (!ctrl_is_member(n_loop, address) &&
+        !ctrl_is_member(n_loop, value) &&
         mem->is_Phi() && mem->in(0) == n_loop->_head &&
         mem->outcnt() == 1 &&
         mem->in(LoopNode::LoopBackControl) == n) {
@@ -1021,17 +1019,15 @@ void PhaseIdealLoop::try_move_store_after_loop(Node* n) {
     if (n_loop != _ltree_root && !n_loop->_irreducible) {
       Node* address = n->in(MemNode::Address);
       Node* value = n->in(MemNode::ValueIn);
-      IdealLoopTree* address_loop = get_loop(get_ctrl(address));
       // address must be loop invariant
-      if (!n_loop->is_member(address_loop)) {
+      if (!ctrl_is_member(n_loop, address)) {
         // Store must be last on this memory slice in the loop and
         // nothing in the loop must observe it
         Node* phi = nullptr;
         for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
           Node* u = n->fast_out(i);
           if (has_ctrl(u)) { // control use?
-            IdealLoopTree *u_loop = get_loop(get_ctrl(u));
-            if (!n_loop->is_member(u_loop)) {
+            if (!ctrl_is_member(n_loop, u)) {
               continue;
             }
             if (u->is_Phi() && u->in(0) == n_loop->_head) {
@@ -1838,7 +1834,7 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
             Node* cast = nullptr;
             for (uint k = 0; k < x->req(); k++) {
               Node* in = x->in(k);
-              if (in != nullptr && n_loop->is_member(get_loop(get_ctrl(in)))) {
+              if (in != nullptr && ctrl_is_member(n_loop, in)) {
                 const Type* in_t = _igvn.type(in);
                 cast = ConstraintCastNode::make_cast_for_type(x_ctrl, in, in_t,
                                                               ConstraintCastNode::UnconditionalDependency, nullptr);
@@ -2366,11 +2362,9 @@ static void collect_nodes_in_outer_loop_not_reachable_from_sfpt(Node* n, const I
     Node* u = n->fast_out(j);
     assert(check_old_new || old_new[u->_idx] == nullptr, "shouldn't have been cloned");
     if (!u->is_CFG() && (!check_old_new || old_new[u->_idx] == nullptr)) {
-      Node* c = phase->get_ctrl(u);
-      IdealLoopTree* u_loop = phase->get_loop(c);
-      assert(!loop->is_member(u_loop) || !loop->_body.contains(u), "can be in outer loop or out of both loops only");
-      if (!loop->is_member(u_loop)) {
-        if (outer_loop->is_member(u_loop)) {
+      assert(!phase->ctrl_is_member(loop, u) || !loop->_body.contains(u), "can be in outer loop or out of both loops only");
+      if (!phase->ctrl_is_member(loop, u)) {
+        if (phase->ctrl_is_member(outer_loop, u)) {
           wq.push(u);
         } else {
           // nodes pinned with control in the outer loop but not referenced from the safepoint must be moved out of
@@ -2849,7 +2843,7 @@ int PhaseIdealLoop::stride_of_possible_iv(Node* iff) {
     return 0;
   }
   // Must have an invariant operand
-  if (is_member(get_loop(iff), get_ctrl(cmp->in(2)))) {
+  if (ctrl_is_member(get_loop(iff), cmp->in(2))) {
     return 0;
   }
   Node* add2 = nullptr;
