@@ -62,22 +62,22 @@ register %{
 // Integer/Long Registers
 // ----------------------------
 
-reg_def R_R0 (SOC, SOC, Op_RegI,  0,  R(0)->as_VMReg());
-reg_def R_R1 (SOC, SOC, Op_RegI,  1,  R(1)->as_VMReg());
-reg_def R_R2 (SOC, SOC, Op_RegI,  2,  R(2)->as_VMReg());
-reg_def R_R3 (SOC, SOC, Op_RegI,  3,  R(3)->as_VMReg());
-reg_def R_R4 (SOC, SOE, Op_RegI,  4,  R(4)->as_VMReg());
-reg_def R_R5 (SOC, SOE, Op_RegI,  5,  R(5)->as_VMReg());
-reg_def R_R6 (SOC, SOE, Op_RegI,  6,  R(6)->as_VMReg());
-reg_def R_R7 (SOC, SOE, Op_RegI,  7,  R(7)->as_VMReg());
-reg_def R_R8 (SOC, SOE, Op_RegI,  8,  R(8)->as_VMReg());
-reg_def R_R9 (SOC, SOE, Op_RegI,  9,  R(9)->as_VMReg());
-reg_def R_R10(NS,  SOE, Op_RegI, 10, R(10)->as_VMReg());
-reg_def R_R11(NS,  SOE, Op_RegI, 11, R(11)->as_VMReg());
-reg_def R_R12(SOC, SOC, Op_RegI, 12, R(12)->as_VMReg());
-reg_def R_R13(NS,  NS,  Op_RegI, 13, R(13)->as_VMReg());
-reg_def R_R14(SOC, SOC, Op_RegI, 14, R(14)->as_VMReg());
-reg_def R_R15(NS,  NS,  Op_RegI, 15, R(15)->as_VMReg());
+reg_def R_R0 (SOC, SOC, Op_RegI,  0,  as_Register(0)->as_VMReg());
+reg_def R_R1 (SOC, SOC, Op_RegI,  1,  as_Register(1)->as_VMReg());
+reg_def R_R2 (SOC, SOC, Op_RegI,  2,  as_Register(2)->as_VMReg());
+reg_def R_R3 (SOC, SOC, Op_RegI,  3,  as_Register(3)->as_VMReg());
+reg_def R_R4 (SOC, SOE, Op_RegI,  4,  as_Register(4)->as_VMReg());
+reg_def R_R5 (SOC, SOE, Op_RegI,  5,  as_Register(5)->as_VMReg());
+reg_def R_R6 (SOC, SOE, Op_RegI,  6,  as_Register(6)->as_VMReg());
+reg_def R_R7 (SOC, SOE, Op_RegI,  7,  as_Register(7)->as_VMReg());
+reg_def R_R8 (SOC, SOE, Op_RegI,  8,  as_Register(8)->as_VMReg());
+reg_def R_R9 (SOC, SOE, Op_RegI,  9,  as_Register(9)->as_VMReg());
+reg_def R_R10(NS,  SOE, Op_RegI, 10, as_Register(10)->as_VMReg());
+reg_def R_R11(NS,  SOE, Op_RegI, 11, as_Register(11)->as_VMReg());
+reg_def R_R12(SOC, SOC, Op_RegI, 12, as_Register(12)->as_VMReg());
+reg_def R_R13(NS,  NS,  Op_RegI, 13, as_Register(13)->as_VMReg());
+reg_def R_R14(SOC, SOC, Op_RegI, 14, as_Register(14)->as_VMReg());
+reg_def R_R15(NS,  NS,  Op_RegI, 15, as_Register(15)->as_VMReg());
 
 // ----------------------------
 // Float/Double Registers
