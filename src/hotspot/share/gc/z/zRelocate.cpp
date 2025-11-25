@@ -1188,9 +1188,6 @@ public:
           return false;
         }
       }
-
-      // No more work
-      return false;
     };
 
     for (;;) {
