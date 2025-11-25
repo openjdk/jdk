@@ -282,10 +282,17 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
     C_O_FLAG_DEBUG_JVM="-O0"
     C_O_FLAG_NONE="-O0"
 
+    if test "x$TOOLCHAIN_TYPE" = xgcc; then
+      C_O_FLAG_LTO="-flto=auto -fuse-linker-plugin -fno-strict-aliasing -fno-fat-lto-objects"
+    else
+      C_O_FLAG_LTO="-flto -fno-strict-aliasing"
+    fi
+
     if test "x$TOOLCHAIN_TYPE" = xclang && test "x$OPENJDK_TARGET_OS" = xaix; then
       C_O_FLAG_HIGHEST_JVM="${C_O_FLAG_HIGHEST_JVM} -finline-functions"
       C_O_FLAG_HIGHEST="${C_O_FLAG_HIGHEST} -finline-functions"
       C_O_FLAG_HI="${C_O_FLAG_HI} -finline-functions"
+      C_O_FLAG_LTO="${C_O_FLAG_LTO} -ffat-lto-objects"
     fi
 
     # -D_FORTIFY_SOURCE=2 hardening option needs optimization (at least -O1) enabled
@@ -317,6 +324,7 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
     C_O_FLAG_DEBUG_JVM=""
     C_O_FLAG_NONE="-Od"
     C_O_FLAG_SIZE="-O1"
+    C_O_FLAG_LTO="-GL"
   fi
 
   # Now copy to C++ flags
@@ -328,6 +336,7 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
   CXX_O_FLAG_DEBUG_JVM="$C_O_FLAG_DEBUG_JVM"
   CXX_O_FLAG_NONE="$C_O_FLAG_NONE"
   CXX_O_FLAG_SIZE="$C_O_FLAG_SIZE"
+  CXX_O_FLAG_LTO="$C_O_FLAG_LTO"
 
   # Adjust optimization flags according to debug level.
   case $DEBUG_LEVEL in
@@ -360,12 +369,15 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
   AC_SUBST(C_O_FLAG_NORM)
   AC_SUBST(C_O_FLAG_NONE)
   AC_SUBST(C_O_FLAG_SIZE)
+  AC_SUBST(C_O_FLAG_LTO)
+
   AC_SUBST(CXX_O_FLAG_HIGHEST_JVM)
   AC_SUBST(CXX_O_FLAG_HIGHEST)
   AC_SUBST(CXX_O_FLAG_HI)
   AC_SUBST(CXX_O_FLAG_NORM)
   AC_SUBST(CXX_O_FLAG_NONE)
   AC_SUBST(CXX_O_FLAG_SIZE)
+  AC_SUBST(CXX_O_FLAG_LTO)
 ])
 
 AC_DEFUN([FLAGS_SETUP_CFLAGS],
