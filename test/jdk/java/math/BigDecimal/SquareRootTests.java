@@ -78,7 +78,7 @@ public class SquareRootTests {
                 try {
                     BigDecimal input = BigDecimal.valueOf(i, j);
                     BigDecimal result = input.rootn(0, MathContext.DECIMAL64);
-                    System.err.println("Unexpected 0th root of negative: (" +
+                    System.err.println("Unexpected 0th root: (" +
                                        input + ").rootn(0)  = " + result );
                     failures += 1;
                 } catch (ArithmeticException e) {
