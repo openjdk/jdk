@@ -4188,20 +4188,21 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
 
 #ifdef ASSERT
 
-// Clone Template Assertion Predicates to a target loop. The target loop is the original, not-cloned loop.
-// This is currently only used for StressDuplicateLoopBackedge.
-class CloneAssertionPredicatesVisitor : public PredicateVisitor {
+// Moves Template Assertion Predicates to a target loop by cloning and killing the old ones. The target loop is the
+// original, not-cloned loop. This is currently only used with StressLoopBackedge which is a develop flag only and
+// false with product builds. We can therefore guard it with an ifdef. More details can be found at the use-site.
+class MoveAssertionPredicatesVisitor : public PredicateVisitor {
   ClonePredicateToTargetLoop _clone_predicate_to_loop;
   PhaseIdealLoop* const _phase;
 
 public:
-  CloneAssertionPredicatesVisitor(LoopNode* target_loop_head,
+  MoveAssertionPredicatesVisitor(LoopNode* target_loop_head,
                                  const NodeInSingleLoopBody &node_in_loop_body,
                                  PhaseIdealLoop* phase)
     : _clone_predicate_to_loop(target_loop_head, node_in_loop_body, phase),
       _phase(phase) {
   }
-  NONCOPYABLE(CloneAssertionPredicatesVisitor);
+  NONCOPYABLE(MoveAssertionPredicatesVisitor);
 
   using PredicateVisitor::visit;
 
@@ -4210,8 +4211,8 @@ public:
     template_assertion_predicate.kill(_phase->igvn());
   }
 };
-
 #endif // ASSERT
+
 // Transform:
 //
 // loop<-----------------+
@@ -4495,11 +4496,13 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
 #ifdef ASSERT
   if (StressDuplicateBackedge && head->is_CountedLoop()) {
     // The Template Assertion Predicates from the old counted loop are now at the new outer loop - clone them to
-    // the inner counted loop and kill the old ones.
+    // the inner counted loop and kill the old ones. We only need to do this with debug builds because
+    // StressDuplicateBackedge is a devlop flag and false by default. Without StressDuplicateBackedge 'head' will be a
+    // non-counted loop, and thus we have no Template Assertion Predicates above the old loop to move down.
     PredicateIterator predicate_iterator(outer_head->in(LoopNode::EntryControl));
     NodeInSingleLoopBody node_in_body(this, loop);
-    CloneAssertionPredicatesVisitor clone_assertion_predicates_visitor(head, node_in_body, this);
-    predicate_iterator.for_each(clone_assertion_predicates_visitor);
+    MoveAssertionPredicatesVisitor move_assertion_predicates_visitor(head, node_in_body, this);
+    predicate_iterator.for_each(move_assertion_predicates_visitor);
   }
 #endif // ASSERT
 

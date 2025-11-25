@@ -27,6 +27,7 @@
  * @summary Test that StressDuplicateBackedge correctly clones Template Assertion Predicates to the inner counted loop.
  * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+StressDuplicateBackedge
  *                   compiler.predicates.assertion.TestStressDuplicateBackedgeWithAssertionPredicate
+ * @run main compiler.predicates.assertion.TestStressDuplicateBackedgeWithAssertionPredicate
  */
 
 package compiler.predicates.assertion;
@@ -47,29 +48,29 @@ public class TestStressDuplicateBackedgeWithAssertionPredicate {
         //    even though it is a counted loop: This is stressed with StressDuplicateLoopBackedge.
         // 6) We do the following transformation with current mainline:
         //
-        //
         //                                     Template Assertion
         //      Template Assertion                 Predicates
         //          Predicates                         |
         //              |              ====>          ...
         //             ...                             |
-        //              |                             Loop
+        //              |                             Loop       # Outer Non-Counted Loop (new)
         //          CountedLoop                        |
-        //                                        Counted Loop
+        //                                        Counted Loop   # Inner Counted Loop (old)
         //
-        // The Template Assertion Predicates are still at the outer loop. As a result, we find them to
-        // be useless in the next predicate elimination call with EliminateUselessPredicates because
-        // they cannot be found from the inner counted loop. However, we have verification code in place
-        // that checks that we can only find useless Template Assertion Predicates if the associated
-        // counted loop node is dead. This is not the case and we crash with an assertion failure.
+        // 7) After the transformation, the Template Assertion Predicates are still at the Outer Non-Counted Loop.
+        //    As a result, we find them to be useless in the next predicate elimination call with
+        //    EliminateUselessPredicates because they cannot be found from the Inner counted Loop (we stop at
+        //    Loop which is not a predicate). However, we have verification code in place that checks that we
+        //    can only find useless Template Assertion Predicates if the associated counted loop node is dead.
+        //    This is not the case and we crash with an assertion failure.
         //
-        // The fix is to move the Template Assertion Predicates to the inner counted loop.
+        //   The fix is to move the Template Assertion Predicates to the Inner Counted Loop again.
         for (int i = 0; i < 100; i++) {
             // 3) Loop Predication will hoist this range checkout out of the loop with Template
             //    Assertion Predicates.
             iArr[i] = 34;
 
-            // 1) We need an inner loop to make sure the outer counter loop is not strip mined.
+            // 1) We need an inner empty loop to make sure the outer counter loop is not strip mined.
             //    Otherwise, we cannot apply the duplicate backedge optimization to the outer loop.
             // 4) Found to be empty and removed.
             for (int j = 0; j < 10; j++) {}
