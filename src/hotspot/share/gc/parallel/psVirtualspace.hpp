@@ -137,6 +137,8 @@ inline size_t PSVirtualSpace::uncommitted_size() const {
 }
 
 inline void PSVirtualSpace::set_reserved(char* low_addr, char* high_addr, bool special) {
+  assert(low_addr <= high_addr, "precondition");
+
   _reserved_low_addr = low_addr;
   _reserved_high_addr = high_addr;
   _special = special;
@@ -147,6 +149,9 @@ inline void PSVirtualSpace::set_reserved(ReservedSpace rs) {
 }
 
 inline void PSVirtualSpace::set_committed(char* low_addr, char* high_addr) {
+  assert(low_addr <= high_addr, "precondition");
+  assert(low_addr == _reserved_low_addr, "precondition");
+
   _committed_low_addr = low_addr;
   _committed_high_addr = high_addr;
 }

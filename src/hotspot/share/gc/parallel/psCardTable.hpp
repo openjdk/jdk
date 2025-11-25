@@ -69,6 +69,8 @@ class PSCardTable: public CardTable {
                            HeapWord* start,
                            HeapWord* end);
 
+  void commit_delta_excluding(MemRegion delta, MemRegion already_committed, bool should_clear_card = false);
+
  public:
   PSCardTable(MemRegion whole_heap) : CardTable(whole_heap),
                                       _preprocessing_active_workers(0) {}
@@ -84,6 +86,11 @@ class PSCardTable: public CardTable {
                                   uint n_stripes);
 
   bool is_dirty_for_addr(void *addr);
+
+  void verify_clean_cards(MemRegion mr) const NOT_DEBUG_RETURN;
+
+  void right_shift_gen_boundary(MemRegion new_region0, MemRegion new_region1);
+  void adjust_after_young_gen_expansion(MemRegion new_region0, MemRegion new_region1);
 
   // Card marking
   void inline_write_ref_field_gc(void* field) {

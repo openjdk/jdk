@@ -27,9 +27,11 @@
 PSOldGenerationPool::PSOldGenerationPool(PSOldGen* old_gen,
                                          const char* name,
                                          bool support_usage_threshold) :
-  CollectedMemoryPool(name, old_gen->capacity_in_bytes(),
-                      old_gen->reserved().byte_size(), support_usage_threshold), _old_gen(old_gen) {
-}
+  CollectedMemoryPool(name,
+                      old_gen->capacity_in_bytes(),
+                      old_gen->max_gen_size(),
+                      support_usage_threshold),
+  _old_gen(old_gen) {}
 
 MemoryUsage PSOldGenerationPool::get_memory_usage() {
   size_t maxSize   = max_size();
@@ -49,14 +51,14 @@ PSEdenSpacePool::PSEdenSpacePool(PSYoungGen* young_gen,
                                  MutableSpace* space,
                                  const char* name,
                                  bool support_usage_threshold) :
-  CollectedMemoryPool(name, space->capacity_in_bytes(),
+  CollectedMemoryPool(name,
+                      space->capacity_in_bytes(),
                       (young_gen->max_gen_size() -
                        young_gen->from_space()->capacity_in_bytes() -
                        young_gen->to_space()->capacity_in_bytes()),
                       support_usage_threshold),
   _young_gen(young_gen),
-  _space(space) {
-}
+  _space(space) {}
 
 MemoryUsage PSEdenSpacePool::get_memory_usage() {
   size_t maxSize   = max_size();

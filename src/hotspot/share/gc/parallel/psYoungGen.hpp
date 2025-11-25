@@ -26,8 +26,7 @@
 #define SHARE_GC_PARALLEL_PSYOUNGGEN_HPP
 
 #include "gc/parallel/mutableSpace.hpp"
-#include "gc/parallel/objectStartArray.hpp"
-#include "gc/parallel/psVirtualspace.hpp"
+#include "gc/parallel/psHeapVirtualSpace.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "gc/shared/hSpaceCounters.hpp"
 
@@ -54,8 +53,7 @@ class PSYoungGen : public CHeapObj<mtGC> {
   };
 
  private:
-  MemRegion       _reserved;
-  PSVirtualSpace* _virtual_space;
+  PSHeapVirtualSpace* _heap_vs;
 
   // Spaces
   MutableSpace* _eden_space;
@@ -66,8 +64,10 @@ class PSYoungGen : public CHeapObj<mtGC> {
   const size_t _min_gen_size;
   const size_t _max_gen_size;
 
-  // Current young-gen sizing state, updated by compute_desired_sizes().
+  // Current young-gen sizing state, updated after young-gen resizing.
   SizingState _sizing_state;
+
+  void set_sizing_state(SizingState sizing_state) { _sizing_state = sizing_state; }
 
   // Performance counters
   GenerationCounters*   _gen_counters;
@@ -85,6 +85,9 @@ class PSYoungGen : public CHeapObj<mtGC> {
   void resize_spaces(size_t requested_eden_size,
                      size_t requested_survivor_size);
 
+  void reinit_to_from_layout_inner(size_t requested_eden_size,
+                                    size_t requested_survivor_size);
+
   // Try to expand eden to hold at least word_size.
   // Return true iff the expansion is successful.
   bool try_expand_to_hold(size_t word_size);
@@ -92,38 +95,45 @@ class PSYoungGen : public CHeapObj<mtGC> {
   // Adjust the spaces to be consistent with the virtual space.
   void post_resize();
 
-  void initialize(ReservedSpace rs, size_t inital_size, size_t alignment);
   void initialize_work();
-  void initialize_virtual_space(ReservedSpace rs, size_t initial_size, size_t alignment);
-
-  void compute_desired_sizes(bool is_survivor_overflowing,
-                             size_t& eden_size,
-                             size_t& survivor_size);
 
   void resize_inner(size_t desired_eden_size,
                     size_t desired_survivor_size);
 
  public:
   // Initialize the generation.
-  PSYoungGen(ReservedSpace rs,
+  PSYoungGen(PSHeapVirtualSpace* vs,
              size_t initial_byte_size,
-             size_t minimum_byte_size,
-             size_t maximum_byte_size);
+             size_t min_gen_size,
+             size_t max_gen_size);
 
-  MemRegion reserved() const { return _reserved; }
+  MemRegion reserved() const {
+    return MemRegion((HeapWord*) _heap_vs->young_gen_low_addr(),
+                     (HeapWord*) _heap_vs->young_gen_high_addr());
+  }
+
+  MemRegion committed() const {
+    return MemRegion((HeapWord*) _heap_vs->young_gen_low_addr(),
+                     (HeapWord*) _heap_vs->young_gen_committed_high_addr());
+  }
+
+  size_t reserved_size() const { return reserved().byte_size(); }
+  size_t committed_size() const { return committed().byte_size(); }
+  size_t uncommitted_size() const { return reserved_size() - committed_size(); }
 
   bool is_in(const void* p) const {
-    return _virtual_space->is_in_committed(p);
+    return committed().contains(p);
   }
 
   bool is_in_reserved(const void* p) const {
-    return reserved().contains((void *)p);
+    return reserved().contains(p);
   }
+
+  void reinit_after_gen_boundary_change();
 
   MutableSpace*   eden_space() const    { return _eden_space; }
   MutableSpace*   from_space() const    { return _from_space; }
   MutableSpace*   to_space() const      { return _to_space; }
-  PSVirtualSpace* virtual_space() const { return _virtual_space; }
 
   // Called during/after GC
   void swap_spaces();
@@ -132,7 +142,14 @@ class PSYoungGen : public CHeapObj<mtGC> {
     return from_space()->bottom() < to_space()->bottom();
   }
 
-  void resize_after_young_gc(bool is_survivor_overflowing);
+  void resize(size_t desired_eden_size, size_t desired_survivor_size);
+  // Returns true if resizing was completed within the current young-gen reservation.
+  // Returns false if desired sizes were prepared for a caller-managed gen-boundary left shift.
+  bool try_resize(bool is_survivor_overflowing,
+                  size_t old_gen_total_free_bytes,
+                  size_t* out_eden_size,
+                  size_t* out_survivor_size);
+  void reinit_to_from_layout(size_t desired_eden_size, size_t desired_survivor_size);
 
   // Size info
   size_t capacity_in_bytes() const;

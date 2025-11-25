@@ -296,14 +296,19 @@ void MutableNUMASpace::initialize(MemRegion mr,
   // Must always clear the space
   clear(SpaceDecorator::DontMangle);
 
-  size_t num_pages = mr.byte_size() / page_size();
+  if (!mr.is_empty()) {
+    size_t num_pages = mr.byte_size() / page_size();
+    assert(num_pages >= 1, "inv");
+    if (num_pages < (size_t)lgrp_spaces()->length()) {
+      log_warning(gc)("Degraded NUMA config: #os-pages (%zu) < #CPU (%d); space-size: %zu, page-size: %zu",
+        num_pages, lgrp_spaces()->length(), mr.byte_size(), page_size());
 
-  if (num_pages < (size_t)lgrp_spaces()->length()) {
-    log_warning(gc)("Degraded NUMA config: #os-pages (%zu) < #CPU (%d); space-size: %zu, page-size: %zu",
-      num_pages, lgrp_spaces()->length(), mr.byte_size(), page_size());
-
-    // Keep only the first few CPUs.
-    lgrp_spaces()->trunc_to((int)num_pages);
+      // Keep only the first few CPUs.
+      lgrp_spaces()->trunc_to((int)num_pages);
+    }
+  } else {
+    // Keep at least one space.
+    lgrp_spaces()->trunc_to(1);
   }
 
   // Handle space resize

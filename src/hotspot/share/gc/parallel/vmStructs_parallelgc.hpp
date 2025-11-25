@@ -27,10 +27,10 @@
 
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
+#include "gc/parallel/psHeapVirtualSpace.hpp"
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/parallel/psVirtualspace.hpp"
 #include "gc/parallel/psYoungGen.hpp"
-#include "gc/parallel/vmStructs_parallelgc.hpp"
 
 #define VM_STRUCTS_PARALLELGC(nonstatic_field, \
                               volatile_nonstatic_field, \
@@ -46,23 +46,25 @@
   nonstatic_field(PSVirtualSpace,              _committed_low_addr,                           char*)                                 \
   nonstatic_field(PSVirtualSpace,              _committed_high_addr,                          char*)                                 \
                                                                                                                                      \
+  nonstatic_field(PSHeapVirtualSpace,          _alignment,                                    const size_t)                          \
+  nonstatic_field(PSHeapVirtualSpace,          _page_size,                                    const size_t)                          \
+  nonstatic_field(PSHeapVirtualSpace,          _reserved_low_addr,                            char*)                                 \
+  nonstatic_field(PSHeapVirtualSpace,          _reserved_high_addr,                           char*)                                 \
+  nonstatic_field(PSHeapVirtualSpace,          _gen_boundary,                                 char*)                                 \
+  nonstatic_field(PSHeapVirtualSpace,          _old_gen_committed_high_addr,                  char*)                                 \
+  nonstatic_field(PSHeapVirtualSpace,          _young_gen_committed_high_addr,                char*)                                 \
+                                                                                                                                     \
   nonstatic_field(MutableSpace,                _bottom,                                       HeapWord*)                             \
   nonstatic_field(MutableSpace,                _end,                                          Atomic<HeapWord*>)                     \
   volatile_nonstatic_field(MutableSpace,       _top,                                          Atomic<HeapWord*>)                     \
                                                                                                                                      \
-  nonstatic_field(PSYoungGen,                  _reserved,                                     MemRegion)                             \
-  nonstatic_field(PSYoungGen,                  _virtual_space,                                PSVirtualSpace*)                       \
+  nonstatic_field(PSYoungGen,                  _heap_vs,                                      PSHeapVirtualSpace*)                   \
   nonstatic_field(PSYoungGen,                  _eden_space,                                   MutableSpace*)                         \
   nonstatic_field(PSYoungGen,                  _from_space,                                   MutableSpace*)                         \
   nonstatic_field(PSYoungGen,                  _to_space,                                     MutableSpace*)                         \
-  nonstatic_field(PSYoungGen,                  _min_gen_size,                                 const size_t)                          \
-  nonstatic_field(PSYoungGen,                  _max_gen_size,                                 const size_t)                          \
                                                                                                                                      \
-  nonstatic_field(PSOldGen,                    _virtual_space,                                PSVirtualSpace*)                       \
+  nonstatic_field(PSOldGen,                    _heap_vs,                                      PSHeapVirtualSpace*)                   \
   nonstatic_field(PSOldGen,                    _object_space,                                 MutableSpace*)                         \
-  nonstatic_field(PSOldGen,                    _min_gen_size,                                 const size_t)                          \
-  nonstatic_field(PSOldGen,                    _max_gen_size,                                 const size_t)                          \
-                                                                                                                                     \
                                                                                                                                      \
   nonstatic_field(ParallelScavengeHeap,        _young_gen,                                    PSYoungGen*)                           \
   nonstatic_field(ParallelScavengeHeap,        _old_gen,                                      PSOldGen*)                             \
@@ -79,6 +81,7 @@
            declare_type(ParallelScavengeHeap,         CollectedHeap)      \
                                                                           \
   declare_toplevel_type(PSVirtualSpace)                                   \
+  declare_toplevel_type(PSHeapVirtualSpace)                               \
   declare_toplevel_type(MutableSpace)                                     \
   declare_toplevel_type(PSYoungGen)                                       \
   declare_toplevel_type(PSOldGen)                                         \
@@ -88,6 +91,7 @@
   /*****************************/                                         \
                                                                           \
   declare_toplevel_type(PSVirtualSpace*)                                  \
+  declare_toplevel_type(PSHeapVirtualSpace*)                              \
   declare_toplevel_type(MutableSpace*)                                    \
   declare_toplevel_type(PSYoungGen*)                                      \
   declare_toplevel_type(PSOldGen*)                                        \

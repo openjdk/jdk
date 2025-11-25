@@ -27,10 +27,9 @@
 
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/parallel/objectStartArray.hpp"
-#include "gc/parallel/psVirtualspace.hpp"
+#include "gc/parallel/psHeapVirtualSpace.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "gc/shared/hSpaceCounters.hpp"
-#include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 
 class ReservedSpace;
@@ -38,17 +37,16 @@ class ReservedSpace;
 class PSOldGen : public CHeapObj<mtGC> {
   friend class VMStructs;
  private:
-  PSVirtualSpace*          _virtual_space;     // Controls mapping and unmapping of virtual mem
+  PSHeapVirtualSpace*      _heap_vs;           // Controls mapping and unmapping of virtual mem
   ObjectStartArray*        _start_array;       // Keeps track of where objects start in a 512b block
   MutableSpace*            _object_space;      // Where all the objects live
+
+  // Sizing information, in bytes, set in constructor
+  const size_t             _max_gen_size;
 
   // Performance Counters
   GenerationCounters*      _gen_counters;
   HSpaceCounters*          _space_counters;
-
-  // Sizing information, in bytes, set in constructor
-  const size_t _min_gen_size;
-  const size_t _max_gen_size;
 
   // Block size for parallel iteration
   static const size_t IterateBlockSize = 1024 * 1024;
@@ -56,46 +54,53 @@ class PSOldGen : public CHeapObj<mtGC> {
   bool expand_for_allocate(size_t word_size);
   bool expand(size_t bytes);
   bool expand_by(size_t bytes);
-  bool expand_to_reserved();
 
   void post_resize();
 
-  void initialize(ReservedSpace rs, size_t initial_size, size_t alignment);
-  void initialize_virtual_space(ReservedSpace rs, size_t initial_size, size_t alignment);
   void initialize_work();
   void initialize_performance_counters();
 
  public:
   // Initialize the generation.
-  PSOldGen(ReservedSpace rs, size_t initial_size, size_t min_size,
+  PSOldGen(PSHeapVirtualSpace* vs,
+           ObjectStartArray* object_start_array,
+           size_t initial_size,
            size_t max_size);
 
   MemRegion reserved() const {
-    return MemRegion((HeapWord*)(_virtual_space->low_boundary()),
-                     (HeapWord*)(_virtual_space->high_boundary()));
+    return MemRegion((HeapWord*) _heap_vs->old_gen_low_addr(),
+                     (HeapWord*) _heap_vs->old_gen_high_addr());
   }
 
   MemRegion committed() const {
-    return MemRegion((HeapWord*)(_virtual_space->low()),
-                     (HeapWord*)(_virtual_space->high()));
+    return MemRegion((HeapWord*) _heap_vs->old_gen_low_addr(),
+                     (HeapWord*) _heap_vs->old_gen_committed_high_addr());
   }
 
+  size_t reserved_size() const { return reserved().byte_size(); }
+  size_t committed_size() const { return committed().byte_size(); }
+
+  size_t uncommitted_size() const {
+    return pointer_delta(_heap_vs->old_gen_high_addr(),
+                         _heap_vs->old_gen_committed_high_addr(),
+                         sizeof(char));
+  }
+
+  size_t min_gen_size() const;
   size_t max_gen_size() const { return _max_gen_size; }
-  size_t min_gen_size() const { return _min_gen_size; }
 
-  void try_expand_till_size(size_t live_bytes);
+  bool try_accommodate(size_t live_bytes);
 
-  bool is_in(const void* p) const           {
-    return _virtual_space->is_in_committed((void *)p);
+  bool is_in(const void* p) const {
+    return committed().contains(p);
   }
 
   bool is_in_reserved(const void* p) const {
-    return _virtual_space->is_in_reserved(p);
+    return reserved().contains(p);
   }
 
   MutableSpace*         object_space() const      { return _object_space; }
   ObjectStartArray*     start_array()             { return _start_array;  }
-  PSVirtualSpace*       virtual_space() const     { return _virtual_space;}
 
   // Size info
   size_t capacity_in_bytes() const        { return object_space()->capacity_in_bytes(); }
@@ -103,6 +108,8 @@ class PSOldGen : public CHeapObj<mtGC> {
   size_t free_in_bytes() const            { return object_space()->free_in_bytes(); }
 
   void complete_loaded_archive_space(MemRegion archive_space);
+
+  void reinit_after_committed_mr_change();
 
   // Calculating new sizes
   void resize(size_t desired_capacity);

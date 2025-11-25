@@ -46,25 +46,9 @@ inline MutableSpace* PSParallelCompact::space(SpaceId id) {
   return _space_info[id].space();
 }
 
-inline HeapWord* PSParallelCompact::new_top(SpaceId id) {
-  assert(id < last_space_id, "id out of range");
-  return _space_info[id].new_top();
-}
-
-inline HeapWord* PSParallelCompact::dense_prefix(SpaceId id) {
-  assert(id < last_space_id, "id out of range");
-  return _space_info[id].dense_prefix();
-}
-
-inline ObjectStartArray* PSParallelCompact::start_array(SpaceId id) {
-  assert(id < last_space_id, "id out of range");
-  return _space_info[id].start_array();
-}
-
 #ifdef ASSERT
 inline void PSParallelCompact::check_new_location(HeapWord* old_addr, HeapWord* new_addr) {
-  assert(old_addr >= new_addr || space_id(old_addr) != space_id(new_addr),
-         "must move left or to a different space");
+  assert(old_addr >= new_addr, "must move left");
   assert(is_object_aligned(old_addr) && is_object_aligned(new_addr),
          "checking alignment");
 }

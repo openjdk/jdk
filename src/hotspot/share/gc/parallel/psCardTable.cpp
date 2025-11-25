@@ -25,6 +25,7 @@
 #include "gc/parallel/objectStartArray.inline.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #include "gc/parallel/psCardTable.hpp"
+#include "gc/parallel/psHeapVirtualSpace.hpp"
 #include "gc/parallel/psPromotionManager.inline.hpp"
 #include "gc/parallel/psYoungGen.hpp"
 #include "memory/iterator.inline.hpp"
@@ -415,6 +416,175 @@ void PSCardTable::verify_all_young_refs_imprecise() {
 bool PSCardTable::is_dirty_for_addr(void *addr) {
   CardValue* p = byte_for(addr);
   return is_dirty(p);
+}
+
+#ifdef ASSERT
+void PSCardTable::verify_clean_cards(MemRegion mr) const {
+  assert(!mr.is_empty(), "precondition");
+
+  CardValue* start;
+  if (mr.start() == _whole_heap.start()) {
+    start = byte_for(mr.start());
+  } else {
+    assert(mr.start() > _whole_heap.start(), "mr is not covered.");
+    start = byte_after(mr.start() - 1);
+  }
+  CardValue* const end = byte_after(mr.last());
+  for (CardValue* cur = start; cur < end; ++cur) {
+    assert(*cur == clean_card, "card not clean: " PTR_FORMAT, p2i(cur));
+  }
+}
+#endif
+
+// Helper to commit only the part of 'delta' that is not in already_committed.
+void PSCardTable::commit_delta_excluding(MemRegion delta, MemRegion already_committed, bool should_clear_card) {
+  assert(!delta.is_empty(), "precondition");
+
+  if (already_committed.contains(delta)) {
+    return;
+  }
+
+  auto commit_or_exit = [&](const MemRegion& r) {
+    os::commit_memory_or_exit((char*)r.start(),
+                              r.byte_size(),
+                              _page_size,
+                              !ExecMem,
+                              "card table expansion");
+    if (should_clear_card) {
+      memset(r.start(), clean_card, r.byte_size());
+    }
+  };
+
+  MemRegion inter = delta.intersection(already_committed);
+
+  if (inter.is_empty()) {
+    commit_or_exit(delta);
+  } else {
+    if (delta.start() < inter.start()) {
+      commit_or_exit(MemRegion(delta.start(), inter.start()));
+    }
+    if (inter.end() < delta.end()) {
+      commit_or_exit(MemRegion(inter.end(), delta.end()));
+    }
+  }
+}
+
+void PSCardTable::right_shift_gen_boundary(MemRegion new_region0,
+                                           MemRegion new_region1) {
+  // Preconditions – the whole heap must contain both regions and region0 always starts at heap base.
+  assert(_whole_heap.contains(new_region0), "precondition");
+  assert(_whole_heap.contains(new_region1), "precondition");
+  assert(new_region0.start() == _whole_heap.start(), "region0 must start at heap start");
+  assert(new_region0.end() == new_region1.start(), "region0 must be fully committed");
+  assert(new_region0.end() > _covered[0].end(), "strict right shift");
+
+  MemRegion old_region0 = _covered[0];
+  MemRegion old_region1 = _covered[1];
+
+  // In a right‑shift, the old generation (region0) expands and the young generation (region1)
+  // moves its low address rightwards.
+  MemRegion old_committed0 = committed_for(old_region0);
+  MemRegion old_committed1 = committed_for(old_region1);
+
+  // Update the covered regions.
+  _covered[0] = new_region0;
+  _covered[1] = new_region1;
+
+  MemRegion new_committed0 = committed_for(new_region0);
+  MemRegion new_committed1 = committed_for(new_region1);
+
+  //
+  // There can be multiple scenarios:
+  //
+  // case A - old-gen extends into the middle of before-young-gen
+  // before: |ooo   |yyyy    |
+  // after:  |oooooooo|yyyy  |
+  //
+  // case B - old-gen extend beyond before-young-gen end
+  // before: |ooo   |yyyy    |
+  // after:  |oooooooooooo|yy|
+  //
+  // case C - old-gen extends to heap-end; after-young-gen is zero sized.
+  // before: |ooo   |yyyy    |
+  // after:  |ooooooooooooooo|
+  //
+  // In all those scenarios, we need to perform the following 3 actions:
+  //
+  // -----------------------------------------------------------------
+  // 1) Region0 expands (its high side moves right). Commit the newly needed tail.
+  // -----------------------------------------------------------------
+  if (new_committed0.end() > old_committed0.end()) {
+    MemRegion delta{old_committed0.end(), new_committed0.end()};
+    // The newly added part may overlap the old young‑gen committed range; avoid double‑commit.
+    commit_delta_excluding(delta, old_committed1);
+  }
+
+  // -----------------------------------------------------------------
+  // 2) Region1 moves its low side rightwards.
+  // -----------------------------------------------------------------
+  assert(new_committed1.start() >= old_committed1.start(), "inv");
+  // Nothing specific to do here for commit, as region1 is shrinking from the left.
+  // The area it "lost" has been taken over by region0 above.
+
+  // -----------------------------------------------------------------
+  // 3) Region1 high side potentially moves rightwards.
+  // -----------------------------------------------------------------
+  assert(new_committed1.end() >= MAX2(old_committed1.end(), new_committed1.start()), "inv");
+
+  if (new_committed1.end() > MAX2(old_committed1.end(), new_committed1.start())) {
+    // Expansion at the end
+    MemRegion delta{MAX2(old_committed1.end(), new_committed1.start()), new_committed1.end()};
+    os::commit_memory_or_exit((char*)delta.start(), delta.byte_size(), _page_size, !ExecMem,
+                              "card table expansion");
+    memset(delta.start(), clean_card, delta.byte_size());
+  }
+
+  {
+    // Clean the heap range newly joined old-gen committed coverage.
+    MemRegion old_gen_delta(old_region0.end(), new_region0.end());
+    clear_MemRegion(old_gen_delta);
+  }
+}
+
+void PSCardTable::adjust_after_young_gen_expansion(MemRegion new_region0,
+                                                   MemRegion new_region1) {
+  // Preconditions – the whole heap must contain both regions and region0 always starts at heap base.
+  assert(_whole_heap.contains(new_region0), "precondition");
+  assert(_whole_heap.contains(new_region1), "precondition");
+  assert(new_region0.start() == _whole_heap.start(), "region0 must start at heap start");
+  assert(new_region0.end() <= _covered[0].end(), "region0 committed mem must never grow");
+  assert(new_region1.start() < _covered[1].start(), "region1 start must left-shift");
+  assert(new_region1.end() == _whole_heap.end(), "region1 must be at heap-end");
+  assert(new_region1.end() >= _covered[1].end(), "region1 must never shrink");
+
+  // Heap:
+  // before: |oooo    |yyyy   |
+  // after:  |oooo   |yyyyy   |
+  MemRegion old_region1 = _covered[1];
+  MemRegion old_committed0 = committed_for(_covered[0]);
+  MemRegion old_committed1 = committed_for(_covered[1]);
+
+  // Update the covered regions.
+  _covered[0] = new_region0;
+  _covered[1] = new_region1;
+
+  MemRegion new_committed1 = committed_for(new_region1);
+  assert(new_committed1.start() <= old_committed1.start(), "inv");
+  // Check if cardtable needs to be expanded on left-edge.
+  if (new_committed1.start() < old_committed1.start()) {
+    MemRegion delta{new_committed1.start(), old_committed1.start()};
+    commit_delta_excluding(delta, old_committed0, true);
+  }
+
+  assert(new_committed1.end() >= old_committed1.end(), "region1 must not shrink on the right edge");
+  if (new_committed1.end() > old_committed1.end()) {
+    MemRegion delta{old_committed1.end(), new_committed1.end()};
+    commit_delta_excluding(delta, old_committed1, true);
+  }
+
+  // Cards from old-gen (left-edge) must be clean.
+  verify_clean_cards(MemRegion{new_region1.start(), old_region1.start()});
+  // Can't assert for right-edge; those cards can contain arbitrary value.
 }
 
 bool PSCardTable::is_in_young(const void* p) const {

@@ -30,11 +30,9 @@
 #include "gc/parallel/psScavenge.hpp"
 
 inline bool ParallelScavengeHeap::should_alloc_in_eden(const size_t size) const {
-  const size_t max_young_gen_bytes = young_gen()->max_gen_size();
-  const size_t survivor_size_bytes = young_gen()->from_space()->capacity_in_bytes();
-  const size_t max_eden_size_bytes = max_young_gen_bytes - survivor_size_bytes * 2;
-  const size_t max_eden_size_words = max_eden_size_bytes / HeapWordSize;
-  return size < max_eden_size_words / 2;
+  const size_t capacity_in_words = max_capacity() / HeapWordSize;
+  // Only if it's small enough.
+  return size < capacity_in_words / 8;
 }
 
 inline bool ParallelScavengeHeap::is_in_young(const void* p) const {

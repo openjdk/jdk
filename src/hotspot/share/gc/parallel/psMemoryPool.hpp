@@ -40,7 +40,7 @@ public:
 
   MemoryUsage get_memory_usage();
   size_t used_in_bytes() { return _old_gen->used_in_bytes(); }
-  size_t max_size() const { return _old_gen->reserved().byte_size(); }
+  size_t max_size() const { return _old_gen->max_gen_size(); }
 };
 
 class PSEdenSpacePool : public CollectedMemoryPool {

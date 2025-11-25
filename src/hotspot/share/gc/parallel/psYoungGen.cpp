@@ -24,6 +24,7 @@
 
 #include "gc/parallel/mutableNUMASpace.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
+#include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/psYoungGen.hpp"
 #include "gc/shared/gcUtil.hpp"
@@ -35,9 +36,11 @@
 #include "runtime/java.hpp"
 #include "utilities/align.hpp"
 
-PSYoungGen::PSYoungGen(ReservedSpace rs, size_t initial_size, size_t min_size, size_t max_size) :
-  _reserved(),
-  _virtual_space(nullptr),
+PSYoungGen::PSYoungGen(PSHeapVirtualSpace* vs,
+                       size_t initial_size,
+                       size_t min_size,
+                       size_t max_size) :
+  _heap_vs(vs),
   _eden_space(nullptr),
   _from_space(nullptr),
   _to_space(nullptr),
@@ -49,33 +52,17 @@ PSYoungGen::PSYoungGen(ReservedSpace rs, size_t initial_size, size_t min_size, s
   _from_counters(nullptr),
   _to_counters(nullptr)
 {
-  initialize(rs, initial_size, SpaceAlignment);
-}
-
-void PSYoungGen::initialize_virtual_space(ReservedSpace rs,
-                                          size_t initial_size,
-                                          size_t alignment) {
-  assert(initial_size != 0, "Should have a finite size");
-  _virtual_space = new PSVirtualSpace(rs, alignment);
-  if (!virtual_space()->expand_by(initial_size)) {
+  if (!_heap_vs->expand_young_gen(initial_size)) {
     vm_exit_during_initialization("Could not reserve enough space for object heap");
   }
-}
 
-void PSYoungGen::initialize(ReservedSpace rs, size_t initial_size, size_t alignment) {
-  initialize_virtual_space(rs, initial_size, alignment);
   initialize_work();
 }
 
 void PSYoungGen::initialize_work() {
-
-  _reserved = MemRegion((HeapWord*)virtual_space()->low_boundary(),
-                        (HeapWord*)virtual_space()->high_boundary());
-  assert(_reserved.byte_size() == max_gen_size(), "invariant");
-
-  MemRegion cmr((HeapWord*)virtual_space()->low(),
-                (HeapWord*)virtual_space()->high());
-  ParallelScavengeHeap::heap()->card_table()->resize_covered_region(cmr);
+  MemRegion cmr = committed();
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
+  heap->card_table()->resize_covered_region(cmr);
 
   if (ZapUnusedHeapArea) {
     // Mangle newly committed space immediately because it
@@ -85,20 +72,26 @@ void PSYoungGen::initialize_work() {
   }
 
   if (UseNUMA) {
-    _eden_space = new MutableNUMASpace(virtual_space()->page_size());
+    _eden_space = new MutableNUMASpace(_heap_vs->page_size());
   } else {
-    _eden_space = new MutableSpace(virtual_space()->page_size());
+    _eden_space = new MutableSpace(_heap_vs->page_size());
   }
-  _from_space = new MutableSpace(virtual_space()->page_size());
-  _to_space   = new MutableSpace(virtual_space()->page_size());
+  _from_space = new MutableSpace(_heap_vs->page_size());
+  _to_space   = new MutableSpace(_heap_vs->page_size());
 
+  // Young-gen can become zero-sized in old-gen only mode.
+  size_t young_gen_min_size = 0;
   // Generation Counters - generation 0, 3 subspaces
-  _gen_counters = new GenerationCounters("new", 0, 3, min_gen_size(),
-                                         max_gen_size(), virtual_space()->committed_size());
+  _gen_counters = new GenerationCounters("new",
+                                         0,
+                                         3,
+                                         young_gen_min_size,
+                                         max_gen_size(),
+                                         committed_size());
 
   // Compute maximum space sizes for performance counters
   size_t alignment = SpaceAlignment;
-  size_t size = virtual_space()->reserved_size();
+  size_t size = reserved_size();
 
   size_t max_survivor_size;
   size_t max_eden_size;
@@ -156,7 +149,7 @@ void PSYoungGen::initialize_work() {
 
 void PSYoungGen::compute_initial_space_boundaries() {
   // Compute sizes
-  size_t size = virtual_space()->committed_size();
+  size_t size = committed_size();
   assert(size >= 3 * SpaceAlignment, "Young space is not large enough for eden + 2 survivors");
 
   size_t survivor_size = size / InitialSurvivorRatio;
@@ -179,18 +172,27 @@ void PSYoungGen::compute_initial_space_boundaries() {
 }
 
 void PSYoungGen::set_space_boundaries(size_t eden_size, size_t survivor_size) {
-  assert(eden_size < virtual_space()->committed_size(), "just checking");
-  assert(eden_size > 0  && survivor_size > 0, "just checking");
+#ifdef ASSERT
+  {
+    if (eden_size != 0) {
+      assert(survivor_size != 0, "precondition");
+      assert(eden_size < committed_size(), "precondition");
+    } else {
+      assert(survivor_size == 0, "precondition");
+      assert(committed_size() == 0, "precondition");
+    }
+  }
+#endif
 
   // Layout: to, from, eden
-  char *to_start   = virtual_space()->low();
+  char *to_start   = _heap_vs->young_gen_low_addr();
   char *to_end     = to_start + survivor_size;
   char *from_start = to_end;
   char *from_end   = from_start + survivor_size;
   char *eden_start = from_end;
   char *eden_end   = eden_start + eden_size;
 
-  assert(eden_end == virtual_space()->high(), "just checking");
+  assert(eden_end == _heap_vs->young_gen_committed_high_addr(), "just checking");
 
   assert(is_object_aligned(eden_start), "checking alignment");
   assert(is_object_aligned(to_start),   "checking alignment");
@@ -208,8 +210,6 @@ void PSYoungGen::set_space_boundaries(size_t eden_size, size_t survivor_size) {
 
 #ifndef PRODUCT
 void PSYoungGen::space_invariants() {
-  guarantee(eden_space()->capacity_in_bytes() >= SpaceAlignment, "eden too small");
-  guarantee(from_space()->capacity_in_bytes() >= SpaceAlignment, "from too small");
   assert(from_space()->capacity_in_bytes() == to_space()->capacity_in_bytes(), "inv");
 
   HeapWord* eden_bottom = eden_space()->bottom();
@@ -229,7 +229,7 @@ void PSYoungGen::space_invariants() {
   assert(to_bottom <= to_top && to_top <= to_end, "inv");
 
   // Relationship of spaces to each other; from/to, eden
-  guarantee((char*)MIN2(from_bottom, to_bottom) == virtual_space()->low(), "inv");
+  guarantee((char*)MIN2(from_bottom, to_bottom) == _heap_vs->young_gen_low_addr(), "inv");
 
   guarantee(is_aligned(eden_bottom, SpaceAlignment), "inv");
   guarantee(is_aligned(from_bottom, SpaceAlignment), "inv");
@@ -245,16 +245,16 @@ void PSYoungGen::space_invariants() {
     guarantee(to_end == from_bottom, "inv");
     guarantee(from_end == eden_bottom, "inv");
   }
-  guarantee((char*)eden_end <= virtual_space()->high(), "inv");
+  guarantee((char*)eden_end <= _heap_vs->young_gen_committed_high_addr(), "inv");
   guarantee(is_aligned(eden_end, SpaceAlignment), "inv");
 
   // More checks that the virtual space is consistent with the spaces
-  assert(virtual_space()->committed_size() >=
+  assert(committed_size() >=
     (eden_space()->capacity_in_bytes() + 2 * from_space()->capacity_in_bytes()), "Committed size is inconsistent");
-  assert(virtual_space()->committed_size() <= virtual_space()->reserved_size(),
+  assert(committed_size() <= reserved_size(),
     "Space invariant");
 
-  virtual_space()->verify();
+  _heap_vs->verify();
 }
 #endif
 
@@ -268,31 +268,31 @@ bool PSYoungGen::try_expand_to_hold(size_t word_size) {
   }
 
   // For logging purpose
-  size_t original_committed_size = virtual_space()->committed_size();
+  size_t original_committed_size = committed_size();
 
-  assert(is_aligned(virtual_space()->committed_high_addr(), SpaceAlignment), "inv");
-  if (pointer_delta(virtual_space()->committed_high_addr(), eden_space()->top(), sizeof(HeapWord)) >= word_size) {
+  assert(is_aligned(_heap_vs->young_gen_committed_high_addr(), SpaceAlignment), "inv");
+  if (pointer_delta(_heap_vs->young_gen_committed_high_addr(), eden_space()->top(), sizeof(HeapWord)) >= word_size) {
     // eden needs expansion but no OS committing
-    assert(virtual_space()->committed_high_addr() > (char*)eden_space()->end(), "inv");
+    assert(_heap_vs->young_gen_committed_high_addr() > (char*)eden_space()->end(), "inv");
   } else {
     // eden needs OS committing and expansion
-    assert(virtual_space()->reserved_high_addr() > virtual_space()->committed_high_addr(), "inv");
+    assert(_heap_vs->young_gen_high_addr() > _heap_vs->young_gen_committed_high_addr(), "inv");
 
     const size_t existing_free_in_eden = eden_space()->free_in_words();
     assert(existing_free_in_eden < word_size, "inv");
 
     size_t delta_words = word_size - existing_free_in_eden;
     size_t delta_bytes = delta_words * HeapWordSize;
-    delta_bytes = align_up(delta_bytes, virtual_space()->alignment());
-    if (!virtual_space()->expand_by(delta_bytes)) {
+    delta_bytes = align_up(delta_bytes, _heap_vs->alignment());
+    if (!_heap_vs->expand_young_gen(delta_bytes)) {
       // Expansion fails at OS level.
       return false;
     }
 
-    assert(is_aligned(virtual_space()->committed_high_addr(), SpaceAlignment), "inv");
+    assert(is_aligned(_heap_vs->young_gen_committed_high_addr(), SpaceAlignment), "inv");
   }
 
-  HeapWord* new_eden_end = (HeapWord*) virtual_space()->committed_high_addr();
+  HeapWord* new_eden_end = (HeapWord*) _heap_vs->young_gen_committed_high_addr();
   assert(new_eden_end > eden_space()->end(), "inv");
   MemRegion edenMR = MemRegion(eden_space()->bottom(), new_eden_end);
 
@@ -307,7 +307,7 @@ bool PSYoungGen::try_expand_to_hold(size_t word_size) {
   }
   post_resize();
   log_debug(gc, ergo)("PSYoung size changed (eden expansion): %zuK->%zuK",
-                      original_committed_size / K, virtual_space()->committed_size() / K);
+                      original_committed_size / K, committed_size() / K);
   return true;
 }
 
@@ -315,7 +315,7 @@ HeapWord* PSYoungGen::expand_and_allocate(size_t word_size) {
   assert(Heap_lock->is_locked(), "precondition");
 
   {
-    size_t available_word_size = pointer_delta(virtual_space()->reserved_high_addr(),
+    size_t available_word_size = pointer_delta(_heap_vs->young_gen_high_addr(),
                                                eden_space()->top(),
                                                sizeof(HeapWord));
     if (word_size > available_word_size) {
@@ -334,122 +334,17 @@ HeapWord* PSYoungGen::expand_and_allocate(size_t word_size) {
   return result;
 }
 
-void PSYoungGen::compute_desired_sizes(bool is_survivor_overflowing,
-                                       size_t& eden_size,
-                                       size_t& survivor_size) {
-  assert(eden_space()->is_empty() && to_space()->is_empty(), "precondition");
-  assert(is_from_to_layout(), "precondition");
-
-  // Current sizes for all three spaces
-  const size_t current_eden_size = eden_space()->capacity_in_bytes();
-  assert(from_space()->capacity_in_bytes() == to_space()->capacity_in_bytes(), "inv");
-  const size_t current_survivor_size = from_space()->capacity_in_bytes();
-  assert(current_eden_size + 2 * current_survivor_size <= max_gen_size(), "inv");
-
-  PSAdaptiveSizePolicy* size_policy = ParallelScavengeHeap::heap()->size_policy();
-
-  // eden-space
-  eden_size = size_policy->compute_desired_eden_size(is_survivor_overflowing, current_eden_size);
-  eden_size = align_up(eden_size, SpaceAlignment);
-  assert(eden_size >= SpaceAlignment, "inv");
-
-  // from-space; survivor
-  const size_t survivor_used = from_space()->used_in_bytes();
-  // When survivor usage is below this ratio, consider survivor space sparse.
-  constexpr double survivor_sparse_threshold = 0.8;
-
-  survivor_size = size_policy->compute_desired_survivor_size(current_survivor_size, max_gen_size());
-  survivor_size = MAX3(survivor_size,
-                       survivor_used,
-                       SpaceAlignment);
-  survivor_size = align_up(survivor_size, SpaceAlignment);
-
-  log_debug(gc, ergo)("Desired size eden: %zu K, survivor: %zu K",
-                      eden_size / K,
-                      survivor_size / K);
-
-  _sizing_state = SizingState::balanced;
-
-  if (max_gen_size() < eden_size + 2 * survivor_size) {
-    log_info(gc, ergo)("Requested sizes exceed MaxNewSize (K): %zu vs %zu",
-                       (eden_size + 2 * survivor_size) / K,
-                       max_gen_size() / K);
-    // Must reduce eden/survivor to satisfy the max_gen_size constraint. Prioritize survivor_space to reduce promotion.
-    // Check if survivor is actually using its requested size.
-    if (!is_survivor_overflowing && survivor_used < survivor_sparse_threshold * survivor_size) {
-      // When survivor usage is sparse, trim survivor reservation and keep more room for eden.
-      size_t target_survivor_size = survivor_used + survivor_used / 4;
-      target_survivor_size = align_up(target_survivor_size, SpaceAlignment);
-      target_survivor_size = MAX2(target_survivor_size, SpaceAlignment);
-
-      if (target_survivor_size < survivor_size) {
-        // Decrease survivor gradually to avoid abrupt sizing swings.
-        // Simplified: new_survivor_size = survivor_size / 2 + 3 * survivor_used / 8.
-        const size_t survivor_delta = survivor_size - target_survivor_size;
-        const size_t survivor_decrement = align_up(survivor_delta / 2, SpaceAlignment);
-        survivor_size = MAX2(target_survivor_size, survivor_size - survivor_decrement);
-        log_debug(gc, ergo)("Trim survivor under MaxNewSize pressure (used: %zu K, target: %zu K, new: %zu K)",
-                            survivor_used / K,
-                            target_survivor_size / K,
-                            survivor_size / K);
-      }
-    }
-
-    // Recheck after potential survivor_size adjustment.
-    if (max_gen_size() < eden_size + 2 * survivor_size) {
-      if (2 * survivor_size >= max_gen_size()) {
-        // If requested survivor size is too large
-        survivor_size = align_down((max_gen_size() - SpaceAlignment) / 2, SpaceAlignment);
-      }
-
-      // Respect survivor size and reduce eden
-      eden_size = max_gen_size() - 2 * survivor_size;
-
-      _sizing_state = SizingState::constrained;
-    }
-  }
-
-  if (eden_size + 2 * survivor_size < min_gen_size()) {
-    // Keep survivor and adjust eden to meet min-gen-size.
-    eden_size = min_gen_size() - 2 * survivor_size;
-
-    _sizing_state = SizingState::surplus;
-  }
-
-  const size_t final_gen_size = eden_size + 2 * survivor_size;
-  // A balanced result fills max_gen_size; otherwise there is surplus young-gen headroom.
-  if (_sizing_state == SizingState::balanced) {
-    if (final_gen_size < max_gen_size()) {
-      _sizing_state = SizingState::surplus;
-    }
-  }
-
-#ifdef ASSERT
-  {
-    assert(eden_size >= SpaceAlignment, "inv");
-    assert(survivor_size >= SpaceAlignment, "inv");
-
-    assert(is_aligned(eden_size, SpaceAlignment), "inv");
-    assert(is_aligned(survivor_size, SpaceAlignment), "inv");
-
-    assert(final_gen_size >= min_gen_size(), "inv");
-    assert(final_gen_size <= max_gen_size(), "inv");
-    if (final_gen_size < max_gen_size()) {
-      assert(_sizing_state == SizingState::surplus, "inv");
-    }
-  }
-#endif
-}
-
 void PSYoungGen::resize_inner(size_t desired_eden_size,
                               size_t desired_survivor_size) {
   assert(desired_eden_size != 0, "precondition");
   assert(desired_survivor_size != 0, "precondition");
+  assert(is_aligned(desired_eden_size, SpaceAlignment), "precondition");
+  assert(is_aligned(desired_survivor_size, SpaceAlignment), "precondition");
 
   size_t desired_young_gen_size = desired_eden_size + 2 * desired_survivor_size;
 
   assert(desired_young_gen_size >= min_gen_size(), "precondition");
-  assert(desired_young_gen_size <= max_gen_size(), "precondition");
+  assert(desired_young_gen_size <= reserved_size(), "precondition");
 
   if (eden_space()->capacity_in_bytes() == desired_eden_size
       && from_space()->capacity_in_bytes() == desired_survivor_size) {
@@ -469,48 +364,188 @@ void PSYoungGen::resize_inner(size_t desired_eden_size,
                         " used: %zu capacity: %zu"
                         " gen limits: %zu / %zu",
                         desired_eden_size, desired_survivor_size, used_in_bytes(), capacity_in_bytes(),
-                        max_gen_size(), min_gen_size());
+                        reserved_size(), min_gen_size());
   }
 }
 
-void PSYoungGen::resize_after_young_gc(bool is_survivor_overflowing) {
+bool PSYoungGen::try_resize(bool is_survivor_overflowing,
+                            size_t old_gen_total_free_bytes,
+                            size_t* out_eden_size,
+                            size_t* out_survivor_size) {
   assert(eden_space()->is_empty(), "precondition");
   assert(to_space()->is_empty(), "precondition");
+  assert(is_from_to_layout(), "precondition");
+  assert(is_aligned(old_gen_total_free_bytes, SpaceAlignment), "precondition");
 
-  size_t desired_eden_size = 0;
-  size_t desired_survivor_size = 0;
+  ParallelScavengeHeap* const heap = ParallelScavengeHeap::heap();
+  PSAdaptiveSizePolicy* const size_policy = heap->size_policy();
+  const size_t young_reserved_size = reserved_size();
+  assert(young_reserved_size >= min_gen_size(), "inv");
 
-  compute_desired_sizes(is_survivor_overflowing,
-                        desired_eden_size,
-                        desired_survivor_size);
+  const size_t current_eden_size = eden_space()->capacity_in_bytes();
+  const size_t current_survivor_size = from_space()->capacity_in_bytes();
+  const size_t current_young_gen_size = current_eden_size + 2 * current_survivor_size;
+  assert(current_survivor_size == to_space()->capacity_in_bytes(), "inv");
+  assert(current_young_gen_size <= young_reserved_size, "inv");
+
+  size_t eden_size = size_policy->compute_desired_eden_size(is_survivor_overflowing,
+                                                            current_eden_size);
+  eden_size = align_up(eden_size, SpaceAlignment);
+  assert(eden_size >= SpaceAlignment, "inv");
+
+  size_t survivor_size = size_policy->compute_desired_survivor_size(current_survivor_size,
+                                                                    young_reserved_size);
+  survivor_size = MAX3(survivor_size,
+                       from_space()->used_in_bytes(),
+                       SpaceAlignment);
+  survivor_size = align_up(survivor_size, SpaceAlignment);
+
+  log_debug(gc, ergo)("Desired size eden: %zu K, survivor: %zu K",
+                      eden_size / K,
+                      survivor_size / K);
+
+  size_t desired_young_gen_size = eden_size + 2 * survivor_size;
+
+  if (desired_young_gen_size > young_reserved_size) {
+    // Exceed current reserve-size; check if survivor is sparse and can be trimmed.
+    const size_t survivor_used = from_space()->used_in_bytes();
+    constexpr double survivor_sparse_threshold = 0.8;
+    if (!is_survivor_overflowing && survivor_used < survivor_sparse_threshold * survivor_size) {
+      size_t target_survivor_size = survivor_used + survivor_used / 4;
+      target_survivor_size = align_up(target_survivor_size, SpaceAlignment);
+      target_survivor_size = MAX2(target_survivor_size, SpaceAlignment);
+
+      if (target_survivor_size < survivor_size) {
+        const size_t survivor_delta = survivor_size - target_survivor_size;
+        const size_t survivor_decrement = align_up(survivor_delta / 2, SpaceAlignment);
+        survivor_size = MAX2(target_survivor_size, survivor_size - survivor_decrement);
+        log_debug(gc, ergo)("Trim survivor under pressure (used: %zu K, target: %zu K, new: %zu K)",
+                            survivor_used / K,
+                            target_survivor_size / K,
+                            survivor_size / K);
+        // Recompute desired size after trimming.
+        desired_young_gen_size = eden_size + 2 * survivor_size;
+      }
+    }
+  }
+
+  // Recheck after potential trimming.
+  if (desired_young_gen_size > young_reserved_size) {
+    // Need to keep from-space parseable so that live-obj is at the start of from-space.
+    if (survivor_size >= young_reserved_size) {
+      survivor_size = young_reserved_size - SpaceAlignment;
+    }
+
+    if (survivor_size <= old_gen_total_free_bytes) {
+      eden_size = young_reserved_size - survivor_size;
+      const size_t new_young_gen_size = eden_size + 2 * survivor_size;
+      if (desired_young_gen_size > new_young_gen_size) {
+        set_sizing_state(SizingState::constrained);
+      } else if (desired_young_gen_size < new_young_gen_size) {
+        set_sizing_state(SizingState::surplus);
+      } else {
+        set_sizing_state(SizingState::balanced);
+      }
+      *out_eden_size = eden_size;
+      *out_survivor_size = survivor_size;
+      return false;
+    }
+  }
+
+  if (desired_young_gen_size > young_reserved_size) {
+    set_sizing_state(SizingState::constrained);
+    // Cannot resize by moving the boundary; revise sizes to fit current reservation.
+    // Favor survivor over eden in order to reduce promotion (overflow).
+    if (2 * survivor_size >= young_reserved_size) {
+      survivor_size = align_down((young_reserved_size - SpaceAlignment) / 2, SpaceAlignment);
+    }
+    eden_size = young_reserved_size - 2 * survivor_size;
+  } else if (desired_young_gen_size < young_reserved_size) {
+    set_sizing_state(SizingState::surplus);
+    size_t old_gen_committed_size = heap->old_gen()->committed_size();
+    size_t min_young_gen_committed_size = min_gen_size();
+    // To respect MinHeapSize constraint.
+    if (min_gen_size() + old_gen_committed_size < MinHeapSize) {
+      min_young_gen_committed_size = MinHeapSize - old_gen_committed_size;
+    }
+    if (desired_young_gen_size < min_young_gen_committed_size) {
+      // Adjust eden to meet min-gen-size while keeping survivor.
+      eden_size = min_young_gen_committed_size - 2 * survivor_size;
+    }
+  } else {
+    set_sizing_state(SizingState::balanced);
+  }
+
+  *out_eden_size = eden_size;
+  *out_survivor_size = survivor_size;
+  resize_inner(eden_size, survivor_size);
+  return true;
+}
+
+void PSYoungGen::reinit_to_from_layout(size_t desired_eden_size, size_t desired_survivor_size) {
+  assert(desired_eden_size != 0, "precondition");
+  assert(desired_survivor_size != 0, "precondition");
+  assert(_heap_vs->gen_boundary() + desired_survivor_size ==  (void*) from_space()->bottom(), "precondition");
+  assert(_heap_vs->gen_boundary() == (char*) reserved().start(), "precondition");
+
+  const size_t new_gen_size = desired_eden_size + 2 * desired_survivor_size;
+  assert(new_gen_size > min_gen_size(), "precondition");
+  assert(new_gen_size == reserved_size(), "precondition");
+
+  assert(desired_eden_size != eden_space()->capacity_in_bytes()
+      || desired_survivor_size != from_space()->capacity_in_bytes(), "precondition");
+
+  // to, from, eden layout
+  reinit_to_from_layout_inner(desired_eden_size, desired_survivor_size);
+
+  space_invariants();
+
+  log_trace(gc, ergo)("Young generation size: "
+                      "desired eden: %zu survivor: %zu"
+                      " used: %zu capacity: %zu"
+                      " gen limits: %zu / %zu",
+                      desired_eden_size, desired_survivor_size, used_in_bytes(), capacity_in_bytes(),
+                      reserved_size(), min_gen_size());
+}
+
+void PSYoungGen::resize(size_t desired_eden_size, size_t desired_survivor_size) {
+  assert(eden_space()->is_empty(), "precondition");
+  assert(to_space()->is_empty(), "precondition");
+  assert(is_from_to_layout(), "precondition");
+
+  size_t new_gen_size = desired_eden_size + 2 * desired_survivor_size;
+  if (new_gen_size < min_gen_size()) {
+    // Keep survivor and adjust eden to meet min-gen-size
+    desired_eden_size = min_gen_size() - 2 * desired_survivor_size;
+  }
 
   resize_inner(desired_eden_size, desired_survivor_size);
 }
 
 bool PSYoungGen::resize_generation(size_t desired_young_gen_size) {
-  const size_t alignment = virtual_space()->alignment();
-  size_t orig_size = virtual_space()->committed_size();
+  const size_t alignment = _heap_vs->alignment();
+  size_t orig_size = committed_size();
   bool size_changed = false;
 
-  assert(min_gen_size() <= orig_size && orig_size <= max_gen_size(), "just checking");
+  assert(min_gen_size() <= orig_size && orig_size <= reserved_size(), "just checking");
 
   size_t desired_size = clamp(align_up(desired_young_gen_size, alignment),
                               min_gen_size(),
-                              max_gen_size());
+                              reserved_size());
 
   if (desired_size > orig_size) {
     // Grow the generation
     size_t change = desired_size - orig_size;
     assert(change % alignment == 0, "just checking");
-    HeapWord* prev_high = (HeapWord*) virtual_space()->high();
-    if (!virtual_space()->expand_by(change)) {
+    HeapWord* prev_high = (HeapWord*) _heap_vs->young_gen_committed_high_addr();
+    if (!_heap_vs->expand_young_gen(change)) {
       return false; // Error if we fail to resize!
     }
     if (ZapUnusedHeapArea) {
       // Mangle newly committed space immediately because it
-      // can be done here more simply that after the new
+      // can be done here more simply than after the new
       // spaces have been computed.
-      HeapWord* new_high = (HeapWord*) virtual_space()->high();
+      HeapWord* new_high = (HeapWord*) _heap_vs->young_gen_committed_high_addr();
       MemRegion mangle_region(prev_high, new_high);
       SpaceMangler::mangle_region(mangle_region);
     }
@@ -518,10 +553,10 @@ bool PSYoungGen::resize_generation(size_t desired_young_gen_size) {
   } else if (desired_size < orig_size) {
     size_t desired_change = orig_size - desired_size;
     assert(desired_change % alignment == 0, "just checking");
-    virtual_space()->shrink_by(desired_change);
+    _heap_vs->shrink_young_gen(desired_change);
     size_changed = true;
   } else {
-    if (orig_size == max_gen_size()) {
+    if (orig_size == reserved_size()) {
       log_trace(gc)("PSYoung generation size at maximum: %zuK", orig_size/K);
     } else if (orig_size == min_gen_size()) {
       log_trace(gc)("PSYoung generation size at minimum: %zuK", orig_size/K);
@@ -531,32 +566,31 @@ bool PSYoungGen::resize_generation(size_t desired_young_gen_size) {
   if (size_changed) {
     post_resize();
     log_trace(gc)("PSYoung generation size changed: %zuK->%zuK",
-                  orig_size/K, virtual_space()->committed_size()/K);
+                  orig_size/K, committed_size()/K);
   }
 
-  guarantee(desired_young_gen_size <= virtual_space()->committed_size() ||
-            virtual_space()->committed_size() == max_gen_size(), "Sanity");
+  guarantee(desired_young_gen_size <= committed_size() ||
+            committed_size() == reserved_size(), "Sanity");
 
   return true;
 }
 
-void PSYoungGen::resize_spaces(size_t requested_eden_size,
-                               size_t requested_survivor_size) {
+void PSYoungGen::reinit_to_from_layout_inner(size_t requested_eden_size,
+                                             size_t requested_survivor_size) {
   assert(requested_eden_size > 0 && requested_survivor_size > 0,
          "precondition");
   assert(is_aligned(requested_eden_size, SpaceAlignment), "precondition");
   assert(is_aligned(requested_survivor_size, SpaceAlignment), "precondition");
-  assert(from_space()->bottom() < to_space()->bottom(), "precondition");
 
-  // layout: from, to, eden
-  char* from_start = virtual_space()->low();
-  char* from_end = from_start + requested_survivor_size;
-  char* to_start = from_end;
+  // layout: to, from, eden
+  char* to_start = _heap_vs->young_gen_low_addr();
   char* to_end = to_start + requested_survivor_size;
-  char* eden_start = to_end;
+  char* from_start = to_end;
+  char* from_end = from_start + requested_survivor_size;
+  char* eden_start = from_end;
   char* eden_end = eden_start + requested_eden_size;
 
-  assert(eden_end <= virtual_space()->high(), "inv");
+  assert(eden_end == _heap_vs->young_gen_committed_high_addr(), "inv");
 
   MemRegion edenMR((HeapWord*)eden_start, (HeapWord*)eden_end);
   MemRegion fromMR((HeapWord*)from_start, (HeapWord*)from_end);
@@ -590,18 +624,104 @@ void PSYoungGen::resize_spaces(size_t requested_eden_size,
                            MutableSpace::SetupPages,
                            workers);
 
-  if (ZapUnusedHeapArea) {
-    if (!UseNUMA) {
-      eden_space()->mangle_unused_area();
-    }
-    to_space()->mangle_unused_area();
-    from_space()->mangle_unused_area();
+  log_trace(gc, ergo)("AdaptiveSizePolicy::survivor sizes: (%zu, %zu) -> (%zu, %zu) ",
+                      old_from_capacity, old_to_capacity,
+                      from_space()->capacity_in_bytes(),
+                      to_space()->capacity_in_bytes());
+}
+
+
+void PSYoungGen::resize_spaces(size_t requested_eden_size,
+                               size_t requested_survivor_size) {
+  assert(requested_eden_size > 0 && requested_survivor_size > 0,
+         "precondition");
+  assert(is_aligned(requested_eden_size, SpaceAlignment), "precondition");
+  assert(is_aligned(requested_survivor_size, SpaceAlignment), "precondition");
+  assert(is_from_to_layout(), "precondition");
+
+  // layout: from, to, eden
+  char* from_start = _heap_vs->young_gen_low_addr();
+  char* from_end = from_start + requested_survivor_size;
+  char* to_start = from_end;
+  char* to_end = to_start + requested_survivor_size;
+  char* eden_start = to_end;
+  char* eden_end = eden_start + requested_eden_size;
+
+  assert(eden_end <= _heap_vs->young_gen_committed_high_addr(), "inv");
+
+  MemRegion edenMR((HeapWord*)eden_start, (HeapWord*)eden_end);
+  MemRegion fromMR((HeapWord*)from_start, (HeapWord*)from_end);
+  MemRegion toMR  ((HeapWord*)to_start,   (HeapWord*)to_end);
+
+#ifdef ASSERT
+  if (!from_space()->is_empty()) {
+    assert(fromMR.start() == from_space()->bottom(), "inv");
+    assert(fromMR.contains(from_space()->used_region()), "inv");
   }
+#endif
+  // For logging below
+  size_t old_from_capacity = from_space()->capacity_in_bytes();
+  size_t old_to_capacity   = to_space()->capacity_in_bytes();
+
+  WorkerThreads* workers = &ParallelScavengeHeap::heap()->workers();
+
+  eden_space()->initialize(edenMR,
+                           SpaceDecorator::Clear,
+                           SpaceDecorator::DontMangle,
+                           MutableSpace::SetupPages,
+                           workers);
+    to_space()->initialize(toMR,
+                           SpaceDecorator::Clear,
+                           SpaceDecorator::DontMangle,
+                           MutableSpace::SetupPages,
+                           workers);
+  from_space()->initialize(fromMR,
+                           from_space()->is_empty(),
+                           SpaceDecorator::DontMangle,
+                           MutableSpace::SetupPages,
+                           workers);
 
   log_trace(gc, ergo)("AdaptiveSizePolicy::survivor sizes: (%zu, %zu) -> (%zu, %zu) ",
                       old_from_capacity, old_to_capacity,
                       from_space()->capacity_in_bytes(),
                       to_space()->capacity_in_bytes());
+}
+
+void PSYoungGen::reinit_after_gen_boundary_change() {
+  PSScavenge::reset_young_gen_reserved(reserved());
+
+  size_t committed_size = this->committed_size();
+
+  if (committed_size > 0) {
+    assert(committed_size >= min_gen_size(), "precondition");
+  }
+
+  size_t survivor_size = committed_size / InitialSurvivorRatio;
+  survivor_size = align_down(survivor_size, SpaceAlignment);
+  if (survivor_size == 0 && committed_size > 0) {
+    survivor_size = SpaceAlignment;
+    // For from/to/eden spaces
+    assert(committed_size >= 3 * SpaceAlignment, "inv");
+  }
+
+  size_t eden_size = committed_size - 2 * survivor_size;
+
+  set_space_boundaries(eden_size, survivor_size);
+
+#ifdef ASSERT
+  {
+    bool is_eden_zero_sized = eden_space()->capacity_in_bytes() == 0;
+    bool is_from_zero_sized = from_space()->capacity_in_bytes() == 0;
+    bool is_to_zero_sized = to_space()->capacity_in_bytes() == 0;
+    bool is_young_gen_zero_sized = reserved_size() == 0;
+    assert(is_eden_zero_sized == is_from_zero_sized, "inv");
+    assert(is_from_zero_sized == is_to_zero_sized, "inv");
+    assert(is_eden_zero_sized == is_young_gen_zero_sized, "inv");
+    if (is_young_gen_zero_sized) {
+      assert(_heap_vs->gen_boundary() == (char*)ParallelScavengeHeap::heap()->reserved_region().end(), "inv");
+    }
+  }
+#endif
 }
 
 void PSYoungGen::swap_spaces() {
@@ -654,7 +774,10 @@ void PSYoungGen::print() const { print_on(tty); }
 void PSYoungGen::print_on(outputStream* st) const {
   st->print("%-15s", name());
   st->print(" total %zuK, used %zuK ", capacity_in_bytes() / K, used_in_bytes() / K);
-  virtual_space()->print_space_boundaries_on(st);
+  st->print_cr("Young Gen: [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
+             p2i(_heap_vs->young_gen_low_addr()),
+             p2i(_heap_vs->young_gen_committed_high_addr()),
+             p2i(_heap_vs->young_gen_high_addr()));
 
   StreamIndentor si(st, 1);
   eden_space()->print_on(st, "eden ");
@@ -665,8 +788,8 @@ void PSYoungGen::print_on(outputStream* st) const {
 void PSYoungGen::post_resize() {
   assert_locked_or_safepoint(Heap_lock);
 
-  MemRegion cmr((HeapWord*)virtual_space()->low(),
-                (HeapWord*)virtual_space()->high());
+  MemRegion cmr((HeapWord*)_heap_vs->young_gen_low_addr(),
+                (HeapWord*)_heap_vs->young_gen_committed_high_addr());
   ParallelScavengeHeap::heap()->card_table()->resize_covered_region(cmr);
 }
 
@@ -675,7 +798,7 @@ void PSYoungGen::update_counters() {
     _eden_counters->update_all(_eden_space->capacity_in_bytes(), _eden_space->used_in_bytes());
     _from_counters->update_all(_from_space->capacity_in_bytes(), _from_space->used_in_bytes());
     _to_counters->update_all(_to_space->capacity_in_bytes(), _to_space->used_in_bytes());
-    _gen_counters->update_capacity(_virtual_space->committed_size());
+    _gen_counters->update_capacity(committed_size());
   }
 }
 

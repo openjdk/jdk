@@ -68,6 +68,8 @@ class PSScavenge: AllStatic {
   static PSCardTable* card_table()                 { assert(_card_table != nullptr, "Sanity"); return _card_table; }
   static const ParallelScavengeTracer* gc_tracer() { return &_gc_tracer; }
 
+  static void set_young_generation_boundary(HeapWord* v);
+
  public:
   // Accessors
   static uint             tenuring_threshold()  { return _tenuring_threshold; }
@@ -76,20 +78,21 @@ class PSScavenge: AllStatic {
   // Performance Counters
   static CollectorCounters* counters()           { return _counters; }
 
-  static void set_subject_to_discovery_span(MemRegion mr) {
+  static void reset_young_gen_reserved(MemRegion mr) {
+    set_young_generation_boundary(mr.start());
     _span_based_discoverer.set_span(mr);
   }
+
   // Used by scavenge_contents
   static ReferenceProcessor* reference_processor() {
     assert(_ref_processor != nullptr, "Sanity");
     return _ref_processor;
   }
+
   // The promotion managers tell us if they encountered overflow
   static void set_survivor_overflow(bool state) {
     _survivor_overflow = state;
   }
-  // Adaptive size policy support.
-  static void set_young_generation_boundary(HeapWord* v);
 
   // Called by parallelScavengeHeap to init the tenuring threshold
   static void initialize();

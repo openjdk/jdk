@@ -107,14 +107,25 @@ void CardTable::initialize(void* region0_start, void* region1_start) {
 }
 
 MemRegion CardTable::committed_for(const MemRegion mr) const {
+  assert(mr.start() == _covered[0].start()
+      || mr.start() == _covered[1].start(), "precondition");
+
+  if (mr.start() == _whole_heap.end()) {
+    assert(mr.is_empty(), "inv");
+    HeapWord* addr = (HeapWord*) byte_after(_whole_heap.end() - 1);
+    assert(is_aligned(addr, _page_size), "inv");
+    return MemRegion{addr, (size_t)0};
+  }
   HeapWord* addr_l = (HeapWord*)align_down(byte_for(mr.start()), _page_size);
   HeapWord* addr_r = mr.is_empty()
                    ? addr_l
                    : (HeapWord*)align_up(byte_after(mr.last()), _page_size);
 
-  if (mr.start() == _covered[0].start()) {
-    // In case the card for gen-boundary is not page-size aligned, the crossing page belongs to _covered[1].
-    addr_r = MIN2(addr_r, (HeapWord*)align_down(byte_for(_covered[1].start()), _page_size));
+  if (mr.start() == _whole_heap.start()) {
+    if (!_covered[1].is_empty()) {
+      // In case the card for gen-boundary is not page-size aligned, the crossing page belongs to _covered[1].
+      addr_r = MIN2(addr_r, (HeapWord*)align_down(byte_for(_covered[1].start()), _page_size));
+    }
   }
 
   return MemRegion(addr_l, addr_r);

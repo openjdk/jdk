@@ -148,9 +148,7 @@ size_t PSAdaptiveSizePolicy::compute_desired_eden_size(bool is_survivor_overflow
   return cur_eden;
 }
 
-size_t PSAdaptiveSizePolicy::compute_desired_survivor_size(
-  size_t current_survivor_size,
-  size_t max_gen_size) {
+size_t PSAdaptiveSizePolicy::compute_desired_survivor_size(size_t current_survivor_size, size_t max_gen_size) {
   size_t desired_survivor_size = survived_bytes_estimate();
 
   if (desired_survivor_size >= current_survivor_size) {
