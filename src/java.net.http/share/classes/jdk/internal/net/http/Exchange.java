@@ -28,6 +28,7 @@ package jdk.internal.net.http;
 import java.io.IOException;
 import java.net.ProtocolException;
 import java.net.http.HttpClient.Version;
+import java.net.http.HttpHeaders;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -64,6 +65,8 @@ final class Exchange<T> {
     volatile CompletableFuture<? extends ExchangeImpl<T>> exchangeCF;
     volatile CompletableFuture<Void> bodyIgnored;
     volatile boolean streamLimitReached;
+    volatile Response cachedProxyResponse; // cached response from proxy 407
+    volatile byte[] cachedProxyBody; // cached body from proxy 407 response
 
     // used to record possible cancellation raised before the exchImpl
     // has been established.
@@ -227,6 +230,30 @@ final class Exchange<T> {
         // and exchImpl will be null (if we were trying to establish
         // an HTTP/2 tunnel through an HTTP/1.1 proxy)
         if (bodyIgnored != null) return MinimalFuture.completedFuture(null);
+
+        // If we have a cached proxy body (from 407 response), use it
+        if (cachedProxyBody != null) {
+            try {
+                // Use cached response and body
+                Response proxyResponse = cachedProxyResponse;
+                byte[] bodyBytes = cachedProxyBody;
+                cachedProxyResponse = null;
+                cachedProxyBody = null;
+
+                HttpResponse.BodySubscriber<T> subscriber = handler.apply(
+                        new ResponseInfoImpl(proxyResponse));
+                subscriber.onSubscribe(new java.util.concurrent.Flow.Subscription() {
+                    public void request(long n) {
+                        subscriber.onNext(java.util.List.of(java.nio.ByteBuffer.wrap(bodyBytes)));
+                        subscriber.onComplete();
+                    }
+                    public void cancel() {}
+                });
+                return subscriber.getBody().toCompletableFuture();
+            } catch (Exception e) {
+                return MinimalFuture.failedFuture(e);
+            }
+        }
 
         // The connection will not be returned to the pool in the case of WebSocket
         return exchImpl.readBodyAsync(handler, !request.isWebSocket(), parentExecutor)
@@ -455,14 +482,20 @@ final class Exchange<T> {
     private CompletableFuture<Response> checkFor407(ExchangeImpl<T> ex, Throwable t,
                                                     Function<ExchangeImpl<T>,CompletableFuture<Response>> andThen) {
         t = Utils.getCompletionCause(t);
-        if (t instanceof ProxyAuthenticationRequired) {
+        if (t instanceof ProxyAuthenticationRequired par) {
             if (debug.on()) debug.log("checkFor407: ProxyAuthenticationRequired: building synthetic response");
-            bodyIgnored = MinimalFuture.completedFuture(null);
-            Response proxyResponse = ((ProxyAuthenticationRequired)t).proxyResponse;
+            // Cache the proxy response and body if available
+            cachedProxyResponse = par.proxyResponse;
+            cachedProxyBody = par.proxyResponseBody;
+            // Don't set bodyIgnored if we have a cached body
+            if (cachedProxyBody == null) {
+                bodyIgnored = MinimalFuture.completedFuture(null);
+            }
             HttpConnection c = ex == null ? null : ex.connection();
             Response syntheticResponse = new Response(request, this,
-                    proxyResponse.headers, c, proxyResponse.statusCode,
-                    proxyResponse.version, true);
+                    cachedProxyResponse.headers, c, cachedProxyResponse.statusCode,
+                    cachedProxyResponse.version, cachedProxyBody == null); // body ignored only if not cached
+
             return MinimalFuture.completedFuture(syntheticResponse);
         } else if (t != null) {
             if (debug.on()) debug.log("checkFor407: no response - %s", (Object)t);
