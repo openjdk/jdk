@@ -706,9 +706,7 @@ public class Flow {
                         if (exhaustivenessResult.notExhaustiveDetails().isEmpty()) {
                             log.error(tree, Errors.NotExhaustiveStatement);
                         } else {
-                            List<JCDiagnostic> details =
-                                    convertNotExhaustiveDetails(exhaustivenessResult);
-                            log.error(tree, Errors.NotExhaustiveStatementDetails(details));
+                            logNotExhaustiveError(tree.pos(), exhaustivenessResult, Errors.NotExhaustiveStatementDetails);
                         }
                     }
                 }
@@ -755,9 +753,7 @@ public class Flow {
                     if (exhaustivenessResult.notExhaustiveDetails().isEmpty()) {
                         log.error(tree, Errors.NotExhaustive);
                     } else {
-                        List<JCDiagnostic> details =
-                                convertNotExhaustiveDetails(exhaustivenessResult);
-                        log.error(tree, Errors.NotExhaustiveDetails(details));
+                        logNotExhaustiveError(tree.pos(), exhaustivenessResult, Errors.NotExhaustiveDetails);
                     }
                 }
             }
@@ -766,12 +762,18 @@ public class Flow {
             alive = alive.or(resolveYields(tree, prevPendingExits));
         }
 
-        private List<JCDiagnostic> convertNotExhaustiveDetails(ExhaustivenessResult exhaustivenessResult) {
-            return exhaustivenessResult.notExhaustiveDetails()
+        private void logNotExhaustiveError(DiagnosticPosition pos,
+                                           ExhaustivenessResult exhaustivenessResult,
+                                           Error errorKey) {
+            List<JCDiagnostic> details =
+                    exhaustivenessResult.notExhaustiveDetails()
                                        .stream()
-                                       .sorted()
+                                       .sorted((pd1, pd2) -> pd1.toString().compareTo(pd2.toString()))
                                        .map(detail -> diags.fragment(Fragments.NotExhaustiveDetail(detail)))
                                        .collect(List.collector());
+            JCDiagnostic main = diags.error(null, log.currentSource(), pos, errorKey);
+            JCDiagnostic d = new JCDiagnostic.MultilineDiagnostic(main, details);
+            log.report(d);
         }
 
         public void visitTry(JCTry tree) {

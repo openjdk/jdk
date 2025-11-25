@@ -573,10 +573,10 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                     if (d instanceof DiagnosticSourceUnwrapper uw) {
                         d = uw.d;
                     }
-                    if (d instanceof JCDiagnostic diag) {
-                        ((Collection<JCDiagnostic>) diag.getArgs()[0])
+                    if (d instanceof JCDiagnostic.MultilineDiagnostic diag) {
+                        diag.getSubdiagnostics()
                                 .stream()
-                                .map(fragment -> (String) fragment.getArgs()[0])
+                                .map(fragment -> fragment.getArgs()[0].toString())
                                 .forEach(missingPatterns::add);
                     }
                 }

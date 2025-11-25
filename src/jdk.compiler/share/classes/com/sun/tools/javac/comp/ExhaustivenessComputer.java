@@ -150,15 +150,15 @@ public class ExhaustivenessComputer {
                 return ExhaustivenessResult.ofExhaustive();
             }
 
-            Set<String> details =
+            Set<PatternDescription> details =
                     this.computeMissingPatternDescriptions(selector.type, coveredResult.incompletePatterns())
                         .stream()
                         .flatMap(pd -> {
                             if (pd instanceof BindingPattern bp && enum2Constants.containsKey(bp.type.tsym)) {
                                 Symbol enumType = bp.type.tsym;
-                                return enum2Constants.get(enumType).stream().map(c -> enumType.toString() + "." + c.name);
+                                return enum2Constants.get(enumType).stream().map(c -> new EnumConstantPattern(bp.type, c.name));
                             } else {
-                                return Stream.of(pd.toString());
+                                return Stream.of(pd);
                             }
                         })
                         .collect(Collectors.toSet());
@@ -697,7 +697,7 @@ public class ExhaustivenessComputer {
         }
     }
 
-    protected sealed interface PatternDescription {
+    public sealed interface PatternDescription {
         public Type type();
         public Set<PatternDescription> sourcePatterns();
     }
@@ -736,7 +736,7 @@ public class ExhaustivenessComputer {
             throw Assert.error();
         }
     }
-    record BindingPattern(Type type, int permittedSubtypes, Set<PatternDescription> sourcePatterns) implements PatternDescription {
+    public record BindingPattern(Type type, int permittedSubtypes, Set<PatternDescription> sourcePatterns) implements PatternDescription {
 
         public BindingPattern(Type type) {
             this(type, -1, Set.of());
@@ -756,7 +756,7 @@ public class ExhaustivenessComputer {
             return type.tsym + " _";
         }
     }
-    record RecordPattern(Type recordType, int _hashCode, Type[] fullComponentTypes, PatternDescription[] nested, Set<PatternDescription> sourcePatterns) implements PatternDescription {
+    public record RecordPattern(Type recordType, int _hashCode, Type[] fullComponentTypes, PatternDescription[] nested, Set<PatternDescription> sourcePatterns) implements PatternDescription {
 
         public RecordPattern(Type recordType, Type[] fullComponentTypes, PatternDescription[] nested) {
             this(recordType, fullComponentTypes, nested, Set.of());
@@ -805,11 +805,27 @@ public class ExhaustivenessComputer {
         }
     }
 
-    public record ExhaustivenessResult(boolean exhaustive, Set<String> notExhaustiveDetails) {
+    public record EnumConstantPattern(Type enumType, Name enumConstant) implements PatternDescription {
+
+        @Override
+        public Type type() {
+            return enumType();
+        }
+
+        @Override
+        public Set<PatternDescription> sourcePatterns() {
+            return Set.of();
+        }
+        public String toString() {
+            return enumType() + "." + enumConstant();
+        }
+    }
+
+    public record ExhaustivenessResult(boolean exhaustive, Set<PatternDescription> notExhaustiveDetails) {
         public static ExhaustivenessResult ofExhaustive() {
             return new ExhaustivenessResult(true, null);
         }
-        public static ExhaustivenessResult ofDetails(Set<String> notExhaustiveDetails) {
+        public static ExhaustivenessResult ofDetails(Set<PatternDescription> notExhaustiveDetails) {
             return new ExhaustivenessResult(false, notExhaustiveDetails != null ? notExhaustiveDetails : Set.of());
         }
     }

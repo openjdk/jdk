@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.tools.JavaFileObject;
 
@@ -47,6 +48,9 @@ import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.CapturedType;
+import com.sun.tools.javac.comp.ExhaustivenessComputer.BindingPattern;
+import com.sun.tools.javac.comp.ExhaustivenessComputer.EnumConstantPattern;
+import com.sun.tools.javac.comp.ExhaustivenessComputer.RecordPattern;
 import com.sun.tools.javac.file.PathFileObject;
 import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.javac.jvm.Target;
@@ -229,6 +233,18 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
         else if (arg instanceof Tag tag) {
             return messages.getLocalizedString(l, "compiler.misc.tree.tag." +
                                                   StringUtils.toLowerCase(tag.name()));
+        }
+        else if (arg instanceof BindingPattern bp) {
+            return formatArgument(d, bp.type(), l) + " _";
+        }
+        else if (arg instanceof RecordPattern rp) {
+            return formatArgument(d, rp.type(), l) +
+                   Arrays.stream(rp.nested())
+                         .map(pd -> formatArgument(d, pd, l))
+                         .collect(Collectors.joining(", ", "(", ")"));
+        }
+        else if (arg instanceof EnumConstantPattern ep) {
+            return formatArgument(d, ep.type(), l) + "." + ep.enumConstant();
         }
         else {
             return String.valueOf(arg);
