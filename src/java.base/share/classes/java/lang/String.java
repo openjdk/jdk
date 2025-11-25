@@ -2240,12 +2240,12 @@ public final class String
      * defined by the Unicode Standard, which may differ from the simpler
      * per-character mapping performed by {@code equalsIgnoreCase}.
      * For example:
-     * <pre>{@snippet lang=java :
+     * {@snippet lang=java :
      * String a = "Fuß";
      * String b = "FUSS";
      * boolean equalsFoldCase = a.equalsFoldCase(b);       // returns true
      * boolean equalsIgnoreCase = a.equalsIgnoreCase(b);   // returns false
-     * }</pre>
+     * }
      *
      * @param  anotherString
      *         The {@code String} to compare this {@code String} against
@@ -2442,12 +2442,12 @@ public final class String
      * may differ from the simpler per-character mapping performed by
      * {@code compareToIgnoreCase}.
      * For example:
-     * <pre>{@snippet lang=java :
+     * {@snippet lang=java :
      * String a = "Fuß";
      * String b = "FUSS";
      * int cmpFoldCase = a.compareToFoldCase(b);     // returns 0
      * int cmpIgnoreCase = a.compareToIgnoreCase(b); // returns > 0
-     * }</pre>
+     * }
      *
      * @param   str   the {@code String} to be compared.
      * @return  a negative integer, zero, or a positive integer as the specified
