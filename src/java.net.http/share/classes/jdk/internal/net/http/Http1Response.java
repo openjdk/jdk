@@ -335,11 +335,8 @@ class Http1Response<T> {
 
         // expect-continue reads headers and body twice.
         // if we reach here, we must reset the headersReader state.
-        finally {
-            asyncReceiver.unsubscribe(headersReader);
-            headersReader.reset();
-        }
-
+        asyncReceiver.unsubscribe(headersReader);
+        headersReader.reset();
         ClientRefCountTracker refCountTracker = new ClientRefCountTracker(connection.client(), debug);
 
         // We need to keep hold on the client facade until the
