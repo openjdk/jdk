@@ -600,7 +600,7 @@ public class ComponentSampleModel extends SampleModel
      * @return the data of the specified pixel
      * @see #setDataElements(int, int, Object, DataBuffer)
      *
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if obj is too small to hold the output.
      */
@@ -708,7 +708,7 @@ public class ComponentSampleModel extends SampleModel
 
     /**
      * {@inheritDoc}
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if {@code iArray} is too small to hold the output.
      */
@@ -733,7 +733,7 @@ public class ComponentSampleModel extends SampleModel
 
     /**
      * {@inheritDoc}
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or {@code w} or {@code h} is negative
      * or if {@code iArray} is too small to hold the output.
@@ -744,7 +744,7 @@ public class ComponentSampleModel extends SampleModel
         int y1 = y + h;
 
         if (x < 0 || (w < 0) || x >= width || w > width || x1 < 0 || x1 > width ||
-            y < 0 || (h < 0) || y >= height || y > height || y1 < 0 || y1 >  height)
+            y < 0 || (h < 0) || y >= height || y > height || y1 < 0 || y1 > height)
         {
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
@@ -774,7 +774,7 @@ public class ComponentSampleModel extends SampleModel
 
     /**
      * {@inheritDoc}
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates or
      * the band index are not in bounds.
      */
@@ -792,7 +792,7 @@ public class ComponentSampleModel extends SampleModel
 
     /**
      * {@inheritDoc}
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates or
      * the band index are not in bounds.
      */
@@ -810,7 +810,7 @@ public class ComponentSampleModel extends SampleModel
     }
     /**
      * {@inheritDoc}
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates or
      * the band index are not in bounds.
      */
@@ -829,7 +829,7 @@ public class ComponentSampleModel extends SampleModel
 
     /**
      * {@inheritDoc}
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates or
      * band index are not in bounds, or {@code w} or {@code h} is negative,
      * or if {@code iArray} is too small to hold the output.
@@ -898,8 +898,8 @@ public class ComponentSampleModel extends SampleModel
      * @param obj       a primitive array containing pixel data
      * @param data      the DataBuffer containing the image data
      * @see #getDataElements(int, int, Object, DataBuffer)
-     * @throws NullPointerException if {@code obj} is null.
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code obj} is {@code null}.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if obj is too small to hold the input.
      */
@@ -971,7 +971,7 @@ public class ComponentSampleModel extends SampleModel
 
     /**
      * {@inheritDoc}
-     * @throws NullPointerException if {@code iArray} or {@code data} is null.
+     * @throws NullPointerException if {@code iArray} or {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if {@code iArray} is too small to hold the input.
      */
@@ -989,7 +989,7 @@ public class ComponentSampleModel extends SampleModel
 
     /**
      * {@inheritDoc}
-     * @throws NullPointerException if {@code iArray} or {@code data} is null.
+     * @throws NullPointerException if {@code iArray} or {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or {@code w} or {@code h} is negative
      * or if {@code iArray} is too small to hold the input.
@@ -1000,7 +1000,7 @@ public class ComponentSampleModel extends SampleModel
         int y1 = y + h;
 
         if (x < 0 || w < 0 || x >= width || w > width || x1 < 0 || x1 > width ||
-            y < 0 || h < 0 || y >= height || h > height || y1 < 0 || y1 >  height)
+            y < 0 || h < 0 || y >= height || h > height || y1 < 0 || y1 > height)
         {
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
@@ -1024,7 +1024,7 @@ public class ComponentSampleModel extends SampleModel
 
     /**
      * {@inheritDoc}
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates or
      * the band index are not in bounds.
      */
@@ -1041,7 +1041,7 @@ public class ComponentSampleModel extends SampleModel
 
     /**
      * {@inheritDoc}
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates or
      * the band index are not in bounds.
      */
@@ -1060,7 +1060,7 @@ public class ComponentSampleModel extends SampleModel
 
     /**
      * {@inheritDoc}
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates or
      * the band index are not in bounds.
      */
@@ -1079,7 +1079,7 @@ public class ComponentSampleModel extends SampleModel
 
     /**
      * {@inheritDoc}
-     * @throws NullPointerException if {@code iArray} or {@code data} is null.
+     * @throws NullPointerException if {@code iArray} or {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates or
      * band index are not in bounds, or {@code w} or {@code h} is negative,
      * or if {@code iArray} is too small to hold the input.

@@ -231,7 +231,7 @@ public abstract class SampleModel
      * @return the samples for the specified pixel.
      * @see #setPixel(int, int, int[], DataBuffer)
      *
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if {@code iArray} is too small to hold the output.
      */
@@ -293,7 +293,7 @@ public abstract class SampleModel
      * @see java.awt.image.DataBuffer
      * @see #setDataElements(int, int, Object, DataBuffer)
      *
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if {@code obj} is too small to hold the output.
      */
@@ -347,7 +347,7 @@ public abstract class SampleModel
      * @see #setDataElements(int, int, int, int, Object, DataBuffer)
      * @see java.awt.image.DataBuffer
      *
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or {@code w} or {@code h} is negative
      * or if {@code obj} is too small to hold the output.
@@ -529,8 +529,8 @@ public abstract class SampleModel
      * @see #getDataElements(int, int, Object, DataBuffer)
      * @see java.awt.image.DataBuffer
      *
-     * @throws NullPointerException if {@code obj} is null.
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code obj} is {@code null}.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if obj is too small to hold the input.
      */
@@ -579,8 +579,8 @@ public abstract class SampleModel
      * @see #getDataElements(int, int, int, int, Object, DataBuffer)
      * @see java.awt.image.DataBuffer
      *
-     * @throws NullPointerException if {@code obj} is null.
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code obj} is {@code null}.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if obj is too small to hold the input.
      */
@@ -698,7 +698,7 @@ public abstract class SampleModel
      * @return the samples for the specified pixel.
      * @see #setPixel(int, int, float[], DataBuffer)
      *
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if {@code fArray} is too small to hold the output.
      */
@@ -729,7 +729,7 @@ public abstract class SampleModel
      * @return the samples for the specified pixel.
      * @see #setPixel(int, int, double[], DataBuffer)
      *
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if {@code dArray} is too small to hold the output.
      */
@@ -763,7 +763,7 @@ public abstract class SampleModel
      * @return the samples for the specified region of pixels.
      * @see #setPixels(int, int, int, int, int[], DataBuffer)
      *
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or {@code w} or {@code h} is negative
      * or if {@code iArray} is too small to hold the output.
@@ -812,7 +812,7 @@ public abstract class SampleModel
      * @return the samples for the specified region of pixels.
      * @see #setPixels(int, int, int, int, float[], DataBuffer)
      *
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or {@code w} or {@code h} is negative
      * or if {@code fArray} is too small to hold the output.
@@ -861,7 +861,7 @@ public abstract class SampleModel
      * @return the samples for the specified region of pixels.
      * @see #setPixels(int, int, int, int, double[], DataBuffer)
      *
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or {@code w} or {@code h} is negative
      * or if {@code dArray} is too small to hold the output.
@@ -909,7 +909,7 @@ public abstract class SampleModel
      * @return the sample in a specified band for the specified pixel.
      * @see #setSample(int, int, int, int, DataBuffer)
      *
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates or
      * the band index are not in bounds.
      */
@@ -927,7 +927,7 @@ public abstract class SampleModel
      * @param data      The DataBuffer containing the image data.
      * @return the sample in a specified band for the specified pixel.
      *
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates or
      * the band index are not in bounds.
      */
@@ -949,7 +949,7 @@ public abstract class SampleModel
      * @param data      The DataBuffer containing the image data.
      * @return the sample in a specified band for the specified pixel.
      *
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates or
      * the band index are not in bounds.
      */
@@ -977,7 +977,7 @@ public abstract class SampleModel
      *         of pixels.
      * @see #setSamples(int, int, int, int, int, int[], DataBuffer)
      *
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates or
      * band index are not in bounds, or {@code w} or {@code h} is negative,
      * or if {@code iArray} is too small to hold the output.
@@ -1025,7 +1025,7 @@ public abstract class SampleModel
      *         of pixels.
      * @see #setSamples(int, int, int, int, int, float[], DataBuffer)
      *
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates or
      * band index are not in bounds, or {@code w} or {@code h} is negative,
      * or if {@code iArray} is too small to hold the output.
@@ -1074,7 +1074,7 @@ public abstract class SampleModel
      *         of pixels.
      * @see #setSamples(int, int, int, int, int, double[], DataBuffer)
      *
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates or
      * band index are not in bounds, or {@code w} or {@code h} is negative,
      * or if {@code dArray} is too small to hold the output.
@@ -1117,7 +1117,7 @@ public abstract class SampleModel
      * @param data      The DataBuffer containing the image data.
      * @see #getPixel(int, int, int[], DataBuffer)
      *
-     * @throws NullPointerException if {@code iArray} or {code data} is null.
+     * @throws NullPointerException if {@code iArray} or {code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if {@code iArray} is too small to hold the input.
      */
@@ -1137,7 +1137,7 @@ public abstract class SampleModel
      * @param data      The DataBuffer containing the image data.
      * @see #getPixel(int, int, float[], DataBuffer)
      *
-     * @throws NullPointerException if {@code fArray} or {@code data} is null.
+     * @throws NullPointerException if {@code fArray} or {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if {@code fArray} is too small to hold the input.
      */
@@ -1156,7 +1156,7 @@ public abstract class SampleModel
      * @param data      The DataBuffer containing the image data.
      * @see #getPixel(int, int, double[], DataBuffer)
      *
-     * @throws NullPointerException if {@code dArray} or {@code data} is null.
+     * @throws NullPointerException if {@code dArray} or {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if {@code dArray} is too small to hold the input.
      */
@@ -1179,7 +1179,7 @@ public abstract class SampleModel
      * @param data      The DataBuffer containing the image data.
      * @see #getPixels(int, int, int, int, int[], DataBuffer)
      *
-     * @throws NullPointerException if {@code iArray} or {@code data} is null.
+     * @throws NullPointerException if {@code iArray} or {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or {@code w} or {@code h} is negative
      * or if {@code iArray} is too small to hold the input.
@@ -1218,7 +1218,7 @@ public abstract class SampleModel
      * @param data      The DataBuffer containing the image data.
      * @see #getPixels(int, int, int, int, float[], DataBuffer)
      *
-     * @throws NullPointerException if {@code fArray} or {@code data} is null.
+     * @throws NullPointerException if {@code fArray} or {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or {@code w} or {@code h} is negative
      * or if {@code fArray} is too small to hold the input.
@@ -1257,7 +1257,7 @@ public abstract class SampleModel
      * @param data      The DataBuffer containing the image data.
      * @see #getPixels(int, int, int, int, double[], DataBuffer)
      *
-     * @throws NullPointerException if {@code dArray} or {@code data} is null.
+     * @throws NullPointerException if {@code dArray} or {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or {@code w} or {@code h} is negative
      * or if {@code dArray} is too small to hold the input.
@@ -1295,7 +1295,7 @@ public abstract class SampleModel
      * @param data      The DataBuffer containing the image data.
      * @see #getSample(int, int, int,  DataBuffer)
      *
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates or
      * the band index are not in bounds.
      */
@@ -1319,7 +1319,7 @@ public abstract class SampleModel
      * @param data      The DataBuffer containing the image data.
      * @see #getSample(int, int, int, DataBuffer)
      *
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates or
      * the band index are not in bounds.
      */
@@ -1347,7 +1347,7 @@ public abstract class SampleModel
      * @param data      The DataBuffer containing the image data.
      * @see #getSample(int, int, int, DataBuffer)
      *
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates or
      * the band index are not in bounds.
      */
@@ -1373,7 +1373,7 @@ public abstract class SampleModel
      * @param data      The DataBuffer containing the image data.
      * @see #getSamples(int, int, int, int, int, int[], DataBuffer)
      *
-     * @throws NullPointerException if {@code iArray} or {@code data} is null.
+     * @throws NullPointerException if {@code iArray} or {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates or
      * band index are not in bounds, or {@code w} or {@code h} is negative,
      * or if {@code iArray} is too small to hold the input.
@@ -1411,7 +1411,7 @@ public abstract class SampleModel
      * @param data      The DataBuffer containing the image data.
      * @see #getSamples(int, int, int, int, int, float[], DataBuffer)
      *
-     * @throws NullPointerException if {@code fArray} or {@code data} is null.
+     * @throws NullPointerException if {@code fArray} or {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates or
      * band index are not in bounds, or {@code w} or {@code h} is negative,
      * or if {@code fArray} is too small to hold the input.
@@ -1449,7 +1449,7 @@ public abstract class SampleModel
      * @param data      The DataBuffer containing the image data.
      * @see #getSamples(int, int, int, int, int, double[], DataBuffer)
      *
-     * @throws NullPointerException if {@code dArray} or {@code data} is null.
+     * @throws NullPointerException if {@code dArray} or {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates or
      * band index are not in bounds, or {@code w} or {@code h} is negative,
      * or if {@code dArray} is too small to hold the input.

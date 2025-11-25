@@ -448,7 +448,7 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * not in bounds, or if {@code obj} is not {@code null} or
      * not large enough to hold the pixel data
      * @see #setDataElements(int, int, Object, DataBuffer)
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if {code obj} is too small to hold the output.
      */
@@ -532,7 +532,7 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * @throws ArrayIndexOutOfBoundsException if the coordinates
      * are not in bounds, or if {@code iArray} is too small to hold the output.
      * @see #setPixel(int, int, int[], DataBuffer)
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if {@code iArray} is too small to hold the output.
      */
@@ -594,8 +594,8 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * @param obj a primitive array containing pixel data
      * @param data the {@code DataBuffer} containing the image data
      * @see #getDataElements(int, int, Object, DataBuffer)
-     * @throws NullPointerException if {@code obj} is null.
-     * @throws NullPointerException if {@code data} is null.
+     * @throws NullPointerException if {@code obj} is {@code null}.
+     * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if {@code obj} is too small to hold the input.
      */
@@ -648,7 +648,7 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * @param iArray the input pixel in an {@code int} array
      * @param data the {@code DataBuffer} containing the image data
      * @see #getPixel(int, int, int[], DataBuffer)
-     * @throws NullPointerException if {@code iArray} or {@code data} is null.
+     * @throws NullPointerException if {@code iArray} or {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if {@code iArray} is too small to hold the input.
      */
