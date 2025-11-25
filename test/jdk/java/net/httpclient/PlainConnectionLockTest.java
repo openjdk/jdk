@@ -140,6 +140,7 @@ class PlainConnectionLockTest implements HttpServerAdapters {
             https1Server.stop();
         }
         if (serverExecutor != null) {
+            System.out.println("Closing server executor");
             serverExecutor.close();
         }
         requestSemaphore = null;
@@ -149,6 +150,7 @@ class PlainConnectionLockTest implements HttpServerAdapters {
         https1Server = null;
         http1URI = null;
         https1URI = null;
+        System.out.println("done\n");
     }
 
     @Test
@@ -188,29 +190,39 @@ class PlainConnectionLockTest implements HttpServerAdapters {
                 // GET
                 final URI reqURI = new URI(requestURI + "?i=" + i);
                 final HttpRequest req = reqBuilder.copy().uri(reqURI).GET().build();
-                System.out.println("\nIssuing request: " + req);
+                System.out.println("Issuing request: " + req);
                 var cf = client.sendAsync(req, BodyHandlers.ofString());
                 futures.add(cf);
             }
+            System.out.printf("\nWaiting for %s requests to be handled on the server%n", many);
             // wait for all exchanges to be handled
             requestSemaphore.acquire(many);
+            System.out.println("All requests reached the server: releasing one response");
             // allow one request to proceed
             responseSemaphore.release();
             try {
                 // wait for the first response.
+                System.out.println("Waiting for the first response");
                 CompletableFuture.anyOf(futures.toArray(new CompletableFuture[0])).join();
+                System.out.println("Got first response: " + futures.stream().filter(CompletableFuture::isDone)
+                        .findFirst().map(CompletableFuture::join));
                 if (shutdown) {
+                    System.out.println("Calling HttpClient::shutdownNow");
                     client.shutdownNow();
                     client.awaitTermination(Duration.ofSeconds(1));
                 }
             } finally {
+                System.out.printf("Releasing %s remaining responses%n", many - 1);
                 // now release the others.
                 responseSemaphore.release(many - 1);
             }
+
             // wait for all responses
+            System.out.printf("Waiting for all %s responses to complete%n", many);
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).exceptionally(t -> null).join();
 
             // check
+            System.out.printf("All %s responses completed. Checking...%n%n", many);
             Set<String> conns = new HashSet<>();
             int exceptionCount = 0;
             int success = 0;
@@ -234,7 +246,7 @@ class PlainConnectionLockTest implements HttpServerAdapters {
                             "got success=%s, exceptions=%s").formatted(requestURI, shutdown, success, exceptionCount));
                 }
             }
-            System.out.println("Success: %s: shutdownNow:%s, success=%s, exceptions:%s"
+            System.out.println("Success: %s: shutdownNow:%s, success=%s, exceptions:%s\n"
                     .formatted(requestURI, shutdown, success, exceptionCount));
         }
     }
