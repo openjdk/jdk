@@ -107,7 +107,7 @@ public:
   bool is_in_encoding_range() {
     Klass* k = get_Klass();
     bool is_in_encoding_range = CompressedKlassPointers::is_encodable(k);
-    assert(is_in_encoding_range || k->is_interface() || k->is_abstract(), "sanity");
+    assert(is_in_encoding_range, "sanity");
     return is_in_encoding_range;
   }
 

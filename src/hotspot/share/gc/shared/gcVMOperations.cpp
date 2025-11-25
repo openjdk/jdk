@@ -29,7 +29,6 @@
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
-#include "gc/shared/softRefPolicy.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "logging/log.hpp"
 #include "memory/classLoaderMetaspace.hpp"
@@ -93,6 +92,22 @@ static bool should_use_gclocker() {
   return UseSerialGC || UseParallelGC;
 }
 
+static void block_if_java_thread() {
+  Thread* thread = Thread::current();
+  if (thread->is_Java_thread()) {
+    // Block here and allow the shutdown to complete
+    while (true) {
+      // The call to wait has a few important effects:
+      // 1) Block forever (minus spurious wake-ups, hence the loop)
+      // 2) Release the Heap_lock, which is taken by the shutdown code
+      // 3) Transition to blocked state so that the final VM_Exit operation can be scheduled
+      Heap_lock->wait();
+    }
+  } else {
+    assert(thread->is_ConcurrentGC_thread(), "Unexpected thread type");
+  }
+}
+
 bool VM_GC_Operation::doit_prologue() {
   assert(_gc_cause != GCCause::_no_gc, "Illegal GCCause");
 
@@ -111,8 +126,15 @@ bool VM_GC_Operation::doit_prologue() {
   }
   VM_Heap_Sync_Operation::doit_prologue();
 
+  _is_shutting_down = CollectedHeap::is_shutting_down();
+  if (_is_shutting_down) {
+    // Block forever if a Java thread is triggering a GC after
+    // the GC has started to shut down.
+    block_if_java_thread();
+  }
+
   // Check invocations
-  if (skip_operation()) {
+  if (skip_operation() || _is_shutting_down) {
     // skip collection
     Heap_lock->unlock();
     if (should_use_gclocker()) {

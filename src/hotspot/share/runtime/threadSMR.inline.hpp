@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "memory/iterator.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "utilities/debug.hpp"
@@ -114,11 +114,11 @@ ThreadsListHandle::Iterator ThreadsListHandle::end() { return list()->end(); }
 // they are called by public inline update_tlh_stats() below:
 
 inline void ThreadsSMRSupport::add_tlh_times(uint add_value) {
-  Atomic::add(&_tlh_times, add_value);
+  AtomicAccess::add(&_tlh_times, add_value);
 }
 
 inline void ThreadsSMRSupport::inc_tlh_cnt() {
-  Atomic::inc(&_tlh_cnt);
+  AtomicAccess::inc(&_tlh_cnt);
 }
 
 inline void ThreadsSMRSupport::update_tlh_time_max(uint new_value) {
@@ -128,7 +128,7 @@ inline void ThreadsSMRSupport::update_tlh_time_max(uint new_value) {
       // No need to update max value so we're done.
       break;
     }
-    if (Atomic::cmpxchg(&_tlh_time_max, cur_value, new_value) == cur_value) {
+    if (AtomicAccess::cmpxchg(&_tlh_time_max, cur_value, new_value) == cur_value) {
       // Updated max value so we're done. Otherwise try it all again.
       break;
     }
@@ -136,7 +136,7 @@ inline void ThreadsSMRSupport::update_tlh_time_max(uint new_value) {
 }
 
 inline ThreadsList* ThreadsSMRSupport::get_java_thread_list() {
-  return (ThreadsList*)Atomic::load_acquire(&_java_thread_list);
+  return (ThreadsList*)AtomicAccess::load_acquire(&_java_thread_list);
 }
 
 inline bool ThreadsSMRSupport::is_a_protected_JavaThread_with_lock(JavaThread *thread) {

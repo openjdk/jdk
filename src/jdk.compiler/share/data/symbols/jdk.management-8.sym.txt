@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -91,6 +91,10 @@ method name getThreadAllocatedBytes descriptor ([J)[J flags 401
 method name isThreadAllocatedMemorySupported descriptor ()Z flags 401
 method name isThreadAllocatedMemoryEnabled descriptor ()Z flags 401
 method name setThreadAllocatedMemoryEnabled descriptor (Z)V flags 401
+method name getCurrentThreadAllocatedBytes descriptor ()J flags 1
+method name getTotalThreadAllocatedBytes descriptor ()J flags 1
+method name getThreadInfo descriptor ([JZZI)[Ljava/lang/management/ThreadInfo; flags 1
+method name dumpAllThreads descriptor (ZZI)[Ljava/lang/management/ThreadInfo; flags 1
 
 class name com/sun/management/UnixOperatingSystemMXBean
 header extends java/lang/Object implements com/sun/management/OperatingSystemMXBean flags 601 classAnnotations @Ljdk/Profile+Annotation;(value=I3) runtimeAnnotations @Ljdk/Exported;

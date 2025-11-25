@@ -23,8 +23,7 @@
 
 package jdk.test.lib.artifacts;
 
-import jtreg.SkippedException;
-
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
@@ -90,15 +89,15 @@ public class ArtifactResolver {
      * @return the local path to the artifact. If the artifact is a compressed
      * file that gets unpacked, this path will point to the root
      * directory of the uncompressed file(s).
-     * @throws SkippedException thrown if the artifact cannot be found
+     * @throws IOException thrown if the artifact cannot be found
      */
-    public static Path fetchOne(Class<?> klass) {
+    public static Path fetchOne(Class<?> klass) throws IOException {
         try {
             return ArtifactResolver.resolve(klass).entrySet().stream()
                     .findAny().get().getValue();
         } catch (ArtifactResolverException e) {
             Artifact artifact = klass.getAnnotation(Artifact.class);
-            throw new SkippedException("Cannot find the artifact " + artifact.name(), e);
+            throw new IOException("Cannot find the artifact " + artifact.name(), e);
         }
     }
 

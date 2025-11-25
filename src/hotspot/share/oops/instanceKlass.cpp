@@ -78,7 +78,7 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/methodComparator.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -159,7 +159,7 @@ static inline bool is_class_loader(const Symbol* class_name,
     return true;
   }
 
-  if (vmClasses::ClassLoader_klass_loaded()) {
+  if (vmClasses::ClassLoader_klass_is_loaded()) {
     const Klass* const super_klass = parser.super_klass();
     if (super_klass != nullptr) {
       if (super_klass->is_subtype_of(vmClasses::ClassLoader_klass())) {
@@ -455,11 +455,6 @@ const char* InstanceKlass::nest_host_error() {
   }
 }
 
-void* InstanceKlass::operator new(size_t size, ClassLoaderData* loader_data, size_t word_size,
-                                  bool use_class_space, TRAPS) throw() {
-  return Metaspace::allocate(loader_data, word_size, ClassType, use_class_space, THREAD);
-}
-
 InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& parser, TRAPS) {
   const int size = InstanceKlass::size(parser.vtable_size(),
                                        parser.itable_size(),
@@ -472,27 +467,26 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& par
   assert(loader_data != nullptr, "invariant");
 
   InstanceKlass* ik;
-  const bool use_class_space = UseClassMetaspaceForAllClasses || parser.klass_needs_narrow_id();
 
   // Allocation
   if (parser.is_instance_ref_klass()) {
     // java.lang.ref.Reference
-    ik = new (loader_data, size, use_class_space, THREAD) InstanceRefKlass(parser);
+    ik = new (loader_data, size, THREAD) InstanceRefKlass(parser);
   } else if (class_name == vmSymbols::java_lang_Class()) {
     // mirror - java.lang.Class
-    ik = new (loader_data, size, use_class_space, THREAD) InstanceMirrorKlass(parser);
+    ik = new (loader_data, size, THREAD) InstanceMirrorKlass(parser);
   } else if (is_stack_chunk_class(class_name, loader_data)) {
     // stack chunk
-    ik = new (loader_data, size, use_class_space, THREAD) InstanceStackChunkKlass(parser);
+    ik = new (loader_data, size, THREAD) InstanceStackChunkKlass(parser);
   } else if (is_class_loader(class_name, parser)) {
     // class loader - java.lang.ClassLoader
-    ik = new (loader_data, size, use_class_space, THREAD) InstanceClassLoaderKlass(parser);
+    ik = new (loader_data, size, THREAD) InstanceClassLoaderKlass(parser);
   } else {
     // normal
-    ik = new (loader_data, size, use_class_space, THREAD) InstanceKlass(parser);
+    ik = new (loader_data, size, THREAD) InstanceKlass(parser);
   }
 
-  if (ik != nullptr && UseCompressedClassPointers && use_class_space) {
+  if (ik != nullptr && UseCompressedClassPointers) {
     assert(CompressedKlassPointers::is_encodable(ik),
            "Klass " PTR_FORMAT "needs a narrow Klass ID, but is not encodable", p2i(ik));
   }
@@ -799,10 +793,11 @@ oop InstanceKlass::init_lock() const {
   return lock;
 }
 
-// Set the initialization lock to null so the object can be GC'ed.  Any racing
+// Set the initialization lock to null so the object can be GC'ed. Any racing
 // threads to get this lock will see a null lock and will not lock.
 // That's okay because they all check for initialized state after getting
-// the lock and return.
+// the lock and return. For preempted vthreads we keep the oop protected
+// in the ObjectMonitor (see ObjectMonitor::set_object_strong()).
 void InstanceKlass::fence_and_clear_init_lock() {
   // make sure previous stores are all done, notably the init_state.
   OrderAccess::storestore();
@@ -810,6 +805,31 @@ void InstanceKlass::fence_and_clear_init_lock() {
   assert(!is_not_initialized(), "class must be initialized now");
 }
 
+class PreemptableInitCall {
+  JavaThread* _thread;
+  bool _previous;
+  DEBUG_ONLY(InstanceKlass* _previous_klass;)
+ public:
+  PreemptableInitCall(JavaThread* thread, InstanceKlass* ik) : _thread(thread) {
+    _previous = thread->at_preemptable_init();
+    _thread->set_at_preemptable_init(true);
+    DEBUG_ONLY(_previous_klass = _thread->preempt_init_klass();)
+    DEBUG_ONLY(_thread->set_preempt_init_klass(ik));
+  }
+  ~PreemptableInitCall() {
+    _thread->set_at_preemptable_init(_previous);
+    DEBUG_ONLY(_thread->set_preempt_init_klass(_previous_klass));
+  }
+};
+
+void InstanceKlass::initialize_preemptable(TRAPS) {
+  if (this->should_be_initialized()) {
+    PreemptableInitCall pic(THREAD, this);
+    initialize_impl(THREAD);
+  } else {
+    assert(is_initialized(), "sanity check");
+  }
+}
 
 // See "The Virtual Machine Specification" section 2.16.5 for a detailed explanation of the class initialization
 // process. The step comments refers to the procedure described in that section.
@@ -986,7 +1006,12 @@ bool InstanceKlass::link_class_impl(TRAPS) {
   {
     HandleMark hm(THREAD);
     Handle h_init_lock(THREAD, init_lock());
-    ObjectLocker ol(h_init_lock, jt);
+    ObjectLocker ol(h_init_lock, CHECK_PREEMPTABLE_false);
+    // Don't allow preemption if we link/initialize classes below,
+    // since that would release this monitor while we are in the
+    // middle of linking this class.
+    NoPreemptMark npm(THREAD);
+
     // rewritten will have been set if loader constraint error found
     // on an earlier link attempt
     // don't verify or rewrite if already rewritten
@@ -1180,6 +1205,17 @@ void InstanceKlass::clean_initialization_error_table() {
   }
 }
 
+class ThreadWaitingForClassInit : public StackObj {
+  JavaThread* _thread;
+ public:
+  ThreadWaitingForClassInit(JavaThread* thread, InstanceKlass* ik) : _thread(thread) {
+    _thread->set_class_to_be_initialized(ik);
+  }
+  ~ThreadWaitingForClassInit() {
+    _thread->set_class_to_be_initialized(nullptr);
+  }
+};
+
 void InstanceKlass::initialize_impl(TRAPS) {
   HandleMark hm(THREAD);
 
@@ -1199,7 +1235,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
   // Step 1
   {
     Handle h_init_lock(THREAD, init_lock());
-    ObjectLocker ol(h_init_lock, jt);
+    ObjectLocker ol(h_init_lock, CHECK_PREEMPTABLE);
 
     // Step 2
     // If we were to use wait() instead of waitInterruptibly() then
@@ -1212,9 +1248,8 @@ void InstanceKlass::initialize_impl(TRAPS) {
                                jt->name(), external_name(), init_thread_name());
       }
       wait = true;
-      jt->set_class_to_be_initialized(this);
-      ol.wait_uninterruptibly(jt);
-      jt->set_class_to_be_initialized(nullptr);
+      ThreadWaitingForClassInit twcl(THREAD, this);
+      ol.wait_uninterruptibly(CHECK_PREEMPTABLE);
     }
 
     // Step 3
@@ -1271,6 +1306,10 @@ void InstanceKlass::initialize_impl(TRAPS) {
       }
     }
   }
+
+  // Block preemption once we are the initializer thread. Unmounting now
+  // would complicate the reentrant case (identity is platform thread).
+  NoPreemptMark npm(THREAD);
 
   // Step 7
   // Next, if C is a class rather than an interface, initialize it's super class and super
@@ -1413,7 +1452,7 @@ InstanceKlass* InstanceKlass::implementor() const {
     return nullptr;
   } else {
     // This load races with inserts, and therefore needs acquire.
-    InstanceKlass* ikls = Atomic::load_acquire(ik);
+    InstanceKlass* ikls = AtomicAccess::load_acquire(ik);
     if (ikls != nullptr && !ikls->is_loader_alive()) {
       return nullptr;  // don't return unloaded class
     } else {
@@ -1429,7 +1468,7 @@ void InstanceKlass::set_implementor(InstanceKlass* ik) {
   InstanceKlass* volatile* addr = adr_implementor();
   assert(addr != nullptr, "null addr");
   if (addr != nullptr) {
-    Atomic::release_store(addr, ik);
+    AtomicAccess::release_store(addr, ik);
   }
 }
 
@@ -1559,15 +1598,6 @@ bool InstanceKlass::is_same_or_direct_interface(Klass *k) const {
     }
   }
   return false;
-}
-
-objArrayOop InstanceKlass::allocate_objArray(int n, int length, TRAPS) {
-  check_array_allocation_length(length, arrayOopDesc::max_array_length(T_OBJECT), CHECK_NULL);
-  size_t size = objArrayOopDesc::object_size(length);
-  ArrayKlass* ak = array_klass(n, CHECK_NULL);
-  objArrayOop o = (objArrayOop)Universe::heap()->array_allocate(ak, size, length,
-                                                                /* do_zero */ true, CHECK_NULL);
-  return o;
 }
 
 instanceOop InstanceKlass::register_finalizer(instanceOop i, TRAPS) {
@@ -1759,11 +1789,11 @@ void InstanceKlass::mask_for(const methodHandle& method, int bci,
   InterpreterOopMap* entry_for) {
   // Lazily create the _oop_map_cache at first request.
   // Load_acquire is needed to safely get instance published with CAS by another thread.
-  OopMapCache* oop_map_cache = Atomic::load_acquire(&_oop_map_cache);
+  OopMapCache* oop_map_cache = AtomicAccess::load_acquire(&_oop_map_cache);
   if (oop_map_cache == nullptr) {
     // Try to install new instance atomically.
     oop_map_cache = new OopMapCache();
-    OopMapCache* other = Atomic::cmpxchg(&_oop_map_cache, (OopMapCache*)nullptr, oop_map_cache);
+    OopMapCache* other = AtomicAccess::cmpxchg(&_oop_map_cache, (OopMapCache*)nullptr, oop_map_cache);
     if (other != nullptr) {
       // Someone else managed to install before us, ditch local copy and use the existing one.
       delete oop_map_cache;
@@ -2390,7 +2420,7 @@ jmethodID InstanceKlass::update_jmethod_id(jmethodID* jmeths, Method* method, in
     assert(method != nullptr, "old and but not obsolete, so should exist");
   }
   jmethodID new_id = Method::make_jmethod_id(class_loader_data(), method);
-  Atomic::release_store(&jmeths[idnum + 1], new_id);
+  AtomicAccess::release_store(&jmeths[idnum + 1], new_id);
   return new_id;
 }
 
@@ -2405,11 +2435,11 @@ static jmethodID* create_jmethod_id_cache(size_t size) {
 
 // When reading outside a lock, use this.
 jmethodID* InstanceKlass::methods_jmethod_ids_acquire() const {
-  return Atomic::load_acquire(&_methods_jmethod_ids);
+  return AtomicAccess::load_acquire(&_methods_jmethod_ids);
 }
 
 void InstanceKlass::release_set_methods_jmethod_ids(jmethodID* jmeths) {
-  Atomic::release_store(&_methods_jmethod_ids, jmeths);
+  AtomicAccess::release_store(&_methods_jmethod_ids, jmeths);
 }
 
 // Lookup or create a jmethodID.
@@ -2448,7 +2478,7 @@ jmethodID InstanceKlass::get_jmethod_id(Method* method) {
     }
   }
 
-  jmethodID id = Atomic::load_acquire(&jmeths[idnum + 1]);
+  jmethodID id = AtomicAccess::load_acquire(&jmeths[idnum + 1]);
   if (id == nullptr) {
     MutexLocker ml(JmethodIdCreation_lock, Mutex::_no_safepoint_check_flag);
     id = jmeths[idnum + 1];
@@ -2497,11 +2527,11 @@ void InstanceKlass::make_methods_jmethod_ids() {
     Method* m = methods()->at(index);
     int idnum = m->method_idnum();
     assert(!m->is_old(), "should not have old methods or I'm confused");
-    jmethodID id = Atomic::load_acquire(&jmeths[idnum + 1]);
+    jmethodID id = AtomicAccess::load_acquire(&jmeths[idnum + 1]);
     if (!m->is_overpass() &&  // skip overpasses
         id == nullptr) {
       id = Method::make_jmethod_id(class_loader_data(), m);
-      Atomic::release_store(&jmeths[idnum + 1], id);
+      AtomicAccess::release_store(&jmeths[idnum + 1], id);
     }
   }
 }
@@ -2554,10 +2584,10 @@ void InstanceKlass::clean_implementors_list() {
       // Use load_acquire due to competing with inserts
       InstanceKlass* volatile* iklass = adr_implementor();
       assert(iklass != nullptr, "Klass must not be null");
-      InstanceKlass* impl = Atomic::load_acquire(iklass);
+      InstanceKlass* impl = AtomicAccess::load_acquire(iklass);
       if (impl != nullptr && !impl->is_loader_alive()) {
         // null this field, might be an unloaded instance klass or null
-        if (Atomic::cmpxchg(iklass, impl, (InstanceKlass*)nullptr) == impl) {
+        if (AtomicAccess::cmpxchg(iklass, impl, (InstanceKlass*)nullptr) == impl) {
           // Successfully unlinking implementor.
           if (log_is_enabled(Trace, class, unload)) {
             ResourceMark rm;
@@ -2839,18 +2869,20 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
   DEBUG_ONLY(FieldInfoStream::validate_search_table(_constants, _fieldinfo_stream, _fieldinfo_search_table));
 }
 
-// Check if a class or any of its supertypes has a version older than 50.
-// CDS will not perform verification of old classes during dump time because
-// without changing the old verifier, the verification constraint cannot be
-// retrieved during dump time.
-// Verification of archived old classes will be performed during run time.
 bool InstanceKlass::can_be_verified_at_dumptime() const {
-  if (AOTMetaspace::in_aot_cache(this)) {
+  if (CDSConfig::is_dumping_dynamic_archive() && AOTMetaspace::in_aot_cache(this)) {
     // This is a class that was dumped into the base archive, so we know
     // it was verified at dump time.
     return true;
   }
-  if (major_version() < 50 /*JAVA_6_VERSION*/) {
+
+  if (CDSConfig::is_preserving_verification_constraints()) {
+    return true;
+  }
+
+  if (CDSConfig::is_old_class_for_verifier(this)) {
+    // The old verifier does not save verification constraints, so at run time
+    // SystemDictionaryShared::check_verification_constraints() will not work for this class.
     return false;
   }
   if (super() != nullptr && !super()->can_be_verified_at_dumptime()) {
@@ -4259,7 +4291,7 @@ void InstanceKlass::set_init_state(ClassState state) {
   assert(good_state || state == allocated, "illegal state transition");
 #endif
   assert(_init_thread == nullptr, "should be cleared before state change");
-  Atomic::release_store(&_init_state, state);
+  AtomicAccess::release_store(&_init_state, state);
 }
 
 #if INCLUDE_JVMTI

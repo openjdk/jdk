@@ -43,8 +43,8 @@
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
-void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box,
-                                              Register tmp1, Register tmp2, Register tmp3, Register tmp4) {
+void C2_MacroAssembler::fast_lock(Register obj, Register box,
+                                  Register tmp1, Register tmp2, Register tmp3, Register tmp4) {
   // Flag register, zero for success; non-zero for failure.
   Register flag = t1;
 
@@ -74,7 +74,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box,
   const Register tmp1_mark = tmp1;
   const Register tmp3_t = tmp3;
 
-  { // Lightweight locking
+  { // Fast locking
 
     // Push lock to the lock stack and finish successfully. MUST branch to with flag == 0
     Label push;
@@ -205,8 +205,8 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box,
   // C2 uses the value of flag (0 vs !0) to determine the continuation.
 }
 
-void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box,
-                                                Register tmp1, Register tmp2, Register tmp3) {
+void C2_MacroAssembler::fast_unlock(Register obj, Register box,
+                                    Register tmp1, Register tmp2, Register tmp3) {
   // Flag register, zero for success; non-zero for failure.
   Register flag = t1;
 
@@ -225,7 +225,7 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box,
   const Register tmp2_top = tmp2;
   const Register tmp3_t = tmp3;
 
-  { // Lightweight unlock
+  { // Fast unlock
     Label push_and_slow_path;
 
     // Check if obj is top of lock-stack.
@@ -1687,6 +1687,7 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register res
                                         Register tmp4, Register tmp5, Register tmp6,
                                         BasicType eltype)
 {
+  assert(!UseRVV, "sanity");
   assert_different_registers(ary, cnt, result, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, t0, t1);
 
   const int elsize = arrays_hashcode_elsize(eltype);
@@ -1759,29 +1760,143 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register res
   BLOCK_COMMENT("} // arrays_hashcode");
 }
 
+void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register result,
+                                          Register tmp1, Register tmp2, Register tmp3,
+                                          BasicType eltype)
+{
+  assert(UseRVV, "sanity");
+  assert(StubRoutines::riscv::arrays_hashcode_powers_of_31() != nullptr, "sanity");
+  assert_different_registers(ary, cnt, result, tmp1, tmp2, tmp3, t0, t1);
+
+  // The MaxVectorSize should have been set by detecting RVV max vector register
+  // size when check UseRVV (i.e. MaxVectorSize == VM_Version::_initial_vector_length).
+  // Let's use T_INT as all hashCode calculations eventually deal with ints.
+  const int lmul = 2;
+  const int stride = MaxVectorSize / sizeof(jint) * lmul;
+
+  const int elsize_bytes = arrays_hashcode_elsize(eltype);
+  const int elsize_shift = exact_log2(elsize_bytes);
+
+  switch (eltype) {
+    case T_BOOLEAN: BLOCK_COMMENT("arrays_hashcode_v(unsigned byte) {"); break;
+    case T_CHAR:    BLOCK_COMMENT("arrays_hashcode_v(char) {");          break;
+    case T_BYTE:    BLOCK_COMMENT("arrays_hashcode_v(byte) {");          break;
+    case T_SHORT:   BLOCK_COMMENT("arrays_hashcode_v(short) {");         break;
+    case T_INT:     BLOCK_COMMENT("arrays_hashcode_v(int) {");           break;
+    default:
+      ShouldNotReachHere();
+  }
+
+  const Register pow31_highest = tmp1;
+  const Register ary_end       = tmp2;
+  const Register consumed      = tmp3;
+
+  const VectorRegister v_sum    = v2;
+  const VectorRegister v_src    = v4;
+  const VectorRegister v_coeffs = v6;
+  const VectorRegister v_tmp    = v8;
+
+  const address adr_pows31 = StubRoutines::riscv::arrays_hashcode_powers_of_31()
+                           + sizeof(jint);
+  Label VEC_LOOP, DONE, SCALAR_TAIL, SCALAR_TAIL_LOOP;
+
+  // NB: at this point (a) 'result' already has some value,
+  // (b) 'cnt' is not 0 or 1, see java code for details.
+
+  andi(t0, cnt, ~(stride - 1));
+  beqz(t0, SCALAR_TAIL);
+
+  la(t1, ExternalAddress(adr_pows31));
+  lw(pow31_highest, Address(t1, -1 * sizeof(jint)));
+
+  vsetvli(consumed, cnt, Assembler::e32, Assembler::m2);
+  vle32_v(v_coeffs, t1); // 31^^(stride - 1) ... 31^^0
+  vmv_v_x(v_sum, x0);
+
+  bind(VEC_LOOP);
+  arrays_hashcode_elload_v(v_src, v_tmp, ary, eltype);
+  vmul_vv(v_src, v_src, v_coeffs);
+  vmadd_vx(v_sum, pow31_highest, v_src);
+  mulw(result, result, pow31_highest);
+  shadd(ary, consumed, ary, t0, elsize_shift);
+  subw(cnt, cnt, consumed);
+  andi(t1, cnt, ~(stride - 1));
+  bnez(t1, VEC_LOOP);
+
+  vmv_s_x(v_tmp, x0);
+  vredsum_vs(v_sum, v_sum, v_tmp);
+  vmv_x_s(t0, v_sum);
+  addw(result, result, t0);
+  beqz(cnt, DONE);
+
+  bind(SCALAR_TAIL);
+  shadd(ary_end, cnt, ary, t0, elsize_shift);
+
+  bind(SCALAR_TAIL_LOOP);
+  arrays_hashcode_elload(t0, Address(ary), eltype);
+  slli(t1, result, 5);      // optimize 31 * result
+  subw(result, t1, result); // with result<<5 - result
+  addw(result, result, t0);
+  addi(ary, ary, elsize_bytes);
+  bne(ary, ary_end, SCALAR_TAIL_LOOP);
+
+  bind(DONE);
+  BLOCK_COMMENT("} // arrays_hashcode_v");
+}
+
 int C2_MacroAssembler::arrays_hashcode_elsize(BasicType eltype) {
   switch (eltype) {
-  case T_BOOLEAN: return sizeof(jboolean);
-  case T_BYTE:    return sizeof(jbyte);
-  case T_SHORT:   return sizeof(jshort);
-  case T_CHAR:    return sizeof(jchar);
-  case T_INT:     return sizeof(jint);
-  default:
-    ShouldNotReachHere();
-    return -1;
+    case T_BOOLEAN: return sizeof(jboolean);
+    case T_BYTE:    return sizeof(jbyte);
+    case T_SHORT:   return sizeof(jshort);
+    case T_CHAR:    return sizeof(jchar);
+    case T_INT:     return sizeof(jint);
+    default:
+      ShouldNotReachHere();
+      return -1;
   }
 }
 
 void C2_MacroAssembler::arrays_hashcode_elload(Register dst, Address src, BasicType eltype) {
   switch (eltype) {
-  // T_BOOLEAN used as surrogate for unsigned byte
-  case T_BOOLEAN: lbu(dst, src);   break;
-  case T_BYTE:     lb(dst, src);   break;
-  case T_SHORT:    lh(dst, src);   break;
-  case T_CHAR:    lhu(dst, src);   break;
-  case T_INT:      lw(dst, src);   break;
-  default:
-    ShouldNotReachHere();
+    // T_BOOLEAN used as surrogate for unsigned byte
+    case T_BOOLEAN: lbu(dst, src);   break;
+    case T_BYTE:     lb(dst, src);   break;
+    case T_SHORT:    lh(dst, src);   break;
+    case T_CHAR:    lhu(dst, src);   break;
+    case T_INT:      lw(dst, src);   break;
+    default:
+      ShouldNotReachHere();
+  }
+}
+
+void C2_MacroAssembler::arrays_hashcode_elload_v(VectorRegister vdst,
+                                                 VectorRegister vtmp,
+                                                 Register src,
+                                                 BasicType eltype) {
+  assert_different_registers(vdst, vtmp);
+  switch (eltype) {
+    case T_BOOLEAN:
+      vle8_v(vtmp, src);
+      vzext_vf4(vdst, vtmp);
+      break;
+    case T_BYTE:
+      vle8_v(vtmp, src);
+      vsext_vf4(vdst, vtmp);
+      break;
+    case T_CHAR:
+      vle16_v(vtmp, src);
+      vzext_vf2(vdst, vtmp);
+      break;
+    case T_SHORT:
+      vle16_v(vtmp, src);
+      vsext_vf2(vdst, vtmp);
+      break;
+    case T_INT:
+      vle32_v(vdst, src);
+      break;
+    default:
+      ShouldNotReachHere();
   }
 }
 

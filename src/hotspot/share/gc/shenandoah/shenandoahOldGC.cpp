@@ -49,7 +49,7 @@ void ShenandoahOldGC::op_final_mark() {
   assert(!heap->has_forwarded_objects(), "No forwarded objects on this path");
 
   if (ShenandoahVerify) {
-    heap->verifier()->verify_roots_no_forwarded();
+    heap->verifier()->verify_roots_no_forwarded(_old_generation);
   }
 
   if (!heap->cancelled_gc()) {
@@ -68,12 +68,6 @@ void ShenandoahOldGC::op_final_mark() {
 
     heap->set_unload_classes(false);
     heap->prepare_concurrent_roots();
-
-    // Believe verification following old-gen concurrent mark needs to be different than verification following
-    // young-gen concurrent mark, so am commenting this out for now:
-    //   if (ShenandoahVerify) {
-    //     heap->verifier()->verify_after_concmark();
-    //   }
 
     if (VerifyAfterGC) {
       Universe::verify();
@@ -144,21 +138,7 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
   // collection.
   heap->concurrent_final_roots();
 
-  // We do not rebuild_free following increments of old marking because memory has not been reclaimed. However, we may
-  // need to transfer memory to OLD in order to efficiently support the mixed evacuations that might immediately follow.
   size_t allocation_runway = heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(0);
   heap->compute_old_generation_balance(allocation_runway, 0);
-
-  ShenandoahGenerationalHeap::TransferResult result;
-  {
-    ShenandoahHeapLocker locker(heap->lock());
-    result = heap->balance_generations();
-  }
-
-  LogTarget(Info, gc, ergo) lt;
-  if (lt.is_enabled()) {
-    LogStream ls(lt);
-    result.print_on("Old Mark", &ls);
-  }
   return true;
 }
