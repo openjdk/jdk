@@ -412,7 +412,11 @@ public class AttrRecovery extends TestRunner {
                      """,
                      """
                      package test;
-                     public class Base {}
+                     public class Base {
+                         public int get() {
+                             return -1;
+                         }
+                     }
                      """)
             .run()
             .writeAll();
