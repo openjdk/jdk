@@ -120,7 +120,8 @@ public class TlsContextTest implements HttpServerAdapters {
         runTest(context, version, expectedProtocol, true);
     }
 
-    private void runTest(SSLContext context, Version version, String expectedProtocol, boolean setParams) throws Exception {
+    private void runTest(SSLContext context, Version version, String expectedProtocol,
+                         boolean setEmptyParams) throws Exception {
         // for HTTP/3 we won't accept to set the version to HTTP/3 on the
         //    client if we don't have TLSv1.3; We will set the version
         //    on the request instead in that case.
@@ -128,7 +129,7 @@ public class TlsContextTest implements HttpServerAdapters {
                 : HttpClient.newBuilder().version(version);
         var reqBuilder = HttpRequest.newBuilder(new URI(https2URI));
 
-        if (setParams) {
+        if (setEmptyParams) {
             builder.sslParameters(new SSLParameters());
         }
         HttpClient client = builder.sslContext(context)
