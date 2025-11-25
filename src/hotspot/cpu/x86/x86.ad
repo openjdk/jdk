@@ -2634,25 +2634,27 @@ bool Matcher::supports_vector_calling_convention(void) {
 }
 
 static bool is_ndd_demotable(const MachNode* mdef) {
-  return (((mdef->flags() & Node::PD::Flag_ndd_demotable) != 0) ||
-          ((mdef->flags() & Node::PD::Flag_ndd_demotable_commutative) != 0));
+  return ((mdef->flags() & Node::PD::Flag_ndd_demotable) != 0);
 }
 
-bool Matcher::is_register_biasing_candidate(const MachNode* mdef, int oper_index) {
+static bool is_ndd_demotable_commutative(const MachNode* mdef) {
+  return ((mdef->flags() & Node::PD::Flag_ndd_demotable_commutative) != 0);
+}
+
+static bool is_demotion_candidate(const MachNode* mdef) {
+  return (is_ndd_demotable(mdef) || is_ndd_demotable_commutative(mdef));
+}
+
+bool Matcher::is_register_biasing_candidate(const MachNode* mdef,
+                                            int oper_index) {
   if (mdef == nullptr) {
     return false;
   }
 
-  if (mdef->num_opnds() <= oper_index ||
-      mdef->operand_index(oper_index) < 0 ||
-      mdef->in(mdef->operand_index(oper_index)) != nullptr) {
-    return false;
-  }
-
-  // Demotion candidate must be register mask compatible with definition.
-  const RegMask& oper_mask = mdef->in_RegMask(mdef->operand_index(oper_index));
-  if (!oper_mask.overlap(mdef->out_RegMask())) {
-    assert(!is_ndd_demotable(mdef), "%s", mdef->Name());
+  if (mdef->num_opnds() <= oper_index || mdef->operand_index(oper_index) < 0 ||
+      mdef->in(mdef->operand_index(oper_index)) == nullptr) {
+    assert(oper_index != 1 || !is_demotion_candidate(mdef), "%s", mdef->Name());
+    assert(oper_index != 2 || !is_ndd_demotable_commutative(mdef), "%s", mdef->Name());
     return false;
   }
 
@@ -2660,23 +2662,36 @@ bool Matcher::is_register_biasing_candidate(const MachNode* mdef, int oper_index
   // address computation, biasing def towards any address component will not
   // result into NDD demotion by assembler.
   if (mdef->operand_num_edges(oper_index) != 1) {
+    assert(!is_ndd_demotable(mdef), "%s", mdef->Name());
+    return false;
+  }
+
+  // Demotion candidate must be register mask compatible with definition.
+  const RegMask &oper_mask = mdef->in_RegMask(mdef->operand_index(oper_index));
+  if (!oper_mask.overlap(mdef->out_RegMask())) {
+    assert(!is_demotion_candidate(mdef), "%s", mdef->Name());
     return false;
   }
 
   switch (oper_index) {
-    // First operand of MachNode corresponding to Intel APX NDD selection
-    // pattern can share its assigned register with definition operand if
-    // their live ranges do not overlap. In such a scenario we can demote
-    // it to legacy map0/map1 instruction by replacing its 4-byte extended
-    // EVEX prefix with shorter REX/REX2 encoding. Demotion candidates
-    // are decorated with a special flag by instruction selector.
-    case 1: return is_ndd_demotable(mdef);
+  // First operand of MachNode corresponding to Intel APX NDD selection
+  // pattern can share its assigned register with definition operand if
+  // their live ranges do not overlap. In such a scenario we can demote
+  // it to legacy map0/map1 instruction by replacing its 4-byte extended
+  // EVEX prefix with shorter REX/REX2 encoding. Demotion candidates
+  // are decorated with a special flag by instruction selector.
+  case 1:
+    return is_demotion_candidate(mdef);
 
-    // Definition operand of commutative operation can be biased towards second operand.
-    case 2: return (mdef->flags() & Node::PD::Flag_ndd_demotable_commutative) != 0;
+  // Definition operand of commutative operation can be biased towards second
+  // operand.
+  case 2:
+    return (mdef->flags() & Node::PD::Flag_ndd_demotable_commutative) != 0;
 
-    // Current scheme only selects up to two biaising candidates
-    default: assert(false, "unhandled operand index: %s", mdef->Name()); break;
+  // Current scheme only selects up to two biaising candidates
+  default:
+    assert(false, "unhandled operand index: %s", mdef->Name());
+    break;
   }
 
   return false;
@@ -14000,7 +14015,7 @@ instruct orL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (OrL src1 (LoadL src2)));
   effect(KILL cr);
-  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag, PD::Flag_ndd_demotable);
+  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag, PD::Flag_ndd_demotable_commutative);
 
   ins_cost(150);
   format %{ "eorq     $dst, $src1, $src2\t# long ndd" %}

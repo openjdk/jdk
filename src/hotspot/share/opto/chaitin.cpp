@@ -1472,8 +1472,8 @@ static OptoReg::Name find_first_set(LRG& lrg, RegMask& mask) {
 }
 
 OptoReg::Name PhaseChaitin::select_bias_lrg_color(LRG &lrg) {
-  uint bias_lrg1_idx = lrg._copy_bias;
-  uint bias_lrg2_idx = lrg._copy_bias2;
+  uint bias_lrg1_idx = _lrg_map.find(lrg._copy_bias);
+  uint bias_lrg2_idx = _lrg_map.find(lrg._copy_bias2);
 
   // If bias_lrg1 has a color
   if (bias_lrg1_idx != 0 && !_ifg->_yanked->test(bias_lrg1_idx)) {
@@ -1493,7 +1493,8 @@ OptoReg::Name PhaseChaitin::select_bias_lrg_color(LRG &lrg) {
     }
   }
 
-  if (!lrg.mask().is_offset()) {
+  uint bias_lrg_idx = 0;
+  if (bias_lrg1_idx != 0 && bias_lrg2_idx != 0) {
     // Since both the bias live ranges are not part of IFG yet,
     // hence constrain the definition mask with the bias
     // live range with minimum degree of freedom, this will
@@ -1501,15 +1502,26 @@ OptoReg::Name PhaseChaitin::select_bias_lrg_color(LRG &lrg) {
     // live range becomes the part of IFG.
     lrgs(bias_lrg1_idx).compute_set_mask_size();
     lrgs(bias_lrg2_idx).compute_set_mask_size();
-    uint bias_lrg = lrgs(bias_lrg1_idx).degrees_of_freedom() >
-                            lrgs(bias_lrg2_idx).degrees_of_freedom()
-                        ? bias_lrg2_idx
-                        : bias_lrg1_idx;
+    bias_lrg_idx = lrgs(bias_lrg1_idx).degrees_of_freedom() >
+                           lrgs(bias_lrg2_idx).degrees_of_freedom()
+                       ? bias_lrg2_idx
+                       : bias_lrg1_idx;
+  } else if (bias_lrg1_idx != 0) {
+    bias_lrg_idx = bias_lrg1_idx;
+  } else if (bias_lrg2_idx != 0) {
+    bias_lrg_idx = bias_lrg2_idx;
+  }
 
+  // RegisterMask with offset sets all the mask bits before offset.
+  // It's mainly used for allocation from stack slots. Constrain the
+  // register mask of definition live range using bias mask only if
+  // both masks have zero offset.
+  if (bias_lrg_idx != 0 && !lrg.mask().is_offset() &&
+      !lrgs(bias_lrg_idx).mask().is_offset()) {
     // Choose a color which is legal for bias_lrg
     ResourceMark rm(C->regmask_arena());
     RegMask tempmask(lrg.mask(), C->regmask_arena());
-    tempmask.and_with(lrgs(bias_lrg).mask());
+    tempmask.and_with(lrgs(bias_lrg_idx).mask());
     tempmask.clear_to_sets(lrg.num_regs());
     OptoReg::Name reg = find_first_set(lrg, tempmask);
     if (OptoReg::is_valid(reg)) {
@@ -1541,11 +1553,9 @@ OptoReg::Name PhaseChaitin::bias_color(LRG& lrg) {
   }
 
   // Try biasing the color with non-interfering bias live range[s].
-  if (lrg._copy_bias != 0 || lrg._copy_bias2 != 0) {
-    OptoReg::Name reg = select_bias_lrg_color(lrg);
-    if (OptoReg::is_valid(reg)) {
-      return reg;
-    }
+  OptoReg::Name reg = select_bias_lrg_color(lrg);
+  if (OptoReg::is_valid(reg)) {
+    return reg;
   }
 
   // If no bias info exists, just go with the register selection ordering
@@ -1559,7 +1569,7 @@ OptoReg::Name PhaseChaitin::bias_color(LRG& lrg) {
   // CNC - Fun hack.  Alternate 1st and 2nd selection.  Enables post-allocate
   // copy removal to remove many more copies, by preventing a just-assigned
   // register from being repeatedly assigned.
-  OptoReg::Name reg = lrg.mask().find_first_elem();
+  reg = lrg.mask().find_first_elem();
   if( (++_alternate & 1) && OptoReg::is_valid(reg) ) {
     // This 'Remove; find; Insert' idiom is an expensive way to find the
     // SECOND element in the mask.
