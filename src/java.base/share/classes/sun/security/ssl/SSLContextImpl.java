@@ -900,7 +900,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                 tmMediator = getTrustManagers();
             } catch (Exception e) {
                 reserved = e;
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,defaultctx")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,defaultctx")) {
                     SSLLogger.warning(
                             "Failed to load default trust managers", e);
                 }
@@ -912,7 +912,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                     kmMediator = getKeyManagers();
                 } catch (Exception e) {
                     reserved = e;
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,defaultctx")) {
+                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl,defaultctx")) {
                         SSLLogger.warning(
                                 "Failed to load default key managers", e);
                     }
@@ -970,7 +970,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             String defaultKeyStore = props.get("keyStore");
             String defaultKeyStoreType = props.get("keyStoreType");
             String defaultKeyStoreProvider = props.get("keyStoreProvider");
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,defaultctx")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,defaultctx")) {
                 SSLLogger.fine("keyStore is : " + defaultKeyStore);
                 SSLLogger.fine("keyStore type is : " +
                                         defaultKeyStoreType);
@@ -1000,7 +1000,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
 
                 // Try to initialize key store.
                 if ((defaultKeyStoreType.length()) != 0) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,defaultctx")) {
+                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl,defaultctx")) {
                         SSLLogger.finest("init keystore");
                     }
                     if (defaultKeyStoreProvider.isEmpty()) {
@@ -1023,7 +1023,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             /*
              * Try to initialize key manager.
              */
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,defaultctx")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,defaultctx")) {
                 SSLLogger.fine("init keymanager of type " +
                     KeyManagerFactory.getDefaultAlgorithm());
             }
@@ -1061,7 +1061,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                     // exception object, which may be not garbage collection
                     // friendly as 'reservedException' is a static filed.
                     reserved = new KeyManagementException(e.getMessage());
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,defaultctx")) {
+                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl,defaultctx")) {
                         SSLLogger.warning(
                                 "Failed to load default SSLContext", e);
                     }
@@ -1090,7 +1090,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                 super.engineInit(DefaultManagersHolder.keyManagers,
                         DefaultManagersHolder.trustManagers, null);
             } catch (Exception e) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,defaultctx")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,defaultctx")) {
                     SSLLogger.fine("default context init failed: ", e);
                 }
                 throw e;
