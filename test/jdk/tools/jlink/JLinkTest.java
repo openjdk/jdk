@@ -358,6 +358,39 @@ public class JLinkTest {
             helper.generateDefaultImage(userOptions, moduleName).assertFailure("Error: Invalid compression level invalid");
         }
 
+        // short command  without argument- JDK-8321139
+        {
+            String[] userOptions = {"-c"};
+            String moduleName = "invalidCompressLevelEmpty";
+            helper.generateDefaultJModule(moduleName, "composite2");
+            helper.generateDefaultImage(userOptions, moduleName).assertFailure("Error: no value given for -c");
+        }
+
+        // invalid short command - JDK-8321139
+        {
+            String[] userOptions = {"-c", "3", "--output", "image"};
+            String moduleName = "invalidCompressLevel3";
+            helper.generateDefaultJModule(moduleName, "composite2");
+            helper.generateDefaultImage(userOptions, moduleName).assertFailure("Error: Invalid compression level 3");
+        }
+
+
+        // invalid argument value - JDK-8321139
+        {
+            String[] userOptions = {"--compress", "42", "--output", "image"};
+            String moduleName = "invalidCompressLevel42";
+            helper.generateDefaultJModule(moduleName, "composite2");
+            helper.generateDefaultImage(userOptions, moduleName).assertFailure("Error: Invalid compression level 42");
+        }
+
+        // invalid argument value - JDK-8321139
+        {
+            String[] userOptions = {"--compress", "zip-", "--output", "image"};
+            String moduleName = "invalidCompressLevelZip";
+            helper.generateDefaultJModule(moduleName, "composite2");
+            helper.generateDefaultImage(userOptions, moduleName).assertFailure("Error: Invalid compression level zip-");
+        }
+
         // orphan argument - JDK-8166810
         {
             String[] userOptions = {"--compress", "2", "foo" };

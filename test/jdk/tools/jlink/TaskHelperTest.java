@@ -260,27 +260,5 @@ public class TaskHelperTest {
         assertTrue(remaining.isEmpty());
         assertEquals(testCase.expectedCompressValue, compressArgValue);
     }
-
-
-    @Test
-    public void testCompressInvalidValue() {
-        var invalidOptValues = List.of(
-                new CompressTestCase(new String[] {"-c"}, null),
-                new CompressTestCase(new String[] {"-c 3"}, "3"),
-                new CompressTestCase(new String[] {"--compress=42"}, "42"),
-                new CompressTestCase(new String[] {"--compress=zip-"}, "zip-"),
-                new CompressTestCase(new String[] {"--compress=zip-10"}, "zip-10")
-        );
-
-        for (var testCase : invalidOptValues) {
-            try {
-                var remaining = optionsHelper.handleOptions(this, testCase.tokens);
-                assertTrue(remaining.isEmpty());
-                assertEquals(testCase.expectedCompressValue, compressArgValue);
-            } catch (BadArgs e) {
-                // expected
-            }
-        }
-    }
 }
 
