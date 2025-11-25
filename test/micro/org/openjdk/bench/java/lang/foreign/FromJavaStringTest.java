@@ -68,17 +68,17 @@ public class FromJavaStringTest {
     }
 
     @Benchmark
-    public void panama_setString() {
+    public void segment_setString() {
         strSegment.setString(0, str, UTF_8);
     }
 
     @Benchmark
-    public void panama_copy() {
+    public void segment_copyStringRaw() {
         MemorySegment.copy(str, UTF_8, 0, strSegment, 0, str.length());
     }
 
     @Benchmark
-    public void panama_getBytes() {
+    public void segment_copyStringBytes() {
         byte[] bytes = str.getBytes(UTF_8);
         MemorySegment.copy(bytes, 0, strSegment, JAVA_BYTE, 0, bytes.length);
     }

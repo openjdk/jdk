@@ -71,12 +71,12 @@ public class ToJavaStringTest {
     }
 
     @Benchmark
-    public String panama_readString() {
+    public String segment_getString() {
         return strSegment.getString(0);
     }
 
     @Benchmark
-    public String panama_readStringLength() {
+    public String segment_getStringLength() {
         return strSegment.getString(0, UTF_8, length);
     }
 
@@ -86,7 +86,7 @@ public class ToJavaStringTest {
     }
 
     @Benchmark
-    public String panama_copyLength() {
+    public String segment_copyStringBytes() {
         byte[] bytes = new byte[length];
         MemorySegment.copy(strSegment, JAVA_BYTE, 0, bytes, 0, length);
         return new String(bytes, UTF_8);

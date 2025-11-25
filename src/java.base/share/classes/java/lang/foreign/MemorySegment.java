@@ -1341,7 +1341,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *                access operation will occur
      * @param charset the charset used to {@linkplain Charset#newDecoder() decode} the
      *                string bytes
-     * @param length  length in bytes of the string to read
+     * @param length  length, in bytes, of the region of memory to read and decode into
+     *                a string
      * @return a Java string constructed from the bytes read from the given starting
      *         address up to the given length
      * @throws IllegalArgumentException  if the size of the string is greater than the
@@ -2666,7 +2667,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code srcIndex > src.length() - numChars}
      * @throws IllegalArgumentException if {@code dst} is {@linkplain #isReadOnly() read-only}
      * @throws IndexOutOfBoundsException if {@code dstOffset > dstSegment.byteSize() - B} where {@code B} is the size,
-     *         in bytes, of the string encoded using the given charset.
+     *         in bytes, of the substring of {@code src} encoded using the given charset
      * @return the number of copied bytes.
      */
     @ForceInline
