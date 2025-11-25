@@ -370,10 +370,10 @@ class MultiExchange<T> implements Cancelable {
         }
 
         // Check `Transfer-Encoding`
-        var transferEncoding = headers.firstValue("Transfer-Encoding").orElse(null);
-        if (transferEncoding != null) {
+        var transferEncoding = headers.firstValue("Transfer-Encoding");
+        if (transferEncoding.isPresent()) {
             throw new ProtocolException(
-                    "Unexpected \"Transfer-Encoding\" header in a 204 response: " + transferEncoding);
+                    "Unexpected \"Transfer-Encoding\" header in a 204 response: " + transferEncoding.get());
         }
 
     }
