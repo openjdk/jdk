@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -250,11 +250,15 @@ public class H2GoAwayTest {
                         } catch (ExecutionException ee) {
                             final Throwable cause = ee.getCause();
                             if (!(cause instanceof IOException ioe)) {
+                                System.err.println("unexpected exception: " + cause
+                                        + ", for request " + REQ_URI_BASE + reqQueryPart);
                                 throw cause;
                             }
                             // verify it failed for the right reason
                             if (ioe.getMessage() == null
                                     || !ioe.getMessage().contains("request not processed by peer")) {
+                                System.err.println("unexpected exception message: " + ioe.getMessage()
+                                        + ", for request " + REQ_URI_BASE + reqQueryPart);
                                 // propagate the original failure
                                 throw ioe;
                             }
