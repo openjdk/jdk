@@ -2590,6 +2590,7 @@ public final class DateTimeFormatterBuilder {
         boolean onlyChronoField() {
             for (DateTimePrinterParser pp : printerParsers) {
                 if ((pp instanceof NumberPrinterParser    npp && !(npp.field instanceof ChronoField))
+                 || (pp instanceof TextPrinterParser      tpp && !(tpp.field instanceof ChronoField))
                  || (pp instanceof CompositePrinterParser cpp && !cpp.onlyChronoField())) {
                     return false;
                 }

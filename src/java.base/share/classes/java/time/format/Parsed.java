@@ -126,21 +126,10 @@ import java.util.Set;
 final class Parsed implements TemporalAccessor {
     // some fields are accessed using package scope from DateTimeParseContext
 
-    final boolean onlyChronoField;
-    @SuppressWarnings("unchecked")
-    private Map<TemporalField, Long> createFieldValuesMap() {
-        if (onlyChronoField) {
-            return new HashMap<>();
-        } else {
-            // Create the EnumMap with raw types and cast it appropriately
-            // This is safe because ChronoField implements TemporalField
-            return (Map<TemporalField, Long>) (Map) new EnumMap<>(ChronoField.class);
-        }
-    }
     /**
      * The parsed fields.
      */
-    final Map<TemporalField, Long> fieldValues = createFieldValuesMap();
+    final Map<TemporalField, Long> fieldValues;
     /**
      * The parsed zone.
      */
@@ -181,8 +170,12 @@ final class Parsed implements TemporalAccessor {
     /**
      * Creates an instance.
      */
+    @SuppressWarnings("unchecked")
     Parsed(boolean onlyChronoField) {
-        this.onlyChronoField = onlyChronoField;
+        // Create the EnumMap with raw types and cast it appropriately
+        // This is safe because ChronoField implements TemporalField
+        fieldValues = onlyChronoField ? (Map<TemporalField, Long>) (Map) new EnumMap<>(ChronoField.class)
+                                      : new HashMap<>();
     }
 
     /**
@@ -190,7 +183,7 @@ final class Parsed implements TemporalAccessor {
      */
     Parsed copy() {
         // only copy fields used in parsing stage
-        Parsed cloned = new Parsed(onlyChronoField);
+        Parsed cloned = new Parsed(fieldValues instanceof EnumMap);
         cloned.fieldValues.putAll(this.fieldValues);
         cloned.zone = this.zone;
         cloned.zoneNameType = this.zoneNameType;
