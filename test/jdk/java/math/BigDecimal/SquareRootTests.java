@@ -48,7 +48,8 @@ public class SquareRootTests {
     public static void main(String... args) {
         int failures = 0;
 
-        failures += negativeTests();
+        failures += zerothRootTests();
+        failures += negativeWithEvenDegreeTests();
         failures += zeroTests();
         failures += oneDigitTests();
         failures += twoDigitTests();
@@ -69,19 +70,41 @@ public class SquareRootTests {
         }
     }
 
-    private static int negativeTests() {
+    private static int zerothRootTests() {
+        int failures = 0;
+
+        for (long i = -5; i < 5; i++) {
+            for (int j = -5; j < 5; j++) {
+                try {
+                    BigDecimal input = BigDecimal.valueOf(i, j);
+                    BigDecimal result = input.rootn(0, MathContext.DECIMAL64);
+                    System.err.println("Unexpected 0th root of negative: (" +
+                                       input + ").rootn(0)  = " + result );
+                    failures += 1;
+                } catch (ArithmeticException e) {
+                    ; // Expected
+                }
+            }
+        }
+
+        return failures;
+    }
+
+    private static int negativeWithEvenDegreeTests() {
         int failures = 0;
 
         for (long i = -10; i < 0; i++) {
             for (int j = -5; j < 5; j++) {
-                try {
-                    BigDecimal input = BigDecimal.valueOf(i, j);
-                    BigDecimal result = input.sqrt(MathContext.DECIMAL64);
-                    System.err.println("Unexpected sqrt of negative: (" +
-                                       input + ").sqrt()  = " + result );
-                    failures += 1;
-                } catch (ArithmeticException e) {
-                    ; // Expected
+                BigDecimal input = BigDecimal.valueOf(i, j);
+                for (int n = -4; n <= 4; n += 2) {
+                    try {
+                        BigDecimal result = input.sqrt(MathContext.DECIMAL64);
+                        System.err.println("Unexpected nth root of negative: (" +
+                                           input + ").rootn(" + n + ")  = " + result );
+                        failures += 1;
+                    } catch (ArithmeticException e) {
+                        ; // Expected
+                    }
                 }
             }
         }
@@ -93,13 +116,27 @@ public class SquareRootTests {
         int failures = 0;
 
         for (int i = -100; i < 100; i++) {
-            BigDecimal expected = BigDecimal.valueOf(0L, Math.ceilDiv(i, 2));
-            // These results are independent of rounding mode
-            failures += compare(BigDecimal.valueOf(0L, i).sqrt(MathContext.UNLIMITED),
-                                expected, true, "zeros");
+            BigDecimal input = BigDecimal.valueOf(0L, i);
+            for (int n = -10; n <= 0; n++) {
+                try {
+                    BigDecimal result = input.rootn(n, MathContext.DECIMAL64);
+                    System.err.println("Unexpected nth root of zero: (" +
+                                       input + ").rootn(" + n + ")  = " + result );
+                    failures += 1;
+                } catch (ArithmeticException e) {
+                    ; // Expected
+                }
+            }
 
-            failures += compare(BigDecimal.valueOf(0L, i).sqrt(MathContext.DECIMAL64),
-                                expected, true, "zeros");
+            for (int n = 1; n < 10; n++) {
+                BigDecimal expected = BigDecimal.valueOf(0L, Math.ceilDiv(i, n));
+                // These results are independent of rounding mode
+                failures += compare(input.rootn(n, MathContext.UNLIMITED),
+                                    expected, true, "zeros");
+
+                failures += compare(input.rootn(n, MathContext.DECIMAL64),
+                                    expected, true, "zeros");
+            }
         }
 
         return failures;
