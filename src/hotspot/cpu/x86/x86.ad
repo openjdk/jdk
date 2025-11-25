@@ -2767,21 +2767,11 @@ class HandlerImpl {
 
  public:
 
-  static int emit_exception_handler(C2_MacroAssembler *masm);
   static int emit_deopt_handler(C2_MacroAssembler* masm);
 
-  static uint size_exception_handler() {
-    // NativeCall instruction size is the same as NativeJump.
-    // exception handler starts out as jump and can be patched to
-    // a call be deoptimization.  (4932387)
-    // Note that this value is also credited (in output.cpp) to
-    // the size of the code section.
-    return NativeJump::instruction_size;
-  }
-
   static uint size_deopt_handler() {
-    // three 5 byte instructions plus one move for unreachable address.
-    return 15+3;
+    // one call and one jmp.
+    return 7;
   }
 };
 
@@ -2873,24 +2863,6 @@ int MachNode::compute_padding(int current_offset) const {
   }
 }
 
-// Emit exception handler code.
-// Stuff framesize into a register and call a VM stub routine.
-int HandlerImpl::emit_exception_handler(C2_MacroAssembler* masm) {
-
-  // Note that the code buffer's insts_mark is always relative to insts.
-  // That's why we must use the macroassembler to generate a handler.
-  address base = __ start_a_stub(size_exception_handler());
-  if (base == nullptr) {
-    ciEnv::current()->record_failure("CodeCache is full");
-    return 0;  // CodeBuffer::expand failed
-  }
-  int offset = __ offset();
-  __ jump(RuntimeAddress(OptoRuntime::exception_blob()->entry_point()));
-  assert(__ offset() - offset <= (int) size_exception_handler(), "overflow");
-  __ end_a_stub();
-  return offset;
-}
-
 // Emit deopt handler code.
 int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
 
@@ -2903,21 +2875,20 @@ int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
   }
   int offset = __ offset();
 
-  address the_pc = (address) __ pc();
-  Label next;
-  // push a "the_pc" on the stack without destroying any registers
-  // as they all may be live.
+  Label start;
+  __ bind(start);
 
-  // push address of "next"
-  __ call(next, relocInfo::none); // reloc none is fine since it is a disp32
-  __ bind(next);
-  // adjust it so it matches "the_pc"
-  __ subptr(Address(rsp, 0), __ offset() - offset);
+  __ call(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
 
-  __ jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
+  int entry_offset = __ offset();
+
+  __ jmp(start);
+
   assert(__ offset() - offset <= (int) size_deopt_handler(), "overflow %d", (__ offset() - offset));
+  assert(__ offset() - entry_offset >= NativePostCallNop::first_check_size,
+         "out of bounds read in post-call NOP check");
   __ end_a_stub();
-  return offset;
+  return entry_offset;
 }
 
 static Assembler::Width widthForType(BasicType bt) {
