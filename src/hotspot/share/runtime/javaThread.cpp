@@ -1169,10 +1169,8 @@ void JavaThread::set_is_VTMS_transition_disabler(bool val) {
 //   - Target thread will not enter any new monitors.
 //
 bool JavaThread::java_suspend(bool register_vthread_SR) {
-#if INCLUDE_JVMTI
   // Suspending a JavaThread in VTMS transition or disabling VTMS transitions can cause deadlocks.
   assert(!is_VTMS_transition_disabler(), "no suspend allowed for VTMS transition disablers");
-#endif
 
   guarantee(Thread::is_JavaThread_protected(/* target */ this),
             "target JavaThread is not protected in calling context.");
