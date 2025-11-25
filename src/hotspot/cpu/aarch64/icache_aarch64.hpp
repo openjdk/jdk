@@ -28,6 +28,4 @@
 
 #include OS_CPU_HEADER(icache)
 
-#include "code/nmethod.hpp"
-
 #endif // CPU_AARCH64_ICACHE_AARCH64_HPP
