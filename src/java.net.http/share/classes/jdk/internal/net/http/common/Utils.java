@@ -1346,6 +1346,26 @@ public final class Utils {
     }
     // -- toAsciiString-like support to encode path and query URI segments
 
+    public static int readStatusCode(HttpHeaders headers, String errorPrefix) throws ProtocolException {
+        var s = headers.firstValue(":status").orElse(null);
+        if (s == null) {
+            throw new ProtocolException(errorPrefix + "missing status code");
+        }
+        Throwable t = null;
+        int i = 0;
+        try {
+            i = Integer.parseInt(s);
+        } catch (NumberFormatException nfe) {
+            t = nfe;
+        }
+        if (t != null || i < 100 || i > 999) {
+            var pe = new ProtocolException(errorPrefix + "invalid status code: " + s);
+            pe.initCause(t);
+            throw pe;
+        }
+        return i;
+    }
+
     public static long readContentLength(HttpHeaders headers, String errorPrefix, long defaultIfMissing) throws ProtocolException {
         var k = "Content-Length";
         var s = headers.firstValue(k).orElse(null);

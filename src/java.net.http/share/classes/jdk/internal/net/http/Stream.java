@@ -62,6 +62,7 @@ import jdk.internal.net.http.hpack.DecodingCallback;
 import static jdk.internal.net.http.AltSvcProcessor.processAltSvcFrame;
 
 import static jdk.internal.net.http.Exchange.MAX_NON_FINAL_RESPONSES;
+import static jdk.internal.net.http.common.Utils.readStatusCode;
 
 /**
  * Http/2 Stream handling.
@@ -1817,26 +1818,6 @@ class Stream<T> extends ExchangeImpl<T> {
                         .formatted(streamid)), ResetFrame.FLOW_CONTROL_ERROR);
             return true;
         }
-    }
-
-    private static int readStatusCode(HttpHeaders headers, String errorPrefix) throws ProtocolException {
-        var s = headers.firstValue(":status").orElse(null);
-        if (s == null) {
-            throw new ProtocolException(errorPrefix + "missing status code");
-        }
-        Throwable t = null;
-        int i = 0;
-        try {
-            i = Integer.parseInt(s);
-        } catch (NumberFormatException nfe) {
-            t = nfe;
-        }
-        if (t != null || i < 0) {
-            var pe = new ProtocolException(errorPrefix + "invalid status code: " + s);
-            pe.initCause(t);
-            throw pe;
-        }
-        return i;
     }
 
     /**

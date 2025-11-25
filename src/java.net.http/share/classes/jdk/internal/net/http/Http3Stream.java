@@ -58,6 +58,7 @@ import jdk.internal.net.http.quic.streams.QuicStreamReader;
 import static jdk.internal.net.http.Exchange.MAX_NON_FINAL_RESPONSES;
 import static jdk.internal.net.http.RedirectFilter.HTTP_NOT_MODIFIED;
 import static jdk.internal.net.http.common.Utils.readContentLength;
+import static jdk.internal.net.http.common.Utils.readStatusCode;
 
 /**
  * A common super class for the HTTP/3 request/response stream ({@link Http3ExchangeImpl}
@@ -606,28 +607,21 @@ sealed abstract class Http3Stream<T> extends ExchangeImpl<T> permits Http3Exchan
          }
 
          int responseCode;
-         boolean finalResponse = false;
          try {
-             responseCode = (int) responseHeaders
-                     .firstValueAsLong(":status")
-                     .orElseThrow(() -> new IOException("no statuscode in response"));
-         } catch (IOException | NumberFormatException exception) {
+             responseCode = readStatusCode(responseHeaders, "");
+         } catch (ProtocolException pe) {
              // RFC-9114: 4.1.2.  Malformed Requests and Responses:
              //  "Malformed requests or responses that are
              //   detected MUST be treated as a stream error of type H3_MESSAGE_ERROR"
-             cancelImpl(exception, Http3Error.H3_MESSAGE_ERROR);
-             return;
-         }
-         if (responseCode < 100 || responseCode > 999) {
-             cancelImpl(new IOException("Unexpected :status header value"), Http3Error.H3_MESSAGE_ERROR);
+             cancelImpl(pe, Http3Error.H3_MESSAGE_ERROR);
              return;
          }
 
+         boolean finalResponse = false;
          if (responseCode >= 200) {
              responseState = ResponseState.PERMIT_TRAILER;
              finalResponse = true;
          } else {
-             assert responseCode >= 100 && responseCode <= 200 : "unexpected responseCode: " + responseCode;
              String protocolErrorMsg = checkInterimResponseCountExceeded();
              if (protocolErrorMsg != null) {
                  if (debug.on()) {
