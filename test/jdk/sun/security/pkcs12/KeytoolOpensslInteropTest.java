@@ -23,7 +23,7 @@
 
 /*
  * @test id=GenerateOpensslPKCS12
- * @bug 8076190 8242151 8153005 8266182
+ * @bug 8076190 8242151 8153005 8266182 8362894
  * @summary This is java keytool <-> openssl interop test. This test generates
  *          some openssl keystores on the fly, java operates on it and
  *          vice versa.
@@ -138,6 +138,11 @@ public class KeytoolOpensslInteropTest {
                 "pass:changeit", "-certpbe", "AES-256-CBC", "-keypbe",
                 "AES-256-CBC", "-macalg", "SHA512")
                 .shouldHaveExitValue(0);
+
+        ProcessTools.executeCommand(opensslPath, "pkcs12", "-export", "-in",
+                        "kandc", "-out", "os6", "-name", "a", "-passout",
+                        "pass:changeit", "-pbmac1_pbkdf2", "-macalg", "sha256")
+                .shouldHaveExitValue(0);
     }
 
     private static void testWithJavaCommands() throws Throwable {
@@ -167,6 +172,8 @@ public class KeytoolOpensslInteropTest {
         check("os5", "a", "wrongpass", "-", IOException.class, "-", "-");
         // no storepass no cert
         check("os5", "a", null, "changeit", true, false, true);
+
+        check("os6", "a", "changeit", "changeit", true, true, true);
 
         // keytool
 

@@ -111,6 +111,10 @@ final record FileAssociationGroup(List<FileAssociation> items) {
             return this;
         }
 
+        Optional<String> description() {
+            return Optional.ofNullable(description);
+        }
+
         Builder mimeTypes(Collection<String> v) {
             mimeTypes = Set.copyOf(v);
             return this;
