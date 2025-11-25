@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,13 +101,19 @@ public class EventHandler implements Runnable {
         notifier.receivedEvent(event);
 
         /*
-         * See if the event thread is a vthread that we need to start tracking.
+         * See if the event thread is a vthread that we need to start tracking. Note
+         * we don't track the thread if it is not going to be suspended because it
+         * might terminate before we even register the ThreadDeathRequest below,
+         * which will result in it never being unregistered.
          */
         ThreadReference eventThread = null;
-        if (event instanceof ClassPrepareEvent evt) {
-            eventThread = evt.thread();
-        } else if (event instanceof LocatableEvent evt) {
-            eventThread = evt.thread();
+        EventRequest req = event.request();
+        if (req != null && req.suspendPolicy() != EventRequest.SUSPEND_NONE) {
+            if (event instanceof ClassPrepareEvent evt) {
+                eventThread = evt.thread();
+            } else if (event instanceof LocatableEvent evt) {
+                eventThread = evt.thread();
+            }
         }
         if (eventThread != null) {
             // This might be a vthread we haven't seen before, so add it to the list.

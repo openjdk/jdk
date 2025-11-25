@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1207,6 +1207,15 @@ clearWatchpoint(HandlerNode *node)
 /**
  * Determine the thread this node is filtered on.
  * NULL if not thread filtered.
+ *
+ * FIXME - This API does not take into account if there is more than one filter thread.
+ * As a result the event will end up getting enabled on the thread, but when an event
+ * comes in, it will (properly) fail the eventFilterRestricted_passesFilter() check,
+ * and thus (properly) not pass the event on to the debugger. The downside of all this
+ * is that it was not actually necessary to enable the event on the "request" thread.
+ * However, if we return NULL if there is more than one filter thread, then the result
+ * is enabling the event on all threads, and we don't want that either. This API needs
+ * a way to communicate that there was more than one filter thread, so don't enable the event.
  */
 static jthread
 requestThread(HandlerNode *node)
@@ -1243,6 +1252,39 @@ matchThread(JNIEnv *env, HandlerNode *node, void *arg)
     return isSameObject(env, reqThread, goalThread);
 }
 
+// Returns true if this handler has the PlatformThreadsOnly filter enabled.
+static jboolean
+hasPlatformThreadsOnlyFilter(HandlerNode *node)
+{
+    int i;
+    Filter *filter = FILTERS_ARRAY(node);
+
+    for (i = 0; i < FILTER_COUNT(node); ++i, ++filter) {
+        switch (filter->modifier) {
+            case JDWP_REQUEST_MODIFIER(PlatformThreadsOnly):
+                return JNI_TRUE;
+            default:
+                continue;
+        }
+    }
+    return JNI_FALSE;
+}
+
+// Used to determine if no handler of the given type have the PlatformThreadsOnly filter.
+static jboolean
+matchHasNoPlatformThreadsOnlyFilter(JNIEnv *env, HandlerNode *node, void *arg)
+{
+    jthread goalThread = (jthread)arg;
+    jthread reqThread = requestThread(node); // the filter thread
+    if (hasPlatformThreadsOnlyFilter(node)) {
+        return JNI_FALSE;
+    } else {
+        // If this handler does not have a PlatformThreadsOnly filter, then we
+        // only return true if the threads also match, or are both NULL.
+        return isSameObject(env, reqThread, goalThread);
+    }
+}
+
 /**
  * Do any enabling of events (including setting breakpoints etc)
  * needed to get the events requested by this handler node.
@@ -1251,8 +1293,9 @@ static jvmtiError
 enableEvents(HandlerNode *node)
 {
     jvmtiError error = JVMTI_ERROR_NONE;
+    int ei = NODE_EI(node);
 
-    switch (NODE_EI(node)) {
+    switch (ei) {
         /* The stepping code directly enables/disables stepping as
          * necessary
          */
@@ -1261,14 +1304,54 @@ enableEvents(HandlerNode *node)
          * (hardwired in the event hook), so we don't change the
          * notification mode here.
          */
-        case EI_THREAD_START:
-        case EI_THREAD_END:
         case EI_VM_INIT:
         case EI_VM_DEATH:
         case EI_CLASS_UNLOAD:
+            return JVMTI_ERROR_NONE;
+
+        case EI_THREAD_END:
+        case EI_THREAD_START:
+            /* JVMTI_EVENT_THREAD_START/END are always enabled. However, we need to
+             * conditionally enable JVMTI_EVENT_VIRTUAL_THREAD_START/END based on
+             * whether or not there is any handler that does not use the
+             * PlatformThreadsOnly filter. Note we don't have a separate JDWP
+             * event type for virtual theads. They use THREAD_START/END, but
+             * JVMTI does have different event types for them.
+             */
+            if (gdata->includeVThreads) {
+                // JVMTI_EVENT_VIRTUAL_THREAD_START/END are already always enabled.
+                return JVMTI_ERROR_NONE;
+            }
+            if (ei == EI_THREAD_START && gdata->virtualThreadStartEventsPermanentlyEnabled) {
+                // JVMTI_EVENT_VIRTUAL_THREAD_START is already permanently enabled.
+                return JVMTI_ERROR_NONE;
+            }
+            if (hasPlatformThreadsOnlyFilter(node)) {
+                // This request has the filter so would not end up triggering
+                // enabling the VIRTUAL events.
+                return JVMTI_ERROR_NONE;
+            }
+
+            // This request does not have the filter, so enable VIRTUAL events. It's possible
+            // that the events are already enabled, but rather than trying to determine that
+            // first, it's a lot easier to just blindly enable them. There's no harm if they
+            // were already enabled.
+            if (ei == EI_THREAD_START) {
+                error = threadControl_setEventMode(JVMTI_ENABLE, EI_VIRTUAL_THREAD_START, NULL);
+            } else {
+                jthread thread = requestThread(node);
+                error = threadControl_setEventMode(JVMTI_ENABLE, EI_VIRTUAL_THREAD_END, thread);
+            }
+            if (error != JVMTI_ERROR_NONE && error != JVMTI_ERROR_THREAD_NOT_ALIVE) {
+                EXIT_ERROR(error, "enabling VIRTUAL_THREAD_START/END");
+            }
+            return error;
+
         case EI_VIRTUAL_THREAD_START:
         case EI_VIRTUAL_THREAD_END:
-            return error;
+            // These are mapped to EI_THREAD_START/END so we should never see a handler for them.
+            JDI_ASSERT(JNI_FALSE);
+            return JVMTI_ERROR_NONE;
 
         case EI_FIELD_ACCESS:
         case EI_FIELD_MODIFICATION:
@@ -1291,10 +1374,8 @@ enableEvents(HandlerNode *node)
          * thread (or all threads (thread == NULL)) then enable
          * these events on this thread.
          */
-        if (!eventHandlerRestricted_iterator(
-                NODE_EI(node), matchThread, thread)) {
-            error = threadControl_setEventMode(JVMTI_ENABLE,
-                                               NODE_EI(node), thread);
+        if (!eventHandlerRestricted_iterator(ei, matchThread, thread)) {
+            error = threadControl_setEventMode(JVMTI_ENABLE, ei, thread);
         }
     }
     return error;
@@ -1310,9 +1391,9 @@ disableEvents(HandlerNode *node)
     jvmtiError error = JVMTI_ERROR_NONE;
     jvmtiError error2 = JVMTI_ERROR_NONE;
     jthread thread;
+    int ei = NODE_EI(node);
 
-
-    switch (NODE_EI(node)) {
+    switch (ei) {
         /* The stepping code directly enables/disables stepping as
          * necessary
          */
@@ -1321,14 +1402,60 @@ disableEvents(HandlerNode *node)
          * (hardwired in the event hook), so we don't change the
          * notification mode here.
          */
-        case EI_THREAD_START:
-        case EI_THREAD_END:
         case EI_VM_INIT:
         case EI_VM_DEATH:
         case EI_CLASS_UNLOAD:
+            return JVMTI_ERROR_NONE;
+
+        case EI_THREAD_START:
+        case EI_THREAD_END:
+            // See comments above in enableEvents() for special handling of virtual thread events.
+            if (gdata->includeVThreads) {
+                // JVMTI_EVENT_VIRTUAL_THREAD_START/END are already enabled and stay enabled.
+                return JVMTI_ERROR_NONE;
+            }
+            if (ei == EI_THREAD_START && gdata->virtualThreadStartEventsPermanentlyEnabled) {
+                // JVMTI_EVENT_VIRTUAL_THREAD_START is already permanently enabled.
+                return JVMTI_ERROR_NONE;
+            }
+            if (hasPlatformThreadsOnlyFilter(node)) {
+                // This request has the filter, so removing it would not end up
+                // triggering disabling the virtual thread events.
+                return JVMTI_ERROR_NONE;
+            }
+
+            jthread thread = requestThread(node);
+            // Unlike when enabling events, we can't just blindly disable them here.
+            // If, other than this handler, there are one or more handlers that require
+            // events to be enabled, then we need to keep them enabled, so we need to
+            // check all the other handlers.
+            //
+            // One thing important to note when we call eventHandlerRestricted_iterator()
+            // below is that "node" has already been removed from the event handler list,
+            // so it won't show up during the iteration.
+            if (!eventHandlerRestricted_iterator(ei, matchHasNoPlatformThreadsOnlyFilter, thread)) {
+                // This request doesn't have the filter, but all the other existing
+                // requests do, so we should disable the event because none of the
+                // remaining requests rely on it.
+                if (ei == EI_THREAD_START) {
+                    error = threadControl_setEventMode(JVMTI_DISABLE, EI_VIRTUAL_THREAD_START, NULL);
+                } else {
+                    error = threadControl_setEventMode(JVMTI_DISABLE, EI_VIRTUAL_THREAD_END, thread);
+                }
+                //tty_message("DISABLE:(%d) DISABLED - all nodes have filters", ei);
+            } else {
+                //tty_message("DISABLE:(%d) NO ACTION - at least one node with the filter", ei);
+            }
+            if (error != JVMTI_ERROR_NONE) {
+                EXIT_ERROR(error, "disabling VIRTUAL_THREAD_START/END");
+            }
+            return error;
+            
         case EI_VIRTUAL_THREAD_START:
         case EI_VIRTUAL_THREAD_END:
-            return error;
+            // These are mapped to EI_THREAD_START/END so we should never see a handler for them.
+            JDI_ASSERT(JNI_FALSE);
+            return JVMTI_ERROR_NONE;
 
         case EI_FIELD_ACCESS:
         case EI_FIELD_MODIFICATION:
@@ -1351,11 +1478,10 @@ disableEvents(HandlerNode *node)
      *
      * Disable even if the above caused an error
      */
-    if (!eventHandlerRestricted_iterator(NODE_EI(node), matchThread, thread)) {
-        error2 = threadControl_setEventMode(JVMTI_DISABLE,
-                                            NODE_EI(node), thread);
+    if (!eventHandlerRestricted_iterator(ei, matchThread, thread)) {
+        error2 = threadControl_setEventMode(JVMTI_DISABLE, ei, thread);
     }
-    return error != JVMTI_ERROR_NONE? error : error2;
+    return error != JVMTI_ERROR_NONE ? error : error2;
 }
 
 

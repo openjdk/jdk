@@ -989,6 +989,8 @@ parseOptions(char *options)
     gdata->includeVThreads = JNI_FALSE;
     gdata->rememberVThreadsWhenDisconnected = JNI_FALSE;
 
+    gdata->virtualThreadStartEventsPermanentlyEnabled = JNI_FALSE;
+
     gdata->jvmti_data_dump = JNI_FALSE;
 
     /* Options being NULL will end up being an error. */

@@ -94,6 +94,9 @@ typedef struct ThreadList {
     ThreadNode *first;
 } ThreadList;
 
+static void dumpThread(ThreadNode *node);
+static void dumpThreadList(ThreadList *list);
+
 /*
  * popFrameEventLock is used to notify that the event has been received
  */
@@ -157,11 +160,20 @@ setThreadLocalStorage(jthread thread, ThreadNode *node)
 
     error = JVMTI_FUNC_PTR(gdata->jvmti,SetThreadLocalStorage)
             (gdata->jvmti, thread, (void*)node);
-    if ( error == JVMTI_ERROR_THREAD_NOT_ALIVE && node == NULL) {
-        /* Just return. This can happen when clearing the TLS. */
-        return;
-    } else if ( error != JVMTI_ERROR_NONE ) {
-        /* The jthread object must be valid, so this must be a fatal error */
+    if (error == JVMTI_ERROR_THREAD_NOT_ALIVE) {
+        if (node == NULL) {
+            // Just return. This can happen when clearing the TLS.
+            return;
+        }
+        if (isVThread(thread)) {
+            // Just return. This can happen with a vthread that is running and we
+            // had to create a ThreadNode for it. By the time we get here, it may
+            // have already terminated.
+            return;
+        }
+    }
+    if (error != JVMTI_ERROR_NONE) {
+        // The jthread object must be valid, so this must be a fatal error.
         EXIT_ERROR(error, "cannot set thread local storage");
     }
 }
@@ -251,9 +263,10 @@ findThread(ThreadList *list, jthread thread)
          * Otherwise the thread should not be on the runningThreads.
          */
         if ( !gdata->jvmtiCallBacksCleared ) {
-            /* The thread better not be on either list if the TLS lookup failed. */
+            // The thread better not be on the runningThreads list if the TLS lookup failed.
+            // It might be on the runningVThreads list because VIRTUAL_THREAD_END events
+            // might not be enabled, so we don't check runningVThreads.
             JDI_ASSERT(!nonTlsSearch(getEnv(), &runningThreads, thread));
-            JDI_ASSERT(!nonTlsSearch(getEnv(), &runningVThreads, thread));
         } else {
             /*
              * Search the runningThreads and runningVThreads lists. The TLS lookup may have
@@ -320,7 +333,7 @@ findRunningThread(jthread thread)
             // Unlike platform threads, we don't always have a ThreadNode for all vthreads.
             // They can be freed if not holding on to any relevant state info. It's also
             // possible that the vthread was created before the debugger attached. Also
-            // in the future we won't be enabling VIRTUAL_THREAD_START events in some
+            // we won't be enabling VIRTUAL_THREAD_START events in some
             // cases, which means we won't be creating a ThreadNode when the vthread is
             // created. If for any of the above reasons the ThreadNode lookup failed,
             // we'll create one for the vthread now, but only if really needed.
@@ -557,6 +570,26 @@ freeUnusedVThreadNode(JNIEnv *env, ThreadNode* node)
     }
 
     /*
+     * We are about to do a bunch of checks to see if the ThreadNode is holding
+     * on to any important thread state information. If it is, then we can't
+     * free it. However, sometimes this state information is still present even
+     * after the thread has termintated. In this case the state information
+     * is no longer relevant and we can still free the ThreadNode, so the first
+     * thing we do is check if the thread is termintated, and bypass all the
+     * other checks if it is.
+     */
+    jint vthread_state = 0;
+    jvmtiError error = threadState(node->thread, &vthread_state);
+    if (error != JVMTI_ERROR_NONE) {
+        EXIT_ERROR(error, "getting vthread state");
+    }
+    if ((vthread_state & JVMTI_THREAD_STATE_TERMINATED) != 0) {
+        removeNode(node);
+        clearThread(env, node);
+        return;
+    }
+
+    /*
      * node->suspendCount requires special handling to see if it triggers having
      * to keep the node around. It's possible for it to be 0 yet we still need to
      * keep the node around. Also, it's possbile for it to be non-zero yet we
@@ -657,6 +690,18 @@ enumerateOverThreadList(JNIEnv *env, ThreadList *list,
     return error;
 }
 
+
+/*
+ * DeferredEventMode:  Deferred event mode support
+ *
+ * JDWP allows filtering of events by thread. This is allowed after the thread has been
+ * created, even if it has not been started yet. However, JVMTI does not allow enabling
+ * events for a specific thread before the thread has started. If an EventRequest is made
+ * with thread filtering enabled, and this is done  before the thread is running, we must
+ * defer the enabling of the JVMTI event until the THREAD_START event is received. The
+ * code below supports this deferred event enabling.
+ */
+
 static void
 insertEventMode(DeferredEventModeList *list, DeferredEventMode *eventMode)
 {
@@ -697,6 +742,32 @@ addDeferredEventMode(JNIEnv *env, jvmtiEventMode mode, EventIndex ei, jthread th
     eventMode->ei = ei;
     eventMode->next = NULL;
     insertEventMode(&deferredEventModes, eventMode);
+
+    /*
+     * Deferred event mode handling relies on getting a THREAD_START event or
+     * VIRTUAL_THREAD_START event to trigger the enabling of the event. THREAD_START
+     * is always enabled, but VIRTUAL_THREAD_START may not be. So that means if
+     * there is a deferred event mode request for a virtual thread, we must make
+     * sure VIRTUAL_THREAD_START events are enabled.
+     *
+     * Since it is not common to enable events on a thread that has not yet been
+     * started, we choose to just permanently enable VIRTUAL_THREAD_START events
+     * when needed here. A more elegant solution would also disable them when
+     * the deferred event mode is dequeued and processed, but that comes with
+     * complications. We'd not only need to make sure that there are no other
+     * deferred event modes queue up for virtual threads, but we'd also need to
+     * make sure that there are no event handlers (event requests) for THREAD_START
+     * events that do not have the PlatformThreadsFilter enabled.
+     */
+    if (!gdata->includeVThreads && !gdata->virtualThreadStartEventsPermanentlyEnabled && isVThread(thread)) {
+        jvmtiError error = JVMTI_FUNC_PTR(gdata->jvmti,SetEventNotificationMode)
+                (gdata->jvmti, JVMTI_ENABLE, JVMTI_EVENT_VIRTUAL_THREAD_START, NULL);
+        if (error != JVMTI_ERROR_NONE) {
+            EXIT_ERROR(error, "cannot enable JVMTI_EVENT_VIRTUAL_THREAD_START");
+        }
+        gdata->virtualThreadStartEventsPermanentlyEnabled = JNI_TRUE;
+    }
+    
     return JVMTI_ERROR_NONE;
 }
 
@@ -1240,10 +1311,28 @@ commonResumeList(JNIEnv *env)
                 (gdata->jvmti, reqCnt, reqList, results);
     for (i = 0; i < reqCnt; i++) {
         ThreadNode *node;
+        jthread thread = reqList[i];
 
-        node = findRunningThread(reqList[i]);
+        node = findRunningThread(thread);
         if (node == NULL) {
-            EXIT_ERROR(AGENT_ERROR_INVALID_THREAD,"missing entry in running thread table");
+            node = nonTlsSearch(getEnv(), &runningVThreads, thread);
+            if (node != NULL) {
+                // This means the vthread has terminated already. This can only happen
+                // with vthreads since VIRTUAL_THREAD_END events might not be enable to
+                // trigger removal of the ThreadNode when the thread exits. Just assert
+                // that the thread is in the TERMINATED state. The ThreadNode will
+                // eventually be removed by freeUnusedVThreadNodes().
+                if (gdata->assertOn) {
+                    jint vthread_state = 0;
+                    jvmtiError error = threadState(thread, &vthread_state);
+                    if (error != JVMTI_ERROR_NONE) {
+                        EXIT_ERROR(error, "getting vthread state");
+                    }
+                    JDI_ASSERT((vthread_state & JVMTI_THREAD_STATE_TERMINATED) != 0);
+                }
+            } else {
+                EXIT_ERROR(AGENT_ERROR_INVALID_THREAD,"missing entry in running thread table");
+            }
         }
         LOG_MISC(("thread=%p resumed as part of list", node->thread));
 
@@ -1548,8 +1637,7 @@ threadControl_suspendAll(void)
         jint count;
 
         if (gdata->vthreadsSupported) {
-            // Now is a good time to garbage collect vthread nodes. We want to do it before
-            // any suspendAll because it will prevent the suspended nodes from being freed.
+            // Now is a good time to garbage collect vthread nodes.
             if (!gdata->includeVThreads) {
                 freeUnusedVThreadNodes(env);
             }
@@ -2716,9 +2804,6 @@ threadControl_allVThreads(jint *numVThreads)
 
 /***** APIs for debugging the debug agent *****/
 
-static void dumpThreadList(ThreadList *list);
-static void dumpThread(ThreadNode *node);
-
 void
 threadControl_dumpAllThreads()
 {
@@ -2806,6 +2891,14 @@ dumpThread(ThreadNode *node) {
     tty_message("\tcurrentInvoke.pending: %d", node->currentInvoke.pending);
     tty_message("\tcurrentInvoke.started: %d", node->currentInvoke.started);
     tty_message("\tcurrentInvoke.available: %d", node->currentInvoke.available);
+    tty_message("\tcurrentStep.pending: %d", node->currentStep.pending);
+    tty_message("\tinstructionStepMode: %d", node->instructionStepMode);
+    tty_message("\tcurrent_ei: %d", node->current_ei);
+    tty_message("\tcleInfo.ei: %d", node->cleInfo.ei);
+    tty_message("\tpopFrameEvent: %d", node->popFrameEvent);
+    tty_message("\tpopFrameProceed: %d", node->popFrameProceed);
+    tty_message("\tpopFrameThread: %d", node->popFrameThread);
+    tty_message("\tpendingStop: 0x%x", node->pendingStop);
     tty_message("\tobjID: %d", commonRef_refToID(getEnv(), node->thread));
 #endif
 }

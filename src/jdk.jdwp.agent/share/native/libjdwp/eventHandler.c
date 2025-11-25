@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1640,29 +1640,6 @@ eventHandler_initialize(jbyte sessionID)
 
 void
 eventHandler_onConnect() {
-    debugMonitorEnter(handlerLock);
-
-    /*
-     * Enable vthread START and END events if they are not already always enabled.
-     * They are always enabled if we are remembering vthreads when no debugger is
-     * connected. Otherwise they are only enabled when connected because they can
-     * be very noisy and hurt performance a lot.
-     */
-    if (gdata->vthreadsSupported && !gdata->rememberVThreadsWhenDisconnected) {
-        jvmtiError error;
-        error = threadControl_setEventMode(JVMTI_ENABLE,
-                                           EI_VIRTUAL_THREAD_START, NULL);
-        if (error != JVMTI_ERROR_NONE) {
-            EXIT_ERROR(error,"Can't enable vthread start events");
-        }
-        error = threadControl_setEventMode(JVMTI_ENABLE,
-                                           EI_VIRTUAL_THREAD_END, NULL);
-        if (error != JVMTI_ERROR_NONE) {
-            EXIT_ERROR(error,"Can't enable vthread end events");
-        }
-    }
-
-    debugMonitorExit(handlerLock);
 }
 
 static jvmtiError
@@ -1706,6 +1683,19 @@ eventHandler_reset(jbyte sessionID)
         if (adjust_jvmti_error(error) != JVMTI_ERROR_NONE) {
             EXIT_ERROR(error,"Can't disable vthread end events");
         }
+    }
+
+    /* We also want to disable VIRTUAL_THREAD_START events if they were enabled due to
+     * a deferred event request.
+     */
+    if (gdata->virtualThreadStartEventsPermanentlyEnabled) {
+        jvmtiError error;
+        error = threadControl_setEventMode(JVMTI_DISABLE,
+                                           EI_VIRTUAL_THREAD_START, NULL);
+        if (adjust_jvmti_error(error) != JVMTI_ERROR_NONE) {
+            EXIT_ERROR(error,"Can't disable vthread start events");
+        }
+        gdata->virtualThreadStartEventsPermanentlyEnabled = JNI_FALSE;
     }
 
     /* Reset the event helper thread, purging all queued and
@@ -1931,6 +1921,8 @@ eventHandler_dumpHandlers(EventIndex ei, jboolean dumpPermanent)
 void
 eventHandler_dumpHandler(HandlerNode *node)
 {
-    tty_message("Handler for %s(%d)\n", eventIndex2EventName(node->ei), node->ei);
+    tty_message("handlerID(%d) for %s(%d) suspendPolicy(%d) permanent(%d)",
+                node->handlerID, eventIndex2EventName(node->ei), node->ei,
+                node->suspendPolicy, node->permanent);
     eventFilter_dumpHandlerFilters(node);
 }
