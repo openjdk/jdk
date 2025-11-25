@@ -25,6 +25,7 @@
 #ifndef SHARE_UTILITIES_PERMITFORBIDDENFUNCTIONS_HPP
 #define SHARE_UTILITIES_PERMITFORBIDDENFUNCTIONS_HPP
 
+#include "cppstdlib/cstdlib.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -33,6 +34,9 @@
 #else
 #include "permitForbiddenFunctions_posix.hpp"
 #endif
+
+#include <stdio.h>
+#include <string.h>
 
 // Provide wrappers for some functions otherwise forbidden from use in HotSpot.
 //
@@ -53,7 +57,6 @@ namespace permit_forbidden_function {
 BEGIN_ALLOW_FORBIDDEN_FUNCTIONS
 
 [[noreturn]] inline void exit(int status) { ::exit(status); }
-[[noreturn]] inline void _exit(int status) { ::_exit(status); }
 
 ATTRIBUTE_PRINTF(3, 0)
 inline int vsnprintf(char* str, size_t size, const char* format, va_list ap) {
