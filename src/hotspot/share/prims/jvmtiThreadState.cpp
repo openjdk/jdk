@@ -702,7 +702,7 @@ JvmtiThreadState::process_vthread_pending_deopts() {
   javaVFrame* jvf = JvmtiEnvBase::get_vthread_jvf(thread->vthread());
   int frame_count = (int)JvmtiEnvBase::get_frame_count(jvf);
 
-  for (int idx = 0; idx  < deopts->length(); idx++) {
+  for (int idx = deopts->length() - 1; idx >= 0; idx--) {
     int frame_number = deopts->at(idx);
     deopts->remove_at(idx);
     int depth = frame_count - frame_number;
