@@ -480,6 +480,8 @@ final class VirtualThread extends BaseVirtualThread {
     @ReservedStackAccess
     private void mount() {
         startTransition(/*is_mount*/true);
+        // We assume following volatile accesses provide equivalent
+        // of acquire ordering, otherwise we need U.loadFence() here.
 
         // sets the carrier thread
         Thread carrier = Thread.currentCarrierThread();
@@ -520,6 +522,8 @@ final class VirtualThread extends BaseVirtualThread {
         }
         carrier.clearInterrupt();
 
+        // We assume previous volatile accesses provide equivalent
+        // of release ordering, otherwise we need U.storeFence() here.
         endTransition(/*is_mount*/false);
     }
 

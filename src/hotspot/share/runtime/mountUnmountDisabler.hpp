@@ -47,7 +47,6 @@ class MountUnmountDisabler : public AnyObj {
   void VTMS_transition_enable_for_all();
 
  public:
-  // parameter is_SR: suspender or resumer
   MountUnmountDisabler(bool exlusive = false);
   MountUnmountDisabler(oop thread_oop);
   ~MountUnmountDisabler();

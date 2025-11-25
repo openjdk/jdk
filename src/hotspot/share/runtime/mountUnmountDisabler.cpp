@@ -45,6 +45,7 @@ class JVMTIStartTransition : public StackObj {
  public:
   JVMTIStartTransition(JavaThread* current, oop vthread, bool is_mount, bool is_thread_end) :
     _current(current), _vthread(current, vthread), _is_mount(is_mount), _is_thread_end(is_thread_end) {
+    assert(DoJVMTIVirtualThreadTransitions || !JvmtiExport::can_support_virtual_threads(), "sanity check");
     if (DoJVMTIVirtualThreadTransitions && MountUnmountDisabler::notify_jvmti_events()) {
       // post VirtualThreadUnmount event before VirtualThreadEnd
       if (!_is_mount && JvmtiExport::should_post_vthread_unmount()) {
@@ -75,6 +76,7 @@ class JVMTIEndTransition : public StackObj {
  public:
   JVMTIEndTransition(JavaThread* current, oop vthread, bool is_mount, bool is_thread_start) :
     _current(current), _vthread(current, vthread), _is_mount(is_mount), _is_thread_start(is_thread_start) {
+    assert(DoJVMTIVirtualThreadTransitions || !JvmtiExport::can_support_virtual_threads(), "sanity check");
     if (DoJVMTIVirtualThreadTransitions && MountUnmountDisabler::notify_jvmti_events()) {
       bool is_virtual = java_lang_VirtualThread::is_instance(_current->jvmti_vthread());
       bool should_rebind = (_is_mount && !is_virtual) || (!_is_mount && is_virtual);
@@ -154,12 +156,12 @@ void MountUnmountDisabler::start_transition(JavaThread* current, oop vthread, bo
     OrderAccess::storeload();
   }
 
-  // Start of the critical section. We need an acquire fence to prevent future memory
-  // operations to be ordered before we read the disabled conditions. But if this is
-  // a mount, this is already guaranteed by the fences in VirtualThread.mount which will
-  // be executed once we go back to Java. If this is an unmount, the handshake that the
-  // disabler executed against this carrier thread already provided the needed synchronization.
-  // This matches the release fence in xx_enable_for_one()/xx_enable_for_all().
+  // Start of the critical section. If this is a mount, we need an acquire barrier to
+  // synchronize with a possible disabler that executed an operation while this thread
+  // was unmounted. We make VirtualThread.mount guarantee such ordering and avoid barriers
+  // here. If this is an unmount, the handshake that the disabler executed against this
+  // thread already provided the needed synchronization.
+  // This pairs with the release barrier in xx_enable_for_one()/xx_enable_for_all().
 }
 
 void MountUnmountDisabler::end_transition(JavaThread* current, oop vthread, bool is_mount, bool is_thread_start) {
@@ -168,14 +170,14 @@ void MountUnmountDisabler::end_transition(JavaThread* current, oop vthread, bool
   Handle vth = Handle(current, vthread);
   JVMTI_ONLY(JVMTIEndTransition jst(current, vthread, is_mount, is_thread_start);)
 
-  // End of the critical section. We need a release fence here to prevent previous memory
-  // operations to be ordered after we mark the thread as outside transition. But if this
-  // is an unmount, this is already guaranteed by the fences previously executed in
-  // VirtualThread.unmount. If this is a mount, the only thing that needs to be ordered is
-  // the setting of carrierThread, since the handshake that the disabler will execute against
-  // the carrier thread will already provide the needed synchronization. This order is already
-  // guaranteed by the fences in VirtualThread.mount.
-  // This matches the acquire fence in xx_disable_for_one()/xx_disable_for_all().
+  // End of the critical section. If this is an unmount, we need a release barrier before
+  // clearing the in_transition flags to make sure any memory operations executed in the
+  // transition are visible to a possible disabler that executes while this thread is unmounted.
+  // We make VirtualThread.unmount guarantee such ordering and avoid barriers here. If this is
+  // a mount, the only thing that needs to be published is the setting of carrierThread, since
+  // the handshake that the disabler will execute against it already provides the needed
+  // synchronization. This order is already guaranteed by the barriers in VirtualThread.mount.
+  // This pairs with the acquire barrier in xx_disable_for_one()/xx_disable_for_all().
 
   java_lang_Thread::set_is_in_VTMS_transition(vth(), false);
   current->set_is_in_VTMS_transition(false);
@@ -273,9 +275,12 @@ MountUnmountDisabler::VTMS_transition_disable_for_one() {
     ml.wait(10); // wait while the virtual thread is in transition
   }
 
-  // Start of the critical region. Prevent future memory
-  // operations to be ordered before we read the transition flag.
-  // This matches the release fence in end_transition().
+  // Start of the critical section. If the target is unmounted, we need an acquire
+  // barrier to make sure memory operations executed in the last transition are visible.
+  // If the target is mounted, although the handshake that will be executed against it
+  // already provides the needed synchronization, we still need to prevent the load of
+  // carrierThread to float up.
+  // This pairs with the release barrier in end_transition().
   OrderAccess::acquire();
   DEBUG_ONLY(JavaThread::current()->set_is_VTMS_transition_disabler(true);)
 }
@@ -310,9 +315,12 @@ MountUnmountDisabler::VTMS_transition_disable_for_all() {
     }
   }
 
-  // Start of the critical region. Prevent future memory
-  // operations to be ordered before we read the transition flags.
-  // This matches the release fence in end_transition().
+  // Start of the critical section. If some target is unmounted, we need an acquire
+  // barrier to make sure memory operations executed in the last transition are visible.
+  // If a target is mounted, although the handshake that will be executed against it
+  // already provides the needed synchronization, we still need to prevent the load of
+  // carrierThread to float up.
+  // This pairs with the release barrier in end_transition().
   OrderAccess::acquire();
   DEBUG_ONLY(thread->set_is_VTMS_transition_disabler(true);)
 }
@@ -322,9 +330,12 @@ void
 MountUnmountDisabler::VTMS_transition_enable_for_one() {
   assert(java_lang_VirtualThread::is_instance(_vthread()), "");
 
-  // End of the critical section. Prevent previous memory operations to
-  // be ordered after we clear the clear the disable transition flag.
-  // This matches the equivalent acquire fence in start_transition().
+  // End of the critical section. If the target was unmounted, we need a
+  // release barrier before decrementing _VTMS_transition_disable_count to
+  // make sure any memory operations executed by the disabler are visible to
+  // the target once it mounts again. If the target was mounted, the handshake
+  // executed against it already provided the needed synchronization.
+  // This pairs with the equivalent acquire barrier in start_transition().
   OrderAccess::release();
 
   MonitorLocker ml(VTMSTransition_lock);
@@ -341,9 +352,12 @@ void
 MountUnmountDisabler::VTMS_transition_enable_for_all() {
   JavaThread* thread = JavaThread::current();
 
-  // End of the critical section. Prevent previous memory operations to
-  // be ordered after we clear the clear the disable transition flag.
-  // This matches the equivalent acquire fence in start_transition().
+  // End of the critical section. If some target was unmounted, we need a
+  // release barrier before decrementing _global_start_transition_disable_count
+  // to make sure any memory operations executed by the disabler are visible to
+  // the target once it mounts again. If a target was mounted, the handshake
+  // executed against it already provided the needed synchronization.
+  // This pairs with the equivalent acquire barrier in start_transition().
   OrderAccess::release();
 
   MonitorLocker ml(VTMSTransition_lock);

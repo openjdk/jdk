@@ -371,7 +371,7 @@ void Handshake::execute(HandshakeClosure* hs_cl, oop vthread) {
   if (carrier_thread != nullptr) {
     JavaThread* target = java_lang_Thread::thread(carrier_thread);
     assert(target != nullptr, "");
-    // Technically there is need for a ThreadsListHandle since the target
+    // Technically there is no need for a ThreadsListHandle since the target
     // will block if it tries to unmount the vthread, so it can never exit.
     ThreadsListHandle tlh(JavaThread::current());
     assert(tlh.includes(target), "");
