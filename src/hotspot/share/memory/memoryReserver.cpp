@@ -587,7 +587,7 @@ ReservedHeapSpace HeapReserver::Instance::reserve_compressed_oops_heap(const siz
     }
 
     // zerobased: Attempt to allocate in the lower 32G.
-    size_t zerobased_max = OopEncodingHeapMax;
+    const uintptr_t zerobased_max = OopEncodingHeapMax;
 
     // Give it several tries from top of range to bottom.
     if (aligned_heap_base_min_address + size <= zerobased_max && // Zerobased theoretical possible.
