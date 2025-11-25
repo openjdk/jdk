@@ -38,8 +38,8 @@ ifeq ($(call isTargetOs, linux), true)
       EXTRA_HEADER_DIRS := \
           $(call GetJavaHeaderDir, java.base) \
           java.base:libjvm \
-          java.base:libnio \
-          java.base:libnio/ch, \
+          java.base:libjava/nio \
+          java.base:libjava/nio/ch, \
       JDK_LIBS := java.base:libjava java.base:libnet, \
       LIBS_linux := $(LIBDL), \
   ))
