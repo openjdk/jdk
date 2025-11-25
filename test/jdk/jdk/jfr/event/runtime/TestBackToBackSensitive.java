@@ -67,6 +67,7 @@ public class TestBackToBackSensitive {
                 if (cl != null) {
                     if (cl.getType().getName().contains("PlatformClassLoader")) {
                         classLoaderStatistics.add(e.getStartTime());
+                        System.out.println("Class loader" + e);
                     }
                 }
             });
@@ -87,20 +88,20 @@ public class TestBackToBackSensitive {
             r1.stop();
             long chunkFiles = filesInRepository();
             System.out.println("Number of chunk files: " + chunkFiles);
+            // When jdk.PhysicalMemory is expected to be emitted:
+            // Chunk 1: begin, end
+            // Chunk 2: begin, end
+            // Chunk 3: begin, end
+            // Chunk 4: begin, end
+            assertCount(r1, "jdk.PhysicalMemory", physicalMemory, 2 * chunkFiles);
             // When jdk.ClassLoaderStatistics and jdk.ThreadThreadDump are expected to be
             // emitted:
             // Chunk 1: begin, end
             // Chunk 2: begin, end
             // Chunk 3: end
             // Chunk 4: end
-            assertCount("jdk.ThreadDump", threadDumps, 2 + 2 + (chunkFiles - 2));
-            assertCount("jdk.ClassLoaderStatistics", classLoaderStatistics, 2 + 2 + (chunkFiles - 2));
-            // When jdk.PhysicalMemory is expected to be emitted:
-            // Chunk 1: begin, end
-            // Chunk 2: begin, end
-            // Chunk 3: begin, end
-            // Chunk 4: begin, end
-            assertCount("jdk.PhysicalMemory", physicalMemory, 2 * chunkFiles);
+            assertCount(r1, "jdk.ThreadDump", threadDumps, 2 + 2 + (chunkFiles - 2));
+            assertCount(r1, "jdk.ClassLoaderStatistics", classLoaderStatistics, 2 + 2 + (chunkFiles - 2));
         }
     }
 
@@ -109,13 +110,15 @@ public class TestBackToBackSensitive {
         return Files.list(repository).filter(p -> p.toString().endsWith(".jfr")).count();
     }
 
-    private static void assertCount(String eventName, Set<Instant> timestamps, long expected) throws Exception {
+    private static void assertCount(RecordingStream stream, String eventName, Set<Instant> timestamps, long expected) throws Exception {
         System.out.println("Timestamps for " + eventName + ":");
         for (Instant timestamp : timestamps) {
             System.out.println(timestamp);
         }
         int count = timestamps.size();
         if (count != expected) {
+            System.out.println("Dumping failure file.");
+            stream.dump(Path.of("failure.jfr"));
             throw new Exception("Expected " + expected + "  timestamps for event " + eventName + ", but got " + count);
         }
     }
