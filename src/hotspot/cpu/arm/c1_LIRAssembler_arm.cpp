@@ -283,6 +283,8 @@ int LIR_Assembler::emit_deopt_handler() {
   __ b(start);
 
   assert(code_offset() - offset <= deopt_handler_size(), "overflow");
+  assert(code_offset() - entry_offset >= NativePostCallNop::first_check_size,
+         "out of bounds read in post-call NOP check");
   __ end_a_stub();
 
   return entry_offset;

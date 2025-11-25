@@ -450,7 +450,7 @@ the JVM.
     > **Note:** This option will be removed in a future release.
 
     -   `allow`: This mode allows illegal native access in all modules,
-        without any warings.
+        without any warnings.
 
     -   `warn`: This mode is identical to `allow` except that a warning
         message is issued for the first illegal native access found in a module.
@@ -464,6 +464,39 @@ the JVM.
     To verify that your application is ready for a future version of the JDK,
     run it with `--illegal-native-access=deny` along with any necessary `--enable-native-access`
     options.
+
+`--enable-final-field-mutation` *module*\[,*module*...\]
+:   Mutation of final fields is possible with the reflection API of the Java Platform.
+    However, it compromises safety and performance in all programs.
+    This option allows code in the specified modules to mutate final fields by reflection.
+    Attempts by code in any other module to mutate final fields by reflection are deemed _illegal_.
+
+    *module* can be the name of a module on the module path, or `ALL-UNNAMED` to indicate
+    code on the class path.
+
+-`--illegal-final-field-mutation=`*parameter*
+:   This option specifies a mode for how _illegal_ final field mutation is handled:
+
+    > **Note:** This option will be removed in a future release.
+
+    -   `allow`: This mode allows illegal final field mutation in all modules,
+        without any warnings.
+
+    -   `warn`: This mode is identical to `allow` except that a warning message is
+        issued for the first illegal final field mutation performaed in a module.
+        This mode is the default for the current JDK but will change in a future
+        release.
+
+    -   `debug`: This mode is identical to `allow` except that a warning message
+        and stack trace are printed for every illegal final field mutation.
+
+    -   `deny`: This mode disables final field mutation. That is, any illegal final
+        field mutation access causes an `IllegalAccessException`. This mode will
+        become the default in a future release.
+
+    To verify that your application is ready for a future version of the JDK,
+    run it with `--illegal-final-field-mutation=deny` along with any necessary
+    `--enable-final-field-mutation` options.
 
 `--finalization=`*value*
 :   Controls whether the JVM performs finalization of objects. Valid values
@@ -701,7 +734,8 @@ the Java HotSpot Virtual Machine.
     - A class descriptor is in decorated format (`Lname;`) when it should not be.
     - A `NULL` parameter is allowed, but its use is questionable.
     - Calling other JNI functions in the scope of `Get/ReleasePrimitiveArrayCritical`
-      or `Get/ReleaseStringCritical`
+      or `Get/ReleaseStringCritical`.
+    - A JNI call was made to mutate a final field.
 
     Expect a performance degradation when this option is used.
 
@@ -1234,26 +1268,6 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     Native heap trimming is performed in a dedicated thread.
 
     This option is only supported on Linux with GNU C Library (glibc).
-
-`-XX:+NeverActAsServerClassMachine`
-:   Enable the "Client VM emulation" mode which only uses the C1 JIT compiler,
-    a 32Mb CodeCache and the Serial GC. The maximum amount of memory that the
-    JVM may use (controlled by the `-XX:MaxRAM=n` flag) is set to 1GB by default.
-    The string "emulated-client" is added to the JVM version string.
-
-    By default the flag is set to `true` only on Windows in 32-bit mode and
-    `false` in all other cases.
-
-    The "Client VM emulation" mode will not be enabled if any of the following
-    flags are used on the command line:
-
-    ```
-    -XX:{+|-}TieredCompilation
-    -XX:CompilationMode=mode
-    -XX:TieredStopAtLevel=n
-    -XX:{+|-}EnableJVMCI
-    -XX:{+|-}UseJVMCICompiler
-    ```
 
 `-XX:ObjectAlignmentInBytes=`*alignment*
 :   Sets the memory alignment of Java objects (in bytes). By default, the value
@@ -2309,12 +2323,6 @@ perform extensive debugging.
 These `java` options control how garbage collection (GC) is performed by the
 Java HotSpot VM.
 
-`-XX:+AggressiveHeap`
-:   Enables Java heap optimization. This sets various parameters to be
-    optimal for long-running jobs with intensive memory allocation, based on
-    the configuration of the computer (RAM and CPU). By default, the option
-    is disabled and the heap sizes are configured less aggressively.
-
 `-XX:+AlwaysPreTouch`
 :   Requests the VM to touch every page on the Java heap after requesting it from
     the operating system and before handing memory out to the application.
@@ -2950,6 +2958,32 @@ they're used.
     memory for sizing the Java heap to 2 GB:
 
     >   `-XX:MaxRAM=2G`
+
+`-XX:+AggressiveHeap`
+:   Enables Java heap optimization. This sets various parameters to be
+    optimal for long-running jobs with intensive memory allocation, based on
+    the configuration of the computer (RAM and CPU). By default, the option
+    is disabled and the heap sizes are configured less aggressively.
+
+`-XX:+NeverActAsServerClassMachine`
+:   Enable the "Client VM emulation" mode which only uses the C1 JIT compiler,
+    a 32Mb CodeCache and the Serial GC. The maximum amount of memory that the
+    JVM may use (controlled by the `-XX:MaxRAM=n` flag) is set to 1GB by default.
+    The string "emulated-client" is added to the JVM version string.
+
+    By default the flag is set to `true` only on Windows in 32-bit mode and
+    `false` in all other cases.
+
+    The "Client VM emulation" mode will not be enabled if any of the following
+    flags are used on the command line:
+
+    ```
+    -XX:{+|-}TieredCompilation
+    -XX:CompilationMode=mode
+    -XX:TieredStopAtLevel=n
+    -XX:{+|-}EnableJVMCI
+    -XX:{+|-}UseJVMCICompiler
+    ```
 
 ## Obsolete Java Options
 

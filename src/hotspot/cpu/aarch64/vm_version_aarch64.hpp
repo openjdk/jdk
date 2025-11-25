@@ -106,7 +106,7 @@ public:
     CPU_MOTOROLA  = 'M',
     CPU_NVIDIA    = 'N',
     CPU_AMCC      = 'P',
-    CPU_QUALCOM   = 'Q',
+    CPU_QUALCOMM  = 'Q',
     CPU_MARVELL   = 'V',
     CPU_INTEL     = 'i',
     CPU_APPLE     = 'a',
@@ -195,7 +195,7 @@ enum Ampere_CPU_Model {
   // Aarch64 supports fast class initialization checks
   static bool supports_fast_class_init_checks() { return true; }
   constexpr static bool supports_stack_watermark_barrier() { return true; }
-  constexpr static bool supports_recursive_lightweight_locking() { return true; }
+  constexpr static bool supports_recursive_fast_locking() { return true; }
 
   constexpr static bool supports_secondary_supers_table() { return true; }
 

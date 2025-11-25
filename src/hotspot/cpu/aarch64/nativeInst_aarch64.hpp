@@ -532,10 +532,17 @@ private:
   }
 
 public:
+  enum AArch64_specific_constants {
+    // The two parts should be checked separately to prevent out of bounds access in case
+    // the return address points to the deopt handler stub code entry point which could be
+    // at the end of page.
+    first_check_size = instruction_size
+  };
+
   bool check() const {
     // Check the first instruction is NOP.
     if (is_nop()) {
-      uint32_t insn = *(uint32_t*)addr_at(4);
+      uint32_t insn = *(uint32_t*)addr_at(first_check_size);
       // Check next instruction is MOVK zr, xx.
       // These instructions only ever appear together in a post-call
       // NOP, so it's unnecessary to check that the third instruction is

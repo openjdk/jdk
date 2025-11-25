@@ -2277,6 +2277,8 @@ int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm)
   __ b(start);
 
   assert(__ offset() - offset == (int) size_deopt_handler(), "overflow");
+  assert(__ offset() - entry_offset >= NativePostCallNop::first_check_size,
+         "out of bounds read in post-call NOP check");
   __ end_a_stub();
   return entry_offset;
 }
@@ -3369,28 +3371,28 @@ encode %{
   // aarch64_enc_cmpxchg_acq is that we use load-acquire in the
   // CompareAndSwap sequence to serve as a barrier on acquiring a
   // lock.
-  enc_class aarch64_enc_cmpxchg_acq(memory mem, iRegLNoSp oldval, iRegLNoSp newval) %{
+  enc_class aarch64_enc_cmpxchg_acq(memory mem, iRegL oldval, iRegL newval) %{
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     __ cmpxchg($mem$$base$$Register, $oldval$$Register, $newval$$Register,
                Assembler::xword, /*acquire*/ true, /*release*/ true,
                /*weak*/ false, noreg);
   %}
 
-  enc_class aarch64_enc_cmpxchgw_acq(memory mem, iRegINoSp oldval, iRegINoSp newval) %{
+  enc_class aarch64_enc_cmpxchgw_acq(memory mem, iRegI oldval, iRegI newval) %{
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     __ cmpxchg($mem$$base$$Register, $oldval$$Register, $newval$$Register,
                Assembler::word, /*acquire*/ true, /*release*/ true,
                /*weak*/ false, noreg);
   %}
 
-  enc_class aarch64_enc_cmpxchgs_acq(memory mem, iRegINoSp oldval, iRegINoSp newval) %{
+  enc_class aarch64_enc_cmpxchgs_acq(memory mem, iRegI oldval, iRegI newval) %{
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     __ cmpxchg($mem$$base$$Register, $oldval$$Register, $newval$$Register,
                Assembler::halfword, /*acquire*/ true, /*release*/ true,
                /*weak*/ false, noreg);
   %}
 
-  enc_class aarch64_enc_cmpxchgb_acq(memory mem, iRegINoSp oldval, iRegINoSp newval) %{
+  enc_class aarch64_enc_cmpxchgb_acq(memory mem, iRegI oldval, iRegI newval) %{
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     __ cmpxchg($mem$$base$$Register, $oldval$$Register, $newval$$Register,
                Assembler::byte, /*acquire*/ true, /*release*/ true,
@@ -3398,7 +3400,7 @@ encode %{
   %}
 
   // auxiliary used for CompareAndSwapX to set result register
-  enc_class aarch64_enc_cset_eq(iRegINoSp res) %{
+  enc_class aarch64_enc_cset_eq(iRegI res) %{
     Register res_reg = as_Register($res$$reg);
     __ cset(res_reg, Assembler::EQ);
   %}
@@ -8384,7 +8386,7 @@ instruct castVVMask(pRegGov dst)
 // XXX No flag versions for CompareAndSwap{I,L,P,N} because matcher
 // can't match them
 
-instruct compareAndSwapB(iRegINoSp res, indirect mem, iRegINoSp oldval, iRegINoSp newval, rFlagsReg cr) %{
+instruct compareAndSwapB(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
 
   match(Set res (CompareAndSwapB mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
@@ -8402,7 +8404,7 @@ instruct compareAndSwapB(iRegINoSp res, indirect mem, iRegINoSp oldval, iRegINoS
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndSwapS(iRegINoSp res, indirect mem, iRegINoSp oldval, iRegINoSp newval, rFlagsReg cr) %{
+instruct compareAndSwapS(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
 
   match(Set res (CompareAndSwapS mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
@@ -8420,7 +8422,7 @@ instruct compareAndSwapS(iRegINoSp res, indirect mem, iRegINoSp oldval, iRegINoS
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndSwapI(iRegINoSp res, indirect mem, iRegINoSp oldval, iRegINoSp newval, rFlagsReg cr) %{
+instruct compareAndSwapI(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
 
   match(Set res (CompareAndSwapI mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
@@ -8438,7 +8440,7 @@ instruct compareAndSwapI(iRegINoSp res, indirect mem, iRegINoSp oldval, iRegINoS
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndSwapL(iRegINoSp res, indirect mem, iRegLNoSp oldval, iRegLNoSp newval, rFlagsReg cr) %{
+instruct compareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL newval, rFlagsReg cr) %{
 
   match(Set res (CompareAndSwapL mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
@@ -8475,7 +8477,7 @@ instruct compareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndSwapN(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegNNoSp newval, rFlagsReg cr) %{
+instruct compareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval, rFlagsReg cr) %{
 
   match(Set res (CompareAndSwapN mem (Binary oldval newval)));
   predicate(n->as_LoadStore()->barrier_data() == 0);
@@ -8496,7 +8498,7 @@ instruct compareAndSwapN(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegNNoS
 
 // alternative CompareAndSwapX when we are eliding barriers
 
-instruct compareAndSwapBAcq(iRegINoSp res, indirect mem, iRegINoSp oldval, iRegINoSp newval, rFlagsReg cr) %{
+instruct compareAndSwapBAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
 
   predicate(needs_acquiring_load_exclusive(n));
   match(Set res (CompareAndSwapB mem (Binary oldval newval)));
@@ -8515,7 +8517,7 @@ instruct compareAndSwapBAcq(iRegINoSp res, indirect mem, iRegINoSp oldval, iRegI
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndSwapSAcq(iRegINoSp res, indirect mem, iRegINoSp oldval, iRegINoSp newval, rFlagsReg cr) %{
+instruct compareAndSwapSAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
 
   predicate(needs_acquiring_load_exclusive(n));
   match(Set res (CompareAndSwapS mem (Binary oldval newval)));
@@ -8534,7 +8536,7 @@ instruct compareAndSwapSAcq(iRegINoSp res, indirect mem, iRegINoSp oldval, iRegI
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndSwapIAcq(iRegINoSp res, indirect mem, iRegINoSp oldval, iRegINoSp newval, rFlagsReg cr) %{
+instruct compareAndSwapIAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
 
   predicate(needs_acquiring_load_exclusive(n));
   match(Set res (CompareAndSwapI mem (Binary oldval newval)));
@@ -8553,7 +8555,7 @@ instruct compareAndSwapIAcq(iRegINoSp res, indirect mem, iRegINoSp oldval, iRegI
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndSwapLAcq(iRegINoSp res, indirect mem, iRegLNoSp oldval, iRegLNoSp newval, rFlagsReg cr) %{
+instruct compareAndSwapLAcq(iRegINoSp res, indirect mem, iRegL oldval, iRegL newval, rFlagsReg cr) %{
 
   predicate(needs_acquiring_load_exclusive(n));
   match(Set res (CompareAndSwapL mem (Binary oldval newval)));
@@ -8591,7 +8593,7 @@ instruct compareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP new
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndSwapNAcq(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegNNoSp newval, rFlagsReg cr) %{
+instruct compareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval, rFlagsReg cr) %{
 
   predicate(needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() == 0);
   match(Set res (CompareAndSwapN mem (Binary oldval newval)));
@@ -16262,7 +16264,7 @@ instruct branchLoopEnd(cmpOp cmp, rFlagsReg cr, label lbl)
 // ============================================================================
 // inlined locking and unlocking
 
-instruct cmpFastLockLightweight(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp, iRegPNoSp tmp2, iRegPNoSp tmp3)
+instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp, iRegPNoSp tmp2, iRegPNoSp tmp3)
 %{
   match(Set cr (FastLock object box));
   effect(TEMP tmp, TEMP tmp2, TEMP tmp3);
@@ -16271,13 +16273,13 @@ instruct cmpFastLockLightweight(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp
   format %{ "fastlock $object,$box\t! kills $tmp,$tmp2,$tmp3" %}
 
   ins_encode %{
-    __ fast_lock_lightweight($object$$Register, $box$$Register, $tmp$$Register, $tmp2$$Register, $tmp3$$Register);
+    __ fast_lock($object$$Register, $box$$Register, $tmp$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
   ins_pipe(pipe_serial);
 %}
 
-instruct cmpFastUnlockLightweight(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp, iRegPNoSp tmp2, iRegPNoSp tmp3)
+instruct cmpFastUnlock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp, iRegPNoSp tmp2, iRegPNoSp tmp3)
 %{
   match(Set cr (FastUnlock object box));
   effect(TEMP tmp, TEMP tmp2, TEMP tmp3);
@@ -16286,7 +16288,7 @@ instruct cmpFastUnlockLightweight(rFlagsReg cr, iRegP object, iRegP box, iRegPNo
   format %{ "fastunlock $object,$box\t! kills $tmp, $tmp2, $tmp3" %}
 
   ins_encode %{
-    __ fast_unlock_lightweight($object$$Register, $box$$Register, $tmp$$Register, $tmp2$$Register, $tmp3$$Register);
+    __ fast_unlock($object$$Register, $box$$Register, $tmp$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
   ins_pipe(pipe_serial);
