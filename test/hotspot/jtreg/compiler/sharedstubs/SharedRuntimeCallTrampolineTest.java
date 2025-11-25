@@ -83,9 +83,15 @@ public class SharedRuntimeCallTrampolineTest {
         return Pattern.compile("Compiled method.*RuntimeCallTest::test").split(output.getStdout(), 2)[1];
     }
 
+    // Look for runtime_call and trampoline_stub relocation records in the relocations section
+    // output enabled with -XX:+PrintRelocations. We expect there to exist two runtime calls to
+    // new_instance_blob emitted for 'new' expressions and a trampoline stub shared by the calls.
+    // At the time of writing this, matched output lines look like the following:
+    // relocInfo@0x<addr64> [type=6(runtime_call) addr=0x<addr64> offset=<int>] | [destination=0x<addr64>] C2 Runtime new_instance_blob
+    // relocInfo@0x<addr64> [type=13(trampoline_stub) addr=0x<addr64> offset=<int> data=<int>] | [trampoline owner=0x<addr64>]
     private static void checkOutput(OutputAnalyzer output) {
         String testMethodStdout = getTestMethodStdout(output);
-        List<String> callAddrs = Pattern.compile("\\(runtime_call\\) addr=(\\w+) .*\\[destination")
+        List<String> callAddrs = Pattern.compile("relocInfo.*\\(runtime_call\\) addr=(\\w+).*new_instance_blob")
                 .matcher(testMethodStdout)
                 .results()
                 .map(m -> m.group(1))
@@ -94,7 +100,7 @@ public class SharedRuntimeCallTrampolineTest {
         record TrampolineReloc(String addr, String owner) {
         }
         List<TrampolineReloc> trampolineRelocs = Pattern
-                .compile("\\(trampoline_stub\\) addr=(\\w+) .*\\[trampoline owner=(\\w+)]")
+                .compile("relocInfo.*\\(trampoline_stub\\) addr=(\\w+) .*\\[trampoline owner=(\\w+)]")
                 .matcher(testMethodStdout)
                 .results()
                 .map(m -> new TrampolineReloc(m.group(1), m.group(2)))
@@ -104,9 +110,10 @@ public class SharedRuntimeCallTrampolineTest {
                 .filter(reloc -> callAddrs.contains(reloc.owner()))
                 .map(reloc -> new String(reloc.addr()))
                 .collect(Collectors.toList());
-        if (trampolineAddrs.stream().distinct().count() >= trampolineAddrs.size()) {
+        Long distinctTrampolineAddrsCount = trampolineAddrs.stream().distinct().count();
+        if (distinctTrampolineAddrsCount >= trampolineAddrs.size()) {
             throw new RuntimeException("No runtime trampoline stubs reused: distinct "
-                    + trampolineAddrs.stream().distinct().count() + ", in total " + trampolineAddrs.size());
+                    + distinctTrampolineAddrsCount + ", in total " + trampolineAddrs.size());
         }
     }
 
@@ -121,6 +128,7 @@ public class SharedRuntimeCallTrampolineTest {
             }
         }
 
+        // Use 'new' to generate runtime calls to 'new_instance_blob'
         static void test(int i) {
             Object obj = new Dummy(i);
             blackholeObj = obj;

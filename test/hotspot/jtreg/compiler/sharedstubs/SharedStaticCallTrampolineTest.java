@@ -89,9 +89,15 @@ public class SharedStaticCallTrampolineTest {
         return Pattern.compile("Compiled method.*StaticCallTest::test").split(output.getStdout(), 2)[1];
     }
 
+    // Look for static_call and trampoline_stub relocation records in the relocations section output
+    // enabled with -XX:+PrintRelocations. We expect there to exist two static calls to foo() and
+    // another static call to bar() and a trampoline stub shared by the foo() calls.
+    // At the time of writing this, matched output lines look like the following:
+    // relocInfo@0x<addr64> [type=4(static_call) addr=0x<addr64> offset=<int>] | [destination=0x<addr64> metadata=0x<addr64>] Blob::Shared Runtime resolve_static_call_blob
+    // relocInfo@0x<addr64> [type=13(trampoline_stub) addr=0x<addr64> offset=<int> data=<int>] | [trampoline owner=0x<addr64>]
     private static void checkOutput(OutputAnalyzer output) {
         String testMethodStdout = getTestMethodStdout(output);
-        List<String> callAddrs = Pattern.compile("\\(static_call\\) addr=(\\w+) .*\\[destination")
+        List<String> callAddrs = Pattern.compile("relocInfo.*\\(static_call\\) addr=(\\w+).*resolve_static_call_blob")
                 .matcher(testMethodStdout)
                 .results()
                 .map(m -> m.group(1))
@@ -100,7 +106,7 @@ public class SharedStaticCallTrampolineTest {
         record TrampolineReloc(String addr, String owner) {
         }
         List<TrampolineReloc> trampolineRelocs = Pattern
-                .compile("\\(trampoline_stub\\) addr=(\\w+) .*\\[trampoline owner=(\\w+)]")
+                .compile("relocInfo.*\\(trampoline_stub\\) addr=(\\w+) .*\\[trampoline owner=(\\w+)]")
                 .matcher(testMethodStdout)
                 .results()
                 .map(m -> new TrampolineReloc(m.group(1), m.group(2)))
@@ -115,10 +121,10 @@ public class SharedStaticCallTrampolineTest {
                     + callAddrs.size() + ", trampoline_stubs " + trampolineAddrs.size());
         }
 
-        List<String> uniqueTrampolineAddrs = trampolineAddrs.stream()
+        List<String> unsharedTrampolineAddrs = trampolineAddrs.stream()
                 .filter(addr -> Collections.frequency(trampolineAddrs, addr) == 1)
                 .collect(Collectors.toList());
-        if (uniqueTrampolineAddrs.size() == 0) {
+        if (unsharedTrampolineAddrs.size() == 0) {
             throw new RuntimeException(
                     "A trampoline stub is unexpectedly shared with a unique static call: static calls"
                             + callAddrs.size() + ", trampoline_stubs " + trampolineAddrs.size());
