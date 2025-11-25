@@ -151,7 +151,7 @@ class ICacheStubGenerator : public StubCodeGenerator {
 
 #ifndef PD_ICACHE_INVALIDATION_CONTEXT
   // Default implementation: do nothing
-  inline void ICacheInvalidationContext::pd_init(nmethod*) {}
+  inline void ICacheInvalidationContext::pd_init() {}
   inline void ICacheInvalidationContext::pd_invalidate_icache() {}
   inline bool ICacheInvalidationContext::deferred_invalidation() {
     return false;
