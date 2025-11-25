@@ -75,7 +75,7 @@ public class Versions {
                "15", "16", "17", "18", "19", "20", "21", "22",
                "23", "24", "25", "26", "27");
 
-    public static final String LATEST_MAJOR_VERSION = "70.0";
+    public static final String LATEST_MAJOR_VERSION = "71.0";
 
     static enum SourceTarget {
         EIGHT(true,      "52.0",  "8"),
