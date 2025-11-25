@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ public class LogTests {
         int failures = 0;
 
         failures += testLogSpecialCases();
+        failures += testLogMonotonicityNeighborhoods();
+        failures += testLogMinValueEquality();
 
         if (failures > 0) {
             System.err.println("Testing log incurred "
@@ -90,6 +92,70 @@ public class LogTests {
         failures+=Tests.test("Math.log",       input, Math::log,       expected);
         failures+=Tests.test("StrictMath.log", input, StrictMath::log, expected);
 
+        return failures;
+    }
+
+    /**
+     * Neighborhood monotonicity: probe tight neighborhoods around
+     * exp(k) and powers-of-two boundaries using nextDown/nextUp.
+     * For each center value c, build array:
+     * {nextDown(nextDown(c)), nextDown(c), c, nextUp(c), nextUp(nextUp(c))}
+     * and assert non-decreasing order for Math.log and StrictMath.log.
+     */
+    private static int testLogMonotonicityNeighborhoods() {
+        int failures = 0;
+        // exp(k) neighborhoods
+        failures += probeNeighborhoods(k -> StrictMath.pow(Math.E, k));
+        // 2^k neighborhoods
+        failures += probeNeighborhoods(k -> Math.scalb(1.0, k));
+        return failures;
+    }
+
+    private static int probeNeighborhoods(java.util.function.IntToDoubleFunction centerFunc) {
+        int failures = 0;
+        for (int k = -36; k <= 36; k++) {
+            double c = centerFunc.applyAsDouble(k);
+            if (!(c > 0.0) || Double.isInfinite(c) || Double.isNaN(c)) continue; // skip invalid centers
+            double[] n = new double[5];
+            n[2] = c;
+            n[1] = Math.nextDown(c);
+            n[0] = Math.nextDown(n[1]);
+            n[3] = Math.nextUp(c);
+            n[4] = Math.nextUp(n[3]);
+            double[] ml = new double[5];
+            double[] sl = new double[5];
+            for (int i = 0; i < n.length; i++) {
+                ml[i] = Math.log(n[i]);
+                sl[i] = StrictMath.log(n[i]);
+            }
+            for (int i = 0; i < n.length - 1; i++) {
+                if (ml[i] > ml[i+1]) {
+                    failures++;
+                    System.err.println("Monotonicity failure Math.log at k=" + k + " values " + n[i] + ", " + n[i+1]);
+                }
+                if (sl[i] > sl[i+1]) {
+                    failures++;
+                    System.err.println("Monotonicity failure StrictMath.log at k=" + k + " values " + n[i] + ", " + n[i+1]);
+                }
+            }
+        }
+        return failures;
+    }
+
+    /**
+     * Equality check: Math.log(Double.MIN_VALUE) should equal StrictMath.log(Double.MIN_VALUE)
+     * (Used to be a standalone TestLogMinValue.java). Ensures intrinsic does not diverge at subnormal minimum.
+     */
+    private static int testLogMinValueEquality() {
+        int failures = 0;
+        double x = Double.MIN_VALUE;
+        double mathLog = Math.log(x);
+        double strictLog = StrictMath.log(x);
+        if (Double.doubleToRawLongBits(mathLog) != Double.doubleToRawLongBits(strictLog)) {
+            failures++;
+            System.err.println("Mismatch: Math.log(Double.MIN_VALUE)=" + mathLog +
+                               " StrictMath.log(Double.MIN_VALUE)=" + strictLog);
+        }
         return failures;
     }
 }

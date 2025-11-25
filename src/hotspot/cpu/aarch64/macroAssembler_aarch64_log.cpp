@@ -1,7 +1,6 @@
-/* Copyright (c) 2018, Cavium. All rights reserved. (By BELLSOFT)
- * Copyright (c) 2016, 2021, Intel Corporation. All rights reserved.
- * Intel Math Library (LIBM) Source Code
- *
+/*
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
