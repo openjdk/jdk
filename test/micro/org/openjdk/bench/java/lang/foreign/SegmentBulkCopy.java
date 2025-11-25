@@ -81,7 +81,7 @@ public class SegmentBulkCopy {
 
         @Benchmark
         public void bufferCopy() {
-            dstBuffer.put(srcBuffer);
+            dstBuffer.put(0, srcBuffer, 0, size);
         }
 
     }

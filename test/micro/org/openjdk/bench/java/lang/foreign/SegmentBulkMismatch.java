@@ -137,6 +137,28 @@ public class SegmentBulkMismatch {
         }
 
         @Benchmark
+        public long mismatchLoopIntInt() {
+            // Simplified version that assumes the segments are of equal size
+            for (int i = 0; i < (int)srcSegment.byteSize(); i++) {
+                if (srcSegment.get(ValueLayout.JAVA_BYTE, i) != dstSegment.get(ValueLayout.JAVA_BYTE, i)) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        @Benchmark
+        public long mismatchLoopIntLong() {
+            // Simplified version that assumes the segments are of equal size
+            for (int i = 0; i < srcSegment.byteSize(); i++) {
+                if (srcSegment.get(ValueLayout.JAVA_BYTE, i) != dstSegment.get(ValueLayout.JAVA_BYTE, i)) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        @Benchmark
         public long mismatchLoopLongLong() {
             // Simplified version that assumes the segments are of equal size
             for (long i = 0; i < srcSegment.byteSize(); i++) {
