@@ -31,6 +31,9 @@
 
 import jdk.test.lib.ByteCodeLoader;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -41,6 +44,8 @@ import java.lang.classfile.ClassFile;
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import java.lang.constant.ClassDesc;
 import java.lang.reflect.GenericSignatureFormatError;
+import java.util.Arrays;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -56,22 +61,58 @@ class MalformedAnnotationTest {
         Class<?> value();
     }
 
+    static Stream<String> badFieldDescriptors() {
+        return Arrays.stream(new String[] {
+                "Not a_descriptor",
+                "()V",
+                "Ljava/lang/Object",
+                "Ljava/",
+                "Ljava/util/Map.Entry;",
+                "[".repeat(256) + "I",
+                "Lbad.Name;",
+                "Lbad[Name;",
+                "L;",
+                "L/Missing;",
+                "Lmissing/;",
+        });
+    }
+
     /**
      * Ensures bad class descriptors in annotations lead to
      * {@link GenericSignatureFormatError} and the error message contains the
      * malformed descriptor string.
      */
-    @Test
-    void testMalformedClassValue() throws Exception {
-        var badDescString = "Not a_descriptor";
+    @ParameterizedTest
+    @MethodSource("badFieldDescriptors")
+    void testMalformedClassValue(String badDescString) throws Exception {
+        var cl = spinClass(badDescString);
+        var ex = assertThrows(GenericSignatureFormatError.class, () -> cl.getDeclaredAnnotation(ClassCarrier.class));
+        assertTrue(ex.getMessage().contains(badDescString), () -> "Uninformative error: " + ex);
+    }
+
+    private static Class<?> spinClass(String desc) throws Exception {
         var bytes = ClassFile.of().build(ClassDesc.of("Test"), clb -> clb
                 .with(RuntimeVisibleAnnotationsAttribute.of(
                         Annotation.of(ClassCarrier.class.describeConstable().orElseThrow(),
                                 AnnotationElement.of("value", AnnotationValue.ofClass(clb
-                                        .constantPool().utf8Entry(badDescString))))
+                                        .constantPool().utf8Entry(desc))))
                 )));
-        var cl = new ByteCodeLoader("Test", bytes, MalformedAnnotationTest.class.getClassLoader()).loadClass("Test");
-        var ex = assertThrows(GenericSignatureFormatError.class, () -> cl.getDeclaredAnnotation(ClassCarrier.class));
-        assertTrue(ex.getMessage().contains(badDescString), () -> "Uninformative error: " + ex);
+        return new ByteCodeLoader("Test", bytes, ClassCarrier.class.getClassLoader()).loadClass("Test");
+    }
+
+    static Stream<String> goodFieldDescriptors() {
+        return Arrays.stream(new String[] {
+                "Ljava/lang/Object<*>;", // previously MalformedParameterizedTypeException
+                "[Ljava/util/Optional<*>;", // previously ClassCastException
+                "Ljava/util/Map$Entry<**>;", // previously ClassCastException
+        });
+    }
+
+    @ParameterizedTest
+    @MethodSource("goodFieldDescriptors")
+    void testLegalClassValue(String goodDescString) throws Exception {
+        var cl = spinClass(goodDescString);
+        var anno = cl.getDeclaredAnnotation(ClassCarrier.class);
+        assertThrows(TypeNotPresentException.class, anno::value);
     }
 }

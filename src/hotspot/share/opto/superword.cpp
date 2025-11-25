@@ -73,8 +73,7 @@ public:
 
   void set_ignored(Node* n) {
     // Only consider nodes in the loop.
-    Node* ctrl = _vloop.phase()->get_ctrl(n);
-    if (_vloop.lpt()->is_member(_vloop.phase()->get_loop(ctrl))) {
+    if (_vloop.phase()->ctrl_is_member(_vloop.lpt(), n)) {
       // Find the index in the loop.
       for (uint j = 0; j < _body.size(); j++) {
         if (n == _body.at(j)) {

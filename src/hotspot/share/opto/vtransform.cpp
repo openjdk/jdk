@@ -1252,7 +1252,6 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   // back to the phi. Check that all non strict order reductions only have a single
   // use, except for the last (last_red), which only has phi as a use in the loop,
   // and all other uses are outside the loop.
-  VTransformReductionVectorNode* first_red   = this;
   VTransformReductionVectorNode* last_red    = phi->in_req(2)->isa_ReductionVector();
   VTransformReductionVectorNode* current_red = last_red;
   while (true) {
@@ -1264,7 +1263,11 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
         tty->print("  Cannot move out of loop, other reduction node does not match:");
         print();
         tty->print("  other: ");
-        current_red->print();
+        if (current_red != nullptr) {
+          current_red->print();
+        } else {
+          tty->print("nullptr");
+        }
       )
       return false; // not compatible
     }
