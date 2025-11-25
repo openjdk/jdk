@@ -272,14 +272,22 @@ int LIR_Assembler::emit_deopt_handler() {
 
   int offset = code_offset();
 
-  __ mov_relative_address(LR, __ pc());
-  __ push(LR); // stub expects LR to be saved
+  Label start;
+  __ bind(start);
+
   __ jump(SharedRuntime::deopt_blob()->unpack(), relocInfo::runtime_call_type, noreg);
 
+  int entry_offset = __ offset();
+  __ mov_relative_address(LR, __ pc());
+  __ push(LR); // stub expects LR to be saved
+  __ b(start);
+
   assert(code_offset() - offset <= deopt_handler_size(), "overflow");
+  assert(code_offset() - entry_offset >= NativePostCallNop::first_check_size,
+         "out of bounds read in post-call NOP check");
   __ end_a_stub();
 
-  return offset;
+  return entry_offset;
 }
 
 
