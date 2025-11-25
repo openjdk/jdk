@@ -104,11 +104,11 @@ public abstract class SSLContextImpl extends SSLContextSpi {
          * first connection to time out and fail. Make sure it is
          * primed and ready by getting some initial output from it.
          */
-        if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
+        if (SSLLogger.isOn() && SSLLogger.isOn("ssl,sslctx")) {
             SSLLogger.finest("trigger seeding of SecureRandom");
         }
         secureRandom.nextInt();
-        if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
+        if (SSLLogger.isOn() && SSLLogger.isOn("ssl,sslctx")) {
             SSLLogger.finest("done seeding of SecureRandom");
         }
 
@@ -143,7 +143,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                 return (X509ExtendedKeyManager)km;
             }
 
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,sslctx")) {
                 SSLLogger.warning(
                     "X509KeyManager passed to SSLContext.init():  need an " +
                     "X509ExtendedKeyManager for SSLEngine use");
@@ -246,7 +246,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             contextLock.lock();
             try {
                 if (statusResponseManager == null) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
+                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl,sslctx")) {
                         SSLLogger.finest(
                                 "Initializing StatusResponseManager");
                     }
@@ -383,7 +383,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                             suite.name, null)) {
                         suites.add(suite);
                         isSupported = true;
-                    } else if (SSLLogger.isOn &&
+                    } else if (SSLLogger.isOn() &&
                             SSLLogger.isOn("ssl,sslctx,verbose")) {
                         SSLLogger.fine(
                                 "Ignore disabled cipher suite: " + suite.name);
@@ -392,7 +392,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                     break;
                 }
 
-                if (!isSupported && SSLLogger.isOn &&
+                if (!isSupported && SSLLogger.isOn() &&
                         SSLLogger.isOn("ssl,sslctx,verbose")) {
                     SSLLogger.finest(
                             "Ignore unsupported cipher suite: " + suite);
@@ -410,7 +410,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             String propertyName) {
 
         String property = System.getProperty(propertyName);
-        if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
+        if (SSLLogger.isOn() && SSLLogger.isOn("ssl,sslctx")) {
             SSLLogger.fine(
                     "System property " + propertyName + " is set to '" +
                     property + "'");
