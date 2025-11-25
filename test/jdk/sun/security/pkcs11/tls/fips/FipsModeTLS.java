@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Red Hat, Inc.
+ * Copyright (c) 2019, 2025, Red Hat, Inc.
  * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -71,6 +71,7 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManagerFactory;
 
 import jdk.test.lib.security.SecurityUtils;
+import jtreg.SkippedException;
 import sun.security.internal.spec.TlsMasterSecretParameterSpec;
 import sun.security.internal.spec.TlsPrfParameterSpec;
 import sun.security.internal.spec.TlsRsaPremasterSecretParameterSpec;
@@ -91,16 +92,7 @@ public final class FipsModeTLS extends SecmodTest {
         // reduce the limit to trigger a key update later
         Security.setProperty("jdk.tls.keyLimits",
                 "AES/GCM/NoPadding KeyUpdate 10000");
-        try {
-            initialize();
-        } catch (Exception e) {
-            System.out.println("Test skipped: failure during" +
-                    " initialization");
-            if (enableDebug) {
-                System.out.println(e);
-            }
-            return;
-        }
+        initialize();
 
         if (shouldRun()) {
             // Test against JCE
@@ -112,15 +104,12 @@ public final class FipsModeTLS extends SecmodTest {
 
             System.out.println("Test PASS - OK");
         } else {
-            System.out.println("Test skipped: TLS 1.2 mechanisms" +
+            throw new SkippedException("Test skipped: TLS 1.2 mechanisms" +
                     " not supported by current SunPKCS11 back-end");
         }
     }
 
     private static boolean shouldRun() {
-        if (sunPKCS11NSSProvider == null) {
-            return false;
-        }
         try {
             String proto = System.getProperty("jdk.tls.client.protocols");
             if ("TLSv1.3".equals(proto)) {
@@ -455,12 +444,14 @@ public final class FipsModeTLS extends SecmodTest {
         //  1. SunPKCS11 (with an NSS FIPS mode backend)
         //  2. SUN (to handle X.509 certificates)
         //  3. SunJSSE (for a TLS engine)
-
-        if (initSecmod() == false) {
-            return;
+        try {
+            if (initSecmod() == false) {
+                throw new Exception("initSecmod failure");
+            }
+            sunPKCS11NSSProvider = getSunPKCS11(BASE + SEP + "nss.cfg");
+        } catch (Exception e) {
+            throw new SkippedException("SunPKCS11 initialization failed", e);
         }
-        String configName = BASE + SEP + "nss.cfg";
-        sunPKCS11NSSProvider = getSunPKCS11(configName);
         System.out.println("SunPKCS11 provider: " + sunPKCS11NSSProvider);
 
         List<Provider> installedProviders = new LinkedList<>();
