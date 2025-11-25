@@ -63,7 +63,9 @@ class JVMTIStartTransition : public StackObj {
         assert(_current->jvmti_thread_state() == nullptr, "should be null");
         assert(java_lang_Thread::jvmti_thread_state(_vthread()) == nullptr, "should be null");
       }
-      _current->rebind_to_jvmti_thread_state_of(_is_mount ? _vthread() : _current->threadObj());
+      if (!_is_mount) {
+        _current->rebind_to_jvmti_thread_state_of(_current->threadObj());
+      }
     }
   }
 };
