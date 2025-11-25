@@ -2750,6 +2750,8 @@ void MacroAssembler::increment(Register reg, int value)
 void MacroAssembler::incrementw(Address dst, int value, Register result)
 {
   assert(!dst.uses(result), "invalid dst for address increment");
+  assert(result->is_valid(), "must be");
+  assert_different_registers(result, rscratch2);
   if (dst.getMode() == Address::literal) {
     assert(abs(value) < (1 << 12), "invalid value and address mode combination");
     lea(rscratch2, dst);
@@ -2763,6 +2765,8 @@ void MacroAssembler::incrementw(Address dst, int value, Register result)
 void MacroAssembler::increment(Address dst, int value, Register result)
 {
   assert(!dst.uses(result), "invalid dst for address increment");
+  assert(result->is_valid(), "must be");
+  assert_different_registers(result, rscratch2);
   if (dst.getMode() == Address::literal) {
     assert(abs(value) < (1 << 12), "invalid value and address mode combination");
     lea(rscratch2, dst);

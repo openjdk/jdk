@@ -580,7 +580,7 @@ Java_sun_java2d_pipe_ShapeSpanIterator_appendPoly
 {
     pathData *pd;
     int i;
-    jint *xPoints = 0, *yPoints = 0;
+    jint *xPoints, *yPoints;
     jboolean oom = JNI_FALSE;
     jfloat xoff = (jfloat) ixoff, yoff = (jfloat) iyoff;
 

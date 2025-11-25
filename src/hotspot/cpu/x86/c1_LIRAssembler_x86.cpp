@@ -1278,8 +1278,6 @@ void LIR_Assembler::type_profile_helper(Register mdo,
   }
 }
 
-long blooper;
-
 void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, Label* failure, Label* obj_is_null) {
   // we always need a stub for the failure case.
   CodeStub* stub = op->stub();
@@ -1513,11 +1511,6 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
         __ jmp(*success_target);
       }
       __ bind(not_null);
-
-      __ push(rax);
-      __ lea(rax, ExternalAddress((address)&blooper));
-      __ addl(Address(rax), 1);
-      __ pop(rax);
 
       Label update_done;
       Register recv = k_RInfo;
@@ -2851,10 +2844,8 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
   __ load_klass(result, obj, rscratch1);
 }
 
-// int ploopy;
-
 void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr dest, LIR_Opr temp_op,
-                                          LIR_Opr freq_op, LIR_Opr step_op,
+                                          LIR_Opr freq_op, LIR_Opr,
                                           CodeStub* overflow_stub) {
 #ifndef PRODUCT
   if (CommentedAssembly) {
@@ -2890,7 +2881,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
       if (ProfileCaptureRatio > 1) {
         __ shll(inc, ratio_shift);
       }
-      __ addl(temp, inc);
+      __ lea(temp, Address(temp, inc, Address::times_1));
       __ movl(dest_adr, temp);
       __ movl(dest->as_register(), temp);
       if (ProfileCaptureRatio > 1) {
@@ -2901,26 +2892,23 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
       switch (dest->type()) {
         case T_INT: {
           inc *= ProfileCaptureRatio;
+          __ movl(temp, dest_adr);
+          // Use lea instead of add to avoid destroying condition codes on x86
+          __ lea(temp, Address(temp, inc, Address::times_1));
+          __ movl(dest_adr, temp);
           if (dest->is_register()) {
-            __ movl(temp, dest_adr);
-            __ addl(temp, inc);
-            __ movl(dest_adr, temp);
             __ movl(dest->as_register(), temp);
-          } else {
-            __ addl(dest_adr, inc);
           }
-
           break;
         }
         case T_LONG: {
           inc *= ProfileCaptureRatio;
+          __ movq(temp, dest_adr);
+          // Use lea instead of add to avoid destroying condition codes on x86
+          __ lea(temp, Address(temp, inc, Address::times_1));
+          __ movq(dest_adr, temp);
           if (dest->is_register()) {
-            __ movq(temp, dest_adr);
-            __ addq(temp, inc);
-            __ movq(dest_adr, temp);
             __ movq(dest->as_register_lo(), temp);
-          } else {
-            __ addq(dest_adr, inc);
           }
 
           break;
@@ -3101,8 +3089,6 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
     lambda(this, op);
   }
 }
-
-int kludge;
 
 void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   Register obj = op->obj()->as_register();
