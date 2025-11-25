@@ -27,20 +27,20 @@
  * @summary Tests for JDI connector timeout failure
  * @modules jdk.jshell/jdk.jshell jdk.jshell/jdk.jshell.spi jdk.jshell/jdk.jshell.execution
  * @build HangingRemoteAgent
- * @run testng/timeout=480 JdiHangingListenExecutionControlTest
+ * @run junit/timeout=480 JdiHangingListenExecutionControlTest
  * @key intermittent
  */
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class JdiHangingListenExecutionControlTest {
 
     private static final String EXPECTED_ERROR =
             "Launching JShell execution engine threw: Accept timed out";
 
+    @Test
     public void hangListenTimeoutTest() {
         try {
             System.err.printf("Unexpected return value: %s\n",

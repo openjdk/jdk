@@ -114,7 +114,6 @@ ifeq ($(HSDIS_BACKEND), binutils)
     TOOLCHAIN_TYPE := gcc
     OPENJDK_TARGET_OS := linux
     OPENJDK_TARGET_OS_TYPE := unix
-    CC_OUT_OPTION := -o$(SPACE)
     GENDEPS_FLAGS := -MMD -MF
     CFLAGS_DEBUG_SYMBOLS := -g
     DISABLED_WARNINGS :=

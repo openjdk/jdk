@@ -143,8 +143,6 @@ class InstanceKlass: public Klass {
  protected:
   InstanceKlass(const ClassFileParser& parser, KlassKind kind = Kind, ReferenceType reference_type = REF_NONE);
 
-  void* operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, bool use_class_space, TRAPS) throw();
-
  public:
   InstanceKlass();
 
@@ -506,7 +504,7 @@ public:
                                        ClassLoaderData* loader_data,
                                        TRAPS);
 
-  JavaThread* init_thread()  { return Atomic::load(&_init_thread); }
+  JavaThread* init_thread()  { return AtomicAccess::load(&_init_thread); }
   const char* init_thread_name() {
     return init_thread()->name_raw();
   }
@@ -520,7 +518,7 @@ public:
   bool is_being_initialized() const        { return init_state() == being_initialized; }
   bool is_in_error_state() const           { return init_state() == initialization_error; }
   bool is_reentrant_initialization(Thread *thread)  { return thread == _init_thread; }
-  ClassState  init_state() const           { return Atomic::load_acquire(&_init_state); }
+  ClassState  init_state() const           { return AtomicAccess::load_acquire(&_init_state); }
   const char* init_state_name() const;
   bool is_rewritten() const                { return _misc_flags.rewritten(); }
 
@@ -540,6 +538,7 @@ public:
   void initialize_with_aot_initialized_mirror(TRAPS);
   void assert_no_clinit_will_run_for_aot_initialized_class() const NOT_DEBUG_RETURN;
   void initialize(TRAPS);
+  void initialize_preemptable(TRAPS);
   void link_class(TRAPS);
   bool link_class_or_fail(TRAPS); // returns false on failure
   void rewrite_class(TRAPS);
@@ -764,14 +763,6 @@ public:
   bool has_final_method() const         { return _misc_flags.has_final_method(); }
   void set_has_final_method()           { _misc_flags.set_has_final_method(true); }
 
-  // Indicates presence of @AOTSafeClassInitializer. Also see AOTClassInitializer for more details.
-  bool has_aot_safe_initializer() const { return _misc_flags.has_aot_safe_initializer(); }
-  void set_has_aot_safe_initializer()   { _misc_flags.set_has_aot_safe_initializer(true); }
-
-  // Indicates @AOTRuntimeSetup private static void runtimeSetup() presence.
-  bool is_runtime_setup_required() const { return _misc_flags.is_runtime_setup_required(); }
-  void set_is_runtime_setup_required()   { _misc_flags.set_is_runtime_setup_required(true); }
-
   // for adding methods, ConstMethod::UNSET_IDNUM means no more ids available
   inline u2 next_method_idnum();
   void set_initial_method_idnum(u2 value)             { _idnum_allocated_count = value; }
@@ -820,7 +811,6 @@ public:
   // additional member function to return a handle
   instanceHandle allocate_instance_handle(TRAPS);
 
-  objArrayOop allocate_objArray(int n, int length, TRAPS);
   // Helper function
   static instanceOop register_finalizer(instanceOop i, TRAPS);
 
@@ -1070,7 +1060,7 @@ private:
   void set_init_thread(JavaThread *thread)  {
     assert((thread == JavaThread::current() && _init_thread == nullptr) ||
            (thread == nullptr && _init_thread == JavaThread::current()), "Only one thread is allowed to own initialization");
-    Atomic::store(&_init_thread, thread);
+    AtomicAccess::store(&_init_thread, thread);
   }
 
   jmethodID* methods_jmethod_ids_acquire() const;

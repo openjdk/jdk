@@ -48,12 +48,12 @@ public class ClassElementValueGen extends ElementValueGen {
     }
 
     protected ClassElementValueGen(final int typeIdx, final ConstantPoolGen cpool) {
-        super(ElementValueGen.CLASS, cpool);
+        super(CLASS, cpool);
         this.idx = typeIdx;
     }
 
     public ClassElementValueGen(final ObjectType t, final ConstantPoolGen cpool) {
-        super(ElementValueGen.CLASS, cpool);
+        super(CLASS, cpool);
         // this.idx = cpool.addClass(t);
         idx = cpool.addUtf8(t.getSignature());
     }
@@ -67,9 +67,9 @@ public class ClassElementValueGen extends ElementValueGen {
     public String getClassString() {
         final ConstantUtf8 cu8 = (ConstantUtf8) getConstantPool().getConstant(idx);
         return cu8.getBytes();
-        // ConstantClass c = (ConstantClass)getConstantPool().getConstant(idx);
+        // ConstantClass c = (ConstantClass) getConstantPool().getConstant(idx);
         // ConstantUtf8 utf8 =
-        // (ConstantUtf8)getConstantPool().getConstant(c.getNameIndex());
+        // (ConstantUtf8) getConstantPool().getConstant(c.getNameIndex());
         // return utf8.getBytes();
     }
 

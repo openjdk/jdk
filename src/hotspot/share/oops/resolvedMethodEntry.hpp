@@ -26,7 +26,7 @@
 #define SHARE_OOPS_RESOLVEDMETHODENTRY_HPP
 
 #include "interpreter/bytecodes.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/sizes.hpp"
 
 // ResolvedMethodEntry contains the resolution information for the invoke bytecodes
@@ -61,6 +61,9 @@
 //       pool entry and thus the same resolved method entry.
 // The is_vfinal flag indicates method pointer for a final method or an index.
 
+// The explicit paddings are necessary for generating deterministic CDS archives. They prevent
+// the C++ compiler from potentially inserting random values in unused gaps.
+
 class InstanceKlass;
 class ResolvedMethodEntry {
   friend class VMStructs;
@@ -70,6 +73,7 @@ class ResolvedMethodEntry {
     InstanceKlass* _interface_klass; // for interface and static
     u2 _resolved_references_index;   // Index of resolved references array that holds the appendix oop for invokehandle
     u2 _table_index;                 // vtable/itable index for virtual and interface calls
+    // The padding field is unused here, as the parent constructor zeroes the union.
   } _entry_specific;
 
   u2 _cpool_index;                   // Constant pool index
@@ -80,50 +84,35 @@ class ResolvedMethodEntry {
 #ifdef ASSERT
   bool _has_interface_klass;
   bool _has_table_index;
+# ifdef _LP64
+  u2 _padding1;
+  u4 _padding2;
+# else
+  u1 _padding1;
+  u1 _padding2;
+# endif
 #endif
-
-  // See comments in resolvedFieldEntry.hpp about copy_from and padding.
-  // We have unused padding on debug builds.
-  void copy_from(const ResolvedMethodEntry& other) {
-    _method = other._method;
-    _entry_specific = other._entry_specific;
-    _cpool_index = other._cpool_index;
-    _number_of_parameters = other._number_of_parameters;
-    _tos_state = other._tos_state;
-    _flags = other._flags;
-    _bytecode1 = other._bytecode1;
-    _bytecode2 = other._bytecode2;
-#ifdef ASSERT
-    _has_interface_klass = other._has_interface_klass;
-    _has_table_index = other._has_table_index;
-#endif
-  }
 
   // Constructors
   public:
     ResolvedMethodEntry(u2 cpi) :
       _method(nullptr),
+      _entry_specific{nullptr},
       _cpool_index(cpi),
       _number_of_parameters(0),
       _tos_state(0),
       _flags(0),
       _bytecode1(0),
-      _bytecode2(0) {
-        _entry_specific._interface_klass = nullptr;
-        DEBUG_ONLY(_has_interface_klass = false;)
-        DEBUG_ONLY(_has_table_index = false;)
-      }
+      _bytecode2(0)
+#ifdef ASSERT
+      , _has_interface_klass(false),
+      _has_table_index(false),
+      _padding1(0),
+      _padding2(0)
+#endif
+      {}
     ResolvedMethodEntry() :
       ResolvedMethodEntry(0) {}
-
-    ResolvedMethodEntry(const ResolvedMethodEntry& other) {
-      copy_from(other);
-    }
-
-    ResolvedMethodEntry& operator=(const ResolvedMethodEntry& other) {
-      copy_from(other);
-      return *this;
-    }
 
 
   // Bit shift to get flags
@@ -145,7 +134,7 @@ class ResolvedMethodEntry {
   bool has_resolved_references_index() const { return (_flags & (1 << has_resolved_ref_shift))    != 0; }
 
   // Getters
-  Method* method() const { return Atomic::load_acquire(&_method); }
+  Method* method() const { return AtomicAccess::load_acquire(&_method); }
   InstanceKlass* interface_klass() const {
     assert(_bytecode1 == Bytecodes::_invokeinterface, "Only invokeinterface has a klass %d", _bytecode1);
     assert(_has_interface_klass, "sanity");
@@ -164,8 +153,8 @@ class ResolvedMethodEntry {
   u2 constant_pool_index() const { return _cpool_index; }
   u1 tos_state() const { return _tos_state; }
   u2 number_of_parameters() const { return _number_of_parameters; }
-  u1 bytecode1() const { return Atomic::load_acquire(&_bytecode1); }
-  u1 bytecode2() const { return Atomic::load_acquire(&_bytecode2); }
+  u1 bytecode1() const { return AtomicAccess::load_acquire(&_bytecode1); }
+  u1 bytecode2() const { return AtomicAccess::load_acquire(&_bytecode2); }
 
   bool is_resolved(Bytecodes::Code code) const {
     switch(code) {
@@ -200,7 +189,7 @@ class ResolvedMethodEntry {
     volatile Bytecodes::Code c = (Bytecodes::Code)*code;
     assert(c == 0 || c == new_code || new_code == 0, "update must be consistent old: %d, new: %d", c, new_code);
   #endif
-    Atomic::release_store(code, new_code);
+    AtomicAccess::release_store(code, new_code);
   }
 
   void set_bytecode1(u1 b1) {
@@ -212,7 +201,7 @@ class ResolvedMethodEntry {
   }
 
   void set_method(Method* m) {
-    Atomic::release_store(&_method, m);
+    AtomicAccess::release_store(&_method, m);
   }
 
   void set_klass(InstanceKlass* klass) {

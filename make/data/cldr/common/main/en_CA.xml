@@ -164,7 +164,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MEd" alt="variant">E, d/M</dateFormatItem>
 						<dateFormatItem id="UMd">U-MM-dd</dateFormatItem>
 						<dateFormatItem id="UMd" alt="variant">d/M/U</dateFormatItem>
-						<dateFormatItem id="yMd" alt="variant">d/M/r</dateFormatItem>
 						<dateFormatItem id="yyyyM">r-MM</dateFormatItem>
 						<dateFormatItem id="yyyyMd">r-MM-dd</dateFormatItem>
 						<dateFormatItem id="yyyyMd" alt="variant">d/M/r</dateFormatItem>
@@ -229,7 +228,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern>M/d/y GGGGG</pattern>
+							<pattern>M/d/y G</pattern>
 							<pattern alt="variant">d/M/y GGGGG</pattern>
 						</dateFormat>
 					</dateFormatLength>
@@ -1030,7 +1029,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 		</fields>
 		<timeZoneNames>
-			<regionFormat type="daylight">{0} Daylight Saving Time</regionFormat>
 			<zone type="America/St_Barthelemy">
 				<exemplarCity>Saint-Barthélemy</exemplarCity>
 			</zone>
@@ -1043,9 +1041,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/St_Lucia">
 				<exemplarCity>Saint Lucia</exemplarCity>
 			</zone>
-			<zone type="Asia/Rangoon">
-				<exemplarCity>Rangoon</exemplarCity>
-			</zone>
 			<zone type="Atlantic/St_Helena">
 				<exemplarCity>Saint Helena</exemplarCity>
 			</zone>
@@ -1055,196 +1050,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/St_Thomas">
 				<exemplarCity>Saint Thomas</exemplarCity>
 			</zone>
-			<metazone type="Afghanistan">
-				<short>
-					<standard>AFT</standard>
-				</short>
-			</metazone>
-			<metazone type="Alaska">
-				<long>
-					<generic>Alaska Time</generic>
-					<standard>Alaska Standard Time</standard>
-					<daylight>Alaska Daylight Saving Time</daylight>
-				</long>
-			</metazone>
-			<metazone type="America_Central">
-				<long>
-					<generic>Central Time</generic>
-					<standard>Central Standard Time</standard>
-					<daylight>Central Daylight Saving Time</daylight>
-				</long>
-			</metazone>
-			<metazone type="America_Eastern">
-				<long>
-					<generic>Eastern Time</generic>
-					<standard>Eastern Standard Time</standard>
-					<daylight>Eastern Daylight Saving Time</daylight>
-				</long>
-			</metazone>
-			<metazone type="Argentina">
-				<short>
-					<generic>ART</generic>
-				</short>
-			</metazone>
-			<metazone type="Australia_CentralWestern">
-				<short>
-					<generic>ACWT</generic>
-					<standard>ACWST</standard>
-					<daylight>ACWDT</daylight>
-				</short>
-			</metazone>
-			<metazone type="Australia_Eastern">
-				<short>
-					<generic>AET</generic>
-					<standard>AEST</standard>
-					<daylight>AEDT</daylight>
-				</short>
-			</metazone>
-			<metazone type="Australia_Western">
-				<short>
-					<standard>AWST</standard>
-					<daylight>AWDT</daylight>
-				</short>
-			</metazone>
-			<metazone type="Bangladesh">
-				<short>
-					<standard>BST</standard>
-				</short>
-			</metazone>
-			<metazone type="Bhutan">
-				<short>
-					<standard>BTT</standard>
-				</short>
-			</metazone>
-			<metazone type="Brasilia">
-				<short>
-					<generic>BRT</generic>
-					<daylight>BRST</daylight>
-				</short>
-			</metazone>
-			<metazone type="Brunei">
-				<short>
-					<standard>BNT</standard>
-				</short>
-			</metazone>
-			<metazone type="Chatham">
-				<short>
-					<standard>CHAST</standard>
-					<daylight>CHADT</daylight>
-				</short>
-			</metazone>
-			<metazone type="Christmas">
-				<short>
-					<standard>CXT</standard>
-				</short>
-			</metazone>
-			<metazone type="Cocos">
-				<short>
-					<standard>CCT</standard>
-				</short>
-			</metazone>
-			<metazone type="Colombia">
-				<short>
-					<daylight>COST</daylight>
-				</short>
-			</metazone>
-			<metazone type="East_Timor">
-				<short>
-					<standard>TLT</standard>
-				</short>
-			</metazone>
-			<metazone type="Easter">
-				<short>
-					<standard>EAST</standard>
-					<daylight>EASST</daylight>
-				</short>
-			</metazone>
-			<metazone type="Ecuador">
-				<short>
-					<standard>ECT</standard>
-				</short>
-			</metazone>
-			<metazone type="Falkland">
-				<short>
-					<generic>FKT</generic>
-					<daylight>FKST</daylight>
-				</short>
-			</metazone>
 			<metazone type="French_Southern">
 				<long>
 					<standard>French Southern and Antarctic Time</standard>
 				</long>
-			</metazone>
-			<metazone type="Galapagos">
-				<short>
-					<standard>GALT</standard>
-				</short>
-			</metazone>
-			<metazone type="Greenland_Eastern">
-				<short>
-					<generic>EGT</generic>
-				</short>
-			</metazone>
-			<metazone type="Gulf">
-				<short>
-					<standard>Gulf Time</standard>
-				</short>
-			</metazone>
-			<metazone type="Guyana">
-				<short>
-					<standard>GYT</standard>
-				</short>
-			</metazone>
-			<metazone type="India">
-				<short>
-					<standard>IST</standard>
-				</short>
-			</metazone>
-			<metazone type="Indochina">
-				<short>
-					<standard>ICT</standard>
-				</short>
-			</metazone>
-			<metazone type="Indonesia_Central">
-				<short>
-					<standard>WITA</standard>
-				</short>
-			</metazone>
-			<metazone type="Indonesia_Eastern">
-				<short>
-					<standard>WIT</standard>
-				</short>
-			</metazone>
-			<metazone type="Indonesia_Western">
-				<short>
-					<standard>WIB</standard>
-				</short>
-			</metazone>
-			<metazone type="Iran">
-				<long>
-					<generic>Iran Time</generic>
-					<standard>Iran Standard Time</standard>
-					<daylight>Iran Daylight Saving Time</daylight>
-				</long>
-				<short>
-					<standard>IRST</standard>
-					<daylight>IRDT</daylight>
-				</short>
-			</metazone>
-			<metazone type="Malaysia">
-				<short>
-					<standard>MYT</standard>
-				</short>
-			</metazone>
-			<metazone type="Maldives">
-				<short>
-					<standard>MVT</standard>
-				</short>
-			</metazone>
-			<metazone type="Nepal">
-				<short>
-					<standard>NPT</standard>
-				</short>
 			</metazone>
 			<metazone type="Newfoundland">
 				<short>
@@ -1253,55 +1062,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>NDT</daylight>
 				</short>
 			</metazone>
-			<metazone type="Noronha">
-				<short>
-					<generic>FNT</generic>
-				</short>
-			</metazone>
-			<metazone type="Pakistan">
-				<short>
-					<standard>PKT</standard>
-				</short>
-			</metazone>
-			<metazone type="Paraguay">
-				<short>
-					<generic>PYT</generic>
-					<daylight>PYST</daylight>
-				</short>
-			</metazone>
-			<metazone type="Peru">
-				<short>
-					<generic>PET</generic>
-				</short>
-			</metazone>
 			<metazone type="Pierre_Miquelon">
 				<long>
 					<generic>Saint-Pierre-et-Miquelon Time</generic>
 					<standard>Saint-Pierre-et-Miquelon Standard Time</standard>
-					<daylight>Saint-Pierre-et-Miquelon Daylight Saving Time</daylight>
+					<daylight>Saint-Pierre-et-Miquelon Daylight Time</daylight>
 				</long>
 				<short>
 					<generic>PMT</generic>
 					<standard>PMST</standard>
 					<daylight>PMDT</daylight>
-				</short>
-			</metazone>
-			<metazone type="Samoa">
-				<long>
-					<generic>American Samoa Time</generic>
-					<standard>American Samoa Standard Time</standard>
-					<daylight>Samoan Time</daylight>
-				</long>
-			</metazone>
-			<metazone type="Uruguay">
-				<short>
-					<standard>UYT</standard>
-					<daylight>UYST</daylight>
-				</short>
-			</metazone>
-			<metazone type="Venezuela">
-				<short>
-					<standard>VET</standard>
 				</short>
 			</metazone>
 			<metazone type="Wallis">
@@ -1370,6 +1140,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="USD">
 				<symbol>US$</symbol>
+			</currency>
+			<currency type="XCG">
+				<symbol draft="contributed">Cg</symbol>
 			</currency>
 			<currency type="XXX">
 				<displayName>unknown currency</displayName>

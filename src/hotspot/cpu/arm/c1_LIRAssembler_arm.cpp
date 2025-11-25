@@ -245,7 +245,7 @@ int LIR_Assembler::emit_unwind_handler() {
   MonitorExitStub* stub = nullptr;
   if (method()->is_synchronized()) {
     monitor_address(0, FrameMap::R0_opr);
-    stub = new MonitorExitStub(FrameMap::R0_opr, true, 0);
+    stub = new MonitorExitStub(FrameMap::R0_opr, 0);
     __ unlock_object(R2, R1, R0, *stub->entry());
     __ bind(*stub->continuation());
   }
@@ -272,14 +272,22 @@ int LIR_Assembler::emit_deopt_handler() {
 
   int offset = code_offset();
 
-  __ mov_relative_address(LR, __ pc());
-  __ push(LR); // stub expects LR to be saved
+  Label start;
+  __ bind(start);
+
   __ jump(SharedRuntime::deopt_blob()->unpack(), relocInfo::runtime_call_type, noreg);
 
+  int entry_offset = __ offset();
+  __ mov_relative_address(LR, __ pc());
+  __ push(LR); // stub expects LR to be saved
+  __ b(start);
+
   assert(code_offset() - offset <= deopt_handler_size(), "overflow");
+  assert(code_offset() - entry_offset >= NativePostCallNop::first_check_size,
+         "out of bounds read in post-call NOP check");
   __ end_a_stub();
 
-  return offset;
+  return entry_offset;
 }
 
 
@@ -2427,7 +2435,6 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register lock = op->lock_opr()->as_pointer_register();
 
   if (op->code() == lir_lock) {
-    assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
     int null_check_offset = __ lock_object(hdr, obj, lock, *op->stub()->entry());
     if (op->info() != nullptr) {
       add_debug_info_for_null_check(null_check_offset, op->info());
@@ -2551,11 +2558,6 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
 void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   fatal("Type profiling not implemented on this platform");
 }
-
-void LIR_Assembler::emit_delay(LIR_OpDelay*) {
-  Unimplemented();
-}
-
 
 void LIR_Assembler::monitor_address(int monitor_no, LIR_Opr dst) {
   Address mon_addr = frame_map()->address_for_monitor_lock(monitor_no);

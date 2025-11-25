@@ -115,7 +115,8 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * @throws    NullPointerException if {@code locale} is null
      */
     public DecimalFormatSymbols(Locale locale) {
-        initialize(locale);
+        initialize(Objects.requireNonNull(locale,
+            "locale should not be null"));
     }
 
     /**
@@ -180,6 +181,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * @since 1.6
      */
     public static final DecimalFormatSymbols getInstance(Locale locale) {
+        Objects.requireNonNull(locale, "locale should not be null");
         LocaleProviderAdapter adapter;
         adapter = LocaleProviderAdapter.getAdapter(DecimalFormatSymbolsProvider.class, locale);
         DecimalFormatSymbolsProvider provider = adapter.getDecimalFormatSymbolsProvider();

@@ -21,9 +21,9 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @bug 8295803 8299689 8351435 8361613
+ * @bug 8295803 8299689 8351435 8361613 8366261
  * @summary Tests System.console() returns correct Console (or null) from the expected
  *          module.
  * @library /test/lib
@@ -92,9 +92,12 @@ public class ModuleSelectionTest {
         var con = System.console();
         var pc = Class.forName("java.io.ProxyingConsole");
         var jdkc = Class.forName("jdk.internal.io.JdkConsole");
-        var istty = (boolean)MethodHandles.privateLookupIn(Console.class, MethodHandles.lookup())
-                .findStatic(Console.class, "istty", MethodType.methodType(boolean.class))
-                .invoke();
+        var lookup = MethodHandles.privateLookupIn(Console.class, MethodHandles.lookup());
+        var istty = (boolean)lookup.findStatic(Console.class, "isStdinTty", MethodType.methodType(boolean.class))
+                        .invoke() &&
+                   (boolean)lookup.findStatic(Console.class, "isStdoutTty", MethodType.methodType(boolean.class))
+                        .invoke();
+
         var impl = con != null ? MethodHandles.privateLookupIn(pc, MethodHandles.lookup())
                 .findGetter(pc, "delegate", jdkc)
                 .invoke(con) : null;

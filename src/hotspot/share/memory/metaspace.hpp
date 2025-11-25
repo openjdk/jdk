@@ -31,7 +31,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 class ClassLoaderData;
-class MetaspaceShared;
+class AOTMetaspace;
 class MetaspaceTracer;
 class Mutex;
 class outputStream;
@@ -43,7 +43,7 @@ class ReservedSpace;
 // (auxiliary stuff goes into MetaspaceUtils)
 class Metaspace : public AllStatic {
 
-  friend class MetaspaceShared;
+  friend class AOTMetaspace;
 
 public:
   enum MetadataType {
@@ -120,12 +120,12 @@ public:
   static constexpr size_t min_allocation_word_size = min_allocation_alignment_words;
 
   static MetaWord* allocate(ClassLoaderData* loader_data, size_t word_size,
-                            MetaspaceObj::Type type, bool use_class_space, TRAPS);
+                            MetaspaceObj::Type type, TRAPS);
 
   // Non-TRAPS version of allocate which can be called by a non-Java thread, that returns
   // null on failure.
   static MetaWord* allocate(ClassLoaderData* loader_data, size_t word_size,
-                            MetaspaceObj::Type type, bool use_class_space);
+                            MetaspaceObj::Type type);
 
   // Returns true if the pointer points into class space, non-class metaspace, or the
   // metadata portion of the CDS archive.

@@ -33,19 +33,13 @@ import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsServer;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -53,6 +47,9 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.testng.Assert.assertEquals;
 
@@ -61,14 +58,16 @@ public class RedirectMethodChange implements HttpServerAdapters {
     SSLContext sslContext;
     HttpClient client;
 
-    HttpTestServer httpTestServer;        // HTTP/1.1    [ 4 servers ]
+    HttpTestServer httpTestServer;        // HTTP/1.1    [ 5 servers ]
     HttpTestServer httpsTestServer;       // HTTPS/1.1
     HttpTestServer http2TestServer;       // HTTP/2 ( h2c )
     HttpTestServer https2TestServer;      // HTTP/2 ( h2  )
+    HttpTestServer http3TestServer;   // HTTP/3 ( h3  )
     String httpURI;
     String httpsURI;
     String http2URI;
     String https2URI;
+    String http3URI;
 
     static final String RESPONSE = "Hello world";
     static final String POST_BODY = "This is the POST body 123909090909090";
@@ -90,6 +89,22 @@ public class RedirectMethodChange implements HttpServerAdapters {
     @DataProvider(name = "variants")
     public Object[][] variants() {
         return new Object[][] {
+                { http3URI, "GET",  301, "GET"  },
+                { http3URI, "GET",  302, "GET"  },
+                { http3URI, "GET",  303, "GET"  },
+                { http3URI, "GET",  307, "GET"  },
+                { http3URI, "GET",  308, "GET"  },
+                { http3URI, "POST", 301, "GET"  },
+                { http3URI, "POST", 302, "GET"  },
+                { http3URI, "POST", 303, "GET"  },
+                { http3URI, "POST", 307, "POST" },
+                { http3URI, "POST", 308, "POST" },
+                { http3URI, "PUT",  301, "PUT"  },
+                { http3URI, "PUT",  302, "PUT"  },
+                { http3URI, "PUT",  303, "GET"  },
+                { http3URI, "PUT",  307, "PUT"  },
+                { http3URI, "PUT",  308, "PUT"  },
+
                 { httpURI, "GET",  301, "GET"  },
                 { httpURI, "GET",  302, "GET"  },
                 { httpURI, "GET",  303, "GET"  },
@@ -156,6 +171,15 @@ public class RedirectMethodChange implements HttpServerAdapters {
         };
     }
 
+    private HttpRequest.Builder newRequestBuilder(URI uri) {
+        var builder = HttpRequest.newBuilder(uri);
+        if (uri.getRawPath().contains("/http3/")) {
+            builder = builder.version(HTTP_3)
+                    .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
+        }
+        return builder;
+    }
+
     @Test(dataProvider = "variants")
     public void test(String uriString,
                      String method,
@@ -163,7 +187,7 @@ public class RedirectMethodChange implements HttpServerAdapters {
                      String expectedMethod)
         throws Exception
     {
-        HttpRequest req = HttpRequest.newBuilder(URI.create(uriString))
+        HttpRequest req = newRequestBuilder(URI.create(uriString))
                 .method(method, getRequestBodyFor(method))
                 .header("X-Redirect-Code", Integer.toString(redirectCode))
                 .header("X-Expect-Method", expectedMethod)
@@ -183,7 +207,7 @@ public class RedirectMethodChange implements HttpServerAdapters {
         if (sslContext == null)
             throw new AssertionError("Unexpected null sslContext");
 
-        client = HttpClient.newBuilder()
+        client = newClientBuilderForH3()
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .sslContext(sslContext)
                 .build();
@@ -212,10 +236,17 @@ public class RedirectMethodChange implements HttpServerAdapters {
         https2TestServer.addHandler(handler, "/https2/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/test/rmt";
 
+        http3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
+        targetURI = "https://" + http3TestServer.serverAuthority() + "/http3/redirect/rmt";
+        handler = new RedirMethodChgeHandler(targetURI);
+        http3TestServer.addHandler(handler, "/http3/");
+        http3URI = "https://" + http3TestServer.serverAuthority() + "/http3/test/rmt";
+
         httpTestServer.start();
         httpsTestServer.start();
         http2TestServer.start();
         https2TestServer.start();
+        http3TestServer.start();
     }
 
     @AfterTest
@@ -225,6 +256,7 @@ public class RedirectMethodChange implements HttpServerAdapters {
         httpsTestServer.stop();
         http2TestServer.stop();
         https2TestServer.stop();
+        http3TestServer.stop();
     }
 
     /**

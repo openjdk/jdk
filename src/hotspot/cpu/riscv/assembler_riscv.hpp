@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -30,11 +30,11 @@
 #include "asm/assembler.hpp"
 #include "asm/register.hpp"
 #include "code/codeCache.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-#include <type_traits>
 
 #define XLEN 64
 
@@ -910,6 +910,43 @@ protected:
     int32_t val = offset & 0xfff;
     patch((address)&insn, 31, 20, val);
     emit(insn);
+  }
+
+ public:
+
+  static uint32_t encode_csrrw(Register Rd, const uint32_t csr, Register Rs1) {
+    guarantee(is_uimm12(csr), "csr is invalid");
+    uint32_t insn = 0;
+    patch((address)&insn, 6, 0, 0b1110011);
+    patch((address)&insn, 14, 12, 0b001);
+    patch_reg((address)&insn, 7, Rd);
+    patch_reg((address)&insn, 15, Rs1);
+    patch((address)&insn, 31, 20, csr);
+    return insn;
+  }
+
+  static uint32_t encode_jal(Register Rd, const int32_t offset) {
+    guarantee(is_simm21(offset) && ((offset % 2) == 0), "offset is invalid.");
+    uint32_t insn = 0;
+    patch((address)&insn, 6, 0, 0b1101111);
+    patch_reg((address)&insn, 7, Rd);
+    patch((address)&insn, 19, 12, (uint32_t)((offset >> 12) & 0xff));
+    patch((address)&insn, 20, (uint32_t)((offset >> 11) & 0x1));
+    patch((address)&insn, 30, 21, (uint32_t)((offset >> 1) & 0x3ff));
+    patch((address)&insn, 31, (uint32_t)((offset >> 20) & 0x1));
+    return insn;
+  }
+
+  static uint32_t encode_jalr(Register Rd, Register Rs, const int32_t offset) {
+    guarantee(is_simm12(offset), "offset is invalid.");
+    uint32_t insn = 0;
+    patch((address)&insn, 6, 0, 0b1100111);
+    patch_reg((address)&insn, 7, Rd);
+    patch((address)&insn, 14, 12, 0b000);
+    patch_reg((address)&insn, 15, Rs);
+    int32_t val = offset & 0xfff;
+    patch((address)&insn, 31, 20, val);
+    return insn;
   }
 
  protected:
@@ -3667,19 +3704,15 @@ public:
 // --------------------------
 // Upper Immediate Instruction
 // --------------------------
-#define INSN(NAME)                                                                           \
-  void NAME(Register Rd, int32_t imm) {                                                      \
-    /* lui -> c.lui */                                                                       \
-    if (do_compress() && (Rd != x0 && Rd != x2 && imm != 0 && is_simm18(imm))) {             \
-      c_lui(Rd, imm);                                                                        \
-      return;                                                                                \
-    }                                                                                        \
-    _lui(Rd, imm);                                                                           \
+  void lui(Register Rd, int32_t imm) {
+    /* lui -> c.lui */
+    if (do_compress() && (Rd != x0 && Rd != x2 && imm != 0 && is_simm18(imm))) {
+      c_lui(Rd, imm);
+      return;
+    }
+    _lui(Rd, imm);
   }
 
-  INSN(lui);
-
-#undef INSN
 
 // Cache Management Operations
 // These instruction may be turned off for user space.

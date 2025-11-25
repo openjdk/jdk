@@ -43,6 +43,8 @@ public class TestIncludesAreSorted {
      * can be checked).
      */
     private static final String[] HOTSPOT_SOURCES_TO_CHECK = {
+                    "os/linux",
+                    "os/posix",
                     "share"
     };
 

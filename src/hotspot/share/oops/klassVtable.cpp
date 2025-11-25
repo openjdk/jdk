@@ -22,7 +22,7 @@
  *
  */
 
-#include "cds/metaspaceShared.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -50,7 +50,7 @@ inline InstanceKlass* klassVtable::ik() const {
 }
 
 bool klassVtable::is_preinitialized_vtable() {
-  return _klass->in_aot_cache() && !MetaspaceShared::remapped_readwrite() && _klass->verified_at_dump_time();
+  return _klass->in_aot_cache() && !AOTMetaspace::remapped_readwrite() && _klass->verified_at_dump_time();
 }
 
 
@@ -1089,8 +1089,8 @@ void itableMethodEntry::initialize(InstanceKlass* klass, Method* m) {
   if (m == nullptr) return;
 
 #ifdef ASSERT
-  if (MetaspaceShared::in_aot_cache((void*)&_method) &&
-     !MetaspaceShared::remapped_readwrite() &&
+  if (AOTMetaspace::in_aot_cache((void*)&_method) &&
+     !AOTMetaspace::remapped_readwrite() &&
      m->method_holder()->verified_at_dump_time() &&
      klass->verified_at_dump_time()) {
     // At runtime initialize_itable is rerun as part of link_class_impl()
