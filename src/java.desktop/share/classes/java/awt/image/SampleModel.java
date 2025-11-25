@@ -529,8 +529,7 @@ public abstract class SampleModel
      * @see #getDataElements(int, int, Object, DataBuffer)
      * @see java.awt.image.DataBuffer
      *
-     * @throws NullPointerException if {@code obj} is {@code null}.
-     * @throws NullPointerException if {@code data} is {@code null}.
+     * @throws NullPointerException if {@code obj} or {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if obj is too small to hold the input.
      */
@@ -579,8 +578,7 @@ public abstract class SampleModel
      * @see #getDataElements(int, int, int, int, Object, DataBuffer)
      * @see java.awt.image.DataBuffer
      *
-     * @throws NullPointerException if {@code obj} is {@code null}.
-     * @throws NullPointerException if {@code data} is {@code null}.
+     * @throws NullPointerException if {@code obj} or {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if obj is too small to hold the input.
      */

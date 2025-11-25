@@ -568,8 +568,7 @@ public class SinglePixelPackedSampleModel extends SampleModel
      * @param obj       A primitive array containing pixel data.
      * @param data      The DataBuffer containing the image data.
      * @see #getDataElements(int, int, Object, DataBuffer)
-     * @throws NullPointerException if {@code obj} is {@code null}.
-     * @throws NullPointerException if {@code data} is {@code null}.
+     * @throws NullPointerException if {@code obj} or {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if obj is too small to hold the input.
      */
