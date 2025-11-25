@@ -362,7 +362,7 @@ static void sub_add(const XMMRegister subResult[], const XMMRegister addResult[]
 }
 
 static void loadXmms(const XMMRegister destinationRegs[], Register source, int offset,
-                       int vector_len, MacroAssembler *_masm, int regCnt = -1, int memStep = -1) {
+                     int vector_len, MacroAssembler *_masm, int regCnt = -1, int memStep = -1) {
 
   if (vector_len == Assembler::AVX_256bit) {
     regCnt = regCnt == -1 ? 2 : regCnt;
@@ -378,7 +378,7 @@ static void loadXmms(const XMMRegister destinationRegs[], Register source, int o
 }
 
 static void storeXmms(Register destination, int offset, const XMMRegister xmmRegs[],
-                       int vector_len, MacroAssembler *_masm, int regCnt = -1, int memStep = -1) {
+                      int vector_len, MacroAssembler *_masm, int regCnt = -1, int memStep = -1) {
   if (vector_len == Assembler::AVX_256bit) {
     regCnt = regCnt == -1 ? 2 : regCnt;
     memStep = memStep == -1 ? 32 : memStep;
@@ -656,7 +656,7 @@ static address generate_dilithiumAlmostNtt_avx(StubGenerator *stubgen,
 // coeffs (int[256]) = c_rarg0
 // zetas (int[128*8]) = c_rarg1
 static address generate_dilithiumAlmostInverseNtt_avx(StubGenerator *stubgen,
-                                         int vector_len,MacroAssembler *_masm) {
+                                        int vector_len, MacroAssembler *_masm) {
   __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_dilithiumAlmostInverseNtt_id;
   StubCodeMark mark(stubgen, stub_id);
