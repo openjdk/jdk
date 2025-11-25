@@ -1273,7 +1273,7 @@ void LIR_List::volatile_store_unsafe_reg(LIR_Opr src, LIR_Opr base, LIR_Opr offs
 
 
 void LIR_List::increment_profile_ctr(LIR_Opr src, LIR_Address* addr, LIR_Opr res, LIR_Opr tmp,
-                                     LIR_Opr freq, LIR_Opr step,
+                                     LIR_Opr freq,
                                      CodeStub* overflow, CodeEmitInfo* info) {
   append(new LIR_Op2(
             lir_increment_profile_ctr,

@@ -2268,9 +2268,9 @@ class LIR_List: public CompilationResourceObj {
   void volatile_store_mem_reg(LIR_Opr src, LIR_Address* address, CodeEmitInfo* info, LIR_PatchCode patch_code = lir_patch_none);
   void volatile_store_unsafe_reg(LIR_Opr src, LIR_Opr base, LIR_Opr offset, BasicType type, CodeEmitInfo* info, LIR_PatchCode patch_code);
 
-  void increment_profile_ctr(LIR_Opr src, LIR_Address* addr, LIR_Opr res, LIR_Opr tmp, LIR_Opr freq, LIR_Opr step, CodeStub* overflow, CodeEmitInfo* info);
+  void increment_profile_ctr(LIR_Opr src, LIR_Address* addr, LIR_Opr res, LIR_Opr tmp, LIR_Opr freq, CodeStub* overflow, CodeEmitInfo* info);
   void increment_profile_ctr(LIR_Opr src, LIR_Address* addr, LIR_Opr res, LIR_Opr tmp, CodeStub* overflow = nullptr) {
-    increment_profile_ctr(src, addr, res, tmp, LIR_OprFact::illegalOpr, LIR_OprFact::illegalOpr, overflow, nullptr);
+    increment_profile_ctr(src, addr, res, tmp, LIR_OprFact::illegalOpr, overflow, nullptr);
   }
 
   void idiv(LIR_Opr left, LIR_Opr right, LIR_Opr res, LIR_Opr tmp, CodeEmitInfo* info);

@@ -3188,10 +3188,10 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
                          >> ratio_shift << ratio_shift
                          << InvocationCounter::count_shift;
     __ increment_profile_ctr(step, counter, result, tmp,
-                             LIR_OprFact::intConst(freq), step, overflow, info);
+                             LIR_OprFact::intConst(freq), overflow, info);
   } else {
     __ increment_profile_ctr(step, counter, result, tmp,
-                             LIR_OprFact::illegalOpr, step, nullptr, info);
+                             LIR_OprFact::illegalOpr, nullptr, info);
   }
 }
 

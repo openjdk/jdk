@@ -2845,8 +2845,7 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
 }
 
 void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr dest, LIR_Opr temp_op,
-                                          LIR_Opr freq_op, LIR_Opr,
-                                          CodeStub* overflow_stub) {
+                                          LIR_Opr freq_op, CodeStub* overflow_stub) {
 #ifndef PRODUCT
   if (CommentedAssembly) {
     __ block_comment("increment_profile_ctr" " {");
