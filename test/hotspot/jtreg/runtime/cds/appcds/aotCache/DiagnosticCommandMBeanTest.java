@@ -96,6 +96,7 @@ public class DiagnosticCommandMBeanTest {
                     out.shouldContain("Failed to stop recording");
                 }
                 out.shouldNotContain("Exception occurred!");
+                out.shouldHaveExitValue(0);
             }
         }
     }

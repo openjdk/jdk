@@ -78,6 +78,7 @@ public class JcmdAOTEndRecordingTest {
                     // this message is output when the VM is not recording AOT data
                     output.shouldContain("AOT.end_recording is unsupported");
                 }
+                output.shouldHaveExitValue(0);
             } catch (Exception e) {
                 throw new RuntimeException("Test failed: " + e);
             }
