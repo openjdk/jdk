@@ -44,27 +44,29 @@ public class TestStressDuplicateBackedgeWithAssertionPredicate {
     }
 
     static void test() {
-        // 5) Once the inner loop is removed, we can apply the duplicate backedge optimization
-        //    even though it is a counted loop: This is stressed with StressDuplicateLoopBackedge.
-        // 6) We do the following transformation with current mainline:
+        // 5) Once the inner empty loop is removed (step 4), we can apply the "duplicate backedge
+        //    optimization" to the initial outer counted loop which is now the only loop left. Note
+        //    that we can do that even though it is a counted loop: This is stressed with
+        //    StressDuplicateLoopBackedge.
+        // 6) We do the following "duplicate loop backedge" transformation with current mainline:
         //
         //                                     Template Assertion
         //      Template Assertion                 Predicates
         //          Predicates                         |
         //              |              ====>          ...
         //             ...                             |
-        //              |                             Loop       # Outer Non-Counted Loop (new)
-        //          CountedLoop                        |
-        //                                        Counted Loop   # Inner Counted Loop (old)
+        //              |                             Loop       # Outer Non-Counted Loop (newly added)
+        //          CountedLoop                       |
+        //                                        CountedLoop    # Inner Counted Loop (old)
         //
         // 7) After the transformation, the Template Assertion Predicates are still at the Outer Non-Counted Loop.
         //    As a result, we find them to be useless in the next predicate elimination call with
-        //    EliminateUselessPredicates because they cannot be found from the Inner counted Loop (we stop at
+        //    EliminateUselessPredicates because they cannot be found from the Inner Counted Loop (we stop at
         //    Loop which is not a predicate). However, we have verification code in place that checks that we
         //    can only find useless Template Assertion Predicates if the associated counted loop node is dead.
         //    This is not the case and we crash with an assertion failure.
         //
-        //   The fix is to move the Template Assertion Predicates to the Inner Counted Loop again.
+        //    The fix is to move the Template Assertion Predicates to the Inner Counted Loop again.
         for (int i = 0; i < 100; i++) {
             // 3) Loop Predication will hoist this range checkout out of the loop with Template
             //    Assertion Predicates.
