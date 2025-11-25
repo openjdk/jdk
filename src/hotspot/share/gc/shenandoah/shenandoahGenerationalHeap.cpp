@@ -248,7 +248,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint 
   bool has_plab = false;
   HeapWord* copy = nullptr;
   size_t size = ShenandoahForwarding::size(p);
-  constexpr bool is_promotion = TO_GENERATION == OLD_GENERATION && FROM_GENERATION == YOUNG_GENERATION;
+  constexpr bool is_promotion = (TO_GENERATION == OLD_GENERATION) && (FROM_GENERATION == YOUNG_GENERATION);
 
 #ifdef ASSERT
   if (ShenandoahOOMDuringEvacALot &&
@@ -337,7 +337,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint 
   }
 
   if (ShenandoahEvacTracking) {
-    evac_tracker()->begin_evacuation(thread, size * HeapWordSize, FROM_GENERATION, YOUNG_GENERATION);
+    evac_tracker()->begin_evacuation(thread, size * HeapWordSize, FROM_GENERATION, TO_GENERATION);
   }
 
   // Copy the object:
