@@ -1954,14 +1954,14 @@ const int ObjectAlignmentInBytes = 8;
              "fence. Add cleanliness checks.")                              \
                                                                             \
   product(bool, UseObjectMonitorTable, false, DIAGNOSTIC,                   \
-          "With Lightweight Locking mode, use a table to record inflated "  \
-          "monitors rather than the first word of the object.")             \
+          "Use a table to record inflated monitors rather than the first "  \
+          "word of the object.")                                            \
                                                                             \
-  product(int, LightweightFastLockingSpins, 13, DIAGNOSTIC,                 \
-          "Specifies the number of times lightweight fast locking will "    \
-          "attempt to CAS the markWord before inflating. Between each "     \
-          "CAS it will spin for exponentially more time, resulting in "     \
-          "a total number of spins on the order of O(2^value)")             \
+  product(int, FastLockingSpins, 13, DIAGNOSTIC,                            \
+          "Specifies the number of times fast locking will attempt to "     \
+          "CAS the markWord before inflating. Between each CAS it will "    \
+          "spin for exponentially more time, resulting in a total number "  \
+          "of spins on the order of O(2^value)")                            \
           range(1, 30)                                                      \
                                                                             \
   product(uint, TrimNativeHeapInterval, 0,                                  \
