@@ -58,7 +58,7 @@ import static java.net.http.HttpClient.Version.HTTP_1_1;
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  * @run junit/othervm
- *              -Djdk.httpclient.HttpClient.log=requests,responses,headers,errors
+ *              -Djdk.httpclient.HttpClient.log=errors
  *              -Djdk.httpclient.connectionPoolSize=1
  *              ${test.main.class}
  */
@@ -72,18 +72,18 @@ class PlainConnectionLockTest implements HttpServerAdapters {
     private String http1URI;
     private String https1URI;
     private ExecutorService serverExecutor;
-    private final Semaphore responseSemaphore = new Semaphore(0);
-    private final Semaphore requestSemaphore = new Semaphore(0);
+    private Semaphore responseSemaphore;
+    private Semaphore requestSemaphore;
     private static final int MANY = 100;
 
     static {
         HttpServerAdapters.enableServerLogging();
     }
 
-    private boolean blockResponse() {
+    private boolean blockResponse(Semaphore request, Semaphore response) {
         try {
-            requestSemaphore.release();
-            responseSemaphore.acquire();
+            request.release();
+            response.acquire();
             return true;
         } catch (InterruptedException x) {
             return false;
@@ -92,17 +92,20 @@ class PlainConnectionLockTest implements HttpServerAdapters {
 
 
     @BeforeEach
-    void beforeTest() throws Exception {
+    synchronized void beforeTest() throws Exception {
+        requestSemaphore = new Semaphore(0);
+        responseSemaphore = new Semaphore(0);
         sslContext = new SimpleSSLContext().get();
         if (sslContext == null) {
             throw new AssertionError("Unexpected null sslContext");
         }
         serverExecutor = Executors.newThreadPerTaskExecutor(
                 Thread.ofVirtual().name("Http1Server", 0).factory());
-        // create a h2 server
+
+        // create a https server for HTTP/1.1
         https1Server = HttpTestServer.create(HTTP_1_1, sslContext, serverExecutor);
         https1Server.addHandler((exchange) -> {
-            if (blockResponse()) {
+            if (blockResponse(requestSemaphore, responseSemaphore)) {
                 exchange.sendResponseHeaders(200, 0);
             } else {
                 exchange.sendResponseHeaders(500, 0);
@@ -112,9 +115,10 @@ class PlainConnectionLockTest implements HttpServerAdapters {
         System.out.println("HTTPS Server started at " + https1Server.getAddress());
         https1URI = "https://" + https1Server.serverAuthority() + "/PlainConnectionLockTest/https1";
 
+        // create a plain http server for HTTP/1.1
         http1Server = HttpTestServer.create(HTTP_1_1, null, serverExecutor);
         http1Server.addHandler((exchange) -> {
-            if (blockResponse()) {
+            if (blockResponse(requestSemaphore, responseSemaphore)) {
                 exchange.sendResponseHeaders(200, 0);
             } else {
                 exchange.sendResponseHeaders(500, 0);
@@ -126,7 +130,7 @@ class PlainConnectionLockTest implements HttpServerAdapters {
     }
 
     @AfterEach
-    void afterTest() throws Exception {
+    synchronized void afterTest() throws Exception {
         if (http1Server != null) {
             System.out.println("Stopping HTTP server " + http1Server.getAddress());
             http1Server.stop();
@@ -135,7 +139,16 @@ class PlainConnectionLockTest implements HttpServerAdapters {
             System.out.println("Stopping HTTPS server " + https1Server.getAddress());
             https1Server.stop();
         }
-        serverExecutor.close();
+        if (serverExecutor != null) {
+            serverExecutor.close();
+        }
+        requestSemaphore = null;
+        responseSemaphore = null;
+        serverExecutor = null;
+        http1Server = null;
+        https1Server = null;
+        http1URI = null;
+        https1URI = null;
     }
 
     @Test
@@ -162,7 +175,7 @@ class PlainConnectionLockTest implements HttpServerAdapters {
         throw x;
     }
 
-    private void sendManyRequests(final String requestURI, final int many, boolean shutdown) throws Exception {
+    private synchronized void sendManyRequests(final String requestURI, final int many, boolean shutdown) throws Exception {
         System.out.println("\nSending %s requests to %s, shutdown=%s\n".formatted(many, requestURI, shutdown));
         System.err.println("\nSending %s requests to %s, shutdown=%s\n".formatted(many, requestURI, shutdown));
         assert many > 0;
