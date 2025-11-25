@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4652655 4857717 8025633 8026567 8071982 8164407 8182765 8205593 8240169
+ *      8369531
  * @summary This test verifies that class cross references work properly.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool

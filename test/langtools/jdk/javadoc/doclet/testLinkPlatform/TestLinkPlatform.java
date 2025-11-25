@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8216497 8297437
+ * @bug 8216497 8297437 8369531
  * @summary javadoc should auto-link to platform classes
  * @library /tools/lib ../../lib
  * @modules

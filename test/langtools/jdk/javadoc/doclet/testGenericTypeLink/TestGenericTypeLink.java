@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     8177280 8262992 8259499 8307377 8352249
+ * @bug     8177280 8262992 8259499 8307377 8352249 8369531
  * @summary see and link tag syntax should allow generic types
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool

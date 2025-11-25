@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 4720957 5020118 8026567 8038976 8184969 8164407 8182765 8205593
- *      8216497
+ *      8216497 8369531
  * @summary Test to make sure that -link and -linkoffline link to
  * right files, and URLs with and without trailing slash are accepted.
  * @library ../../lib

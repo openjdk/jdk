@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4857717 8025633 8026567 8164407 8182765 8205593
+ * @bug 4857717 8025633 8026567 8164407 8182765 8205593 8369531
  * @summary Test to make sure that externally overridden and implemented methods
  * are documented properly.  The method should still include "implements" or
  * "overrides" documentation even though the method is external.
