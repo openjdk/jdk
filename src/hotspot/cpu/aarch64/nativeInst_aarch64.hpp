@@ -75,10 +75,8 @@ public:
     return (encoding() & 0xff000000) == 0x10000000;
   }
 
-  inline bool is_nop() const;
   bool is_jump();
   bool is_general_jump();
-  inline bool is_jump_or_nop();
   inline bool is_cond_jump();
   bool is_safepoint_poll();
   bool is_movz();
@@ -395,11 +393,6 @@ public:
   static void insert(address code_pos);
 };
 
-inline bool NativeInstruction::is_nop() const{
-  uint32_t insn = *(uint32_t*)addr_at(0);
-  return insn == 0xd503201f;
-}
-
 inline bool NativeInstruction::is_jump() {
   uint32_t insn = *(uint32_t*)addr_at(0);
 
@@ -417,10 +410,6 @@ inline bool NativeInstruction::is_jump() {
     return true;
   } else
     return false;
-}
-
-inline bool NativeInstruction::is_jump_or_nop() {
-  return is_nop() || is_jump();
 }
 
 // Call trampoline stubs.
