@@ -1366,7 +1366,7 @@ Node *PhaseIdealLoop::clone_up_backedge_goo(Node *back_ctrl, Node *preheader_ctr
 // the backedge of the main or post loop is removed, a Div node won't be able to float above the zero trip guard of the
 // loop and can't execute even if the loop is not reached.
 void PhaseIdealLoop::cast_incr_before_loop(Node* incr, Node* ctrl, CountedLoopNode* loop) {
-  Node* castii = new CastIINode(ctrl, incr, TypeInt::INT, ConstraintCastNode::NonFloatingNonNarrowingDependency);
+  Node* castii = new CastIINode(ctrl, incr, TypeInt::INT, ConstraintCastNode::DependencyType::NonFloatingNonNarrowing);
   register_new_node(castii, ctrl);
   Node* phi = loop->phi();
   assert(phi->in(LoopNode::EntryControl) == incr, "replacing wrong input?");
@@ -3263,7 +3263,7 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
   Node* cast_ii = ConstraintCastNode::make_cast_for_basic_type(
       cl->in(LoopNode::EntryControl), exact_limit,
       phase->_igvn.type(exact_limit),
-      ConstraintCastNode::NonFloatingNonNarrowingDependency, T_INT);
+      ConstraintCastNode::DependencyType::NonFloatingNonNarrowing, T_INT);
   phase->register_new_node(cast_ii, cl->in(LoopNode::EntryControl));
 
   Node* final_iv = new SubINode(cast_ii, cl->stride());

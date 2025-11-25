@@ -1001,7 +1001,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
     // a negative stride). We add a CastII here to guarantee that, when the counted loop is created in a subsequent loop
     // opts pass, an accurate range of values for the limits is found.
     const TypeInt* inner_iters_actual_int_range = TypeInt::make(0, iters_limit, Type::WidenMin);
-    inner_iters_actual_int = new CastIINode(outer_head, inner_iters_actual_int, inner_iters_actual_int_range, ConstraintCastNode::NonFloatingNonNarrowingDependency);
+    inner_iters_actual_int = new CastIINode(outer_head, inner_iters_actual_int, inner_iters_actual_int_range, ConstraintCastNode::DependencyType::NonFloatingNonNarrowing);
     _igvn.register_new_node_with_optimizer(inner_iters_actual_int);
   } else {
     inner_iters_actual_int = inner_iters_actual;
@@ -1288,7 +1288,7 @@ bool PhaseIdealLoop::try_make_short_running_loop(IdealLoopTree* loop, jint strid
     register_new_node(bol, iff->in(0));
     new_limit = ConstraintCastNode::make_cast_for_basic_type(new_predicate_proj, new_limit,
                                                              TypeInteger::make(1, iters_limit_long, Type::WidenMin, bt),
-                                                             ConstraintCastNode::NonFloatingNonNarrowingDependency, bt);
+                                                             ConstraintCastNode::DependencyType::NonFloatingNonNarrowing, bt);
     register_new_node(new_limit, new_predicate_proj);
 
 #ifndef PRODUCT
@@ -1307,7 +1307,7 @@ bool PhaseIdealLoop::try_make_short_running_loop(IdealLoopTree* loop, jint strid
     const TypeLong* new_limit_t = new_limit->Value(&_igvn)->is_long();
     new_limit = ConstraintCastNode::make_cast_for_basic_type(predicates.entry(), new_limit,
                                                              TypeLong::make(0, new_limit_t->_hi, new_limit_t->_widen),
-                                                             ConstraintCastNode::NonFloatingNonNarrowingDependency, bt);
+                                                             ConstraintCastNode::DependencyType::NonFloatingNonNarrowing, bt);
     register_new_node(new_limit, predicates.entry());
   } else {
     assert(bt == T_INT && known_short_running_loop, "only CountedLoop statically known to be short running");

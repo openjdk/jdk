@@ -32,7 +32,7 @@
 //------------------------------ConstraintCastNode-----------------------------
 // cast to a different range
 class ConstraintCastNode: public TypeNode {
-protected:
+public:
   // Cast nodes are subject to a few optimizations:
   //
   // 1- if the type carried by the Cast doesn't narrow the type of its input, the cast can be replaced by its input.
@@ -44,8 +44,19 @@ protected:
   // 1- and 2- are not always applied depending on what constraint are applied to the Cast: there are cases where 1-
   // and 2- apply, where neither 1- nor 2- apply and where one or the other apply. This class abstract away these
   // details.
+  //
+  // If _narrows_type is true, the cast carries a type dependency: "after" the control the cast is dependent on, its data
+  // input is known to have a narrower type (stored in the cast node itself). Optimizations 1- above only apply to cast
+  // nodes for which _narrows_type is true.
+  // if _floating is true, the cast only depends on a single control: its control input. Otherwise, it is pinned at its
+  // current location. Optimizations 2- only apply to cast nodes for which _floating is true.
+  // The 4 combinations of _narrows_types/_floating true/false have some use. See below, at the end of this class
+  // definition, for examples.
   class DependencyType {
-  public:
+  private:
+    const bool _floating; // Does this Cast depends on its control input or is it pinned?
+    const bool _narrows_type; // Does this Cast narrows the type i.e. if input type is narrower can it be removed?
+    const char* _desc;
     DependencyType(bool depends_on_test, bool narrows_type, const char* desc)
       : _floating(depends_on_test),
         _narrows_type(narrows_type),
@@ -53,13 +64,16 @@ protected:
     }
     NONCOPYABLE(DependencyType);
 
-    bool floating() const {
+  public:
+
+    bool is_floating() const {
       return _floating;
     }
 
     bool narrows_type() const {
       return _narrows_type;
     }
+
     void dump_on(outputStream *st) const {
       st->print("%s", _desc);
     }
@@ -72,42 +86,39 @@ protected:
       return _floating == other._floating && _narrows_type == other._narrows_type;
     }
 
-    const DependencyType& widen_type_dependency() const {
+    const DependencyType& with_non_narrowing() const {
       if (_floating) {
-        return FloatingNonNarrowingDependency;
+        return FloatingNonNarrowing;
       }
-      return NonFloatingNonNarrowingDependency;
+      return NonFloatingNonNarrowing;
     }
 
-    const DependencyType& pinned_dependency() const {
+    const DependencyType& with_pinned_dependency() const {
       if (_narrows_type) {
-        return NonFloatingNarrowingDependency;
+        return NonFloatingNarrowing;
       }
-      return NonFloatingNonNarrowingDependency;
+      return NonFloatingNonNarrowing;
     }
 
-  private:
-    const bool _floating; // Does this Cast depends on its control input or is it pinned?
-    const bool _narrows_type; // Does this Cast narrows the type i.e. if input type is narrower can it be removed?
-    const char* _desc;
+    // All the possible combinations of floating/narrowing with example use cases:
+    // used for range checks: the range check CastII is dependent on the range check and if its input's type is narrower
+    // than the type of the range check, it's safe to be removed.
+    static const DependencyType FloatingNarrowing;
+    // used after loop opts when Cast nodes' types are widened so Casts that only differ by slightly different types can
+    // common. Given the type carried by the Cast is no longer accurate, removing a Cast because its input has a
+    // narrower type causes the dependency carried by the Cast to be lost. In some corner cases, that could let an array
+    // access float above a check it is dependent on.
+    static const DependencyType FloatingNonNarrowing;
+    // used when an array access is no longer dependent on a single range check (range check smearing for instance). The
+    // array access must remain below all the checks it depends on. If the one it directly depends on (its control input)
+    // is hoisted and the cast floats with it, the risk is that it ends up above other checks it depends on, allowing an
+    // out of bound array access to proceed.
+    static const DependencyType NonFloatingNarrowing;
+    // used when a floating node is sunk out of loop: we don't want the cast that forces the node to be out of loop to
+    // be removed in any case otherwise the sunk node floats back into the loop.
+    static const DependencyType NonFloatingNonNarrowing;
+
   };
-
-public:
-
-  // All the possible combinations of floating/narrowing. Example use cases for each:
-  // FloatingNarrowingDependency is used for range checks: the range check CastII is dependent on the range check and if
-  // its input's type is narrower than the type of the range check, it's safe to be removed.
-  // NonFloatingNonNarrowingDependency is used when a floating node is sunk out of loop: we don't want the cast that
-  // forces the node to be out of loop to be removed in any case
-  // NonFloatingNarrowingDependency is used when an array access is no longer dependent on a single range check (range
-  // check smearing for instance)
-  // FloatingNonNarrowingDependency is used after loop opts when Cast nodes' types are widen so Casts that only differ
-  // by slightly different types can common. Given the type carried by the Cast is no longer accurate, removing a Cast
-  // because its input has a narrower type causes the dependency carried by the Cast to be lost
-  static const DependencyType FloatingNarrowingDependency;
-  static const DependencyType FloatingNonNarrowingDependency;
-  static const DependencyType NonFloatingNarrowingDependency;
-  static const DependencyType NonFloatingNonNarrowingDependency;
 
 protected:
   const DependencyType& _dependency;
@@ -117,7 +128,7 @@ protected:
   const TypeInteger* widen_type(const PhaseGVN* phase, const Type* res, BasicType bt) const;
 
   virtual ConstraintCastNode* make_with(Node* parent, const TypeInteger* type, const DependencyType& dependency) const {
-    ShouldNotReachHere();
+    ShouldNotReachHere(); // Only implemented for CastII and CastLL
     return nullptr;
   }
 
@@ -142,8 +153,9 @@ protected:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual int Opcode() const;
   virtual uint ideal_reg() const = 0;
-  bool carry_dependency() const { return !_dependency.cmp(FloatingNarrowingDependency); }
-  virtual bool depends_only_on_test() const { return _dependency.floating(); }
+  bool carry_dependency() const { return !_dependency.cmp(DependencyType::FloatingNarrowing); }
+  // A cast node depends_only_on_test if and only if it is floating
+  virtual bool depends_only_on_test() const { return _dependency.is_floating(); }
   const DependencyType& dependency() const { return _dependency; }
   TypeNode* dominating_cast(PhaseGVN* gvn, PhaseTransform* pt) const;
   static Node* make_cast_for_basic_type(Node* c, Node* n, const Type* t, const DependencyType& dependency, BasicType bt);
@@ -179,7 +191,7 @@ class CastIINode: public ConstraintCastNode {
   virtual uint size_of() const;
 
   public:
-  CastIINode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = FloatingNarrowingDependency, bool range_check_dependency = false, const TypeTuple* types = nullptr)
+  CastIINode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = DependencyType::FloatingNarrowing, bool range_check_dependency = false, const TypeTuple* types = nullptr)
     : ConstraintCastNode(ctrl, n, t, dependency, types), _range_check_dependency(range_check_dependency) {
     assert(ctrl != nullptr, "control must be set");
     init_class_id(Class_CastII);
@@ -215,8 +227,6 @@ public:
     init_class_id(Class_CastLL);
   }
 
-  virtual const Type* Value(PhaseGVN* phase) const;
-
   static bool is_inner_loop_backedge(ProjNode* proj);
 
   static bool cmp_used_at_inner_loop_exit_test(CmpNode* cmp);
@@ -230,7 +240,7 @@ public:
 
 class CastHHNode: public ConstraintCastNode {
 public:
-  CastHHNode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = FloatingNarrowingDependency, const TypeTuple* types = nullptr)
+  CastHHNode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = DependencyType::FloatingNarrowing, const TypeTuple* types = nullptr)
           : ConstraintCastNode(ctrl, n, t, dependency, types) {
     assert(ctrl != nullptr, "control must be set");
     init_class_id(Class_CastHH);
@@ -241,7 +251,7 @@ public:
 
 class CastFFNode: public ConstraintCastNode {
 public:
-  CastFFNode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = FloatingNarrowingDependency, const TypeTuple* types = nullptr)
+  CastFFNode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = DependencyType::FloatingNarrowing, const TypeTuple* types = nullptr)
           : ConstraintCastNode(ctrl, n, t, dependency, types) {
     assert(ctrl != nullptr, "control must be set");
     init_class_id(Class_CastFF);
@@ -252,7 +262,7 @@ public:
 
 class CastDDNode: public ConstraintCastNode {
 public:
-  CastDDNode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = FloatingNarrowingDependency, const TypeTuple* types = nullptr)
+  CastDDNode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = DependencyType::FloatingNarrowing, const TypeTuple* types = nullptr)
           : ConstraintCastNode(ctrl, n, t, dependency, types) {
     assert(ctrl != nullptr, "control must be set");
     init_class_id(Class_CastDD);
@@ -263,7 +273,7 @@ public:
 
 class CastVVNode: public ConstraintCastNode {
 public:
-  CastVVNode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = FloatingNarrowingDependency, const TypeTuple* types = nullptr)
+  CastVVNode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = DependencyType::FloatingNarrowing, const TypeTuple* types = nullptr)
           : ConstraintCastNode(ctrl, n, t, dependency, types) {
     assert(ctrl != nullptr, "control must be set");
     init_class_id(Class_CastVV);
@@ -277,7 +287,7 @@ public:
 // cast pointer to pointer (different type)
 class CastPPNode: public ConstraintCastNode {
   public:
-  CastPPNode (Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = FloatingNarrowingDependency, const TypeTuple* types = nullptr)
+  CastPPNode (Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = DependencyType::FloatingNarrowing, const TypeTuple* types = nullptr)
     : ConstraintCastNode(ctrl, n, t, dependency, types) {
     init_class_id(Class_CastPP);
   }
@@ -289,7 +299,7 @@ class CastPPNode: public ConstraintCastNode {
 // for _checkcast, cast pointer to pointer (different type), without JOIN,
 class CheckCastPPNode: public ConstraintCastNode {
   public:
-  CheckCastPPNode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = FloatingNarrowingDependency, const TypeTuple* types = nullptr)
+  CheckCastPPNode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = DependencyType::FloatingNarrowing, const TypeTuple* types = nullptr)
     : ConstraintCastNode(ctrl, n, t, dependency, types) {
     assert(ctrl != nullptr, "control must be set");
     init_class_id(Class_CheckCastPP);

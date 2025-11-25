@@ -22,7 +22,6 @@
  *
  */
 
-#include "castnode.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
@@ -35,14 +34,17 @@
 #include "opto/type.hpp"
 #include "utilities/checkedCast.hpp"
 
-const ConstraintCastNode::DependencyType ConstraintCastNode::FloatingNarrowingDependency(true, true, "floating narrowing dependency"); // not pinned, narrows type
-const ConstraintCastNode::DependencyType ConstraintCastNode::FloatingNonNarrowingDependency(true, false, "floating non narrowing dependency"); // not pinned, doesn't narrow type
-const ConstraintCastNode::DependencyType ConstraintCastNode::NonFloatingNarrowingDependency(false, true, "now floating narrowing dependency"); // pinned, narrows type
-const ConstraintCastNode::DependencyType ConstraintCastNode::NonFloatingNonNarrowingDependency(false, false, "non floating non narrowing dependency"); // pinned, doesn't narrow type
+const ConstraintCastNode::DependencyType ConstraintCastNode::DependencyType::FloatingNarrowing(true, true, "floating narrowing dependency"); // not pinned, narrows type
+const ConstraintCastNode::DependencyType ConstraintCastNode::DependencyType::FloatingNonNarrowing(true, false, "floating non narrowing dependency"); // not pinned, doesn't narrow type
+const ConstraintCastNode::DependencyType ConstraintCastNode::DependencyType::NonFloatingNarrowing(false, true, "now floating narrowing dependency"); // pinned, narrows type
+const ConstraintCastNode::DependencyType ConstraintCastNode::DependencyType::NonFloatingNonNarrowing(false, false, "non floating non narrowing dependency"); // pinned, doesn't narrow type
 
 //=============================================================================
 // If input is already higher or equal to cast type, then this is an identity.
 Node* ConstraintCastNode::Identity(PhaseGVN* phase) {
+  // if this cast doesn't narrow its input's type, it doesn't carry a type dependency so we can't remove it if:
+  // - there's a dominating cast with same input but narrower type
+  // - its input has a narrower type
   if (!_dependency.narrows_type()) {
     return this;
   }
@@ -148,9 +150,9 @@ Node* ConstraintCastNode::make_cast_for_basic_type(Node* c, Node* n, const Type*
 }
 
 TypeNode* ConstraintCastNode::dominating_cast(PhaseGVN* gvn, PhaseTransform* pt) const {
-  if (!_dependency.narrows_type()) {
-    return nullptr;
-  }
+  // See discussion at definition of ConstraintCastNode::DependencyType: replacing this cast with a dominating one is
+  // not safe if _dependency.narrows_type() is not true.
+  assert(_dependency.narrows_type(), "cast can't be replaced by dominating one");
   Node* val = in(1);
   Node* ctl = in(0);
   int opc = Opcode();
@@ -274,9 +276,9 @@ void CastIINode::dump_spec(outputStream* st) const {
 #endif
 
 CastIINode* CastIINode::pin_array_access_node() const {
-  assert(depends_only_on_test(), "already pinned");
+  assert(_dependency.is_floating(), "already pinned");
   if (has_range_check()) {
-    return new CastIINode(in(0), in(1), bottom_type(), _dependency.pinned_dependency(), has_range_check());
+    return new CastIINode(in(0), in(1), bottom_type(), _dependency.with_pinned_dependency(), has_range_check());
   }
   return nullptr;
 }
@@ -309,16 +311,6 @@ void CastIINode::remove_range_check_cast(Compile* C) {
   }
 }
 
-
-const Type* CastLLNode::Value(PhaseGVN* phase) const {
-  const Type* res = ConstraintCastNode::Value(phase);
-  if (res == Type::TOP) {
-    return Type::TOP;
-  }
-  assert(res->isa_long(), "res must be long");
-
-  return widen_type(phase, res, T_LONG);
-}
 
 bool CastLLNode::is_inner_loop_backedge(ProjNode* proj) {
   if (proj != nullptr) {
@@ -584,18 +576,47 @@ Node* ConstraintCastNode::optimize_integer_cast_of_add(PhaseGVN* phase, BasicTyp
     const TypeInteger* tx = phase->type(x)->is_integer(bt);
     const TypeInteger* ty = phase->type(y)->is_integer(bt);
 
-    // If both inputs are not constant then, with the Cast pushed through the Add/Sub, the cast gets less precised types,
-    // and the resulting Add/Sub's type is wider than that of the Cast before pushing.
-    const DependencyType& dependency = (!tx->is_con() && !ty->is_con()) ? _dependency.widen_type_dependency() : _dependency;
+    // (Cast (Add x y) tz) is transformed into (Add (Cast x rx) (Cast y ry))
+    //
+    // tz = [tzlo, tzhi]
+    // rx = [rxlo, rxhi]
+    // ry = [rylo, ryhi]
+    // with type of x, tx = [txlo, txhi]
+    // with type of y, ty = [tylo, tyhi]
+    //
+    // From Compile::push_thru_add():
+    // rxlo = max(tzlo - tyhi, txlo)
+    // rxhi = min(tzhi - tylo, txhi)
+    // rylo = max(tzlo - txhi, tylo)
+    // ryhi = min(tzhi - txlo, tyhi)
+    //
+    // If x is a constant, then txlo = txhi
+    // rxlo = txlo, rxhi = txhi
+    // The bounds of the type of the Add after transformation then is:
+    // rxlo + rylo >= txlo + tzlo - txhi >= tzlo
+    // rxhi + ryhi <= txhi + tzhi - txlo <= tzhi
+    // The resulting type is not wider than the type of the Cast
+    // before transformation
+    //
+    // If neither x nor y are constant then the type of the resulting
+    // Add can be wider than the type of the type of the Cast before
+    // transformation.
+    // For instance, tx = [0, 10], ty = [0, 10], tz = [0, 10]
+    // then rx = [0, 10], ry = [0, 10]
+    // and rx + ry = [0, 20] which is wider than tz
+    //
+    // Same reasoning applies to (Cast (Sub x y) tz)
+    const DependencyType& dependency = (!tx->is_con() && !ty->is_con()) ? _dependency.with_non_narrowing() : _dependency;
     Node* cx = find_or_make_integer_cast(igvn, x, rx, dependency);
     Node* cy = find_or_make_integer_cast(igvn, y, ry, dependency);
+    Node* res = nullptr;
     if (op == Op_Add(bt)) {
       return AddNode::make(cx, cy, bt);
     } else {
       assert(op == Op_Sub(bt), "");
       return SubNode::make(cx, cy, bt);
     }
-    return nullptr;
+    return res;
   }
   return nullptr;
 }
@@ -606,13 +627,13 @@ Node* ConstraintCastNode::optimize_integer_cast(PhaseGVN* phase, BasicType bt) {
     return res;
   }
   const Type* t = Value(phase);
-  if (t != Type::TOP) {
+  if (t != Type::TOP && phase->C->post_loop_opts_phase()) {
     const Type* bottom_t = bottom_type();
     const TypeInteger* wide_t = widen_type(phase, bottom_t, bt);
     if (wide_t != bottom_t) {
       // Widening the type of the Cast (to allow some commoning) causes the Cast to change how it can be optimized (if
       // type of its input is narrower than the Cast's type, we can't remove it to not loose the dependency).
-      return make_with(in(1), wide_t, _dependency.widen_type_dependency());
+      return make_with(in(1), wide_t, _dependency.with_non_narrowing());
     }
   }
   return nullptr;
@@ -620,10 +641,6 @@ Node* ConstraintCastNode::optimize_integer_cast(PhaseGVN* phase, BasicType bt) {
 
 const TypeInteger* ConstraintCastNode::widen_type(const PhaseGVN* phase, const Type* res, BasicType bt) const {
   const TypeInteger* this_type = res->is_integer(bt);
-  if (!phase->C->post_loop_opts_phase()) {
-    return this_type;
-  }
-
   // At VerifyConstraintCasts == 1, we verify the ConstraintCastNodes that are present during code
   // emission. This allows us detecting possible mis-scheduling due to these nodes being pinned at
   // the wrong control nodes.
