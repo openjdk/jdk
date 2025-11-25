@@ -1286,7 +1286,7 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
 
         // Read & validate `Content-Length`
         long clen = readContentLength(
-                promiseHeaders, "illegal push headers for pushId=%s: ".formatted(pushId), 0);
+                promiseHeaders, "illegal push headers for pushId=%s: ".formatted(pushId), -1);
         if (clen > 0) {
             throw new ProtocolException("push headers contain non-zero \"Content-Length\" for pushId=" + pushId);
         }
