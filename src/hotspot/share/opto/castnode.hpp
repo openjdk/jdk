@@ -221,7 +221,7 @@ class CastIINode: public ConstraintCastNode {
 
 class CastLLNode: public ConstraintCastNode {
 public:
-  CastLLNode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = FloatingNarrowingDependency, const TypeTuple* types = nullptr)
+  CastLLNode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = DependencyType::FloatingNarrowing, const TypeTuple* types = nullptr)
           : ConstraintCastNode(ctrl, n, t, dependency, types) {
     assert(ctrl != nullptr, "control must be set");
     init_class_id(Class_CastLL);

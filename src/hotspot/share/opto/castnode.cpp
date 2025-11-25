@@ -609,14 +609,13 @@ Node* ConstraintCastNode::optimize_integer_cast_of_add(PhaseGVN* phase, BasicTyp
     const DependencyType& dependency = (!tx->is_con() && !ty->is_con()) ? _dependency.with_non_narrowing() : _dependency;
     Node* cx = find_or_make_integer_cast(igvn, x, rx, dependency);
     Node* cy = find_or_make_integer_cast(igvn, y, ry, dependency);
-    Node* res = nullptr;
     if (op == Op_Add(bt)) {
       return AddNode::make(cx, cy, bt);
     } else {
       assert(op == Op_Sub(bt), "");
       return SubNode::make(cx, cy, bt);
     }
-    return res;
+    return nullptr;
   }
   return nullptr;
 }
