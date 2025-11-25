@@ -351,7 +351,7 @@ size_t CodeCache::page_size(bool aligned, size_t min_pages) {
 ReservedSpace CodeCache::reserve_heap_memory(size_t size, size_t rs_ps) {
   // Align and reserve space for code cache
   const size_t rs_align = MAX2(rs_ps, os::vm_allocation_granularity());
-  const size_t rs_size = align_up(size, rs_align);
+  const size_t rs_size = align_up(size, os::vm_page_size());
 
   ReservedSpace rs = CodeMemoryReserver::reserve(rs_size, rs_align, rs_ps);
   if (!rs.is_reserved()) {

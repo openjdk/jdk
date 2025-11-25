@@ -303,7 +303,8 @@ WB_END
 
 WB_ENTRY(void, WB_ReadFromNoaccessArea(JNIEnv* env, jobject o))
   size_t granularity = os::vm_allocation_granularity();
-  ReservedHeapSpace rhs = HeapReserver::reserve(100 * granularity, granularity, os::vm_page_size(), nullptr);
+  size_t page_size = os::vm_page_size();
+  ReservedHeapSpace rhs = HeapReserver::reserve(100 * page_size, granularity, page_size, nullptr);
 
   // Check if constraints are complied
   if (!( UseCompressedOops && rhs.is_reserved() &&
@@ -343,7 +344,8 @@ WB_END
 static jint wb_stress_virtual_space_resize(size_t reserved_space_size,
                                            size_t magnitude, size_t iterations) {
   size_t granularity = os::vm_allocation_granularity();
-  ReservedHeapSpace rhs = HeapReserver::reserve(reserved_space_size * granularity, granularity, os::vm_page_size(), nullptr);
+  size_t page_size = os::vm_page_size();
+  ReservedHeapSpace rhs = HeapReserver::reserve(reserved_space_size * page_size, granularity, page_size, nullptr);
   if (!rhs.is_reserved()) {
     tty->print_cr("Failed to initialize ReservedSpace. Can't proceed.");
     return 3;
@@ -1523,7 +1525,7 @@ WB_ENTRY(void, WB_ReadReservedMemory(JNIEnv* env, jobject o))
   static char c;
   static volatile char* p;
 
-  p = os::reserve_memory(os::vm_allocation_granularity(), mtTest);
+  p = os::reserve_memory(os::vm_page_size(), mtTest);
   if (p == nullptr) {
     THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), "Failed to reserve memory");
   }

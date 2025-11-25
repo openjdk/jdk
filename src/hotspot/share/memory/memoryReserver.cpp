@@ -37,7 +37,8 @@ static void sanity_check_size_and_alignment(size_t size, size_t alignment) {
   assert(size > 0, "Precondition");
 
   DEBUG_ONLY(const size_t granularity = os::vm_allocation_granularity());
-  assert(is_aligned(size, granularity), "size not aligned to os::vm_allocation_granularity()");
+  DEBUG_ONLY(const size_t page_size = os::vm_page_size());
+  assert(is_aligned(size, page_size), "size not aligned to os::vm_page_size()");
 
   assert(alignment >= granularity, "Must be set");
   assert(is_power_of_2(alignment), "not a power of 2");
@@ -524,13 +525,12 @@ static ReservedSpace establish_noaccess_prefix(const ReservedSpace& reserved, si
 
 ReservedHeapSpace HeapReserver::Instance::reserve_compressed_oops_heap(const size_t size, size_t alignment, size_t page_size) {
   const size_t noaccess_prefix_size = lcm(os::vm_page_size(), alignment);
-  const size_t granularity = os::vm_allocation_granularity();
 
   assert(size + noaccess_prefix_size <= OopEncodingHeapMax,  "can not allocate compressed oop heap for this size");
-  assert(is_aligned(size, granularity), "size not aligned to os::vm_allocation_granularity()");
+  assert(is_aligned(size, os::vm_page_size()), "size not aligned to os::vm_page_size()");
 
   assert(alignment >= os::vm_page_size(), "alignment too small");
-  assert(is_aligned(alignment, granularity), "alignment not aligned to os::vm_allocation_granularity()");
+  assert(is_aligned(alignment, os::vm_allocation_granularity()), "alignment not aligned to os::vm_allocation_granularity()");
   assert(is_power_of_2(alignment), "not a power of 2");
 
   // The necessary attach point alignment for generated wish addresses.
@@ -679,7 +679,7 @@ ReservedHeapSpace HeapReserver::reserve(size_t size, size_t alignment, size_t pa
   sanity_check_arguments(size, alignment, page_size);
 
   assert(alignment != 0, "Precondition");
-  assert(is_aligned(size, alignment), "Precondition");
+  assert(is_aligned(size, page_size), "Precondition");
 
   Instance instance(heap_allocation_directory);
 

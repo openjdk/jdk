@@ -92,13 +92,13 @@ void PerfMemory::initialize() {
     return;
 
   size_t capacity = align_up((size_t)PerfDataMemorySize,
-                             os::vm_allocation_granularity());
+                             os::vm_page_size());
 
   log_debug(perf, memops)("PerfDataMemorySize = %d,"
-                          " os::vm_allocation_granularity = %zu"
+                          " os::vm_page_size = %zu"
                           ", adjusted size = %zu",
                           PerfDataMemorySize,
-                          os::vm_allocation_granularity(),
+                          os::vm_page_size(),
                           capacity);
 
   // allocate PerfData memory region

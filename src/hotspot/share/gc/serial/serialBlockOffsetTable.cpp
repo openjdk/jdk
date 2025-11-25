@@ -39,7 +39,7 @@ size_t SerialBlockOffsetTable::compute_size(size_t mem_region_words) {
   assert(mem_region_words % CardTable::card_size_in_words() == 0, "precondition");
 
   size_t number_of_slots = mem_region_words / CardTable::card_size_in_words();
-  return os::align_up_vm_allocation_granularity(number_of_slots);
+  return os::align_up_vm_page_size(number_of_slots);
 }
 
 SerialBlockOffsetTable::SerialBlockOffsetTable(MemRegion reserved,
