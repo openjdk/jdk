@@ -23,8 +23,8 @@
 
 /*
  * @test
+ * @bug 8364490
  * @summary "Hello world" sanity test for SpecTrapLimitExtraEntries
- * @requires vm.flagless
  *
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:SpecTrapLimitExtraEntries=0 compiler.arguments.TestSpecTrapLimitExtraEntries
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:SpecTrapLimitExtraEntries=100 compiler.arguments.TestSpecTrapLimitExtraEntries
