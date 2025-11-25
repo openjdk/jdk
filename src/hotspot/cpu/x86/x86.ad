@@ -2633,21 +2633,36 @@ bool Matcher::supports_vector_calling_convention(void) {
   return EnableVectorSupport;
 }
 
+static bool is_ndd_demotable(const MachNode* mdef) {
+  return (((mdef->flags() & Node::PD::Flag_ndd_demotable) != 0) ||
+          ((mdef->flags() & Node::PD::Flag_ndd_demotable_commutative) != 0));
+}
+
 bool Matcher::is_register_biasing_candidate(const MachNode* mdef, int oper_index) {
   if (mdef == nullptr) {
     return false;
   }
 
-  if (mdef->num_opnds() <= oper_index || mdef->operand_index(oper_index) < 0 ||
-      // Complex memory operand covers multiple incoming edges needed for
-      // address computation, biasing def towards any address component will not
-      // result into NDD demotion by assembler.
-      mdef->operand_num_edges(oper_index) != 1) {
+  if (mdef->num_opnds() <= oper_index ||
+      mdef->operand_index(oper_index) < 0 ||
+      mdef->in(mdef->operand_index(oper_index)) != nullptr) {
     return false;
   }
 
+  // Demotion candidate must be register mask compatible with definition.
+  const RegMask& oper_mask = mdef->in_RegMask(mdef->operand_index(oper_index));
+  if (!oper_mask.overlap(mdef->out_RegMask())) {
+    assert(!is_ndd_demotable(mdef), "%s", mdef->Name());
+    return false;
+  }
 
-  bool res = false;
+  // Complex memory operand covers multiple incoming edges needed for
+  // address computation, biasing def towards any address component will not
+  // result into NDD demotion by assembler.
+  if (mdef->operand_num_edges(oper_index) != 1) {
+    return false;
+  }
+
   switch (oper_index) {
     // First operand of MachNode corresponding to Intel APX NDD selection
     // pattern can share its assigned register with definition operand if
@@ -2655,33 +2670,16 @@ bool Matcher::is_register_biasing_candidate(const MachNode* mdef, int oper_index
     // it to legacy map0/map1 instruction by replacing its 4-byte extended
     // EVEX prefix with shorter REX/REX2 encoding. Demotion candidates
     // are decorated with a special flag by instruction selector.
-    case 1: {
-      res = (((mdef->flags() & Node::PD::Flag_ndd_demotable) != 0) ||
-              ((mdef->flags() & Node::PD::Flag_ndd_demotable_commutative) != 0));
+    case 1: return is_ndd_demotable(mdef);
 
-    }
-    break;
+    // Definition operand of commutative operation can be biased towards second operand.
+    case 2: return (mdef->flags() & Node::PD::Flag_ndd_demotable_commutative) != 0;
 
-    // Definition operand of commutative operation can be biased towards
-    // second operand.
-    case 2: {
-      res = ((mdef->flags() & Node::PD::Flag_ndd_demotable_commutative) != 0);
-    }
-    break;
-
-    // Current scheme only selects upto two biaising candidates
-    default: {
-      assert(false, "unhandled operand index");
-    }
-    break;
+    // Current scheme only selects up to two biaising candidates
+    default: assert(false, "unhandled operand index: %s", mdef->Name()); break;
   }
 
-  if (res) {
-    // Demotion candidate must be register mask compatible with definition.
-    assert(mdef->in_RegMask(mdef->operand_index(oper_index)).overlap(mdef->out_RegMask()), "sanity");
-  }
-
-  return res;
+  return false;
 }
 
 OptoRegPair Matcher::vector_return_value(uint ideal_reg) {

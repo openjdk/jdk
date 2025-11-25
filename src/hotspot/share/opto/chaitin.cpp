@@ -1482,19 +1482,25 @@ OptoReg::Name PhaseChaitin::select_bias_lrg_color(LRG &lrg) {
     if (is_legal_reg(lrg, reg)) {
       return reg;
     }
+  }
+
   // If bias_lrg2 has a color
-  } else if (bias_lrg2_idx != 0 && !_ifg->_yanked->test(bias_lrg2_idx)) {
+  if (bias_lrg2_idx != 0 && !_ifg->_yanked->test(bias_lrg2_idx)) {
     OptoReg::Name reg = lrgs(bias_lrg2_idx).reg();
     //  And it is legal for lrg
     if (is_legal_reg(lrg, reg)) {
       return reg;
     }
-  } else if (!lrg.mask().is_offset()) {
+  }
+
+  if (!lrg.mask().is_offset()) {
     // Since both the bias live ranges are not part of IFG yet,
     // hence constrain the definition mask with the bias
-    // live range with minimum degree of freedom, this will enhance
-    // the chances of register sharing once the bias live range
-    // becomes the part of IFG.
+    // live range with minimum degree of freedom, this will
+    // enhance the chances of register sharing once the bias
+    // live range becomes the part of IFG.
+    lrgs(bias_lrg1_idx).compute_set_mask_size();
+    lrgs(bias_lrg2_idx).compute_set_mask_size();
     uint bias_lrg = lrgs(bias_lrg1_idx).degrees_of_freedom() >
                             lrgs(bias_lrg2_idx).degrees_of_freedom()
                         ? bias_lrg2_idx
