@@ -469,18 +469,15 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                     "HTTP3 is not supported"));
         }
         sslParams = requireNonNullElseGet(builder.sslParams, sslContext::getDefaultSSLParameters);
-        String[] protocols = sslParams.getProtocols();
-        if (protocols == null) {
-            protocols = sslContext.getDefaultSSLParameters().getProtocols();
-        }
-        if (protocols == null) {
-            // getDefaultSSLParameters.getProtocols should not return null
-            protocols = new String[0];
+        String[] sslProtocols = sslParams.getProtocols();
+        if (sslProtocols == null) {
+            sslProtocols = requireNonNullElseGet(sslContext.getDefaultSSLParameters().getProtocols(),
+                    () -> new String[0]);
         }
         // HTTP/3 MUST use TLS version 1.3 or higher
-        hasRequiredH3TLS = Arrays.asList(protocols).contains("TLSv1.3");
+        hasRequiredH3TLS = Arrays.asList(sslProtocols).contains("TLSv1.3");
         // HTTP/2 MUST use TLS version 1.2 or higher for HTTP/2 over TLS
-        hasRequiredH2TLS = hasRequiredH3TLS || Arrays.asList(protocols).contains("TLSv1.2");
+        hasRequiredH2TLS = hasRequiredH3TLS || Arrays.asList(sslProtocols).contains("TLSv1.2");
 
         if (version == Version.HTTP_3 && !hasRequiredH3TLS) {
             throw new UncheckedIOException(new UnsupportedProtocolVersionException(
