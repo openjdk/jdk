@@ -433,28 +433,21 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                     continue;
                 }
 
-                CipherSuite suite;
-                try {
-                    suite = CipherSuite.nameOf(cipherSuiteNames[i]);
-                } catch (IllegalArgumentException iae) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
-                        SSLLogger.fine(
-                                "Unknown or unsupported cipher suite name: " +
-                                cipherSuiteNames[i]);
-                    }
-
-                    continue;
-                }
+                CipherSuite suite = CipherSuite.nameOf(cipherSuiteNames[i]);
 
                 if (suite != null && suite.isAvailable()) {
                     cipherSuites.add(suite);
                 } else {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
-                        SSLLogger.fine(
-                                "The current installed providers do not " +
-                                "support cipher suite: " + cipherSuiteNames[i]);
-                    }
+                    SSLLogger.logWarning("ssl,sslctx",
+                            "Unknown or unsupported cipher suite: "
+                                    + cipherSuiteNames[i]);
                 }
+            }
+
+            if (cipherSuites.isEmpty()) {
+                throw new IllegalArgumentException("System property "
+                        + propertyName
+                        + " contains no supported cipher suites");
             }
 
             return cipherSuites;
