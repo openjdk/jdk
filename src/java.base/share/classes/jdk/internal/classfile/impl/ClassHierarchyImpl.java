@@ -25,14 +25,10 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassHierarchyResolver;
-import java.lang.classfile.ClassReader;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.constant.ClassDesc;
 import java.util.Collection;
@@ -41,7 +37,6 @@ import java.util.Map;
 import java.util.function.Function;
 
 import static java.lang.classfile.ClassFile.ACC_INTERFACE;
-import static java.lang.classfile.constantpool.PoolEntry.*;
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.util.Objects.requireNonNull;
 import static jdk.internal.constant.ConstantUtils.referenceClassDesc;
@@ -168,7 +163,7 @@ public final class ClassHierarchyImpl {
             var ci = streamProvider.apply(classDesc);
             if (ci == null) return null;
             try (ci) {
-                ClassReader reader = new ClassReaderImpl(ci.readAllBytes(), (ClassFileImpl) ClassFile.of());
+                var reader = new ClassReaderImpl(ci.readAllBytes(), ClassFileImpl.DEFAULT_CONTEXT);
                 boolean isInterface = (reader.flags() & ACC_INTERFACE) != 0;
                 ClassDesc superClass = reader.superclassEntry()
                         .map(ClassEntry::asSymbol)
