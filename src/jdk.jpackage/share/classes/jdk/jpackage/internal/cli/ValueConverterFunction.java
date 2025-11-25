@@ -24,34 +24,17 @@
  */
 package jdk.jpackage.internal.cli;
 
-import java.util.Objects;
-
-interface ValueConverter<T, U> extends ValueConverterFunction<T, U> {
+@FunctionalInterface
+interface ValueConverterFunction<T, U> {
 
     /**
-     * Gives the class of the type of values this converter converts to.
+     * Converts value of one type into another.
      *
-     * @return the target class for conversion
+     * @param value the value to convert
+     * @return the converted value
+     * @throws IllegalArgumentException if the given value can not be converted to
+     *                                  an object of type {@link U}
+     * @throws Exception                if internal converter error occurs
      */
-    Class<? extends U> valueType();
-
-    static <T, U> ValueConverter<T, U> create(ValueConverterFunction<T, U> conv, Class<? extends U> type) {
-        Objects.requireNonNull(conv);
-        Objects.requireNonNull(type);
-
-        return new ValueConverter<>() {
-
-            @Override
-            public U convert(T value) throws Exception {
-                Objects.requireNonNull(value);
-                return Objects.requireNonNull(conv.convert(value));
-            }
-
-            @Override
-            public Class<? extends U> valueType() {
-                return type;
-            }
-
-        };
-    }
+    U convert(T value) throws Exception, IllegalArgumentException;
 }
