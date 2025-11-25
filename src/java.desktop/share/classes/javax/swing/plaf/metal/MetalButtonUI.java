@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,6 +217,13 @@ public class MetalButtonUI extends BasicButtonUI {
         // If there is an icon and no text
         else if ( isIcon ) {
             focusRect.setBounds( iconRect );
+        } else {
+            Rectangle emptyRect = new Rectangle();
+            emptyRect.x = 5;
+            emptyRect.y = 5;
+            emptyRect.width = b.getWidth() - emptyRect.x * 2;
+            emptyRect.height = b.getHeight() - emptyRect.y * 2;
+            focusRect.setBounds(emptyRect);
         }
 
         g.setColor(getFocusColor());
