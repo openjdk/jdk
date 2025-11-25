@@ -26,6 +26,7 @@ package java.util.concurrent.atomic;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import jdk.internal.reflect.Reflection;
 
 /**
  * Utility class containing common field validation and access checking logic
@@ -36,41 +37,52 @@ import java.lang.reflect.Modifier;
  */
 final class FieldUpdaterUtil {
 
-    private FieldUpdaterUtil() {} // Prevent instantiation
+    private FieldUpdaterUtil() {}
 
     /**
-     * Validates that a field meets the basic requirements for atomic field updaters.
-     * Checks that the field is volatile and not static. For primitive updaters,
-     * validates the field type matches the expected type.
+     * Finds a field and validates it meets the requirements for atomic field updaters.
+     * Ensures the caller has access, the field is volatile and not static, and for
+     * primitive updaters, that the field type matches the expected type.
      *
-     * @param field the field to validate
+     * @param tclass the class holding the field
+     * @param fieldName the name of the field
+     * @param caller the class constructing the updater
      * @param expectedType the expected field type (int.class, long.class),
      *                     or null for reference type updaters
+     * @param <T> the type of instances of tclass
+     * @return the validated field
+     * @throws RuntimeException if the field cannot be found or accessed
      * @throws IllegalArgumentException if the field is not volatile, is static,
      *                                  or does not match the expected type
      */
-    static void validateField(Field field, Class<?> expectedType) {
-        Class<?> fieldType = field.getType();
-        int modifiers = field.getModifiers();
+    static <T> Field findValidatedField(Class<T> tclass, String fieldName,
+                                        Class<?> caller, Class<?> expectedType) {
+        try {
+            Field field = tclass.getDeclaredField(fieldName);
+            int modifiers = field.getModifiers();
+            Reflection.ensureMemberAccess(caller, tclass, null, modifiers);
 
-        // Type validation for primitive updaters
-        if (expectedType == int.class && fieldType != int.class) {
-            throw new IllegalArgumentException("Must be integer type");
-        } else if (expectedType == long.class && fieldType != long.class) {
-            throw new IllegalArgumentException("Must be long type");
-        } else if (expectedType == null && fieldType.isPrimitive()) {
-            // Reference updaters must not be used with primitive types
-            throw new IllegalArgumentException("Must be reference type");
-        }
+            Class<?> fieldType = field.getType();
 
-        // Volatile check
-        if (!Modifier.isVolatile(modifiers)) {
-            throw new IllegalArgumentException("Must be volatile type");
-        }
+            if (expectedType == int.class && fieldType != int.class) {
+                throw new IllegalArgumentException("Must be integer type");
+            } else if (expectedType == long.class && fieldType != long.class) {
+                throw new IllegalArgumentException("Must be long type");
+            } else if (expectedType == null && fieldType.isPrimitive()) {
+                throw new IllegalArgumentException("Must be reference type");
+            }
 
-        // Static check
-        if (Modifier.isStatic(modifiers)) {
-            throw new IllegalArgumentException("Must not be a static field");
+            if (!Modifier.isVolatile(modifiers)) {
+                throw new IllegalArgumentException("Must be volatile type");
+            }
+
+            if (Modifier.isStatic(modifiers)) {
+                throw new IllegalArgumentException("Must not be a static field");
+            }
+
+            return field;
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
         }
     }
 

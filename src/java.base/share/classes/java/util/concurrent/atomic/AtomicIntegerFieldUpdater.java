@@ -386,20 +386,8 @@ public abstract class AtomicIntegerFieldUpdater<T> {
         AtomicIntegerFieldUpdaterImpl(final Class<T> tclass,
                                       final String fieldName,
                                       final Class<?> caller) {
-            final Field field;
-            final int modifiers;
-            try {
-                field = tclass.getDeclaredField(fieldName);
-                modifiers = field.getModifiers();
-                sun.reflect.misc.ReflectUtil.ensureMemberAccess(
-                    caller, tclass, null, modifiers);
-            } catch (Exception ex) {
-                throw new RuntimeException(ex);
-            }
-
-            FieldUpdaterUtil.validateField(field, int.class);
-
-            this.cclass = FieldUpdaterUtil.computeAccessClass(tclass, caller, modifiers);
+            Field field = FieldUpdaterUtil.findValidatedField(tclass, fieldName, caller, int.class);
+            this.cclass = FieldUpdaterUtil.computeAccessClass(tclass, caller, field.getModifiers());
             this.tclass = tclass;
             this.offset = U.objectFieldOffset(field);
         }

@@ -342,25 +342,12 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
                                         final Class<V> vclass,
                                         final String fieldName,
                                         final Class<?> caller) {
-            final Field field;
-            final Class<?> fieldClass;
-            final int modifiers;
-            try {
-                field = tclass.getDeclaredField(fieldName);
-                modifiers = field.getModifiers();
-                sun.reflect.misc.ReflectUtil.ensureMemberAccess(
-                    caller, tclass, null, modifiers);
-                fieldClass = field.getType();
-            } catch (Exception ex) {
-                throw new RuntimeException(ex);
-            }
+            Field field = FieldUpdaterUtil.findValidatedField(tclass, fieldName, caller, null);
 
-            if (vclass != fieldClass)
+            if (vclass != field.getType())
                 throw new ClassCastException();
 
-            FieldUpdaterUtil.validateField(field, null);
-
-            this.cclass = FieldUpdaterUtil.computeAccessClass(tclass, caller, modifiers);
+            this.cclass = FieldUpdaterUtil.computeAccessClass(tclass, caller, field.getModifiers());
             this.tclass = tclass;
             this.vclass = vclass;
             this.offset = U.objectFieldOffset(field);
