@@ -1450,7 +1450,7 @@ disableEvents(HandlerNode *node)
                 EXIT_ERROR(error, "disabling VIRTUAL_THREAD_START/END");
             }
             return error;
-            
+
         case EI_VIRTUAL_THREAD_START:
         case EI_VIRTUAL_THREAD_END:
             // These are mapped to EI_THREAD_START/END so we should never see a handler for them.

@@ -767,7 +767,7 @@ addDeferredEventMode(JNIEnv *env, jvmtiEventMode mode, EventIndex ei, jthread th
         }
         gdata->virtualThreadStartEventsPermanentlyEnabled = JNI_TRUE;
     }
-    
+
     return JVMTI_ERROR_NONE;
 }
 
