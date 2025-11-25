@@ -24,7 +24,6 @@
  */
 
 #include "runtime/icache.hpp"
-#include "utilities/globalDefinitions.hpp"
 
 void ICacheStubGenerator::generate_icache_flush(
                 ICache::flush_icache_stub_t* flush_icache_stub) {
@@ -33,5 +32,3 @@ void ICacheStubGenerator::generate_icache_flush(
 }
 
 void ICache::initialize(int phase) {}
-
-THREAD_LOCAL bool deferred_icache_invalidation = false;

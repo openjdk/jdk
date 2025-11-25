@@ -71,8 +71,6 @@ class AbstractICache : AllStatic {
   static void invalidate_range(address start, int nbytes);
 };
 
-class nmethod;
-
 class ICacheInvalidationContext : StackObj {
   NONCOPYABLE(ICacheInvalidationContext);
 

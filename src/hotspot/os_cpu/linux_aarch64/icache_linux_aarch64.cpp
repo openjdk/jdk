@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +22,6 @@
  *
  */
 
-#ifndef CPU_AARCH64_ICACHE_AARCH64_HPP
-#define CPU_AARCH64_ICACHE_AARCH64_HPP
+#include "utilities/globalDefinitions.hpp"
 
-#include OS_CPU_HEADER(icache)
-
-#include "code/nmethod.hpp"
-
-#endif // CPU_AARCH64_ICACHE_AARCH64_HPP
+THREAD_LOCAL bool deferred_icache_invalidation = false;
