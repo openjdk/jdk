@@ -162,7 +162,9 @@ public final class LauncherAsServiceVerifier {
 
         for (var launcherAsService : List.of(true, false)) {
             partitionedLauncherNames.get(launcherAsService).forEach(launcherName -> {
-                verify(cmd, launcherName, launcherAsService);
+                // Launcher should not be a service with "--launcher-as-service"
+                // and "--mac-app-store" specified.
+                verify(cmd, launcherName, launcherAsService && !cmd.hasArgument("--mac-app-store"));
             });
         }
 
@@ -193,7 +195,7 @@ public final class LauncherAsServiceVerifier {
             }
         }
 
-        if (launcherAsServiceNames.isEmpty() || cmd.isRuntime()) {
+        if (launcherAsServiceNames.isEmpty() || cmd.isRuntime() || cmd.hasArgument("--mac-app-store")) {
             servicesSpecificFiles.forEach(path -> TKit.assertPathExists(path,
                     false));
             servicesSpecificFolders.forEach(path -> TKit.assertPathExists(path,
@@ -308,7 +310,7 @@ public final class LauncherAsServiceVerifier {
     }
 
     public void verifyLauncherExecuted(JPackageCommand cmd) {
-        if (canVerifyInstall(cmd)) {
+        if (canVerifyInstall(cmd) && !cmd.hasArgument("--mac-app-store")) {
             delayInstallVerify();
             Path outputFilePath = appOutputFilePathVerify(cmd);
             HelloApp.assertApp(cmd.appLauncherPath(launcherName))

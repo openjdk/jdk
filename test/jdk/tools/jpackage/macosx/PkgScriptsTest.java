@@ -54,20 +54,30 @@ public class PkgScriptsTest {
         return List.of(new Object[][]{
             { new PkgInstallScript[]{
                     PkgInstallScript.PREINSTALL,
-                    PkgInstallScript.POSTINSTALL },
+                    PkgInstallScript.POSTINSTALL }, false,
             },
             { new PkgInstallScript[]{
-                    PkgInstallScript.PREINSTALL },
+                    PkgInstallScript.PREINSTALL }, false,
             },
             { new PkgInstallScript[]{
-                    PkgInstallScript.POSTINSTALL },
+                    PkgInstallScript.POSTINSTALL }, false,
+            },
+            { new PkgInstallScript[]{
+                    PkgInstallScript.PREINSTALL,
+                    PkgInstallScript.POSTINSTALL }, true,
+            },
+            { new PkgInstallScript[]{
+                    PkgInstallScript.PREINSTALL }, true,
+            },
+            { new PkgInstallScript[]{
+                    PkgInstallScript.POSTINSTALL }, true,
             },
         });
     }
 
     @Test
     @ParameterSupplier("input")
-    public void test(PkgInstallScript[] customScriptRoles) {
+    public void test(PkgInstallScript[] customScriptRoles, boolean appStore) {
         var responseDir = TKit.createTempDirectory("response");
 
         var customScripts = Stream.of(customScriptRoles).map(role -> {
@@ -80,6 +90,9 @@ public class PkgScriptsTest {
             .forTypes(PackageType.MAC_PKG)
             .configureHelloApp()
             .addInitializer(cmd -> {
+                if (appStore) {
+                    cmd.addArgument("--mac-app-store");
+                }
                 cmd.addArguments("--resource-dir", TKit.createTempDirectory("resources"));
                 customScripts.forEach(customScript -> {
                     customScript.createFor(cmd);
@@ -93,7 +106,7 @@ public class PkgScriptsTest {
                 }).forEach(cmd::validateOutput);
             }).addInstallVerifier(cmd -> {
                 customScripts.forEach(customScript -> {
-                    customScript.verify(cmd);
+                    customScript.verify(cmd, !appStore);
                 });
                 if (cmd.isPackageUnpacked()) {
                     noScriptRoles.forEach(role -> {
@@ -155,11 +168,13 @@ public class PkgScriptsTest {
             ));
         }
 
-        void verify(JPackageCommand cmd) {
+        void verify(JPackageCommand cmd, boolean exists) {
             if (cmd.isPackageUnpacked()) {
-                role.verifyExists(cmd, true);
-            } else {
+                role.verifyExists(cmd, exists);
+            } else if (exists) {
                 TKit.assertFileExists(responseFilePath(cmd));
+            } else {
+                TKit.assertPathExists(responseFilePath(cmd), false);
             }
         }
 
