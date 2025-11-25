@@ -4913,11 +4913,10 @@ void MacroAssembler::load_narrow_klass_compact(Register dst, Register src) {
 void MacroAssembler::load_klass(Register dst, Register src) {
   if (UseCompactObjectHeaders) {
     load_narrow_klass_compact(dst, src);
-    decode_klass_not_null(dst);
   } else {
     ldrw(dst, Address(src, oopDesc::klass_offset_in_bytes()));
-    decode_klass_not_null(dst);
   }
+  decode_klass_not_null(dst);
 }
 
 void MacroAssembler::restore_cpu_control_state_after_jni(Register tmp1, Register tmp2) {
@@ -4991,12 +4990,11 @@ void MacroAssembler::cmp_klasses_from_objects(Register obj1, Register obj2, Regi
   if (UseCompactObjectHeaders) {
     load_narrow_klass_compact(tmp1, obj1);
     load_narrow_klass_compact(tmp2,  obj2);
-    cmpw(tmp1, tmp2);
   } else {
     ldrw(tmp1, Address(obj1, oopDesc::klass_offset_in_bytes()));
     ldrw(tmp2, Address(obj2, oopDesc::klass_offset_in_bytes()));
-    cmpw(tmp1, tmp2);
   }
+  cmpw(tmp1, tmp2);
 }
 
 void MacroAssembler::store_klass(Register dst, Register src) {
