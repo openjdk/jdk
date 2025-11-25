@@ -1480,9 +1480,6 @@ public class ForkJoinPool extends AbstractExecutorService
                     task = t;
                 }
                 nsteals += stolen;
-                if ((config & CLEAR_TLS) != 0 &&
-                    (Thread.currentThread() instanceof ForkJoinWorkerThread f))
-                    f.resetThreadLocals();
             }
         }
 
@@ -2134,9 +2131,12 @@ public class ForkJoinPool extends AbstractExecutorService
     private int awaitWork(WorkQueue w) {
         int inactive = 0, phase;
         if (w != null) {                          // always true; hoist checks
+            if ((w.config & CLEAR_TLS) != 0 &&
+                (Thread.currentThread() instanceof ForkJoinWorkerThread f))
+                f.resetThreadLocals();            // clear before release
+            LockSupport.setCurrentBlocker(this);
             long waitTime = (w.source == INVALID_ID) ? 0L : keepAlive;
             if ((inactive = (phase = w.phase) & IDLE) != 0) {
-                LockSupport.setCurrentBlocker(this);
                 int activePhase = phase + IDLE;
                 for (long deadline = 0L;;) {
                     Thread.interrupted();         // clear status
@@ -2163,8 +2163,8 @@ public class ForkJoinPool extends AbstractExecutorService
                     if (inactive == 0 || (inactive = w.phase & IDLE) == 0)
                         break;
                 }
-                LockSupport.setCurrentBlocker(null);
             }
+            LockSupport.setCurrentBlocker(null);
         }
         return inactive;
     }
