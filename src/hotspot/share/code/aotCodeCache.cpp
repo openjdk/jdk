@@ -1123,7 +1123,7 @@ bool AOTCodeCache::write_stub_data(CodeBlob &blob, AOTStubData *stub_data) {
         } else {
           // this can happen when a stub is not generated or an
           // extra is the common handler target
-          offset = (uint)(end - start);
+          offset = NULL_ADDRESS_MARKER;
         }
         n = write_bytes(&offset, sizeof(uint));
         if (n != sizeof(int)) {
@@ -1355,10 +1355,15 @@ void AOTCodeReader::read_stub_data(CodeBlob* code_blob, AOTStubData* stub_data) 
       // equal to end
       uint entry = *(uint*)addr(offset); offset += sizeof(uint);
       assert(entry <= end, "stub %s entry offset %d lies beyond stub end %d", StubInfo::name(stub_id), entry, end);
-      if (entry < end) {
+      if (entry <= end) {
+        // entry addresses may not address end but extras can
+        assert(entry < end || i >= StubInfo::entry_count(stub_id),
+               "entry offset 0x%x exceeds stub length 0x%x for stub %s",
+               entry, end, StubInfo::name(stub_id));
         addresses.append(stub_start + entry);
       } else {
-        // entry offset == end encodes a nullptr
+        // special case: entry encodes a nullptr
+        assert(entry == AOTCodeCache::NULL_ADDRESS_MARKER, "sanity");
         addresses.append(nullptr);
       }
     }
@@ -2405,7 +2410,7 @@ void AOTStubData::load_archive_data(StubId stub_id, address& start, address& end
     assert(extras->length() == 0, "non-empty array when retrieving extras for stub %s!", StubInfo::name(stub_id));
     while (index < count) {
       address extra = _address_array.at(base + index++);
-      assert(extra == nullptr || (start <= extra && extra < end), "extra address %p not in range (%p, %p) for stub %s", extra, start, end, StubInfo::name(stub_id));
+      assert(extra == nullptr || (start <= extra && extra <= end), "extra address %p not in range (%p, %p) for stub %s", extra, start, end, StubInfo::name(stub_id));
       extras->append(extra);
     }
   }

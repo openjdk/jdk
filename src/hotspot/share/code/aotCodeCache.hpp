@@ -538,6 +538,10 @@ private:
     return true;
   }
 public:
+  // marker used where an address offset needs to be stored for later
+  // retrieval and the address turns out to be null
+  static const uint NULL_ADDRESS_MARKER = UINT_MAX;
+
   static AOTCodeCache* cache() { assert(_passed_init2, "Too early to ask"); return _cache; }
   static void initialize() NOT_CDS_RETURN;
   static void init2() NOT_CDS_RETURN;
