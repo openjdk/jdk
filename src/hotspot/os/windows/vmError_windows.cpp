@@ -24,6 +24,7 @@
 
 #include "cds/aotMetaspace.hpp"
 #include "cds/cdsConfig.hpp"
+#include "cppstdlib/cstdlib.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
