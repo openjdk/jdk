@@ -57,33 +57,35 @@ final class FieldUpdaterUtil {
      */
     static <T> Field findValidatedField(Class<T> tclass, String fieldName,
                                         Class<?> caller, Class<?> expectedType) {
+        Field field;
+        int modifiers;
         try {
-            Field field = tclass.getDeclaredField(fieldName);
-            int modifiers = field.getModifiers();
+            field = tclass.getDeclaredField(fieldName);
+            modifiers = field.getModifiers();
             Reflection.ensureMemberAccess(caller, tclass, null, modifiers);
-
-            Class<?> fieldType = field.getType();
-
-            if (expectedType == int.class && fieldType != int.class) {
-                throw new IllegalArgumentException("Must be integer type");
-            } else if (expectedType == long.class && fieldType != long.class) {
-                throw new IllegalArgumentException("Must be long type");
-            } else if (expectedType == null && fieldType.isPrimitive()) {
-                throw new IllegalArgumentException("Must be reference type");
-            }
-
-            if (!Modifier.isVolatile(modifiers)) {
-                throw new IllegalArgumentException("Must be volatile type");
-            }
-
-            if (Modifier.isStatic(modifiers)) {
-                throw new IllegalArgumentException("Must not be a static field");
-            }
-
-            return field;
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
+
+        Class<?> fieldType = field.getType();
+
+        if (expectedType == int.class && fieldType != int.class) {
+            throw new IllegalArgumentException("Must be integer type");
+        } else if (expectedType == long.class && fieldType != long.class) {
+            throw new IllegalArgumentException("Must be long type");
+        } else if (expectedType == null && fieldType.isPrimitive()) {
+            throw new IllegalArgumentException("Must be reference type");
+        }
+
+        if (!Modifier.isVolatile(modifiers)) {
+            throw new IllegalArgumentException("Must be volatile type");
+        }
+
+        if (Modifier.isStatic(modifiers)) {
+            throw new IllegalArgumentException("Must not be a static field");
+        }
+
+        return field;
     }
 
     /**
