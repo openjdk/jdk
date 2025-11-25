@@ -81,162 +81,19 @@ interface OptionValueConverter<T, U> {
         return new Builder<>();
     }
 
-    static <T, U> MapperBuilder<T, U> buildMapper() {
-        return new MapperBuilder<>();
-    }
-
-    static final class MapperBuilder<T, U> {
-
-        private MapperBuilder() {
-        }
-
-        private MapperBuilder(MapperBuilder<T, U> other) {
-            converter = other.converter;
-            validator = other.validator;
-            formatString = other.formatString;
-            exceptionFactory = other.exceptionFactory;
-        }
-
-        MapperBuilder<T, U> copy() {
-            return new MapperBuilder<>(this);
-        }
-
-        OptionValueConverter<T, U> create() {
-            return new DefaultOptionValueConverter<>(
-                    converter,
-                    formatString().orElseGet(() -> {
-                        if (exceptionFactory == null) {
-                            return "";
-                        } else {
-                            return null;
-                        }
-                    }),
-                    exceptionFactory().orElseGet(() -> {
-                        if (formatString == null) {
-                            return OptionValueExceptionFactory.unreachable();
-                        } else {
-                            return null;
-                        }
-                    }),
-                    validator());
-        }
-
-        MapperBuilder<T, U> converter(ValueConverter<T, U> v) {
-            converter = v;
-            return this;
-        }
-
-        MapperBuilder<T, U> validator(Validator<U, ? extends RuntimeException> v) {
-            validator = v;
-            return this;
-        }
-
-        MapperBuilder<T, U> formatString(String v) {
-            formatString = v;
-            return this;
-        }
-
-        MapperBuilder<T, U> exceptionFactory(OptionValueExceptionFactory<? extends RuntimeException> v) {
-            exceptionFactory = v;
-            return this;
-        }
-
-        MapperBuilder<T, U> mutate(Consumer<MapperBuilder<T, U>> mutator) {
-            mutator.accept(this);
-            return this;
-        }
-
-        Optional<ValueConverter<T, U>> converter() {
-            return Optional.ofNullable(converter);
-        }
-
-        Optional<Validator<U, ? extends RuntimeException>> validator() {
-            return Optional.ofNullable(validator);
-        }
-
-        Optional<String> formatString() {
-            return Optional.ofNullable(formatString);
-        }
-
-        Optional<OptionValueExceptionFactory<? extends RuntimeException>> exceptionFactory() {
-            return Optional.ofNullable(exceptionFactory);
-        }
-
-
-        private record DefaultOptionValueConverter<T, U>(ValueConverter<T, U> converter, String formatString,
-                OptionValueExceptionFactory<? extends RuntimeException> exceptionFactory,
-                Optional<Validator<U, ? extends RuntimeException>> validator) implements OptionValueConverter<T, U> {
-
-            DefaultOptionValueConverter {
-                Objects.requireNonNull(converter);
-                Objects.requireNonNull(formatString);
-                Objects.requireNonNull(exceptionFactory);
-                Objects.requireNonNull(validator);
-            }
-
-            @Override
-            public Result<U> convert(OptionName optionName, StringToken optionValue, T value) {
-                Objects.requireNonNull(optionName);
-                Objects.requireNonNull(optionValue);
-                Objects.requireNonNull(value);
-
-                if (value instanceof String && !value.equals(optionValue.value())) {
-                    throw new IllegalArgumentException();
-                }
-
-                final U convertedValue;
-                try {
-                    convertedValue = converter.convert(value);
-                } catch (Exception ex) {
-                    return handleException(optionName, optionValue, ex);
-                }
-
-                final List<? extends Exception> validationExceptions = validator.map(val -> {
-                    try {
-                        return val.validate(optionName, ParsedValue.create(convertedValue, optionValue));
-                    } catch (Validator.ValidatorException ex) {
-                        // All unexpected exceptions that the converter yields should be tunneled via ConverterException.
-                        throw new ConverterException(ex.getCause());
-                    }
-                }).orElseGet(List::of);
-
-                if (validationExceptions.isEmpty()) {
-                    return Result.ofValue(convertedValue);
-                } else {
-                    return Result.ofErrors(validationExceptions);
-                }
-            }
-
-            @Override
-            public Class<? extends U> valueType() {
-                return converter.valueType();
-            }
-
-            private Result<U> handleException(OptionName optionName, StringToken optionValue, Exception ex) {
-                if (ex instanceof IllegalArgumentException) {
-                    return Result.ofError(exceptionFactory.create(optionName, optionValue, formatString, Optional.of(ex)));
-                } else {
-                    throw new ConverterException(ex);
-                }
-            }
-        }
-
-
-        private ValueConverter<T, U> converter;
-        private Validator<U, ? extends RuntimeException> validator;
-        private String formatString;
-        private OptionValueExceptionFactory<? extends RuntimeException> exceptionFactory;
-    }
-
 
     static final class Builder<T> {
 
         private Builder() {
-            mapperBuilder = buildMapper();
+            this(new OneStepBackend<>(new StepBuilder<>(true)));
+        }
+
+        private Builder(Backend<T> backend) {
+            this.backend = Objects.requireNonNull(backend);
         }
 
         private Builder(Builder<T> other) {
-            mapperBuilder = other.mapperBuilder.copy();
+            backend = other.backend.copy();
             tokenizer = other.tokenizer;
         }
 
@@ -244,8 +101,38 @@ interface OptionValueConverter<T, U> {
             return new Builder<>(this);
         }
 
+        <U> Builder<U> map(ValueConverter<T, U> converter) {
+            Objects.requireNonNull(converter);
+            return new Builder<>(new TwoStepBackend<>(
+                    backend,
+                    new StepBuilder<T, U>(false).converter(converter))).tokenizer(tokenizer);
+        }
+
+        <U> Builder<T> map(Builder<U> other) {
+            Objects.requireNonNull(other);
+            switch (backend) {
+                case OneStepBackend<T> _ -> {
+                    throw new UnsupportedOperationException();
+                }
+                case TwoStepBackend<?, T> b -> {
+                    var fromInterimValueType = other.backend.valueType().orElseThrow();
+                    var toInterimValueType = b.interimValueType();
+                    if (fromInterimValueType.equals(toInterimValueType)) {
+                        @SuppressWarnings("unchecked")
+                        var twoStepBackend = (TwoStepBackend<U, T>)b;
+                        return new Builder<>(new TwoStepBackend<>(
+                                other.backend,
+                                twoStepBackend.otherConvBuilder())).tokenizer(tokenizer);
+                    } else {
+                        throw new IllegalArgumentException(String.format(
+                                "Expected (%s); actual (%s)", toInterimValueType, fromInterimValueType));
+                    }
+                }
+            }
+        }
+
         OptionValueConverter<String, T> create() {
-            return mapperBuilder.create();
+            return backend.create();
         }
 
         OptionArrayValueConverter<T> createArray() {
@@ -253,12 +140,19 @@ interface OptionValueConverter<T, U> {
         }
 
         Builder<T> converter(ValueConverter<String, T> v) {
-            mapperBuilder.converter(v);
+            switch (backend) {
+                case OneStepBackend<T> b -> {
+                    b.stringConvBuilder().converter(v);
+                }
+                case TwoStepBackend<?, T> _ -> {
+                    throw new UnsupportedOperationException();
+                }
+            }
             return this;
         }
 
         Builder<T> validator(Validator<T, ? extends RuntimeException> v) {
-            mapperBuilder.validator(v);
+            backend.validator(v);
             return this;
         }
 
@@ -268,12 +162,12 @@ interface OptionValueConverter<T, U> {
         }
 
         Builder<T> formatString(String v) {
-            mapperBuilder.formatString(v);
+            backend.formatString(v);
             return this;
         }
 
         Builder<T> exceptionFactory(OptionValueExceptionFactory<? extends RuntimeException> v) {
-            mapperBuilder.exceptionFactory(v);
+            backend.exceptionFactory(v);
             return this;
         }
 
@@ -282,12 +176,30 @@ interface OptionValueConverter<T, U> {
             return this;
         }
 
-        Optional<ValueConverter<String, T>> converter() {
-            return mapperBuilder.converter();
+        boolean hasConverter() {
+            switch (backend) {
+                case OneStepBackend<T> b -> {
+                    return b.stringConvBuilder().converter().isPresent();
+                }
+                case TwoStepBackend<?, T> _ -> {
+                    return true;
+                }
+            }
         }
 
         Optional<Validator<T, ? extends RuntimeException>> validator() {
-            return mapperBuilder.validator();
+            return backend.validator();
+        }
+
+        Optional<ValueConverter<String, T>> converter() {
+            switch (backend) {
+                case OneStepBackend<T> b -> {
+                    return b.stringConvBuilder().converter();
+                }
+                case TwoStepBackend<?, T> _ -> {
+                    throw new UnsupportedOperationException();
+                }
+            }
         }
 
         Optional<Function<String, String[]>> tokenizer() {
@@ -295,11 +207,11 @@ interface OptionValueConverter<T, U> {
         }
 
         Optional<String> formatString() {
-            return mapperBuilder.formatString();
+            return backend.formatString();
         }
 
         Optional<OptionValueExceptionFactory<? extends RuntimeException>> exceptionFactory() {
-            return mapperBuilder.exceptionFactory();
+            return backend.exceptionFactory();
         }
 
 
@@ -352,7 +264,311 @@ interface OptionValueConverter<T, U> {
             }
         }
 
-        private final MapperBuilder<String, T> mapperBuilder;
+
+        private record TwoStepOptionValueConverter<T, U>(OptionValueConverter<String, T> stringConverter,
+                OptionValueConverter<T, U> converter) implements OptionValueConverter<String, U> {
+
+            TwoStepOptionValueConverter {
+                Objects.requireNonNull(stringConverter);
+                Objects.requireNonNull(converter);
+            }
+
+            @Override
+            public Result<U> convert(OptionName optionName, StringToken optionValue, String value) {
+                final var interimResult = stringConverter.convert(optionName, optionValue, value);
+                return interimResult.flatMap(interimValue -> {
+                    return converter.convert(optionName, optionValue, interimValue);
+                });
+            }
+
+            @Override
+            public Class<? extends U> valueType() {
+                return converter.valueType();
+            }
+        }
+
+
+        private sealed interface Backend<T> {
+
+            OptionValueConverter<String, T> create();
+
+            Backend<T> copy();
+
+            void validator(Validator<T, ? extends RuntimeException> v);
+
+            void formatString(String v);
+
+            void exceptionFactory(OptionValueExceptionFactory<? extends RuntimeException> v);
+
+            Optional<Class<? extends T>> valueType();
+
+            Optional<Validator<T, ? extends RuntimeException>> validator();
+
+            Optional<String> formatString();
+
+            Optional<OptionValueExceptionFactory<? extends RuntimeException>> exceptionFactory();
+        }
+
+
+        private record OneStepBackend<T>(StepBuilder<String, T> stringConvBuilder) implements Backend<T> {
+
+            OneStepBackend {
+                Objects.requireNonNull(stringConvBuilder);
+            }
+
+            @Override
+            public Backend<T> copy() {
+                return new OneStepBackend<>(stringConvBuilder.copy());
+            }
+
+            @Override
+            public OptionValueConverter<String, T> create() {
+                return stringConvBuilder.create();
+            }
+
+            @Override
+            public void validator(Validator<T, ? extends RuntimeException> v) {
+                stringConvBuilder.validator(v);
+            }
+
+            @Override
+            public void formatString(String v) {
+                stringConvBuilder.formatString(v);
+            }
+
+            @Override
+            public void exceptionFactory(OptionValueExceptionFactory<? extends RuntimeException> v) {
+                stringConvBuilder.exceptionFactory(v);
+            }
+
+            @Override
+            public Optional<Class<? extends T>> valueType() {
+                return stringConvBuilder.converter().map(ValueConverter::valueType);
+            }
+
+            @Override
+            public Optional<Validator<T, ? extends RuntimeException>> validator() {
+                return stringConvBuilder.validator();
+            }
+
+            @Override
+            public Optional<String> formatString() {
+                return stringConvBuilder.formatString();
+            }
+
+            @Override
+            public Optional<OptionValueExceptionFactory<? extends RuntimeException>> exceptionFactory() {
+                return stringConvBuilder.exceptionFactory();
+            }
+        }
+
+
+        private record TwoStepBackend<T, U>(Backend<T> stringConvBuilder, StepBuilder<T, U> otherConvBuilder) implements Backend<U> {
+
+            TwoStepBackend {
+                Objects.requireNonNull(stringConvBuilder);
+                Objects.requireNonNull(otherConvBuilder);
+            }
+
+            Class<? extends T> interimValueType() {
+                return stringConvBuilder.valueType().orElseThrow();
+            }
+
+            @Override
+            public Backend<U> copy() {
+                return new TwoStepBackend<>(stringConvBuilder.copy(), otherConvBuilder.copy());
+            }
+
+            @Override
+            public OptionValueConverter<String, U> create() {
+                return new TwoStepOptionValueConverter<>(stringConvBuilder.create(), otherConvBuilder.create());
+            }
+
+            @Override
+            public void validator(Validator<U, ? extends RuntimeException> v) {
+                otherConvBuilder.validator(v);
+            }
+
+            @Override
+            public void formatString(String v) {
+                otherConvBuilder.formatString(v);
+            }
+
+            @Override
+            public void exceptionFactory(OptionValueExceptionFactory<? extends RuntimeException> v) {
+                otherConvBuilder.exceptionFactory(v);
+            }
+
+            @Override
+            public Optional<Class<? extends U>> valueType() {
+                return otherConvBuilder.converter().map(ValueConverter::valueType);
+            }
+
+            @Override
+            public Optional<Validator<U, ? extends RuntimeException>> validator() {
+                return otherConvBuilder.validator();
+            }
+
+            @Override
+            public Optional<String> formatString() {
+                return otherConvBuilder.formatString();
+            }
+
+            @Override
+            public Optional<OptionValueExceptionFactory<? extends RuntimeException>> exceptionFactory() {
+                return otherConvBuilder.exceptionFactory();
+            }
+        }
+
+
+        private static final class StepBuilder<T, U> {
+
+            private StepBuilder(boolean starter) {
+                this.starter = starter;
+            }
+
+            private StepBuilder(StepBuilder<T, U> other) {
+                starter = other.starter;
+                converter = other.converter;
+                validator = other.validator;
+                formatString = other.formatString;
+                exceptionFactory = other.exceptionFactory;
+            }
+
+            StepBuilder<T, U> copy() {
+                return new StepBuilder<>(this);
+            }
+
+            OptionValueConverter<T, U> create() {
+                return new DefaultOptionValueConverter<>(
+                        converter,
+                        formatString().orElseGet(() -> {
+                            if (exceptionFactory == null) {
+                                return "";
+                            } else {
+                                return null;
+                            }
+                        }),
+                        exceptionFactory().orElseGet(() -> {
+                            if (formatString == null) {
+                                return OptionValueExceptionFactory.unreachable();
+                            } else {
+                                return null;
+                            }
+                        }),
+                        validator(),
+                        starter);
+            }
+
+            StepBuilder<T, U> converter(ValueConverter<T, U> v) {
+                converter = v;
+                return this;
+            }
+
+            StepBuilder<T, U> validator(Validator<U, ? extends RuntimeException> v) {
+                validator = v;
+                return this;
+            }
+
+            StepBuilder<T, U> formatString(String v) {
+                formatString = v;
+                return this;
+            }
+
+            StepBuilder<T, U> exceptionFactory(OptionValueExceptionFactory<? extends RuntimeException> v) {
+                exceptionFactory = v;
+                return this;
+            }
+
+            Optional<ValueConverter<T, U>> converter() {
+                return Optional.ofNullable(converter);
+            }
+
+            Optional<Validator<U, ? extends RuntimeException>> validator() {
+                return Optional.ofNullable(validator);
+            }
+
+            Optional<String> formatString() {
+                return Optional.ofNullable(formatString);
+            }
+
+            Optional<OptionValueExceptionFactory<? extends RuntimeException>> exceptionFactory() {
+                return Optional.ofNullable(exceptionFactory);
+            }
+
+
+            private record DefaultOptionValueConverter<T, U>(
+                    ValueConverter<T, U> converter,
+                    String formatString,
+                    OptionValueExceptionFactory<? extends RuntimeException> exceptionFactory,
+                    Optional<Validator<U, ? extends RuntimeException>> validator,
+                    boolean starter) implements OptionValueConverter<T, U> {
+
+                DefaultOptionValueConverter {
+                    Objects.requireNonNull(converter);
+                    Objects.requireNonNull(formatString);
+                    Objects.requireNonNull(exceptionFactory);
+                    Objects.requireNonNull(validator);
+                }
+
+                @Override
+                public Result<U> convert(OptionName optionName, StringToken optionValue, T value) {
+                    Objects.requireNonNull(optionName);
+                    Objects.requireNonNull(optionValue);
+                    Objects.requireNonNull(value);
+
+                    if (starter && !value.equals(optionValue.value())) {
+                        throw new IllegalArgumentException();
+                    }
+
+                    final U convertedValue;
+                    try {
+                        convertedValue = converter.convert(value);
+                    } catch (Exception ex) {
+                        return handleException(optionName, optionValue, ex);
+                    }
+
+                    final List<? extends Exception> validationExceptions = validator.map(val -> {
+                        try {
+                            return val.validate(optionName, ParsedValue.create(convertedValue, optionValue));
+                        } catch (Validator.ValidatorException ex) {
+                            // All unexpected exceptions that the converter yields should be tunneled via ConverterException.
+                            throw new ConverterException(ex.getCause());
+                        }
+                    }).orElseGet(List::of);
+
+                    if (validationExceptions.isEmpty()) {
+                        return Result.ofValue(convertedValue);
+                    } else {
+                        return Result.ofErrors(validationExceptions);
+                    }
+                }
+
+                @Override
+                public Class<? extends U> valueType() {
+                    return converter.valueType();
+                }
+
+                private Result<U> handleException(OptionName optionName, StringToken optionValue, Exception ex) {
+                    if (ex instanceof IllegalArgumentException) {
+                        return Result.ofError(exceptionFactory.create(optionName, optionValue, formatString, Optional.of(ex)));
+                    } else {
+                        throw new ConverterException(ex);
+                    }
+                }
+            }
+
+
+            private final boolean starter;
+            private ValueConverter<T, U> converter;
+            private Validator<U, ? extends RuntimeException> validator;
+            private String formatString;
+            private OptionValueExceptionFactory<? extends RuntimeException> exceptionFactory;
+        }
+
+
+        private final Backend<T> backend;
         private Function<String, String[]> tokenizer;
     }
 }
+
