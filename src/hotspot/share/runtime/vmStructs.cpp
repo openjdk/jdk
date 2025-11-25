@@ -54,6 +54,7 @@
 #include "oops/array.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
+#include "oops/bsmAttribute.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/constMethod.hpp"
 #include "oops/cpCache.hpp"
@@ -166,10 +167,12 @@
   nonstatic_field(ArrayKlass,                  _dimension,                                    int)                                   \
   volatile_nonstatic_field(ArrayKlass,         _higher_dimension,                             ObjArrayKlass*)                        \
   volatile_nonstatic_field(ArrayKlass,         _lower_dimension,                              ArrayKlass*)                           \
+  nonstatic_field(BSMAttributeEntries,         _offsets,                                      Array<u4>*)                            \
+  nonstatic_field(BSMAttributeEntries,         _bootstrap_methods,                            Array<u2>*)                            \
+  nonstatic_field(ConstantPool,                _bsm_entries,                                  BSMAttributeEntries)                   \
   nonstatic_field(ConstantPool,                _tags,                                         Array<u1>*)                            \
   nonstatic_field(ConstantPool,                _cache,                                        ConstantPoolCache*)                    \
   nonstatic_field(ConstantPool,                _pool_holder,                                  InstanceKlass*)                        \
-  nonstatic_field(ConstantPool,                _operands,                                     Array<u2>*)                            \
   nonstatic_field(ConstantPool,                _resolved_klasses,                             Array<Klass*>*)                        \
   nonstatic_field(ConstantPool,                _length,                                       int)                                   \
   nonstatic_field(ConstantPool,                _minor_version,                                u2)                                    \
@@ -733,6 +736,7 @@
   unchecked_nonstatic_field(Array<int>,                _data,                                 sizeof(int))                           \
   unchecked_nonstatic_field(Array<u1>,                 _data,                                 sizeof(u1))                            \
   unchecked_nonstatic_field(Array<u2>,                 _data,                                 sizeof(u2))                            \
+  unchecked_nonstatic_field(Array<u4>,                 _data,                                 sizeof(u4))                            \
   unchecked_nonstatic_field(Array<Method*>,            _data,                                 sizeof(Method*))                       \
   unchecked_nonstatic_field(Array<Klass*>,             _data,                                 sizeof(Klass*))                        \
   unchecked_nonstatic_field(Array<ResolvedFieldEntry>, _data,                                 sizeof(ResolvedFieldEntry))            \
@@ -964,6 +968,7 @@
   declare_toplevel_type(volatile Metadata*)                               \
                                                                           \
   declare_toplevel_type(DataLayout)                                       \
+  declare_toplevel_type(BSMAttributeEntries)                              \
                                                                           \
   /********/                                                              \
   /* Oops */                                                              \
