@@ -111,20 +111,21 @@ void StubCodeGenerator::setup_code_desc(const char* name, address start, address
 // Helper used to restore ranges and handler addresses restored from
 // AOT cache. Expects entries to contain 3 * count addresses beginning
 // at offset begin which identify start of range, end of range and
-// address of handler pc. end of range may be nullptr in which case it
-// defaults to stub_end. hanlder pc may be nullptr in which case it
-// defaults to default_handler.
+// address of handler pc. start and end of range may not be null.
+// handler pc may be null in which case it defaults to the
+// default_handler.
 
 void StubCodeGenerator::register_unsafe_access_handlers(GrowableArray<address> &entries, int begin, int count, address stub_end) {
   for (int i = 0; i < count; i++) {
     int offset = begin + 3 * i;
     address start = entries.at(offset);
     address end = entries.at(offset + 1);
-    if (end == nullptr) {
-      end = stub_end;
-    }
     address handler = entries.at(offset + 2);
+    assert(start != nullptr, "sanity");
+    assert(end != nullptr, "sanity");
     if (handler == nullptr) {
+      assert(UnsafeMemoryAccess::common_exit_stub_pc() != nullptr,
+             "default unsafe handler must be set before registering unsafe rgeionwiht no handler!");
       handler = UnsafeMemoryAccess::common_exit_stub_pc();
     }
     UnsafeMemoryAccess::add_to_table(start, end, handler);

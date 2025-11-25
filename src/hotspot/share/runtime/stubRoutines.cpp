@@ -157,7 +157,8 @@ void UnsafeMemoryAccess::collect_entries(address range_start, address range_end,
       if (e._error_exit_pc != _common_exit_stub_pc) {
         entries.append(e._error_exit_pc);
       } else {
-        // an address outside the stub must be the common exit stub address
+        // an address outside the stub must be the common exit stub
+        // address which is marked with a null address
         entries.append(nullptr);
       }
     }
