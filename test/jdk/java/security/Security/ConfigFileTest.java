@@ -443,18 +443,26 @@ sealed class PropsFile permits ExtraPropsFile {
     protected static final class Include {
         final PropsFile propsFile;
         final String value;
+        final Path displayPath;
 
-        private Include(PropsFile propsFile, String value) {
+        private Include(PropsFile propsFile, String value, Path displayPath) {
             this.propsFile = propsFile;
             this.value = value;
+            this.displayPath = displayPath;
         }
 
-        static Include of(PropsFile propsFile) {
-            return new Include(propsFile, propsFile.path.toString());
+        static Include ofAbsolute(PropsFile propsFile) {
+            return new Include(propsFile, propsFile.path.toString(),
+                    propsFile.path);
         }
 
-        static Include of(PropsFile propsFile, String value) {
-            return new Include(propsFile, value);
+        static Include ofRelative(PropsFile propsFile, Path baseDir) {
+            Path rel = baseDir.relativize(propsFile.path);
+            return new Include(propsFile, rel.toString(), baseDir.resolve(rel));
+        }
+
+        Include withNewValue(String newValue) {
+            return new Include(propsFile, newValue, displayPath);
         }
     }
 
@@ -510,12 +518,11 @@ sealed class PropsFile permits ExtraPropsFile {
     }
 
     void addAbsoluteInclude(PropsFile propsFile) {
-        addIncludeDefinition(Include.of(propsFile));
+        addIncludeDefinition(Include.ofAbsolute(propsFile));
     }
 
     void addRelativeInclude(PropsFile propsFile) {
-        addIncludeDefinition(Include.of(propsFile,
-                path.getParent().relativize(propsFile.path).toString()));
+        addIncludeDefinition(Include.ofRelative(propsFile, path.getParent()));
     }
 
     void assertApplied(OutputAnalyzer oa) {
@@ -524,7 +531,7 @@ sealed class PropsFile permits ExtraPropsFile {
         for (Include include : includes) {
             include.propsFile.assertApplied(oa);
             oa.shouldContain("processing include: '" + include.value + "'");
-            oa.shouldContain("finished processing " + include.propsFile.path);
+            oa.shouldContain("finished processing " + include.displayPath);
         }
     }
 
@@ -536,7 +543,7 @@ sealed class PropsFile permits ExtraPropsFile {
                 include.propsFile.assertWasOverwritten(oa);
             }
             oa.shouldContain("processing include: '" + include.value + "'");
-            oa.shouldContain("finished processing " + include.propsFile.path);
+            oa.shouldContain("finished processing " + include.displayPath);
         }
     }
 
@@ -571,7 +578,7 @@ final class ExtraPropsFile extends PropsFile {
         if (includes.isEmpty()) {
             String propName = "props.fileName";
             systemProps.put(propName, include.propsFile.fileName);
-            include = Include.of(include.propsFile,
+            include = include.withNewValue(
                     include.value.replace(include.propsFile.fileName,
                             "${props.none}${" + propName + "}"));
         }

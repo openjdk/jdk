@@ -257,24 +257,18 @@ public final class Security {
                     // We perform symlinks resolution on currentPath under the
                     // rationale that the original file writer is the one who
                     // decided where the relative includes should resolve.
-                    path = resolve(currentPath).resolveSibling(path);
+                    // JDK-8352728: we prefer java.io.File::getCanonicalFile
+                    // over java.nio.file.Path::toRealPath because the former
+                    // is more fault-tolerant, since the canonical form of a
+                    // pathname is specified to exist even for nonexistent
+                    // or inaccessible files.
+                    path = currentPath.toFile().getCanonicalFile().toPath()
+                            .resolveSibling(path);
                 }
                 loadFromPath(path, LoadingMode.APPEND);
             } catch (IOException | InvalidPathException e) {
                 throw new InternalError("Unable to include '" + expPropFile +
                         "'", e);
-            }
-        }
-
-        private static Path resolve(Path path) {
-            // JDK-8352728: we prefer java.io.File::getCanonicalFile over
-            // java.nio.file.Path::toRealPath because the former is more
-            // fault-tolerant, since the canonical form of a pathname is
-            // specified to exist even for nonexistent/inaccessible files.
-            try {
-                return path.toFile().getCanonicalFile().toPath();
-            } catch (IOException e) {
-                throw new InternalError("Cannot resolve path", e);
             }
         }
 
@@ -325,7 +319,6 @@ public final class Security {
         private static void debugLoad(boolean start, Object source) {
             if (sdebug != null) {
                 int level = activePaths.isEmpty() ? 1 : activePaths.size();
-                source = source instanceof Path path ? resolve(path) : source;
                 sdebug.println((start ?
                         ">".repeat(level) + " starting to process " :
                         "<".repeat(level) + " finished processing ") + source);
