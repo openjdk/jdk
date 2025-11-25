@@ -31,10 +31,6 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * The {@code Array} class provides static methods to dynamically create and
  * access Java arrays.
  *
- * <p>{@code Array} permits widening conversions to occur during a get or set
- * operation, but throws an {@code IllegalArgumentException} if a narrowing
- * conversion would occur.
- *
  * @author Nakul Saraiya
  * @since 1.1
  */

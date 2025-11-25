@@ -56,10 +56,6 @@ import sun.reflect.annotation.TypeAnnotationParser;
  * single field of a class or an interface.  The reflected field may
  * be a class (static) field or an instance field.
  *
- * <p>A {@code Field} permits widening conversions to occur during a get or
- * set access operation, but throws an {@code IllegalArgumentException} if a
- * narrowing conversion would occur.
- *
  * @see Member
  * @see java.lang.Class
  * @see java.lang.Class#getFields()

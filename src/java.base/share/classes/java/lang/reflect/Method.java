@@ -53,11 +53,6 @@ import java.util.StringJoiner;
  * on a class or interface.  The reflected method may be a class method
  * or an instance method (including an abstract method).
  *
- * <p>A {@code Method} permits widening conversions to occur when matching the
- * actual parameters to invoke with the underlying method's formal
- * parameters, but it throws an {@code IllegalArgumentException} if a
- * narrowing conversion would occur.
- *
  * @see Member
  * @see java.lang.Class
  * @see java.lang.Class#getMethods()
