@@ -7233,7 +7233,7 @@ bool LibraryCallKit::inline_aescrypt_Block(vmIntrinsics::ID id) {
 bool LibraryCallKit::inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id) {
   address stubAddr = nullptr;
   const char *stubName = nullptr;
-  bool is_decrypt= false;
+  bool is_decrypt = false;
   assert(UseAES, "need AES instruction support");
 
   switch(id) {
