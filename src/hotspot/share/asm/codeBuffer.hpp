@@ -28,11 +28,11 @@
 #include "code/oopRecorder.hpp"
 #include "code/relocInfo.hpp"
 #include "compiler/compiler_globals.hpp"
+#include "nmt/memTag.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/linkedlist.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/resizableHashTable.hpp"
 
@@ -538,7 +538,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     SECT_LIMIT, SECT_NONE = -1
   };
 
-  typedef LinkedListImpl<int> Offsets;
+  typedef GrowableArrayCHeap<int, mtCompiler> Offsets;
   typedef ResizeableHashTable<address, Offsets, AnyObj::C_HEAP, mtCompiler> SharedTrampolineRequests;
 
  private:
