@@ -43,7 +43,13 @@ public class MissedPoll {
         System.out.println(q.getClass());
         try (var pool = Executors.newCachedThreadPool()) {
             var futures = new ArrayList<Future<Integer>>();
-            var phaser = new Phaser(4);
+            var phaser = new Phaser(4) {
+                @Override
+                protected boolean onAdvance(int phase, int registeredParties) {
+                    q.clear();
+                    return super.onAdvance(phase, registeredParties);
+                }
+            };
             for (var i = 0; i < 4; i++) {
                 futures.add(pool.submit(() -> {
                     int errors = 0;
@@ -56,16 +62,17 @@ public class MissedPoll {
                                 ++errors;
                         }
                         phaser.arriveAndAwaitAdvance();
-                        q.clear();
-                        phaser.arriveAndAwaitAdvance();
                     }
                     return errors;
                 }));
             }
             for (var future : futures) {
-                if (future.get() != 0)
-                    throw new Error();
+                Integer res;
+                if ((res = future.get()) != 0)
+                    throw new AssertionError("Expected 0 but got " + res);
             }
         }
+        if (!q.isEmpty())
+            throw new AssertionError("Queue is not empty: " + q);
     }
 }
