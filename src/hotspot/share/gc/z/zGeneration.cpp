@@ -1436,7 +1436,7 @@ public:
     ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
     if (_bs_nm->is_armed(nm)) {
       {
-        ICacheInvalidationContext icic(nm);
+        ICacheInvalidationContext icic;
         // Heal barriers
         ZNMethod::nmethod_patch_barriers(nm);
 

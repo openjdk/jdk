@@ -77,16 +77,12 @@ class ICacheInvalidationContext : StackObj {
   NONCOPYABLE(ICacheInvalidationContext);
 
 private:
-  static THREAD_LOCAL bool _deferred_icache_invalidation;
-
-  nmethod* _nm;
-
-  void pd_init(nmethod* nm);
+  void pd_init();
   void pd_invalidate_icache();
 
 public:
-  ICacheInvalidationContext(nmethod* nm) : _nm(nullptr) {
-    pd_init(nm);
+  ICacheInvalidationContext() {
+    pd_init();
   }
 
   ~ICacheInvalidationContext() {

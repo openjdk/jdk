@@ -203,7 +203,7 @@ void ZNMethod::register_nmethod(nmethod* nm) {
   log_register(nm);
 
   {
-    ICacheInvalidationContext icic(nm);
+    ICacheInvalidationContext icic;
 
     // Patch nmethod barriers
     nmethod_patch_barriers(nm);
@@ -372,7 +372,7 @@ public:
         assert(prev_color != ZPointerStoreGoodMask, "Potentially non-monotonic transition");
 
         {
-          ICacheInvalidationContext icic(nm);
+          ICacheInvalidationContext icic;
           // Heal oops and potentially mark young objects if there is a concurrent young collection.
           ZUncoloredRootProcessOopClosure cl(prev_color);
           ZNMethod::nmethod_oops_do_inner(nm, &cl);

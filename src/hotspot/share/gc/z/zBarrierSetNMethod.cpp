@@ -72,7 +72,7 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   }
 
   {
-    ICacheInvalidationContext icic(nm);
+    ICacheInvalidationContext icic;
 
     // Heal barriers
     ZNMethod::nmethod_patch_barriers(nm);
