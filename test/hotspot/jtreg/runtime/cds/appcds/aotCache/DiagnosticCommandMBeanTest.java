@@ -25,8 +25,9 @@
 
 /*
  * @test
- * @summary Sanity test for DiagnosticCommand MBean ability to invoke AOT.end_recording
+ * @requires vm.cds.supports.aot.class.linking
  * @requires vm.cds.write.archived.java.heap
+ * @summary Sanity test for DiagnosticCommand MBean ability to invoke AOT.end_recording
  * @library /test/jdk/lib/testlibrary /test/lib
  *          /test/hotspot/jtreg/runtime/cds/appcds/aotCache/test-classes
  * @build DiagnosticCommandMBeanTest
@@ -34,7 +35,6 @@
  * @run driver DiagnosticCommandMBeanTest
  */
 
-import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
@@ -95,7 +95,7 @@ public class DiagnosticCommandMBeanTest {
                     out.shouldContain("AOT.end_recording invoked successfully");
                     out.shouldContain("Failed to stop recording");
                 }
-                out.shouldNotContain("IOException occurred!");
+                out.shouldNotContain("Exception occurred!");
             }
         }
     }

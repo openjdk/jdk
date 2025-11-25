@@ -1059,7 +1059,7 @@ void AOTMetaspace::exercise_runtime_cds_code(TRAPS) {
 
 bool AOTMetaspace::preimage_static_archive_dumped() {
   assert(CDSConfig::is_dumping_preimage_static_archive(), "Required");
-  return _preimage_static_archive_dumped == 1;
+  return AtomicAccess::load_acquire(&_preimage_static_archive_dumped) == 1;
 }
 
 void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS) {
