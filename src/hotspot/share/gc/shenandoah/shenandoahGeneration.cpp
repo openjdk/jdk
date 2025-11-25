@@ -490,7 +490,6 @@ size_t ShenandoahGeneration::select_aged_regions(const size_t old_promotion_rese
   assert_no_in_place_promotions();
 
   auto const heap = ShenandoahGenerationalHeap::heap();
-  ShenandoahYoungGeneration* young_gen = heap->young_generation();
   ShenandoahFreeSet* free_set = heap->free_set();
   bool* const candidate_regions_for_promotion_by_copy = heap->collection_set()->preselected_regions();
   ShenandoahMarkingContext* const ctx = heap->marking_context();
@@ -513,12 +512,10 @@ size_t ShenandoahGeneration::select_aged_regions(const size_t old_promotion_rese
   ResourceMark rm;
   AgedRegionData* sorted_regions = NEW_RESOURCE_ARRAY(AgedRegionData, num_regions);
 
-  ShenandoahFreeSet* freeset = heap->free_set();
-
   // Any region that is to be promoted in place needs to be retired from its Collector or Mutator partition.
-  idx_t pip_low_collector_idx = freeset->max_regions();
+  idx_t pip_low_collector_idx = free_set->max_regions();
   idx_t pip_high_collector_idx = -1;
-  idx_t pip_low_mutator_idx = freeset->max_regions();
+  idx_t pip_low_mutator_idx = free_set->max_regions();
   idx_t pip_high_mutator_idx = -1;
   size_t collector_regions_to_pip = 0;
   size_t mutator_regions_to_pip = 0;
@@ -528,7 +525,6 @@ size_t ShenandoahGeneration::select_aged_regions(const size_t old_promotion_rese
   size_t pip_mutator_bytes = 0;
   size_t pip_collector_bytes = 0;
 
-  size_t min_remnant_size = PLAB::min_size() * HeapWordSize;
   for (idx_t i = 0; i < num_regions; i++) {
     ShenandoahHeapRegion* const r = heap->get_region(i);
     if (r->is_empty() || !r->has_live() || !r->is_young() || !r->is_regular()) {
@@ -635,17 +631,17 @@ size_t ShenandoahGeneration::select_aged_regions(const size_t old_promotion_rese
   }
 
   if (pip_mutator_regions + pip_collector_regions > 0) {
-    freeset->account_for_pip_regions(pip_mutator_regions, pip_mutator_bytes, pip_collector_regions, pip_collector_bytes);
+    free_set->account_for_pip_regions(pip_mutator_regions, pip_mutator_bytes, pip_collector_regions, pip_collector_bytes);
   }
 
   // Retire any regions that have been selected for promote in place
   if (collector_regions_to_pip > 0) {
-    freeset->shrink_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId::Collector,
+    free_set->shrink_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId::Collector,
                                                                pip_low_collector_idx, pip_high_collector_idx,
                                                                collector_regions_to_pip);
   }
   if (mutator_regions_to_pip > 0) {
-    freeset->shrink_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId::Mutator,
+    free_set->shrink_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId::Mutator,
                                                                pip_low_mutator_idx, pip_high_mutator_idx,
                                                                mutator_regions_to_pip);
   }

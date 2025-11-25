@@ -149,6 +149,7 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
       // Count in just trashed collection set, during coalesced CM-with-UR
       immediate_regions++;
       immediate_garbage += garbage;
+      fatal("This looks like a hold over from IU mode? or earlier design that piggybacked update refs on concurrent mark");
     }
   }
   heap->old_generation()->set_expected_humongous_region_promotions(humongous_regions_promoted);

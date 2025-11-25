@@ -414,7 +414,7 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
     size_t first_old, last_old, num_old;
     heap->free_set()->prepare_to_rebuild(young_trash_regions, old_trash_regions, first_old, last_old, num_old);
     // At the end of old-gen, we may find that we have reclaimed immediate garbage, allowing a longer allocation runway.
-    // We may also find that we have accumulated canddiate regions for mixed evacuation.  If so, we will want to expand
+    // We may also find that we have accumulated candidate regions for mixed evacuation.  If so, we will want to expand
     // the OldCollector reserve in order to make room for these mixed evacuations.
     assert(ShenandoahHeap::heap()->mode()->is_generational(), "sanity");
     assert(young_trash_regions == 0, "sanity");
