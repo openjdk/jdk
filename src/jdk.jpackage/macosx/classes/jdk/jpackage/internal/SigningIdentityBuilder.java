@@ -156,9 +156,10 @@ final class SigningIdentityBuilder {
                 return certs.getFirst();
             }
             default -> {
-                Log.error(I18N.format("error.multiple.certs.found", certificateSelector.signingIdentities().getFirst(),
-                        keychain.map(Keychain::name).orElse("")));
-                return certs.getFirst();
+                throw I18N.buildConfigException("error.multiple.certs.found",
+                        certificateSelector.signingIdentities().getFirst(),
+                        keychain.map(Keychain::name).orElse("")
+                ).create();
             }
         }
     }

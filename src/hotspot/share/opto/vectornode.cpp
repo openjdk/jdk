@@ -1403,7 +1403,7 @@ Node* ReductionNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 }
 
 // Convert fromLong to maskAll if the input sets or unsets all lanes.
-Node* convertFromLongToMaskAll(PhaseGVN* phase, const TypeLong* bits_type, bool is_mask, const TypeVect* vt) {
+static Node* convertFromLongToMaskAll(PhaseGVN* phase, const TypeLong* bits_type, const TypeVect* vt) {
   uint vlen = vt->length();
   BasicType bt = vt->element_basic_type();
   // The "maskAll" API uses the corresponding integer types for floating-point data.
@@ -1418,7 +1418,7 @@ Node* convertFromLongToMaskAll(PhaseGVN* phase, const TypeLong* bits_type, bool 
     } else {
       con = phase->intcon(con_value);
     }
-    Node* res = VectorNode::scalar2vector(con, vlen, maskall_bt, is_mask);
+    Node* res = VectorNode::scalar2vector(con, vlen, maskall_bt, vt->isa_vectmask() != nullptr);
     // Convert back to the original floating-point data type.
     if (is_floating_point_type(bt)) {
       res = new VectorMaskCastNode(phase->transform(res), vt);
@@ -1432,7 +1432,7 @@ Node* VectorLoadMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // VectorLoadMask(VectorLongToMask(-1/0)) => Replicate(-1/0)
   if (in(1)->Opcode() == Op_VectorLongToMask) {
     const TypeVect* vt = bottom_type()->is_vect();
-    Node* res = convertFromLongToMaskAll(phase, in(1)->in(1)->bottom_type()->isa_long(), false, vt);
+    Node* res = convertFromLongToMaskAll(phase, in(1)->in(1)->bottom_type()->isa_long(), vt);
     if (res != nullptr) {
       return res;
     }
@@ -1900,10 +1900,12 @@ Node* VectorMaskCastNode::Identity(PhaseGVN* phase) {
 // l is -1 or 0.
 Node* VectorMaskToLongNode::Ideal_MaskAll(PhaseGVN* phase) {
   Node* in1 = in(1);
-  // VectorMaskToLong follows a VectorStoreMask if predicate is not supported.
+  // VectorMaskToLong follows a VectorStoreMask if it doesn't require the mask
+  // saved with a predicate type.
   if (in1->Opcode() == Op_VectorStoreMask) {
-    assert(!in1->in(1)->bottom_type()->isa_vectmask(), "sanity");
-    in1 = in1->in(1);
+    Node* mask = in1->in(1);
+    assert(!Matcher::mask_op_prefers_predicate(Opcode(), mask->bottom_type()->is_vect()), "sanity");
+    in1 = mask;
   }
   if (VectorNode::is_all_ones_vector(in1)) {
     int vlen = in1->bottom_type()->is_vect()->length();
@@ -1960,7 +1962,7 @@ Node* VectorLongToMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // VectorLongToMask(-1/0) => MaskAll(-1/0)
   const TypeLong* bits_type = in(1)->bottom_type()->isa_long();
   if (bits_type && is_mask) {
-    Node* res = convertFromLongToMaskAll(phase, bits_type, true, dst_type);
+    Node* res = convertFromLongToMaskAll(phase, bits_type, dst_type);
     if (res != nullptr) {
       return res;
     }

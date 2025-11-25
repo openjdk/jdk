@@ -114,6 +114,7 @@ intx AOTMetaspace::_relocation_delta;
 char* AOTMetaspace::_requested_base_address;
 Array<Method*>* AOTMetaspace::_archived_method_handle_intrinsics = nullptr;
 bool AOTMetaspace::_use_optimized_module_handling = true;
+FileMapInfo* AOTMetaspace::_output_mapinfo = nullptr;
 
 // The CDS archive is divided into the following regions:
 //     rw  - read-write metadata
@@ -322,6 +323,24 @@ void AOTMetaspace::initialize_for_static_dump() {
     AOTMetaspace::unrecoverable_writing_error();
   }
   _symbol_region.init(&_symbol_rs, &_symbol_vs);
+  if (CDSConfig::is_dumping_preimage_static_archive()) {
+    // We are in the AOT training run. User code is executed.
+    //
+    // On Windows, if the user code closes System.out and we open the AOT config file for output
+    // only at VM exit, we might get back the same file HANDLE as stdout, and the AOT config
+    // file may get corrupted by UL logs. By opening early, we ensure that the output
+    // HANDLE is different than stdout so we can avoid such corruption.
+    open_output_mapinfo();
+  } else {
+    // No need for the above as we won't execute any user code.
+  }
+}
+
+void AOTMetaspace::open_output_mapinfo() {
+  const char* static_archive = CDSConfig::output_archive_path();
+  assert(static_archive != nullptr, "sanity");
+  _output_mapinfo = new FileMapInfo(static_archive, true);
+  _output_mapinfo->open_as_output();
 }
 
 // Called by universe_post_init()
@@ -655,15 +674,14 @@ private:
 
 public:
 
-  VM_PopulateDumpSharedSpace(StaticArchiveBuilder& b) :
-    VM_Operation(), _mapped_heap_info(), _streamed_heap_info(), _map_info(nullptr), _builder(b) {}
+  VM_PopulateDumpSharedSpace(StaticArchiveBuilder& b, FileMapInfo* map_info) :
+    VM_Operation(), _mapped_heap_info(), _streamed_heap_info(), _map_info(map_info), _builder(b) {}
 
   bool skip_operation() const { return false; }
 
   VMOp_Type type() const { return VMOp_PopulateDumpSharedSpace; }
   ArchiveMappedHeapInfo* mapped_heap_info()  { return &_mapped_heap_info; }
   ArchiveStreamedHeapInfo* streamed_heap_info()  { return &_streamed_heap_info; }
-  FileMapInfo* map_info() const { return _map_info; }
   void doit();   // outline because gdb sucks
   bool allow_nested_vm_operations() const { return true; }
 }; // class VM_PopulateDumpSharedSpace
@@ -795,12 +813,6 @@ void VM_PopulateDumpSharedSpace::doit() {
   CppVtables::zero_archived_vtables();
 
   // Write the archive file
-  if (CDSConfig::is_dumping_final_static_archive()) {
-    FileMapInfo::free_current_info(); // FIXME: should not free current info
-  }
-  const char* static_archive = CDSConfig::output_archive_path();
-  assert(static_archive != nullptr, "sanity");
-  _map_info = new FileMapInfo(static_archive, true);
   _map_info->populate_header(AOTMetaspace::core_region_alignment());
   _map_info->set_early_serialized_data(early_serialized_data);
   _map_info->set_serialized_data(serialized_data);
@@ -1138,7 +1150,14 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
   }
 #endif
 
-  VM_PopulateDumpSharedSpace op(builder);
+  if (!CDSConfig::is_dumping_preimage_static_archive()) {
+    if (CDSConfig::is_dumping_final_static_archive()) {
+      FileMapInfo::free_current_info(); // FIXME: should not free current info
+    }
+    open_output_mapinfo();
+  }
+
+  VM_PopulateDumpSharedSpace op(builder, _output_mapinfo);
   VMThread::execute(&op);
 
   if (AOTCodeCache::is_on_for_dump() && CDSConfig::is_dumping_final_static_archive()) {
@@ -1152,7 +1171,9 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
     CDSConfig::disable_dumping_aot_code();
   }
 
-  bool status = write_static_archive(&builder, op.map_info(), op.mapped_heap_info(), op.streamed_heap_info());
+  bool status = write_static_archive(&builder, _output_mapinfo, op.mapped_heap_info(), op.streamed_heap_info());
+  assert(!_output_mapinfo->is_open(), "Must be closed already");
+  _output_mapinfo = nullptr;
   if (status && CDSConfig::is_dumping_preimage_static_archive()) {
     tty->print_cr("%s AOTConfiguration recorded: %s",
                   CDSConfig::has_temp_aot_config_file() ? "Temporary" : "", AOTConfiguration);
@@ -1173,11 +1194,10 @@ bool AOTMetaspace::write_static_archive(ArchiveBuilder* builder,
   // relocate the data so that it can be mapped to AOTMetaspace::requested_base_address()
   // without runtime relocation.
   builder->relocate_to_requested();
-
-  map_info->open_as_output();
   if (!map_info->is_open()) {
     return false;
   }
+  map_info->prepare_for_writing();
   builder->write_archive(map_info, mapped_heap_info, streamed_heap_info);
   return true;
 }
