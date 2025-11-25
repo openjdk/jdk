@@ -34,14 +34,14 @@
  *          java.desktop
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build ReplToolTesting TestingInputStream Compiler
- * @run testng ToolCompletionTest
+ * @run junit ToolCompletionTest
  */
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 public class ToolCompletionTest extends ReplToolTesting {
 

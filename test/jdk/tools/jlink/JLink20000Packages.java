@@ -21,14 +21,28 @@
  * questions.
  */
 
+import tests.JImageGenerator;
+
+import java.io.BufferedOutputStream;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.attribute.ModuleAttribute;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
+import java.lang.constant.ModuleDesc;
+import java.lang.constant.PackageDesc;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.StringJoiner;
-import java.util.spi.ToolProvider;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
 
-import tests.JImageGenerator;
+import static java.lang.classfile.ClassFile.ACC_MANDATED;
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
+import static java.lang.constant.ConstantDescs.CD_String;
+import static java.lang.constant.ConstantDescs.CD_void;
 
 /*
  * @test
@@ -36,79 +50,57 @@ import tests.JImageGenerator;
  *          pagination is in place, the limitation is on the constant pool size, not number
  *          of packages.
  * @bug 8321413
- * @library ../lib
- * @enablePreview
+ * @library ../lib /test/lib
  * @modules java.base/jdk.internal.jimage
- *          jdk.jlink/jdk.tools.jlink.internal
- *          jdk.jlink/jdk.tools.jlink.plugin
- *          jdk.jlink/jdk.tools.jmod
  *          jdk.jlink/jdk.tools.jimage
- *          jdk.compiler
  * @build tests.*
- * @run main/othervm/timeout=1920 -Xmx1g -Xlog:init=debug -XX:+UnlockDiagnosticVMOptions -XX:+BytecodeVerificationLocal JLink20000Packages
+ * @run main/othervm -Xlog:init=debug -XX:+UnlockDiagnosticVMOptions -XX:+BytecodeVerificationLocal JLink20000Packages
  */
 public class JLink20000Packages {
-    private static final ToolProvider JAVAC_TOOL = ToolProvider.findFirst("javac")
-            .orElseThrow(() -> new RuntimeException("javac tool not found"));
-
-    static void report(String command, String[] args) {
-        System.out.println(command + " " + String.join(" ", Arrays.asList(args)));
-    }
-
-    static void javac(String[] args) {
-        report("javac", args);
-        JAVAC_TOOL.run(System.out, System.err, args);
-    }
+    private static final ClassDesc CD_System = ClassDesc.of("java.lang.System");
+    private static final ClassDesc CD_PrintStream = ClassDesc.of("java.io.PrintStream");
+    private static final MethodTypeDesc MTD_void_String = MethodTypeDesc.of(CD_void, CD_String);
 
     public static void main(String[] args) throws Exception {
-        Path src = Paths.get("bug8321413");
+        String moduleName = "bug8321413x";
+        Path src = Paths.get(moduleName);
+        Files.createDirectories(src);
+        Path jarPath = src.resolve(moduleName +".jar");
         Path imageDir = src.resolve("out-jlink");
-        Path mainModulePath = src.resolve("bug8321413x");
 
-        StringJoiner mainModuleInfoContent = new StringJoiner(";\n  exports ", "module bug8321413x {\n  exports ", ";\n}");
+        // Generate module with 20000 classes in unique packages
+        try (JarOutputStream out = new JarOutputStream(new BufferedOutputStream(Files.newOutputStream(jarPath)))) {
+            Set<String> packageNames = new HashSet<>();
+            for (int i = 0; i < 20_000; i++) {
+                String packageName = "p" + i;
+                packageNames.add(packageName);
 
-        for (int i = 0; i < 20000; i++) {
-            String packageName = "p" + i;
-            String className = "C" + i;
+                // Generate a class file for this package
+                String className = "C" + i;
+                byte[] classData = ClassFile.of().build(ClassDesc.of(packageName, className), cb -> {});
+                out.putNextEntry(new JarEntry(packageName + "/" + className +".class"));
+                out.write(classData);
+            }
 
-            Path packagePath = Files.createDirectories(mainModulePath.resolve(packageName));
+            // Write the main class
+            out.putNextEntry(new JarEntry("testpackage/JLink20000PackagesTest.class"));
+            out.write(generateMainClass());
+            packageNames.add("testpackage");
 
-            StringBuilder classContent = new StringBuilder("package ");
-            classContent.append(packageName).append(";\n");
-            classContent.append("class ").append(className).append(" {}\n");
-            Files.writeString(packagePath.resolve(className + ".java"), classContent.toString());
-
-            mainModuleInfoContent.add(packageName);
+            // Write the module descriptor
+            byte[] moduleInfo = ClassFile.of().buildModule(ModuleAttribute.of(
+                    ModuleDesc.of(moduleName), mab -> {
+                        mab.requires(ModuleDesc.of("java.base"), ACC_MANDATED, null);
+                        packageNames.forEach(pkgName -> mab.exports(PackageDesc.of(pkgName), 0));
+                    }));
+            out.putNextEntry(new JarEntry("module-info.class"));
+            out.write(moduleInfo);
         }
 
-        // create module reading the generated modules
-        Path mainModuleInfo = mainModulePath.resolve("module-info.java");
-        Files.writeString(mainModuleInfo, mainModuleInfoContent.toString());
-
-        Path mainClassDir = mainModulePath.resolve("testpackage");
-        Files.createDirectories(mainClassDir);
-
-        Files.writeString(mainClassDir.resolve("JLink20000PackagesTest.java"), """
-                package testpackage;
-
-                public class JLink20000PackagesTest {
-                    public static void main(String[] args) throws Exception {
-                        System.out.println("JLink20000PackagesTest started.");
-                    }
-                }
-                """);
-
-        String out = src.resolve("out").toString();
-        javac(new String[]{
-                "-d", out,
-                "--module-source-path", src.toString(),
-                "--module", "bug8321413x"
-        });
-
         JImageGenerator.getJLinkTask()
-                .modulePath(out)
                 .output(imageDir)
-                .addMods("bug8321413x")
+                .addJars(jarPath)
+                .addMods(moduleName)
                 .call()
                 .assertSuccess();
 
@@ -117,13 +109,32 @@ public class JLink20000Packages {
 
         ProcessBuilder processBuilder = new ProcessBuilder(bin.toString(),
                 "-XX:+UnlockDiagnosticVMOptions",
+                // Option is useful to verify build image
                 "-XX:+BytecodeVerificationLocal",
-                "-m", "bug8321413x/testpackage.JLink20000PackagesTest");
+                "-m", moduleName + "/testpackage.JLink20000PackagesTest");
         processBuilder.inheritIO();
         processBuilder.directory(binDir.toFile());
         Process process = processBuilder.start();
         int exitCode = process.waitFor();
         if (exitCode != 0)
              throw new AssertionError("JLink20000PackagesTest failed to launch");
+    }
+
+    /**
+     * Generate test class with main() does
+     * System.out.println("JLink20000PackagesTest started.");
+     */
+    private static byte[] generateMainClass() {
+        return ClassFile.of().build(ClassDesc.of("testpackage", "JLink20000PackagesTest"),
+                cb -> {
+                    cb.withMethod("main", MethodTypeDesc.of(CD_void, CD_String.arrayType()),
+                            ACC_PUBLIC | ACC_STATIC, mb -> {
+                                mb.withCode(cob -> cob.getstatic(CD_System, "out", CD_PrintStream)
+                                        .ldc("JLink20000PackagesTest started.")
+                                        .invokevirtual(CD_PrintStream, "println", MTD_void_String)
+                                        .return_()
+                                );
+                            });
+                });
     }
 }

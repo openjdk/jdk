@@ -30,12 +30,12 @@
  *          jdk.jdeps/com.sun.tools.javap
  *          jdk.jshell/jdk.internal.jshell.tool
  * @build KullaTesting TestingInputStream ToolSimpleTest
- * @run testng/othervm/timeout=480 ToolLocalSimpleTest
+ * @run junit/othervm/timeout=480 ToolLocalSimpleTest
  */
 
 import java.util.Locale;
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
 public class ToolLocalSimpleTest extends ToolSimpleTest {
 
@@ -51,12 +51,12 @@ public class ToolLocalSimpleTest extends ToolSimpleTest {
     @Test
     public void verifyLocal() {
         System.setProperty("LOCAL_CHECK", "Here");
-        assertEquals(System.getProperty("LOCAL_CHECK"), "Here");
+        assertEquals("Here", System.getProperty("LOCAL_CHECK"));
         test(new String[]{"--no-startup"},
                 a -> assertCommand(a, "System.getProperty(\"LOCAL_CHECK\")", "$1 ==> \"Here\""),
                 a -> assertCommand(a, "System.setProperty(\"LOCAL_CHECK\", \"After\")", "$2 ==> \"Here\"")
         );
-        assertEquals(System.getProperty("LOCAL_CHECK"), "After");
+        assertEquals("After", System.getProperty("LOCAL_CHECK"));
     }
 
     @Override

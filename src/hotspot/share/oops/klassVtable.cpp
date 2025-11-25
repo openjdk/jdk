@@ -22,7 +22,7 @@
  *
  */
 
-#include "cds/metaspaceShared.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -50,7 +50,7 @@ inline InstanceKlass* klassVtable::ik() const {
 }
 
 bool klassVtable::is_preinitialized_vtable() {
-  return _klass->is_shared() && !MetaspaceShared::remapped_readwrite() && _klass->verified_at_dump_time();
+  return _klass->in_aot_cache() && !AOTMetaspace::remapped_readwrite() && _klass->verified_at_dump_time();
 }
 
 
@@ -163,7 +163,7 @@ void klassVtable::initialize_vtable(GrowableArray<InstanceKlass*>* supers) {
   // Note:  Arrays can have intermediate array supers.  Use java_super to skip them.
   InstanceKlass* super = _klass->java_super();
 
-  bool is_shared = _klass->is_shared();
+  bool in_aot_cache = _klass->in_aot_cache();
   Thread* current = Thread::current();
 
   if (!_klass->is_array_klass()) {
@@ -178,7 +178,7 @@ void klassVtable::initialize_vtable(GrowableArray<InstanceKlass*>* supers) {
 #endif
 
   if (Universe::is_bootstrapping()) {
-    assert(!is_shared, "sanity");
+    assert(!in_aot_cache, "sanity");
     // just clear everything
     for (int i = 0; i < _length; i++) table()[i].clear();
     return;
@@ -346,7 +346,7 @@ InstanceKlass* klassVtable::find_transitive_override(InstanceKlass* initialsuper
       break;
     }
     // if no override found yet, continue to search up
-    superk = superk->java_super();
+    superk = superk->super();
   }
 
   return superk;
@@ -683,14 +683,14 @@ bool klassVtable::needs_new_vtable_entry(Method* target_method,
   // a new entry
   Symbol* name = target_method->name();
   Symbol* signature = target_method->signature();
-  const InstanceKlass* k = super;
+  const InstanceKlass* ik = super;
   Method* super_method = nullptr;
   InstanceKlass *holder = nullptr;
   Method* recheck_method =  nullptr;
   bool found_pkg_prvt_method = false;
-  while (k != nullptr) {
+  while (ik != nullptr) {
     // lookup through the hierarchy for a method with matching name and sign.
-    super_method = InstanceKlass::cast(k)->lookup_method(name, signature);
+    super_method = ik->lookup_method(name, signature);
     if (super_method == nullptr) {
       break; // we still have to search for a matching miranda method
     }
@@ -722,7 +722,7 @@ bool klassVtable::needs_new_vtable_entry(Method* target_method,
 
     // Start with lookup result and continue to search up, for versions supporting transitive override
     if (major_version >= VTABLE_TRANSITIVE_OVERRIDE_VERSION) {
-      k = superk->java_super(); // haven't found an override match yet; continue to look
+      ik = superk->super(); // haven't found an override match yet; continue to look
     } else {
       break;
     }
@@ -774,7 +774,7 @@ bool klassVtable::is_miranda_entry_at(int i) {
   if (holder->is_interface()) {
     assert(m->is_public(), "should be public");
     assert(ik()->implements_interface(holder) , "this class should implement the interface");
-    if (is_miranda(m, ik()->methods(), ik()->default_methods(), ik()->java_super(), klass()->is_interface())) {
+    if (is_miranda(m, ik()->methods(), ik()->default_methods(), ik()->super(), klass()->is_interface())) {
       return true;
     }
   }
@@ -865,7 +865,7 @@ bool klassVtable::is_miranda(Method* m, Array<Method*>* class_methods,
   // Overpasses may or may not exist for supers for pass 1,
   // they should have been created for pass 2 and later.
 
-  for (const InstanceKlass* cursuper = super; cursuper != nullptr; cursuper = cursuper->java_super()) {
+  for (const InstanceKlass* cursuper = super; cursuper != nullptr; cursuper = cursuper->super()) {
      Method* found_mth = cursuper->find_local_method(name, signature,
                                                      Klass::OverpassLookupMode::find,
                                                      Klass::StaticLookupMode::skip,
@@ -959,7 +959,7 @@ void klassVtable::get_mirandas(GrowableArray<Method*>* new_mirandas,
 int klassVtable::fill_in_mirandas(Thread* current, int initialized) {
   ResourceMark rm(current);
   GrowableArray<Method*> mirandas(20);
-  get_mirandas(&mirandas, nullptr, ik()->java_super(), ik()->methods(),
+  get_mirandas(&mirandas, nullptr, ik()->super(), ik()->methods(),
                ik()->default_methods(), ik()->local_interfaces(),
                klass()->is_interface());
   for (int i = 0; i < mirandas.length(); i++) {
@@ -1089,8 +1089,8 @@ void itableMethodEntry::initialize(InstanceKlass* klass, Method* m) {
   if (m == nullptr) return;
 
 #ifdef ASSERT
-  if (MetaspaceShared::is_in_shared_metaspace((void*)&_method) &&
-     !MetaspaceShared::remapped_readwrite() &&
+  if (AOTMetaspace::in_aot_cache((void*)&_method) &&
+     !AOTMetaspace::remapped_readwrite() &&
      m->method_holder()->verified_at_dump_time() &&
      klass->verified_at_dump_time()) {
     // At runtime initialize_itable is rerun as part of link_class_impl()
@@ -1275,7 +1275,7 @@ int klassItable::assign_itable_indices_for_interface(InstanceKlass* klass) {
         // A shared method could have an initialized itable_index that
         // is < 0.
         assert(m->vtable_index() == Method::pending_itable_index ||
-               m->is_shared(),
+               m->in_aot_cache(),
                "set by initialize_vtable");
         m->set_itable_index(ime_num);
         // Progress to next itable entry
@@ -1571,8 +1571,7 @@ void klassVtable::verify(outputStream* st, bool forced) {
   // verify consistency with superKlass vtable
   Klass* super = _klass->super();
   if (super != nullptr) {
-    InstanceKlass* sk = InstanceKlass::cast(super);
-    klassVtable vt = sk->vtable();
+    klassVtable vt = super->vtable();
     for (int i = 0; i < vt.length(); i++) {
       verify_against(st, &vt, i);
     }

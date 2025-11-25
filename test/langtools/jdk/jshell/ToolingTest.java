@@ -30,11 +30,10 @@
  *          jdk.jdeps/com.sun.tools.javap
  *          jdk.jshell/jdk.internal.jshell.tool
  * @build KullaTesting TestingInputStream
- * @run testng ToolingTest
+ * @run junit ToolingTest
  */
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 public class ToolingTest extends ReplToolTesting {
     @Test

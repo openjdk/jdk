@@ -24,11 +24,11 @@
 
 #include "cds/aotClassLocation.hpp"
 #include "cds/aotLogging.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "cds/serializeClosure.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
@@ -246,7 +246,7 @@ AOTClassLocation* AOTClassLocation::allocate(JavaThread* current, const char* pa
     type = FileType::NOT_EXIST;
   } else {
     aot_log_error(aot)("Unable to open file %s.", path);
-    MetaspaceShared::unrecoverable_loading_error();
+    AOTMetaspace::unrecoverable_loading_error();
   }
 
   ResourceMark rm(current);
@@ -1028,10 +1028,10 @@ bool AOTClassLocationConfig::validate(const char* cache_filename, bool has_aot_l
         vm_exit_during_initialization("Unable to use create AOT cache.", nullptr);
       } else {
         aot_log_error(aot)("%s%s", mismatch_msg, hint_msg);
-        MetaspaceShared::unrecoverable_loading_error();
+        AOTMetaspace::unrecoverable_loading_error();
       }
     } else {
-      MetaspaceShared::report_loading_error("%s%s", mismatch_msg, hint_msg);
+      AOTMetaspace::report_loading_error("%s%s", mismatch_msg, hint_msg);
     }
   }
   return success;

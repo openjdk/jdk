@@ -48,7 +48,7 @@
 #include "gc/z/zVerify.hpp"
 #include "gc/z/zWorkers.hpp"
 #include "prims/jvmtiTagMap.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/debug.hpp"
 
 static const ZStatCriticalPhase ZCriticalPhaseRelocationStall("Relocation Stall");
@@ -64,16 +64,16 @@ ZRelocateQueue::ZRelocateQueue()
     _needs_attention(0) {}
 
 bool ZRelocateQueue::needs_attention() const {
-  return Atomic::load(&_needs_attention) != 0;
+  return AtomicAccess::load(&_needs_attention) != 0;
 }
 
 void ZRelocateQueue::inc_needs_attention() {
-  const int needs_attention = Atomic::add(&_needs_attention, 1);
+  const int needs_attention = AtomicAccess::add(&_needs_attention, 1);
   assert(needs_attention == 1 || needs_attention == 2, "Invalid state");
 }
 
 void ZRelocateQueue::dec_needs_attention() {
-  const int needs_attention = Atomic::sub(&_needs_attention, 1);
+  const int needs_attention = AtomicAccess::sub(&_needs_attention, 1);
   assert(needs_attention == 0 || needs_attention == 1, "Invalid state");
 }
 
@@ -83,12 +83,12 @@ void ZRelocateQueue::activate(uint nworkers) {
 }
 
 void ZRelocateQueue::deactivate() {
-  Atomic::store(&_is_active, false);
+  AtomicAccess::store(&_is_active, false);
   clear();
 }
 
 bool ZRelocateQueue::is_active() const {
-  return Atomic::load(&_is_active);
+  return AtomicAccess::load(&_is_active);
 }
 
 void ZRelocateQueue::join(uint nworkers) {
@@ -463,7 +463,7 @@ public:
   ZPage* alloc_and_retire_target_page(ZForwarding* forwarding, ZPage* target) {
     ZPage* const page = alloc_page(forwarding);
     if (page == nullptr) {
-      Atomic::inc(&_in_place_count);
+      AtomicAccess::inc(&_in_place_count);
     }
 
     if (target != nullptr) {
@@ -539,7 +539,7 @@ public:
       ZPage* const to_page = alloc_page(forwarding);
       _shared_targets->set(partition_id, to_age, to_page);
       if (to_page == nullptr) {
-        Atomic::inc(&_in_place_count);
+        AtomicAccess::inc(&_in_place_count);
         _in_place = true;
       }
 
@@ -671,7 +671,6 @@ private:
     assert(ZHeap::heap()->is_in_page_relaxed(from_page, from_addr), "Must be");
     assert(to_page->is_in(to_addr), "Must be");
 
-
     // Read the size from the to-object, since the from-object
     // could have been overwritten during in-place relocation.
     const size_t size = ZUtils::object_size(to_addr);
@@ -741,7 +740,7 @@ private:
   }
 
   static void update_remset_promoted_filter_and_remap_per_field(volatile zpointer* p) {
-    const zpointer ptr = Atomic::load(p);
+    const zpointer ptr = AtomicAccess::load(p);
 
     assert(ZPointer::is_old_load_good(ptr), "Should be at least old load good: " PTR_FORMAT, untype(ptr));
 
@@ -1211,7 +1210,7 @@ public:
     }
 
     if (ZNUMA::is_enabled()) {
-      Atomic::add(&_numa_local_forwardings, numa_local_forwardings_worker, memory_order_relaxed);
+      AtomicAccess::add(&_numa_local_forwardings, numa_local_forwardings_worker, memory_order_relaxed);
     }
 
     _queue->leave();
@@ -1223,7 +1222,7 @@ public:
 };
 
 static void remap_and_maybe_add_remset(volatile zpointer* p) {
-  const zpointer ptr = Atomic::load(p);
+  const zpointer ptr = AtomicAccess::load(p);
 
   if (ZPointer::is_store_good(ptr)) {
     // Already has a remset entry
@@ -1323,7 +1322,7 @@ private:
 
 public:
   ZFlipAgePagesTask(const ZArray<ZPage*>* pages)
-    : ZTask("ZPromotePagesTask"),
+    : ZTask("ZFlipAgePagesTask"),
       _iter(pages) {}
 
   virtual void work() {
@@ -1338,16 +1337,6 @@ public:
       // Figure out if this is proper promotion
       const bool promotion = to_age == ZPageAge::old;
 
-      if (promotion) {
-        // Before promoting an object (and before relocate start), we must ensure that all
-        // contained zpointers are store good. The marking code ensures that for non-null
-        // pointers, but null pointers are ignored. This code ensures that even null pointers
-        // are made store good, for the promoted objects.
-        prev_page->object_iterate([&](oop obj) {
-          ZIterator::basic_oop_iterate_safe(obj, ZBarrier::promote_barrier_on_young_oop_field);
-        });
-      }
-
       // Logging
       prev_page->log_msg(promotion ? " (flip promoted)" : " (flip survived)");
 
@@ -1361,7 +1350,7 @@ public:
 
       if (promotion) {
         ZGeneration::young()->flip_promote(prev_page, new_page);
-        // Defer promoted page registration times the lock is taken
+        // Defer promoted page registration
         promoted_pages.push(prev_page);
       }
 
@@ -1372,9 +1361,40 @@ public:
   }
 };
 
+class ZPromoteBarrierTask : public ZTask {
+private:
+  ZArrayParallelIterator<ZPage*> _iter;
+
+public:
+  ZPromoteBarrierTask(const ZArray<ZPage*>* pages)
+    : ZTask("ZPromoteBarrierTask"),
+      _iter(pages) {}
+
+  virtual void work() {
+    SuspendibleThreadSetJoiner sts_joiner;
+
+    for (ZPage* page; _iter.next(&page);) {
+      // When promoting an object (and before relocate start), we must ensure that all
+      // contained zpointers are store good. The marking code ensures that for non-null
+      // pointers, but null pointers are ignored. This code ensures that even null pointers
+      // are made store good, for the promoted objects.
+      page->object_iterate([&](oop obj) {
+        ZIterator::basic_oop_iterate_safe(obj, ZBarrier::promote_barrier_on_young_oop_field);
+      });
+
+      SuspendibleThreadSet::yield();
+    }
+  }
+};
+
 void ZRelocate::flip_age_pages(const ZArray<ZPage*>* pages) {
   ZFlipAgePagesTask flip_age_task(pages);
   workers()->run(&flip_age_task);
+}
+
+void ZRelocate::barrier_flip_promoted_pages(const ZArray<ZPage*>* pages) {
+  ZPromoteBarrierTask promote_barrier_task(pages);
+  workers()->run(&promote_barrier_task);
 }
 
 void ZRelocate::synchronize() {

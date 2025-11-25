@@ -135,15 +135,6 @@ public:
   void gc_prologue();
   void gc_epilogue();
 
-  bool should_allocate(size_t word_size, bool is_tlab) {
-    bool result = false;
-    size_t overflow_limit = (size_t)1 << (BitsPerSize_t - LogHeapWordSize);
-    if (!is_tlab) {
-      result = (word_size > 0) && (word_size < overflow_limit);
-    }
-    return result;
-  }
-
   // Performance Counter support
   void update_counters();
 

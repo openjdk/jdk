@@ -182,6 +182,11 @@ VStatus VLoopAnalyzer::setup_submodules_helper() {
     _reductions.mark_reductions();
   }
 
+  VStatus body_status = _body.construct();
+  if (!body_status.is_success()) {
+    return body_status;
+  }
+
   _memory_slices.find_memory_slices();
 
   // If there is no memory slice detected, it means there is no store.
@@ -192,11 +197,6 @@ VStatus VLoopAnalyzer::setup_submodules_helper() {
     return VStatus::make_failure(VLoopAnalyzer::FAILURE_NO_REDUCTION_OR_STORE);
   }
 
-  VStatus body_status = _body.construct();
-  if (!body_status.is_success()) {
-    return body_status;
-  }
-
   _types.compute_vector_element_type();
 
   _vpointers.compute_vpointers();
@@ -205,6 +205,64 @@ VStatus VLoopAnalyzer::setup_submodules_helper() {
 
   return VStatus::make_success();
 }
+
+// There are 2 kinds of slices:
+// - No memory phi: only loads. All have the same input memory state from before the loop.
+// - With memory phi. Chain of memory operations inside the loop.
+void VLoopMemorySlices::find_memory_slices() {
+  Compile* C = _vloop.phase()->C;
+  // We iterate over the body, which is topologically sorted. Hence, if there is a phi
+  // in a slice, we will find it first, and the loads and stores afterwards.
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    if (n->is_memory_phi()) {
+      // Memory slice with stores (and maybe loads)
+      PhiNode* phi = n->as_Phi();
+      int alias_idx = C->get_alias_index(phi->adr_type());
+      assert(_inputs.at(alias_idx) == nullptr, "did not yet touch this slice");
+      _inputs.at_put(alias_idx, phi->in(1));
+      _heads.at_put(alias_idx, phi);
+    } else if (n->is_Load()) {
+      LoadNode* load = n->as_Load();
+      int alias_idx = C->get_alias_index(load->adr_type());
+      PhiNode* head = _heads.at(alias_idx);
+      if (head == nullptr) {
+        // We did not find a phi on this slice yet -> must be a slice with only loads.
+        assert(_inputs.at(alias_idx) == nullptr || _inputs.at(alias_idx) == load->in(1),
+               "not yet touched or the same input");
+        _inputs.at_put(alias_idx, load->in(1));
+      } // else: the load belongs to a slice with a phi that already set heads and inputs.
+#ifdef ASSERT
+    } else if (n->is_Store()) {
+      // Found a store. Make sure it is in a slice with a Phi.
+      StoreNode* store = n->as_Store();
+      int alias_idx = C->get_alias_index(store->adr_type());
+      PhiNode* head = _heads.at(alias_idx);
+      assert(head != nullptr, "should have found a mem phi for this slice");
+#endif
+    }
+  }
+  NOT_PRODUCT( if (_vloop.is_trace_memory_slices()) { print(); } )
+}
+
+#ifndef PRODUCT
+void VLoopMemorySlices::print() const {
+  tty->print_cr("\nVLoopMemorySlices::print: %s",
+                heads().length() > 0 ? "" : "NONE");
+  for (int i = 0; i < _inputs.length(); i++) {
+    Node* input = _inputs.at(i);
+    PhiNode* head = _heads.at(i);
+    if (input != nullptr) {
+      tty->print("%3d input", i);  input->dump();
+      if (head == nullptr) {
+        tty->print_cr("    load only");
+      } else {
+        tty->print("    head ");  head->dump();
+      }
+    }
+  }
+}
+#endif
 
 void VLoopVPointers::compute_vpointers() {
   count_vpointers();
@@ -229,7 +287,7 @@ void VLoopVPointers::compute_and_cache_vpointers() {
   int pointers_idx = 0;
   _body.for_each_mem([&] (MemNode* const mem, int bb_idx) {
     // Placement new: construct directly into the array.
-    ::new (&_vpointers[pointers_idx]) VPointer(mem, _vloop);
+    ::new (&_vpointers[pointers_idx]) VPointer(mem, _vloop, _pointer_expression_nodes);
     _bb_idx_to_vpointer.at_put(bb_idx, pointers_idx);
     pointers_idx++;
   });
@@ -267,7 +325,6 @@ void VLoopVPointers::print() const {
 //                   the edge, i.e. spaw the order.
 void VLoopDependencyGraph::construct() {
   const GrowableArray<PhiNode*>& mem_slice_heads = _memory_slices.heads();
-  const GrowableArray<MemNode*>& mem_slice_tails = _memory_slices.tails();
 
   ResourceMark rm;
   GrowableArray<MemNode*> slice_nodes;
@@ -277,7 +334,10 @@ void VLoopDependencyGraph::construct() {
   // For each memory slice, create the memory subgraph
   for (int i = 0; i < mem_slice_heads.length(); i++) {
     PhiNode* head = mem_slice_heads.at(i);
-    MemNode* tail = mem_slice_tails.at(i);
+    // If there is no head (memory-phi) for this slice, then we have either no memops
+    // in the loop, or only loads. We do not need to add any memory edges in that case.
+    if (head == nullptr) { continue; }
+    MemNode* tail = head->in(2)->as_Mem();
 
     _memory_slices.get_slice_in_reverse_order(head, tail, slice_nodes);
 
@@ -479,6 +539,108 @@ void VLoopDependencyGraph::PredsIterator::next() {
     _is_current_memory_edge = false;
     _is_current_weak_memory_edge = false;
   }
+}
+
+// Cost-model heuristic for nodes that do not contribute to computational
+// cost inside the loop.
+bool VLoopAnalyzer::has_zero_cost(Node* n) const {
+  // Outside body?
+  if (!_vloop.in_bb(n)) { return true; }
+
+  // Internal nodes of pointer expressions are most likely folded into
+  // the load / store and have no additional cost.
+  if (vpointers().is_in_pointer_expression(n)) { return true; }
+
+  // Not all AddP nodes can be detected in VPointer parsing, so
+  // we filter them out here.
+  // We don't want to explicitly model the cost of control flow,
+  // since we have the same CFG structure before and after
+  // vectorization: A loop head, a loop exit, with a backedge.
+  if (n->is_AddP() || // Pointer expression
+      n->is_CFG() ||  // CFG
+      n->is_Phi() ||  // CFG
+      n->is_Cmp() ||  // CFG
+      n->is_Bool()) { // CFG
+    return true;
+  }
+
+  // All other nodes have a non-zero cost.
+  return false;
+}
+
+// Compute the cost over all operations in the (scalar) loop.
+float VLoopAnalyzer::cost_for_scalar_loop() const {
+#ifndef PRODUCT
+  if (_vloop.is_trace_cost()) {
+    tty->print_cr("\nVLoopAnalyzer::cost_for_scalar_loop:");
+  }
+#endif
+
+  float sum = 0;
+  for (int j = 0; j < body().body().length(); j++) {
+    Node* n = body().body().at(j);
+    if (!has_zero_cost(n)) {
+      float c = cost_for_scalar_node(n->Opcode());
+      sum += c;
+#ifndef PRODUCT
+      if (_vloop.is_trace_cost_verbose()) {
+        tty->print_cr("  -> cost = %.2f for %d %s", c, n->_idx, n->Name());
+      }
+#endif
+    }
+  }
+
+#ifndef PRODUCT
+  if (_vloop.is_trace_cost()) {
+    tty->print_cr("  total_cost = %.2f", sum);
+  }
+#endif
+  return sum;
+}
+
+// For now, we use unit cost. We might refine that in the future.
+// If needed, we could also use platform specific costs, if the
+// default here is not accurate enough.
+float VLoopAnalyzer::cost_for_scalar_node(int opcode) const {
+  float c = 1;
+#ifndef PRODUCT
+  if (_vloop.is_trace_cost()) {
+    tty->print_cr("  cost = %.2f opc=%s", c, NodeClassNames[opcode]);
+  }
+#endif
+  return c;
+}
+
+// For now, we use unit cost. We might refine that in the future.
+// If needed, we could also use platform specific costs, if the
+// default here is not accurate enough.
+float VLoopAnalyzer::cost_for_vector_node(int opcode, int vlen, BasicType bt) const {
+  float c = 1;
+#ifndef PRODUCT
+  if (_vloop.is_trace_cost()) {
+    tty->print_cr("  cost = %.2f opc=%s vlen=%d bt=%s",
+                  c, NodeClassNames[opcode], vlen, type2name(bt));
+  }
+#endif
+  return c;
+}
+
+// For now, we use unit cost, i.e. we count the number of backend instructions
+// that the vtnode will use. We might refine that in the future.
+// If needed, we could also use platform specific costs, if the
+// default here is not accurate enough.
+float VLoopAnalyzer::cost_for_vector_reduction_node(int opcode, int vlen, BasicType bt, bool requires_strict_order) const {
+  // Each reduction is composed of multiple instructions, each estimated with a unit cost.
+  //                                Linear: shuffle and reduce    Recursive: shuffle and reduce
+  float c = requires_strict_order ? 2 * vlen                    : 2 * exact_log2(vlen);
+#ifndef PRODUCT
+  if (_vloop.is_trace_cost()) {
+    tty->print_cr("  cost = %.2f opc=%s vlen=%d bt=%s requires_strict_order=%s",
+                  c, NodeClassNames[opcode], vlen, type2name(bt),
+                  requires_strict_order ? "true" : "false");
+  }
+#endif
+  return c;
 }
 
 // Computing aliasing runtime check using init and last of main-loop
@@ -934,7 +1096,7 @@ BoolNode* make_a_plus_b_leq_c(Node* a, Node* b, Node* c, PhaseIdealLoop* phase) 
   return bol;
 }
 
-BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other) const {
+BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other, Node* ctrl) const {
   // Ensure iv_scale1 <= iv_scale2.
   const VPointer& vp1 = (this->iv_scale() <= other.iv_scale()) ? *this : other;
   const VPointer& vp2 = (this->iv_scale() <= other.iv_scale()) ? other :*this ;
@@ -971,8 +1133,8 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other) 
   Node* main_init = new ConvL2INode(main_initL);
   phase->register_new_node_with_ctrl_of(main_init, pre_init);
 
-  Node* p1_init = vp1.make_pointer_expression(main_init);
-  Node* p2_init = vp2.make_pointer_expression(main_init);
+  Node* p1_init = vp1.make_pointer_expression(main_init, ctrl);
+  Node* p2_init = vp2.make_pointer_expression(main_init, ctrl);
   Node* size1 = igvn.longcon(vp1.size());
   Node* size2 = igvn.longcon(vp2.size());
 
@@ -1092,13 +1254,18 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other) 
   return bol;
 }
 
-Node* VPointer::make_pointer_expression(Node* iv_value) const {
+// Creates the long pointer expression, evaluated with iv = iv_value.
+// Since we are casting pointers to long with CastP2X, we must be careful
+// that the values do not cross SafePoints, where the oop could be moved
+// by GC, and the already cast value would not be updated, as it is not in
+// the oop-map. For this, we must set a ctrl that is late enough, so that we
+// cannot cross a SafePoint.
+Node* VPointer::make_pointer_expression(Node* iv_value, Node* ctrl) const {
   assert(is_valid(), "must be valid");
 
   PhaseIdealLoop* phase = _vloop.phase();
   PhaseIterGVN& igvn = phase->igvn();
   Node* iv = _vloop.iv();
-  Node* ctrl = phase->get_ctrl(iv_value);
 
   auto maybe_add = [&] (Node* n1, Node* n2, BasicType bt) {
     if (n1 == nullptr) { return n2; }
@@ -1120,7 +1287,9 @@ Node* VPointer::make_pointer_expression(Node* iv_value) const {
       Node* scaleL = igvn.longcon(s.scaleL().value());
       Node* variable = (s.variable() == iv) ? iv_value : s.variable();
       if (variable->bottom_type()->isa_ptr() != nullptr) {
-        variable = new CastP2XNode(nullptr, variable);
+        // Use a ctrl that is late enough, so that we do not
+        // evaluate the cast before a SafePoint.
+        variable = new CastP2XNode(ctrl, variable);
         phase->register_new_node(variable, ctrl);
       }
       node = new MulLNode(scaleL, variable);

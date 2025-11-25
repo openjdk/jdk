@@ -23,10 +23,12 @@
  */
 
 #include "cds/aotLinkedClassBulkLoader.hpp"
-#include "cds/archiveHeapLoader.hpp"
+#include "cds/aotMappedHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
+#include "cds/heapShared.inline.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
+#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -101,7 +103,11 @@ bool vmClasses::resolve(vmClassID id, TRAPS) {
 void vmClasses::resolve_until(vmClassID limit_id, vmClassID &start_id, TRAPS) {
   assert((int)start_id <= (int)limit_id, "IDs are out of order!");
   for (auto id : EnumRange<vmClassID>{start_id, limit_id}) { // (inclusive start, exclusive end)
-    resolve(id, CHECK);
+    if (CDSConfig::is_using_aot_linked_classes()) {
+      precond(klass_at(id)->is_loaded());
+    } else {
+      resolve(id, CHECK);
+    }
   }
 
   // move the starting value forward to the limit:
@@ -109,11 +115,17 @@ void vmClasses::resolve_until(vmClassID limit_id, vmClassID &start_id, TRAPS) {
 }
 
 void vmClasses::resolve_all(TRAPS) {
-  assert(!Object_klass_loaded(), "well-known classes should only be initialized once");
+  assert(!Object_klass_is_loaded(), "well-known classes should only be initialized once");
 
   // Create the ModuleEntry for java.base.  This call needs to be done here,
   // after vmSymbols::initialize() is called but before any classes are pre-loaded.
   ClassLoader::classLoader_init2(THREAD);
+
+#if INCLUDE_CDS
+  if (CDSConfig::is_using_aot_linked_classes()) {
+    AOTLinkedClassBulkLoader::preload_classes(THREAD);
+  }
+#endif
 
   // Preload commonly used klasses
   vmClassID scan = vmClassID::FIRST;
@@ -122,23 +134,30 @@ void vmClasses::resolve_all(TRAPS) {
   CollectedHeap::set_filler_object_klass(vmClasses::Object_klass());
 #if INCLUDE_CDS
   if (CDSConfig::is_using_archive()) {
-    // It's unsafe to access the archived heap regions before they
-    // are fixed up, so we must do the fixup as early as possible
-    // before the archived java objects are accessed by functions
-    // such as java_lang_Class::restore_archived_mirror and
-    // ConstantPool::restore_unshareable_info (restores the archived
-    // resolved_references array object).
-    //
-    // ArchiveHeapLoader::fixup_regions fills the empty
-    // spaces in the archived heap regions and may use
-    // vmClasses::Object_klass(), so we can do this only after
-    // Object_klass is resolved. See the above resolve_through()
-    // call. No mirror objects are accessed/restored in the above call.
-    // Mirrors are restored after java.lang.Class is loaded.
-    ArchiveHeapLoader::fixup_region();
-
+#if INCLUDE_CDS_JAVA_HEAP
+    if (HeapShared::is_loading() && HeapShared::is_loading_mapping_mode()) {
+      // It's unsafe to access the archived heap regions before they
+      // are fixed up, so we must do the fixup as early as possible
+      // before the archived java objects are accessed by functions
+      // such as java_lang_Class::restore_archived_mirror and
+      // ConstantPool::restore_unshareable_info (restores the archived
+      // resolved_references array object).
+      //
+      // AOTMappedHeapLoader::fixup_regions fills the empty
+      // spaces in the archived heap regions and may use
+      // vmClasses::Object_klass(), so we can do this only after
+      // Object_klass is resolved. See the above resolve_through()
+      // call. No mirror objects are accessed/restored in the above call.
+      // Mirrors are restored after java.lang.Class is loaded.
+      AOTMappedHeapLoader::fixup_region();
+    }
+    if (HeapShared::is_archived_heap_in_use() && !CDSConfig::is_using_full_module_graph()) {
+      // Need to remove all the archived java.lang.Module objects from HeapShared::roots().
+      ClassLoaderDataShared::clear_archived_oops();
+    }
+#endif // INCLUDE_CDS_JAVA_HEAP
     // Initialize the constant pool for the Object_class
-    assert(Object_klass()->is_shared(), "must be");
+    assert(Object_klass()->in_aot_cache(), "must be");
     Object_klass()->constants()->restore_unshareable_info(CHECK);
     resolve_through(VM_CLASS_ID(Class_klass), scan, CHECK);
   } else
@@ -204,28 +223,25 @@ void vmClasses::resolve_all(TRAPS) {
                       "All well known classes must be resolved in JVMTI early phase"));
     for (auto id : EnumRange<vmClassID>{}) {
       InstanceKlass* k = _klasses[as_int(id)];
-      assert(k->is_shared(), "must not be replaced by JVMTI class file load hook");
+      assert(k->in_aot_cache(), "must not be replaced by JVMTI class file load hook");
     }
   }
 #endif
 
   InstanceStackChunkKlass::init_offset_of_stack();
-  if (CDSConfig::is_using_aot_linked_classes()) {
-    AOTLinkedClassBulkLoader::load_javabase_classes(THREAD);
-  }
 }
 
 #if INCLUDE_CDS
 
 void vmClasses::resolve_shared_class(InstanceKlass* klass, ClassLoaderData* loader_data, Handle domain, TRAPS) {
   assert(!Universe::is_fully_initialized(), "We can make short cuts only during VM initialization");
-  assert(klass->is_shared(), "Must be shared class");
+  assert(klass->in_aot_cache(), "Must be shared class");
   if (klass->class_loader_data() != nullptr) {
     return;
   }
 
   // add super and interfaces first
-  InstanceKlass* super = klass->java_super();
+  InstanceKlass* super = klass->super();
   if (super != nullptr && super->class_loader_data() == nullptr) {
     assert(super->is_instance_klass(), "Super should be instance klass");
     resolve_shared_class(super, loader_data, domain, CHECK);
