@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import javax.security.auth.DestroyFailedException;
 import javax.security.auth.callback.*;
 
 import sun.security.util.Debug;
+import sun.security.util.CryptoAlgorithmConstraints;
 
 /**
  * This class represents a storage facility for cryptographic
@@ -183,6 +184,7 @@ import sun.security.util.Debug;
  * Consult the release documentation for your implementation to see if any
  * other types are supported.
  *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @author Jan Luehe
  *
  * @see java.security.PrivateKey
@@ -300,6 +302,7 @@ public class KeyStore {
          * @throws    NullPointerException if {@code protectionAlgorithm} is
          *     {@code null}
          *
+         * @spec security/standard-names.html Java Security Standard Algorithm Names
          * @since 1.8
          */
         public PasswordProtection(char[] password, String protectionAlgorithm,
@@ -839,12 +842,21 @@ public class KeyStore {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * @implNote
-     * The JDK Reference Implementation additionally uses the
-     * {@code jdk.security.provider.preferred}
+     * The JDK Reference Implementation additionally uses
+     * <ul>
+     * <li>the {@code jdk.security.provider.preferred}
      * {@link Security#getProperty(String) Security} property to determine
-     * the preferred provider order for the specified algorithm. This
+     * the preferred provider order for the specified keystore type. This
      * may be different from the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
+     * </li>
+     * <li>the {@code jdk.crypto.disabledAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified keystore type is allowed. If the
+     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
+     * the security property value.
+     * </li>
+     * </ul>
      *
      * @param type the type of keystore.
      * See the KeyStore section in the <a href=
@@ -852,6 +864,7 @@ public class KeyStore {
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard keystore types.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a keystore object of the specified type
      *
      * @throws KeyStoreException if no provider supports a
@@ -866,6 +879,11 @@ public class KeyStore {
         throws KeyStoreException
     {
         Objects.requireNonNull(type, "null type name");
+
+        if (!CryptoAlgorithmConstraints.permits("KEYSTORE", type)) {
+            throw new KeyStoreException(type + " is disabled");
+        }
+
         try {
             Object[] objs = Security.getImpl(type, "KeyStore", (String)null);
             return new KeyStore((KeyStoreSpi)objs[0], (Provider)objs[1], type);
@@ -885,6 +903,14 @@ public class KeyStore {
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
+     * @implNote
+     * The JDK Reference Implementation additionally uses
+     * the {@code jdk.crypto.disabledAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified keystore type is allowed. If the
+     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
+     * the security property value.
+     *
      * @param type the type of keystore.
      * See the KeyStore section in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#keystore-types">
@@ -893,6 +919,7 @@ public class KeyStore {
      *
      * @param provider the name of the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a keystore object of the specified type
      *
      * @throws IllegalArgumentException if the provider name is {@code null}
@@ -913,8 +940,15 @@ public class KeyStore {
         throws KeyStoreException, NoSuchProviderException
     {
         Objects.requireNonNull(type, "null type name");
-        if (provider == null || provider.isEmpty())
+
+        if (provider == null || provider.isEmpty()) {
             throw new IllegalArgumentException("missing provider");
+        }
+
+        if (!CryptoAlgorithmConstraints.permits("KEYSTORE", type)) {
+            throw new KeyStoreException(type + " is disabled");
+        }
+
         try {
             Object[] objs = Security.getImpl(type, "KeyStore", provider);
             return new KeyStore((KeyStoreSpi)objs[0], (Provider)objs[1], type);
@@ -931,6 +965,14 @@ public class KeyStore {
      * object is returned.  Note that the specified provider object
      * does not have to be registered in the provider list.
      *
+     * @implNote
+     * The JDK Reference Implementation additionally uses
+     * the {@code jdk.crypto.disabledAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified keystore type is allowed. If the
+     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
+     * the security property value.
+     *
      * @param type the type of keystore.
      * See the KeyStore section in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#keystore-types">
@@ -939,6 +981,7 @@ public class KeyStore {
      *
      * @param provider the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a keystore object of the specified type
      *
      * @throws IllegalArgumentException if the specified provider is
@@ -958,8 +1001,15 @@ public class KeyStore {
         throws KeyStoreException
     {
         Objects.requireNonNull(type, "null type name");
-        if (provider == null)
+
+        if (provider == null) {
             throw new IllegalArgumentException("missing provider");
+        }
+
+        if (!CryptoAlgorithmConstraints.permits("KEYSTORE", type)) {
+            throw new KeyStoreException(type + " is disabled");
+        }
+
         try {
             Object[] objs = Security.getImpl(type, "KeyStore", provider);
             return new KeyStore((KeyStoreSpi)objs[0], (Provider)objs[1], type);
@@ -1672,6 +1722,14 @@ public class KeyStore {
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
+     * @implNote
+     * The JDK Reference Implementation additionally uses
+     * the {@code jdk.crypto.disabledAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified keystore type is allowed. If the
+     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
+     * the security property value. Disallowed type will be skipped.
+     *
      * @param  file the keystore file
      * @param  password the keystore password, which may be {@code null}
      *
@@ -1724,6 +1782,14 @@ public class KeyStore {
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
+     *
+     * @implNote
+     * The JDK Reference Implementation additionally uses
+     * the {@code jdk.crypto.disabledAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified keystore type is allowed. If the
+     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
+     * the security property value. Disallowed type will be skipped.
      *
      * @param  file the keystore file
      * @param  param the {@code LoadStoreParameter} that specifies how to load
@@ -1793,8 +1859,12 @@ public class KeyStore {
                                     kdebug.println(s.getAlgorithm()
                                             + " keystore detected: " + file);
                                 }
-                                keystore = new KeyStore(impl, p, s.getAlgorithm());
-                                break;
+                                String ksAlgo = s.getAlgorithm();
+                                if (CryptoAlgorithmConstraints.permits(
+                                        "KEYSTORE", ksAlgo)) {
+                                    keystore = new KeyStore(impl, p, ksAlgo);
+                                    break;
+                                }
                             }
                         } catch (NoSuchAlgorithmException e) {
                             // ignore

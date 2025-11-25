@@ -25,7 +25,7 @@
  * @test
  * @bug     6198196 6278523
  * @summary package-info.java: Weird compiler error
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @modules java.compiler
  *          jdk.compiler
  */

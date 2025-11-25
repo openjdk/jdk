@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,42 +121,23 @@ public class TestParallelGCWithCDS {
         out.shouldNotContain(errMsg);
         out.shouldHaveExitValue(0);
 
-        int n = 2;
-        if (!dumpWithParallel && execWithParallel) {
-            // We dumped with G1, so we have an archived heap. At exec time, try to load them into
-            // a small ParallelGC heap that may be too small.
-            String[] sizes = {
-                "4m",   // usually this will success load the archived heap
-                "2m",   // usually this will fail to load the archived heap, but app can launch
-                        // or fail with "GC triggered before VM initialization completed"
-                "1m"    // usually this will cause VM launch to fail with "Too small maximum heap"
-            };
-            for (String sz : sizes) {
-                String xmx = "-Xmx" + sz;
-                System.out.println("=======\n" + n + ". Exec with " + execGC + " " + xmx);
-                out = TestCommon.exec(helloJar,
-                                      execGC,
-                                      small1,
-                                      small2,
-                                      xmx,
-                                      coops,
-                                      "-Xlog:cds",
-                                      "Hello");
-                if (out.getExitValue() == 0) {
-                    out.shouldContain(HELLO);
-                    out.shouldNotContain(errMsg);
-                } else {
-                    String pattern = "((Too small maximum heap)" +
-                                     "|(GC triggered before VM initialization completed)" +
-                                     "|(CDS archive has aot-linked classes but the archived heap objects cannot be loaded)" +
-                                     "|(Initial heap size set to a larger value than the maximum heap size)" +
-                                     "|(java.lang.OutOfMemoryError)" +
-                                     "|(Error: A JNI error has occurred, please check your installation and try again))";
-                    out.shouldMatch(pattern);
-                    out.shouldNotHaveFatalError();
-                }
-                n++;
-            }
+        // Regardless of which GC dumped the heap, there will be an object archive, either
+        // created with mapping if dumped with G1, or streaming if dumped with parallel GC.
+        // At exec time, try to load them into a small ParallelGC heap that may be too small.
+        System.out.println("2. Exec with " + execGC);
+        out = TestCommon.exec(helloJar,
+                              execGC,
+                              small1,
+                              small2,
+                              "-Xmx4m",
+                              coops,
+                              "-Xlog:cds",
+                              "Hello");
+        if (out.getExitValue() == 0) {
+            out.shouldContain(HELLO);
+            out.shouldNotContain(errMsg);
+        } else {
+            out.shouldNotHaveFatalError();
         }
     }
 }

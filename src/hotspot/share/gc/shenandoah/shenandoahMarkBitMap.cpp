@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Red Hat, Inc. and/or its affiliates.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,9 +24,8 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "gc/shenandoah/shenandoahMarkBitMap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahMarkBitMap.inline.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -58,6 +57,26 @@ bool ShenandoahMarkBitMap::is_bitmap_clear_range(const HeapWord* start, const He
   return (result == end);
 }
 
+HeapWord* ShenandoahMarkBitMap::get_prev_marked_addr(const HeapWord* limit,
+                                                     const HeapWord* addr) const {
+#ifdef ASSERT
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  ShenandoahHeapRegion* r = heap->heap_region_containing(addr);
+  ShenandoahMarkingContext* ctx = heap->marking_context();
+  HeapWord* tams = ctx->top_at_mark_start(r);
+  assert(limit != nullptr, "limit must not be null");
+  assert(limit >= r->bottom(), "limit must be more than bottom");
+  assert(addr <= tams, "addr must be less than TAMS");
+#endif
+
+  // Round addr down to a possible object boundary to be safe.
+  size_t const addr_offset = address_to_index(align_down(addr, HeapWordSize << LogMinObjAlignment));
+  size_t const limit_offset = address_to_index(limit);
+  size_t const last_offset = get_prev_one_offset(limit_offset, addr_offset);
+
+  // cast required to remove const-ness of the value pointed to.  We won't modify that object, but my caller might.
+  return (last_offset > addr_offset)? (HeapWord*) addr + 1: index_to_address(last_offset);
+}
 
 HeapWord* ShenandoahMarkBitMap::get_next_marked_addr(const HeapWord* addr,
                                                      const HeapWord* limit) const {
@@ -154,19 +173,19 @@ void ShenandoahMarkBitMap::check_mark(HeapWord* addr) const {
 
 void ShenandoahMarkBitMap::verify_index(idx_t bit) const {
   assert(bit < _size,
-         "BitMap index out of bounds: " SIZE_FORMAT " >= " SIZE_FORMAT,
+         "BitMap index out of bounds: %zu >= %zu",
          bit, _size);
 }
 
 void ShenandoahMarkBitMap::verify_limit(idx_t bit) const {
   assert(bit <= _size,
-         "BitMap limit out of bounds: " SIZE_FORMAT " > " SIZE_FORMAT,
+         "BitMap limit out of bounds: %zu > %zu",
          bit, _size);
 }
 
 void ShenandoahMarkBitMap::verify_range(idx_t beg, idx_t end) const {
   assert(beg <= end,
-         "BitMap range error: " SIZE_FORMAT " > " SIZE_FORMAT, beg, end);
+         "BitMap range error: %zu > %zu", beg, end);
   verify_limit(end);
 }
 #endif

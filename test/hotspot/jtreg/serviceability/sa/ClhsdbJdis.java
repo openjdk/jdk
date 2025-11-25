@@ -26,6 +26,7 @@
  * @bug 8193124
  * @summary Test the clhsdb 'jdis' command
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run main/othervm ClhsdbJdis
  */

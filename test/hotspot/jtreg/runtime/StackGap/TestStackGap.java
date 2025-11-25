@@ -27,6 +27,7 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @requires os.family == "linux"
+ * @requires !jdk.static
  * @compile T.java
  * @run main/native TestStackGap
  */

@@ -49,6 +49,6 @@ runs:
     - name: 'Export path to where GTest is installed'
       id: path-name
       run: |
-        # Export the path
-        echo 'path=gtest' >> $GITHUB_OUTPUT
+        # Export the absolute path
+        echo "path=`pwd`/gtest" >> $GITHUB_OUTPUT
       shell: bash

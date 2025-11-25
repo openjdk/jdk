@@ -36,7 +36,7 @@ import jdk.test.lib.jfr.Events;
 
 /**
  * @test TestFatEvent
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm -Dprop1=12345678901234567890123456789012345678901234567890

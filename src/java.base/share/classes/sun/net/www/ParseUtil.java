@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@ import java.nio.charset.CodingErrorAction;
 import java.util.HexFormat;
 
 import sun.nio.cs.UTF_8;
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
  * A class that contains useful routines common to sun.net.www
@@ -502,11 +504,27 @@ public final class ParseUtil {
     {
         if (scheme != null) {
             if (path != null && !path.isEmpty() && path.charAt(0) != '/')
-                throw new URISyntaxException(s,
+                throw new URISyntaxException(formatMsg("%s", filterNonSocketInfo(s)),
                                              "Relative path in absolute URI");
         }
     }
 
+    /**
+     * {@return true if the url is a file: URL for a 'local file' as defined by RFC 8089, Section 2}
+     *
+     * For unknown historical reasons, this method deviates from RFC 8089
+     * by allowing "~" as an alias for 'localhost'
+     *
+     * @param url the URL which may be a local file URL
+     */
+    public static boolean isLocalFileURL(URL url) {
+        if (url.getProtocol().equalsIgnoreCase("file")) {
+            String host = url.getHost();
+            return host == null || host.isEmpty() || host.equals("~") ||
+                    host.equalsIgnoreCase("localhost");
+        }
+        return false;
+    }
 
     // -- Character classes for parsing --
 

@@ -45,13 +45,13 @@ class VM_SerialCollectForAllocation : public VM_CollectForAllocation {
 
 // VM operation to invoke a collection of the heap as a
 // SerialHeap heap.
-class VM_SerialGCCollect: public VM_GC_Operation {
+class VM_SerialGCCollect: public VM_GC_Collect_Operation {
  public:
   VM_SerialGCCollect(bool full,
                      uint gc_count_before,
                      uint full_gc_count_before,
                      GCCause::Cause gc_cause)
-    : VM_GC_Operation(gc_count_before, gc_cause, full_gc_count_before, full) {}
+    : VM_GC_Collect_Operation(gc_count_before, gc_cause, full_gc_count_before, full) {}
 
   virtual VMOp_Type type() const { return VMOp_SerialGCCollect; }
   virtual void doit();

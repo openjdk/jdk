@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,9 @@ public class TestJTabbedPaneBackgroundColor {
     private static Robot robot;
     private static volatile Dimension dim;
     private static volatile Point loc;
+    private static volatile boolean isOpaque;
+    private static volatile Color c1 = null;
+    private static volatile Color c2 = null;
 
     public static void main(String[] args) throws Exception {
         robot = new Robot();
@@ -55,10 +58,12 @@ public class TestJTabbedPaneBackgroundColor {
         for (UIManager.LookAndFeelInfo laf :
                 UIManager.getInstalledLookAndFeels()) {
             System.out.println("Testing: " + laf.getName());
-            setLookAndFeel(laf);
 
             try {
-                SwingUtilities.invokeAndWait(TestJTabbedPaneBackgroundColor::createAndShowUI);
+                SwingUtilities.invokeAndWait(() -> {
+                    setLookAndFeel(laf);
+                    createAndShowUI();
+                });
                 robot.waitForIdle();
                 robot.delay(500);
 
@@ -70,10 +75,12 @@ public class TestJTabbedPaneBackgroundColor {
                 loc = new Point(loc.x + dim.width - 2, loc.y + 2);
                 doTesting(loc, laf);
 
-                if (!pane.isOpaque()) {
-                    pane.setOpaque(true);
-                    pane.repaint();
-                }
+                SwingUtilities.invokeAndWait(() -> {
+                    if (!pane.isOpaque()) {
+                        pane.setOpaque(true);
+                        pane.repaint();
+                    }
+                });
                 robot.waitForIdle();
                 robot.delay(500);
 
@@ -119,14 +126,18 @@ public class TestJTabbedPaneBackgroundColor {
         frame.setVisible(true);
     }
 
-    private static void doTesting(Point p, UIManager.LookAndFeelInfo laf) {
-        boolean isOpaque = pane.isOpaque();
+    private static void doTesting(Point p, UIManager.LookAndFeelInfo laf) throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            isOpaque = pane.isOpaque();
+            c1 = pane.getBackground();
+            c2 = frame.getContentPane().getBackground();
+        });
         Color actual = robot.getPixelColor(p.x, p.y);
-        Color expected = isOpaque
-                ? pane.getBackground()
-                : frame.getContentPane().getBackground();
+        Color expected = isOpaque ? c1 : c2;
 
         if (!expected.equals(actual)) {
+            System.out.println("Expected Color : " + expected);
+            System.out.println("Actual Color : " + actual);
             addOpaqueError(laf.getName(), isOpaque);
         }
     }

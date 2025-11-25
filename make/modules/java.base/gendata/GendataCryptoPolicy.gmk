@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,11 @@
 # questions.
 #
 
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
+################################################################################
+
 #
 # In pre-JDK9 releases, Oracle JDK has had a separately downloadable set
 # of policy files which has been a nightmare for deployment.
@@ -36,12 +41,6 @@
 # file in their environment.  The $(UNLIMITED_CRYPTO) make variable
 # determines the default directory/policy.
 #
-
-default: all
-
-include $(SPEC)
-include MakeBase.gmk
-
 
 ################################################################################
 POLICY_DIR := $(SUPPORT_OUTPUTDIR)/modules_conf/java.base/security/policy
@@ -70,3 +69,6 @@ TARGETS += \
     $(UNLIMITED_POLICY_DIR)/default_local.policy \
 
 ################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

@@ -33,6 +33,7 @@ import java.util.Map;
  * @bug 8261095
  * @summary Test the clhsdb 'symbol' command on live process
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run main/othervm ClhsdbSymbol
  */

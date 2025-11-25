@@ -24,7 +24,7 @@ import java.util.ListResourceBundle;
 
 /**
  * @author Morten Jorgensen
- * @LastModified: Nov 2024
+ * @LastModified: Dec 2024
  */
 public class ErrorMessages_de extends ListResourceBundle {
 
@@ -548,6 +548,12 @@ public class ErrorMessages_de extends ListResourceBundle {
         {ErrorMsg.DATA_CONVERSION_ERR,
         "Datentyp \"{0}\" kann nicht in \"{1}\" konvertiert werden."},
 
+        /*
+         * Note to translators:  property name "jdk.xml.enableExtensionFunctions"
+         * and value "true" should not be translated.
+         */
+        {ErrorMsg.UNSUPPORTED_EXT_FUNC_ERR,
+        "Verwendung der Erweiterungsfunktion \"{0}\" ist nicht zul\u00E4ssig, wenn die Erweiterungsfunktionen vom Feature f\u00FCr die sichere Verarbeitung oder der Eigenschaft \"jdk.xml.enableExtensionFunctions\" deaktiviert wurden. Setzen Sie \"jdk.xml.enableExtensionFunctions\" auf \"true\", um die Erweiterungsfunktionen zu aktivieren."},
         /*
          * Note to translators:  "Templates" is a Java class name that should
          * not be translated.

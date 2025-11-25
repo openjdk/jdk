@@ -127,6 +127,7 @@ public class Names {
 
     // module names
     public final Name java_base;
+    public final Name java_se;
     public final Name jdk_unsupported;
 
     // attribute names
@@ -227,6 +228,9 @@ public class Names {
     public final Name enumSwitch;
     public final Name enumConstant;
 
+    // special annotation names
+    public final Name requiresIdentityInternal;
+
     public final Name.Table table;
 
     @SuppressWarnings("this-escape")
@@ -315,6 +319,7 @@ public class Names {
 
         // module names
         java_base = fromString("java.base");
+        java_se = fromString("java.se");
         jdk_unsupported = fromString("jdk.unsupported");
 
         // attribute names
@@ -410,6 +415,9 @@ public class Names {
         typeSwitch = fromString("typeSwitch");
         enumSwitch = fromString("enumSwitch");
         enumConstant = fromString("enumConstant");
+
+        // special annotations:
+        requiresIdentityInternal = fromString("jdk.internal.RequiresIdentity+Annotation");
     }
 
     protected Name.Table createTable(Options options) {

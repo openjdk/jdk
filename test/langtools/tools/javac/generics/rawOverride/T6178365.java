@@ -25,7 +25,7 @@
  * @test
  * @bug 6178365
  * @summary REGRESSION: Compile Error - Abstract error in LoginModule
- * @author Peter von der Ah\u00e9
+ * @author Peter von der Ahé
  * @run main T6178365
  */
 

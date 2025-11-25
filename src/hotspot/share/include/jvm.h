@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,9 @@
 #include <sys/stat.h>
 
 #include "jni.h"
-#include "jvm_md.h"
 #include "jvm_constants.h"
 #include "jvm_io.h"
+#include "jvm_md.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -218,6 +218,9 @@ JVM_DumpClassListToFile(JNIEnv* env, jstring fileName);
 JNIEXPORT void JNICALL
 JVM_DumpDynamicArchive(JNIEnv* env, jstring archiveName);
 
+JNIEXPORT jboolean JNICALL
+JVM_NeedsClassInitBarrierForCDS(JNIEnv* env, jclass cls);
+
 /*
  * java.lang.Throwable
  */
@@ -298,6 +301,9 @@ JVM_HoldsLock(JNIEnv *env, jclass threadClass, jobject obj);
 JNIEXPORT jobject JNICALL
 JVM_GetStackTrace(JNIEnv *env, jobject thread);
 
+JNIEXPORT jobject JNICALL
+JVM_CreateThreadSnapshot(JNIEnv* env, jobject thread);
+
 JNIEXPORT jobjectArray JNICALL
 JVM_GetAllThreads(JNIEnv *env, jclass dummy);
 
@@ -346,6 +352,9 @@ JVM_HasReferencePendingList(JNIEnv *env);
 
 JNIEXPORT void JNICALL
 JVM_WaitForReferencePendingList(JNIEnv *env);
+
+JNIEXPORT jobject JNICALL
+JVM_ReferenceGet(JNIEnv *env, jobject ref);
 
 JNIEXPORT jboolean JNICALL
 JVM_ReferenceRefersTo(JNIEnv *env, jobject ref, jobject o);
@@ -424,12 +433,10 @@ JVM_FindClassFromBootLoader(JNIEnv *env, const char *name);
  *  init:   whether initialization is done
  *  loader: class loader to look up the class. This may not be the same as the caller's
  *          class loader.
- *  caller: initiating class. The initiating class may be null when a security
- *          manager is not installed.
  */
 JNIEXPORT jclass JNICALL
-JVM_FindClassFromCaller(JNIEnv *env, const char *name, jboolean init,
-                        jobject loader, jclass caller);
+JVM_FindClassFromLoader(JNIEnv *env, const char *name, jboolean init,
+                        jobject loader);
 
 /*
  * Find a class from a given class.
@@ -546,20 +553,8 @@ JVM_GetClassInterfaces(JNIEnv *env, jclass cls);
 JNIEXPORT jboolean JNICALL
 JVM_IsInterface(JNIEnv *env, jclass cls);
 
-JNIEXPORT jobject JNICALL
-JVM_GetProtectionDomain(JNIEnv *env, jclass cls);
-
-JNIEXPORT jboolean JNICALL
-JVM_IsArrayClass(JNIEnv *env, jclass cls);
-
-JNIEXPORT jboolean JNICALL
-JVM_IsPrimitiveClass(JNIEnv *env, jclass cls);
-
 JNIEXPORT jboolean JNICALL
 JVM_IsHiddenClass(JNIEnv *env, jclass cls);
-
-JNIEXPORT jint JNICALL
-JVM_GetClassModifiers(JNIEnv *env, jclass cls);
 
 JNIEXPORT jobjectArray JNICALL
 JVM_GetDeclaredClasses(JNIEnv *env, jclass ofClass);
@@ -601,16 +596,6 @@ JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, jboolean publicOnly);
 
 JNIEXPORT jobjectArray JNICALL
 JVM_GetClassDeclaredConstructors(JNIEnv *env, jclass ofClass, jboolean publicOnly);
-
-
-/* Differs from JVM_GetClassModifiers in treatment of inner classes.
-   This returns the access flags for the class as specified in the
-   class file rather than searching the InnerClasses attribute (if
-   present) to find the source-level access flags. Only the values of
-   the low 13 bits (i.e., a mask of 0x1FFF) are guaranteed to be
-   valid. */
-JNIEXPORT jint JNICALL
-JVM_GetClassAccessFlags(JNIEnv *env, jclass cls);
 
 /* Nestmates - since JDK 11 */
 
@@ -657,58 +642,58 @@ JNIEXPORT jobject JNICALL
 JVM_GetClassConstantPool(JNIEnv *env, jclass cls);
 
 JNIEXPORT jint JNICALL JVM_ConstantPoolGetSize
-(JNIEnv *env, jobject unused, jobject jcpool);
+(JNIEnv *env, jobject jcpool);
 
 JNIEXPORT jclass JNICALL JVM_ConstantPoolGetClassAt
-(JNIEnv *env, jobject unused, jobject jcpool, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jclass JNICALL JVM_ConstantPoolGetClassAtIfLoaded
-(JNIEnv *env, jobject unused, jobject jcpool, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jint JNICALL JVM_ConstantPoolGetClassRefIndexAt
-(JNIEnv *env, jobject obj, jobject unused, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jobject JNICALL JVM_ConstantPoolGetMethodAt
-(JNIEnv *env, jobject unused, jobject jcpool, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jobject JNICALL JVM_ConstantPoolGetMethodAtIfLoaded
-(JNIEnv *env, jobject unused, jobject jcpool, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jobject JNICALL JVM_ConstantPoolGetFieldAt
-(JNIEnv *env, jobject unused, jobject jcpool, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jobject JNICALL JVM_ConstantPoolGetFieldAtIfLoaded
-(JNIEnv *env, jobject unused, jobject jcpool, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jobjectArray JNICALL JVM_ConstantPoolGetMemberRefInfoAt
-(JNIEnv *env, jobject unused, jobject jcpool, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jint JNICALL JVM_ConstantPoolGetNameAndTypeRefIndexAt
-(JNIEnv *env, jobject obj, jobject unused, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jobjectArray JNICALL JVM_ConstantPoolGetNameAndTypeRefInfoAt
-(JNIEnv *env, jobject obj, jobject unused, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jint JNICALL JVM_ConstantPoolGetIntAt
-(JNIEnv *env, jobject unused, jobject jcpool, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jlong JNICALL JVM_ConstantPoolGetLongAt
-(JNIEnv *env, jobject unused, jobject jcpool, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jfloat JNICALL JVM_ConstantPoolGetFloatAt
-(JNIEnv *env, jobject unused, jobject jcpool, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jdouble JNICALL JVM_ConstantPoolGetDoubleAt
-(JNIEnv *env, jobject unused, jobject jcpool, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jstring JNICALL JVM_ConstantPoolGetStringAt
-(JNIEnv *env, jobject unused, jobject jcpool, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jstring JNICALL JVM_ConstantPoolGetUTF8At
-(JNIEnv *env, jobject unused, jobject jcpool, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jbyte JNICALL JVM_ConstantPoolGetTagAt
-(JNIEnv *env, jobject unused, jobject jcpool, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 /*
  * Parameter reflection

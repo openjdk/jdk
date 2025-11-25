@@ -30,7 +30,7 @@ import compiler.lib.ir_framework.*;
  * @test
  * @bug 8276673 8280089
  * @summary Test abs nodes optimization in C2.
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
+ * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestIRAbs
  */

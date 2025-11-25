@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
  * @test
  * @bug 6255196
  * @summary  Verifies the function of method browse(java.net.URI uri).
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
+ * @library /java/awt/regtesthelpers /test/lib
+ * @build PassFailJFrame jtreg.SkippedException
  * @run main/manual BrowseTest
  */
 
@@ -35,6 +35,8 @@ import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import javax.swing.JPanel;
+
+import jtreg.SkippedException;
 
 public class BrowseTest extends JPanel {
     static final String INSTRUCTIONS = """
@@ -47,12 +49,6 @@ public class BrowseTest extends JPanel {
             """;
 
     public BrowseTest() {
-        if (!Desktop.isDesktopSupported()) {
-            PassFailJFrame.log("Class java.awt.Desktop is not supported on " +
-                    "current platform. Farther testing will not be performed");
-            PassFailJFrame.forcePass();
-        }
-
         Desktop desktop = Desktop.getDesktop();
 
         URI dirURI = new File(System.getProperty("user.home")).toURI();
@@ -77,6 +73,11 @@ public class BrowseTest extends JPanel {
 
     public static void main(String[] args) throws InterruptedException,
             InvocationTargetException {
+        if (!Desktop.isDesktopSupported()) {
+            throw new SkippedException("Class java.awt.Desktop is not supported " +
+                    "on current platform. Further testing will not be performed");
+        }
+
         PassFailJFrame.builder()
                 .title("Browser Test")
                 .splitUI(BrowseTest::new)

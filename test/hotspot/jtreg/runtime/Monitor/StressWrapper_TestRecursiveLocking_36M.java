@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,22 +33,7 @@
  * @run main/othervm/timeout=240 -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -Xint
- *     -XX:LockingMode=0
- *     -ms256m -mx256m
- *     TestRecursiveLocking 120 1
- *
- * @run main/othervm/timeout=240 -Xbootclasspath/a:.
- *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -Xint
- *     -XX:LockingMode=1
- *     -ms256m -mx256m
- *     TestRecursiveLocking 120 1
- *
- * @run main/othervm/timeout=240 -Xbootclasspath/a:.
- *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -Xint
- *     -XX:LockingMode=2
- *     -ms256m -mx256m
+ *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 120 1
  */
 
@@ -63,22 +48,7 @@
  * @run main/othervm/timeout=240 -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -Xint
- *     -XX:LockingMode=0
- *     -ms256m -mx256m
- *     TestRecursiveLocking 120 2
- *
- * @run main/othervm/timeout=240 -Xbootclasspath/a:.
- *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -Xint
- *     -XX:LockingMode=1
- *     -ms256m -mx256m
- *     TestRecursiveLocking 120 2
- *
- * @run main/othervm/timeout=240 -Xbootclasspath/a:.
- *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -Xint
- *     -XX:LockingMode=2
- *     -ms256m -mx256m
+ *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 120 2
  */
 
@@ -94,22 +64,7 @@
  * @run main/othervm/timeout=240 -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:TieredStopAtLevel=1
- *     -XX:LockingMode=0
- *     -ms256m -mx256m
- *     TestRecursiveLocking 120 1
- *
- * @run main/othervm/timeout=240 -Xbootclasspath/a:.
- *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:TieredStopAtLevel=1
- *     -XX:LockingMode=1
- *     -ms256m -mx256m
- *     TestRecursiveLocking 120 1
- *
- * @run main/othervm/timeout=240 -Xbootclasspath/a:.
- *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:TieredStopAtLevel=1
- *     -XX:LockingMode=2
- *     -ms256m -mx256m
+ *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 120 1
  */
 
@@ -125,22 +80,7 @@
  * @run main/othervm/timeout=240 -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:TieredStopAtLevel=1
- *     -XX:LockingMode=0
- *     -ms256m -mx256m
- *     TestRecursiveLocking 120 2
- *
- * @run main/othervm/timeout=240 -Xbootclasspath/a:.
- *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:TieredStopAtLevel=1
- *     -XX:LockingMode=1
- *     -ms256m -mx256m
- *     TestRecursiveLocking 120 2
- *
- * @run main/othervm/timeout=240 -Xbootclasspath/a:.
- *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:TieredStopAtLevel=1
- *     -XX:LockingMode=2
- *     -ms256m -mx256m
+ *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 120 2
  */
 
@@ -156,22 +96,7 @@
  * @run main/othervm/timeout=240 -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:-EliminateNestedLocks
- *     -XX:LockingMode=0
- *     -ms256m -mx256m
- *     TestRecursiveLocking 120 1
- *
- * @run main/othervm/timeout=240 -Xbootclasspath/a:.
- *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:-EliminateNestedLocks
- *     -XX:LockingMode=1
- *     -ms256m -mx256m
- *     TestRecursiveLocking 120 1
- *
- * @run main/othervm/timeout=240 -Xbootclasspath/a:.
- *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:-EliminateNestedLocks
- *     -XX:LockingMode=2
- *     -ms256m -mx256m
+ *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 120 1
  */
 
@@ -182,26 +107,11 @@
  * @summary Tests recursive locking in C2 in alternate A and B mode.
  * @library /testlibrary /test/lib
  * @build jdk.test.whitebox.WhiteBox
- *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm/timeout=240 -Xbootclasspath/a:.
- *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:LockingMode=0
- *     -XX:-EliminateNestedLocks
- *     -ms256m -mx256m
- *     TestRecursiveLocking 120 2
  *
  * @run main/othervm/timeout=240 -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:LockingMode=1
  *     -XX:-EliminateNestedLocks
- *     -ms256m -mx256m
- *     TestRecursiveLocking 120 2
- *
- * @run main/othervm/timeout=240 -Xbootclasspath/a:.
- *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:LockingMode=2
- *     -XX:-EliminateNestedLocks
- *     -ms256m -mx256m
+ *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 120 2
  */

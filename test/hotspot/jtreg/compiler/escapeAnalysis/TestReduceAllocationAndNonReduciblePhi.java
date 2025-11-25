@@ -35,7 +35,6 @@
  *                   -XX:CompileCommand=inline,*Point*::*
  *                   -XX:CompileCommand=exclude,*::dummy*
  *                   -Xbatch
- *                   -server
  *                   compiler.escapeAnalysis.TestReduceAllocationAndNonReduciblePhi
  *
  * @run main compiler.escapeAnalysis.TestReduceAllocationAndNonReduciblePhi

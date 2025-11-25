@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -209,7 +208,7 @@ void DCmdParser::parse(CmdLine* line, char delim, TRAPS) {
 
         strncpy(argbuf, iter.key_addr(), len);
         argbuf[len] = '\0';
-        jio_snprintf(buf, buflen - 1, "Unknown argument '%s' in diagnostic command.", argbuf);
+        jio_snprintf(buf, buflen, "Unknown argument '%s' in diagnostic command.", argbuf);
 
         THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), buf);
       }
@@ -237,7 +236,7 @@ void DCmdParser::check(TRAPS) {
   GenDCmdArgument* arg = _arguments_list;
   while (arg != nullptr) {
     if (arg->is_mandatory() && !arg->has_value()) {
-      jio_snprintf(buf, buflen - 1, "The argument '%s' is mandatory.", arg->name());
+      jio_snprintf(buf, buflen, "The argument '%s' is mandatory.", arg->name());
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), buf);
     }
     arg = arg->next();
@@ -245,7 +244,7 @@ void DCmdParser::check(TRAPS) {
   arg = _options;
   while (arg != nullptr) {
     if (arg->is_mandatory() && !arg->has_value()) {
-      jio_snprintf(buf, buflen - 1, "The option '%s' is mandatory.", arg->name());
+      jio_snprintf(buf, buflen, "The option '%s' is mandatory.", arg->name());
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), buf);
     }
     arg = arg->next();
@@ -380,15 +379,14 @@ GrowableArray<DCmdArgumentInfo*>* DCmdParser::argument_info_array() const {
 DCmdFactory* DCmdFactory::_DCmdFactoryList = nullptr;
 bool DCmdFactory::_has_pending_jmx_notification = false;
 
-void DCmd::parse_and_execute(DCmdSource source, outputStream* out,
-                             const char* cmdline, char delim, TRAPS) {
+void DCmd::Executor::parse_and_execute(const char* cmdline, char delim, TRAPS) {
 
   if (cmdline == nullptr) return; // Nothing to do!
   DCmdIter iter(cmdline, '\n');
 
   int count = 0;
   while (iter.has_next()) {
-    if(source == DCmd_Source_MBean && count > 0) {
+    if (_source == DCmd_Source_MBean && count > 0) {
       // When diagnostic commands are invoked via JMX, each command line
       // must contains one and only one command because of the Permission
       // checks performed by the DiagnosticCommandMBean
@@ -409,14 +407,23 @@ void DCmd::parse_and_execute(DCmdSource source, outputStream* out,
         line = updated_cmd;
       }
 
-      DCmd* command = DCmdFactory::create_local_DCmd(source, line, out, CHECK);
+      DCmd* command = DCmdFactory::create_local_DCmd(_source, line, _out, CHECK);
       assert(command != nullptr, "command error must be handled before this line");
       DCmdMark mark(command);
       command->parse(&line, delim, CHECK);
-      command->execute(source, CHECK);
+      execute(command, CHECK);
     }
     count++;
   }
+}
+
+void DCmd::Executor::execute(DCmd* command, TRAPS) {
+  command->execute(_source, CHECK);
+}
+
+void DCmd::parse_and_execute(DCmdSource source, outputStream* out,
+                             const char* cmdline, char delim, TRAPS) {
+  Executor(source, out).parse_and_execute(cmdline, delim, CHECK);
 }
 
 bool DCmd::reorder_help_cmd(CmdLine line, stringStream &updated_line) {

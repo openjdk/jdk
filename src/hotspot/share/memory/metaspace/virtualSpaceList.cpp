@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,18 +23,17 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/commitLimiter.hpp"
 #include "memory/metaspace/counters.hpp"
 #include "memory/metaspace/freeChunkList.hpp"
-#include "memory/metaspace/metaspaceContext.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
+#include "memory/metaspace/metaspaceContext.hpp"
 #include "memory/metaspace/virtualSpaceList.hpp"
 #include "memory/metaspace/virtualSpaceNode.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 
 namespace metaspace {
@@ -99,7 +98,7 @@ void VirtualSpaceList::create_new_node() {
                                                         _commit_limiter,
                                                         &_reserved_words_counter, &_committed_words_counter);
   vsn->set_next(_first_node);
-  Atomic::release_store(&_first_node, vsn);
+  AtomicAccess::release_store(&_first_node, vsn);
   _nodes_counter.increment();
 }
 
@@ -150,7 +149,7 @@ void VirtualSpaceList::print_on(outputStream* st) const {
     vsn = vsn->next();
     n++;
   }
-  st->print_cr("- total %d nodes, " SIZE_FORMAT " reserved words, " SIZE_FORMAT " committed words.",
+  st->print_cr("- total %d nodes, %zu reserved words, %zu committed words.",
                n, reserved_words(), committed_words());
 }
 
@@ -190,7 +189,7 @@ void VirtualSpaceList::verify() const {
 // Returns true if this pointer is contained in one of our nodes.
 bool VirtualSpaceList::contains(const MetaWord* p) const {
   // Note: needs to work without locks.
-  const VirtualSpaceNode* vsn = Atomic::load_acquire(&_first_node);
+  const VirtualSpaceNode* vsn = AtomicAccess::load_acquire(&_first_node);
   while (vsn != nullptr) {
     if (vsn->contains(p)) {
       return true;

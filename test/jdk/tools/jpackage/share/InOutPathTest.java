@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.JPackageCommand.AppLayoutAssert;
+import jdk.jpackage.test.JPackageCommand.StandardAssert;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import static jdk.jpackage.test.RunnablePackageTest.Action.CREATE_AND_UNPACK;
@@ -49,14 +49,14 @@ import jdk.jpackage.test.TKit;
  * @summary Test jpackage command line with overlapping input and output paths
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile InOutPathTest.java
- * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ * @compile -Xlint:all -Werror InOutPathTest.java
+ * @run main/othervm/timeout=2880 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=InOutPathTest
  */
 public final class InOutPathTest {
 
     @Parameters
-    public static Collection input() {
+    public static Collection<?> input() {
         List<Object[]> data = new ArrayList<>();
 
         for (var packageTypeAlias : PackageTypeAlias.values()) {
@@ -177,7 +177,7 @@ public final class InOutPathTest {
             if (!isAppImageValid(cmd)) {
                 // Standard asserts for .jpackage.xml fail in messed up app image. Disable them.
                 // Other standard asserts for app image contents should pass.
-                cmd.excludeAppLayoutAsserts(AppLayoutAssert.APP_IMAGE_FILE);
+                cmd.excludeStandardAsserts(StandardAssert.APP_IMAGE_FILE);
             }
         };
 

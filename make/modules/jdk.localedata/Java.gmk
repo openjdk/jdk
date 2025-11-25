@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,12 @@
 # questions.
 #
 
+################################################################################
+
 COPY += _dict _th
 # Exclude BreakIterator classes that are just used in compile process to generate
 # data files and shouldn't go in the product
 EXCLUDE_FILES += sun/text/resources/ext/BreakIteratorRules_th.java
 KEEP_ALL_TRANSLATIONS := true
+
+################################################################################

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "code/codeCache.hpp"
 #include "code/scopeDesc.hpp"
@@ -51,8 +50,8 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/monitorChunk.hpp"
 #include "runtime/os.hpp"
-#include "runtime/sharedRuntime.hpp"
 #include "runtime/safefetch.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stackValue.hpp"
 #include "runtime/stubCodeGenerator.hpp"
@@ -207,10 +206,7 @@ address frame::raw_pc() const {
   if (is_deoptimized_frame()) {
     nmethod* nm = cb()->as_nmethod_or_null();
     assert(nm != nullptr, "only nmethod is expected here");
-    if (nm->is_method_handle_return(pc()))
-      return nm->deopt_mh_handler_begin() - pc_return_offset;
-    else
-      return nm->deopt_handler_begin() - pc_return_offset;
+    return nm->deopt_handler_entry() - pc_return_offset;
   } else {
     return (pc() - pc_return_offset);
   }
@@ -230,7 +226,15 @@ void frame::set_pc(address newpc) {
   _deopt_state = unknown;
   _pc = newpc;
   _cb = CodeCache::find_blob(_pc);
+}
 
+// This is optimized for intra-blob pc adjustments only.
+void frame::adjust_pc(address newpc) {
+  assert(_cb != nullptr, "invariant");
+  assert(_cb == CodeCache::find_blob(newpc), "invariant");
+  // Unsafe to use the is_deoptimized tester after changing pc
+  _deopt_state = unknown;
+  _pc = newpc;
 }
 
 // type testers
@@ -351,9 +355,7 @@ void frame::deoptimize(JavaThread* thread) {
 
   // If the call site is a MethodHandle call site use the MH deopt handler.
   nmethod* nm = _cb->as_nmethod();
-  address deopt = nm->is_method_handle_return(pc()) ?
-                        nm->deopt_mh_handler_begin() :
-                        nm->deopt_handler_begin();
+  address deopt = nm->deopt_handler_entry();
 
   NativePostCallNop* inst = nativePostCallNop_at(pc());
 
@@ -889,7 +891,8 @@ oop frame::interpreter_callee_receiver(Symbol* signature) {
   return *interpreter_callee_receiver_addr(signature);
 }
 
-void frame::oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool query_oop_map_cache) const {
+template <typename RegisterMapT>
+void frame::oops_interpreted_do(OopClosure* f, const RegisterMapT* map, bool query_oop_map_cache) const {
   assert(is_interpreted_frame(), "Not an interpreted frame");
   Thread *thread = Thread::current();
   methodHandle m (thread, interpreter_frame_method());
@@ -926,33 +929,19 @@ void frame::oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool quer
 
   int max_locals = m->is_native() ? m->size_of_parameters() : m->max_locals();
 
-  Symbol* signature = nullptr;
-  bool has_receiver = false;
-
   // Process a callee's arguments if we are at a call site
   // (i.e., if we are at an invoke bytecode)
   // This is used sometimes for calling into the VM, not for another
   // interpreted or compiled frame.
-  if (!m->is_native()) {
+  if (!m->is_native() && map != nullptr && map->include_argument_oops()) {
     Bytecode_invoke call = Bytecode_invoke_check(m, bci);
-    if (map != nullptr && call.is_valid()) {
-      signature = call.signature();
-      has_receiver = call.has_receiver();
-      if (map->include_argument_oops() &&
-          interpreter_frame_expression_stack_size() > 0) {
-        ResourceMark rm(thread);  // is this right ???
-        // we are at a call site & the expression stack is not empty
-        // => process callee's arguments
-        //
-        // Note: The expression stack can be empty if an exception
-        //       occurred during method resolution/execution. In all
-        //       cases we empty the expression stack completely be-
-        //       fore handling the exception (the exception handling
-        //       code in the interpreter calls a blocking runtime
-        //       routine which can cause this code to be executed).
-        //       (was bug gri 7/27/98)
-        oops_interpreted_arguments_do(signature, has_receiver, f);
-      }
+    if (call.is_valid() && interpreter_frame_expression_stack_size() > 0) {
+      ResourceMark rm(thread);  // is this right ???
+      Symbol* signature = call.signature();
+      bool has_receiver = call.has_receiver();
+      // We are at a call site & the expression stack is not empty
+      // so we might have callee arguments we need to process.
+      oops_interpreted_arguments_do(signature, has_receiver, f);
     }
   }
 
@@ -968,6 +957,9 @@ void frame::oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool quer
   mask.iterate_oop(&blk);
 }
 
+template void frame::oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool query_oop_map_cache) const;
+template void frame::oops_interpreted_do(OopClosure* f, const SmallRegisterMapNoArgs* map, bool query_oop_map_cache) const;
+template void frame::oops_interpreted_do(OopClosure* f, const SmallRegisterMapWithArgs* map, bool query_oop_map_cache) const;
 
 void frame::oops_interpreted_arguments_do(Symbol* signature, bool has_receiver, OopClosure* f) const {
   InterpretedArgumentOopFinder finder(signature, has_receiver, this, f);
@@ -1090,7 +1082,7 @@ oop frame::retrieve_receiver(RegisterMap* reg_map) {
     return nullptr;
   }
   oop r = *oop_adr;
-  assert(Universe::heap()->is_in_or_null(r), "bad receiver: " INTPTR_FORMAT " (" INTX_FORMAT ")", p2i(r), p2i(r));
+  assert(Universe::heap()->is_in_or_null(r), "bad receiver: " INTPTR_FORMAT " (%zd)", p2i(r), p2i(r));
   return r;
 }
 
@@ -1162,10 +1154,7 @@ void frame::oops_do_internal(OopClosure* f, NMethodClosure* cf,
                              const RegisterMap* map, bool use_interpreter_oop_map_cache) const {
 #ifndef PRODUCT
   // simulate GC crash here to dump java thread in error report
-  if (CrashGCForDumpingJavaThread) {
-    char *t = nullptr;
-    *t = 'c';
-  }
+  guarantee(!CrashGCForDumpingJavaThread, "");
 #endif
   if (is_interpreted_frame()) {
     oops_interpreted_do(f, map, use_interpreter_oop_map_cache);

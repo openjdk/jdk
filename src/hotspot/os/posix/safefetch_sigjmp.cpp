@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "runtime/safefetch.hpp"
 #include "sanitizers/address.hpp"
@@ -33,8 +32,8 @@
 #ifdef SAFEFETCH_METHOD_SIGSETJMP
 
 // For SafeFetch we need POSIX TLS and sigsetjmp/longjmp.
-#include <setjmp.h>
 #include <pthread.h>
+#include <setjmp.h>
 static pthread_key_t g_jmpbuf_key;
 
 struct InitTLSKey { InitTLSKey() { pthread_key_create(&g_jmpbuf_key, nullptr); } };
@@ -67,6 +66,14 @@ template <class T>
 ATTRIBUTE_NO_ASAN static bool _SafeFetchXX_internal(const T *adr, T* result) {
 
   T n = 0;
+
+#ifdef AIX
+  // AIX allows reading from nullptr without signalling
+  if (adr == nullptr) {
+    *result = 0;
+    return false;
+  }
+#endif
 
   // Set up a jump buffer. Anchor its pointer in TLS. Then read from the unsafe address.
   // If that address was invalid, we fault, and in the signal handler we will jump back

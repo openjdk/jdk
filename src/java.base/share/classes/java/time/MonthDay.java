@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
+import java.io.ObjectStreamField;
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.chrono.Chronology;
 import java.time.chrono.IsoChronology;
@@ -133,6 +135,20 @@ public final class MonthDay
      */
     @java.io.Serial
     private static final long serialVersionUID = -939150713474957432L;
+
+    /**
+     * For backward compatibility of the serialized {@code MonthDay.class} object,
+     * explicitly declare the types of the serialized fields as defined in Java SE 8.
+     * Instances of {@code MonthDay} are serialized using the dedicated
+     * serialized form by {@code writeReplace}.
+     * @serialField month int The month-of-year.
+     * @serialField day int The day-of-month.
+     */
+    @Serial
+    private static final ObjectStreamField[] serialPersistentFields = {
+            new ObjectStreamField("month", int.class),
+            new ObjectStreamField("day", int.class)
+    };
     /**
      * Parser.
      */
@@ -144,13 +160,13 @@ public final class MonthDay
         .toFormatter();
 
     /**
-     * The month-of-year, not null.
+     * @serial The month-of-year.
      */
-    private final int month;
+    private final transient byte month;
     /**
-     * The day-of-month.
+     * @serial The day-of-month.
      */
-    private final int day;
+    private final transient byte day;
 
     //-----------------------------------------------------------------------
     /**
@@ -319,8 +335,8 @@ public final class MonthDay
      * @param dayOfMonth  the day-of-month to represent, validated from 1 to 29-31
      */
     private MonthDay(int month, int dayOfMonth) {
-        this.month = month;
-        this.day = dayOfMonth;
+        this.month = (byte) month;
+        this.day = (byte) dayOfMonth;
     }
 
     //-----------------------------------------------------------------------

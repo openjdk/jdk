@@ -69,7 +69,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
     /*
      * Revision notes: This differs from previous versions of this
      * class that relied on AbstractQueuedSynchronizer, mainly to
-     * avoid surprising users about retaining interrupt status during
+     * avoid surprising users about retaining interrupted status during
      * cancellation races. Sync control in the current design relies
      * on a "state" field updated via CAS to track completion, along
      * with a simple Treiber stack to hold waiting threads.
@@ -285,7 +285,9 @@ public class FutureTask<V> implements RunnableFuture<V> {
      * this future has already been set or has been cancelled.
      *
      * <p>This method is invoked internally by the {@link #run} method
-     * upon successful completion of the computation.
+     * upon successful completion of the computation. Invocation in
+     * other contexts has undefined effects. Any override of this
+     * method in subclasses should include {@code super.set(v)}.
      *
      * @param v the value
      */

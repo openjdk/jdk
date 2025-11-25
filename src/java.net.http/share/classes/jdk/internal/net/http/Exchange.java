@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,17 +27,20 @@ package jdk.internal.net.http;
 
 import java.io.IOException;
 import java.net.ProtocolException;
+import java.net.http.HttpClient.Version;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
 
+import jdk.internal.net.http.HttpClientImpl.DelegatingExecutor;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.Utils;
@@ -60,22 +63,30 @@ final class Exchange<T> {
     volatile ExchangeImpl<T> exchImpl;
     volatile CompletableFuture<? extends ExchangeImpl<T>> exchangeCF;
     volatile CompletableFuture<Void> bodyIgnored;
+    volatile boolean streamLimitReached;
 
     // used to record possible cancellation raised before the exchImpl
     // has been established.
-    private volatile IOException failed;
+    private final AtomicReference<IOException> failed = new AtomicReference<>();
     final MultiExchange<T> multi;
-    final Executor parentExecutor;
+    final DelegatingExecutor parentExecutor;
     volatile boolean upgrading; // to HTTP/2
     volatile boolean upgraded;  // to HTTP/2
     final PushGroup<T> pushGroup;
     final String dbgTag;
 
     // Keeps track of the underlying connection when establishing an HTTP/2
-    // exchange so that it can be aborted/timed out mid setup.
+    // or HTTP/3 exchange so that it can be aborted/timed out mid-setup.
     final ConnectionAborter connectionAborter = new ConnectionAborter();
 
     final AtomicInteger nonFinalResponses = new AtomicInteger();
+
+    // This will be set to true only when it is guaranteed that the server hasn't processed
+    // the request. Typically, this happens when the server explicitly states (through a GOAWAY frame
+    // or a relevant error code in reset frame) that the corresponding stream (id) wasn't processed.
+    // However, there can be cases where the client is certain that the request wasn't sent
+    // to the server (and thus not processed). In such cases, the client can set this to true.
+    private volatile boolean unprocessedByPeer;
 
     Exchange(HttpRequestImpl request, MultiExchange<T> multi) {
         this.request = request;
@@ -91,7 +102,7 @@ final class Exchange<T> {
         return pushGroup;
     }
 
-    Executor executor() {
+    DelegatingExecutor executor() {
         return parentExecutor;
     }
 
@@ -108,9 +119,13 @@ final class Exchange<T> {
     }
 
     // Keeps track of the underlying connection when establishing an HTTP/2
-    // exchange so that it can be aborted/timed out mid setup.
-    static final class ConnectionAborter {
+    // or HTTP/3 exchange so that it can be aborted/timed out mid setup.
+    final class ConnectionAborter {
+        // In case of HTTP/3 requests we may have
+        // two connections in parallel: a regular TCP connection
+        // and a QUIC connection.
         private volatile HttpConnection connection;
+        private volatile HttpQuicConnection quicConnection;
         private volatile boolean closeRequested;
         private volatile Throwable cause;
 
@@ -121,10 +136,11 @@ final class Exchange<T> {
                 // closed
                 closeRequested = this.closeRequested;
                 if (!closeRequested) {
-                    this.connection = connection;
-                } else {
-                    // assert this.connection == null
-                    this.closeRequested = false;
+                    if (connection instanceof HttpQuicConnection quicConnection) {
+                        this.quicConnection = quicConnection;
+                    } else {
+                        this.connection = connection;
+                    }
                 }
             }
             if (closeRequested) closeConnection(connection, cause);
@@ -132,6 +148,7 @@ final class Exchange<T> {
 
         void closeConnection(Throwable error) {
             HttpConnection connection;
+            HttpQuicConnection quicConnection;
             Throwable cause;
             synchronized (this) {
                 cause = this.cause;
@@ -139,38 +156,63 @@ final class Exchange<T> {
                     cause = error;
                 }
                 connection = this.connection;
-                if (connection == null) {
+                quicConnection = this.quicConnection;
+                if (connection == null || quicConnection == null) {
                     closeRequested = true;
                     this.cause = cause;
                 } else {
+                    this.quicConnection = null;
                     this.connection = null;
                     this.cause = null;
                 }
             }
             closeConnection(connection, cause);
+            closeConnection(quicConnection, cause);
         }
 
+        // Called by HTTP/2 after an upgrade.
+        // There is no upgrade for HTTP/3
         HttpConnection disable() {
             HttpConnection connection;
             synchronized (this) {
                 connection = this.connection;
                 this.connection = null;
+                this.quicConnection = null;
                 this.closeRequested = false;
                 this.cause = null;
             }
             return connection;
         }
 
-        private static void closeConnection(HttpConnection connection, Throwable cause) {
-            if (connection != null) {
-                try {
-                    connection.close(cause);
-                } catch (Throwable t) {
-                    // ignore
+        void clear(HttpConnection connection) {
+            synchronized (this) {
+                var c = this.connection;
+                if (connection == c) this.connection = null;
+                var qc = this.quicConnection;
+                if (connection == qc) this.quicConnection = null;
+            }
+        }
+
+        private void closeConnection(HttpConnection connection, Throwable cause) {
+            if (connection == null) {
+                return;
+            }
+            try {
+                connection.close(cause);
+            } catch (Throwable t) {
+                // ignore
+                if (debug.on()) {
+                    debug.log("ignoring exception that occurred during closing of connection: "
+                            + connection, t);
                 }
             }
         }
     }
+
+    // true if previous attempt resulted in streamLimitReached
+    public boolean hasReachedStreamLimit() { return streamLimitReached; }
+    // can be used to set or clear streamLimitReached (for instance clear it after retrying)
+    void streamLimitReached(boolean streamLimitReached) { this.streamLimitReached = streamLimitReached; }
 
     // Called for 204 response - when no body is permitted
     // This is actually only needed for HTTP/1.1 in order
@@ -236,26 +278,26 @@ final class Exchange<T> {
         // If the impl is non null, propagate the exception right away.
         // Otherwise record it so that it can be propagated once the
         // exchange impl has been established.
-        ExchangeImpl<?> impl = exchImpl;
+        ExchangeImpl<?> impl;
+        IOException closeReason = null;
+        synchronized (this) {
+            impl =  exchImpl;
+            if (impl == null) {
+                // no impl yet. record the exception
+                failed.compareAndSet(null, cause);
+            }
+        }
         if (impl != null) {
             // propagate the exception to the impl
             if (debug.on()) debug.log("Cancelling exchImpl: %s", exchImpl);
             impl.cancel(cause);
         } else {
-            // no impl yet. record the exception
-            IOException failed = this.failed;
-            if (failed == null) {
-                synchronized (this) {
-                    failed = this.failed;
-                    if (failed == null) {
-                        failed = this.failed = cause;
-                    }
-                }
+             // abort/close the connection if setting up the exchange. This can
+            // be important when setting up HTTP/2 or HTTP/3
+            closeReason = failed.get();
+            if (closeReason != null) {
+                connectionAborter.closeConnection(closeReason);
             }
-
-            // abort/close the connection if setting up the exchange. This can
-            // be important when setting up HTTP/2
-            connectionAborter.closeConnection(failed);
 
             // now call checkCancelled to recheck the impl.
             // if the failed state is set and the impl is not null, reset
@@ -274,19 +316,26 @@ final class Exchange<T> {
         ExchangeImpl<?> impl = null;
         IOException cause = null;
         CompletableFuture<? extends ExchangeImpl<T>> cf = null;
-        if (failed != null) {
+        if (failed.get() != null) {
             synchronized (this) {
-                cause = failed;
+                cause = failed.get();
                 impl = exchImpl;
                 cf = exchangeCF;
             }
+        }
+        if (multi.requestCancelled() && impl != null && cause == null) {
+            cause = new IOException("Request cancelled");
         }
         if (cause == null) return;
         if (impl != null) {
             // The exception is raised by propagating it to the impl.
             if (debug.on()) debug.log("Cancelling exchImpl: %s", impl);
             impl.cancel(cause);
-            failed = null;
+            synchronized (this) {
+                if (impl == exchImpl) {
+                    failed.compareAndSet(cause, null);
+                }
+            }
         } else {
             Log.logTrace("Exchange: request [{0}/timeout={1}ms] no impl is set."
                          + "\n\tCan''t cancel yet with {2}",
@@ -308,12 +357,12 @@ final class Exchange<T> {
                     // if upgraded, we don't close the connection.
                     // cancelling will be handled by the HTTP/2 exchange
                     // in its own time.
-                    if (!upgraded) {
+                    if (!upgraded && !(connection instanceof HttpQuicConnection)) {
                         t = getCancelCause();
                         if (t == null) t = new IOException("Request cancelled");
                         if (debug.on()) debug.log("exchange cancelled during connect: " + t);
                         try {
-                            connection.close();
+                            connection.close(t);
                         } catch (Throwable x) {
                             if (debug.on()) debug.log("Failed to close connection", x);
                         }
@@ -330,8 +379,13 @@ final class Exchange<T> {
         request.setH2Upgrade(this);
     }
 
+    synchronized IOException failed(IOException io) {
+        IOException cause = failed.compareAndExchange(null, io);
+        return cause == null ? io : cause;
+    }
+
     synchronized IOException getCancelCause() {
-        return failed;
+        return failed.get();
     }
 
     // get/set the exchange impl, solving race condition issues with
@@ -339,8 +393,8 @@ final class Exchange<T> {
     private CompletableFuture<? extends ExchangeImpl<T>>
     establishExchange(HttpConnection connection) {
         if (debug.on()) {
-            debug.log("establishing exchange for %s,%n\t proxy=%s",
-                      request, request.proxy());
+            debug.log("establishing exchange for %s #%s,%n\t proxy=%s",
+                      request, multi.id, request.proxy());
         }
         // check if we have been cancelled first.
         Throwable t = getCancelCause();
@@ -353,7 +407,17 @@ final class Exchange<T> {
         }
 
         CompletableFuture<? extends ExchangeImpl<T>> cf, res;
-        cf = ExchangeImpl.get(this, connection);
+
+        cf = ExchangeImpl.get(this, connection)
+                // set exchImpl and call checkCancelled to make  sure exchImpl
+                // gets cancelled even if the exchangeCf was completed exceptionally
+                // before the CF returned by ExchangeImpl.get completed. This deals
+                // with issues when the request is cancelled while the exchange impl
+                // is being created.
+                .thenApply((eimpl) -> {
+                    synchronized (Exchange.this) {exchImpl = eimpl;}
+                    checkCancelled(); return eimpl;
+                }).copy();
         // We should probably use a VarHandle to get/set exchangeCF
         // instead - as we need CAS semantics.
         synchronized (this) { exchangeCF = cf; };
@@ -379,7 +443,7 @@ final class Exchange<T> {
     }
 
     // Completed HttpResponse will be null if response succeeded
-    // will be a non null responseAsync if expect continue returns an error
+    // will be a non-null responseAsync if expect continue returns an error
 
     public CompletableFuture<Response> responseAsync() {
         return responseAsyncImpl(null);
@@ -409,6 +473,11 @@ final class Exchange<T> {
         }
     }
 
+    private CompletableFuture<Response> startSendingBody(DelegatingExecutor executor) {
+        return exchImpl.sendBodyAsync()
+                        .thenCompose(exIm -> exIm.getResponseAsync(executor));
+    }
+
     // After sending the request headers, if no ProxyAuthorizationRequired
     // was raised and the expectContinue flag is on, we need to wait
     // for the 100-Continue response
@@ -430,9 +499,7 @@ final class Exchange<T> {
                         if (debug.on())
                             debug.log("Setting ExpectTimeoutRaised and sending request body");
                         exchImpl.setExpectTimeoutRaised();
-                        CompletableFuture<Response> cf =
-                                exchImpl.sendBodyAsync()
-                                        .thenCompose(exIm -> exIm.getResponseAsync(parentExecutor));
+                        CompletableFuture<Response> cf = startSendingBody(parentExecutor);
                         cf = wrapForUpgrade(cf);
                         cf = wrapForLog(cf);
                         return cf;
@@ -444,9 +511,7 @@ final class Exchange<T> {
                         nonFinalResponses.incrementAndGet();
                         Log.logTrace("Received 100-Continue: sending body");
                         if (debug.on()) debug.log("Received 100-Continue for %s", r1);
-                        CompletableFuture<Response> cf =
-                                exchImpl.sendBodyAsync()
-                                        .thenCompose(exIm -> exIm.getResponseAsync(parentExecutor));
+                        CompletableFuture<Response> cf = startSendingBody(parentExecutor);
                         cf = wrapForUpgrade(cf);
                         cf = wrapForLog(cf);
                         return cf;
@@ -471,8 +536,7 @@ final class Exchange<T> {
     private CompletableFuture<Response> sendRequestBody(ExchangeImpl<T> ex) {
         assert !request.expectContinue();
         if (debug.on()) debug.log("sendRequestBody");
-        CompletableFuture<Response> cf = ex.sendBodyAsync()
-                .thenCompose(exIm -> exIm.getResponseAsync(parentExecutor));
+        CompletableFuture<Response> cf = startSendingBody(parentExecutor);
         cf = wrapForUpgrade(cf);
         // after 101 is handled we check for other 1xx responses
         cf = cf.thenCompose(this::ignore1xxResponse);
@@ -669,7 +733,7 @@ final class Exchange<T> {
                             // Either way, we need to relay it to s.
                             synchronized (this) {
                                 exchImpl = s;
-                                t = failed;
+                                t = failed.get();
                             }
                             // Check whether the HTTP/1.1 was cancelled.
                             if (t == null) t = e.getCancelCause();
@@ -703,5 +767,14 @@ final class Exchange<T> {
 
     String dbgString() {
         return dbgTag;
+    }
+
+    final boolean isUnprocessedByPeer() {
+        return this.unprocessedByPeer;
+    }
+
+    // Marks the exchange as unprocessed by the peer
+    final void markUnprocessedByPeer() {
+        this.unprocessedByPeer = true;
     }
 }

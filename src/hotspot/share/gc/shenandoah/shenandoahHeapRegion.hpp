@@ -216,7 +216,7 @@ public:
   bool is_alloc_allowed()          const { auto cur_state = state(); return is_empty_state(cur_state) || cur_state == _regular || cur_state == _pinned; }
   bool is_stw_move_allowed()       const { auto cur_state = state(); return cur_state == _regular || cur_state == _cset || (ShenandoahHumongousMoves && cur_state == _humongous_start); }
 
-  RegionState state()              const { return Atomic::load(&_state); }
+  RegionState state()              const { return AtomicAccess::load(&_state); }
   int  state_ordinal()             const { return region_state_to_ordinal(state()); }
 
   void record_pin();
@@ -265,6 +265,8 @@ private:
   CENSUS_NOISE(uint _youth;)   // tracks epochs of retrograde ageing (rejuvenation)
 
   ShenandoahSharedFlag _recycling; // Used to indicate that the region is being recycled; see try_recycle*().
+
+  bool _needs_bitmap_reset;
 
 public:
   ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed);
@@ -363,6 +365,9 @@ public:
 
   // Allocation (return nullptr if full)
   inline HeapWord* allocate(size_t word_size, const ShenandoahAllocRequest& req);
+
+  // Allocate fill after top
+  inline HeapWord* allocate_fill(size_t word_size);
 
   inline void clear_live_data();
   void set_live_data(size_t s);
@@ -477,8 +482,20 @@ public:
 
   CENSUS_NOISE(void clear_youth() { _youth = 0; })
 
+  inline bool need_bitmap_reset() const {
+    return _needs_bitmap_reset;
+  }
+
+  inline void set_needs_bitmap_reset() {
+    _needs_bitmap_reset = true;
+  }
+
+  inline void unset_needs_bitmap_reset() {
+    _needs_bitmap_reset = false;
+  }
+
 private:
-  void decrement_humongous_waste() const;
+  void decrement_humongous_waste();
   void do_commit();
   void do_uncommit();
 

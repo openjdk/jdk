@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1557,8 +1557,8 @@ public class Container extends Component {
      * as a {@code Frame} object) should be used to restore the validity of the
      * component hierarchy.
      * <p>
-     * The {@code Window} class and the {@code Applet} class are the validate
-     * roots in AWT.  Swing introduces more validate roots.
+     * The {@code Window} class is the validate root in AWT.
+     * Swing introduces more validate roots.
      *
      * @return whether this container is a validate root
      * @see #invalidate
@@ -3853,6 +3853,7 @@ public class Container extends Component {
         /**
          * The handler to fire {@code PropertyChange}
          * when children are added or removed
+         * @serial
          */
         @SuppressWarnings("serial") // Not statically typed as Serializable
         protected ContainerListener accessibleContainerHandler = null;

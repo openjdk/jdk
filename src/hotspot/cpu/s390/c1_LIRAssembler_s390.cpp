@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_LIRAssembler.hpp"
@@ -186,7 +185,7 @@ int LIR_Assembler::emit_exception_handler() {
 
   int offset = code_offset();
 
-  address a = Runtime1::entry_for (C1StubId::handle_exception_from_callee_id);
+  address a = Runtime1::entry_for (StubId::c1_handle_exception_from_callee_id);
   address call_addr = emit_call_c(a);
   CHECK_BAILOUT_(-1);
   __ should_not_reach_here();
@@ -226,15 +225,11 @@ int LIR_Assembler::emit_unwind_handler() {
   // Perform needed unlocking.
   MonitorExitStub* stub = nullptr;
   if (method()->is_synchronized()) {
-    // C1StubId::monitorexit_id expects lock address in Z_R1_scratch.
+    // StubId::c1_monitorexit_id expects lock address in Z_R1_scratch.
     LIR_Opr lock = FrameMap::as_opr(Z_R1_scratch);
     monitor_address(0, lock);
-    stub = new MonitorExitStub(lock, true, 0);
-    if (LockingMode == LM_MONITOR) {
-      __ branch_optimized(Assembler::bcondAlways, *stub->entry());
-    } else {
-      __ unlock_object(Rtmp1, Rtmp2, lock->as_register(), *stub->entry());
-    }
+    stub = new MonitorExitStub(lock, 0);
+    __ unlock_object(Rtmp1, Rtmp2, lock->as_register(), *stub->entry());
     __ bind(*stub->continuation());
   }
 
@@ -259,7 +254,7 @@ int LIR_Assembler::emit_unwind_handler() {
   // Z_EXC_PC: exception pc
 
   // Dispatch to the unwind logic.
-  __ load_const_optimized(Z_R5, Runtime1::entry_for (C1StubId::unwind_exception_id));
+  __ load_const_optimized(Z_R5, Runtime1::entry_for (StubId::c1_unwind_exception_id));
   __ z_br(Z_R5);
 
   // Emit the slow path assembly.
@@ -277,14 +272,27 @@ int LIR_Assembler::emit_deopt_handler() {
     // Not enough space left for the handler.
     bailout("deopt handler overflow");
     return -1;
-  }  int offset = code_offset();
+  }
+
+  int offset = code_offset();
+
+  Label start;
+  __ bind(start);
+
   // Size must be constant (see HandlerImpl::emit_deopt_handler).
   __ load_const(Z_R1_scratch, SharedRuntime::deopt_blob()->unpack());
   __ call(Z_R1_scratch);
+
+  int entry_offset = __ offset();
+
+  __ z_bru(start);
+
   guarantee(code_offset() - offset <= deopt_handler_size(), "overflow");
+  assert(code_offset() - entry_offset >= NativePostCallNop::first_check_size,
+         "out of bounds read in post-call NOP check");
   __ end_a_stub();
 
-  return offset;
+  return entry_offset;
 }
 
 void LIR_Assembler::jobject2reg(jobject o, Register reg) {
@@ -1017,7 +1025,7 @@ void LIR_Assembler::stack2reg(LIR_Opr src, LIR_Opr dest, BasicType type) {
   }
 }
 
-void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type, bool pop_fpu_stack) {
+void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
   assert(src->is_register(), "should not call otherwise");
   assert(dest->is_stack(), "should not call otherwise");
 
@@ -1075,7 +1083,7 @@ void LIR_Assembler::reg2reg(LIR_Opr from_reg, LIR_Opr to_reg) {
 }
 
 void LIR_Assembler::reg2mem(LIR_Opr from, LIR_Opr dest_opr, BasicType type,
-                            LIR_PatchCode patch_code, CodeEmitInfo* info, bool pop_fpu_stack,
+                            LIR_PatchCode patch_code, CodeEmitInfo* info,
                             bool wide) {
   assert(type != T_METADATA, "store of metadata ptr not supported");
   LIR_Address* addr = dest_opr->as_address_ptr();
@@ -1502,7 +1510,7 @@ void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, L
 }
 
 void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr dest,
-                             CodeEmitInfo* info, bool pop_fpu_stack) {
+                             CodeEmitInfo* info) {
   assert(info == nullptr, "should never be used, idiv/irem and ldiv/lrem not handled by this method");
 
   if (left->is_single_cpu()) {
@@ -1932,8 +1940,8 @@ void LIR_Assembler::throw_op(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmit
   // Reuse the debug info from the safepoint poll for the throw op itself.
   __ get_PC(Z_EXC_PC);
   add_call_info(__ offset(), info); // for exception handler
-  address stub = Runtime1::entry_for (compilation()->has_fpu_code() ? C1StubId::handle_exception_id
-                                                                    : C1StubId::handle_exception_nofpu_id);
+  address stub = Runtime1::entry_for (compilation()->has_fpu_code() ? StubId::c1_handle_exception_id
+                                                                    : StubId::c1_handle_exception_nofpu_id);
   emit_call_c(stub);
 }
 
@@ -2130,7 +2138,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
       store_parameter(src_klass, 0); // sub
       store_parameter(dst_klass, 1); // super
-      emit_call_c(Runtime1::entry_for (C1StubId::slow_subtype_check_id));
+      emit_call_c(Runtime1::entry_for (StubId::c1_slow_subtype_check_id));
       CHECK_BAILOUT2(cont, slow);
       // Sets condition code 0 for match (2 otherwise).
       __ branch_optimized(Assembler::bcondEqual, cont);
@@ -2550,7 +2558,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
                                      failure_target, nullptr);
     if (need_slow_path) {
       // Call out-of-line instance of __ check_klass_subtype_slow_path(...):
-      address a = Runtime1::entry_for (C1StubId::slow_subtype_check_id);
+      address a = Runtime1::entry_for (StubId::c1_slow_subtype_check_id);
       store_parameter(klass_RInfo, 0); // sub
       store_parameter(k_RInfo, 1);     // super
       emit_call_c(a); // Sets condition code 0 for match (2 otherwise).
@@ -2625,7 +2633,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     // Perform the fast part of the checking logic.
     __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, success_target, failure_target, nullptr);
     // Call out-of-line instance of __ check_klass_subtype_slow_path(...):
-    address a = Runtime1::entry_for (C1StubId::slow_subtype_check_id);
+    address a = Runtime1::entry_for (StubId::c1_slow_subtype_check_id);
     store_parameter(klass_RInfo, 0); // sub
     store_parameter(k_RInfo, 1);     // super
     emit_call_c(a); // Sets condition code 0 for match (2 otherwise).
@@ -2715,14 +2723,7 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register obj = op->obj_opr()->as_register();  // May not be an oop.
   Register hdr = op->hdr_opr()->as_register();
   Register lock = op->lock_opr()->as_register();
-  if (LockingMode == LM_MONITOR) {
-    if (op->info() != nullptr) {
-      add_debug_info_for_null_check_here(op->info());
-      __ null_check(obj);
-    }
-    __ branch_optimized(Assembler::bcondAlways, *op->stub()->entry());
-  } else if (op->code() == lir_lock) {
-    assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
+  if (op->code() == lir_lock) {
     // Add debug info for NullPointerException only if one is possible.
     if (op->info() != nullptr) {
       add_debug_info_for_null_check_here(op->info());
@@ -2730,7 +2731,6 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
     __ lock_object(hdr, obj, lock, *op->stub()->entry());
     // done
   } else if (op->code() == lir_unlock) {
-    assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
     __ unlock_object(hdr, obj, lock, *op->stub()->entry());
   } else {
     ShouldNotReachHere();
@@ -2825,10 +2825,6 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
 
 void LIR_Assembler::align_backward_branch_target() {
   __ align(OptoLoopAlignment);
-}
-
-void LIR_Assembler::emit_delay(LIR_OpDelay* op) {
-  ShouldNotCallThis(); // There are no delay slots on ZARCH_64.
 }
 
 void LIR_Assembler::negate(LIR_Opr left, LIR_Opr dest, LIR_Opr tmp) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  *
- * @modules java.base/jdk.internal.org.objectweb.asm:+open java.base/jdk.internal.org.objectweb.asm.util:+open
+ * @library /testlibrary/asm
  * @library /vmTestbase /test/lib
  *
  * @comment build retransform.jar in current dir
@@ -45,7 +45,7 @@ import vm.runtime.defmeth.shared.annotation.NotApplicableFor;
 import vm.runtime.defmeth.shared.builder.TestBuilder;
 import vm.runtime.defmeth.shared.data.*;
 
-import static jdk.internal.org.objectweb.asm.Opcodes.ACC_SYNCHRONIZED;
+import static org.objectweb.asm.Opcodes.ACC_SYNCHRONIZED;
 import static vm.runtime.defmeth.shared.data.method.body.CallMethod.Invoke.*;
 import static vm.runtime.defmeth.shared.data.method.body.CallMethod.IndexbyteOp.*;
 import static vm.runtime.defmeth.shared.ExecutionMode.*;
@@ -680,6 +680,8 @@ public class PrivateMethodsTest extends DefMethTest {
      * public class C extends B { }
      *
      * TEST: { B b = new C(); b.m()I throws IllegalAccessError; }
+     * TEST: { I b = new B(); b.m()I returns 3; }
+     * TEST: { I c = new C(); c.m()I returns 3; }
      */
     public void testPrivateSuperClassMethodDefaultMethodNoOverride(TestBuilder b) {
         ConcreteClass A = b.clazz("A")
@@ -694,6 +696,10 @@ public class PrivateMethodsTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").extend(B).build();
 
-        b.test().privateCallSite(B, C, "m", "()I").throws_(IllegalAccessError.class).done();
+        b.test().privateCallSite(B, C, "m", "()I").throws_(IllegalAccessError.class).done()
+         .test().       callSite(I, B, "m", "()I").returns(3).done()
+         .test().       callSite(I, C, "m", "()I").returns(3).done()
+        ;
+
     }
 }

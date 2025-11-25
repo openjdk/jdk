@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
@@ -85,6 +84,8 @@ void VM_Version::get_os_cpu_info() {
       _cpu = CPU_AMCC;
     } else if (buf && strstr(buf, "Cavium Inc.") != nullptr) {
       _cpu = CPU_CAVIUM;
+    } else if (buf && strstr(buf, "Qualcomm Technologies Inc") != nullptr) {
+      _cpu = CPU_QUALCOMM;
     } else {
       log_info(os)("VM_Version: unknown CPU model");
     }

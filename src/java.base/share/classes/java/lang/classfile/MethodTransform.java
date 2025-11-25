@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,17 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * A transformation on streams of {@link MethodElement}.
+ * <p>
+ * Refer to {@link ClassFileTransform} for general guidance and caution around
+ * the use of transforms for structures in the {@code class} file format.
+ * <p>
+ * A method transform can be lifted to a class transform via {@link
+ * ClassTransform#transformingMethods(MethodTransform)}, transforming only
+ * the {@link MethodModel} among the class members and passing all other
+ * elements to the builders.
  *
- * @see ClassFileTransform
- *
+ * @see MethodModel
+ * @see ClassBuilder#transformMethod
  * @since 24
  */
 @FunctionalInterface
@@ -44,7 +52,7 @@ public non-sealed interface MethodTransform
         extends ClassFileTransform<MethodTransform, MethodElement, MethodBuilder> {
 
     /**
-     * A method transform that sends all elements to the builder.
+     * A method transform that passes all elements to the builder.
      */
     MethodTransform ACCEPT_ALL = new MethodTransform() {
         @Override
@@ -54,7 +62,7 @@ public non-sealed interface MethodTransform
     };
 
     /**
-     * Create a stateful method transform from a {@link Supplier}.  The supplier
+     * Creates a stateful method transform from a {@link Supplier}.  The supplier
      * will be invoked for each transformation.
      *
      * @param supplier a {@link Supplier} that produces a fresh transform object
@@ -67,7 +75,7 @@ public non-sealed interface MethodTransform
     }
 
     /**
-     * Create a method transform that passes each element through to the builder,
+     * Creates a method transform that passes each element through to the builder,
      * and calls the specified function when transformation is complete.
      *
      * @param finisher the function to call when transformation is complete
@@ -89,7 +97,7 @@ public non-sealed interface MethodTransform
     }
 
     /**
-     * Create a method transform that passes each element through to the builder,
+     * Creates a method transform that passes each element through to the builder,
      * except for those that the supplied {@link Predicate} is true for.
      *
      * @param filter the predicate that determines which elements to drop
@@ -104,8 +112,9 @@ public non-sealed interface MethodTransform
     }
 
     /**
-     * Create a method transform that transforms {@link CodeModel} elements
-     * with the supplied code transform.
+     * Creates a method transform that transforms {@link CodeModel} elements
+     * with the supplied code transform, passing every other element through to
+     * the builder.
      *
      * @param xform the method transform
      * @return the class transform

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.net.*;
 import java.util.*;
 import java.util.regex.*;
 import sun.jvm.hotspot.code.*;
-import sun.jvm.hotspot.c1.*;
 import sun.jvm.hotspot.code.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.interpreter.*;
@@ -120,13 +119,10 @@ public class VM {
   private static int   Flags_WAS_SET_ON_COMMAND_LINE;
   /** This is only present in a non-core build */
   private CodeCache    codeCache;
-  /** This is only present in a C1 build */
-  private Runtime1     runtime1;
   /** These constants come from globalDefinitions.hpp */
   private int          invocationEntryBCI;
   private ReversePtrs  revPtrs;
   private VMRegImpl    vmregImpl;
-  private int          reserveForAllocationPrefetch;
   private int          labAlignmentReserve;
 
   // System.getProperties from debuggee VM
@@ -450,8 +446,6 @@ public class VM {
     boolType = (CIntegerType) db.lookupType("bool");
 
     Type threadLocalAllocBuffer = db.lookupType("ThreadLocalAllocBuffer");
-    CIntegerField reserveForAllocationPrefetchField = threadLocalAllocBuffer.getCIntegerField("_reserve_for_allocation_prefetch");
-    reserveForAllocationPrefetch = (int)reserveForAllocationPrefetchField.getCInteger(intType);
 
     Type collectedHeap = db.lookupType("CollectedHeap");
     CIntegerField labAlignmentReserveField = collectedHeap.getCIntegerField("_lab_alignment_reserve");
@@ -479,7 +473,7 @@ public class VM {
         usingServerCompiler = false;
       } else {
         // Determine whether C2 is present
-        if (db.lookupType("Matcher", false) != null) {
+        if (db.lookupIntConstant("COMPILER2") != null) {
           usingServerCompiler = true;
         } else {
           usingClientCompiler = true;
@@ -866,17 +860,6 @@ public class VM {
     return codeCache;
   }
 
-  /** Should only be called for C1 builds */
-  public Runtime1 getRuntime1() {
-    if (Assert.ASSERTS_ENABLED) {
-      Assert.that(isClientCompiler(), "C1 builds only");
-    }
-    if (runtime1 == null) {
-      runtime1 = new Runtime1();
-    }
-    return runtime1;
-  }
-
   /** Test to see whether we're in debugging mode (NOTE: this really
       should not be tested by this code; currently only used in
       StackFrameStream) */
@@ -893,9 +876,7 @@ public class VM {
   }
 
   /** Indicates whether a given program counter is in Java code. This
-      includes but is not spanned by the interpreter and code cache.
-      Only used in the debugging system, for implementing
-      JavaThread.currentFrameGuess() on x86. */
+      includes but is not spanned by the interpreter and code cache. */
   public boolean isJavaPCDbg(Address addr) {
     // FIXME: this is not a complete enough set: must include areas
     // like vtable stubs
@@ -929,10 +910,6 @@ public class VM {
   // returns null, if not available.
   public String getVMInternalInfo() {
     return vmInternalInfo;
-  }
-
-  public int getReserveForAllocationPrefetch() {
-    return reserveForAllocationPrefetch;
   }
 
   public int getLabAlignmentReserve() {

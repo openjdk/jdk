@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/method.hpp"
@@ -98,31 +97,26 @@ DEF_METADATA_HANDLE_FN_NOINLINE(method, Method)
 DEF_METADATA_HANDLE_FN_NOINLINE(constantPool, ConstantPool)
 
 
-static uintx chunk_oops_do(OopClosure* f, Chunk* chunk, char* chunk_top) {
+static void chunk_oops_do(OopClosure* f, Chunk* chunk, char* chunk_top) {
   oop* bottom = (oop*) chunk->bottom();
   oop* top    = (oop*) chunk_top;
-  uintx handles_visited = top - bottom;
   assert(top >= bottom && top <= (oop*) chunk->top(), "just checking");
-  // during GC phase 3, a handle may be a forward pointer that
-  // is not yet valid, so loosen the assertion
+
   while (bottom < top) {
     f->do_oop(bottom++);
   }
-  return handles_visited;
 }
 
 void HandleArea::oops_do(OopClosure* f) {
-  uintx handles_visited = 0;
   // First handle the current chunk. It is filled to the high water mark.
-  handles_visited += chunk_oops_do(f, _chunk, _hwm);
+  chunk_oops_do(f, _chunk, _hwm);
+
   // Then handle all previous chunks. They are completely filled.
   Chunk* k = _first;
   while(k != _chunk) {
-    handles_visited += chunk_oops_do(f, k, k->top());
+    chunk_oops_do(f, k, k->top());
     k = k->next();
   }
-
-  if (_prev != nullptr) _prev->oops_do(f);
 }
 
 void HandleMark::initialize(Thread* thread) {
@@ -134,7 +128,7 @@ void HandleMark::initialize(Thread* thread) {
   _hwm   = _area->_hwm;
   _max   = _area->_max;
   _size_in_bytes = _area->_size_in_bytes;
-  debug_only(_area->_handle_mark_nesting++);
+  DEBUG_ONLY(_area->_handle_mark_nesting++);
   assert(_area->_handle_mark_nesting > 0, "must stack allocate HandleMarks");
 
   // Link this in the thread

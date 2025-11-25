@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ define_pd_global(bool, UncommonNullCast,         true);  // Uncommon-trap nulls 
 
 define_pd_global(bool, DelayCompilerStubsGeneration, COMPILER2_OR_JVMCI);
 
-define_pd_global(uintx, CodeCacheSegmentSize,    64 COMPILER1_AND_COMPILER2_PRESENT(+64)); // Tiered compilation has large code-entry alignment.
+define_pd_global(size_t, CodeCacheSegmentSize,   64 COMPILER1_AND_COMPILER2_PRESENT(+64)); // Tiered compilation has large code-entry alignment.
 // See 4827828 for this change. There is no globals_core_i486.hpp. I can't
 // assign a different value for C2 without touching a number of files. Use
 // #ifdef to minimize the change as it's late in Mantis. -- FIXME.
@@ -61,29 +61,19 @@ define_pd_global(intx, InlineSmallCode,          1000);
 #define MIN_STACK_RED_PAGES DEFAULT_STACK_RED_PAGES
 #define MIN_STACK_RESERVED_PAGES (0)
 
-#ifdef _LP64
 // Java_java_net_SocketOutputStream_socketWrite0() uses a 64k buffer on the
-// stack if compiled for unix and LP64. To pass stack overflow tests we need
-// 20 shadow pages.
+// stack if compiled for unix. To pass stack overflow tests we need 20 shadow pages.
 #define DEFAULT_STACK_SHADOW_PAGES (NOT_WIN64(20) WIN64_ONLY(8) DEBUG_ONLY(+4))
 // For those clients that do not use write socket, we allow
 // the min range value to be below that of the default
 #define MIN_STACK_SHADOW_PAGES (NOT_WIN64(10) WIN64_ONLY(8) DEBUG_ONLY(+4))
-#else
-#define DEFAULT_STACK_SHADOW_PAGES (4 DEBUG_ONLY(+5))
-#define MIN_STACK_SHADOW_PAGES DEFAULT_STACK_SHADOW_PAGES
-#endif // _LP64
 
 define_pd_global(intx, StackYellowPages, DEFAULT_STACK_YELLOW_PAGES);
 define_pd_global(intx, StackRedPages, DEFAULT_STACK_RED_PAGES);
 define_pd_global(intx, StackShadowPages, DEFAULT_STACK_SHADOW_PAGES);
 define_pd_global(intx, StackReservedPages, DEFAULT_STACK_RESERVED_PAGES);
 
-#ifdef _LP64
 define_pd_global(bool, VMContinuations, true);
-#else
-define_pd_global(bool, VMContinuations, false);
-#endif
 
 define_pd_global(bool, RewriteBytecodes,     true);
 define_pd_global(bool, RewriteFrequentPairs, true);
@@ -191,6 +181,15 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
   product(bool, IntelJccErratumMitigation, true, DIAGNOSTIC,                \
              "Turn off JVM mitigations related to Intel micro code "        \
              "mitigations for the Intel JCC erratum")                       \
+                                                                            \
+  product(int, X86ICacheSync, -1, DIAGNOSTIC,                               \
+             "Select the X86 ICache sync mechanism: -1 = auto-select; "     \
+             "0 = none (dangerous); 1 = CLFLUSH loop; 2 = CLFLUSHOPT loop; "\
+             "3 = CLWB loop; 4 = single CPUID; 5 = single SERIALIZE. "      \
+             "Explicitly selected mechanism will fail at startup if "       \
+             "hardware does not support it.")                               \
+             range(-1, 5)                                                   \
+                                                                            \
 // end of ARCH_FLAGS
 
 #endif // CPU_X86_GLOBALS_X86_HPP

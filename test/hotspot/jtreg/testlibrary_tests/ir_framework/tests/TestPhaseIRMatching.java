@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,14 +60,15 @@ public class TestPhaseIRMatching {
     public static void main(String[] args) {
         run(Basics.class);
         run(NoCompilationOutput.class);
+        run(LoadStore.class);
     }
 
     private static void run(Class<?> testClass) {
         List<String> noAdditionalFlags = new ArrayList<>();
         FlagVMProcess flagVMProcess = new FlagVMProcess(testClass, noAdditionalFlags);
         List<String> testVMFlags = flagVMProcess.getTestVMFlags();
-        TestVMProcess testVMProcess = new TestVMProcess(testVMFlags, testClass, null, -1, false);
-        TestClassParser testClassParser = new TestClassParser(testClass);
+        TestVMProcess testVMProcess = new TestVMProcess(testVMFlags, testClass, null, -1, false, false);
+        TestClassParser testClassParser = new TestClassParser(testClass, false);
         Matchable testClassMatchable = testClassParser.parse(testVMProcess.getHotspotPidFileName(),
                                                              testVMProcess.getIrEncoding());
         MatchResult result = testClassMatchable.match();
@@ -107,6 +108,16 @@ class Basics {
     Object obj3;
     Object obj4;
 
+    public class Helper {
+        private String s;
+
+        public Helper(String s, int i) {
+            this.s = s;
+        }
+
+        public String getString() { return s; }
+    }
+
     @Test
     @IR(failOn = IRNode.STORE, phase = {CompilePhase.DEFAULT, CompilePhase.PRINT_IDEAL})
     @ExpectedFailure(ruleId = 1, failOn = 1) // Only one failure - remove duplicated phases after mapping DEFAULT
@@ -114,73 +125,87 @@ class Basics {
         i = 34;
     }
 
+    // Test failures on ideal phases only.
     @Test
-    @IR(failOn = {IRNode.STORE, IRNode.ALLOC, IRNode.COUNTED_LOOP},
-        counts = {IRNode.STORE, "3", IRNode.ALLOC, "1", IRNode.COUNTED_LOOP, "2"})
-    @ExpectedFailure(ruleId = 1, phase = CompilePhase.PRINT_IDEAL, failOn = 1, counts = {1, 3})
-    @ExpectedFailure(ruleId = 1, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, counts = 2)
+    @IR(failOn = {IRNode.STORE, IRNode.OOPMAP_WITH, "asdf", IRNode.COUNTED_LOOP},
+        counts = {IRNode.STORE, "2", IRNode.FIELD_ACCESS, "2", IRNode.STORE_I, "1"})
+    @ExpectedFailure(ruleId = 1, phase = CompilePhase.PRINT_IDEAL, failOn = 1)
 
-    @IR(failOn = {IRNode.STORE, IRNode.ALLOC, IRNode.COUNTED_LOOP})
-    @ExpectedFailure(ruleId = 2, phase = CompilePhase.PRINT_IDEAL, failOn = 1)
+    @IR(failOn = {IRNode.STORE_F, IRNode.OOPMAP_WITH, "asdf", IRNode.COUNTED_LOOP},
+        counts = {IRNode.STORE, "2", IRNode.FIELD_ACCESS, "2", IRNode.STORE_I, "2"})
+    @ExpectedFailure(ruleId = 2, phase = CompilePhase.PRINT_IDEAL, counts = 3)
 
-    @IR(counts = {IRNode.STORE, "3", IRNode.ALLOC, "1", IRNode.COUNTED_LOOP, "2"})
-    @ExpectedFailure(ruleId = 3, phase = CompilePhase.PRINT_IDEAL, counts = {1, 3})
-    @ExpectedFailure(ruleId = 3, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, counts = 2)
+    @IR(failOn = {IRNode.STORE, IRNode.OOPMAP_WITH, "asdf", IRNode.COUNTED_LOOP})
+    @ExpectedFailure(ruleId = 3, phase = CompilePhase.PRINT_IDEAL, failOn = 1)
+
+    @IR(counts = {IRNode.STORE, "3", IRNode.FIELD_ACCESS, "2", IRNode.COUNTED_LOOP, "2"})
+    @ExpectedFailure(ruleId = 4, phase = CompilePhase.PRINT_IDEAL, counts = {1, 3})
+
+    @IR(failOn = {IRNode.STORE, IRNode.OOPMAP_WITH, "asdf", IRNode.COUNTED_LOOP},
+        counts = {IRNode.STORE, "3", IRNode.FIELD_ACCESS, "2", IRNode.COUNTED_LOOP, "2"})
+    @ExpectedFailure(ruleId = 5, phase = CompilePhase.PRINT_IDEAL, failOn = 1, counts = {1, 3})
 
     @IR(counts = {IRNode.STORE_I, "2"})
-    @ExpectedFailure(ruleId = 4, phase = CompilePhase.PRINT_IDEAL, counts = 1)
+    @ExpectedFailure(ruleId = 6, phase = CompilePhase.PRINT_IDEAL, counts = 1)
     public void defaultOnIdeal() {
         i = 34;
         l = 34;
     }
 
+    // Test failures on mach phases only.
     @Test
-    @IR(failOn = {IRNode.STORE_F, IRNode.ALLOC, IRNode.COUNTED_LOOP},
-        counts = {IRNode.STORE_F, "3", IRNode.ALLOC, "1", IRNode.COUNTED_LOOP, "2"})
+    @IR(failOn = {IRNode.STORE_F, IRNode.FIELD_ACCESS, IRNode.COUNTED_LOOP},
+        counts = {IRNode.STORE_I, "1", IRNode.FIELD_ACCESS, "2", IRNode.OOPMAP_WITH, "asdf", "< 2"})
     @ExpectedFailure(ruleId = 1, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, failOn = 2)
-    @ExpectedFailure(ruleId = 1, phase = CompilePhase.PRINT_IDEAL, counts = {1, 3})
 
-    @IR(failOn = {IRNode.STORE_F, IRNode.ALLOC, IRNode.COUNTED_LOOP})
-    @ExpectedFailure(ruleId = 2, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, failOn = 2)
+    @IR(failOn = {IRNode.STORE_F, IRNode.OOPMAP_WITH, "asdf", IRNode.COUNTED_LOOP},
+        counts = {IRNode.STORE_I, "1", IRNode.FIELD_ACCESS, "1", IRNode.OOPMAP_WITH, "asdf", "< 2"})
+    @ExpectedFailure(ruleId = 2, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, counts = 2)
 
-    @IR(counts = {IRNode.STORE_F, "3", IRNode.ALLOC, "1", IRNode.COUNTED_LOOP, "2"})
-    @ExpectedFailure(ruleId = 3, phase = CompilePhase.PRINT_IDEAL, counts = {1, 3})
+    @IR(failOn = {IRNode.STORE_F, IRNode.FIELD_ACCESS, IRNode.COUNTED_LOOP})
+    @ExpectedFailure(ruleId = 3, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, failOn = 2)
 
-    @IR(failOn = {IRNode.STORE_F, IRNode.ALLOC, IRNode.COUNTED_LOOP},
-        counts = {IRNode.STORE_F, "3", IRNode.ALLOC, "2", IRNode.COUNTED_LOOP, "2"})
+    @IR(counts = {IRNode.STORE_I, "1", IRNode.FIELD_ACCESS, "1", IRNode.OOPMAP_WITH, "asdf", "3"})
+    @ExpectedFailure(ruleId = 4, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, counts = {2, 3})
 
-    @ExpectedFailure(ruleId = 4, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, failOn = 2, counts = 2)
-    @ExpectedFailure(ruleId = 4, phase = CompilePhase.PRINT_IDEAL, counts = {1, 3})
+    @IR(failOn = {IRNode.STORE_F, IRNode.FIELD_ACCESS, IRNode.COUNTED_LOOP},
+        counts = {IRNode.STORE_I, "1", IRNode.FIELD_ACCESS, "1", IRNode.OOPMAP_WITH, "asdf", "3"})
+    @ExpectedFailure(ruleId = 5, phase = CompilePhase.PRINT_OPTO_ASSEMBLY,  failOn = 2, counts = {2, 3})
 
-    @IR(counts = {IRNode.ALLOC, "2"})
-    @ExpectedFailure(ruleId = 5, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, counts = 1)
-    public Object defaultOnOptoAssembly() {
-        return new Object();
+    @IR(counts = {IRNode.FIELD_ACCESS, "1"})
+    @ExpectedFailure(ruleId = 6, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, counts = 1)
+    public void defaultOnOptoAssembly() {
+        i = 34;
+        l = 34;
     }
 
+    // Test failures on ideal and mach phases.
     @Test
-    @IR(failOn = {IRNode.STORE, IRNode.ALLOC, IRNode.ALLOC_OF, "Object", IRNode.COUNTED_LOOP},
-        counts = {IRNode.STORE, "20", IRNode.ALLOC, "1", IRNode.ALLOC_OF, "Object", "1", IRNode.COUNTED_LOOP, "2"})
-    @ExpectedFailure(ruleId = 1, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, failOn = {2, 3})
-    @ExpectedFailure(ruleId = 1, phase = CompilePhase.PRINT_IDEAL, failOn = 1, counts = {1, 4})
+    @IR(failOn = {IRNode.STORE, IRNode.FIELD_ACCESS, IRNode.COUNTED_LOOP},
+        counts = {IRNode.STORE, "2", IRNode.FIELD_ACCESS, "2", IRNode.STORE_I, "1"})
+    @ExpectedFailure(ruleId = 1, phase = CompilePhase.PRINT_IDEAL, failOn = 1)
+    @ExpectedFailure(ruleId = 1, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, failOn = 2)
 
-    @IR(failOn = {IRNode.STORE, IRNode.ALLOC, IRNode.ALLOC_OF, "Object", IRNode.COUNTED_LOOP})
+    @IR(failOn = {IRNode.STORE, IRNode.FIELD_ACCESS, IRNode.COUNTED_LOOP})
     @ExpectedFailure(ruleId = 2, phase = CompilePhase.PRINT_IDEAL, failOn = 1)
-    @ExpectedFailure(ruleId = 2, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, failOn = {2, 3})
+    @ExpectedFailure(ruleId = 2, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, failOn = 2)
 
-    @IR(counts = {IRNode.STORE, "20", IRNode.ALLOC, "1", IRNode.ALLOC_OF, "Object", "2", IRNode.COUNTED_LOOP, "2"})
-    @ExpectedFailure(ruleId = 3, phase = CompilePhase.PRINT_IDEAL, counts = {1, 4})
-    @ExpectedFailure(ruleId = 3, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, counts = 3)
+    @IR(counts = {IRNode.STORE, "20", IRNode.FIELD_ACCESS, "1", IRNode.STORE_I, "1"})
+    @ExpectedFailure(ruleId = 3, phase = CompilePhase.PRINT_IDEAL, counts = 1)
+    @ExpectedFailure(ruleId = 3, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, counts = 2)
 
-    @IR(failOn = {IRNode.STORE, IRNode.ALLOC, IRNode.ALLOC_OF, "Object", IRNode.COUNTED_LOOP},
-        counts = {IRNode.STORE, "20", IRNode.ALLOC, "2", IRNode.ALLOC_OF, "Object", "2", IRNode.COUNTED_LOOP, "2"})
-    @ExpectedFailure(ruleId = 4, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, failOn = {2, 3}, counts = {2, 3})
-    @ExpectedFailure(ruleId = 4, phase = CompilePhase.PRINT_IDEAL, failOn = 1, counts = {1, 4})
+    @IR(failOn = {IRNode.STORE, IRNode.FIELD_ACCESS, IRNode.COUNTED_LOOP},
+        counts = {IRNode.STORE, "20", IRNode.FIELD_ACCESS, "1", IRNode.COUNTED_LOOP, "2"})
+    @ExpectedFailure(ruleId = 4, phase = CompilePhase.PRINT_IDEAL, failOn = 1, counts = {1, 3})
+    @ExpectedFailure(ruleId = 4, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, failOn = 2, counts = 2)
 
-    @IR(counts = {IRNode.ALLOC, "2", IRNode.ALLOC_OF, "Object", "1"})
-    @ExpectedFailure(ruleId = 5, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, counts = 1)
+    @IR(failOn = {IRNode.STORE, IRNode.FIELD_ACCESS, IRNode.COUNTED_LOOP, IRNode.STORE_I},
+        counts = {IRNode.STORE, "20", IRNode.FIELD_ACCESS, "1", IRNode.COUNTED_LOOP, "2", IRNode.OOPMAP_WITH, "asdf", "2"})
+    @ExpectedFailure(ruleId = 5, phase = CompilePhase.PRINT_IDEAL, failOn = {1, 4}, counts = {1, 3})
+    @ExpectedFailure(ruleId = 5, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, failOn = 2, counts = {2, 4})
     public void defaultOnBoth() {
-        obj = new Object();
+        i = 34;
+        l = 34;
     }
 
     @Test
@@ -238,9 +263,9 @@ class Basics {
     @Test
     @IR(failOn = {IRNode.ALLOC, IRNode.ALLOC_ARRAY},
         counts = {IRNode.ALLOC, "0", IRNode.ALLOC_ARRAY, "0"},
-        phase = {CompilePhase.BEFORE_REMOVEUSELESS, CompilePhase.CCP1, CompilePhase.PRINT_OPTO_ASSEMBLY, CompilePhase.DEFAULT})
+        phase = {CompilePhase.BEFORE_REMOVEUSELESS, CompilePhase.CCP1, CompilePhase.DEFAULT})
     @ExpectedFailure(ruleId = 1, failOn = {1, 2}, counts = {1, 2},
-                     phase = {CompilePhase.BEFORE_REMOVEUSELESS, CompilePhase.CCP1, CompilePhase.PRINT_OPTO_ASSEMBLY})
+                     phase = {CompilePhase.BEFORE_REMOVEUSELESS, CompilePhase.CCP1, CompilePhase.BEFORE_MACRO_EXPANSION})
     public void alloc() {
         obj = new Object();
         obj2 = new Object[1];
@@ -248,7 +273,7 @@ class Basics {
 
     @Test
     @IR(counts = {IRNode.ALLOC, "2", IRNode.ALLOC_ARRAY, "2"}, // works for all phases
-        phase = {CompilePhase.BEFORE_REMOVEUSELESS, CompilePhase.CCP1, CompilePhase.PRINT_OPTO_ASSEMBLY, CompilePhase.DEFAULT})
+        phase = {CompilePhase.BEFORE_REMOVEUSELESS, CompilePhase.CCP1, CompilePhase.DEFAULT})
     public void alloc2() {
         obj = new Object();
         obj2 = new Object[1];
@@ -399,6 +424,11 @@ class FailureBuilder implements MatchResultVisitor {
     }
 
     @Override
+    public void visitMethodNotCompilable(Method method, int failedIRRules) {
+        throw new RuntimeException("No test should bailout from compilation");
+    }
+
+    @Override
     public void visitIRRule(AcceptChildren acceptChildren, int irRuleId, IR irAnno) {
         ruleId = irRuleId;
         acceptChildren.accept(this);
@@ -518,5 +548,241 @@ record Failure(String methodName, int irRuleId, CompilePhase compilePhase, Check
                                                   .thenComparing(Failure::compilePhase)
                                                   .thenComparing(Failure::checkAttributeType)
                                                   .thenComparing(Failure::constraintId)).collect(Collectors.toList());
+    }
+}
+
+// Test load and store regexes
+class LoadStore {
+    int i;
+    float f;
+    interface I1 {}
+    static class Base implements I1 {
+        int i;
+    }
+    interface I2 {}
+    static class Derived extends Base implements I2 {
+        long l;
+    }
+    Base base = new Base();
+    Derived derived = new Derived();
+
+    static class SingleNest {
+        static class DoubleNest {
+            int i;
+        }
+    }
+
+    SingleNest.DoubleNest doubleNest = new SingleNest.DoubleNest();
+
+
+    @Test
+    @IR(failOn = {IRNode.LOAD_OF_CLASS, ".*", IRNode.STORE_OF_CLASS, ".*"})
+    public void triviallyFailBoth() {
+    }
+
+    @Test
+    @IR(counts = {
+            IRNode.LOAD_OF_CLASS, "LoadS[a-z]+", "1",
+            IRNode.LOAD_OF_CLASS, "Load.tore", "1",
+            IRNode.LOAD_OF_CLASS, "LoadStore", "1",
+            IRNode.LOAD_OF_CLASS, "/LoadStore", "1",
+            IRNode.LOAD_OF_CLASS, "tests/LoadStore", "1",
+            IRNode.LOAD_OF_CLASS, "/tests/LoadStore", "1",
+            IRNode.LOAD_OF_CLASS, "ir_framework/tests/LoadStore", "1",
+            IRNode.LOAD_OF_CLASS, "(?<=[@: ])ir_framework/tests/LoadStore", "1",  // To assert it's the whole qualification
+            IRNode.LOAD_OF_CLASS, "(?<=[@: ])[\\w\\$/]*tests[\\w\\$/]*", "1",
+        },
+        failOn = {
+            IRNode.LOAD_OF_CLASS, "oadStore",
+            IRNode.LOAD_OF_CLASS, "LoadStor",
+            IRNode.LOAD_OF_CLASS, "/ir_framework/tests/LoadStore",
+            IRNode.LOAD_OF_CLASS, "(?<=[@: ])[\\w\\$]*tests[\\w\\$]*",
+        }
+    )
+    // @ir_framework/tests/LoadStore+12 *
+    public float simpleLoad() {
+        return f;
+    }
+
+    @Test
+    @IR(counts = {
+            IRNode.STORE_OF_CLASS, "LoadS[a-z]+", "1",
+            IRNode.STORE_OF_CLASS, "Load.tore", "1",
+            IRNode.STORE_OF_CLASS, "LoadStore", "1",
+            IRNode.STORE_OF_CLASS, "/LoadStore", "1",
+            IRNode.STORE_OF_CLASS, "tests/LoadStore", "1",
+            IRNode.STORE_OF_CLASS, "/tests/LoadStore", "1",
+            IRNode.STORE_OF_CLASS, "ir_framework/tests/LoadStore", "1",
+            IRNode.STORE_OF_CLASS, "(?<=[@: ])ir_framework/tests/LoadStore", "1",
+            IRNode.STORE_OF_CLASS, "(?<=[@: ])[\\w\\$/]*tests[\\w\\$/]*", "1",
+        },
+        failOn = {
+            IRNode.STORE_OF_CLASS, "oadStore",
+            IRNode.STORE_OF_CLASS, "LoadStor",
+            IRNode.STORE_OF_CLASS, "/ir_framework/tests/LoadStore",
+            IRNode.STORE_OF_CLASS, "(?<=[@: ])[\\w\\$]*tests[\\w\\$]*",
+        }
+    )
+    // @ir_framework/tests/LoadStore+12 *
+    public void simpleStore() {
+        i = 1;
+    }
+
+    @Test
+    @IR(counts = {
+            IRNode.LOAD_I_OF_CLASS, "Base", "1",
+            IRNode.LOAD_I_OF_CLASS, "\\$Base", "1",
+            IRNode.LOAD_I_OF_CLASS, "LoadS[a-z]+\\$Base", "1",
+            IRNode.LOAD_I_OF_CLASS, "Load.tore\\$Base", "1",
+            IRNode.LOAD_I_OF_CLASS, "LoadStore\\$Base", "1",
+            IRNode.LOAD_I_OF_CLASS, "/LoadStore\\$Base", "1",
+            IRNode.LOAD_I_OF_CLASS, "tests/LoadStore\\$Base", "1",
+            IRNode.LOAD_I_OF_CLASS, "/tests/LoadStore\\$Base", "1",
+            IRNode.LOAD_I_OF_CLASS, "ir_framework/tests/LoadStore\\$Base", "1",
+            IRNode.LOAD_I_OF_CLASS, "(?<=[@: ])ir_framework/tests/LoadStore\\$Base", "1",
+            IRNode.LOAD_I_OF_CLASS, "(?<=[@: ])[\\w\\$/]*tests[\\w\\$/]*", "1",
+        },
+        failOn = {
+            IRNode.LOAD_I_OF_CLASS, "/Base",
+            IRNode.LOAD_I_OF_CLASS, "oadStore\\$Base",
+            IRNode.LOAD_I_OF_CLASS, "LoadStore\\$Bas",
+            IRNode.LOAD_I_OF_CLASS, "LoadStore",
+            IRNode.LOAD_I_OF_CLASS, "/ir_framework/tests/LoadStore\\$Base",
+            IRNode.LOAD_I_OF_CLASS, "(?<=[@: ])[\\w\\$]*tests[\\w\\$]*",
+        }
+    )
+    // @ir_framework/tests/LoadStore$Base (ir_framework/tests/LoadStore$I1)+12 *
+    public int loadWithInterface() {
+        return base.i;
+    }
+
+    @Test
+    @IR(counts = {
+            IRNode.STORE_I_OF_CLASS, "Base", "1",
+            IRNode.STORE_I_OF_CLASS, "\\$Base", "1",
+            IRNode.STORE_I_OF_CLASS, "LoadS[a-z]+\\$Base", "1",
+            IRNode.STORE_I_OF_CLASS, "Load.tore\\$Base", "1",
+            IRNode.STORE_I_OF_CLASS, "LoadStore\\$Base", "1",
+            IRNode.STORE_I_OF_CLASS, "/LoadStore\\$Base", "1",
+            IRNode.STORE_I_OF_CLASS, "tests/LoadStore\\$Base", "1",
+            IRNode.STORE_I_OF_CLASS, "/tests/LoadStore\\$Base", "1",
+            IRNode.STORE_I_OF_CLASS, "ir_framework/tests/LoadStore\\$Base", "1",
+            IRNode.STORE_I_OF_CLASS, "(?<=[@: ])ir_framework/tests/LoadStore\\$Base", "1",
+            IRNode.STORE_I_OF_CLASS, "(?<=[@: ])[\\w\\$/]*tests[\\w\\$/]*", "1",
+        },
+        failOn = {
+            IRNode.STORE_I_OF_CLASS, "/Base",
+            IRNode.STORE_I_OF_CLASS, "oadStore\\$Base",
+            IRNode.STORE_I_OF_CLASS, "LoadStore\\$Bas",
+            IRNode.STORE_I_OF_CLASS, "LoadStore",
+            IRNode.STORE_I_OF_CLASS, "/ir_framework/tests/LoadStore\\$Base",
+            IRNode.STORE_I_OF_CLASS, "(?<=[@: ])[\\w\\$]*tests[\\w\\$]*",
+        }
+    )
+    // @ir_framework/tests/LoadStore$Base (ir_framework/tests/LoadStore$I1)+12 *
+    public void storeWithInterface() {
+        base.i = 1;
+    }
+
+    @Test
+    @IR(counts = {
+            IRNode.LOAD_L_OF_CLASS, "Derived", "1",
+            IRNode.LOAD_L_OF_CLASS, "\\$Derived", "1",
+            IRNode.LOAD_L_OF_CLASS, "LoadS[a-z]+\\$Derived", "1",
+            IRNode.LOAD_L_OF_CLASS, "Load.tore\\$Derived", "1",
+            IRNode.LOAD_L_OF_CLASS, "LoadStore\\$Derived", "1",
+            IRNode.LOAD_L_OF_CLASS, "/LoadStore\\$Derived", "1",
+            IRNode.LOAD_L_OF_CLASS, "tests/LoadStore\\$Derived", "1",
+            IRNode.LOAD_L_OF_CLASS, "/tests/LoadStore\\$Derived", "1",
+            IRNode.LOAD_L_OF_CLASS, "ir_framework/tests/LoadStore\\$Derived", "1",
+            IRNode.LOAD_L_OF_CLASS, "(?<=[@: ])ir_framework/tests/LoadStore\\$Derived", "1",
+            IRNode.LOAD_L_OF_CLASS, "(?<=[@: ])[\\w\\$/]*tests[\\w\\$/]*", "1",
+        },
+        failOn = {
+            IRNode.LOAD_L_OF_CLASS, "/Derived",
+            IRNode.LOAD_L_OF_CLASS, "oadStore\\$Derived",
+            IRNode.LOAD_L_OF_CLASS, "LoadStore\\$Derive",
+            IRNode.LOAD_L_OF_CLASS, "LoadStore",
+            IRNode.LOAD_L_OF_CLASS, "/ir_framework/tests/LoadStore\\$Derived",
+            IRNode.LOAD_L_OF_CLASS, "(?<=[@: ])[\\w\\$]*tests[\\w\\$]*",
+        }
+    )
+    // @ir_framework/tests/LoadStore$Derived (ir_framework/tests/LoadStore$I1,ir_framework/tests/LoadStore$I2)+24 *
+    public long loadWithInterfaces() {
+        return derived.l;
+    }
+
+    @Test
+    @IR(counts = {
+            IRNode.STORE_L_OF_CLASS, "Derived", "1",
+            IRNode.STORE_L_OF_CLASS, "\\$Derived", "1",
+            IRNode.STORE_L_OF_CLASS, "LoadS[a-z]+\\$Derived", "1",
+            IRNode.STORE_L_OF_CLASS, "Load.tore\\$Derived", "1",
+            IRNode.STORE_L_OF_CLASS, "LoadStore\\$Derived", "1",
+            IRNode.STORE_L_OF_CLASS, "/LoadStore\\$Derived", "1",
+            IRNode.STORE_L_OF_CLASS, "tests/LoadStore\\$Derived", "1",
+            IRNode.STORE_L_OF_CLASS, "/tests/LoadStore\\$Derived", "1",
+            IRNode.STORE_L_OF_CLASS, "ir_framework/tests/LoadStore\\$Derived", "1",
+            IRNode.STORE_L_OF_CLASS, "(?<=[@: ])ir_framework/tests/LoadStore\\$Derived", "1",
+            IRNode.STORE_L_OF_CLASS, "(?<=[@: ])[\\w\\$/]*tests[\\w\\$/]*", "1",
+        },
+        failOn = {
+            IRNode.STORE_L_OF_CLASS, "/Derived",
+            IRNode.STORE_L_OF_CLASS, "oadStore\\$Derived",
+            IRNode.STORE_L_OF_CLASS, "LoadStore\\$Derive",
+            IRNode.STORE_L_OF_CLASS, "LoadStore",
+            IRNode.STORE_L_OF_CLASS, "/ir_framework/tests/LoadStore\\$Derived",
+            IRNode.STORE_L_OF_CLASS, "(?<=[@: ])[\\w\\$]*tests[\\w\\$]*",
+        }
+    )
+    // @ir_framework/tests/LoadStore$Derived (ir_framework/tests/LoadStore$I1,ir_framework/tests/LoadStore$I2)+24 *
+    public void storeWithInterfaces() {
+        derived.l = 1;
+    }
+
+    @Test
+    @IR(counts = {
+            IRNode.LOAD_I_OF_CLASS, "DoubleNest", "1",
+            IRNode.LOAD_I_OF_CLASS, "\\$DoubleNest", "1",
+            IRNode.LOAD_I_OF_CLASS, "SingleNest\\$DoubleNest", "1",
+            IRNode.LOAD_I_OF_CLASS, "\\$SingleNest\\$DoubleNest", "1",
+            IRNode.LOAD_I_OF_CLASS, "LoadStore\\$SingleNest\\$DoubleNest", "1",
+            IRNode.LOAD_I_OF_CLASS, "/LoadStore\\$SingleNest\\$DoubleNest", "1",
+            IRNode.LOAD_I_OF_CLASS, "tests/LoadStore\\$SingleNest\\$DoubleNest", "1",
+            IRNode.LOAD_I_OF_CLASS, "/tests/LoadStore\\$SingleNest\\$DoubleNest", "1",
+            IRNode.LOAD_I_OF_CLASS, "ir_framework/tests/LoadStore\\$SingleNest\\$DoubleNest", "1",
+        },
+        failOn = {
+            IRNode.LOAD_I_OF_CLASS, "SingleNest",
+            IRNode.LOAD_I_OF_CLASS, "LoadStore",
+            IRNode.LOAD_I_OF_CLASS, "LoadStore\\$SingleNest",
+        }
+    )
+    // @ir_framework/tests/LoadStore$SingleNest$DoubleNest+12 *
+    public int loadDoubleNested() {
+        return doubleNest.i;
+    }
+
+    @Test
+    @IR(counts = {
+            IRNode.STORE_I_OF_CLASS, "DoubleNest", "1",
+            IRNode.STORE_I_OF_CLASS, "\\$DoubleNest", "1",
+            IRNode.STORE_I_OF_CLASS, "SingleNest\\$DoubleNest", "1",
+            IRNode.STORE_I_OF_CLASS, "\\$SingleNest\\$DoubleNest", "1",
+            IRNode.STORE_I_OF_CLASS, "LoadStore\\$SingleNest\\$DoubleNest", "1",
+            IRNode.STORE_I_OF_CLASS, "/LoadStore\\$SingleNest\\$DoubleNest", "1",
+            IRNode.STORE_I_OF_CLASS, "tests/LoadStore\\$SingleNest\\$DoubleNest", "1",
+            IRNode.STORE_I_OF_CLASS, "/tests/LoadStore\\$SingleNest\\$DoubleNest", "1",
+            IRNode.STORE_I_OF_CLASS, "ir_framework/tests/LoadStore\\$SingleNest\\$DoubleNest", "1",
+        },
+        failOn = {
+            IRNode.STORE_I_OF_CLASS, "SingleNest",
+            IRNode.STORE_I_OF_CLASS, "LoadStore",
+            IRNode.STORE_I_OF_CLASS, "LoadStore\\$SingleNest",
+        }
+    )
+    // @ir_framework/tests/LoadStore$SingleNest$DoubleNest+12 *
+    public void storeDoubleNested() {
+        doubleNest.i = 1;
     }
 }

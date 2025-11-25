@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,15 @@ public class JavacMessages implements Messages {
         this(defaultBundleName, context.get(Locale.class));
         this.context = context;
         context.put(messagesKey, this);
-        Options options = Options.instance(context);
+
+        // Initialize fields configured by Options that we may need before it is ready
+        diagFormatter = new BasicDiagnosticFormatter(this);
+
+        // Once Options is ready, complete the initialization
+        Options.instance(context).whenReady(this::initOptions);
+    }
+
+    private void initOptions(Options options) {
         boolean rawDiagnostics = options.isSet("rawDiagnostics");
         this.diagFormatter = rawDiagnostics ? new RawDiagnosticFormatter(options) :
                                                   new BasicDiagnosticFormatter(options, this);

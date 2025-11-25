@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,15 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gcTimer.hpp"
-#include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/referenceProcessor.inline.hpp"
+#include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/workerDataArray.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 #define ASSERT_REF_TYPE(ref_type) assert((ref_type) >= REF_SOFT && (ref_type) <= REF_PHANTOM, \
                                          "Invariant (%d)", (int)ref_type)
@@ -215,7 +214,7 @@ ReferenceProcessorPhaseTimes::~ReferenceProcessorPhaseTimes() {
 
 void ReferenceProcessorPhaseTimes::add_ref_dropped(ReferenceType ref_type, size_t count) {
   ASSERT_REF_TYPE(ref_type);
-  Atomic::add(&_ref_dropped[ref_type_2_index(ref_type)], count, memory_order_relaxed);
+  AtomicAccess::add(&_ref_dropped[ref_type_2_index(ref_type)], count, memory_order_relaxed);
 }
 
 void ReferenceProcessorPhaseTimes::set_ref_discovered(ReferenceType ref_type, size_t count) {
@@ -268,7 +267,6 @@ void ReferenceProcessorPhaseTimes::print_reference(ReferenceType ref_type, uint 
 
   if (lt.is_enabled()) {
     LogStream ls(lt);
-    ResourceMark rm;
 
     int const ref_type_index = ref_type_2_index(ref_type);
 

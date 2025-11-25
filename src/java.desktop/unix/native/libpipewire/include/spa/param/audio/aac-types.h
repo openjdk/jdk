@@ -12,6 +12,11 @@ extern "C" {
 #include <spa/utils/type.h>
 #include <spa/param/audio/aac.h>
 
+/**
+ * \addtogroup spa_param
+ * \{
+ */
+
 #define SPA_TYPE_INFO_AudioAACStreamFormat        SPA_TYPE_INFO_ENUM_BASE "AudioAACStreamFormat"
 #define SPA_TYPE_INFO_AUDIO_AAC_STREAM_FORMAT_BASE    SPA_TYPE_INFO_AudioAACStreamFormat ":"
 

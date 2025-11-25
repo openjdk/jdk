@@ -44,7 +44,6 @@ private:
   void satb_write_barrier_pre(MacroAssembler* masm,
                               Register obj,
                               Register pre_val,
-                              Register thread,
                               Register tmp,
                               bool tosca_live,
                               bool expand_call);
@@ -52,7 +51,6 @@ private:
   void shenandoah_write_barrier_pre(MacroAssembler* masm,
                                     Register obj,
                                     Register pre_val,
-                                    Register thread,
                                     Register tmp,
                                     bool tosca_live,
                                     bool expand_call);
@@ -81,7 +79,7 @@ public:
   virtual void arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                   Register src, Register dst, Register count);
   virtual void load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                       Register dst, Address src, Register tmp1, Register tmp_thread);
+                       Register dst, Address src, Register tmp1);
   virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                         Address dst, Register val, Register tmp1, Register tmp2, Register tmp3);
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,

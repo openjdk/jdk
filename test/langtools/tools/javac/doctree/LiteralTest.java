@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614  8241780 8273244 8284908
+ * @bug 7021614  8241780 8273244 8284908 8352249
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -76,9 +76,9 @@ DocComment[DOC_COMMENT, pos:0
      */
     void nested() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Literal[LITERAL, pos:1, {@literal_nested}_]
+    Literal[LITERAL, pos:0, {@literal_nested}_]
   body: empty
   block tags: empty
 ]
@@ -91,9 +91,9 @@ DocComment[DOC_COMMENT, pos:1
      */
     void embedded_newline() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Literal[LITERAL, pos:1, if_(a_<_b)_{|________}|_]
+    Literal[LITERAL, pos:0, if_(a_<_b)_{|_______}|]
   body: empty
   block tags: empty
 ]
@@ -106,14 +106,13 @@ DocComment[DOC_COMMENT, pos:1
      */
     void embedded_at() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Literal[LITERAL, pos:1, |_@tag|_]
+    Literal[LITERAL, pos:0, |@tag|]
   body: empty
   block tags: empty
 ]
 */
-
 
     /** {@literal if (a < b) { } */
     void unterminated_1() { }
@@ -134,11 +133,11 @@ DocComment[DOC_COMMENT, pos:0
      * @author jjg */
     void unterminated_2() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Erroneous[ERRONEOUS, pos:1, prefPos:37
+    Erroneous[ERRONEOUS, pos:0, prefPos:35
       code: compiler.err.dc.unterminated.inline.tag
-      body: {@literal_if_(a_<_b)_{_}|_@author_jjg
+      body: {@literal_if_(a_<_b)_{_}|@author_jjg
     ]
   body: empty
   block tags: empty

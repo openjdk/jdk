@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,8 @@ public class JcmdOutputEncodingTest {
         launcher.addVMArgs(Utils.getTestJavaOpts());
         launcher.addVMArg("-Dfile.encoding=" + cs);
         launcher.addVMArg("-Dsun.stdout.encoding=" + cs);
+        // Thread.print command output may be lengthy, disable streaming output to avoid deadlocks
+        launcher.addVMArg("-Djdk.attach.allowStreamingOutput=false");
         launcher.addToolArg(Long.toString(ProcessTools.getProcessId()));
         boolean isVirtualThread = Thread.currentThread().isVirtual();
         Path threadDumpFile = null;

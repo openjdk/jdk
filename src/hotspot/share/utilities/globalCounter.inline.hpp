@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,20 +27,20 @@
 
 #include "utilities/globalCounter.hpp"
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 
 inline GlobalCounter::CSContext
 GlobalCounter::critical_section_begin(Thread *thread) {
   assert(thread == Thread::current(), "must be current thread");
-  uintx old_cnt = Atomic::load(thread->get_rcu_counter());
+  uintx old_cnt = AtomicAccess::load(thread->get_rcu_counter());
   // Retain the old counter value if already active, e.g. nested.
   // Otherwise, set the counter to the current version + active bit.
   uintx new_cnt = old_cnt;
   if ((new_cnt & COUNTER_ACTIVE) == 0) {
-    new_cnt = Atomic::load(&_global_counter._counter) | COUNTER_ACTIVE;
+    new_cnt = AtomicAccess::load(&_global_counter._counter) | COUNTER_ACTIVE;
   }
-  Atomic::release_store_fence(thread->get_rcu_counter(), new_cnt);
+  AtomicAccess::release_store_fence(thread->get_rcu_counter(), new_cnt);
   return static_cast<CSContext>(old_cnt);
 }
 
@@ -49,8 +49,8 @@ GlobalCounter::critical_section_end(Thread *thread, CSContext context) {
   assert(thread == Thread::current(), "must be current thread");
   assert((*thread->get_rcu_counter() & COUNTER_ACTIVE) == COUNTER_ACTIVE, "must be in critical section");
   // Restore the counter value from before the associated begin.
-  Atomic::release_store(thread->get_rcu_counter(),
-                        static_cast<uintx>(context));
+  AtomicAccess::release_store(thread->get_rcu_counter(),
+                              static_cast<uintx>(context));
 }
 
 class GlobalCounter::CriticalSection {

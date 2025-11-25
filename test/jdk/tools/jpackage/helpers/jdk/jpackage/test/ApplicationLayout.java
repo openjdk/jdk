@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.util.Optional;
 
 public record ApplicationLayout(Path launchersDirectory, Path appDirectory,
         Path runtimeDirectory, Path runtimeHomeDirectory, Path appModsDirectory,
-        Path destktopIntegrationDirectory, Path contentDirectory) {
+        Path desktopIntegrationDirectory, Path contentDirectory, Path libapplauncher) {
 
     public ApplicationLayout resolveAt(Path root) {
         return new ApplicationLayout(
@@ -38,8 +38,9 @@ public record ApplicationLayout(Path launchersDirectory, Path appDirectory,
                 resolve(root, runtimeDirectory),
                 resolve(root, runtimeHomeDirectory),
                 resolve(root, appModsDirectory),
-                resolve(root, destktopIntegrationDirectory),
-                resolve(root, contentDirectory));
+                resolve(root, desktopIntegrationDirectory),
+                resolve(root, contentDirectory),
+                resolve(root, libapplauncher));
     }
 
     public static ApplicationLayout linuxAppImage() {
@@ -50,7 +51,8 @@ public record ApplicationLayout(Path launchersDirectory, Path appDirectory,
                 Path.of("lib/runtime"),
                 Path.of("lib/app/mods"),
                 Path.of("lib"),
-                Path.of("lib")
+                Path.of("lib"),
+                Path.of("lib/libapplauncher.so")
         );
     }
 
@@ -62,7 +64,8 @@ public record ApplicationLayout(Path launchersDirectory, Path appDirectory,
                 Path.of("runtime"),
                 Path.of("app/mods"),
                 Path.of(""),
-                Path.of("")
+                Path.of(""),
+                null
         );
     }
 
@@ -74,7 +77,8 @@ public record ApplicationLayout(Path launchersDirectory, Path appDirectory,
                 Path.of("Contents/runtime/Contents/Home"),
                 Path.of("Contents/app/mods"),
                 Path.of("Contents/Resources"),
-                Path.of("Contents")
+                Path.of("Contents"),
+                null
         );
     }
 
@@ -94,11 +98,18 @@ public record ApplicationLayout(Path launchersDirectory, Path appDirectory,
         throw new IllegalArgumentException("Unknown platform");
     }
 
-    public static ApplicationLayout javaRuntime() {
+    public static ApplicationLayout platformJavaRuntime() {
+        Path runtime = Path.of("");
+        Path runtimeHome = runtime;
+        if (TKit.isOSX()) {
+            runtimeHome = Path.of("Contents/Home");
+        }
+
         return new ApplicationLayout(
                 null,
                 null,
-                Path.of(""),
+                runtime,
+                runtimeHome,
                 null,
                 null,
                 null,
@@ -116,7 +127,8 @@ public record ApplicationLayout(Path launchersDirectory, Path appDirectory,
                 lib.resolve("runtime"),
                 lib.resolve("app/mods"),
                 lib,
-                lib
+                lib,
+                lib.resolve("lib/libapplauncher.so")
         );
     }
 

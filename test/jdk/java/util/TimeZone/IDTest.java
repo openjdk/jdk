@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,30 @@
 
 /*
  * @test
- * @bug 4509255 5055567 6176318 7090844
+ * @bug 4509255 5055567 6176318 7090844 8347841 8347955
  * @summary Tests consistencies of time zone IDs.
  */
 
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeMap;
+import java.util.function.Predicate;
 
 public class IDTest {
     public static void main(String[] args) {
         Set<String> ids = new HashSet<>();
         Map<Integer, Set<String>> tree = new TreeMap<>();
 
-        String[] tzs = TimeZone.getAvailableIDs();
-        String[] tzs2 = TimeZone.getAvailableIDs();
+        String[] tzs = TimeZone.availableIDs()
+                .filter(Predicate.not(ZoneId.SHORT_IDS::containsKey))
+                .toArray(String[]::new);
+        String[] tzs2 = TimeZone.availableIDs()
+                .filter(Predicate.not(ZoneId.SHORT_IDS::containsKey))
+                .toArray(String[]::new);
         if (tzs.length != tzs2.length) {
             throw new RuntimeException("tzs.length(" + tzs.length
                                        + ") != tzs2.length(" + tzs2.length + ")");
@@ -83,8 +89,12 @@ public class IDTest {
             // Check the getAvailableIDs(int) call to return the same
             // set of IDs
             int offset = key.intValue();
-            tzs = TimeZone.getAvailableIDs(offset);
-            tzs2 = TimeZone.getAvailableIDs(offset);
+            tzs = TimeZone.availableIDs(offset)
+                    .filter(Predicate.not(ZoneId.SHORT_IDS::containsKey))
+                    .toArray(String[]::new);
+            tzs2 = TimeZone.availableIDs(offset)
+                    .filter(Predicate.not(ZoneId.SHORT_IDS::containsKey))
+                    .toArray(String[]::new);
             if (!Arrays.equals(tzs, tzs2)) {
                 throw new RuntimeException("inconsistent tzs from getAvailableIDs("+offset+")");
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,15 @@
   void neon_reduce_logical_helper(int opc, bool sf, Register Rd, Register Rn, Register Rm,
                                   enum shift_kind kind = Assembler::LSL, unsigned shift = 0);
 
+  void select_from_two_vectors_neon(FloatRegister dst, FloatRegister src1,
+                                    FloatRegister src2, FloatRegister index,
+                                    FloatRegister tmp, unsigned vector_length_in_bytes);
+
+  void select_from_two_vectors_sve(FloatRegister dst, FloatRegister src1,
+                                   FloatRegister src2, FloatRegister index,
+                                   FloatRegister tmp, SIMD_RegVariant T,
+                                   unsigned vector_length_in_bytes);
+
  public:
   // jdk.internal.util.ArraysSupport.vectorizedHashCode
   address arrays_hashcode(Register ary, Register cnt, Register result, FloatRegister vdata0,
@@ -43,11 +52,8 @@
                           BasicType eltype);
 
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
-  void fast_lock(Register object, Register box, Register tmp, Register tmp2, Register tmp3);
-  void fast_unlock(Register object, Register box, Register tmp, Register tmp2);
-  // Code used by cmpFastLockLightweight and cmpFastUnlockLightweight mach instructions in .ad file.
-  void fast_lock_lightweight(Register object, Register box, Register t1, Register t2, Register t3);
-  void fast_unlock_lightweight(Register object, Register box, Register t1, Register t2, Register t3);
+  void fast_lock(Register object, Register box, Register t1, Register t2, Register t3);
+  void fast_unlock(Register object, Register box, Register t1, Register t2, Register t3);
 
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
@@ -79,15 +85,19 @@
   // the higher garbage bits.
   void bytemask_compress(Register dst);
 
-  // Pack the lowest-numbered bit of each mask element in src into a long value
-  // in dst, at most the first 64 lane elements.
-  void sve_vmask_tolong(Register dst, PRegister src, BasicType bt, int lane_cnt,
-                        FloatRegister vtmp1, FloatRegister vtmp2);
+  // Pack the value of each mask element in "src" into a long value in "dst", at most the
+  // first 64 lane elements. The input "src" is a vector of boolean represented as bytes
+  // with 0x00/0x01 as element values. Each lane value from "src" is packed into one bit in
+  // "dst".
+  void sve_vmask_tolong(Register dst, FloatRegister src, FloatRegister vtmp, int lane_cnt);
 
-  // Unpack the mask, a long value in src, into predicate register dst based on the
-  // corresponding data type. Note that dst can support at most 64 lanes.
-  void sve_vmask_fromlong(PRegister dst, Register src, BasicType bt, int lane_cnt,
-                          FloatRegister vtmp1, FloatRegister vtmp2);
+  void sve2_vmask_tolong(Register dst, FloatRegister src, FloatRegister vtmp1,
+                         FloatRegister vtmp2, int lane_cnt);
+
+  // Unpack the mask, a long value in "src", into vector register "dst" with boolean type.
+  // Each bit in "src" is unpacked into one byte lane in "dst". Note that "dst" can support
+  // at most 64 lanes.
+  void sve_vmask_fromlong(FloatRegister dst, Register src, FloatRegister vtmp, int lane_cnt);
 
   // SIMD&FP comparison
   void neon_compare(FloatRegister dst, BasicType bt, FloatRegister src1,
@@ -167,18 +177,19 @@
   // lowest-numbered elements of dst. Any remaining elements of dst will
   // be filled with zero.
   void sve_compress_byte(FloatRegister dst, FloatRegister src, PRegister mask,
-                         FloatRegister vtmp1, FloatRegister vtmp2,
-                         FloatRegister vtmp3, FloatRegister vtmp4,
-                         PRegister ptmp, PRegister pgtmp);
+                         FloatRegister vtmp1, FloatRegister vtmp2, FloatRegister vtmp3,
+                         PRegister ptmp, PRegister pgtmp, unsigned vector_length_in_bytes);
 
   void sve_compress_short(FloatRegister dst, FloatRegister src, PRegister mask,
-                          FloatRegister vtmp1, FloatRegister vtmp2,
-                          PRegister pgtmp);
+                          FloatRegister vzr, FloatRegister vtmp,
+                          PRegister pgtmp, unsigned vector_length_in_bytes);
 
   void neon_reverse_bits(FloatRegister dst, FloatRegister src, BasicType bt, bool isQ);
 
   void neon_reverse_bytes(FloatRegister dst, FloatRegister src, BasicType bt, bool isQ);
 
+  void neon_rearrange_hsd(FloatRegister dst, FloatRegister src, FloatRegister shuffle,
+                          FloatRegister tmp, BasicType bt, bool isQ);
   // java.lang.Math::signum intrinsics
   void vector_signum_neon(FloatRegister dst, FloatRegister src, FloatRegister zero,
                           FloatRegister one, SIMD_Arrangement T);
@@ -186,4 +197,20 @@
   void vector_signum_sve(FloatRegister dst, FloatRegister src, FloatRegister zero,
                          FloatRegister one, FloatRegister vtmp, PRegister pgtmp, SIMD_RegVariant T);
 
+  void verify_int_in_range(uint idx, const TypeInt* t, Register val, Register tmp);
+  void verify_long_in_range(uint idx, const TypeLong* t, Register val, Register tmp);
+
+  void reconstruct_frame_pointer(Register rtmp);
+
+  // Select from a table of two vectors
+  void select_from_two_vectors(FloatRegister dst, FloatRegister src1, FloatRegister src2,
+                               FloatRegister index, FloatRegister tmp, BasicType bt,
+                               unsigned vector_length_in_bytes);
+
+  void vector_expand_neon(FloatRegister dst, FloatRegister src, FloatRegister mask,
+                          FloatRegister tmp1, FloatRegister tmp2, BasicType bt,
+                          int vector_length_in_bytes);
+  void vector_expand_sve(FloatRegister dst, FloatRegister src, PRegister pg,
+                         FloatRegister tmp1, FloatRegister tmp2, BasicType bt,
+                         int vector_length_in_bytes);
 #endif // CPU_AARCH64_C2_MACROASSEMBLER_AARCH64_HPP

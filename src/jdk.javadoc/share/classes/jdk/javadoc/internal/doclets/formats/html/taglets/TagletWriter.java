@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -409,7 +409,7 @@ public class TagletWriter {
             public String visitExecutable(ExecutableElement e, Void p) {
                 return utils.getFullyQualifiedName(utils.getEnclosingTypeElement(e))
                         + "." + utils.getSimpleName(e)
-                        + utils.flatSignature(e, htmlWriter.getCurrentTypeElement());
+                        + utils.makeSignature(e, htmlWriter.getCurrentTypeElement(), false, true);
             }
 
             @Override

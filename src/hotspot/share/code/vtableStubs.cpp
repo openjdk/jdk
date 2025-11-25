@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
@@ -79,7 +78,7 @@ void* VtableStub::operator new(size_t size, int code_size) throw() {
 
 
 void VtableStub::print_on(outputStream* st) const {
-  st->print("vtable stub (index = %d, receiver_location = " INTX_FORMAT ", code = [" INTPTR_FORMAT ", " INTPTR_FORMAT "])",
+  st->print("vtable stub (index = %d, receiver_location = %zd, code = [" INTPTR_FORMAT ", " INTPTR_FORMAT "])",
              index(), p2i(receiver_location()), p2i(code_begin()), p2i(code_end()));
 }
 
@@ -128,7 +127,7 @@ void VtableStubs::initialize() {
   {
     MutexLocker ml(VtableStubs_lock, Mutex::_no_safepoint_check_flag);
     for (int i = 0; i < N; i++) {
-      Atomic::store(&_table[i], (VtableStub*)nullptr);
+      AtomicAccess::store(&_table[i], (VtableStub*)nullptr);
     }
   }
 }
@@ -226,7 +225,7 @@ address VtableStubs::find_stub(bool is_vtable_stub, int vtable_index) {
 
       enter(is_vtable_stub, vtable_index, s);
       if (PrintAdapterHandlers) {
-        tty->print_cr("Decoding VtableStub %s[%d]@" PTR_FORMAT " [" PTR_FORMAT ", " PTR_FORMAT "] (" SIZE_FORMAT " bytes)",
+        tty->print_cr("Decoding VtableStub %s[%d]@" PTR_FORMAT " [" PTR_FORMAT ", " PTR_FORMAT "] (%zu bytes)",
                       is_vtable_stub? "vtbl": "itbl", vtable_index, p2i(VtableStub::receiver_location()),
                       p2i(s->code_begin()), p2i(s->code_end()), pointer_delta(s->code_end(), s->code_begin(), 1));
         Disassembler::decode(s->code_begin(), s->code_end());
@@ -269,7 +268,7 @@ inline uint VtableStubs::unsafe_hash(address entry_point) {
 VtableStub* VtableStubs::lookup(bool is_vtable_stub, int vtable_index) {
   assert_lock_strong(VtableStubs_lock);
   unsigned hash = VtableStubs::hash(is_vtable_stub, vtable_index);
-  VtableStub* s = Atomic::load(&_table[hash]);
+  VtableStub* s = AtomicAccess::load(&_table[hash]);
   while( s && !s->matches(is_vtable_stub, vtable_index)) s = s->next();
   return s;
 }
@@ -280,9 +279,9 @@ void VtableStubs::enter(bool is_vtable_stub, int vtable_index, VtableStub* s) {
   assert(s->matches(is_vtable_stub, vtable_index), "bad vtable stub");
   unsigned int h = VtableStubs::hash(is_vtable_stub, vtable_index);
   // Insert s at the beginning of the corresponding list.
-  s->set_next(Atomic::load(&_table[h]));
+  s->set_next(AtomicAccess::load(&_table[h]));
   // Make sure that concurrent readers not taking the mutex observe the writing of "next".
-  Atomic::release_store(&_table[h], s);
+  AtomicAccess::release_store(&_table[h], s);
 }
 
 VtableStub* VtableStubs::entry_point(address pc) {
@@ -293,7 +292,7 @@ VtableStub* VtableStubs::entry_point(address pc) {
   MutexLocker ml(VtableStubs_lock, Mutex::_no_safepoint_check_flag);
   uint hash = VtableStubs::unsafe_hash(pc);
   VtableStub* s;
-  for (s = Atomic::load(&_table[hash]); s != nullptr && s->entry_point() != pc; s = s->next()) {}
+  for (s = AtomicAccess::load(&_table[hash]); s != nullptr && s->entry_point() != pc; s = s->next()) {}
   return (s != nullptr && s->entry_point() == pc) ? s : nullptr;
 }
 
@@ -306,7 +305,7 @@ bool VtableStubs::contains(address pc) {
 
 VtableStub* VtableStubs::stub_containing(address pc) {
   for (int i = 0; i < N; i++) {
-    for (VtableStub* s = Atomic::load_acquire(&_table[i]); s != nullptr; s = s->next()) {
+    for (VtableStub* s = AtomicAccess::load_acquire(&_table[i]); s != nullptr; s = s->next()) {
       if (s->contains(pc)) return s;
     }
   }
@@ -319,7 +318,7 @@ void vtableStubs_init() {
 
 void VtableStubs::vtable_stub_do(void f(VtableStub*)) {
   for (int i = 0; i < N; i++) {
-    for (VtableStub* s = Atomic::load_acquire(&_table[i]); s != nullptr; s = s->next()) {
+    for (VtableStub* s = AtomicAccess::load_acquire(&_table[i]); s != nullptr; s = s->next()) {
       f(s);
     }
   }

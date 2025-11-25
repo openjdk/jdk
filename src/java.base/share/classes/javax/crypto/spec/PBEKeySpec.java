@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,9 +42,9 @@ import java.util.Arrays;
  * PKCS #12 looks at all 16 bits of each character.
  *
  * <p>You convert the password characters to a PBE key by creating an
- * instance of the appropriate secret-key factory. For example, a secret-key
+ * instance of the appropriate secret key factory. For example, a secret key
  * factory for PKCS #5 will construct a PBE key from only the low order 8 bits
- * of each password character, whereas a secret-key factory for PKCS #12 will
+ * of each password character, whereas a secret key factory for PKCS #12 will
  * take all 16 bits of each character.
  *
  * <p>Also note that this class stores passwords as char arrays instead of

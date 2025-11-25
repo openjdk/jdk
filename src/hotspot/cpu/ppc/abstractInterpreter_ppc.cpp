@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "interpreter/interpreter.hpp"
 #include "oops/constMethod.hpp"
 #include "oops/klass.inline.hpp"
@@ -101,7 +100,7 @@ int AbstractInterpreter::size_activation(int max_stack,
 //   It is also guaranteed to be walkable even though it is in a skeletal state
 //
 // is_top_frame == true:
-//   We're processing the *oldest* interpreter frame!
+//   We're processing the *youngest* interpreter frame on top of stack!
 //
 // pop_frame_extra_args:
 //   If this is != 0 we are returning to a deoptimized frame by popping
@@ -128,6 +127,16 @@ void AbstractInterpreter::layout_activation(Method* method,
   intptr_t* locals_base  = (caller->is_interpreted_frame()) ?
     caller->interpreter_frame_esp() + caller_actual_parameters :
     caller->sp() + method->max_locals() - 1 + (frame::java_abi_size / Interpreter::stackElementSize);
+
+#ifdef ASSERT
+  if (caller->is_interpreted_frame()) {
+    assert(locals_base <= caller->interpreter_frame_expression_stack(), "bad placement");
+    // If the bottom frame's caller was thawed then it has frame::java_abi (aka parent_ijava_frame_abi).
+    // With an ordinary i2c call it would keep the larger frame::top_ijava_frame_abi
+    intptr_t* l2 = caller->sp() + method->max_locals() - 1 + (frame::parent_ijava_frame_abi_size / Interpreter::stackElementSize);
+    assert(locals_base >= l2, "bad placement");
+  }
+#endif
 
   intptr_t* monitor_base = caller->sp() - frame::ijava_state_size / Interpreter::stackElementSize;
   intptr_t* monitor      = monitor_base - (moncount * frame::interpreter_frame_monitor_size());

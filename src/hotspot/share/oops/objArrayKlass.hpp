@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,10 @@ class ClassLoaderData;
 // ObjArrayKlass is the klass for objArrays
 
 class ObjArrayKlass : public ArrayKlass {
-  friend class VMStructs;
+  friend class Deoptimization;
   friend class JVMCIVMStructs;
+  friend class oopFactory;
+  friend class VMStructs;
 
  public:
   static const KlassKind Kind = ObjArrayKlassKind;
@@ -47,7 +49,14 @@ class ObjArrayKlass : public ArrayKlass {
 
   // Constructor
   ObjArrayKlass(int n, Klass* element_klass, Symbol* name);
-  static ObjArrayKlass* allocate(ClassLoaderData* loader_data, int n, Klass* k, Symbol* name, TRAPS);
+  static ObjArrayKlass* allocate_klass(ClassLoaderData* loader_data, int n, Klass* k, Symbol* name, TRAPS);
+
+  objArrayOop allocate_instance(int length, TRAPS);
+
+ protected:
+  // Create array_name for element klass
+  static Symbol* create_element_klass_array_name(JavaThread* current, Klass* element_klass);
+
  public:
   // For dummy objects
   ObjArrayKlass() {}
@@ -55,7 +64,9 @@ class ObjArrayKlass : public ArrayKlass {
   // Instance variables
   Klass* element_klass() const      { return _element_klass; }
   void set_element_klass(Klass* k)  { _element_klass = k; }
-  Klass** element_klass_addr()      { return &_element_klass; }
+
+  // Compiler/Interpreter offset
+  static ByteSize element_klass_offset() { return byte_offset_of(ObjArrayKlass, _element_klass); }
 
   Klass* bottom_klass() const       { return _bottom_klass; }
   void set_bottom_klass(Klass* k)   { _bottom_klass = k; }
@@ -63,9 +74,6 @@ class ObjArrayKlass : public ArrayKlass {
 
   ModuleEntry* module() const;
   PackageEntry* package() const;
-
-  // Compiler/Interpreter offset
-  static ByteSize element_klass_offset() { return byte_offset_of(ObjArrayKlass, _element_klass); }
 
   // Dispatched operation
   bool can_be_primary_super_slow() const;
@@ -78,7 +86,6 @@ class ObjArrayKlass : public ArrayKlass {
   static ObjArrayKlass* allocate_objArray_klass(ClassLoaderData* loader_data,
                                                 int n, Klass* element_klass, TRAPS);
 
-  objArrayOop allocate(int length, TRAPS);
   oop multi_allocate(int rank, jint* sizes, TRAPS);
 
   // Copying
@@ -143,7 +150,7 @@ class ObjArrayKlass : public ArrayKlass {
   inline void oop_oop_iterate_elements_bounded(objArrayOop a, OopClosureType* closure, void* low, void* high);
 
  public:
-  jint compute_modifier_flags() const;
+  u2 compute_modifier_flags() const;
 
  public:
   // Printing

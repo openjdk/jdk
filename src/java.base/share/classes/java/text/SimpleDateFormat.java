@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,10 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * <p>
  * The following pattern letters are defined (all other characters from
  * {@code 'A'} to {@code 'Z'} and from {@code 'a'} to
- * {@code 'z'} are reserved):
+ * {@code 'z'} not in the table below are reserved). {@link #applyPattern(String)},
+ * {@link #applyLocalizedPattern(String)}, and the {@link #SimpleDateFormat(String)
+ * SimpleDateFormat constructors} throw {@code IllegalArgumentException} when
+ * passed a pattern containing an unquoted reserved character.
  * <blockquote>
  * <table class="striped">
  * <caption style="display:none">Chart shows pattern letters, date/time component, presentation, and examples.</caption>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, 2024, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,18 +23,15 @@
  *
  */
 
-#include "precompiled.hpp"
-
 #if defined(LINUX) || defined(_WIN64) || defined(__APPLE__)
 
 #include "gc/shared/collectedHeap.hpp"
 #include "logging/logAsyncWriter.hpp"
 #include "memory/allocation.hpp"
-#include "memory/universe.hpp"
 #include "memory/resourceArea.hpp"
-#include "nmt/memTag.hpp"
-#include "nmt/memTagBitmap.hpp"
+#include "memory/universe.hpp"
 #include "nmt/memMapPrinter.hpp"
+#include "nmt/memTag.hpp"
 #include "nmt/memTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/nonJavaThread.hpp"
@@ -42,8 +39,11 @@
 #include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
+#include "utilities/bitMap.hpp"
+#include "utilities/bitMap.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 
 // Note: throughout this code we will use the term "VMA" for OS system level memory mapping
 
@@ -97,8 +97,8 @@ public:
                            _count(0), _capacity(0), _last(0) {}
 
   ~CachedNMTInformation() {
-    ALLOW_C_FUNCTION(free, ::free(_ranges);)
-    ALLOW_C_FUNCTION(free, ::free(_mem_tags);)
+    permit_forbidden_function::free(_ranges);
+    permit_forbidden_function::free(_mem_tags);
   }
 
   bool add(const void* from, const void* to, MemTag mem_tag) {
@@ -112,9 +112,9 @@ public:
     if (_count == _capacity) {
       // Enlarge if needed
       const size_t new_capacity = MAX2((size_t)4096, 2 * _capacity);
-      // Unfortunately, we need to allocate manually, raw, since we must prevent NMT deadlocks (ThreadCritical).
-      ALLOW_C_FUNCTION(realloc, _ranges = (Range*)::realloc(_ranges, new_capacity * sizeof(Range));)
-      ALLOW_C_FUNCTION(realloc, _mem_tags = (MemTag*)::realloc(_mem_tags, new_capacity * sizeof(MemTag));)
+      // Unfortunately, we need to allocate manually, raw, since we must prevent NMT deadlocks.
+      _ranges = (Range*)permit_forbidden_function::realloc(_ranges, new_capacity * sizeof(Range));
+      _mem_tags = (MemTag*)permit_forbidden_function::realloc(_mem_tags, new_capacity * sizeof(MemTag));
       if (_ranges == nullptr || _mem_tags == nullptr) {
         // In case of OOM lets make no fuss. Just return.
         return false;
@@ -129,8 +129,8 @@ public:
   }
 
   // Given a vma [from, to), find all regions that intersect with this vma and
-  // return their collective flags.
-  MemTagBitmap lookup(const void* from, const void* to) const {
+  // fill out their collective flags into bm.
+  void lookup(const void* from, const void* to, ResourceBitMap& bm) const {
     assert(from <= to, "Sanity");
     // We optimize for sequential lookups. Since this class is used when a list
     // of OS mappings is scanned (VirtualQuery, /proc/pid/maps), and these lists
@@ -139,16 +139,14 @@ public:
       // the range is to the right of the given section, we need to re-start the search
       _last = 0;
     }
-    MemTagBitmap bm;
     for(uintx i = _last; i < _count; i++) {
       if (range_intersects(from, to, _ranges[i].from, _ranges[i].to)) {
-        bm.set_tag(_mem_tags[i]);
+        bm.set_bit((BitMap::idx_t)_mem_tags[i]);
       } else if (to <= _ranges[i].from) {
         _last = i;
         break;
       }
     }
-    return bm;
   }
 
   bool do_allocation_site(const ReservedMemoryRegion* rgn) override {
@@ -158,7 +156,7 @@ public:
 
   // Iterate all NMT virtual memory regions and fill this cache.
   bool fill_from_nmt() {
-    return VirtualMemoryTracker::walk_virtual_memory(this);
+    return MemTracker::walk_virtual_memory(this);
   }
 };
 
@@ -172,7 +170,8 @@ static bool vma_touches_thread_stack(const void* from, const void* to, const Thr
   // Very rarely however is a VMA backing a thread stack folded together with another adjacent VMA by the
   // kernel. That can happen, e.g., for non-java threads that don't have guard pages.
   // Therefore we go for the simplest way here and check for intersection between VMA and thread stack.
-  return range_intersects(from, to, (const void*)t->stack_end(), (const void*)t->stack_base());
+  // Note it is possible to encounter a brand new thread that has not yet initialized its stack fields.
+  return t->stack_base_or_null() != nullptr && range_intersects(from, to, (const void*)t->stack_end(), (const void*)t->stack_base());
 }
 
 struct GCThreadClosure : public ThreadClosure {
@@ -194,7 +193,7 @@ static void print_thread_details(uintx thread_id, const char* name, outputStream
   // avoid commas and spaces in output to ease post-processing via awk
   char tmp[64];
   stringStream ss(tmp, sizeof(tmp));
-  ss.print(":" UINTX_FORMAT "-%s", (uintx)thread_id, name);
+  ss.print(":%zu-%s", (uintx)thread_id, name);
   for (int i = 0; tmp[i] != '\0'; i++) {
     if (!isalnum(tmp[i])) {
       tmp[i] = '-';
@@ -237,7 +236,7 @@ MappingPrintSession::MappingPrintSession(outputStream* st, const CachedNMTInform
 {}
 
 void MappingPrintSession::print_nmt_flag_legend() const {
-#define DO(flag, shortname, text) _out->indent(); _out->print_cr("%10s: %s", shortname, text);
+#define DO(flag, shortname, text) _out->print_cr("%10s: %s", shortname, text);
   NMT_FLAGS_DO(DO)
 #undef DO
 }
@@ -247,11 +246,13 @@ bool MappingPrintSession::print_nmt_info_for_region(const void* vma_from, const 
   // print NMT information, if available
   if (MemTracker::enabled()) {
     // Correlate vma region (from, to) with NMT region(s) we collected previously.
-    const MemTagBitmap flags = _nmt_info.lookup(vma_from, vma_to);
-    if (flags.has_any()) {
+    ResourceMark rm;
+    ResourceBitMap flags(mt_number_of_tags);
+    _nmt_info.lookup(vma_from, vma_to, flags);
+    if (!flags.is_empty()) {
       for (int i = 0; i < mt_number_of_tags; i++) {
         const MemTag mem_tag = (MemTag)i;
-        if (flags.has_tag(mem_tag)) {
+        if (flags.at((BitMap::idx_t)mem_tag)) {
           if (num_printed > 0) {
             _out->put(',');
           }

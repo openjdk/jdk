@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.crypto.provider;
 import java.security.*;
 import java.util.Arrays;
 import javax.crypto.DecapsulateException;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import sun.security.provider.SHA3.SHAKE256;
 import sun.security.provider.SHA3Parallel.Shake128Parallel;
@@ -71,6 +72,268 @@ public final class ML_KEM {
             -1599, -709, -789, -1317, -57, 1049, -584
     };
 
+    private static final short[] montZetasForVectorNttArr = new short[]{
+            // level 0
+            -758, -758, -758, -758, -758, -758, -758, -758,
+            -758, -758, -758, -758, -758, -758, -758, -758,
+            -758, -758, -758, -758, -758, -758, -758, -758,
+            -758, -758, -758, -758, -758, -758, -758, -758,
+            -758, -758, -758, -758, -758, -758, -758, -758,
+            -758, -758, -758, -758, -758, -758, -758, -758,
+            -758, -758, -758, -758, -758, -758, -758, -758,
+            -758, -758, -758, -758, -758, -758, -758, -758,
+            -758, -758, -758, -758, -758, -758, -758, -758,
+            -758, -758, -758, -758, -758, -758, -758, -758,
+            -758, -758, -758, -758, -758, -758, -758, -758,
+            -758, -758, -758, -758, -758, -758, -758, -758,
+            -758, -758, -758, -758, -758, -758, -758, -758,
+            -758, -758, -758, -758, -758, -758, -758, -758,
+            -758, -758, -758, -758, -758, -758, -758, -758,
+            -758, -758, -758, -758, -758, -758, -758, -758,
+            // level 1
+            -359, -359, -359, -359, -359, -359, -359, -359,
+            -359, -359, -359, -359, -359, -359, -359, -359,
+            -359, -359, -359, -359, -359, -359, -359, -359,
+            -359, -359, -359, -359, -359, -359, -359, -359,
+            -359, -359, -359, -359, -359, -359, -359, -359,
+            -359, -359, -359, -359, -359, -359, -359, -359,
+            -359, -359, -359, -359, -359, -359, -359, -359,
+            -359, -359, -359, -359, -359, -359, -359, -359,
+            -1517, -1517, -1517, -1517, -1517, -1517, -1517, -1517,
+            -1517, -1517, -1517, -1517, -1517, -1517, -1517, -1517,
+            -1517, -1517, -1517, -1517, -1517, -1517, -1517, -1517,
+            -1517, -1517, -1517, -1517, -1517, -1517, -1517, -1517,
+            -1517, -1517, -1517, -1517, -1517, -1517, -1517, -1517,
+            -1517, -1517, -1517, -1517, -1517, -1517, -1517, -1517,
+            -1517, -1517, -1517, -1517, -1517, -1517, -1517, -1517,
+            -1517, -1517, -1517, -1517, -1517, -1517, -1517, -1517,
+            // level 2
+            1493, 1493, 1493, 1493, 1493, 1493, 1493, 1493,
+            1493, 1493, 1493, 1493, 1493, 1493, 1493, 1493,
+            1493, 1493, 1493, 1493, 1493, 1493, 1493, 1493,
+            1493, 1493, 1493, 1493, 1493, 1493, 1493, 1493,
+            1422, 1422, 1422, 1422, 1422, 1422, 1422, 1422,
+            1422, 1422, 1422, 1422, 1422, 1422, 1422, 1422,
+            1422, 1422, 1422, 1422, 1422, 1422, 1422, 1422,
+            1422, 1422, 1422, 1422, 1422, 1422, 1422, 1422,
+            287, 287, 287, 287, 287, 287, 287, 287,
+            287, 287, 287, 287, 287, 287, 287, 287,
+            287, 287, 287, 287, 287, 287, 287, 287,
+            287, 287, 287, 287, 287, 287, 287, 287,
+            202, 202, 202, 202, 202, 202, 202, 202,
+            202, 202, 202, 202, 202, 202, 202, 202,
+            202, 202, 202, 202, 202, 202, 202, 202,
+            202, 202, 202, 202, 202, 202, 202, 202,
+            // level 3
+            -171, -171, -171, -171, -171, -171, -171, -171,
+            -171, -171, -171, -171, -171, -171, -171, -171,
+            622, 622, 622, 622, 622, 622, 622, 622,
+            622, 622, 622, 622, 622, 622, 622, 622,
+            1577, 1577, 1577, 1577, 1577, 1577, 1577, 1577,
+            1577, 1577, 1577, 1577, 1577, 1577, 1577, 1577,
+            182, 182, 182, 182, 182, 182, 182, 182,
+            182, 182, 182, 182, 182, 182, 182, 182,
+            962, 962, 962, 962, 962, 962, 962, 962,
+            962, 962, 962, 962, 962, 962, 962, 962,
+            -1202, -1202, -1202, -1202, -1202, -1202, -1202, -1202,
+            -1202, -1202, -1202, -1202, -1202, -1202, -1202, -1202,
+            -1474, -1474, -1474, -1474, -1474, -1474, -1474, -1474,
+            -1474, -1474, -1474, -1474, -1474, -1474, -1474, -1474,
+            1468, 1468, 1468, 1468, 1468, 1468, 1468, 1468,
+            1468, 1468, 1468, 1468, 1468, 1468, 1468, 1468,
+            // level 4
+            573, 573, 573, 573, 573, 573, 573, 573,
+            -1325, -1325, -1325, -1325, -1325, -1325, -1325, -1325,
+            264, 264, 264, 264, 264, 264, 264, 264,
+            383, 383, 383, 383, 383, 383, 383, 383,
+            -829, -829, -829, -829, -829, -829, -829, -829,
+            1458, 1458, 1458, 1458, 1458, 1458, 1458, 1458,
+            -1602, -1602, -1602, -1602, -1602, -1602, -1602, -1602,
+            -130, -130, -130, -130, -130, -130, -130, -130,
+            -681, -681, -681, -681, -681, -681, -681, -681,
+            1017, 1017, 1017, 1017, 1017, 1017, 1017, 1017,
+            732, 732, 732, 732, 732, 732, 732, 732,
+            608, 608, 608, 608, 608, 608, 608, 608,
+            -1542, -1542, -1542, -1542, -1542, -1542, -1542, -1542,
+            411, 411, 411, 411, 411, 411, 411, 411,
+            -205, -205, -205, -205, -205, -205, -205, -205,
+            -1571, -1571, -1571, -1571, -1571, -1571, -1571, -1571,
+            // level 5
+            1223, 1223, 1223, 1223, 652, 652, 652, 652,
+            -552, -552, -552, -552, 1015, 1015, 1015, 1015,
+            -1293, -1293, -1293, -1293, 1491, 1491, 1491, 1491,
+            -282, -282, -282, -282, -1544, -1544, -1544, -1544,
+            516, 516, 516, 516, -8, -8, -8, -8,
+            -320, -320, -320, -320, -666, -666, -666, -666,
+            1711, 1711, 1711, 1711, -1162, -1162, -1162, -1162,
+            126, 126, 126, 126, 1469, 1469, 1469, 1469,
+            -853, -853, -853, -853, -90, -90, -90, -90,
+            -271, -271, -271, -271, 830, 830, 830, 830,
+            107, 107, 107, 107, -1421, -1421, -1421, -1421,
+            -247, -247, -247, -247, -951, -951, -951, -951,
+            -398, -398, -398, -398, 961, 961, 961, 961,
+            -1508, -1508, -1508, -1508, -725, -725, -725, -725,
+            448, 448, 448, 448, -1065, -1065, -1065, -1065,
+            677, 677, 677, 677, -1275, -1275, -1275, -1275,
+            // level 6
+            -1103, -1103, 430, 430, 555, 555, 843, 843,
+            -1251, -1251, 871, 871, 1550, 1550, 105, 105,
+            422, 422, 587, 587, 177, 177, -235, -235,
+            -291, -291, -460, -460, 1574, 1574, 1653, 1653,
+            -246, -246, 778, 778, 1159, 1159, -147, -147,
+            -777, -777, 1483, 1483, -602, -602, 1119, 1119,
+            -1590, -1590, 644, 644, -872, -872, 349, 349,
+            418, 418, 329, 329, -156, -156, -75, -75,
+            817, 817, 1097, 1097, 603, 603, 610, 610,
+            1322, 1322, -1285, -1285, -1465, -1465, 384, 384,
+            -1215, -1215, -136, -136, 1218, 1218, -1335, -1335,
+            -874, -874, 220, 220, -1187, -1187, 1670, 1670,
+            -1185, -1185, -1530, -1530, -1278, -1278, 794, 794,
+            -1510, -1510, -854, -854, -870, -870, 478, 478,
+            -108, -108, -308, -308, 996, 996, 991, 991,
+            958, 958, -1460, -1460, 1522, 1522, 1628, 1628
+    };
+    private static final int[] MONT_ZETAS_FOR_INVERSE_NTT = new int[]{
+            584, -1049, 57, 1317, 789, 709, 1599, -1601,
+            -990, 604, 348, 857, 612, 474, 1177, -1014,
+            -88, -982, -191, 668, 1386, 486, -1153, -534,
+            514, 137, 586, -1178, 227, 339, -907, 244,
+            1200, -833, 1394, -30, 1074, 636, -317, -1192,
+            -1259, -355, -425, -884, -977, 1430, 868, 607,
+            184, 1448, 702, 1327, 431, 497, 595, -94,
+            1649, -1497, -620, 42, -172, 1107, -222, 1003,
+            426, -845, 395, -510, 1613, 825, 1269, -290,
+            -1429, 623, -567, 1617, 36, 1007, 1440, 332,
+            -201, 1313, -1382, -744, 669, -1538, 128, -1598,
+            1401, 1183, -553, 714, 405, -1155, -445, 406,
+            -1496, -49, 82, 1369, 259, 1604, 373, 909,
+            -1249, -1000, -25, -52, 530, -895, 1226, 819,
+            -185, 281, -742, 1253, 417, 1400, 35, -593,
+            97, -1263, 551, -585, 969, -914, -1188
+    };
+
+    private static final short[] montZetasForVectorInverseNttArr = new short[]{
+            // level 0
+            -1628, -1628, -1522, -1522, 1460, 1460, -958, -958,
+            -991, -991, -996, -996, 308, 308, 108, 108,
+            -478, -478, 870, 870, 854, 854, 1510, 1510,
+            -794, -794, 1278, 1278, 1530, 1530, 1185, 1185,
+            1659, 1659, 1187, 1187, -220, -220, 874, 874,
+            1335, 1335, -1218, -1218, 136, 136, 1215, 1215,
+            -384, -384, 1465, 1465, 1285, 1285, -1322, -1322,
+            -610, -610, -603, -603, -1097, -1097, -817, -817,
+            75, 75, 156, 156, -329, -329, -418, -418,
+            -349, -349, 872, 872, -644, -644, 1590, 1590,
+            -1119, -1119, 602, 602, -1483, -1483, 777, 777,
+            147, 147, -1159, -1159, -778, -778, 246, 246,
+            -1653, -1653, -1574, -1574, 460, 460, 291, 291,
+            235, 235, -177, -177, -587, -587, -422, -422,
+            -105, -105, -1550, -1550, -871, -871, 1251, 1251,
+            -843, -843, -555, -555, -430, -430, 1103, 1103,
+            // level 1
+            1275, 1275, 1275, 1275, -677, -677, -677, -677,
+            1065, 1065, 1065, 1065, -448, -448, -448, -448,
+            725, 725, 725, 725, 1508, 1508, 1508, 1508,
+            -961, -961, -961, -961, 398, 398, 398, 398,
+            951, 951, 951, 951, 247, 247, 247, 247,
+            1421, 1421, 1421, 1421, -107, -107, -107, -107,
+            -830, -830, -830, -830, 271, 271, 271, 271,
+            90, 90, 90, 90, 853, 853, 853, 853,
+            -1469, -1469, -1469, -1469, -126, -126, -126, -126,
+            1162, 1162, 1162, 1162, 1618, 1618, 1618, 1618,
+            666, 666, 666, 666, 320, 320, 320, 320,
+            8, 8, 8, 8, -516, -516, -516, -516,
+            1544, 1544, 1544, 1544, 282, 282, 282, 282,
+            -1491, -1491, -1491, -1491, 1293, 1293, 1293, 1293,
+            -1015, -1015, -1015, -1015, 552, 552, 552, 552,
+            -652, -652, -652, -652, -1223, -1223, -1223, -1223,
+            // level 2
+            1571, 1571, 1571, 1571, 1571, 1571, 1571, 1571,
+            205, 205, 205, 205, 205, 205, 205, 205,
+            -411, -411, -411, -411, -411, -411, -411, -411,
+            1542, 1542, 1542, 1542, 1542, 1542, 1542, 1542,
+            -608, -608, -608, -608, -608, -608, -608, -608,
+            -732, -732, -732, -732, -732, -732, -732, -732,
+            -1017, -1017, -1017, -1017, -1017, -1017, -1017, -1017,
+            681, 681, 681, 681, 681, 681, 681, 681,
+            130, 130, 130, 130, 130, 130, 130, 130,
+            1602, 1602, 1602, 1602, 1602, 1602, 1602, 1602,
+            -1458, -1458, -1458, -1458, -1458, -1458, -1458, -1458,
+            829, 829, 829, 829, 829, 829, 829, 829,
+            -383, -383, -383, -383, -383, -383, -383, -383,
+            -264, -264, -264, -264, -264, -264, -264, -264,
+            1325, 1325, 1325, 1325, 1325, 1325, 1325, 1325,
+            -573, -573, -573, -573, -573, -573, -573, -573,
+            // level 3
+            -1468, -1468, -1468, -1468, -1468, -1468, -1468, -1468,
+            -1468, -1468, -1468, -1468, -1468, -1468, -1468, -1468,
+            1474, 1474, 1474, 1474, 1474, 1474, 1474, 1474,
+            1474, 1474, 1474, 1474, 1474, 1474, 1474, 1474,
+            1202, 1202, 1202, 1202, 1202, 1202, 1202, 1202,
+            1202, 1202, 1202, 1202, 1202, 1202, 1202, 1202,
+            -962, -962, -962, -962, -962, -962, -962, -962,
+            -962, -962, -962, -962, -962, -962, -962, -962,
+            -182, -182, -182, -182, -182, -182, -182, -182,
+            -182, -182, -182, -182, -182, -182, -182, -182,
+            -1577, -1577, -1577, -1577, -1577, -1577, -1577, -1577,
+            -1577, -1577, -1577, -1577, -1577, -1577, -1577, -1577,
+            -622, -622, -622, -622, -622, -622, -622, -622,
+            -622, -622, -622, -622, -622, -622, -622, -622,
+            171, 171, 171, 171, 171, 171, 171, 171,
+            171, 171, 171, 171, 171, 171, 171, 171,
+            // level 4
+            -202, -202, -202, -202, -202, -202, -202, -202,
+            -202, -202, -202, -202, -202, -202, -202, -202,
+            -202, -202, -202, -202, -202, -202, -202, -202,
+            -202, -202, -202, -202, -202, -202, -202, -202,
+            -287, -287, -287, -287, -287, -287, -287, -287,
+            -287, -287, -287, -287, -287, -287, -287, -287,
+            -287, -287, -287, -287, -287, -287, -287, -287,
+            -287, -287, -287, -287, -287, -287, -287, -287,
+            -1422, -1422, -1422, -1422, -1422, -1422, -1422, -1422,
+            -1422, -1422, -1422, -1422, -1422, -1422, -1422, -1422,
+            -1422, -1422, -1422, -1422, -1422, -1422, -1422, -1422,
+            -1422, -1422, -1422, -1422, -1422, -1422, -1422, -1422,
+            -1493, -1493, -1493, -1493, -1493, -1493, -1493, -1493,
+            -1493, -1493, -1493, -1493, -1493, -1493, -1493, -1493,
+            -1493, -1493, -1493, -1493, -1493, -1493, -1493, -1493,
+            -1493, -1493, -1493, -1493, -1493, -1493, -1493, -1493,
+            // level 5
+            1517, 1517, 1517, 1517, 1517, 1517, 1517, 1517,
+            1517, 1517, 1517, 1517, 1517, 1517, 1517, 1517,
+            1517, 1517, 1517, 1517, 1517, 1517, 1517, 1517,
+            1517, 1517, 1517, 1517, 1517, 1517, 1517, 1517,
+            1517, 1517, 1517, 1517, 1517, 1517, 1517, 1517,
+            1517, 1517, 1517, 1517, 1517, 1517, 1517, 1517,
+            1517, 1517, 1517, 1517, 1517, 1517, 1517, 1517,
+            1517, 1517, 1517, 1517, 1517, 1517, 1517, 1517,
+            359, 359, 359, 359, 359, 359, 359, 359,
+            359, 359, 359, 359, 359, 359, 359, 359,
+            359, 359, 359, 359, 359, 359, 359, 359,
+            359, 359, 359, 359, 359, 359, 359, 359,
+            359, 359, 359, 359, 359, 359, 359, 359,
+            359, 359, 359, 359, 359, 359, 359, 359,
+            359, 359, 359, 359, 359, 359, 359, 359,
+            359, 359, 359, 359, 359, 359, 359, 359,
+            // level 6
+            758, 758, 758, 758, 758, 758, 758, 758,
+            758, 758, 758, 758, 758, 758, 758, 758,
+            758, 758, 758, 758, 758, 758, 758, 758,
+            758, 758, 758, 758, 758, 758, 758, 758,
+            758, 758, 758, 758, 758, 758, 758, 758,
+            758, 758, 758, 758, 758, 758, 758, 758,
+            758, 758, 758, 758, 758, 758, 758, 758,
+            758, 758, 758, 758, 758, 758, 758, 758,
+            758, 758, 758, 758, 758, 758, 758, 758,
+            758, 758, 758, 758, 758, 758, 758, 758,
+            758, 758, 758, 758, 758, 758, 758, 758,
+            758, 758, 758, 758, 758, 758, 758, 758,
+            758, 758, 758, 758, 758, 758, 758, 758,
+            758, 758, 758, 758, 758, 758, 758, 758,
+            758, 758, 758, 758, 758, 758, 758, 758,
+            758, 758, 758, 758, 758, 758, 758, 758
+    };
+
     private static final int[] MONT_ZETAS_FOR_NTT_MULT = new int[]{
             -1003, 1003, 222, -222, -1107, 1107, 172, -172,
             -42, 42, 620, -620, 1497, -1497, -1649, 1649,
@@ -88,6 +351,24 @@ public final class ML_KEM {
             -857, 857, -348, 348, -604, 604, 990, -990,
             1601, -1601, -1599, 1599, -709, 709, -789, 789,
             -1317, 1317, -57, 57, 1049, -1049, -584, 584
+    };
+    private static final short[] montZetasForVectorNttMultArr = new short[]{
+            -1103, 1103, 430, -430, 555, -555, 843, -843,
+            -1251, 1251, 871, -871, 1550, -1550, 105, -105,
+            422, -422, 587, -587, 177, -177, -235, 235,
+            -291, 291, -460, 460, 1574, -1574, 1653, -1653,
+            -246, 246, 778, -778, 1159, -1159, -147, 147,
+            -777, 777, 1483, -1483, -602, 602, 1119, -1119,
+            -1590, 1590, 644, -644, -872, 872, 349, -349,
+            418, -418, 329, -329, -156, 156, -75, 75,
+            817, -817, 1097, -1097, 603, -603, 610, -610,
+            1322, -1322, -1285, 1285, -1465, 1465, 384, -384,
+            -1215, 1215, -136, 136, 1218, -1218, -1335, 1335,
+            -874, 874, 220, -220, -1187, 1187, 1670, 1659,
+            -1185, 1185, -1530, 1530, -1278, 1278, 794, -794,
+            -1510, 1510, -854, 854, -870, 870, 478, -478,
+            -108, 108, -308, 308, 996, -996, 991, -991,
+            958, -958, -1460, 1460, 1522, -1522, 1628, -1628
     };
 
     private final int mlKem_k;
@@ -261,7 +542,7 @@ public final class ML_KEM {
         try {
             mlKemH = MessageDigest.getInstance(HASH_H_NAME);
             mlKemG = MessageDigest.getInstance(HASH_G_NAME);
-        } catch (NoSuchAlgorithmException e){
+        } catch (NoSuchAlgorithmException e) {
             // This should never happen.
             throw new RuntimeException(e);
         }
@@ -422,7 +703,7 @@ public final class ML_KEM {
 
     private K_PKE_CipherText kPkeEncrypt(
             K_PKE_EncryptionKey publicKey, byte[] message, byte[] sigma) {
-        short[][] zeroes = new short[mlKem_k][ML_KEM_N];
+        short[][] zeroes = shortMatrixAlloc(mlKem_k, ML_KEM_N);
         byte[] pkBytes = publicKey.keyBytes;
         byte[] rho = Arrays.copyOfRange(pkBytes,
                 pkBytes.length - 32, pkBytes.length);
@@ -511,7 +792,7 @@ public final class ML_KEM {
         System.arraycopy(rho, 0, seedBuf, 0, rho.length);
         seedBuf[rhoLen + 2] = 0x1F;
         seedBuf[XOF_BLOCK_LEN - 1] = (byte)0x80;
-        byte[][] xofBufArr = new byte[nrPar][XOF_BLOCK_LEN + XOF_PAD];
+        byte[][] xofBufArr = byteMatrixAlloc(nrPar, XOF_BLOCK_LEN + XOF_PAD);
         int[] iIndex = new int[nrPar];
         int[] jIndex = new int[nrPar];
 
@@ -527,7 +808,7 @@ public final class ML_KEM {
 
             for (int i = 0; i < mlKem_k; i++) {
                 for (int j = 0; j < mlKem_k; j++) {
-                    xofBufArr[parInd] = seedBuf.clone();
+                    System.arraycopy(seedBuf, 0, xofBufArr[parInd], 0, seedBuf.length);
                     if (transposed) {
                         xofBufArr[parInd][rhoLen] = (byte) i;
                         xofBufArr[parInd][rhoLen + 1] = (byte) j;
@@ -707,9 +988,13 @@ public final class ML_KEM {
         return vector;
     }
 
-    // The elements of poly should be in the range [-ML_KEM_Q, ML_KEM_Q]
-    // The elements of poly at return will be in the range of [0, ML_KEM_Q]
-    private void mlKemNTT(short[] poly) {
+    @IntrinsicCandidate
+    static int implKyberNtt(short[] poly, short[] ntt_zetas) {
+        implKyberNttJava(poly);
+        return 1;
+    }
+
+    static void implKyberNttJava(short[] poly) {
         int[] coeffs = new int[ML_KEM_N];
         for (int m = 0; m < ML_KEM_N; m++) {
             coeffs[m] = poly[m];
@@ -718,12 +1003,23 @@ public final class ML_KEM {
         for (int m = 0; m < ML_KEM_N; m++) {
             poly[m] = (short) coeffs[m];
         }
+    }
+
+    // The elements of poly should be in the range [-mlKem_q, mlKem_q]
+    // The elements of poly at return will be in the range of [0, mlKem_q]
+    private void mlKemNTT(short[] poly) {
+        assert poly.length == ML_KEM_N;
+        implKyberNtt(poly, montZetasForVectorNttArr);
         mlKemBarrettReduce(poly);
     }
 
-    // Works in place, but also returns its (modified) input so that it can
-    // be used in expressions
-    private short[] mlKemInverseNTT(short[] poly) {
+    @IntrinsicCandidate
+    static int implKyberInverseNtt(short[] poly, short[] zetas) {
+        implKyberInverseNttJava(poly);
+        return 1;
+    }
+
+    static void implKyberInverseNttJava(short[] poly) {
         int[] coeffs = new int[ML_KEM_N];
         for (int m = 0; m < ML_KEM_N; m++) {
             coeffs[m] = poly[m];
@@ -732,6 +1028,13 @@ public final class ML_KEM {
         for (int m = 0; m < ML_KEM_N; m++) {
             poly[m] = (short) coeffs[m];
         }
+    }
+
+    // Works in place, but also returns its (modified) input so that it can
+    // be used in expressions
+    private short[] mlKemInverseNTT(short[] poly) {
+        assert poly.length == ML_KEM_N;
+        implKyberInverseNtt(poly, montZetasForVectorInverseNttArr);
         return poly;
     }
 
@@ -822,11 +1125,16 @@ public final class ML_KEM {
         return result;
     }
 
-    // Multiplies two polynomials represented in the NTT domain.
-    // The result is a representation of the product still in the NTT domain.
-    // The coefficients in the result are in the range (-ML_KEM_Q, ML_KEM_Q).
-    private void nttMult(short[] result, short[] ntta, short[] nttb) {
+    @IntrinsicCandidate
+    static int implKyberNttMult(short[] result, short[] ntta, short[] nttb,
+                                short[] zetas) {
+        implKyberNttMultJava(result, ntta, nttb);
+        return 1;
+    }
+
+    static void implKyberNttMultJava(short[] result, short[] ntta, short[] nttb) {
         for (int m = 0; m < ML_KEM_N / 2; m++) {
+
             int a0 = ntta[2 * m];
             int a1 = ntta[2 * m + 1];
             int b0 = nttb[2 * m];
@@ -837,6 +1145,15 @@ public final class ML_KEM {
             result[2 * m + 1] = (short) montMul(
                     (montMul(a0, b1) + montMul(a1, b0)), MONT_R_SQUARE_MOD_Q);
         }
+    }
+
+    // Multiplies two polynomials represented in the NTT domain.
+    // The result is a representation of the product still in the NTT domain.
+    // The coefficients in the result are in the range (-mlKem_q, mlKem_q).
+    private void nttMult(short[] result, short[] ntta, short[] nttb) {
+        assert (result.length == ML_KEM_N) && (ntta.length == ML_KEM_N) &&
+                (nttb.length == ML_KEM_N);
+        implKyberNttMult(result, ntta, nttb, montZetasForVectorNttMultArr);
     }
 
     // Adds the vector of polynomials b to a in place, i.e. a will hold
@@ -853,15 +1170,40 @@ public final class ML_KEM {
         return a;
     }
 
+    @IntrinsicCandidate
+    static int implKyberAddPoly(short[] result, short[] a, short[] b) {
+        implKyberAddPolyJava(result, a, b);
+        return 1;
+    }
+
+    static void implKyberAddPolyJava(short[] result, short[] a, short[] b) {
+        for (int m = 0; m < ML_KEM_N; m++) {
+            int r = a[m] + b[m] + ML_KEM_Q; // This makes r > - ML_KEM_Q
+            a[m] = (short) r;
+        }
+    }
+
     // Adds the polynomial b to a in place, i.e. (the modified) a will hold
     // the result.
     // The coefficients are supposed be greater than -ML_KEM_Q in a and
     // greater than -ML_KEM_Q and less than ML_KEM_Q in b.
     // The coefficients in the result are greater than -ML_KEM_Q.
-    private void mlKemAddPoly(short[] a, short[] b) {
+    private short[] mlKemAddPoly(short[] a, short[] b) {
+        assert (a.length == ML_KEM_N) && (b.length == ML_KEM_N);
+        implKyberAddPoly(a, a, b);
+        return a;
+    }
+
+    @IntrinsicCandidate
+    static int implKyberAddPoly(short[] result, short[] a, short[] b, short[] c) {
+        implKyberAddPolyJava(result, a, b, c);
+        return 1;
+    }
+
+    static void implKyberAddPolyJava(short[] result, short[] a, short[] b, short[] c) {
         for (int m = 0; m < ML_KEM_N; m++) {
-            int r = a[m] + b[m] + ML_KEM_Q; // This makes r > -ML_KEM_Q
-            a[m] = (short) r;
+            int r = a[m] + b[m] + c[m] + 2 * ML_KEM_Q; // This makes r > - ML_KEM_Q
+            result[m] = (short) r;
         }
     }
 
@@ -871,10 +1213,9 @@ public final class ML_KEM {
     // greater than -ML_KEM_Q and less than ML_KEM_Q.
     // The coefficients in the result are nonnegative and less than ML_KEM_Q.
     private short[] mlKemAddPoly(short[] a, short[] b, short[] c) {
-        for (int m = 0; m < ML_KEM_N; m++) {
-            int r = a[m] + b[m] + c[m] + 2 * ML_KEM_Q; // This makes r > - ML_KEM_Q
-            a[m] = (short) r;
-        }
+        assert (a.length == ML_KEM_N) && (b.length == ML_KEM_N) &&
+                (c.length == ML_KEM_N);
+        implKyberAddPoly(a, a, b, c);
         mlKemBarrettReduce(a);
         return a;
     }
@@ -997,21 +1338,38 @@ public final class ML_KEM {
         return result;
     }
 
-    // The intrinsic implementations assume that the input and output buffers
-    // are such that condensed can be read in 192-byte chunks and
-    // parsed can be written in 128 shorts chunks. In other words,
-    // if (i - 1) * 128 < parsedLengths <= i * 128 then
-    // parsed.size should be at least i * 128 and
-    // condensed.size should be at least index + i * 192
-    private void twelve2Sixteen(byte[] condensed, int index,
-                                short[] parsed, int parsedLength) {
+    @IntrinsicCandidate
+    private static int implKyber12To16(byte[] condensed, int index, short[] parsed, int parsedLength) {
+        implKyber12To16Java(condensed, index, parsed, parsedLength);
+        return 1;
+    }
 
+    private static void implKyber12To16Java(byte[] condensed, int index, short[] parsed, int parsedLength) {
         for (int i = 0; i < parsedLength * 3 / 2; i += 3) {
             parsed[(i / 3) * 2] = (short) ((condensed[i + index] & 0xff) +
                     256 * (condensed[i + index + 1] & 0xf));
             parsed[(i / 3) * 2 + 1] = (short) (((condensed[i + index + 1] >>> 4) & 0xf) +
                     16 * (condensed[i + index + 2] & 0xff));
         }
+    }
+
+    // The intrinsic implementations assume that the input and output buffers
+    // are such that condensed can be read in 96-byte chunks and
+    // parsed can be written in 64 shorts chunks except for the last chunk
+    // that can be either 48 or 64 shorts. In other words,
+    // if (i - 1) * 64 < parsedLengths <= i * 64 then
+    // parsed.length should be either i * 64 or (i-1) * 64 + 48 and
+    // condensed.length should be at least index + i * 96.
+    private void twelve2Sixteen(byte[] condensed, int index,
+                                short[] parsed, int parsedLength) {
+        int i = parsedLength / 64;
+        int remainder = parsedLength - i * 64;
+        if (remainder != 0) {
+            i++;
+        }
+        assert ((remainder == 0) || (remainder == 48)) &&
+                (index + i * 96 <= condensed.length);
+        implKyber12To16(condensed, index, parsed, parsedLength);
     }
 
     private static void decodePoly5(byte[] condensed, int index, short[] parsed) {
@@ -1152,6 +1510,19 @@ public final class ML_KEM {
         return result;
     }
 
+    @IntrinsicCandidate
+    static int implKyberBarrettReduce(short[] coeffs) {
+        implKyberBarrettReduceJava(coeffs);
+        return 1;
+    }
+
+    static void implKyberBarrettReduceJava(short[] poly) {
+        for (int m = 0; m < ML_KEM_N; m++) {
+            int tmp = ((int) poly[m] * BARRETT_MULTIPLIER) >> BARRETT_SHIFT;
+            poly[m] = (short) (poly[m] - tmp * ML_KEM_Q);
+        }
+    }
+
     // The input elements can have any short value.
     // Modifies poly such that upon return poly[i] will be
     // in the range [0, ML_KEM_Q] and will be congruent with the original
@@ -1161,11 +1532,9 @@ public final class ML_KEM {
     // That means that if the original poly[i] > -ML_KEM_Q then at return it
     // will be in the range [0, ML_KEM_Q), i.e. it will be the canonical
     // representative of its residue class.
-    private void mlKemBarrettReduce(short[] poly) {
-        for (int m = 0; m < ML_KEM_N; m++) {
-            int tmp = ((int) poly[m] * BARRETT_MULTIPLIER) >> BARRETT_SHIFT;
-            poly[m] = (short) (poly[m] - tmp * ML_KEM_Q);
-        }
+    private static void mlKemBarrettReduce(short[] poly) {
+        assert poly.length == ML_KEM_N;
+        implKyberBarrettReduce(poly);
     }
 
     // Precondition: -(2^MONT_R_BITS -1) * MONT_Q <= b * c < (2^MONT_R_BITS - 1) * MONT_Q
@@ -1179,5 +1548,23 @@ public final class ML_KEM {
         int m = ((MONT_Q_INV_MOD_R * aLow) << (32 - MONT_R_BITS)) >> (32 - MONT_R_BITS);
 
         return (aHigh - ((m * MONT_Q) >> MONT_R_BITS)); // subtract signed high product
+    }
+
+    // For multidimensional array initialization, manually allocating each entry is
+    // faster than doing the entire initialization in one go
+    static short[][] shortMatrixAlloc(int first, int second) {
+        short[][] res = new short[first][];
+        for (int i = 0; i < first; i++) {
+            res[i] = new short[second];
+        }
+        return res;
+    }
+
+    static byte[][] byteMatrixAlloc(int first, int second) {
+        byte[][] res = new byte[first][];
+        for (int i = 0; i < first; i++) {
+            res[i] = new byte[second];
+        }
+        return res;
     }
 }

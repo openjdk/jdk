@@ -25,8 +25,8 @@
 #ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHYOUNGGENERATION_HPP
 #define SHARE_VM_GC_SHENANDOAH_SHENANDOAHYOUNGGENERATION_HPP
 
-#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 
 class ShenandoahYoungGeneration : public ShenandoahGeneration {
 private:
@@ -34,7 +34,7 @@ private:
   ShenandoahYoungHeuristics* _young_heuristics;
 
 public:
-  ShenandoahYoungGeneration(uint max_queues, size_t max_capacity, size_t max_soft_capacity);
+  ShenandoahYoungGeneration(uint max_queues);
 
   ShenandoahHeuristics* initialize_heuristics(ShenandoahMode* gc_mode) override;
 
@@ -73,10 +73,16 @@ public:
     return _old_gen_task_queues != nullptr;
   }
 
+  size_t bytes_allocated_since_gc_start() const override;
+  size_t used() const override;
+  size_t used_regions() const override;
+  size_t used_regions_size() const override;
+  size_t get_humongous_waste() const override;
+  size_t free_unaffiliated_regions() const override;
+  size_t get_affiliated_region_count() const override;
+  size_t max_capacity() const override;
+
   size_t available() const override;
-
-  // Do not override available_with_reserve() because that needs to see memory reserved for Collector
-
   size_t soft_available() const override;
 
   void prepare_gc() override;

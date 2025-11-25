@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "code/pcDesc.hpp"
 #include "oops/metadata.hpp"
 #include "oops/method.hpp"
+#include "runtime/mutexLocker.hpp"
 
 class AbstractCompiler;
 class CompiledDirectCall;
@@ -90,7 +91,6 @@ class ExceptionCache : public CHeapObj<mtCode> {
 
 // cache pc descs found in earlier inquiries
 class PcDescCache {
-  friend class VMStructs;
  private:
   enum { cache_size = 4 };
   // The array elements MUST be volatile! Several threads may modify
@@ -100,7 +100,7 @@ class PcDescCache {
   typedef PcDesc* PcDescPtr;
   volatile PcDescPtr _pc_descs[cache_size]; // last cache_size pc_descs found
  public:
-  PcDescCache() { debug_only(_pc_descs[0] = nullptr); }
+  PcDescCache() { DEBUG_ONLY(_pc_descs[0] = nullptr); }
   void    init_to(PcDesc* initial_pc_desc);
   PcDesc* find_pc_desc(int pc_offset, bool approximate);
   void    add_pc_desc(PcDesc* pc_desc);
@@ -134,27 +134,28 @@ public:
 // nmethods (native methods) are the compiled code versions of Java methods.
 //
 // An nmethod contains:
-//  - header                 (the nmethod structure)
-//  [Relocation]
-//  - relocation information
-//  - constant part          (doubles, longs and floats used in nmethod)
-//  - oop table
-//  [Code]
-//  - code body
-//  - exception handler
-//  - stub code
-//  [Debugging information]
-//  - oop array
-//  - data array
-//  - pcs
-//  [Exception handler table]
-//  - handler entry point array
-//  [Implicit Null Pointer exception table]
-//  - implicit null table array
-//  [Speculations]
-//  - encoded speculations array
-//  [JVMCINMethodData]
-//  - meta data for JVMCI compiled nmethod
+//  - Header                 (the nmethod structure)
+//  - Constant part          (doubles, longs and floats used in nmethod)
+//  - Code part:
+//    - Code body
+//    - Exception handler
+//    - Stub code
+//    - OOP table
+//
+// As a CodeBlob, an nmethod references [mutable data] allocated on the C heap:
+//  - CodeBlob relocation data
+//  - Metainfo
+//  - JVMCI data
+//
+// An nmethod references [immutable data] allocated on C heap:
+//  - Dependency assertions data
+//  - Implicit null table array
+//  - Handler entry point array
+//  - Debugging information:
+//    - Scopes data array
+//    - Scopes pcs array
+//  - JVMCI speculations array
+//  - Nmethod reference counter
 
 #if INCLUDE_JVMCI
 class FailedSpeculation;
@@ -167,6 +168,8 @@ class nmethod : public CodeBlob {
   friend class CodeCache;  // scavengable oops
   friend class JVMCINMethodData;
   friend class DeoptimizationScope;
+
+  #define ImmutableDataRefCountSize ((int)sizeof(int))
 
  private:
 
@@ -226,20 +229,17 @@ class nmethod : public CodeBlob {
   int _exception_offset;
   // All deoptee's will resume execution at this location described by
   // this offset.
-  int _deopt_handler_offset;
-  // All deoptee's at a MethodHandle call site will resume execution
-  // at this location described by this offset.
-  int _deopt_mh_handler_offset;
+  int _deopt_handler_entry_offset;
   // Offset (from insts_end) of the unwind handler if it exists
   int16_t  _unwind_handler_offset;
   // Number of arguments passed on the stack
   uint16_t _num_stack_arg_slots;
 
-  // Offsets in mutable data section
-  // _oops_offset == _data_offset,  offset where embedded oop table begins (inside data)
-  uint16_t _metadata_offset; // embedded meta data table
+  uint16_t _oops_size;
 #if INCLUDE_JVMCI
-  uint16_t _jvmci_data_offset;
+  // _metadata_size is not specific to JVMCI. In the non-JVMCI case, it can be derived as:
+  // _metadata_size = mutable_data_size - relocation_size
+  uint16_t _metadata_size;
 #endif
 
   // Offset in immutable data section
@@ -251,6 +251,7 @@ class nmethod : public CodeBlob {
 #if INCLUDE_JVMCI
   int      _speculations_offset;
 #endif
+  int      _immutable_data_ref_count_offset;
 
   // location in frame (offset for sp) that deopt can store the original
   // pc during a deopt.
@@ -268,7 +269,6 @@ class nmethod : public CodeBlob {
 
   // set during construction
   uint8_t _has_unsafe_access:1,        // May fault due to unsafe access.
-          _has_method_handle_invokes:1,// Has this method MethodHandle invokes?
           _has_wide_vectors:1,         // Preserve wide vectors at safepoints
           _has_monitors:1,             // Fastpath monitor detection for continuations
           _has_scoped_access:1,        // used by for shared scope closure (scopedMemoryAccess.cpp)
@@ -286,7 +286,7 @@ class nmethod : public CodeBlob {
   volatile DeoptimizationStatus _deoptimization_status; // Used for stack deoptimization
 
   DeoptimizationStatus deoptimization_status() const {
-    return Atomic::load(&_deoptimization_status);
+    return AtomicAccess::load(&_deoptimization_status);
   }
 
   // Initialize fields to their default values
@@ -305,13 +305,15 @@ class nmethod : public CodeBlob {
           int frame_size,
           ByteSize basic_lock_owner_sp_offset, /* synchronized natives only */
           ByteSize basic_lock_sp_offset,       /* synchronized natives only */
-          OopMapSet* oop_maps);
+          OopMapSet* oop_maps,
+          int mutable_data_size);
 
   // For normal JIT compiled code
   nmethod(Method* method,
           CompilerType type,
           int nmethod_size,
           int immutable_data_size,
+          int mutable_data_size,
           int compile_id,
           int entry_bci,
           address immutable_data,
@@ -333,8 +335,11 @@ class nmethod : public CodeBlob {
 #endif
           );
 
+  nmethod(const nmethod &nm);
+
   // helper methods
   void* operator new(size_t size, int nmethod_size, int comp_level) throw();
+  void* operator new(size_t size, int nmethod_size, CodeBlobType code_blob_type) throw();
 
   // For method handle intrinsics: Try MethodNonProfiled, MethodProfiled and NonNMethod.
   // Attention: Only allow NonNMethod space for special nmethods which don't need to be
@@ -469,6 +474,82 @@ class nmethod : public CodeBlob {
   void oops_do_set_strong_done(nmethod* old_head);
 
 public:
+  // If you change anything in this enum please patch
+  // vmStructs_jvmci.cpp accordingly.
+  enum class InvalidationReason : s1 {
+    NOT_INVALIDATED = -1,
+    C1_CODEPATCH,
+    C1_DEOPTIMIZE,
+    C1_DEOPTIMIZE_FOR_PATCHING,
+    C1_PREDICATE_FAILED_TRAP,
+    CI_REPLAY,
+    UNLOADING,
+    UNLOADING_COLD,
+    JVMCI_INVALIDATE,
+    JVMCI_MATERIALIZE_VIRTUAL_OBJECT,
+    JVMCI_REPLACED_WITH_NEW_CODE,
+    JVMCI_REPROFILE,
+    MARKED_FOR_DEOPTIMIZATION,
+    MISSING_EXCEPTION_HANDLER,
+    NOT_USED,
+    OSR_INVALIDATION_BACK_BRANCH,
+    OSR_INVALIDATION_FOR_COMPILING_WITH_C1,
+    OSR_INVALIDATION_OF_LOWER_LEVEL,
+    SET_NATIVE_FUNCTION,
+    UNCOMMON_TRAP,
+    WHITEBOX_DEOPTIMIZATION,
+    ZOMBIE,
+    INVALIDATION_REASONS_COUNT
+  };
+
+
+  static const char* invalidation_reason_to_string(InvalidationReason invalidation_reason) {
+    switch (invalidation_reason) {
+      case InvalidationReason::C1_CODEPATCH:
+        return "C1 code patch";
+      case InvalidationReason::C1_DEOPTIMIZE:
+        return "C1 deoptimized";
+      case InvalidationReason::C1_DEOPTIMIZE_FOR_PATCHING:
+        return "C1 deoptimize for patching";
+      case InvalidationReason::C1_PREDICATE_FAILED_TRAP:
+        return "C1 predicate failed trap";
+      case InvalidationReason::CI_REPLAY:
+        return "CI replay";
+      case InvalidationReason::JVMCI_INVALIDATE:
+        return "JVMCI invalidate";
+      case InvalidationReason::JVMCI_MATERIALIZE_VIRTUAL_OBJECT:
+        return "JVMCI materialize virtual object";
+      case InvalidationReason::JVMCI_REPLACED_WITH_NEW_CODE:
+        return "JVMCI replaced with new code";
+      case InvalidationReason::JVMCI_REPROFILE:
+        return "JVMCI reprofile";
+      case InvalidationReason::MARKED_FOR_DEOPTIMIZATION:
+        return "marked for deoptimization";
+      case InvalidationReason::MISSING_EXCEPTION_HANDLER:
+        return "missing exception handler";
+      case InvalidationReason::NOT_USED:
+        return "not used";
+      case InvalidationReason::OSR_INVALIDATION_BACK_BRANCH:
+        return "OSR invalidation back branch";
+      case InvalidationReason::OSR_INVALIDATION_FOR_COMPILING_WITH_C1:
+        return "OSR invalidation for compiling with C1";
+      case InvalidationReason::OSR_INVALIDATION_OF_LOWER_LEVEL:
+        return "OSR invalidation of lower level";
+      case InvalidationReason::SET_NATIVE_FUNCTION:
+        return "set native function";
+      case InvalidationReason::UNCOMMON_TRAP:
+        return "uncommon trap";
+      case InvalidationReason::WHITEBOX_DEOPTIMIZATION:
+        return "whitebox deoptimization";
+      case InvalidationReason::ZOMBIE:
+        return "zombie";
+      default: {
+        assert(false, "Unhandled reason");
+        return "Unknown";
+      }
+    }
+  }
+
   // create nmethod with entry_bci
   static nmethod* new_nmethod(const methodHandle& method,
                               int compile_id,
@@ -491,6 +572,12 @@ public:
 #endif
   );
 
+  // Relocate the nmethod to the code heap identified by code_blob_type.
+  // Returns nullptr if the code heap does not have enough space, the
+  // nmethod is unrelocatable, or the nmethod is invalidated during relocation,
+  // otherwise the relocated nmethod. The original nmethod will be marked not entrant.
+  nmethod* relocate(CodeBlobType code_blob_type);
+
   static nmethod* new_native_nmethod(const methodHandle& method,
                                      int compile_id,
                                      CodeBuffer *code_buffer,
@@ -506,6 +593,8 @@ public:
   bool is_native_method() const { return _method != nullptr && _method->is_native(); }
   bool is_java_method  () const { return _method != nullptr && !_method->is_native(); }
   bool is_osr_method   () const { return _entry_bci != InvocationEntryBci; }
+
+  bool is_relocatable();
 
   // Compiler task identification.  Note that all OSR methods
   // are numbered in an independent sequence if CICountOSR is true,
@@ -526,22 +615,21 @@ public:
   address insts_begin           () const { return           code_begin()   ; }
   address insts_end             () const { return           header_begin() + _stub_offset             ; }
   address stub_begin            () const { return           header_begin() + _stub_offset             ; }
-  address stub_end              () const { return           data_begin()   ; }
+  address stub_end              () const { return           code_end()     ; }
   address exception_begin       () const { return           header_begin() + _exception_offset        ; }
-  address deopt_handler_begin   () const { return           header_begin() + _deopt_handler_offset    ; }
-  address deopt_mh_handler_begin() const { return           header_begin() + _deopt_mh_handler_offset ; }
+  address deopt_handler_entry   () const { return           header_begin() + _deopt_handler_entry_offset    ; }
   address unwind_handler_begin  () const { return _unwind_handler_offset != -1 ? (insts_end() - _unwind_handler_offset) : nullptr; }
+  oop*    oops_begin            () const { return (oop*)    data_begin(); }
+  oop*    oops_end              () const { return (oop*)    data_end(); }
 
   // mutable data
-  oop*    oops_begin            () const { return (oop*)        data_begin(); }
-  oop*    oops_end              () const { return (oop*)       (data_begin() + _metadata_offset)      ; }
-  Metadata** metadata_begin     () const { return (Metadata**) (data_begin() + _metadata_offset)      ; }
+  Metadata** metadata_begin     () const { return (Metadata**) (mutable_data_begin() + _relocation_size); }
 #if INCLUDE_JVMCI
-  Metadata** metadata_end       () const { return (Metadata**) (data_begin() + _jvmci_data_offset)    ; }
-  address jvmci_data_begin      () const { return               data_begin() + _jvmci_data_offset     ; }
-  address jvmci_data_end        () const { return               data_end(); }
+  Metadata** metadata_end       () const { return (Metadata**) (mutable_data_begin() + _relocation_size + _metadata_size); }
+  address jvmci_data_begin      () const { return               mutable_data_begin() + _relocation_size + _metadata_size; }
+  address jvmci_data_end        () const { return               mutable_data_end(); }
 #else
-  Metadata** metadata_end       () const { return (Metadata**)  data_end(); }
+  Metadata** metadata_end       () const { return (Metadata**)  mutable_data_end(); }
 #endif
 
   // immutable data
@@ -560,10 +648,11 @@ public:
 #if INCLUDE_JVMCI
   address scopes_data_end       () const { return           _immutable_data + _speculations_offset ; }
   address speculations_begin    () const { return           _immutable_data + _speculations_offset ; }
-  address speculations_end      () const { return            immutable_data_end(); }
+  address speculations_end      () const { return           _immutable_data + _immutable_data_ref_count_offset ; }
 #else
-  address scopes_data_end       () const { return            immutable_data_end(); }
+  address scopes_data_end       () const { return           _immutable_data + _immutable_data_ref_count_offset ; }
 #endif
+  address immutable_data_ref_count_begin () const { return  _immutable_data + _immutable_data_ref_count_offset ; }
 
   // Sizes
   int immutable_data_size() const { return _immutable_data_size; }
@@ -631,8 +720,8 @@ public:
   // alive.  It is used when an uncommon trap happens.  Returns true
   // if this thread changed the state of the nmethod or false if
   // another thread performed the transition.
-  bool  make_not_entrant();
-  bool  make_not_used()    { return make_not_entrant(); }
+  bool  make_not_entrant(InvalidationReason invalidation_reason);
+  bool  make_not_used() { return make_not_entrant(InvalidationReason::NOT_USED); }
 
   bool  is_marked_for_deoptimization() const { return deoptimization_status() != not_marked; }
   bool  has_been_deoptimized() const { return deoptimization_status() == deoptimize_done; }
@@ -667,9 +756,6 @@ public:
 
   bool  has_scoped_access() const                 { return _has_scoped_access; }
   void  set_has_scoped_access(bool z)             { _has_scoped_access = z; }
-
-  bool  has_method_handle_invokes() const         { return _has_method_handle_invokes; }
-  void  set_has_method_handle_invokes(bool z)     { _has_method_handle_invokes = z; }
 
   bool  has_wide_vectors() const                  { return _has_wide_vectors; }
   void  set_has_wide_vectors(bool z)              { _has_wide_vectors = z; }
@@ -741,12 +827,9 @@ public:
   ExceptionCache* exception_cache_entry_for_exception(Handle exception);
 
 
-  // MethodHandle
-  bool is_method_handle_return(address return_pc);
   // Deopt
   // Return true is the PC is one would expect if the frame is being deopted.
   inline bool is_deopt_pc(address pc);
-  inline bool is_deopt_mh_entry(address pc);
   inline bool is_deopt_entry(address pc);
 
   // Accessor/mutator for the original pc of a frame before a frame was deopted.
@@ -835,10 +918,13 @@ public:
   JVMCINMethodData* jvmci_nmethod_data() const {
     return jvmci_data_size() == 0 ? nullptr : (JVMCINMethodData*) jvmci_data_begin();
   }
+
+  // Returns true if the runtime should NOT collect deoptimization profile for a JVMCI
+  // compiled method
+  bool jvmci_skip_profile_deopt() const;
 #endif
 
-  void oops_do(OopClosure* f) { oops_do(f, false); }
-  void oops_do(OopClosure* f, bool allow_dead);
+  void oops_do(OopClosure* f);
 
   // All-in-one claiming of nmethods: returns true if the caller successfully claimed that
   // nmethod.
@@ -877,6 +963,27 @@ public:
   bool  load_reported() const                     { return _load_reported; }
   void  set_load_reported()                       { _load_reported = true; }
 
+  inline void init_immutable_data_ref_count() {
+    assert(is_not_installed(), "should be called in nmethod constructor");
+    *((int*)immutable_data_ref_count_begin()) = 1;
+  }
+
+  inline int inc_immutable_data_ref_count() {
+    assert_lock_strong(CodeCache_lock);
+    int* ref_count = (int*)immutable_data_ref_count_begin();
+    assert(*ref_count > 0, "Must be positive");
+    return ++(*ref_count);
+  }
+
+  inline int dec_immutable_data_ref_count() {
+    assert_lock_strong(CodeCache_lock);
+    int* ref_count = (int*)immutable_data_ref_count_begin();
+    assert(*ref_count > 0, "Must be positive");
+    return --(*ref_count);
+  }
+
+  static void add_delayed_compiled_method_load_event(nmethod* nm) NOT_CDS_RETURN;
+
  public:
   // ScopeDesc retrieval operation
   PcDesc* pc_desc_at(address pc)   { return find_pc_desc(pc, false); }
@@ -900,7 +1007,7 @@ public:
   void post_compiled_method_load_event(JvmtiThreadState* state = nullptr);
 
   // verify operations
-  void verify() override;
+  void verify();
   void verify_scopes();
   void verify_interrupt_point(address interrupt_point, bool is_inline_cache);
 
@@ -911,10 +1018,14 @@ public:
   // Avoid hiding of parent's 'decode(outputStream*)' method.
   void decode(outputStream* st) const { decode2(st); } // just delegate here.
 
+  // AOT cache support
+  static void post_delayed_compiled_method_load_events() NOT_CDS_RETURN;
+
   // printing support
-  void print()                 const override;
-  void print(outputStream* st) const;
+  void print_on_impl(outputStream* st) const;
   void print_code();
+  void print_value_on_impl(outputStream* st) const;
+  void print_code_snippet(outputStream* st, address addr) const;
 
 #if defined(SUPPORT_DATA_STRUCTS)
   // print output in opt build for disassembler library
@@ -922,7 +1033,6 @@ public:
   void print_pcs_on(outputStream* st);
   void print_scopes() { print_scopes_on(tty); }
   void print_scopes_on(outputStream* st)          PRODUCT_RETURN;
-  void print_value_on(outputStream* st) const override;
   void print_handler_table();
   void print_nul_chk_table();
   void print_recorded_oop(int log_n, int index);
@@ -941,23 +1051,15 @@ public:
   void maybe_print_nmethod(const DirectiveSet* directive);
   void print_nmethod(bool print_code);
 
-  // need to re-define this from CodeBlob else the overload hides it
-  void print_on(outputStream* st) const override { CodeBlob::print_on(st); }
-  void print_on(outputStream* st, const char* msg) const;
+  void print_on_with_msg(outputStream* st, const char* msg) const;
 
   // Logging
   void log_identity(xmlStream* log) const;
   void log_new_nmethod() const;
-  void log_state_change() const;
+  void log_relocated_nmethod(nmethod* original) const;
+  void log_state_change(InvalidationReason invalidation_reason) const;
 
   // Prints block-level comments, including nmethod specific block labels:
-  void print_block_comment(outputStream* stream, address block_begin) const override {
-#if defined(SUPPORT_ASSEMBLY) || defined(SUPPORT_ABSTRACT_ASSEMBLY)
-    print_nmethod_labels(stream, block_begin);
-    CodeBlob::print_block_comment(stream, block_begin);
-#endif
-  }
-
   void print_nmethod_labels(outputStream* stream, address block_begin, bool print_section_labels=true) const;
   const char* nmethod_section_label(address pos) const;
 
@@ -995,6 +1097,27 @@ public:
 
   void make_deoptimized();
   void finalize_relocations();
+
+  class Vptr : public CodeBlob::Vptr {
+    void print_on(const CodeBlob* instance, outputStream* st) const override {
+      ttyLocker ttyl;
+      instance->as_nmethod()->print_on_impl(st);
+    }
+    void print_value_on(const CodeBlob* instance, outputStream* st) const override {
+      instance->as_nmethod()->print_value_on_impl(st);
+    }
+  };
+
+  static const Vptr _vpntr;
+};
+
+struct NMethodMarkingScope : StackObj {
+  NMethodMarkingScope() {
+    nmethod::oops_do_marking_prologue();
+  }
+  ~NMethodMarkingScope() {
+    nmethod::oops_do_marking_epilogue();
+  }
 };
 
 #endif // SHARE_CODE_NMETHOD_HPP

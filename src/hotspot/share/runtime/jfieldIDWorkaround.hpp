@@ -157,7 +157,7 @@ class jfieldIDWorkaround: AllStatic {
   static jfieldID to_jfieldID(InstanceKlass* k, int offset, bool is_static) {
     if (is_static) {
       JNIid *id = k->jni_id_for(offset);
-      debug_only(id->set_is_static_field_id());
+      DEBUG_ONLY(id->set_is_static_field_id());
       return jfieldIDWorkaround::to_static_jfieldID(id);
     } else {
       return jfieldIDWorkaround::to_instance_jfieldID(k, offset);

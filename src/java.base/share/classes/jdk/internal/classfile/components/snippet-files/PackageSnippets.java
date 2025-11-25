@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package java.lang.classfile.components.snippets;
+package jdk.internal.classfile.components.snippet;
 
 import java.lang.classfile.*;
 import jdk.internal.classfile.components.ClassPrinter;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -47,6 +46,7 @@ intptr_t  MachOper::constant() const { return 0x00; }
 relocInfo::relocType MachOper::constant_reloc() const { return relocInfo::none; }
 jdouble MachOper::constantD() const { ShouldNotReachHere(); }
 jfloat  MachOper::constantF() const { ShouldNotReachHere(); }
+jshort  MachOper::constantH() const { ShouldNotReachHere(); }
 jlong   MachOper::constantL() const { ShouldNotReachHere(); }
 TypeOopPtr *MachOper::oop() const { return nullptr; }
 int MachOper::ccode() const { return 0x00; }
@@ -525,7 +525,7 @@ bool MachNode::rematerialize() const {
   uint idx = oper_input_base();
   if (req() > idx) {
     const RegMask &rm = in_RegMask(idx);
-    if (rm.is_NotEmpty() && rm.is_bound(ideal_reg())) {
+    if (!rm.is_empty() && rm.is_bound(ideal_reg())) {
       return false;
     }
   }
@@ -619,8 +619,11 @@ void MachNullCheckNode::save_label( Label** label, uint* block_num ) {
 }
 
 const RegMask &MachNullCheckNode::in_RegMask( uint idx ) const {
-  if( idx == 0 ) return RegMask::Empty;
-  else return in(1)->as_Mach()->out_RegMask();
+  if (idx == 0) {
+    return RegMask::EMPTY;
+  } else {
+    return in(1)->as_Mach()->out_RegMask();
+  }
 }
 
 //=============================================================================
@@ -772,8 +775,6 @@ bool MachCallJavaNode::cmp( const Node &n ) const {
 }
 #ifndef PRODUCT
 void MachCallJavaNode::dump_spec(outputStream *st) const {
-  if (_method_handle_invoke)
-    st->print("MethodHandle ");
   if (_method) {
     _method->print_short_name(st);
     st->print(" ");
@@ -794,10 +795,7 @@ const RegMask &MachCallJavaNode::in_RegMask(uint idx) const {
   }
   // Values outside the domain represent debug info
   Matcher* m = Compile::current()->matcher();
-  // If this call is a MethodHandle invoke we have to use a different
-  // debugmask which does not include the register we use to save the
-  // SP over MH invokes.
-  RegMask** debugmask = _method_handle_invoke ? m->idealreg2mhdebugmask : m->idealreg2debugmask;
+  RegMask** debugmask = m->idealreg2debugmask;
   return *debugmask[in(idx)->ideal_reg()];
 }
 

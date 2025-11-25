@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +24,11 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "gc/shared/gcCause.hpp"
+#include "gc/shenandoah/heuristics/shenandoahAdaptiveHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
-#include "gc/shenandoah/heuristics/shenandoahAdaptiveHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
@@ -91,13 +91,13 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
   // we hit max_cset. When max_cset is hit, we terminate the cset selection. Note that in this scheme,
   // ShenandoahGarbageThreshold is the soft threshold which would be ignored until min_garbage is hit.
 
-  size_t capacity    = _space_info->soft_max_capacity();
+  size_t capacity    = ShenandoahHeap::heap()->soft_max_capacity();
   size_t max_cset    = (size_t)((1.0 * capacity / 100 * ShenandoahEvacReserve) / ShenandoahEvacWaste);
   size_t free_target = (capacity / 100 * ShenandoahMinFreeThreshold) + max_cset;
   size_t min_garbage = (free_target > actual_free ? (free_target - actual_free) : 0);
 
-  log_info(gc, ergo)("Adaptive CSet Selection. Target Free: " SIZE_FORMAT "%s, Actual Free: "
-                     SIZE_FORMAT "%s, Max Evacuation: " SIZE_FORMAT "%s, Min Garbage: " SIZE_FORMAT "%s",
+  log_info(gc, ergo)("Adaptive CSet Selection. Target Free: %zu%s, Actual Free: "
+                     "%zu%s, Max Evacuation: %zu%s, Min Garbage: %zu%s",
                      byte_size_in_proper_unit(free_target), proper_unit_for_byte_size(free_target),
                      byte_size_in_proper_unit(actual_free), proper_unit_for_byte_size(actual_free),
                      byte_size_in_proper_unit(max_cset),    proper_unit_for_byte_size(max_cset),
@@ -142,7 +142,7 @@ void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
   if (available_sd > 0) {
     double available_avg = _available.avg();
     z_score = (double(available) - available_avg) / available_sd;
-    log_debug(gc, ergo)("Available: " SIZE_FORMAT " %sB, z-score=%.3f. Average available: %.1f %sB +/- %.1f %sB.",
+    log_debug(gc, ergo)("Available: %zu %sB, z-score=%.3f. Average available: %.1f %sB +/- %.1f %sB.",
                         byte_size_in_proper_unit(available), proper_unit_for_byte_size(available),
                         z_score,
                         byte_size_in_proper_unit(available_avg), proper_unit_for_byte_size(available_avg),
@@ -233,22 +233,29 @@ static double saturate(double value, double min, double max) {
 //    in operation mode.  We want some way to decide that the average rate has changed, while keeping average
 //    allocation rate computation independent.
 bool ShenandoahAdaptiveHeuristics::should_start_gc() {
-  size_t capacity = _space_info->soft_max_capacity();
+  size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
   size_t available = _space_info->soft_available();
   size_t allocated = _space_info->bytes_allocated_since_gc_start();
 
-  log_debug(gc)("should_start_gc? available: " SIZE_FORMAT ", soft_max_capacity: " SIZE_FORMAT
-                ", allocated: " SIZE_FORMAT, available, capacity, allocated);
+  log_debug(gc)("should_start_gc? available: %zu, soft_max_capacity: %zu"
+                ", allocated: %zu", available, capacity, allocated);
 
   // Track allocation rate even if we decide to start a cycle for other reasons.
   double rate = _allocation_rate.sample(allocated);
+
+  if (_start_gc_is_pending) {
+    log_trigger("GC start is already pending");
+    return true;
+  }
+
   _last_trigger = OTHER;
 
   size_t min_threshold = min_free_threshold();
   if (available < min_threshold) {
-    log_trigger("Free (" SIZE_FORMAT "%s) is below minimum threshold (" SIZE_FORMAT "%s)",
+    log_trigger("Free (%zu%s) is below minimum threshold (%zu%s)",
                  byte_size_in_proper_unit(available), proper_unit_for_byte_size(available),
                  byte_size_in_proper_unit(min_threshold), proper_unit_for_byte_size(min_threshold));
+    accept_trigger_with_type(OTHER);
     return true;
   }
 
@@ -257,10 +264,11 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   if (_gc_times_learned < max_learn) {
     size_t init_threshold = capacity / 100 * ShenandoahInitFreeThreshold;
     if (available < init_threshold) {
-      log_trigger("Learning " SIZE_FORMAT " of " SIZE_FORMAT ". Free (" SIZE_FORMAT "%s) is below initial threshold (" SIZE_FORMAT "%s)",
+      log_trigger("Learning %zu of %zu. Free (%zu%s) is below initial threshold (%zu%s)",
                    _gc_times_learned + 1, max_learn,
                    byte_size_in_proper_unit(available), proper_unit_for_byte_size(available),
                    byte_size_in_proper_unit(init_threshold), proper_unit_for_byte_size(init_threshold));
+      accept_trigger_with_type(OTHER);
       return true;
     }
   }
@@ -282,32 +290,37 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
           avg_cycle_time * 1000, byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate));
   if (avg_cycle_time * avg_alloc_rate > allocation_headroom) {
     log_trigger("Average GC time (%.2f ms) is above the time for average allocation rate (%.0f %sB/s)"
-                 " to deplete free headroom (" SIZE_FORMAT "%s) (margin of error = %.2f)",
+                 " to deplete free headroom (%zu%s) (margin of error = %.2f)",
                  avg_cycle_time * 1000,
                  byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate),
                  byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
                  _margin_of_error_sd);
-    log_info(gc, ergo)("Free headroom: " SIZE_FORMAT "%s (free) - " SIZE_FORMAT "%s (spike) - " SIZE_FORMAT "%s (penalties) = " SIZE_FORMAT "%s",
+    log_info(gc, ergo)("Free headroom: %zu%s (free) - %zu%s (spike) - %zu%s (penalties) = %zu%s",
                        byte_size_in_proper_unit(available),           proper_unit_for_byte_size(available),
                        byte_size_in_proper_unit(spike_headroom),      proper_unit_for_byte_size(spike_headroom),
                        byte_size_in_proper_unit(penalties),           proper_unit_for_byte_size(penalties),
                        byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom));
-    _last_trigger = RATE;
+    accept_trigger_with_type(RATE);
     return true;
   }
 
   bool is_spiking = _allocation_rate.is_spiking(rate, _spike_threshold_sd);
   if (is_spiking && avg_cycle_time > allocation_headroom / rate) {
-    log_trigger("Average GC time (%.2f ms) is above the time for instantaneous allocation rate (%.0f %sB/s) to deplete free headroom (" SIZE_FORMAT "%s) (spike threshold = %.2f)",
+    log_trigger("Average GC time (%.2f ms) is above the time for instantaneous allocation rate (%.0f %sB/s) to deplete free headroom (%zu%s) (spike threshold = %.2f)",
                  avg_cycle_time * 1000,
                  byte_size_in_proper_unit(rate), proper_unit_for_byte_size(rate),
                  byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
                  _spike_threshold_sd);
-    _last_trigger = SPIKE;
+    accept_trigger_with_type(SPIKE);
     return true;
   }
 
-  return ShenandoahHeuristics::should_start_gc();
+  if (ShenandoahHeuristics::should_start_gc()) {
+    _start_gc_is_pending = true;
+    return true;
+  } else {
+    return false;
+  }
 }
 
 void ShenandoahAdaptiveHeuristics::adjust_last_trigger_parameters(double amount) {
@@ -337,10 +350,7 @@ void ShenandoahAdaptiveHeuristics::adjust_spike_threshold(double amount) {
 }
 
 size_t ShenandoahAdaptiveHeuristics::min_free_threshold() {
-  // Note that soft_max_capacity() / 100 * min_free_threshold is smaller than max_capacity() / 100 * min_free_threshold.
-  // We want to behave conservatively here, so use max_capacity().  By returning a larger value, we cause the GC to
-  // trigger when the remaining amount of free shrinks below the larger threshold.
-  return _space_info->max_capacity() / 100 * ShenandoahMinFreeThreshold;
+  return ShenandoahHeap::heap()->soft_max_capacity() / 100 * ShenandoahMinFreeThreshold;
 }
 
 ShenandoahAllocationRate::ShenandoahAllocationRate() :
@@ -351,16 +361,32 @@ ShenandoahAllocationRate::ShenandoahAllocationRate() :
   _rate_avg(int(ShenandoahAdaptiveSampleSizeSeconds * ShenandoahAdaptiveSampleFrequencyHz), ShenandoahAdaptiveDecayFactor) {
 }
 
+double ShenandoahAllocationRate::force_sample(size_t allocated, size_t &unaccounted_bytes_allocated) {
+  const double MinSampleTime = 0.002;    // Do not sample if time since last update is less than 2 ms
+  double now = os::elapsedTime();
+  double time_since_last_update = now -_last_sample_time;
+  if (time_since_last_update < MinSampleTime) {
+    unaccounted_bytes_allocated = allocated - _last_sample_value;
+    _last_sample_value = 0;
+    return 0.0;
+  } else {
+    double rate = instantaneous_rate(now, allocated);
+    _rate.add(rate);
+    _rate_avg.add(_rate.avg());
+    _last_sample_time = now;
+    _last_sample_value = allocated;
+    unaccounted_bytes_allocated = 0;
+    return rate;
+  }
+}
+
 double ShenandoahAllocationRate::sample(size_t allocated) {
   double now = os::elapsedTime();
   double rate = 0.0;
   if (now - _last_sample_time > _interval_sec) {
-    if (allocated >= _last_sample_value) {
-      rate = instantaneous_rate(now, allocated);
-      _rate.add(rate);
-      _rate_avg.add(_rate.avg());
-    }
-
+    rate = instantaneous_rate(now, allocated);
+    _rate.add(rate);
+    _rate_avg.add(_rate.avg());
     _last_sample_time = now;
     _last_sample_value = allocated;
   }

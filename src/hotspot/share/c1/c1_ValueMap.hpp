@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,7 +187,13 @@ class ValueNumberingVisitor: public InstructionVisitor {
   void do_Convert        (Convert*         x) { /* nothing to do */ }
   void do_NullCheck      (NullCheck*       x) { /* nothing to do */ }
   void do_TypeCast       (TypeCast*        x) { /* nothing to do */ }
-  void do_NewInstance    (NewInstance*     x) { /* nothing to do */ }
+  void do_NewInstance    (NewInstance*     x) {
+    ciInstanceKlass* c = x->klass();
+    if (c != nullptr && !c->is_initialized() &&
+        (!c->is_loaded() || c->has_class_initializer())) {
+      kill_memory();
+    }
+  }
   void do_NewTypeArray   (NewTypeArray*    x) { /* nothing to do */ }
   void do_NewObjectArray (NewObjectArray*  x) { /* nothing to do */ }
   void do_NewMultiArray  (NewMultiArray*   x) { /* nothing to do */ }
@@ -203,7 +209,6 @@ class ValueNumberingVisitor: public InstructionVisitor {
   void do_Base           (Base*            x) { /* nothing to do */ }
   void do_OsrEntry       (OsrEntry*        x) { /* nothing to do */ }
   void do_ExceptionObject(ExceptionObject* x) { /* nothing to do */ }
-  void do_RoundFP        (RoundFP*         x) { /* nothing to do */ }
   void do_ProfileCall    (ProfileCall*     x) { /* nothing to do */ }
   void do_ProfileReturnType (ProfileReturnType*  x) { /* nothing to do */ }
   void do_ProfileInvoke  (ProfileInvoke*   x) { /* nothing to do */ };

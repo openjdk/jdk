@@ -196,10 +196,13 @@ private:
 
   // Use symbolic constants defined in cardTable.hpp
   //  CardTable::card_shift = 9;
-  //  CardTable::card_size = 512;
-  //  CardTable::card_size_in_words = 64;
+  //  CardTable::card_size = 512;  (default value 512, a power of 2 >= 128)
+  //  CardTable::card_size_in_words = 64; (default value 64, a power of 2 >= 16)
   //  CardTable::clean_card_val()
   //  CardTable::dirty_card_val()
+
+  // See shenandoahCardTable.hpp
+  //  ShenandoahMinCardSizeInBytes 128
 
   const size_t LogCardValsPerIntPtr;    // the number of card values (entries) in an intptr_t
   const size_t LogCardSizeInWords;      // the size of a card in heap word units
@@ -236,15 +239,19 @@ public:
   inline bool is_write_card_dirty(HeapWord* p) const;
   inline void mark_card_as_dirty(HeapWord* p);
   inline void mark_range_as_dirty(HeapWord* p, size_t num_heap_words);
-  inline void mark_card_as_clean(HeapWord* p);
   inline void mark_range_as_clean(HeapWord* p, size_t num_heap_words);
+
+  // See comment in ShenandoahScanRemembered
+  inline void mark_read_table_as_clean();
+
+  inline void mark_write_table_as_clean();
 
   // Merge any dirty values from write table into the read table, while leaving
   // the write table unchanged.
   void merge_write_table(HeapWord* start, size_t word_count);
 
-  // Destructively copy the write table to the read table, and clean the write table.
-  void reset_remset(HeapWord* start, size_t word_count);
+  // See comment in ShenandoahScanRemembered
+  void swap_card_tables();
 };
 
 // A ShenandoahCardCluster represents the minimal unit of work
@@ -346,6 +353,7 @@ class ShenandoahCardCluster: public CHeapObj<mtGC> {
 
 private:
   ShenandoahDirectCardMarkRememberedSet* _rs;
+  const HeapWord* _end_of_heap;
 
 public:
   static const size_t CardsPerCluster = 64;
@@ -399,7 +407,8 @@ public:
 
   ShenandoahCardCluster(ShenandoahDirectCardMarkRememberedSet* rs) {
     _rs = rs;
-    _object_starts = NEW_C_HEAP_ARRAY(crossing_info, rs->total_cards(), mtGC);
+    _end_of_heap = ShenandoahHeap::heap()->end();
+    _object_starts = NEW_C_HEAP_ARRAY(crossing_info, rs->total_cards() + 1, mtGC); // the +1 is to account for card table guarding entry
     for (size_t i = 0; i < rs->total_cards(); i++) {
       _object_starts[i].short_word = 0;
     }
@@ -645,12 +654,31 @@ public:
   size_t get_last_start(size_t card_index) const;
 
 
-  // Given a card_index, return the starting address of the first block in the heap
-  // that straddles into the card. If the card is co-initial with an object, then
-  // this would return the starting address of the heap that this card covers.
-  // Expects to be called for a card affiliated with the old generation in
-  // generational mode.
-  HeapWord* block_start(size_t card_index) const;
+  // Given a card_index, return the starting address of the first live object in the heap
+  // that intersects with or follows this card. This must be a valid, parsable object, and must
+  // be the first such object that intersects with this card. The object may start before,
+  // at, or after the start of the card identified by card_index, and may end in or after the card.
+  //
+  // The tams argument represents top for the enclosing region at the start of the most recently
+  // initiated concurrent old marking effort.  If ctx is non-null, we use the marking context to identify
+  // marked objects below tams.  Above tams, we know that every object is marked and that the memory is
+  // parsable (so we can add an object's size to its address to find the next object).  If ctx is null,
+  // we use crossing maps to find where object's start, and use object sizes to walk individual objects.
+  // The region must be parsable if ctx is null.
+  //
+  // The end_range_of_interest pointer argument represents an upper bound on how far we look in the forward direction
+  // for the first object in the heap that intersects or follows this card.  If there are no live objects found at
+  // an address less than end_range_of_interest returns nullptr.
+  //
+  // Expects to be called for a card in a region affiliated with the old generation of the
+  // generational heap, otherwise behavior is undefined.
+  //
+  // If not null, ctx holds the complete marking context of the old generation. If null,
+  // we expect that the marking context isn't available and the crossing maps are valid.
+  // Note that crossing maps may be invalid following class unloading and before dead
+  // or unloaded objects have been coalesced and filled.  Coalesce and fill updates the crossing maps.
+  HeapWord* first_object_start(size_t card_index, const ShenandoahMarkingContext* const ctx,
+                               HeapWord* tams, HeapWord* end_range_of_interest) const;
 };
 
 // ShenandoahScanRemembered is a concrete class representing the
@@ -755,10 +783,20 @@ public:
   bool is_write_card_dirty(HeapWord* p);
   void mark_card_as_dirty(HeapWord* p);
   void mark_range_as_dirty(HeapWord* p, size_t num_heap_words);
-  void mark_card_as_clean(HeapWord* p);
   void mark_range_as_clean(HeapWord* p, size_t num_heap_words);
 
-  void reset_remset(HeapWord* start, size_t word_count) { _rs->reset_remset(start, word_count); }
+  // This method is used to concurrently clean the "read" card table -
+  // currently, as part of the reset phase. Later on the pointers to the "read"
+  // and "write" card tables are swapped everywhere to enable the GC to
+  // concurrently operate on the "read" table while mutators effect changes on
+  // the "write" table.
+  void mark_read_table_as_clean();
+
+  void mark_write_table_as_clean();
+
+  // Swaps read and write card tables pointers in effect setting a clean card
+  // table for the next GC cycle.
+  void swap_card_tables() { _rs->swap_card_tables(); }
 
   void merge_write_table(HeapWord* start, size_t word_count) { _rs->merge_write_table(start, word_count); }
 
@@ -888,14 +926,14 @@ private:
   // The largest chunk size is 4 MiB, measured in words.  Otherwise, remembered set scanning may become too unbalanced.
   // If the largest chunk size is too small, there is too much overhead sifting out assignments to individual worker threads.
   static const size_t _maximum_chunk_size_words = (4 * 1024 * 1024) / HeapWordSize;
-
   static const size_t _clusters_in_smallest_chunk = 4;
+
+  size_t _largest_chunk_size_words;
 
   // smallest_chunk_size is 4 clusters.  Each cluster spans 128 KiB.
   // This is computed from CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
   static size_t smallest_chunk_size_words() {
-      return _clusters_in_smallest_chunk * CardTable::card_size_in_words() *
-             ShenandoahCardCluster::CardsPerCluster;
+      return _clusters_in_smallest_chunk * CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
   }
 
   // The total remembered set scanning effort is divided into chunks of work that are assigned to individual worker tasks.
@@ -910,19 +948,30 @@ private:
   // The first group "effectively" processes chunks of size 1 MiB (or smaller for smaller region sizes).
   // The last group processes chunks of size 128 KiB.  There are four groups total.
 
-  // group[0] is 4 MiB chunk size (_maximum_chunk_size_words)
-  // group[1] is 2 MiB chunk size
-  // group[2] is 1 MiB chunk size
-  // group[3] is 512 KiB chunk size
-  // group[4] is 256 KiB chunk size
-  // group[5] is 128 Kib shunk size (_smallest_chunk_size_words = 4 * 64 * 64
-  static const size_t _maximum_groups = 6;
+  // group[ 0] is 4 MiB chunk size (_maximum_chunk_size_words)
+  // group[ 1] is 2 MiB chunk size
+  // group[ 2] is 1 MiB chunk size
+  // group[ 3] is 512 KiB chunk size
+  // group[ 4] is 256 KiB chunk size
+  // group[ 5] is 128 KiB chunk size
+  // group[ 6] is  64 KiB chunk size
+  // group[ 7] is  32 KiB chunk size
+  // group[ 8] is  16 KiB chunk size
+  // group[ 9] is   8 KiB chunk size
+  // group[10] is   4 KiB chunk size
+  //   Note: 4 KiB is smallest possible chunk_size, computed from:
+  //         _clusters_in_smallest_chunk * MinimumCardSizeInWords * ShenandoahCardCluster::CardsPerCluster, which is
+  //         4 * 16 * 64 = 4096
+
+  // We set aside arrays to represent the maximum number of groups that may be required for any heap configuration
+  static const size_t _maximum_groups = 11;
 
   const ShenandoahHeap* _heap;
 
   const size_t _regular_group_size;                        // Number of chunks in each group
   const size_t _first_group_chunk_size_b4_rebalance;
   const size_t _num_groups;                        // Number of groups in this configuration
+  size_t _adjusted_num_groups;                     // Rebalancing may coalesce groups
   const size_t _total_chunks;
 
   shenandoah_padding(0);

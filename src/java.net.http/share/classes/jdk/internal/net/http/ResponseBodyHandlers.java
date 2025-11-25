@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import jdk.internal.net.http.ResponseSubscribers.PathSubscriber;
+import jdk.internal.util.Exceptions;
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 
 public final class ResponseBodyHandlers {
@@ -190,7 +191,12 @@ public final class ResponseBodyHandlers {
 
         static final UncheckedIOException unchecked(ResponseInfo rinfo,
                                                     String msg) {
-            String s = String.format("%s in response [%d, %s]", msg, rinfo.statusCode(), rinfo.headers());
+            String s;
+            if (Exceptions.enhancedNonSocketExceptions()) {
+                s = String.format("%s in response [%d, %s]", msg, rinfo.statusCode(), rinfo.headers());
+            } else {
+                s = String.format("%s in response [%d]", msg, rinfo.statusCode());
+            }
             return new UncheckedIOException(new IOException(s));
         }
 

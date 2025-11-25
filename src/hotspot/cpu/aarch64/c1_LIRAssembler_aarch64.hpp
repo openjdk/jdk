@@ -33,8 +33,6 @@ friend class ArrayCopyStub;
 
   int array_element_size(BasicType type) const;
 
-  void arith_fpu_implementation(LIR_Code code, int left_index, int right_index, int dest_index, bool pop_fpu_stack);
-
   // helper functions which checks for overflow and sets bailout if it
   // occurs.  Always returns a valid embeddable pointer but in the
   // bailout case the pointer won't be to unique storage.
@@ -73,7 +71,7 @@ friend class ArrayCopyStub;
     //            CompiledDirectCall::to_trampoline_stub_size()
     _call_stub_size = 13 * NativeInstruction::instruction_size,
     _exception_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(175),
-    _deopt_handler_size = 7 * NativeInstruction::instruction_size
+    _deopt_handler_size = 4 * NativeInstruction::instruction_size
   };
 
 public:

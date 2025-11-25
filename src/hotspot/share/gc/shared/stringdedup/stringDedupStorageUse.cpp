@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,8 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/stringdedup/stringDedupStorageUse.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalCounter.inline.hpp"
@@ -35,18 +34,18 @@ StringDedup::StorageUse::StorageUse(OopStorage* storage) :
 {}
 
 bool StringDedup::StorageUse::is_used_acquire() const {
-  return Atomic::load_acquire(&_use_count) > 0;
+  return AtomicAccess::load_acquire(&_use_count) > 0;
 }
 
 StringDedup::StorageUse*
 StringDedup::StorageUse::obtain(StorageUse* volatile* ptr) {
   GlobalCounter::CriticalSection cs(Thread::current());
-  StorageUse* storage = Atomic::load(ptr);
-  Atomic::inc(&storage->_use_count);
+  StorageUse* storage = AtomicAccess::load(ptr);
+  AtomicAccess::inc(&storage->_use_count);
   return storage;
 }
 
 void StringDedup::StorageUse::relinquish() {
-  size_t result = Atomic::sub(&_use_count, size_t(1));
+  size_t result = AtomicAccess::sub(&_use_count, size_t(1));
   assert(result != SIZE_MAX, "use count underflow");
 }

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,15 @@
 # questions.
 #
 
-$(eval $(call IncludeCustomExtension, hotspot/lib/JvmFeatures.gmk))
+################################################################################
+
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
 
 ################################################################################
 # Setup CFLAGS and EXCLUDES for the libjvm compilation, depending on which
 # jvm features are selected for this jvm variant.
+################################################################################
 
 ifeq ($(call check-jvm-feature, compiler1), true)
   JVM_CFLAGS_FEATURES += -DCOMPILER1
@@ -53,7 +57,7 @@ ifeq ($(call check-jvm-feature, zero), true)
       -DZERO_LIBARCH='"$(OPENJDK_TARGET_CPU_LEGACY_LIB)"' $(LIBFFI_CFLAGS)
   JVM_LIBS_FEATURES += $(LIBFFI_LIBS)
   ifeq ($(ENABLE_LIBFFI_BUNDLING), true)
-    JVM_LDFLAGS_FEATURES += $(call SET_EXECUTABLE_ORIGIN,/..)
+    JVM_LDFLAGS_FEATURES += $(call SetExecutableOrigin,/..)
   endif
 else
   JVM_EXCLUDE_PATTERNS += /zero/
@@ -121,9 +125,11 @@ endif
 ifneq ($(call check-jvm-feature, cds), true)
   JVM_CFLAGS_FEATURES += -DINCLUDE_CDS=0
   JVM_EXCLUDE_FILES += \
+      aotCodeCache.cpp \
       classLoaderDataShared.cpp \
       classLoaderExt.cpp \
-      systemDictionaryShared.cpp
+      systemDictionaryShared.cpp \
+      trainingData.cpp
   JVM_EXCLUDE_PATTERNS += cds/
 endif
 
@@ -185,7 +191,7 @@ ifeq ($(call check-jvm-feature, link-time-opt), true)
     JVM_LDFLAGS_FEATURES += -LTCG:INCREMENTAL
   endif
 else
-  ifeq ($(call isCompiler, gcc), true)
+  ifeq ($(TOOLCHAIN_TYPE), gcc)
     JVM_LDFLAGS_FEATURES += -O1
   endif
 endif
@@ -220,11 +226,9 @@ ifeq ($(call check-jvm-feature, opt-size), true)
       frame_ppc.cpp \
       frame_s390.cpp \
       frame_x86.cpp \
-      genCollectedHeap.cpp \
       generation.cpp \
       growableArray.cpp \
       handles.cpp \
-      hashtable.cpp \
       heap.cpp \
       icache.cpp \
       icache_arm.cpp \
@@ -242,7 +246,6 @@ ifeq ($(call check-jvm-feature, opt-size), true)
       linkResolver.cpp \
       klass.cpp \
       klassVtable.cpp \
-      markSweep.cpp \
       memRegion.cpp \
       memoryPool.cpp \
       method.cpp \
@@ -280,3 +283,8 @@ ifeq ($(call check-jvm-feature, opt-size), true)
     BUILD_LIBJVM_systemDictionary.cpp_CXXFLAGS := -fno-optimize-sibling-calls
   endif
 endif
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

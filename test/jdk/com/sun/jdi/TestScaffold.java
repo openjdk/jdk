@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,9 @@ abstract public class TestScaffold extends TargetAdapter {
     private boolean redefineAsynchronously = false;
     private ReferenceType mainStartClass = null;
 
+    // Set true by tests that need the debug agent to be run with includevirtualthreads=y.
+    private boolean includeVThreads = false;
+
     ThreadReference mainThread;
     /**
      * We create a VMDeathRequest, SUSPEND_ALL, to sync the BE and FE.
@@ -82,6 +85,10 @@ abstract public class TestScaffold extends TargetAdapter {
             Thread.sleep(millis);
         } catch (InterruptedException ee) {
         }
+    }
+
+    void enableIncludeVirtualthreads() {
+        includeVThreads = true;
     }
 
     boolean getExceptionCaught() {
@@ -588,7 +595,8 @@ abstract public class TestScaffold extends TargetAdapter {
 
         argInfo.targetVMArgs = VMConnection.getDebuggeeVMOptions() + " " + argInfo.targetVMArgs;
         connection = new VMConnection(argInfo.connectorSpec,
-                                      argInfo.traceFlags);
+                                      argInfo.traceFlags,
+                                      includeVThreads);
 
         addListener(new TargetAdapter() {
                 public void eventSetComplete(EventSet set) {

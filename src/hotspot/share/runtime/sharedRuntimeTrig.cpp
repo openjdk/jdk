@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jni.h"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -201,7 +200,7 @@ recompute:
   }
 
   /* compute n */
-  z  = scalbnA(z,q0);           /* actual value of z */
+  z  = scalbn(z,q0);                    /* actual value of z */
   z -= 8.0*floor(z*0.125);              /* trim off integer >= 8 */
   n  = (int) z;
   z -= (double)n;
@@ -234,7 +233,7 @@ recompute:
     }
     if(ih==2) {
       z = one - z;
-      if(carry!=0) z -= scalbnA(one,q0);
+      if(carry!=0) z -= scalbn(one,q0);
     }
   }
 
@@ -260,7 +259,7 @@ recompute:
     jz -= 1; q0 -= 24;
     while(iq[jz]==0) { jz--; q0-=24;}
   } else { /* break z into 24-bit if necessary */
-    z = scalbnA(z,-q0);
+    z = scalbn(z,-q0);
     if(z>=two24B) {
       fw = (double)((int)(twon24*z));
       iq[jz] = (int)(z-two24B*fw);
@@ -270,7 +269,7 @@ recompute:
   }
 
   /* convert integer "bit" chunk to floating-point value */
-  fw = scalbnA(one,q0);
+  fw = scalbn(one,q0);
   for(i=jz;i>=0;i--) {
     q[i] = fw*(double)iq[i]; fw*=twon24;
   }

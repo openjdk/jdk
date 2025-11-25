@@ -18,13 +18,24 @@ extern "C" {
 #include <spa/pod/builder.h>
 #include <spa/param/video/raw.h>
 
-static inline int
+#ifndef SPA_API_VIDEO_RAW_UTILS
+ #ifdef SPA_API_IMPL
+  #define SPA_API_VIDEO_RAW_UTILS SPA_API_IMPL
+ #else
+  #define SPA_API_VIDEO_RAW_UTILS static inline
+ #endif
+#endif
+
+SPA_API_VIDEO_RAW_UTILS int
 spa_format_video_raw_parse(const struct spa_pod *format,
                struct spa_video_info_raw *info)
 {
     info->flags = SPA_VIDEO_FLAG_NONE;
-    if (spa_pod_find_prop (format, NULL, SPA_FORMAT_VIDEO_modifier)) {
+    const struct spa_pod_prop *mod_prop;
+    if ((mod_prop = spa_pod_find_prop (format, NULL, SPA_FORMAT_VIDEO_modifier)) != NULL) {
         info->flags |= SPA_VIDEO_FLAG_MODIFIER;
+        if ((mod_prop->flags & SPA_POD_PROP_FLAG_DONT_FIXATE) == SPA_POD_PROP_FLAG_DONT_FIXATE)
+            info->flags |= SPA_VIDEO_FLAG_MODIFIER_FIXATION_REQUIRED;
     }
 
     return spa_pod_parse_object(format,
@@ -46,9 +57,9 @@ spa_format_video_raw_parse(const struct spa_pod *format,
         SPA_FORMAT_VIDEO_colorPrimaries,    SPA_POD_OPT_Id(&info->color_primaries));
 }
 
-static inline struct spa_pod *
+SPA_API_VIDEO_RAW_UTILS struct spa_pod *
 spa_format_video_raw_build(struct spa_pod_builder *builder, uint32_t id,
-               struct spa_video_info_raw *info)
+               const struct spa_video_info_raw *info)
 {
     struct spa_pod_frame f;
     spa_pod_builder_push_object(builder, &f, SPA_TYPE_OBJECT_Format, id);
@@ -65,12 +76,14 @@ spa_format_video_raw_build(struct spa_pod_builder *builder, uint32_t id,
     if (info->framerate.denom != 0)
         spa_pod_builder_add(builder,
             SPA_FORMAT_VIDEO_framerate,    SPA_POD_Fraction(&info->framerate), 0);
-    if (info->modifier != 0 || info->flags & SPA_VIDEO_FLAG_MODIFIER)
-        spa_pod_builder_add(builder,
-            SPA_FORMAT_VIDEO_modifier,    SPA_POD_Long(info->modifier), 0);
+    if (info->modifier != 0 || info->flags & SPA_VIDEO_FLAG_MODIFIER) {
+        spa_pod_builder_prop(builder,
+            SPA_FORMAT_VIDEO_modifier,    SPA_POD_PROP_FLAG_MANDATORY);
+        spa_pod_builder_long(builder,           info->modifier);
+    }
     if (info->max_framerate.denom != 0)
         spa_pod_builder_add(builder,
-            SPA_FORMAT_VIDEO_maxFramerate,    SPA_POD_Fraction(info->max_framerate), 0);
+            SPA_FORMAT_VIDEO_maxFramerate,    SPA_POD_Fraction(&info->max_framerate), 0);
     if (info->views != 0)
         spa_pod_builder_add(builder,
             SPA_FORMAT_VIDEO_views,        SPA_POD_Int(info->views), 0);
@@ -79,7 +92,7 @@ spa_format_video_raw_build(struct spa_pod_builder *builder, uint32_t id,
             SPA_FORMAT_VIDEO_interlaceMode,    SPA_POD_Id(info->interlace_mode), 0);
     if (info->pixel_aspect_ratio.denom != 0)
         spa_pod_builder_add(builder,
-            SPA_FORMAT_VIDEO_pixelAspectRatio,SPA_POD_Fraction(info->pixel_aspect_ratio), 0);
+            SPA_FORMAT_VIDEO_pixelAspectRatio, SPA_POD_Fraction(&info->pixel_aspect_ratio), 0);
     if (info->multiview_mode != 0)
         spa_pod_builder_add(builder,
             SPA_FORMAT_VIDEO_multiviewMode,    SPA_POD_Id(info->multiview_mode), 0);

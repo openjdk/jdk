@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "memory/allocation.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
@@ -35,7 +35,7 @@
 #include "runtime/safepoint.hpp"
 #include "runtime/stackWatermark.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
-#include "runtime/synchronizer.inline.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
@@ -43,8 +43,6 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/sizes.hpp"
-
-#include <type_traits>
 
 const int LockStack::lock_stack_offset =      in_bytes(JavaThread::lock_stack_offset());
 const int LockStack::lock_stack_top_offset =  in_bytes(JavaThread::lock_stack_top_offset());
@@ -78,14 +76,13 @@ uint32_t LockStack::end_offset() {
 
 #ifndef PRODUCT
 void LockStack::verify(const char* msg) const {
-  assert(LockingMode == LM_LIGHTWEIGHT, "never use lock-stack when light weight locking is disabled");
   assert((_top <= end_offset()), "lockstack overflow: _top %d end_offset %d", _top, end_offset());
   assert((_top >= start_offset()), "lockstack underflow: _top %d start_offset %d", _top, start_offset());
   if (SafepointSynchronize::is_at_safepoint() || (Thread::current()->is_Java_thread() && is_owning_thread())) {
     int top = to_index(_top);
     for (int i = 0; i < top; i++) {
       assert(_base[i] != nullptr, "no zapped before top");
-      if (VM_Version::supports_recursive_lightweight_locking()) {
+      if (VM_Version::supports_recursive_fast_locking()) {
         oop o = _base[i];
         for (; i < top - 1; i++) {
           // Consecutive entries may be the same

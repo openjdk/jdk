@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -733,11 +733,11 @@ HRESULT D3DVertexCacher::Render(int actionType)
         res = lpD3DVertexBuffer->Unlock();
         UINT currentVertex = firstPendingVertex;
         UINT batchSize;
-        J2dTraceLn2(J2D_TRACE_VERBOSE,
-                    "D3DVC::Render Starting flushing of %d vertices "\
-                    "in %d batches",
-                    pendingVertices,
-                    (currentBatch - firstPendingBatch + 1));
+        J2dTraceLn(J2D_TRACE_VERBOSE,
+                   "D3DVC::Render Starting flushing of %d vertices "\
+                   "in %d batches",
+                   pendingVertices,
+                   (currentBatch - firstPendingBatch + 1));
 
 
         for (UINT b = firstPendingBatch; b <= currentBatch; b++) {
@@ -785,20 +785,20 @@ HRESULT D3DVertexCacher::EnsureCapacity(D3DPRIMITIVETYPE newPType, UINT vNum)
         // if we can't fit new vertices in the vertex buffer,
         // render whatever we have in the buffer and start
         // from the beginning of the vertex buffer
-        J2dTraceLn2(J2D_TRACE_VERBOSE,
-                    "D3DVC::EnsureCapacity exceeded capacity. "\
-                    "current v: %d, requested vertices: %d\n",
-                    firstUnusedVertex, vNum);
+        J2dTraceLn(J2D_TRACE_VERBOSE,
+                   "D3DVC::EnsureCapacity exceeded capacity. "\
+                   "current v: %d, requested vertices: %d\n",
+                   firstUnusedVertex, vNum);
         if (FAILED(res = Render(RESET_ACTION))) {
             return res;
         }
     }
 
-    J2dTraceLn5(J2D_TRACE_VERBOSE,
-                "D3DVC::EnsureCapacity current batch: %d "\
-                " batch.type=%d newType=%d vNum=%d firstUnusedV=%d",
-                currentBatch, batches[currentBatch].pType, newPType, vNum,
-                firstUnusedVertex);
+    J2dTraceLn(J2D_TRACE_VERBOSE,
+               "D3DVC::EnsureCapacity current batch: %d "\
+               " batch.type=%d newType=%d vNum=%d firstUnusedV=%d",
+               currentBatch, batches[currentBatch].pType, newPType, vNum,
+               firstUnusedVertex);
     // there should not be multiple linestrips in a batch,
     // or they will be counted as a single line strip
     if (batches[currentBatch].pType != newPType ||

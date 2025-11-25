@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_FrameMap.hpp"
 #include "c1/c1_LIR.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -173,11 +172,6 @@ Address FrameMap::make_new_address(ByteSize sp_offset) const {
 
 LIR_Opr FrameMap::stack_pointer() {
   return FrameMap::SP_opr;
-}
-
-LIR_Opr FrameMap::method_handle_invoke_SP_save_opr() {
-  assert(Rmh_SP_save == FP, "Fix register used for saving SP for MethodHandle calls");
-  return FP_opr;
 }
 
 bool FrameMap::validate_frame() {

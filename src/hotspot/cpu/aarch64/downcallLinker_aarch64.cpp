@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,7 +22,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
@@ -78,7 +77,6 @@ RuntimeStub* DowncallLinker::make_downcall_stub(BasicType* signature,
 #ifndef PRODUCT
   LogTarget(Trace, foreign, downcall) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     stub->print_on(&ls);
   }
@@ -192,7 +190,6 @@ void DowncallLinker::StubGenerator::generate() {
 #ifndef PRODUCT
   LogTarget(Trace, foreign, downcall) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     arg_shuffle.print_on(&ls);
   }
@@ -292,7 +289,7 @@ void DowncallLinker::StubGenerator::generate() {
 
     __ verify_sve_vector_length(tmp1);
 
-    __ safepoint_poll(L_safepoint_poll_slow_path, true /* at_return */, true /* acquire */, false /* in_nmethod */, tmp1);
+    __ safepoint_poll(L_safepoint_poll_slow_path, true /* at_return */, false /* in_nmethod */, tmp1);
 
     __ ldrw(tmp1, Address(rthread, JavaThread::suspend_flags_offset()));
     __ cbnzw(tmp1, L_safepoint_poll_slow_path);

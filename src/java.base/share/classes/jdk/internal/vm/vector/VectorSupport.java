@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.misc.Unsafe;
 
 import java.util.function.*;
+
+import static jdk.internal.vm.vector.Utils.isNonCapturingLambda;
 
 public class VectorSupport {
     static {
@@ -114,6 +116,9 @@ public class VectorSupport {
     public static final int VECTOR_OP_EXPM1 = 117;
     public static final int VECTOR_OP_HYPOT = 118;
 
+    public static final int VECTOR_OP_MATHLIB_FIRST = VECTOR_OP_TAN;
+    public static final int VECTOR_OP_MATHLIB_LAST  = VECTOR_OP_HYPOT;
+
     public static final int VECTOR_OP_SADD  = 119;
     public static final int VECTOR_OP_SSUB  = 120;
     public static final int VECTOR_OP_SUADD = 121;
@@ -157,9 +162,6 @@ public class VectorSupport {
 
     public static class VectorSpecies<E> {}
 
-    /**
-     * @hidden
-     */
     public static class VectorPayload {
         private final Object payload; // array of primitives
 
@@ -172,26 +174,18 @@ public class VectorSupport {
         }
     }
 
-    /**
-     * @hidden
-     */
     public static class Vector<E> extends VectorPayload {
         public Vector(Object payload) {
             super(payload);
         }
     }
 
-    /**
-     * @hidden
-     */
     public static class VectorShuffle<E> extends VectorPayload {
         public VectorShuffle(Object payload) {
             super(payload);
         }
     }
-    /**
-     * @hidden
-     */
+
     public static class VectorMask<E> extends VectorPayload {
         public VectorMask(Object payload) {
             super(payload);
@@ -334,6 +328,23 @@ public class VectorSupport {
 
     /* ============================================================================ */
 
+//    public interface LibraryUnaryOperation<V extends Vector<?>,
+//            M extends VectorMask<?>> {
+//        V apply(MemorySegment entry, V v, M m);
+//    }
+
+    @IntrinsicCandidate
+    public static
+    <V extends Vector<E>, E>
+    V libraryUnaryOp(long addr, Class<? extends V> vClass, Class<E> eClass, int length, String debugName,
+                     V v,
+                     UnaryOperation<V,?> defaultImpl) {
+        assert isNonCapturingLambda(defaultImpl) : defaultImpl;
+        return defaultImpl.apply(v, null);
+    }
+
+    /* ============================================================================ */
+
     public interface BinaryOperation<VM extends VectorPayload,
                                      M extends VectorMask<?>> {
         VM apply(VM v1, VM v2, M m);
@@ -352,6 +363,24 @@ public class VectorSupport {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         return defaultImpl.apply(v1, v2, m);
     }
+
+    /* ============================================================================ */
+
+//    public interface LibraryBinaryOperation<V extends VectorPayload,
+//            M extends VectorMask<?>> {
+//        V apply(MemorySegment entry, V v1, V v2, M m);
+//    }
+
+    @IntrinsicCandidate
+    public static
+    <V extends VectorPayload, E>
+    V libraryBinaryOp(long addr, Class<? extends V> vClass, Class<E> eClass, int length, String debugName,
+                      V v1, V v2,
+                      BinaryOperation<V,?> defaultImpl) {
+        assert isNonCapturingLambda(defaultImpl) : defaultImpl;
+        return defaultImpl.apply(v1, v2, null);
+    }
+
     /* ============================================================================ */
 
     public interface SelectFromTwoVector<V extends Vector<?>> {
@@ -462,8 +491,8 @@ public class VectorSupport {
     V loadWithMap(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass,
                   int length,
                   Class<? extends Vector<Integer>> vectorIndexClass,
-                  Object base, long offset,
-                  W index_vector,
+                  int indexLength, Object base, long offset,
+                  W indexVector1, W indexVector2, W indexVector3, W indexVector4,
                   M m, C container, int index, int[] indexMap, int indexM, S s,
                   LoadVectorOperationWithMap<C, V, S, M> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
@@ -529,8 +558,8 @@ public class VectorSupport {
     void storeWithMap(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass,
                       int length,
                       Class<? extends Vector<Integer>> vectorIndexClass,
-                      Object base, long offset,
-                      W index_vector,
+                      int indexLength, Object base, long offset,
+                      W indexVector,
                       V v, M m, C container, int index, int[] indexMap, int indexM,
                       StoreVectorOperationWithMap<C, V, M> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
@@ -729,13 +758,19 @@ public class VectorSupport {
 
     /* ============================================================================ */
 
+    // Returns a string containing a list of CPU features VM detected.
+    public static native String getCPUFeatures();
+
+    /* ============================================================================ */
+
     // query the JVM's supported vector sizes and types
     public static native int getMaxLaneCount(Class<?> etype);
 
     /* ============================================================================ */
 
-    public static boolean isNonCapturingLambda(Object o) {
-        return o.getClass().getDeclaredFields().length == 0;
+    @SuppressWarnings({"restricted"})
+    public static void loadNativeLibrary(String name) {
+        System.loadLibrary(name);
     }
 
     /* ============================================================================ */

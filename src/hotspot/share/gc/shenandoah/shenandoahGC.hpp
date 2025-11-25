@@ -25,8 +25,8 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHGC_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHGC_HPP
 
-#include "memory/allocation.hpp"
 #include "gc/shared/gcCause.hpp"
+#include "memory/allocation.hpp"
 
 /*
  * Base class of three Shenandoah GC modes
@@ -44,6 +44,8 @@
  *                         Full GC --------> (finish)
  */
 
+class ShenandoahGeneration;
+
 class ShenandoahGC : public StackObj {
 public:
   // Fail point from concurrent GC
@@ -53,16 +55,21 @@ public:
     _degenerated_roots,
     _degenerated_mark,
     _degenerated_evac,
-    _degenerated_updaterefs,
+    _degenerated_update_refs,
     _DEGENERATED_LIMIT
   };
+
+  explicit ShenandoahGC(ShenandoahGeneration* generation) : _generation(generation) {}
 
   // Returns false if the collection was cancelled, true otherwise.
   virtual bool collect(GCCause::Cause cause) = 0;
   static const char* degen_point_to_string(ShenandoahDegenPoint point);
 
+  ShenandoahGeneration* generation() const { return _generation; }
 protected:
   static void update_roots(bool full_gc);
+
+  ShenandoahGeneration* _generation;
 };
 
 #endif  // SHARE_GC_SHENANDOAH_SHENANDOAHGC_HPP

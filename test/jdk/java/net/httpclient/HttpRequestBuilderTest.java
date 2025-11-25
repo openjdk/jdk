@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,14 @@
 
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpOption.Http3DiscoveryMode;
+import java.net.http.HttpOption;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -33,12 +39,15 @@ import java.util.stream.Stream;
 import java.net.http.HttpRequest;
 import static java.net.http.HttpRequest.BodyPublishers.ofString;
 import static java.net.http.HttpRequest.BodyPublishers.noBody;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 
-/**
+/*
  * @test
  * @bug 8170064 8276559
- * @summary  HttpRequest[.Builder] API and behaviour checks
+ * @summary HttpRequest[.Builder] API and behaviour checks
  */
+
 public class HttpRequestBuilderTest {
 
     static final URI TEST_URI = URI.create("http://www.foo.com/");
@@ -202,6 +211,15 @@ public class HttpRequestBuilderTest {
         builder = test2("method", builder, builder::method, null,
                         ofString("foo"),
                         NullPointerException.class);
+
+        builder = test2("setOption", builder, builder::setOption,
+                (HttpOption<Http3DiscoveryMode>)null, (Http3DiscoveryMode) null,
+                NullPointerException.class);
+
+        builder = test2("setOption", builder, builder::setOption,
+                (HttpOption<Http3DiscoveryMode>)null, HTTP_3_URI_ONLY,
+                NullPointerException.class);
+
 // see JDK-8170093
 //
 //        builder = test2("method", builder, builder::method, "foo",
@@ -262,13 +280,25 @@ public class HttpRequestBuilderTest {
         // verify that the default HEAD() method implementation in HttpRequest.Builder
         // interface works as expected
         HttpRequest defaultHeadReq = new NotOverriddenHEADImpl().HEAD().uri(TEST_URI).build();
-        String actualMethod = defaultHeadReq.method();
-        if (!actualMethod.equals("HEAD")) {
-            throw new AssertionError("failed: expected HEAD method but got method: " + actualMethod);
-        }
-        if (defaultHeadReq.bodyPublisher().isEmpty()) {
-            throw new AssertionError("failed: missing bodyPublisher on HEAD request");
-        }
+        assertEquals("HEAD", defaultHeadReq.method(), "Method");
+        assertEquals(false, defaultHeadReq.bodyPublisher().isEmpty(), "Body publisher absence");
+        HttpRequest defaultReqWithoutOption = new NotOverriddenHEADImpl().HEAD().uri(TEST_URI).build();
+        assertEquals(Optional.empty(), defaultReqWithoutOption.getOption(H3_DISCOVERY), "default without options");
+        HttpRequest defaultReqWithOption = new NotOverriddenHEADImpl().HEAD().uri(TEST_URI)
+                .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY).build();
+        assertEquals(Optional.empty(), defaultReqWithOption.getOption(H3_DISCOVERY), "default with options");
+        HttpRequest reqWithoutOption = HttpRequest.newBuilder().HEAD().uri(TEST_URI).build();
+        assertEquals(Optional.empty(), reqWithoutOption.getOption(H3_DISCOVERY), "req without options");
+        HttpRequest reqWithOption = HttpRequest.newBuilder().HEAD().uri(TEST_URI)
+                .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY).build();
+        assertEquals(Optional.of(HTTP_3_URI_ONLY), reqWithOption.getOption(H3_DISCOVERY), "req with options");
+        HttpRequest resetReqWithOption = HttpRequest.newBuilder().HEAD().uri(TEST_URI)
+                .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
+                .setOption(H3_DISCOVERY, null).build();
+        assertEquals(Optional.empty(), resetReqWithOption.getOption(H3_DISCOVERY), "req with option reset");
+
+        verifyCopy();
+
     }
 
     private static boolean shouldFail(Class<? extends Exception> ...exceptions) {
@@ -295,13 +325,7 @@ public class HttpRequestBuilderTest {
             throw new AssertionError("failed: " + name
                     + ". Unexpected body processor for GET: "
                     + request.bodyPublisher().get());
-
-        if (expectedMethod.equals(method)) {
-            System.out.println("success: " + name);
-        } else {
-            throw new AssertionError("failed: " + name
-                    + ". Expected " + expectedMethod + ", got " + method);
-        }
+        assertEquals(expectedMethod, method, "Method");
     }
 
     static void test0(String name,
@@ -378,68 +402,129 @@ public class HttpRequestBuilderTest {
         }
     }
 
+    private static void verifyCopy() {
+
+        // Create the request builder
+        HttpRequest.Builder requestBuilder = HttpRequest
+                .newBuilder(TEST_URI)
+                .header("X-Foo", "1")
+                .method("GET", noBody())
+                .expectContinue(true)
+                .timeout(Duration.ofSeconds(0xBEEF))
+                .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
+                .version(HttpClient.Version.HTTP_2);
+
+        // Create the original and the _copy_ requests
+        HttpRequest request = requestBuilder.build();
+        HttpRequest copiedRequest = requestBuilder
+                .copy()
+                .header("X-Foo", "2")
+                .header("X-Bar", "3")
+                .build();
+
+        // Verify copied _references_
+        assertEquals(request.uri(), copiedRequest.uri(), "URI");
+        assertEquals(request.method(), copiedRequest.method(), "Method");
+        assertEquals(request.expectContinue(), copiedRequest.expectContinue(), "Expect continue setting");
+        assertEquals(request.timeout(), copiedRequest.timeout(), "Timeout");
+        assertEquals(request.version(), copiedRequest.version(), "Version");
+        assertEquals(request.getOption(H3_DISCOVERY), copiedRequest.getOption(H3_DISCOVERY), "H3_DISCOVERY option");
+        assertEquals(Optional.of(HTTP_3_URI_ONLY), copiedRequest.getOption(H3_DISCOVERY), "copied H3_DISCOVERY option");
+
+        // Verify headers
+        assertEquals(request.headers().map(), Map.of("X-Foo", List.of("1")), "Request headers");
+        assertEquals(copiedRequest.headers().map(), Map.of("X-Foo", List.of("1", "2"), "X-Bar", List.of("3")), "Copied request headers");
+
+    }
+
+    private static void assertEquals(Object expected, Object actual, Object name) {
+        if (!Objects.equals(expected, actual)) {
+            String message = String.format("%s mismatch!%nExpected: %s%nActual: %s", name, expected, actual);
+            throw new AssertionError(message);
+        }
+    }
+
     // doesn't override the default HEAD() method
     private static final class NotOverriddenHEADImpl implements HttpRequest.Builder {
-        private final HttpRequest.Builder underlying = HttpRequest.newBuilder();
+        private final HttpRequest.Builder underlying;
+
+        NotOverriddenHEADImpl() {
+            this(HttpRequest.newBuilder());
+        }
+
+        NotOverriddenHEADImpl(HttpRequest.Builder underlying) {
+            this.underlying = underlying;
+        }
 
         @Override
         public HttpRequest.Builder uri(URI uri) {
-            return this.underlying.uri(uri);
+            underlying.uri(uri);
+            return this;
         }
 
         @Override
         public HttpRequest.Builder expectContinue(boolean enable) {
-            return this.underlying.expectContinue(enable);
+            underlying.expectContinue(enable); return this;
         }
 
         @Override
         public HttpRequest.Builder version(HttpClient.Version version) {
-            return this.underlying.version(version);
+            this.underlying.version(version);
+            return this;
         }
 
         @Override
         public HttpRequest.Builder header(String name, String value) {
-            return this.underlying.header(name, value);
+            this.underlying.header(name, value);
+            return this;
         }
 
         @Override
         public HttpRequest.Builder headers(String... headers) {
-            return this.underlying.headers(headers);
+            underlying.headers(headers);
+            return this;
         }
 
         @Override
         public HttpRequest.Builder timeout(Duration duration) {
-            return this.underlying.timeout(duration);
+            this.underlying.timeout(duration);
+            return this;
         }
 
         @Override
         public HttpRequest.Builder setHeader(String name, String value) {
-            return this.underlying.setHeader(name, value);
+            underlying.setHeader(name, value);
+            return this;
         }
 
         @Override
         public HttpRequest.Builder GET() {
-            return this.underlying.GET();
+            this.underlying.GET();
+            return this;
         }
 
         @Override
         public HttpRequest.Builder POST(HttpRequest.BodyPublisher bodyPublisher) {
-            return this.underlying.POST(bodyPublisher);
+            this.underlying.POST(bodyPublisher);
+            return this;
         }
 
         @Override
         public HttpRequest.Builder PUT(HttpRequest.BodyPublisher bodyPublisher) {
-            return this.underlying.PUT(bodyPublisher);
+            this.underlying.PUT(bodyPublisher);
+            return this;
         }
 
         @Override
         public HttpRequest.Builder DELETE() {
-            return this.underlying.DELETE();
+            this.underlying.DELETE();
+            return this;
         }
 
         @Override
         public HttpRequest.Builder method(String method, HttpRequest.BodyPublisher bodyPublisher) {
-            return this.underlying.method(method, bodyPublisher);
+            this.underlying.method(method, bodyPublisher);
+            return this;
         }
 
         @Override
@@ -449,7 +534,7 @@ public class HttpRequestBuilderTest {
 
         @Override
         public HttpRequest.Builder copy() {
-            return this.underlying.copy();
+            return new NotOverriddenHEADImpl(underlying.copy());
         }
     }
 }

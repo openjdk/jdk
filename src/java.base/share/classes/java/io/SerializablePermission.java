@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import java.util.StringTokenizer;
  * no actions list; you either have the named permission
  * or you don't.
  *
- * @apiNote
+ * @deprecated
  * This permission cannot be used for controlling access to resources
  * as the Security Manager is no longer supported.
  *
@@ -51,6 +51,7 @@ import java.util.StringTokenizer;
 
 /* code was borrowed originally from java.lang.RuntimePermission. */
 
+@Deprecated(since="25", forRemoval=true)
 public final class SerializablePermission extends BasicPermission {
 
     @java.io.Serial

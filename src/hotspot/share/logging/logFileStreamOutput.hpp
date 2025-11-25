@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,13 +40,14 @@ class LogFileStreamOutput : public LogOutput {
 
  protected:
   FILE*               _stream;
-  size_t              _decorator_padding[LogDecorators::Count];
+  int                 _decorator_padding[LogDecorators::Count];
 
-  LogFileStreamOutput(FILE *stream) : _fold_multilines(false), _write_error_is_shown(false), _stream(stream) {
-    for (size_t i = 0; i < LogDecorators::Count; i++) {
-      _decorator_padding[i] = 0;
-    }
-  }
+  LogFileStreamOutput(FILE *stream)
+    : _fold_multilines(false),
+      _write_error_is_shown(false),
+      _stream(stream),
+      _decorator_padding()
+  {}
 
   int write_decorations(const LogDecorations& decorations);
   int write_internal(const LogDecorations& decorations, const char* msg);

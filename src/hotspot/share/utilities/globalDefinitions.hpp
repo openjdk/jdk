@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,19 @@
 #ifndef SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 #define SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 
+#include "classfile_constants.h"
+#include "cppstdlib/cstddef.hpp"
+#include "cppstdlib/limits.hpp"
+#include "cppstdlib/type_traits.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/forbiddenFunctions.hpp"
 #include "utilities/macros.hpp"
-
-// Get constants like JVM_T_CHAR and JVM_SIGNATURE_INT, before pulling in <jvm.h>.
-#include "classfile_constants.h"
 
 #include COMPILER_HEADER(utilities/globalDefinitions)
 
-#include <cstddef>
 #include <cstdint>
-#include <limits>
-#include <type_traits>
 
 class oopDesc;
 
@@ -86,6 +86,9 @@ class oopDesc;
 // they cannot be defined and potential callers will fail to compile.
 #define NONCOPYABLE(C) C(C const&) = delete; C& operator=(C const&) = delete /* next token must be ; */
 
+// offset_of was a workaround for UB with offsetof uses that are no longer an
+// issue.  This can be removed once all uses have been converted.
+#define offset_of(klass, field) offsetof(klass, field)
 
 //----------------------------------------------------------------------------------------------------
 // Printf-style formatters for fixed- and variable-width types as pointers and
@@ -99,6 +102,7 @@ class oopDesc;
 //  _X_0  - print as hexadecimal, with leading 0s: 0x00012345
 //  _W(w) - prints w sized string with the given value right
 //          adjusted. Use -w to print left adjusted.
+//  _0    - print as hexadecimal, with leading 0s, without 0x prefix: 0012345
 //
 // Note that the PTR format specifiers print using 0x with leading zeros,
 // just like the _X_0 version for integers.
@@ -131,31 +135,8 @@ class oopDesc;
 #define UINT64_FORMAT_X          "0x%"        PRIx64
 #define UINT64_FORMAT_X_0        "0x%016"     PRIx64
 #define UINT64_FORMAT_W(width)   "%"   #width PRIu64
-
-// Format integers which change size between 32- and 64-bit.
-#define SSIZE_FORMAT             "%"          PRIdPTR
-#define SSIZE_PLUS_FORMAT        "%+"         PRIdPTR
-#define SSIZE_FORMAT_W(width)    "%"   #width PRIdPTR
-#define SIZE_FORMAT              "%"          PRIuPTR
-#define SIZE_FORMAT_X            "0x%"        PRIxPTR
-#ifdef _LP64
-#define SIZE_FORMAT_X_0          "0x%016"     PRIxPTR
-#else
-#define SIZE_FORMAT_X_0          "0x%08"      PRIxPTR
-#endif
-#define SIZE_FORMAT_W(width)     "%"   #width PRIuPTR
-
-#define INTX_FORMAT              "%"          PRIdPTR
-#define INTX_FORMAT_X            "0x%"        PRIxPTR
-#define INTX_FORMAT_W(width)     "%"   #width PRIdPTR
-#define UINTX_FORMAT             "%"          PRIuPTR
-#define UINTX_FORMAT_X           "0x%"        PRIxPTR
-#ifdef _LP64
-#define UINTX_FORMAT_X_0         "0x%016"     PRIxPTR
-#else
-#define UINTX_FORMAT_X_0         "0x%08"      PRIxPTR
-#endif
-#define UINTX_FORMAT_W(width)    "%"   #width PRIuPTR
+#define UINT64_FORMAT_0          "%016"       PRIx64
+#define PHYS_MEM_TYPE_FORMAT     "%"          PRIu64
 
 // Format jlong, if necessary
 #ifndef JLONG_FORMAT
@@ -170,14 +151,21 @@ class oopDesc;
 #ifndef JULONG_FORMAT_X
 #define JULONG_FORMAT_X          UINT64_FORMAT_X
 #endif
+#ifndef JULONG_FORMAT_W
+#define JULONG_FORMAT_W(width)   UINT64_FORMAT_W(width)
+#endif
 
-// Format pointers which change size between 32- and 64-bit.
+// Format pointers and padded integral values which change size between 32- and 64-bit.
 #ifdef  _LP64
 #define INTPTR_FORMAT            "0x%016"     PRIxPTR
 #define PTR_FORMAT               "0x%016"     PRIxPTR
+#define UINTX_FORMAT_X_0         "0x%016"     PRIxPTR
+#define SIZE_FORMAT_X_0          "0x%016"     PRIxPTR
 #else   // !_LP64
 #define INTPTR_FORMAT            "0x%08"      PRIxPTR
 #define PTR_FORMAT               "0x%08"      PRIxPTR
+#define UINTX_FORMAT_X_0         "0x%08"      PRIxPTR
+#define SIZE_FORMAT_X_0          "0x%08"      PRIxPTR
 #endif  // _LP64
 
 // Convert pointer to intptr_t, for use in printing pointers.
@@ -185,36 +173,12 @@ inline intptr_t p2i(const volatile void* p) {
   return (intptr_t) p;
 }
 
+// Convert pointer to uintptr_t
+inline uintptr_t p2u(const volatile void* p) {
+  return (uintptr_t) p;
+}
+
 #define BOOL_TO_STR(_b_) ((_b_) ? "true" : "false")
-
-//----------------------------------------------------------------------------------------------------
-// Forbid the use of various C library functions.
-// Some of these have os:: replacements that should normally be used instead.
-// Others are considered security concerns, with preferred alternatives.
-
-FORBID_C_FUNCTION(void exit(int), "use os::exit");
-FORBID_C_FUNCTION(void _exit(int), "use os::exit");
-FORBID_C_FUNCTION(char* strerror(int), "use os::strerror");
-FORBID_C_FUNCTION(char* strtok(char*, const char*), "use strtok_r");
-FORBID_C_FUNCTION(int sprintf(char*, const char*, ...), "use os::snprintf");
-FORBID_C_FUNCTION(int vsprintf(char*, const char*, va_list), "use os::vsnprintf");
-FORBID_C_FUNCTION(int vsnprintf(char*, size_t, const char*, va_list), "use os::vsnprintf");
-
-// All of the following functions return raw C-heap pointers (sometimes as an option, e.g. realpath or getwd)
-// or, in case of free(), take raw C-heap pointers. Don't use them unless you are really sure you must.
-FORBID_C_FUNCTION(void* malloc(size_t size), "use os::malloc");
-FORBID_C_FUNCTION(void* calloc(size_t nmemb, size_t size), "use os::malloc and zero out manually");
-FORBID_C_FUNCTION(void free(void *ptr), "use os::free");
-FORBID_C_FUNCTION(void* realloc(void *ptr, size_t size), "use os::realloc");
-FORBID_C_FUNCTION(char* strdup(const char *s), "use os::strdup");
-FORBID_C_FUNCTION(char* strndup(const char *s, size_t n), "don't use");
-FORBID_C_FUNCTION(int posix_memalign(void **memptr, size_t alignment, size_t size), "don't use");
-FORBID_C_FUNCTION(void* aligned_alloc(size_t alignment, size_t size), "don't use");
-FORBID_C_FUNCTION(char* realpath(const char* path, char* resolved_path), "use os::realpath");
-FORBID_C_FUNCTION(char* get_current_dir_name(void), "use os::get_current_directory()");
-FORBID_C_FUNCTION(char* getwd(char *buf), "use os::get_current_directory()");
-FORBID_C_FUNCTION(wchar_t* wcsdup(const wchar_t *s), "don't use");
-FORBID_C_FUNCTION(void* reallocf(void *ptr, size_t size), "don't use");
 
 //----------------------------------------------------------------------------------------------------
 // Constants
@@ -311,6 +275,9 @@ inline jdouble jdouble_cast(jlong x);
 const jlong min_jlong = CONST64(0x8000000000000000);
 const jlong max_jlong = CONST64(0x7fffffffffffffff);
 
+// for timer info max values which include all bits, 0xffffffffffffffff
+const jlong all_bits_jlong = ~jlong(0);
+
 //-------------------------------------------
 // Constant for jdouble
 const jlong min_jlongDouble = CONST64(0x0000000000000001);
@@ -321,7 +288,6 @@ const jdouble max_jdouble = jdouble_cast(max_jlongDouble);
 const size_t K                  = 1024;
 const size_t M                  = K*K;
 const size_t G                  = M*K;
-const size_t HWperKB            = K / sizeof(HeapWord);
 
 // Constants for converting from a base unit to milli-base units.  For
 // example from seconds to milliseconds and microseconds
@@ -381,15 +347,15 @@ inline T byte_size_in_proper_unit(T s) {
   }
 }
 
-#define PROPERFMT             SIZE_FORMAT "%s"
-#define PROPERFMTARGS(s)      byte_size_in_proper_unit(s), proper_unit_for_byte_size(s)
+#define PROPERFMT             "%zu%s"
+#define PROPERFMTARGS(s)      byte_size_in_proper_unit<size_t>(s), proper_unit_for_byte_size(s)
 
 // Printing a range, with start and bytes given
-#define RANGEFMT              "[" PTR_FORMAT " - " PTR_FORMAT "), (" SIZE_FORMAT " bytes)"
+#define RANGEFMT              "[" PTR_FORMAT " - " PTR_FORMAT "), (%zu bytes)"
 #define RANGEFMTARGS(p1, size) p2i(p1), p2i(p1 + size), size
 
 // Printing a range, with start and end given
-#define RANGE2FMT             "[" PTR_FORMAT " - " PTR_FORMAT "), (" SIZE_FORMAT " bytes)"
+#define RANGE2FMT             "[" PTR_FORMAT " - " PTR_FORMAT "), (%zu bytes)"
 #define RANGE2FMTARGS(p1, p2) p2i(p1), p2i(p2), ((uintptr_t)p2 - (uintptr_t)p1)
 
 inline const char* exact_unit_for_byte_size(size_t s) {
@@ -422,12 +388,12 @@ inline size_t byte_size_in_exact_unit(size_t s) {
   return s;
 }
 
-#define EXACTFMT            SIZE_FORMAT "%s"
+#define EXACTFMT            "%zu%s"
 #define EXACTFMTARGS(s)     byte_size_in_exact_unit(s), exact_unit_for_byte_size(s)
 
 // Memory size transition formatting.
 
-#define HEAP_CHANGE_FORMAT "%s: " SIZE_FORMAT "K(" SIZE_FORMAT "K)->" SIZE_FORMAT "K(" SIZE_FORMAT "K)"
+#define HEAP_CHANGE_FORMAT "%s: %zuK(%zuK)->%zuK(%zuK)"
 
 #define HEAP_CHANGE_FORMAT_ARGS(_name_, _prev_used_, _prev_capacity_, _used_, _capacity_) \
   (_name_), (_prev_used_) / K, (_prev_capacity_) / K, (_used_) / K, (_capacity_) / K
@@ -452,6 +418,11 @@ const uintx max_uintx = (uintx)-1;
 // max_uintx            0xFFFFFFFF      0xFFFFFFFFFFFFFFFF
 
 typedef unsigned int uint;   NEEDS_CLEANUP
+
+// This typedef is to address the issue of running a 32-bit VM. In this case the amount
+// of physical memory may not fit in size_t, so we have to have a larger type. Once 32-bit
+// is deprecated, one can use size_t.
+typedef uint64_t physical_memory_size_type;
 
 //----------------------------------------------------------------------------------------------------
 // Java type definitions
@@ -560,6 +531,11 @@ const jfloat min_jfloat = jfloat_cast(min_jintFloat);
 const jint max_jintFloat = (jint)(0x7f7fffff);
 const jfloat max_jfloat = jfloat_cast(max_jintFloat);
 
+const jshort max_jfloat16 = 31743;
+const jshort min_jfloat16 = 1;
+const jshort one_jfloat16 = 15360;
+const jshort pos_inf_jfloat16 = 31744;
+const jshort neg_inf_jfloat16 = -1024;
 // A named constant for the integral representation of a Java null.
 const intptr_t NULL_WORD = 0;
 
@@ -567,6 +543,7 @@ const intptr_t NULL_WORD = 0;
 // JVM spec restrictions
 
 const int max_method_code_size = 64*K - 1;  // JVM spec, 2nd ed. section 4.8.1 (p.134)
+const int max_method_parameter_length = 255; // JVM spec, 22nd ed. section 4.3.3 (p.83)
 
 //----------------------------------------------------------------------------------------------------
 // old CDS options
@@ -675,19 +652,11 @@ inline jdouble jdouble_cast (jlong   x)  { return ((DoubleLongConv*)&x)->d;  }
 inline jint low (jlong value)                    { return jint(value); }
 inline jint high(jlong value)                    { return jint(value >> 32); }
 
-// the fancy casts are a hopefully portable way
-// to do unsigned 32 to 64 bit type conversion
-inline void set_low (jlong* value, jint low )    { *value &= (jlong)0xffffffff << 32;
-                                                   *value |= (jlong)(julong)(juint)low; }
-
-inline void set_high(jlong* value, jint high)    { *value &= (jlong)(julong)(juint)0xffffffff;
-                                                   *value |= (jlong)high       << 32; }
-
 inline jlong jlong_from(jint h, jint l) {
-  jlong result = 0; // initialization to avoid warning
-  set_high(&result, h);
-  set_low(&result,  l);
-  return result;
+  // First cast jint values to juint, so cast to julong will zero-extend.
+  julong high = (julong)(juint)h << 32;
+  julong low = (julong)(juint)l;
+  return (jlong)(high | low);
 }
 
 union jlong_accessor {
@@ -806,6 +775,22 @@ inline jlong min_signed_integer(BasicType bt) {
   return min_jlong;
 }
 
+inline julong max_unsigned_integer(BasicType bt) {
+  if (bt == T_INT) {
+    return max_juint;
+  }
+  assert(bt == T_LONG, "unsupported");
+  return max_julong;
+}
+
+inline uint bits_per_java_integer(BasicType bt) {
+  if (bt == T_INT) {
+    return BitsPerJavaInteger;
+  }
+  assert(bt == T_LONG, "int or long only");
+  return BitsPerJavaLong;
+}
+
 // Auxiliary math routines
 // least common multiple
 extern size_t lcm(size_t a, size_t b);
@@ -918,6 +903,7 @@ class JavaValue {
  void set_jfloat(jfloat f) { _value.f = f;}
  void set_jdouble(jdouble d) { _value.d = d;}
  void set_jint(jint i) { _value.i = i;}
+ void set_jshort(jshort i) { _value.i = i;}
  void set_jlong(jlong l) { _value.l = l;}
  void set_jobject(jobject h) { _value.h = h;}
  void set_oop(oopDesc* o) { _value.o = o;}
@@ -1026,15 +1012,6 @@ enum JavaThreadState {
   _thread_max_state         = 12  // maximum thread state+1 - used for statistics allocation
 };
 
-enum LockingMode {
-  // Use only heavy monitors for locking
-  LM_MONITOR     = 0,
-  // Legacy stack-locking, with monitors as 2nd tier
-  LM_LEGACY      = 1,
-  // New lightweight locking, with monitors as 2nd tier
-  LM_LIGHTWEIGHT = 2
-};
-
 //----------------------------------------------------------------------------------------------------
 // Special constants for debugging
 
@@ -1075,6 +1052,15 @@ const intptr_t OneBit     =  1; // only right_most bit set in a word
 // (note: #define used only so that they can be used in enum constant definitions)
 #define nth_bit(n)        (((n) >= BitsPerWord) ? 0 : (OneBit << (n)))
 #define right_n_bits(n)   (nth_bit(n) - 1)
+
+// same as nth_bit(n), but allows handing in a type as template parameter. Allows
+// us to use nth_bit with 64-bit types on 32-bit platforms
+template<class T> inline T nth_bit_typed(int n) {
+  return ((T)1) << n;
+}
+template<class T> inline T right_n_bits_typed(int n) {
+  return nth_bit_typed<T>(n) - 1;
+}
 
 // bit-operations using a mask m
 inline void   set_bits    (intptr_t& x, intptr_t m) { x |= m; }
@@ -1144,7 +1130,7 @@ inline bool is_even(intx x) { return !is_odd(x); }
 
 // abs methods which cannot overflow and so are well-defined across
 // the entire domain of integer types.
-static inline unsigned int uabs(unsigned int n) {
+static inline unsigned int g_uabs(unsigned int n) {
   union {
     unsigned int result;
     int value;
@@ -1153,7 +1139,7 @@ static inline unsigned int uabs(unsigned int n) {
   if (value < 0) result = 0-result;
   return result;
 }
-static inline julong uabs(julong n) {
+static inline julong g_uabs(julong n) {
   union {
     julong result;
     jlong value;
@@ -1162,8 +1148,8 @@ static inline julong uabs(julong n) {
   if (value < 0) result = 0-result;
   return result;
 }
-static inline julong uabs(jlong n) { return uabs((julong)n); }
-static inline unsigned int uabs(int n) { return uabs((unsigned int)n); }
+static inline julong g_uabs(jlong n) { return g_uabs((julong)n); }
+static inline unsigned int g_uabs(int n) { return g_uabs((unsigned int)n); }
 
 // "to" should be greater than "from."
 inline size_t byte_size(void* from, void* to) {
@@ -1268,6 +1254,32 @@ JAVA_INTEGER_SHIFT_OP(>>, java_shift_right_unsigned, jlong, julong)
 
 #undef JAVA_INTEGER_SHIFT_OP
 
+inline jlong java_negate(jlong v, BasicType bt) {
+  if (bt == T_INT) {
+    return java_negate(checked_cast<jint>(v));
+  }
+  assert(bt == T_LONG, "int or long only");
+  return java_negate(v);
+}
+
+// Some convenient bit shift operations that accepts a BasicType as the last
+// argument. These avoid potential mistakes with overloaded functions only
+// distinguished by lhs argument type.
+#define JAVA_INTEGER_SHIFT_BASIC_TYPE(FUNC)            \
+inline jlong FUNC(jlong lhs, jint rhs, BasicType bt) { \
+  if (bt == T_INT) {                                   \
+    return FUNC(checked_cast<jint>(lhs), rhs);         \
+  }                                                    \
+  assert(bt == T_LONG, "unsupported basic type");      \
+  return FUNC(lhs, rhs);                              \
+}
+
+JAVA_INTEGER_SHIFT_BASIC_TYPE(java_shift_left)
+JAVA_INTEGER_SHIFT_BASIC_TYPE(java_shift_right)
+JAVA_INTEGER_SHIFT_BASIC_TYPE(java_shift_right_unsigned)
+
+#undef JAVA_INTERGER_SHIFT_BASIC_TYPE
+
 //----------------------------------------------------------------------------------------------------
 // The goal of this code is to provide saturating operations for int/uint.
 // Checks overflow conditions and saturates the result to min_jint/max_jint.
@@ -1338,7 +1350,7 @@ typedef const char* ccstr;
 typedef const char* ccstrlist;   // represents string arguments which accumulate
 
 //----------------------------------------------------------------------------------------------------
-// Default hash/equals functions used by ResourceHashtable
+// Default hash/equals functions used by HashTable
 
 template<typename K> unsigned primitive_hash(const K& k) {
   unsigned hash = (unsigned)((uintptr_t)k);
@@ -1362,8 +1374,37 @@ template<typename K> int primitive_compare(const K& k0, const K& k1) {
 template<typename T>
 std::add_rvalue_reference_t<T> declval() noexcept;
 
+// This provides a workaround for static_assert(false) in discarded or
+// otherwise uninstantiated places.  Instead use
+//   static_assert(DependentAlwaysFalse<T>, "...")
+// See http://wg21.link/p2593r1. Some, but not all, compiler versions we're
+// using have implemented that change as a DR:
+// https://cplusplus.github.io/CWG/issues/2518.html
+template<typename T> inline constexpr bool DependentAlwaysFalse = false;
+
 // Quickly test to make sure IEEE-754 subnormal numbers are correctly
 // handled.
 bool IEEE_subnormal_handling_OK();
+
+//----------------------------------------------------------------------------------------------------
+// Forbid using the global allocator by HotSpot code.
+//
+// This is a subset of allocator and deallocator functions. These are
+// implicitly declared in all translation units, without needing to include
+// <new>; see C++17 6.7.4. This isn't even the full set of those; implicit
+// declarations involving std::align_val_t are not covered here, since that
+// type is defined in <new>.  A translation unit that doesn't include <new> is
+// still likely to include this file.  See cppstdlib/new.hpp for more details.
+#ifndef HOTSPOT_GTEST
+
+[[deprecated]] void* operator new(std::size_t);
+[[deprecated]] void operator delete(void*) noexcept;
+[[deprecated]] void operator delete(void*, std::size_t) noexcept;
+
+[[deprecated]] void* operator new[](std::size_t);
+[[deprecated]] void operator delete[](void*) noexcept;
+[[deprecated]] void operator delete[](void*, std::size_t) noexcept;
+
+#endif // HOTSPOT_GTEST
 
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_HPP

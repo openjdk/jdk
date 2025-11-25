@@ -12,6 +12,11 @@ extern "C" {
 #include <spa/utils/type.h>
 #include <spa/param/audio/wma.h>
 
+/**
+ * \addtogroup spa_param
+ * \{
+ */
+
 #define SPA_TYPE_INFO_AudioWMAProfile        SPA_TYPE_INFO_ENUM_BASE "AudioWMAProfile"
 #define SPA_TYPE_INFO_AUDIO_WMA_PROFILE_BASE    SPA_TYPE_INFO_AudioWMAProfile ":"
 

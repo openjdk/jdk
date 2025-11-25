@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,10 @@
 #define SHARE_GC_G1_G1PAGEBASEDVIRTUALSPACE_HPP
 
 #include "memory/memRegion.hpp"
-#include "memory/virtualspace.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.hpp"
 
+class ReservedSpace;
 class WorkerThreads;
 
 // Virtual space management helper for a virtual space with an OS page allocation
@@ -45,7 +45,6 @@ class WorkerThreads;
 // The implementation gives an error when trying to commit or uncommit pages that
 // have already been committed or uncommitted.
 class G1PageBasedVirtualSpace {
-  friend class VMStructs;
  private:
   // Reserved area addresses.
   char* _low_boundary;

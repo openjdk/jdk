@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,12 @@
 # questions.
 #
 
+################################################################################
+
 include CopyCommon.gmk
 include Modules.gmk
 
 ################################################################################
-#
 # Copy property and template files from share/conf to CONF_DST_DIR
 #
 $(eval $(call SetupCopyFiles, COPY_XML_MODULE_CONF, \
@@ -37,4 +38,5 @@ $(eval $(call SetupCopyFiles, COPY_XML_MODULE_CONF, \
 ))
 
 TARGETS += $(COPY_XML_MODULE_CONF)
+
 ################################################################################

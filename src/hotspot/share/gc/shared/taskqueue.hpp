@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,28 +25,17 @@
 #ifndef SHARE_GC_SHARED_TASKQUEUE_HPP
 #define SHARE_GC_SHARED_TASKQUEUE_HPP
 
+#include "cppstdlib/type_traits.hpp"
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
+#include "metaprogramming/primitiveConversions.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/powerOfTwo.hpp"
 #include "utilities/stack.hpp"
-
-// Simple TaskQueue stats that are collected by default in debug builds.
-
-#if !defined(TASKQUEUE_STATS) && defined(ASSERT)
-#define TASKQUEUE_STATS 1
-#elif !defined(TASKQUEUE_STATS)
-#define TASKQUEUE_STATS 0
-#endif
-
-#if TASKQUEUE_STATS
-#define TASKQUEUE_STATS_ONLY(code) code
-#else
-#define TASKQUEUE_STATS_ONLY(code)
-#endif // TASKQUEUE_STATS
 
 #if TASKQUEUE_STATS
 class TaskQueueStats {
@@ -114,76 +103,92 @@ void TaskQueueStats::reset() {
 }
 #endif // TASKQUEUE_STATS
 
+// Helper for TaskQueueSuper, encoding {queue index, tag} pair in a form that
+// supports atomic access to the pair.
+class TaskQueueAge {
+  friend struct PrimitiveConversions::Translate<TaskQueueAge>;
+
+public:
+  // Internal type used for indexing the queue, and for the tag.
+  using idx_t = NOT_LP64(uint16_t) LP64_ONLY(uint32_t);
+
+  explicit TaskQueueAge(size_t data = 0) : _data{data} {}
+  TaskQueueAge(idx_t top, idx_t tag) : _fields{top, tag} {}
+
+  idx_t top() const { return _fields._top; }
+  idx_t tag() const { return _fields._tag; }
+
+  bool operator==(const TaskQueueAge& other) const { return _data == other._data; }
+
+private:
+  struct Fields {
+    idx_t _top;
+    idx_t _tag;
+  };
+  union {
+    size_t _data;    // Provides access to _fields as a single integral value.
+    Fields _fields;
+  };
+  // _data must be able to hold combined _fields. Must be equal to ensure
+  // there isn't any padding that could be uninitialized by 2-arg ctor.
+  static_assert(sizeof(_data) == sizeof(_fields));
+};
+
+// Support for Atomic<TaskQueueAge>.
+template<>
+struct PrimitiveConversions::Translate<TaskQueueAge> : public std::true_type {
+  using Value = TaskQueueAge;
+  using Decayed = decltype(TaskQueueAge::_data);
+
+  static Decayed decay(Value x) { return x._data; }
+  static Value recover(Decayed x) { return Value(x); }
+};
+
 // TaskQueueSuper collects functionality common to all GenericTaskQueue instances.
 
 template <unsigned int N, MemTag MT>
 class TaskQueueSuper: public CHeapObj<MT> {
 protected:
-  // Internal type for indexing the queue; also used for the tag.
-  typedef NOT_LP64(uint16_t) LP64_ONLY(uint32_t) idx_t;
-  STATIC_ASSERT(N == idx_t(N)); // Ensure N fits in an idx_t.
+  using Age = TaskQueueAge;
+  using idx_t = Age::idx_t;
+  static_assert(N == idx_t(N)); // Ensure N fits in an idx_t.
 
   // N must be a power of 2 for computing modulo via masking.
   // N must be >= 2 for the algorithm to work at all, though larger is better.
-  STATIC_ASSERT(N >= 2);
-  STATIC_ASSERT(is_power_of_2(N));
+  static_assert(N >= 2);
+  static_assert(is_power_of_2(N));
   static const uint MOD_N_MASK = N - 1;
 
-  class Age {
-    friend class TaskQueueSuper;
-
-  public:
-    explicit Age(size_t data = 0) : _data(data) {}
-    Age(idx_t top, idx_t tag) { _fields._top = top; _fields._tag = tag; }
-
-    idx_t top() const { return _fields._top; }
-    idx_t tag() const { return _fields._tag; }
-
-    bool operator ==(const Age& other) const { return _data == other._data; }
-
-  private:
-    struct fields {
-      idx_t _top;
-      idx_t _tag;
-    };
-    union {
-      size_t _data;
-      fields _fields;
-    };
-    STATIC_ASSERT(sizeof(size_t) >= sizeof(fields));
-  };
-
   uint bottom_relaxed() const {
-    return Atomic::load(&_bottom);
+    return _bottom.load_relaxed();
   }
 
   uint bottom_acquire() const {
-    return Atomic::load_acquire(&_bottom);
+    return _bottom.load_acquire();
   }
 
   void set_bottom_relaxed(uint new_bottom) {
-    Atomic::store(&_bottom, new_bottom);
+    _bottom.store_relaxed(new_bottom);
   }
 
   void release_set_bottom(uint new_bottom) {
-    Atomic::release_store(&_bottom, new_bottom);
+    _bottom.release_store(new_bottom);
   }
 
   Age age_relaxed() const {
-    return Age(Atomic::load(&_age._data));
+    return _age.load_relaxed();
   }
 
   void set_age_relaxed(Age new_age) {
-    Atomic::store(&_age._data, new_age._data);
+    _age.store_relaxed(new_age);
   }
 
   Age cmpxchg_age(Age old_age, Age new_age) {
-    return Age(Atomic::cmpxchg(&_age._data, old_age._data, new_age._data));
+    return _age.compare_exchange(old_age, new_age);
   }
 
   idx_t age_top_relaxed() const {
-    // Atomically accessing a subfield of an "atomic" member.
-    return Atomic::load(&_age._fields._top);
+    return _age.load_relaxed().top();
   }
 
   // These both operate mod N.
@@ -236,16 +241,16 @@ private:
   DEFINE_PAD_MINUS_SIZE(0, DEFAULT_PADDING_SIZE, 0);
 
   // Index of the first free element after the last one pushed (mod N).
-  volatile uint _bottom;
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_PADDING_SIZE, sizeof(uint));
+  Atomic<uint> _bottom;
+  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_PADDING_SIZE, sizeof(_bottom));
 
   // top() is the index of the oldest pushed element (mod N), and tag()
   // is the associated epoch, to distinguish different modifications of
   // the age.  There is no available element if top() == _bottom or
   // (_bottom - top()) mod N == N-1; the latter indicates underflow
   // during concurrent pop_local/pop_global.
-  volatile Age _age;
-  DEFINE_PAD_MINUS_SIZE(2, DEFAULT_PADDING_SIZE, sizeof(Age));
+  Atomic<Age> _age;
+  DEFINE_PAD_MINUS_SIZE(2, DEFAULT_PADDING_SIZE, sizeof(_age));
 
   NONCOPYABLE(TaskQueueSuper);
 
@@ -575,8 +580,10 @@ private:
 
 class PartialArrayState;
 
-// Discriminated union over oop*, narrowOop*, and PartialArrayState.
+// Discriminated union over oop/oop*, narrowOop*, and PartialArrayState.
 // Uses a low tag in the associated pointer to identify the category.
+// Oop/oop* are overloaded using the same tag because they can not appear at the
+// same time.
 // Used as a task queue element type.
 class ScannerTask {
   void* _p;
@@ -609,6 +616,8 @@ class ScannerTask {
 public:
   ScannerTask() : _p(nullptr) {}
 
+  explicit ScannerTask(oop p) : _p(encode(p, OopTag)) {}
+
   explicit ScannerTask(oop* p) : _p(encode(p, OopTag)) {}
 
   explicit ScannerTask(narrowOop* p) : _p(encode(p, NarrowOopTag)) {}
@@ -634,6 +643,10 @@ public:
 
   oop* to_oop_ptr() const {
     return static_cast<oop*>(decode(OopTag));
+  }
+
+  oop to_oop() const {
+    return cast_to_oop(decode(OopTag));
   }
 
   narrowOop* to_narrow_oop_ptr() const {

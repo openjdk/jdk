@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
  * @test
  * $bug 8087223
  * @summary Adding constantTag to keep method call consistent with it.
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/jdk.internal.misc
+ * @library /testlibrary/asm
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @compile -XDignore.symbol.file IntfMethod.java
  * @run main/othervm IntfMethod
@@ -35,10 +35,10 @@
  */
 
 
-import jdk.internal.org.objectweb.asm.*;
+import org.objectweb.asm.*;
 import java.io.FileOutputStream;
 import java.lang.reflect.InvocationTargetException;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static org.objectweb.asm.Opcodes.*;
 
 public class IntfMethod {
     static byte[] dumpC() {

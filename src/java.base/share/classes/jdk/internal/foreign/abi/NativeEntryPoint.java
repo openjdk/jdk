@@ -48,7 +48,29 @@ public class NativeEntryPoint {
     private record CacheKey(MethodType methodType, ABIDescriptor abi,
                             List<VMStorage> argMoves, List<VMStorage> retMoves,
                             boolean needsReturnBuffer, int capturedStateMask,
-                            boolean needsTransition) {}
+                            boolean needsTransition) {
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof CacheKey other)) return false;
+
+            return methodType == other.methodType && abi == other.abi && capturedStateMask == other.capturedStateMask
+                    && needsTransition == other.needsTransition && needsReturnBuffer == other.needsReturnBuffer
+                    && argMoves.equals(other.argMoves) && retMoves.equals(other.retMoves);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = System.identityHashCode(methodType);
+            result = 31 * result + abi.hashCode();
+            result = 31 * result + argMoves.hashCode();
+            result = 31 * result + retMoves.hashCode();
+            result = 31 * result + Boolean.hashCode(needsReturnBuffer);
+            result = 31 * result + capturedStateMask;
+            result = 31 * result + Boolean.hashCode(needsTransition);
+            return result;
+        }
+    }
 
     private NativeEntryPoint(MethodType methodType, long downcallStubAddress) {
         this.methodType = methodType;

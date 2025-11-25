@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -276,7 +275,7 @@ address BarrierSetAssembler::patching_epoch_addr() {
 }
 
 void BarrierSetAssembler::increment_patching_epoch() {
-  Atomic::inc(&_patching_epoch);
+  AtomicAccess::inc(&_patching_epoch);
 }
 
 void BarrierSetAssembler::clear_patching_epoch() {
@@ -285,10 +284,6 @@ void BarrierSetAssembler::clear_patching_epoch() {
 
 void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation, Label* guard) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-
-  if (bs_nm == nullptr) {
-    return;
-  }
 
   Label local_guard;
   Label skip_barrier;
@@ -336,13 +331,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
     __ ldr(rscratch2, thread_disarmed_and_epoch_addr);
     __ cmp(rscratch1, rscratch2);
   } else {
-    assert(patching_type == NMethodPatchingType::conc_data_patch, "must be");
-    // Subsequent loads of oops must occur after load of guard value.
-    // BarrierSetNMethod::disarm sets guard with release semantics.
-    __ membar(__ LoadLoad);
-    Address thread_disarmed_addr(rthread, in_bytes(bs_nm->thread_disarmed_guard_value_offset()));
-    __ ldrw(rscratch2, thread_disarmed_addr);
-    __ cmpw(rscratch1, rscratch2);
+    ShouldNotReachHere();
   }
   __ br(condition, barrier_target);
 
@@ -362,11 +351,6 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
 }
 
 void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
-  BarrierSetNMethod* bs = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs == nullptr) {
-    return;
-  }
-
   Label bad_call;
   __ cbz(rmethod, bad_call);
 
@@ -414,14 +398,18 @@ void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register
 OptoReg::Name BarrierSetAssembler::encode_float_vector_register_size(const Node* node, OptoReg::Name opto_reg) {
   switch (node->ideal_reg()) {
     case Op_RegF:
+    case Op_RegI: // RA may place scalar values (Op_RegI/N/L/P) in FP registers when UseFPUForSpilling is enabled
+    case Op_RegN:
       // No need to refine. The original encoding is already fine to distinguish.
-      assert(opto_reg % 4 == 0, "Float register should only occupy a single slot");
+      assert(opto_reg % 4 == 0, "32-bit register should only occupy a single slot");
       break;
     // Use different encoding values of the same fp/vector register to help distinguish different sizes.
     // Such as V16. The OptoReg::name and its corresponding slot value are
     // "V16": 64, "V16_H": 65, "V16_J": 66, "V16_K": 67.
     case Op_RegD:
     case Op_VecD:
+    case Op_RegL:
+    case Op_RegP:
       opto_reg &= ~3;
       opto_reg |= 1;
       break;

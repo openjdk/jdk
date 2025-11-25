@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,7 +222,7 @@ abstract class AbstractTask<P_IN, P_OUT, R,
 
     /**
      * Does nothing; instead, subclasses should use
-     * {@link #setLocalResult(Object)}} to manage results.
+     * {@link #setLocalResult(Object)} to manage results.
      *
      * @param result must be null, or an exception is thrown (this is a safety
      *        tripwire to detect when {@code setRawResult()} is being used

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
@@ -169,6 +168,7 @@ void TemplateTable::patch_bytecode(Bytecodes::Code bc, Register bc_reg,
                                    Register temp_reg, bool load_bc_into_bc_reg/*=true*/,
                                    int byte_no)
 {
+  assert_different_registers(bc_reg, temp_reg);
   if (!RewriteBytecodes)  return;
   Label L_patch_done;
 
@@ -232,9 +232,12 @@ void TemplateTable::patch_bytecode(Bytecodes::Code bc, Register bc_reg,
   __ stop("patching the wrong bytecode");
   __ bind(L_okay);
 #endif
-
-  // patch bytecode
-  __ strb(bc_reg, at_bcp(0));
+  // Patch bytecode with release store to coordinate with ResolvedFieldEntry loads
+  // in fast bytecode codelets. load_field_entry has a memory barrier that gains
+  // the needed ordering, together with control dependency on entering the fast codelet
+  // itself.
+  __ lea(temp_reg, at_bcp(0));
+  __ stlrb(bc_reg, temp_reg);
   __ bind(L_patch_done);
 }
 
@@ -485,7 +488,7 @@ void TemplateTable::condy_helper(Label& Done)
   __ mov(rarg, (int) bytecode());
   __ call_VM(obj, entry, rarg);
 
-  __ get_vm_result_2(flags, rthread);
+  __ get_vm_result_metadata(flags, rthread);
 
   // VMr = obj = base address to find primitive value to push
   // VMr2 = flags = (tos, off) using format of CPCE::_flags
@@ -1145,6 +1148,7 @@ void TemplateTable::aastore() {
   // Get the value we will store
   __ ldr(r0, at_tos());
   // Now store using the appropriate barrier
+  // Clobbers: r10, r11, r3
   do_oop_store(_masm, element_address, r0, IS_ARRAY);
   __ b(done);
 
@@ -1153,6 +1157,7 @@ void TemplateTable::aastore() {
   __ profile_null_seen(r2);
 
   // Store a null
+  // Clobbers: r10, r11, r3
   do_oop_store(_masm, element_address, noreg, IS_ARRAY);
 
   // Pop stack arguments
@@ -1758,7 +1763,7 @@ void TemplateTable::float_cmp(bool is_float, int unordered_result)
 
 void TemplateTable::branch(bool is_jsr, bool is_wide)
 {
-  __ profile_taken_branch(r0, r1);
+  __ profile_taken_branch(r0);
   const ByteSize be_offset = MethodCounters::backedge_counter_offset() +
                              InvocationCounter::counter_offset();
   const ByteSize inv_offset = MethodCounters::invocation_counter_offset() +
@@ -1808,7 +1813,6 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
   if (UseLoopCounter) {
     // increment backedge counter for backward branches
     // r0: MDO
-    // w1: MDO bumped taken-count
     // r2: target offset
     __ cmp(r2, zr);
     __ br(Assembler::GT, dispatch); // count only if backward branch
@@ -1819,12 +1823,10 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
     __ ldr(rscratch1, Address(rmethod, Method::method_counters_offset()));
     __ cbnz(rscratch1, has_counters);
     __ push(r0);
-    __ push(r1);
     __ push(r2);
     __ call_VM(noreg, CAST_FROM_FN_PTR(address,
             InterpreterRuntime::build_method_counters), rmethod);
     __ pop(r2);
-    __ pop(r1);
     __ pop(r0);
     __ ldr(rscratch1, Address(rmethod, Method::method_counters_offset()));
     __ cbz(rscratch1, dispatch); // No MethodCounters allocated, OutOfMemory
@@ -1891,6 +1893,8 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
 
     __ mov(r19, r0);                             // save the nmethod
 
+    JFR_ONLY(__ enter_jfr_critical_section();)
+
     call_VM(noreg, CAST_FROM_FN_PTR(address, SharedRuntime::OSR_migration_begin));
 
     // r0 is OSR buffer, move it to expected parameter location
@@ -1902,6 +1906,9 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
         Address(rfp, frame::interpreter_frame_sender_sp_offset * wordSize));
     // remove frame anchor
     __ leave();
+
+    JFR_ONLY(__ leave_jfr_critical_section();)
+
     // Ensure compiled code always sees stack at proper alignment
     __ andr(sp, esp, -16);
 
@@ -2266,7 +2273,7 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
   assert_different_registers(Rcache, index, temp);
   assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
 
-  Label resolved, clinit_barrier_slow;
+  Label L_clinit_barrier_slow, L_done;
 
   Bytecodes::Code code = bytecode();
   __ load_method_entry(Rcache, index);
@@ -2281,27 +2288,29 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
   // Load-acquire the bytecode to match store-release in InterpreterRuntime
   __ ldarb(temp, temp);
   __ subs(zr, temp, (int) code);  // have we resolved this bytecode?
-  __ br(Assembler::EQ, resolved);
+
+  // Class initialization barrier for static methods
+  if (VM_Version::supports_fast_class_init_checks() && bytecode() == Bytecodes::_invokestatic) {
+    __ br(Assembler::NE, L_clinit_barrier_slow);
+    __ ldr(temp, Address(Rcache, in_bytes(ResolvedMethodEntry::method_offset())));
+    __ load_method_holder(temp, temp);
+    __ clinit_barrier(temp, rscratch1, &L_done, /*L_slow_path*/ nullptr);
+    __ bind(L_clinit_barrier_slow);
+  } else {
+    __ br(Assembler::EQ, L_done);
+  }
 
   // resolve first time through
   // Class initialization barrier slow path lands here as well.
-  __ bind(clinit_barrier_slow);
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ mov(temp, (int) code);
-  __ call_VM(noreg, entry, temp);
+  __ call_VM_preemptable(noreg, entry, temp);
 
   // Update registers with resolved info
   __ load_method_entry(Rcache, index);
   // n.b. unlike x86 Rcache is now rcpool plus the indexed offset
   // so all clients ofthis method must be modified accordingly
-  __ bind(resolved);
-
-  // Class initialization barrier for static methods
-  if (VM_Version::supports_fast_class_init_checks() && bytecode() == Bytecodes::_invokestatic) {
-    __ ldr(temp, Address(Rcache, in_bytes(ResolvedMethodEntry::method_offset())));
-    __ load_method_holder(temp, temp);
-    __ clinit_barrier(temp, rscratch1, nullptr, &clinit_barrier_slow);
-  }
+  __ bind(L_done);
 }
 
 void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
@@ -2310,7 +2319,7 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   const Register temp = r19;
   assert_different_registers(Rcache, index, temp);
 
-  Label resolved;
+  Label L_clinit_barrier_slow, L_done;
 
   Bytecodes::Code code = bytecode();
   switch (code) {
@@ -2329,16 +2338,29 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   // Load-acquire the bytecode to match store-release in ResolvedFieldEntry::fill_in()
   __ ldarb(temp, temp);
   __ subs(zr, temp, (int) code);  // have we resolved this bytecode?
-  __ br(Assembler::EQ, resolved);
+
+  // Class initialization barrier for static fields
+  if (VM_Version::supports_fast_class_init_checks() &&
+      (bytecode() == Bytecodes::_getstatic || bytecode() == Bytecodes::_putstatic)) {
+    const Register field_holder = temp;
+
+    __ br(Assembler::NE, L_clinit_barrier_slow);
+    __ ldr(field_holder, Address(Rcache, in_bytes(ResolvedFieldEntry::field_holder_offset())));
+    __ clinit_barrier(field_holder, rscratch1, &L_done, /*L_slow_path*/ nullptr);
+    __ bind(L_clinit_barrier_slow);
+  } else {
+    __ br(Assembler::EQ, L_done);
+  }
 
   // resolve first time through
+  // Class initialization barrier slow path lands here as well.
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ mov(temp, (int) code);
-  __ call_VM(noreg, entry, temp);
+  __ call_VM_preemptable(noreg, entry, temp);
 
   // Update registers with resolved info
   __ load_field_entry(Rcache, index);
-  __ bind(resolved);
+  __ bind(L_done);
 }
 
 void TemplateTable::load_resolved_field_entry(Register obj,
@@ -2878,6 +2900,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
     __ pop(atos);
     if (!is_static) pop_and_check_object(obj);
     // Store into the field
+    // Clobbers: r10, r11, r3
     do_oop_store(_masm, field, r0, IN_HEAP);
     if (rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_aputfield, bc, r1, true, byte_no);
@@ -3073,12 +3096,13 @@ void TemplateTable::fast_storefield(TosState state)
   // access constant pool cache
   __ load_field_entry(r2, r1);
 
-  // R1: field offset, R2: field holder, R3: flags
-  load_resolved_field_entry(r2, r2, noreg, r1, r3);
+  // R1: field offset, R2: field holder, R5: flags
+  load_resolved_field_entry(r2, r2, noreg, r1, r5);
+  __ verify_field_offset(r1);
 
   {
     Label notVolatile;
-    __ tbz(r3, ResolvedFieldEntry::is_volatile_shift, notVolatile);
+    __ tbz(r5, ResolvedFieldEntry::is_volatile_shift, notVolatile);
     __ membar(MacroAssembler::StoreStore | MacroAssembler::LoadStore);
     __ bind(notVolatile);
   }
@@ -3094,6 +3118,7 @@ void TemplateTable::fast_storefield(TosState state)
   // access field
   switch (bytecode()) {
   case Bytecodes::_fast_aputfield:
+    // Clobbers: r10, r11, r3
     do_oop_store(_masm, field, r0, IN_HEAP);
     break;
   case Bytecodes::_fast_lputfield:
@@ -3126,7 +3151,7 @@ void TemplateTable::fast_storefield(TosState state)
 
   {
     Label notVolatile;
-    __ tbz(r3, ResolvedFieldEntry::is_volatile_shift, notVolatile);
+    __ tbz(r5, ResolvedFieldEntry::is_volatile_shift, notVolatile);
     __ membar(MacroAssembler::StoreLoad | MacroAssembler::StoreStore);
     __ bind(notVolatile);
   }
@@ -3163,6 +3188,8 @@ void TemplateTable::fast_accessfield(TosState state)
   __ load_field_entry(r2, r1);
 
   __ load_sized_value(r1, Address(r2, in_bytes(ResolvedFieldEntry::field_offset_offset())), sizeof(int), true /*is_signed*/);
+  __ verify_field_offset(r1);
+
   __ load_unsigned_byte(r3, Address(r2, in_bytes(ResolvedFieldEntry::flags_offset())));
 
   // r0: object
@@ -3229,7 +3256,9 @@ void TemplateTable::fast_xaccess(TosState state)
   __ ldr(r0, aaddress(0));
   // access constant pool cache
   __ load_field_entry(r2, r3, 2);
+
   __ load_sized_value(r1, Address(r2, in_bytes(ResolvedFieldEntry::field_offset_offset())), sizeof(int), true /*is_signed*/);
+  __ verify_field_offset(r1);
 
   // 8179954: We need to make sure that the code generated for
   // volatile accesses forms a sequentially-consistent set of
@@ -3671,7 +3700,7 @@ void TemplateTable::_new() {
   __ bind(slow_case);
   __ get_constant_pool(c_rarg1);
   __ get_unsigned_2_byte_index_at_bcp(c_rarg2, 1);
-  call_VM(r0, CAST_FROM_FN_PTR(address, InterpreterRuntime::_new), c_rarg1, c_rarg2);
+  __ call_VM_preemptable(r0, CAST_FROM_FN_PTR(address, InterpreterRuntime::_new), c_rarg1, c_rarg2);
   __ verify_oop(r0);
 
   // continue
@@ -3724,8 +3753,7 @@ void TemplateTable::checkcast()
 
   __ push(atos); // save receiver for result, and for GC
   call_VM(r0, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  // vm_result_2 has metadata result
-  __ get_vm_result_2(r0, rthread);
+  __ get_vm_result_metadata(r0, rthread);
   __ pop(r3); // restore receiver
   __ b(resolved);
 
@@ -3778,8 +3806,7 @@ void TemplateTable::instanceof() {
 
   __ push(atos); // save receiver for result, and for GC
   call_VM(r0, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  // vm_result_2 has metadata result
-  __ get_vm_result_2(r0, rthread);
+  __ get_vm_result_metadata(r0, rthread);
   __ pop(r3); // restore receiver
   __ verify_oop(r3);
   __ load_klass(r3, r3);

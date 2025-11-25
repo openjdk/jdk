@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
@@ -135,14 +134,6 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
         set_ctrl(load,blk1);
     }
   }
-
-  // Found some other Node; must clone it up
-#ifndef PRODUCT
-  if( PrintOpto && VerifyLoopOptimizations ) {
-    tty->print("Cloning up: ");
-    n->dump();
-  }
-#endif
 
   // ConvI2L may have type information on it which becomes invalid if
   // it moves up in the graph so change any clones so widen the type
@@ -309,12 +300,6 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
            at_relevant_ctrl(cmov, blk1, blk2)))) {
 
       // Must clone down
-#ifndef PRODUCT
-      if( PrintOpto && VerifyLoopOptimizations ) {
-        tty->print("Cloning down: ");
-        n->dump();
-      }
-#endif
       if (!n->is_FastLock()) {
         // Clone down any block-local BoolNode uses of this CmpNode
         for (DUIterator i = n->outs(); n->has_out(i); i++) {
@@ -344,12 +329,6 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
           }
           if (at_relevant_ctrl(bol, blk1, blk2)) {
             // Recursively sink any BoolNode
-#ifndef PRODUCT
-            if( PrintOpto && VerifyLoopOptimizations ) {
-              tty->print("Cloning down: ");
-              bol->dump();
-            }
-#endif
             for (DUIterator j = bol->outs(); bol->has_out(j); j++) {
               Node* u = bol->out(j);
               // Uses are either IfNodes, CMoves, OpaqueNotNull, or Opaque*AssertionPredicate
@@ -425,9 +404,10 @@ void PhaseIdealLoop::clone_template_assertion_expression_down(Node* node) {
   auto clone_expression = [&](IfNode* template_assertion_predicate) {
     OpaqueTemplateAssertionPredicateNode* opaque_node =
         template_assertion_predicate->in(1)->as_OpaqueTemplateAssertionPredicate();
-    TemplateAssertionExpression template_assertion_expression(opaque_node);
-    Node* new_ctrl = template_assertion_predicate->in(0);
-    OpaqueTemplateAssertionPredicateNode* cloned_opaque_node = template_assertion_expression.clone(new_ctrl, this);
+    TemplateAssertionExpression template_assertion_expression(opaque_node, this);
+    Node* new_control = template_assertion_predicate->in(0);
+    OpaqueTemplateAssertionPredicateNode* cloned_opaque_node = template_assertion_expression.clone(new_control,
+                                                                                                   opaque_node->loop_node());
     igvn().replace_input_of(template_assertion_predicate, 1, cloned_opaque_node);
   };
   template_assertion_expression_node.for_each_template_assertion_predicate(clone_expression);
@@ -675,7 +655,7 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
 
     // Replace in the graph with lazy-update mechanism
     new_iff->set_req(0, new_iff); // hook self so it does not go dead
-    lazy_replace(ifp, ifpx);
+    replace_node_and_forward_ctrl(ifp, ifpx);
     new_iff->set_req(0, region);
 
     // Record bits for later xforms
@@ -689,9 +669,10 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
   }
   _igvn.remove_dead_node(new_iff);
   // Lazy replace IDOM info with the region's dominator
-  lazy_replace(iff, region_dom);
-  lazy_update(region, region_dom); // idom must be update before handle_uses
-  region->set_req(0, nullptr);        // Break the self-cycle. Required for lazy_update to work on region
+  replace_node_and_forward_ctrl(iff, region_dom);
+  // Break the self-cycle. Required for forward_ctrl to work on region.
+  region->set_req(0, nullptr);
+  forward_ctrl(region, region_dom); // idom must be updated before handle_use
 
   // Now make the original merge point go dead, by handling all its uses.
   small_cache region_cache;

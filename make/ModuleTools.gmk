@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,10 @@
 # questions.
 #
 
-ifndef _MODULE_TOOLS_GMK
-_MODULE_TOOLS_GMK := 1
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
+################################################################################
 
 include JavaCompilation.gmk
 
@@ -49,4 +51,7 @@ TOOL_ADD_PACKAGES_ATTRIBUTE := $(BUILD_JAVA) $(JAVA_FLAGS_SMALL_BUILDJDK) \
     --add-exports java.base/jdk.internal.module=ALL-UNNAMED \
     build.tools.jigsaw.AddPackagesAttribute
 
-endif # _MODULE_TOOLS_GMK
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

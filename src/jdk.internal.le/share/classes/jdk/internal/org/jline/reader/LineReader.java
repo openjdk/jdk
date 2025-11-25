@@ -10,6 +10,7 @@ package jdk.internal.org.jline.reader;
 
 import java.io.File;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Map;
 import java.util.function.IntConsumer;
@@ -766,7 +767,11 @@ public interface LineReader {
 
     void addCommandsInBuffer(Collection<String> commands);
 
-    void editAndAddInBuffer(File file) throws Exception;
+    default void editAndAddInBuffer(File file) throws Exception {
+        editAndAddInBuffer(file != null ? file.toPath() : null);
+    }
+
+    void editAndAddInBuffer(Path file) throws Exception;
 
     String getLastBinding();
 

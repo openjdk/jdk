@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,12 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmClasses.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
@@ -103,7 +102,7 @@ TEST_VM(markWord, printing) {
     st = new LockerThread(&done, h_obj());
     st->doit();
 
-    ol.wait(THREAD);
+    ol.wait_uninterruptibly(THREAD);
     assert_test_pattern(h_obj, "monitor");
     done.wait_with_safepoint_check(THREAD);  // wait till the thread is done.
   }

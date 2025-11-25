@@ -12,6 +12,14 @@ extern "C" {
 #include <spa/utils/defs.h>
 #include <spa/buffer/meta.h>
 
+#ifndef SPA_API_BUFFER
+ #ifdef SPA_API_IMPL
+  #define SPA_API_BUFFER SPA_API_IMPL
+ #else
+  #define SPA_API_BUFFER static inline
+ #endif
+#endif
+
 /** \defgroup spa_buffer Buffers
  *
  * Buffers describe the data and metadata that is exchanged between
@@ -27,9 +35,15 @@ enum spa_data_type {
     SPA_DATA_Invalid,
     SPA_DATA_MemPtr,        /**< pointer to memory, the data field in
                       *  struct spa_data is set. */
-    SPA_DATA_MemFd,            /**< generic fd, mmap to get to memory */
-    SPA_DATA_DmaBuf,        /**< fd to dmabuf memory */
-    SPA_DATA_MemId,            /**< memory is identified with an id */
+    SPA_DATA_MemFd,            /**< memfd, mmap to get to memory. */
+    SPA_DATA_DmaBuf,        /**< fd to dmabuf memory. This might not be readily
+                      *  mappable (unless the MAPPABLE flag is set) and should
+                      *  normally be handled with DMABUF apis. */
+    SPA_DATA_MemId,            /**< memory is identified with an id. The actual memory
+                      *  can be obtained in some other way and can be identified
+                      *  with this id. */
+    SPA_DATA_SyncObj,        /**< a syncobj, usually requires a spa_meta_sync_timeline metadata
+                      *  with timeline points. */
 
     _SPA_DATA_LAST,            /**< not part of ABI */
 };
@@ -65,9 +79,12 @@ struct spa_data {
 #define SPA_DATA_FLAG_WRITABLE    (1u<<1)    /**< data is writable */
 #define SPA_DATA_FLAG_DYNAMIC    (1u<<2)    /**< data pointer can be changed */
 #define SPA_DATA_FLAG_READWRITE    (SPA_DATA_FLAG_READABLE|SPA_DATA_FLAG_WRITABLE)
+#define SPA_DATA_FLAG_MAPPABLE    (1u<<3)    /**< data is mappable with simple mmap/munmap. Some memory
+                      *  types are not simply mappable (DmaBuf) unless explicitly
+                      *  specified with this flag. */
     uint32_t flags;            /**< data flags */
     int64_t fd;            /**< optional fd for data */
-    uint32_t mapoffset;        /**< offset to map fd at */
+    uint32_t mapoffset;        /**< offset to map fd at, this is page aligned */
     uint32_t maxsize;        /**< max size of data */
     void *data;            /**< optional data pointer */
     struct spa_chunk *chunk;    /**< valid chunk of memory */
@@ -82,7 +99,7 @@ struct spa_buffer {
 };
 
 /** Find metadata in a buffer */
-static inline struct spa_meta *spa_buffer_find_meta(const struct spa_buffer *b, uint32_t type)
+SPA_API_BUFFER struct spa_meta *spa_buffer_find_meta(const struct spa_buffer *b, uint32_t type)
 {
     uint32_t i;
 
@@ -93,7 +110,7 @@ static inline struct spa_meta *spa_buffer_find_meta(const struct spa_buffer *b, 
     return NULL;
 }
 
-static inline void *spa_buffer_find_meta_data(const struct spa_buffer *b, uint32_t type, size_t size)
+SPA_API_BUFFER void *spa_buffer_find_meta_data(const struct spa_buffer *b, uint32_t type, size_t size)
 {
     struct spa_meta *m;
     if ((m = spa_buffer_find_meta(b, type)) && m->size >= size)

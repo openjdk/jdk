@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciField.hpp"
 #include "ci/ciInstance.hpp"
 #include "ci/ciInstanceKlass.hpp"
@@ -32,10 +31,10 @@
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/fieldStreams.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -90,14 +89,10 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
   JavaThread *thread = JavaThread::current();
   if (ciObjectFactory::is_initialized()) {
     _loader = JNIHandles::make_local(thread, ik->class_loader());
-    _protection_domain = JNIHandles::make_local(thread,
-                                                ik->protection_domain());
     _is_shared = false;
   } else {
     Handle h_loader(thread, ik->class_loader());
-    Handle h_protection_domain(thread, ik->protection_domain());
     _loader = JNIHandles::make_global(h_loader);
-    _protection_domain = JNIHandles::make_global(h_protection_domain);
     _is_shared = true;
   }
 
@@ -119,7 +114,7 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
 
 // Version for unloaded classes:
 ciInstanceKlass::ciInstanceKlass(ciSymbol* name,
-                                 jobject loader, jobject protection_domain)
+                                 jobject loader)
   : ciKlass(name, T_OBJECT)
 {
   assert(name->char_at(0) != JVM_SIGNATURE_ARRAY, "not an instance klass");
@@ -130,7 +125,6 @@ ciInstanceKlass::ciInstanceKlass(ciSymbol* name,
   _is_hidden = false;
   _is_record = false;
   _loader = loader;
-  _protection_domain = protection_domain;
   _is_shared = false;
   _super = nullptr;
   _java_mirror = nullptr;
@@ -170,19 +164,6 @@ oop ciInstanceKlass::loader() {
 // ciInstanceKlass::loader_handle
 jobject ciInstanceKlass::loader_handle() {
   return _loader;
-}
-
-// ------------------------------------------------------------------
-// ciInstanceKlass::protection_domain
-oop ciInstanceKlass::protection_domain() {
-  ASSERT_IN_VM;
-  return JNIHandles::resolve(_protection_domain);
-}
-
-// ------------------------------------------------------------------
-// ciInstanceKlass::protection_domain_handle
-jobject ciInstanceKlass::protection_domain_handle() {
-  return _protection_domain;
 }
 
 // ------------------------------------------------------------------
@@ -410,20 +391,21 @@ bool ciInstanceKlass::contains_field_offset(int offset) {
   return get_instanceKlass()->contains_field_offset(offset);
 }
 
+ciField* ciInstanceKlass::get_non_static_field_by_offset(const int field_offset) {
+  for (int i = 0, len = nof_nonstatic_fields(); i < len; i++) {
+    ciField* field = _nonstatic_fields->at(i);
+    int field_off = field->offset_in_bytes();
+    if (field_off == field_offset)
+      return field;
+  }
+  return nullptr;
+}
+
 // ------------------------------------------------------------------
 // ciInstanceKlass::get_field_by_offset
 ciField* ciInstanceKlass::get_field_by_offset(int field_offset, bool is_static) {
   if (!is_static) {
-    for (int i = 0, len = nof_nonstatic_fields(); i < len; i++) {
-      ciField* field = _nonstatic_fields->at(i);
-      int  field_off = field->offset_in_bytes();
-      if (field_off == field_offset)
-        return field;
-      if (field_off > field_offset)
-        break;
-      // could do binary search or check bins, but probably not worth it
-    }
-    return nullptr;
+    return get_non_static_field_by_offset(field_offset);
   }
   VM_ENTRY_MARK;
   InstanceKlass* k = get_instanceKlass();
@@ -449,10 +431,29 @@ ciField* ciInstanceKlass::get_field_by_name(ciSymbol* name, ciSymbol* signature,
   return field;
 }
 
+// This is essentially a shortcut for:
+//   get_field_by_offset(field_offset, is_static)->layout_type()
+// except this does not require allocating memory for a new ciField
+BasicType ciInstanceKlass::get_field_type_by_offset(const int field_offset, const bool is_static) {
+  if (!is_static) {
+    ciField* field = get_non_static_field_by_offset(field_offset);
+    return field != nullptr ? field->layout_type() : T_ILLEGAL;
+  }
 
-static int sort_field_by_offset(ciField** a, ciField** b) {
-  return (*a)->offset_in_bytes() - (*b)->offset_in_bytes();
-  // (no worries about 32-bit overflow...)
+  // Avoid allocating a new ciField by obtaining the field type directly
+  VM_ENTRY_MARK;
+  InstanceKlass* k = get_instanceKlass();
+  fieldDescriptor fd;
+  if (!k->find_field_from_offset(field_offset, is_static, &fd)) {
+    return T_ILLEGAL;
+  }
+
+  // Reproduce the behavior of ciField::layout_type
+  BasicType field_type = fd.field_type();
+  if (is_reference_type(field_type)) {
+    return T_OBJECT;
+  }
+  return type2field[make(field_type)->basic_type()];
 }
 
 // ------------------------------------------------------------------
@@ -495,9 +496,6 @@ int ciInstanceKlass::compute_nonstatic_fields() {
 
   int flen = fields->length();
 
-  // Now sort them by offset, ascending.
-  // (In principle, they could mix with superclass fields.)
-  fields->sort(sort_field_by_offset);
   _nonstatic_fields = fields;
   return flen;
 }
@@ -579,6 +577,11 @@ bool ciInstanceKlass::compute_has_trusted_loader() {
   return java_lang_ClassLoader::is_trusted_loader(loader_oop);
 }
 
+bool ciInstanceKlass::has_class_initializer() {
+  VM_ENTRY_MARK;
+  return get_instanceKlass()->class_initializer() != nullptr;
+}
+
 // ------------------------------------------------------------------
 // ciInstanceKlass::find_method
 //
@@ -602,7 +605,7 @@ bool ciInstanceKlass::is_leaf_type() {
   if (is_shared()) {
     return is_final();  // approximately correct
   } else {
-    return !has_subklass() && (nof_implementors() == 0);
+    return !has_subklass() && (!is_interface() || nof_implementors() == 0);
   }
 }
 
@@ -616,6 +619,7 @@ bool ciInstanceKlass::is_leaf_type() {
 // This is OK, since any dependencies we decide to assert
 // will be checked later under the Compile_lock.
 ciInstanceKlass* ciInstanceKlass::implementor() {
+  assert(is_interface(), "required");
   ciInstanceKlass* impl = _implementor;
   if (impl == nullptr) {
     if (is_shared()) {

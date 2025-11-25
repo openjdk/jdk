@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ class MacroAssembler: public Assembler {
   void store_sized_value(Register dst, RegisterOrConstant offs, Register base, size_t size_in_bytes);
 
   // Move register if destination register and target register are different
-  inline void mr_if_needed(Register rd, Register rs);
+  inline void mr_if_needed(Register rd, Register rs, bool allow_invalid = false);
   inline void fmr_if_needed(FloatRegister rd, FloatRegister rs);
   // This is dedicated for emitting scheduled mach nodes. For better
   // readability of the ad file I put it here.
@@ -179,8 +179,8 @@ class MacroAssembler: public Assembler {
   //
   // branch, jump
   //
-  // set dst to -1, 0, +1 as follows: if CCR0bi is "greater than", dst is set to 1,
-  // if CCR0bi is "equal", dst is set to 0, otherwise it's set to -1.
+  // set dst to -1, 0, +1 as follows: if CR0bi is "greater than", dst is set to 1,
+  // if CR0bi is "equal", dst is set to 0, otherwise it's set to -1.
   void inline set_cmp3(Register dst);
   // set dst to (treat_unordered_like_less ? -1 : +1)
   void inline set_cmpu3(Register dst, bool treat_unordered_like_less);
@@ -299,8 +299,14 @@ class MacroAssembler: public Assembler {
   void clobber_nonvolatile_registers() NOT_DEBUG_RETURN;
   void clobber_carg_stack_slots(Register tmp);
 
-  void save_nonvolatile_gprs(   Register dst_base, int offset);
-  void restore_nonvolatile_gprs(Register src_base, int offset);
+  int  save_nonvolatile_registers_size(bool include_fp_regs, bool include_vector_regs) {
+    int size = (32 - 14) * 8; // GP regs
+    if (include_fp_regs) size += (32 - 14) * 8;
+    if (include_vector_regs) size += (32 - 20) * 16;
+    return size;
+  }
+  void save_nonvolatile_registers(   Register dst_base, int offset, bool include_fp_regs, bool include_vector_regs);
+  void restore_nonvolatile_registers(Register src_base, int offset, bool include_fp_regs, bool include_vector_regs);
 
   enum {
     num_volatile_gp_regs = 11,
@@ -333,10 +339,6 @@ class MacroAssembler: public Assembler {
 
   // Push a frame of size `bytes' plus native_abi_reg_args on top.
   void push_frame_reg_args(unsigned int bytes, Register tmp);
-
-  // Setup up a new C frame with a spill area for non-volatile GPRs and additional
-  // space for local variables
-  void push_frame_reg_args_nonvolatiles(unsigned int bytes, Register tmp);
 
   // pop current C frame
   void pop_frame();
@@ -499,12 +501,10 @@ class MacroAssembler: public Assembler {
                                      bool cmpxchgx_hint, bool is_add, int size);
   void cmpxchg_loop_body(ConditionRegister flag, Register dest_current_value,
                          RegisterOrConstant compare_value, Register exchange_value,
-                         Register addr_base, Register tmp1, Register tmp2,
-                         Label &retry, Label &failed, bool cmpxchgx_hint, int size);
+                         Register addr_base,Label &retry, Label &failed, bool cmpxchgx_hint, int size);
   void cmpxchg_generic(ConditionRegister flag, Register dest_current_value,
                        RegisterOrConstant compare_value, Register exchange_value,
-                       Register addr_base, Register tmp1, Register tmp2,
-                       int semantics, bool cmpxchgx_hint, Register int_flag_success,
+                       Register addr_base, int semantics, bool cmpxchgx_hint, Register int_flag_success,
                        Label* failed_ext, bool contention_hint, bool weak, int size);
  public:
   // Temps and addr_base are killed if processor does not support Power 8 instructions.
@@ -547,20 +547,20 @@ class MacroAssembler: public Assembler {
   // compare_value must be at least 32 bit sign extended. Result will be sign extended.
   void cmpxchgb(ConditionRegister flag, Register dest_current_value,
                 RegisterOrConstant compare_value, Register exchange_value,
-                Register addr_base, Register tmp1, Register tmp2,
-                int semantics, bool cmpxchgx_hint = false, Register int_flag_success = noreg,
-                Label* failed = nullptr, bool contention_hint = false, bool weak = false) {
-    cmpxchg_generic(flag, dest_current_value, compare_value, exchange_value, addr_base, tmp1, tmp2,
-                    semantics, cmpxchgx_hint, int_flag_success, failed, contention_hint, weak, 1);
+                Register addr_base, int semantics, bool cmpxchgx_hint = false,
+                Register int_flag_success = noreg, Label* failed = nullptr,
+                bool contention_hint = false, bool weak = false) {
+    cmpxchg_generic(flag, dest_current_value, compare_value, exchange_value, addr_base, semantics,
+                    cmpxchgx_hint, int_flag_success, failed, contention_hint, weak, 1);
   }
   // Temps, addr_base and exchange_value are killed if processor does not support Power 8 instructions.
   // compare_value must be at least 32 bit sign extended. Result will be sign extended.
   void cmpxchgh(ConditionRegister flag, Register dest_current_value,
                 RegisterOrConstant compare_value, Register exchange_value,
-                Register addr_base, Register tmp1, Register tmp2,
-                int semantics, bool cmpxchgx_hint = false, Register int_flag_success = noreg,
-                Label* failed = nullptr, bool contention_hint = false, bool weak = false) {
-    cmpxchg_generic(flag, dest_current_value, compare_value, exchange_value, addr_base, tmp1, tmp2,
+                Register addr_base, int semantics, bool cmpxchgx_hint = false,
+                Register int_flag_success = noreg, Label* failed = nullptr,
+                bool contention_hint = false, bool weak = false) {
+    cmpxchg_generic(flag, dest_current_value, compare_value, exchange_value, addr_base,
                     semantics, cmpxchgx_hint, int_flag_success, failed, contention_hint, weak, 2);
   }
   void cmpxchgw(ConditionRegister flag, Register dest_current_value,
@@ -568,7 +568,7 @@ class MacroAssembler: public Assembler {
                 Register addr_base,
                 int semantics, bool cmpxchgx_hint = false, Register int_flag_success = noreg,
                 Label* failed = nullptr, bool contention_hint = false, bool weak = false) {
-    cmpxchg_generic(flag, dest_current_value, compare_value, exchange_value, addr_base, noreg, noreg,
+    cmpxchg_generic(flag, dest_current_value, compare_value, exchange_value, addr_base,
                     semantics, cmpxchgx_hint, int_flag_success, failed, contention_hint, weak, 4);
   }
   void cmpxchgd(ConditionRegister flag, Register dest_current_value,
@@ -612,12 +612,45 @@ class MacroAssembler: public Assembler {
   // The temp_reg can be noreg, if no temps are available.
   // It can also be sub_klass or super_klass, meaning it's OK to kill that one.
   // Updates the sub's secondary super cache as necessary.
+  void check_klass_subtype_slow_path_linear(Register sub_klass,
+                                            Register super_klass,
+                                            Register temp1_reg,
+                                            Register temp2_reg,
+                                            Label* L_success = nullptr,
+                                            Register result_reg = noreg);
+
+  void check_klass_subtype_slow_path_table(Register sub_klass,
+                                           Register super_klass,
+                                           Register temp1_reg,
+                                           Register temp2_reg,
+                                           Label* L_success = nullptr,
+                                           Register result_reg = noreg);
+
   void check_klass_subtype_slow_path(Register sub_klass,
                                      Register super_klass,
                                      Register temp1_reg,
                                      Register temp2_reg,
                                      Label* L_success = nullptr,
                                      Register result_reg = noreg);
+
+  void lookup_secondary_supers_table_var(Register sub_klass,
+                                         Register r_super_klass,
+                                         Register temp1,
+                                         Register temp2,
+                                         Register temp3,
+                                         Register temp4,
+                                         Register result);
+
+  // If r is valid, return r.
+  // If r is invalid, remove a register r2 from available_regs, add r2
+  // to regs_to_push, then return r2.
+  Register allocate_if_noreg(const Register r,
+                             RegSetIterator<Register> &available_regs,
+                             RegSet &regs_to_push);
+
+  // Frameless register spills (negative offset from SP)
+  void push_set(RegSet set);
+  void pop_set(RegSet set);
 
   // Simplified, combined version, good for typical uses.
   // Falls through on failure.
@@ -631,14 +664,14 @@ class MacroAssembler: public Assembler {
 
   // As above, but with a constant super_klass.
   // The result is in Register result, not the condition codes.
-  void lookup_secondary_supers_table(Register r_sub_klass,
-                                     Register r_super_klass,
-                                     Register temp1,
-                                     Register temp2,
-                                     Register temp3,
-                                     Register temp4,
-                                     Register result,
-                                     u1 super_klass_slot);
+  void lookup_secondary_supers_table_const(Register r_sub_klass,
+                                           Register r_super_klass,
+                                           Register temp1,
+                                           Register temp2,
+                                           Register temp3,
+                                           Register temp4,
+                                           Register result,
+                                           u1 super_klass_slot);
 
   void verify_secondary_supers_table(Register r_sub_klass,
                                      Register r_super_klass,
@@ -664,11 +697,9 @@ class MacroAssembler: public Assembler {
 
   void push_cont_fastpath();
   void pop_cont_fastpath();
-  void inc_held_monitor_count(Register tmp);
-  void dec_held_monitor_count(Register tmp);
   void atomically_flip_locked_state(bool is_unlock, Register obj, Register tmp, Label& failed, int semantics);
-  void lightweight_lock(Register box, Register obj, Register t1, Register t2, Label& slow);
-  void lightweight_unlock(Register obj, Register t1, Label& slow);
+  void fast_lock(Register box, Register obj, Register t1, Register t2, Label& slow);
+  void fast_unlock(Register obj, Register t1, Label& slow);
 
   // allocation (for C1)
   void tlab_allocate(
@@ -688,14 +719,9 @@ class MacroAssembler: public Assembler {
   void compiler_fast_unlock_object(ConditionRegister flag, Register oop, Register box,
                                    Register tmp1, Register tmp2, Register tmp3);
 
-  void compiler_fast_lock_lightweight_object(ConditionRegister flag, Register oop, Register box,
-                                             Register tmp1, Register tmp2, Register tmp3);
-
-  void compiler_fast_unlock_lightweight_object(ConditionRegister flag, Register oop, Register box,
-                                               Register tmp1, Register tmp2, Register tmp3);
-
   // Check if safepoint requested and if so branch
   void safepoint_poll(Label& slow_path, Register temp, bool at_return, bool in_nmethod);
+  void jump_to_polling_page_return_handler_blob(int safepoint_offset, bool fixed_size = false);
 
   void resolve_jobject(Register value, Register tmp1, Register tmp2,
                        MacroAssembler::PreservationLevel preservation_level);
@@ -712,8 +738,8 @@ class MacroAssembler: public Assembler {
   void set_top_ijava_frame_at_SP_as_last_Java_frame(Register sp, Register tmp1, Label* jpc = nullptr);
 
   // Read vm result from thread: oop_result = R16_thread->result;
-  void get_vm_result  (Register oop_result);
-  void get_vm_result_2(Register metadata_result);
+  void get_vm_result_oop(Register oop_result);
+  void get_vm_result_metadata(Register metadata_result);
 
   static bool needs_explicit_null_check(intptr_t offset);
   static bool uses_implicit_null_check(void* address);
@@ -769,6 +795,7 @@ class MacroAssembler: public Assembler {
   inline void decode_heap_oop(Register d);
 
   // Load/Store klass oop from klass field. Compress.
+  void load_klass_no_decode(Register dst, Register src);
   void load_klass(Register dst, Register src);
   void load_narrow_klass_compact(Register dst, Register src);
   void cmp_klass(ConditionRegister dst, Register obj, Register klass, Register tmp, Register tmp2);
@@ -861,10 +888,6 @@ class MacroAssembler: public Assembler {
   void update_1word_crc32(Register crc, Register buf, Register table, int bufDisp, int bufInc,
                           Register t0,  Register t1,  Register t2,  Register t3,
                           Register tc0, Register tc1, Register tc2, Register tc3);
-  void kernel_crc32_1word(Register crc, Register buf, Register len, Register table,
-                          Register t0,  Register t1,  Register t2,  Register t3,
-                          Register tc0, Register tc1, Register tc2, Register tc3,
-                          bool invertCRC);
   void kernel_crc32_vpmsum(Register crc, Register buf, Register len, Register constants,
                            Register t0, Register t1, Register t2, Register t3, Register t4,
                            Register t5, Register t6, bool invertCRC);
@@ -919,21 +942,29 @@ class MacroAssembler: public Assembler {
   //
 
   // assert on cr0
-  void asm_assert(bool check_equal, const char* msg);
-  void asm_assert_eq(const char* msg) { asm_assert(true, msg); }
-  void asm_assert_ne(const char* msg) { asm_assert(false, msg); }
+  enum AsmAssertCond {
+    eq,
+    ne,
+    ge,
+    gt,
+    lt,
+    le
+  };
+  void asm_assert(AsmAssertCond cond, const char* msg) PRODUCT_RETURN;
+  void asm_assert_eq(const char* msg) { asm_assert(eq, msg); }
+  void asm_assert_ne(const char* msg) { asm_assert(ne, msg); }
 
  private:
-  void asm_assert_mems_zero(bool check_equal, int size, int mem_offset, Register mem_base,
+  void asm_assert_mems_zero(AsmAssertCond cond, int size, int mem_offset, Register mem_base,
                             const char* msg) NOT_DEBUG_RETURN;
 
  public:
 
   void asm_assert_mem8_is_zero(int mem_offset, Register mem_base, const char* msg) {
-    asm_assert_mems_zero(true,  8, mem_offset, mem_base, msg);
+    asm_assert_mems_zero(eq,  8, mem_offset, mem_base, msg);
   }
   void asm_assert_mem8_isnot_zero(int mem_offset, Register mem_base, const char* msg) {
-    asm_assert_mems_zero(false, 8, mem_offset, mem_base, msg);
+    asm_assert_mems_zero(ne, 8, mem_offset, mem_base, msg);
   }
 
   // Calls verify_oop. If UseCompressedOops is on, decodes the oop.

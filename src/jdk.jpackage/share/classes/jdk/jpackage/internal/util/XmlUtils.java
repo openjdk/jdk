@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,17 @@
  */
 package jdk.jpackage.internal.util;
 
+import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
+
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.reflect.Proxy;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -40,13 +45,28 @@ import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.stax.StAXResult;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 
 public final class XmlUtils {
 
-    public static void createXml(Path dstFile, XmlConsumer xmlConsumer) throws
-            IOException {
+    @FunctionalInterface
+    public interface XmlConsumerNoArg {
+        void accept() throws IOException, XMLStreamException;
+    }
+
+    public static XmlConsumer toXmlConsumer(XmlConsumerNoArg xmlConsumer) {
+        return xml -> xmlConsumer.accept();
+    }
+
+    public static void createXml(Path dstFile, XmlConsumer xmlConsumer) throws IOException {
         XMLOutputFactory xmlFactory = XMLOutputFactory.newInstance();
         Files.createDirectories(dstFile.getParent());
         try (Writer w = Files.newBufferedWriter(dstFile)) {
@@ -60,13 +80,36 @@ public final class XmlUtils {
             xml.flush();
             xml.close();
         } catch (XMLStreamException ex) {
-            throw new IOException(ex);
-        } catch (IOException ex) {
-            throw ex;
+            throw rethrowUnchecked(ex);
         }
     }
 
-    public static void mergeXmls(XMLStreamWriter xml, Collection<Source> sources)
+    public static void createXml(Node root, XmlConsumer xmlConsumer) throws IOException {
+        createXml(new DOMResult(root), xmlConsumer);
+    }
+
+    public static DOMResult createXml(XmlConsumer xmlConsumer) throws IOException {
+        var dom = new DOMResult(initDocumentBuilder().newDocument());
+        createXml(dom, xmlConsumer);
+        return dom;
+    }
+
+    public static void createXml(DOMResult dom, XmlConsumer xmlConsumer) throws IOException {
+        try {
+            var xml = XMLOutputFactory.newInstance().createXMLStreamWriter(dom);
+            xmlConsumer.accept(xml);
+            xml.flush();
+            xml.close();
+        } catch (XMLStreamException ex) {
+            throw rethrowUnchecked(ex);
+        }
+    }
+
+    public static void concatXml(XMLStreamWriter xml, Source... sources) throws XMLStreamException, IOException {
+        concatXml(xml, List.of(sources));
+    }
+
+    public static void concatXml(XMLStreamWriter xml, Iterable<? extends Source> sources)
             throws XMLStreamException, IOException {
         xml = (XMLStreamWriter) Proxy.newProxyInstance(XMLStreamWriter.class.getClassLoader(),
                 new Class<?>[]{XMLStreamWriter.class},
@@ -100,5 +143,21 @@ public final class XmlUtils {
             throw new IllegalStateException(ex);
         }
         return dbf;
+    }
+
+    public static Stream<Node> queryNodes(Node xml, XPath xPath, String xpathExpr) throws XPathExpressionException {
+        return toStream((NodeList) xPath.evaluate(xpathExpr, xml, XPathConstants.NODESET));
+    }
+
+    public static Stream<Node> toStream(NodeList nodes) {
+        return Optional.ofNullable(nodes).map(v -> {
+            return IntStream.range(0, v.getLength()).mapToObj(v::item);
+        }).orElseGet(Stream::of);
+    }
+
+    public static Stream<Node> toStream(NamedNodeMap nodes) {
+        return Optional.ofNullable(nodes).map(v -> {
+            return IntStream.range(0, v.getLength()).mapToObj(v::item);
+        }).orElseGet(Stream::of);
     }
 }

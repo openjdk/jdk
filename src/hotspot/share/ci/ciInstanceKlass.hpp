@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,12 +44,12 @@ class ciInstanceKlass : public ciKlass {
   friend class ciMethod;
   friend class ciField;
   friend class ciReplay;
+  friend class CompileTrainingData;
 
 private:
   enum SubklassValue { subklass_unknown, subklass_false, subklass_true };
 
   jobject                _loader;
-  jobject                _protection_domain;
 
   InstanceKlass::ClassState _init_state;           // state of class
   bool                   _is_shared;
@@ -68,7 +68,7 @@ private:
   ciInstance*            _java_mirror;
 
   ciConstantPoolCache*   _field_cache;  // cached map index->field
-  GrowableArray<ciField*>* _nonstatic_fields;
+  GrowableArray<ciField*>* _nonstatic_fields;  // ordered by JavaFieldStream
   int                    _has_injected_fields; // any non static injected fields? lazily initialized.
 
   // The possible values of the _implementor fall into following three cases:
@@ -82,9 +82,11 @@ private:
   bool compute_injected_fields_helper();
   void compute_transitive_interfaces();
 
+  ciField* get_non_static_field_by_offset(int field_offset);
+
 protected:
   ciInstanceKlass(Klass* k);
-  ciInstanceKlass(ciSymbol* name, jobject loader, jobject protection_domain);
+  ciInstanceKlass(ciSymbol* name, jobject loader);
 
   InstanceKlass* get_instanceKlass() const {
     return InstanceKlass::cast(get_Klass());
@@ -92,9 +94,6 @@ protected:
 
   oop loader();
   jobject loader_handle();
-
-  oop protection_domain();
-  jobject protection_domain_handle();
 
   const char* type_string() { return "ciInstanceKlass"; }
 
@@ -207,6 +206,7 @@ public:
   ciInstanceKlass* get_canonical_holder(int offset);
   ciField* get_field_by_offset(int field_offset, bool is_static);
   ciField* get_field_by_name(ciSymbol* name, ciSymbol* signature, bool is_static);
+  BasicType get_field_type_by_offset(int field_offset, bool is_static);
 
   // total number of nonstatic fields (including inherited):
   int nof_nonstatic_fields() {
@@ -234,6 +234,8 @@ public:
   ciInstanceKlass* unique_concrete_subklass();
   bool has_finalizable_subclass();
 
+  bool has_class_initializer();
+
   bool contains_field_offset(int offset);
 
   // Get the instance of java.lang.Class corresponding to
@@ -257,6 +259,7 @@ public:
 
   ciInstanceKlass* unique_implementor() {
     assert(is_loaded(), "must be loaded");
+    assert(is_interface(), "must be");
     ciInstanceKlass* impl = implementor();
     return (impl != this ? impl : nullptr);
   }

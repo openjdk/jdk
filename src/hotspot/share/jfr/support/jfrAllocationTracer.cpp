@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
 *
 */
 
-#include "precompiled.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
 #include "jfr/support/jfrAllocationTracer.hpp"
 #include "jfr/support/jfrObjectAllocationSample.hpp"
@@ -32,5 +32,7 @@ JfrAllocationTracer::JfrAllocationTracer(const Klass* klass, HeapWord* obj, size
   if (LeakProfiler::is_running()) {
     LeakProfiler::sample(obj, alloc_size, thread);
   }
-  JfrObjectAllocationSample::send_event(klass, alloc_size, outside_tlab, thread);
+  if (EventObjectAllocationSample::is_enabled()) {
+    JfrObjectAllocationSample::send_event(klass, alloc_size, outside_tlab, thread);
+  }
 }

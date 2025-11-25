@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,7 +174,7 @@ class ZipUtils {
         Preconditions.checkIndex(off, b.length, Preconditions.AIOOBE_FORMATTER);
         Preconditions.checkIndex(off + 1, b.length, Preconditions.AIOOBE_FORMATTER);
         return Short.toUnsignedInt(
-                UNSAFE.getShortUnaligned(b, off + (long) Unsafe.ARRAY_BYTE_BASE_OFFSET, false));
+                UNSAFE.getShortUnaligned(b, off + Unsafe.ARRAY_BYTE_BASE_OFFSET, false));
     }
 
     /**
@@ -185,7 +185,7 @@ class ZipUtils {
         Preconditions.checkIndex(off, b.length, Preconditions.AIOOBE_FORMATTER);
         Preconditions.checkIndex(off + 3, b.length, Preconditions.AIOOBE_FORMATTER);
         return Integer.toUnsignedLong(
-                UNSAFE.getIntUnaligned(b, off + (long) Unsafe.ARRAY_BYTE_BASE_OFFSET, false));
+                UNSAFE.getIntUnaligned(b, off + Unsafe.ARRAY_BYTE_BASE_OFFSET, false));
     }
 
     /**
@@ -195,7 +195,7 @@ class ZipUtils {
     public static final long get64S(byte[] b, int off) {
         Preconditions.checkIndex(off, b.length, Preconditions.AIOOBE_FORMATTER);
         Preconditions.checkIndex(off + 7, b.length, Preconditions.AIOOBE_FORMATTER);
-        return UNSAFE.getLongUnaligned(b, off + (long) Unsafe.ARRAY_BYTE_BASE_OFFSET, false);
+        return UNSAFE.getLongUnaligned(b, off + Unsafe.ARRAY_BYTE_BASE_OFFSET, false);
     }
 
     /**
@@ -206,7 +206,7 @@ class ZipUtils {
     public static final int get32S(byte[] b, int off) {
         Preconditions.checkIndex(off, b.length, Preconditions.AIOOBE_FORMATTER);
         Preconditions.checkIndex(off + 3, b.length, Preconditions.AIOOBE_FORMATTER);
-        return UNSAFE.getIntUnaligned(b, off + (long) Unsafe.ARRAY_BYTE_BASE_OFFSET, false);
+        return UNSAFE.getIntUnaligned(b, off + Unsafe.ARRAY_BYTE_BASE_OFFSET, false);
     }
 
     /*

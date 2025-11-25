@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/register.hpp"
 #include "c1/c1_FrameMap.hpp"
 #include "c1/c1_LIR.hpp"
@@ -59,16 +58,9 @@ LIR_Opr LIR_OprFact::double_fpu(int reg1, int reg2) {
 
 #ifndef PRODUCT
 void LIR_Address::verify() const {
-#ifdef _LP64
   assert(base()->is_cpu_register(), "wrong base operand");
   assert(index()->is_illegal() || index()->is_double_cpu(), "wrong index operand");
   assert(base()->type() == T_ADDRESS || base()->type() == T_OBJECT || base()->type() == T_LONG || base()->type() == T_METADATA,
          "wrong type for addresses");
-#else
-  assert(base()->is_single_cpu(), "wrong base operand");
-  assert(index()->is_illegal() || index()->is_single_cpu(), "wrong index operand");
-  assert(base()->type() == T_ADDRESS || base()->type() == T_OBJECT || base()->type() == T_INT || base()->type() == T_METADATA,
-         "wrong type for addresses");
-#endif
 }
 #endif // PRODUCT

@@ -38,7 +38,7 @@ class outputStream;
 class BytecodeClosure;
 class BytecodeTracer: AllStatic {
  public:
-  static void trace_interpreter(const methodHandle& method, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st = tty);
+  NOT_PRODUCT(static void trace_interpreter(const methodHandle& method, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st = tty);)
   static void print_method_codes(const methodHandle& method, int from, int to, outputStream* st, int flags);
 };
 

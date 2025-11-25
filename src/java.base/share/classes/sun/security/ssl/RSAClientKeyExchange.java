@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,7 +190,7 @@ final class RSAClientKeyExchange {
                 throw chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "Cannot generate RSA premaster secret", gse);
             }
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "Produced RSA ClientKeyExchange handshake message", ckem);
             }
@@ -208,8 +208,7 @@ final class RSAClientKeyExchange {
                         "Not supported key exchange type");
             } else {
                 SSLKeyDerivation masterKD = ke.createKeyDerivation(chc);
-                SecretKey masterSecret =
-                        masterKD.deriveKey("MasterSecret", null);
+                SecretKey masterSecret = masterKD.deriveKey("MasterSecret");
 
                 // update the states
                 chc.handshakeSession.setMasterSecret(masterSecret);
@@ -271,7 +270,7 @@ final class RSAClientKeyExchange {
 
             RSAClientKeyExchangeMessage ckem =
                     new RSAClientKeyExchangeMessage(shc, message);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "Consuming RSA ClientKeyExchange handshake message", ckem);
             }
@@ -296,8 +295,7 @@ final class RSAClientKeyExchange {
                         "Not supported key exchange type");
             } else {
                 SSLKeyDerivation masterKD = ke.createKeyDerivation(shc);
-                SecretKey masterSecret =
-                        masterKD.deriveKey("MasterSecret", null);
+                SecretKey masterSecret = masterKD.deriveKey("MasterSecret");
 
                 // update the states
                 shc.handshakeSession.setMasterSecret(masterSecret);

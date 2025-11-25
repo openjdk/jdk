@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,13 @@
  * @key randomness
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run main/othervm -XX:CompileCommand=compileonly,compiler.loopopts.superword.TestMovingLoadBeforeStore::test*
- *                   --add-modules java.base --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
- *                   -Xbatch
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressLCM
- *                   -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=100
- *                   compiler.loopopts.superword.TestMovingLoadBeforeStore
+ * @run main/othervm/timeout=480
+ *   -XX:CompileCommand=compileonly,compiler.loopopts.superword.TestMovingLoadBeforeStore::test*
+ *   --add-modules java.base --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
+ *   -Xbatch
+ *   -XX:+UnlockDiagnosticVMOptions -XX:+StressLCM
+ *   -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=100
+ *   compiler.loopopts.superword.TestMovingLoadBeforeStore
  */
 
 package compiler.loopopts.superword;
@@ -156,7 +157,7 @@ public class TestMovingLoadBeforeStore {
 
     static void test3(byte[] a) {
         for (int i = 51; i < 6000; i++) {
-            int adr = UNSAFE.ARRAY_BYTE_BASE_OFFSET + 42 + i;
+            long adr = UNSAFE.ARRAY_BYTE_BASE_OFFSET + 42 + i;
             UNSAFE.putIntUnaligned(a, adr + 0*4, UNSAFE.getIntUnaligned(a, adr + 0*4) + 1);
             UNSAFE.putIntUnaligned(a, adr + 1*4, UNSAFE.getIntUnaligned(a, adr + 1*4) + 1);
             UNSAFE.putIntUnaligned(a, adr + 2*4, UNSAFE.getIntUnaligned(a, adr + 2*4) + 1);
@@ -171,7 +172,7 @@ public class TestMovingLoadBeforeStore {
 
     static void ref3(byte[] a) {
         for (int i = 51; i < 6000; i++) {
-            int adr = UNSAFE.ARRAY_BYTE_BASE_OFFSET + 42 + i;
+            long adr = UNSAFE.ARRAY_BYTE_BASE_OFFSET + 42 + i;
             UNSAFE.putIntUnaligned(a, adr + 0*4, UNSAFE.getIntUnaligned(a, adr + 0*4) + 1);
             UNSAFE.putIntUnaligned(a, adr + 1*4, UNSAFE.getIntUnaligned(a, adr + 1*4) + 1);
             UNSAFE.putIntUnaligned(a, adr + 2*4, UNSAFE.getIntUnaligned(a, adr + 2*4) + 1);

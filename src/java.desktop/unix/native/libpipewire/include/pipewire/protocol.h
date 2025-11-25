@@ -81,7 +81,7 @@ struct pw_protocol_marshal {
 };
 
 struct pw_protocol_implementation {
-#define PW_VERSION_PROTOCOL_IMPLEMENTATION    0
+#define PW_VERSION_PROTOCOL_IMPLEMENTATION    1
     uint32_t version;
 
     struct pw_protocol_client * (*new_client) (struct pw_protocol *protocol,
@@ -89,6 +89,10 @@ struct pw_protocol_implementation {
                            const struct spa_dict *props);
     struct pw_protocol_server * (*add_server) (struct pw_protocol *protocol,
                            struct pw_impl_core *core,
+                           const struct spa_dict *props);
+    struct pw_protocol_server * (*add_fd_server) (struct pw_protocol *protocol,
+                           struct pw_impl_core *core,
+                           int listen_fd, int close_fd,
                            const struct spa_dict *props);
 };
 
@@ -101,6 +105,7 @@ struct pw_protocol_events {
 
 #define pw_protocol_new_client(p,...)    (pw_protocol_get_implementation(p)->new_client(p,__VA_ARGS__))
 #define pw_protocol_add_server(p,...)    (pw_protocol_get_implementation(p)->add_server(p,__VA_ARGS__))
+#define pw_protocol_add_fd_server(p,...)    (pw_protocol_get_implementation(p)->add_fd_server(p,__VA_ARGS__))
 #define pw_protocol_ext(p,type,method,...)    (((type*)pw_protocol_get_extension(p))->method( __VA_ARGS__))
 
 struct pw_protocol *pw_protocol_new(struct pw_context *context, const char *name, size_t user_data_size);

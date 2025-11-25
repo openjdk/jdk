@@ -32,10 +32,16 @@ inputs:
   debug-suffix:
     description: 'File name suffix denoting debug level, possibly empty'
     required: false
+  static-suffix:
+    description: 'Static bundle file name suffix'
+    required: false
 outputs:
   jdk-path:
     description: 'Path to the installed JDK bundle'
     value: ${{ steps.path-name.outputs.jdk }}
+  static-jdk-path:
+    description: 'Path to the installed static JDK bundle'
+    value: ${{ steps.path-name.outputs.static_jdk }}
   symbols-path:
     description: 'Path to the installed symbols bundle'
     value: ${{ steps.path-name.outputs.symbols }}
@@ -61,6 +67,15 @@ runs:
         path: bundles
       if: steps.download-bundles.outcome == 'failure'
 
+    - name: 'Download static bundles artifact'
+      id: download-static-bundles
+      uses: actions/download-artifact@v4
+      with:
+        name: bundles-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.static-suffix }}
+        path: bundles
+      continue-on-error: true
+      if: ${{ inputs.static-suffix == '-static' }}
+
     - name: 'Unpack bundles'
       run: |
         if [[ -e bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.zip ]]; then
@@ -73,6 +88,20 @@ runs:
           echo 'Unpacking jdk bundle...'
           mkdir -p bundles/jdk
           tar -xf bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz -C bundles/jdk
+        fi
+
+        if [[ '${{ inputs.static-suffix }}' == '-static' ]]; then
+          if [[ -e bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.static-suffix }}.zip ]]; then
+            echo 'Unpacking static jdk bundle...'
+            mkdir -p bundles/static-jdk
+            unzip -q bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.static-suffix }}.zip -d bundles/static-jdk
+          fi
+
+          if [[ -e bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.static-suffix }}.tar.gz ]]; then
+            echo 'Unpacking static jdk bundle...'
+            mkdir -p bundles/static-jdk
+            tar -xf bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.static-suffix }}.tar.gz -C bundles/static-jdk
+          fi
         fi
 
         if [[ -e bundles/symbols-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz ]]; then
@@ -106,4 +135,12 @@ runs:
         echo "jdk=$jdk_dir" >> $GITHUB_OUTPUT
         echo "symbols=$symbols_dir" >> $GITHUB_OUTPUT
         echo "tests=$tests_dir" >> $GITHUB_OUTPUT
+
+        if [[ '${{ inputs.static-suffix }}' == '-static' ]]; then
+          static_jdk_dir="$GITHUB_WORKSPACE/$(dirname $(find bundles/static-jdk -name bin -type d))"
+          if [[ '${{ runner.os }}' == 'Windows' ]]; then
+            static_jdk_dir="$(cygpath $static_jdk_dir)"
+          fi
+          echo "static_jdk=$static_jdk_dir" >> $GITHUB_OUTPUT
+        fi
       shell: bash

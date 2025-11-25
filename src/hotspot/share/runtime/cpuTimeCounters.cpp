@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023 Google LLC. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,9 +23,8 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/cpuTimeCounters.hpp"
-#include "runtime/atomic.hpp"
 
 const char* CPUTimeGroups::to_string(CPUTimeType val) {
   switch (val) {
@@ -37,6 +36,8 @@ const char* CPUTimeGroups::to_string(CPUTimeType val) {
       return "gc_conc_mark";
     case CPUTimeType::gc_conc_refine:
       return "gc_conc_refine";
+    case CPUTimeType::gc_conc_refine_control:
+      return "gc_conc_refine_control";
     case CPUTimeType::gc_service:
       return "gc_service";
     case CPUTimeType::vm:
@@ -54,6 +55,7 @@ bool CPUTimeGroups::is_gc_counter(CPUTimeType val) {
     case CPUTimeType::gc_parallel_workers:
     case CPUTimeType::gc_conc_mark:
     case CPUTimeType::gc_conc_refine:
+    case CPUTimeType::gc_conc_refine_control:
     case CPUTimeType::gc_service:
       return true;
     default:
@@ -71,20 +73,14 @@ CPUTimeCounters::CPUTimeCounters() :
 
 void CPUTimeCounters::inc_gc_total_cpu_time(jlong diff) {
   CPUTimeCounters* instance = CPUTimeCounters::get_instance();
-  Atomic::add(&(instance->_gc_total_cpu_time_diff), diff);
+  AtomicAccess::add(&(instance->_gc_total_cpu_time_diff), diff);
 }
 
 void CPUTimeCounters::publish_gc_total_cpu_time() {
   CPUTimeCounters* instance = CPUTimeCounters::get_instance();
-  // Ensure that we are only incrementing atomically by using Atomic::cmpxchg
-  // to set the value to zero after we obtain the new CPU time difference.
-  jlong old_value;
-  jlong fetched_value = Atomic::load(&(instance->_gc_total_cpu_time_diff));
+  // Atomically fetch the current _gc_total_cpu_time_diff and reset it to zero.
   jlong new_value = 0;
-  do {
-    old_value = fetched_value;
-    fetched_value = Atomic::cmpxchg(&(instance->_gc_total_cpu_time_diff), old_value, new_value);
-  } while (old_value != fetched_value);
+  jlong fetched_value = AtomicAccess::xchg(&(instance->_gc_total_cpu_time_diff), new_value);
   get_counter(CPUTimeGroups::CPUTimeType::gc_total)->inc(fetched_value);
 }
 
@@ -127,5 +123,3 @@ void ThreadTotalCPUTimeClosure::do_thread(Thread* thread) {
   // must ensure the thread exists and has not terminated.
   _total += os::thread_cpu_time(thread);
 }
-
-

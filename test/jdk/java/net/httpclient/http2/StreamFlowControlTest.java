@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.net.ProtocolException;
 import java.net.URI;
@@ -144,7 +145,7 @@ public class StreamFlowControlTest {
                     // we have to pull to get the exception, but slow enough
                     // so that DataFrames are buffered up to the point that
                     // the window is exceeded...
-                    long wait = uri.startsWith("https://") ? 800 : 350;
+                    long wait = uri.startsWith("https://") ? 800 : 500;
                     try (InputStream is = response.body()) {
                         sleep(wait);
                         is.readAllBytes();
@@ -335,7 +336,9 @@ public class StreamFlowControlTest {
                             // to wait for the connection window
                             fct.conn.obtainConnectionWindow(resp.length);
                         } catch (InterruptedException ie) {
-                            // ignore and continue...
+                            var ioe = new InterruptedIOException(ie.toString());
+                            ioe.initCause(ie);
+                            throw ioe;
                         }
                     }
                     try {
@@ -344,6 +347,7 @@ public class StreamFlowControlTest {
                         if (t instanceof FCHttp2TestExchange fct) {
                             fct.conn.updateConnectionWindow(resp.length);
                         }
+                        throw x;
                     }
                 }
             } finally {

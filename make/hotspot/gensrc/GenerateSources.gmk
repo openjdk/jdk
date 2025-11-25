@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,15 @@
 # questions.
 #
 
-default: all
+include MakeFileStart.gmk
 
-include $(SPEC)
-include MakeBase.gmk
+################################################################################
+
 include Execute.gmk
+include HotspotCommon.gmk
 include JavaCompilation.gmk
 include JdkNativeCompilation.gmk
 include TextFileProcessing.gmk
-
-include HotspotCommon.gmk
 
 # The real work is done in these files
 
@@ -40,8 +39,6 @@ include gensrc/GensrcJfr.gmk
 include gensrc/GensrcAdlc.gmk
 include gensrc/GensrcDtrace.gmk
 include gensrc/GensrcJvmti.gmk
-
-$(eval $(call IncludeCustomExtension, hotspot/gensrc/GenerateSources.gmk))
 
 # While technically the rules below are "gendata" which can be done in parallel
 # with native compilation, let's keep it here for simplicity.
@@ -63,6 +60,6 @@ $(CHMOD_HOTSPOT_LAUNCHER): $(CREATE_HOTSPOT_LAUNCHER)
 
 TARGETS += $(CREATE_HOTSPOT_LAUNCHER) $(CHMOD_HOTSPOT_LAUNCHER)
 
-all: $(TARGETS)
+################################################################################
 
-.PHONY: all
+include MakeFileEnd.gmk

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,13 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "cds/archiveHeapLoader.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
-#include "cds/heapShared.hpp"
-#include "cds/metaspaceShared.hpp"
+#include "cds/heapShared.inline.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
@@ -50,6 +49,7 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/memoryReserver.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/metaspaceCounters.hpp"
@@ -60,6 +60,7 @@
 #include "oops/compressedOops.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
+#include "oops/jmethodIDTable.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/objLayout.hpp"
@@ -68,7 +69,7 @@
 #include "oops/typeArrayKlass.hpp"
 #include "prims/resolvedMethodTable.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/cpuTimeCounters.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/handles.inline.hpp"
@@ -79,11 +80,13 @@
 #include "runtime/threads.hpp"
 #include "runtime/timerTrace.hpp"
 #include "sanitizers/leak.hpp"
+#include "services/cpuTimeUsage.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/align.hpp"
 #include "utilities/autoRestore.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/preserveException.hpp"
@@ -165,8 +168,8 @@ uintx Universe::_the_array_interfaces_bitmap = 0;
 uintx Universe::_the_empty_klass_bitmap      = 0;
 
 // These variables are guarded by FullGCALot_lock.
-debug_only(OopHandle Universe::_fullgc_alot_dummy_array;)
-debug_only(int Universe::_fullgc_alot_dummy_next = 0;)
+DEBUG_ONLY(OopHandle Universe::_fullgc_alot_dummy_array;)
+DEBUG_ONLY(int Universe::_fullgc_alot_dummy_next = 0;)
 
 // Heap
 int             Universe::_verify_count = 0;
@@ -233,6 +236,7 @@ static BuiltinException _internal_error;
 static BuiltinException _array_index_out_of_bounds_exception;
 static BuiltinException _array_store_exception;
 static BuiltinException _class_cast_exception;
+static BuiltinException _preempted_exception;
 
 objArrayOop Universe::the_empty_class_array ()  {
   return (objArrayOop)_the_empty_class_array.resolve();
@@ -253,6 +257,7 @@ oop Universe::internal_error_instance()           { return _internal_error.insta
 oop Universe::array_index_out_of_bounds_exception_instance() { return _array_index_out_of_bounds_exception.instance(); }
 oop Universe::array_store_exception_instance()    { return _array_store_exception.instance(); }
 oop Universe::class_cast_exception_instance()     { return _class_cast_exception.instance(); }
+oop Universe::preempted_exception_instance()      { return _preempted_exception.instance(); }
 
 oop Universe::the_null_sentinel()                 { return _the_null_sentinel.resolve(); }
 
@@ -312,10 +317,11 @@ void Universe::archive_exception_instances() {
   _array_index_out_of_bounds_exception.store_in_cds();
   _array_store_exception.store_in_cds();
   _class_cast_exception.store_in_cds();
+  _preempted_exception.store_in_cds();
 }
 
 void Universe::load_archived_object_instances() {
-  if (ArchiveHeapLoader::is_in_use()) {
+  if (HeapShared::is_archived_heap_in_use()) {
     for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
       int index = _archived_basic_type_mirror_indices[i];
       if (!is_reference_type((BasicType)i) && index >= 0) {
@@ -331,6 +337,7 @@ void Universe::load_archived_object_instances() {
     _array_index_out_of_bounds_exception.load_from_cds();
     _array_store_exception.load_from_cds();
     _class_cast_exception.load_from_cds();
+    _preempted_exception.load_from_cds();
   }
 }
 #endif
@@ -350,6 +357,7 @@ void Universe::serialize(SerializeClosure* f) {
   _array_index_out_of_bounds_exception.serialize(f);
   _array_store_exception.serialize(f);
   _class_cast_exception.serialize(f);
+  _preempted_exception.serialize(f);
 #endif
 
   f->do_ptr(&_fillerArrayKlass);
@@ -370,7 +378,7 @@ void Universe::serialize(SerializeClosure* f) {
 void Universe::check_alignment(uintx size, uintx alignment, const char* name) {
   if (size < alignment || size % alignment != 0) {
     vm_exit_during_initialization(
-      err_msg("Size of %s (" UINTX_FORMAT " bytes) must be aligned to " UINTX_FORMAT " bytes", name, size, alignment));
+      err_msg("Size of %s (%zu bytes) must be aligned to %zu bytes", name, size, alignment));
   }
 }
 
@@ -436,6 +444,9 @@ void Universe::genesis(TRAPS) {
 
     vmSymbols::initialize();
 
+    // Initialize table for matching jmethodID, before SystemDictionary.
+    JmethodIDTable::initialize();
+
     SystemDictionary::initialize(CHECK);
 
     // Create string constants
@@ -443,7 +454,6 @@ void Universe::genesis(TRAPS) {
     _the_null_string = OopHandle(vm_global(), s);
     s = StringTable::intern("-2147483648", CHECK);
     _the_min_jint_string = OopHandle(vm_global(), s);
-
 
 #if INCLUDE_CDS
     if (CDSConfig::is_using_archive()) {
@@ -497,7 +507,7 @@ void Universe::genesis(TRAPS) {
   // Since some of the old system object arrays have been converted to
   // ordinary object arrays, _objectArrayKlass will be loaded when
   // SystemDictionary::initialize(CHECK); is run. See the extra check
-  // for Object_klass_loaded in objArrayKlassKlass::allocate_objArray_klass_impl.
+  // for Object_klass_is_loaded in ObjArrayKlass::allocate_objArray_klass.
   {
     Klass* oak = vmClasses::Object_klass()->array_klass(CHECK);
     _objectArrayKlass = ObjArrayKlass::cast(oak);
@@ -546,42 +556,45 @@ void Universe::genesis(TRAPS) {
 
 void Universe::initialize_basic_type_mirrors(TRAPS) {
 #if INCLUDE_CDS_JAVA_HEAP
-    if (CDSConfig::is_using_archive() &&
-        ArchiveHeapLoader::is_in_use() &&
-        _basic_type_mirrors[T_INT].resolve() != nullptr) {
-      assert(ArchiveHeapLoader::can_use(), "Sanity");
-
-      // check that all basic type mirrors are mapped also
-      for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
-        if (!is_reference_type((BasicType)i)) {
-          oop m = _basic_type_mirrors[i].resolve();
-          assert(m != nullptr, "archived mirrors should not be null");
-        }
+  if (CDSConfig::is_using_archive() &&
+      HeapShared::is_archived_heap_in_use() &&
+      _basic_type_mirrors[T_INT].resolve() != nullptr) {
+    // check that all basic type mirrors are mapped also
+    for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
+      if (!is_reference_type((BasicType)i)) {
+        oop m = _basic_type_mirrors[i].resolve();
+        assert(m != nullptr, "archived mirrors should not be null");
       }
-    } else
-      // _basic_type_mirrors[T_INT], etc, are null if archived heap is not mapped.
+    }
+  } else
+    // _basic_type_mirrors[T_INT], etc, are null if not using an archived heap
 #endif
-    {
-      for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
-        BasicType bt = (BasicType)i;
-        if (!is_reference_type(bt)) {
-          oop m = java_lang_Class::create_basic_type_mirror(type2name(bt), bt, CHECK);
-          _basic_type_mirrors[i] = OopHandle(vm_global(), m);
-        }
-        CDS_JAVA_HEAP_ONLY(_archived_basic_type_mirror_indices[i] = -1);
+  {
+    for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
+      BasicType bt = (BasicType)i;
+      if (!is_reference_type(bt)) {
+        oop m = java_lang_Class::create_basic_type_mirror(type2name(bt), bt, CHECK);
+        _basic_type_mirrors[i] = OopHandle(vm_global(), m);
       }
+      CDS_JAVA_HEAP_ONLY(_archived_basic_type_mirror_indices[i] = -1);
     }
-    if (CDSConfig::is_dumping_heap()) {
-      HeapShared::init_scratch_objects(CHECK);
-    }
+  }
+  if (CDSConfig::is_dumping_heap()) {
+    HeapShared::init_scratch_objects_for_basic_type_mirrors(CHECK);
+  }
 }
 
 void Universe::fixup_mirrors(TRAPS) {
+  if (CDSConfig::is_using_aot_linked_classes()) {
+    // All mirrors of preloaded classes are already restored. No need to fix up.
+    return;
+  }
+
   // Bootstrap problem: all classes gets a mirror (java.lang.Class instance) assigned eagerly,
   // but we cannot do that for classes created before java.lang.Class is loaded. Here we simply
   // walk over permanent objects created so far (mostly classes) and fixup their mirrors. Note
   // that the number of objects allocated at this point is very small.
-  assert(vmClasses::Class_klass_loaded(), "java.lang.Class should be loaded");
+  assert(vmClasses::Class_klass_is_loaded(), "java.lang.Class should be loaded");
   HandleMark hm(THREAD);
 
   if (!CDSConfig::is_using_archive()) {
@@ -732,7 +745,7 @@ oop Universe::gen_out_of_memory_error(oop default_err) {
   int next;
   if ((_preallocated_out_of_memory_error_avail_count > 0) &&
       vmClasses::Throwable_klass()->is_initialized()) {
-    next = (int)Atomic::add(&_preallocated_out_of_memory_error_avail_count, -1);
+    next = (int)AtomicAccess::add(&_preallocated_out_of_memory_error_avail_count, -1);
     assert(next < (int)PreallocatedOutOfMemoryErrorCount, "avail count is corrupt");
   } else {
     next = -1;
@@ -872,7 +885,7 @@ jint universe_init() {
   ObjLayout::initialize();
 
 #ifdef _LP64
-  MetaspaceShared::adjust_heap_sizes_for_dumping();
+  AOTMetaspace::adjust_heap_sizes_for_dumping();
 #endif // _LP64
 
   GCConfig::arguments()->initialize_heap_sizes();
@@ -894,22 +907,43 @@ jint universe_init() {
     return JNI_EINVAL;
   }
 
-  ClassLoaderData::init_null_class_loader_data();
+  // Add main_thread to threads list to finish barrier setup with
+  // on_thread_attach.  Should be before starting to build Java objects in
+  // the AOT heap loader, which invokes barriers.
+  {
+    JavaThread* main_thread = JavaThread::current();
+    MutexLocker mu(Threads_lock);
+    Threads::add(main_thread);
+  }
+
+  HeapShared::initialize_writing_mode();
+
+  // Create the string table before the AOT object archive is loaded,
+  // as it might need to access the string table.
+  StringTable::create_table();
 
 #if INCLUDE_CDS
-  DynamicArchive::check_for_dynamic_dump();
   if (CDSConfig::is_using_archive()) {
     // Read the data structures supporting the shared spaces (shared
     // system dictionary, symbol table, etc.)
-    MetaspaceShared::initialize_shared_spaces();
+    AOTMetaspace::initialize_shared_spaces();
   }
+#endif
+
+  ClassLoaderData::init_null_class_loader_data();
+
+#if INCLUDE_CDS
+#if INCLUDE_CDS_JAVA_HEAP
+  if (CDSConfig::is_using_full_module_graph()) {
+    ClassLoaderDataShared::restore_archived_entries_for_null_class_loader_data();
+  }
+#endif // INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_archive()) {
-    MetaspaceShared::prepare_for_dumping();
+    CDSConfig::prepare_for_dumping();
   }
 #endif
 
   SymbolTable::create_table();
-  StringTable::create_table();
 
   if (strlen(VerifySubSet) > 0) {
     Universe::initialize_verify_flags();
@@ -936,53 +970,63 @@ void Universe::initialize_tlab() {
   }
 }
 
-ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
+ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment, size_t desired_page_size) {
 
   assert(alignment <= Arguments::conservative_max_heap_alignment(),
-         "actual alignment " SIZE_FORMAT " must be within maximum heap alignment " SIZE_FORMAT,
+         "actual alignment %zu must be within maximum heap alignment %zu",
          alignment, Arguments::conservative_max_heap_alignment());
+  assert(is_aligned(heap_size, alignment), "precondition");
 
-  size_t total_reserved = align_up(heap_size, alignment);
+  size_t total_reserved = heap_size;
   assert(!UseCompressedOops || (total_reserved <= (OopEncodingHeapMax - os::vm_page_size())),
       "heap size is too big for compressed oops");
 
-  size_t page_size = os::vm_page_size();
-  if (UseLargePages && is_aligned(alignment, os::large_page_size())) {
-    page_size = os::large_page_size();
+  size_t page_size;
+  if (desired_page_size == 0) {
+    if (UseLargePages) {
+      page_size = os::large_page_size();
+    } else {
+      page_size = os::vm_page_size();
+    }
   } else {
     // Parallel is the only collector that might opt out of using large pages
     // for the heap.
-    assert(!UseLargePages || UseParallelGC , "Wrong alignment to use large pages");
+    assert(UseParallelGC , "only Parallel");
+    // Use caller provided value.
+    page_size = desired_page_size;
   }
-
+  assert(is_aligned(heap_size, page_size), "inv");
   // Now create the space.
-  ReservedHeapSpace total_rs(total_reserved, alignment, page_size, AllocateHeapAt);
+  ReservedHeapSpace rhs = HeapReserver::reserve(total_reserved, alignment, page_size, AllocateHeapAt);
 
-  if (total_rs.is_reserved()) {
-    assert((total_reserved == total_rs.size()) && ((uintptr_t)total_rs.base() % alignment == 0),
-           "must be exactly of required size and alignment");
-    // We are good.
-
-    if (AllocateHeapAt != nullptr) {
-      log_info(gc,heap)("Successfully allocated Java heap at location %s", AllocateHeapAt);
-    }
-
-    if (UseCompressedOops) {
-      CompressedOops::initialize(total_rs);
-    }
-
-    Universe::calculate_verify_data((HeapWord*)total_rs.base(), (HeapWord*)total_rs.end());
-
-    return total_rs;
+  if (!rhs.is_reserved()) {
+    vm_exit_during_initialization(
+      err_msg("Could not reserve enough space for %zu KB object heap",
+              total_reserved/K));
   }
 
-  vm_exit_during_initialization(
-    err_msg("Could not reserve enough space for " SIZE_FORMAT "KB object heap",
-            total_reserved/K));
+  assert(total_reserved == rhs.size(),    "must be exactly of required size");
+  assert(is_aligned(rhs.base(),alignment),"must be exactly of required alignment");
 
-  // satisfy compiler
-  ShouldNotReachHere();
-  return ReservedHeapSpace(0, 0, os::vm_page_size());
+  assert(markWord::encode_pointer_as_mark(rhs.base()).decode_pointer() == rhs.base(),
+      "area must be distinguishable from marks for mark-sweep");
+  assert(markWord::encode_pointer_as_mark(&rhs.base()[rhs.size()]).decode_pointer() ==
+      &rhs.base()[rhs.size()],
+      "area must be distinguishable from marks for mark-sweep");
+
+  // We are good.
+
+  if (AllocateHeapAt != nullptr) {
+    log_info(gc,heap)("Successfully allocated Java heap at location %s", AllocateHeapAt);
+  }
+
+  if (UseCompressedOops) {
+    CompressedOops::initialize(rhs);
+  }
+
+  Universe::calculate_verify_data((HeapWord*)rhs.base(), (HeapWord*)rhs.end());
+
+  return rhs;
 }
 
 OopStorage* Universe::vm_weak() {
@@ -1110,6 +1154,7 @@ bool universe_post_init() {
   _array_index_out_of_bounds_exception.init_if_empty(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), CHECK_false);
   _array_store_exception.init_if_empty(vmSymbols::java_lang_ArrayStoreException(), CHECK_false);
   _class_cast_exception.init_if_empty(vmSymbols::java_lang_ClassCastException(), CHECK_false);
+  _preempted_exception.init_if_empty(vmSymbols::jdk_internal_vm_PreemptedException(), CHECK_false);
 
   // Virtual Machine Error for when we get into a situation we can't resolve
   Klass* k = vmClasses::InternalError_klass();
@@ -1143,8 +1188,9 @@ bool universe_post_init() {
   MemoryService::add_metaspace_memory_pools();
 
   MemoryService::set_universe_heap(Universe::heap());
+
 #if INCLUDE_CDS
-  MetaspaceShared::post_initialize(CHECK_false);
+  AOTMetaspace::post_initialize(CHECK_false);
 #endif
   return true;
 }
@@ -1157,7 +1203,10 @@ void Universe::compute_base_vtable_size() {
 void Universe::print_on(outputStream* st) {
   GCMutexLocker hl(Heap_lock); // Heap_lock might be locked by caller thread.
   st->print_cr("Heap");
-  heap()->print_on(st);
+
+  StreamIndentor si(st, 1);
+  heap()->print_heap_on(st);
+  MetaspaceUtils::print_on(st);
 }
 
 void Universe::print_heap_at_SIGBREAK() {
@@ -1282,6 +1331,69 @@ void Universe::verify(VerifyOption option, const char* prefix) {
   }
 }
 
+static void log_cpu_time() {
+  LogTarget(Info, cpu) cpuLog;
+  if (!cpuLog.is_enabled()) {
+    return;
+  }
+
+  const double process_cpu_time = os::elapsed_process_cpu_time();
+  if (process_cpu_time == 0 || process_cpu_time == -1) {
+    // 0 can happen e.g. for short running processes with
+    // low CPU utilization
+    return;
+  }
+
+  const double gc_threads_cpu_time = (double) CPUTimeUsage::GC::gc_threads() / NANOSECS_PER_SEC;
+  const double gc_vm_thread_cpu_time = (double) CPUTimeUsage::GC::vm_thread() / NANOSECS_PER_SEC;
+  const double gc_string_dedup_cpu_time = (double) CPUTimeUsage::GC::stringdedup() / NANOSECS_PER_SEC;
+  const double gc_cpu_time = (double) gc_threads_cpu_time + gc_vm_thread_cpu_time + gc_string_dedup_cpu_time;
+
+  const double elasped_time = os::elapsedTime();
+  const bool has_error = CPUTimeUsage::Error::has_error();
+
+  if (gc_cpu_time < process_cpu_time) {
+    cpuLog.print("=== CPU time Statistics =============================================================");
+    if (has_error) {
+      cpuLog.print("WARNING: CPU time sampling reported errors, numbers may be unreliable");
+    }
+    cpuLog.print("                                                                            CPUs");
+    cpuLog.print("                                                               s       %%  utilized");
+    cpuLog.print("   Process");
+    cpuLog.print("     Total                        %30.4f  %6.2f  %8.1f", process_cpu_time, 100.0, process_cpu_time / elasped_time);
+    cpuLog.print("     Garbage Collection           %30.4f  %6.2f  %8.1f", gc_cpu_time, percent_of(gc_cpu_time, process_cpu_time), gc_cpu_time / elasped_time);
+    cpuLog.print("       GC Threads                 %30.4f  %6.2f  %8.1f", gc_threads_cpu_time, percent_of(gc_threads_cpu_time, process_cpu_time), gc_threads_cpu_time / elasped_time);
+    cpuLog.print("       VM Thread                  %30.4f  %6.2f  %8.1f", gc_vm_thread_cpu_time, percent_of(gc_vm_thread_cpu_time, process_cpu_time), gc_vm_thread_cpu_time / elasped_time);
+
+    if (UseStringDeduplication) {
+      cpuLog.print("       String Deduplication       %30.4f  %6.2f  %8.1f", gc_string_dedup_cpu_time, percent_of(gc_string_dedup_cpu_time, process_cpu_time), gc_string_dedup_cpu_time / elasped_time);
+    }
+    cpuLog.print("=====================================================================================");
+  }
+}
+
+void Universe::before_exit() {
+  // Tell the GC that it is time to shutdown and to block requests for new GC pauses.
+  heap()->initiate_shutdown();
+
+  // Log CPU time statistics before stopping the GC threads.
+  log_cpu_time();
+
+  // Stop the GC threads.
+  heap()->stop();
+
+  // Print GC/heap related information.
+  Log(gc, exit) log;
+  if (log.is_info()) {
+    LogStream ls_info(log.info());
+    Universe::print_on(&ls_info);
+    if (log.is_trace()) {
+      LogStream ls_trace(log.trace());
+      MutexLocker mcld(ClassLoaderDataGraph_lock);
+      ClassLoaderDataGraph::print_on(&ls_trace);
+    }
+  }
+}
 
 #ifndef PRODUCT
 void Universe::calculate_verify_data(HeapWord* low_boundary, HeapWord* high_boundary) {

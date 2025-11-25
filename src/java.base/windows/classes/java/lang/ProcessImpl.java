@@ -199,18 +199,18 @@ final class ProcessImpl extends Process {
     }
 
     private static final int VERIFICATION_CMD_BAT = 0;
-    private static final int VERIFICATION_WIN32 = 1;
     private static final int VERIFICATION_WIN32_SAFE = 2; // inside quotes not allowed
     private static final int VERIFICATION_LEGACY = 3;
     // See Command shell overview for documentation of special characters.
     // https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-xp/bb490954(v=technet.10)
-    private static final char ESCAPE_VERIFICATION[][] = {
+    private static final String ESCAPE_VERIFICATION[] = {
         // We guarantee the only command file execution for implicit [cmd.exe] run.
         //    http://technet.microsoft.com/en-us/library/bb490954.aspx
-        {' ', '\t', '\"', '<', '>', '&', '|', '^'},
-        {' ', '\t', '\"', '<', '>'},
-        {' ', '\t', '\"', '<', '>'},
-        {' ', '\t'}
+        // All space characters require quoting are checked in needsEscaping().
+        "\"<>&|^",
+        "\"<>",
+        "\"<>",
+        ""
     };
 
     private static String createCommandLine(int verificationType,
@@ -325,9 +325,14 @@ final class ProcessImpl extends Process {
         }
 
         if (!argIsQuoted) {
-            char testEscape[] = ESCAPE_VERIFICATION[verificationType];
-            for (int i = 0; i < testEscape.length; ++i) {
-                if (arg.indexOf(testEscape[i]) >= 0) {
+            for (int i = 0; i < arg.length(); i++) {
+                char ch = arg.charAt(i);
+                if (Character.isLetterOrDigit(ch))
+                    continue;   // skip over common characters
+                // All space chars require quotes and other mode specific characters
+                if (Character.isSpaceChar(ch) ||
+                        Character.isWhitespace(ch) ||
+                        ESCAPE_VERIFICATION[verificationType].indexOf(ch) >= 0) {
                     return true;
                 }
             }
@@ -376,12 +381,6 @@ final class ProcessImpl extends Process {
         File file = new File(executablePath);
         String upName = file.getName().toUpperCase(Locale.ROOT);
         return (upName.endsWith(".EXE") || upName.indexOf('.') < 0);
-    }
-
-    // Old version that can be bypassed
-    private boolean isShellFile(String executablePath) {
-        String upPath = executablePath.toUpperCase(Locale.ROOT);
-        return (upPath.endsWith(".CMD") || upPath.endsWith(".BAT"));
     }
 
     private String quoteString(String arg) {
@@ -466,12 +465,10 @@ final class ProcessImpl extends Process {
             // Quotation protects from interpretation of the [path] argument as
             // start of longer path with spaces. Quotation has no influence to
             // [.exe] extension heuristic.
-            boolean isShell = allowAmbiguousCommands ? isShellFile(executablePath)
-                    : !isExe(executablePath);
+            boolean isShell = !isExe(executablePath);
             cmdstr = createCommandLine(
                     // We need the extended verification procedures
-                    isShell ? VERIFICATION_CMD_BAT
-                            : (allowAmbiguousCommands ? VERIFICATION_WIN32 : VERIFICATION_WIN32_SAFE),
+                    isShell ? VERIFICATION_CMD_BAT : VERIFICATION_WIN32_SAFE,
                     quoteString(executablePath),
                     cmd);
         }

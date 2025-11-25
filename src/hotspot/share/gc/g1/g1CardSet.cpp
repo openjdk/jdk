@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CardSet.inline.hpp"
 #include "gc/g1/g1CardSetContainers.inline.hpp"
 #include "gc/g1/g1CardSetMemory.inline.hpp"
@@ -30,7 +29,7 @@
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "memory/allocation.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -216,9 +215,9 @@ void G1CardSetCoarsenStats::subtract_from(G1CardSetCoarsenStats& other) {
 
 void G1CardSetCoarsenStats::record_coarsening(uint tag, bool collision) {
   assert(tag < ARRAY_SIZE(_coarsen_from), "tag %u out of bounds", tag);
-  Atomic::inc(&_coarsen_from[tag], memory_order_relaxed);
+  AtomicAccess::inc(&_coarsen_from[tag], memory_order_relaxed);
   if (collision) {
-    Atomic::inc(&_coarsen_collision[tag], memory_order_relaxed);
+    AtomicAccess::inc(&_coarsen_collision[tag], memory_order_relaxed);
   }
 }
 
@@ -315,7 +314,7 @@ public:
     if (!_inserted_card && inserted) {
       // It does not matter to us who is setting the flag so a regular atomic store
       // is sufficient.
-      Atomic::store(&_inserted_card, true);
+      AtomicAccess::store(&_inserted_card, true);
     }
 
     return found.value();
@@ -344,9 +343,9 @@ public:
   }
 
   void reset() {
-    if (Atomic::load(&_inserted_card)) {
+    if (AtomicAccess::load(&_inserted_card)) {
       _table.unsafe_reset(InitialLogTableSize);
-      Atomic::store(&_inserted_card, false);
+      AtomicAccess::store(&_inserted_card, false);
     }
   }
 
@@ -463,7 +462,7 @@ G1CardSet::ContainerPtr G1CardSet::acquire_container(ContainerPtr volatile* cont
   GlobalCounter::CriticalSection cs(Thread::current());
   while (true) {
     // Get ContainerPtr and increment refcount atomically wrt to memory reuse.
-    ContainerPtr container = Atomic::load_acquire(container_addr);
+    ContainerPtr container = AtomicAccess::load_acquire(container_addr);
     uint cs_type = container_type(container);
     if (container == FullCardSet || cs_type == ContainerInlinePtr) {
       return container;
@@ -506,13 +505,13 @@ class G1ReleaseCardsets : public StackObj {
 
   void coarsen_to_full(ContainerPtr* container_addr) {
     while (true) {
-      ContainerPtr cur_container = Atomic::load_acquire(container_addr);
+      ContainerPtr cur_container = AtomicAccess::load_acquire(container_addr);
       uint cs_type = G1CardSet::container_type(cur_container);
       if (cur_container == G1CardSet::FullCardSet) {
         return;
       }
 
-      ContainerPtr old_value = Atomic::cmpxchg(container_addr, cur_container, G1CardSet::FullCardSet);
+      ContainerPtr old_value = AtomicAccess::cmpxchg(container_addr, cur_container, G1CardSet::FullCardSet);
 
       if (old_value == cur_container) {
         _card_set->release_and_maybe_free_container(cur_container);
@@ -548,7 +547,7 @@ G1AddCardResult G1CardSet::add_to_howl(ContainerPtr parent_container,
   ContainerPtr volatile* bucket_entry = howl->container_addr(bucket);
 
   while (true) {
-    if (Atomic::load(&howl->_num_entries) >= _config->cards_in_howl_threshold()) {
+    if (AtomicAccess::load(&howl->_num_entries) >= _config->cards_in_howl_threshold()) {
       return Overflow;
     }
 
@@ -572,7 +571,7 @@ G1AddCardResult G1CardSet::add_to_howl(ContainerPtr parent_container,
   }
 
   if (increment_total && add_result == Added) {
-    Atomic::inc(&howl->_num_entries, memory_order_relaxed);
+    AtomicAccess::inc(&howl->_num_entries, memory_order_relaxed);
   }
 
   if (to_transfer != nullptr) {
@@ -641,7 +640,7 @@ bool G1CardSet::coarsen_container(ContainerPtr volatile* container_addr,
       ShouldNotReachHere();
   }
 
-  ContainerPtr old_value = Atomic::cmpxchg(container_addr, cur_container, new_container); // Memory order?
+  ContainerPtr old_value = AtomicAccess::cmpxchg(container_addr, cur_container, new_container); // Memory order?
   if (old_value == cur_container) {
     // Success. Indicate that the cards from the current card set must be transferred
     // by this caller.
@@ -688,7 +687,7 @@ void G1CardSet::transfer_cards(G1CardSetHashTableValue* table_entry, ContainerPt
     assert(container_type(source_container) == ContainerHowl, "must be");
     // Need to correct for that the Full remembered set occupies more cards than the
     // AoCS before.
-    Atomic::add(&_num_occupied, _config->max_cards_in_region() - table_entry->_num_occupied, memory_order_relaxed);
+    AtomicAccess::add(&_num_occupied, _config->max_cards_in_region() - table_entry->_num_occupied, memory_order_relaxed);
   }
 }
 
@@ -714,14 +713,14 @@ void G1CardSet::transfer_cards_in_howl(ContainerPtr parent_container,
     diff -= 1;
 
     G1CardSetHowl* howling_array = container_ptr<G1CardSetHowl>(parent_container);
-    Atomic::add(&howling_array->_num_entries, diff, memory_order_relaxed);
+    AtomicAccess::add(&howling_array->_num_entries, diff, memory_order_relaxed);
 
     G1CardSetHashTableValue* table_entry = get_container(card_region);
     assert(table_entry != nullptr, "Table entry not found for transferred cards");
 
-    Atomic::add(&table_entry->_num_occupied, diff, memory_order_relaxed);
+    AtomicAccess::add(&table_entry->_num_occupied, diff, memory_order_relaxed);
 
-    Atomic::add(&_num_occupied, diff, memory_order_relaxed);
+    AtomicAccess::add(&_num_occupied, diff, memory_order_relaxed);
   }
 }
 
@@ -780,6 +779,15 @@ G1AddCardResult G1CardSet::add_card(uintptr_t card) {
   uint card_within_region;
   split_card(card, card_region, card_within_region);
 
+#ifdef ASSERT
+  {
+    uint region_idx = card_region >> config()->log2_card_regions_per_heap_region();
+    G1HeapRegion* r = G1CollectedHeap::heap()->region_at(region_idx);
+    assert(!r->rem_set()->has_cset_group() ||
+           r->rem_set()->cset_group()->card_set() != this, "Should not be sharing a cardset");
+  }
+#endif
+
   return add_card(card_region, card_within_region, true /* increment_total */);
 }
 
@@ -819,8 +827,8 @@ G1AddCardResult G1CardSet::add_card(uint card_region, uint card_in_region, bool 
   }
 
   if (increment_total && add_result == Added) {
-    Atomic::inc(&table_entry->_num_occupied, memory_order_relaxed);
-    Atomic::inc(&_num_occupied, memory_order_relaxed);
+    AtomicAccess::inc(&table_entry->_num_occupied, memory_order_relaxed);
+    AtomicAccess::inc(&_num_occupied, memory_order_relaxed);
   }
   if (should_grow_table) {
     _table->grow();

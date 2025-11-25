@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "classfile/classLoaderExt.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "classfile/stringTable.hpp"
 #include "classfile/modules.hpp"
+#include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -40,6 +38,7 @@
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
@@ -70,7 +69,6 @@
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/reflectionUtils.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/threadHeapSampler.hpp"
 #include "runtime/threads.hpp"
@@ -200,7 +198,7 @@ JvmtiEnv::GetThreadLocalStorage(jthread thread, void** data_ptr) {
     MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current_thread));
     ThreadInVMfromNative __tiv(current_thread);
     VM_ENTRY_BASE(jvmtiError, JvmtiEnv::GetThreadLocalStorage , current_thread)
-    debug_only(VMNativeEntryWrapper __vew;)
+    DEBUG_ONLY(VMNativeEntryWrapper __vew;)
 
     JvmtiVTMSTransitionDisabler disabler(thread);
     ThreadsListHandle tlh(current_thread);
@@ -452,6 +450,18 @@ JvmtiEnv::RetransformClasses(jint class_count, const jclass* classes) {
 
     InstanceKlass* ik = InstanceKlass::cast(klass);
     if (ik->get_cached_class_file_bytes() == nullptr) {
+      // Link the class to avoid races with the rewriter. This will call the verifier also
+      // on the class. Linking is also done in VM_RedefineClasses below, but we need
+      // to keep that for other VM_RedefineClasses callers.
+      JavaThread* THREAD = current_thread;
+      ik->link_class(THREAD);
+      if (HAS_PENDING_EXCEPTION) {
+        // Retransform/JVMTI swallows error messages. Using this class will rerun the verifier in a context
+        // that propagates the VerifyError, if thrown.
+        CLEAR_PENDING_EXCEPTION;
+        return JVMTI_ERROR_INVALID_CLASS;
+      }
+
       // Not cached, we need to reconstitute the class file from the
       // VM representation. We don't attach the reconstituted class
       // bytes to the InstanceKlass here because they have not been
@@ -668,7 +678,7 @@ JvmtiEnv::AddToBootstrapClassLoaderSearch(const char* segment) {
     // terminating the VM so we check one more time.
 
     // create the zip entry
-    ClassPathZipEntry* zip_entry = ClassLoader::create_class_path_zip_entry(segment, true);
+    ClassPathZipEntry* zip_entry = ClassLoader::create_class_path_zip_entry(segment);
     if (zip_entry == nullptr) {
       return JVMTI_ERROR_ILLEGAL_ARGUMENT;
     }
@@ -676,7 +686,7 @@ JvmtiEnv::AddToBootstrapClassLoaderSearch(const char* segment) {
     // add the jar file to the bootclasspath
     log_info(class, load)("opened: %s", zip_entry->name());
 #if INCLUDE_CDS
-    ClassLoaderExt::append_boot_classpath(zip_entry);
+    ClassLoader::append_boot_classpath(zip_entry);
 #else
     ClassLoader::add_to_boot_append_entries(zip_entry);
 #endif
@@ -710,7 +720,7 @@ JvmtiEnv::AddToSystemClassLoaderSearch(const char* segment) {
 
     // create the zip entry (which will open the zip file and hence
     // check that the segment is indeed a zip file).
-    ClassPathZipEntry* zip_entry = ClassLoader::create_class_path_zip_entry(segment, false);
+    ClassPathZipEntry* zip_entry = ClassLoader::create_class_path_zip_entry(segment);
     if (zip_entry == nullptr) {
       return JVMTI_ERROR_ILLEGAL_ARGUMENT;
     }
@@ -941,14 +951,14 @@ JvmtiEnv::SuspendThread(jthread thread) {
 
     // Do not use JvmtiVTMSTransitionDisabler in context of self suspend to avoid deadlocks.
     if (java_thread != current) {
-      err = suspend_thread(thread_oop, java_thread, /* single_suspend */ true, nullptr);
+      err = suspend_thread(thread_oop, java_thread, /* single_suspend */ true);
       return err;
     }
     // protect thread_oop as a safepoint can be reached in disabler destructor
     self_tobj = Handle(current, thread_oop);
   }
   // Do self suspend for current JavaThread.
-  err = suspend_thread(self_tobj(), current, /* single_suspend */ true, nullptr);
+  err = suspend_thread(self_tobj(), current, /* single_suspend */ true);
   return err;
 } /* end SuspendThread */
 
@@ -989,14 +999,18 @@ JvmtiEnv::SuspendThreadList(jint request_count, const jthread* request_list, jvm
         self_tobj = Handle(current, thread_oop);
         continue; // self suspend after all other suspends
       }
-      results[i] = suspend_thread(thread_oop, java_thread, /* single_suspend */ true, nullptr);
+      if (java_lang_VirtualThread::is_instance(thread_oop)) {
+        oop carrier_thread = java_lang_VirtualThread::carrier_thread(thread_oop);
+        java_thread = carrier_thread == nullptr ? nullptr : java_lang_Thread::thread(carrier_thread);
+      }
+      results[i] = suspend_thread(thread_oop, java_thread, /* single_suspend */ true);
     }
   }
   // Self suspend after all other suspends if necessary.
   // Do not use JvmtiVTMSTransitionDisabler in context of self suspend to avoid deadlocks.
   if (self_tobj() != nullptr) {
     // there should not be any error for current java_thread
-    results[self_idx] = suspend_thread(self_tobj(), current, /* single_suspend */ true, nullptr);
+    results[self_idx] = suspend_thread(self_tobj(), current, /* single_suspend */ true);
   }
   // per-thread suspend results returned via results parameter
   return JVMTI_ERROR_NONE;
@@ -1049,7 +1063,7 @@ JvmtiEnv::SuspendAllVirtualThreads(jint except_count, const jthread* except_list
           self_tobj = Handle(current, vt_oop);
           continue; // self suspend after all other suspends
         }
-        suspend_thread(vt_oop, java_thread, /* single_suspend */ false, nullptr);
+        suspend_thread(vt_oop, java_thread, /* single_suspend */ false);
       }
     }
     JvmtiVTSuspender::register_all_vthreads_suspend();
@@ -1066,7 +1080,7 @@ JvmtiEnv::SuspendAllVirtualThreads(jint except_count, const jthread* except_list
   // Self suspend after all other suspends if necessary.
   // Do not use JvmtiVTMSTransitionDisabler in context of self suspend to avoid deadlocks.
   if (self_tobj() != nullptr) {
-    suspend_thread(self_tobj(), current, /* single_suspend */ false, nullptr);
+    suspend_thread(self_tobj(), current, /* single_suspend */ false);
   }
   return JVMTI_ERROR_NONE;
 } /* end SuspendAllVirtualThreads */
@@ -1114,6 +1128,10 @@ JvmtiEnv::ResumeThreadList(jint request_count, const jthread* request_list, jvmt
         results[i] = err;
         continue;
       }
+    }
+    if (java_lang_VirtualThread::is_instance(thread_oop)) {
+      oop carrier_thread = java_lang_VirtualThread::carrier_thread(thread_oop);
+      java_thread = carrier_thread == nullptr ? nullptr : java_lang_Thread::thread(carrier_thread);
     }
     results[i] = resume_thread(thread_oop, java_thread, /* single_resume */ true);
   }
@@ -1213,7 +1231,7 @@ JvmtiEnv::StopThread(jthread thread, jobject exception) {
 // thread - NOT protected by ThreadsListHandle and NOT pre-checked
 jvmtiError
 JvmtiEnv::InterruptThread(jthread thread) {
-  JavaThread* current_thread  = JavaThread::current();
+  JavaThread* current_thread = JavaThread::current();
   HandleMark hm(current_thread);
 
   JvmtiVTMSTransitionDisabler disabler(thread);
@@ -1229,6 +1247,7 @@ JvmtiEnv::InterruptThread(jthread thread) {
   if (java_lang_VirtualThread::is_instance(thread_obj)) {
     // For virtual threads we have to call into Java to interrupt:
     Handle obj(current_thread, thread_obj);
+    JvmtiJavaUpcallMark jjum(current_thread); // hide JVMTI events for Java upcall
     JavaValue result(T_VOID);
     JavaCalls::call_virtual(&result,
                             obj,
@@ -1360,11 +1379,6 @@ JvmtiEnv::GetOwnedMonitorInfo(jthread thread, jint* owned_monitor_count_ptr, job
     return err;
   }
 
-  if (LockingMode == LM_LEGACY && java_thread == nullptr) {
-    *owned_monitor_count_ptr = 0;
-    return JVMTI_ERROR_NONE;
-  }
-
   // growable array of jvmti monitors info on the C-heap
   GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
       new (mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
@@ -1418,11 +1432,6 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(jthread thread, jint* monitor_info_count
   jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, calling_thread, &java_thread, &thread_oop);
   if (err != JVMTI_ERROR_NONE) {
     return err;
-  }
-
-  if (LockingMode == LM_LEGACY && java_thread == nullptr) {
-    *monitor_info_count_ptr = 0;
-    return JVMTI_ERROR_NONE;
   }
 
   // growable array of jvmti monitors info on the C-heap
@@ -1804,12 +1813,39 @@ JvmtiEnv::NotifyFramePop(jthread thread, jint depth) {
     return JVMTI_ERROR_THREAD_NOT_ALIVE;
   }
 
-  SetFramePopClosure op(this, state, depth);
+  SetOrClearFramePopClosure op(this, state, true /* set */, depth);
   MutexLocker mu(current, JvmtiThreadState_lock);
   JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
   return op.result();
 } /* end NotifyFramePop */
 
+// Threads_lock NOT held, java_thread not protected by lock
+jvmtiError
+JvmtiEnv::ClearAllFramePops(jthread thread) {
+  ResourceMark rm;
+  JvmtiVTMSTransitionDisabler disabler(thread);
+  JavaThread* current = JavaThread::current();
+  ThreadsListHandle tlh(current);
+
+  JavaThread* java_thread = nullptr;
+  oop thread_obj = nullptr;
+  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, current, &java_thread, &thread_obj);
+  if (err != JVMTI_ERROR_NONE) {
+    return err;
+  }
+
+  HandleMark hm(current);
+  Handle thread_handle(current, thread_obj);
+  JvmtiThreadState *state = JvmtiThreadState::state_for(java_thread, thread_handle);
+  if (state == nullptr) {
+    return JVMTI_ERROR_THREAD_NOT_ALIVE;
+  }
+
+  SetOrClearFramePopClosure op(this, state, false /* clear all frame pops*/);
+  MutexLocker mu(current, JvmtiThreadState_lock);
+  JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
+  return op.result();
+} /* end ClearAllFramePops */
 
   //
   // Force Early Return functions
@@ -2691,19 +2727,10 @@ JvmtiEnv::GetSourceFileName(oop k_mirror, char** source_name_ptr) {
 // modifiers_ptr - pre-checked for null
 jvmtiError
 JvmtiEnv::GetClassModifiers(oop k_mirror, jint* modifiers_ptr) {
-  JavaThread* current_thread  = JavaThread::current();
-  jint result = 0;
+  jint result = java_lang_Class::modifiers(k_mirror);
   if (!java_lang_Class::is_primitive(k_mirror)) {
-    Klass* k = java_lang_Class::as_Klass(k_mirror);
-    NULL_CHECK(k, JVMTI_ERROR_INVALID_CLASS);
-    result = k->modifier_flags();
-
     // Reset the deleted  ACC_SUPER bit (deleted in compute_modifier_flags()).
-    if (k->is_super()) {
-      result |= JVM_ACC_SUPER;
-    }
-  } else {
-    result = (JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC);
+    result |= JVM_ACC_SUPER;
   }
   *modifiers_ptr = result;
 
@@ -2742,8 +2769,10 @@ JvmtiEnv::GetClassMethods(oop k_mirror, jint* method_count_ptr, jmethodID** meth
   int result_length = ik->methods()->length();
   jmethodID* result_list = (jmethodID*)jvmtiMalloc(result_length * sizeof(jmethodID));
   int index;
-  bool jmethodids_found = true;
   int skipped = 0;  // skip overpass methods
+
+  // Make jmethodIDs for all non-overpass methods.
+  ik->make_methods_jmethod_ids();
 
   for (index = 0; index < result_length; index++) {
     Method* m = ik->methods()->at(index);
@@ -2757,20 +2786,8 @@ JvmtiEnv::GetClassMethods(oop k_mirror, jint* method_count_ptr, jmethodID** meth
       skipped++;
       continue;
     }
-    jmethodID id;
-    if (jmethodids_found) {
-      id = m->find_jmethod_id_or_null();
-      if (id == nullptr) {
-        // If we find an uninitialized value, make sure there is
-        // enough space for all the uninitialized values we might
-        // find.
-        ik->ensure_space_for_methodids(index);
-        jmethodids_found = false;
-        id = m->jmethod_id();
-      }
-    } else {
-      id = m->jmethod_id();
-    }
+    jmethodID id = m->find_jmethod_id_or_null();
+    assert(id != nullptr, "should be created above");
     result_list[result_index] = id;
   }
 
@@ -2824,9 +2841,9 @@ JvmtiEnv::GetClassFields(oop k_mirror, jint* field_count_ptr, jfieldID** fields_
 
   InstanceKlass* ik = InstanceKlass::cast(k);
 
-  FilteredJavaFieldStream flds(ik);
+  JavaFieldStream flds(ik);
 
-  int result_count = flds.field_count();
+  int result_count = ik->java_fields_count();
 
   // Allocate the result and fill it in.
   jfieldID* result_list = (jfieldID*)jvmtiMalloc(result_count * sizeof(jfieldID));
@@ -3149,7 +3166,7 @@ jvmtiError
 JvmtiEnv::GetFieldModifiers(fieldDescriptor* fdesc_ptr, jint* modifiers_ptr) {
 
   AccessFlags resultFlags = fdesc_ptr->access_flags();
-  jint result = resultFlags.as_int();
+  jint result = resultFlags.as_field_flags();
   *modifiers_ptr = result;
 
   return JVMTI_ERROR_NONE;
@@ -3228,7 +3245,7 @@ JvmtiEnv::GetMethodDeclaringClass(Method* method, jclass* declaring_class_ptr) {
 jvmtiError
 JvmtiEnv::GetMethodModifiers(Method* method, jint* modifiers_ptr) {
   NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
-  (*modifiers_ptr) = method->access_flags().as_int() & JVM_RECOGNIZED_METHOD_MODIFIERS;
+  (*modifiers_ptr) = method->access_flags().as_method_flags();
   return JVMTI_ERROR_NONE;
 } /* end GetMethodModifiers */
 
@@ -3402,7 +3419,8 @@ jvmtiError
 JvmtiEnv::GetBytecodes(Method* method, jint* bytecode_count_ptr, unsigned char** bytecodes_ptr) {
   NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
 
-  methodHandle mh(Thread::current(), method);
+  JavaThread* current_thread = JavaThread::current();
+  methodHandle mh(current_thread, method);
   jint size = (jint)mh->code_size();
   jvmtiError err = allocate(size, bytecodes_ptr);
   if (err != JVMTI_ERROR_NONE) {
@@ -3411,6 +3429,13 @@ JvmtiEnv::GetBytecodes(Method* method, jint* bytecode_count_ptr, unsigned char**
 
   (*bytecode_count_ptr) = size;
   // get byte codes
+  // Make sure the class is verified and rewritten first.
+  JavaThread* THREAD = current_thread;
+  mh->method_holder()->link_class(THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    CLEAR_PENDING_EXCEPTION;
+    return JVMTI_ERROR_INVALID_CLASS;
+  }
   JvmtiClassFileReconstituter::copy_bytecodes(mh, *bytecodes_ptr);
 
   return JVMTI_ERROR_NONE;

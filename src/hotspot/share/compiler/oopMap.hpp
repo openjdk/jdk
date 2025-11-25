@@ -162,7 +162,7 @@ class OopMap: public ResourceObj {
   bool _has_derived_oops;
   CompressedWriteStream* _write_stream;
 
-  debug_only( OopMapValue::oop_types* _locs_used; int _locs_length;)
+  DEBUG_ONLY( OopMapValue::oop_types* _locs_used; int _locs_length;)
 
   // Accessors
   int omv_count() const                       { return _omv_count; }
@@ -292,9 +292,7 @@ public:
   bool has_derived_oops() const { return _has_derived_oops; }
   bool has_any(OopMapValue::oop_types type) const;
 
-#ifdef ASSERT
-  int nr_of_bytes() const; // this is an expensive operation, only used in debug builds
-#endif
+  int nr_of_bytes() const; // this is an expensive operation, only used in debug builds or in aot code generation
 
   void oops_do(const frame* fr, const RegisterMap* reg_map, OopClosure* f, DerivedOopClosure* df) const;
   void oops_do(const frame* fr, const RegisterMap* reg_map, OopClosure* f, DerivedPointerIterationMode derived_mode) const;
@@ -350,6 +348,8 @@ public:
 
   static ImmutableOopMapSet* build_from(const OopMapSet* oopmap_set);
 
+  ImmutableOopMapSet* clone() const;
+
   int find_slot_for_offset(int pc_offset) const;
   const ImmutableOopMap* find_map_at_offset(int pc_offset) const;
   const ImmutableOopMap* find_map_at_slot(int slot, int pc_offset) const;
@@ -378,9 +378,7 @@ class OopMapStream : public StackObj {
   bool is_done()                        { if(!_valid_omv) { find_next(); } return !_valid_omv; }
   void next()                           { find_next(); }
   OopMapValue current()                 { return _omv; }
-#ifdef ASSERT
   int stream_position() const           { return _stream.position(); }
-#endif
 };
 
 class ImmutableOopMapBuilder {
@@ -483,7 +481,6 @@ private:
 // pointers are updated based on their base pointers new value and an offset.
 #if COMPILER2_OR_JVMCI
 class DerivedPointerTable : public AllStatic {
-  friend class VMStructs;
  private:
   class Entry;
   static bool _active;                                           // do not record pointers for verify pass etc.

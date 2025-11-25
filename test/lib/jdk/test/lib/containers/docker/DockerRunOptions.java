@@ -31,6 +31,7 @@ import java.util.Collections;
 // in test environment.
 public class DockerRunOptions {
     public String imageNameAndTag;
+    public ArrayList<String> engineOpts = new ArrayList<>();
     public ArrayList<String> dockerOpts = new ArrayList<>();
     public String command;    // normally a full path to java
     public ArrayList<String> javaOpts = new ArrayList<>();
@@ -65,22 +66,27 @@ public class DockerRunOptions {
         this.addJavaOpts("-XX:+ErrorFileToStderr");
     }
 
-    public DockerRunOptions addDockerOpts(String... opts) {
+    public final DockerRunOptions addDockerOpts(String... opts) {
         Collections.addAll(dockerOpts, opts);
         return this;
     }
 
-    public DockerRunOptions addJavaOpts(String... opts) {
+    public final DockerRunOptions addEngineOpts(String... opts) {
+        Collections.addAll(engineOpts, opts);
+        return this;
+    }
+
+    public final DockerRunOptions addJavaOpts(String... opts) {
         Collections.addAll(javaOpts, opts);
         return this;
     }
 
-    public DockerRunOptions addJavaOptsAppended(String... opts) {
+    public final DockerRunOptions addJavaOptsAppended(String... opts) {
         Collections.addAll(javaOptsAppended, opts);
         return this;
     }
 
-    public DockerRunOptions addClassOptions(String... opts) {
+    public final DockerRunOptions addClassOptions(String... opts) {
         Collections.addAll(classParams,opts);
         return this;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CardSet.inline.hpp"
 #include "gc/g1/g1CardSetContainers.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
@@ -71,7 +70,7 @@ public:
   ~G1CardSetTest() { }
 
   static uint next_random(uint& seed, uint i) {
-    // Park–Miller random number generator
+    // Park-Miller random number generator
     seed = (seed * 279470273u) % 0xfffffffb;
     return (seed % i);
   }
@@ -414,8 +413,8 @@ public:
         found++;
       }
     }
-    Atomic::add(&_added, added);
-    Atomic::add(&_found, found);
+    AtomicAccess::add(&_added, added);
+    AtomicAccess::add(&_found, found);
   }
 
   size_t added() const { return _added; }

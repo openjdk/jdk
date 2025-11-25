@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
@@ -44,13 +43,13 @@ G1BlockOffsetTable::G1BlockOffsetTable(MemRegion heap, G1RegionToSpaceMapper* st
   _offset_base = ((uint8_t*)bot_reserved.start() - (uintptr_t(_reserved.start()) >> CardTable::card_shift()));
 
   log_trace(gc, bot)("G1BlockOffsetTable::G1BlockOffsetTable: ");
-  log_trace(gc, bot)("    rs.base(): " PTR_FORMAT "  rs.size(): " SIZE_FORMAT "  rs end(): " PTR_FORMAT,
+  log_trace(gc, bot)("    rs.base(): " PTR_FORMAT "  rs.size(): %zu  rs end(): " PTR_FORMAT,
                      p2i(bot_reserved.start()), bot_reserved.byte_size(), p2i(bot_reserved.end()));
 }
 
 void G1BlockOffsetTable::set_offset_array(uint8_t* addr, uint8_t offset) {
   check_address(addr, "Block offset table address out of range");
-  Atomic::store(addr, offset);
+  AtomicAccess::store(addr, offset);
 }
 
 void G1BlockOffsetTable::set_offset_array(uint8_t* addr, HeapWord* high, HeapWord* low) {

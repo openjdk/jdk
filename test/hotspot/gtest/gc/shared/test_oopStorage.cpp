@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
 #include "gc/shared/workerThread.hpp"
@@ -48,7 +47,7 @@ public:
   typedef OopStorage::ActiveArray ActiveArray;
 
   static ActiveArray& active_array(const OopStorage& storage) {
-    return *storage._active_array;
+    return *storage._active_array.load_relaxed();
   }
 
   static AllocationList& allocation_list(OopStorage& storage) {
@@ -91,7 +90,7 @@ public:
   }
 
   static void block_array_set_block_count(ActiveArray* blocks, size_t count) {
-    blocks->_block_count = count;
+    blocks->_block_count.store_relaxed(count);
   }
 
   static const oop* get_block_pointer(const Block& block, unsigned index) {
@@ -1136,9 +1135,9 @@ TEST_VM_F(OopStorageTestWithAllocation, print_storage) {
   {
     ResourceMark rm;
     stringStream expected_st;
-    expected_st.print("Test Storage: " SIZE_FORMAT
-                      " entries in " SIZE_FORMAT
-                      " blocks (%.F%%), " SIZE_FORMAT " bytes",
+    expected_st.print("Test Storage: %zu"
+                      " entries in %zu"
+                      " blocks (%.F%%), %zu bytes",
                       expected_entries,
                       expected_blocks,
                       expected_usage,

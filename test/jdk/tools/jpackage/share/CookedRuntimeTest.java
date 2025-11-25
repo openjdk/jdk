@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import jdk.jpackage.test.TKit;
  * @summary test '--runtime-image' option of jpackage
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile CookedRuntimeTest.java
+ * @compile -Xlint:all -Werror CookedRuntimeTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=CookedRuntimeTest
  */
@@ -51,10 +51,11 @@ import jdk.jpackage.test.TKit;
 public final class CookedRuntimeTest {
 
     public CookedRuntimeTest(String javaAppDesc, String jlinkOutputSubdir,
-            String runtimeSubdir) {
+            String runtimeSubdir, boolean withNativeCommands) {
         this.javaAppDesc = javaAppDesc;
         this.jlinkOutputSubdir = Path.of(jlinkOutputSubdir);
         this.runtimeSubdir = Path.of(runtimeSubdir);
+        this.withNativeCommands = withNativeCommands;
     }
 
     @Test
@@ -90,6 +91,10 @@ public final class CookedRuntimeTest {
                 "--no-header-files",
                 "--no-man-pages");
 
+        if (!withNativeCommands) {
+            jlink.addArgument("--strip-native-commands");
+        }
+
         if (moduleName != null) {
             jlink.addArguments("--add-modules", moduleName, "--module-path",
                     Path.of(cmd.getArgumentValue("--module-path")).resolve(
@@ -112,7 +117,7 @@ public final class CookedRuntimeTest {
     }
 
     @Parameters
-    public static Collection data() {
+    public static Collection<?> data() {
         final List<String> javaAppDescs = List.of("Hello",
                 "com.foo/com.foo.main.Aloha");
 
@@ -127,7 +132,14 @@ public final class CookedRuntimeTest {
         List<Object[]> data = new ArrayList<>();
         for (var javaAppDesc : javaAppDescs) {
             for (var pathCfg : paths) {
-                data.add(new Object[] { javaAppDesc, pathCfg[0], pathCfg[1] });
+                if (TKit.isOSX()) {
+                    // On OSX platform we need to test both runtime root and runtime home
+                    // directories with and without "bin" folder.
+                    data.add(new Object[] { javaAppDesc, pathCfg[0], pathCfg[1], true });
+                    data.add(new Object[] { javaAppDesc, pathCfg[0], pathCfg[1], false });
+                } else {
+                    data.add(new Object[] { javaAppDesc, pathCfg[0], pathCfg[1], true });
+                }
             }
         }
 
@@ -137,4 +149,5 @@ public final class CookedRuntimeTest {
     private final String javaAppDesc;
     private final Path jlinkOutputSubdir;
     private final Path runtimeSubdir;
+    private final boolean withNativeCommands;
 }

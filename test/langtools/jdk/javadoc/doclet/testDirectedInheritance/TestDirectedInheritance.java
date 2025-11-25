@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,8 +220,8 @@ public class TestDirectedInheritance extends JavadocTester {
         checkExit(Exit.OK);
         new OutputChecker("x/E1.html").check("""
                 <div class="block">E1: main description
-                 I2: main description
-                 I1: main description</div>""", """
+                I2: main description
+                I1: main description</div>""", """
                 <dt>Throws:</dt>
                 <dd><code>F</code> - E1: description of an exception</dd>
                 <dd><code>F</code> - I2: first description of an exception</dd>

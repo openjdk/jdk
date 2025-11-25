@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -516,7 +516,7 @@ public class Compatibility {
             String line;
             while ((line = reader.readLine()) != null) {
                 String item = line.trim();
-                if (!item.isEmpty()) {
+                if (!item.isEmpty() && !item.startsWith("#")) {
                     list.add(item);
                 }
             }
@@ -718,7 +718,8 @@ public class Compatibility {
             String match = "^  ("
                     + "  Signature algorithm: " + signItem.certInfo.
                             expectedSigalg(signItem) + ", " + signItem.certInfo.
-                            expectedKeySize() + "-bit key"
+                            expectedKeySize() + "-bit (" + signItem.certInfo.
+                            expectedKeyAlgorithm() + " key|key)"
                     + ")|("
                     + "  Digest algorithm: " + signItem.expectedDigestAlg()
                     + (isWeakAlg(signItem.expectedDigestAlg()) ? " \\(weak\\)" : "")
@@ -849,6 +850,9 @@ public class Compatibility {
             if (Test.CERTIFICATE_SELF_SIGNED.equals(line)) continue;
             if (Test.HAS_EXPIRED_CERT_VERIFYING_WARNING.equals(line)
                     && signItem.certInfo.expired) continue;
+
+            if (line.contains(Test.OUTDATED_KEYSTORE_WARNING1)) continue;
+            if (line.contains(Test.OUTDATED_KEYSTORE_WARNING2)) continue;
             System.out.println("verifyingStatus: unexpected line: " + line);
             return Status.ERROR; // treat unexpected warnings as error
         }
@@ -1222,6 +1226,12 @@ public class Compatibility {
                         throw new RuntimeException("Unsupported/expected key algorithm: " + keyAlgorithm);
                 }
             }
+        }
+
+        private String expectedKeyAlgorithm() {
+            return keyAlgorithm.equals("EC")
+                    ? ("EC .secp" + expectedKeySize() + "r1.")
+                    : keyAlgorithm;
         }
 
         private int expectedKeySize() {

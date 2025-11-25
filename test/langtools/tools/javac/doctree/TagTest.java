@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614 8078320 8273244 8284908 8301201 8301813
+ * @bug 7021614 8078320 8273244 8284908 8301201 8301813 8352249
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -39,14 +39,14 @@ class TagTest {
      */
     void custom_tag_with_a_colon() {}
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: empty
   body: empty
   block tags: 1
-    UnknownBlockTag[UNKNOWN_BLOCK_TAG, pos:1
+    UnknownBlockTag[UNKNOWN_BLOCK_TAG, pos:0
       tag:tag:colon
       content: 1
-        Text[TEXT, pos:12, abc]
+        Text[TEXT, pos:11, abc]
     ]
 ]
 */
@@ -56,14 +56,14 @@ DocComment[DOC_COMMENT, pos:1
      */
     void custom_tag_with_a_hyphen() {}
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: empty
   body: empty
   block tags: 1
-    UnknownBlockTag[UNKNOWN_BLOCK_TAG, pos:1
+    UnknownBlockTag[UNKNOWN_BLOCK_TAG, pos:0
       tag:tag-hyphen
       content: 1
-        Text[TEXT, pos:13, abc]
+        Text[TEXT, pos:12, abc]
     ]
 ]
 */
@@ -73,13 +73,13 @@ DocComment[DOC_COMMENT, pos:1
      */
     void simple_standard_block() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: empty
   body: empty
   block tags: 1
-    Author[AUTHOR, pos:1
+    Author[AUTHOR, pos:0
       name: 1
-        Text[TEXT, pos:9, jjg]
+        Text[TEXT, pos:8, jjg]
     ]
 ]
 */
@@ -89,11 +89,11 @@ DocComment[DOC_COMMENT, pos:1
      */
     void no_name_block() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: empty
   body: empty
   block tags: 1
-    Erroneous[ERRONEOUS, pos:1, prefPos:2
+    Erroneous[ERRONEOUS, pos:0, prefPos:1
       code: compiler.err.dc.no.tag.name
       body: @_abc
     ]
@@ -105,14 +105,14 @@ DocComment[DOC_COMMENT, pos:1
      */
     void unknown_name_block() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: empty
   body: empty
   block tags: 1
-    UnknownBlockTag[UNKNOWN_BLOCK_TAG, pos:1
+    UnknownBlockTag[UNKNOWN_BLOCK_TAG, pos:0
       tag:abc
       content: 1
-        Text[TEXT, pos:6, def_ghi]
+        Text[TEXT, pos:5, def_ghi]
     ]
 ]
 */
@@ -122,11 +122,11 @@ DocComment[DOC_COMMENT, pos:1
      */
     void simple_standard_inline() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Link[LINK, pos:1
+    Link[LINK, pos:0
       reference:
-        Reference[REFERENCE, pos:8, String]
+        Reference[REFERENCE, pos:7, String]
       body: empty
     ]
   body: empty
@@ -139,13 +139,13 @@ DocComment[DOC_COMMENT, pos:1
      */
     void no_name_inline() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 2
-    Erroneous[ERRONEOUS, pos:1, prefPos:3
+    Erroneous[ERRONEOUS, pos:0, prefPos:2
       code: compiler.err.dc.no.tag.name
       body: {@
     ]
-    Text[TEXT, pos:3, _abc}]
+    Text[TEXT, pos:2, _abc}]
   body: empty
   block tags: empty
 ]
@@ -156,12 +156,12 @@ DocComment[DOC_COMMENT, pos:1
      */
     void unknown_name_inline() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    UnknownInlineTag[UNKNOWN_INLINE_TAG, pos:1
+    UnknownInlineTag[UNKNOWN_INLINE_TAG, pos:0
       tag:abc
       content: 1
-        Text[TEXT, pos:7, def_ghi]
+        Text[TEXT, pos:6, def_ghi]
     ]
   body: empty
   block tags: empty
@@ -173,9 +173,9 @@ DocComment[DOC_COMMENT, pos:1
      */
     void unterminated_standard_inline() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Erroneous[ERRONEOUS, pos:1, prefPos:13
+    Erroneous[ERRONEOUS, pos:0, prefPos:12
       code: compiler.err.dc.unterminated.inline.tag
       body: {@abc_def_ghi
     ]
@@ -193,9 +193,9 @@ DocComment[DOC_COMMENT, pos:1
      */
     void inline_text_at() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Literal[CODE, pos:1, |_abc|_@def|_ghi|_]
+    Literal[CODE, pos:0, |abc|@def|ghi|]
   body: empty
   block tags: empty
 ]
@@ -209,12 +209,12 @@ DocComment[DOC_COMMENT, pos:1
      */
     void inline_content_at() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    UnknownInlineTag[UNKNOWN_INLINE_TAG, pos:1
+    UnknownInlineTag[UNKNOWN_INLINE_TAG, pos:0
       tag:tag
       content: 1
-        Text[TEXT, pos:7, abc|_@def|_ghi|_]
+        Text[TEXT, pos:6, abc|@def|ghi|]
     ]
   body: empty
   block tags: empty

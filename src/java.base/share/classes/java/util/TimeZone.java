@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ package java.util;
 import java.io.Serializable;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.stream.Stream;
 
 import jdk.internal.util.StaticProperty;
 import sun.util.calendar.ZoneInfo;
@@ -544,7 +545,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * cannot be understood.
      * @throws NullPointerException if {@code ID} is {@code null}
      */
-    public static synchronized TimeZone getTimeZone(String ID) {
+    public static TimeZone getTimeZone(String ID) {
         return getTimeZone(ID, true);
     }
 
@@ -596,6 +597,11 @@ public abstract class TimeZone implements Serializable, Cloneable {
     }
 
     private static TimeZone getTimeZone(String ID, boolean fallback) {
+        if (ZoneId.SHORT_IDS.containsKey(ID)) {
+            System.err.printf(
+                "WARNING: Use of the three-letter time zone ID \"%s\" is deprecated and it will be removed in a future release%n",
+                ID);
+        }
         TimeZone tz = ZoneInfo.getTimeZone(ID);
         if (tz == null) {
             tz = parseCustomTimeZone(ID);
@@ -609,22 +615,61 @@ public abstract class TimeZone implements Serializable, Cloneable {
     /**
      * Gets the available IDs according to the given time zone offset in milliseconds.
      *
+     * @apiNote Consider using {@link #availableIDs(int)} which returns
+     * a stream of the available time zone IDs according to the given offset.
+     *
      * @param rawOffset the given time zone GMT offset in milliseconds.
      * @return an array of IDs, where the time zone for that ID has
      * the specified GMT offset. For example, "America/Phoenix" and "America/Denver"
      * both have GMT-07:00, but differ in daylight saving behavior.
      * @see #getRawOffset()
+     * @see #availableIDs(int)
      */
-    public static synchronized String[] getAvailableIDs(int rawOffset) {
+    public static String[] getAvailableIDs(int rawOffset) {
         return ZoneInfo.getAvailableIDs(rawOffset);
     }
 
     /**
-     * Gets all the available IDs supported.
-     * @return an array of IDs.
+     * {@return an array of the available IDs supported}
+     *
+     * @apiNote Consider using {@link #availableIDs()} which returns
+     * a stream of the available time zone IDs.
+     *
+     * @see #availableIDs()
      */
-    public static synchronized String[] getAvailableIDs() {
+    public static String[] getAvailableIDs() {
         return ZoneInfo.getAvailableIDs();
+    }
+
+    /**
+     * Gets the available IDs according to the given time zone offset in milliseconds.
+     *
+     * @implNote Unlike {@link #getAvailableIDs(int)}, this method does
+     * not create a copy of the {@code TimeZone} IDs array.
+     *
+     * @param rawOffset the given time zone GMT offset in milliseconds.
+     * @return a stream of IDs, where the time zone for that ID has
+     * the specified GMT offset. For example, "America/Phoenix" and "America/Denver"
+     * both have GMT-07:00, but differ in daylight saving behavior.
+     * @see #getRawOffset()
+     * @see #getAvailableIDs(int)
+     * @since 25
+     */
+    public static Stream<String> availableIDs(int rawOffset) {
+        return ZoneInfo.availableIDs(rawOffset);
+    }
+
+    /**
+     * {@return a stream of the available IDs supported}
+     *
+     * @implNote Unlike {@link #getAvailableIDs()}, this method does
+     * not create a copy of the {@code TimeZone} IDs array.
+     *
+     * @since 25
+     * @see #getAvailableIDs()
+     */
+    public static Stream<String> availableIDs() {
+        return ZoneInfo.availableIDs();
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1RegionsOnNodes.hpp"
@@ -36,16 +35,13 @@ G1RegionsOnNodes::~G1RegionsOnNodes() {
   FREE_C_HEAP_ARRAY(uint, _count_per_node);
 }
 
-uint G1RegionsOnNodes::add(G1HeapRegion* hr) {
+void G1RegionsOnNodes::add(G1HeapRegion* hr) {
   uint node_index = hr->node_index();
 
   // Update only if the node index is valid.
   if (node_index < _numa->num_active_nodes()) {
     *(_count_per_node + node_index) += 1;
-    return node_index;
   }
-
-  return G1NUMA::UnknownNodeIndex;
 }
 
 void G1RegionsOnNodes::clear() {

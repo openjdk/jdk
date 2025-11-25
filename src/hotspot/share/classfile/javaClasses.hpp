@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,13 +228,13 @@ class java_lang_String : AllStatic {
   macro(java_lang_Class, array_klass,            intptr_signature,  false) \
   macro(java_lang_Class, oop_size,               int_signature,     false) \
   macro(java_lang_Class, static_oop_field_count, int_signature,     false) \
-  macro(java_lang_Class, protection_domain,      object_signature,  false) \
   macro(java_lang_Class, source_file,            object_signature,  false) \
   macro(java_lang_Class, init_lock,              object_signature,  false)
 
 class java_lang_Class : AllStatic {
   friend class VMStructs;
   friend class JVMCIVMStructs;
+  friend class HeapShared;
 
  private:
 
@@ -257,6 +257,9 @@ class java_lang_Class : AllStatic {
   static int _classData_offset;
   static int _classRedefinedCount_offset;
   static int _reflectionData_offset;
+  static int _modifiers_offset;
+  static int _is_primitive_offset;
+  static int _raw_access_flags_offset;
 
   static bool _offsets_computed;
 
@@ -267,9 +270,15 @@ class java_lang_Class : AllStatic {
   static void set_protection_domain(oop java_class, oop protection_domain);
   static void set_class_loader(oop java_class, oop class_loader);
   static void set_component_mirror(oop java_class, oop comp_mirror);
-  static void initialize_mirror_fields(Klass* k, Handle mirror, Handle protection_domain,
+  static void initialize_mirror_fields(InstanceKlass* ik, Handle mirror, Handle protection_domain,
                                        Handle classData, TRAPS);
   static void set_mirror_module_field(JavaThread* current, Klass* K, Handle mirror, Handle module);
+
+  static void set_modifiers(oop java_class, u2 value);
+  static void set_raw_access_flags(oop java_class, u2 value);
+  static void set_is_primitive(oop java_class);
+  static void release_set_array_klass(oop java_class, Klass* klass);
+
  public:
   static void allocate_fixup_lists();
   static void compute_offsets();
@@ -291,8 +300,10 @@ class java_lang_Class : AllStatic {
 
   static void fixup_module_field(Klass* k, Handle module);
 
-  // Conversion
+  // Conversion -- java_class must not be null. The return value is null only if java_class is a primitive type.
   static Klass* as_Klass(oop java_class);
+  static InstanceKlass* as_InstanceKlass(oop java_class);
+
   static void set_klass(oop java_class, Klass* klass);
   static BasicType as_BasicType(oop java_class, Klass** reference_klass = nullptr);
   static Symbol* as_signature(oop java_class, bool intern_if_not_found);
@@ -304,9 +315,8 @@ class java_lang_Class : AllStatic {
   static bool is_primitive(oop java_class);
   static BasicType primitive_type(oop java_class);
   static oop primitive_mirror(BasicType t);
-  // JVM_NewArray support
   static Klass* array_klass_acquire(oop java_class);
-  static void release_set_array_klass(oop java_class, Klass* klass);
+
   // compiler support for class operations
   static int klass_offset()                { CHECK_INIT(_klass_offset); }
   static int array_klass_offset()          { CHECK_INIT(_array_klass_offset); }
@@ -321,12 +331,11 @@ class java_lang_Class : AllStatic {
     set_init_lock(java_class, nullptr);
   }
   static oop  component_mirror(oop java_class);
+  static int component_mirror_offset() { return _component_mirror_offset; }
   static objArrayOop signers(oop java_class);
   static oop  class_data(oop java_class);
   static void set_class_data(oop java_class, oop classData);
-  static void set_reflection_data(oop java_class, oop reflection_data);
-
-  static int component_mirror_offset() { return _component_mirror_offset; }
+  static int reflection_data_offset() { return _reflectionData_offset; }
 
   static oop class_loader(oop java_class);
   static void set_module(oop java_class, oop module);
@@ -336,6 +345,8 @@ class java_lang_Class : AllStatic {
 
   static oop source_file(oop java_class);
   static void set_source_file(oop java_class, oop source_file);
+
+  static int modifiers(oop java_class);
 
   static size_t oop_size(oop java_class);
   static void set_oop_size(HeapWord* java_class, size_t size);
@@ -454,7 +465,7 @@ class java_lang_Thread : AllStatic {
   static const char*  thread_status_name(oop java_thread_oop);
 
   // Fill in current stack trace, can cause GC
-  static oop async_get_stack_trace(oop java_thread, TRAPS);
+  static oop async_get_stack_trace(jobject jthread, TRAPS);
 
   JFR_ONLY(static u2 jfr_epoch(oop java_thread);)
   JFR_ONLY(static void set_jfr_epoch(oop java_thread, u2 epoch);)
@@ -551,6 +562,7 @@ class java_lang_VirtualThread : AllStatic {
   static int _next_offset;
   static int _onWaitingList_offset;
   static int _notified_offset;
+  static int _interruptible_wait_offset;
   static int _recheckInterval_offset;
   static int _timeout_offset;
   static int _objectWaiter_offset;
@@ -603,6 +615,7 @@ class java_lang_VirtualThread : AllStatic {
   static jlong timeout(oop vthread);
   static void set_timeout(oop vthread, jlong value);
   static void set_notified(oop vthread, jboolean value);
+  static void set_interruptible_wait(oop vthread, jboolean value);
   static bool is_preempted(oop vthread);
   static JavaThreadStatus map_state_to_thread_status(int state);
 
@@ -925,12 +938,16 @@ class java_lang_Module {
   friend class JavaClasses;
 };
 
+#define CONSTANTPOOL_INJECTED_FIELDS(macro)                             \
+  macro(reflect_ConstantPool, vmholder, object_signature, false)
+
 // Interface to jdk.internal.reflect.ConstantPool objects
 class reflect_ConstantPool {
  private:
   // Note that to reduce dependencies on the JDK we compute these
-  // offsets at run-time.
-  static int _oop_offset;
+  // offsets at run-time. This field is the oop offset for the
+  // actual constant pool, previously called constantPoolOop.
+  static int _vmholder_offset;
 
   static void compute_offsets();
 
@@ -942,7 +959,6 @@ class reflect_ConstantPool {
 
   // Accessors
   static void set_cp(oop reflect, ConstantPool* value);
-  static int oop_offset() { CHECK_INIT(_oop_offset); }
 
   static ConstantPool* get_cp(oop reflect);
 
@@ -1409,13 +1425,17 @@ class java_lang_invoke_MethodType: AllStatic {
 
 
 // Interface to java.lang.invoke.CallSite objects
+#define CALLSITE_INJECTED_FIELDS(macro) \
+  macro(java_lang_invoke_CallSite, vmdependencies, intptr_signature, false) \
+  macro(java_lang_invoke_CallSite, last_cleanup, long_signature, false)
 
 class java_lang_invoke_CallSite: AllStatic {
   friend class JavaClasses;
 
 private:
   static int _target_offset;
-  static int _context_offset;
+  static int _vmdependencies_offset;
+  static int _last_cleanup_offset;
 
   static void compute_offsets();
 
@@ -1426,7 +1446,7 @@ public:
   static void         set_target(          oop site, oop target);
   static void         set_target_volatile( oop site, oop target);
 
-  static oop context_no_keepalive(oop site);
+  static DependencyContext vmdependencies(oop call_site);
 
   // Testers
   static bool is_subclass(Klass* klass) {
@@ -1436,7 +1456,6 @@ public:
 
   // Accessors for code generation:
   static int target_offset()  { CHECK_INIT(_target_offset); }
-  static int context_offset() { CHECK_INIT(_context_offset); }
 };
 
 // Interface to java.lang.invoke.ConstantCallSite objects
@@ -1457,35 +1476,6 @@ public:
   // Testers
   static bool is_subclass(Klass* klass) {
     return klass->is_subclass_of(vmClasses::ConstantCallSite_klass());
-  }
-  static bool is_instance(oop obj);
-};
-
-// Interface to java.lang.invoke.MethodHandleNatives$CallSiteContext objects
-
-#define CALLSITECONTEXT_INJECTED_FIELDS(macro) \
-  macro(java_lang_invoke_MethodHandleNatives_CallSiteContext, vmdependencies, intptr_signature, false) \
-  macro(java_lang_invoke_MethodHandleNatives_CallSiteContext, last_cleanup, long_signature, false)
-
-class DependencyContext;
-
-class java_lang_invoke_MethodHandleNatives_CallSiteContext : AllStatic {
-  friend class JavaClasses;
-
-private:
-  static int _vmdependencies_offset;
-  static int _last_cleanup_offset;
-
-  static void compute_offsets();
-
-public:
-  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
-  // Accessors
-  static DependencyContext vmdependencies(oop context);
-
-  // Testers
-  static bool is_subclass(Klass* klass) {
-    return klass->is_subclass_of(vmClasses::Context_klass());
   }
   static bool is_instance(oop obj);
 };
@@ -1912,11 +1902,11 @@ class InjectedField {
   const vmClassID klass_id;
   const vmSymbolID name_index;
   const vmSymbolID signature_index;
-  const bool           may_be_java;
+  const bool may_be_java;
 
 
-  Klass* klass() const      { return vmClasses::klass_at(klass_id); }
-  Symbol* name() const      { return lookup_symbol(name_index); }
+  InstanceKlass* klass() const { return vmClasses::klass_at(klass_id); }
+  Symbol* name() const { return lookup_symbol(name_index); }
   Symbol* signature() const { return lookup_symbol(signature_index); }
 
   int compute_offset();

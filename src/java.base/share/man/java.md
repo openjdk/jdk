@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -450,7 +450,7 @@ the JVM.
     > **Note:** This option will be removed in a future release.
 
     -   `allow`: This mode allows illegal native access in all modules,
-        without any warings.
+        without any warnings.
 
     -   `warn`: This mode is identical to `allow` except that a warning
         message is issued for the first illegal native access found in a module.
@@ -464,6 +464,39 @@ the JVM.
     To verify that your application is ready for a future version of the JDK,
     run it with `--illegal-native-access=deny` along with any necessary `--enable-native-access`
     options.
+
+`--enable-final-field-mutation` *module*\[,*module*...\]
+:   Mutation of final fields is possible with the reflection API of the Java Platform.
+    However, it compromises safety and performance in all programs.
+    This option allows code in the specified modules to mutate final fields by reflection.
+    Attempts by code in any other module to mutate final fields by reflection are deemed _illegal_.
+
+    *module* can be the name of a module on the module path, or `ALL-UNNAMED` to indicate
+    code on the class path.
+
+-`--illegal-final-field-mutation=`*parameter*
+:   This option specifies a mode for how _illegal_ final field mutation is handled:
+
+    > **Note:** This option will be removed in a future release.
+
+    -   `allow`: This mode allows illegal final field mutation in all modules,
+        without any warnings.
+
+    -   `warn`: This mode is identical to `allow` except that a warning message is
+        issued for the first illegal final field mutation performaed in a module.
+        This mode is the default for the current JDK but will change in a future
+        release.
+
+    -   `debug`: This mode is identical to `allow` except that a warning message
+        and stack trace are printed for every illegal final field mutation.
+
+    -   `deny`: This mode disables final field mutation. That is, any illegal final
+        field mutation access causes an `IllegalAccessException`. This mode will
+        become the default in a future release.
+
+    To verify that your application is ready for a future version of the JDK,
+    run it with `--illegal-final-field-mutation=deny` along with any necessary
+    `--enable-final-field-mutation` options.
 
 `--finalization=`*value*
 :   Controls whether the JVM performs finalization of objects. Valid values
@@ -701,7 +734,8 @@ the Java HotSpot Virtual Machine.
     - A class descriptor is in decorated format (`Lname;`) when it should not be.
     - A `NULL` parameter is allowed, but its use is questionable.
     - Calling other JNI functions in the scope of `Get/ReleasePrimitiveArrayCritical`
-      or `Get/ReleaseStringCritical`
+      or `Get/ReleaseStringCritical`.
+    - A JNI call was made to mutate a final field.
 
     Expect a performance degradation when this option is used.
 
@@ -1235,26 +1269,6 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
 
     This option is only supported on Linux with GNU C Library (glibc).
 
-`-XX:+NeverActAsServerClassMachine`
-:   Enable the "Client VM emulation" mode which only uses the C1 JIT compiler,
-    a 32Mb CodeCache and the Serial GC. The maximum amount of memory that the
-    JVM may use (controlled by the `-XX:MaxRAM=n` flag) is set to 1GB by default.
-    The string "emulated-client" is added to the JVM version string.
-
-    By default the flag is set to `true` only on Windows in 32-bit mode and
-    `false` in all other cases.
-
-    The "Client VM emulation" mode will not be enabled if any of the following
-    flags are used on the command line:
-
-    ```
-    -XX:{+|-}TieredCompilation
-    -XX:CompilationMode=mode
-    -XX:TieredStopAtLevel=n
-    -XX:{+|-}EnableJVMCI
-    -XX:{+|-}UseJVMCICompiler
-    ```
-
 `-XX:ObjectAlignmentInBytes=`*alignment*
 :   Sets the memory alignment of Java objects (in bytes). By default, the value
     is set to 8 bytes. The specified value should be a power of 2, and must be
@@ -1292,10 +1306,15 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
 
 `-XX:OnOutOfMemoryError=`*string*
 :   Sets a custom command or a series of semicolon-separated commands to run
-    when an `OutOfMemoryError` exception is first thrown. If the string
+    when an `OutOfMemoryError` exception is first thrown by the JVM.
+    If the string
     contains spaces, then it must be enclosed in quotation marks. For an
     example of a command string, see the description of the `-XX:OnError`
     option.
+    This applies only to `OutOfMemoryError` exceptions caused by Java Heap
+    exhaustion; it does not apply to `OutOfMemoryError` exceptions thrown
+    directly from Java code, nor by the JVM for other types of resource
+    exhaustion (such as native thread creation errors).
 
 `-XX:+PrintCommandLineFlags`
 :   Enables printing of ergonomically selected JVM flags that appeared on the
@@ -1306,7 +1325,7 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
 `-XX:+PreserveFramePointer`
 :   Selects between using the RBP register as a general purpose register
     (`-XX:-PreserveFramePointer`) and using the RBP register to hold the frame
-    pointer of the currently executing method (`-XX:+PreserveFramePointer` . If
+    pointer of the currently executing method (`-XX:+PreserveFramePointer`). If
     the frame pointer is available, then external profiling tools (for example,
     Linux perf) can construct more accurate stack traces.
 
@@ -1442,6 +1461,13 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
         the potential leaking object was allocated is included in the
         information collected.
 
+    `report-on-exit=`*identifier*
+    :   Specifies the name of the view to display when the Java Virtual Machine
+        (JVM) shuts down. To specify more than one view, use the report-on-exit
+        parameter repeatedly. This option is not available if the disk option
+        is set to false. For a list of available views, see `jfr help view`.
+        By default, no report is generated.
+
     `settings=`*path*
     :   Specifies the path and name of the event settings file (of type JFC).
         By default, the `default.jfc` file is used, which is located in
@@ -1502,6 +1528,15 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     ```
 
     This option is similar to `-Xss`.
+
+`-XX:+UseCompactObjectHeaders`
+:   Enables compact object headers. By default, this option is disabled.
+    Enabling this option reduces memory footprint in the Java heap by
+    4 bytes per object (on average) and often improves performance.
+
+    The feature remains disabled by default while it continues to be evaluated.
+    In a future release it is expected to be enabled by default, and
+    eventually will be the only mode of operation.
 
 `-XX:-UseCompressedOops`
 :   Disables the use of compressed pointers. By default, this option is
@@ -2189,10 +2224,14 @@ perform extensive debugging.
 `-XX:+HeapDumpOnOutOfMemoryError`
 :   Enables the dumping of the Java heap to a file in the current directory by
     using the heap profiler (HPROF) when a `java.lang.OutOfMemoryError`
-    exception is thrown. You can explicitly set the heap dump file path and
+    exception is thrown by the JVM. You can explicitly set the heap dump file path and
     name using the `-XX:HeapDumpPath` option. By default, this option is
     disabled and the heap isn't dumped when an `OutOfMemoryError` exception is
     thrown.
+    This applies only to `OutOfMemoryError` exceptions caused by Java Heap
+    exhaustion; it does not apply to `OutOfMemoryError` exceptions thrown
+    directly from Java code, nor by the JVM for other types of resource
+    exhaustion (such as native thread creation errors).
 
 `-XX:HeapDumpPath=`*path*
 :   Sets the path and file name for writing the heap dump provided by the heap
@@ -2283,12 +2322,6 @@ perform extensive debugging.
 
 These `java` options control how garbage collection (GC) is performed by the
 Java HotSpot VM.
-
-`-XX:+AggressiveHeap`
-:   Enables Java heap optimization. This sets various parameters to be
-    optimal for long-running jobs with intensive memory allocation, based on
-    the configuration of the computer (RAM and CPU). By default, the option
-    is disabled and the heap sizes are configured less aggressively.
 
 `-XX:+AlwaysPreTouch`
 :   Requests the VM to touch every page on the Java heap after requesting it from
@@ -2423,7 +2456,7 @@ Java HotSpot VM.
 :   Sets the initial amount of memory that the JVM will use for the Java heap
     before applying ergonomics heuristics as a percentage of the maximum amount
     determined as described in the `-XX:MaxRAM` option. The default value is
-    1.5625 percent.
+    0.2 percent.
 
     The following example shows how to set the percentage of the initial
     amount of memory used for the Java heap:
@@ -2476,10 +2509,9 @@ Java HotSpot VM.
 
 `-XX:MaxGCPauseMillis=`*time*
 :   Sets a target for the maximum GC pause time (in milliseconds). This is a
-    soft goal, and the JVM will make its best effort to achieve it. The
-    specified value doesn't adapt to your heap size. By default, for G1 the
-    maximum pause time target is 200 milliseconds. The other generational
-    collectors do not use a pause time goal by default.
+    soft goal, and the JVM will make its best effort to achieve it. Only G1
+    and Parallel support a maximum GC pause time target. For G1, the default
+    maximum pause time target is 200 milliseconds.
 
     The following example shows how to set the maximum target pause time to 500
     ms:
@@ -2541,25 +2573,6 @@ Java HotSpot VM.
 `-XX:MaxNewSize=`*size*
 :   Sets the maximum size (in bytes) of the heap for the young generation
     (nursery). The default value is set ergonomically.
-
-`-XX:MaxRAM=`*size*
-:   Sets the maximum amount of memory that the JVM may use for the Java heap
-    before applying ergonomics heuristics. The default value is the maximum
-    amount of available memory to the JVM process or 128 GB, whichever is lower.
-
-    The maximum amount of available memory to the JVM process is the minimum
-    of the machine's physical memory and any constraints set by the environment
-    (e.g. container).
-
-    Specifying this option disables automatic use of compressed oops if
-    the combined result of this and other options influencing the maximum amount
-    of memory is larger than the range of memory addressable by compressed oops.
-    See `-XX:UseCompressedOops` for further information about compressed oops.
-
-    The following example shows how to set the maximum amount of available
-    memory for sizing the Java heap to 2 GB:
-
-    >   `-XX:MaxRAM=2G`
 
 `-XX:MaxRAMPercentage=`*percent*
 :   Sets the maximum amount of memory that the JVM may use for the Java heap
@@ -2685,9 +2698,6 @@ Java HotSpot VM.
 
     >   `-XX:ParallelGCThreads=2`
 
-`-XX:+ParallelRefProcEnabled`
-:   Enables parallel reference processing. By default, this option is disabled.
-
 `-XX:+PrintAdaptiveSizePolicy`
 :   Enables printing of information about adaptive-generation sizing. By
     default, this option is disabled.
@@ -2787,9 +2797,8 @@ Java HotSpot VM.
 `-XX:+UseNUMA`
 :   Enables performance optimization of an application on a machine with
     nonuniform memory architecture (NUMA) by increasing the application's use
-    of lower latency memory. By default, this option is disabled and no
-    optimization for NUMA is made. The option is available only when the
-    parallel garbage collector is used (`-XX:+UseParallelGC`).
+    of lower latency memory. The default value for this option depends on the
+    garbage collector.
 
 `-XX:+UseParallelGC`
 :   Enables the use of the parallel scavenge garbage collector (also known as
@@ -2862,6 +2871,46 @@ Java HotSpot VM.
     expensive operations. Using a lower value will cause heap memory to be
     uncommitted earlier, at the risk of soon having to commit it again.
 
+`-XX:+UseShenandoahGC`
+:   Enables the use of the Shenandoah garbage collector. This is a low pause
+    time, concurrent garbage collector. Its pause times are not proportional to
+    the size of the heap. Shenandoah garbage collector can work with compressed
+    pointers. See `-XX:UseCompressedOops` for further information about
+    compressed pointers.
+
+`-XX:ShenandoahGCMode=`*mode*
+:   Sets the GC mode for Shenandoah GC to use. By default, this option is set
+    to `satb`. Among other things, this defines which barriers are in use.
+    Possible mode values include the following:
+
+    `satb`
+    :   Snapshot-at-the-beginning concurrent GC (three pass mark-evac-update).
+        It is a single generation GC.
+
+    `generational`
+    :   It is also a snapshot-at-the-beginning and concurrent GC, but it is
+        generational. Please see [JEP 404](https://openjdk.org/jeps/404) and
+        [JEP 521](https://openjdk.org/jeps/521) for its advantages and risks.
+
+`-XX:ShenandoahGCHeuristics=`*heuristics*
+:   Sets the heuristics for Shenandoah GC to use. By default, this option is
+    set to `adaptive`. This fine-tunes the GC mode selected, by choosing when
+    to start the GC, how much to process on each cycle, and what other features
+    to automatically enable. When `-XX:ShenandoahGCMode` is `generational`, the
+    only supported option is the default, `adaptive`.
+
+    Possible heuristics are the following:
+
+    `adaptive`
+    :   To maintain the given amount of free heap at all times, even during
+        the GC cycle.
+
+    `static`
+    :   Trigger GC when free heap falls below a specified threshold.
+
+    `compact`
+    :   Run GC more frequently and with deeper targets to free up more memory.
+
 ## Deprecated Java Options
 
 These `java` options are deprecated and might be removed in a future JDK
@@ -2883,6 +2932,59 @@ they're used.
 :   Enables the use of Java Flight Recorder (JFR) during the runtime of the
     application. Since JDK 8u40 this option has not been required to use JFR.
 
+`-XX:+ParallelRefProcEnabled`
+:   Enables parallel reference processing. By default, collectors employing multiple
+    threads perform parallel reference processing if the number of parallel threads
+    to use is larger than one.
+    The option is available only when the throughput or G1 garbage collector is used
+    (`-XX:+UseParallelGC` or `-XX:+UseG1GC`). Other collectors employing multiple
+    threads always perform reference processing in parallel.
+
+`-XX:MaxRAM=`*size*
+:   Sets the maximum amount of memory that the JVM may use for the Java heap
+    before applying ergonomics heuristics. The default value is the amount of
+    available memory to the JVM process.
+
+    The maximum amount of available memory to the JVM process is the minimum
+    of the machine's physical memory and any constraints set by the environment
+    (e.g. container).
+
+    Specifying this option disables automatic use of compressed oops if
+    the combined result of this and other options influencing the maximum amount
+    of memory is larger than the range of memory addressable by compressed oops.
+    See `-XX:UseCompressedOops` for further information about compressed oops.
+
+    The following example shows how to set the maximum amount of available
+    memory for sizing the Java heap to 2 GB:
+
+    >   `-XX:MaxRAM=2G`
+
+`-XX:+AggressiveHeap`
+:   Enables Java heap optimization. This sets various parameters to be
+    optimal for long-running jobs with intensive memory allocation, based on
+    the configuration of the computer (RAM and CPU). By default, the option
+    is disabled and the heap sizes are configured less aggressively.
+
+`-XX:+NeverActAsServerClassMachine`
+:   Enable the "Client VM emulation" mode which only uses the C1 JIT compiler,
+    a 32Mb CodeCache and the Serial GC. The maximum amount of memory that the
+    JVM may use (controlled by the `-XX:MaxRAM=n` flag) is set to 1GB by default.
+    The string "emulated-client" is added to the JVM version string.
+
+    By default the flag is set to `true` only on Windows in 32-bit mode and
+    `false` in all other cases.
+
+    The "Client VM emulation" mode will not be enabled if any of the following
+    flags are used on the command line:
+
+    ```
+    -XX:{+|-}TieredCompilation
+    -XX:CompilationMode=mode
+    -XX:TieredStopAtLevel=n
+    -XX:{+|-}EnableJVMCI
+    -XX:{+|-}UseJVMCICompiler
+    ```
+
 ## Obsolete Java Options
 
 These `java` options are still accepted but ignored, and a warning is issued
@@ -2897,70 +2999,11 @@ when they're used.
 
 ## Removed Java Options
 
-These `java` options have been removed in JDK @@VERSION_SPECIFICATION@@ and using them results in an error of:
-
->   `Unrecognized VM option` *option-name*
-
-`-XX:RTMAbortRatio=`*abort\_ratio*
-:   Specifies the RTM abort ratio is specified as a percentage (%) of all
-    executed RTM transactions. If a number of aborted transactions becomes
-    greater than this ratio, then the compiled code is deoptimized. This ratio
-    is used when the `-XX:+UseRTMDeopt` option is enabled. The default value of
-    this option is 50. This means that the compiled code is deoptimized if 50%
-    of all transactions are aborted.
-
-`-XX:RTMRetryCount=`*number\_of\_retries*
-:   Specifies the number of times that the RTM locking code is retried, when it
-    is aborted or busy, before falling back to the normal locking mechanism.
-    The default value for this option is 5. The `-XX:UseRTMLocking` option must
-    be enabled.
-
-`-XX:+UseRTMDeopt`
-:   Autotunes RTM locking depending on the abort ratio. This ratio is specified
-    by the `-XX:RTMAbortRatio` option. If the number of aborted transactions
-    exceeds the abort ratio, then the method containing the lock is deoptimized
-    and recompiled with all locks as normal locks. This option is disabled by
-    default. The `-XX:+UseRTMLocking` option must be enabled.
-
-`-XX:+UseRTMLocking`
-:   Generates Restricted Transactional Memory (RTM) locking code for all
-    inflated locks, with the normal locking mechanism as the fallback handler.
-    This option is disabled by default. Options related to RTM are available
-    only on x86 CPUs that support Transactional Synchronization Extensions (TSX).
-
-    RTM is part of Intel's TSX, which is an x86 instruction set extension and
-    facilitates the creation of multithreaded applications. RTM introduces the
-    new instructions `XBEGIN`, `XABORT`, `XEND`, and `XTEST`. The `XBEGIN` and
-    `XEND` instructions enclose a set of instructions to run as a transaction.
-    If no conflict is found when running the transaction, then the memory and
-    register modifications are committed together at the `XEND` instruction.
-    The `XABORT` instruction can be used to explicitly abort a transaction and
-    the `XTEST` instruction checks if a set of instructions is being run in a
-    transaction.
-
-    A lock on a transaction is inflated when another thread tries to access the
-    same transaction, thereby blocking the thread that didn't originally
-    request access to the transaction. RTM requires that a fallback set of
-    operations be specified in case a transaction aborts or fails. An RTM lock
-    is a lock that has been delegated to the TSX's system.
-
-    RTM improves performance for highly contended locks with low conflict in a
-    critical region (which is code that must not be accessed by more than one
-    thread concurrently). RTM also improves the performance of coarse-grain
-    locking, which typically doesn't perform well in multithreaded
-    applications. (Coarse-grain locking is the strategy of holding locks for
-    long periods to minimize the overhead of taking and releasing locks, while
-    fine-grained locking is the strategy of trying to achieve maximum
-    parallelism by locking only when necessary and unlocking as soon as
-    possible.) Also, for lightly contended locks that are used by different
-    threads, RTM can reduce false cache line sharing, also known as cache line
-    ping-pong. This occurs when multiple threads from different processors are
-    accessing different resources, but the resources share the same cache line.
-    As a result, the processors repeatedly invalidate the cache lines of other
-    processors, which forces them to read from main memory instead of their
-    cache.
+No documented java options have been removed in JDK @@VERSION_SPECIFICATION@@.
 
 For the lists and descriptions of options removed in previous releases see the *Removed Java Options* section in:
+
+-   [The `java` Command, Release 25](https://docs.oracle.com/en/java/javase/25/docs/specs/man/java.html)
 
 -   [The `java` Command, Release 24](https://docs.oracle.com/en/java/javase/24/docs/specs/man/java.html)
 
@@ -3348,16 +3391,18 @@ getting overwritten.
 ### -Xlog Output Mode
 
 By default logging messages are output synchronously - each log message is written to
-the designated output when the logging call is made. But you can instead use asynchronous
+the designated output when the logging call is made. You can instead use asynchronous
 logging mode by specifying:
 
-`-Xlog:async`
+`-Xlog:async[:[stall|drop]]`
 :     Write all logging asynchronously.
 
 In asynchronous logging mode, log sites enqueue all logging messages to an intermediate buffer
 and a standalone thread is responsible for flushing them to the corresponding outputs. The
-intermediate buffer is bounded and on buffer exhaustion the enqueuing message is discarded.
-Log entry write operations are guaranteed non-blocking.
+intermediate buffer is bounded. On buffer exhaustion the enqueuing message is either discarded (`async:drop`),
+or logging threads are stalled until the flushing thread catches up (`async:stall`).
+If no specific mode is chosen, then `async:drop` is chosen by default.
+Log entry write operations are guaranteed to be non-blocking in the `async:drop` case.
 
 The option `-XX:AsyncLogBufferSize=N` specifies the memory budget in bytes for the intermediate buffer.
 The default value should be big enough to cater for most cases. Users can provide a custom value to
@@ -3784,9 +3829,10 @@ general form:
     be loaded on top of those in the `<static_archive>`.
 -   On Windows, the above path delimiter `:` should be replaced with `;`
 
-(The names "static" and "dynamic" are used for historical reasons.
-The only significance is that the "static" archive is loaded first and
-the "dynamic" archive is loaded second).
+The names "static" and "dynamic" are used for historical reasons. The dynamic
+archive, while still useful, supports fewer optimizations than
+available for the static CDS archive. If the full set of CDS/AOT
+optimizations are desired, consider using the AOT cache described below.
 
 The JVM can use up to two archives. To use only a single `<static_archive>`,
 you can omit the `<dynamic_archive>` portion:
@@ -3960,11 +4006,194 @@ archive, you should make sure that the archive is created by at least version
 -   The CDS archive cannot be loaded if any JAR files in the class path or
     module path are modified after the archive is generated.
 
--   If any of the VM options `--upgrade-module-path`, `--patch-module` or
-    `--limit-modules` are specified, CDS is disabled. This means that the
-    JVM will execute without loading any CDS archives. In addition, if
-    you try to create a CDS archive with any of these 3 options specified,
-    the JVM will report an error.
+### Module related options
+
+The following module related options are supported by CDS: `--module-path`, `--module`,
+`--add-modules`, and `--enable-native-access`.
+
+The values for these options (if specified), should be identical when creating and using the
+CDS archive. Otherwise, if there is a mismatch of any of these options, the CDS archive may be
+partially or completely disabled, leading to lower performance.
+
+- If the `AOTClassLinking` option (see below) *was* enabled during CDS archive creation, the CDS archive
+  cannot be used, and the following error message is printed:
+
+  `CDS archive has aot-linked classes. It cannot be used when archived full module graph is not used`
+
+- If the `AOTClassLinking` option *was not* enabled during CDS archive creation, the CDS archive
+  can be used, but the "archived module graph" feature will be disabled. This can lead to increased
+  start-up time.
+
+To diagnose problems with the AOT options, you can add `-Xlog:aot` to the application's VM
+arguments. For example, if `--add-modules jdk.jconsole` was specified during archive creation
+and `--add-modules jdk.incubator.vector` is specified during runtime, the following messages will
+be logged:
+
+ `Mismatched values for property jdk.module.addmods`
+
+ `runtime jdk.incubator.vector dump time jdk.jconsole`
+
+ `subgraph jdk.internal.module.ArchivedBootLayer cannot be used because full module graph is disabled`
+
+If any of the VM options `--upgrade-module-path`, `--patch-module` or
+`--limit-modules` are specified, CDS is disabled. This means that the
+JVM will execute without loading any CDS archives. In addition, if
+you try to create a CDS archive with any of these 3 options specified,
+the JVM will report an error.
+
+## Ahead-of-Time Cache
+
+The JDK supports ahead-of-time (AOT) optimizations that can be performed before an
+application is executed. One example is Class Data Sharing (CDS), as described above,
+that parses classes ahead of time. AOT optimizations can improve the start-up and
+warm-up performance of Java applications.
+
+The Ahead-of-Time Cache (AOT cache) is a container introduced in JDK 24 for
+storing artifacts produced by AOT optimizations. The AOT cache currently contains
+Java classes and heap objects. In future JDK releases, the AOT cache may contain additional
+artifacts, such as execution profiles and compiled methods.
+
+An AOT cache is specific to a combination of the following:
+
+-   A particular application (as expressed by `-classpath`, `-jar`, or `--module-path`.)
+-   A particular JDK release.
+-   A particular OS and CPU architecture.
+
+If any of the above changes, you must recreate the AOT cache.
+
+The deployment of the AOT cache is divided into three phases:
+
+-   **Training:** We execute the application with a representative work-load
+    to gather statistical data that tell us what artifacts should be included
+    into the AOT cache. The data are saved in an *AOT Configuration* file.
+
+-   **Assembly:** We use the AOT Configuration file to produce an AOT cache.
+
+-   **Production:** We execute the application with the AOT cache for better
+    start-up and warm-up performance.
+
+The AOT cache can be used with the following command-line options:
+
+`-XX:AOTCache=`*cachefile*
+:   Specifies the location of the AOT cache. The standard extension for *cachefile* is `.aot`.
+    This option cannot be used together with `-XX:AOTCacheOutput`.
+
+    This option is compatible with `AOTMode` settings of `on`, `create`, or `auto` (the default).
+    The *cachefile* is read in AOT modes `on` and `auto`, and is ignored by mode `off`.
+    The *cachefile* is written by AOT mode `create`.  In that case, this option is
+    equivalent to `-XX:AOTCacheOutput=`*cachefile*.
+
+`-XX:AOTCacheOutput=`*cachefile*
+:   Specifies the location of the AOT cache to write. The standard extension for *cachefile* is `.aot`.
+    This option cannot be used together with `-XX:AOTCache`.
+
+    This option is compatible with `AOTMode` settings of `record`, `create`, or `auto` (the default).
+
+`-XX:AOTConfiguration=`*configfile*
+:   Specifies the AOT Configuration file for the JVM to write to or read from.
+    The standard extension for *configfile* is `.aotconfig`.
+
+    This option is compatible with `AOTMode` settings of `record`, `create`, or `auto` (the default).
+    The *configfile* is read by AOT mode `create`, and written by the other applicable modes.
+    If the AOT mode is `auto`, then `AOTCacheOutput` must also be present.
+
+`-XX:AOTMode=`*mode*
+:   Specifies the AOT Mode for this run.
+    *mode* must be one of the following: `auto`, `off`, `record`, `create`, or `on`.
+
+-   `auto`: This AOT mode is the default, and takes effect if no `-XX:AOTMode` option
+    is present.  It automatically sets the AOT mode to `record`, `on`, or `off`, as follows:
+     - If `-XX:AOTCacheOutput=`*cachefile* is specified, the AOT mode is changed to `record`
+       (a training run, with a subsequent `create` operation).
+     - Otherwise, if an AOT cache can be loaded, the AOT mode is changed to `on` (a production run).
+     - Otherwise, the AOT mode is changed to `off` (a production run with no AOT cache).
+
+-   `off`: No AOT cache is used.
+    Other AOT command line options are ignored.
+
+-   `record`: Execute the application in the training phase.
+     At least one of `-XX:AOTConfiguration=`*configfile* and/or
+     `-XX:AOTCacheOutput=`*cachefile* must be specified.
+     If `-XX:AOTConfiguration=`*configfile* is specified, the JVM gathers
+     statistical data and stores them into *configfile*.
+     If `-XX:AOTConfiguration=`*configfile* is not specified, the JVM uses
+     a temporary file name, which may be the string `AOTCacheOutput+".config"`,
+     or else a fresh implementation-dependent temporary file name.
+     If `-XX:AOTCacheOutput=`*cachefile* is specified, a second JVM process is launched
+     to perform the Assembly phase to write the optimization artifacts into *cachefile*.
+
+     Extra JVM options can be passed to the second JVM process using the environment
+     variable `JDK_AOT_VM_OPTIONS`, with the same format as the environment variable
+     `JAVA_TOOL_OPTIONS`, which is
+     [defined by JVMTI](https://docs.oracle.com/en/java/javase/24/docs/specs/jvmti.html#tooloptions).
+
+-   `create`: Perform the Assembly phase. `-XX:AOTConfiguration=`*configfile* must be
+     specified.
+     The JVM reads history and statistics
+     from *configfile* and writes the optimization artifacts into *cachefile*.
+     Note that the application itself is not executed in this phase.
+
+-   `on`: Execute the application in the Production phase.
+     If `-XX:AOTCache=`*cachefile* is specified, the JVM tries to
+     load *cachefile* as the AOT cache. Otherwise, the JVM tries to load
+     a *default CDS archive* from the JDK installation directory as the AOT cache.
+
+     The loading of an AOT cache can fail for a number of reasons:
+
+     - You are trying to use the AOT cache with an incompatible application, JDK release,
+       or OS/CPU.
+
+     - The specified *cachefile* does not exist or is not accessible.
+
+     - Incompatible JVM options are used (for example, certain JVMTI options).
+
+       Since the AOT cache is an optimization feature, there's no guarantee that it will be
+       compatible with all possible JVM options. See [JEP 483](https://openjdk.org/jeps/483),
+       section **Consistency of training and subsequent runs** for a representative
+       list of scenarios that may be incompatible with the AOT cache.
+
+       These scenarios usually involve arbitrary modification of classes for diagnostic
+       purposes and are typically not relevant for production environments.
+
+     When the AOT cache fails to load:
+
+     - If `AOTMode` was originally `auto`, the JVM will continue execution without using the
+       AOT cache. This is the recommended mode for production environments, especially
+       when you may not have complete control of the command-line (e.g., your
+       application's launch script may allow users to inject options to the command-line).
+       This allows your application to function correctly, although sometimes it may not
+       benefit from the AOT cache.
+
+     - If `AOTMode` is `on`, the JVM will print an error message and exit immediately. This
+       mode should be used only as a "fail-fast" debugging aid to check if your command-line
+       options are compatible with the AOT cache. An alternative is to run your application with
+       `-XX:AOTMode=auto -Xlog:aot` to see if the AOT cache can be used or not.
+
+`-XX:+AOTClassLinking`
+:   If this option is enabled, the JVM will perform more advanced optimizations (such
+    as ahead-of-time resolution of invokedynamic instructions)
+    when creating the AOT cache. As a result, the application will see further improvements
+    in start-up and warm-up performance. However, an AOT cache created with this option
+    cannot be used when certain command-line parameters are specified in
+    the Production phase. Please see [JEP 483](https://openjdk.org/jeps/483) for a
+    detailed discussion of `-XX:+AOTClassLinking` and its restrictions.
+
+    When `-XX:AOTMode` *is used* in the command-line, `AOTClassLinking` is automatically
+    enabled. To disable it, you must explicitly pass the `-XX:-AOTClassLinking` option.
+
+    When `-XX:AOTMode` *is not used* in the command-line,  `AOTClassLinking` is disabled by
+    default to provide full compatibility with traditional CDS options such as `-Xshare:dump.
+
+The first occurrence of the special sequence `%p` in `*configfile* and `*cachefile* is replaced
+with the process ID of the JVM process launched in the command-line, and likewise the
+first occurrence of `%t` is replace by the JVM's startup timestamp.
+(After replacement there must be no further occurrences of `%p` or `%t`, to prevent
+problems with sub-processes.)  For example:
+
+>   `java -XX:AOTConfiguration=foo%p.aotconfig -XX:AOTCacheOutput=foo%p.aot -cp foo.jar Foo`
+
+will create two files: `foopid123.aotconfig` and `foopid123.aot`, where `123` is the
+process ID of the JVM that has executed the application `Foo`.
 
 ## Performance Tuning Examples
 

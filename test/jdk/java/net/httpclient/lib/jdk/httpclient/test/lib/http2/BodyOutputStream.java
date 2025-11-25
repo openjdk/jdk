@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package jdk.httpclient.test.lib.http2;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.Objects;
+import java.util.concurrent.Semaphore;
 
 import jdk.internal.net.http.frame.DataFrame;
 import jdk.internal.net.http.frame.ResetFrame;
@@ -39,7 +40,8 @@ public class BodyOutputStream extends OutputStream {
     final static byte[] EMPTY_BARRAY = new byte[0];
 
     final int streamid;
-    int window;
+    // stream level send window, permits = bytes
+    final Semaphore window;
     volatile boolean closed;
     volatile BodyInputStream bis;
     volatile int resetErrorCode;
@@ -48,7 +50,7 @@ public class BodyOutputStream extends OutputStream {
     final Queue outputQ;
 
     BodyOutputStream(int streamid, int initialWindow, Http2TestServerConnection conn) {
-        this.window = initialWindow;
+        this.window = new Semaphore(initialWindow);
         this.streamid = streamid;
         this.conn = conn;
         this.outputQ = conn.outputQ;
@@ -57,29 +59,19 @@ public class BodyOutputStream extends OutputStream {
 
     // called from connection reader thread as all incoming window
     // updates are handled there.
-    synchronized void updateWindow(int update) {
-        window += update;
-        notifyAll();
+    void updateWindow(int update) {
+        window.release(update);
     }
 
     void waitForWindow(int demand) throws InterruptedException {
-        // first wait for the connection window
-        conn.obtainConnectionWindow(demand);
-        // now wait for the stream window
+        //  first wait for the stream window
         waitForStreamWindow(demand);
+        // now wait for the connection window
+        conn.obtainConnectionWindow(demand);
     }
 
     public void waitForStreamWindow(int demand) throws InterruptedException {
-        synchronized (this) {
-            while (demand > 0) {
-                int n = Math.min(demand, window);
-                demand -= n;
-                window -= n;
-                if (demand > 0) {
-                    wait();
-                }
-            }
-        }
+        window.acquire(demand);
     }
 
     public void goodToGo() {
@@ -170,7 +162,7 @@ public class BodyOutputStream extends OutputStream {
             sendEndStream();
             if (bis!= null && bis.unconsumed()) {
                 // Send a reset if there is still unconsumed data in the input stream
-                sendReset(EMPTY_BARRAY, 0, 0, ResetFrame.NO_ERROR);
+                sendReset(ResetFrame.NO_ERROR);
             }
         } catch (IOException ex) {
             ex.printStackTrace();
@@ -181,12 +173,18 @@ public class BodyOutputStream extends OutputStream {
         send(EMPTY_BARRAY, 0, 0, DataFrame.END_STREAM);
     }
 
-    public void sendReset(byte[] buf, int offset, int len, int flags) throws IOException {
-        ByteBuffer buffer = ByteBuffer.allocate(len);
-        buffer.put(buf, offset, len);
-        buffer.flip();
+    public void sendReset(int resetErrorCode) throws IOException {
         assert streamid != 0;
-        ResetFrame rf = new ResetFrame(streamid, flags);
+        ResetFrame rf = new ResetFrame(streamid, resetErrorCode);
         outputQ.put(rf);
+    }
+
+    public void reset(int resetErrorCode) throws IOException {
+        if (closed) return;
+        synchronized (this) {
+            if (closed) return;
+            this.closed = true;
+        }
+        sendReset(resetErrorCode);
     }
 }

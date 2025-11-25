@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,17 +37,6 @@ import java.nio.file.Path;
  * process and its children.
  */
 public class GatherProcessInfoTimeoutHandler extends TimeoutHandler {
-    private static final boolean HAS_NATIVE_LIBRARY;
-    static {
-        boolean value = true;
-        try {
-            System.loadLibrary("timeoutHandler");
-        } catch (UnsatisfiedLinkError ignore) {
-            // not all os need timeoutHandler native-library
-            value = false;
-        }
-        HAS_NATIVE_LIBRARY = value;
-    }
     private static final String LOG_FILENAME = "processes.log";
     private static final String OUTPUT_FILENAME = "processes.html";
 

@@ -23,7 +23,8 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #include "gc/shenandoah/shenandoahForwarding.hpp"
@@ -31,10 +32,8 @@
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahRuntime.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
-#include "interpreter/interpreter.hpp"
 #include "interpreter/interp_masm.hpp"
+#include "interpreter/interpreter.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #ifdef COMPILER1
@@ -83,9 +82,9 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
 }
 
 void ShenandoahBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
-                                                       Register start, Register count, Register tmp, RegSet saved_regs) {
+                                                       Register start, Register count, Register tmp) {
   if (ShenandoahCardBarrier && is_oop) {
-    gen_write_ref_array_post_barrier(masm, decorators, start, count, tmp, saved_regs);
+    gen_write_ref_array_post_barrier(masm, decorators, start, count, tmp);
   }
 }
 
@@ -143,7 +142,7 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_pre(MacroAssembler* masm,
   __ ld(tmp1, index);                  // tmp := *index_adr
   __ beqz(tmp1, runtime);              // tmp == 0? If yes, goto runtime
 
-  __ sub(tmp1, tmp1, wordSize);        // tmp := tmp - wordSize
+  __ subi(tmp1, tmp1, wordSize);       // tmp := tmp - wordSize
   __ sd(tmp1, index);                  // *index_adr := tmp
   __ ld(tmp2, buffer);
   __ add(tmp1, tmp1, tmp2);            // tmp := tmp + *buffer_adr
@@ -173,9 +172,9 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_pre(MacroAssembler* masm,
   // expand_call should be passed true.
   if (expand_call) {
     assert(pre_val != c_rarg1, "smashed arg");
-    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre), pre_val, thread);
+    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_barrier_pre), pre_val);
   } else {
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre), pre_val, thread);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_barrier_pre), pre_val);
   }
 
   __ pop_reg(saved, sp);
@@ -397,7 +396,8 @@ void ShenandoahBarrierSetAssembler::store_check(MacroAssembler* masm, Register o
 
   assert(CardTable::dirty_card_val() == 0, "must be");
 
-  __ load_byte_map_base(t1);
+  Address curr_ct_holder_addr(xthread, in_bytes(ShenandoahThreadLocalData::card_table_offset()));
+  __ ld(t1, curr_ct_holder_addr);
   __ add(t1, obj, t1);
 
   if (UseCondCardMark) {
@@ -550,7 +550,7 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
 }
 
 void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
-                                                                     Register start, Register count, Register tmp, RegSet saved_regs) {
+                                                                     Register start, Register count, Register tmp) {
   assert(ShenandoahCardBarrier, "Did you mean to enable ShenandoahCardBarrier?");
 
   Label L_loop, L_done;
@@ -562,20 +562,21 @@ void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssemb
   // end = start + count << LogBytesPerHeapOop
   // last element address to make inclusive
   __ shadd(end, count, start, tmp, LogBytesPerHeapOop);
-  __ sub(end, end, BytesPerHeapOop);
+  __ subi(end, end, BytesPerHeapOop);
   __ srli(start, start, CardTable::card_shift());
   __ srli(end, end, CardTable::card_shift());
 
   // number of bytes to copy
   __ sub(count, end, start);
 
-  __ load_byte_map_base(tmp);
+  Address curr_ct_holder_addr(xthread, in_bytes(ShenandoahThreadLocalData::card_table_offset()));
+  __ ld(tmp, curr_ct_holder_addr);
   __ add(start, start, tmp);
 
   __ bind(L_loop);
   __ add(tmp, start, count);
   __ sb(zr, Address(tmp));
-  __ sub(count, count, 1);
+  __ subi(count, count, 1);
   __ bgez(count, L_loop);
   __ bind(L_done);
 }
@@ -690,7 +691,7 @@ void ShenandoahBarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAss
   __ ld(tmp, queue_index);
   __ beqz(tmp, runtime);
 
-  __ sub(tmp, tmp, wordSize);
+  __ subi(tmp, tmp, wordSize);
   __ sd(tmp, queue_index);
   __ ld(t1, buffer);
   __ add(tmp, tmp, t1);
@@ -701,7 +702,7 @@ void ShenandoahBarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAss
   __ bind(runtime);
   __ push_call_clobbered_registers();
   __ load_parameter(0, pre_val);
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre), pre_val, thread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_barrier_pre), pre_val);
   __ pop_call_clobbered_registers();
   __ bind(done);
 

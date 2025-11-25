@@ -1,4 +1,4 @@
-## Harfbuzz v8.2.2
+## Harfbuzz 11.2.0
 
 ### Harfbuzz License
 
@@ -8,14 +8,14 @@ HarfBuzz is licensed under the so-called "Old MIT" license.  Details follow.
 For parts of HarfBuzz that are licensed under different licenses see individual
 files names COPYING in subdirectories where applicable.
 
-Copyright © 2010-2023  Google, Inc.
+Copyright © 2010-2024  Google, Inc.
 Copyright © 2018-2020  Ebrahim Byagowi
 Copyright © 2004-2013  Red Hat, Inc.
 Copyright © 2019  Facebook, Inc.
 Copyright (C) 2012 Zilong Tan (eric.zltan@gmail.com)
 Copyright © 2007  Chris Wilson
 Copyright © 2018-2019 Adobe Inc.
-Copyright © 2006-2023 Behdad Esfahbod
+Copyright © 2006-2025 Behdad Esfahbod
 Copyright © 1998-2004  David Turner and Werner Lemberg
 Copyright © 2009  Keith Stribley
 Copyright © 2018  Khaled Hosny
@@ -54,7 +54,7 @@ exception is licensed with a slightly different MIT variant:
 The contents of this directory are licensed under the following terms:
 
 ---------------------------------
-The below license applies to the following files:
+The below applies to the following file(s):
 libharfbuzz/hb-ucd.cc
 
 Copyright (C) 2012 Grigori Goronzy <greg@kinoho.net>
@@ -72,13 +72,14 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ---------------------------------
-The below license applies to the following files:
+The below applies to the following file(s):
 libharfbuzz/hb-unicode-emoji-table.hh
 
-© 2023 Unicode®, Inc.
+© 2024 Unicode®, Inc.
+
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc.
 in the U.S. and other countries.
-For terms of use, see https://www.unicode.org/terms_of_use.html
+For terms of use and license, see https://www.unicode.org/terms_of_use.html
 
 </pre>
 

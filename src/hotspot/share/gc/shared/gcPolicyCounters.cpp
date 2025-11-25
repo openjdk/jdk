@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,8 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "gc/shared/gcPolicyCounters.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcPolicyCounters.hpp"
 #include "memory/resourceArea.hpp"
 
 GCPolicyCounters::GCPolicyCounters(const char* name, int collectors,
@@ -59,11 +58,6 @@ GCPolicyCounters::GCPolicyCounters(const char* name, int collectors,
     cname = PerfDataManager::counter_name(_name_space, "desiredSurvivorSize");
     _desired_survivor_size =
         PerfDataManager::create_variable(SUN_GC, cname, PerfData::U_Bytes,
-                                         CHECK);
-
-    cname = PerfDataManager::counter_name(_name_space, "gcTimeLimitExceeded");
-    _gc_overhead_limit_exceeded_counter =
-        PerfDataManager::create_variable(SUN_GC, cname, PerfData::U_Events,
                                          CHECK);
   }
 }

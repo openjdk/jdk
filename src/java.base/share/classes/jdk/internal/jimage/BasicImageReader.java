@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import jdk.internal.jimage.decompressor.Decompressor;
  * to the jimage file provided by the shipped JDK by tools running on JDK 8.
  */
 public class BasicImageReader implements AutoCloseable {
-    @SuppressWarnings("removal")
+    @SuppressWarnings({ "removal", "suppression" })
     private static boolean isSystemProperty(String key, String value, String def) {
         // No lambdas during bootstrap
         return AccessController.doPrivileged(
@@ -82,7 +82,7 @@ public class BasicImageReader implements AutoCloseable {
     private final ImageStringsReader stringsReader;
     private final Decompressor decompressor;
 
-    @SuppressWarnings({ "removal", "this-escape" })
+    @SuppressWarnings({ "removal", "this-escape", "suppression" })
     protected BasicImageReader(Path path, ByteOrder byteOrder)
             throws IOException {
         this.imagePath = Objects.requireNonNull(path);
@@ -317,13 +317,12 @@ public class BasicImageReader implements AutoCloseable {
     }
 
     public String[] getEntryNames() {
-        int[] attributeOffsets = new int[offsets.capacity()];
-        offsets.get(attributeOffsets);
-        return IntStream.of(attributeOffsets)
-                        .filter(o -> o != 0)
-                        .mapToObj(o -> ImageLocation.readFrom(this, o).getFullName())
-                        .sorted()
-                        .toArray(String[]::new);
+        return IntStream.range(0, offsets.capacity())
+                .map(offsets::get)
+                .filter(o -> o != 0)
+                .mapToObj(o -> ImageLocation.readFrom(this, o).getFullName())
+                .sorted()
+                .toArray(String[]::new);
     }
 
     ImageLocation getLocation(int offset) {

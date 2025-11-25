@@ -36,7 +36,7 @@ class outputStream;
 /*
  * Malloc tracking header.
  *
- * If NMT is active (state >= minimal), we need to track allocations. A simple and cheap way to
+ * If NMT is active (state >= summary), we need to track allocations. A simple and cheap way to
  * do this is by using malloc headers.
  *
  * The user allocation is preceded by a header and is immediately followed by a (possibly unaligned)
@@ -106,7 +106,7 @@ class MallocHeader {
   // We discount sizes larger than these
   static const size_t max_reasonable_malloc_size = LP64_ONLY(256 * G) NOT_LP64(3500 * M);
 
-  void print_block_on_error(outputStream* st, address bad_address) const;
+  void print_block_on_error(outputStream* st, address bad_address, address block_address) const;
 
   static uint16_t build_footer(uint8_t b1, uint8_t b2) { return (uint16_t)(((uint16_t)b1 << 8) | (uint16_t)b2); }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,8 +150,8 @@ public final class DecimalStyle {
      * <p>
      * This method provides access to locale sensitive decimal style symbols.
      * If the locale contains "nu" (Numbering System) and/or "rg"
-     * (Region Override) <a href="../../util/Locale.html#def_locale_extension">
-     * Unicode extensions</a>, returned instance will reflect the values specified with
+     * (Region Override) {@linkplain Locale##def_locale_extension Unicode extensions},
+     * returned instance will reflect the values specified with
      * those extensions. If both "nu" and "rg" are specified, the value from
      * the "nu" extension supersedes the implicit one from the "rg" extension.
      *
@@ -160,7 +160,15 @@ public final class DecimalStyle {
      */
     public static DecimalStyle of(Locale locale) {
         Objects.requireNonNull(locale, "locale");
-        return CACHE.computeIfAbsent(locale, DecimalStyle::create);
+        DecimalStyle info = CACHE.get(locale);
+        if (info == null) {
+            info = create(locale);
+            var existing = CACHE.putIfAbsent(locale, info);
+            if (existing != null) {
+                info = existing;
+            }
+        }
+        return info;
     }
 
     private static DecimalStyle create(Locale locale) {

@@ -1,7 +1,7 @@
 round: 1
 
 @java.lang.Deprecated
-public class GeneratedSource<T> extends java.util.ArrayList<java.lang.String> implements java.lang.Runnable {
+public class GeneratedSource<T extends java.lang.CharSequence> extends java.util.ArrayList<java.lang.String> implements java.lang.Runnable {
 
   public GeneratedSource();
 
@@ -11,7 +11,7 @@ public class GeneratedSource<T> extends java.util.ArrayList<java.lang.String> im
 }
 
 @java.lang.Deprecated
-public class GeneratedClass<T> extends java.util.ArrayList<java.lang.String> implements java.lang.Runnable {
+public class GeneratedClass<T extends java.lang.CharSequence> extends java.util.ArrayList<java.lang.String> implements java.lang.Runnable {
 
   public GeneratedClass();
 
@@ -22,7 +22,7 @@ public class GeneratedClass<T> extends java.util.ArrayList<java.lang.String> imp
 round: 2
 
 @javax.annotation.processing.SupportedAnnotationTypes({"*"})
-public abstract class GeneratedSource<E> extends java.util.LinkedList<java.lang.Number> implements java.lang.Runnable, java.lang.CharSequence {
+public abstract class GeneratedSource<E extends java.lang.Number> extends java.util.LinkedList<java.lang.Number> implements java.lang.Runnable, java.lang.CharSequence {
 
   public GeneratedSource();
 
@@ -30,7 +30,7 @@ public abstract class GeneratedSource<E> extends java.util.LinkedList<java.lang.
 }
 
 @javax.annotation.processing.SupportedAnnotationTypes({"*"})
-public abstract class GeneratedClass<E> extends java.util.LinkedList<java.lang.Number> implements java.lang.Runnable, java.lang.CharSequence {
+public abstract class GeneratedClass<E extends java.lang.Number> extends java.util.LinkedList<java.lang.Number> implements java.lang.Runnable, java.lang.CharSequence {
 
   public GeneratedClass();
 
@@ -39,7 +39,7 @@ public abstract class GeneratedClass<E> extends java.util.LinkedList<java.lang.N
 round: 3
 
 @javax.annotation.processing.SupportedAnnotationTypes({"*"})
-public abstract class GeneratedSource<E> extends java.util.LinkedList<java.lang.Number> implements java.lang.Runnable, java.lang.CharSequence {
+public abstract class GeneratedSource<E extends java.lang.Number> extends java.util.LinkedList<java.lang.Number> implements java.lang.Runnable, java.lang.CharSequence {
 
   public GeneratedSource();
 
@@ -47,7 +47,7 @@ public abstract class GeneratedSource<E> extends java.util.LinkedList<java.lang.
 }
 
 @javax.annotation.processing.SupportedAnnotationTypes({"*"})
-public abstract class GeneratedClass<E> extends java.util.LinkedList<java.lang.Number> implements java.lang.Runnable, java.lang.CharSequence {
+public abstract class GeneratedClass<E extends java.lang.Number> extends java.util.LinkedList<java.lang.Number> implements java.lang.Runnable, java.lang.CharSequence {
 
   public GeneratedClass();
 

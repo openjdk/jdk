@@ -73,6 +73,7 @@ public final class XContentWindow extends XWindow {
         this.parentFrame = parentFrame;
     }
 
+    @Override
     void preInit(XCreateWindowParams params) {
         super.preInit(params);
         params.putIfNull(BIT_GRAVITY, Integer.valueOf(XConstants.NorthWestGravity));
@@ -83,9 +84,11 @@ public final class XContentWindow extends XWindow {
         }
     }
 
+    @Override
     protected String getWMName() {
         return "Content window";
     }
+    @Override
     protected boolean isEventDisabled(XEvent e) {
         switch (e.get_type()) {
           // Override parentFrame to receive MouseEnter/Exit
@@ -159,6 +162,7 @@ public final class XContentWindow extends XWindow {
     }
 
 
+    @Override
     public void postPaintEvent(Component target, int x, int y, int w, int h) {
         // TODO: ?
         // get rid of 'instanceof' by subclassing:
@@ -188,7 +192,7 @@ public final class XContentWindow extends XWindow {
         iconifiedExposeEvents.clear();
     }
 
-    private static class SavedExposeEvent {
+    private static final class SavedExposeEvent {
         Component target;
         int x, y, w, h;
         SavedExposeEvent(Component target, int x, int y, int w, int h) {
@@ -200,6 +204,7 @@ public final class XContentWindow extends XWindow {
         }
     }
 
+    @Override
     public String toString() {
         return getClass().getName() + "[" + getBounds() + "]";
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotConstantPoolResolver.hpp"
 #include "cds/archiveBuilder.hpp"
@@ -37,19 +36,6 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "runtime/handles.inline.hpp"
-
-AOTConstantPoolResolver::ClassesTable* AOTConstantPoolResolver::_processed_classes = nullptr;
-
-void AOTConstantPoolResolver::initialize() {
-  assert(_processed_classes == nullptr, "must be");
-  _processed_classes = new (mtClass)ClassesTable();
-}
-
-void AOTConstantPoolResolver::dispose() {
-  assert(_processed_classes != nullptr, "must be");
-  delete _processed_classes;
-  _processed_classes = nullptr;
-}
 
 // Returns true if we CAN PROVE that cp_index will always resolve to
 // the same information at both dump time and run time. This is a
@@ -99,7 +85,7 @@ bool AOTConstantPoolResolver::is_class_resolution_deterministic(InstanceKlass* c
   if (resolved_class->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(resolved_class);
 
-    if (!ik->is_shared() && SystemDictionaryShared::is_excluded_class(ik)) {
+    if (!ik->in_aot_cache() && SystemDictionaryShared::is_excluded_class(ik)) {
       return false;
     }
 
@@ -145,17 +131,11 @@ bool AOTConstantPoolResolver::is_class_resolution_deterministic(InstanceKlass* c
   }
 }
 
-void AOTConstantPoolResolver::dumptime_resolve_constants(InstanceKlass* ik, TRAPS) {
+void AOTConstantPoolResolver::preresolve_string_cp_entries(InstanceKlass* ik, TRAPS) {
   if (!ik->is_linked()) {
+    // The cp->resolved_referenced() array is not ready yet, so we can't call resolve_string().
     return;
   }
-  bool first_time;
-  _processed_classes->put_if_absent(ik, &first_time);
-  if (!first_time) {
-    // We have already resolved the constants in class, so no need to do it again.
-    return;
-  }
-
   constantPoolHandle cp(THREAD, ik->constants());
   for (int cp_index = 1; cp_index < cp->length(); cp_index++) { // Index 0 is unused
     switch (cp->tag_at(cp_index).value()) {
@@ -224,7 +204,7 @@ void AOTConstantPoolResolver::preresolve_class_cp_entries(JavaThread* current, I
       if (HAS_PENDING_EXCEPTION) {
         CLEAR_PENDING_EXCEPTION; // just ignore
       } else {
-        log_trace(cds, resolve)("Resolved class  [%3d] %s -> %s", cp_index, ik->external_name(),
+        log_trace(aot, resolve)("Resolved class  [%3d] %s -> %s", cp_index, ik->external_name(),
                                 resolved_klass->external_name());
       }
     }
@@ -244,8 +224,46 @@ void AOTConstantPoolResolver::preresolve_field_and_method_cp_entries(JavaThread*
       bcs.next();
       Bytecodes::Code raw_bc = bcs.raw_code();
       switch (raw_bc) {
+      case Bytecodes::_getstatic:
+      case Bytecodes::_putstatic:
+        maybe_resolve_fmi_ref(ik, m, raw_bc, bcs.get_index_u2(), preresolve_list, THREAD);
+        if (HAS_PENDING_EXCEPTION) {
+          CLEAR_PENDING_EXCEPTION; // just ignore
+        }
+        break;
       case Bytecodes::_getfield:
+      // no-fast bytecode
+      case Bytecodes::_nofast_getfield:
+      // fast bytecodes
+      case Bytecodes::_fast_agetfield:
+      case Bytecodes::_fast_bgetfield:
+      case Bytecodes::_fast_cgetfield:
+      case Bytecodes::_fast_dgetfield:
+      case Bytecodes::_fast_fgetfield:
+      case Bytecodes::_fast_igetfield:
+      case Bytecodes::_fast_lgetfield:
+      case Bytecodes::_fast_sgetfield:
+        raw_bc = Bytecodes::_getfield;
+        maybe_resolve_fmi_ref(ik, m, raw_bc, bcs.get_index_u2(), preresolve_list, THREAD);
+        if (HAS_PENDING_EXCEPTION) {
+          CLEAR_PENDING_EXCEPTION; // just ignore
+        }
+        break;
+
       case Bytecodes::_putfield:
+      // no-fast bytecode
+      case Bytecodes::_nofast_putfield:
+      // fast bytecodes
+      case Bytecodes::_fast_aputfield:
+      case Bytecodes::_fast_bputfield:
+      case Bytecodes::_fast_zputfield:
+      case Bytecodes::_fast_cputfield:
+      case Bytecodes::_fast_dputfield:
+      case Bytecodes::_fast_fputfield:
+      case Bytecodes::_fast_iputfield:
+      case Bytecodes::_fast_lputfield:
+      case Bytecodes::_fast_sputfield:
+        raw_bc = Bytecodes::_putfield;
         maybe_resolve_fmi_ref(ik, m, raw_bc, bcs.get_index_u2(), preresolve_list, THREAD);
         if (HAS_PENDING_EXCEPTION) {
           CLEAR_PENDING_EXCEPTION; // just ignore
@@ -255,6 +273,7 @@ void AOTConstantPoolResolver::preresolve_field_and_method_cp_entries(JavaThread*
       case Bytecodes::_invokespecial:
       case Bytecodes::_invokevirtual:
       case Bytecodes::_invokeinterface:
+      case Bytecodes::_invokestatic:
         maybe_resolve_fmi_ref(ik, m, raw_bc, bcs.get_index_u2(), preresolve_list, THREAD);
         if (HAS_PENDING_EXCEPTION) {
           CLEAR_PENDING_EXCEPTION; // just ignore
@@ -291,11 +310,29 @@ void AOTConstantPoolResolver::maybe_resolve_fmi_ref(InstanceKlass* ik, Method* m
   }
 
   Klass* resolved_klass = cp->klass_ref_at(raw_index, bc, CHECK);
+  const char* is_static = "";
 
   switch (bc) {
+  case Bytecodes::_getstatic:
+  case Bytecodes::_putstatic:
+    if (!VM_Version::supports_fast_class_init_checks()) {
+      return; // Do not resolve since interpreter lacks fast clinit barriers support
+    }
+    InterpreterRuntime::resolve_get_put(bc, raw_index, mh, cp, ClassInitMode::dont_init, CHECK);
+    is_static = " *** static";
+    break;
+
   case Bytecodes::_getfield:
   case Bytecodes::_putfield:
-    InterpreterRuntime::resolve_get_put(bc, raw_index, mh, cp, false /*initialize_holder*/, CHECK);
+    InterpreterRuntime::resolve_get_put(bc, raw_index, mh, cp, ClassInitMode::dont_init, CHECK);
+    break;
+
+  case Bytecodes::_invokestatic:
+    if (!VM_Version::supports_fast_class_init_checks()) {
+      return; // Do not resolve since interpreter lacks fast clinit barriers support
+    }
+    InterpreterRuntime::cds_resolve_invoke(bc, raw_index, cp, CHECK);
+    is_static = " *** static";
     break;
 
   case Bytecodes::_invokevirtual:
@@ -312,16 +349,16 @@ void AOTConstantPoolResolver::maybe_resolve_fmi_ref(InstanceKlass* ik, Method* m
     ShouldNotReachHere();
   }
 
-  if (log_is_enabled(Trace, cds, resolve)) {
+  if (log_is_enabled(Trace, aot, resolve)) {
     ResourceMark rm(THREAD);
     bool resolved = cp->is_resolved(raw_index, bc);
     Symbol* name = cp->name_ref_at(raw_index, bc);
     Symbol* signature = cp->signature_ref_at(raw_index, bc);
-    log_trace(cds, resolve)("%s %s [%3d] %s -> %s.%s:%s",
+    log_trace(aot, resolve)("%s %s [%3d] %s -> %s.%s:%s%s",
                             (resolved ? "Resolved" : "Failed to resolve"),
                             Bytecodes::name(bc), cp_index, ik->external_name(),
                             resolved_klass->external_name(),
-                            name->as_C_string(), signature->as_C_string());
+                            name->as_C_string(), signature->as_C_string(), is_static);
   }
 }
 
@@ -346,9 +383,9 @@ void AOTConstantPoolResolver::preresolve_indy_cp_entries(JavaThread* current, In
           CLEAR_PENDING_EXCEPTION; // just ignore
         }
       }
-      if (log_is_enabled(Trace, cds, resolve)) {
+      if (log_is_enabled(Trace, aot, resolve)) {
         ResourceMark rm(THREAD);
-        log_trace(cds, resolve)("%s indy   [%3d] %s",
+        log_trace(aot, resolve)("%s indy   [%3d] %s",
                                 rie->is_resolved() ? "Resolved" : "Failed to resolve",
                                 cp_index, ik->external_name());
       }
@@ -370,9 +407,9 @@ bool AOTConstantPoolResolver::check_methodtype_signature(ConstantPool* cp, Symbo
       }
 
       if (SystemDictionaryShared::should_be_excluded(k)) {
-        if (log_is_enabled(Warning, cds, resolve)) {
+        if (log_is_enabled(Warning, aot, resolve)) {
           ResourceMark rm;
-          log_warning(cds, resolve)("Cannot aot-resolve Lambda proxy because %s is excluded", k->external_name());
+          log_warning(aot, resolve)("Cannot aot-resolve Lambda proxy because %s is excluded", k->external_name());
         }
         return false;
       }
@@ -403,41 +440,41 @@ bool AOTConstantPoolResolver::check_lambda_metafactory_signature(ConstantPool* c
   // as <clinit> can have side effects ==> exclude such cases.
   InstanceKlass* intf = InstanceKlass::cast(k);
   bool exclude = intf->interface_needs_clinit_execution_as_super();
-  if (log_is_enabled(Debug, cds, resolve)) {
+  if (log_is_enabled(Debug, aot, resolve)) {
     ResourceMark rm;
-    log_debug(cds, resolve)("%s aot-resolve Lambda proxy of interface type %s",
+    log_debug(aot, resolve)("%s aot-resolve Lambda proxy of interface type %s",
                             exclude ? "Cannot" : "Can", k->external_name());
   }
   return !exclude;
 }
 
 bool AOTConstantPoolResolver::check_lambda_metafactory_methodtype_arg(ConstantPool* cp, int bsms_attribute_index, int arg_i) {
-  int mt_index = cp->operand_argument_index_at(bsms_attribute_index, arg_i);
+  int mt_index = cp->bsm_attribute_entry(bsms_attribute_index)->argument_index(arg_i);
   if (!cp->tag_at(mt_index).is_method_type()) {
     // malformed class?
     return false;
   }
 
   Symbol* sig = cp->method_type_signature_at(mt_index);
-  if (log_is_enabled(Debug, cds, resolve)) {
+  if (log_is_enabled(Debug, aot, resolve)) {
     ResourceMark rm;
-    log_debug(cds, resolve)("Checking MethodType for LambdaMetafactory BSM arg %d: %s", arg_i, sig->as_C_string());
+    log_debug(aot, resolve)("Checking MethodType for LambdaMetafactory BSM arg %d: %s", arg_i, sig->as_C_string());
   }
 
   return check_methodtype_signature(cp, sig);
 }
 
 bool AOTConstantPoolResolver::check_lambda_metafactory_methodhandle_arg(ConstantPool* cp, int bsms_attribute_index, int arg_i) {
-  int mh_index = cp->operand_argument_index_at(bsms_attribute_index, arg_i);
+  int mh_index = cp->bsm_attribute_entry(bsms_attribute_index)->argument_index(arg_i);
   if (!cp->tag_at(mh_index).is_method_handle()) {
     // malformed class?
     return false;
   }
 
   Symbol* sig = cp->method_handle_signature_ref_at(mh_index);
-  if (log_is_enabled(Debug, cds, resolve)) {
+  if (log_is_enabled(Debug, aot, resolve)) {
     ResourceMark rm;
-    log_debug(cds, resolve)("Checking MethodType of MethodHandle for LambdaMetafactory BSM arg %d: %s", arg_i, sig->as_C_string());
+    log_debug(aot, resolve)("Checking MethodType of MethodHandle for LambdaMetafactory BSM arg %d: %s", arg_i, sig->as_C_string());
   }
   return check_methodtype_signature(cp, sig);
 }
@@ -472,9 +509,9 @@ bool AOTConstantPoolResolver::is_indy_resolution_deterministic(ConstantPool* cp,
                              "[Ljava/lang/Object;"
                             ")Ljava/lang/invoke/CallSite;")) {
     Symbol* factory_type_sig = cp->uncached_signature_ref_at(cp_index);
-    if (log_is_enabled(Debug, cds, resolve)) {
+    if (log_is_enabled(Debug, aot, resolve)) {
       ResourceMark rm;
-      log_debug(cds, resolve)("Checking StringConcatFactory callsite signature [%d]: %s", cp_index, factory_type_sig->as_C_string());
+      log_debug(aot, resolve)("Checking StringConcatFactory callsite signature [%d]: %s", cp_index, factory_type_sig->as_C_string());
     }
 
     Klass* k;
@@ -524,9 +561,9 @@ bool AOTConstantPoolResolver::is_indy_resolution_deterministic(ConstantPool* cp,
      *                                {@code interfaceMethodType}.
      */
     Symbol* factory_type_sig = cp->uncached_signature_ref_at(cp_index);
-    if (log_is_enabled(Debug, cds, resolve)) {
+    if (log_is_enabled(Debug, aot, resolve)) {
       ResourceMark rm;
-      log_debug(cds, resolve)("Checking indy callsite signature [%d]: %s", cp_index, factory_type_sig->as_C_string());
+      log_debug(aot, resolve)("Checking lambda callsite signature [%d]: %s", cp_index, factory_type_sig->as_C_string());
     }
 
     if (!check_lambda_metafactory_signature(cp, factory_type_sig)) {
@@ -534,7 +571,7 @@ bool AOTConstantPoolResolver::is_indy_resolution_deterministic(ConstantPool* cp,
     }
 
     int bsms_attribute_index = cp->bootstrap_methods_attribute_index(cp_index);
-    int arg_count = cp->operand_argument_count_at(bsms_attribute_index);
+    int arg_count = cp->bsm_attribute_entry(bsms_attribute_index)->argument_count();
     if (arg_count != 3) {
       // Malformed class?
       return false;

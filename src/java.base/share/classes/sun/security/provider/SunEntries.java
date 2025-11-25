@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,6 +264,10 @@ public final class SunEntries {
                 "sun.security.provider.SHA3$SHA384", attrs);
         addWithAlias(p, "MessageDigest", "SHA3-512",
                 "sun.security.provider.SHA3$SHA512", attrs);
+        addWithAlias(p, "MessageDigest", "SHAKE128-256",
+                "sun.security.provider.SHA3$SHAKE128Hash", attrs);
+        addWithAlias(p, "MessageDigest", "SHAKE256-512",
+                "sun.security.provider.SHA3$SHAKE256Hash", attrs);
 
         /*
          * Certificates

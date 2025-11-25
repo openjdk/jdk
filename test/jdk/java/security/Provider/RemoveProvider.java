@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,14 @@
 /*
  * @test
  * @bug 4190873 7054918 8130181
- * @library ../testlibrary
+ * @library /test/lib
  * @summary Make sure provider instance can be removed from list of registered
  * providers, and "entrySet", "keySet", and "values" methods don't loop
  * indefinitely.
  */
 import java.security.*;
 import java.util.*;
+import jdk.test.lib.security.ProvidersSnapshot;
 
 public class RemoveProvider {
 

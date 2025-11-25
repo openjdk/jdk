@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,13 @@
 # questions.
 #
 
-ifndef _ZIP_ARCHIVE_GMK
-_ZIP_ARCHIVE_GMK := 1
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
+################################################################################
 
 # Depends on build tools for MakeZipReproducible
-include ../ToolsJdk.gmk
-
-ifeq ($(_MAKEBASE_GMK), )
-  $(error You must include MakeBase.gmk prior to including ZipArchive.gmk)
-endif
+include $(TOPDIR)/make/ToolsJdk.gmk
 
 # Setup make rules for creating a zip archive.
 #
@@ -192,4 +190,7 @@ define SetupZipArchiveBody
   $1 += $$($1_ZIP)
 endef
 
-endif # _ZIP_ARCHIVE_GMK
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk
