@@ -1904,6 +1904,11 @@ public class IRNode {
         optoOnly(SCOPE_OBJECT, regex);
     }
 
+    public static final String SAFEPOINT_SCALAROBJECT_OF = COMPOSITE_PREFIX + "SAFEPOINT_SCALAROBJECT_OF" + POSTFIX;
+    static {
+        safepointScalarobjectOfNodes(SAFEPOINT_SCALAROBJECT_OF, "SafePointScalarObject");
+    }
+
     public static final String SIGNUM_VD = VECTOR_PREFIX + "SIGNUM_VD" + POSTFIX;
     static {
         vectorNode(SIGNUM_VD, "SignumVD", TYPE_DOUBLE);
@@ -2053,6 +2058,16 @@ public class IRNode {
     public static final String STORE_VECTOR_SCATTER_MASKED = PREFIX + "STORE_VECTOR_SCATTER_MASKED" + POSTFIX;
     static {
         beforeMatchingNameRegex(STORE_VECTOR_SCATTER_MASKED, "StoreVectorScatterMasked");
+    }
+
+    public static final String VECTOR_LOAD_MASK = PREFIX + "VECTOR_LOAD_MASK" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTOR_LOAD_MASK, "VectorLoadMask");
+    }
+
+    public static final String VECTOR_STORE_MASK = PREFIX + "VECTOR_STORE_MASK" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTOR_STORE_MASK, "VectorStoreMask");
     }
 
     public static final String SUB = PREFIX + "SUB" + POSTFIX;
@@ -3193,16 +3208,26 @@ public class IRNode {
     }
 
     // Typename in load/store have the structure:
-    // @fully/qualified/package/name/to/TheClass+12 *
+    // @ptrtype:fully/qualified/package/name/to/TheClass:ptrlattice+12
+    // with ptrtype being the kind of the type such as instptr, aryptr, etc, and ptrlattice being
+    // the kind of the value such as BotPTR, NotNull, etc.
     // And variation:
-    // - after @, we can have "stable:" or other labels, with optional space after ':'
-    // - the class can actually be a subclass, with $ separator (and it must be ok to give only the deepest one
+    // - after ptrtype, we can have "stable:" or other labels, with optional space after ':'
+    // - the class can actually be a nested class, with $ separator (and it must be ok to give only the deepest one
     // - after the class name, we can have a comma-separated list of implemented interfaces enclosed in parentheses
-    // - before the offset, we can have something like ":NotNull", either way, seeing "+" or ":" means the end of the type
     // Worst case, it can be something like:
-    // @bla: bli:a/b/c$d$e (f/g,h/i/j):NotNull+24 *
-    private static final String LOAD_STORE_PREFIX = "@(\\w+: ?)*[\\w/\\$]*\\b";
-    private static final String LOAD_STORE_SUFFIX = "( \\([^\\)]+\\))?(:|\\+)\\S* \\*";
+    // @bla: bli:a/b/c$d$e (f/g,h/i/j):NotNull+24
+
+    // @ matches the start character of the pattern
+    // (\w+: ?)+ tries to match the pattern 'ptrtype:' or 'stable:' with optional trailing whitespaces
+    // (\w/)* tries to match the pattern 'a/b/`
+    // (\w$)* tries to match the pattern 'c$d$'
+    // \b asserts that the next character is a word character
+    private static final String LOAD_STORE_PREFIX = "@(\\w+: ?)+(\\w/)*(\\w$)*\\b";
+    // ( \([^\)]+\))? tries to match the pattern ' (f/g,h/i/j)'
+    // :\w+ tries to match the pattern ':NotNull'
+    // .* tries to match the remaining of the pattern
+    private static final String LOAD_STORE_SUFFIX = "( \\([^\\)]+\\))?:\\w+.*";
 
     private static void loadOfNodes(String irNodePlaceholder, String irNodeRegex) {
         String regex = START + irNodeRegex + MID + LOAD_STORE_PREFIX + IS_REPLACED + LOAD_STORE_SUFFIX + END;
@@ -3211,6 +3236,11 @@ public class IRNode {
 
     private static void storeOfNodes(String irNodePlaceholder, String irNodeRegex) {
         String regex = START + irNodeRegex + MID + LOAD_STORE_PREFIX + IS_REPLACED + LOAD_STORE_SUFFIX + END;
+        beforeMatching(irNodePlaceholder, regex);
+    }
+
+    private static void safepointScalarobjectOfNodes(String irNodePlaceholder, String irNodeRegex) {
+        String regex = START + irNodeRegex + MID + ".*" + IS_REPLACED + ".*" + END;
         beforeMatching(irNodePlaceholder, regex);
     }
 

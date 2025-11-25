@@ -24,7 +24,7 @@
 /*
  *
  * @test
- * @bug 8176841 8194148 8284840 8306116 8333582
+ * @bug 8176841 8194148 8284840 8306116 8333582 8354548
  * @summary Tests *Format class deals with Unicode extensions
  *      correctly.
  * @modules jdk.localedata
@@ -96,7 +96,7 @@ public class FormatTests {
 
             // -ca
             {JCAL, "java.util.JapaneseImperialCalendar", null,
-            "Thursday, August 10, 29 Heisei, 3:15:00\u202fPM Pacific Daylight Time"
+            "Thursday, August 10, 29 Heisei at 3:15:00\u202fPM Pacific Daylight Time"
             },
 
             // -tz

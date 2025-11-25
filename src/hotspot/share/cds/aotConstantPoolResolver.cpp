@@ -318,13 +318,13 @@ void AOTConstantPoolResolver::maybe_resolve_fmi_ref(InstanceKlass* ik, Method* m
     if (!VM_Version::supports_fast_class_init_checks()) {
       return; // Do not resolve since interpreter lacks fast clinit barriers support
     }
-    InterpreterRuntime::resolve_get_put(bc, raw_index, mh, cp, false /*initialize_holder*/, CHECK);
+    InterpreterRuntime::resolve_get_put(bc, raw_index, mh, cp, ClassInitMode::dont_init, CHECK);
     is_static = " *** static";
     break;
 
   case Bytecodes::_getfield:
   case Bytecodes::_putfield:
-    InterpreterRuntime::resolve_get_put(bc, raw_index, mh, cp, false /*initialize_holder*/, CHECK);
+    InterpreterRuntime::resolve_get_put(bc, raw_index, mh, cp, ClassInitMode::dont_init, CHECK);
     break;
 
   case Bytecodes::_invokestatic:
@@ -449,7 +449,7 @@ bool AOTConstantPoolResolver::check_lambda_metafactory_signature(ConstantPool* c
 }
 
 bool AOTConstantPoolResolver::check_lambda_metafactory_methodtype_arg(ConstantPool* cp, int bsms_attribute_index, int arg_i) {
-  int mt_index = cp->bsm_attribute_entry(bsms_attribute_index)->argument_index(arg_i);
+  int mt_index = cp->bsm_attribute_entry(bsms_attribute_index)->argument(arg_i);
   if (!cp->tag_at(mt_index).is_method_type()) {
     // malformed class?
     return false;
@@ -465,7 +465,7 @@ bool AOTConstantPoolResolver::check_lambda_metafactory_methodtype_arg(ConstantPo
 }
 
 bool AOTConstantPoolResolver::check_lambda_metafactory_methodhandle_arg(ConstantPool* cp, int bsms_attribute_index, int arg_i) {
-  int mh_index = cp->bsm_attribute_entry(bsms_attribute_index)->argument_index(arg_i);
+  int mh_index = cp->bsm_attribute_entry(bsms_attribute_index)->argument(arg_i);
   if (!cp->tag_at(mh_index).is_method_handle()) {
     // malformed class?
     return false;

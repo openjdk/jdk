@@ -25,10 +25,9 @@
 #ifndef SHARE_OOPS_OBJARRAYOOP_HPP
 #define SHARE_OOPS_OBJARRAYOOP_HPP
 
+#include "cppstdlib/type_traits.hpp"
 #include "oops/arrayOop.hpp"
 #include "utilities/align.hpp"
-
-#include <type_traits>
 
 class Klass;
 
@@ -36,7 +35,7 @@ class Klass;
 // Evaluating "String arg[10]" will create an objArrayOop.
 
 class objArrayOopDesc : public arrayOopDesc {
-  friend class ArchiveHeapWriter;
+  friend class AOTMappedHeapWriter;
   friend class ObjArrayKlass;
   friend class Runtime1;
   friend class psPromotionManager;

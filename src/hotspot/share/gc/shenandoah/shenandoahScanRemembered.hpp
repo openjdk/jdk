@@ -353,6 +353,7 @@ class ShenandoahCardCluster: public CHeapObj<mtGC> {
 
 private:
   ShenandoahDirectCardMarkRememberedSet* _rs;
+  const HeapWord* _end_of_heap;
 
 public:
   static const size_t CardsPerCluster = 64;
@@ -406,6 +407,7 @@ public:
 
   ShenandoahCardCluster(ShenandoahDirectCardMarkRememberedSet* rs) {
     _rs = rs;
+    _end_of_heap = ShenandoahHeap::heap()->end();
     _object_starts = NEW_C_HEAP_ARRAY(crossing_info, rs->total_cards() + 1, mtGC); // the +1 is to account for card table guarding entry
     for (size_t i = 0; i < rs->total_cards(); i++) {
       _object_starts[i].short_word = 0;
@@ -652,12 +654,31 @@ public:
   size_t get_last_start(size_t card_index) const;
 
 
-  // Given a card_index, return the starting address of the first block in the heap
-  // that straddles into the card. If the card is co-initial with an object, then
-  // this would return the starting address of the heap that this card covers.
-  // Expects to be called for a card affiliated with the old generation in
-  // generational mode.
-  HeapWord* block_start(size_t card_index) const;
+  // Given a card_index, return the starting address of the first live object in the heap
+  // that intersects with or follows this card. This must be a valid, parsable object, and must
+  // be the first such object that intersects with this card. The object may start before,
+  // at, or after the start of the card identified by card_index, and may end in or after the card.
+  //
+  // The tams argument represents top for the enclosing region at the start of the most recently
+  // initiated concurrent old marking effort.  If ctx is non-null, we use the marking context to identify
+  // marked objects below tams.  Above tams, we know that every object is marked and that the memory is
+  // parsable (so we can add an object's size to its address to find the next object).  If ctx is null,
+  // we use crossing maps to find where object's start, and use object sizes to walk individual objects.
+  // The region must be parsable if ctx is null.
+  //
+  // The end_range_of_interest pointer argument represents an upper bound on how far we look in the forward direction
+  // for the first object in the heap that intersects or follows this card.  If there are no live objects found at
+  // an address less than end_range_of_interest returns nullptr.
+  //
+  // Expects to be called for a card in a region affiliated with the old generation of the
+  // generational heap, otherwise behavior is undefined.
+  //
+  // If not null, ctx holds the complete marking context of the old generation. If null,
+  // we expect that the marking context isn't available and the crossing maps are valid.
+  // Note that crossing maps may be invalid following class unloading and before dead
+  // or unloaded objects have been coalesced and filled.  Coalesce and fill updates the crossing maps.
+  HeapWord* first_object_start(size_t card_index, const ShenandoahMarkingContext* const ctx,
+                               HeapWord* tams, HeapWord* end_range_of_interest) const;
 };
 
 // ShenandoahScanRemembered is a concrete class representing the
