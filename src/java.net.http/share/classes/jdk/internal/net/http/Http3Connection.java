@@ -545,7 +545,28 @@ public final class Http3Connection implements AutoCloseable {
         if (debug.on()) debug.log("Reference h3 stream: " + streamId);
         client.client.h3StreamReference();
         exchanges.put(streamId, exchange);
-        exchange.start();
+        // It's possible that the connection will have been closed
+        // by the time we reach here.
+        // We need to double-check that the connection is still opened
+        // after having put the exchange to the exchanges map.
+        if (isOpen()) {
+            // only start the exchange if the connection is
+            // still open
+            exchange.start();
+        } else {
+            // Otherwise mark the exchange as unprocessed since we haven't
+            // sent the headers yet and the connection got closed
+            // before we started the exchange.
+            TerminationCause tc = quicConnection.terminationCause();
+            if (Log.http3()) {
+                Log.logHttp3("HTTP/3 exchange for {0}/streamId={1} unprocessed due to {2}",
+                        quicConnectionTag(), Long.toString(streamId), tc.getCloseCause());
+            }
+            exchange.exchange.markUnprocessedByPeer();
+            exchange.cancelImpl(tc.getCloseCause(),
+                    Http3Error.fromCode(tc.getCloseCode()).orElse(H3_NO_ERROR));
+        }
+        // OK to return the exchange even if already closed
         return exchange;
     }
 
