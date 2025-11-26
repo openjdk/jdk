@@ -32,24 +32,20 @@ import java.util.Optional;
 public interface LinuxLauncherMixin {
 
     /**
-     * Gets the start menu shortcut setting of this application launcher.
+     * Gets the start menu shortcut of this application launcher.
      * <p>
-     * Returns <code>true</code> if this application launcher was requested to have
-     * the start menu shortcut.
-     * <p>
-     * Returns <code>false</code> if this application launcher was requested not to
-     * have the start menu shortcut.
-     * <p>
-     * Returns an empty {@link Optional} instance if there was no request about the
-     * start menu shortcut for this application launcher.
+     * Returns a non-empty {@link Optional} instance if a request about the start
+     * menu shortcut for this application launcher was made and an empty
+     * {@link Optional} instance if there was no request about the start menu
+     * shortcut for this application launcher.
      *
-     * @return the start menu shortcut setting of this application launcher
+     * @return the start menu shortcut of this application launcher
      */
-    Optional<Boolean> shortcut();
+    Optional<LauncherShortcut> shortcut();
 
     /**
      * Default implementation of {@link LinuxLauncherMixin} interface.
      */
-    record Stub(Optional<Boolean> shortcut) implements LinuxLauncherMixin {
+    record Stub(Optional<LauncherShortcut> shortcut) implements LinuxLauncherMixin {
     }
 }

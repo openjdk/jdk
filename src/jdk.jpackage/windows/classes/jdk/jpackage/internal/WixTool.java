@@ -89,7 +89,7 @@ public enum WixTool {
         }
     }
 
-    static WixToolset createToolset() throws ConfigException {
+    static WixToolset createToolset() {
         Function<List<ToolLookupResult>, Map<WixTool, ToolInfo>> conv = lookupResults -> {
             return lookupResults.stream().filter(ToolLookupResult::isValid).collect(Collectors.
                     groupingBy(lookupResult -> {
@@ -183,13 +183,12 @@ public enum WixTool {
             final boolean[] tooOld = new boolean[1];
             final String[] parsedVersion = new String[1];
 
-            final var validator = new ToolValidator(toolPath).setMinimalVersion(tool.minimalVersion).
-                    setToolNotFoundErrorHandler((name, ex) -> {
-                        return new ConfigException("", "");
-                    }).setToolOldVersionErrorHandler((name, version) -> {
-                tooOld[0] = true;
-                return null;
-            });
+            final var validator = new ToolValidator(toolPath)
+                    .setMinimalVersion(tool.minimalVersion)
+                    .setToolOldVersionErrorHandler((name, version) -> {
+                        tooOld[0] = true;
+                        return null;
+                    });
 
             final Function<Stream<String>, String> versionParser;
 

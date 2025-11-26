@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/classListWriter.hpp"
@@ -34,6 +35,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
+#include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -75,9 +77,9 @@
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/trimNativeHeap.hpp"
+#include "runtime/vm_version.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
-#include "runtime/vm_version.hpp"
 #include "sanitizers/leak.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
@@ -448,7 +450,7 @@ void before_exit(JavaThread* thread, bool halt) {
   ClassListWriter::write_resolved_constants();
 
   if (CDSConfig::is_dumping_preimage_static_archive()) {
-    MetaspaceShared::preload_and_dump(thread);
+    AOTMetaspace::dump_static_archive(thread);
   }
 #endif
 
@@ -463,7 +465,10 @@ void before_exit(JavaThread* thread, bool halt) {
     event.commit();
   }
 
-  JFR_ONLY(Jfr::on_vm_shutdown(false, halt);)
+  // 2nd argument (emit_event_shutdown) should be set to false
+  // because EventShutdown would be emitted at Threads::destroy_vm().
+  // (one of the callers of before_exit())
+  JFR_ONLY(Jfr::on_vm_shutdown(true, false, halt);)
 
   // Stop the WatcherThread. We do this before disenrolling various
   // PeriodicTasks to reduce the likelihood of races.
@@ -471,20 +476,19 @@ void before_exit(JavaThread* thread, bool halt) {
 
   NativeHeapTrimmer::cleanup();
 
-  // Run before exit and then stop concurrent GC threads
-  Universe::heap()->before_exit();
-
-  // Print GC/heap related information.
-  Log(gc, exit) log;
-  if (log.is_info()) {
-    LogStream ls_info(log.info());
-    Universe::print_on(&ls_info);
-    if (log.is_trace()) {
-      LogStream ls_trace(log.trace());
-      MutexLocker mcld(ClassLoaderDataGraph_lock);
-      ClassLoaderDataGraph::print_on(&ls_trace);
-    }
+  if (JvmtiExport::should_post_thread_life()) {
+    JvmtiExport::post_thread_end(thread);
   }
+
+  // Always call even when there are not JVMTI environments yet, since environments
+  // may be attached late and JVMTI must track phases of VM execution.
+  JvmtiExport::post_vm_death();
+  JvmtiAgentList::unload_agents();
+
+  // No user code can be executed in the current thread after this point.
+
+  // Run before exit and then stop concurrent GC threads.
+  Universe::before_exit();
 
   if (PrintBytecodeHistogram) {
     BytecodeHistogram::print();
@@ -499,18 +503,15 @@ void before_exit(JavaThread* thread, bool halt) {
   }
 #endif
 
-  if (JvmtiExport::should_post_thread_life()) {
-    JvmtiExport::post_thread_end(thread);
-  }
-
-  // Always call even when there are not JVMTI environments yet, since environments
-  // may be attached late and JVMTI must track phases of VM execution
-  JvmtiExport::post_vm_death();
-  JvmtiAgentList::unload_agents();
-
   // Terminate the signal thread
   // Note: we don't wait until it actually dies.
   os::terminate_signal_thread();
+
+  #if INCLUDE_CDS
+  if (AOTVerifyTrainingData) {
+    TrainingData::verify();
+  }
+  #endif
 
   print_statistics();
 
@@ -748,29 +749,19 @@ int JDK_Version::compare(const JDK_Version& other) const {
 
 /* See JEP 223 */
 void JDK_Version::to_string(char* buffer, size_t buflen) const {
-  assert(buffer && buflen > 0, "call with useful buffer");
-  size_t index = 0;
-
+  assert((buffer != nullptr) && (buflen > 0), "call with useful buffer");
+  stringStream ss{buffer, buflen};
   if (!is_valid()) {
-    jio_snprintf(buffer, buflen, "%s", "(uninitialized)");
+    ss.print_raw("(uninitialized)");
   } else {
-    int rc = jio_snprintf(
-        &buffer[index], buflen - index, "%d.%d", _major, _minor);
-    if (rc == -1) return;
-    index += rc;
+    ss.print("%d.%d", _major, _minor);
     if (_patch > 0) {
-      rc = jio_snprintf(&buffer[index], buflen - index, ".%d.%d", _security, _patch);
-      if (rc == -1) return;
-      index += rc;
+      ss.print(".%d.%d", _security, _patch);
     } else if (_security > 0) {
-      rc = jio_snprintf(&buffer[index], buflen - index, ".%d", _security);
-      if (rc == -1) return;
-      index += rc;
+      ss.print(".%d", _security);
     }
     if (_build > 0) {
-      rc = jio_snprintf(&buffer[index], buflen - index, "+%d", _build);
-      if (rc == -1) return;
-      index += rc;
+      ss.print("+%d", _build);
     }
   }
 }

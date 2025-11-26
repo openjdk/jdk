@@ -40,11 +40,9 @@ SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer) :
            NOT_PRODUCT(COMMA is_trace_superword_packset())
            NOT_PRODUCT(COMMA is_trace_superword_rejections())
            ),
-  _mem_ref_for_main_loop_alignment(nullptr),
+  _vpointer_for_main_loop_alignment(nullptr),
   _aw_for_main_loop_alignment(0),
-  _do_vector_loop(phase()->C->do_vector_loop()),            // whether to do vectorization/simd style
-  _num_work_vecs(0),                                        // amount of vector work we have
-  _num_reductions(0)                                        // amount of reduction work we have
+  _do_vector_loop(phase()->C->do_vector_loop())             // whether to do vectorization/simd style
 {
 }
 
@@ -75,8 +73,7 @@ public:
 
   void set_ignored(Node* n) {
     // Only consider nodes in the loop.
-    Node* ctrl = _vloop.phase()->get_ctrl(n);
-    if (_vloop.lpt()->is_member(_vloop.phase()->get_loop(ctrl))) {
+    if (_vloop.phase()->ctrl_is_member(_vloop.lpt(), n)) {
       // Find the index in the loop.
       for (uint j = 0; j < _body.size(); j++) {
         if (n == _body.at(j)) {
@@ -455,12 +452,20 @@ bool SuperWord::transform_loop() {
 //
 // 8) The pairs are combined into vector sized packs.
 //
-// 9) Reorder the memory slices to co-locate members of the memory packs.
+// 9) The packs are split and filtered, to ensure correctness and that
+//    all packs have corresponding vector nodes implemented in the backend.
 //
-// 10) Generate ideal vector nodes for the final set of packs and where necessary,
-//    inserting scalar promotion, vector creation from multiple scalars, and
-//    extraction of scalar values from vectors.
+// 10) VTransform (see vtransform.hpp)
+//     - construct from PackSet
+//     - schedule (detect circles)
+//     - apply
+//       - align main loop
+//       - add runtime checks (aliasing and alignment)
+//       - build new loop with vector C2 nodes
 //
+// Runtime Checks:
+//   Some required properties cannot be proven statically, and require a
+//   runtime check. See VTransform::add_speculative_check
 bool SuperWord::SLP_extract() {
   assert(cl()->is_main_loop(), "SLP should only work on main loops");
 
@@ -495,7 +500,7 @@ bool SuperWord::SLP_extract() {
   DEBUG_ONLY(verify_packs();)
   DEBUG_ONLY(verify_no_extract());
 
-  return schedule_and_apply();
+  return do_vtransform();
 }
 
 int SuperWord::MemOp::cmp_by_group(MemOp* a, MemOp* b) {
@@ -657,39 +662,9 @@ void SuperWord::create_adjacent_memop_pairs_in_one_group(const GrowableArray<Mem
   }
 }
 
-void VLoopMemorySlices::find_memory_slices() {
-  assert(_heads.is_empty(), "not yet computed");
-  assert(_tails.is_empty(), "not yet computed");
-  CountedLoopNode* cl = _vloop.cl();
-
-  // Iterate over all memory phis
-  for (DUIterator_Fast imax, i = cl->fast_outs(imax); i < imax; i++) {
-    PhiNode* phi = cl->fast_out(i)->isa_Phi();
-    if (phi != nullptr && _vloop.in_bb(phi) && phi->is_memory_phi()) {
-      Node* phi_tail = phi->in(LoopNode::LoopBackControl);
-      if (phi_tail != phi->in(LoopNode::EntryControl)) {
-        _heads.push(phi);
-        _tails.push(phi_tail->as_Mem());
-      }
-    }
-  }
-
-  NOT_PRODUCT( if (_vloop.is_trace_memory_slices()) { print(); } )
-}
-
-#ifndef PRODUCT
-void VLoopMemorySlices::print() const {
-  tty->print_cr("\nVLoopMemorySlices::print: %s",
-                heads().length() > 0 ? "" : "NONE");
-  for (int m = 0; m < heads().length(); m++) {
-    tty->print("%6d ", m);  heads().at(m)->dump();
-    tty->print("       ");  tails().at(m)->dump();
-  }
-}
-#endif
-
 // Get all memory nodes of a slice, in reverse order
 void VLoopMemorySlices::get_slice_in_reverse_order(PhiNode* head, MemNode* tail, GrowableArray<MemNode*> &slice) const {
+  assert(head != nullptr && tail != nullptr, "must be slice with memory state loop");
   assert(slice.is_empty(), "start empty");
   Node* n = tail;
   Node* prev = nullptr;
@@ -832,12 +807,18 @@ bool VLoopDependencyGraph::independent(Node* s1, Node* s2) const {
   Node* shallow = d1 > d2 ? s2 : s1;
   int min_d = MIN2(d1, d2); // prune traversal at min_d
 
+  // If we can speculate (using the aliasing runtime check), we can drop the weak edges,
+  // and later insert a runtime check.
+  // If we cannot speculate (aliasing analysis runtime checks), we need to respect all edges.
+  bool speculate_away_weak_edges = _vloop.use_speculative_aliasing_checks();
+
   ResourceMark rm;
   Unique_Node_List worklist;
   worklist.push(deep);
   for (uint i = 0; i < worklist.size(); i++) {
     Node* n = worklist.at(i);
     for (PredsIterator preds(*this, n); !preds.done(); preds.next()) {
+      if (speculate_away_weak_edges && preds.is_current_weak_memory_edge()) { continue; }
       Node* pred = preds.current();
       if (_vloop.in_bb(pred) && depth(pred) >= min_d) {
         if (pred == shallow) {
@@ -869,9 +850,16 @@ bool VLoopDependencyGraph::mutually_independent(const Node_List* nodes) const {
     worklist.push(n); // start traversal at all nodes in nodes list
     nodes_set.set(_body.bb_idx(n));
   }
+
+  // If we can speculate (using the aliasing runtime check), we can drop the weak edges,
+  // and later insert a runtime check.
+  // If we cannot speculate (aliasing analysis runtime checks), we need to respect all edges.
+  bool speculate_away_weak_edges = _vloop.use_speculative_aliasing_checks();
+
   for (uint i = 0; i < worklist.size(); i++) {
     Node* n = worklist.at(i);
     for (PredsIterator preds(*this, n); !preds.done(); preds.next()) {
+      if (speculate_away_weak_edges && preds.is_current_weak_memory_edge()) { continue; }
       Node* pred = preds.current();
       if (_vloop.in_bb(pred) && depth(pred) >= min_d) {
         if (nodes_set.test(_body.bb_idx(pred))) {
@@ -1560,7 +1548,7 @@ void SuperWord::filter_packs_for_alignment() {
     MemNode const* mem = current->as_constrained()->mem_ref();
     Node_List* pack = get_pack(mem);
     assert(pack != nullptr, "memop of final solution must still be packed");
-    _mem_ref_for_main_loop_alignment = mem;
+    _vpointer_for_main_loop_alignment = &vpointer(mem);
     _aw_for_main_loop_alignment = pack->size() * mem->memory_size();
   }
 }
@@ -1576,18 +1564,6 @@ void SuperWord::filter_packs_for_implemented() {
 
 // Remove packs that are not profitable.
 void SuperWord::filter_packs_for_profitable() {
-  // Count the number of reductions vs other vector ops, for the
-  // reduction profitability heuristic.
-  for (int i = 0; i < _packset.length(); i++) {
-    Node_List* pack = _packset.at(i);
-    Node* n = pack->at(0);
-    if (is_marked_reduction(n)) {
-      _num_reductions++;
-    } else {
-      _num_work_vecs++;
-    }
-  }
-
   // Remove packs that are not profitable
   auto filter = [&](const Node_List* pack) {
     return profitable(pack);
@@ -1604,34 +1580,12 @@ bool SuperWord::implemented(const Node_List* pack, const uint size) const {
   if (p0 != nullptr) {
     int opc = p0->Opcode();
     if (is_marked_reduction(p0)) {
-      const Type *arith_type = p0->bottom_type();
-      // This heuristic predicts that 2-element reductions for INT/LONG are not
-      // profitable. This heuristic was added in JDK-8078563. The argument
-      // was that reductions are not just a single instruction, but multiple, and
-      // hence it is not directly clear that they are profitable. If we only have
-      // two elements per vector, then the performance gains from non-reduction
-      // vectors are at most going from 2 scalar instructions to 1 vector instruction.
-      // But a 2-element reduction vector goes from 2 scalar instructions to
-      // 3 instructions (1 shuffle and two reduction ops).
-      // However, this optimization assumes that these reductions stay in the loop
-      // which may not be true any more in most cases after the introduction of:
-      // PhaseIdealLoop::move_unordered_reduction_out_of_loop
-      // Hence, this heuristic has room for improvement.
-      bool is_two_element_int_or_long_reduction = (size == 2) &&
-                                                  (arith_type->basic_type() == T_INT ||
-                                                   arith_type->basic_type() == T_LONG);
-      if (is_two_element_int_or_long_reduction && AutoVectorizationOverrideProfitability != 2) {
-#ifndef PRODUCT
-        if (is_trace_superword_rejections()) {
-          tty->print_cr("\nPerformance heuristic: 2-element INT/LONG reduction not profitable.");
-          tty->print_cr("  Can override with AutoVectorizationOverrideProfitability=2");
-        }
-#endif
-        return false;
-      }
+      const Type* arith_type = p0->bottom_type();
       retValue = ReductionNode::implemented(opc, size, arith_type->basic_type());
     } else if (VectorNode::is_convert_opcode(opc)) {
       retValue = VectorCastNode::implemented(opc, size, velt_basic_type(p0->in(1)), velt_basic_type(p0));
+    } else if (VectorNode::is_reinterpret_opcode(opc)) {
+      retValue = Matcher::match_rule_supported_auto_vectorization(Op_VectorReinterpret, size, velt_basic_type(p0));
     } else if (VectorNode::is_minmax_opcode(opc) && is_subword_type(velt_basic_type(p0))) {
       // Java API for Math.min/max operations supports only int, long, float
       // and double types. Thus, avoid generating vector min/max nodes for
@@ -1705,7 +1659,9 @@ VTransformBoolTest PackSet::get_bool_test(const Node_List* bool_pack) const {
   CmpNode* cmp0 = bol->in(1)->as_Cmp();
   assert(get_pack(cmp0) != nullptr, "Bool must have matching Cmp pack");
 
-  if (cmp0->Opcode() == Op_CmpF || cmp0->Opcode() == Op_CmpD) {
+  switch (cmp0->Opcode()) {
+  case Op_CmpF:
+  case Op_CmpD:
     // If we have a Float or Double comparison, we must be careful with
     // handling NaN's correctly. CmpF and CmpD have a return code, as
     // they are based on the java bytecodes fcmpl/dcmpl:
@@ -1749,7 +1705,24 @@ VTransformBoolTest PackSet::get_bool_test(const Node_List* bool_pack) const {
       mask = bol->_test.negate();
       is_negated = true;
     }
-  }
+    break;
+  case Op_CmpU:
+  case Op_CmpUL:
+    // When we have CmpU->Bool, the mask of the Bool has no unsigned-ness information,
+    // but the mask is implicitly unsigned only because of the CmpU. Since we will replace
+    // the CmpU->Bool with a single VectorMaskCmp, we need to now make the unsigned-ness
+    // explicit.
+    mask = BoolTest::unsigned_mask(mask);
+    break;
+  case Op_CmpI:
+  case Op_CmpL:
+    // The mask of signed int/long scalar comparisons has the same semantics
+    // as the mask for vector elementwise int/long comparison with VectorMaskCmp.
+    break;
+  default:
+    // Other Cmp ops are not expected to get here.
+    ShouldNotReachHere();
+  } // switch
 
   return VTransformBoolTest(mask, is_negated);
 }
@@ -1778,26 +1751,6 @@ bool SuperWord::profitable(const Node_List* p) const {
     if (second_pk == nullptr) {
       // The second input has to be the vector we wanted to reduce,
       // but it was not packed.
-      return false;
-    } else if (_num_work_vecs == _num_reductions && AutoVectorizationOverrideProfitability != 2) {
-      // This heuristic predicts that the reduction is not profitable.
-      // Reduction vectors can be expensive, because they require multiple
-      // operations to fold all the lanes together. Hence, vectorizing the
-      // reduction is not profitable on its own. Hence, we need a lot of
-      // other "work vectors" that deliver performance improvements to
-      // balance out the performance loss due to reductions.
-      // This heuristic is a bit simplistic, and assumes that the reduction
-      // vector stays in the loop. But in some cases, we can move the
-      // reduction out of the loop, replacing it with a single vector op.
-      // See: PhaseIdealLoop::move_unordered_reduction_out_of_loop
-      // Hence, this heuristic has room for improvement.
-#ifndef PRODUCT
-        if (is_trace_superword_rejections()) {
-          tty->print_cr("\nPerformance heuristic: not enough vectors in the loop to make");
-          tty->print_cr("  reduction profitable.");
-          tty->print_cr("  Can override with AutoVectorizationOverrideProfitability=2");
-        }
-#endif
       return false;
     } else if (second_pk->size() != p->size()) {
       return false;
@@ -1928,7 +1881,9 @@ void PackSet::verify() const {
 }
 #endif
 
-bool SuperWord::schedule_and_apply() const {
+// Build VTransform from SuperWord Packset, and eventually apply it (create new vectorized C2 loop).
+// See description at top of "vtransform.hpp".
+bool SuperWord::do_vtransform() const {
   if (_packset.is_empty()) { return false; }
 
   // Make an empty transform.
@@ -1936,11 +1891,12 @@ bool SuperWord::schedule_and_apply() const {
   VTransformTrace trace(_vloop.vtrace(),
                         is_trace_superword_rejections(),
                         is_trace_align_vector(),
+                        _vloop.is_trace_speculative_aliasing_analysis(),
                         _vloop.is_trace_speculative_runtime_checks(),
                         is_trace_superword_info());
 #endif
   VTransform vtransform(_vloop_analyzer,
-                        _mem_ref_for_main_loop_alignment,
+                        _vpointer_for_main_loop_alignment,
                         _aw_for_main_loop_alignment
                         NOT_PRODUCT(COMMA trace)
                         );
@@ -1951,24 +1907,61 @@ bool SuperWord::schedule_and_apply() const {
     SuperWordVTransformBuilder builder(_packset, vtransform);
   }
 
+  vtransform.optimize();
+
   if (!vtransform.schedule()) { return false; }
-  if (vtransform.has_store_to_load_forwarding_failure()) { return false; }
+
+  if (!vtransform.is_profitable()) { return false; }
+
+  vtransform.apply();
+  return true;
+}
+
+// Check Cost-Model, and other heuristics.
+// Can be overridden with AutoVectorizationOverrideProfitability.
+bool VTransform::is_profitable() const {
+  assert(_graph.is_scheduled(), "must already be scheduled");
 
   if (AutoVectorizationOverrideProfitability == 0) {
 #ifndef PRODUCT
-    if (is_trace_superword_any()) {
+    if (_trace._info) {
       tty->print_cr("\nForced bailout of vectorization (AutoVectorizationOverrideProfitability=0).");
     }
 #endif
     return false;
   }
 
-  vtransform.apply();
-  return true;
+  if (AutoVectorizationOverrideProfitability == 2) {
+#ifndef PRODUCT
+    if (_trace._info) {
+      tty->print_cr("\nForced vectorization, ignoring profitability (AutoVectorizationOverrideProfitability=2).");
+    }
+#endif
+    return true;
+  }
+
+  // Note: currently we only do throughput-based cost-modeling. In the future, we could
+  //       also implement latency-based cost-modeling and take store-to-load-forwarding
+  //       failures into account as the latency between the load and store. This would
+  //       allow a more precise tradeoff between the forwarding failure penalty versus
+  //       the vectorization gains.
+  if (has_store_to_load_forwarding_failure()) { return false; }
+
+  // Cost-model
+  float scalar_cost = _vloop_analyzer.cost_for_scalar_loop();
+  float vector_cost = cost_for_vector_loop();
+#ifndef PRODUCT
+  if (_trace._info) {
+    tty->print_cr("\nVTransform: scalar_cost = %.2f vs vector_cost = %.2f",
+                  scalar_cost, vector_cost);
+  }
+#endif
+  return vector_cost < scalar_cost;
 }
 
 // Apply the vectorization, i.e. we irreversibly edit the C2 graph. At this point, all
 // correctness and profitability checks have passed, and the graph was successfully scheduled.
+// See description at top of "vtransform.hpp".
 void VTransform::apply() {
 #ifndef PRODUCT
   if (_trace._info || TraceLoopOpts) {
@@ -1983,129 +1976,41 @@ void VTransform::apply() {
   Compile* C = phase()->C;
   C->print_method(PHASE_AUTO_VECTORIZATION1_BEFORE_APPLY, 4, cl());
 
-  _graph.apply_memops_reordering_with_schedule();
-  C->print_method(PHASE_AUTO_VECTORIZATION2_AFTER_REORDER, 4, cl());
-
   adjust_pre_loop_limit_to_align_main_loop_vectors();
   C->print_method(PHASE_AUTO_VECTORIZATION3_AFTER_ADJUST_LIMIT, 4, cl());
 
-  apply_speculative_runtime_checks();
+  apply_speculative_alignment_runtime_checks();
+  apply_speculative_aliasing_runtime_checks();
   C->print_method(PHASE_AUTO_VECTORIZATION4_AFTER_SPECULATIVE_RUNTIME_CHECKS, 4, cl());
 
   apply_vectorization();
   C->print_method(PHASE_AUTO_VECTORIZATION5_AFTER_APPLY, 4, cl());
 }
 
-// We prepare the memory graph for the replacement of scalar memops with vector memops.
-// We reorder all slices in parallel, ensuring that the memops inside each slice are
-// ordered according to the _schedule. This means that all packed memops are consecutive
-// in the memory graph after the reordering.
-void VTransformGraph::apply_memops_reordering_with_schedule() const {
-#ifndef PRODUCT
-  assert(is_scheduled(), "must be already scheduled");
-  if (_trace._info) {
-    print_memops_schedule();
-  }
-#endif
-
-  ResourceMark rm;
-  int max_slices = phase()->C->num_alias_types();
-  // When iterating over the schedule, we keep track of the current memory state,
-  // which is the Phi or a store in the loop.
-  GrowableArray<Node*> current_state_in_slice(max_slices, max_slices, nullptr);
-  // The memory state after the loop is the last store inside the loop. If we reorder the
-  // loop we may have a different last store, and we need to adjust the uses accordingly.
-  GrowableArray<Node*> old_last_store_in_slice(max_slices, max_slices, nullptr);
-
-  const GrowableArray<PhiNode*>& mem_slice_head = _vloop_analyzer.memory_slices().heads();
-
-  // (1) Set up the initial memory state from Phi. And find the old last store.
-  for (int i = 0; i < mem_slice_head.length(); i++) {
-    Node* phi  = mem_slice_head.at(i);
-    assert(phi->is_Phi(), "must be phi");
-    int alias_idx = phase()->C->get_alias_index(phi->adr_type());
-    current_state_in_slice.at_put(alias_idx, phi);
-
-    // If we have a memory phi, we have a last store in the loop, find it over backedge.
-    StoreNode* last_store = phi->in(2)->as_Store();
-    old_last_store_in_slice.at_put(alias_idx, last_store);
-  }
-
-  // (2) Walk over schedule, append memops to the current state
-  //     of that slice. If it is a Store, we take it as the new state.
-  for_each_memop_in_schedule([&] (MemNode* n) {
-    assert(n->is_Load() || n->is_Store(), "only loads or stores");
-    int alias_idx = phase()->C->get_alias_index(n->adr_type());
-    Node* current_state = current_state_in_slice.at(alias_idx);
-    if (current_state == nullptr) {
-      // If there are only loads in a slice, we never update the memory
-      // state in the loop, hence there is no phi for the memory state.
-      // We just keep the old memory state that was outside the loop.
-      assert(n->is_Load() && !in_bb(n->in(MemNode::Memory)),
-             "only loads can have memory state from outside loop");
-    } else {
-      igvn().replace_input_of(n, MemNode::Memory, current_state);
-      if (n->is_Store()) {
-        current_state_in_slice.at_put(alias_idx, n);
-      }
-    }
-  });
-
-  // (3) For each slice, we add the current state to the backedge
-  //     in the Phi. Further, we replace uses of the old last store
-  //     with uses of the new last store (current_state).
-  GrowableArray<Node*> uses_after_loop;
-  for (int i = 0; i < mem_slice_head.length(); i++) {
-    Node* phi  = mem_slice_head.at(i);
-    int alias_idx = phase()->C->get_alias_index(phi->adr_type());
-    Node* current_state = current_state_in_slice.at(alias_idx);
-    assert(current_state != nullptr, "slice is mapped");
-    assert(current_state != phi, "did some work in between");
-    assert(current_state->is_Store(), "sanity");
-    igvn().replace_input_of(phi, 2, current_state);
-
-    // Replace uses of old last store with current_state (new last store)
-    // Do it in two loops: first find all the uses, and change the graph
-    // in as second loop so that we do not break the iterator.
-    Node* last_store = old_last_store_in_slice.at(alias_idx);
-    assert(last_store != nullptr, "we have a old last store");
-    uses_after_loop.clear();
-    for (DUIterator_Fast kmax, k = last_store->fast_outs(kmax); k < kmax; k++) {
-      Node* use = last_store->fast_out(k);
-      if (!in_bb(use)) {
-        uses_after_loop.push(use);
-      }
-    }
-    for (int k = 0; k < uses_after_loop.length(); k++) {
-      Node* use = uses_after_loop.at(k);
-      for (uint j = 0; j < use->req(); j++) {
-        Node* def = use->in(j);
-        if (def == last_store) {
-          igvn().replace_input_of(use, j, current_state);
-        }
-      }
-    }
-  }
-}
-
 void VTransformGraph::apply_vectorization_for_each_vtnode(uint& max_vector_length, uint& max_vector_width) const {
   ResourceMark rm;
-  // We keep track of the resulting Nodes from every "VTransformNode::apply" call.
-  // Since "apply" is called on defs before uses, this allows us to find the
-  // generated def (input) nodes when we are generating the use nodes in "apply".
-  int length = _vtnodes.length();
-  GrowableArray<Node*> vtnode_idx_to_transformed_node(length, length, nullptr);
+  VTransformApplyState apply_state(_vloop_analyzer, _vtnodes.length());
 
+  // Apply: transform the node and connect with inputs (no backedges).
   for (int i = 0; i < _schedule.length(); i++) {
     VTransformNode* vtn = _schedule.at(i);
-    VTransformApplyResult result = vtn->apply(_vloop_analyzer,
-                                              vtnode_idx_to_transformed_node);
+    VTransformApplyResult result = vtn->apply(apply_state);
     NOT_PRODUCT( if (_trace._verbose) { result.trace(vtn); } )
 
-    vtnode_idx_to_transformed_node.at_put(vtn->_idx, result.node());
+    apply_state.set_transformed_node(vtn, result.node());
     max_vector_length = MAX2(max_vector_length, result.vector_length());
     max_vector_width  = MAX2(max_vector_width,  result.vector_width());
   }
+
+  // Cleanup: connect backedges
+  for (int i = 0; i < _schedule.length(); i++) {
+    VTransformNode* vtn = _schedule.at(i);
+    vtn->apply_backedge(apply_state);
+  }
+
+  // Memory uses after the loop: used to connect to old last store,
+  // now need to connect to new last store.
+  apply_state.fix_memory_state_uses_after_loop();
 }
 
 // We call "apply" on every VTransformNode, which replaces the packed scalar nodes with vector nodes.
@@ -2589,12 +2494,19 @@ static bool can_subword_truncate(Node* in, const Type* type) {
   case Op_RotateRight:
   case Op_RotateLeft:
   case Op_PopCountI:
+  case Op_ReverseBytesS:
+  case Op_ReverseBytesUS:
   case Op_ReverseBytesI:
   case Op_ReverseI:
   case Op_CountLeadingZerosI:
   case Op_CountTrailingZerosI:
+  case Op_IsFiniteF:
+  case Op_IsFiniteD:
   case Op_IsInfiniteF:
   case Op_IsInfiniteD:
+  case Op_CmpLTMask:
+  case Op_RoundF:
+  case Op_RoundD:
   case Op_ExtractS:
   case Op_ExtractC:
   case Op_ExtractB:
@@ -2754,10 +2666,10 @@ bool VLoopMemorySlices::same_memory_slice(MemNode* m1, MemNode* m2) const {
          _vloop.phase()->C->get_alias_index(m2->adr_type());
 }
 
-LoadNode::ControlDependency VTransformLoadVectorNode::control_dependency() const {
+LoadNode::ControlDependency SuperWordVTransformBuilder::load_control_dependency(const Node_List* pack) const {
   LoadNode::ControlDependency dep = LoadNode::DependsOnlyOnTest;
-  for (int i = 0; i < nodes().length(); i++) {
-    Node* n = nodes().at(i);
+  for (uint i = 0; i < pack->size(); i++) {
+    Node* n = pack->at(i);
     assert(n->is_Load(), "only meaningful for loads");
     if (!n->depends_only_on_test()) {
       if (n->as_Load()->has_unknown_control_dependency() &&
@@ -2775,22 +2687,24 @@ LoadNode::ControlDependency VTransformLoadVectorNode::control_dependency() const
 
 // Find the memop pack with the maximum vector width, unless they were already
 // determined (e.g. by SuperWord::filter_packs_for_alignment()).
-void VTransform::determine_mem_ref_and_aw_for_main_loop_alignment() {
-  if (_mem_ref_for_main_loop_alignment != nullptr) {
-    assert(VLoop::vectors_should_be_aligned(), "mem_ref only set if filtered for alignment");
+void VTransform::determine_vpointer_and_aw_for_main_loop_alignment() {
+  if (_vpointer_for_main_loop_alignment != nullptr) {
+    assert(VLoop::vectors_should_be_aligned(), "vpointer_for_main_loop_alignment only set if filtered for alignment");
     return;
   }
 
-  MemNode const* mem_ref = nullptr;
+  VPointer const* vpointer = nullptr;
   int max_aw = 0;
+  bool vpointer_is_load = false;
 
   const GrowableArray<VTransformNode*>& vtnodes = _graph.vtnodes();
   for (int i = 0; i < vtnodes.length(); i++) {
     VTransformMemVectorNode* vtn = vtnodes.at(i)->isa_MemVector();
     if (vtn == nullptr) { continue; }
-    MemNode* p0 = vtn->nodes().at(0)->as_Mem();
 
-    int vw = p0->memory_size() * vtn->nodes().length();
+    int vw = vtn->vpointer().size();
+    bool vtn_is_load = vtn->is_load_in_loop();
+
     // Generally, we prefer to align with the largest memory op (load or store).
     // If there are multiple, then SuperWordAutomaticAlignment determines if we
     // prefer loads or stores.
@@ -2800,15 +2714,16 @@ void VTransform::determine_mem_ref_and_aw_for_main_loop_alignment() {
     // it is worse if a store is split, and less bad if a load is split.
     // By default, we have SuperWordAutomaticAlignment=1, i.e. we align with a
     // store if possible, to avoid splitting that store.
-    bool prefer_store = mem_ref != nullptr && SuperWordAutomaticAlignment == 1 && mem_ref->is_Load() && p0->is_Store();
-    bool prefer_load  = mem_ref != nullptr && SuperWordAutomaticAlignment == 2 && mem_ref->is_Store() && p0->is_Load();
+    bool prefer_store = SuperWordAutomaticAlignment == 1 &&  vpointer_is_load && !vtn_is_load;
+    bool prefer_load  = SuperWordAutomaticAlignment == 2 && !vpointer_is_load &&  vtn_is_load;
     if (vw > max_aw || (vw == max_aw && (prefer_load || prefer_store))) {
+      vpointer = &vtn->vpointer();
       max_aw = vw;
-      mem_ref = p0;
+      vpointer_is_load = vtn_is_load;
     }
   }
-  assert(mem_ref != nullptr && max_aw > 0, "found mem_ref and aw");
-  _mem_ref_for_main_loop_alignment = mem_ref;
+  assert(vpointer != nullptr && max_aw > 0, "found vpointer and aw");
+  _vpointer_for_main_loop_alignment = vpointer;
   _aw_for_main_loop_alignment = max_aw;
 }
 
@@ -2822,13 +2737,17 @@ void VTransform::determine_mem_ref_and_aw_for_main_loop_alignment() {
 }                                       \
 
 // Ensure that the main loop vectors are aligned by adjusting the pre loop limit. We memory-align
-// the address of "_mem_ref_for_main_loop_alignment" to "_aw_for_main_loop_alignment", which is a
+// the address of "_vpointer_for_main_loop_alignment" to "_aw_for_main_loop_alignment", which is a
 // sufficiently large alignment width. We adjust the pre-loop iteration count by adjusting the
 // pre-loop limit.
 void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
-  determine_mem_ref_and_aw_for_main_loop_alignment();
-  const MemNode* align_to_ref = _mem_ref_for_main_loop_alignment;
-  const int aw                = _aw_for_main_loop_alignment;
+  determine_vpointer_and_aw_for_main_loop_alignment();
+
+  assert(cl()->is_main_loop(), "can only do alignment for main loop");
+  assert(_vpointer_for_main_loop_alignment != nullptr &&
+         _vpointer_for_main_loop_alignment->is_valid() &&
+         _aw_for_main_loop_alignment > 0,
+         "must have alignment reference and aw");
 
   if (!VLoop::vectors_should_be_aligned() && SuperWordAutomaticAlignment == 0) {
 #ifdef ASSERT
@@ -2839,8 +2758,8 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
     return;
   }
 
-  assert(align_to_ref != nullptr && aw > 0, "must have alignment reference and aw");
-  assert(cl()->is_main_loop(), "can only do alignment for main loop");
+  const VPointer& p = *_vpointer_for_main_loop_alignment;
+  const int aw      = _aw_for_main_loop_alignment;
 
   // The opaque node for the limit, where we adjust the input
   Opaque1Node* pre_opaq = _vloop.pre_loop_end()->limit()->as_Opaque1();
@@ -2855,10 +2774,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   Node* orig_limit = pre_opaq->original_loop_limit();
   assert(orig_limit != nullptr && igvn().type(orig_limit) != Type::TOP, "");
 
-  const VPointer& p = vpointer(align_to_ref);
-  assert(p.is_valid(), "sanity");
-
-  // For the main-loop, we want the address of align_to_ref to be memory aligned
+  // For the main-loop, we want the address of vpointer p to be memory aligned
   // with some alignment width (aw, a power of 2). When we enter the main-loop,
   // we know that iv is equal to the pre-loop limit. If we adjust the pre-loop
   // limit by executing adjust_pre_iter many extra iterations, we can change the
@@ -2993,9 +2909,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
 #ifdef ASSERT
   if (_trace._align_vector) {
     tty->print_cr("\nVTransform::adjust_pre_loop_limit_to_align_main_loop_vectors:");
-    tty->print("  align_to_ref:");
-    align_to_ref->dump();
-    tty->print("  ");
+    tty->print("  vpointer_for_main_loop_alignment");
     p.print_on(tty);
     tty->print_cr("  aw:        %d", aw);
     tty->print_cr("  iv_stride: %d", iv_stride);
@@ -3051,7 +2965,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   const bool is_sub = iv_scale * iv_stride > 0;
 
   // 1.1: con
-  Node* xbic = igvn().intcon(is_sub ? -con : con);
+  Node* xbic = phase()->intcon(is_sub ? -con : con);
   TRACE_ALIGN_VECTOR_NODE(xbic);
 
   // 1.2: invar = SUM(invar_summands)
@@ -3068,7 +2982,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
       phase()->register_new_node(invar_variable, pre_ctrl);
       TRACE_ALIGN_VECTOR_NODE(invar_variable);
     }
-    Node* invar_scale_con = igvn().intcon(invar_scale);
+    Node* invar_scale_con = phase()->intcon(invar_scale);
     TRACE_ALIGN_VECTOR_NODE(invar_scale_con);
     Node* invar_summand = new MulINode(invar_variable, invar_scale_con);
     phase()->register_new_node(invar_summand, pre_ctrl);
@@ -3120,7 +3034,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   // 2: Compute (14):
   //    XBIC = xbic / abs(iv_scale)
   //    The division is executed as shift
-  Node* log2_abs_iv_scale = igvn().intcon(exact_log2(abs(iv_scale)));
+  Node* log2_abs_iv_scale = phase()->intcon(exact_log2(abs(iv_scale)));
   Node* XBIC = new URShiftINode(xbic, log2_abs_iv_scale);
   phase()->register_new_node(XBIC, pre_ctrl);
   TRACE_ALIGN_VECTOR_NODE(log2_abs_iv_scale);
@@ -3145,7 +3059,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   //                    = XBIC_OP_old_limit AND (AW - 1)
   //    Since AW is a power of 2, the modulo operation can be replaced with
   //    a bitmask operation.
-  Node* mask_AW = igvn().intcon(AW-1);
+  Node* mask_AW = phase()->intcon(AW-1);
   Node* adjust_pre_iter = new AndINode(XBIC_OP_old_limit, mask_AW);
   phase()->register_new_node(adjust_pre_iter, pre_ctrl);
   TRACE_ALIGN_VECTOR_NODE(mask_AW);

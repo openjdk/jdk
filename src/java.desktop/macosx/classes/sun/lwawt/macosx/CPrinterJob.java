@@ -26,14 +26,32 @@
 package sun.lwawt.macosx;
 
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.EventQueue;
+import java.awt.HeadlessException;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
+import java.awt.SecondaryLoop;
+import java.awt.Toolkit;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
-import java.awt.print.*;
+import java.awt.print.Pageable;
+import java.awt.print.PageFormat;
+import java.awt.print.Paper;
+import java.awt.print.Printable;
+import java.awt.print.PrinterAbortException;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
 import java.net.URI;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.print.*;
+import javax.print.DocFlavor;
+import javax.print.PrintService;
+import javax.print.PrintServiceLookup;
+import javax.print.StreamPrintService;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.standard.Chromaticity;
@@ -48,8 +66,16 @@ import javax.print.attribute.standard.PageRanges;
 import javax.print.attribute.standard.Sides;
 import javax.print.attribute.Attribute;
 
-import sun.java2d.*;
-import sun.print.*;
+import sun.java2d.Disposer;
+import sun.java2d.DisposerRecord;
+import sun.java2d.SunGraphics2D;
+import sun.java2d.SurfaceData;
+import sun.print.CustomMediaTray;
+import sun.print.CustomOutputBin;
+import sun.print.GrayscaleProxyGraphics2D;
+import sun.print.PeekGraphics;
+import sun.print.RasterPrinterJob;
+import sun.print.SunPageSelection;
 
 public final class CPrinterJob extends RasterPrinterJob {
     // NOTE: This uses RasterPrinterJob as a base, but it doesn't use
@@ -60,6 +86,9 @@ public final class CPrinterJob extends RasterPrinterJob {
     // future compatibility and the state keeping that it handles.
 
     private static String sShouldNotReachHere = "Should not reach here.";
+    private static final double USER_SPACE_DPI = 72.0;
+    private static final int DEFAULT_DOC_DPI_X = 300;
+    private static final int DEFAULT_DOC_DPI_Y = 300;
 
     private volatile SecondaryLoop printingLoop;
     private AtomicReference<Throwable> printErrorRef = new AtomicReference<>();
@@ -82,7 +111,11 @@ public final class CPrinterJob extends RasterPrinterJob {
     //  PageFormat data is passed in and set on the fNSPrintInfo on a per call
     //  basis.
     private long fNSPrintInfo = -1;
-    private Object fNSPrintInfoLock = new Object();
+    private final Object fNSPrintInfoLock = new Object();
+    private final Object disposerReferent = new Object();
+
+    private double hRes = DEFAULT_DOC_DPI_X;
+    private double vRes = DEFAULT_DOC_DPI_Y;
 
     static {
         // AWT has to be initialized for the native code to function correctly.
@@ -423,8 +456,7 @@ public final class CPrinterJob extends RasterPrinterJob {
      */
     @Override
     protected double getXRes() {
-        // NOTE: This is not used in the CPrinterJob code path.
-        return 0;
+        return hRes;
     }
 
     /**
@@ -433,8 +465,31 @@ public final class CPrinterJob extends RasterPrinterJob {
      */
     @Override
     protected double getYRes() {
-        // NOTE: This is not used in the CPrinterJob code path.
-        return 0;
+        return vRes;
+    }
+
+    @Override
+    protected void setXYRes(double x, double y) {
+        hRes = x;
+        vRes = y;
+    }
+
+    /**
+     * Returns the resolution in dots per inch across the width
+     * of the page. This method take into account the page orientation.
+     */
+    private double getXRes(PageFormat pageFormat) {
+        return pageFormat.getOrientation() == PageFormat.PORTRAIT ?
+                getXRes() : getYRes();
+    }
+
+    /**
+     * Returns the resolution in dots per inch across the height
+     * of the page. This method take into account the page orientation.
+     */
+    private double getYRes(PageFormat pageFormat) {
+        return pageFormat.getOrientation() == PageFormat.PORTRAIT ?
+                getYRes() : getXRes();
     }
 
     /**
@@ -598,25 +653,29 @@ public final class CPrinterJob extends RasterPrinterJob {
 
     // The following methods are CPrinterJob specific.
 
-    @Override
-    @SuppressWarnings("removal")
-    protected void finalize() {
-        synchronized (fNSPrintInfoLock) {
-            if (fNSPrintInfo != -1) {
-                dispose(fNSPrintInfo);
-            }
-            fNSPrintInfo = -1;
+    static class NSPrintInfoDisposer implements DisposerRecord {
+
+        private final long fNSPrintInfo;
+
+        NSPrintInfoDisposer(long ptr) {
+            fNSPrintInfo = ptr;
+        }
+
+        public void dispose() {
+            CPrinterJob.disposeNSPrintInfo(fNSPrintInfo);
         }
     }
 
-    private native long createNSPrintInfo();
-    private native void dispose(long printInfo);
+    private static native long createNSPrintInfo();
+    private static native void disposeNSPrintInfo(long printInfo);
 
     private long getNSPrintInfo() {
         // This is called from the native side.
         synchronized (fNSPrintInfoLock) {
             if (fNSPrintInfo == -1) {
                 fNSPrintInfo = createNSPrintInfo();
+                Disposer.addRecord(disposerReferent,
+                                   new NSPrintInfoDisposer(fNSPrintInfo));
             }
             return fNSPrintInfo;
         }
@@ -775,11 +834,15 @@ public final class CPrinterJob extends RasterPrinterJob {
         // This is called from the native side.
         Runnable r = new Runnable() { public void run() {
             try {
-                SurfaceData sd = CPrinterSurfaceData.createData(page, context); // Just stores page into an ivar
+                AffineTransform deviceTransform = new AffineTransform(
+                        getXRes(page) / USER_SPACE_DPI, 0, 0,
+                        getYRes(page) / USER_SPACE_DPI, 0, 0);
+                SurfaceData sd = CPrinterSurfaceData
+                        .createData(page, deviceTransform, context); // Just stores page into an ivar
                 if (defaultFont == null) {
                     defaultFont = new Font("Dialog", Font.PLAIN, 12);
                 }
-                Graphics2D delegate = new SunGraphics2D(sd, Color.black, Color.white, defaultFont);
+                SunGraphics2D delegate = new SunGraphics2D(sd, Color.black, Color.white, defaultFont);
 
                 Graphics2D pathGraphics = new CPrinterGraphics(delegate, printerJob); // Just stores delegate into an ivar
                 Rectangle2D pageFormatArea = getPageFormatArea(page);
@@ -788,8 +851,11 @@ public final class CPrinterJob extends RasterPrinterJob {
                     pathGraphics = new GrayscaleProxyGraphics2D(pathGraphics, printerJob);
                 }
                 painter.print(pathGraphics, FlipPageFormat.getOriginal(page), pageIndex);
-                delegate.dispose();
-                delegate = null;
+                synchronized (sd) {
+                    sd.invalidate();
+                    delegate.dispose();
+                    delegate = null;
+                }
         } catch (PrinterException pe) { throw new java.lang.reflect.UndeclaredThrowableException(pe); }
         }};
 
@@ -828,6 +894,9 @@ public final class CPrinterJob extends RasterPrinterJob {
                         Rectangle2D pageFormatArea =
                              getPageFormatArea(pageFormat);
                         initPrinterGraphics(peekGraphics, pageFormatArea);
+                        double scaleX = getXRes(pageFormat) / USER_SPACE_DPI;
+                        double scaleY = getYRes(pageFormat) / USER_SPACE_DPI;
+                        peekGraphics.scale(scaleX, scaleY);
 
                         // Do the assignment here!
                         ret[0] = pageFormat;
