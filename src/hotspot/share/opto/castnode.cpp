@@ -42,12 +42,14 @@ const ConstraintCastNode::DependencyType ConstraintCastNode::DependencyType::Non
 //=============================================================================
 // If input is already higher or equal to cast type, then this is an identity.
 Node* ConstraintCastNode::Identity(PhaseGVN* phase) {
-  // if this cast doesn't narrow its input's type, it doesn't carry a type dependency so we can't remove it if:
-  // - there's a dominating cast with same input but narrower type
-  // - its input has a narrower type
   if (!_dependency.narrows_type()) {
+    // If this cast doesn't carry a type dependency (i.e. not used for type narrowing), we cannot optimize it.
     return this;
   }
+  
+  // This cast node carries a type depedency. We can remove it if:
+  // - Its input has a narrower type
+  // - There's a dominating cast with same input but narrower type
   Node* dom = dominating_cast(phase, phase);
   if (dom != nullptr) {
     return dom;
