@@ -1516,21 +1516,13 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
   if (req.is_mutator_alloc()) {
     request_generation = _heap->mode()->is_generational()? _heap->young_generation(): _heap->global_generation();
     orig_partition = ShenandoahFreeSetPartitionId::Mutator;
-  } else if (req.type() == ShenandoahAllocRequest::_alloc_gclab) {
-    request_generation = _heap->mode()->is_generational()? _heap->young_generation(): _heap->global_generation();
-    orig_partition = ShenandoahFreeSetPartitionId::Collector;
-  } else if (req.type() == ShenandoahAllocRequest::_alloc_plab) {
+  } else if (req.is_old()) {
     request_generation = _heap->old_generation();
     orig_partition = ShenandoahFreeSetPartitionId::OldCollector;
   } else {
-    assert(req.type() == ShenandoahAllocRequest::_alloc_shared_gc, "Unexpected allocation type");
-    if (req.is_old()) {
-      request_generation = _heap->old_generation();
-      orig_partition = ShenandoahFreeSetPartitionId::OldCollector;
-    } else {
-      request_generation = _heap->mode()->is_generational()? _heap->young_generation(): _heap->global_generation();
-      orig_partition = ShenandoahFreeSetPartitionId::Collector;
-    }
+    // Not old collector alloc, so this is a young collector gclab or shared allocation
+    request_generation = _heap->mode()->is_generational()? _heap->young_generation(): _heap->global_generation();
+    orig_partition = ShenandoahFreeSetPartitionId::Collector;
   }
   if (alloc_capacity(r) < PLAB::min_size() * HeapWordSize) {
     // Regardless of whether this allocation succeeded, if the remaining memory is less than PLAB:min_size(), retire this region.
