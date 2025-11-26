@@ -657,6 +657,12 @@ class Stream<T> extends ExchangeImpl<T> {
                     request, exchange, responseHeaders, connection(),
                     responseCode, HttpClient.Version.HTTP_2);
 
+            /* TODO: review if needs to be removed
+               the value is not used, but in case `content-length` doesn't parse as
+               long, there will be NumberFormatException. If left as is, make sure
+               code up the stack handles NFE correctly. */
+            responseHeaders.firstValueAsLong("content-length");
+
             if (Log.headers()) {
                 StringBuilder sb = new StringBuilder("RESPONSE HEADERS (streamid=%s):\n".formatted(streamid));
                 sb.append("  %s %s %s\n".formatted(request.method(), request.uri(), responseCode));
@@ -1765,6 +1771,12 @@ class Stream<T> extends ExchangeImpl<T> {
                 this.response = new Response(
                         pushReq, exchange, responseHeaders, connection(),
                         responseCode, HttpClient.Version.HTTP_2);
+
+                /* TODO: review if needs to be removed
+                   the value is not used, but in case `content-length` doesn't parse
+                   as long, there will be NumberFormatException. If left as is, make
+                   sure code up the stack handles NFE correctly. */
+                responseHeaders.firstValueAsLong("content-length");
 
                 if (Log.headers()) {
                     StringBuilder sb = new StringBuilder("RESPONSE HEADERS (streamid=%s):\n".formatted(streamid));
