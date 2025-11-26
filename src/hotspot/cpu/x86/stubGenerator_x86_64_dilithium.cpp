@@ -85,7 +85,7 @@ static address unshufflePermsAddr(int offset) {
 // |  B  |     |  D  |     | ...
 // +-----+-----+-----+-----+-----
 //
-// NOTE: size 0 and 1 are used for initial and final shuffles respectivelly of
+// NOTE: size 0 and 1 are used for initial and final shuffles respectively of
 // dilithiumAlmostInverseNtt and dilithiumAlmostNtt. For size 0 and 1, input1[]
 // and input2[] are modified in-place (and output2 is used as a temporary)
 //
@@ -245,14 +245,14 @@ static auto whole_shuffle(Register scratch, KRegister mergeMask1, KRegister merg
 
 // We do Montgomery multiplications of two AVX registers in 4 steps:
 // 1. Do the multiplications of the corresponding even numbered slots into
-//    the odd numbered slots of a scratch2 register.
-// 2. Swap the even and odd numbered slots of the original input registers.*
-// 3. Similar to step 1, but into output register.
-// 4. Combine the outputs of step 1 and step 3 into the output of the Montgomery
-//    multiplication.
-// (*For levels 0-6 in the Ntt and levels 1-7 of the inverse Ntt, need NOT swap
-// the second operand (zetas) since the odd slots contain the same number
-// as the corresponding even one. This is indicated by input2NeedsShuffle=false)
+//    the odd numbered slots of the scratch2 register.
+// 2. Swap the even and odd numbered slots of the original input registers.(*Note)
+// 3. Similar to step 1, but multiplication result is placed into output register.
+// 4. Combine odd/even slots respectively from the scratch2 and output registers
+//    into the output register for the final result of the Montgomery multiplication.
+// (*Note: For levels 0-6 in the Ntt and levels 1-7 of the inverse Ntt, need NOT
+//         swap the second operand (zetas) since the odd slots contain the same number
+//         as the corresponding even one. This is indicated by input2NeedsShuffle=false)
 //
 // The registers to be multiplied are in input1[] and inputs2[]. The results go
 // into output[]. Two scratch[] register arrays are expected. input1[] can
@@ -279,7 +279,7 @@ static auto whole_montMul(XMMRegister montQInvModR, XMMRegister dilithium_q,
     // If so, use output:
     const XMMRegister* scratch = scratch1 == input1 ? output: scratch1;
 
-    // scratch = input1_even*intput2_even
+    // scratch = input1_even * intput2_even
     for (int i = 0; i < regCnt; i++) {
       __ vpmuldq(scratch[i], input1[i], input2[i], vector_len);
     }
@@ -362,7 +362,7 @@ static void sub_add(const XMMRegister subResult[], const XMMRegister addResult[]
 }
 
 static void loadXmms(const XMMRegister destinationRegs[], Register source, int offset,
-                       int vector_len, MacroAssembler *_masm, int regCnt = -1, int memStep = -1) {
+                     int vector_len, MacroAssembler *_masm, int regCnt = -1, int memStep = -1) {
 
   if (vector_len == Assembler::AVX_256bit) {
     regCnt = regCnt == -1 ? 2 : regCnt;
@@ -378,7 +378,7 @@ static void loadXmms(const XMMRegister destinationRegs[], Register source, int o
 }
 
 static void storeXmms(Register destination, int offset, const XMMRegister xmmRegs[],
-                       int vector_len, MacroAssembler *_masm, int regCnt = -1, int memStep = -1) {
+                      int vector_len, MacroAssembler *_masm, int regCnt = -1, int memStep = -1) {
   if (vector_len == Assembler::AVX_256bit) {
     regCnt = regCnt == -1 ? 2 : regCnt;
     memStep = memStep == -1 ? 32 : memStep;
@@ -476,7 +476,7 @@ static address generate_dilithiumAlmostNtt_avx(StubGenerator *stubgen,
     // level 0-3 can be done by shuffling registers (also notice fewer zetas loads, they repeat)
     // level 0 - 128
     // scratch1 = coeffs3 * zetas1
-    // coeffs3, coeffs1 = coeffs1±scratch1
+    // coeffs3, coeffs1 = coeffs1 ± scratch1
     // scratch1 = coeffs4 * zetas1
     // coeffs4, coeffs2 = coeffs2 ± scratch1
     __ vmovdqu(Zetas1[0], Address(zetas, 0), vector_len);
@@ -521,12 +521,12 @@ static address generate_dilithiumAlmostNtt_avx(StubGenerator *stubgen,
       // coeffs2_2 = coeffs1_2 - scratch1
       // coeffs1_2 = coeffs1_2 + scratch1
       loadXmms(Zetas3, zetas, level * 512, vector_len, _masm);
-      shuffle(Scratch1, Coeffs1_2, Coeffs2_2, distance * 32); //Coeffs2_2 freed
+      shuffle(Scratch1, Coeffs1_2, Coeffs2_2, distance * 32); // Coeffs2_2 freed
       montMul64(Scratch1, Scratch1, Zetas3, Coeffs2_2, Scratch2, level==7);
       sub_add(Coeffs2_2, Coeffs1_2, Coeffs1_2, Scratch1, vector_len, _masm);
 
       loadXmms(Zetas3, zetas, 4*64 + level * 512, vector_len, _masm);
-      shuffle(Scratch1, Coeffs3_2, Coeffs4_2, distance * 32); //Coeffs4_2 freed
+      shuffle(Scratch1, Coeffs3_2, Coeffs4_2, distance * 32); // Coeffs4_2 freed
       montMul64(Scratch1, Scratch1, Zetas3, Coeffs4_2, Scratch2, level==7);
       sub_add(Coeffs4_2, Coeffs3_2, Coeffs3_2, Scratch1, vector_len, _masm);
     }
@@ -551,15 +551,15 @@ static address generate_dilithiumAlmostNtt_avx(StubGenerator *stubgen,
     const XMMRegister Coeffs1_2[] = {xmm0, xmm1, xmm2, xmm3};
     const XMMRegister Coeffs2_2[] = {xmm4, xmm5, xmm6, xmm7};
 
-    // Since we cannot fit the entire payload into registers, we process
-    // input in two stages. First half, load 8 registers 32 integers each apart.
-    // With one load, we can process level 0-2 (128-, 64- and 32-integers apart)
-    // Remaining levels, load 8 registers from consecutive memory (16-, 8-, 4-,
-    // 2-, 1-integer appart)
-    // Levels 5, 6, 7 (4-, 2-, 1-integer appart) require shuffles within registers
-    // Other levels, shuffles can be done by re-aranging register order
+    // Since we cannot fit the entire payload into registers, we process the
+    // input in two stages. For the first half, load 8 registers, each 32 integers
+    // apart. With one load, we can process level 0-2 (128-, 64- and 32-integers
+    // apart). For the remaining levels, load 8 registers from consecutive memory
+    // (16-, 8-, 4-, 2-, 1-integer apart)
+    // Levels 5, 6, 7 (4-, 2-, 1-integer apart) require shuffles within registers.
+    // On the other levels, shuffles can be done by rearranging the register order
 
-    // Four batches of 8 registers each, 128 bytes appart
+    // Four batches of 8 registers each, 128 bytes apart
     for (int i=0; i<4; i++) {
       loadXmms(Coeffs1_2, coeffs, i*32 + 0*128, vector_len, _masm, 4, 128);
       loadXmms(Coeffs2_2, coeffs, i*32 + 4*128, vector_len, _masm, 4, 128);
@@ -656,7 +656,7 @@ static address generate_dilithiumAlmostNtt_avx(StubGenerator *stubgen,
 // coeffs (int[256]) = c_rarg0
 // zetas (int[128*8]) = c_rarg1
 static address generate_dilithiumAlmostInverseNtt_avx(StubGenerator *stubgen,
-                                         int vector_len,MacroAssembler *_masm) {
+                                        int vector_len, MacroAssembler *_masm) {
   __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_dilithiumAlmostInverseNtt_id;
   StubCodeMark mark(stubgen, stub_id);
@@ -698,7 +698,7 @@ static address generate_dilithiumAlmostInverseNtt_avx(StubGenerator *stubgen,
   // Java version.
   // In each of these iterations half of the coefficients are added to and
   // subtracted from the other half of the coefficients then the result of
-  // the substration is (Montgomery) multiplied by the corresponding zetas.
+  // the subtraction is (Montgomery) multiplied by the corresponding zetas.
   // In each level we just shuffle the coefficients so that the results of
   // the additions and subtractions go to the vector registers so that they
   // align with each other and the zetas.
@@ -847,7 +847,7 @@ static address generate_dilithiumAlmostInverseNtt_avx(StubGenerator *stubgen,
       storeXmms(coeffs, 128 + i*256, Coeffs2_2, vector_len, _masm, 4);
     }
 
-    // Four batches of 8 registers each, 128 bytes appart
+    // Four batches of 8 registers each, 128 bytes apart
     for (int i=0; i<4; i++) {
       loadXmms(Coeffs1_2, coeffs, i*32 + 0*128, vector_len, _masm, 4, 128);
       loadXmms(Coeffs2_2, coeffs, i*32 + 4*128, vector_len, _masm, 4, 128);
