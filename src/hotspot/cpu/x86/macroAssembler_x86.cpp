@@ -4749,6 +4749,17 @@ Address MacroAssembler::argument_address(RegisterOrConstant arg_slot,
   return Address(rsp, scale_reg, scale_factor, offset);
 }
 
+// Handle the receiver type profile update given the "recv" klass.
+//
+// Normally updates the ReceiverData (RD) that starts at "mdp" + "mdp_offset".
+// If there are no matching or claimable receiver entries in RD, updates
+// the polymorphic counter.
+//
+// This code expected to run by either the interpreter or JIT-ed code, without
+// extra synchronization. For safety, receiver cells are claimed atomically, which
+// avoids grossly misrepresenting the profiles under concurrent updates. For speed,
+// counter updates are not atomic.
+//
 void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_offset) {
   int base_receiver_offset   = in_bytes(ReceiverTypeData::receiver_offset(0));
   int end_receiver_offset    = in_bytes(ReceiverTypeData::receiver_offset(ReceiverTypeData::row_limit()));
@@ -4818,16 +4829,17 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   // Since this claim is racy, we need to make sure that rows are only claimed once.
   // This makes sure we never overwrite a row for another receiver and never duplicate
   // the receivers in the list.
-  // Note: It is tempting to combine this search with the optimistic loop above,
-  // and claim the first nullptr slot without checking the rest of the table.
-  // But, profiling code should tolerate free slots in MDO, for example, to allow cleaning up
-  // rows for unloaded receivers.
   //
   // This code is effectively:
   //   for (i = 0; i < receiver_count(); i++) {
   //     if (receiver(i) == null)  CAS(&receiver(i), null -> recv);
   //     if (receiver(i) == recv)  goto found_recv;
   //   }
+  //
+  // Note: It is tempting to combine this search with the optimistic loop above,
+  // and claim the first nullptr slot without checking the rest of the table.
+  // But, profiling code should tolerate free slots in MDO, for example, to allow cleaning up
+  // rows for unloaded receivers.
   //
   movptr(offset, base_receiver_offset);
   bind(L_loop_nulls);
