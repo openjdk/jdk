@@ -9263,6 +9263,8 @@ void MacroAssembler::fill32_tail(uint shift, Register dst, int disp, XMMRegister
   testq(length, length);
   jcc(Assembler::zero, L_done);
   movb(Address(dst, disp), temp);
+  addq(dst, 1);
+  subq(length, 1 >> shift);
 
   bind(L_done);
 }
@@ -9277,9 +9279,7 @@ void MacroAssembler::fill64_tail(uint shift, Register dst, int disp,
   jcc(Assembler::lessEqual, L32);
   fill32(dst, disp, xmm);
   subq(length, 32 >> shift);
-  fill32_tail(shift, dst, disp + 32, xmm, length, temp);
-  jmp(L_exit);
-  // Size <= 32B
+  addq(dst, 32);
   bind(L32);
   fill32_tail(shift, dst, disp, xmm, length, temp);
   bind(L_exit);
