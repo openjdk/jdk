@@ -257,13 +257,7 @@ public final class Security {
                     // We perform symlinks resolution on currentPath under the
                     // rationale that the original file writer is the one who
                     // decided where the relative includes should resolve.
-                    // JDK-8352728: we prefer java.io.File::getCanonicalFile
-                    // over java.nio.file.Path::toRealPath because the former
-                    // is more fault-tolerant, since the canonical form of a
-                    // pathname is specified to exist even for nonexistent
-                    // or inaccessible files.
-                    path = currentPath.toFile().getCanonicalFile().toPath()
-                            .resolveSibling(path);
+                    path = currentPath.toRealPath().resolveSibling(path);
                 }
                 loadFromPath(path, LoadingMode.APPEND);
             } catch (IOException | InvalidPathException e) {
