@@ -698,7 +698,7 @@ JvmtiThreadState::process_vthread_pending_deopts() {
   }
   JavaThread* thread = get_thread();
   ResourceMark rm;
-  GrowableArray<int>* deopts = get_vthread_pending_deopts();
+  GrowableArray<int>* deopts = vthread_pending_deopts();
   javaVFrame* jvf = JvmtiEnvBase::get_vthread_jvf(thread->vthread());
   int frame_count = (int)JvmtiEnvBase::get_frame_count(jvf);
 

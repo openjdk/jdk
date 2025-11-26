@@ -287,14 +287,14 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
     return _vthread_pending_deopts != nullptr && _vthread_pending_deopts->length() > 0;
   }
 
-  void check_and_clear_vthread_pending_deopts() {
+  void clear_vthread_pending_deopts() {
     if (_vthread_pending_deopts != nullptr) {
       delete _vthread_pending_deopts;
       _vthread_pending_deopts = nullptr;
     }
   }
 
-  GrowableArray<int>* get_vthread_pending_deopts() {
+  GrowableArray<int>* vthread_pending_deopts() {
     if (_vthread_pending_deopts == nullptr) {
       _vthread_pending_deopts = new (mtServiceability) GrowableArray<int> (2, mtServiceability);
       assert(_vthread_pending_deopts != nullptr, "sanity check");
