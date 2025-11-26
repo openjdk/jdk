@@ -46,29 +46,27 @@ import javax.tools.StandardLocation;
 import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.Completer;
-import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.comp.Annotate;
-import com.sun.tools.javac.file.JRTIndex;
 import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.file.LegacyCtSymAccess;
+import com.sun.tools.javac.file.LegacyCtSymAccess.LegacyCtSymInfo;
 import com.sun.tools.javac.jvm.ClassReader;
 import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.javac.main.Option;
-import com.sun.tools.javac.platform.PlatformDescription;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.Dependencies.CompletionCause;
 
 import static javax.tools.StandardLocation.*;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
-import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.main.DelegatingJavaFileManager;
 
-import com.sun.tools.javac.util.Dependencies.CompletionCause;
 
 /**
  *  This class provides operations to locate class definitions
@@ -160,7 +158,7 @@ public class ClassFinder {
      * replacement for the info that used to be in ct.sym.
      * In time, this will go away and be replaced by the module system.
      */
-    private final JRTIndex jrtIndex;
+    private final LegacyCtSymAccess legacyCtSymInfoAccess;
 
     /**
      * Completer that delegates to the complete-method of this class.
@@ -208,17 +206,15 @@ public class ClassFinder {
             : null;
 
         // Temporary, until more info is available from the module system.
-        boolean useCtProps;
         JavaFileManager fm = context.get(JavaFileManager.class);
         if (fm instanceof DelegatingJavaFileManager delegatingJavaFileManager) {
             fm = delegatingJavaFileManager.getBaseFileManager();
         }
         if (fm instanceof JavacFileManager javacFileManager) {
-            useCtProps = javacFileManager.isDefaultBootClassPath() && javacFileManager.isSymbolFileEnabled();
+            legacyCtSymInfoAccess = javacFileManager.getLegacyCtSymInfo();
         } else {
-            useCtProps = false;
+            legacyCtSymInfoAccess = LegacyCtSymAccess.NOOP;
         }
-        jrtIndex = useCtProps && JRTIndex.isAvailable() ? JRTIndex.getSharedInstance() : null;
 
         profile = Profile.instance(context);
         cachedCompletionFailure = new CompletionFailure(null, () -> null, dcfh);
@@ -241,7 +237,7 @@ public class ClassFinder {
      * available from the module system.
      */
     long getSupplementaryFlags(ClassSymbol c) {
-        if (jrtIndex == null || !jrtIndex.isInJRT(c.classfile) || c.name == names.module_info) {
+        if (!legacyCtSymInfoAccess.isOnDefaultBootClassPath(c.classfile) || c.name == names.module_info) {
             return 0;
         }
 
@@ -257,7 +253,7 @@ public class ClassFinder {
             try {
                 ModuleSymbol owningModule = packge.modle;
                 if (owningModule == syms.noModule) {
-                    JRTIndex.CtSym ctSym = jrtIndex.getCtSym(packge.flatName());
+                    LegacyCtSymInfo ctSym = legacyCtSymInfoAccess.getInfo(packge.flatName());
                     Profile minProfile = Profile.DEFAULT;
                     if (ctSym.proprietary)
                         newFlags |= PROPRIETARY;

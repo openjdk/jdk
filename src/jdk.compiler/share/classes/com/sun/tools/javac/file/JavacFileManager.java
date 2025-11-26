@@ -69,6 +69,7 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
+import com.sun.tools.javac.file.LegacyCtSymAccess;
 import com.sun.tools.javac.file.RelativePath.RelativeDirectory;
 import com.sun.tools.javac.file.RelativePath.RelativeFile;
 import com.sun.tools.javac.main.Option;
@@ -457,6 +458,25 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     }
 
     private JRTIndex jrtIndex;
+
+    public LegacyCtSymAccess getLegacyCtSymInfo() {
+        if (isDefaultBootClassPath() && isSymbolFileEnabled() && JRTIndex.isAvailable()) {
+            return new LegacyCtSymAccess() {
+                private final JRTIndex jrtIndex = getJRTIndex();
+                @Override
+                public boolean isOnDefaultBootClassPath(JavaFileObject fo) {
+                    return jrtIndex.isInJRT(fo);
+                }
+
+                @Override
+                public LegacyCtSymInfo getInfo(CharSequence packge) throws IOException {
+                    return jrtIndex.getCtSym(packge);
+                }
+            };
+        } else {
+            return LegacyCtSymAccess.NOOP;
+        }
+    }
 
     private final class DirectoryContainer implements Container {
         private final Path directory;
