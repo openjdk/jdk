@@ -587,7 +587,6 @@ void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
   assert(Rsub_klass != r14, "r14 holds locals");
   assert(Rsub_klass != r13, "r13 holds bcp");
   assert(Rsub_klass != rcx, "rcx holds 2ndary super array length");
-  assert(Rsub_klass != rdi, "rdi holds 2ndary super array scan ptr");
 
   // Profile the not-null value's klass.
   profile_typecheck(rcx, Rsub_klass); // blows rcx
