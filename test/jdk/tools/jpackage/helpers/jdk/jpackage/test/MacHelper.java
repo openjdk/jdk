@@ -797,6 +797,15 @@ public final class MacHelper {
         ).orElseGet(cmd::name);
     }
 
+    public static boolean isForAppStore(JPackageCommand cmd) {
+        return PropertyFinder.findAppProperty(cmd,
+                PropertyFinder.cmdlineBooleanOption("--mac-app-store"),
+                PropertyFinder.appImageFile(appImageFile -> {
+                    return Boolean.toString(appImageFile.macAppStore());
+                })
+        ).map(Boolean::parseBoolean).orElse(false);
+    }
+
     public static boolean isXcodeDevToolsInstalled() {
         return Inner.XCODE_DEV_TOOLS_INSTALLED;
     }

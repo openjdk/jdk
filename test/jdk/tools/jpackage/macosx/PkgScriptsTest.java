@@ -22,6 +22,7 @@
  */
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -32,6 +33,7 @@ import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageStringBundle;
+import jdk.jpackage.test.MacHelper;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
@@ -50,29 +52,18 @@ import jdk.jpackage.test.TKit;
  */
 public class PkgScriptsTest {
 
-    public static Collection<?> input() {
-        return List.of(new Object[][]{
-            { new PkgInstallScript[]{
-                    PkgInstallScript.PREINSTALL,
-                    PkgInstallScript.POSTINSTALL }, false,
-            },
-            { new PkgInstallScript[]{
-                    PkgInstallScript.PREINSTALL }, false,
-            },
-            { new PkgInstallScript[]{
-                    PkgInstallScript.POSTINSTALL }, false,
-            },
-            { new PkgInstallScript[]{
-                    PkgInstallScript.PREINSTALL,
-                    PkgInstallScript.POSTINSTALL }, true,
-            },
-            { new PkgInstallScript[]{
-                    PkgInstallScript.PREINSTALL }, true,
-            },
-            { new PkgInstallScript[]{
-                    PkgInstallScript.POSTINSTALL }, true,
-            },
-        });
+    public static Collection<Object[]> input() {
+        List<Object[]> data = new ArrayList<>();
+        for (var appStore : List.of(true, false)) {
+            for (var scriptRoles : List.of(
+                    List.of(PkgInstallScript.PREINSTALL, PkgInstallScript.POSTINSTALL),
+                    List.of(PkgInstallScript.PREINSTALL),
+                    List.of(PkgInstallScript.POSTINSTALL)
+            )) {
+                data.add(new Object[] {scriptRoles.toArray(PkgInstallScript[]::new), appStore});
+            }
+        }
+        return data;
     }
 
     @Test
@@ -106,7 +97,7 @@ public class PkgScriptsTest {
                 }).forEach(cmd::validateOutput);
             }).addInstallVerifier(cmd -> {
                 customScripts.forEach(customScript -> {
-                    customScript.verify(cmd, !appStore);
+                    customScript.verify(cmd);
                 });
                 if (cmd.isPackageUnpacked()) {
                     noScriptRoles.forEach(role -> {
@@ -168,10 +159,11 @@ public class PkgScriptsTest {
             ));
         }
 
-        void verify(JPackageCommand cmd, boolean exists) {
+        void verify(JPackageCommand cmd) {
+            var scriptsEnabled = !MacHelper.isForAppStore(cmd);
             if (cmd.isPackageUnpacked()) {
-                role.verifyExists(cmd, exists);
-            } else if (exists) {
+                role.verifyExists(cmd, scriptsEnabled);
+            } else if (scriptsEnabled) {
                 TKit.assertFileExists(responseFilePath(cmd));
             } else {
                 TKit.assertPathExists(responseFilePath(cmd), false);

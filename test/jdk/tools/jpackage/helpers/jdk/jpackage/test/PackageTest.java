@@ -811,8 +811,7 @@ public final class PackageTest extends RunnablePackageTest {
                 Path unpackedDir) {
 
             final boolean withServices = !cmd.isRuntime()
-                    && !LauncherAsServiceVerifier.getLaunchersAsServices(cmd).isEmpty()
-                    && !cmd.hasArgument("--mac-app-store");
+                    && !LauncherAsServiceVerifier.getLaunchersAsServices(cmd).isEmpty();
 
             final long expectedRootCount;
             if (isOfType(cmd, WINDOWS)) {

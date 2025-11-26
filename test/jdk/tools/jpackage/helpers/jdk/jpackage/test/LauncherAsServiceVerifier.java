@@ -149,7 +149,11 @@ public final class LauncherAsServiceVerifier {
             applyToAdditionalLauncher(target);
         }
         target.test().ifPresent(pkg -> {
-            pkg.addInstallVerifier(this::verifyLauncherExecuted);
+            pkg.addInstallVerifier(cmd -> {
+                if (!MacHelper.isForAppStore(cmd)) {
+                    verifyLauncherExecuted(cmd);
+                }
+            });
         });
     }
 
@@ -227,7 +231,11 @@ public final class LauncherAsServiceVerifier {
     }
 
     static List<String> getLaunchersAsServices(JPackageCommand cmd) {
-        return Objects.requireNonNull(partitionLaunchers(cmd).get(true));
+        if (MacHelper.isForAppStore(cmd)) {
+            return List.of();
+        } else {
+            return Objects.requireNonNull(partitionLaunchers(cmd).get(true));
+        }
     }
 
     private static Map<Boolean, List<String>> partitionLaunchers(JPackageCommand cmd) {
@@ -241,7 +249,9 @@ public final class LauncherAsServiceVerifier {
     }
 
     static boolean launcherAsService(JPackageCommand cmd, String launcherName) {
-        if (cmd.isMainLauncher(launcherName)) {
+        if (MacHelper.isForAppStore(cmd)) {
+            return false;
+        } else if (cmd.isMainLauncher(launcherName)) {
             return PropertyFinder.findLauncherProperty(cmd, null,
                     PropertyFinder.cmdlineBooleanOption("--launcher-as-service"),
                     PropertyFinder.nop(),
@@ -310,7 +320,7 @@ public final class LauncherAsServiceVerifier {
     }
 
     public void verifyLauncherExecuted(JPackageCommand cmd) {
-        if (canVerifyInstall(cmd) && !cmd.hasArgument("--mac-app-store")) {
+        if (canVerifyInstall(cmd)) {
             delayInstallVerify();
             Path outputFilePath = appOutputFilePathVerify(cmd);
             HelloApp.assertApp(cmd.appLauncherPath(launcherName))
