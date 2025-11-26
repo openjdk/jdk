@@ -25,6 +25,8 @@
  * @test
  * @bug 8371864
  * @run main/othervm/timeout=600 TestGCMSplitBound
+ * @requires (os.simpleArch == "x64" & (vm.cpu.features ~= ".*avx2.*" |
+ *                                      vm.cpu.features ~= ".*avx512.*"))
  * @summary Test GaloisCounterMode.implGCMCrypt0 AVX512/AVX2 intrinsics.
  */
 
@@ -56,7 +58,8 @@ public class TestGCMSplitBound {
     private static final int IV_SIZE_IN_BYTES = 12;
     private static final int TAG_SIZE_IN_BYTES = 16;
 
-    private Cipher getCipher(final byte[] key, final byte[] aad, final byte[] nonce, int mode)
+    private Cipher getCipher(final byte[] key, final byte[] aad,
+                             final byte[] nonce, int mode)
         throws Exception {
         SecretKey keySpec = new SecretKeySpec(key, "AES");
         AlgorithmParameterSpec params =
@@ -69,7 +72,8 @@ public class TestGCMSplitBound {
         return cipher;
     }
 
-    private byte[] gcmEncrypt(final byte[] key, final byte[] plaintext, final byte[] aad)
+    private byte[] gcmEncrypt(final byte[] key, final byte[] plaintext,
+                              final byte[] aad)
         throws Exception {
         byte[] nonce = randBytes(IV_SIZE_IN_BYTES);
         Cipher cipher = getCipher(key, aad, nonce, Cipher.ENCRYPT_MODE);
@@ -77,16 +81,19 @@ public class TestGCMSplitBound {
         int len = IV_SIZE_IN_BYTES + outputSize;
         byte[] output = new byte[len];
         System.arraycopy(nonce, 0, output, 0, IV_SIZE_IN_BYTES);
-        cipher.doFinal(plaintext, 0, plaintext.length, output, IV_SIZE_IN_BYTES);
+        cipher.doFinal(plaintext, 0, plaintext.length, output,
+                       IV_SIZE_IN_BYTES);
         return output;
     }
 
-    private byte[] gcmDecrypt(final byte[] key, final byte[] ciphertext, final byte[] aad)
+    private byte[] gcmDecrypt(final byte[] key, final byte[] ciphertext,
+                              final byte[] aad)
         throws Exception {
         byte[] nonce = new byte[IV_SIZE_IN_BYTES];
         System.arraycopy(ciphertext, 0, nonce, 0, IV_SIZE_IN_BYTES);
         Cipher cipher = getCipher(key, aad, nonce, Cipher.DECRYPT_MODE);
-        return cipher.doFinal(ciphertext, IV_SIZE_IN_BYTES, ciphertext.length - IV_SIZE_IN_BYTES);
+        return cipher.doFinal(ciphertext, IV_SIZE_IN_BYTES,
+                              ciphertext.length - IV_SIZE_IN_BYTES);
     }
 
     // x86-64 parallel intrinsic data size
@@ -94,14 +101,16 @@ public class TestGCMSplitBound {
     // max data size for x86-64 intrinsic
     private static final int SPLIT_LEN = 1048576; // 1MB
 
-    private void encryptAndDecrypt(byte[] key, byte[] aad, byte[] message, int messageSize)
+    private void encryptAndDecrypt(byte[] key, byte[] aad, byte[] message,
+                                   int messageSize)
         throws Exception {
         byte[] ciphertext = gcmEncrypt(key, message, aad);
         byte[] decrypted = gcmDecrypt(key, ciphertext, aad);
         if (ciphertext == null) {
             throw new RuntimeException("ciphertext is null");
         }
-        if (Arrays.compare(decrypted, 0, messageSize, message, 0, messageSize) != 0) {
+        if (Arrays.compare(decrypted, 0, messageSize,
+                           message, 0, messageSize) != 0) {
             throw new RuntimeException(
                  "Decrypted message is different from the original message");
         }
@@ -115,13 +124,14 @@ public class TestGCMSplitBound {
             byte[] message = randBytes(PARALLEL_LEN);
             encryptAndDecrypt(key, aad, message, PARALLEL_LEN);
         }
-        for (int messageSize = SPLIT_LEN - 300; messageSize <= SPLIT_LEN + 300; messageSize++) {
+        for (int messageSize = SPLIT_LEN - 300; messageSize <= SPLIT_LEN + 300;
+                                                messageSize++) {
             byte[] message = randBytes(messageSize);
             try {
                 encryptAndDecrypt(key, aad, message, messageSize);
             } catch (Exception e) {
-                throw new RuntimeException(
-                    "Failed for messageSize " + Integer.toHexString(messageSize), e);
+                throw new RuntimeException("Failed for messageSize " +
+                    Integer.toHexString(messageSize), e);
             }
         }
     }
