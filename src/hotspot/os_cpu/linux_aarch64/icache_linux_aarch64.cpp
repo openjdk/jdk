@@ -24,4 +24,4 @@
 
 #include "utilities/globalDefinitions.hpp"
 
-THREAD_LOCAL bool deferred_icache_invalidation = false;
+THREAD_LOCAL ICacheInvalidationContext* current_icache_invalidation_context = nullptr;

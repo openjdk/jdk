@@ -203,7 +203,7 @@ void ZNMethod::register_nmethod(nmethod* nm) {
   log_register(nm);
 
   {
-    ICacheInvalidationContext icic;
+    ICacheInvalidationContext icic(needs_barrier_patching(nm));
 
     // Patch nmethod barriers
     nmethod_patch_barriers(nm);
@@ -372,7 +372,7 @@ public:
         assert(prev_color != ZPointerStoreGoodMask, "Potentially non-monotonic transition");
 
         {
-          ICacheInvalidationContext icic;
+          ICacheInvalidationContext icic(ZNMethod::needs_non_immediate_oops_patching(nm));
 
           // Heal oops and potentially mark young objects if there is a concurrent young collection.
           ZUncoloredRootProcessOopClosure cl(prev_color);
@@ -427,4 +427,16 @@ void ZNMethod::unlink(ZWorkers* workers, bool unloading_occurred) {
 
 void ZNMethod::purge() {
   ClassUnloadingContext::context()->purge_and_free_nmethods();
+}
+
+bool ZNMethod::needs_icache_invalidation(nmethod* nm) {
+  return needs_barrier_patching(nm) || needs_non_immediate_oops_patching(nm);
+}
+
+bool ZNMethod::needs_barrier_patching(nmethod* nm) {
+  return gc_data(nm)->barriers()->is_nonempty();
+}
+
+bool ZNMethod::needs_non_immediate_oops_patching(nmethod* nm) {
+  return gc_data(nm)->has_non_immediate_oops();
 }

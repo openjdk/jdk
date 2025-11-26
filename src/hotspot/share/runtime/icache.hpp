@@ -75,11 +75,13 @@ class ICacheInvalidationContext : StackObj {
  private:
   NONCOPYABLE(ICacheInvalidationContext);
 
+  bool _needs_invalidation;
+
   void pd_init();
   void pd_invalidate_icache();
 
  public:
-  ICacheInvalidationContext() {
+  ICacheInvalidationContext(bool needs_invalidation) : _needs_invalidation(needs_invalidation) {
     pd_init();
   }
 

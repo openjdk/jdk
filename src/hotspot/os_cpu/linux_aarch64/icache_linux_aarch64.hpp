@@ -30,21 +30,24 @@
 
 #define PD_ICACHE_INVALIDATION_CONTEXT
 
-extern THREAD_LOCAL bool deferred_icache_invalidation;
+extern THREAD_LOCAL ICacheInvalidationContext* current_icache_invalidation_context;
 
 inline void ICacheInvalidationContext::pd_init() {
-   if (NeoverseN1Errata1542419) {
-    deferred_icache_invalidation = true;
+  if (NeoverseN1Errata1542419 && _needs_invalidation) {
+    current_icache_invalidation_context = this;
   }
 }
 
 inline bool ICacheInvalidationContext::deferred_invalidation() {
-  return deferred_icache_invalidation;
+  if (NeoverseN1Errata1542419 && current_icache_invalidation_context != nullptr) {
+    assert(current_icache_invalidation_context->_needs_invalidation, "ICacheInvalidationContext::deferred_invalidation must be invoked when icache invalidation is needed");
+    return true;
+  }
+  return false;
 }
 
 inline void ICacheInvalidationContext::pd_invalidate_icache() {
-  if (NeoverseN1Errata1542419) {
-    assert(deferred_icache_invalidation, "Deferred icache invalidation must be enabled");
+  if (NeoverseN1Errata1542419 && _needs_invalidation) {
     // Errata 1542419: Neoverse N1 cores with the 'COHERENT_ICACHE' feature may fetch stale
     // instructions when software depends on prefetch-speculation-protection
     // instead of explicit synchronization.
@@ -84,7 +87,7 @@ inline void ICacheInvalidationContext::pd_invalidate_icache() {
                  "isb           \n"
                  : : : "memory");
 
-    deferred_icache_invalidation = false;
+    current_icache_invalidation_context = nullptr;
   }
 }
 

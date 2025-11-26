@@ -81,7 +81,7 @@ public:
       // Disarmed nmethods are alive
       return false;
     }
-    ICacheInvalidationContext icic;
+    ICacheInvalidationContext icic(ZNMethod::needs_non_immediate_oops_patching(nm));
 
     ZIsUnloadingOopClosure cl(nm);
     ZNMethod::nmethod_oops_do_inner(nm, &cl);

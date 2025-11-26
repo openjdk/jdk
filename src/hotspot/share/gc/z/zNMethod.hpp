@@ -74,6 +74,10 @@ public:
 
   static oop oop_load_no_keepalive(const nmethod* nm, int index);
   static oop oop_load_phantom(const nmethod* nm, int index);
+
+  static bool needs_icache_invalidation(nmethod* nm);
+  static bool needs_barrier_patching(nmethod* nm);
+  static bool needs_non_immediate_oops_patching(nmethod* nm);
 };
 
 #endif // SHARE_GC_Z_ZNMETHOD_HPP

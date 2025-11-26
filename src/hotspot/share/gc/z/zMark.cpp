@@ -720,7 +720,7 @@ public:
     ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
     if (_bs_nm->is_armed(nm)) {
       {
-         ICacheInvalidationContext icic;
+         ICacheInvalidationContext icic(ZNMethod::needs_icache_invalidation(nm));
 
          // Heal barriers
          ZNMethod::nmethod_patch_barriers(nm);
@@ -769,7 +769,12 @@ public:
       const bool complete_disarm = ZPointer::is_store_good(new_disarm_value_ptr);
 
       {
-        ICacheInvalidationContext icic;
+        bool needs_icache_invalidation = ZNMethod::needs_non_immediate_oops_patching(nm);
+        if (complete_disarm && ZNMethod::needs_barrier_patching(nm)) {
+          needs_icache_invalidation = true;
+        }
+
+        ICacheInvalidationContext icic(needs_icache_invalidation);
 
         if (complete_disarm) {
           // We are about to completely disarm the nmethod, must take responsibility to patch all barriers before disarming
