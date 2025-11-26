@@ -21,6 +21,9 @@
  * questions.
  */
 
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -31,14 +34,20 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLContext;
 
+import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpsServer;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.common.TestServerConfigurator;
 import jdk.test.lib.net.SimpleSSLContext;
 
 import org.junit.jupiter.api.AfterEach;
@@ -50,14 +59,41 @@ import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 
 /*
- * @test
+ * @test id=default
  * @bug 8372198
+ * @requires os.family != "windows"
  * @summary Attempt to check that no deadlock occurs when
  *          connections are closed by the ConnectionPool.
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  * @run junit/othervm
+ *              -Djdk.httpclient.HttpClient.log=errors
+ *              -Djdk.httpclient.connectionPoolSize=1
+ *              ${test.main.class}
+ */
+/*
+ * @test id=windows
+ * @bug 8372198
+ * @requires os.family == "windows"
+ * @summary Attempt to check that no deadlock occurs when
+ *          connections are closed by the ConnectionPool.
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext
+ *        jdk.httpclient.test.lib.common.HttpServerAdapters
+ * @comment A special jtreg id for windows allows for experimentation
+ *          with different configuration - for instance, specifying
+ *          -Djdk.internal.httpclient.tcp.selector.useVirtualThreads=<always|never>
+ *          on the run command line, or specifying a different request count
+ *          with -DrequestCount=<integer>.
+ *          On windows, it seems important to set the backlog for the HTTP/1.1
+ *          server to at least the number of concurrent request. This is done
+ *          in the beforeTest() method.
+ *          If the test fails waiting for avalaible permits, due to system limitations,
+ *          even with the backlog correctly configure, adding a margin to the backlog
+ *          or reducing the requestCount could be envisaged.
+ * @run junit/othervm
+ *              -Djdk.internal.httpclient.tcp.selector.useVirtualThreads=always
  *              -Djdk.httpclient.HttpClient.log=errors
  *              -Djdk.httpclient.connectionPoolSize=1
  *              ${test.main.class}
@@ -74,7 +110,8 @@ class PlainConnectionLockTest implements HttpServerAdapters {
     private ExecutorService serverExecutor;
     private Semaphore responseSemaphore;
     private Semaphore requestSemaphore;
-    private static final int MANY = 100;
+    private boolean successfulCompletion;
+    private static final int MANY = Integer.getInteger("requestCount", 100);
 
     static {
         HttpServerAdapters.enableServerLogging();
@@ -95,6 +132,7 @@ class PlainConnectionLockTest implements HttpServerAdapters {
     synchronized void beforeTest() throws Exception {
         requestSemaphore = new Semaphore(0);
         responseSemaphore = new Semaphore(0);
+        successfulCompletion = false;
         sslContext = new SimpleSSLContext().get();
         if (sslContext == null) {
             throw new AssertionError("Unexpected null sslContext");
@@ -102,8 +140,17 @@ class PlainConnectionLockTest implements HttpServerAdapters {
         serverExecutor = Executors.newThreadPerTaskExecutor(
                 Thread.ofVirtual().name("Http1Server", 0).factory());
 
+        // On windows, sending 100 concurrent requests may
+        // fail is the server's connection backlog is less than 100.
+        // The default backlog is 50. Just make sure the backlog is
+        // big enough.
+        int backlog = MANY > 50 ? MANY : 50;
+
         // create a https server for HTTP/1.1
-        https1Server = HttpTestServer.create(HTTP_1_1, sslContext, serverExecutor);
+        var loopback = InetAddress.getLoopbackAddress();
+        var wrappedHttps1Server = HttpsServer.create(new InetSocketAddress(loopback, 0), backlog);
+        wrappedHttps1Server.setHttpsConfigurator(new TestServerConfigurator(loopback, sslContext));
+        https1Server = HttpTestServer.of(wrappedHttps1Server, serverExecutor);
         https1Server.addHandler((exchange) -> {
             if (blockResponse(requestSemaphore, responseSemaphore)) {
                 exchange.sendResponseHeaders(200, 0);
@@ -116,7 +163,8 @@ class PlainConnectionLockTest implements HttpServerAdapters {
         https1URI = "https://" + https1Server.serverAuthority() + "/PlainConnectionLockTest/https1";
 
         // create a plain http server for HTTP/1.1
-        http1Server = HttpTestServer.create(HTTP_1_1, null, serverExecutor);
+        var wrappedHttp1Server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), backlog);
+        http1Server = HttpTestServer.of(wrappedHttp1Server, serverExecutor);
         http1Server.addHandler((exchange) -> {
             if (blockResponse(requestSemaphore, responseSemaphore)) {
                 exchange.sendResponseHeaders(200, 0);
@@ -141,7 +189,12 @@ class PlainConnectionLockTest implements HttpServerAdapters {
         }
         if (serverExecutor != null) {
             System.out.println("Closing server executor");
-            serverExecutor.close();
+            if (successfulCompletion) {
+                serverExecutor.close();
+            } else {
+                // server handlers may be wedged.
+                serverExecutor.shutdownNow();
+            }
         }
         requestSemaphore = null;
         responseSemaphore = null;
@@ -155,19 +208,42 @@ class PlainConnectionLockTest implements HttpServerAdapters {
 
     @Test
     void sendManyHttpRequestsNoShutdown() throws Exception {
-        sendManyRequests(http1URI, MANY, false);
+        try {
+            sendManyRequests(http1URI, MANY, false);
+        } catch (Throwable t) {
+            t.printStackTrace(System.out);
+            throw t;
+        }
     }
+
     @Test
     void sendManyHttpRequestsShutdownNow() throws Exception {
-        sendManyRequests(http1URI, MANY, true);
+        try {
+            sendManyRequests(http1URI, MANY, true);
+        } catch (Throwable t) {
+            t.printStackTrace(System.out);
+            throw t;
+        }
     }
+
     @Test
     void sendManyHttpsRequestsNoShutdown() throws Exception {
-        sendManyRequests(https1URI, MANY, false);
+        try {
+            sendManyRequests(https1URI, MANY, false);
+        } catch (Throwable t) {
+            t.printStackTrace(System.out);
+            throw t;
+        }
     }
+
     @Test
     void sendManyHttpsRequestsShutdownNow() throws Exception {
-        sendManyRequests(https1URI, MANY, true);
+        try {
+            sendManyRequests(https1URI, MANY, true);
+        } catch (Throwable t) {
+            t.printStackTrace(System.out);
+            throw t;
+        }
     }
 
     private static void throwCause(CompletionException x) throws Exception {
@@ -177,9 +253,26 @@ class PlainConnectionLockTest implements HttpServerAdapters {
         throw x;
     }
 
+    static final long start = System.nanoTime();
+    public static String now() {
+        long now = System.nanoTime() - start;
+        long secs = now / 1000_000_000;
+        long mill = (now % 1000_000_000) / 1000_000;
+        long nan = now % 1000_000;
+        return String.format("[%d s, %d ms, %d ns] ", secs, mill, nan);
+    }
+
+    static Throwable getCause(Throwable exception) {
+        if (exception instanceof IOException) return exception;
+        if (exception instanceof CancellationException) return exception;
+        if (exception instanceof CompletionException) return getCause(exception.getCause());
+        if (exception instanceof ExecutionException) return getCause(exception.getCause());
+        return exception;
+    }
+
     private synchronized void sendManyRequests(final String requestURI, final int many, boolean shutdown) throws Exception {
-        System.out.println("\nSending %s requests to %s, shutdown=%s\n".formatted(many, requestURI, shutdown));
-        System.err.println("\nSending %s requests to %s, shutdown=%s\n".formatted(many, requestURI, shutdown));
+        System.out.println("\n%sSending %s requests to %s, shutdown=%s\n".formatted(now(), many, requestURI, shutdown));
+        System.err.println("\n%sSending %s requests to %s, shutdown=%s\n".formatted(now(), many, requestURI, shutdown));
         assert many > 0;
         try (final HttpClient client = HttpClient.newBuilder()
                 .proxy(NO_PROXY)
@@ -190,39 +283,75 @@ class PlainConnectionLockTest implements HttpServerAdapters {
                 // GET
                 final URI reqURI = new URI(requestURI + "?i=" + i);
                 final HttpRequest req = reqBuilder.copy().uri(reqURI).GET().build();
-                System.out.println("Issuing request: " + req);
+                System.out.println(now() + "Issuing request: " + req);
                 var cf = client.sendAsync(req, BodyHandlers.ofString());
                 futures.add(cf);
             }
-            System.out.printf("\nWaiting for %s requests to be handled on the server%n", many);
+            System.out.printf("\n%sWaiting for %s requests to be handled on the server%n", now(), many);
+
+            int count = 0;
             // wait for all exchanges to be handled
-            requestSemaphore.acquire(many);
-            System.out.println("All requests reached the server: releasing one response");
+            while (!requestSemaphore.tryAcquire(many, 5, TimeUnit.SECONDS)) {
+                count++;
+                System.out.printf("%sFailed to obtain %s permits after %ss - only %s available%n",
+                        now(), many, (count * 5), requestSemaphore.availablePermits());
+                for (var cf : futures) {
+                    if (cf.isDone() || cf.isCancelled()) {
+                        System.out.printf("%sFound some completed cf: %s%n", now(), cf);
+                        if (cf.isCancelled()) {
+                            System.out.printf("%scf is cancelled: %s%n", now(), cf);
+                            client.shutdownNow(); // make sure HttpCient::close won't block waiting for server
+                            var error = new AssertionError(now() + "A request cf was cancelled" + cf);
+                            System.out.printf("%s throwing: %s%n", now(), error);
+                            throw error;
+                        }
+                        if (cf.isCompletedExceptionally()) {
+                            System.out.printf("%scf is completed exceptionally: %s%n", now(), cf);
+                            var exception = getCause(cf.exceptionNow());
+                            System.out.printf("%sexception is: %s%n", now(), exception);
+                            client.shutdownNow(); // make sure HttpCient::close won't block waiting for server
+                            exception.printStackTrace(System.out);
+                            var error = new AssertionError(now() + "A request failed prematurely", exception);
+                            System.out.printf("%s throwing: %s%n", now(), error);
+                            throw error;
+                        }
+                        System.out.printf("%scf is completed prematurely: %s%n", now(), cf);
+                        client.shutdownNow(); // make sure HttpCient::close won't block waiting for server
+                        var error = new AssertionError(now() + "A request succeeded prematurely: " + cf.join());
+                        System.out.printf("%s throwing: %s%n", now(), error);
+                        throw error;
+                    }
+                }
+                System.out.printf("%sCouldn't acquire %s permits, only %s available - keep on waiting%n",
+                        now(), many, requestSemaphore.availablePermits());
+            }
+
+            System.out.println(now() + "All requests reached the server: releasing one response");
             // allow one request to proceed
             responseSemaphore.release();
             try {
                 // wait for the first response.
-                System.out.println("Waiting for the first response");
+                System.out.println(now() + "Waiting for the first response");
                 CompletableFuture.anyOf(futures.toArray(new CompletableFuture[0])).join();
-                System.out.println("Got first response: " + futures.stream().filter(CompletableFuture::isDone)
+                System.out.println(now() + "Got first response: " + futures.stream().filter(CompletableFuture::isDone)
                         .findFirst().map(CompletableFuture::join));
                 if (shutdown) {
-                    System.out.println("Calling HttpClient::shutdownNow");
+                    System.out.println(now() + "Calling HttpClient::shutdownNow");
                     client.shutdownNow();
                     client.awaitTermination(Duration.ofSeconds(1));
                 }
             } finally {
-                System.out.printf("Releasing %s remaining responses%n", many - 1);
+                System.out.printf("%s Releasing %s remaining responses%n", now(), many - 1);
                 // now release the others.
                 responseSemaphore.release(many - 1);
             }
 
             // wait for all responses
-            System.out.printf("Waiting for all %s responses to complete%n", many);
+            System.out.printf("%sWaiting for all %s responses to complete%n", now(), many);
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).exceptionally(t -> null).join();
 
             // check
-            System.out.printf("All %s responses completed. Checking...%n%n", many);
+            System.out.printf("%sAll %s responses completed. Checking...%n%n", now(), many);
             Set<String> conns = new HashSet<>();
             int exceptionCount = 0;
             int success = 0;
@@ -230,9 +359,9 @@ class PlainConnectionLockTest implements HttpServerAdapters {
                 try {
                     var resp = respCF.join();
                     Assertions.assertEquals(200, resp.statusCode(),
-                            "unexpected response code for GET request: " + resp);
+                            now() + "unexpected response code for GET request: " + resp);
                     Assertions.assertTrue(conns.add(resp.connectionLabel().get()),
-                            "unexepected reuse of connection: "
+                            now() + "unexepected reuse of connection: "
                                     + resp.connectionLabel().get() + " found in " + conns);
                     success++;
                 } catch (CompletionException x) {
@@ -242,12 +371,13 @@ class PlainConnectionLockTest implements HttpServerAdapters {
             }
             if (shutdown) {
                 if (success == 0) {
-                    throw new AssertionError(("%s: shutdownNow=%s: Expected at least one response, " +
-                            "got success=%s, exceptions=%s").formatted(requestURI, shutdown, success, exceptionCount));
+                    throw new AssertionError(("%s%s: shutdownNow=%s: Expected at least one response, " +
+                            "got success=%s, exceptions=%s").formatted(now(), requestURI, shutdown, success, exceptionCount));
                 }
             }
-            System.out.println("Success: %s: shutdownNow:%s, success=%s, exceptions:%s\n"
-                    .formatted(requestURI, shutdown, success, exceptionCount));
+            System.out.println("%sSuccess: %s: shutdownNow:%s, success=%s, exceptions:%s\n"
+                    .formatted(now(), requestURI, shutdown, success, exceptionCount));
+            successfulCompletion = true;
         }
     }
 }
