@@ -438,8 +438,6 @@ public class JavaCompiler {
         sourceOutput  = options.isSet(PRINTSOURCE); // used to be -s
         lineDebugInfo = options.isUnset(G_CUSTOM) ||
                         options.isSet(G_CUSTOM, "lines");
-        genEndPos     = options.isSet(XJCOV) ||
-                        context.get(DiagnosticListener.class) != null;
         devVerbose    = options.isSet("dev");
         processPcks   = options.isSet("process.packages");
         werrorAny     = options.isSet(WERROR) || options.isSet(WERROR_CUSTOM, Option.LINT_CUSTOM_ALL);
@@ -503,10 +501,6 @@ public class JavaCompiler {
     /** Generate code with the LineNumberTable attribute for debugging
      */
     public boolean lineDebugInfo;
-
-    /** Switch: should we store the ending positions?
-     */
-    public boolean genEndPos;
 
     /** Switch: should we debug ignored exceptions
      */
@@ -655,9 +649,8 @@ public class JavaCompiler {
                 TaskEvent e = new TaskEvent(TaskEvent.Kind.PARSE, filename);
                 taskListener.started(e);
                 keepComments = true;
-                genEndPos = true;
             }
-            Parser parser = parserFactory.newParser(content, keepComments(), genEndPos,
+            Parser parser = parserFactory.newParser(content, keepComments(),
                                 lineDebugInfo, filename.isNameCompatible("module-info", Kind.SOURCE));
             tree = parser.parseCompilationUnit();
             if (verbose) {
@@ -697,10 +690,7 @@ public class JavaCompiler {
     public JCTree.JCCompilationUnit parse(JavaFileObject filename) {
         JavaFileObject prev = log.useSource(filename);
         try {
-            JCTree.JCCompilationUnit t = parse(filename, readSource(filename));
-            if (t.endPositions != null)
-                log.setEndPosTable(filename, t.endPositions);
-            return t;
+            return parse(filename, readSource(filename));
         } finally {
             log.useSource(prev);
         }
@@ -1162,7 +1152,6 @@ public class JavaCompiler {
                 options.put("parameters", "parameters");
                 reader.saveParameterNames = true;
                 keepComments = true;
-                genEndPos = true;
                 if (!taskListener.isEmpty())
                     taskListener.started(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING));
                 deferredDiagnosticHandler = log.new DeferredDiagnosticHandler();

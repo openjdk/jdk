@@ -55,7 +55,6 @@ import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.main.Main;
 import com.sun.tools.javac.main.Option;
-import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.TreeInfo;
@@ -592,11 +591,6 @@ public class Log extends AbstractLog {
 
     public boolean hasDiagnosticListener() {
         return diagListener != null;
-    }
-
-    public void setEndPosTable(JavaFileObject name, EndPosTable endPosTable) {
-        Assert.checkNonNull(name);
-        getSource(name).setEndPosTable(endPosTable);
     }
 
     /** Return current sourcefile.
