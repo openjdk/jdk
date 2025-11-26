@@ -209,7 +209,7 @@ void StubCodeGenerator::print_statistics_on(outputStream* st) {
     if (!strcmp(scd->group(), "StubRoutines")) {
       emitted += 1;
       if (scd->loaded_from_cache()) {
-	loaded_from_cache += 1;
+        loaded_from_cache += 1;
       }
     }
     scd = StubCodeDesc::next(scd);
