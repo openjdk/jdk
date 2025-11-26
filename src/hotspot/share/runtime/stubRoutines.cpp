@@ -260,7 +260,7 @@ static BufferBlob* initialize_stubs(BlobId blob_id,
       if (lt.is_enabled()) {
         LogStream ls(lt);
         ls.print_cr("Failed to store blob '%s' to Startup Code Cache", buffer_name);
-      } 
+      }
     }
   }
 
