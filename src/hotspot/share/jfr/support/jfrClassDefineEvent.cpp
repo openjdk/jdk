@@ -26,11 +26,11 @@
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoaderData.inline.hpp"
-#include "jfrfiles/jfrEventClasses.hpp"
 #include "jfr/instrumentation/jfrClassTransformer.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/support/jfrClassDefineEvent.hpp"
 #include "jfr/support/jfrSymbolTable.hpp"
+#include "jfrfiles/jfrEventClasses.hpp"
 #include "oops/instanceKlass.hpp"
 #include "runtime/javaThread.hpp"
 
