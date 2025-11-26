@@ -28,7 +28,8 @@ import static jdk.test.lib.Utils.runAndCheckException;
 /*
  * @test
  * @bug 8371688
- * @summary Unexpected behavior for jdk.tls.client.cipherSuites system property
+ * @summary Unexpected behavior for jdk.tls.client.cipherSuites and
+ *          jdk.tls.server.cipherSuites system properties
  * @library /javax/net/ssl/templates
  *          /test/lib
  * @run main/othervm NoSupportedCipherSuites jdk.tls.client.cipherSuites
