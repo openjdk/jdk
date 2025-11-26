@@ -37,7 +37,7 @@
  *                 jdk.test.lib.classloader.ClassUnloadCommon$TestFailure
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello_custom.jar CustomLoadee
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
- * @run driver PrintSharedArchiveAndExit
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./WhiteBox.jar PrintSharedArchiveAndExit
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
@@ -45,6 +45,8 @@ import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.whitebox.WhiteBox;
 
 public class PrintSharedArchiveAndExit {
+    private static WhiteBox WB = WhiteBox.getWhiteBox();
+
     public static void main(String[] args) throws Exception {
         run();
     }
@@ -82,7 +84,11 @@ public class PrintSharedArchiveAndExit {
               .shouldContain("Shared Builtin Dictionary")
               .shouldContain("Shared Unregistered Dictionary")
               .shouldMatch("Number of shared symbols: \\d+")
-              .shouldMatch("Number of shared strings: \\d+")
               .shouldMatch("VM version: .*");
+
+        if (WB.canWriteMappedJavaHeapArchive()) {
+            // With the mapping object dumper, the string table is dumped.
+            output.shouldMatch("Number of shared strings: \\d+");
+        }
     }
 }

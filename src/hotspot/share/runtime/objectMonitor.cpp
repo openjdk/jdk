@@ -43,7 +43,6 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
-#include "runtime/lightweightSynchronizer.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/orderAccess.hpp"
@@ -51,6 +50,7 @@
 #include "runtime/safefetch.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/threads.hpp"
 #include "services/threadService.hpp"
 #include "utilities/debug.hpp"
@@ -304,11 +304,26 @@ ObjectMonitor::ObjectMonitor(oop object) :
 
 ObjectMonitor::~ObjectMonitor() {
   _object.release(_oop_storage);
+  _object_strong.release(JavaThread::thread_oop_storage());
 }
 
 oop ObjectMonitor::object() const {
   check_object_context();
   return _object.resolve();
+}
+
+// Keep object protected during ObjectLocker preemption.
+void ObjectMonitor::set_object_strong() {
+  check_object_context();
+  if (_object_strong.is_empty()) {
+    if (AtomicAccess::cmpxchg(&_object_strong_lock, 0, 1) == 0) {
+      if (_object_strong.is_empty()) {
+        assert(_object.resolve() != nullptr, "");
+        _object_strong = OopHandle(JavaThread::thread_oop_storage(), _object.resolve());
+      }
+      AtomicAccess::release_store(&_object_strong_lock, 0);
+    }
+  }
 }
 
 void ObjectMonitor::ExitOnSuspend::operator()(JavaThread* current) {
@@ -400,7 +415,7 @@ bool ObjectMonitor::try_lock_with_contention_mark(JavaThread* locking_thread, Ob
 }
 
 void ObjectMonitor::enter_for_with_contention_mark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark) {
-  // Used by LightweightSynchronizer::inflate_and_enter in deoptimization path to enter for another thread.
+  // Used by ObjectSynchronizer::inflate_and_enter in deoptimization path to enter for another thread.
   // The monitor is private to or already owned by locking_thread which must be suspended.
   // So this code may only contend with deflation.
   assert(locking_thread == Thread::current() || locking_thread->is_obj_deopt_suspend(), "must be");
@@ -841,7 +856,7 @@ bool ObjectMonitor::deflate_monitor(Thread* current) {
   }
 
   if (UseObjectMonitorTable) {
-    LightweightSynchronizer::deflate_monitor(current, obj, this);
+    ObjectSynchronizer::deflate_monitor(current, obj, this);
   } else if (obj != nullptr) {
     // Install the old mark word if nobody else has already done it.
     install_displaced_markword_in_object(obj);
@@ -1813,7 +1828,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     current->set_current_waiting_monitor(this);
     result = Continuation::try_preempt(current, ce->cont_oop(current));
     if (result == freeze_ok) {
-      vthread_wait(current, millis);
+      vthread_wait(current, millis, interruptible);
       current->set_current_waiting_monitor(nullptr);
       return;
     }
@@ -2167,12 +2182,14 @@ void ObjectMonitor::quick_notifyAll(JavaThread* current) {
   }
 }
 
-void ObjectMonitor::vthread_wait(JavaThread* current, jlong millis) {
+void ObjectMonitor::vthread_wait(JavaThread* current, jlong millis, bool interruptible) {
   oop vthread = current->vthread();
   ObjectWaiter* node = new ObjectWaiter(vthread, this);
   node->_is_wait = true;
+  node->_interruptible = interruptible;
   node->TState = ObjectWaiter::TS_WAIT;
   java_lang_VirtualThread::set_notified(vthread, false);  // Reset notified flag
+  java_lang_VirtualThread::set_interruptible_wait(vthread, interruptible);
 
   // Enter the waiting queue, which is a circular doubly linked list in this case
   // but it could be a priority queue or any data structure.
@@ -2217,11 +2234,12 @@ bool ObjectMonitor::vthread_wait_reenter(JavaThread* current, ObjectWaiter* node
   ObjectWaiter::TStates state = node->TState;
   bool was_notified = state == ObjectWaiter::TS_ENTER;
   assert(was_notified || state == ObjectWaiter::TS_RUN, "");
-  node->_interrupted = !was_notified && current->is_interrupted(false);
+  node->_interrupted = node->_interruptible && !was_notified && current->is_interrupted(false);
 
-  // Post JFR and JVMTI events.
+  // Post JFR and JVMTI events. If non-interruptible we are in
+  // ObjectLocker case so we don't post anything.
   EventJavaMonitorWait wait_event;
-  if (wait_event.should_commit() || JvmtiExport::should_post_monitor_waited()) {
+  if (node->_interruptible && (wait_event.should_commit() || JvmtiExport::should_post_monitor_waited())) {
     vthread_monitor_waited_event(current, node, cont, &wait_event, !was_notified && !node->_interrupted);
   }
 

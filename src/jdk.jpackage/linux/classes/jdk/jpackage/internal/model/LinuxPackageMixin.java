@@ -34,6 +34,12 @@ public interface LinuxPackageMixin {
     /**
      * Gets the name of the start menu group where to create shortcuts for
      * application launchers of this package.
+     * <p>
+     * It sets the value of the "Categories" property in .desktop files of the
+     * package.
+     * <p>
+     * Should be one of the values from <a href=
+     * "https://specifications.freedesktop.org/menu/latest/category-registry.html">https://specifications.freedesktop.org/menu/latest/category-registry.html</a>
      *
      * @return the name of the start menu group where to create shortcuts for
      *         application launchers of this package
@@ -44,6 +50,13 @@ public interface LinuxPackageMixin {
 
     /**
      * Gets the category of this package.
+     * <p>
+     * For RPM packages this is the value of the optional "Group" property.
+     * <p>
+     * For DEB packages this is the value of the mandatory "Section" property.
+     * <a href=
+     * "https://www.debian.org/doc/debian-policy/ch-archive.html#s-subsections">The
+     * present list of recognized values.</a>
      *
      * @return the category of this package
      */
@@ -62,7 +75,7 @@ public interface LinuxPackageMixin {
      * Gets the release of this package. Returns an empty {@link Optional} instance
      * if this package doesn't have a release.
      * <p>
-     * For RPM packages, this is the value of a "Release" property in spec file. RPM
+     * For RPM packages, this is the value of the "Release" property in spec file. RPM
      * packages always have a release.
      * <p>
      * For DEB packages, this is an optional {@code debian_revision} component of a
