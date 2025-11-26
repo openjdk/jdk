@@ -47,7 +47,7 @@ Node* ConstraintCastNode::Identity(PhaseGVN* phase) {
     return this;
   }
   
-  // This cast node carries a type depedency. We can remove it if:
+  // This cast node carries a type dependency. We can remove it if:
   // - Its input has a narrower type
   // - There's a dominating cast with same input but narrower type
   Node* dom = dominating_cast(phase, phase);
