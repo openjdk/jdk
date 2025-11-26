@@ -4806,8 +4806,34 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
     return;
   }
 
+  // The update code is tight on registers, and CAS wants RAX specifically,
+  // so we need to shuffle registers a bit. If any of the important registers
+  // are in RAX, select a spare register and move the operand there.
   Register offset = rscratch1;
-  assert_different_registers(mdp, recv, offset);
+  Register swap_reg =
+             (mdp != rbx && recv != rbx) ? rbx :
+             (mdp != rcx && recv != rcx) ? rcx :
+             rdx;
+  assert_different_registers(mdp, recv, offset, swap_reg);
+
+  if (recv == rax) {
+    push(swap_reg);
+    movptr(swap_reg, recv);
+    recv = swap_reg;
+  } else if (mdp == rax) {
+    push(swap_reg);
+    movptr(swap_reg, mdp);
+    mdp = swap_reg;
+  } else if (offset == rax) {
+    push(swap_reg);
+    movptr(swap_reg, offset);
+    offset = swap_reg;
+  } else {
+    push(rax);
+  }
+
+  // None of the important registers are in RAX after shuffle
+  assert_different_registers(rax, mdp, recv, offset);
 
   Label L_loop, L_loop_nulls, L_found_recv, L_not_null, L_count_update;
 
@@ -4845,45 +4871,9 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   bind(L_loop_nulls);
     cmpptr(Address(mdp, offset, Address::times_ptr), NULL_WORD);
     jccb(Assembler::notEqual, L_not_null);
-      // This code is tight on registers, and CAS wants RAX specifically,
-      // so we need to shuffle registers a bit.
-      Register temp_reg = noreg;
-      Register recv_reg = recv;
-      Address slot(mdp, offset, Address::times_ptr);
-      if (recv == rax) {
-        // Need to swap recv (RAX) with some other register.
-        // Pick any register, as long as it does not carry offset/mdp.
-        temp_reg = (offset != rbx && mdp != rbx) ? rbx :
-                   (offset != rcx && mdp != rcx) ? rcx :
-                   rdx;
-        push(temp_reg);
-        movptr(temp_reg, recv);
-        recv_reg = temp_reg;
-        assert_different_registers(rax, mdp, recv_reg, offset);
-      } else if (mdp == rax || offset == rax) {
-        // Use the *other* register as temporary, collapse the address into it,
-        // and use it as slot address.
-        temp_reg = (mdp == rax) ? offset : mdp;
-        push(temp_reg);
-        lea(temp_reg, Address(mdp, offset, Address::times_ptr));
-        slot = Address(temp_reg, 0);
-        assert_different_registers(rax, (mdp == rax ? noreg : mdp), recv_reg, (mdp == rax ? offset : noreg));
-      } else {
-        // Nothing to do, just go with defaults.
-        assert_different_registers(rax, mdp, recv_reg, offset);
-      }
       // CAS: null -> recv
-      push(rax);
       xorptr(rax, rax);
-      cmpxchgptr(recv_reg, slot);
-      pop(rax);
-      // All done. Restore recv/temp regs, if needed.
-      if (recv_reg != recv) {
-        movptr(recv, recv_reg);
-      }
-      if (temp_reg != noreg) {
-        pop(temp_reg);
-      }
+      cmpxchgptr(recv, Address(mdp, offset, Address::times_ptr));
       // CAS failure means something had claimed the slot concurrently.
       // It can be the same receiver we want, or something else.
       // Fall-through to check the slot contents.
@@ -4907,6 +4897,15 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
 
   bind(L_count_update);
   addptr(Address(mdp, offset, Address::times_ptr), DataLayout::counter_increment);
+
+  if (mdp == swap_reg || offset == swap_reg || recv == swap_reg) {
+    // Implies some important register was shifted from RAX, move it back.
+    movptr(rax, swap_reg);
+    pop(swap_reg);
+  } else {
+    // None of the important registers were in RAX, just restore RAX
+    pop(rax);
+  }
 }
 
 
