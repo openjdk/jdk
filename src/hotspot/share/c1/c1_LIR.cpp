@@ -576,16 +576,16 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       assert(op->as_Op2() != nullptr, "must be");
 
       if (op2->_info)                     do_info(op2->_info);
-      if (op2->_opr1->is_valid())         do_input(op2->_opr1);
-      if (op2->_opr2->is_valid())         do_input(op2->_opr2);
-      if (op2->_tmp1->is_valid())         do_temp(op2->_tmp1);
-      if (op2->_result->is_valid())       do_output(op2->_result);
+      if (op2->_opr1->is_valid())         do_input(op2->_opr1);  // step
+      if (op2->_opr2->is_valid())         do_input(op2->_opr2);  // ctr_address
+      if (op2->_tmp1->is_valid())         do_temp(op2->_tmp1);   // tmp
+      if (op2->_result->is_valid())       do_output(op2->_result);// res
       if (op->code() == lir_xchg || op->code() == lir_xadd || op->code() == lir_increment_profile_ctr) {
         // on ARM and PPC, return value is loaded first so could
         // destroy inputs. On other platforms that implement those
         // (x86, sparc), the extra constrainsts are harmless.
-        if (op2->_opr1->is_valid())       do_temp(op2->_opr1);
-        if (op2->_opr2->is_valid())       do_temp(op2->_opr2);
+        if (op2->_opr1->is_valid())       do_temp(op2->_opr1);   // step
+        if (op2->_opr2->is_valid())       do_temp(op2->_opr2);   // ctr_address
       }
       if (op2->overflow() != nullptr)      do_stub(op2->overflow());
 
@@ -899,7 +899,23 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       do_temp(opProfileType->_tmp);
       break;
     }
-  default:
+
+    case lir_increment_counter:
+    {
+      LIR_OpIncrementCounter* opr = op->as_OpIncrementCounter();
+      assert(opr != nullptr, "must be");
+
+      if (opr->_info)                      do_info(opr->_info);
+      do_input(opr->_counter_addr);        do_temp(opr->_counter_addr);
+      do_input(opr->_step);                do_temp(opr->_step);
+      if (opr->_dest->is_valid())          { do_output(opr->_dest); }
+      if (opr->_temp_op->is_valid())       do_temp(opr->_temp_op);
+      if (opr->overflow_stub() != nullptr) do_stub(opr->overflow_stub());
+
+      break;
+    }
+
+    default:
     op->visit(this);
   }
 }
@@ -1023,6 +1039,14 @@ void LIR_Op2::emit_code(LIR_Assembler* masm) {
   masm->emit_op2(this);
   if (overflow()) {
     masm->append_code_stub(overflow());
+  }
+}
+
+void LIR_OpIncrementCounter::emit_code(LIR_Assembler* masm) {
+  masm->increment_profile_ctr
+    (_step, _counter_addr, _dest, _temp_op, _freq_op, _overflow_stub);
+  if (overflow_stub()) {
+    masm->append_code_stub(overflow_stub());
   }
 }
 
@@ -1272,18 +1296,31 @@ void LIR_List::volatile_store_unsafe_reg(LIR_Opr src, LIR_Opr base, LIR_Opr offs
 }
 
 
+void LIR_List::increment_counter(LIR_Opr step, LIR_Address* addr, LIR_Opr dest, LIR_Opr tmp,
+                                 LIR_Opr freq, CodeStub* overflow, CodeEmitInfo* info) {
+    append(new LIR_OpIncrementCounter (
+            step,
+            LIR_OprFact::address(addr),
+            dest,
+            tmp,
+            freq,
+            overflow,
+            info));
+}
+
+
 void LIR_List::increment_profile_ctr(LIR_Opr src, LIR_Address* addr, LIR_Opr res, LIR_Opr tmp,
                                      LIR_Opr freq,
                                      CodeStub* overflow, CodeEmitInfo* info) {
   append(new LIR_Op2(
             lir_increment_profile_ctr,
-            src,
-            LIR_OprFact::address(addr),
-            res,
-            tmp,
-            freq,
-            tmp,
-            overflow,
+            src,                         // opr1
+            LIR_OprFact::address(addr),  // opr2
+            res,                         // result
+            tmp,                         // tmp1
+            freq,                        // tmp2
+            tmp,                         // tmp3
+            overflow,                    // overflow
             info));
 }
 
@@ -1780,6 +1817,7 @@ const char * LIR_Op::name() const {
      // LIR_OpProfileType
      case lir_profile_type:          s = "profile_type";  break;
      case lir_increment_profile_ctr: s = "increment_profile_ctr"; break;
+     case lir_increment_counter:     s = "increment_counter"; break;
      // LIR_OpAssert
 #ifdef ASSERT
      case lir_assert:                s = "assert";        break;
@@ -2075,6 +2113,13 @@ void LIR_OpProfileType::print_instr(outputStream* out) const {
   tmp()->print(out);          out->print(" ");
 }
 
+void LIR_OpIncrementCounter::print_instr(outputStream* out) const {
+  step()->print(out);          out->print(" ");
+  counter_addr()->print(out);  out->print(" ");
+  dest()->print(out);          out->print(" ");
+  temp_op()->print(out);       out->print(" ");
+  freq_op()->print(out);       out->print(" ");
+}
 #endif // PRODUCT
 
 // Implementation of LIR_InsertionBuffer
