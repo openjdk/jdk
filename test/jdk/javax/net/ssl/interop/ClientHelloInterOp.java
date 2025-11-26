@@ -31,7 +31,6 @@ import javax.net.ssl.TrustManagerFactory;
 import java.nio.ByteBuffer;
 import java.security.KeyStore;
 import java.security.PEMDecoder;
-import java.security.PEMRecord;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;

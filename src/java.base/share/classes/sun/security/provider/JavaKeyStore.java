@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -627,6 +627,10 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
 
             dos.write(digest);
             dos.flush();
+
+            if (debug != null) {
+                emitWeakKeyStoreWarning();
+            }
         }
     }
 
@@ -790,6 +794,10 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
                     privateKeyCount + ". trusted key count: " + trustedKeyCount);
             }
 
+            if (debug != null) {
+                emitWeakKeyStoreWarning();
+            }
+
             /*
              * If a password has been provided, we check the keyed digest
              * at the end. If this check fails, the store has been tampered
@@ -837,5 +845,17 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
             passwdBytes[j++] = (byte)password[i];
         }
         return passwdBytes;
+    }
+
+    private void emitWeakKeyStoreWarning() {
+        String type = this.getClass().getSimpleName().
+                toUpperCase(Locale.ROOT);
+        if (type.equals("JKS")){
+            debug.println("WARNING: JKS uses outdated cryptographic "
+                    + "algorithms and will be removed in a future "
+                    + "release. Migrate to PKCS12 using:");
+            debug.println("keytool -importkeystore -srckeystore <keystore> "
+                    + "-destkeystore <keystore> -deststoretype pkcs12");
+        }
     }
 }

@@ -277,10 +277,9 @@ public final class BufWriterImpl implements BufWriter {
         int strlen = str.length();
         int countNonZeroAscii = JLA.countNonZeroAscii(str);
         long utflenLong = utfLen(str, countNonZeroAscii);
-        if (!ExactConversionsSupport.isLongToCharExact(utflenLong)) {
-            throw new IllegalArgumentException("utf8 length out of range of u2: " + utflenLong);
-        }
-        int utflen = (int)utflenLong;
+        // Utf8Entry should always be writable
+        assert ExactConversionsSupport.isLongToCharExact(utflenLong) : utflenLong;
+        int utflen = (int) utflenLong;
         reserveSpace(utflen + 3);
 
         int offset = this.offset;
