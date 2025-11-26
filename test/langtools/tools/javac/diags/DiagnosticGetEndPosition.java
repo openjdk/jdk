@@ -118,7 +118,7 @@ public class DiagnosticGetEndPosition {
             compiler.getTask(
                 null,
                 null,
-                d -> assertEquals("", //ideally would be "0", but the positions are not fully set yet
+                d -> assertEquals("0",
                                   implCode.substring((int) d.getStartPosition(),
                                                      (int) d.getEndPosition())),
                 List.of("-sourcepath", src.toString(), "-Xlint:divzero"),
