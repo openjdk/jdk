@@ -97,7 +97,7 @@ public class TestPushAddThruCast {
 
     @Run(test = "test3")
     public static void test3_runner() {
-        i = RANDOM.nextInt(3, length-1);
+        i = RANDOM.nextInt(3, length - 1);
         int res = test3();
         if (res != i * 4 - 6) {
             throw new RuntimeException("incorrect result: " + res + " for i = " + i);
