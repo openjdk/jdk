@@ -327,8 +327,23 @@ public:
   inline void decrease_available(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
   inline size_t get_available(ShenandoahFreeSetPartitionId which_partition);
 
-  void increase_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
-  void decrease_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
+  inline void increase_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
+    shenandoah_assert_heaplocked();
+    assert (which_partition < NumPartitions, "Partition must be valid");
+    _used[int(which_partition)] += bytes;
+    _available[int(which_partition)] -= bytes;
+    assert (_used[int(which_partition)] <= _capacity[int(which_partition)],
+            "Must not use (%zu) more than capacity (%zu) after increase by %zu",
+            _used[int(which_partition)], _capacity[int(which_partition)], bytes);
+  }
+  inline void decrease_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
+    shenandoah_assert_heaplocked();
+    assert (which_partition < NumPartitions, "Partition must be valid");
+    assert (_used[int(which_partition)] >= bytes, "Must not use less than zero after decrease");
+    _used[int(which_partition)] -= bytes;
+    _available[int(which_partition)] += bytes;
+  }
+
   inline size_t get_used(ShenandoahFreeSetPartitionId which_partition) {
     assert (which_partition < NumPartitions, "Partition must be valid");
     return _used[int(which_partition)];
