@@ -40,8 +40,6 @@ class os::Linux {
   static const char *_libc_version;
   static const char *_libpthread_version;
 
-  static bool _supports_fast_thread_cpu_time;
-
   static GrowableArray<int>* _cpu_to_node;
   static GrowableArray<int>* _nindex_to_node;
 
@@ -142,18 +140,11 @@ class os::Linux {
   static bool manually_expand_stack(JavaThread * t, address addr);
   static void expand_stack_to(address bottom);
 
-  // fast POSIX clocks support
-  static void fast_thread_clock_init(void);
-
   static int pthread_getcpuclockid(pthread_t tid, clockid_t *clock_id) {
     return _pthread_getcpuclockid ? _pthread_getcpuclockid(tid, clock_id) : -1;
   }
 
-  static bool supports_fast_thread_cpu_time() {
-    return _supports_fast_thread_cpu_time;
-  }
-
-  static jlong fast_thread_cpu_time(clockid_t clockid);
+  static jlong total_thread_cpu_time(clockid_t clockid);
 
   static jlong sendfile(int out_fd, int in_fd, jlong* offset, jlong count);
 
