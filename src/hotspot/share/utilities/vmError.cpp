@@ -664,6 +664,7 @@ void VMError::report(outputStream* st, bool _verbose) {
   BEGIN
   if (MemTracker::enabled() &&
       NmtVirtualMemory_lock != nullptr &&
+      _thread != nullptr &&
       NmtVirtualMemory_lock->owned_by_self()) {
     // Manually unlock to avoid reentrancy due to mallocs in detailed mode.
     NmtVirtualMemory_lock->unlock();
@@ -1305,7 +1306,7 @@ void VMError::report(outputStream* st, bool _verbose) {
     os::print_signal_handlers(st, buf, sizeof(buf));
     st->cr();
 
-  STEP_IF("Native Memory Tracking", _verbose)
+  STEP_IF("Native Memory Tracking", _verbose && _thread != nullptr)
     MemTracker::error_report(st);
     st->cr();
 
