@@ -33,7 +33,7 @@ import java.util.Random;
 import java.nio.ByteOrder;
 
 /*
- * @test
+ * @test id=normal
  * @bug 8326139 8348659
  * @summary Test splitting packs in SuperWord
  * @library /test/lib /
@@ -45,6 +45,14 @@ import java.nio.ByteOrder;
  * @run driver compiler.loopopts.superword.TestSplitPacks nCOH_yAV_nSAC
  * @run driver compiler.loopopts.superword.TestSplitPacks yCOH_nAV_nSAC
  * @run driver compiler.loopopts.superword.TestSplitPacks yCOH_yAV_nSAC
+ */
+
+/*
+ * @test id=extra
+ * @bug 8372451
+ * @summary Test with extra flags, that triggered specific bugs
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestSplitPacks nCOH_nAV_ySAC_V8
  */
 
 public class TestSplitPacks {
@@ -88,6 +96,12 @@ public class TestSplitPacks {
             case "nCOH_yAV_nSAC" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:+AlignVector", "-XX:-UseAutoVectorizationSpeculativeAliasingChecks"); }
             case "yCOH_nAV_nSAC" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:-AlignVector", "-XX:-UseAutoVectorizationSpeculativeAliasingChecks"); }
             case "yCOH_yAV_nSAC" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:+AlignVector", "-XX:-UseAutoVectorizationSpeculativeAliasingChecks"); }
+            // MaxVectorSize=8 means we get smaller vectors. Together with LoopUnrollLimit=1000 we get quite
+            // a large unrolling factor, and so there are a lot of VectorReduction nodes during VTransform::optimize,
+            // and this long chain is transformed in optimize_move_non_strict_order_reductions_out_of_loop, leaving
+            // a long chain of dead nodes. These need to be progressively cleaned up. JDK-8372451 encountered an
+            // issue where we did not clean up all dead nodes within the 10 passes, and so we hit an assert.
+            case "nCOH_nAV_ySAC_V8" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:-AlignVector", "-XX:+UseAutoVectorizationSpeculativeAliasingChecks", "-XX:MaxVectorSize=8"); }
             default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
         };
         framework.start();

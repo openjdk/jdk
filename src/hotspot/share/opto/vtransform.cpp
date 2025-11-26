@@ -1260,13 +1260,13 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
         current_red->element_basic_type() != bt ||
         current_red->vector_length() != vlen) {
       TRACE_OPTIMIZE(
-        tty->print("  Cannot move out of loop, other reduction node does not match:");
+        tty->print("  Cannot move out of loop, other reduction node does not match: ");
         print();
         tty->print("  other: ");
         if (current_red != nullptr) {
           current_red->print();
         } else {
-          tty->print("nullptr");
+          tty->print_cr("nullptr");
         }
       )
       return false; // not compatible
