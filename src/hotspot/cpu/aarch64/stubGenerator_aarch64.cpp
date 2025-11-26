@@ -3710,7 +3710,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    const start = __ pc();
+    start = __ pc();
     __ enter();
 
     Label DONE, CTR_large_block, large_block_return;
@@ -10999,7 +10999,6 @@ class StubGenerator: public StubCodeGenerator {
     const FloatRegister
       vtemp          = v0;
 
-    address start;
     for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
       address next_entry = __ pc();
       StubRoutines::_lookup_secondary_supers_table_stubs[slot] = next_entry;
@@ -11317,7 +11316,7 @@ class StubGenerator: public StubCodeGenerator {
     bool return_barrier = Continuation::is_thaw_return_barrier(kind);
     bool return_barrier_exception = Continuation::is_thaw_return_barrier_exception(kind);
 
-    start = __ pc();
+    address start = __ pc();
 
     if (return_barrier) {
       __ ldr(rscratch1, Address(rthread, JavaThread::cont_entry_offset()));
