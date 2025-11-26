@@ -37,6 +37,8 @@ import sun.security.provider.certpath.AlgorithmChecker;
 import sun.security.ssl.SSLAlgorithmConstraints.SIGNATURE_CONSTRAINTS_MODE;
 import sun.security.validator.Validator;
 
+import static sun.security.ssl.Utilities.LINE_SEP;
+
 /**
  * Implementation of an SSLContext.
  *
@@ -524,7 +526,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             if (line.length() > 0) {
                 // +1 for the comma
                 if (line.length() + 1 + value.length() > maxWidth) {
-                    result.append(line).append("\n");
+                    result.append(line).append(LINE_SEP);
                     line.setLength(0);
                 } else {
                     line.append(",");
