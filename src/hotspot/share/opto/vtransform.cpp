@@ -46,30 +46,43 @@ void VTransformGraph::add_vtnode(VTransformNode* vtnode) {
 void VTransformGraph::optimize(VTransform& vtransform) {
   TRACE_OPTIMIZE( tty->print_cr("\nVTransformGraph::optimize"); )
 
-  bool progress = true;
-  DEBUG_ONLY(int pass_count = 0;)
-  while (progress) {
-    progress = false;
-    assert(++pass_count < 10, "ensure we do not have endless loops");
-    for (int i = 0; i < _vtnodes.length(); i++) {
-      VTransformNode* vtn = _vtnodes.at(i);
-      if (!vtn->is_alive()) { continue; }
-      progress |= vtn->optimize(_vloop_analyzer, vtransform);
+  ResourceMark rm;
+  VTransformOptimize vtoptimize(_vloop_analyzer, vtransform);
 
-      // Nodes that have no use any more are dead.
-      if (vtn->out_strong_edges() == 0 &&
-          // There are some exceptions:
-          // 1. Memory phi uses are not modeled, so they appear to have no use here, but must be kept alive.
-          // 2. Similarly, some stores may not have their memory uses modeled, but need to be kept alive.
-          // 3. Outer node with strong inputs: is a use after the loop that we must keep alive.
-          !(vtn->isa_PhiScalar() != nullptr ||
-            vtn->is_load_or_store_in_loop() ||
-            (vtn->isa_Outer() != nullptr && vtn->has_strong_in_edge()))) {
-        vtn->mark_dead();
-        progress = true;
-      }
-    }
+  for (int i = 0; i < _vtnodes.length(); i++) {
+    VTransformNode* vtn = _vtnodes.at(i);
+    vtoptimize.worklist_push(vtn);
   }
+
+  vtoptimize.optimize();
+  // TODO: verify?
+}
+
+void VTransformOptimize::optimize() {
+  while (_worklist.is_nonempty()) {
+    VTransformNode* vtn = _worklist.pop();
+    optimize_step(vtn);
+  }
+}
+
+// Return true if (and only if) we made progress.
+bool VTransformOptimize::optimize_step(VTransformNode* vtn) {
+  if (!vtn->is_alive()) { return false; }
+  bool progress = vtn->optimize(*this);
+
+  // Nodes that have no use any more are dead.
+  if (vtn->out_strong_edges() == 0 &&
+      // There are some exceptions:
+      // 1. Memory phi uses are not modeled, so they appear to have no use here, but must be kept alive.
+      // 2. Similarly, some stores may not have their memory uses modeled, but need to be kept alive.
+      // 3. Outer node with strong inputs: is a use after the loop that we must keep alive.
+      !(vtn->isa_PhiScalar() != nullptr ||
+        vtn->is_load_or_store_in_loop() ||
+        (vtn->isa_Outer() != nullptr && vtn->has_strong_in_edge()))) {
+    vtn->mark_dead(*this);
+    return true;
+  }
+  return progress;
 }
 
 // Compute a linearization of the graph. We do this with a reverse-post-order of a DFS.
@@ -1141,8 +1154,8 @@ VTransformApplyResult VTransformBoolVectorNode::apply(VTransformApplyState& appl
   return VTransformApplyResult::make_vector(vn);
 }
 
-bool VTransformReductionVectorNode::optimize(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform) {
-  return optimize_move_non_strict_order_reductions_out_of_loop(vloop_analyzer, vtransform);
+bool VTransformReductionVectorNode::optimize(VTransformOptimize& vtoptimize) {
+  return optimize_move_non_strict_order_reductions_out_of_loop(vtoptimize);
 }
 
 int VTransformReductionVectorNode::vector_reduction_opcode() const {
@@ -1213,7 +1226,7 @@ bool VTransformReductionVectorNode::requires_strict_order() const {
 //       become profitable, since the expensive reduction node is moved
 //       outside the loop, and instead cheaper element-wise vector accumulations
 //       are performed inside the loop.
-bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop_preconditions(VTransform& vtransform) {
+bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop_preconditions(const VTransform& vtransform) {
   // We have a phi with a single use.
   VTransformPhiScalarNode* phi = in_req(1)->isa_PhiScalar();
   if (phi == nullptr) {
@@ -1314,7 +1327,8 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   return true; // success
 }
 
-bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform) {
+bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop(VTransformOptimize& vtoptimize) {
+  VTransform& vtransform = vtoptimize.vtransform();
   if (!optimize_move_non_strict_order_reductions_out_of_loop_preconditions(vtransform)) {
     return false;
   }
@@ -1328,7 +1342,7 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   const uint vlen    = vector_length();
   const BasicType bt = element_basic_type();
   const int vopc     = VectorNode::opcode(sopc, bt);
-  PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
+  PhaseIdealLoop* phase = vtoptimize.vloop_analyzer().vloop().phase();
 
   // Create a vector of identity values.
   Node* identity = ReductionNode::make_identity_con_scalar(phase->igvn(), sopc, bt);
@@ -1341,6 +1355,7 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   // Look at old scalar phi.
   VTransformPhiScalarNode* phi_scalar = in_req(1)->isa_PhiScalar();
   PhiNode* old_phi = phi_scalar->node();
+  vtoptimize.worklist_push(phi_scalar);
   VTransformNode* init = phi_scalar->in_req(1);
 
   TRACE_OPTIMIZE(
@@ -1354,6 +1369,7 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   phi_vector->init_req(0, phi_scalar->in_req(0));
   phi_vector->init_req(1, vtn_identity_vector);
   // Note: backedge comes later
+  vtoptimize.worklist_push(phi_vector);
 
   // Traverse down the chain of reductions, and replace them with vector_accumulators.
   VTransformReductionVectorNode* first_red   = this;
@@ -1365,6 +1381,8 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
     VTransformVectorNode* vector_accumulator = new (vtransform.arena()) VTransformElementWiseVectorNode(vtransform, 3, current_red->properties(), vopc);
     vector_accumulator->init_req(1, current_vector_accumulator);
     vector_accumulator->init_req(2, vector_input);
+    vtoptimize.worklist_push(current_red);
+    vtoptimize.worklist_push(vector_accumulator);
     TRACE_OPTIMIZE(
       tty->print("  replace    ");
       current_red->print();
