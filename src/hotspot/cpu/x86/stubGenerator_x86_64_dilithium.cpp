@@ -273,10 +273,16 @@ static int xmm29_29[] = {29, 29, 29, 29};
 static address generate_dilithiumAlmostNtt_avx512(StubGenerator *stubgen,
                                                   MacroAssembler *_masm) {
 
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_dilithiumAlmostNtt_id;
+  __ align(CodeEntryAlignment);
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = stubgen->load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
   StubCodeMark mark(stubgen, stub_id);
-  address start = __ pc();
+  start = __ pc();
   __ enter();
 
   Label L_loop, L_end;
@@ -451,6 +457,9 @@ static address generate_dilithiumAlmostNtt_avx512(StubGenerator *stubgen,
   __ mov64(rax, 0); // return 0
   __ ret(0);
 
+  // record the stub entry and end
+  stubgen->store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
@@ -463,10 +472,16 @@ static address generate_dilithiumAlmostNtt_avx512(StubGenerator *stubgen,
 static address generate_dilithiumAlmostInverseNtt_avx512(StubGenerator *stubgen,
                                                          MacroAssembler *_masm) {
 
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_dilithiumAlmostInverseNtt_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = stubgen->load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(stubgen, stub_id);
-  address start = __ pc();
+  start = __ pc();
   __ enter();
 
   Label L_loop, L_end;
@@ -630,6 +645,9 @@ static address generate_dilithiumAlmostInverseNtt_avx512(StubGenerator *stubgen,
   __ mov64(rax, 0); // return 0
   __ ret(0);
 
+  // record the stub entry and end
+  stubgen->store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
@@ -644,10 +662,16 @@ static address generate_dilithiumAlmostInverseNtt_avx512(StubGenerator *stubgen,
 static address generate_dilithiumNttMult_avx512(StubGenerator *stubgen,
                                                 MacroAssembler *_masm) {
 
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_dilithiumNttMult_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = stubgen->load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(stubgen, stub_id);
-  address start = __ pc();
+  start = __ pc();
   __ enter();
 
   Label L_loop;
@@ -696,6 +720,9 @@ static address generate_dilithiumNttMult_avx512(StubGenerator *stubgen,
   __ mov64(rax, 0); // return 0
   __ ret(0);
 
+  // record the stub entry and end
+  stubgen->store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
@@ -708,10 +735,16 @@ static address generate_dilithiumNttMult_avx512(StubGenerator *stubgen,
 static address generate_dilithiumMontMulByConstant_avx512(StubGenerator *stubgen,
                                                           MacroAssembler *_masm) {
 
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_dilithiumMontMulByConstant_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = stubgen->load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(stubgen, stub_id);
-  address start = __ pc();
+  start = __ pc();
   __ enter();
 
   Label L_loop;
@@ -757,6 +790,9 @@ static address generate_dilithiumMontMulByConstant_avx512(StubGenerator *stubgen
   __ mov64(rax, 0); // return 0
   __ ret(0);
 
+  // record the stub entry and end
+  stubgen->store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
@@ -772,10 +808,16 @@ static address generate_dilithiumMontMulByConstant_avx512(StubGenerator *stubgen
 static address generate_dilithiumDecomposePoly_avx512(StubGenerator *stubgen,
                                                       MacroAssembler *_masm) {
 
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_dilithiumDecomposePoly_id;
+  __ align(CodeEntryAlignment);
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = stubgen->load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
   StubCodeMark mark(stubgen, stub_id);
-  address start = __ pc();
+  start = __ pc();
   __ enter();
 
   Label L_loop;
@@ -1013,6 +1055,9 @@ static address generate_dilithiumDecomposePoly_avx512(StubGenerator *stubgen,
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ mov64(rax, 0); // return 0
   __ ret(0);
+
+  // record the stub entry and end
+  stubgen->store_archive_data(stub_id, start, __ pc());
 
   return start;
 }

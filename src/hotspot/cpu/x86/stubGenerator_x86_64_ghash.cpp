@@ -80,11 +80,17 @@ void StubGenerator::generate_ghash_stubs() {
 
 // Single and multi-block ghash operations.
 address StubGenerator::generate_ghash_processBlocks() {
-  __ align(CodeEntryAlignment);
-  Label L_ghash_loop, L_exit;
   StubId stub_id = StubId::stubgen_ghash_processBlocks_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  Label L_ghash_loop, L_exit;
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   const Register state        = c_rarg0;
   const Register subkeyH      = c_rarg1;
@@ -211,17 +217,25 @@ address StubGenerator::generate_ghash_processBlocks() {
   __ leave();
   __ ret(0);
 
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
 
 // Ghash single and multi block operations using AVX instructions
 address StubGenerator::generate_avx_ghash_processBlocks() {
-  __ align(CodeEntryAlignment);
-
   StubId stub_id = StubId::stubgen_ghash_processBlocks_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   // arguments
   const Register state = c_rarg0;
@@ -236,6 +250,9 @@ address StubGenerator::generate_avx_ghash_processBlocks() {
   __ pop_ppx(rbx);
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
+
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
 
   return start;
 }

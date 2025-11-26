@@ -579,10 +579,8 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(StubId stub_id, addres
   assert(entry_count == expected_entry_count, "sanity check");
   GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
   GrowableArray<address>* extras_ptr = (add_extras ? &extras : nullptr);
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end, entries_ptr, extras_ptr);
+  address start = load_archive_data(stub_id, entries_ptr, extras_ptr);
+  if (start != nullptr) {
     assert(entries.length() == expected_entry_count - 1,
            "unexpected extra entry count %d", entries.length());
     assert(extras.length() == expected_extra_count,
@@ -592,14 +590,14 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(StubId stub_id, addres
     }
     if (add_extras) {
       // restore 1 x UMAM {start,end,handler} addresses from extras
-      register_unsafe_access_handlers(extras, 0, 1, end);
+      register_unsafe_access_handlers(extras, 0, 1);
     }
     return start;
   }
 
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   int avx3threshold = VM_Version::avx3_threshold();
   bool use64byteVector = (MaxVectorSize > 32) && (avx3threshold == 0);
@@ -956,10 +954,8 @@ address StubGenerator::generate_conjoint_copy_avx3_masked(StubId stub_id, addres
   assert(entry_count == expected_entry_count, "sanity check");
   GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
   GrowableArray<address>* extras_ptr = (add_extras ? &extras : nullptr);
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end, entries_ptr, extras_ptr);
+  address start = load_archive_data(stub_id, entries_ptr, extras_ptr);
+  if (start != nullptr) {
     assert(entries.length() == expected_entry_count - 1,
            "unexpected extra entry count %d", entries.length());
     assert(extras.length() == expected_extra_count,
@@ -969,13 +965,13 @@ address StubGenerator::generate_conjoint_copy_avx3_masked(StubId stub_id, addres
     }
     if (add_extras) {
       // restore 1 x UMAM {start,end,handler} addresses from extras
-      register_unsafe_access_handlers(extras, 0, 1, end);
+      register_unsafe_access_handlers(extras, 0, 1);
     }
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   int avx3threshold = VM_Version::avx3_threshold();
   bool use64byteVector = (MaxVectorSize > 32) && (avx3threshold == 0);
@@ -1471,10 +1467,8 @@ address StubGenerator::generate_disjoint_byte_copy(address* entry) {
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == expected_entry_count, "sanity check");
   GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end, entries_ptr, &extras);
+  address start = load_archive_data(stub_id, entries_ptr, &extras);
+  if (start != nullptr) {
     assert(entries.length() == expected_entry_count - 1,
            "unexpected extra entry count %d", entries.length());
     assert(extras.length() == expected_extra_count,
@@ -1483,12 +1477,12 @@ address StubGenerator::generate_disjoint_byte_copy(address* entry) {
       *entry = entries.at(0);
     }
     // restore 2 UMAM {start,end,handler} addresses from extras
-    register_unsafe_access_handlers(extras, 0, 2, end);
+    register_unsafe_access_handlers(extras, 0, 2);
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
   DecoratorSet decorators = IN_HEAP | IS_ARRAY | ARRAYCOPY_DISJOINT;
 
   Label L_copy_bytes, L_copy_8_bytes, L_copy_4_bytes, L_copy_2_bytes;
@@ -1623,10 +1617,8 @@ address StubGenerator::generate_conjoint_byte_copy(address nooverlap_target, add
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == expected_entry_count, "sanity check");
   GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end, entries_ptr, &extras);
+  address start = load_archive_data(stub_id, entries_ptr, &extras);
+  if (start != nullptr) {
     assert(entries.length() == expected_entry_count - 1,
            "unexpected extra entry count %d", entries.length());
     assert(extras.length() == expected_extra_count,
@@ -1635,12 +1627,12 @@ address StubGenerator::generate_conjoint_byte_copy(address nooverlap_target, add
       *entry = entries.at(0);
     }
     // restore 2 UMAM {start,end,handler} addresses from extras
-    register_unsafe_access_handlers(extras, 0, 2, end);
+    register_unsafe_access_handlers(extras, 0, 2);
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
   DecoratorSet decorators = IN_HEAP | IS_ARRAY;
 
   Label L_copy_bytes, L_copy_8_bytes, L_copy_4_bytes, L_copy_2_bytes;
@@ -1769,10 +1761,8 @@ address StubGenerator::generate_disjoint_short_copy(address *entry) {
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == expected_entry_count, "sanity check");
   GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end, entries_ptr, &extras);
+  address start = load_archive_data(stub_id, entries_ptr, &extras);
+  if (start != nullptr) {
     assert(entries.length() == expected_entry_count - 1,
            "unexpected extra entry count %d", entries.length());
     assert(extras.length() == expected_extra_count,
@@ -1781,12 +1771,12 @@ address StubGenerator::generate_disjoint_short_copy(address *entry) {
       *entry = entries.at(0);
     }
     // restore 2 UMAM {start,end,handler} addresses from extras
-    register_unsafe_access_handlers(extras, 0, 2, end);
+    register_unsafe_access_handlers(extras, 0, 2);
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
   DecoratorSet decorators = IN_HEAP | IS_ARRAY | ARRAYCOPY_DISJOINT;
 
   Label L_copy_bytes, L_copy_8_bytes, L_copy_4_bytes,L_copy_2_bytes,L_exit;
@@ -1888,10 +1878,8 @@ address StubGenerator::generate_fill(StubId stub_id) {
   bool aligned;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   switch (stub_id) {
@@ -1925,7 +1913,7 @@ address StubGenerator::generate_fill(StubId stub_id) {
 
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   BLOCK_COMMENT("Entry:");
 
@@ -1983,10 +1971,8 @@ address StubGenerator::generate_conjoint_short_copy(address nooverlap_target, ad
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == expected_entry_count, "sanity check");
   GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end, entries_ptr, &extras);
+  address start = load_archive_data(stub_id, entries_ptr, &extras);
+  if (start != nullptr) {
     assert(entries.length() == expected_entry_count - 1,
            "unexpected extra entry count %d", entries.length());
     assert(extras.length() == expected_extra_count,
@@ -1995,12 +1981,12 @@ address StubGenerator::generate_conjoint_short_copy(address nooverlap_target, ad
       *entry = entries.at(0);
     }
     // restore 2 UMAM {start,end,handler} addresses from extras
-    register_unsafe_access_handlers(extras, 0, 2, end);
+    register_unsafe_access_handlers(extras, 0, 2);
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
   DecoratorSet decorators = IN_HEAP | IS_ARRAY;
 
   Label L_copy_bytes, L_copy_8_bytes, L_copy_4_bytes;
@@ -2145,10 +2131,8 @@ address StubGenerator::generate_disjoint_int_oop_copy(StubId stub_id, address* e
   assert(entry_count == expected_entry_count, "sanity check");
   GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
   GrowableArray<address>* extras_ptr = (add_extras ? &extras : nullptr);
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end, entries_ptr, extras_ptr);
+  address start = load_archive_data(stub_id, entries_ptr, extras_ptr);
+  if (start != nullptr) {
     assert(entries.length() == expected_entry_count - 1,
            "unexpected extra entry count %d", entries.length());
     assert(extras.length() == expected_extra_count,
@@ -2158,14 +2142,14 @@ address StubGenerator::generate_disjoint_int_oop_copy(StubId stub_id, address* e
     }
     if (add_extras) {
       // restore 2 UMAM {start,end,handler} addresses from extras
-      register_unsafe_access_handlers(extras, 0, 2, end);
+      register_unsafe_access_handlers(extras, 0, 2);
     }
     return start;
   }
 
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   Label L_copy_bytes, L_copy_8_bytes, L_copy_4_bytes, L_exit;
   const Register from        = rdi;  // source array address
@@ -2315,10 +2299,8 @@ address StubGenerator::generate_conjoint_int_oop_copy(StubId stub_id, address no
   assert(entry_count == expected_entry_count, "sanity check");
   GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
   GrowableArray<address>* extras_ptr = (add_extras ? &extras : nullptr);
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end, entries_ptr, extras_ptr);
+  address start = load_archive_data(stub_id, entries_ptr, extras_ptr);
+  if (start != nullptr) {
     assert(entries.length() == expected_entry_count - 1,
            "unexpected extra entry count %d", entries.length());
     assert(extras.length() == expected_extra_count,
@@ -2328,14 +2310,14 @@ address StubGenerator::generate_conjoint_int_oop_copy(StubId stub_id, address no
     }
     if (add_extras) {
       // restore 2 UMAM {start,end,handler} addresses from extras
-      register_unsafe_access_handlers(extras, 0, 2, end);
+      register_unsafe_access_handlers(extras, 0, 2);
     }
     return start;
   }
 
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   Label L_copy_bytes, L_copy_8_bytes, L_exit;
   const Register from        = rdi;  // source array address
@@ -2487,10 +2469,8 @@ address StubGenerator::generate_disjoint_long_oop_copy(StubId stub_id, address *
   assert(entry_count == expected_entry_count, "sanity check");
   GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
   GrowableArray<address>* extras_ptr = (add_extras ? &extras : nullptr);
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end, entries_ptr, extras_ptr);
+  address start = load_archive_data(stub_id, entries_ptr, extras_ptr);
+  if (start != nullptr) {
     assert(entries.length() == expected_entry_count - 1,
            "unexpected extra entry count %d", entries.length());
     assert(extras.length() == expected_extra_count,
@@ -2500,14 +2480,14 @@ address StubGenerator::generate_disjoint_long_oop_copy(StubId stub_id, address *
     }
     if (add_extras) {
       // restore 2 UMAM {start,end,handler} addresses from extras
-      register_unsafe_access_handlers(extras, 0, 2, end);
+      register_unsafe_access_handlers(extras, 0, 2);
     }
     return start;
   }
 
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   Label L_copy_bytes, L_copy_8_bytes, L_exit;
   const Register from        = rdi;  // source array address
@@ -2659,10 +2639,8 @@ address StubGenerator::generate_conjoint_long_oop_copy(StubId stub_id, address n
   assert(entry_count == expected_entry_count, "sanity check");
   GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
   GrowableArray<address>* extras_ptr = (add_extras ? &extras : nullptr);
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end, entries_ptr, extras_ptr);
+  address start = load_archive_data(stub_id, entries_ptr, extras_ptr);
+  if (start != nullptr) {
     assert(entries.length() == expected_entry_count - 1,
            "unexpected extra entry count %d", entries.length());
     assert(extras.length() == expected_extra_count,
@@ -2672,14 +2650,14 @@ address StubGenerator::generate_conjoint_long_oop_copy(StubId stub_id, address n
     }
     if (add_extras) {
       // restore 2 UMAM {start,end,handler} addresses from extras
-      register_unsafe_access_handlers(extras, 0, 2, end);
+      register_unsafe_access_handlers(extras, 0, 2);
     }
     return start;
   }
 
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   Label L_copy_bytes, L_copy_8_bytes, L_exit;
   const Register from        = rdi;  // source array address
@@ -2830,10 +2808,8 @@ address StubGenerator::generate_checkcast_copy(StubId stub_id, address *entry) {
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == expected_entry_count, "sanity check");
   GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end, entries_ptr);
+  address start = load_archive_data(stub_id, entries_ptr);
+  if (start != nullptr) {
     assert(entries.length() == expected_entry_count - 1,
            "unexpected extra entry count %d", entries.length());
     if (entry != nullptr) {
@@ -2871,7 +2847,7 @@ address StubGenerator::generate_checkcast_copy(StubId stub_id, address *entry) {
 
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
@@ -3056,13 +3032,8 @@ address StubGenerator::generate_unsafe_copy(address byte_copy_entry, address sho
   StubId stub_id = StubId::stubgen_unsafe_arraycopy_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    // TODO - in debug mode we should save and restore the supplied
-    // copy entries and assert that the restored entries match the ones
-    // passed in
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
 
@@ -3078,7 +3049,7 @@ address StubGenerator::generate_unsafe_copy(address byte_copy_entry, address sho
 
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
@@ -3220,19 +3191,17 @@ address StubGenerator::generate_unsafe_setmemory(address unsafe_byte_fill) {
   // we expect one set of extra unsafememory access handler entries
   GrowableArray<address> extras;
   int expected_extra_count = 3 * 3;
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end, nullptr, &extras);
+  address start = load_archive_data(stub_id, nullptr, &extras);
+  if (start != nullptr) {
     assert(extras.length() == expected_extra_count,
            "unexpected extra entry count %d", extras.length());
-    register_unsafe_access_handlers(extras, 0, 3, end);
+    register_unsafe_access_handlers(extras, 0, 3);
     return start;
   }
 
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
   __ enter();   // required for proper stackwalking of RuntimeStub frame
 
   assert(unsafe_byte_fill != nullptr, "Invalid call");
@@ -3391,12 +3360,11 @@ address StubGenerator::generate_generic_copy(address byte_copy_entry, address sh
   StubId stub_id = StubId::stubgen_generic_arraycopy_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
+
   Label L_failed, L_failed_0, L_skip_failed_0, L_objArray;
   Label L_copy_shorts, L_copy_ints, L_copy_longs;
 
@@ -3415,7 +3383,7 @@ address StubGenerator::generate_generic_copy(address byte_copy_entry, address sh
 
   StubCodeMark mark(this, stub_id);
   __ align(CodeEntryAlignment);
-  address start = __ pc();
+  start = __ pc();
 
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 

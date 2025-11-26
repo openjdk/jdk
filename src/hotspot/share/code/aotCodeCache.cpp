@@ -2287,8 +2287,6 @@ AOTStubData::AOTStubData(BlobId blob_id) :
   _cached_blob(nullptr),
   _stub_cnt(0),
   _ranges(nullptr),
-  _current(StubId::NO_STUBID),
-  _current_idx(-1),
   _flags(0) {
   assert(StubInfo::is_stubgen(blob_id),
          "AOTStubData expects a multi-stub blob not %s",
@@ -2348,41 +2346,28 @@ bool AOTStubData::store_code_blob(CodeBlob& new_blob, CodeBuffer *code_buffer) {
   }
 }
 
-bool AOTStubData::find_archive_data(StubId stub_id) {
+address AOTStubData::load_archive_data(StubId stub_id, address& end, GrowableArray<address>* entries, GrowableArray<address>* extras) {
   assert(StubInfo::blob(stub_id) == _blob_id, "sanity check");
   if (is_invalid()) {
-    return false;
+    return nullptr;
   }
   int idx = StubInfo::stubgen_offset_in_blob(_blob_id, stub_id);
   assert(idx >= 0 && idx < _stub_cnt, "invalid index %d for stub count %d", idx, _stub_cnt);
   // ensure we have a valid associated range
-  StubAddrRange range = _ranges[idx];
-  int start_index = range.start_index();
-  if (start_index < 0) {
-    _current = StubId::NO_STUBID;
+  StubAddrRange &range = _ranges[idx];
+  int base = range.start_index();
+  if (base < 0) {
 #ifdef DEBUG
     // reset index so we can idenitfy which ones we failed to find
     range.init_entry(-2, 0);
 #endif
-    return false;
+    return nullptr;
   }
-  _current = stub_id;
-  _current_idx = idx;
-  return true;
-}
-
-void AOTStubData::load_archive_data(StubId stub_id, address& start, address& end, GrowableArray<address>* entries, GrowableArray<address>* extras) {
-  assert(StubInfo::blob(stub_id) == _blob_id, "sanity check");
-  assert(_current == stub_id && stub_id != StubId::NO_STUBID, "sanity check");
-  assert(!is_invalid(), "should not load stubs when archive data is invalid");
-  assert(_current_idx >= 0, "sanity");
-  StubAddrRange& range = _ranges[_current_idx];
-  int base = range.start_index();
   int count = range.count();
   assert(base >= 0, "sanity");
   assert(count >= 2, "sanity");
   // first two saved addresses are start and end
-  start = _address_array.at(base);
+  address start = _address_array.at(base);
   end = _address_array.at(base + 1);
   assert(start != nullptr, "failed to load start address of stub %s", StubInfo::name(stub_id));
   assert(end != nullptr, "failed to load end address of stub %s", StubInfo::name(stub_id));
@@ -2414,6 +2399,8 @@ void AOTStubData::load_archive_data(StubId stub_id, address& start, address& end
       extras->append(extra);
     }
   }
+
+  return start;
 }
 
 void AOTStubData::store_archive_data(StubId stub_id, address start, address end, GrowableArray<address>* entries, GrowableArray<address>* extras) {
@@ -2421,9 +2408,8 @@ void AOTStubData::store_archive_data(StubId stub_id, address start, address end,
   assert(start != nullptr, "start address cannot be null");
   assert(end != nullptr, "end address cannot be null");
   assert(start < end, "start address %p should be less than end %p address for stub %s", start, end, StubInfo::name(stub_id));
-  _current = stub_id;
-  _current_idx = StubInfo::stubgen_offset_in_blob(_blob_id, stub_id);
-  StubAddrRange& range = _ranges[_current_idx];
+  int idx = StubInfo::stubgen_offset_in_blob(_blob_id, stub_id);
+  StubAddrRange& range = _ranges[idx];
   assert(range.start_index() == -1, "sanity");
   int base = _address_array.length();
   assert(base >= 0, "sanity");

@@ -367,10 +367,16 @@ static int xmm29_29[] = {29, 29, 29, 29};
 // ntt_zetas (short[256]) = c_rarg1
 address generate_kyberNtt_avx512(StubGenerator *stubgen,
                                  MacroAssembler *_masm) {
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_kyberNtt_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = stubgen->load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(stubgen, stub_id);
-  address start = __ pc();
+  start = __ pc();
   __ enter();
 
   const Register coeffs = c_rarg0;
@@ -454,6 +460,9 @@ address generate_kyberNtt_avx512(StubGenerator *stubgen,
   __ mov64(rax, 0); // return 0
   __ ret(0);
 
+  // record the stub entry and end
+  stubgen->store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
@@ -463,11 +472,16 @@ address generate_kyberNtt_avx512(StubGenerator *stubgen,
 // ntt_zetas (short[256]) = c_rarg1
 address generate_kyberInverseNtt_avx512(StubGenerator *stubgen,
                                         MacroAssembler *_masm) {
-
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_kyberInverseNtt_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = stubgen->load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(stubgen, stub_id);
-  address start = __ pc();
+  start = __ pc();
   __ enter();
 
   const Register coeffs = c_rarg0;
@@ -577,6 +591,9 @@ address generate_kyberInverseNtt_avx512(StubGenerator *stubgen,
   __ mov64(rax, 0); // return 0
   __ ret(0);
 
+  // record the stub entry and end
+  stubgen->store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
@@ -588,11 +605,16 @@ address generate_kyberInverseNtt_avx512(StubGenerator *stubgen,
 // zetas (short[128]) = c_rarg3
 address generate_kyberNttMult_avx512(StubGenerator *stubgen,
                                      MacroAssembler *_masm) {
-
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_kyberNttMult_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = stubgen->load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(stubgen, stub_id);
-  address start = __ pc();
+  start = __ pc();
   __ enter();
 
   const Register result = c_rarg0;
@@ -698,6 +720,9 @@ address generate_kyberNttMult_avx512(StubGenerator *stubgen,
   __ mov64(rax, 0); // return 0
   __ ret(0);
 
+  // record the stub entry and end
+  stubgen->store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
@@ -708,11 +733,16 @@ address generate_kyberNttMult_avx512(StubGenerator *stubgen,
 // b (short[256]) = c_rarg2
 address generate_kyberAddPoly_2_avx512(StubGenerator *stubgen,
                                        MacroAssembler *_masm) {
-
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_kyberAddPoly_2_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = stubgen->load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(stubgen, stub_id);
-  address start = __ pc();
+  start = __ pc();
   __ enter();
 
   const Register result = c_rarg0;
@@ -743,6 +773,9 @@ address generate_kyberAddPoly_2_avx512(StubGenerator *stubgen,
   __ mov64(rax, 0); // return 0
   __ ret(0);
 
+  // record the stub entry and end
+  stubgen->store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
@@ -754,11 +787,16 @@ address generate_kyberAddPoly_2_avx512(StubGenerator *stubgen,
 // c (short[256]) = c_rarg3
 address generate_kyberAddPoly_3_avx512(StubGenerator *stubgen,
                                        MacroAssembler *_masm) {
-
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_kyberAddPoly_3_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = stubgen->load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(stubgen, stub_id);
-  address start = __ pc();
+  start = __ pc();
   __ enter();
 
   const Register result = c_rarg0;
@@ -797,6 +835,9 @@ address generate_kyberAddPoly_3_avx512(StubGenerator *stubgen,
   __ mov64(rax, 0); // return 0
   __ ret(0);
 
+  // record the stub entry and end
+  stubgen->store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
@@ -808,11 +849,16 @@ address generate_kyberAddPoly_3_avx512(StubGenerator *stubgen,
 // parsedLength (int) = c_rarg3
 address generate_kyber12To16_avx512(StubGenerator *stubgen,
                                     MacroAssembler *_masm) {
-
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_kyber12To16_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = stubgen->load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(stubgen, stub_id);
-  address start = __ pc();
+  start = __ pc();
   __ enter();
 
   const Register condensed = c_rarg0;
@@ -896,6 +942,9 @@ address generate_kyber12To16_avx512(StubGenerator *stubgen,
   __ mov64(rax, 0); // return 0
   __ ret(0);
 
+  // record the stub entry and end
+  stubgen->store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
@@ -905,11 +954,16 @@ address generate_kyber12To16_avx512(StubGenerator *stubgen,
 // coeffs (short[256]) = c_rarg0
 address generate_kyberBarrettReduce_avx512(StubGenerator *stubgen,
                                            MacroAssembler *_masm) {
-
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_kyberBarrettReduce_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = stubgen->load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(stubgen, stub_id);
-  address start = __ pc();
+  start = __ pc();
   __ enter();
 
   const Register coeffs = c_rarg0;
@@ -932,6 +986,9 @@ address generate_kyberBarrettReduce_avx512(StubGenerator *stubgen,
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ mov64(rax, 0); // return 0
   __ ret(0);
+
+  // record the stub entry and end
+  stubgen->store_archive_data(stub_id, start, __ pc());
 
   return start;
 }

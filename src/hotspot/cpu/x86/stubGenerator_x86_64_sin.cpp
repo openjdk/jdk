@@ -181,8 +181,14 @@ ATTRIBUTE_ALIGNED(8) static const juint _ALL_ONES[] =
 
 address StubGenerator::generate_libmSin() {
   StubId stub_id = StubId::stubgen_dsin_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   Label L_2TAG_PACKET_0_0_1, L_2TAG_PACKET_1_0_1, L_2TAG_PACKET_2_0_1, L_2TAG_PACKET_3_0_1;
   Label L_2TAG_PACKET_4_0_1, L_2TAG_PACKET_5_0_1, L_2TAG_PACKET_6_0_1, L_2TAG_PACKET_7_0_1;
@@ -644,6 +650,9 @@ address StubGenerator::generate_libmSin() {
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
+
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
 
   return start;
 }

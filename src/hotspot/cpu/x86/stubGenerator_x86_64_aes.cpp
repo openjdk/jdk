@@ -248,10 +248,16 @@ void StubGenerator::generate_aes_stubs() {
 // Output:
 //   rax - number of processed bytes
 address StubGenerator::generate_galoisCounterMode_AESCrypt() {
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_galoisCounterMode_AESCrypt_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   const Register in = c_rarg0;
   const Register len = c_rarg1;
@@ -317,6 +323,9 @@ address StubGenerator::generate_galoisCounterMode_AESCrypt() {
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
@@ -335,10 +344,16 @@ address StubGenerator::generate_galoisCounterMode_AESCrypt() {
 // Output:
 //   rax - number of processed bytes
 address StubGenerator::generate_avx2_galoisCounterMode_AESCrypt() {
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_galoisCounterMode_AESCrypt_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   const Register in = c_rarg0;
   const Register len = c_rarg1;
@@ -402,15 +417,24 @@ address StubGenerator::generate_avx2_galoisCounterMode_AESCrypt() {
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
 // Vector AES Counter implementation
 address StubGenerator::generate_counterMode_VectorAESCrypt()  {
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_counterMode_AESCrypt_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   const Register from = c_rarg0; // source array address
   const Register to = c_rarg1; // destination array address
@@ -469,6 +493,9 @@ address StubGenerator::generate_counterMode_VectorAESCrypt()  {
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
@@ -496,10 +523,16 @@ address StubGenerator::generate_counterMode_VectorAESCrypt()  {
 //
 address StubGenerator::generate_counterMode_AESCrypt_Parallel() {
   assert(UseAES, "need AES instructions and misaligned SSE support");
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_counterMode_AESCrypt_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   const Register from = c_rarg0; // source array address
   const Register to = c_rarg1; // destination array address
@@ -779,15 +812,24 @@ address StubGenerator::generate_counterMode_AESCrypt_Parallel() {
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
 address StubGenerator::generate_cipherBlockChaining_decryptVectorAESCrypt() {
   assert(VM_Version::supports_avx512_vaes(), "need AES instructions and misaligned SSE support");
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_cipherBlockChaining_decryptAESCrypt_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   const Register from = c_rarg0;  // source array address
   const Register to = c_rarg1;  // destination array address
@@ -1055,6 +1097,9 @@ address StubGenerator::generate_cipherBlockChaining_decryptVectorAESCrypt() {
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
@@ -1067,11 +1112,17 @@ address StubGenerator::generate_cipherBlockChaining_decryptVectorAESCrypt() {
 //
 address StubGenerator::generate_aescrypt_encryptBlock() {
   assert(UseAES, "need AES instructions and misaligned SSE support");
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_aescrypt_encryptBlock_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
   Label L_doLast;
-  address start = __ pc();
+  start = __ pc();
 
   const Register from        = c_rarg0;  // source array address
   const Register to          = c_rarg1;  // destination array address
@@ -1150,6 +1201,9 @@ address StubGenerator::generate_aescrypt_encryptBlock() {
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
@@ -1162,11 +1216,17 @@ address StubGenerator::generate_aescrypt_encryptBlock() {
 //
 address StubGenerator::generate_aescrypt_decryptBlock() {
   assert(UseAES, "need AES instructions and misaligned SSE support");
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_aescrypt_decryptBlock_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
   Label L_doLast;
-  address start = __ pc();
+  start = __ pc();
 
   const Register from        = c_rarg0;  // source array address
   const Register to          = c_rarg1;  // destination array address
@@ -1246,6 +1306,9 @@ address StubGenerator::generate_aescrypt_decryptBlock() {
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
@@ -1264,10 +1327,16 @@ address StubGenerator::generate_aescrypt_decryptBlock() {
 //
 address StubGenerator::generate_cipherBlockChaining_encryptAESCrypt() {
   assert(UseAES, "need AES instructions and misaligned SSE support");
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_cipherBlockChaining_encryptAESCrypt_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   Label L_exit, L_key_192_256, L_key_256, L_loopTop_128, L_loopTop_192, L_loopTop_256;
   const Register from        = c_rarg0;  // source array address
@@ -1396,6 +1465,9 @@ address StubGenerator::generate_cipherBlockChaining_encryptAESCrypt() {
   __ jcc(Assembler::notEqual, L_loopTop_256);
   __ jmp(L_exit);
 
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
@@ -1416,10 +1488,16 @@ address StubGenerator::generate_cipherBlockChaining_encryptAESCrypt() {
 //
 address StubGenerator::generate_cipherBlockChaining_decryptAESCrypt_Parallel() {
   assert(UseAES, "need AES instructions and misaligned SSE support");
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_cipherBlockChaining_decryptAESCrypt_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   const Register from        = c_rarg0;  // source array address
   const Register to          = c_rarg1;  // destination array address
@@ -1655,14 +1733,23 @@ __ opc(xmm_result3, src_reg);         \
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
 address StubGenerator::generate_electronicCodeBook_encryptAESCrypt() {
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_electronicCodeBook_encryptAESCrypt_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   const Register from = c_rarg0;  // source array address
   const Register to = c_rarg1;  // destination array address
@@ -1676,14 +1763,23 @@ address StubGenerator::generate_electronicCodeBook_encryptAESCrypt() {
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
   return start;
  }
 
 address StubGenerator::generate_electronicCodeBook_decryptAESCrypt() {
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_electronicCodeBook_decryptAESCrypt_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   const Register from = c_rarg0;  // source array address
   const Register to = c_rarg1;  // destination array address
@@ -1696,6 +1792,9 @@ address StubGenerator::generate_electronicCodeBook_decryptAESCrypt() {
   __ vzeroupper();
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
+
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
 
   return start;
 }

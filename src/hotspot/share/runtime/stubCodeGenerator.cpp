@@ -115,7 +115,7 @@ void StubCodeGenerator::setup_code_desc(const char* name, address start, address
 // handler pc may be null in which case it defaults to the
 // default_handler.
 
-void StubCodeGenerator::register_unsafe_access_handlers(GrowableArray<address> &entries, int begin, int count, address stub_end) {
+void StubCodeGenerator::register_unsafe_access_handlers(GrowableArray<address> &entries, int begin, int count) {
   for (int i = 0; i < count; i++) {
     int offset = begin + 3 * i;
     address start = entries.at(offset);
@@ -171,21 +171,20 @@ void StubCodeGenerator::print_stub_code_desc(StubCodeDesc* cdesc) {
   }
 }
 
-bool StubCodeGenerator::find_archive_data(StubId stub_id) {
+address StubCodeGenerator::load_archive_data(StubId stub_id, GrowableArray<address> *entries, GrowableArray<address>* extras) {
   // punt to stub data if it exists and is not for dumping
   if (_stub_data == nullptr || _stub_data->is_dumping()) {
-    return false;
+    return nullptr;
   }
-  return _stub_data->find_archive_data(stub_id);
-}
-
-void StubCodeGenerator::load_archive_data(StubId stub_id, address& start, address& end, GrowableArray<address> *entries, GrowableArray<address>* extras) {
-  assert(_stub_data != nullptr && _stub_data->current_stub_id() == stub_id, "no current archive data for %s", StubInfo::name(stub_id));
-
   // punt to stub data
-  _stub_data->load_archive_data(stub_id, start, end, entries, extras);
+  address start, end;
+  start = _stub_data->load_archive_data(stub_id, end, entries, extras);
 
-  setup_code_desc(StubInfo::name(stub_id), start, end, true);
+  if (start != nullptr) {
+    setup_code_desc(StubInfo::name(stub_id), start, end, true);
+  }
+
+  return start;
 }
 
 void StubCodeGenerator::store_archive_data(StubId stub_id, address start, address end, GrowableArray<address>* entries, GrowableArray<address>* extras) {

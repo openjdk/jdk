@@ -104,10 +104,15 @@ static address generate_sha3_implCompress(StubId stub_id,
   default:
     ShouldNotReachHere();
   }
-
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = stubgen->load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(stubgen, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   const Register buf          = c_rarg0;
   const Register state        = c_rarg1;
@@ -316,6 +321,9 @@ static address generate_sha3_implCompress(StubId stub_id,
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 
+  // record the stub entry and end
+  stubgen->store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
@@ -326,10 +334,16 @@ static address generate_sha3_implCompress(StubId stub_id,
 // Performs two keccak() computations in parallel. The steps of the
 // two computations are executed interleaved.
 static address generate_double_keccak(StubGenerator *stubgen, MacroAssembler *_masm) {
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_double_keccak_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = stubgen->load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(stubgen, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   const Register state0 = c_rarg0;
   const Register state1 = c_rarg1;
@@ -494,6 +508,9 @@ static address generate_double_keccak(StubGenerator *stubgen, MacroAssembler *_m
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
+
+  // record the stub entry and end
+  stubgen->store_archive_data(stub_id, start, __ pc());
 
   return start;
 }

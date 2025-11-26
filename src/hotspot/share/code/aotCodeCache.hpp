@@ -218,10 +218,6 @@ private:
   // array identifying range of entries in _address_array for each stub
   // indexed by offset of stub in blob
   StubAddrRange* _ranges;
-  // id of last looked up stub or NO_STUBID if lookup not attempted or failed
-  StubId _current;
-  // offset of _current in blob or -1 if lookup not attempted or failed
-  int _current_idx;
 
   // flags indicating whether the AOT code cache is open and, if so,
   // whether we are loading or storing stubs.the first of those
@@ -253,41 +249,10 @@ public:
   bool is_invalid() CDS_ONLY({ return (_flags & INVALID) != 0; }) NOT_CDS_RETURN_(false);
 
   BlobId blob_id() { return _blob_id; }
-  StubId current_stub_id() { return _current; }
-  //
   bool load_code_blob() NOT_CDS_RETURN_(true);
   bool store_code_blob(CodeBlob& new_blob, CodeBuffer *code_buffer) NOT_CDS_RETURN_(true);
-  // determine whether a stub is available in the AOT cache
-  bool find_archive_data(StubId stub_id) NOT_CDS_RETURN_(false);
-  // retrieve stub entry data if it we are using archived stubs and
-  // the stub has been found in an AOT-restored blob or store stub
-  // entry data if we are saving archived stubs and the stub has just
-  // been successfully generated into the current blob.
-  //
-  // start and end identify the inclusive start and exclusive end
-  // address for stub code and must lie in the current blob's code
-  // range. Stubs presented via this interface must declare at least
-  // one entry and start is always taken to be the first entry.
-  //
-  // Optional arrays entries and extras present other addresses of
-  // interest all of which must either lie in the interval (start,
-  // end) or be nullptr (verified by load and store methods).
-  //
-  // entries lists secondary entries for the stub each of which must
-  // match a corresponding entry declaration for the stub (entry count
-  // verified by load and store methods). Null entry addresses are
-  // allowed when an architecture does not require a specific entry
-  // but may not vary from one run to the next. If the cache is in use
-  // at a store (for loading or saving code) then non-null entry
-  // addresses are entered into the AOT cache stub address table
-  // allowing references to them from other stubs or nmethods to be
-  // relocated.
-  //
-  // extras lists other non-entry stub addresses of interest such as
-  // memory protection ranges and associated handler addresses. These
-  // do do not need to be declared as entries and their number and
-  // meaning may vary according to the architecture.
-  void load_archive_data(StubId stub_id, address& start, address& end, GrowableArray<address>* entries = nullptr, GrowableArray<address>* extras = nullptr) NOT_CDS_RETURN;
+
+  address load_archive_data(StubId stub_id, address &end, GrowableArray<address>* entries = nullptr, GrowableArray<address>* extras = nullptr) NOT_CDS_RETURN_(nullptr);
   void store_archive_data(StubId stub_id, address start, address end, GrowableArray<address>* entries = nullptr, GrowableArray<address>* extras = nullptr) NOT_CDS_RETURN;
 
   const AOTStubData* as_const() { return (const AOTStubData*)this; }

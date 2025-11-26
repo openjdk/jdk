@@ -111,10 +111,16 @@ void StubGenerator::generate_chacha_stubs() {
 
 /* The 2-block AVX/AVX2-enabled ChaCha20 block function implementation */
 address StubGenerator::generate_chacha20Block_avx() {
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_chacha20Block_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   Label L_twoRounds;
   const Register state        = c_rarg0;
@@ -295,15 +301,25 @@ address StubGenerator::generate_chacha20Block_avx() {
   }
   __ leave();
   __ ret(0);
+
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
 /* The 4-block AVX512-enabled ChaCha20 block function implementation */
 address StubGenerator::generate_chacha20Block_avx512() {
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_chacha20Block_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   Label L_twoRounds;
   const Register state        = c_rarg0;
@@ -466,6 +482,10 @@ address StubGenerator::generate_chacha20Block_avx512() {
   __ vzeroupper();
   __ leave();
   __ ret(0);
+
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 

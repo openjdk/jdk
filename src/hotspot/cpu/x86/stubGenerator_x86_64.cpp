@@ -194,18 +194,15 @@ address StubGenerator::generate_call_stub(address& return_address) {
   GrowableArray<address> entries;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 2, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    // this stub has an extra return entry which we need to retrieve
-    load_archive_data(stub_id, start, end, &entries);
+  address start = load_archive_data(stub_id, &entries);
+  if (start != nullptr) {
     assert(entries.length() == 1, "expected 1 extra entry");
     return_address = entries.at(0);
     return start;
   }
 
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   // same as in generate_catch_exception()!
   const Address rsp_after_call(rbp, rsp_after_call_off * wordSize);
@@ -433,15 +430,13 @@ address StubGenerator::generate_catch_exception() {
   StubId stub_id = StubId::stubgen_catch_exception_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
 
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   // same as in generate_call_stub():
   const Address rsp_after_call(rbp, rsp_after_call_off * wordSize);
@@ -503,14 +498,12 @@ address StubGenerator::generate_forward_exception() {
   StubId stub_id = StubId::stubgen_forward_exception_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   // Upon entry, the sp points to the return address returning into
   // Java (interpreted or compiled) code; i.e., the return address
@@ -578,14 +571,12 @@ address StubGenerator::generate_orderaccess_fence() {
   StubId stub_id = StubId::stubgen_fence_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   __ membar(Assembler::StoreLoad);
   __ ret(0);
@@ -608,14 +599,12 @@ address StubGenerator::generate_verify_mxcsr() {
   StubId stub_id = StubId::stubgen_verify_mxcsr_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   const Address mxcsr_save(rsp, 0);
 
@@ -648,16 +637,14 @@ address StubGenerator::generate_f2i_fixup() {
   StubId stub_id = StubId::stubgen_f2i_fixup_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   StubCodeMark mark(this, stub_id);
   Address inout(rsp, 5 * wordSize); // return address + 4 saves
 
-  address start = __ pc();
+  start = __ pc();
 
   Label L;
 
@@ -698,15 +685,13 @@ address StubGenerator::generate_f2l_fixup() {
   StubId stub_id = StubId::stubgen_f2l_fixup_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   StubCodeMark mark(this, stub_id);
   Address inout(rsp, 5 * wordSize); // return address + 4 saves
-  address start = __ pc();
+  start = __ pc();
 
   Label L;
 
@@ -747,16 +732,14 @@ address StubGenerator::generate_d2i_fixup() {
   StubId stub_id = StubId::stubgen_d2i_fixup_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   StubCodeMark mark(this, stub_id);
   Address inout(rsp, 6 * wordSize); // return address + 5 saves
 
-  address start = __ pc();
+  start = __ pc();
 
   Label L;
 
@@ -806,16 +789,14 @@ address StubGenerator::generate_d2l_fixup() {
   StubId stub_id = StubId::stubgen_d2l_fixup_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   StubCodeMark mark(this, stub_id);
   Address inout(rsp, 6 * wordSize); // return address + 5 saves
 
-  address start = __ pc();
+  start = __ pc();
 
   Label L;
 
@@ -865,15 +846,13 @@ address StubGenerator::generate_count_leading_zeros_lut() {
   StubId stub_id = StubId::stubgen_vector_count_leading_zeros_lut_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align64();
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   __ emit_data64(0x0101010102020304, relocInfo::none);
   __ emit_data64(0x0000000000000000, relocInfo::none);
@@ -894,15 +873,13 @@ address StubGenerator::generate_popcount_avx_lut() {
   StubId stub_id = StubId::stubgen_vector_popcount_lut_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align64();
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   __ emit_data64(0x0302020102010100, relocInfo::none);
   __ emit_data64(0x0403030203020201, relocInfo::none);
@@ -923,15 +900,13 @@ address StubGenerator::generate_iota_indices() {
   StubId stub_id = StubId::stubgen_vector_iota_indices_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
   // B
   __ emit_data64(0x0706050403020100, relocInfo::none);
   __ emit_data64(0x0F0E0D0C0B0A0908, relocInfo::none);
@@ -997,15 +972,13 @@ address StubGenerator::generate_vector_reverse_bit_lut() {
   StubId stub_id = StubId::stubgen_vector_reverse_bit_lut_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   __ emit_data64(0x0E060A020C040800, relocInfo::none);
   __ emit_data64(0x0F070B030D050901, relocInfo::none);
@@ -1026,15 +999,13 @@ address StubGenerator::generate_vector_reverse_byte_perm_mask_long() {
   StubId stub_id = StubId::stubgen_vector_reverse_byte_perm_mask_long_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   __ emit_data64(0x0001020304050607, relocInfo::none);
   __ emit_data64(0x08090A0B0C0D0E0F, relocInfo::none);
@@ -1055,15 +1026,13 @@ address StubGenerator::generate_vector_reverse_byte_perm_mask_int() {
   StubId stub_id = StubId::stubgen_vector_reverse_byte_perm_mask_int_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   __ emit_data64(0x0405060700010203, relocInfo::none);
   __ emit_data64(0x0C0D0E0F08090A0B, relocInfo::none);
@@ -1084,15 +1053,13 @@ address StubGenerator::generate_vector_reverse_byte_perm_mask_short() {
   StubId stub_id = StubId::stubgen_vector_reverse_byte_perm_mask_short_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   __ emit_data64(0x0607040502030001, relocInfo::none);
   __ emit_data64(0x0E0F0C0D0A0B0809, relocInfo::none);
@@ -1113,15 +1080,13 @@ address StubGenerator::generate_vector_byte_shuffle_mask() {
   StubId stub_id = StubId::stubgen_vector_byte_shuffle_mask_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   __ emit_data64(0x7070707070707070, relocInfo::none);
   __ emit_data64(0x7070707070707070, relocInfo::none);
@@ -1137,15 +1102,13 @@ address StubGenerator::generate_vector_byte_shuffle_mask() {
 address StubGenerator::generate_fp_mask(StubId stub_id, int64_t mask) {
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   __ emit_data64( mask, relocInfo::none );
   __ emit_data64( mask, relocInfo::none );
@@ -1170,15 +1133,13 @@ address StubGenerator::generate_compress_perm_table(StubId stub_id) {
   }
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
   if (esize == 32) {
     // Loop to generate 256 x 8 int compression permute index table. A row is
     // accessed using 8 bit index computed using vector mask. An entry in
@@ -1236,15 +1197,13 @@ address StubGenerator::generate_expand_perm_table(StubId stub_id) {
   }
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
   if (esize == 32) {
     // Loop to generate 256 x 8 int expand permute index table. A row is accessed
     // using 8 bit index computed using vector mask. An entry in a row holds either
@@ -1289,15 +1248,13 @@ address StubGenerator::generate_expand_perm_table(StubId stub_id) {
 address StubGenerator::generate_vector_mask(StubId stub_id, int64_t mask) {
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   __ emit_data64(mask, relocInfo::none);
   __ emit_data64(mask, relocInfo::none);
@@ -1318,15 +1275,13 @@ address StubGenerator::generate_vector_byte_perm_mask() {
   StubId stub_id = StubId::stubgen_vector_byte_perm_mask_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   __ emit_data64(0x0000000000000001, relocInfo::none);
   __ emit_data64(0x0000000000000003, relocInfo::none);
@@ -1346,15 +1301,13 @@ address StubGenerator::generate_vector_byte_perm_mask() {
 address StubGenerator::generate_vector_fp_mask(StubId stub_id, int64_t mask) {
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   __ emit_data64(mask, relocInfo::none);
   __ emit_data64(mask, relocInfo::none);
@@ -1378,15 +1331,13 @@ address StubGenerator::generate_vector_custom_i32(StubId stub_id, Assembler::Avx
                                    int32_t val12, int32_t val13, int32_t val14, int32_t val15) {
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   assert(len != Assembler::AVX_NoVec, "vector len must be specified");
   __ emit_data(val0, relocInfo::none, 0);
@@ -1435,14 +1386,12 @@ address StubGenerator::generate_verify_oop() {
   StubId stub_id = StubId::stubgen_verify_oop_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   Label exit, error;
 
@@ -1641,16 +1590,14 @@ address StubGenerator::generate_data_cache_writeback() {
   StubId stub_id = StubId::stubgen_data_cache_writeback_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
 
-  address start = __ pc();
+  start = __ pc();
 
   __ enter();
   __ cache_wb(Address(src, 0));
@@ -1668,10 +1615,8 @@ address StubGenerator::generate_data_cache_writeback_sync() {
   StubId stub_id = StubId::stubgen_data_cache_writeback_sync_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align(CodeEntryAlignment);
@@ -1681,7 +1626,7 @@ address StubGenerator::generate_data_cache_writeback_sync() {
   // post wbsync translates to an sfence
 
   Label skip;
-  address start = __ pc();
+  start = __ pc();
 
   __ enter();
   __ cmpl(is_pre, 0);
@@ -1713,15 +1658,13 @@ address StubGenerator::generate_md5_implCompress(StubId stub_id) {
   }
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   const Register buf_param = r15;
   const Address state_param(rsp, 0 * wordSize);
@@ -1761,15 +1704,13 @@ address StubGenerator::generate_upper_word_mask() {
   StubId stub_id = StubId::stubgen_upper_word_mask_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align64();
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   __ emit_data64(0x0000000000000000, relocInfo::none);
   __ emit_data64(0xFFFFFFFF00000000, relocInfo::none);
@@ -1784,15 +1725,13 @@ address StubGenerator::generate_shuffle_byte_flip_mask() {
   StubId stub_id = StubId::stubgen_shuffle_byte_flip_mask_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align64();
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   __ emit_data64(0x08090a0b0c0d0e0f, relocInfo::none);
   __ emit_data64(0x0001020304050607, relocInfo::none);
@@ -1819,15 +1758,13 @@ address StubGenerator::generate_sha1_implCompress(StubId stub_id) {
   }
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   Register buf = c_rarg0;
   Register state = c_rarg1;
@@ -1867,10 +1804,8 @@ address StubGenerator::generate_pshuffle_byte_flip_mask(address& entry_00ba, add
   GrowableArray<address> entries;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 3, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end, &entries);
+  address start = load_archive_data(stub_id, &entries);
+  if (start != nullptr) {
     assert(entries.length() == entry_count - 1,
            "unexpected extra entry count %d", entries.length());
     entry_00ba = entries.at(0);
@@ -1881,7 +1816,7 @@ address StubGenerator::generate_pshuffle_byte_flip_mask(address& entry_00ba, add
   }
   __ align64();
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
   address entry2 = nullptr;
   address entry3 = nullptr;
   __ emit_data64(0x0405060700010203, relocInfo::none);
@@ -1921,10 +1856,8 @@ address StubGenerator::generate_pshuffle_byte_flip_mask_sha512(address& entry_ym
   GrowableArray<address> entries;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 2, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end, &entries);
+  address start = load_archive_data(stub_id, &entries);
+  if (start != nullptr) {
     assert(entries.length() == entry_count - 1,
            "unexpected extra entry count %d", entries.length());
     entry_ymm_lo = entries.at(0);
@@ -1934,7 +1867,7 @@ address StubGenerator::generate_pshuffle_byte_flip_mask_sha512(address& entry_ym
   }
   __ align32();
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
   address entry2 = nullptr;
   if (VM_Version::supports_avx2()) {
     __ emit_data64(0x0001020304050607, relocInfo::none); // PSHUFFLE_BYTE_FLIP_MASK
@@ -1974,15 +1907,13 @@ address StubGenerator::generate_sha256_implCompress(StubId stub_id) {
   assert(VM_Version::supports_sha() || VM_Version::supports_avx2(), "");
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   Register buf = c_rarg0;
   Register state = c_rarg1;
@@ -2039,15 +1970,13 @@ address StubGenerator::generate_sha512_implCompress(StubId stub_id) {
   assert(VM_Version::supports_bmi2() || VM_Version::supports_sha512(), "");
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   Register buf = c_rarg0;
   Register state = c_rarg1;
@@ -2086,15 +2015,13 @@ address StubGenerator::base64_shuffle_addr() {
   StubId stub_id = StubId::stubgen_shuffle_base64_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align64();
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   assert(((unsigned long long)start & 0x3f) == 0,
          "Alignment problem (0x%08llx)", (unsigned long long)start);
@@ -2117,15 +2044,13 @@ address StubGenerator::base64_avx2_shuffle_addr() {
   StubId stub_id = StubId::stubgen_avx2_shuffle_base64_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align32();
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   __ emit_data64(0x0809070805060405, relocInfo::none);
   __ emit_data64(0x0e0f0d0e0b0c0a0b, relocInfo::none);
@@ -2142,15 +2067,13 @@ address StubGenerator::base64_avx2_input_mask_addr() {
   StubId stub_id = StubId::stubgen_avx2_input_mask_base64_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align32();
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   __ emit_data64(0x8000000000000000, relocInfo::none);
   __ emit_data64(0x8000000080000000, relocInfo::none);
@@ -2167,15 +2090,13 @@ address StubGenerator::base64_avx2_lut_addr() {
   StubId stub_id = StubId::stubgen_avx2_lut_base64_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align32();
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   __ emit_data64(0xfcfcfcfcfcfc4741, relocInfo::none);
   __ emit_data64(0x0000f0edfcfcfcfc, relocInfo::none);
@@ -2198,15 +2119,13 @@ address StubGenerator::base64_encoding_table_addr() {
   StubId stub_id = StubId::stubgen_encoding_table_base64_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align64();
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   assert(((unsigned long long)start & 0x3f) == 0, "Alignment problem (0x%08llx)", (unsigned long long)start);
   __ emit_data64(0x4847464544434241, relocInfo::none);
@@ -2243,15 +2162,13 @@ address StubGenerator::generate_base64_encodeBlock()
   StubId stub_id = StubId::stubgen_base64_encodeBlock_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   __ enter();
 
@@ -2637,15 +2554,13 @@ address StubGenerator::base64_vbmi_lookup_lo_addr() {
   StubId stub_id = StubId::stubgen_lookup_lo_base64_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align64();
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   assert(((unsigned long long)start & 0x3f) == 0,
          "Alignment problem (0x%08llx)", (unsigned long long)start);
@@ -2668,15 +2583,13 @@ address StubGenerator::base64_vbmi_lookup_hi_addr() {
   StubId stub_id = StubId::stubgen_lookup_hi_base64_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align64();
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   assert(((unsigned long long)start & 0x3f) == 0,
          "Alignment problem (0x%08llx)", (unsigned long long)start);
@@ -2698,15 +2611,13 @@ address StubGenerator::base64_vbmi_lookup_lo_url_addr() {
   StubId stub_id = StubId::stubgen_lookup_lo_base64url_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align64();
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   assert(((unsigned long long)start & 0x3f) == 0,
          "Alignment problem (0x%08llx)", (unsigned long long)start);
@@ -2729,15 +2640,13 @@ address StubGenerator::base64_vbmi_lookup_hi_url_addr() {
   StubId stub_id = StubId::stubgen_lookup_hi_base64url_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align64();
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   assert(((unsigned long long)start & 0x3f) == 0,
          "Alignment problem (0x%08llx)", (unsigned long long)start);
@@ -2760,15 +2669,13 @@ address StubGenerator::base64_vbmi_pack_vec_addr() {
   StubId stub_id = StubId::stubgen_pack_vec_base64_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align64();
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   assert(((unsigned long long)start & 0x3f) == 0,
          "Alignment problem (0x%08llx)", (unsigned long long)start);
@@ -2791,15 +2698,13 @@ address StubGenerator::base64_vbmi_join_0_1_addr() {
   StubId stub_id = StubId::stubgen_join_0_1_base64_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align64();
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   assert(((unsigned long long)start & 0x3f) == 0,
          "Alignment problem (0x%08llx)", (unsigned long long)start);
@@ -2822,15 +2727,13 @@ address StubGenerator::base64_vbmi_join_1_2_addr() {
   StubId stub_id = StubId::stubgen_join_1_2_base64_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align64();
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   assert(((unsigned long long)start & 0x3f) == 0,
          "Alignment problem (0x%08llx)", (unsigned long long)start);
@@ -2853,15 +2756,13 @@ address StubGenerator::base64_vbmi_join_2_3_addr() {
   StubId stub_id = StubId::stubgen_join_2_3_base64_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align64();
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   assert(((unsigned long long)start & 0x3f) == 0,
          "Alignment problem (0x%08llx)", (unsigned long long)start);
@@ -2884,15 +2785,13 @@ address StubGenerator::base64_AVX2_decode_tables_addr() {
   StubId stub_id = StubId::stubgen_avx2_decode_tables_base64_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align64();
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   assert(((unsigned long long)start & 0x3f) == 0,
          "Alignment problem (0x%08llx)", (unsigned long long)start);
@@ -2930,15 +2829,13 @@ address StubGenerator::base64_AVX2_decode_LUT_tables_addr() {
   StubId stub_id = StubId::stubgen_avx2_decode_lut_tables_base64_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align64();
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   assert(((unsigned long long)start & 0x3f) == 0,
          "Alignment problem (0x%08llx)", (unsigned long long)start);
@@ -2982,14 +2879,12 @@ address StubGenerator::base64_decoding_table_addr() {
   StubId stub_id = StubId::stubgen_decoding_table_base64_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   __ emit_data64(0xffffffffffffffff, relocInfo::none);
   __ emit_data64(0xffffffffffffffff, relocInfo::none);
@@ -3075,15 +2970,13 @@ address StubGenerator::generate_base64_decodeBlock() {
   StubId stub_id = StubId::stubgen_base64_decodeBlock_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   __ enter();
 
@@ -3620,16 +3513,14 @@ address StubGenerator::generate_updateBytesCRC32() {
   StubId stub_id = StubId::stubgen_updateBytesCRC32_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
 
-  address start = __ pc();
+  start = __ pc();
 
   // Win64: rcx, rdx, r8, r9 (c_rarg0, c_rarg1, ...)
   // Unix:  rdi, rsi, rdx, rcx, r8, r9 (c_rarg0, c_rarg1, ...)
@@ -3688,15 +3579,13 @@ address StubGenerator::generate_updateBytesCRC32C(bool is_pclmulqdq_supported) {
   StubId stub_id = StubId::stubgen_updateBytesCRC32C_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   //reg.arg        int#0        int#1        int#2        int#3        int#4        int#5        float regs
   //Windows        RCX          RDX          R8           R9           none         none         XMM0..XMM3
@@ -3780,15 +3669,13 @@ address StubGenerator::generate_multiplyToLen() {
   StubId stub_id = StubId::stubgen_multiplyToLen_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   // Win64: rcx, rdx, r8, r9 (c_rarg0, c_rarg1, ...)
   // Unix:  rdi, rsi, rdx, rcx, r8, r9 (c_rarg0, c_rarg1, ...)
@@ -3848,15 +3735,13 @@ address StubGenerator::generate_vectorizedMismatch() {
   StubId stub_id = StubId::stubgen_vectorizedMismatch_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   BLOCK_COMMENT("Entry:");
   __ enter();
@@ -3911,15 +3796,13 @@ address StubGenerator::generate_squareToLen() {
   StubId stub_id = StubId::stubgen_squareToLen_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   // Win64: rcx, rdx, r8, r9 (c_rarg0, c_rarg1, ...)
   // Unix:  rdi, rsi, rdx, rcx (c_rarg0, c_rarg1, ...)
@@ -3958,15 +3841,13 @@ address StubGenerator::generate_method_entry_barrier() {
   StubId stub_id = StubId::stubgen_method_entry_barrier_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   Label deoptimize_label;
 
@@ -4059,15 +3940,13 @@ address StubGenerator::generate_mulAdd() {
   StubId stub_id = StubId::stubgen_mulAdd_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   // Win64: rcx, rdx, r8, r9 (c_rarg0, c_rarg1, ...)
   // Unix:  rdi, rsi, rdx, rcx, r8, r9 (c_rarg0, c_rarg1, ...)
@@ -4112,15 +3991,13 @@ address StubGenerator::generate_bigIntegerRightShift() {
   StubId stub_id = StubId::stubgen_bigIntegerRightShiftWorker_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   Label Shift512Loop, ShiftTwo, ShiftTwoLoop, ShiftOne, Exit;
   // For Unix, the arguments are as follows: rdi, rsi, rdx, rcx, r8.
@@ -4259,15 +4136,13 @@ address StubGenerator::generate_bigIntegerLeftShift() {
   StubId stub_id = StubId::stubgen_bigIntegerLeftShiftWorker_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   Label Shift512Loop, ShiftTwo, ShiftTwoLoop, ShiftOne, Exit;
   // For Unix, the arguments are as follows: rdi, rsi, rdx, rcx, r8.
@@ -4426,15 +4301,13 @@ address StubGenerator::generate_float16ToFloat() {
   StubId stub_id = StubId::stubgen_hf2f_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   StubCodeMark mark(this, stub_id);
 
-  address start = __ pc();
+  start = __ pc();
 
   BLOCK_COMMENT("Entry:");
   // No need for RuntimeStub frame since it is called only during JIT compilation
@@ -4463,15 +4336,13 @@ address StubGenerator::generate_floatToFloat16() {
   StubId stub_id = StubId::stubgen_f2hf_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   StubCodeMark mark(this, stub_id);
 
-  address start = __ pc();
+  start = __ pc();
 
   BLOCK_COMMENT("Entry:");
   // No need for RuntimeStub frame since it is called only during JIT compilation
@@ -4515,14 +4386,12 @@ address StubGenerator::generate_cont_thaw(StubId stub_id) {
   }
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   // TODO: Handle Valhalla return types. May require generating different return barriers.
 
@@ -4660,14 +4529,12 @@ address StubGenerator::generate_cont_preempt_stub() {
   StubId stub_id = StubId::stubgen_cont_preempt_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   __ reset_last_Java_frame(true);
 
@@ -4702,14 +4569,12 @@ address StubGenerator::generate_upcall_stub_exception_handler() {
   StubId stub_id = StubId::stubgen_upcall_stub_exception_handler_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   // native caller has no idea how to handle exceptions
   // we just crash here. Up to callee to catch exceptions.
@@ -4734,14 +4599,12 @@ address StubGenerator::generate_upcall_stub_load_target() {
   StubId stub_id = StubId::stubgen_upcall_stub_load_target_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   __ resolve_global_jobject(j_rarg0, rscratch1);
     // Load target method from receiver
@@ -4763,10 +4626,8 @@ void StubGenerator::generate_lookup_secondary_supers_table_stub() {
   GrowableArray<address> entries;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == Klass::SECONDARY_SUPERS_TABLE_SIZE, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end, &entries);
+  address start = load_archive_data(stub_id, &entries);
+  if (start != nullptr) {
     assert(entries.length() == Klass::SECONDARY_SUPERS_TABLE_SIZE - 1,
            "unexpected extra entry count %d", entries.length());
     StubRoutines::_lookup_secondary_supers_table_stubs[0] = start;
@@ -4782,7 +4643,6 @@ void StubGenerator::generate_lookup_secondary_supers_table_stub() {
       r_sub_klass   = rsi,
       result        = rdi;
 
-  address start;
   for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
     address next_entry = __ pc();
     if (slot == 0) {
@@ -4807,16 +4667,12 @@ address StubGenerator::generate_lookup_secondary_supers_table_slow_path_stub() {
   StubId stub_id = StubId::stubgen_lookup_secondary_supers_table_slow_path_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  if (find_archive_data(stub_id)) {
-    address start = nullptr;
-    address end = nullptr;
-    load_archive_data(stub_id, start, end);
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
     return start;
   }
-
   StubCodeMark mark(this, stub_id);
-
-  address start = __ pc();
+  start = __ pc();
 
   const Register
       r_super_klass  = rax,
