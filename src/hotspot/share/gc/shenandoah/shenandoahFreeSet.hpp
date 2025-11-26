@@ -420,7 +420,6 @@ public:
     assert (which_partition < NumPartitions, "selected free set must be valid");
     _used[int(which_partition)] = value;
     _available[int(which_partition)] = _capacity[int(which_partition)] - value;
-    AtomicAccess::store(_used + int(which_partition), value);
   }
 
   inline size_t count(ShenandoahFreeSetPartitionId which_partition) const { return _region_counts[int(which_partition)]; }
