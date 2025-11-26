@@ -231,7 +231,7 @@ extern void trace_class_resolution(Klass* to_class) {
 JVM_ENTRY(jboolean, JVM_AOTEndRecording(JNIEnv *env))
 #if INCLUDE_CDS
   if (CDSConfig::is_dumping_preimage_static_archive()) {
-    if (AOTMetaspace::is_recording_preimage_static_archive()) {
+    if (!AOTMetaspace::preimage_static_archive_dumped()) {
       AOTMetaspace::dump_static_archive(THREAD);
       return JNI_TRUE;
     }
