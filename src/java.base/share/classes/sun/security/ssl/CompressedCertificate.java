@@ -164,7 +164,7 @@ final class CompressedCertificate {
                     hc.certDeflater.getKey(), certMsg.length,
                     compressedCertMsg);
 
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine("Produced Compressed Certificate message", ccm);
             }
 
@@ -197,7 +197,7 @@ final class CompressedCertificate {
 
             // Parse the handshake message
             CompressedCertMessage ccm = new CompressedCertMessage(hc, message);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "Consuming CompressedCertificate handshake message", ccm);
             }

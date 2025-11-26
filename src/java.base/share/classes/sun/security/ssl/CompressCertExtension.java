@@ -241,7 +241,7 @@ final class CompressCertExtension {
         HandshakeContext hc = (HandshakeContext) context;
         // Is it a supported and enabled extension?
         if (!hc.sslConfig.isAvailable(extension)) {
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine("Ignore unavailable " +
                         "compress_certificate extension");
             }
@@ -255,7 +255,7 @@ final class CompressCertExtension {
         }
 
         if (hc.certInflaters.isEmpty()) {
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine("Ignore unsupported " +
                         "compress_certificate extension");
             }
@@ -284,7 +284,7 @@ final class CompressCertExtension {
         HandshakeContext hc = (HandshakeContext) context;
         // Is it a supported and enabled extension?
         if (!hc.sslConfig.isAvailable(extension)) {
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine("Ignore unavailable " +
                         "compress_certificate extension");
             }
@@ -293,7 +293,7 @@ final class CompressCertExtension {
 
         if (hc.sslConfig.certDeflaters == null ||
                 hc.sslConfig.certDeflaters.isEmpty()) {
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine("Ignore unsupported " +
                         "compress_certificate extension");
             }
@@ -307,7 +307,7 @@ final class CompressCertExtension {
         hc.certDeflater = CompressionAlgorithm.selectDeflater(
                 hc.sslConfig, spec.compressionAlgorithms);
         if (hc.certDeflater == null) {
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine("Ignore, no supported " +
                         "certificate compression algorithms");
             }

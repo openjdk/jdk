@@ -83,7 +83,7 @@ enum CompressionAlgorithm {
     static Map<Integer, Function<byte[], byte[]>> findInflaters(
             SSLConfiguration config) {
         if (config.certInflaters == null || config.certInflaters.isEmpty()) {
-            if (SSLLogger.isOn &&
+            if (SSLLogger.isOn() &&
                     SSLLogger.isOn("ssl,handshake,verbose")) {
                 SSLLogger.finest(
                     "No supported certificate compression algorithms");
@@ -99,7 +99,7 @@ enum CompressionAlgorithm {
             CompressionAlgorithm ca =
                     CompressionAlgorithm.nameOf(entry.getKey());
             if (ca == null) {
-                if (SSLLogger.isOn &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn("ssl,handshake,verbose")) {
                     SSLLogger.finest(
                         "Ignore unsupported certificate " +
