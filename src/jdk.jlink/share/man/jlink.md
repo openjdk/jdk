@@ -64,9 +64,9 @@ Developers are responsible for updating their custom runtime images.
 `--bind-services`
 :   Link service provider modules and their dependencies.
 
-`-c zip-[0-9]` or `--compress=zip-[0-9]`
+`-c zip-{0-9}` or `--compress=zip-{0-9}`
 :   Enable compression of resources. The accepted values are:
-    zip-[0-9], where zip-0 provides no compression,
+    zip-{0-9}, where zip-0 provides no compression,
     and zip-9 provides the best compression. Default is zip-6.
 
 :   Deprecated values to be removed in a future release:
@@ -173,12 +173,12 @@ For a complete list of all available plug-ins, run the command
 ### Plugin `compress`
 
 Options
-:   `--compress=zip-`[`0`-`9`]\[`:filter=`*pattern-list*\]
+:   `--compress=zip-`{`0`-`9`}\[`:filter=`*pattern-list*\]
 
 Description
 :   Compresses all resources in the output image.
     Accepted values are:
-    zip-[0-9], where zip-0 provides no compression,
+    zip-{0-9}, where zip-0 provides no compression,
     and zip-9 provides the best compression. Default is zip-6.
 
 :   Deprecated values to be removed in a future release:
