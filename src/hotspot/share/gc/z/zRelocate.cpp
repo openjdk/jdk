@@ -1165,7 +1165,7 @@ public:
     const auto do_forwarding_one_from_iter = [&]() {
       ZForwarding* forwarding;
 
-      while (true) {
+      for (;;) {
         if (_iters->get(current_node).next_if(&forwarding, check_numa_local, current_node)) {
           // Set thread affinity for NUMA-local processing (if needed)
           if (UseNUMA && !has_affinity_current_node) {
