@@ -369,7 +369,7 @@ InstanceKlass* LambdaProxyClassDictionary::load_and_init_lambda_proxy_class(Inst
     JvmtiExport::post_class_load(THREAD, lambda_ik);
   }
   if (class_load_start_event.should_commit()) {
-    SystemDictionary::post_class_load_event(&class_load_start_event, lambda_ik, ClassLoaderData::class_loader_data(class_loader()));
+    JFR_ONLY(SystemDictionary::post_class_load_event(&class_load_start_event, lambda_ik, ClassLoaderData::class_loader_data(class_loader()));)
   }
 
   lambda_ik->initialize(CHECK_NULL);
