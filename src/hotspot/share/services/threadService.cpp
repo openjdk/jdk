@@ -48,7 +48,7 @@
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/objectMonitor.inline.hpp"
-#include "runtime/synchronizer.inline.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.inline.hpp"
@@ -1161,9 +1161,11 @@ public:
     Type _type;
     // park blocker or an object the thread waiting on/trying to lock
     OopHandle _obj;
+    // thread that owns park blocker object when park blocker is AbstractOwnableSynchronizer
+    OopHandle _owner;
 
-    Blocker(Type type, OopHandle obj): _type(type), _obj(obj) {}
-    Blocker(): _type(NOTHING), _obj(nullptr) {}
+    Blocker(Type type, OopHandle obj): _type(type), _obj(obj), _owner() {}
+    Blocker(): _type(NOTHING), _obj(), _owner() {}
 
     bool is_empty() const {
       return _type == NOTHING;
@@ -1198,6 +1200,7 @@ public:
       delete _locks;
     }
     _blocker._obj.release(oop_storage());
+    _blocker._owner.release(oop_storage());
   }
 
 private:
@@ -1300,6 +1303,13 @@ public:
     oop park_blocker = java_lang_Thread::park_blocker(_thread_h());
     if (park_blocker != nullptr) {
       _blocker = Blocker(Blocker::PARK_BLOCKER, OopHandle(oop_storage(), park_blocker));
+      if (park_blocker->is_a(vmClasses::java_util_concurrent_locks_AbstractOwnableSynchronizer_klass())) {
+        // could be stale (unlikely in practice), but it's good enough to see deadlocks
+        oop ownerObj = java_util_concurrent_locks_AbstractOwnableSynchronizer::get_owner_threadObj(park_blocker);
+        if (ownerObj != nullptr) {
+          _blocker._owner = OopHandle(oop_storage(), ownerObj);
+        }
+      }
     }
 
     ResourceMark rm(current);
@@ -1381,6 +1391,7 @@ class jdk_internal_vm_ThreadSnapshot: AllStatic {
   static int _locks_offset;
   static int _blockerTypeOrdinal_offset;
   static int _blockerObject_offset;
+  static int _parkBlockerOwner_offset;
 
   static void compute_offsets(InstanceKlass* klass, TRAPS) {
     JavaClasses::compute_offset(_name_offset, klass, "name", vmSymbols::string_signature(), false);
@@ -1390,6 +1401,7 @@ class jdk_internal_vm_ThreadSnapshot: AllStatic {
     JavaClasses::compute_offset(_locks_offset, klass, "locks", vmSymbols::jdk_internal_vm_ThreadLock_array(), false);
     JavaClasses::compute_offset(_blockerTypeOrdinal_offset, klass, "blockerTypeOrdinal", vmSymbols::int_signature(), false);
     JavaClasses::compute_offset(_blockerObject_offset, klass, "blockerObject", vmSymbols::object_signature(), false);
+    JavaClasses::compute_offset(_parkBlockerOwner_offset, klass, "parkBlockerOwner", vmSymbols::thread_signature(), false);
   }
 public:
   static void init(InstanceKlass* klass, TRAPS) {
@@ -1420,9 +1432,10 @@ public:
   static void set_locks(oop snapshot, oop locks) {
     snapshot->obj_field_put(_locks_offset, locks);
   }
-  static void set_blocker(oop snapshot, int type_ordinal, oop lock) {
+  static void set_blocker(oop snapshot, int type_ordinal, oop lock, oop owner) {
     snapshot->int_field_put(_blockerTypeOrdinal_offset, type_ordinal);
     snapshot->obj_field_put(_blockerObject_offset, lock);
+    snapshot->obj_field_put(_parkBlockerOwner_offset, owner);
   }
 };
 
@@ -1434,6 +1447,7 @@ int jdk_internal_vm_ThreadSnapshot::_stackTrace_offset;
 int jdk_internal_vm_ThreadSnapshot::_locks_offset;
 int jdk_internal_vm_ThreadSnapshot::_blockerTypeOrdinal_offset;
 int jdk_internal_vm_ThreadSnapshot::_blockerObject_offset;
+int jdk_internal_vm_ThreadSnapshot::_parkBlockerOwner_offset;
 
 oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
   ThreadsListHandle tlh(THREAD);
@@ -1559,7 +1573,8 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
   jdk_internal_vm_ThreadSnapshot::set_stack_trace(snapshot(), trace());
   jdk_internal_vm_ThreadSnapshot::set_locks(snapshot(), locks());
   if (!cl._blocker.is_empty()) {
-    jdk_internal_vm_ThreadSnapshot::set_blocker(snapshot(), cl._blocker._type, cl._blocker._obj.resolve());
+    jdk_internal_vm_ThreadSnapshot::set_blocker(snapshot(),
+        cl._blocker._type, cl._blocker._obj.resolve(), cl._blocker._owner.resolve());
   }
   return snapshot();
 }

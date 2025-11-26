@@ -229,14 +229,14 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm, Decorator
   __ bind(filtered);
 }
 
-static void generate_post_barrier_fast_path(MacroAssembler* masm,
-                                            const Register store_addr,
-                                            const Register new_val,
-                                            const Register thread,
-                                            const Register tmp1,
-                                            const Register tmp2,
-                                            Label& done,
-                                            bool new_val_may_be_null) {
+static void generate_post_barrier(MacroAssembler* masm,
+                                  const Register store_addr,
+                                  const Register new_val,
+                                  const Register thread,
+                                  const Register tmp1,
+                                  const Register tmp2,
+                                  Label& done,
+                                  bool new_val_may_be_null) {
   assert_different_registers(store_addr, new_val, tmp1, R0);
   assert_different_registers(store_addr, tmp1, tmp2, R0);
 
@@ -273,7 +273,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
   bool not_null = (decorators & IS_NOT_NULL) != 0;
 
   Label done;
-  generate_post_barrier_fast_path(masm, store_addr, new_val, R16_thread, tmp1, tmp2, done, !not_null);
+  generate_post_barrier(masm, store_addr, new_val, R16_thread, tmp1, tmp2, done, !not_null);
   __ bind(done);
 }
 
@@ -321,10 +321,10 @@ void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorator
   Label done;
   if (on_oop && on_reference && L_handle_null == nullptr) { L_handle_null = &done; }
   // Load the value of the referent field.
-  ModRefBarrierSetAssembler::load_at(masm, decorators, type,
-                                     base, ind_or_offs, dst,
-                                     tmp1, tmp2,
-                                     preservation_level, L_handle_null);
+  CardTableBarrierSetAssembler::load_at(masm, decorators, type,
+                                        base, ind_or_offs, dst,
+                                        tmp1, tmp2,
+                                        preservation_level, L_handle_null);
   if (on_oop && on_reference) {
     // Generate the G1 pre-barrier code to log the value of
     // the referent field in an SATB buffer. Note with
@@ -450,7 +450,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post_c2(MacroAssembler* masm,
     new_val_decoded = __ decode_heap_oop_not_null(tmp2, new_val);
   }
 
-  generate_post_barrier_fast_path(masm, store_addr, new_val_decoded, R16_thread, tmp1, tmp2, done, new_val_may_be_null);
+  generate_post_barrier(masm, store_addr, new_val_decoded, R16_thread, tmp1, tmp2, done, new_val_may_be_null);
   __ bind(done);
 }
 
@@ -498,7 +498,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post_c1(MacroAssembler* masm,
                                                      Register tmp1,
                                                      Register tmp2) {
   Label done;
-  generate_post_barrier_fast_path(masm, store_addr, new_val, thread, tmp1, tmp2, done, true /* new_val_may_be_null */);
+  generate_post_barrier(masm, store_addr, new_val, thread, tmp1, tmp2, done, true /* new_val_may_be_null */);
   masm->bind(done);
 }
 

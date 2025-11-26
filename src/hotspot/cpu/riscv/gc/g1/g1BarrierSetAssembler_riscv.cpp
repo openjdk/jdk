@@ -91,8 +91,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
                                                              DecoratorSet decorators,
                                                              Register start,
                                                              Register count,
-                                                             Register tmp,
-                                                             RegSet saved_regs) {
+                                                             Register tmp) {
   assert_different_registers(start, count, tmp);
 
   Label loop, next, done;
@@ -228,14 +227,14 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
 
 }
 
-static void generate_post_barrier_fast_path(MacroAssembler* masm,
-                                            const Register store_addr,
-                                            const Register new_val,
-                                            const Register thread,
-                                            const Register tmp1,
-                                            const Register tmp2,
-                                            Label& done,
-                                            bool new_val_may_be_null) {
+static void generate_post_barrier(MacroAssembler* masm,
+                                  const Register store_addr,
+                                  const Register new_val,
+                                  const Register thread,
+                                  const Register tmp1,
+                                  const Register tmp2,
+                                  Label& done,
+                                  bool new_val_may_be_null) {
   assert(thread == xthread, "must be");
   assert_different_registers(store_addr, new_val, thread, tmp1, tmp2, noreg);
   // Does store cross heap regions?
@@ -271,7 +270,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
                                                   Register tmp1,
                                                   Register tmp2) {
   Label done;
-  generate_post_barrier_fast_path(masm, store_addr, new_val, thread, tmp1, tmp2, done, true /* new_val_may_be_null */);
+  generate_post_barrier(masm, store_addr, new_val, thread, tmp1, tmp2, done, true /* new_val_may_be_null */);
   __ bind(done);
 }
 
@@ -333,7 +332,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post_c2(MacroAssembler* masm,
                                                      Register tmp2,
                                                      bool new_val_may_be_null) {
   Label done;
-  generate_post_barrier_fast_path(masm, store_addr, new_val, thread, tmp1, tmp2, done, new_val_may_be_null);
+  generate_post_barrier(masm, store_addr, new_val, thread, tmp1, tmp2, done, new_val_may_be_null);
   __ bind(done);
 }
 
@@ -345,7 +344,7 @@ void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorator
   bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
   bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
   bool on_reference = on_weak || on_phantom;
-  ModRefBarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp2);
+  CardTableBarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp2);
   if (on_oop && on_reference) {
     // RA is live.  It must be saved around calls.
     __ enter(); // barrier may call runtime
@@ -438,7 +437,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post_c1(MacroAssembler* masm,
                                                      Register tmp1,
                                                      Register tmp2) {
   Label done;
-  generate_post_barrier_fast_path(masm, store_addr, new_val, thread, tmp1, tmp2, done, true /* new_val_may_be_null */);
+  generate_post_barrier(masm, store_addr, new_val, thread, tmp1, tmp2, done, true /* new_val_may_be_null */);
   masm->bind(done);
 }
 

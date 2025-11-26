@@ -245,7 +245,7 @@ int LIR_Assembler::emit_unwind_handler() {
   MonitorExitStub* stub = nullptr;
   if (method()->is_synchronized()) {
     monitor_address(0, FrameMap::R0_opr);
-    stub = new MonitorExitStub(FrameMap::R0_opr, true, 0);
+    stub = new MonitorExitStub(FrameMap::R0_opr, 0);
     __ unlock_object(R2, R1, R0, *stub->entry());
     __ bind(*stub->continuation());
   }
@@ -272,14 +272,22 @@ int LIR_Assembler::emit_deopt_handler() {
 
   int offset = code_offset();
 
-  __ mov_relative_address(LR, __ pc());
-  __ push(LR); // stub expects LR to be saved
+  Label start;
+  __ bind(start);
+
   __ jump(SharedRuntime::deopt_blob()->unpack(), relocInfo::runtime_call_type, noreg);
 
+  int entry_offset = __ offset();
+  __ mov_relative_address(LR, __ pc());
+  __ push(LR); // stub expects LR to be saved
+  __ b(start);
+
   assert(code_offset() - offset <= deopt_handler_size(), "overflow");
+  assert(code_offset() - entry_offset >= NativePostCallNop::first_check_size,
+         "out of bounds read in post-call NOP check");
   __ end_a_stub();
 
-  return offset;
+  return entry_offset;
 }
 
 
@@ -2427,7 +2435,6 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register lock = op->lock_opr()->as_pointer_register();
 
   if (op->code() == lir_lock) {
-    assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
     int null_check_offset = __ lock_object(hdr, obj, lock, *op->stub()->entry());
     if (op->info() != nullptr) {
       add_debug_info_for_null_check(null_check_offset, op->info());
@@ -2632,11 +2639,11 @@ void LIR_Assembler::volatile_move_op(LIR_Opr src, LIR_Opr dest, BasicType type, 
     const Register src_hi = src->as_register_hi();
     assert(addr->index()->is_illegal() && addr->disp() == 0, "The address is simple already");
 
-    if (src_lo < src_hi) {
+    if (src_lo->encoding() < src_hi->encoding()) {
       null_check_offset = __ offset();
       __ stmia(addr->base()->as_register(), RegisterSet(src_lo) | RegisterSet(src_hi));
     } else {
-      assert(src_lo < Rtemp, "Rtemp is higher than any allocatable register");
+      assert(src_lo->encoding() < Rtemp->encoding(), "Rtemp is higher than any allocatable register");
       __ mov(Rtemp, src_hi);
       null_check_offset = __ offset();
       __ stmia(addr->base()->as_register(), RegisterSet(src_lo) | RegisterSet(Rtemp));
@@ -2649,10 +2656,10 @@ void LIR_Assembler::volatile_move_op(LIR_Opr src, LIR_Opr dest, BasicType type, 
     assert(addr->index()->is_illegal() && addr->disp() == 0, "The address is simple already");
 
     null_check_offset = __ offset();
-    if (dest_lo < dest_hi) {
+    if (dest_lo->encoding() < dest_hi->encoding()) {
       __ ldmia(addr->base()->as_register(), RegisterSet(dest_lo) | RegisterSet(dest_hi));
     } else {
-      assert(dest_lo < Rtemp, "Rtemp is higher than any allocatable register");
+      assert(dest_lo->encoding() < Rtemp->encoding(), "Rtemp is higher than any allocatable register");
       __ ldmia(addr->base()->as_register(), RegisterSet(dest_lo) | RegisterSet(Rtemp));
       __ mov(dest_hi, Rtemp);
     }

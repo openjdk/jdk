@@ -502,7 +502,7 @@ const int ObjectAlignmentInBytes = 8;
           "If > 0, provokes an error after VM initialization; the value "   \
           "determines which error to provoke. See controlled_crash() "      \
           "in vmError.cpp.")                                                \
-          range(0, 17)                                                      \
+          range(0, 18)                                                      \
                                                                             \
   develop(uint, TestCrashInErrorHandler, 0,                                 \
           "If > 0, provokes an error inside VM error handler (a secondary " \
@@ -1565,6 +1565,9 @@ const int ObjectAlignmentInBytes = 8;
           "Start aggressive sweeping if less than X[%] of the total code cache is free.")\
           range(0, 100)                                                     \
                                                                             \
+  product(bool, NMethodRelocation, false, EXPERIMENTAL,                     \
+          "Enables use of experimental function nmethod::relocate()")       \
+                                                                            \
   /* interpreter debugging */                                               \
   develop(intx, BinarySwitchThreshold, 5,                                   \
           "Minimal number of lookupswitch entries for rewriting to binary " \
@@ -1951,14 +1954,14 @@ const int ObjectAlignmentInBytes = 8;
              "fence. Add cleanliness checks.")                              \
                                                                             \
   product(bool, UseObjectMonitorTable, false, DIAGNOSTIC,                   \
-          "With Lightweight Locking mode, use a table to record inflated "  \
-          "monitors rather than the first word of the object.")             \
+          "Use a table to record inflated monitors rather than the first "  \
+          "word of the object.")                                            \
                                                                             \
-  product(int, LightweightFastLockingSpins, 13, DIAGNOSTIC,                 \
-          "Specifies the number of times lightweight fast locking will "    \
-          "attempt to CAS the markWord before inflating. Between each "     \
-          "CAS it will spin for exponentially more time, resulting in "     \
-          "a total number of spins on the order of O(2^value)")             \
+  product(int, FastLockingSpins, 13, DIAGNOSTIC,                            \
+          "Specifies the number of times fast locking will attempt to "     \
+          "CAS the markWord before inflating. Between each CAS it will "    \
+          "spin for exponentially more time, resulting in a total number "  \
+          "of spins on the order of O(2^value)")                            \
           range(1, 30)                                                      \
                                                                             \
   product(uint, TrimNativeHeapInterval, 0,                                  \

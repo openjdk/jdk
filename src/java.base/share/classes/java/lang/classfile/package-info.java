@@ -250,12 +250,6 @@
  * the convenience method {@code CodeBuilder.invoke}, which in turn behaves
  * as if it calls method {@code CodeBuilder.with}. This composing of method calls on the
  * builder enables the composing of transforms (as described later).
- * <p>
- * Unless otherwise noted, passing a {@code null} argument to a constructor
- * or method of any Class-File API class or interface will cause a {@link
- * NullPointerException} to be thrown. Additionally,
- * invoking a method with an array or collection containing a {@code null} element
- * will cause a {@code NullPointerException}, unless otherwise specified.
  *
  * <h3>Symbolic information</h3>
  * To describe symbolic information for classes and types, the API uses the
@@ -272,14 +266,22 @@
  * symbolic information, one accepting nominal descriptors, and the other
  * accepting constant pool entries.
  *
- * <h3>Consistency checks, syntax checks and verification</h3>
- * The Class-File API performs checks to ensure arguments are representable in
- * the {@code class} file format.  A value that is lost when it is built to a
- * {@code class} file and re-parsed to a model is rejected with an {@link
- * IllegalArgumentException}.  For example, a negative value or a value over
- * {@code 65535} is lost when built to a {@link ##u2 u2} item, with
- * the range {@code [0, 65535]}.  In particular, any variable-sized table
- * exceeding its maximum representable size is rejected.
+ * <h3 id="checks">Consistency checks, syntax checks and verification</h3>
+ * The Class-File API performs checks to ensure arguments to construct {@code
+ * class} file structures are representable in the {@code class} file format.
+ * An argument value that cannot be representable by its data type is rejected
+ * with an {@link IllegalArgumentException}.  For example, an {@code int} value
+ * cannot be out of the range of its {@linkplain java.lang.classfile##data-types
+ * data type}; a {@code List} cannot exceed the maximum representable size of
+ * its table data type, or contain an unrepresentable element.  Restrictions
+ * based on underlying data type, such as the {@code int} and {@code List} ones
+ * before, are specified on the corresponding APIs.  Unless otherwise noted, in
+ * all structures, a {@code String} cannot exceed {@code 65535} bytes when
+ * represented in modified UTF-8 format.
+ * <p>
+ * Unless otherwise noted, passing null or an array or collection that contains
+ * null as an element to a constructor or method of any Class-File API class or
+ * interface will cause a {@link NullPointerException} to be thrown.
  * <p>
  * No consistency checks are performed while building or transforming classfiles
  * (except for null and representable arguments checks). All builders and

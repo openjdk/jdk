@@ -34,6 +34,9 @@ import java.math.BigInteger;
 import static jdk.incubator.vector.Float16Consts.SIGN_BIT_MASK;
 import static jdk.incubator.vector.Float16Consts.EXP_BIT_MASK;
 import static jdk.incubator.vector.Float16Consts.SIGNIF_BIT_MASK;
+import static jdk.incubator.vector.Float16Consts.MAG_BIT_MASK;
+import static jdk.incubator.vector.Float16Consts.EXP_BIAS;
+import static jdk.incubator.vector.Float16Consts.SIGNIFICAND_WIDTH;
 
 import static java.lang.Float.float16ToFloat;
 import static java.lang.Float.floatToFloat16;
@@ -94,19 +97,26 @@ import jdk.internal.vm.vector.Float16Math;
  *      <cite>IEEE Standard for Floating-Point Arithmetic</cite></a>
  */
 
-// Currently Float16 is a value-based class and in future it is
+// Currently Float16 is a value-based class and in the future it is
 // expected to be aligned with Value Classes and Object as described in
 // JEP-401 (https://openjdk.org/jeps/401).
 @jdk.internal.ValueBased
 public final class Float16
     extends Number
     implements Comparable<Float16> {
-    /** @serial */
+
+    /**
+     * Primitive {@code short} field to hold the bits of the {@code Float16}.
+     * @serial
+     */
     private final short value;
+
     private static final long serialVersionUID = 16; // May not be needed when a value class?
 
     // Functionality for future consideration:
-    // IEEEremainder / remainder operator remainder
+    // IEEEremainder and separate % operator remainder (which are
+    // defined to use different rounding modes, see JLS sections 15.4
+    // and 15.17.3).
 
     // Do *not* define any public constructors
    /**
@@ -145,6 +155,16 @@ public final class Float16
      * @see Double#NaN
      */
     public static final Float16 NaN = valueOf(Float.NaN);
+
+    /**
+     * A constant holding a zero (0.0) of type {@code Float16}.
+     */
+    private static final Float16 ZERO = valueOf(0);
+
+    /**
+     * A constant holding a one (1.0) of type {@code Float16}.
+     */
+    private static final Float16 ONE  = valueOf(1);
 
     /**
      * A constant holding the largest positive finite value of type
@@ -223,6 +243,16 @@ public final class Float16
     public static final int BYTES = SIZE / Byte.SIZE;
 
     /**
+     * The overflow threshold (for round to nearest) is MAX_VALUE + 1/2 ulp.
+     */
+    private static final double OVERFLOW_THRESH = 0x1.ffcp15 + 0x0.002p15;
+
+    /**
+     * The underflow threshold (for round to nearest) is MIN_VALUE * 0.5.
+     */
+    private static final double UNDERFLOW_THRESH = 0x1.0p-24d * 0.5d;
+
+    /**
      * Returns a string representation of the {@code Float16}
      * argument.
      *
@@ -265,10 +295,12 @@ public final class Float16
             // replace subnormal double exponent with subnormal Float16
             // exponent
             String s = Double.toHexString(Math.scalb((double)f,
-                                                     /* -1022+14 */
-                                                     Double.MIN_EXPONENT-
+                                                     // -1022 + 14
+                                                     Double.MIN_EXPONENT -
                                                      MIN_EXPONENT));
-            return s.replaceFirst("p-1022$", "p-14");
+            // The char sequence "-1022" can only appear in the
+            // representation of the exponent, not in the (hex) significand.
+            return s.replace("-1022", "-14");
         } else {// double string will be the same as Float16 string
             return Double.toHexString(f);
         }
@@ -301,10 +333,10 @@ public final class Float16
     * @param  value a {@code long} value.
     */
     public static Float16 valueOf(long value) {
-        if (value <= -65_520L) {  // -(Float16.MAX_VALUE + Float16.ulp(Float16.MAX_VALUE) / 2)
+        if (value <= -65_520L) {  // -(MAX_VALUE + ulp(MAX_VALUE) / 2)
             return NEGATIVE_INFINITY;
         } else {
-            if (value >= 65_520L) {  // Float16.MAX_VALUE + Float16.ulp(Float16.MAX_VALUE) / 2
+            if (value >= 65_520L) {  // MAX_VALUE + ulp(MAX_VALUE) / 2
                 return POSITIVE_INFINITY;
             }
             // Remaining range of long, the integers in approx. +/-
@@ -340,51 +372,51 @@ public final class Float16
     * @param  d a {@code double}
     */
     public static Float16 valueOf(double d) {
-        long doppel = Double.doubleToRawLongBits(d);
-
-        short sign_bit = (short)((doppel & 0x8000_0000_0000_0000L) >> 48);
-
         if (Double.isNaN(d)) {
             // Have existing float code handle any attempts to
             // preserve NaN bits.
             return valueOf((float)d);
         }
 
+        long doppel = Double.doubleToRawLongBits(d);
+        short sign_bit = (short)((doppel & 0x8000_0000_0000_0000L) >> (64 - 16));
         double abs_d = Math.abs(d);
 
-        // The overflow threshold is binary16 MAX_VALUE + 1/2 ulp
-        if (abs_d >= (0x1.ffcp15 + 0x0.002p15) ) {
+        if (abs_d >= OVERFLOW_THRESH) {
              // correctly signed infinity
             return new Float16((short)(sign_bit | 0x7c00));
         }
 
-        // Smallest magnitude nonzero representable binary16 value
-        // is equal to 0x1.0p-24; half-way and smaller rounds to zero.
-        if (abs_d <= 0x1.0p-24d * 0.5d) { // Covers double zeros and subnormals.
-            return new Float16(sign_bit); // Positive or negative zero
+        if (abs_d <= UNDERFLOW_THRESH) { // Covers double zeros and subnormals.
+            // positive or negative zero
+            return new Float16(sign_bit);
         }
 
         // Dealing with finite values in exponent range of binary16
         // (when rounding is done, could still round up)
         int exp = Math.getExponent(d);
-        assert -25 <= exp && exp <= 15;
+        assert
+            (MIN_EXPONENT - PRECISION) <= exp &&
+            exp <= MAX_EXPONENT;
 
-        // For binary16 subnormals, beside forcing exp to -15, retain
-        // the difference expdelta = E_min - exp.  This is the excess
-        // shift value, in addition to 42, to be used in the
+        // For target format subnormals, beside forcing exp to
+        // MIN_EXPONENT-1, retain the difference expdelta = E_min -
+        // exp.  This is the excess shift value, in addition to the
+        // difference in precision bits, to be used in the
         // computations below.  Further the (hidden) msb with value 1
         // in d must be involved as well.
         int expdelta = 0;
         long msb = 0x0000_0000_0000_0000L;
-        if (exp < -14) {
-            expdelta = -14 - exp; // FIXME?
-            exp = -15;
-            msb = 0x0010_0000_0000_0000L; // should be 0x0020_... ?
+        if (exp < MIN_EXPONENT) {
+            expdelta = MIN_EXPONENT - exp;
+            exp = MIN_EXPONENT - 1;
+            msb = 0x0010_0000_0000_0000L;
         }
         long f_signif_bits = doppel & 0x000f_ffff_ffff_ffffL | msb;
 
+        final int PRECISION_DIFF = Double.PRECISION - PRECISION; // 42
         // Significand bits as if using rounding to zero (truncation).
-        short signif_bits = (short)(f_signif_bits >> (42 + expdelta));
+        short signif_bits = (short)(f_signif_bits >> (PRECISION_DIFF + expdelta));
 
         // For round to nearest even, determining whether or not to
         // round up (in magnitude) is a function of the least
@@ -399,9 +431,9 @@ public final class Float16
         // 1    1     1
         // See "Computer Arithmetic Algorithms," Koren, Table 4.9
 
-        long lsb    = f_signif_bits & (1L << 42 + expdelta);
-        long round  = f_signif_bits & (1L << 41 + expdelta);
-        long sticky = f_signif_bits & ((1L << 41 + expdelta) - 1);
+        long lsb    = f_signif_bits &  (1L << (PRECISION_DIFF      + expdelta));
+        long round  = f_signif_bits &  (1L << (PRECISION_DIFF - 1) + expdelta);
+        long sticky = f_signif_bits & ((1L << (PRECISION_DIFF - 1) + expdelta) - 1);
 
         if (round != 0 && ((lsb | sticky) != 0 )) {
             signif_bits++;
@@ -412,7 +444,8 @@ public final class Float16
         // to implement a carry out from rounding the significand.
         assert (0xf800 & signif_bits) == 0x0;
 
-        return new Float16((short)(sign_bit | ( ((exp + 15) << 10) + signif_bits ) ));
+        return new Float16((short)(sign_bit |
+                                   ( ((exp + EXP_BIAS) << (PRECISION - 1)) + signif_bits) ));
     }
 
     /**
@@ -451,7 +484,7 @@ public final class Float16
         // characters rather than codepoints.
 
         if (trialResult == 0.0 // handles signed zeros
-            || Math.abs(trialResult) > (65504.0 + 32.0) || // Float.MAX_VALUE + ulp(MAX_VALUE),
+            || Math.abs(trialResult) > (65504.0 + 32.0) || // MAX_VALUE + ulp(MAX_VALUE),
                                                            // handles infinities too
             Double.isNaN(trialResult) ||
             noDoubleRoundingToFloat16(trialResult)) {
@@ -600,7 +633,7 @@ public final class Float16
          * Float16}.
          */
         private static final Float16[] FLOAT16_10_POW = {
-            Float16.valueOf(1), Float16.valueOf(10), Float16.valueOf(100),
+            Float16.ONE, Float16.valueOf(10), Float16.valueOf(100),
             Float16.valueOf(1_000), Float16.valueOf(10_000)
         };
 
@@ -637,14 +670,14 @@ public final class Float16
 
         private static Float16 fullFloat16Value(BigDecimal bd) {
             if (BigDecimal.ZERO.compareTo(bd) == 0) {
-                return Float16.valueOf(0);
+                return ZERO;
             }
             BigInteger w = bd.unscaledValue().abs();
             int scale = bd.scale();
             long qb = w.bitLength() - (long) Math.ceil(scale * L);
             Float16 signum = Float16.valueOf(bd.signum());
             if (qb < Q_MIN_F16 - 2) {  // qb < -26
-                return Float16.multiply(signum, Float16.valueOf(0));
+                return Float16.multiply(signum, ZERO);
             }
             if (qb > Q_MAX_F16 + P_F16 + 1) {  // qb > 17
                 return Float16.multiply(signum, Float16.POSITIVE_INFINITY);
@@ -717,7 +750,7 @@ public final class Float16
     public static boolean isNaN(Float16 f16) {
         final short bits = float16ToRawShortBits(f16);
         // A NaN value has all ones in its exponent and a non-zero significand
-        return ((bits & 0x7c00) == 0x7c00 && (bits & 0x03ff) != 0);
+        return ((bits & EXP_BIT_MASK) == EXP_BIT_MASK && (bits & SIGNIF_BIT_MASK) != 0);
     }
 
     /**
@@ -736,8 +769,9 @@ public final class Float16
      * @see Double#isInfinite(double)
      */
     public static boolean isInfinite(Float16 f16) {
-        return ((float16ToRawShortBits(f16) ^
-                 float16ToRawShortBits(POSITIVE_INFINITY)) & 0x7fff) == 0;
+        final short bits = float16ToRawShortBits(f16);
+        // An infinite value has all ones in its exponent and a zero significand
+        return ((bits & EXP_BIT_MASK) == EXP_BIT_MASK && (bits & SIGNIF_BIT_MASK) == 0);
     }
 
     /**
@@ -757,7 +791,7 @@ public final class Float16
      * @see Double#isFinite(double)
      */
     public static boolean isFinite(Float16 f16) {
-        return (float16ToRawShortBits(f16) & (short)0x0000_7FFF) <=
+        return (float16ToRawShortBits(f16) & MAG_BIT_MASK) <=
             float16ToRawShortBits(MAX_VALUE);
      }
 
@@ -881,7 +915,7 @@ public final class Float16
      */
     public static int hashCode(Float16 value) {
         // Use bit-pattern of canonical NaN for hashing.
-        Float16 f16 = isNaN(value) ? Float16.NaN : value;
+        Float16 f16 = isNaN(value) ? NaN : value;
         return (int)float16ToRawShortBits(f16);
     }
 
@@ -928,7 +962,7 @@ public final class Float16
      */
     public static short float16ToShortBits(Float16 f16) {
         if (isNaN(f16)) {
-            return Float16.NaN.value;
+            return NaN.value;
         }
         return f16.value;
     }
@@ -1076,7 +1110,7 @@ public final class Float16
      * 2) performing the operation in the wider format
      * 3) converting the result from 2) to the narrower format
      *
-     * For example, this property hold between the formats used for the
+     * For example, this property holds between the formats used for the
      * float and double types. Therefore, the following is a valid
      * implementation of a float addition:
      *
@@ -1460,7 +1494,7 @@ public final class Float16
         // operation. Therefore, in this case do _not_ use the float
         // unary minus as an implementation as that is not guaranteed
         // to flip the sign bit of a NaN.
-        return shortBitsToFloat16((short)(f16.value ^ (short)0x0000_8000));
+        return shortBitsToFloat16((short)(f16.value ^ SIGN_BIT_MASK));
     }
 
     /**
@@ -1478,7 +1512,7 @@ public final class Float16
     public static Float16 abs(Float16 f16) {
         // Zero out sign bit. Per IEE 754-2019 section 5.5.1, abs is a
         // bit-level operation and not a logical operation.
-        return shortBitsToFloat16((short)(f16.value & (short)0x0000_7FFF));
+        return shortBitsToFloat16((short)(f16.value & MAG_BIT_MASK));
     }
 
     /**
@@ -1513,8 +1547,8 @@ public final class Float16
      */
     /*package*/ static int getExponent0(short bits) {
         // package private to be usable in java.lang.Float.
-        int bin16ExpBits     = 0x0000_7c00 & bits;     // Five exponent bits.
-        return (bin16ExpBits >> (PRECISION - 1)) - 15;
+        int bin16ExpBits = EXP_BIT_MASK & bits; // Five exponent bits.
+        return (bin16ExpBits >> (PRECISION - 1)) - EXP_BIAS;
     }
 
     /**
@@ -1545,13 +1579,13 @@ public final class Float16
         int exp = getExponent(f16);
 
         return switch(exp) {
-        case MAX_EXPONENT + 1 -> abs(f16);          // NaN or infinity
-        case MIN_EXPONENT - 1 -> Float16.MIN_VALUE; // zero or subnormal
+        case MAX_EXPONENT + 1 -> abs(f16);  // NaN or infinity
+        case MIN_EXPONENT - 1 -> MIN_VALUE; // zero or subnormal
         default -> {
-            assert exp <= MAX_EXPONENT && exp >= MIN_EXPONENT;
+            assert exp <= MAX_EXPONENT && exp >= MIN_EXPONENT: "Out of range exponent";
             // ulp(x) is usually 2^(SIGNIFICAND_WIDTH-1)*(2^ilogb(x))
             // Let float -> float16 conversion handle encoding issues.
-            yield scalb(valueOf(1), exp - (PRECISION - 1));
+            yield scalb(ONE, exp - (PRECISION - 1));
         }
         };
     }
@@ -1669,11 +1703,10 @@ public final class Float16
         // nonzero value by it would be guaranteed to over or
         // underflow; due to rounding, scaling down takes an
         // additional power of two which is reflected here
-        final int MAX_SCALE = Float16.MAX_EXPONENT + -Float16.MIN_EXPONENT +
-                Float16Consts.SIGNIFICAND_WIDTH + 1;
+        final int MAX_SCALE = MAX_EXPONENT + -MIN_EXPONENT + SIGNIFICAND_WIDTH + 1;
 
         // Make sure scaling factor is in a reasonable range
-        scaleFactor = Math.max(Math.min(scaleFactor, MAX_SCALE), -MAX_SCALE);
+        scaleFactor = Math.clamp(scaleFactor, -MAX_SCALE, MAX_SCALE);
 
         int DoubleConsts_EXP_BIAS = 1023;
         /*
@@ -1707,9 +1740,8 @@ public final class Float16
      * @see Math#copySign(double, double)
      */
     public static Float16 copySign(Float16 magnitude, Float16 sign) {
-        return shortBitsToFloat16((short) ((float16ToRawShortBits(sign) & SIGN_BIT_MASK) |
-                                           (float16ToRawShortBits(magnitude) &
-                                            (EXP_BIT_MASK | SIGNIF_BIT_MASK) )));
+        return shortBitsToFloat16((short)((float16ToRawShortBits(sign)      & SIGN_BIT_MASK) |
+                                          (float16ToRawShortBits(magnitude) & MAG_BIT_MASK)));
     }
 
     /**
@@ -1731,7 +1763,7 @@ public final class Float16
      * @see Math#signum(double)
      */
     public static Float16 signum(Float16 f) {
-        return (f.floatValue() == 0.0f || isNaN(f)) ? f : copySign(valueOf(1), f);
+        return (f.floatValue() == 0.0f || isNaN(f)) ? f : copySign(ONE, f);
     }
 
     // TODO: Temporary location for this functionality while Float16
