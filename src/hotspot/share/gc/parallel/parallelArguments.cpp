@@ -37,22 +37,45 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-size_t ParallelArguments::conservative_max_heap_alignment() {
-  // The card marking array and the offset arrays for old generations are
-  // committed in os pages as well. Make sure they are entirely full (to
-  // avoid partial page problems), e.g. if 512 bytes heap corresponds to 1
-  // byte entry and the os page size is 4096, the maximum heap size should
-  // be 512*4096 = 2MB aligned.
+static size_t num_young_spaces() {
+  // When using NUMA, we create one MutableNUMASpace for each NUMA node
+  const size_t num_eden_spaces = UseNUMA ? os::numa_get_groups_num() : 1;
 
-  size_t alignment = CardTable::ct_max_alignment_constraint();
+  // The young generation must have room for eden + two survivors
+  return num_eden_spaces + 2;
+}
+
+static size_t num_old_spaces() {
+  return 1;
+}
+
+void ParallelArguments::initialize_alignments() {
+  // Initialize card size before initializing alignments
+  CardTable::initialize_card_size();
+  const size_t card_table_alignment = CardTable::ct_max_alignment_constraint();
+  SpaceAlignment = ParallelScavengeHeap::default_space_alignment();
 
   if (UseLargePages) {
-      // In presence of large pages we have to make sure that our
-      // alignment is large page aware.
-      alignment = lcm(os::large_page_size(), alignment);
-  }
+    const size_t total_spaces = num_young_spaces() + num_old_spaces();
+    const size_t page_size =  os::page_size_for_region_unaligned(MaxHeapSize, total_spaces);
+    ParallelScavengeHeap::set_desired_page_size(page_size);
 
-  return alignment;
+    if (page_size == os::vm_page_size()) {
+      log_warning(gc, heap)("MaxHeapSize (%zu) must be large enough for %zu * page-size; Disabling UseLargePages for heap",
+                            MaxHeapSize, total_spaces);
+    }
+
+    if (page_size > SpaceAlignment) {
+      SpaceAlignment = page_size;
+    }
+
+    HeapAlignment = lcm(page_size, card_table_alignment);
+
+  } else {
+    assert(is_aligned(SpaceAlignment, os::vm_page_size()), "");
+    ParallelScavengeHeap::set_desired_page_size(os::vm_page_size());
+    HeapAlignment = card_table_alignment;
+  }
 }
 
 void ParallelArguments::initialize() {
@@ -112,45 +135,26 @@ void ParallelArguments::initialize() {
   FullGCForwarding::initialize_flags(heap_reserved_size_bytes());
 }
 
-static size_t num_young_spaces() {
-  // When using NUMA, we create one MutableNUMASpace for each NUMA node
-  const size_t num_eden_spaces = UseNUMA ? os::numa_get_groups_num() : 1;
+size_t ParallelArguments::conservative_max_heap_alignment() {
+  // The card marking array and the offset arrays for old generations are
+  // committed in os pages as well. Make sure they are entirely full (to
+  // avoid partial page problems), e.g. if 512 bytes heap corresponds to 1
+  // byte entry and the os page size is 4096, the maximum heap size should
+  // be 512*4096 = 2MB aligned.
 
-  // The young generation must have room for eden + two survivors
-  return num_eden_spaces + 2;
-}
-
-static size_t num_old_spaces() {
-  return 1;
-}
-
-void ParallelArguments::initialize_alignments() {
-  // Initialize card size before initializing alignments
-  CardTable::initialize_card_size();
-  const size_t card_table_alignment = CardTable::ct_max_alignment_constraint();
-  SpaceAlignment = ParallelScavengeHeap::default_space_alignment();
+  size_t alignment = CardTable::ct_max_alignment_constraint();
 
   if (UseLargePages) {
-    const size_t total_spaces = num_young_spaces() + num_old_spaces();
-    const size_t page_size =  os::page_size_for_region_unaligned(MaxHeapSize, total_spaces);
-    ParallelScavengeHeap::set_desired_page_size(page_size);
-
-    if (page_size == os::vm_page_size()) {
-      log_warning(gc, heap)("MaxHeapSize (%zu) must be large enough for %zu * page-size; Disabling UseLargePages for heap",
-                            MaxHeapSize, total_spaces);
-    }
-
-    if (page_size > SpaceAlignment) {
-      SpaceAlignment = page_size;
-    }
-
-    HeapAlignment = lcm(page_size, card_table_alignment);
-
-  } else {
-    assert(is_aligned(SpaceAlignment, os::vm_page_size()), "");
-    ParallelScavengeHeap::set_desired_page_size(os::vm_page_size());
-    HeapAlignment = card_table_alignment;
+      // In presence of large pages we have to make sure that our
+      // alignment is large page aware.
+      alignment = lcm(os::large_page_size(), alignment);
   }
+
+  return alignment;
+}
+
+CollectedHeap* ParallelArguments::create_heap() {
+  return new ParallelScavengeHeap();
 }
 
 size_t ParallelArguments::young_gen_size_lower_bound() {
@@ -163,8 +167,4 @@ size_t ParallelArguments::old_gen_size_lower_bound() {
 
 size_t ParallelArguments::heap_reserved_size_bytes() {
   return MaxHeapSize;
-}
-
-CollectedHeap* ParallelArguments::create_heap() {
-  return new ParallelScavengeHeap();
 }

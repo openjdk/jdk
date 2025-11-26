@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +46,11 @@ static size_t compute_heap_alignment() {
   return alignment;
 }
 
-size_t SerialArguments::conservative_max_heap_alignment() {
-  return MAX2((size_t)Generation::GenGrain, compute_heap_alignment());
+void SerialArguments::initialize_alignments() {
+  // Initialize card size before initializing alignments
+  CardTable::initialize_card_size();
+  SpaceAlignment = (size_t)Generation::GenGrain;
+  HeapAlignment = compute_heap_alignment();
 }
 
 void SerialArguments::initialize() {
@@ -54,11 +58,8 @@ void SerialArguments::initialize() {
   FullGCForwarding::initialize_flags(MaxHeapSize);
 }
 
-void SerialArguments::initialize_alignments() {
-  // Initialize card size before initializing alignments
-  CardTable::initialize_card_size();
-  SpaceAlignment = (size_t)Generation::GenGrain;
-  HeapAlignment = compute_heap_alignment();
+size_t SerialArguments::conservative_max_heap_alignment() {
+  return MAX2((size_t)Generation::GenGrain, compute_heap_alignment());
 }
 
 CollectedHeap* SerialArguments::create_heap() {
