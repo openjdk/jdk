@@ -612,21 +612,23 @@ void G1RemSet::scan_collection_set_code_roots(G1ParScanThreadState* pss,
                                               G1GCPhaseTimes::GCParPhases objcopy_phase) {
   EventGCPhaseParallel event;
 
-  Tickspan code_root_scan_time;
-  Tickspan code_root_trim_partially_time;
-  G1EvacPhaseWithTrimTimeTracker timer(pss, code_root_scan_time, code_root_trim_partially_time);
-
   G1GCPhaseTimes* p = _g1h->phase_times();
 
-  G1ScanCodeRootsClosure cl(_scan_state, pss, worker_id);
-  // Code roots work distribution occurs inside the iteration method. So scan all collection
-  // set regions for all threads.
-  _g1h->collection_set_iterate_increment_from(&cl, worker_id);
+  Tickspan code_root_scan_time;
+  Tickspan code_root_trim_partially_time;
+  {
+    G1EvacPhaseWithTrimTimeTracker timer(pss, code_root_scan_time, code_root_trim_partially_time);
+
+    G1ScanCodeRootsClosure cl(_scan_state, pss, worker_id);
+    // Code roots work distribution occurs inside the iteration method. So scan all collection
+    // set regions for all threads.
+    _g1h->collection_set_iterate_increment_from(&cl, worker_id);
+
+    p->record_or_add_thread_work_item(coderoots_phase, worker_id, cl.code_roots_scanned(), G1GCPhaseTimes::CodeRootsScannedNMethods);
+  }
 
   p->record_or_add_time_secs(coderoots_phase, worker_id, code_root_scan_time.seconds());
   p->add_time_secs(objcopy_phase, worker_id, code_root_trim_partially_time.seconds());
-
-  p->record_or_add_thread_work_item(coderoots_phase, worker_id, cl.code_roots_scanned(), G1GCPhaseTimes::CodeRootsScannedNMethods);
 
   event.commit(GCId::current(), worker_id, G1GCPhaseTimes::phase_name(coderoots_phase));
 }
