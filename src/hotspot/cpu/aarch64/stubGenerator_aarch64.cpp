@@ -8809,7 +8809,8 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_dlog() {
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "dlog");
+    StubId stub_id = StubId::stubgen_dlog_id;
+    StubCodeMark mark(this, stub_id);
     address entry = __ pc();
     FloatRegister vtmp0 = v0, vtmp1 = v1, vtmp2 = v2, vtmp3 = v3, vtmp4 = v4,
         vtmp5 = v5, tmpC1 = v16, tmpC2 = v17, tmpC3 = v18, tmpC4 = v19;
