@@ -29,12 +29,12 @@
  * @compile IllegalAccessInCatch.jasm
  * @run main/othervm -Xbatch
  *   -XX:CompileCommand=compileonly,IllegalAccessInCatch*::test
- *   -XX:+IgnoreUnrecognizedVMOptions  -XX:+VerifyStack
+ *   -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyStack
  *   -XX:-TieredCompilation
  *   TestAccessErrorInCatch
  * @run main/othervm -Xbatch
  *   -XX:CompileCommand=compileonly,IllegalAccessInCatch*::test
- *   -XX:+IgnoreUnrecognizedVMOptions  -XX:+VerifyStack
+ *   -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyStack
  *   -XX:TieredStopAtLevel=3
  *   TestAccessErrorInCatch
  */
