@@ -1691,6 +1691,8 @@ int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
   __ z_bru(start);
 
   assert(__ offset() - offset == (int) size_deopt_handler(), "must be fixed size");
+  assert(__ offset() - entry_offset >= NativePostCallNop::first_check_size,
+         "out of bounds read in post-call NOP check");
 
   __ end_a_stub();
   return entry_offset;
@@ -1772,6 +1774,10 @@ bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
 }
 
 bool Matcher::vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen) {
+  return false;
+}
+
+bool Matcher::mask_op_prefers_predicate(int opcode, const TypeVect* vt) {
   return false;
 }
 
