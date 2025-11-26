@@ -1022,27 +1022,39 @@ bool VPointer::can_make_speculative_aliasing_check_with(const VPointer& other) c
   // or at the multiversion_if. That is before the pre-loop. From the construction of
   // VPointer, we already know that all its variables (except iv) are pre-loop invariant.
   //
-  // For the computation of main_init, we also need the pre_limit, and so we need
-  // to check that this value is pre-loop invariant. In the case of non-equal iv_scales,
-  // we also need the main_limit in the aliasing check, and so this value must then
-  // also be pre-loop invariant.
+  // In VPointer::make_speculative_aliasing_check_with we compute main_init in all
+  // cases. For this, we require pre_init and pre_limit. These values must be available
+  // for the speculative check, i.e. their control must dominate the speculative check.
+  // Further, "if vp1.iv_scale() != vp2.iv_scale()" we additionally need to have
+  // main_limit available for the speculative check.
+  // Note: no matter if the speculative check is inserted as a predicate or at the
+  //       multiversion if, the speculative check happens before (dominates) the
+  //       pre-loop.
+  Node* pre_init = _vloop.pre_loop_end()->init_trip();
   Opaque1Node* pre_limit_opaq = _vloop.pre_loop_end()->limit()->as_Opaque1();
   Node* pre_limit = pre_limit_opaq->in(1);
   Node* main_limit = _vloop.cl()->limit();
-
-  if (!_vloop.is_pre_loop_invariant(pre_limit)) {
+  if (!_vloop.is_available_for_speculative_check(pre_init)) {
 #ifdef ASSERT
     if (_vloop.is_trace_speculative_aliasing_analysis()) {
-      tty->print_cr("VPointer::can_make_speculative_aliasing_check_with: pre_limit is not pre-loop independent!");
+      tty->print_cr("VPointer::can_make_speculative_aliasing_check_with: pre_limit is not available at speculative check!");
+    }
+#endif
+    return false;
+  }
+  if (!_vloop.is_available_for_speculative_check(pre_limit)) {
+#ifdef ASSERT
+    if (_vloop.is_trace_speculative_aliasing_analysis()) {
+      tty->print_cr("VPointer::can_make_speculative_aliasing_check_with: pre_limit is not available at speculative check!");
     }
 #endif
     return false;
   }
 
-  if (vp1.iv_scale() != vp2.iv_scale() && !_vloop.is_pre_loop_invariant(main_limit)) {
+  if (vp1.iv_scale() != vp2.iv_scale() && !_vloop.is_available_for_speculative_check(main_limit)) {
 #ifdef ASSERT
     if (_vloop.is_trace_speculative_aliasing_analysis()) {
-      tty->print_cr("VPointer::can_make_speculative_aliasing_check_with: main_limit is not pre-loop independent!");
+      tty->print_cr("VPointer::can_make_speculative_aliasing_check_with: main_limit is not available at speculative check!");
     }
 #endif
     return false;
@@ -1119,6 +1131,8 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other, 
   Node* pre_limit = pre_limit_opaq->in(1);
   assert(_vloop.is_pre_loop_invariant(pre_init),  "needed for aliasing check before pre-loop");
   assert(_vloop.is_pre_loop_invariant(pre_limit), "needed for aliasing check before pre-loop");
+  assert(_vloop.is_available_for_speculative_check(pre_init),  "ctrl must be early enough to avoid cycles");
+  assert(_vloop.is_available_for_speculative_check(pre_limit), "ctrl must be early enough to avoid cycles");
 
   Node* pre_initL = new ConvI2LNode(pre_init);
   Node* pre_limitL = new ConvI2LNode(pre_limit);
@@ -1180,6 +1194,7 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other, 
     jint main_iv_stride = _vloop.iv_stride();
     Node* main_limit = _vloop.cl()->limit();
     assert(_vloop.is_pre_loop_invariant(main_limit), "needed for aliasing check before pre-loop");
+    assert(_vloop.is_available_for_speculative_check(main_limit), "ctrl must be early enough to avoid cycles");
 
     Node* main_limitL = new ConvI2LNode(main_limit);
     phase->register_new_node_with_ctrl_of(main_limitL, pre_init);
