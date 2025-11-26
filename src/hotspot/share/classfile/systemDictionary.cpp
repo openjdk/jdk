@@ -1865,8 +1865,9 @@ void SystemDictionary::add_nest_host_error(const constantPoolHandle& pool,
     MutexLocker ml(Thread::current(), SystemDictionary_lock);
     ResolutionErrorEntry* entry = ResolutionErrorTable::find_entry(pool, which);
     if (entry == nullptr) {
-      // Only add a new resolution error if one hasn't been found for this constant pool index. In this case,
-      // resolution succeeded but there's an error in this nest host.
+      // Only add a new entry to the resolution error table if one hasn't been found for this 
+      // constant pool index. In this case resolution succeeded but there's an error in this nest host
+      // that we use the table to record.
       assert(pool->resolved_klass_at(which) != nullptr, "klass should be resolved if there is no entry");
       ResolutionErrorTable::add_entry(pool, which, message);
     } else {
