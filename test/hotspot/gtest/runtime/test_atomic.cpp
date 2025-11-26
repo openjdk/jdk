@@ -158,8 +158,6 @@ TEST_VM(AtomicIntegerTest, cmpxchg_int32) {
 
 TEST_VM(AtomicIntegerTest, cmpxchg_int64) {
   // Check if 64-bit atomics are available on the machine.
-  if (!VM_Version::supports_cx8()) return;
-
   using Support = AtomicIntegerCmpxchgTestSupport<int64_t>;
   Support().test();
 }
@@ -293,8 +291,6 @@ enum class AtomicEnumTestScoped64Bit : uint64_t { A, B, C };
 
 TEST_VM(AtomicEnumTest, scoped_enum_64_bit) {
   // Check if 64-bit atomics are available on the machine.
-  if (!VM_Version::supports_cx8()) return;
-
   const AtomicEnumTestScoped64Bit B = AtomicEnumTestScoped64Bit::B;
   const AtomicEnumTestScoped64Bit C = AtomicEnumTestScoped64Bit::C;
   AtomicTestSupport<AtomicEnumTestScoped64Bit>::test<B, C>();
