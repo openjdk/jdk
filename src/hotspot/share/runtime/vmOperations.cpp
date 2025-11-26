@@ -286,42 +286,27 @@ class ObjectMonitorsDump : public MonitorClosure, public ObjectMonitorsView {
   }
 
  private:
-  class ObjectMonitorLinkedList :
-    public LinkedListImpl<ObjectMonitor*,
-                          AnyObj::C_HEAP, mtThread,
-                          AllocFailStrategy::RETURN_NULL> {};
+  using OMList = GrowableArrayCHeap<ObjectMonitor*, mtThread>;
 
   // HashTable SIZE is specified at compile time so we
   // use 1031 which is the first prime after 1024.
-  typedef HashTable<int64_t, ObjectMonitorLinkedList*, 1031, AnyObj::C_HEAP, mtThread,
+  typedef HashTable<int64_t, OMList, 1031, AnyObj::C_HEAP, mtThread,
                             &ObjectMonitorsDump::ptr_hash> PtrTable;
   PtrTable* _ptrs;
   size_t _key_count;
   size_t _om_count;
 
-  void add_list(int64_t key, ObjectMonitorLinkedList* list) {
-    _ptrs->put(key, list);
-    _key_count++;
-  }
-
-  ObjectMonitorLinkedList* get_list(int64_t key) {
-    ObjectMonitorLinkedList** listpp = _ptrs->get(key);
-    return (listpp == nullptr) ? nullptr : *listpp;
-  }
-
   void add(ObjectMonitor* monitor) {
     int64_t key = monitor->owner();
 
-    ObjectMonitorLinkedList* list = get_list(key);
-    if (list == nullptr) {
-      // Create new list and add it to the hash table:
-      list = new (mtThread) ObjectMonitorLinkedList;
-      _ptrs->put(key, list);
+    bool created = false;
+    OMList* list = _ptrs->put_if_absent(key, &created);
+    if (created) {
       _key_count++;
     }
 
-    assert(list->find(monitor) == nullptr, "Should not contain duplicates");
-    list->add(monitor);  // Add the ObjectMonitor to the list.
+    assert(list->find(monitor) == -1, "Should not contain duplicates");
+    list->push(monitor);  // Add the ObjectMonitor to the list.
     _om_count++;
   }
 
@@ -334,9 +319,8 @@ class ObjectMonitorsDump : public MonitorClosure, public ObjectMonitorsView {
   ~ObjectMonitorsDump() {
     class CleanupObjectMonitorsDump: StackObj {
      public:
-      bool do_entry(int64_t& key, ObjectMonitorLinkedList*& list) {
-        list->clear();  // clear the LinkListNodes
-        delete list;    // then delete the LinkedList
+      bool do_entry(int64_t& key, OMList& list) {
+        list.~GrowableArrayCHeap();
         return true;
       }
     } cleanup;
@@ -368,11 +352,12 @@ class ObjectMonitorsDump : public MonitorClosure, public ObjectMonitorsView {
   // Implements the ObjectMonitorsView interface
   void visit(MonitorClosure* closure, JavaThread* thread) override {
     int64_t key = ObjectMonitor::owner_id_from(thread);
-    ObjectMonitorLinkedList* list = get_list(key);
-    LinkedListIterator<ObjectMonitor*> iter(list != nullptr ? list->head() : nullptr);
-    while (!iter.is_empty()) {
-      ObjectMonitor* monitor = *iter.next();
-      closure->do_monitor(monitor);
+    OMList* list = _ptrs->get(key);
+    if (list == nullptr) {
+      return;
+    }
+    for (int i = 0; i < list->length(); i++) {
+      closure->do_monitor(list->at(i));
     }
   }
 
