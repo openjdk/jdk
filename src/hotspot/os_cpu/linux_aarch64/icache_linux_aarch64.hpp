@@ -67,7 +67,7 @@ inline void ICacheInvalidationContext::pd_invalidate_icache() {
     // "Since one TLB inner-shareable invalidation is enough to avoid this erratum, the number
     // of injected TLB invalidations should be minimized in the trap handler to mitigate
     // the performance impact due to this workaround."
-#ifndef PRODUCT
+#ifdef ASSERT
     unsigned int cache_info = 0;
     asm volatile ("mrs\t%0, ctr_el0":"=r" (cache_info));
     constexpr unsigned int CTR_IDC_SHIFT = 28;
@@ -80,6 +80,7 @@ inline void ICacheInvalidationContext::pd_invalidate_icache() {
     // and IC IVAU instruction is ignored, we use XZR in it.
     asm volatile("dsb ish       \n"
                  "ic  ivau, xzr \n"
+                 "dsb ish       \n"
                  "isb           \n"
                  : : : "memory");
 
