@@ -207,8 +207,6 @@ struct AtomicXchgAndCmpxchg1ByteStressSupport {
       test_index<Exchange>(i);
     }
   }
-
-
   void test_exchange() {
     struct StressWithExchange {
       void operator()(Atomic<char>& atomic, char compare_value, char new_value) {
