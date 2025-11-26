@@ -29,6 +29,11 @@
  * @summary Sanity test for Jcmd AOT.end_recording command
  * @library /test/lib
  * @build JcmdAOTEndRecordingTest
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar LingeredApp.jar
+ *              jdk/test/lib/apps/LingeredApp
+ *              jdk/test/lib/apps/LingeredApp$1
+ *              jdk/test/lib/apps/LingeredApp$SteadyStateLock
+ *              jdk/test/lib/process/OutputBuffer
  * @run driver JcmdAOTEndRecordingTest
  */
 
@@ -41,11 +46,24 @@ import java.io.IOException;
 
 public class JcmdAOTEndRecordingTest {
     public static void main(String[] args)  throws Exception {
+        test(false);
+        test(true);
+    }
+
+    static void test(boolean isTraining) throws Exception {
         LingeredApp theApp = null;
         try {
             theApp = new LingeredApp();
             theApp.setUseDefaultClasspath(false);
-            LingeredApp.startApp(theApp);
+            if (isTraining) {
+                LingeredApp.startApp(theApp,
+                                     "-cp", "LingeredApp.jar",
+                                     "-XX:AOTMode=record",
+                                     "-XX:AOTConfiguration=LingeredApp.aotconfig");
+            } else {
+                LingeredApp.startApp(theApp,
+                                     "-cp", "LingeredApp.jar");
+            }
             long pid = theApp.getPid();
 
             JDKToolLauncher jcmd = JDKToolLauncher.createUsingTestJDK("jcmd");
@@ -54,7 +72,13 @@ public class JcmdAOTEndRecordingTest {
 
             try {
                 OutputAnalyzer output = ProcessTools.executeProcess(jcmd.getCommand());
-                output.shouldContain("Error! Not a recording run");
+                if (isTraining) {
+                    output.shouldContain("Recording ended successfully");
+                } else {
+                    // this message is output when the VM is not recording AOT data
+                    output.shouldContain("AOT.end_recording is unsupported");
+                }
+                output.shouldHaveExitValue(0);
             } catch (Exception e) {
                 throw new RuntimeException("Test failed: " + e);
             }

@@ -1147,12 +1147,12 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
 #if INCLUDE_JVMCI
     + align_up(speculations_len                  , oopSize)
 #endif
-    + align_up(debug_info->data_size()           , oopSize)
-    + ImmutableDataReferencesCounterSize;
+    + align_up(debug_info->data_size()           , oopSize);
 
   // First, allocate space for immutable data in C heap.
   address immutable_data = nullptr;
   if (immutable_data_size > 0) {
+    immutable_data_size += ImmutableDataRefCountSize;
     immutable_data = (address)os::malloc(immutable_data_size, mtCode);
     if (immutable_data == nullptr) {
       vm_exit_out_of_memory(immutable_data_size, OOM_MALLOC_ERROR, "nmethod: no space for immutable data");
@@ -1302,7 +1302,7 @@ nmethod::nmethod(
     }
     // Native wrappers do not have deopt handlers. Make the values
     // something that will never match a pc like the nmethod vtable entry
-    _deopt_handler_offset    = 0;
+    _deopt_handler_entry_offset    = 0;
     _unwind_handler_offset   = 0;
 
     CHECKED_CAST(_oops_size, uint16_t, align_up(code_buffer->total_oop_size(), oopSize));
@@ -1323,7 +1323,7 @@ nmethod::nmethod(
 #if INCLUDE_JVMCI
     _speculations_offset     = 0;
 #endif
-    _immutable_data_reference_counter_offset = 0;
+    _immutable_data_ref_count_offset = 0;
 
     code_buffer->copy_code_and_locs_to(this);
     code_buffer->copy_values_to(this);
@@ -1442,7 +1442,7 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
   _skipped_instructions_size    = nm._skipped_instructions_size;
   _stub_offset                  = nm._stub_offset;
   _exception_offset             = nm._exception_offset;
-  _deopt_handler_offset         = nm._deopt_handler_offset;
+  _deopt_handler_entry_offset   = nm._deopt_handler_entry_offset;
   _unwind_handler_offset        = nm._unwind_handler_offset;
   _num_stack_arg_slots          = nm._num_stack_arg_slots;
   _oops_size                    = nm._oops_size;
@@ -1456,12 +1456,12 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
 #if INCLUDE_JVMCI
   _speculations_offset          = nm._speculations_offset;
 #endif
-  _immutable_data_reference_counter_offset = nm._immutable_data_reference_counter_offset;
+  _immutable_data_ref_count_offset = nm._immutable_data_ref_count_offset;
 
   // Increment number of references to immutable data to share it between nmethods
   if (_immutable_data_size > 0) {
     _immutable_data             = nm._immutable_data;
-    set_immutable_data_references_counter(get_immutable_data_references_counter() + 1);
+    inc_immutable_data_ref_count();
   } else {
     _immutable_data             = blob_end();
   }
@@ -1704,19 +1704,26 @@ nmethod::nmethod(
         _exception_offset        = -1;
       }
       if (offsets->value(CodeOffsets::Deopt) != -1) {
-        _deopt_handler_offset    = code_offset() + offsets->value(CodeOffsets::Deopt);
+        _deopt_handler_entry_offset    = code_offset() + offsets->value(CodeOffsets::Deopt);
       } else {
-        _deopt_handler_offset    = -1;
+        _deopt_handler_entry_offset    = -1;
       }
     } else
 #endif
     {
       // Exception handler and deopt handler are in the stub section
-      assert(offsets->value(CodeOffsets::Exceptions) != -1, "must be set");
       assert(offsets->value(CodeOffsets::Deopt     ) != -1, "must be set");
 
-      _exception_offset          = _stub_offset + offsets->value(CodeOffsets::Exceptions);
-      _deopt_handler_offset      = _stub_offset + offsets->value(CodeOffsets::Deopt);
+      bool has_exception_handler = (offsets->value(CodeOffsets::Exceptions) != -1);
+      assert(has_exception_handler == (compiler->type() != compiler_c2),
+             "C2 compiler doesn't provide exception handler stub code.");
+      if (has_exception_handler) {
+        _exception_offset = _stub_offset + offsets->value(CodeOffsets::Exceptions);
+      } else {
+        _exception_offset = -1;
+      }
+
+      _deopt_handler_entry_offset = _stub_offset + offsets->value(CodeOffsets::Deopt);
     }
     if (offsets->value(CodeOffsets::UnwindHandler) != -1) {
       // C1 generates UnwindHandler at the end of instructions section.
@@ -1754,12 +1761,11 @@ nmethod::nmethod(
 
 #if INCLUDE_JVMCI
     _speculations_offset  = _scopes_data_offset   + align_up(debug_info->data_size(), oopSize);
-    _immutable_data_reference_counter_offset = _speculations_offset + align_up(speculations_len, oopSize);
-    DEBUG_ONLY( int immutable_data_end_offset = _immutable_data_reference_counter_offset + ImmutableDataReferencesCounterSize; )
+    _immutable_data_ref_count_offset = _speculations_offset + align_up(speculations_len, oopSize);
 #else
-    _immutable_data_reference_counter_offset =  _scopes_data_offset + align_up(debug_info->data_size(), oopSize);
-    DEBUG_ONLY( int immutable_data_end_offset = _immutable_data_reference_counter_offset + ImmutableDataReferencesCounterSize; )
+    _immutable_data_ref_count_offset = _scopes_data_offset + align_up(debug_info->data_size(), oopSize);
 #endif
+    DEBUG_ONLY( int immutable_data_end_offset = _immutable_data_ref_count_offset + ImmutableDataRefCountSize; )
     assert(immutable_data_end_offset <= immutable_data_size, "wrong read-only data size: %d > %d",
            immutable_data_end_offset, immutable_data_size);
 
@@ -1791,7 +1797,7 @@ nmethod::nmethod(
       memcpy(speculations_begin(), speculations, speculations_len);
     }
 #endif
-    set_immutable_data_references_counter(1);
+    init_immutable_data_ref_count();
 
     post_init();
 
@@ -2424,12 +2430,8 @@ void nmethod::purge(bool unregister_nmethod) {
   delete[] _compiled_ic_data;
 
   if (_immutable_data != blob_end()) {
-    int reference_count = get_immutable_data_references_counter();
-    assert(reference_count > 0, "immutable data has no references");
-
-    set_immutable_data_references_counter(reference_count - 1);
-    // Free memory if this is the last nmethod referencing immutable data
-    if (reference_count == 0) {
+    // Free memory if this was the last nmethod referencing immutable data
+    if (dec_immutable_data_ref_count() == 0) {
       os::free(_immutable_data);
     }
 
@@ -2638,7 +2640,7 @@ void nmethod::metadata_do(MetadataClosure* f) {
 // Main purpose is to reduce code cache pressure and get rid of
 // nmethods that don't seem to be all that relevant any longer.
 bool nmethod::is_cold() {
-  if (!MethodFlushing || is_native_method() || is_not_installed()) {
+  if (!MethodFlushing || is_not_installed()) {
     // No heuristic unloading at all
     return false;
   }
@@ -4029,7 +4031,7 @@ const char* nmethod::nmethod_section_label(address pos) const {
   // Check stub_code before checking exception_handler or deopt_handler.
   if (pos == this->stub_begin())                                        label = "[Stub Code]";
   if (JVMCI_ONLY(_exception_offset >= 0 &&) pos == exception_begin())          label = "[Exception Handler]";
-  if (JVMCI_ONLY(_deopt_handler_offset != -1 &&) pos == deopt_handler_begin()) label = "[Deopt Handler Code]";
+  if (JVMCI_ONLY(_deopt_handler_entry_offset != -1 &&) pos == deopt_handler_entry()) label = "[Deopt Handler Entry Point]";
   return label;
 }
 
@@ -4306,6 +4308,46 @@ void nmethod::print_value_on_impl(outputStream* st) const {
 #if defined(SUPPORT_DATA_STRUCTS)
   print_on_with_msg(st, nullptr);
 #endif
+}
+
+void nmethod::print_code_snippet(outputStream* st, address addr) const {
+  if (entry_point() <= addr && addr < code_end()) {
+    // Pointing into the nmethod's code. Try to disassemble some instructions around addr.
+    // Determine conservative start and end points.
+    address start;
+    if (frame_complete_offset() != CodeOffsets::frame_never_safe &&
+        addr >= code_begin() + frame_complete_offset()) {
+      start = code_begin() + frame_complete_offset();
+    } else {
+      start = (addr < verified_entry_point()) ? entry_point() : verified_entry_point();
+    }
+    address start_for_hex_dump = start; // We can choose a different starting point for hex dump, below.
+    address end = code_end();
+
+    // Try using relocations to find closer instruction start and end points.
+    // (Some platforms have variable length instructions and can only
+    // disassemble correctly at instruction start addresses.)
+    RelocIterator iter((nmethod*)this, start);
+    while (iter.next() && iter.addr() < addr) { // find relocation before addr
+      // Note: There's a relocation which doesn't point to an instruction start:
+      // ZBarrierRelocationFormatStoreGoodAfterMov with ZGC on x86_64
+      // We could detect and skip it, but hex dump is still usable when
+      // disassembler produces garbage in such a very rare case.
+      start = iter.addr();
+      // We want at least 64 Bytes ahead in hex dump.
+      if (iter.addr() <= (addr - 64)) start_for_hex_dump = iter.addr();
+    }
+    if (iter.has_current()) {
+      if (iter.addr() == addr) iter.next(); // find relocation after addr
+      if (iter.has_current()) end = iter.addr();
+    }
+
+    // Always print hex. Disassembler may still have problems when hitting an incorrect instruction start.
+    os::print_hex_dump(st, start_for_hex_dump, end, 1, /* print_ascii=*/false);
+    if (!Disassembler::is_abstract()) {
+      Disassembler::decode(start, end, st);
+    }
+  }
 }
 
 #ifndef PRODUCT
