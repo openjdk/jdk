@@ -34,6 +34,7 @@
 #include "gc/z/zUtils.inline.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/align.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 //
 // Storage
@@ -43,11 +44,23 @@ template <typename T> uintptr_t ZValueStorage<T>::_end = 0;
 template <typename T> uintptr_t ZValueStorage<T>::_top = 0;
 
 template <typename S>
-uintptr_t ZValueStorage<S>::alloc(size_t size) {
-  assert(size <= Offset, "Allocation too large");
+template <typename T>
+uintptr_t ZValueStorage<S>::alloc() {
+  constexpr size_t size = sizeof(T);
+  constexpr size_t alignment = alignof(T);
+
+  // Check type requirements
+  static_assert(size <= Offset, "Allocation too large");
+  static_assert(alignment <= Offset, "Alignment too large");
+  static_assert(is_power_of_2(alignment), "Only power of 2 alignment supported");
+
+  // Check storage requirements
+  assert(S::alignment() <= Offset, "Alignment too large");
+  assert(is_power_of_2(S::alignment()), "Only power of 2 alignment supported");
 
   // Allocate entry in existing memory block
-  const uintptr_t addr = align_up(_top, S::alignment());
+  const size_t addr_alignment = MAX2(S::alignment(), alignment);
+  const uintptr_t addr = align_up(_top, addr_alignment);
   _top = addr + size;
 
   if (_top < _end) {
@@ -62,7 +75,7 @@ uintptr_t ZValueStorage<S>::alloc(size_t size) {
   _end = _top + Offset;
 
   // Retry allocation
-  return alloc(size);
+  return alloc<T>();
 }
 
 inline size_t ZContendedStorage::alignment() {
@@ -124,7 +137,7 @@ inline uintptr_t ZValue<S, T>::value_addr(uint32_t value_id) const {
 
 template <typename S, typename T>
 inline ZValue<S, T>::ZValue()
-  : _addr(S::alloc(sizeof(T))) {
+  : _addr(S::template alloc<T>()) {
   // Initialize all instances
   ZValueIterator<S, T> iter(this);
   for (T* addr; iter.next(&addr);) {
@@ -134,7 +147,7 @@ inline ZValue<S, T>::ZValue()
 
 template <typename S, typename T>
 inline ZValue<S, T>::ZValue(const T& value)
-  : _addr(S::alloc(sizeof(T))) {
+  : _addr(S::template alloc<T>()) {
   // Initialize all instances
   ZValueIterator<S, T> iter(this);
   for (T* addr; iter.next(&addr);) {
@@ -145,7 +158,7 @@ inline ZValue<S, T>::ZValue(const T& value)
 template <typename S, typename T>
 template <typename... Args>
 inline ZValue<S, T>::ZValue(ZValueIdTagType, Args&&... args)
-  : _addr(S::alloc(sizeof(T))) {
+  : _addr(S::template alloc<T>()) {
   // Initialize all instances
   uint32_t value_id;
   ZValueIterator<S, T> iter(this);
