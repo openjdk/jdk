@@ -2686,7 +2686,7 @@ bool Matcher::is_register_biasing_candidate(const MachNode* mdef,
   // Definition operand of commutative operation can be biased towards second
   // operand.
   case 2:
-    return (mdef->flags() & Node::PD::Flag_ndd_demotable_commutative) != 0;
+    return is_ndd_demotable_commutative(mdef);
 
   // Current scheme only selects up to two biaising candidates
   default:
