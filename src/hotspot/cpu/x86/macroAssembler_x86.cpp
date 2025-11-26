@@ -4806,26 +4806,28 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
     return;
   }
 
-  // The update code uses CAS, which wants RAX register specifically. Therefore,
-  // we need to shift any important registers from RAX into some other register,
-  // or we need to save RAX, before we use it in CAS paths.
+  // The update code uses CAS, which wants RAX register specifically, *and* it needs
+  // other important registers untouched. Therefore, we need to shift any important
+  // registers from RAX into some other spare register. If we have a spare register,
+  // we are forced to save it on stack here. But since it implies RAX is in our use,
+  // we can then save on RAX push/pops near the CAS.
   Register offset = rscratch1;
-  Register spare_reg =
-             (mdp != rbx && recv != rbx) ? rbx :
-             (mdp != rcx && recv != rcx) ? rcx :
-             rdx;
-  assert_different_registers(mdp, recv, offset, spare_reg);
+  Register spare_reg = noreg;
+  if (recv == rax || mdp == rax) {
+    spare_reg = (recv != rbx && mdp != rbx) ? rbx :
+                (recv != rcx && mdp != rcx) ? rcx :
+                rdx;
+    assert_different_registers(mdp, recv, offset, spare_reg);
 
-  if (recv == rax) {
     push(spare_reg);
-    movptr(spare_reg, recv);
-    recv = spare_reg;
-  } else if (mdp == rax) {
-    push(spare_reg);
-    movptr(spare_reg, mdp);
-    mdp = spare_reg;
-  } else {
-    push(rax);
+    if (recv == rax) {
+      movptr(spare_reg, recv);
+      recv = spare_reg;
+    } else {
+      assert(mdp == rax, "Remaining case");
+      movptr(spare_reg, mdp);
+      mdp = spare_reg;
+    }
   }
 
   // None of the important registers are in RAX after this shuffle.
@@ -4867,9 +4869,16 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   bind(L_loop_nulls);
     cmpptr(Address(mdp, offset, Address::times_ptr), NULL_WORD);
     jccb(Assembler::notEqual, L_not_null);
-      // CAS: null -> recv
+      // Atomically swing receiver slot: null -> recv.
+      // If we have not shifted anything from RAX, we better save and restore it here.
+      if (spare_reg == noreg) {
+        push(rax);
+      }
       xorptr(rax, rax);
       cmpxchgptr(recv, Address(mdp, offset, Address::times_ptr));
+      if (spare_reg == noreg) {
+        pop(rax);
+      }
       // CAS failure means something had claimed the slot concurrently.
       // It can be the same receiver we want, or something else.
       // Fall-through to check the slot contents.
@@ -4894,13 +4903,11 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   bind(L_count_update);
   addptr(Address(mdp, offset, Address::times_ptr), DataLayout::counter_increment);
 
-  // About to return to outer code: restore RAX and spare register
-  if (mdp == spare_reg || recv == spare_reg) {
-    // Implies some important register was shifted from RAX
+  // About to return to outer code: restore affected registers.
+  // Taking this branch implies some important register was shifted from RAX.
+  if (spare_reg != noreg) {
     movptr(rax, spare_reg);
     pop(spare_reg);
-  } else {
-    pop(rax);
   }
 }
 
