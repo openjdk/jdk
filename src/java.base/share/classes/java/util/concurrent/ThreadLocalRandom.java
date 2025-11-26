@@ -501,10 +501,10 @@ public final class ThreadLocalRandom extends Random {
      * @return a {@code double} value pseudorandomly chosen from a
      *         Gaussian distribution
      *
-     * @implNote This implementation explicitly overrides
-     *           {@link java.util.Random#nextGaussian()} and instead uses the
-     *           ziggurat-based algorithm from the default implementation of
-     *           {@link java.util.random.RandomGenerator#nextGaussian()}.
+     * @implNote This implementation invokes the default implementation of
+     *           {@link java.util.random.RandomGenerator#nextGaussian()},
+     *           and so it uses McFarland's fast modified ziggurat algorithm
+     *           rather than the polar method described in the superclass.
      */
     @Override
     public double nextGaussian() {
