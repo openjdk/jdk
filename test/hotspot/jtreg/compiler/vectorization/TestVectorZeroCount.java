@@ -22,6 +22,7 @@
  */
 
 package compiler.vectorization;
+
 import java.util.Random;
 import jdk.test.lib.Utils;
 

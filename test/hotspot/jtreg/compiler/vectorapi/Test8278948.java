@@ -30,7 +30,7 @@ import jdk.incubator.vector.ShortVector;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 
-/**
+/*
  * @test
  * @bug 8278948
  * @key randomness
