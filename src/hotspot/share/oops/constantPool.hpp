@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "oops/arrayOop.hpp"
+#include "oops/bsmAttribute.inline.hpp"
 #include "oops/cpCache.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oopHandle.hpp"
@@ -77,43 +78,6 @@ public:
   }
 };
 
-class BSMAttributeEntry {
-  friend class ConstantPool;
-  u2 _bootstrap_method_index;
-  u2 _argument_count;
-
-  // The argument indexes are stored right after the object, in a contiguous array.
-  // [ bsmi_0 argc_0 arg_00 arg_01 ... arg_0N bsmi_1 argc_1 arg_10 ... arg_1N ... ]
-  // So in order to find the argument array, jump over ourselves.
-  const u2* argument_indexes() const {
-    return reinterpret_cast<const u2*>(this + 1);
-  }
-  u2* argument_indexes() {
-    return reinterpret_cast<u2*>(this + 1);
-  }
-  // These are overlays on top of the operands array. Do not construct.
-  BSMAttributeEntry() = delete;
-
-public:
-  // Offsets for SA
-  enum {
-    _bsmi_offset = 0,
-    _argc_offset = 1,
-    _argv_offset = 2
-  };
-
-  int bootstrap_method_index() const {
-    return _bootstrap_method_index;
-  }
-  int argument_count() const {
-    return _argument_count;
-  }
-  int argument_index(int n) const {
-    assert(checked_cast<u2>(n) < _argument_count, "oob");
-    return argument_indexes()[n];
-  }
-};
-
 class ConstantPool : public Metadata {
   friend class VMStructs;
   friend class JVMCIVMStructs;
@@ -126,7 +90,8 @@ class ConstantPool : public Metadata {
   Array<u1>*           _tags;        // the tag array describing the constant pool's contents
   ConstantPoolCache*   _cache;       // the cache holding interpreter runtime information
   InstanceKlass*       _pool_holder; // the corresponding class
-  Array<u2>*           _operands;    // for variable-sized (InvokeDynamic) nodes, usually empty
+
+  BSMAttributeEntries _bsm_entries;
 
   // Consider using an array of compressed klass pointers to
   // save space on 64-bit platforms.
@@ -167,8 +132,6 @@ class ConstantPool : public Metadata {
 
   u1* tag_addr_at(int cp_index) const            { return tags()->adr_at(cp_index); }
 
-  void set_operands(Array<u2>* operands)       { _operands = operands; }
-
   u2 flags() const                             { return _flags; }
   void set_flags(u2 f)                         { _flags = f; }
 
@@ -208,7 +171,13 @@ class ConstantPool : public Metadata {
   virtual bool is_constantPool() const      { return true; }
 
   Array<u1>* tags() const                   { return _tags; }
-  Array<u2>* operands() const               { return _operands; }
+
+  BSMAttributeEntries& bsm_entries() {
+    return _bsm_entries;
+  }
+  const BSMAttributeEntries& bsm_entries() const {
+    return _bsm_entries;
+  }
 
   bool has_preresolution() const            { return (_flags & _has_preresolution) != 0; }
   void set_has_preresolution() {
@@ -556,76 +525,21 @@ class ConstantPool : public Metadata {
     assert(tag_at(cp_index).has_bootstrap(), "Corrupted constant pool");
     return extract_low_short_from_int(*int_at_addr(cp_index));
   }
-  // The first part of the operands array consists of an index into the second part.
-  // Extract a 32-bit index value from the first part.
-  static int operand_offset_at(Array<u2>* operands, int bsms_attribute_index) {
-    int n = (bsms_attribute_index * 2);
-    assert(n >= 0 && n+2 <= operands->length(), "oob");
-    // The first 32-bit index points to the beginning of the second part
-    // of the operands array.  Make sure this index is in the first part.
-    DEBUG_ONLY(int second_part = build_int_from_shorts(operands->at(0),
-                                                       operands->at(1)));
-    assert(second_part == 0 || n+2 <= second_part, "oob (2)");
-    int offset = build_int_from_shorts(operands->at(n+0),
-                                       operands->at(n+1));
-    // The offset itself must point into the second part of the array.
-    assert(offset == 0 || (offset >= second_part && offset <= operands->length()), "oob (3)");
-    return offset;
-  }
-  static void operand_offset_at_put(Array<u2>* operands, int bsms_attribute_index, int offset) {
-    int n = bsms_attribute_index * 2;
-    assert(n >= 0 && n+2 <= operands->length(), "oob");
-    operands->at_put(n+0, extract_low_short_from_int(offset));
-    operands->at_put(n+1, extract_high_short_from_int(offset));
-  }
-  static int operand_array_length(Array<u2>* operands) {
-    if (operands == nullptr || operands->length() == 0)  return 0;
-    int second_part = operand_offset_at(operands, 0);
-    return (second_part / 2);
-  }
-
-#ifdef ASSERT
-  // operand tuples fit together exactly, end to end
-  static int operand_limit_at(Array<u2>* operands, int bsms_attribute_index) {
-    int nextidx = bsms_attribute_index + 1;
-    if (nextidx == operand_array_length(operands))
-      return operands->length();
-    else
-      return operand_offset_at(operands, nextidx);
-  }
-#endif //ASSERT
-
-  // These functions are used in RedefineClasses for CP merge
-  int operand_offset_at(int bsms_attribute_index) {
-    assert(0 <= bsms_attribute_index &&
-           bsms_attribute_index < operand_array_length(operands()),
-           "Corrupted CP operands");
-    return operand_offset_at(operands(), bsms_attribute_index);
-  }
 
   BSMAttributeEntry* bsm_attribute_entry(int bsms_attribute_index) {
-    int offset = operand_offset_at(bsms_attribute_index);
-    return reinterpret_cast<BSMAttributeEntry*>(operands()->adr_at(offset));
+    return _bsm_entries.entry(bsms_attribute_index);
   }
 
-  int operand_next_offset_at(int bsms_attribute_index) {
-    BSMAttributeEntry* bsme = bsm_attribute_entry(bsms_attribute_index);
-    u2* argv_start = bsme->argument_indexes();
-    int offset = argv_start - operands()->data();
-    return offset + bsme->argument_count();
-  }
-  // Compare a bootstrap specifier data in the operands arrays
-  bool compare_operand_to(int bsms_attribute_index1, const constantPoolHandle& cp2,
-                          int bsms_attribute_index2);
-  // Find a bootstrap specifier data in the operands array
-  int find_matching_operand(int bsms_attribute_index, const constantPoolHandle& search_cp,
-                            int operands_cur_len);
-  // Resize the operands array with delta_len and delta_size
-  void resize_operands(int delta_len, int delta_size, TRAPS);
-  // Extend the operands array with the length and size of the ext_cp operands
-  void extend_operands(const constantPoolHandle& ext_cp, TRAPS);
-  // Shrink the operands array to a smaller array with new_len length
-  void shrink_operands(int new_len, TRAPS);
+  bool compare_bootstrap_entry_to(int bsms_attribute_index1, const constantPoolHandle& cp2,
+                                  int bsms_attribute_index2);
+  // Find a BSM entry in search_cp that matches the BSM at bsm_attribute_index.
+  // Return -1 if not found.
+  int find_matching_bsm_entry(int bsms_attribute_index, const constantPoolHandle& search_cp,
+                              int offset_limit);
+  // Extend the BSM attribute storage to fit both the current data and the BSM data in ext_cp.
+  // Use the returned InsertionIterator to fill out the newly allocated space.
+  BSMAttributeEntries::InsertionIterator start_extension(const constantPoolHandle& ext_cp, TRAPS);
+  void end_extension(BSMAttributeEntries::InsertionIterator iter, TRAPS);
 
   u2 bootstrap_method_ref_index_at(int cp_index) {
     assert(tag_at(cp_index).has_bootstrap(), "Corrupted constant pool");
@@ -641,7 +555,7 @@ class ConstantPool : public Metadata {
     int bsmai = bootstrap_methods_attribute_index(cp_index);
     BSMAttributeEntry* bsme = bsm_attribute_entry(bsmai);
     assert((uint)j < (uint)bsme->argument_count(), "oob");
-    return bsm_attribute_entry(bsmai)->argument_index(j);
+    return bsm_attribute_entry(bsmai)->argument(j);
   }
 
   // The following methods (name/signature/klass_ref_at, klass_ref_at_noresolve,
@@ -848,7 +762,7 @@ private:
   }
   static void copy_cp_to_impl(const constantPoolHandle& from_cp, int start_cpi, int end_cpi, const constantPoolHandle& to_cp, int to_cpi, TRAPS);
   static void copy_entry_to(const constantPoolHandle& from_cp, int from_cpi, const constantPoolHandle& to_cp, int to_cpi);
-  static void copy_operands(const constantPoolHandle& from_cp, const constantPoolHandle& to_cp, TRAPS);
+  static void copy_bsm_entries(const constantPoolHandle& from_cp, const constantPoolHandle& to_cp, TRAPS);
   int  find_matching_entry(int pattern_i, const constantPoolHandle& search_cp);
   int  version() const                    { return _saved._version; }
   void set_version(int version)           { _saved._version = version; }

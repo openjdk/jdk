@@ -62,12 +62,14 @@
 
 class ClassLoaderData;
 
+bool CollectedHeap::_is_shutting_down = false;
+
 size_t CollectedHeap::_lab_alignment_reserve = SIZE_MAX;
 Klass* CollectedHeap::_filler_object_klass = nullptr;
 size_t CollectedHeap::_filler_array_max_size = 0;
 size_t CollectedHeap::_stack_chunk_max_size = 0;
 
-class GCLogMessage : public FormatBuffer<512> {};
+class GCLogMessage : public FormatBuffer<1024> {};
 
 template <>
 void EventLogBase<GCLogMessage>::print(outputStream* st, GCLogMessage& m) {
@@ -377,18 +379,12 @@ MetaWord* CollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loa
                                        word_size,
                                        mdtype,
                                        gc_count,
-                                       full_gc_count,
-                                       GCCause::_metadata_GC_threshold);
+                                       full_gc_count);
 
     VMThread::execute(&op);
 
     if (op.gc_succeeded()) {
       return op.result();
-    }
-
-    if (is_shutting_down()) {
-      stall_for_vm_shutdown();
-      return nullptr;
     }
 
     loop_count++;
@@ -605,30 +601,20 @@ void CollectedHeap::post_initialize() {
   initialize_serviceability();
 }
 
-bool CollectedHeap::is_shutting_down() const {
-  return Universe::is_shutting_down();
+bool CollectedHeap::is_shutting_down() {
+  assert(Heap_lock->owned_by_self(), "Protected by this lock");
+  return _is_shutting_down;
 }
 
-void CollectedHeap::stall_for_vm_shutdown() {
-  assert(is_shutting_down(), "Precondition");
-  // Stall the thread (2 seconds) instead of an indefinite wait to avoid deadlock
-  // if the VM shutdown triggers a GC.
-  // The 2-seconds sleep is:
-  //   - long enough to keep daemon threads stalled, while the shutdown
-  //     sequence completes in the common case.
-  //   - short enough to avoid excessive stall time if the shutdown itself
-  //     triggers a GC.
-  JavaThread::current()->sleep(2 * MILLIUNITS);
+void CollectedHeap::initiate_shutdown() {
+  {
+    // Acquire the Heap_lock to synchronize with VM_Heap_Sync_Operations,
+    // which may depend on the value of _is_shutting_down flag.
+    MutexLocker hl(Heap_lock);
+    _is_shutting_down = true;
+  }
 
-  ResourceMark rm;
-  log_warning(gc, alloc)("%s: Stall for VM-Shutdown timed out; allocation may fail with OOME", Thread::current()->name());
-}
-
-void CollectedHeap::before_exit() {
   print_tracing_info();
-
-  // Stop any on-going concurrent work and prepare for exit.
-  stop();
 }
 
 size_t CollectedHeap::bootstrap_max_memory() const {
