@@ -302,8 +302,7 @@ abstract class AbstractMask<E> extends VectorMask<E> {
         // converting, clip the comparison value to [0..vlength]
         // inclusive.
         int indexLimit = Math.max(0, Math.min(length - offset, vlength));
-        VectorMask<E> badMask = null, badMask2 = null;
-        badMask =
+        VectorMask<E> badMask =
             iota.compare(GE, iota.broadcast(indexLimit));
         if (offset < 0) {
             // An active lane is bad if its number is less than
@@ -313,7 +312,7 @@ abstract class AbstractMask<E> extends VectorMask<E> {
             // vlength.  This specific expression works correctly even
             // when offset is Integer.MIN_VALUE.
             int firstGoodIndex = -Math.max(offset, -vlength);
-            badMask2 =
+            VectorMask<E> badMask2 =
                 iota.compare(LT, iota.broadcast(firstGoodIndex));
             if (indexLimit >= vlength) {
                 badMask = badMask2;  // 1st badMask is all true
@@ -378,9 +377,8 @@ abstract class AbstractMask<E> extends VectorMask<E> {
         // inclusive.
         // 0 <= indexLimit <= vlength
         int indexLimit = (int) Math.max(0, Math.min(length - offset, vlength));
-        VectorMask<E> badMask = null, badMask2 = null;
-        badMask =
-            iota.compare(GE, iota.broadcast(indexLimit));
+        VectorMask<E> badMask =
+                iota.compare(GE, iota.broadcast(indexLimit));
         if (offset < 0) {
             // An active lane is bad if its number is less than
             // -offset, because when added to offset it will then
@@ -390,8 +388,8 @@ abstract class AbstractMask<E> extends VectorMask<E> {
             // when offset is Integer.MIN_VALUE.
             // 0 <= firstGoodIndex <= vlength
             int firstGoodIndex = (int) -Math.max(offset, -vlength);
-            badMask2 =
-                iota.compare(LT, iota.broadcast(firstGoodIndex));
+            VectorMask<E> badMask2 =
+                    iota.compare(LT, iota.broadcast(firstGoodIndex));
             if (indexLimit >= vlength) {
                 badMask = badMask2;  // 1st badMask is all true
             } else {

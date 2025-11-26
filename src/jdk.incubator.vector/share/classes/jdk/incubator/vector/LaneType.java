@@ -216,7 +216,7 @@ enum LaneType {
     @Stable private static final LaneType[] ENUM_FROM_SK;
     @Stable private static final LaneType[] ENUM_FROM_C0;
     @Stable private static final LaneType[] ENUM_FROM_BT;
-    private static final int C0_MASK = 0x0F, BT_MASK = 0x1F;
+    private static final int C0_MASK = 0x0F, BT_MASK = 0x0F;
     static {
         LaneType[] values = values().clone();
         LaneType[] valuesByKey = new LaneType[1+values.length];
