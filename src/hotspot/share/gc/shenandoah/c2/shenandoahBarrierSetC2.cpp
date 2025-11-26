@@ -520,10 +520,16 @@ void ShenandoahBarrierSetC2::post_barrier(GraphKit* kit,
 #undef __
 
 const TypeFunc* ShenandoahBarrierSetC2::_write_barrier_pre_Type              = nullptr;
+const TypeFunc* ShenandoahBarrierSetC2::_clone_barrier_Type                  = nullptr;
 
 inline const TypeFunc* ShenandoahBarrierSetC2::write_barrier_pre_Type() {
   assert(ShenandoahBarrierSetC2::_write_barrier_pre_Type != nullptr, "should be initialized");
   return ShenandoahBarrierSetC2::_write_barrier_pre_Type;
+}
+
+inline const TypeFunc* ShenandoahBarrierSetC2::clone_barrier_Type() {
+  assert(ShenandoahBarrierSetC2::_clone_barrier_Type != nullptr, "should be initialized");
+  return ShenandoahBarrierSetC2::_clone_barrier_Type;
 }
 
 void ShenandoahBarrierSetC2::make_write_barrier_pre_Type() {
@@ -539,7 +545,8 @@ void ShenandoahBarrierSetC2::make_write_barrier_pre_Type() {
   ShenandoahBarrierSetC2::_write_barrier_pre_Type = TypeFunc::make(domain, range);
 }
 
-const TypeFunc* ShenandoahBarrierSetC2::clone_barrier_Type() {
+void ShenandoahBarrierSetC2::make_clone_barrier_Type() {
+  assert(ShenandoahBarrierSetC2::_clone_barrier_Type == nullptr, "should be");
   const Type **fields = TypeTuple::fields(1);
   fields[TypeFunc::Parms+0] = TypeOopPtr::NOTNULL; // src oop
   const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+1, fields);
@@ -548,7 +555,7 @@ const TypeFunc* ShenandoahBarrierSetC2::clone_barrier_Type() {
   fields = TypeTuple::fields(0);
   const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0, fields);
 
-  return TypeFunc::make(domain, range);
+  ShenandoahBarrierSetC2::_clone_barrier_Type = TypeFunc::make(domain, range);
 }
 
 const TypeFunc* ShenandoahBarrierSetC2::load_reference_barrier_Type() {
