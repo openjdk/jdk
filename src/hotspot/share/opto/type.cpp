@@ -734,6 +734,7 @@ void Type::Initialize_shared(Compile* current) {
 #if INCLUDE_SHENANDOAHGC
   ShenandoahBarrierSetC2::make_write_barrier_pre_Type();
   ShenandoahBarrierSetC2::make_clone_barrier_Type();
+  ShenandoahBarrierSetC2::make_load_reference_barrier_Type();
 #endif //INCLUDE_SHENANDOAHGC
 
   LockNode::initialize_lock_Type();

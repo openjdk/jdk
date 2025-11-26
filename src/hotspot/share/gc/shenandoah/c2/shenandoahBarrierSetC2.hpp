@@ -111,7 +111,10 @@ public:
   static const TypeFunc* clone_barrier_Type();
   static void make_clone_barrier_Type();
 
+  static const TypeFunc* _load_reference_barrier_Type;
   static const TypeFunc* load_reference_barrier_Type();
+  static void make_load_reference_barrier_Type();
+
   virtual bool has_load_barrier_nodes() const { return true; }
 
   // This is the entry-point for the backend to perform accesses through the Access API.
