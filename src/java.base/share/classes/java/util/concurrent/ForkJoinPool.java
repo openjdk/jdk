@@ -1429,57 +1429,38 @@ public class ForkJoinPool extends AbstractExecutorService
         // specialized execution methods
 
         /**
-         * Runs the given task, as well as remaining local tasks, and
-         * those from the given queue that can be polled without interference.
+         * Runs the given task, as well as remaining local tasks.
          */
-        final void topLevelExec(ForkJoinTask<?> task, WorkQueue q, int fifo) {
-            if (task != null && q != null) {
-                int stolen = 1;
-                outer: for (;;) {
-                    task.doExec();
-                    task = null;
-                    int p = top, cap; ForkJoinTask<?>[] a;
-                    if ((a = array) == null || (cap = a.length) <= 0)
-                        break;
-                    if (fifo == 0) {  // specialized localPop
-                        int s = p - 1; long k;
-                        if (U.getReference(
-                                a, k = slotOffset((cap - 1) & s)) != null &&
-                            (task = (ForkJoinTask<?>)
-                             U.getAndSetReference(a, k, null)) != null) {
-                            top = s;
-                            continue;
-                        }
-                    } else {         // specialized localPoll
-                        for (int b = base; p - b > 0; ) {
-                            int nb = b + 1;
-                            if ((task = (ForkJoinTask<?>)U.getAndSetReference(
-                                     a, slotOffset((cap - 1) & b), null)) != null) {
-                                base = nb;
-                                continue outer;
-                            }
-                            if (nb == p)
-                                break;
-                            while (b == (b = U.getIntAcquire(this, BASE)))
-                                Thread.onSpinWait();
-                        }
+        final void topLevelExec(ForkJoinTask<?> task, int cfg) {
+            int fifo = cfg & FIFO, clr = cfg & CLEAR_TLS;
+            while (task != null) {
+                task.doExec();
+                task = null;
+                int p = top, cap; ForkJoinTask<?>[] a;
+                if ((a = array) == null || (cap = a.length) <= 0)
+                    break;
+                if (fifo == 0) {  // specialized localPop
+                    int s = p - 1; long k;
+                    if (U.getReference(
+                            a, k = slotOffset((cap - 1) & s)) != null &&
+                        (task = (ForkJoinTask<?>)
+                         U.getAndSetReference(a, k, null)) != null) {
+                        top = s;
                     }
-
-                    ForkJoinTask<?> t; ForkJoinTask<?>[] qa; int qcap;
-                    if ((qa = q.array) == null || (qcap = qa.length) <= 0)
-                        break;       // one-shot steal attempt
-                    int qb = q.base; long qk;
-                    do {
-                        t = (ForkJoinTask<?>)U.getReferenceAcquire(
-                            qa, qk = slotOffset((qcap - 1) & qb));
-                    } while (qb != (qb = q.base));
-                    if (t == null || !U.compareAndSetReference(qa, qk, t, null))
-                        break;
-                    q.base = qb + 1;
-                    ++stolen;
-                    task = t;
+                } else {         // specialized localPoll
+                    for (int b = base; p - b > 0; ) {
+                        int nb = b + 1;
+                        if ((task = (ForkJoinTask<?>)U.getAndSetReference(
+                                 a, slotOffset((cap - 1) & b), null)) != null) {
+                            base = nb;
+                            break;
+                        }
+                        if (nb == p)
+                            break;
+                        while (b == (b = U.getIntAcquire(this, BASE)))
+                            Thread.onSpinWait();
+                    }
                 }
-                nsteals += stolen;
             }
         }
 
@@ -2010,8 +1991,8 @@ public class ForkJoinPool extends AbstractExecutorService
     final void runWorker(WorkQueue w) {
         if (w != null && w.phase != 0) {                  // else unregistered
             WorkQueue[] qs;
-            int r = w.stackPred;                          // seed from registerWorker
-            int fifo = (int)config & FIFO, rescans = 0, inactive = 0, taken = 0, n;
+            int cfg = w.config, r = w.stackPred;          // seed from registerWorker
+            int rescans = 0, inactive = 0, taken = 0, n;
             while ((runState & STOP) == 0L && (qs = queues) != null &&
                    (n = qs.length) > 0) {
                 int i = r, step = (r >>> 16) | 1;
@@ -2051,11 +2032,12 @@ public class ForkJoinPool extends AbstractExecutorService
                                 q.base = nb;
                                 Object nt = U.getReferenceAcquire(a, np);
                                 w.source = qid;
-                                rescans = taken = 1;
+                                rescans = 1;
+                                ++taken;
                                 if (nt != null &&         // confirm a[nk]
                                     U.getReferenceAcquire(a, np) == nt)
                                     signalWork(a, nk);    // propagate
-                                w.topLevelExec(t, q, fifo);
+                                w.topLevelExec(t, cfg);
                             }
                         }
                     }
@@ -2090,13 +2072,17 @@ public class ForkJoinPool extends AbstractExecutorService
             if (!compareAndSetCtl(            // try to enqueue
                     pc, c = ((pc - RC_UNIT) & UMASK) | sp))
                 w.phase = phase;              // back out on contention
-            else if (((c & RC_MASK) == 0L && quiescent() > 0) || taken == 0)
-                inactive = w.phase & IDLE;    // check quiescent termination
-            else {                            // spin for approx 1 scan cost
-                int tc = (short)(c >>> TC_SHIFT);
-                int spins = Math.max(tc << 2, SPIN_WAITS) | 0x3;
-                while ((inactive = w.phase & IDLE) != 0 && --spins != 0)
-                    Thread.onSpinWait();
+            else {
+                if (taken != 0)
+                    w.nsteals += taken;
+                if (((c & RC_MASK) == 0L && quiescent() > 0) || taken == 0)
+                    inactive = w.phase & IDLE;    // check quiescent termination
+                else {                            // spin for approx 1 scan cost
+                    int tc = (short)(c >>> TC_SHIFT);
+                    int spins = Math.max((tc << 1) + tc, SPIN_WAITS);
+                    while ((inactive = w.phase & IDLE) != 0 && --spins != 0)
+                        Thread.onSpinWait();
+                }
             }
         }
         return inactive;
@@ -2131,12 +2117,9 @@ public class ForkJoinPool extends AbstractExecutorService
     private int awaitWork(WorkQueue w) {
         int inactive = 0, phase;
         if (w != null) {                          // always true; hoist checks
-            if ((w.config & CLEAR_TLS) != 0 &&
-                (Thread.currentThread() instanceof ForkJoinWorkerThread f))
-                f.resetThreadLocals();            // clear before release
-            LockSupport.setCurrentBlocker(this);
             long waitTime = (w.source == INVALID_ID) ? 0L : keepAlive;
             if ((inactive = (phase = w.phase) & IDLE) != 0) {
+                LockSupport.setCurrentBlocker(this);
                 int activePhase = phase + IDLE;
                 for (long deadline = 0L;;) {
                     Thread.interrupted();         // clear status
@@ -2163,8 +2146,8 @@ public class ForkJoinPool extends AbstractExecutorService
                     if (inactive == 0 || (inactive = w.phase & IDLE) == 0)
                         break;
                 }
+                LockSupport.setCurrentBlocker(null);
             }
-            LockSupport.setCurrentBlocker(null);
         }
         return inactive;
     }
