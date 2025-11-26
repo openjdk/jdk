@@ -590,7 +590,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 #ifdef ASSERT
   virtual void do_Assert         (Assert*          x);
 #endif
-  virtual void do_IncProfileCtr  (ProfileInvoke*   x) { }
 
 #ifdef C1_LIRGENERATOR_MD_HPP
 #include C1_LIRGENERATOR_MD_HPP
