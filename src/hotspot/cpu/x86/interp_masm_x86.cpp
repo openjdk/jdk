@@ -1412,7 +1412,7 @@ void InterpreterMacroAssembler::profile_virtual_call(Register receiver,
     }
 
     // Record the receiver type.
-    type_profile(receiver, mdp, 0);
+    profile_receiver_type(receiver, mdp, 0);
     bind(skip_receiver_profile);
 
     // The method data pointer needs to be updated to reflect the new target.
@@ -1493,7 +1493,7 @@ void InterpreterMacroAssembler::profile_typecheck(Register mdp, Register klass) 
       mdp_delta = in_bytes(VirtualCallData::virtual_call_data_size());
 
       // Record the object type.
-      type_profile(klass, mdp, 0);
+      profile_receiver_type(klass, mdp, 0);
     }
     update_mdp_by_constant(mdp, mdp_delta);
 

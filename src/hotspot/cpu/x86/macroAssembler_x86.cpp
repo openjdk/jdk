@@ -4749,7 +4749,7 @@ Address MacroAssembler::argument_address(RegisterOrConstant arg_slot,
   return Address(rsp, scale_reg, scale_factor, offset);
 }
 
-void MacroAssembler::type_profile(Register recv, Register mdp, int mdp_offset) {
+void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_offset) {
   int base_receiver_offset   = in_bytes(ReceiverTypeData::receiver_offset(0));
   int end_receiver_offset    = in_bytes(ReceiverTypeData::receiver_offset(ReceiverTypeData::row_limit()));
   int poly_count_offset      = in_bytes(CounterData::count_offset());
