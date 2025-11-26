@@ -4800,7 +4800,12 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
 
   Label L_loop, L_loop_nulls, L_found_recv, L_not_null, L_count_update;
 
-  // Optimistic: search for already set up receiver.
+  // Optimistic: search for already set up receiver:
+  //
+  // This code is effectively:
+  //   for (i = 0; i < receiver_count(); i++) {
+  //     if (receiver(i) == recv)  goto found_recv;
+  //   }
   movptr(offset, base_receiver_offset);
   bind(L_loop);
     cmpptr(recv, Address(mdp, offset, Address::times_ptr));
@@ -4817,6 +4822,13 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   // and claim the first nullptr slot without checking the rest of the table.
   // But, profiling code should tolerate free slots in MDO, for example, to allow cleaning up
   // rows for unloaded receivers.
+  //
+  // This code is effectively:
+  //   for (i = 0; i < receiver_count(); i++) {
+  //     if (receiver(i) == null)  CAS(&receiver(i), null -> recv);
+  //     if (receiver(i) == recv)  goto found_recv;
+  //   }
+  //
   movptr(offset, base_receiver_offset);
   bind(L_loop_nulls);
     cmpptr(Address(mdp, offset, Address::times_ptr), NULL_WORD);
@@ -4868,11 +4880,14 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   cmpptr(offset, end_receiver_offset);
   jccb(Assembler::notEqual, L_loop_nulls);
 
-  // Receiver did not match any saved receiver and there is no empty row for it.
-  // Increment poly counter instead.
+  // Falling through from search/install loops: receiver did not match any saved receiver,
+  // and there is no empty row for it. Increment poly counter instead.
+  // Effectively: offset = CounterData::count_offset();
   movptr(offset, poly_count_offset);
   jmpb(L_count_update);
 
+  // Found a receiver, convert its slot offset to corresponding count offset.
+  // Effectively: offset = &receiver_count[index_of(found_recv)] - mdp;
   bind(L_found_recv);
   addptr(offset, receiver_to_count_step);
 
