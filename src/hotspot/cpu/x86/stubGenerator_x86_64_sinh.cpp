@@ -533,6 +533,7 @@ address StubGenerator::generate_libmSinh() {
 
 #undef __
 
+#if INCLUDE_CDS
 void StubGenerator::init_AOTAddressTable_sinh(GrowableArray<address>& external_addresses) {
 #define ADD(addr) external_addresses.append((address)addr);
   ADD(_L2E);
@@ -552,3 +553,4 @@ void StubGenerator::init_AOTAddressTable_sinh(GrowableArray<address>& external_a
   ADD(_MASK3);
 #undef ADD
 }
+#endif // INCLUDE_CDS

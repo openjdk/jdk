@@ -556,6 +556,7 @@ void StubGenerator::generateHtbl_eight_blocks(Register htbl) {
 
 #undef __
 
+#if INCLUDE_CDS
 void StubGenerator::init_AOTAddressTable_ghash(GrowableArray<address>& external_addresses) {
 #define ADD(addr) external_addresses.append((address)addr);
   ADD(GHASH_SHUFFLE_MASK);
@@ -564,3 +565,4 @@ void StubGenerator::init_AOTAddressTable_ghash(GrowableArray<address>& external_
   ADD(GHASH_POLYNOMIAL);
 #undef ADD
 }
+#endif // INCLUDE_CDS

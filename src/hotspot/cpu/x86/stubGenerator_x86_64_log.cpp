@@ -727,6 +727,7 @@ address StubGenerator::generate_libmLog10() {
 
 #undef __
 
+#if INCLUDE_CDS
 void StubGenerator::init_AOTAddressTable_log(GrowableArray<address>& external_addresses) {
 #define ADD(addr) external_addresses.append((address)addr);
   ADD(_L_tbl);
@@ -746,3 +747,4 @@ void StubGenerator::init_AOTAddressTable_log(GrowableArray<address>& external_ad
   ADD(((address)_coeff_log10+32));
 #undef ADD
 }
+#endif // INCLUDE_CDS

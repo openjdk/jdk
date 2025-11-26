@@ -509,6 +509,7 @@ address StubGenerator::generate_libmTanh() {
 
 #undef __
 
+#if INCLUDE_CDS
 void StubGenerator::init_AOTAddressTable_tanh(GrowableArray<address>& external_addresses) {
 #define ADD(addr) external_addresses.append((address)addr);
   ADD(_L2E);
@@ -528,3 +529,4 @@ void StubGenerator::init_AOTAddressTable_tanh(GrowableArray<address>& external_a
   ADD(_RMASK);
 #undef ADD
 }
+#endif // INCLUDE_CDS

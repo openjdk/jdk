@@ -348,6 +348,8 @@ address StubGenerator::generate_libmCbrt() {
 }
 
 #undef __
+
+#if INCLUDE_CDS
 void StubGenerator::init_AOTAddressTable_cbrt(GrowableArray<address>& external_addresses) {
 #define ADD(addr) external_addresses.append((address)(addr))
   ADD(_ABS_MASK);
@@ -369,3 +371,4 @@ void StubGenerator::init_AOTAddressTable_cbrt(GrowableArray<address>& external_a
   ADD(_D_table);
 #undef ADD
 }
+#endif // INCLUDE_CDS

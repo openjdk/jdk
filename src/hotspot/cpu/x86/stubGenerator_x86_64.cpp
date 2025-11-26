@@ -5026,6 +5026,7 @@ StubGenerator::StubGenerator(CodeBuffer* code, BlobId blob_id, AOTStubData* stub
   };
 }
 
+#if INCLUDE_CDS
 // publish addresses of static data defined in this file and in other
 // stubgen stub generator files
 void StubGenerator::init_AOTAddressTable(GrowableArray<address>& external_addresses) {
@@ -5064,6 +5065,7 @@ void StubGenerator_AOTAddressTable_init() {
 #endif
   AOTCodeCache::publish_external_addresses(external_addresses);
 }
+#endif // INCLUDE_CDS
 
 void StubGenerator_generate(CodeBuffer* code, BlobId blob_id, AOTStubData* stub_data) {
   StubGenerator g(code, blob_id, stub_data);

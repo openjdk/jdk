@@ -604,6 +604,8 @@ bVec,
 }
 
 #undef __
+
+#if INCLUDE_CDS
 void StubGenerator::init_AOTAddressTable_chacha(GrowableArray<address>& external_addresses) {
 #define ADD(addr) external_addresses.append((address)(addr))
   ADD(CC20_COUNTER_ADD_AVX);
@@ -611,3 +613,4 @@ void StubGenerator::init_AOTAddressTable_chacha(GrowableArray<address>& external
   ADD(CC20_LROT_CONSTS);
 #undef ADD
 }
+#endif // INCLUDE_CDS

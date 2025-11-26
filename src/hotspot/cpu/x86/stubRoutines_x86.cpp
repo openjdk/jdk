@@ -412,6 +412,7 @@ ATTRIBUTE_ALIGNED(64) const julong StubRoutines::x86::_k512_W[] =
     0x5fcb6fab3ad6faecULL, 0x6c44198c4a475817ULL,
 };
 
+#if INCLUDE_CDS
 // publish addresses of external data defined in this file which may
 // be referenced from stub or code
 void StubRoutines::x86::init_AOTAddressTable(GrowableArray<address>& external_addresses) {
@@ -436,3 +437,4 @@ void StubRoutines::x86::init_AOTAddressTable(GrowableArray<address>& external_ad
   ADD(_k512_W);
 #undef ADD
 }
+#endif // INCLUDE_CDS

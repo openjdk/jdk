@@ -58,5 +58,7 @@ public:
   void store_parameter(jobject c,   int offset_from_esp_in_words);
   void store_parameter(Metadata* c, int offset_from_esp_in_words);
 
+#if INCLUDE_CDS
   void static init_AOTAddressTable(GrowableArray<address>& external_addresses);
+#endif // INCLUDE_CDS
 #endif // CPU_X86_C1_LIRASSEMBLER_X86_HPP

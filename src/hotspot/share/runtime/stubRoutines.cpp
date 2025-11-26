@@ -103,9 +103,11 @@ BlobId StubRoutines::stub_to_blob(StubId id) {
 // Initialization
 
 extern void StubGenerator_generate(CodeBuffer* code, BlobId blob_id, AOTStubData* stub_data); // only interface to generators
+#if INCLUDE_CDS
 #if (defined(X86) && defined(_LP64)) || defined(AARCH64)
 extern void StubGenerator_AOTAddressTable_init();
 #endif
+#endif // INCLUDE_CDS
 
 void UnsafeMemoryAccess::create_table(int max_size) {
   UnsafeMemoryAccess::_table = new UnsafeMemoryAccess[max_size];
@@ -313,6 +315,7 @@ STUBGEN_BLOBS_DO(DEFINE_BLOB_INIT_FUNCTION)
 #undef DEFINE_BLOB_INIT_FUNCTION
 
 
+#if INCLUDE_CDS
 // Non-generated init method
 
 void StubRoutines::init_AOTAddressTable() {
@@ -324,6 +327,7 @@ void StubRoutines::init_AOTAddressTable() {
 // non-generated external API init driver function
 
 void stubs_AOTAddressTable_init() { StubRoutines::init_AOTAddressTable(); }
+#endif // INCLUDE_CDS
 
 /*
  * we generate the underlying driver function compiler_stubs_init()

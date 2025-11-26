@@ -6906,8 +6906,10 @@ static const int64_t right_3_bits = right_n_bits(3);
   }
 }; // end class declaration
 
+#if INCLUDE_CDS
 // nothing to do for riscv
 void StubGenerator_AOTAddressTable_init() {
+#endif // INCLUDE_CDS
 }
 
 void StubGenerator_generate(CodeBuffer* code, BlobId blob_id, AOTStubData* stub_data) {

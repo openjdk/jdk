@@ -1008,6 +1008,7 @@ void StubGenerator::generate_kyber_stubs() {
   }
 }
 
+#if INCLUDE_CDS
 void StubGenerator::init_AOTAddressTable_kyber(GrowableArray<address>& external_addresses) {
 #define ADD(addr) external_addresses.append((address)(addr))
   // use accessors to correctly identify the relevant addresses
@@ -1023,3 +1024,4 @@ void StubGenerator::init_AOTAddressTable_kyber(GrowableArray<address>& external_
   ADD(kyberAvx512ConstsAddr(f00Offset));
 #undef ADD
 }
+#endif // INCLUDE_CDS

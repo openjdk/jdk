@@ -786,6 +786,7 @@ address StubGenerator::generate_intpoly_assign() {
 }
 #undef __
 
+#if INCLUDE_CDS
 void StubGenerator::init_AOTAddressTable_poly_mont(GrowableArray<address>& external_addresses) {
 #define ADD(addr) external_addresses.append((address)addr);
   // use accessors to retrieve all correct addresses
@@ -797,3 +798,4 @@ void StubGenerator::init_AOTAddressTable_poly_mont(GrowableArray<address>& exter
   ADD(modulus_p256(1));
 #undef ADD
 }
+#endif // INCLUDE_CDS

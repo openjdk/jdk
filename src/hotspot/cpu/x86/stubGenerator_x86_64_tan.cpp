@@ -1039,6 +1039,7 @@ address StubGenerator::generate_libmTan() {
 
 #undef __
 
+#if INCLUDE_CDS
 void StubGenerator::init_AOTAddressTable_tan(GrowableArray<address>& external_addresses) {
 #define ADD(addr) external_addresses.append((address)addr);
   ADD(_MUL16);
@@ -1059,3 +1060,4 @@ void StubGenerator::init_AOTAddressTable_tan(GrowableArray<address>& external_ad
   ADD(_QQ_2_tan);
 #undef ADD
 }
+#endif // INCLUDE_CDS

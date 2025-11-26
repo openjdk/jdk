@@ -233,6 +233,7 @@ ATTRIBUTE_ALIGNED(16) static const juint _Ctable[] = {
 };
 address StubGenerator::Ctable = (address)_Ctable;
 
+#if INCLUDE_CDS
 void StubGenerator::init_AOTAddressTable_constants(GrowableArray<address>& external_addresses) {
 #define ADD(addr) external_addresses.append((address)(addr))
   ADD(_ONE);
@@ -257,3 +258,4 @@ void StubGenerator::init_AOTAddressTable_constants(GrowableArray<address>& exter
   ADD(_Ctable);
 #undef ADD
 }
+#endif // INCLUDE_CDS

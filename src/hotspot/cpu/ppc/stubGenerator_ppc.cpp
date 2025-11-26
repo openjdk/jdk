@@ -5119,8 +5119,10 @@ void generate_lookup_secondary_supers_table_stub() {
   }
 };
 
+#if INCLUDE_CDS
 // nothing to do for ppc
 void StubGenerator_AOTAddressTable_init() {
+#endif // INCLUDE_CDS
 }
 
 void StubGenerator_generate(CodeBuffer* code, BlobId blob_id, AOTStubData *stub_data) {

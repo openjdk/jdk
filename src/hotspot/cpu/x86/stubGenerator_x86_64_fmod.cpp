@@ -535,6 +535,7 @@ address StubGenerator::generate_libmFmod() {
 
 #undef __
 
+#if INCLUDE_CDS
 void StubGenerator::init_AOTAddressTable_fmod(GrowableArray<address>& external_addresses) {
 #define ADD(addr) external_addresses.append((address)addr);
   ADD(CONST_NaN);
@@ -544,3 +545,4 @@ void StubGenerator::init_AOTAddressTable_fmod(GrowableArray<address>& external_a
   ADD(CONST_e307);
 #undef ADD
 }
+#endif // INCLUDE_CDS

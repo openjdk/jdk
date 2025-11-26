@@ -4193,6 +4193,7 @@ void StubGenerator::aesgcm_avx2(Register in, Register len, Register ct, Register
 
 #undef __
 
+#if INCLUDE_CDS
 void StubGenerator::init_AOTAddressTable_aes(GrowableArray<address>& external_addresses) {
 #define ADD(addr) external_addresses.append((address)(addr))
   ADD(key_shuffle_mask_addr());
@@ -4214,3 +4215,4 @@ void StubGenerator::init_AOTAddressTable_aes(GrowableArray<address>& external_ad
   ADD(counter_mask_add_1234_addr());
 #undef ADD
 }
+#endif // INCLUDE_CDS

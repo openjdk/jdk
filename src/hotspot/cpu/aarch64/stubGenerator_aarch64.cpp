@@ -12840,6 +12840,7 @@ class StubGenerator: public StubCodeGenerator {
     };
   }
 
+#if INCLUDE_CDS
   static void init_AOTAddressTable(GrowableArray<address>& external_addresses) {
     // external data defined in this file
 #define ADD(addr) external_addresses.append((address)addr);
@@ -12855,8 +12856,10 @@ class StubGenerator: public StubCodeGenerator {
     ADD(_decodeBlock_fromBase64URLForSIMD);
 #undef ADD
   }
+#endif // INCLUDE_CDS
 }; // end class declaration
 
+#if INCLUDE_CDS
 void StubGenerator_AOTAddressTable_init() {
   ResourceMark rm;
   GrowableArray<address> external_addresses;
@@ -12866,6 +12869,7 @@ void StubGenerator_AOTAddressTable_init() {
   StubRoutines::aarch64::init_AOTAddressTable(external_addresses);
   AOTCodeCache::publish_external_addresses(external_addresses);
 }
+#endif // INCLUDE_CDS
 
 void StubGenerator_generate(CodeBuffer* code, BlobId blob_id, AOTStubData* stub_data) {
   StubGenerator g(code, blob_id, stub_data);

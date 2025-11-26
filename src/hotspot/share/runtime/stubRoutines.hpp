@@ -284,8 +284,10 @@ public:
   static BlobId stub_to_blob(StubId id);
 #endif
 
+#if INCLUDE_CDS
   // Initalization
   static void    init_AOTAddressTable();
+#endif // INCLUDE_CDS
 
   // Debugging
   static jint    verify_oop_count()                        { return _verify_oop_count; }

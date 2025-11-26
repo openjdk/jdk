@@ -1386,6 +1386,7 @@ void StubGenerator::generate_dilithium_stubs() {
   }
 }
 
+#if INCLUDE_CDS
 void StubGenerator::init_AOTAddressTable_dilithium(GrowableArray<address>& external_addresses) {
 #define ADD(addr) external_addresses.append((address)(addr))
   // use accessors to correctly identify the relevant addresses
@@ -1401,3 +1402,4 @@ void StubGenerator::init_AOTAddressTable_dilithium(GrowableArray<address>& exter
   ADD(dilithiumAvx512ConstsAddr(barrettAddendIdx));
 #undef ADD
 }
+#endif // INCLUDE_CDS

@@ -69,6 +69,7 @@ static jlong *double_signmask_pool = double_quadword(&fp_signmask_pool[2*2],    
 static jlong *float_signflip_pool  = double_quadword(&fp_signmask_pool[3*2], (jlong)UCONST64(0x8000000080000000), (jlong)UCONST64(0x8000000080000000));
 static jlong *double_signflip_pool = double_quadword(&fp_signmask_pool[4*2], (jlong)UCONST64(0x8000000000000000), (jlong)UCONST64(0x8000000000000000));
 
+#if INCLUDE_CDS
 // publish external addresses defined in this file
 void LIR_Assembler::init_AOTAddressTable(GrowableArray<address>& external_addresses) {
 #define ADD(addr) external_addresses.append((address)addr);
@@ -78,6 +79,7 @@ void LIR_Assembler::init_AOTAddressTable(GrowableArray<address>& external_addres
   ADD(double_signflip_pool);
 #undef ADD
 }
+#endif // INCLUDE_CDS
 
 NEEDS_CLEANUP // remove this definitions ?
 const Register SYNC_header = rax;   // synchronization header

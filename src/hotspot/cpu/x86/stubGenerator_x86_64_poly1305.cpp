@@ -1707,6 +1707,7 @@ void StubGenerator::poly1305_msg_mul_reduce_vec4_avx2(
 }
 #undef __
 
+#if INCLUDE_CDS
 void StubGenerator::init_AOTAddressTable_poly1305(GrowableArray<address>& external_addresses) {
 #define ADD(addr) external_addresses.append((address)addr);
   ADD(POLY1305_PAD_MSG);
@@ -1714,3 +1715,4 @@ void StubGenerator::init_AOTAddressTable_poly1305(GrowableArray<address>& extern
   ADD(POLY1305_MASK44);
 #undef ADD
 }
+#endif // INCLUDE_CDS

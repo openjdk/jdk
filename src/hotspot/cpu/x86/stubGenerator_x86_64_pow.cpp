@@ -1873,6 +1873,7 @@ address StubGenerator::generate_libmPow() {
 
 #undef __
 
+#if INCLUDE_CDS
 void StubGenerator::init_AOTAddressTable_pow(GrowableArray<address>& external_addresses) {
 #define ADD(addr) external_addresses.append((address)addr);
   ADD(_HIGHSIGMASK);
@@ -1900,3 +1901,4 @@ void StubGenerator::init_AOTAddressTable_pow(GrowableArray<address>& external_ad
   ADD(_DOUBLE0DOT5);
 #undef ADD
 }
+#endif // INCLUDE_CDS

@@ -71,7 +71,9 @@ void icache_init2();
 void initialize_stub_info();    // must precede all blob/stub generation
 void preuniverse_stubs_init();
 
+#if INCLUDE_CDS
 void stubs_AOTAddressTable_init();
+#endif // INCLUDE_CDS
 void initial_stubs_init();
 
 jint universe_init();           // depends on codeCache_init and preuniverse_stubs_init
@@ -151,8 +153,10 @@ jint init_globals() {
   AOTCodeCache::init2();     // depends on universe_init, must be before initial_stubs_init
   AsyncLogWriter::initialize();
 
+#if INCLUDE_CDS
   stubs_AOTAddressTable_init(); // publish external addresses used by stubs
                                 // depends on AOTCodeCache::init2
+#endif // INCLUDE_CDS
   initial_stubs_init();      // stubgen initial stub routines
   // stack overflow exception blob is referenced by the interpreter
   SharedRuntime::generate_initial_stubs();

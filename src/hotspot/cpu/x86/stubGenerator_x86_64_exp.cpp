@@ -395,6 +395,7 @@ address StubGenerator::generate_libmExp() {
 
 #undef __
 
+#if INCLUDE_CDS
 void StubGenerator::init_AOTAddressTable_exp(GrowableArray<address>& external_addresses) {
 #define ADD(addr) external_addresses.append((address)addr);
   ADD(_cv);
@@ -413,3 +414,4 @@ void StubGenerator::init_AOTAddressTable_exp(GrowableArray<address>& external_ad
   ADD(_INF);
 #undef ADD
 }
+#endif // INCLUDE_CDS

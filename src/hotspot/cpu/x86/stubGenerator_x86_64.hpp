@@ -637,6 +637,7 @@ class StubGenerator: public StubCodeGenerator {
   void generate_compiler_stubs();
   void generate_final_stubs();
 
+#if INCLUDE_CDS
   static void init_AOTAddressTable_adler(GrowableArray<address>& external_addresses);
   static void init_AOTAddressTable_aes(GrowableArray<address>& external_addresses);
   static void init_AOTAddressTable_cbrt(GrowableArray<address>& external_addresses);
@@ -657,10 +658,13 @@ class StubGenerator: public StubCodeGenerator {
   static void init_AOTAddressTable_sinh(GrowableArray<address>& external_addresses);
   static void init_AOTAddressTable_tan(GrowableArray<address>& external_addresses);
   static void init_AOTAddressTable_tanh(GrowableArray<address>& external_addresses);
+#endif // INCLUDE_CDS
 
 public:
   StubGenerator(CodeBuffer* code, BlobId blob_id, AOTStubData* stub_data);
+#if INCLUDE_CDS
   static void init_AOTAddressTable(GrowableArray<address>& external_addresses);
+#endif // INCLUDE_CDS
 };
 
 #endif // CPU_X86_STUBGENERATOR_X86_64_HPP

@@ -414,6 +414,7 @@ ATTRIBUTE_ALIGNED(64) jdouble StubRoutines::aarch64::_pio2[] = {
   2.16741683877804819444e-51, // 0x3569F31D00000000
 };
 
+#if INCLUDE_CDS
 #define ADD(addr) external_addresses.append((address)addr);
 
 void StubRoutines::aarch64::init_AOTAddressTable(GrowableArray<address>& external_addresses) {
@@ -429,3 +430,4 @@ void StubRoutines::aarch64::init_AOTAddressTable(GrowableArray<address>& externa
 }
 
 #undef ADD
+#endif // INCLUDE_CDS

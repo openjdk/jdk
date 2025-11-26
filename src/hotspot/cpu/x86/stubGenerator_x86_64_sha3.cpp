@@ -528,9 +528,11 @@ void StubGenerator::generate_sha3_stubs() {
 
 #undef __
 
+#if INCLUDE_CDS
 void StubGenerator::init_AOTAddressTable_sha3(GrowableArray<address>& external_addresses) {
 #define ADD(addr) external_addresses.append((address)addr);
   ADD(round_constsAddr());
   ADD(permsAndRotsAddr());
 #undef ADD
 }
+#endif // INCLUDE_CDS
