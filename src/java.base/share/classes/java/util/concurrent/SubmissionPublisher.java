@@ -292,9 +292,7 @@ public class SubmissionPublisher<T> implements Publisher<T>,
 
     /**
      * Creates a new SubmissionPublisher using the {@link
-     * ForkJoinPool#commonPool()} for async delivery to subscribers
-     * (unless it does not support a parallelism level of at least two,
-     * in which case, a new Thread is created to run each task), with
+     * ForkJoinPool#commonPool()} for async delivery to subscribers, with
      * maximum buffer capacity of {@link Flow#defaultBufferSize}, and no
      * handler for Subscriber exceptions in method {@link
      * Flow.Subscriber#onNext(Object) onNext}.

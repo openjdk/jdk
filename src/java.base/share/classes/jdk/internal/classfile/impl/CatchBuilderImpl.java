@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,9 @@ package jdk.internal.classfile.impl;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.Label;
 import java.lang.classfile.Opcode;
+import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.constant.ClassDesc;
-import java.lang.constant.ConstantDesc;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -39,14 +40,12 @@ public final class CatchBuilderImpl implements CodeBuilder.CatchBuilder {
     final CodeBuilder b;
     final BlockCodeBuilderImpl tryBlock;
     final Label tryCatchEnd;
-    final Set<ConstantDesc> catchTypes;
     BlockCodeBuilderImpl catchBlock;
 
     public CatchBuilderImpl(CodeBuilder b, BlockCodeBuilderImpl tryBlock, Label tryCatchEnd) {
         this.b = b;
         this.tryBlock = tryBlock;
         this.tryCatchEnd = tryCatchEnd;
-        this.catchTypes = new HashSet<>();
     }
 
     @Override
@@ -59,15 +58,21 @@ public final class CatchBuilderImpl implements CodeBuilder.CatchBuilder {
         Objects.requireNonNull(exceptionTypes);
         Objects.requireNonNull(catchHandler);
 
+        // nullable list of CP entries - null means catching all (0)
+        List<ClassEntry> entries = new ArrayList<>(Math.max(1, exceptionTypes.size()));
+        if (exceptionTypes.isEmpty()) {
+            entries.add(null);
+        } else {
+            for (var exceptionType : exceptionTypes) {
+                var entry = b.constantPool().classEntry(exceptionType); // throws IAE
+                entries.add(entry);
+            }
+        }
+        // End validation
+
         if (catchBlock == null) {
             if (tryBlock.reachable()) {
                 b.branch(Opcode.GOTO, tryCatchEnd);
-            }
-        }
-
-        for (var exceptionType : exceptionTypes) {
-            if (!catchTypes.add(exceptionType)) {
-                throw new IllegalArgumentException("Existing catch block catches exception of type: " + exceptionType);
             }
         }
 
@@ -82,13 +87,9 @@ public final class CatchBuilderImpl implements CodeBuilder.CatchBuilder {
         catchBlock = new BlockCodeBuilderImpl(b, tryCatchEnd);
         Label tryStart = tryBlock.startLabel();
         Label tryEnd = tryBlock.endLabel();
-        if (exceptionTypes.isEmpty()) {
-            catchBlock.exceptionCatchAll(tryStart, tryEnd, catchBlock.startLabel());
-        }
-        else {
-            for (var exceptionType : exceptionTypes) {
-                catchBlock.exceptionCatch(tryStart, tryEnd, catchBlock.startLabel(), exceptionType);
-            }
+        for (var entry : entries) {
+            // This accepts null for catching all
+            catchBlock.exceptionCatch(tryStart, tryEnd, catchBlock.startLabel(), entry);
         }
         catchBlock.start();
         catchHandler.accept(catchBlock);

@@ -26,7 +26,7 @@
 #include "gc/g1/g1BatchedTask.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1GCParPhaseTimesTracker.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/growableArray.hpp"
 
 void G1AbstractSubTask::record_work_item(uint worker_id, uint index, size_t count) {
@@ -40,7 +40,7 @@ const char* G1AbstractSubTask::name() const {
 }
 
 bool G1BatchedTask::try_claim_serial_task(int& task) {
-  task = Atomic::fetch_then_add(&_num_serial_tasks_done, 1);
+  task = AtomicAccess::fetch_then_add(&_num_serial_tasks_done, 1);
   return task < _serial_tasks.length();
 }
 
@@ -96,8 +96,8 @@ void G1BatchedTask::work(uint worker_id) {
 }
 
 G1BatchedTask::~G1BatchedTask() {
-  assert(Atomic::load(&_num_serial_tasks_done) >= _serial_tasks.length(),
-         "Only %d tasks of %d claimed", Atomic::load(&_num_serial_tasks_done), _serial_tasks.length());
+  assert(AtomicAccess::load(&_num_serial_tasks_done) >= _serial_tasks.length(),
+         "Only %d tasks of %d claimed", AtomicAccess::load(&_num_serial_tasks_done), _serial_tasks.length());
 
   for (G1AbstractSubTask* task : _parallel_tasks) {
     delete task;

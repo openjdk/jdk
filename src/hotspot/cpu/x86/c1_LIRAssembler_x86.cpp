@@ -412,12 +412,8 @@ int LIR_Assembler::emit_unwind_handler() {
   MonitorExitStub* stub = nullptr;
   if (method()->is_synchronized()) {
     monitor_address(0, FrameMap::rax_opr);
-    stub = new MonitorExitStub(FrameMap::rax_opr, true, 0);
-    if (LockingMode == LM_MONITOR) {
-      __ jmp(*stub->entry());
-    } else {
-      __ unlock_object(rdi, rsi, rax, *stub->entry());
-    }
+    stub = new MonitorExitStub(FrameMap::rax_opr, 0);
+    __ unlock_object(rdi, rsi, rax, *stub->entry());
     __ bind(*stub->continuation());
   }
 
@@ -454,14 +450,22 @@ int LIR_Assembler::emit_deopt_handler() {
   }
 
   int offset = code_offset();
-  InternalAddress here(__ pc());
 
-  __ pushptr(here.addr(), rscratch1);
-  __ jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
+  Label start;
+  __ bind(start);
+
+  __ call(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
+
+  int entry_offset = __ offset();
+
+  __ jmp(start);
+
   guarantee(code_offset() - offset <= deopt_handler_size(), "overflow");
+  assert(code_offset() - entry_offset >= NativePostCallNop::first_check_size,
+         "out of bounds read in post-call NOP check");
   __ end_a_stub();
 
-  return offset;
+  return entry_offset;
 }
 
 void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
@@ -1385,11 +1389,11 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
         __ cmpptr(klass_RInfo, k_RInfo);
         __ jcc(Assembler::equal, *success_target);
 
-        __ push(klass_RInfo);
-        __ push(k_RInfo);
+        __ push_ppx(klass_RInfo);
+        __ push_ppx(k_RInfo);
         __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_slow_subtype_check_id)));
-        __ pop(klass_RInfo);
-        __ pop(klass_RInfo);
+        __ pop_ppx(klass_RInfo);
+        __ pop_ppx(klass_RInfo);
         // result is a boolean
         __ testl(klass_RInfo, klass_RInfo);
         __ jcc(Assembler::equal, *failure_target);
@@ -1399,11 +1403,11 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       // perform the fast part of the checking logic
       __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, success_target, failure_target, nullptr);
       // call out-of-line instance of __ check_klass_subtype_slow_path(...):
-      __ push(klass_RInfo);
-      __ push(k_RInfo);
+      __ push_ppx(klass_RInfo);
+      __ push_ppx(k_RInfo);
       __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_slow_subtype_check_id)));
-      __ pop(klass_RInfo);
-      __ pop(k_RInfo);
+      __ pop_ppx(klass_RInfo);
+      __ pop_ppx(k_RInfo);
       // result is a boolean
       __ testl(k_RInfo, k_RInfo);
       __ jcc(Assembler::equal, *failure_target);
@@ -1478,11 +1482,11 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     // perform the fast part of the checking logic
     __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, success_target, failure_target, nullptr);
     // call out-of-line instance of __ check_klass_subtype_slow_path(...):
-    __ push(klass_RInfo);
-    __ push(k_RInfo);
+    __ push_ppx(klass_RInfo);
+    __ push_ppx(k_RInfo);
     __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_slow_subtype_check_id)));
-    __ pop(klass_RInfo);
-    __ pop(k_RInfo);
+    __ pop_ppx(klass_RInfo);
+    __ pop_ppx(k_RInfo);
     // result is a boolean
     __ testl(k_RInfo, k_RInfo);
     __ jcc(Assembler::equal, *failure_target);
@@ -2536,26 +2540,26 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
       // safely do the copy.
       Label cont, slow;
 
-      __ push(src);
-      __ push(dst);
+      __ push_ppx(src);
+      __ push_ppx(dst);
 
       __ load_klass(src, src, tmp_load_klass);
       __ load_klass(dst, dst, tmp_load_klass);
 
       __ check_klass_subtype_fast_path(src, dst, tmp, &cont, &slow, nullptr);
 
-      __ push(src);
-      __ push(dst);
+      __ push_ppx(src);
+      __ push_ppx(dst);
       __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_slow_subtype_check_id)));
-      __ pop(dst);
-      __ pop(src);
+      __ pop_ppx(dst);
+      __ pop_ppx(src);
 
       __ testl(src, src);
       __ jcc(Assembler::notEqual, cont);
 
       __ bind(slow);
-      __ pop(dst);
-      __ pop(src);
+      __ pop_ppx(dst);
+      __ pop_ppx(src);
 
       address copyfunc_addr = StubRoutines::checkcast_arraycopy();
       if (copyfunc_addr != nullptr) { // use stub if available
@@ -2733,15 +2737,8 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register obj = op->obj_opr()->as_register();  // may not be an oop
   Register hdr = op->hdr_opr()->as_register();
   Register lock = op->lock_opr()->as_register();
-  if (LockingMode == LM_MONITOR) {
-    if (op->info() != nullptr) {
-      add_debug_info_for_null_check_here(op->info());
-      __ null_check(obj);
-    }
-    __ jmp(*op->stub()->entry());
-  } else if (op->code() == lir_lock) {
-    assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
-    Register tmp = LockingMode == LM_LIGHTWEIGHT ? op->scratch_opr()->as_register() : noreg;
+  if (op->code() == lir_lock) {
+    Register tmp = op->scratch_opr()->as_register();
     // add debug info for NullPointerException only if one is possible
     int null_check_offset = __ lock_object(hdr, obj, lock, tmp, *op->stub()->entry());
     if (op->info() != nullptr) {
@@ -2749,7 +2746,6 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
     }
     // done
   } else if (op->code() == lir_unlock) {
-    assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
     __ unlock_object(hdr, obj, lock, *op->stub()->entry());
   } else {
     Unimplemented();
@@ -2904,13 +2900,13 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
     if (exact_klass != nullptr) {
       Label ok;
       __ load_klass(tmp, obj, tmp_load_klass);
-      __ push(tmp);
+      __ push_ppx(tmp);
       __ mov_metadata(tmp, exact_klass->constant_encoding());
       __ cmpptr(tmp, Address(rsp, 0));
       __ jcc(Assembler::equal, ok);
       __ stop("exact klass and actual klass differ");
       __ bind(ok);
-      __ pop(tmp);
+      __ pop_ppx(tmp);
     }
 #endif
     if (!no_conflict) {
@@ -2975,7 +2971,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
 
         {
           Label ok;
-          __ push(tmp);
+          __ push_ppx(tmp);
           __ testptr(mdo_addr, TypeEntries::type_mask);
           __ jcc(Assembler::zero, ok);
           // may have been set by another thread
@@ -2986,7 +2982,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
 
           __ stop("unexpected profiling mismatch");
           __ bind(ok);
-          __ pop(tmp);
+          __ pop_ppx(tmp);
         }
 #else
         __ jccb(Assembler::zero, next);
@@ -3010,11 +3006,6 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   }
   __ bind(next);
 }
-
-void LIR_Assembler::emit_delay(LIR_OpDelay*) {
-  Unimplemented();
-}
-
 
 void LIR_Assembler::monitor_address(int monitor_no, LIR_Opr dst) {
   __ lea(dst->as_register(), frame_map()->address_for_monitor_lock(monitor_no));

@@ -163,7 +163,7 @@ TEST_VM_F(AsyncLogTest, logBuffer) {
                                       LogDecorators());
   size_t len = strlen(TestLogFileName) + strlen(LogFileOutput::Prefix) + 1;
   char* name = NEW_C_HEAP_ARRAY(char, len, mtLogging);
-  snprintf(name, len, "%s%s", LogFileOutput::Prefix, TestLogFileName);
+  os::snprintf_checked(name, len, "%s%s", LogFileOutput::Prefix, TestLogFileName);
 
   LogFileStreamOutput* output = new LogFileOutput(name);
   output->initialize(nullptr, nullptr);
@@ -253,6 +253,8 @@ TEST_VM_F(AsyncLogTest, droppingMessage) {
 
   set_log_config(TestLogFileName, "logging=debug");
   test_asynclog_drop_messages();
+  AsyncLogWriter::flush();
+  fflush(nullptr);
   bool messages_dropped = file_contains_substring(TestLogFileName, "messages dropped due to async logging");
   if (!messages_dropped) {
     stringStream content;

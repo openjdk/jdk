@@ -603,7 +603,7 @@ address generate_kyberNttMult_avx512(StubGenerator *stubgen,
   const Register perms = r11;
   const Register loopCnt = r12;
 
-  __ push(r12);
+  __ push_ppx(r12);
   __ movl(loopCnt, 2);
 
   Label Loop;
@@ -692,7 +692,7 @@ address generate_kyberNttMult_avx512(StubGenerator *stubgen,
     __ subl(loopCnt, 1);
     __ jcc(Assembler::greater, Loop);
 
-  __ pop(r12);
+  __ pop_ppx(r12);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ mov64(rax, 0); // return 0

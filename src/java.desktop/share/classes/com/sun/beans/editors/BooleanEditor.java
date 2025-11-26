@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.beans.*;
 public class BooleanEditor extends PropertyEditorSupport {
 
 
+    @Override
     public String getJavaInitializationString() {
         Object value = getValue();
         return (value != null)
@@ -41,6 +42,7 @@ public class BooleanEditor extends PropertyEditorSupport {
                 : "null";
     }
 
+    @Override
     public String getAsText() {
         Object value = getValue();
         return (value instanceof Boolean)
@@ -48,6 +50,7 @@ public class BooleanEditor extends PropertyEditorSupport {
              : null;
     }
 
+    @Override
     public void setAsText(String text) throws java.lang.IllegalArgumentException {
         if (text == null) {
             setValue(null);
@@ -60,6 +63,7 @@ public class BooleanEditor extends PropertyEditorSupport {
         }
     }
 
+    @Override
     public String[] getTags() {
         return new String[] {getValidName(true), getValidName(false)};
     }

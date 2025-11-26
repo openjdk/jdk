@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ import jdk.internal.module.Modules;
  *          loads all classes and get their declared fields
  *          and call setAccessible(false) followed by setAccessible(true);
  * @modules java.base/jdk.internal.module
- * @run main/othervm --add-modules=ALL-SYSTEM FieldSetAccessibleTest
+ * @run main/othervm/timeout=480 --add-modules=ALL-SYSTEM FieldSetAccessibleTest
  *
  * @author danielfuchs
  */

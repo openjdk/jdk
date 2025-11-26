@@ -54,6 +54,7 @@ enum platform_dependent_constants {
 
 class ppc {
   friend class StubGenerator;
+  friend class StubRoutines;
 
  private:
  public:

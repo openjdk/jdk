@@ -118,7 +118,7 @@ public abstract class JavadocHelper implements AutoCloseable {
         StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null);
         try {
             fm.setLocationFromPaths(StandardLocation.SOURCE_PATH, sourceLocations);
-            return new OnDemandJavadocHelper(mainTask, fm);
+            return new OnDemandJavadocHelper(mainTask, fm, sourceLocations);
         } catch (IOException ex) {
             try {
                 fm.close();
@@ -135,6 +135,21 @@ public abstract class JavadocHelper implements AutoCloseable {
                 }
                 @Override
                 public void close() throws IOException {}
+
+                @Override
+                public String getResolvedDocComment(StoredElement forElement) throws IOException {
+                    return null;
+                }
+
+                @Override
+                public StoredElement getHandle(Element forElement) {
+                    return null;
+                }
+
+                @Override
+                public Collection<? extends Path> getSourceLocations() {
+                    return List.of();
+                }
             };
         }
     }
@@ -147,6 +162,7 @@ public abstract class JavadocHelper implements AutoCloseable {
      * @throws IOException if something goes wrong in the search
      */
     public abstract String getResolvedDocComment(Element forElement) throws IOException;
+    public abstract String getResolvedDocComment(StoredElement forElement) throws IOException;
 
     /**Returns an element representing the same given program element, but the returned element will
      * be resolved from source, if it can be found. Returns the original element if the source for
@@ -158,6 +174,9 @@ public abstract class JavadocHelper implements AutoCloseable {
      */
     public abstract Element getSourceElement(Element forElement) throws IOException;
 
+    public abstract StoredElement getHandle(Element forElement);
+    public abstract Collection<? extends Path> getSourceLocations();
+
     /**Closes the helper.
      *
      * @throws IOException if something foes wrong during the close
@@ -165,21 +184,35 @@ public abstract class JavadocHelper implements AutoCloseable {
     @Override
     public abstract void close() throws IOException;
 
+    public record StoredElement(String module, String binaryName, String handle) {}
+
     private static final class OnDemandJavadocHelper extends JavadocHelper {
         private final JavacTask mainTask;
         private final JavaFileManager baseFileManager;
         private final StandardJavaFileManager fm;
         private final Map<String, Pair<JavacTask, TreePath>> signature2Source = new HashMap<>();
+        private final Collection<? extends Path> sourceLocations;
 
-        private OnDemandJavadocHelper(JavacTask mainTask, StandardJavaFileManager fm) {
+        private OnDemandJavadocHelper(JavacTask mainTask, StandardJavaFileManager fm, Collection<? extends Path> sourceLocations) {
             this.mainTask = mainTask;
             this.baseFileManager = ((JavacTaskImpl) mainTask).getContext().get(JavaFileManager.class);
             this.fm = fm;
+            this.sourceLocations = sourceLocations;
         }
 
         @Override
         public String getResolvedDocComment(Element forElement) throws IOException {
             Pair<JavacTask, TreePath> sourceElement = getSourceElement(mainTask, forElement);
+
+            if (sourceElement == null)
+                return null;
+
+            return getResolvedDocComment(sourceElement.fst, sourceElement.snd);
+        }
+
+        @Override
+        public String getResolvedDocComment(StoredElement forElement) throws IOException {
+            Pair<JavacTask, TreePath> sourceElement = getSourceElement(forElement);
 
             if (sourceElement == null)
                 return null;
@@ -202,7 +235,30 @@ public abstract class JavadocHelper implements AutoCloseable {
             return result;
         }
 
-        private String getResolvedDocComment(JavacTask task, TreePath el) throws IOException {
+        @Override
+        public StoredElement getHandle(Element forElement) {
+            TypeElement type = topLevelType(forElement);
+
+            if (type == null)
+                return null;
+
+            Elements elements = mainTask.getElements();
+            ModuleElement module = elements.getModuleOf(type);
+            String moduleName = module == null || module.isUnnamed()
+                    ? null
+                    : module.getQualifiedName().toString();
+            String binaryName = elements.getBinaryName(type).toString();
+            String handle = elementSignature(forElement);
+
+            return new StoredElement(moduleName, binaryName, handle);
+        }
+
+        @Override
+        public Collection<? extends Path> getSourceLocations() {
+            return sourceLocations;
+        }
+
+         private String getResolvedDocComment(JavacTask task, TreePath el) throws IOException {
             DocTrees trees = DocTrees.instance(task);
             Element element = trees.getElement(el);
             String docComment = trees.getDocComment(el);
@@ -634,7 +690,7 @@ public abstract class JavadocHelper implements AutoCloseable {
                        .filter(supMethod -> task.getElements().overrides(method, supMethod, type));
         }
 
-        /* Find types from which methods in type may inherit javadoc, in the proper order.*/
+        /* Find types from which methods in binaryName may inherit javadoc, in the proper order.*/
         private Stream<Element> superTypeForInheritDoc(JavacTask task, Element type) {
             TypeElement clazz = (TypeElement) type;
             Stream<Element> result = interfaces(clazz);
@@ -699,6 +755,35 @@ public abstract class JavadocHelper implements AutoCloseable {
             DocTrees trees = DocTrees.instance(task);
             Element exc = trees.getElement(new DocTreePath(new DocTreePath(rootOn, comment), tt.getExceptionName()));
             return exc != null ? exc.toString() : null;
+        }
+
+        private Pair<JavacTask, TreePath> getSourceElement(StoredElement el) throws IOException {
+            if (el == null) {
+                return null;
+            }
+
+            String handle = el.handle();
+            Pair<JavacTask, TreePath> cached = signature2Source.get(handle);
+
+            if (cached != null) {
+                return cached.fst != null ? cached : null;
+            }
+
+            Pair<JavacTask, CompilationUnitTree> source = findSource(el.module(), el.binaryName());
+
+            if (source == null)
+                return null;
+
+            fillElementCache(source.fst, source.snd);
+
+            cached = signature2Source.get(handle);
+
+            if (cached != null) {
+                return cached;
+            } else {
+                signature2Source.put(handle, Pair.of(null, null));
+                return null;
+            }
         }
 
         private Pair<JavacTask, TreePath> getSourceElement(JavacTask origin, Element el) throws IOException {

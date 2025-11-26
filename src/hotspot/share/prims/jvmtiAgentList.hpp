@@ -83,7 +83,7 @@ class JvmtiAgentList : AllStatic {
   static Iterator java_agents();
   static Iterator native_agents();
   static Iterator xrun_agents();
-  static void disable_agent_list() NOT_JVMTI_RETURN;
+  static bool disable_agent_list() NOT_JVMTI_RETURN_(false);
 };
 
 #endif // SHARE_PRIMS_JVMTIAGENTLIST_HPP

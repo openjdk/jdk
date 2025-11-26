@@ -36,17 +36,18 @@ class nmethod;
 class BarrierSetNMethod: public CHeapObj<mtGC> {
 private:
   int _current_phase;
+
+  void deoptimize(nmethod* nm, address* return_addr_ptr);
+
+protected:
   enum {
     not_entrant = 1 << 31, // armed sticky bit, see make_not_entrant
     armed = 0,
     initial = 1,
   };
 
-  void deoptimize(nmethod* nm, address* return_addr_ptr);
-
-protected:
-  virtual int guard_value(nmethod* nm);
-  void set_guard_value(nmethod* nm, int value);
+  int guard_value(nmethod* nm);
+  void set_guard_value(nmethod* nm, int value, int bit_mask = ~not_entrant);
 
 public:
   BarrierSetNMethod() : _current_phase(initial) {}
@@ -60,13 +61,13 @@ public:
 
   static int nmethod_stub_entry_barrier(address* return_address_ptr);
   bool nmethod_osr_entry_barrier(nmethod* nm);
-  virtual bool is_armed(nmethod* nm);
+  bool is_armed(nmethod* nm);
   void arm(nmethod* nm) { guard_with(nm, armed); }
   void disarm(nmethod* nm);
-  virtual void make_not_entrant(nmethod* nm);
-  virtual bool is_not_entrant(nmethod* nm);
+  void make_not_entrant(nmethod* nm);
+  bool is_not_entrant(nmethod* nm);
 
-  virtual void guard_with(nmethod* nm, int value);
+  void guard_with(nmethod* nm, int value);
 
   virtual void arm_all_nmethods();
 
