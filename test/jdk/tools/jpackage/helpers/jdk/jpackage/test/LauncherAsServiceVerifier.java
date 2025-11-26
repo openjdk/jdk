@@ -166,9 +166,7 @@ public final class LauncherAsServiceVerifier {
 
         for (var launcherAsService : List.of(true, false)) {
             partitionedLauncherNames.get(launcherAsService).forEach(launcherName -> {
-                // Launcher should not be a service with "--launcher-as-service"
-                // and "--mac-app-store" specified.
-                verify(cmd, launcherName, launcherAsService && !cmd.hasArgument("--mac-app-store"));
+                verify(cmd, launcherName, launcherAsService);
             });
         }
 
@@ -199,7 +197,7 @@ public final class LauncherAsServiceVerifier {
             }
         }
 
-        if (launcherAsServiceNames.isEmpty() || cmd.isRuntime() || cmd.hasArgument("--mac-app-store")) {
+        if (launcherAsServiceNames.isEmpty() || cmd.isRuntime()) {
             servicesSpecificFiles.forEach(path -> TKit.assertPathExists(path,
                     false));
             servicesSpecificFolders.forEach(path -> TKit.assertPathExists(path,
@@ -231,11 +229,7 @@ public final class LauncherAsServiceVerifier {
     }
 
     static List<String> getLaunchersAsServices(JPackageCommand cmd) {
-        if (MacHelper.isForAppStore(cmd)) {
-            return List.of();
-        } else {
-            return Objects.requireNonNull(partitionLaunchers(cmd).get(true));
-        }
+        return Objects.requireNonNull(partitionLaunchers(cmd).get(true));
     }
 
     private static Map<Boolean, List<String>> partitionLaunchers(JPackageCommand cmd) {
