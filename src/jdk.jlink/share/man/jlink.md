@@ -49,7 +49,7 @@ custom runtime image
 ## Description
 
 The `jlink` tool links a set of modules, along with their transitive
-dependencies, to create a custom runtime image.
+dependences, to create a custom runtime image.
 
 **Note:**
 
