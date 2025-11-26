@@ -32,8 +32,7 @@ import java.time.LocalTime;
 /**
  * Helper for java.time
  */
-public final class DateTimeHelper
-{
+public final class DateTimeHelper {
     private DateTimeHelper() {
     }
     /**
