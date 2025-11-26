@@ -1355,7 +1355,6 @@ void AOTCodeReader::read_stub_data(CodeBlob* code_blob, AOTStubData* stub_data) 
       // entry offset is an offset from the stub start less than or
       // equal to end
       uint entry = *(uint*)addr(offset); offset += sizeof(uint);
-      assert(entry <= end, "stub %s entry offset %d lies beyond stub end %d", StubInfo::name(stub_id), entry, end);
       if (entry <= end) {
         // entry addresses may not address end but extras can
         assert(entry < end || i >= StubInfo::entry_count(stub_id),
@@ -1364,7 +1363,7 @@ void AOTCodeReader::read_stub_data(CodeBlob* code_blob, AOTStubData* stub_data) 
         addresses.append(stub_start + entry);
       } else {
         // special case: entry encodes a nullptr
-        assert(entry == AOTCodeCache::NULL_ADDRESS_MARKER, "sanity");
+        assert(entry == AOTCodeCache::NULL_ADDRESS_MARKER, "stub %s entry offset %d lies beyond stub end %d and does not equal NULL_ADDRESS_MARKER", StubInfo::name(stub_id), entry, end);
         addresses.append(nullptr);
       }
     }
