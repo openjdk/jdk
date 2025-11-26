@@ -1481,6 +1481,7 @@ void Arguments::set_conservative_max_heap_alignment() {
   _conservative_max_heap_alignment = MAX3(heap_alignment,
                                           os::vm_allocation_granularity(),
                                           os::max_page_size());
+  assert(is_power_of_2(_conservative_max_heap_alignment), "Expected to be a power-of-2");
 }
 
 jint Arguments::set_ergonomics_flags() {
@@ -2482,6 +2483,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
       }
     } else if (match_option(option, "-Xmaxjitcodesize", &tail) ||
                match_option(option, "-XX:ReservedCodeCacheSize=", &tail)) {
+      if (match_option(option, "-Xmaxjitcodesize", &tail)) {
+        warning("Option -Xmaxjitcodesize was deprecated in JDK 26 and will likely be removed in a future release.");
+      }
       julong long_ReservedCodeCacheSize = 0;
 
       ArgsRange errcode = parse_memory_size(tail, &long_ReservedCodeCacheSize, 1);
