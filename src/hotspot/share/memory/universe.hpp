@@ -128,9 +128,6 @@ class Universe: AllStatic {
   static bool _module_initialized;                    // true after call_initPhase2 called
   static bool _fully_initialized;                     // true after universe_init and initialize_vtables called
 
-  // Shutdown
-  static volatile bool _is_shutting_down;
-
   // the array of preallocated errors with backtraces
   static objArrayOop  preallocated_out_of_memory_errors();
 
@@ -244,6 +241,7 @@ class Universe: AllStatic {
   static oop          array_index_out_of_bounds_exception_instance();
   static oop          array_store_exception_instance();
   static oop          class_cast_exception_instance();
+  static oop          preempted_exception_instance();
   static oop          vm_exception()                  { return internal_error_instance(); }
 
   static Array<Klass*>* the_array_interfaces_array()  { return _the_array_interfaces_array; }
@@ -315,7 +313,7 @@ class Universe: AllStatic {
   DEBUG_ONLY(static bool is_in_heap_or_null(const void* p) { return p == nullptr || is_in_heap(p); })
 
   // Reserve Java heap and determine CompressedOops mode
-  static ReservedHeapSpace reserve_heap(size_t heap_size, size_t alignment);
+  static ReservedHeapSpace reserve_heap(size_t heap_size, size_t alignment, size_t desired_page_size = 0);
 
   // Global OopStorages
   static OopStorage* vm_weak();
@@ -326,8 +324,6 @@ class Universe: AllStatic {
   static bool is_bootstrapping()                      { return _bootstrapping; }
   static bool is_module_initialized()                 { return _module_initialized; }
   static bool is_fully_initialized()                  { return _fully_initialized; }
-
-  static bool is_shutting_down()                  { return  AtomicAccess::load_acquire(&_is_shutting_down); }
 
   static bool        on_page_boundary(void* addr);
   static bool        should_fill_in_stack_trace(Handle throwable);

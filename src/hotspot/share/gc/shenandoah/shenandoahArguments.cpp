@@ -37,9 +37,10 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 void ShenandoahArguments::initialize() {
-#if !(defined AARCH64 || defined AMD64 || defined IA32 || defined PPC64 || defined RISCV64)
+#if !(defined AARCH64 || defined AMD64 || defined PPC64 || defined RISCV64)
   vm_exit_during_initialization("Shenandoah GC is not supported on this platform.");
 #endif
 
@@ -205,7 +206,7 @@ void ShenandoahArguments::initialize() {
 }
 
 size_t ShenandoahArguments::conservative_max_heap_alignment() {
-  size_t align = ShenandoahMaxRegionSize;
+  size_t align = next_power_of_2(ShenandoahMaxRegionSize);
   if (UseLargePages) {
     align = MAX2(align, os::large_page_size());
   }

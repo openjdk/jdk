@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * Copyright (c) 2023, Rivos Inc. All rights reserved.
@@ -52,24 +52,19 @@ class VM_Version : public Abstract_VM_Version {
     const char* const _pretty;
     const bool        _feature_string;
     const uint64_t    _linux_feature_bit;
-    int64_t           _value;
+
    public:
     RVFeatureValue(const char* pretty, int linux_bit_num, bool fstring) :
-      _pretty(pretty), _feature_string(fstring), _linux_feature_bit(nth_bit(linux_bit_num)),
-      _value(-1) {
+      _pretty(pretty), _feature_string(fstring), _linux_feature_bit(nth_bit(linux_bit_num)) {
     }
-    virtual void enable_feature(int64_t value = 0) {
-      _value = value;
-    }
-    virtual void disable_feature() {
-      _value = -1;
-    }
-    const char* pretty()          { return _pretty; }
-    uint64_t feature_bit()        { return _linux_feature_bit; }
-    bool feature_string()         { return _feature_string; }
-    int64_t value()               { return _value; }
+    virtual void enable_feature(int64_t value = 0) = 0;
+    virtual void disable_feature() = 0;
+    const char* pretty()         { return _pretty; }
+    uint64_t feature_bit()       { return _linux_feature_bit; }
+    bool feature_string()        { return _feature_string; }
     virtual bool enabled() = 0;
     virtual void update_flag() = 0;
+    virtual void log_enabled() = 0;
   };
 
   #define UPDATE_DEFAULT(flag)           \
@@ -94,11 +89,12 @@ class VM_Version : public Abstract_VM_Version {
           FLAG_SET_DEFAULT(flag, true);                                                                     \
         } else {                                                                                            \
           FLAG_SET_DEFAULT(flag, false);                                                                    \
-          stringStream ss;                                                                                  \
-          deps_string(ss, dep0, ##__VA_ARGS__);                                                             \
-          warning("Cannot enable " #flag ", it's missing dependent extension(s) %s", ss.as_string(true));   \
           /* Sync CPU features with flags */                                                                \
           disable_feature();                                                                                \
+          stringStream ss;                                                                                  \
+          ss.print("missing dependent extension(s): ");                                                     \
+          deps_string(ss, dep0, ##__VA_ARGS__);                                                             \
+          log_disabled(ss.as_string(true));                                                                 \
         }                                                                                                   \
       } else {                                                                                              \
         /* Sync CPU features with flags */                                                                  \
@@ -106,11 +102,12 @@ class VM_Version : public Abstract_VM_Version {
           disable_feature();                                                                                \
         } else if (!deps_all_enabled(dep0, ##__VA_ARGS__)) {                                                \
           FLAG_SET_DEFAULT(flag, false);                                                                    \
-          stringStream ss;                                                                                  \
-          deps_string(ss, dep0, ##__VA_ARGS__);                                                             \
-          warning("Cannot enable " #flag ", it's missing dependent extension(s) %s", ss.as_string(true));   \
           /* Sync CPU features with flags */                                                                \
           disable_feature();                                                                                \
+          stringStream ss;                                                                                  \
+          ss.print("missing dependent extension(s): ");                                                     \
+          deps_string(ss, dep0, ##__VA_ARGS__);                                                             \
+          log_disabled(ss.as_string(true));                                                                 \
         }                                                                                                   \
       }                                                                                                     \
   }                                                                                                         \
@@ -135,13 +132,13 @@ class VM_Version : public Abstract_VM_Version {
       return RVExtFeatures::current()->support_feature(_cpu_feature_index);
     }
     void enable_feature(int64_t value = 0) {
-      RVFeatureValue::enable_feature(value);
       RVExtFeatures::current()->set_feature(_cpu_feature_index);
     }
     void disable_feature() {
-      RVFeatureValue::disable_feature();
       RVExtFeatures::current()->clear_feature(_cpu_feature_index);
     }
+    void log_enabled();
+    void log_disabled(const char* reason);
 
    protected:
     bool deps_all_enabled(RVExtFeatureValue* dep0, ...) {
@@ -196,21 +193,22 @@ class VM_Version : public Abstract_VM_Version {
   };
 
   class RVNonExtFeatureValue : public RVFeatureValue {
-    bool _enabled;
+    static const int64_t DEFAULT_VALUE = -1;
+    int64_t _value;
+
    public:
     RVNonExtFeatureValue(const char* pretty, int linux_bit_num, bool fstring) :
       RVFeatureValue(pretty, linux_bit_num, fstring),
-      _enabled(false) {
+      _value(DEFAULT_VALUE) {
     }
-    bool enabled()               { return _enabled; }
-    void enable_feature(int64_t value = 0) {
-      RVFeatureValue::enable_feature(value);
-      _enabled = true;
+    bool enabled() { return _value != DEFAULT_VALUE; }
+    void enable_feature(int64_t value) {
+      assert(value != DEFAULT_VALUE, "Sanity");
+      _value = value;
     }
-    void disable_feature() {
-      RVFeatureValue::disable_feature();
-      _enabled = false;
-    }
+    void disable_feature() { _value = DEFAULT_VALUE; }
+    int64_t value() { return _value; }
+    void log_enabled();
   };
 
  public:
@@ -503,7 +501,7 @@ private:
 
   constexpr static bool supports_stack_watermark_barrier() { return true; }
 
-  constexpr static bool supports_recursive_lightweight_locking() { return true; }
+  constexpr static bool supports_recursive_fast_locking() { return true; }
 
   constexpr static bool supports_secondary_supers_table() { return true; }
 

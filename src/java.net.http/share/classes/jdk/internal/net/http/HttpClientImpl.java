@@ -60,6 +60,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutionException;
@@ -75,6 +76,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -96,6 +98,7 @@ import jdk.internal.net.http.common.OperationTrackers.Trackable;
 import jdk.internal.net.http.common.OperationTrackers.Tracker;
 import jdk.internal.net.http.common.Utils.SafeExecutor;
 import jdk.internal.net.http.common.Utils.SafeExecutorService;
+import jdk.internal.net.http.common.Utils.UseVTForSelector;
 import jdk.internal.net.http.websocket.BuilderImpl;
 
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
@@ -123,6 +126,16 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     // Defaults to value used for HTTP/1 Keep-Alive Timeout. Can be overridden by jdk.httpclient.keepalive.timeout.h2 property.
     static final long IDLE_CONNECTION_TIMEOUT_H2 = getTimeoutProp("jdk.httpclient.keepalive.timeout.h2", KEEP_ALIVE_TIMEOUT);
     static final long IDLE_CONNECTION_TIMEOUT_H3 = getTimeoutProp("jdk.httpclient.keepalive.timeout.h3", IDLE_CONNECTION_TIMEOUT_H2);
+
+    static final UseVTForSelector USE_VT_FOR_SELECTOR =
+        Utils.useVTForSelector("jdk.internal.httpclient.tcp.selector.useVirtualThreads", "default");
+    private static boolean useVtForSelector() {
+        return switch (USE_VT_FOR_SELECTOR) {
+            case ALWAYS -> true;
+            case NEVER -> false;
+            default -> true;
+        };
+    }
 
     // Define the default factory as a static inner class
     // that embeds all the necessary logic to avoid
@@ -291,7 +304,6 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         if (pending.cf.isDone()) return res;
 
         var client = pending.client;
-        var cf = pending.cf;
         var id = pending.id;
         boolean added = client.pendingRequests.add(pending);
         // this may immediately remove `pending` from the set is the cf is already completed
@@ -340,6 +352,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     private final boolean isDefaultExecutor;
     private final SSLContext sslContext;
     private final SSLParameters sslParams;
+    private final Thread selmgrThread;
     private final SelectorManager selmgr;
     private final FilterFactory filters;
     private final Http2ClientImpl client2;
@@ -507,7 +520,11 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             // unlikely
             throw new UncheckedIOException(e);
         }
-        selmgr.setDaemon(true);
+        selmgrThread = useVtForSelector()
+                ? Thread.ofVirtual().name("HttpClient-" + id + "-SelectorManager")
+                .inheritInheritableThreadLocals(false).unstarted(selmgr)
+                : Thread.ofPlatform().name("HttpClient-" + id + "-SelectorManager")
+                .inheritInheritableThreadLocals(false).daemon().unstarted(selmgr);
         filters = new FilterFactory();
         initFilters();
         assert facadeRef.get() != null;
@@ -526,7 +543,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
 
     private void start() {
         try {
-            selmgr.start();
+            selmgrThread.start();
         } catch (Throwable t) {
             isStarted.set(true);
             throw t;
@@ -633,7 +650,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     @Override
     public boolean awaitTermination(Duration duration) throws InterruptedException {
         // Implicit NPE will be thrown if duration is null
-        return selmgr.join(duration);
+        return selmgrThread.join(duration);
     }
 
     @Override
@@ -925,7 +942,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     }
 
     boolean isSelectorThread() {
-        return Thread.currentThread() == selmgr;
+        return Thread.currentThread() == selmgrThread;
     }
 
     AltServicesRegistry registry() { return registry; }
@@ -974,6 +991,12 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             }
             throw ie;
         } catch (ExecutionException e) {
+            // Exceptions are often thrown from asynchronous code, and the
+            // stacktrace may not always contain the application classes. That
+            // makes it difficult to trace back to the application code which
+            // invoked the `HttpClient`. Here we instantiate/recreate the
+            // exceptions to capture the application's calling code in the
+            // stacktrace of the thrown exception.
             final Throwable throwable = e.getCause();
             final String msg = throwable.getMessage();
 
@@ -1104,6 +1127,8 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             res = registerPending(pending, res);
 
             if (exchangeExecutor != null) {
+                // We're called by `sendAsync()` - make sure we translate exceptions
+                res = translateSendAsyncExecFailure(res);
                 // makes sure that any dependent actions happen in the CF default
                 // executor. This is only needed for sendAsync(...), when
                 // exchangeExecutor is non-null.
@@ -1121,8 +1146,33 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         }
     }
 
+    /**
+     * {@return a new {@code CompletableFuture} wrapping the
+     * {@link #sendAsync(HttpRequest, BodyHandler, PushPromiseHandler, Executor) sendAsync()}
+     * execution failures with, as per specification, {@link IOException}, if necessary}
+     */
+    private static <T> CompletableFuture<HttpResponse<T>> translateSendAsyncExecFailure(
+            CompletableFuture<HttpResponse<T>> responseFuture) {
+            return responseFuture
+                    .handle((response, exception) -> {
+                        if (exception == null) {
+                            return MinimalFuture.completedFuture(response);
+                        }
+                        var unwrappedException = Utils.getCompletionCause(exception);
+                        // Except `Error` and `CancellationException`, wrap failures inside an `IOException`.
+                        // This is required to comply with the specification of `HttpClient::sendAsync`.
+                        var translatedException = unwrappedException instanceof Error
+                                || unwrappedException instanceof CancellationException
+                                || unwrappedException instanceof IOException
+                                ? unwrappedException
+                                : new IOException(unwrappedException);
+                        return MinimalFuture.<HttpResponse<T>>failedFuture(translatedException);
+                    })
+                    .thenCompose(Function.identity());
+    }
+
     // Main loop for this client's selector
-    private static final class SelectorManager extends Thread {
+    private static final class SelectorManager implements Runnable {
 
         // For testing purposes we have an internal System property that
         // can control the frequency at which the selector manager will wake
@@ -1161,9 +1211,6 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         private final ReentrantLock lock = new ReentrantLock();
 
         SelectorManager(HttpClientImpl ref) throws IOException {
-            super(null, null,
-                  "HttpClient-" + ref.id + "-SelectorManager",
-                  0, false);
             owner = ref;
             debug = ref.debug;
             debugtimeout = ref.debugtimeout;
@@ -1186,7 +1233,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         }
 
         void eventUpdated(AsyncEvent e) throws ClosedChannelException {
-            if (Thread.currentThread() == this) {
+            if (owner.isSelectorThread()) {
                 SelectionKey key = e.channel().keyFor(selector);
                 if (key != null && key.isValid()) {
                     SelectorAttachment sa = (SelectorAttachment) key.attachment();
@@ -1278,6 +1325,10 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                 }
             }
             if (!inSelectorThread) selector.wakeup();
+        }
+
+        String getName() {
+            return owner.selmgrThread.getName();
         }
 
         // Only called by the selector manager thread

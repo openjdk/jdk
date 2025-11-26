@@ -28,8 +28,10 @@ import java.io.IOException;
 import java.nio.file.CopyOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.NotLinkException;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
@@ -99,6 +101,19 @@ public final class FileUtils {
         }
     }
 
+    public static Path readSymlinkTargetRecursive(Path symlink) throws IOException, NotLinkException {
+        try {
+            var target = Files.readSymbolicLink(symlink);
+            if (Files.isSymbolicLink(target)) {
+                return readSymlinkTargetRecursive(target);
+            } else {
+                return target;
+            }
+        } catch (NotLinkException ex) {
+            throw ex;
+        }
+    }
+
     private static boolean isPathMatch(Path what, List<Path> paths) {
         return paths.stream().anyMatch(what::endsWith);
     }
@@ -106,6 +121,17 @@ public final class FileUtils {
     private static record CopyAction(Path src, Path dest) {
 
         void apply(CopyOption... options) throws IOException {
+            if (List.of(options).contains(StandardCopyOption.REPLACE_EXISTING)) {
+                // They requested copying with replacing the existing content.
+                if (src == null && Files.isRegularFile(dest)) {
+                    // This copy action creates a directory, but a file at the same path already exists, so delete it.
+                    Files.deleteIfExists(dest);
+                } else if (src != null && Files.isDirectory(dest)) {
+                    // This copy action copies a file, but a directory at the same path exists already, so delete it.
+                    deleteRecursive(dest);
+                }
+            }
+
             if (src == null) {
                 Files.createDirectories(dest);
             } else {
