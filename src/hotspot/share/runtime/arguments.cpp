@@ -1482,6 +1482,7 @@ void Arguments::set_conservative_max_heap_alignment() {
                                           os::vm_allocation_granularity(),
                                           os::max_page_size(),
                                           GCArguments::compute_heap_alignment());
+  assert(is_power_of_2(_conservative_max_heap_alignment), "Expected to be a power-of-2");
 }
 
 jint Arguments::set_ergonomics_flags() {
