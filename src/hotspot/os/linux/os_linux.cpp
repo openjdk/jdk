@@ -5163,7 +5163,7 @@ int os::get_core_path(char* buffer, size_t bufferSize) {
 
     if (core_pattern[0] == '|') {
       written = jio_snprintf(buffer, bufferSize,
-                             "\"%s\" (or dumping to %s/core.%d)",
+                             "\"%s\" (alternatively, falling back to %s/core.%d)",
                              &core_pattern[1], p, current_process_id());
     } else if (pid_pos != nullptr) {
       *pid_pos = '\0';
