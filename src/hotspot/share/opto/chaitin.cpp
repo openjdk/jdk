@@ -1471,14 +1471,14 @@ static OptoReg::Name find_first_set(LRG& lrg, RegMask& mask) {
   return assigned;
 }
 
-OptoReg::Name PhaseChaitin::select_bias_lrg_color(LRG &lrg) {
+OptoReg::Name PhaseChaitin::select_bias_lrg_color(LRG& lrg) {
   uint bias_lrg1_idx = _lrg_map.find(lrg._copy_bias);
   uint bias_lrg2_idx = _lrg_map.find(lrg._copy_bias2);
 
   // If bias_lrg1 has a color
   if (bias_lrg1_idx != 0 && !_ifg->_yanked->test(bias_lrg1_idx)) {
     OptoReg::Name reg = lrgs(bias_lrg1_idx).reg();
-    //  And it is legal for lrg
+    //  and it is legal for lrg
     if (is_legal_reg(lrg, reg)) {
       return reg;
     }
@@ -1487,7 +1487,7 @@ OptoReg::Name PhaseChaitin::select_bias_lrg_color(LRG &lrg) {
   // If bias_lrg2 has a color
   if (bias_lrg2_idx != 0 && !_ifg->_yanked->test(bias_lrg2_idx)) {
     OptoReg::Name reg = lrgs(bias_lrg2_idx).reg();
-    //  And it is legal for lrg
+    //  and it is legal for lrg
     if (is_legal_reg(lrg, reg)) {
       return reg;
     }
@@ -1495,11 +1495,10 @@ OptoReg::Name PhaseChaitin::select_bias_lrg_color(LRG &lrg) {
 
   uint bias_lrg_idx = 0;
   if (bias_lrg1_idx != 0 && bias_lrg2_idx != 0) {
-    // Since both the bias live ranges are not part of IFG yet,
-    // hence constrain the definition mask with the bias
-    // live range with minimum degree of freedom, this will
-    // enhance the chances of register sharing once the bias
-    // live range becomes the part of IFG.
+    // Since none of the bias live ranges are part of the IFG yet, constrain the
+    // definition mask with the bias live range with the least degrees of
+    // freedom. This will increase the chances of register sharing once the bias
+    // live range becomes part of the IFG.
     lrgs(bias_lrg1_idx).compute_set_mask_size();
     lrgs(bias_lrg2_idx).compute_set_mask_size();
     bias_lrg_idx = lrgs(bias_lrg1_idx).degrees_of_freedom() >
@@ -1512,8 +1511,8 @@ OptoReg::Name PhaseChaitin::select_bias_lrg_color(LRG &lrg) {
     bias_lrg_idx = bias_lrg2_idx;
   }
 
-  // RegisterMask with offset sets all the mask bits before offset.
-  // It's mainly used for allocation from stack slots. Constrain the
+  // Register masks with offset excludes all mask bits before the offset.
+  // Such masks are mainly used for allocation from stack slots. Constrain the
   // register mask of definition live range using bias mask only if
   // both masks have zero offset.
   if (bias_lrg_idx != 0 && !lrg.mask().is_offset() &&
@@ -1696,7 +1695,7 @@ uint PhaseChaitin::Select( ) {
         }
       }
 
-      // For commutative operation, def allocation can also be
+      // For commutative operations, def allocation can also be
       // biased towards LRG of second input's def.
       if (Matcher::is_register_biasing_candidate(mdef, 2)) {
         Node* in2 = mdef->in(mdef->operand_index(2));

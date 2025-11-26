@@ -2659,15 +2659,15 @@ bool Matcher::is_register_biasing_candidate(const MachNode* mdef,
   }
 
   // Complex memory operand covers multiple incoming edges needed for
-  // address computation, biasing def towards any address component will not
-  // result into NDD demotion by assembler.
+  // address computation. Biasing def towards any address component will not
+  // result in NDD demotion by assembler.
   if (mdef->operand_num_edges(oper_index) != 1) {
     assert(!is_ndd_demotable(mdef), "%s", mdef->Name());
     return false;
   }
 
   // Demotion candidate must be register mask compatible with definition.
-  const RegMask &oper_mask = mdef->in_RegMask(mdef->operand_index(oper_index));
+  const RegMask& oper_mask = mdef->in_RegMask(mdef->operand_index(oper_index));
   if (!oper_mask.overlap(mdef->out_RegMask())) {
     assert(!is_demotion_candidate(mdef), "%s", mdef->Name());
     return false;
@@ -2688,7 +2688,7 @@ bool Matcher::is_register_biasing_candidate(const MachNode* mdef,
   case 2:
     return is_ndd_demotable_commutative(mdef);
 
-  // Current scheme only selects up to two biaising candidates
+  // Current scheme only selects up to two biasing candidates
   default:
     assert(false, "unhandled operand index: %s", mdef->Name());
     break;
