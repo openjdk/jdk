@@ -97,7 +97,8 @@ bool SuspendResumeManager::suspend(bool register_vthread_SR) {
   if (_target == self) {
     // If target is the current thread we can bypass the handshake machinery
     // and just suspend directly.
-    assert(!self->is_in_VTMS_transition(), "no suspend allowed in VTMS transition");
+    // Self-suspending while in transition can cause deadlocks.
+    assert(!self->is_in_vthread_transition(), "no self-suspend allowed in transition");
     // The vthread() oop must only be accessed before state is set to _thread_blocked.
     int64_t id = java_lang_Thread::thread_id(_target->vthread());
     ThreadBlockInVM tbivm(self);

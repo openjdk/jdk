@@ -260,7 +260,7 @@
   nonstatic_field(JavaThread,                  _om_cache,                                     OMCache)                               \
   nonstatic_field(JavaThread,                  _cont_entry,                                   ContinuationEntry*)                    \
   nonstatic_field(JavaThread,                  _unlocked_inflated_monitor,                    ObjectMonitor*)                        \
-  nonstatic_field(JavaThread,                  _is_in_VTMS_transition,                        bool)                                  \
+  nonstatic_field(JavaThread,                  _is_in_vthread_transition,                     bool)                                  \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_disable_suspend,                           bool))                                 \
                                                                                                                                      \
   nonstatic_field(ContinuationEntry,           _pin_count,                                    uint32_t)                              \
@@ -436,7 +436,7 @@
   JFR_ONLY(nonstatic_field(Thread,          _jfr_thread_local,                                JfrThreadLocal))                       \
                                                                                                                                      \
   static_field(java_lang_Thread,            _tid_offset,                                      int)                                   \
-  static_field(java_lang_Thread,            _is_in_VTMS_transition_offset,                    int)                                   \
+  static_field(java_lang_Thread,            _is_in_vthread_transition_offset,                 int)                                   \
   JFR_ONLY(static_field(java_lang_Thread,   _jfr_epoch_offset,                                int))                                  \
                                                                                                                                      \
   JFR_ONLY(nonstatic_field(JfrThreadLocal,  _vthread_id,                                      traceid))                              \

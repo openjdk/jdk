@@ -698,7 +698,7 @@ JvmtiEnvBase::check_and_skip_hidden_frames(bool is_in_VTMS_transition, javaVFram
 
 javaVFrame*
 JvmtiEnvBase::check_and_skip_hidden_frames(JavaThread* jt, javaVFrame* jvf) {
-  jvf = check_and_skip_hidden_frames(jt->is_in_VTMS_transition(), jvf);
+  jvf = check_and_skip_hidden_frames(jt->is_in_vthread_transition(), jvf);
   return jvf;
 }
 
@@ -1693,7 +1693,7 @@ private:
   // jt->jvmti_vthread() for VTMS transition protocol.
   void correct_jvmti_thread_states() {
     for (JavaThread* jt : ThreadsListHandle()) {
-      if (jt->is_in_VTMS_transition()) {
+      if (jt->is_in_vthread_transition()) {
         continue; // no need in JvmtiThreadState correction below if in transition
       }
       correct_jvmti_thread_state(jt);
@@ -2035,7 +2035,7 @@ JvmtiHandshake::execute(JvmtiUnitedHandshakeClosure* hs_cl, ThreadsListHandle* t
   bool is_virtual = java_lang_VirtualThread::is_instance(target_h());
   bool self = target_jt == current;
 
-  assert(!Continuations::enabled() || self || !is_virtual || current->is_VTMS_transition_disabler(), "sanity check");
+  assert(!Continuations::enabled() || self || !is_virtual || current->is_vthread_transition_disabler(), "sanity check");
 
   hs_cl->set_target_jt(target_jt);   // can be needed in the virtual thread case
   hs_cl->set_is_virtual(is_virtual); // can be needed in the virtual thread case
@@ -2609,7 +2609,7 @@ PrintStackTraceClosure::do_thread_impl(Thread *target) {
                    "is_VTMS_transition_disabler: %d, is_in_VTMS_transition = %d\n",
                    tname, java_thread->name(), java_thread->is_exiting(),
                    java_thread->is_suspended(), java_thread->is_carrier_thread_suspended(), is_vt_suspended,
-                   java_thread->is_VTMS_transition_disabler(), java_thread->is_in_VTMS_transition());
+                   java_thread->is_vthread_transition_disabler(), java_thread->is_in_vthread_transition());
 
   if (java_thread->has_last_Java_frame()) {
     RegisterMap reg_map(java_thread,

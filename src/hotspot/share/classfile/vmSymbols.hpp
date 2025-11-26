@@ -497,8 +497,8 @@ class SerializeClosure;
   template(java_lang_Boolean_signature,               "Ljava/lang/Boolean;")                      \
   template(url_code_signer_array_void_signature,      "(Ljava/net/URL;[Ljava/security/CodeSigner;)V") \
   template(jvmti_thread_state_name,                   "jvmti_thread_state")                       \
-  template(VTMS_transition_disable_count_name,        "VTMS_transition_disable_count")            \
-  template(is_in_VTMS_transition_name,                "is_in_VTMS_transition")                    \
+  template(vthread_transition_disable_count_name,     "vthread_transition_disable_count")         \
+  template(is_in_vthread_transition_name,             "is_in_vthread_transition")                 \
   template(module_entry_name,                         "module_entry")                             \
   template(resolved_references_name,                  "<resolved_references>")                    \
   template(init_lock_name,                            "<init_lock>")                              \

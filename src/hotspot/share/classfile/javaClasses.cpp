@@ -1684,8 +1684,8 @@ int java_lang_Thread::_name_offset;
 int java_lang_Thread::_contextClassLoader_offset;
 int java_lang_Thread::_eetop_offset;
 int java_lang_Thread::_jvmti_thread_state_offset;
-int java_lang_Thread::_VTMS_transition_disable_count_offset;
-int java_lang_Thread::_is_in_VTMS_transition_offset;
+int java_lang_Thread::_vthread_transition_disable_count_offset;
+int java_lang_Thread::_is_in_vthread_transition_offset;
 int java_lang_Thread::_interrupted_offset;
 int java_lang_Thread::_interruptLock_offset;
 int java_lang_Thread::_tid_offset;
@@ -1745,33 +1745,33 @@ void java_lang_Thread::set_jvmti_thread_state(oop java_thread, JvmtiThreadState*
   java_thread->address_field_put(_jvmti_thread_state_offset, (address)state);
 }
 
-int java_lang_Thread::VTMS_transition_disable_count(oop java_thread) {
-  jint* addr = java_thread->field_addr<jint>(_VTMS_transition_disable_count_offset);
+int java_lang_Thread::vthread_transition_disable_count(oop java_thread) {
+  jint* addr = java_thread->field_addr<jint>(_vthread_transition_disable_count_offset);
   return AtomicAccess::load(addr);
 }
 
-void java_lang_Thread::inc_VTMS_transition_disable_count(oop java_thread) {
-  assert(VTMSTransition_lock->owned_by_self(), "Must be locked");
-  jint* addr = java_thread->field_addr<jint>(_VTMS_transition_disable_count_offset);
+void java_lang_Thread::inc_vthread_transition_disable_count(oop java_thread) {
+  assert(VThreadTransition_lock->owned_by_self(), "Must be locked");
+  jint* addr = java_thread->field_addr<jint>(_vthread_transition_disable_count_offset);
   int val = AtomicAccess::load(addr);
   AtomicAccess::store(addr, val + 1);
 }
 
-void java_lang_Thread::dec_VTMS_transition_disable_count(oop java_thread) {
-  assert(VTMSTransition_lock->owned_by_self(), "Must be locked");
-  jint* addr = java_thread->field_addr<jint>(_VTMS_transition_disable_count_offset);
+void java_lang_Thread::dec_vthread_transition_disable_count(oop java_thread) {
+  assert(VThreadTransition_lock->owned_by_self(), "Must be locked");
+  jint* addr = java_thread->field_addr<jint>(_vthread_transition_disable_count_offset);
   int val = AtomicAccess::load(addr);
   AtomicAccess::store(addr, val - 1);
 }
 
-bool java_lang_Thread::is_in_VTMS_transition(oop java_thread) {
-  jboolean* addr = java_thread->field_addr<jboolean>(_is_in_VTMS_transition_offset);
+bool java_lang_Thread::is_in_vthread_transition(oop java_thread) {
+  jboolean* addr = java_thread->field_addr<jboolean>(_is_in_vthread_transition_offset);
   return AtomicAccess::load(addr);
 }
 
-void java_lang_Thread::set_is_in_VTMS_transition(oop java_thread, bool val) {
-  assert(is_in_VTMS_transition(java_thread) != val, "already %s transition", val ? "inside" : "outside");
-  jboolean* addr = java_thread->field_addr<jboolean>(_is_in_VTMS_transition_offset);
+void java_lang_Thread::set_is_in_vthread_transition(oop java_thread, bool val) {
+  assert(is_in_vthread_transition(java_thread) != val, "already %s transition", val ? "inside" : "outside");
+  jboolean* addr = java_thread->field_addr<jboolean>(_is_in_vthread_transition_offset);
   AtomicAccess::store(addr, (jboolean)val);
 }
 

@@ -732,14 +732,14 @@ public:
   void wait_for_object_deoptimization();
 
 private:
-  bool _is_in_VTMS_transition;                    // thread is in virtual thread mount state transition
-  DEBUG_ONLY(bool _is_VTMS_transition_disabler;)  // thread currently disabled VTMS transitions
+  bool _is_in_vthread_transition;                    // thread is in virtual thread mount state transition
+  DEBUG_ONLY(bool _is_vthread_transition_disabler;)  // thread currently disabled vthread transitions
 public:
-  bool is_in_VTMS_transition() const;
-  void set_is_in_VTMS_transition(bool val);
+  bool is_in_vthread_transition() const;
+  void set_is_in_vthread_transition(bool val);
 #ifdef ASSERT
-  bool is_VTMS_transition_disabler() const       { return _is_VTMS_transition_disabler; }
-  void set_is_VTMS_transition_disabler(bool val);
+  bool is_vthread_transition_disabler() const       { return _is_vthread_transition_disabler; }
+  void set_is_vthread_transition_disabler(bool val);
 #endif
 
 #if INCLUDE_JVMTI
@@ -757,10 +757,10 @@ public:
   void toggle_is_in_java_upcall()                { _is_in_java_upcall = !_is_in_java_upcall; };
 
   // Temporarily skip posting JVMTI events for safety reasons when executions is in a critical section:
-  // - is in a VTMS transition (_is_in_VTMS_transition)
+  // - is in a vthread transition (_is_in_vthread_transition)
   // - is in an interruptLock or similar critical section (_is_disable_suspend)
   // - JVMTI is making a Java upcall (_is_in_java_upcall)
-  bool should_hide_jvmti_events() const          { return _is_in_VTMS_transition || _is_disable_suspend || _is_in_java_upcall; }
+  bool should_hide_jvmti_events() const          { return _is_in_vthread_transition || _is_disable_suspend || _is_in_java_upcall; }
 
   bool on_monitor_waited_event()             { return _on_monitor_waited_event; }
   void set_on_monitor_waited_event(bool val) { _on_monitor_waited_event = val; }
@@ -921,7 +921,7 @@ public:
   static ByteSize preempt_alternate_return_offset() { return byte_offset_of(JavaThread, _preempt_alternate_return); }
   DEBUG_ONLY(static ByteSize interp_at_preemptable_vmcall_cnt_offset() { return byte_offset_of(JavaThread, _interp_at_preemptable_vmcall_cnt); })
   static ByteSize unlocked_inflated_monitor_offset() { return byte_offset_of(JavaThread, _unlocked_inflated_monitor); }
-  static ByteSize is_in_VTMS_transition_offset()     { return byte_offset_of(JavaThread, _is_in_VTMS_transition); }
+  static ByteSize is_in_vthread_transition_offset()     { return byte_offset_of(JavaThread, _is_in_vthread_transition); }
 
 #if INCLUDE_JVMTI
   static ByteSize is_disable_suspend_offset()        { return byte_offset_of(JavaThread, _is_disable_suspend); }

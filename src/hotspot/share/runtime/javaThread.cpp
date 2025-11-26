@@ -497,8 +497,8 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _handshake(this),
   _suspend_resume_manager(this, &_handshake._lock),
 
-  _is_in_VTMS_transition(false),
-  DEBUG_ONLY(_is_VTMS_transition_disabler(false) COMMA)
+  _is_in_vthread_transition(false),
+  DEBUG_ONLY(_is_vthread_transition_disabler(false) COMMA)
 
   _popframe_preserved_args(nullptr),
   _popframe_preserved_args_size(0),
@@ -1147,18 +1147,18 @@ void JavaThread::send_async_exception(JavaThread* target, oop java_throwable) {
   Handshake::execute(&iaeh, target);
 }
 
-bool JavaThread::is_in_VTMS_transition() const {
-  return AtomicAccess::load(&_is_in_VTMS_transition);
+bool JavaThread::is_in_vthread_transition() const {
+  return AtomicAccess::load(&_is_in_vthread_transition);
 }
 
-void JavaThread::set_is_in_VTMS_transition(bool val) {
-  assert(is_in_VTMS_transition() != val, "already %s transition", val ? "inside" : "outside");
-  AtomicAccess::store(&_is_in_VTMS_transition, val);
+void JavaThread::set_is_in_vthread_transition(bool val) {
+  assert(is_in_vthread_transition() != val, "already %s transition", val ? "inside" : "outside");
+  AtomicAccess::store(&_is_in_vthread_transition, val);
 }
 
 #ifdef ASSERT
-void JavaThread::set_is_VTMS_transition_disabler(bool val) {
-  _is_VTMS_transition_disabler = val;
+void JavaThread::set_is_vthread_transition_disabler(bool val) {
+  _is_vthread_transition_disabler = val;
 }
 #endif
 
@@ -1169,8 +1169,8 @@ void JavaThread::set_is_VTMS_transition_disabler(bool val) {
 //   - Target thread will not enter any new monitors.
 //
 bool JavaThread::java_suspend(bool register_vthread_SR) {
-  // Suspending a JavaThread in VTMS transition or disabling VTMS transitions can cause deadlocks.
-  assert(!is_VTMS_transition_disabler(), "no suspend allowed for VTMS transition disablers");
+  // Suspending a vthread transition disabler can cause deadlocks.
+  assert(!is_vthread_transition_disabler(), "no suspend allowed for vthread transition disablers");
 
   guarantee(Thread::is_JavaThread_protected(/* target */ this),
             "target JavaThread is not protected in calling context.");

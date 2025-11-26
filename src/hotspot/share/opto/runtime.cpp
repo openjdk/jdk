@@ -557,14 +557,14 @@ JRT_ENTRY(void, OptoRuntime::vthread_end_first_transition_C(oopDesc* vt, jboolea
 JRT_END
 
 JRT_ENTRY(void, OptoRuntime::vthread_start_final_transition_C(oopDesc* vt, jboolean is_mount, JavaThread* current))
-  java_lang_Thread::set_is_in_VTMS_transition(vt, false);
-  current->set_is_in_VTMS_transition(false);
+  java_lang_Thread::set_is_in_vthread_transition(vt, false);
+  current->set_is_in_vthread_transition(false);
   MountUnmountDisabler::start_transition(current, vt, false /*is_mount */, true /*is_thread_end*/);
 JRT_END
 
 JRT_ENTRY(void, OptoRuntime::vthread_start_transition_C(oopDesc* vt, jboolean is_mount, JavaThread* current))
-  java_lang_Thread::set_is_in_VTMS_transition(vt, false);
-  current->set_is_in_VTMS_transition(false);
+  java_lang_Thread::set_is_in_vthread_transition(vt, false);
+  current->set_is_in_vthread_transition(false);
   MountUnmountDisabler::start_transition(current, vt, is_mount, false /*is_thread_end*/);
 JRT_END
 

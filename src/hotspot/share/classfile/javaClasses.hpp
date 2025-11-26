@@ -375,8 +375,8 @@ class java_lang_Class : AllStatic {
 
 #define THREAD_INJECTED_FIELDS(macro)                                  \
   macro(java_lang_Thread, jvmti_thread_state, intptr_signature, false) \
-  macro(java_lang_Thread, VTMS_transition_disable_count, int_signature, false) \
-  macro(java_lang_Thread, is_in_VTMS_transition, bool_signature, false) \
+  macro(java_lang_Thread, vthread_transition_disable_count, int_signature, false) \
+  macro(java_lang_Thread, is_in_vthread_transition, bool_signature, false) \
   JFR_ONLY(macro(java_lang_Thread, jfr_epoch, short_signature, false))
 
 class java_lang_Thread : AllStatic {
@@ -390,8 +390,8 @@ class java_lang_Thread : AllStatic {
   static int _contextClassLoader_offset;
   static int _eetop_offset;
   static int _jvmti_thread_state_offset;
-  static int _VTMS_transition_disable_count_offset;
-  static int _is_in_VTMS_transition_offset;
+  static int _vthread_transition_disable_count_offset;
+  static int _is_in_vthread_transition_offset;
   static int _interrupted_offset;
   static int _interruptLock_offset;
   static int _tid_offset;
@@ -445,14 +445,14 @@ class java_lang_Thread : AllStatic {
   static JvmtiThreadState* jvmti_thread_state(oop java_thread);
   static void set_jvmti_thread_state(oop java_thread, JvmtiThreadState* state);
 
-  static int  VTMS_transition_disable_count(oop java_thread);
-  static void inc_VTMS_transition_disable_count(oop java_thread);
-  static void dec_VTMS_transition_disable_count(oop java_thread);
-  static int  VTMS_transition_disable_count_offset() { return _VTMS_transition_disable_count_offset; }
+  static int  vthread_transition_disable_count(oop java_thread);
+  static void inc_vthread_transition_disable_count(oop java_thread);
+  static void dec_vthread_transition_disable_count(oop java_thread);
+  static int  vthread_transition_disable_count_offset() { return _vthread_transition_disable_count_offset; }
 
-  static bool is_in_VTMS_transition(oop java_thread);
-  static void set_is_in_VTMS_transition(oop java_thread, bool val);
-  static int  is_in_VTMS_transition_offset() { return _is_in_VTMS_transition_offset; }
+  static bool is_in_vthread_transition(oop java_thread);
+  static void set_is_in_vthread_transition(oop java_thread, bool val);
+  static int  is_in_vthread_transition_offset() { return _is_in_vthread_transition_offset; }
 
   // Clear all scoped value bindings on error
   static void clear_scopedValueBindings(oop java_thread);

@@ -66,7 +66,7 @@ class UnmountBeginMark : public StackObj {
  public:
   UnmountBeginMark(JavaThread* t) :
     _vthread(t, t->vthread()), _current(t), _result(freeze_pinned_native), _failed(false) {
-    assert(!_current->is_in_VTMS_transition(), "must be");
+    assert(!_current->is_in_vthread_transition(), "must be");
 
     MountUnmountDisabler::start_transition(_current, _vthread(), false /*is_mount*/, false /*is_thread_start*/);
 
@@ -87,7 +87,7 @@ class UnmountBeginMark : public StackObj {
   }
   ~UnmountBeginMark() {
     assert(!_current->is_suspended(), "must be");
-    assert(_current->is_in_VTMS_transition(), "must be");
+    assert(_current->is_in_vthread_transition(), "must be");
 
     if (_result != freeze_ok) {
       // Undo transition
@@ -100,7 +100,7 @@ class UnmountBeginMark : public StackObj {
 
 #if INCLUDE_JVMTI
 static bool is_vthread_safe_to_preempt_for_jvmti(JavaThread* current) {
-  if (current->is_in_VTMS_transition()) {
+  if (current->is_in_vthread_transition()) {
     // We are at the end of a mount transition.
     return false;
   }

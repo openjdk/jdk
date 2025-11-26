@@ -2631,7 +2631,7 @@ intptr_t* ThawBase::handle_preempted_continuation(intptr_t* sp, Continuation::pr
   NOT_PRODUCT(int64_t tid = _thread->monitor_owner_id();)
 
   // Finish the VTMS transition.
-  assert(_thread->is_in_VTMS_transition(), "must be");
+  assert(_thread->is_in_vthread_transition(), "must be");
   bool is_vthread = Continuation::continuation_scope(_cont.continuation()) == java_lang_VirtualThread::vthread_scope();
   if (is_vthread) {
 #if INCLUDE_JVMTI
@@ -2641,8 +2641,8 @@ intptr_t* ThawBase::handle_preempted_continuation(intptr_t* sp, Continuation::pr
 #endif
     { // Faster version of MountUnmountDisabler::end_transition() to avoid
       // unnecessary extra instructions from jvmti_mount_end().
-      java_lang_Thread::set_is_in_VTMS_transition(_thread->vthread(), false);
-      _thread->set_is_in_VTMS_transition(false);
+      java_lang_Thread::set_is_in_vthread_transition(_thread->vthread(), false);
+      _thread->set_is_in_vthread_transition(false);
     }
   }
 

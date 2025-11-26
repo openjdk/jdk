@@ -31,7 +31,7 @@
 class JavaThread;
 
 class MountUnmountDisabler : public AnyObj {
-  static volatile int _global_start_transition_disable_count;
+  static volatile int _global_vthread_transition_disable_count;
   static volatile int _active_disablers;
   static bool    _exclusive_operation_ongoing;
 
@@ -41,22 +41,22 @@ class MountUnmountDisabler : public AnyObj {
   Handle _vthread;       // virtual thread to disable transitions for, no-op if it is a platform thread
 
   //DEBUG_ONLY(static void print_info();)
-  void VTMS_transition_disable_for_one();
-  void VTMS_transition_disable_for_all();
-  void VTMS_transition_enable_for_one();
-  void VTMS_transition_enable_for_all();
+  void disable_transition_for_one();
+  void disable_transition_for_all();
+  void enable_transition_for_one();
+  void enable_transition_for_all();
 
  public:
   MountUnmountDisabler(bool exlusive = false);
   MountUnmountDisabler(oop thread_oop);
   ~MountUnmountDisabler();
 
-  static int global_start_transition_disable_count();
-  static void inc_global_start_transition_disable_count();
-  static void dec_global_start_transition_disable_count();
+  static int global_vthread_transition_disable_count();
+  static void inc_global_vthread_transition_disable_count();
+  static void dec_global_vthread_transition_disable_count();
 
-  static volatile int* global_start_transition_disable_count_address() {
-    return &_global_start_transition_disable_count;
+  static volatile int* global_vthread_transition_disable_count_address() {
+    return &_global_vthread_transition_disable_count;
   }
 
   static bool exclusive_operation_ongoing();
