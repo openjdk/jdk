@@ -83,10 +83,16 @@ inline void JfrConcurrentHashtable<T, IdType, TableEntry>::iterate(Callback& cb)
 }
 
 template <typename T, typename IdType, template <typename, typename> class TableEntry>
-inline bool JfrConcurrentHashtable<T, IdType, TableEntry>::try_add(unsigned idx, TableEntry<T, IdType>* entry) {
+template <typename Callback>
+inline void JfrConcurrentHashtable<T, IdType, TableEntry>::iterate(TableEntry<T, IdType>* entry, Callback& cb) {
+  Bucket::iterate(entry, cb);
+}
+
+template <typename T, typename IdType, template <typename, typename> class TableEntry>
+inline bool JfrConcurrentHashtable<T, IdType, TableEntry>::try_add(unsigned idx, TableEntry<T, IdType>* entry, TableEntry<T, IdType>* next) {
   assert(entry != nullptr, "invariant");
-  assert(idx < _capacity, "invariant");
-  const bool added = bucket(idx).try_add(entry);
+  entry->set_next(next);
+  const bool added = bucket(idx).try_add(entry, next);
   if (added) {
     AtomicAccess::inc(&_size);
   }
@@ -156,20 +162,23 @@ inline TableEntry<T, IdType>* JfrConcurrentHashTableHost<T, IdType, TableEntry, 
   Entry* entry = nullptr;
   while (true) {
     assert(!lookup.found(), "invariant");
-    this->iterate(idx, lookup);
-    if (lookup.found()) {
-      if (entry != nullptr) {
-        _callback->on_unlink(entry);
-        delete entry;
+    Entry* next = this->head(idx);
+    if (next != nullptr) {
+      JfrConcurrentHashtable<T, IdType, TableEntry>::iterate(next, lookup);
+      if (lookup.found()) {
+        if (entry != nullptr) {
+          _callback->on_unlink(entry);
+          delete entry;
+        }
+        entry = lookup.result();
+        break;
       }
-      entry = lookup.result();
-      break;
     }
     if (entry == nullptr) {
       entry = new_entry(hash, data);
     }
     assert(entry != nullptr, "invariant");
-    if (this->try_add(idx, entry)) {
+    if (this->try_add(idx, entry, next)) {
       break;
     }
     // Concurrent insertion to this bucket. Retry.

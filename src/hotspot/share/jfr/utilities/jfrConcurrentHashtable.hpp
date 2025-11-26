@@ -82,16 +82,20 @@ class JfrConcurrentHashtable : public CHeapObj<mtTracing> {
     return hash & _mask;
   }
 
-  Bucket& bucket(unsigned i) { return _buckets[i]; }
-  Bucket* bucket_addr(unsigned i) { return &_buckets[i]; }
+  Bucket& bucket(unsigned idx) { return _buckets[idx]; }
+  Bucket* bucket_addr(unsigned idx) { return &_buckets[idx]; }
+  Entry* head(unsigned idx) { return bucket(idx).head(); }
 
-  bool try_add(unsigned idx, Entry* entry);
+  bool try_add(unsigned idx, Entry* entry, Entry* next);
 
   template <typename Callback>
   void iterate(Callback& cb);
 
   template <typename Callback>
   void iterate(unsigned idx, Callback& cb);
+
+  template <typename Callback>
+  static void iterate(Entry* entry, Callback& cb);
 
   void unlink_entry(Entry* entry);
 
