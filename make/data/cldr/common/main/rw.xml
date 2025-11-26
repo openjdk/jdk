@@ -167,18 +167,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<months>
 					<monthContext type="format">
 						<monthWidth type="abbreviated">
-							<month type="1">mut.</month>
-							<month type="2">gas.</month>
-							<month type="3">wer.</month>
-							<month type="4">mat.</month>
-							<month type="5">gic.</month>
-							<month type="6">kam.</month>
-							<month type="7">nya.</month>
-							<month type="8">kan.</month>
-							<month type="9">nze.</month>
-							<month type="10">ukw.</month>
-							<month type="11">ugu.</month>
-							<month type="12">uku.</month>
+							<month type="1">Mut.</month>
+							<month type="2">Gas.</month>
+							<month type="3">Wer.</month>
+							<month type="4">Mat.</month>
+							<month type="5">Gic.</month>
+							<month type="6">Kam.</month>
+							<month type="7">Nya.</month>
+							<month type="8">Kan.</month>
+							<month type="9">Nze.</month>
+							<month type="10">Ukw.</month>
+							<month type="11">Ugu.</month>
+							<month type="12">Uku.</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">Mutarama</month>
@@ -199,13 +199,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<days>
 					<dayContext type="format">
 						<dayWidth type="abbreviated">
-							<day type="sun">cyu.</day>
-							<day type="mon">mbe.</day>
-							<day type="tue">kab.</day>
-							<day type="wed">gtu.</day>
-							<day type="thu">kan.</day>
-							<day type="fri">gnu.</day>
-							<day type="sat">gnd.</day>
+							<day type="sun">Cyu.</day>
+							<day type="mon">Mbe.</day>
+							<day type="tue">Kab.</day>
+							<day type="wed">Gtu.</day>
+							<day type="thu">Kan.</day>
+							<day type="fri">Gnu.</day>
+							<day type="sat">Gnd.</day>
 						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">Ku cyumweru</day>
@@ -236,17 +236,75 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</quarters>
 				<dateTimeFormats>
 					<availableFormats>
+						<dateFormatItem id="Ed">E, d</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyM">MM-y G</dateFormatItem>
+						<dateFormatItem id="GyMd">dd-MM-y G</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, dd-MM-y G</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
 						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="Md">dd-MM</dateFormatItem>
+						<dateFormatItem id="MEd">E, dd-MM</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="yM">MM-y</dateFormatItem>
 						<dateFormatItem id="yMd">dd-MM-y</dateFormatItem>
+						<dateFormatItem id="yMEd">E, dd-MM-y</dateFormatItem>
+						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMd">d MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">E, d MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
+						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">y G–y G</greatestDifference>
+							<greatestDifference id="y">y–y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">MM-y G– MM-y G</greatestDifference>
+							<greatestDifference id="M">MM-y– MM-y G</greatestDifference>
+							<greatestDifference id="y">MM-y– MM-y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">dd-MM-y– dd-MM-y G</greatestDifference>
+							<greatestDifference id="G">dd-MM-y G – dd-MM-y G</greatestDifference>
+							<greatestDifference id="M">dd-MM-y – dd-MM-y G</greatestDifference>
+							<greatestDifference id="y">dd-MM-y – dd-MM-y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">E, dd-MM-y – E, dd-MM-y G</greatestDifference>
+							<greatestDifference id="G">E, dd-MM-y G–E, dd-MM-y G</greatestDifference>
+							<greatestDifference id="M">E, dd-MM-y – E, dd-MM-y G</greatestDifference>
+							<greatestDifference id="y">E, dd-MM-y – E, dd-MM-y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM–MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">d–d MMM y G</greatestDifference>
+							<greatestDifference id="G">d-MMM-y G–d-MMM-y G</greatestDifference>
+							<greatestDifference id="M">d MMM–d MMM y G</greatestDifference>
+							<greatestDifference id="y">d-MMM-y–d-MMM-y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">E, d MMM–d MMM y G</greatestDifference>
+							<greatestDifference id="G">E, d MMM y G–E, d MMM y G</greatestDifference>
+							<greatestDifference id="M">E, d MMM y–E, d MMM G</greatestDifference>
+							<greatestDifference id="y">E, d MMM y –E, d MMM y G</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
 							<greatestDifference id="h">h–h a</greatestDifference>
@@ -266,53 +324,84 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="h">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">MM-dd – MM-dd</greatestDifference>
-							<greatestDifference id="M">MM-dd – MM-dd</greatestDifference>
+							<greatestDifference id="d">dd-MM – dd-MM</greatestDifference>
+							<greatestDifference id="M">dd-MM – dd-MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">MM-dd, E – MM-dd, E</greatestDifference>
-							<greatestDifference id="M">MM-dd, E – MM-dd, E</greatestDifference>
+							<greatestDifference id="d">E, dd-MM – E, dd-MM</greatestDifference>
+							<greatestDifference id="M">E, dd-MM – E, dd-MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="M">MMM d – MMM d</greatestDifference>
+							<greatestDifference id="d">d–d MMM</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="M">MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="d">E, d MMM – E, d MMM</greatestDifference>
+							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">y-MM – y-MM</greatestDifference>
-							<greatestDifference id="y">y-MM – y-MM</greatestDifference>
+							<greatestDifference id="M">MM-y –MM-y</greatestDifference>
+							<greatestDifference id="y">MM-y – MM-y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="M">y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="y">y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="d">dd-MM-y – dd-MM-y </greatestDifference>
+							<greatestDifference id="M">dd-MM-y – dd-MM-y</greatestDifference>
+							<greatestDifference id="y">dd-MM-y – dd-MM-y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">y-MM-dd, E – y-MM-dd, E</greatestDifference>
-							<greatestDifference id="M">y-MM-dd, E – y-MM-dd, E</greatestDifference>
-							<greatestDifference id="y">y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="d">E, dd–dd-MM–y – E, dd-dd-MM–y </greatestDifference>
+							<greatestDifference id="M">E, dd-MM-y –E, dd-MM-y</greatestDifference>
+							<greatestDifference id="y">E, dd-MM-y –E, dd-MM-y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
-							<greatestDifference id="y">y MMM – y MMM</greatestDifference>
+							<greatestDifference id="M">MMM–MMM y</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="M">y MMM d – MMM d</greatestDifference>
-							<greatestDifference id="y">y MMM d – y MMM d</greatestDifference>
+							<greatestDifference id="d">d–d MMM y</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM y</greatestDifference>
+							<greatestDifference id="y">d MMM y – d MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">y MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="M">y MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="y">y MMM d, E – y MMM d, E</greatestDifference>
+							<greatestDifference id="d">E, d MMM – E, d MMM y</greatestDifference>
+							<greatestDifference id="M">E, d MMM – E, d MMM y</greatestDifference>
+							<greatestDifference id="y">E, d MMM y – E, d MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="y">y MMMM – y MMMM</greatestDifference>
+							<greatestDifference id="M">MMMM – MMMM y</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
+		<fields>
+			<field type="year">
+				<relative type="-1">umwaka ushize</relative>
+				<relative type="0">uyu mwaka</relative>
+				<relative type="1">umwaka utaha</relative>
+			</field>
+			<field type="month">
+				<relative type="-1">ukwezi gushize</relative>
+				<relative type="0">uku kwezi</relative>
+				<relative type="1">ukwezi gutaha</relative>
+			</field>
+			<field type="week">
+				<relative type="-1">icyumweru gishize</relative>
+				<relative type="0">iki cyumweru</relative>
+				<relative type="1">icyumweru gitaha</relative>
+			</field>
+			<field type="day">
+				<relative type="-1">ejo</relative>
+				<relative type="0">uyu munsi</relative>
+				<relative type="1">ejo</relative>
+			</field>
+			<field type="sun">
+				<relative type="-1">Ku Cyumweru hashize</relative>
+				<relative type="0">kuri iki Cyumweru</relative>
+				<relative type="1">Ku Cyumweru hazaza</relative>
+			</field>
+		</fields>
 		<timeZoneNames>
 			<metazone type="GMT">
 				<long>
