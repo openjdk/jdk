@@ -48,7 +48,7 @@ import jdk.tools.jlink.internal.TaskHelper.BadArgs;
 /*
  * @test
  * @summary Test TaskHelper option parsing
- * @bug 8303884
+ * @bug 8303884 8321139
  * @modules jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.plugin
  * @run junit TaskHelperTest
