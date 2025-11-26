@@ -251,6 +251,9 @@ public class TaskHelperTest {
     public void testCompressOptionArg(CompressTestCase testCase) throws TaskHelper.BadArgs, IOException {
         var remaining = optionsHelper.handleOptions(this, testCase.tokens);
 
+		// trigger Plugin::configure
+		taskHelper.getPluginsConfig(null, null, null);
+
         assertTrue(remaining.isEmpty());
         assertEquals(testCase.expectedCompressValue, compressArgValue);
     }
