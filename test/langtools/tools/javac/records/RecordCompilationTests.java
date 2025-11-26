@@ -2191,7 +2191,7 @@ class RecordCompilationTests extends CompilationTestCase {
                 ) {}
                 """
         );
-        assertOKWithWarning("compiler.warn.missing.deprecated.annotation",
+        assertOK(
                 """
                 record R(
                     /**
