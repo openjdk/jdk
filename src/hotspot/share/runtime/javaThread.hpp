@@ -734,12 +734,15 @@ public:
 private:
   bool _is_in_vthread_transition;                    // thread is in virtual thread mount state transition
   DEBUG_ONLY(bool _is_vthread_transition_disabler;)  // thread currently disabled vthread transitions
+  DEBUG_ONLY(bool _is_disabler_at_start;)            // thread at process of disabling vthread transitions
 public:
   bool is_in_vthread_transition() const;
   void set_is_in_vthread_transition(bool val);
 #ifdef ASSERT
   bool is_vthread_transition_disabler() const       { return _is_vthread_transition_disabler; }
   void set_is_vthread_transition_disabler(bool val);
+  bool is_disabler_at_start() const                 { return _is_disabler_at_start; }
+  void set_is_disabler_at_start(bool val);
 #endif
 
 #if INCLUDE_JVMTI

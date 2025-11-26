@@ -123,6 +123,11 @@ class JVMTIEndTransition : public StackObj {
 #endif // INCLUDE_JVMTI
 
 bool MountUnmountDisabler::is_start_transition_disabled(JavaThread* thread, oop vthread) {
+  // We need to read the per-vthread and global counters to check if transitions are disabled.
+  // In case of JVMTI present, the global counter will always be at least 1. This is to force
+  // the slow path and check for possible event posting. Here we need to check if transitions
+  // are actually disabled, so we compare the global counter against 1 or 0 accordingly.
+  // In case of JVMTI we also need to check for suspension.
   int base_disable_count = notify_jvmti_events() ? 1 : 0;
   return java_lang_Thread::vthread_transition_disable_count(vthread) > 0
          || global_vthread_transition_disable_count() > base_disable_count
@@ -290,7 +295,8 @@ MountUnmountDisabler::disable_transition_for_one() {
 // disable transitions for all virtual threads
 void
 MountUnmountDisabler::disable_transition_for_all() {
-  JavaThread* thread = JavaThread::current();
+  DEBUG_ONLY(JavaThread* thread = JavaThread::current();)
+  DEBUG_ONLY(thread->set_is_disabler_at_start(true);)
 
   MonitorLocker ml(VThreadTransition_lock);
   while (exclusive_operation_ongoing()) {
@@ -325,6 +331,7 @@ MountUnmountDisabler::disable_transition_for_all() {
   // This pairs with the release barrier in end_transition().
   OrderAccess::acquire();
   DEBUG_ONLY(thread->set_is_vthread_transition_disabler(true);)
+  DEBUG_ONLY(thread->set_is_disabler_at_start(false);)
 }
 
 // enable transitions for one virtual thread

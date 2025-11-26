@@ -30,7 +30,16 @@
 
 class JavaThread;
 
+// This class adds support to disable virtual thread transitions (mount/unmount).
+// This is needed to safely execute operations that access virtual thread state.
+// Users should use the Handshake class when possible instead of using this directly.
 class MountUnmountDisabler : public AnyObj {
+  // The global counter is used for operations that require disabling
+  // transitions for all virtual threads. Currently this is only used
+  // by some JVMTI operations. We also increment this counter when the
+  // first JVMTI agent attaches to always force the slowpath when starting
+  // a transition. This is needed because if JVMTI is present we need to
+  // check for possible event posting.
   static volatile int _global_vthread_transition_disable_count;
   static volatile int _active_disablers;
   static bool    _exclusive_operation_ongoing;

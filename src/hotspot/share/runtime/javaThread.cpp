@@ -1148,6 +1148,9 @@ void JavaThread::send_async_exception(JavaThread* target, oop java_throwable) {
 }
 
 bool JavaThread::is_in_vthread_transition() const {
+  DEBUG_ONLY(Thread* current = Thread::current();)
+  assert(is_handshake_safe_for(current) || SafepointSynchronize::is_at_safepoint()
+         || JavaThread::cast(current)->is_disabler_at_start(), "not safe");
   return AtomicAccess::load(&_is_in_vthread_transition);
 }
 
@@ -1159,6 +1162,10 @@ void JavaThread::set_is_in_vthread_transition(bool val) {
 #ifdef ASSERT
 void JavaThread::set_is_vthread_transition_disabler(bool val) {
   _is_vthread_transition_disabler = val;
+}
+
+void JavaThread::set_is_disabler_at_start(bool val) {
+  _is_disabler_at_start = val;
 }
 #endif
 
