@@ -266,11 +266,6 @@ const TypeFunc* OptoRuntime::_notify_jvmti_vthread_Type           = nullptr;
 const TypeFunc* OptoRuntime::_dtrace_method_entry_exit_Type       = nullptr;
 const TypeFunc* OptoRuntime::_dtrace_object_alloc_Type            = nullptr;
 const TypeFunc* OptoRuntime::_clone_type_Type                     = nullptr;
-#if INCLUDE_SHENANDOAHGC
-const TypeFunc* OptoRuntime::_load_reference_barrier_Type         = nullptr;
-const TypeFunc* OptoRuntime::_write_barrier_pre_Type              = nullptr;
-const TypeFunc* OptoRuntime::_clone_barrier_Type                  = nullptr;
-#endif // INCLUDE_SHENANDOAHGC
 
 // Helper method to do generation of RunTimeStub's
 address OptoRuntime::generate_stub(ciEnv* env,
@@ -2203,47 +2198,6 @@ static const TypeFunc* make_clone_type_Type() {
   return TypeFunc::make(domain, range);
 }
 
-#if INCLUDE_SHENANDOAHGC
-static const TypeFunc* make_load_reference_barrier_Type() {
-  const Type **fields = TypeTuple::fields(2);
-  fields[TypeFunc::Parms+0] = TypeOopPtr::BOTTOM; // original field value
-  fields[TypeFunc::Parms+1] = TypeRawPtr::BOTTOM; // original load address
-
-  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+2, fields);
-
-  // create result type (range)
-  fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms+0] = TypeOopPtr::BOTTOM;
-  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+1, fields);
-
-  return TypeFunc::make(domain, range);
-}
-
-static const TypeFunc* make_write_barrier_pre_Type() {
-  const Type **fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL; // original field value
-  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+1, fields);
-
-  // create result type (range)
-  fields = TypeTuple::fields(0);
-  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0, fields);
-
-  return TypeFunc::make(domain, range);
-}
-
-static const TypeFunc* make_clone_barrier_Type() {
-  const Type **fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms+0] = TypeOopPtr::NOTNULL; // src oop
-  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+1, fields);
-
-  // create result type (range)
-  fields = TypeTuple::fields(0);
-  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0, fields);
-
-  return TypeFunc::make(domain, range);
-}
-#endif //INCLUDE_SHENANDOAHGC
-
 JRT_ENTRY_NO_ASYNC(void, OptoRuntime::register_finalizer_C(oopDesc* obj, JavaThread* current))
   assert(oopDesc::is_oop(obj), "must be a valid oop");
   assert(obj->klass()->has_finalizer(), "shouldn't be here otherwise");
@@ -2410,11 +2364,6 @@ void OptoRuntime::initialize_types() {
   _dtrace_method_entry_exit_Type      = make_dtrace_method_entry_exit_Type();
   _dtrace_object_alloc_Type           = make_dtrace_object_alloc_Type();
   _clone_type_Type                    = make_clone_type_Type();
-#if INCLUDE_SHENANDOAHGC
-  _load_reference_barrier_Type        = make_load_reference_barrier_Type();
-  _write_barrier_pre_Type             = make_write_barrier_pre_Type();
-  _clone_barrier_Type                 = make_clone_barrier_Type();
-#endif // INCLUDE_SHENANDOAHGC
 }
 
 int trace_exception_counter = 0;

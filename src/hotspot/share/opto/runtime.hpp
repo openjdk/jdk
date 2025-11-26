@@ -200,11 +200,6 @@ class OptoRuntime : public AllStatic {
   static const TypeFunc* _dtrace_method_entry_exit_Type;
   static const TypeFunc* _dtrace_object_alloc_Type;
   static const TypeFunc* _clone_type_Type;
-#if INCLUDE_SHENANDOAHGC
-  static const TypeFunc* _load_reference_barrier_Type;
-  static const TypeFunc* _write_barrier_pre_Type;
-  static const TypeFunc* _clone_barrier_Type;
-#endif //INCLUDE_SHENANDOAHGC
 
   // define stubs
   static address generate_stub(ciEnv* ci_env, TypeFunc_generator gen, address C_function, const char* name, StubId stub_id, int is_fancy_jump, bool pass_tls, bool return_pc);
@@ -747,23 +742,6 @@ private:
     assert(_clone_type_Type != nullptr, "should be initialized");
     return _clone_type_Type;
   }
-
-#if INCLUDE_SHENANDOAHGC
-  static inline const TypeFunc *clone_barrier_Type() {
-    assert(_clone_barrier_Type != nullptr, "should be initialized");
-    return _clone_barrier_Type;
-  }
-
-  static inline const TypeFunc *write_barrier_pre_Type() {
-    assert(_write_barrier_pre_Type != nullptr, "should be initialized");
-    return _write_barrier_pre_Type;
-  }
-
-  static inline const TypeFunc* load_reference_barrier_Type() {
-    assert(_load_reference_barrier_Type != nullptr, "should be initialized");
-    return _load_reference_barrier_Type;
-  }
-#endif //INCLUDE_SHENANDOAHGC
 
 #ifndef PRODUCT
   // Signature for runtime calls in debug printing nodes, which depends on which nodes are actually passed
