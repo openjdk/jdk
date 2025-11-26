@@ -211,11 +211,12 @@ Authors, for copyright and licensing purposes.
     - Filip Wasil
 
 The build projects, the build scripts, the test scripts, and other
-files in the "ci", "projects", "scripts" and "tests" directories, have
+files in the "projects", "scripts" and "tests" directories, have
 other copyright owners, but are released under the libpng license.
 
-Some files in the "contrib" directory, and some tools-generated files
-that are distributed with libpng, have other copyright owners, and are
-released under other open source licenses.
+Some files in the "ci" and "contrib" directories, as well as some
+of the tools-generated files that are distributed with libpng, have
+other copyright owners, and are released under other open source
+licenses.
 ```
 
