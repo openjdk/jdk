@@ -45,7 +45,8 @@ package compiler.loopopts;
  *      -XX:-TieredCompilation -Xcomp -XX:PerMethodTrapLimit=0
  *      -XX:+StressLoopPeeling -XX:+VerifyLoopOptimizations -XX:-StressDuplicateBackedge
  *      compiler.loopopts.TestVerifyLoopOptimizationsHitsMemLimit
- * @run main/othervm -XX:-StressDuplicateBackedge compiler.loopopts.TestVerifyLoopOptimizationsHitsMemLimit
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-StressDuplicateBackedge
+ *                   compiler.loopopts.TestVerifyLoopOptimizationsHitsMemLimit
  */
 
 public class TestVerifyLoopOptimizationsHitsMemLimit {
