@@ -100,6 +100,11 @@ struct AtomicAccessXchgTestSupport {
   }
 };
 
+TEST_VM(AtomicAccessXchgTest, int8) {
+  using Support = AtomicAccessXchgTestSupport<int8_t>;
+  Support().test();
+}
+
 TEST_VM(AtomicAccessXchgTest, int32) {
   using Support = AtomicAccessXchgTestSupport<int32_t>;
   Support().test();
