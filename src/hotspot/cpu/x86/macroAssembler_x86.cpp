@@ -4806,38 +4806,34 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
     return;
   }
 
-  // The update code is tight on registers, and CAS wants RAX specifically,
-  // so we need to shuffle registers a bit. If any of the important registers
-  // are in RAX, select a spare register and move the operand there.
+  // The update code uses CAS, which wants RAX register specifically. Therefore,
+  // we need to shift any important registers from RAX into some other register,
+  // or we need to save RAX, before we use it in CAS paths.
   Register offset = rscratch1;
-  Register swap_reg =
+  Register spare_reg =
              (mdp != rbx && recv != rbx) ? rbx :
              (mdp != rcx && recv != rcx) ? rcx :
              rdx;
-  assert_different_registers(mdp, recv, offset, swap_reg);
+  assert_different_registers(mdp, recv, offset, spare_reg);
 
   if (recv == rax) {
-    push(swap_reg);
-    movptr(swap_reg, recv);
-    recv = swap_reg;
+    push(spare_reg);
+    movptr(spare_reg, recv);
+    recv = spare_reg;
   } else if (mdp == rax) {
-    push(swap_reg);
-    movptr(swap_reg, mdp);
-    mdp = swap_reg;
-  } else if (offset == rax) {
-    push(swap_reg);
-    movptr(swap_reg, offset);
-    offset = swap_reg;
+    push(spare_reg);
+    movptr(spare_reg, mdp);
+    mdp = spare_reg;
   } else {
     push(rax);
   }
 
-  // None of the important registers are in RAX after shuffle
+  // None of the important registers are in RAX after this shuffle.
   assert_different_registers(rax, mdp, recv, offset);
 
   Label L_loop, L_loop_nulls, L_found_recv, L_not_null, L_count_update;
 
-  // Optimistic: search for already set up receiver:
+  // Optimistic: search for already set up receiver.
   //
   // This code is effectively:
   //   for (i = 0; i < receiver_count(); i++) {
@@ -4898,16 +4894,15 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   bind(L_count_update);
   addptr(Address(mdp, offset, Address::times_ptr), DataLayout::counter_increment);
 
-  if (mdp == swap_reg || offset == swap_reg || recv == swap_reg) {
-    // Implies some important register was shifted from RAX, move it back.
-    movptr(rax, swap_reg);
-    pop(swap_reg);
+  // About to return to outer code: restore RAX and spare register
+  if (mdp == spare_reg || recv == spare_reg) {
+    // Implies some important register was shifted from RAX
+    movptr(rax, spare_reg);
+    pop(spare_reg);
   } else {
-    // None of the important registers were in RAX, just restore RAX
     pop(rax);
   }
 }
-
 
 void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* file, int line) {
   if (!VerifyOops) return;
