@@ -419,7 +419,7 @@ public class JavacTrees extends DocTrees {
                     case MODULE -> env.toplevel.modle;
                     case COMPILATION_UNIT ->
                         // Treat unqualified reference in legacy package.html as package reference.
-                        // Unqualified references in doc-fiiles only need to work locally, so null is fine.
+                        // Unqualified references in doc-files only need to work locally, so null is fine.
                         path.getCompilationUnit().getSourceFile().isNameCompatible("package", JavaFileObject.Kind.HTML)
                                 ? env.toplevel.packge
                                 : null;

@@ -161,7 +161,7 @@ public class LinkTaglet extends BaseTaglet {
             }
             refFragment = refFragment.substring(1);
             if (ref == null && refSignature.startsWith("##")) {
-                // Unqualified local anchor link
+                // Unqualified local anchor link in doc-file
                 return htmlWriter.links.createLink(HtmlId.of(refFragment), labelContent);
             }
         }
