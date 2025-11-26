@@ -39,6 +39,19 @@
  *                   -XX:CompileCommand=dontinline,compiler.igvn.ClashingSpeculativeTypePhiNode::notInlined1
  *                   compiler.igvn.ClashingSpeculativeTypePhiNode
  *
+ *  @run main/othervm -XX:-TieredCompilation
+ *                   -XX:-UseOnStackReplacement
+ *                   -XX:-BackgroundCompilation
+ *                   -XX:CompileOnly=compiler.igvn.ClashingSpeculativeTypePhiNode::test2
+ *                   -XX:CompileOnly=compiler.igvn.ClashingSpeculativeTypePhiNode::inlined3
+ *                   -XX:CompileCommand=quiet
+ *                   -XX:TypeProfileLevel=200
+ *                   -XX:+AlwaysIncrementalInline
+ *                   -XX:VerifyIterativeGVN=10
+ *                   -XX:CompileCommand=dontinline,compiler.igvn.ClashingSpeculativeTypePhiNode::notInlined1
+ *                   -XX:+StressIncrementalInlining
+ *                   compiler.igvn.ClashingSpeculativeTypePhiNode
+ *
  * @run main compiler.igvn.ClashingSpeculativeTypePhiNode
  */
 
@@ -46,15 +59,32 @@ package compiler.igvn;
 
 public class ClashingSpeculativeTypePhiNode {
     public static void main(String[] args) {
+        // main1();
+        main2();
+    }
+
+    // 1st case
+
+    static void main1() {
         for (int i = 0; i < 20_000; i++) {
-            test1(false);
-            inlined1(true, true);
-            inlined2(false);
+            test1(false);         // returns null
+            inlined1(true, true); // returns C1
+            inlined2(false);      // returns C2
         }
     }
 
     private static Object test1(boolean flag1) {
         return inlined1(flag1, false);
+        // When inlined1 is inlined
+        // return Phi(flag1, inlined2(flag2), null)
+        // inlined2 is speculatively returning C1, from the calls `inlined1(true, true)` in main1
+        // Phi node gets speculative type C1
+        // When inline2 is inlined
+        // return Phi[C1](flag1, Phi(false, new C1(), notInlined1()), null)
+        // => Phi[C1](flag1, notInlined1(), null)
+        // notInlined1 is speculatively returning C2 from `inline2(false)` in main1
+        // return Phi[C1](flag1, notInlined1()[C2], null)
+        // Clashing speculative type between Phi's _type (C1) and union of inputs (C2).
     }
 
     private static Object inlined1(boolean flag1, boolean flag2) {
@@ -73,6 +103,42 @@ public class ClashingSpeculativeTypePhiNode {
 
     private static Object notInlined1() {
         return new C2();
+    }
+
+    // 2nd case
+
+    static void main2() {
+        for (int i = 0; i < 20_000; i++) {
+            inlined3(new C1());
+        }
+        for (int i = 0; i < 20_000; i++) {
+            test2(true, new C2());
+            test2(false, new C2());
+        }
+    }
+
+
+    private static Object test2(boolean flag1, Object o) {
+        o = inlined4(o);
+        if (flag1) {
+            return inlined3(o);
+        }
+        return null;
+        // We profile only parameters. Param o is speculated to be C2.
+        // return Phi(flag1, inline3(inline4(o[C2])), null)
+        // We inline inline3
+        // return Phi(flag1, inline4(o[C2])[C1], null)
+        // As input of inline3, inline4(o) is speculated to be C1. The Phi has C1 as speculative type in _type
+        // return Phi[C1](flag1, o[C2], null)
+        // Since o is speculated to be C2 as parameter of test2, we get a clash.
+    }
+
+    private static Object inlined3(Object o) {
+        return o; // C1
+    }
+
+    private static Object inlined4(Object o) {
+        return o;
     }
 
     static class C1 {

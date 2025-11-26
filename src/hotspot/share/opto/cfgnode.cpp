@@ -1351,52 +1351,31 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
   }
 #endif //ASSERT
 
-
-  // In rare cases, `_type` and `t` have incompatible opinion on speculative type, resulting into a too small intersection
-  // (such as AnyNull), which is removed in cleanup_speculative. From that `ft` has empty speculative type. After the end
-  // of the current `Value` call, `ft` (that is returned) is becoming `_type`. If verification happens then, `t` would be the
-  // same (union of input types), but the new `_type` has now no speculative type, the result of `t->filter_speculative(_type)`
-  // has the speculative type of `t` (if it's not removed because e.g. the resulting type is exact and non null) and not empty
-  // (like the previously returned type). In such a case, doing the filtering one time more allows to reach a fixpoint.
+  // In rare cases, during an IGVN call to `PhiNode::Value`, `_type` and `t` have incompatible opinion on speculative type,
+  // resulting into a too small intersection (such as AnyNull), which is removed in cleanup_speculative.
+  // From that `ft` has no speculative type (ft->speculative() == nullptr).
+  // After the end of the current `PhiNode::Value` call, `ft` (that is returned) is being store into `_type`
+  // (see PhaseIterGVN::transform_old -> raise_bottom_type -> set_type).
+  //
+  // It is possible that verification happens immediately after, without any change to the current node, or any of its inputs.
+  // In the verification invocation of `PhiNode::Value`, `t` would be the same as the IGVN `t` (union of input types, that are unchanged),
+  // but the new `_type` is the value returned by the IGVN invocation of `PhiNode::Value`, the former `ft`, that has no speculative type.
+  // Thus, the result of `t->filter_speculative(_type)`, the new `ft`, gets the speculative type of `t`, which is not empty. Since the
+  // result of the verification invocation of `PhiNode::Value` has some speculative type, it is not the same as the previously returned type
+  // (that had no speculative type), making verification fail.
+  //
+  // In such a case, doing the filtering one time more allows to reach a fixpoint.
   if (ft->speculative() == nullptr && t->speculative() != nullptr) {
-    const Type* first_ft = ft;
-    ft = t->filter_speculative(first_ft);
-#ifdef ASSERT
-    // The following logic has been moved into TypeOopPtr::filter.
-    const Type* jt = t->join_speculative(first_ft);
-    if (jt->empty()) {           // Emptied out???
-      // Otherwise it's something stupid like non-overlapping int ranges
-      // found on dying counted loops.
-      assert(ft == Type::TOP, ""); // Canonical empty value
-    }
-
-    else {
-
-      if (jt != ft && jt->base() == ft->base()) {
-        if (jt->isa_int() &&
-            jt->is_int()->_lo == ft->is_int()->_lo &&
-            jt->is_int()->_hi == ft->is_int()->_hi)
-          jt = ft;
-        if (jt->isa_long() &&
-            jt->is_long()->_lo == ft->is_long()->_lo &&
-            jt->is_long()->_hi == ft->is_long()->_hi)
-          jt = ft;
-      }
-      if (jt != ft) {
-        tty->print("merge type:  "); t->dump(); tty->cr();
-        tty->print("kill type:   "); _type->dump(); tty->cr();
-        tty->print("join type:   "); jt->dump(); tty->cr();
-        tty->print("filter type: "); ft->dump(); tty->cr();
-      }
-      assert(jt == ft, "");
-    }
-#endif //ASSERT
+    ft = t->filter_speculative(ft);
   }
 
 #ifdef ASSERT
   const Type* ft_ = t->filter_speculative(ft);
   if (!Type::equals(ft, ft_)) {
     stringStream ss;
+
+    ss.print("At node:\n");
+    this->dump("\n", false, &ss);
 
     for (uint i = 1; i < req(); ++i) {
       ss.print("in(%d): ", i);
