@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 6681958
- * @summary Verifies Maximization state of JInternalFrames is 
+ * @summary Verifies Maximization state of JInternalFrames is
  *          not corrupted by WindowsDesktopManager
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
@@ -46,7 +46,7 @@ import java.beans.PropertyVetoException;
 public class JIFMaximizedTrfAttribute {
 
     static final String INSTRUCTIONS = """
-        A maximised JInternalFrame would be shown with a 
+        A maximised JInternalFrame would be shown with a
         button "open another internal frame".
         Press the button on the internal frame.
         A second internal frame is created and opened.

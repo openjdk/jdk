@@ -80,14 +80,13 @@ public final class WindowsDesktopManager extends DefaultDesktopManager
                         if (f.isMaximizable()) {
                             if (!f.isMaximum()) {
                                 f.setMaximum(true);
-                            } else if (f.isMaximum()) {
+                            } else {
+                                // If frame being activated is set to maximised
+                                // and iconified, let it be maximised
+                                // else remain non-maximised
                                 if (f.isIcon()) {
                                     f.setIcon(false);
-                                } else {
-                                    f.setMaximum(true);
                                 }
-                            } else {
-                                f.setMaximum(false);
                             }
                         }
                     }
