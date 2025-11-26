@@ -24,7 +24,9 @@
  */
 package jdk.internal.jimage;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
@@ -38,7 +40,6 @@ import java.security.PrivilegedAction;
 import java.util.Objects;
 import java.util.stream.IntStream;
 
-import jdk.internal.jimage.BasicImageReader.ImageError.Reason;
 import jdk.internal.jimage.decompressor.Decompressor;
 
 /**
@@ -144,12 +145,10 @@ public class BasicImageReader implements AutoCloseable {
             if (channel.read(headerBuffer, 0L) == headerSize) {
                 headerBuffer.rewind();
             } else {
-                throw new ImageError(Reason.INVALID_JIMAGE,
-                        "\"" + name + "\" is not an image file");
+                throw new IOException("\"" + name + "\" is not an image file");
             }
         } else if (headerBuffer.capacity() < headerSize) {
-            throw new ImageError(Reason.INVALID_JIMAGE,
-                    "\"" + name + "\" is not an image file");
+            throw new IOException("\"" + name + "\" is not an image file");
         }
 
         // Interpret the image file header
@@ -166,8 +165,7 @@ public class BasicImageReader implements AutoCloseable {
 
         // Interpret the image index
         if (memoryMap.capacity() < indexSize) {
-            throw new ImageError(Reason.CORRUPT_JIMAGE,
-                    "The image file \"" + name + "\" is corrupted");
+            throw new IOException("The image file \"" + name + "\" is corrupted");
         }
         redirect = intBuffer(memoryMap, header.getRedirectOffset(), header.getRedirectSize());
         offsets = intBuffer(memoryMap, header.getOffsetsOffset(), header.getOffsetsSize());
@@ -194,16 +192,13 @@ public class BasicImageReader implements AutoCloseable {
         ImageHeader result = ImageHeader.readFrom(buffer);
 
         if (result.getMagic() != ImageHeader.MAGIC) {
-            throw new ImageError(Reason.INVALID_JIMAGE,
-                    "\"" + name + "\" is not an image file");
+            throw new IOException("\"" + name + "\" is not an image file");
         }
 
         if (result.getMajorVersion() != ImageHeader.MAJOR_VERSION ||
                 result.getMinorVersion() != ImageHeader.MINOR_VERSION) {
-            throw new ImageError(Reason.BAD_VERSION,
-                    "The image file \"" + name + "\" is not the correct version.\n"
-                            + "Major: " + result.getMajorVersion()
-                            + ". Minor: " + result.getMinorVersion());
+            throw new IOException("The image file \"" + name + "\" is not the correct version.\n"
+                    + "Use '<JAVA_HOME>/bin/jimage' for the JDK associated with this jimage file.");
         }
 
         return result;
@@ -462,31 +457,10 @@ public class BasicImageReader implements AutoCloseable {
         return null;
     }
 
-    /**
-     * Specialized {@link IOException} thrown during construction to provide a
-     * semantic reason for failure and allow better user-facing error messages.
-     */
-    public final static class ImageError extends IOException {
-        private static final long serialVersionUID = 6002259582237888214L;
+    public InputStream getResourceStream(ImageLocation loc) {
+        Objects.requireNonNull(loc);
+        byte[] bytes = getResource(loc);
 
-        public enum Reason {
-            /** The file being opened does not appear to be a jimage file. */
-            INVALID_JIMAGE,
-            /** The jimage file being opened is corrupted. */
-            CORRUPT_JIMAGE,
-            /** The jimage file being opened has the wrong version. */
-            BAD_VERSION,
-        }
-
-        private final Reason reason;
-
-        public ImageError(Reason reason, String message) {
-            super(message);
-            this.reason = reason;
-        }
-
-        public Reason getReason() {
-            return reason;
-        }
+        return new ByteArrayInputStream(bytes);
     }
 }
