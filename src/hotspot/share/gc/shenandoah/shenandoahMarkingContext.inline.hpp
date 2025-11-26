@@ -72,6 +72,10 @@ inline HeapWord* ShenandoahMarkingContext::get_next_marked_addr(const HeapWord* 
   return _mark_bit_map.get_next_marked_addr(start, limit);
 }
 
+inline HeapWord* ShenandoahMarkingContext::get_prev_marked_addr(const HeapWord* limit, const HeapWord* start) const {
+  return _mark_bit_map.get_prev_marked_addr(limit, start);
+}
+
 inline bool ShenandoahMarkingContext::allocated_after_mark_start(oop obj) const {
   const HeapWord* addr = cast_from_oop<HeapWord*>(obj);
   return allocated_after_mark_start(addr);

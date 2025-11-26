@@ -2771,7 +2771,7 @@ class HandlerImpl {
 
   static uint size_deopt_handler() {
     // one call and one jmp.
-    return 10;
+    return 7;
   }
 };
 
@@ -2885,6 +2885,8 @@ int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
   __ jmp(start);
 
   assert(__ offset() - offset <= (int) size_deopt_handler(), "overflow %d", (__ offset() - offset));
+  assert(__ offset() - entry_offset >= NativePostCallNop::first_check_size,
+         "out of bounds read in post-call NOP check");
   __ end_a_stub();
   return entry_offset;
 }
@@ -3703,6 +3705,11 @@ bool Matcher::vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen
       ShouldNotReachHere();
       return false;
   }
+}
+
+bool Matcher::mask_op_prefers_predicate(int opcode, const TypeVect* vt) {
+  // Prefer predicate if the mask type is "TypeVectMask".
+  return vt->isa_vectmask() != nullptr;
 }
 
 MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* generic_opnd, uint ideal_reg, bool is_temp) {
@@ -16925,24 +16932,24 @@ instruct jmpConUCF2_short(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
 // ============================================================================
 // inlined locking and unlocking
 
-instruct cmpFastLockLightweight(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI rax_reg, rRegP tmp) %{
+instruct cmpFastLock(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI rax_reg, rRegP tmp) %{
   match(Set cr (FastLock object box));
   effect(TEMP rax_reg, TEMP tmp, USE_KILL box);
   ins_cost(300);
   format %{ "fastlock $object,$box\t! kills $box,$rax_reg,$tmp" %}
   ins_encode %{
-    __ fast_lock_lightweight($object$$Register, $box$$Register, $rax_reg$$Register, $tmp$$Register, r15_thread);
+    __ fast_lock($object$$Register, $box$$Register, $rax_reg$$Register, $tmp$$Register, r15_thread);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct cmpFastUnlockLightweight(rFlagsReg cr, rRegP object, rax_RegP rax_reg, rRegP tmp) %{
+instruct cmpFastUnlock(rFlagsReg cr, rRegP object, rax_RegP rax_reg, rRegP tmp) %{
   match(Set cr (FastUnlock object rax_reg));
   effect(TEMP tmp, USE_KILL rax_reg);
   ins_cost(300);
   format %{ "fastunlock $object,$rax_reg\t! kills $rax_reg,$tmp" %}
   ins_encode %{
-    __ fast_unlock_lightweight($object$$Register, $rax_reg$$Register, $tmp$$Register, r15_thread);
+    __ fast_unlock($object$$Register, $rax_reg$$Register, $tmp$$Register, r15_thread);
   %}
   ins_pipe(pipe_slow);
 %}
