@@ -573,8 +573,11 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(StubId stub_id, addres
   GrowableArray<address> entries;
   GrowableArray<address> extras;
   bool add_extras = !is_oop && !aligned;
+  // The stub employs one unsafe handler region by default but has two
+  // when MaxVectorSize == 64 So we may expect 0, 3 or 6 extras.
+  int handlers_count = (MaxVectorSize == 64 ? 2 : 1);
   int expected_entry_count = (entry != nullptr ? 2 : 1);
-  int expected_extra_count = 3 * (add_extras ? 2 : 0); // 0/2 x UMAM {start,end,handler}
+  int expected_extra_count = 3 * (add_extras ? handlers_count : 0); // 0/1/2 x UMAM {start,end,handler}
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == expected_entry_count, "sanity check");
   GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
