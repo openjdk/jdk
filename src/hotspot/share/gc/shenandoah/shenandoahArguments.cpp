@@ -39,7 +39,7 @@
 #include "utilities/defaultStream.hpp"
 
 void ShenandoahArguments::initialize() {
-#if !(defined AARCH64 || defined AMD64 || defined IA32 || defined PPC64 || defined RISCV64)
+#if !(defined AARCH64 || defined AMD64 || defined PPC64 || defined RISCV64)
   vm_exit_during_initialization("Shenandoah GC is not supported on this platform.");
 #endif
 
@@ -192,6 +192,13 @@ void ShenandoahArguments::initialize() {
   if (GCCardSizeInBytes < ShenandoahMinCardSizeInBytes) {
     vm_exit_during_initialization(
       err_msg("GCCardSizeInBytes ( %u ) must be >= %u\n", GCCardSizeInBytes, (unsigned int) ShenandoahMinCardSizeInBytes));
+  }
+
+  // Gen shen does not support any ShenandoahGCHeuristics value except for the default "adaptive"
+  if ((strcmp(ShenandoahGCMode, "generational") == 0)
+      && strcmp(ShenandoahGCHeuristics, "adaptive") != 0) {
+    log_warning(gc)("Ignoring -XX:ShenandoahGCHeuristics input: %s, because generational shenandoah only"
+      " supports adaptive heuristics", ShenandoahGCHeuristics);
   }
 
   FullGCForwarding::initialize_flags(MaxHeapSize);

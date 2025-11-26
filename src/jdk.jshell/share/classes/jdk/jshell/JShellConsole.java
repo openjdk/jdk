@@ -28,7 +28,6 @@ import java.io.IOError;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.nio.charset.Charset;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * An interface providing functionality for {@link java.io.Console} in the user's snippet.

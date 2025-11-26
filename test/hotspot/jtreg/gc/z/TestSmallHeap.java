@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,8 @@ public class TestSmallHeap {
     public static void main(String[] args) throws Exception {
         for (var maxCapacity: args) {
             ProcessTools.executeTestJava(
+                // Disable NUMA to avoid potential OOM after JDK-8359683
+                "-XX:-UseNUMA",
                 "-XX:+UseZGC",
                 "-Xlog:gc,gc+init,gc+reloc,gc+heap",
                 "-Xmx" + maxCapacity,

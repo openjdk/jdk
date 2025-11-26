@@ -34,7 +34,6 @@ import jdk.jpackage.internal.PackagingPipeline.CopyAppImageTaskID;
 import jdk.jpackage.internal.PackagingPipeline.PrimaryTaskID;
 import jdk.jpackage.internal.PackagingPipeline.TaskID;
 import jdk.jpackage.internal.model.ApplicationLayout;
-import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.model.WinApplication;
 import jdk.jpackage.internal.model.WinLauncher;
@@ -47,7 +46,6 @@ final class WinPackagingPipeline {
 
     static PackagingPipeline.Builder build() {
         return PackagingPipeline.buildStandard()
-                .appImageLayoutForPackaging(Package::appImageLayout)
                 .task(CopyAppImageTaskID.COPY).noaction().add()
                 .task(WinAppImageTaskID.REBRAND_LAUNCHERS)
                         .addDependency(BuildApplicationTaskID.LAUNCHERS)
@@ -58,7 +56,7 @@ final class WinPackagingPipeline {
     private static void rebrandLaunchers(AppImageBuildEnv<WinApplication, ApplicationLayout> env)
             throws IOException, PackagerException {
         for (var launcher : env.app().launchers()) {
-            final var iconTarget = createLauncherIconResource(env.app(), launcher, env.env()::createResource).map(iconResource -> {
+            final var iconTarget = createLauncherIconResource(launcher, env.env()::createResource).map(iconResource -> {
                 var iconDir = env.env().buildRoot().resolve("icons");
                 var theIconTarget = iconDir.resolve(launcher.executableName() + ".ico");
                 try {
