@@ -3035,6 +3035,29 @@ void ShenandoahFreeSet::log_status_under_lock() {
   }
 }
 
+void ShenandoahFreeSet::log_freeset_stats(ShenandoahFreeSetPartitionId partition_id, LogStream& ls) {
+  size_t max = 0;
+  size_t total_free = 0;
+  size_t total_used = 0;
+
+  for (idx_t idx = _partitions.leftmost(partition_id);
+        idx <= _partitions.rightmost(partition_id); idx++) {
+    if (_partitions.in_free_set(partition_id, idx)) {
+      ShenandoahHeapRegion *r = _heap->get_region(idx);
+      size_t free = alloc_capacity(r);
+      max = MAX2(max, free);
+      total_free += free;
+      total_used += r->used();
+    }
+  }
+
+  ls.print(" %s freeset stats: Partition count: %zu, Reserved: %zu%s, Max free available in a single region: %zu%s;",
+            partition_name(partition_id),
+            _partitions.count(partition_id),
+            byte_size_in_proper_unit(total_free), proper_unit_for_byte_size(total_free),
+            byte_size_in_proper_unit(max),        proper_unit_for_byte_size(max));
+}
+
 void ShenandoahFreeSet::log_status() {
   shenandoah_assert_heaplocked();
 
@@ -3155,20 +3178,21 @@ void ShenandoahFreeSet::log_status() {
       // retired, the sum of used and capacities within regions that are still in the Mutator free partition may not match
       // my internally tracked values of used() and free().
       assert(free == total_free, "Free memory (%zu) should match calculated memory (%zu)", free, total_free);
-      ls.print("Free: %zu%s, Max: %zu%s regular, %zu%s humongous, ",
+      ls.print("Whole heap stats: Total free: %zu%s, Total used: %zu%s, Max free in a single region: %zu%s, Max humongous: %zu%s; ",
                byte_size_in_proper_unit(total_free),    proper_unit_for_byte_size(total_free),
+               byte_size_in_proper_unit(total_used), proper_unit_for_byte_size(total_used),
                byte_size_in_proper_unit(max),           proper_unit_for_byte_size(max),
                byte_size_in_proper_unit(max_humongous), proper_unit_for_byte_size(max_humongous)
       );
 
-      ls.print("Frag: ");
+      ls.print("Frag stats: ");
       size_t frag_ext;
       if (total_free_ext > 0) {
         frag_ext = 100 - (100 * max_humongous / total_free_ext);
       } else {
         frag_ext = 0;
       }
-      ls.print("%zu%% external, ", frag_ext);
+      ls.print("External: %zu%%, ", frag_ext);
 
       size_t frag_int;
       if (_partitions.count(ShenandoahFreeSetPartitionId::Mutator) > 0) {
@@ -3177,53 +3201,12 @@ void ShenandoahFreeSet::log_status() {
       } else {
         frag_int = 0;
       }
-      ls.print("%zu%% internal; ", frag_int);
-      ls.print("Used: %zu%s, Mutator Free: %zu",
-               byte_size_in_proper_unit(total_used), proper_unit_for_byte_size(total_used),
-               _partitions.count(ShenandoahFreeSetPartitionId::Mutator));
+      ls.print("Internal: %zu%%; ", frag_int);
     }
 
-    {
-      size_t max = 0;
-      size_t total_free = 0;
-      size_t total_used = 0;
-
-      for (idx_t idx = _partitions.leftmost(ShenandoahFreeSetPartitionId::Collector);
-           idx <= _partitions.rightmost(ShenandoahFreeSetPartitionId::Collector); idx++) {
-        if (_partitions.in_free_set(ShenandoahFreeSetPartitionId::Collector, idx)) {
-          ShenandoahHeapRegion *r = _heap->get_region(idx);
-          size_t free = alloc_capacity(r);
-          max = MAX2(max, free);
-          total_free += free;
-          total_used += r->used();
-        }
-      }
-      ls.print(" Collector Reserve: %zu%s, Max: %zu%s; Used: %zu%s",
-               byte_size_in_proper_unit(total_free), proper_unit_for_byte_size(total_free),
-               byte_size_in_proper_unit(max),        proper_unit_for_byte_size(max),
-               byte_size_in_proper_unit(total_used), proper_unit_for_byte_size(total_used));
-    }
-
-    if (_heap->mode()->is_generational()) {
-      size_t max = 0;
-      size_t total_free = 0;
-      size_t total_used = 0;
-
-      for (idx_t idx = _partitions.leftmost(ShenandoahFreeSetPartitionId::OldCollector);
-           idx <= _partitions.rightmost(ShenandoahFreeSetPartitionId::OldCollector); idx++) {
-        if (_partitions.in_free_set(ShenandoahFreeSetPartitionId::OldCollector, idx)) {
-          ShenandoahHeapRegion *r = _heap->get_region(idx);
-          size_t free = alloc_capacity(r);
-          max = MAX2(max, free);
-          total_free += free;
-          total_used += r->used();
-        }
-      }
-      ls.print_cr(" Old Collector Reserve: %zu%s, Max: %zu%s; Used: %zu%s",
-                  byte_size_in_proper_unit(total_free), proper_unit_for_byte_size(total_free),
-                  byte_size_in_proper_unit(max),        proper_unit_for_byte_size(max),
-                  byte_size_in_proper_unit(total_used), proper_unit_for_byte_size(total_used));
-    }
+    log_freeset_stats(ShenandoahFreeSetPartitionId::Mutator, ls);
+    log_freeset_stats(ShenandoahFreeSetPartitionId::Collector, ls);
+    if (_heap->mode()->is_generational()) {log_freeset_stats(ShenandoahFreeSetPartitionId::OldCollector, ls);}
   }
 }
 

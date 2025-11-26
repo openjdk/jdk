@@ -47,19 +47,21 @@ ShenandoahCompactHeuristics::ShenandoahCompactHeuristics(ShenandoahSpaceInfo* sp
 }
 
 bool ShenandoahCompactHeuristics::should_start_gc() {
-  size_t max_capacity = _space_info->max_capacity();
   size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
-  size_t available = _space_info->available();
+  size_t available = _space_info->soft_available();
+  size_t allocated = _space_info->bytes_allocated_since_gc_start();
 
-  // Make sure the code below treats available without the soft tail.
-  size_t soft_tail = max_capacity - capacity;
-  available = (available > soft_tail) ? (available - soft_tail) : 0;
+  log_debug(gc)("should_start_gc calculation: available: %zu%s, soft_max_capacity: %zu%s"
+                ", allocated_since_gc_start: %zu%s",
+                byte_size_in_proper_unit(available), proper_unit_for_byte_size(available),
+                byte_size_in_proper_unit(capacity), proper_unit_for_byte_size(capacity),
+                byte_size_in_proper_unit(allocated), proper_unit_for_byte_size(allocated));
 
   size_t threshold_bytes_allocated = capacity / 100 * ShenandoahAllocationThreshold;
   size_t min_threshold = capacity / 100 * ShenandoahMinFreeThreshold;
 
   if (available < min_threshold) {
-    log_trigger("Free (%zu%s) is below minimum threshold (%zu%s)",
+    log_trigger("Free (Soft mutator free) (%zu%s) is below minimum threshold (%zu%s)",
                 byte_size_in_proper_unit(available),     proper_unit_for_byte_size(available),
                 byte_size_in_proper_unit(min_threshold), proper_unit_for_byte_size(min_threshold));
     accept_trigger();
