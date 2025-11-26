@@ -27,7 +27,6 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "compiler/compileLog.hpp"
-#include "jni_md.h"
 #include "libadt/dict.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceMirrorKlass.hpp"
@@ -1921,9 +1920,7 @@ const TypeLong* TypeLong::make(jlong con) {
 }
 
 const TypeLong* TypeLong::make_unsigned(julong ucon) {
-  jlong con = ucon;
-  return (new TypeLong(TypeIntPrototype<jlong, julong>{{con, con}, {ucon, ucon}, {~ucon, ucon}},
-                       WidenMin, false))->hashcons()->is_long();
+  return make_or_top(TypeIntPrototype<jlong, julong>{{min_jlong, max_jlong}, {ucon, ucon}, {0, 0}}, WidenMin)->is_long();
 }
 
 const TypeLong* TypeLong::make(jlong lo, jlong hi, int widen) {

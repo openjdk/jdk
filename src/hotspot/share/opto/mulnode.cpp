@@ -22,7 +22,6 @@
  *
  */
 
-#include "jni_md.h"
 #include "opto/addnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
