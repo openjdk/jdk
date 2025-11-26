@@ -1004,12 +1004,15 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitReference(ReferenceTree tree, Void ignore) {
-        Element e = env.trees.getElement(getCurrentPath());
-        if (e == null) {
-            reportBadReference(tree);
-        } else if ((inLink || inSee)
-                && e.getKind() == ElementKind.CLASS && e.asType().getKind() != TypeKind.DECLARED) {
-            reportBadReference(tree);
+        // Exclude same-file anchor links from reference checks
+        if (!tree.getSignature().startsWith("##")) {
+            Element e = env.trees.getElement(getCurrentPath());
+            if (e == null) {
+                reportBadReference(tree);
+            } else if ((inLink || inSee)
+                    && e.getKind() == ElementKind.CLASS && e.asType().getKind() != TypeKind.DECLARED) {
+                reportBadReference(tree);
+            }
         }
         return super.visitReference(tree, ignore);
     }
