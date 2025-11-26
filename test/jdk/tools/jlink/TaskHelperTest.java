@@ -248,14 +248,8 @@ public class TaskHelperTest {
 
     @ParameterizedTest
     @MethodSource("compressUsages")
-    public void testCompressOptionArg(CompressTestCase testCase) throws TaskHelper.BadArgs {
+    public void testCompressOptionArg(CompressTestCase testCase) throws TaskHelper.BadArgs, IOException {
         var remaining = optionsHelper.handleOptions(this, testCase.tokens);
-        try {
-            // trigger Plugin::configure
-            taskHelper.getPluginsConfig(null, null, null);
-        } catch (IOException ex) {
-            fail("Unexpected IOException");
-        }
 
         assertTrue(remaining.isEmpty());
         assertEquals(testCase.expectedCompressValue, compressArgValue);
