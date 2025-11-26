@@ -373,6 +373,7 @@ public:
 
         {
           ICacheInvalidationContext icic;
+
           // Heal oops and potentially mark young objects if there is a concurrent young collection.
           ZUncoloredRootProcessOopClosure cl(prev_color);
           ZNMethod::nmethod_oops_do_inner(nm, &cl);

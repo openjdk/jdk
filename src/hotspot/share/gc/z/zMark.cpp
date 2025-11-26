@@ -721,6 +721,7 @@ public:
     if (_bs_nm->is_armed(nm)) {
       {
          ICacheInvalidationContext icic;
+
          // Heal barriers
          ZNMethod::nmethod_patch_barriers(nm);
 

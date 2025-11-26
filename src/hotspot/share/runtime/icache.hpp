@@ -72,13 +72,13 @@ class AbstractICache : AllStatic {
 };
 
 class ICacheInvalidationContext : StackObj {
+ private:
   NONCOPYABLE(ICacheInvalidationContext);
 
-private:
   void pd_init();
   void pd_invalidate_icache();
 
-public:
+ public:
   ICacheInvalidationContext() {
     pd_init();
   }
