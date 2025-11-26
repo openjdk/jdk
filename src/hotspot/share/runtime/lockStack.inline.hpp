@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,11 @@
 
 #include "memory/iterator.hpp"
 #include "runtime/javaThread.hpp"
-#include "runtime/lightweightSynchronizer.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/stackWatermark.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
+#include "runtime/synchronizer.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -87,7 +87,7 @@ inline bool LockStack::is_empty() const {
 }
 
 inline bool LockStack::is_recursive(oop o) const {
-  if (!VM_Version::supports_recursive_lightweight_locking()) {
+  if (!VM_Version::supports_recursive_fast_locking()) {
     return false;
   }
   verify("pre-is_recursive");
@@ -119,7 +119,7 @@ inline bool LockStack::is_recursive(oop o) const {
 }
 
 inline bool LockStack::try_recursive_enter(oop o) {
-  if (!VM_Version::supports_recursive_lightweight_locking()) {
+  if (!VM_Version::supports_recursive_fast_locking()) {
     return false;
   }
   verify("pre-try_recursive_enter");
@@ -145,7 +145,7 @@ inline bool LockStack::try_recursive_enter(oop o) {
 }
 
 inline bool LockStack::try_recursive_exit(oop o) {
-  if (!VM_Version::supports_recursive_lightweight_locking()) {
+  if (!VM_Version::supports_recursive_fast_locking()) {
     return false;
   }
   verify("pre-try_recursive_exit");
@@ -254,7 +254,7 @@ inline void OMCache::set_monitor(ObjectMonitor *monitor) {
 
   oop obj = monitor->object_peek();
   assert(obj != nullptr, "must be alive");
-  assert(monitor == LightweightSynchronizer::get_monitor_from_table(JavaThread::current(), obj), "must exist in table");
+  assert(monitor == ObjectSynchronizer::get_monitor_from_table(JavaThread::current(), obj), "must exist in table");
 
   OMCacheEntry to_insert = {obj, monitor};
 

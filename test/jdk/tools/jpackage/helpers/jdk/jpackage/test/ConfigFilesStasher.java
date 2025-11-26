@@ -192,9 +192,7 @@ final class ConfigFilesStasher {
     }
 
     private static ApplicationLayout appImageAppLayout(JPackageCommand cmd) {
-        if (cmd.isRuntime()) {
-            throw new UnsupportedOperationException();
-        }
+        cmd.verifyNotRuntime();
 
         if (cmd.isImagePackageType()) {
             return platformAppImage();
@@ -213,7 +211,7 @@ final class ConfigFilesStasher {
     }
 
     private static boolean isWithServices(JPackageCommand cmd) {
-        return cmd.launcherNames(true).stream().anyMatch(launcherName -> {
+        return !cmd.isImagePackageType() && cmd.launcherNames(true).stream().anyMatch(launcherName -> {
             return LauncherAsServiceVerifier.launcherAsService(cmd, launcherName);
         });
     }

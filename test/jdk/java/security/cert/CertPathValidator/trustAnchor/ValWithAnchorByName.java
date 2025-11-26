@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,13 @@
  * @bug 8132926
  * @summary PKIXParameters built with public key form of TrustAnchor causes
  *          NPE during cert path building/validation
+ * @enablePreview
  * @run main ValWithAnchorByName
  */
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.security.PEMDecoder;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertPath;
@@ -232,9 +235,10 @@ public class ValWithAnchorByName {
     public static void main(String[] args) throws Exception {
         TrustAnchor anchor;
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        X509Certificate rootCert = generateCertificate(cf, ROOT_CA_CERT);
-        X509Certificate eeCert = generateCertificate(cf, EE_CERT);
-        X509Certificate intCaCert = generateCertificate(cf, INT_CA_CERT);
+        PEMDecoder pemDecoder = PEMDecoder.of();
+        X509Certificate rootCert = pemDecoder.decode(ROOT_CA_CERT, X509Certificate.class);
+        X509Certificate eeCert = pemDecoder.decode(EE_CERT, X509Certificate.class);
+        X509Certificate intCaCert = pemDecoder.decode(INT_CA_CERT, X509Certificate.class);
         List<X509Certificate> certList = new ArrayList<X509Certificate>() {{
             add(eeCert);
             add(intCaCert);
@@ -282,11 +286,5 @@ public class ValWithAnchorByName {
         params.setDate(EVAL_DATE);
 
         validator.validate(path, params);
-    }
-
-    private static X509Certificate generateCertificate(CertificateFactory cf,
-            String encoded) throws CertificateException {
-        ByteArrayInputStream is = new ByteArrayInputStream(encoded.getBytes());
-        return (X509Certificate)cf.generateCertificate(is);
     }
 }
