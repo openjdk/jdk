@@ -4859,6 +4859,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
         push(temp_reg);
         movptr(temp_reg, recv);
         recv_reg = temp_reg;
+        assert_different_registers(rax, mdp, recv_reg, offset);
       } else if (mdp == rax || offset == rax) {
         // Use the *other* register as temporary, collapse the address into it,
         // and use it as slot address.
@@ -4866,9 +4867,10 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
         push(temp_reg);
         lea(temp_reg, Address(mdp, offset, Address::times_ptr));
         slot = Address(temp_reg, 0);
+        assert_different_registers(rax, (mdp == rax ? noreg : mdp), recv_reg, (mdp == rax ? offset : noreg));
       } else {
         // Nothing to do, just go with defaults.
-        assert_different_registers(rax, mdp, recv, offset);
+        assert_different_registers(rax, mdp, recv_reg, offset);
       }
       // CAS: null -> recv
       push(rax);
