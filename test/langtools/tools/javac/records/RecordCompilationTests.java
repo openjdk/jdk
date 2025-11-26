@@ -2191,6 +2191,7 @@ class RecordCompilationTests extends CompilationTestCase {
                 ) {}
                 """
         );
+        // here the javadoc tag is ignored
         assertOK(
                 """
                 record R(
@@ -2218,6 +2219,21 @@ class RecordCompilationTests extends CompilationTestCase {
                     int j = r.i();
                 }
                 """
+            );
+            // javadoc tag only has no effect
+            assertOK(
+                    """
+                    record R(
+                        /**
+                         * @deprecated
+                         */
+                        int i
+                    ) {}
+                    class Client {
+                        R r;
+                        int j = r.i();
+                    }
+                    """
             );
         } finally {
             setCompileOptions(previousOptions);
