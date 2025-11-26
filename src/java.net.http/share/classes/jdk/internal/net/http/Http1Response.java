@@ -274,7 +274,8 @@ class Http1Response<T> {
     }
 
     /**
-     * Read up to MAX_IGNORE bytes discarding
+     * Reads the body, if it is present and less than {@value MAX_IGNORE} bytes.
+     * Otherwise, just the connection is closed.
      */
     public CompletableFuture<Void> ignoreBody(Executor executor) {
 
@@ -286,7 +287,11 @@ class Http1Response<T> {
             return MinimalFuture.failedFuture(pe);
         }
 
-        // Read the body, if it is present and less than `MAX_IGNORE` bytes
+        // Read the body, if it is present and less than `MAX_IGNORE` bytes.
+        //
+        // We proceed with reading the body even when `Content-Length: 0` to
+        // ensure that the happy path is taken, and upon success, the connection
+        // is returned back to the pool.
         if (clen != -1 && clen <= MAX_IGNORE) {
             return readBody(discarding(), !request.isWebSocket(), executor);
         } else {
