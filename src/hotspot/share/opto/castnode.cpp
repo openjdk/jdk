@@ -35,9 +35,9 @@
 #include "utilities/checkedCast.hpp"
 
 const ConstraintCastNode::DependencyType ConstraintCastNode::DependencyType::FloatingNarrowing(true, true, "floating narrowing dependency"); // not pinned, narrows type
-const ConstraintCastNode::DependencyType ConstraintCastNode::DependencyType::FloatingNonNarrowing(true, false, "floating non narrowing dependency"); // not pinned, doesn't narrow type
-const ConstraintCastNode::DependencyType ConstraintCastNode::DependencyType::NonFloatingNarrowing(false, true, "now floating narrowing dependency"); // pinned, narrows type
-const ConstraintCastNode::DependencyType ConstraintCastNode::DependencyType::NonFloatingNonNarrowing(false, false, "non floating non narrowing dependency"); // pinned, doesn't narrow type
+const ConstraintCastNode::DependencyType ConstraintCastNode::DependencyType::FloatingNonNarrowing(true, false, "floating non-narrowing dependency"); // not pinned, doesn't narrow type
+const ConstraintCastNode::DependencyType ConstraintCastNode::DependencyType::NonFloatingNarrowing(false, true, "non-floating narrowing dependency"); // pinned, narrows type
+const ConstraintCastNode::DependencyType ConstraintCastNode::DependencyType::NonFloatingNonNarrowing(false, false, "non-floating non-narrowing dependency"); // pinned, doesn't narrow type
 
 //=============================================================================
 // If input is already higher or equal to cast type, then this is an identity.
