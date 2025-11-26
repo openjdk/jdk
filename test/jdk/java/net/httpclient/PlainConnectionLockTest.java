@@ -93,7 +93,6 @@ import static java.net.http.HttpClient.Version.HTTP_1_1;
  *          even with the backlog correctly configure, adding a margin to the backlog
  *          or reducing the requestCount could be envisaged.
  * @run junit/othervm
- *              -Djdk.internal.httpclient.tcp.selector.useVirtualThreads=always
  *              -Djdk.httpclient.HttpClient.log=errors
  *              -Djdk.httpclient.connectionPoolSize=1
  *              ${test.main.class}
