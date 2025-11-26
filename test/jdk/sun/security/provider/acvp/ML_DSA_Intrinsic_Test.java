@@ -37,6 +37,7 @@ import java.util.HexFormat;
  */
 /*
  * @test
+ * @requires os.simpleArch == "x64"
  * @library /test/lib
  * @key randomness
  * @modules java.base/sun.security.provider:+open
