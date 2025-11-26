@@ -706,8 +706,6 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr* t_oop, MemBarNode* mb, PhaseVal
   Node* c = mb->in(0);
 
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  // step over g1 gc barrier if we're at e.g. a clone with ReduceInitialCardMarks off
-  c = bs->step_over_gc_barrier(c);
 
   CallNode* call = nullptr;
   guarantee(c != nullptr, "step_over_gc_barrier failed, there must be something to step to.");

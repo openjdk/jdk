@@ -392,8 +392,6 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
         values.at_put(j, mem);
       } else if (val->is_Store()) {
         Node* n = val->in(MemNode::ValueIn);
-        BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-        n = bs->step_over_gc_barrier(n);
         if (is_subword_type(ft)) {
           n = Compile::narrow_value(ft, n, phi_type, &_igvn, true);
         }
@@ -516,10 +514,7 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, Node *sfpt_ctl, BasicType
       // hit a sentinel, return appropriate 0 value
       return _igvn.zerocon(ft);
     } else if (mem->is_Store()) {
-      Node* n = mem->in(MemNode::ValueIn);
-      BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-      n = bs->step_over_gc_barrier(n);
-      return n;
+      return mem->in(MemNode::ValueIn);
     } else if (mem->is_Phi()) {
       // attempt to produce a Phi reflecting the values on the input paths of the Phi
       Node_Stack value_phis(8);
@@ -605,7 +600,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
             NOT_PRODUCT(fail_eliminate = "Mismatched access");
             can_eliminate = false;
           }
-          if (!n->is_Store() && n->Opcode() != Op_CastP2X && !bs->is_gc_pre_barrier_node(n) && !reduce_merge_precheck) {
+          if (!n->is_Store() && n->Opcode() != Op_CastP2X && !reduce_merge_precheck) {
             DEBUG_ONLY(disq_node = n;)
             if (n->is_Load() || n->is_LoadStore()) {
               NOT_PRODUCT(fail_eliminate = "Field load";)
