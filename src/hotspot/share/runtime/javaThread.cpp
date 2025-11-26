@@ -499,6 +499,7 @@ JavaThread::JavaThread(MemTag mem_tag) :
 
   _is_in_vthread_transition(false),
   DEBUG_ONLY(_is_vthread_transition_disabler(false) COMMA)
+  DEBUG_ONLY(_is_disabler_at_start(false) COMMA)
 
   _popframe_preserved_args(nullptr),
   _popframe_preserved_args_size(0),
