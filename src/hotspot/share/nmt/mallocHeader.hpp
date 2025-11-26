@@ -27,10 +27,16 @@
 #define SHARE_NMT_MALLOCHEADER_HPP
 
 #include "nmt/memTag.hpp"
+#include "sanitizers/address.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/nativeCallStack.hpp"
 
+#if INCLUDE_ASAN
+#undef NMT_BLOCK_INTEGRITY_CHECKS
+#else
+#define NMT_BLOCK_INTEGRITY_CHECKS
+#endif
 class outputStream;
 
 /*
@@ -128,6 +134,17 @@ public:
   inline MallocHeader(size_t size, MemTag mem_tag, uint32_t mst_marker);
 
   inline static size_t malloc_overhead() { return sizeof(MallocHeader) + sizeof(uint16_t); }
+  static void asan_poison_header_footer(void* addr) {
+    MallocHeader* header = (MallocHeader*)addr - 1;
+    ASAN_POISON_MEMORY_REGION(header->footer_address(), sizeof(uint16_t));
+    ASAN_POISON_MEMORY_REGION(header, sizeof(MallocHeader));
+  }
+  static void asan_unpoison_header_footer(void* addr) {
+    MallocHeader* header = (MallocHeader*)addr - 1;
+    ASAN_UNPOISON_MEMORY_REGION(header, sizeof(MallocHeader));
+    ASAN_UNPOISON_MEMORY_REGION(header->footer_address(), sizeof(uint16_t));
+  }
+
   inline size_t size()  const { return _size; }
   inline MemTag mem_tag() const { return _mem_tag; }
   inline uint32_t mst_marker() const { return _mst_marker; }

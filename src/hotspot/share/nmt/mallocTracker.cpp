@@ -199,7 +199,7 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MemTag mem_ta
     assert(header2->mem_tag() == mem_tag, "Wrong memory tag");
   }
 #endif
-
+  MallocHeader::asan_poison_header_footer(memblock);
   return memblock;
 }
 
@@ -207,6 +207,7 @@ void* MallocTracker::record_free_block(void* memblock) {
   assert(MemTracker::enabled(), "Sanity");
   assert(memblock != nullptr, "precondition");
 
+  MallocHeader::asan_unpoison_header_footer(memblock);
   MallocHeader* header = MallocHeader::resolve_checked(memblock);
 
   deaccount(header->free_info());
@@ -218,7 +219,6 @@ void* MallocTracker::record_free_block(void* memblock) {
   }
 
   header->mark_block_as_dead();
-
   return (void*)header;
 }
 

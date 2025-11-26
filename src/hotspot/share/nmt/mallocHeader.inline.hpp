@@ -96,16 +96,18 @@ inline bool MallocHeader::is_valid_malloced_pointer(const void* payload, char* m
 
 template<typename InTypeParam, typename OutTypeParam>
 inline OutTypeParam MallocHeader::resolve_checked_impl(InTypeParam memblock) {
-  char msg[256];
-  address corruption = nullptr;
-  if (!is_valid_malloced_pointer(memblock, msg, sizeof(msg))) {
-    fatal("Not a valid malloc pointer: " PTR_FORMAT ": %s", p2i(memblock), msg);
-  }
   OutTypeParam header_pointer = (OutTypeParam)memblock - 1;
-  if (!header_pointer->check_block_integrity(msg, sizeof(msg), &corruption)) {
-    header_pointer->print_block_on_error(tty, corruption != nullptr ? corruption : (address)header_pointer, (address)header_pointer);
-    fatal("NMT has detected a memory corruption bug. Block at " PTR_FORMAT ": %s", p2i(memblock), msg);
-  }
+  #ifdef NMT_BLOCK_INTEGRITY_CHECKS
+    char msg[256];
+    address corruption = nullptr;
+    if (!is_valid_malloced_pointer(memblock, msg, sizeof(msg))) {
+      fatal("Not a valid malloc pointer: " PTR_FORMAT ": %s", p2i(memblock), msg);
+    }
+    if (!header_pointer->check_block_integrity(msg, sizeof(msg), &corruption)) {
+      header_pointer->print_block_on_error(tty, corruption != nullptr ? corruption : (address)header_pointer, (address)header_pointer);
+      fatal("NMT has detected a memory corruption bug. Block at " PTR_FORMAT ": %s", p2i(memblock), msg);
+    }
+  #endif
   return header_pointer;
 }
 

@@ -706,7 +706,7 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     if (new_outer_size < size) {
       return nullptr;
     }
-
+    MallocHeader::asan_unpoison_header_footer(memblock);
     const size_t old_size = MallocTracker::malloc_header(memblock)->size();
 
     // Observe MallocLimit
@@ -730,6 +730,7 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
       // realloc(3) failed and the block still exists.
       // We have however marked it as dead, revert this change.
       header->revive();
+      MallocHeader::asan_poison_header_footer(memblock);
       return nullptr;
     }
     // realloc(3) succeeded, variable header now points to invalid memory and we need to deaccount the old block.
