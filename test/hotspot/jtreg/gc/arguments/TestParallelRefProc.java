@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package gc.arguments;
  * @summary Test defaults processing for -XX:+ParallelRefProcEnabled.
  * @library /test/lib
  * @library /
+ * @requires vm.gc.Serial & vm.gc.G1
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI gc.arguments.TestParallelRefProc
@@ -77,7 +78,7 @@ public class TestParallelRefProc {
         result.addAll(Arrays.asList(args));
         result.add("-XX:+PrintFlagsFinal");
         result.add("-version");
-        OutputAnalyzer output = GCArguments.executeLimitedTestJava(result);
+        OutputAnalyzer output = GCArguments.executeTestJava(result);
 
         output.shouldHaveExitValue(0);
 
