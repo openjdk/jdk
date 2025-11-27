@@ -163,7 +163,7 @@ class PlainConnectionLockTest implements HttpServerAdapters {
         https1URI = "https://" + https1Server.serverAuthority() + "/PlainConnectionLockTest/https1";
 
         // create a plain http server for HTTP/1.1
-        var wrappedHttp1Server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), backlog);
+        var wrappedHttp1Server = HttpServer.create(new InetSocketAddress(loopback, 0), backlog);
         http1Server = HttpTestServer.of(wrappedHttp1Server, serverExecutor);
         http1Server.addHandler((exchange) -> {
             if (blockResponse(requestSemaphore, responseSemaphore)) {
