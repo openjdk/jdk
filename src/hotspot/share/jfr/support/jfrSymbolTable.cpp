@@ -70,7 +70,7 @@ void JfrSymbolCallback::on_link(const JfrSymbolTable::StringEntry* entry) {
 
 void JfrSymbolCallback::on_unlink(const JfrSymbolTable::StringEntry* entry) {
   assert(entry != nullptr, "invariant");
-  JfrCHeapObj::free(const_cast<char*>(entry->literal()), strlen(entry->literal() + 1));
+  JfrCHeapObj::free(const_cast<char*>(entry->literal()), strlen(entry->literal()) + 1);
 }
 
 static JfrSymbolCallback* _callback = nullptr;
