@@ -269,9 +269,6 @@ void C1_MacroAssembler::load_parameter(int offset_in_words, Register reg) {
   movptr(reg, Address(rbp, (offset_in_words + 2) * BytesPerWord));
 }
 
-
-int baz, barf;
-
 // Randomized profile capture.
 
 void C1_MacroAssembler::step_random(Register state, Register temp) {
@@ -301,28 +298,6 @@ void C1_MacroAssembler::step_random(Register state, Register temp) {
     imull(state, temp);
     addl(state, 12345);
   }
-
-  int ratio_shift = exact_log2(ProfileCaptureRatio);
-  int threshold = (1ull << 32) >> ratio_shift;
-
-  if (getenv("APH_BAZ_BARF")) {
-    Label big, done;
-    push(temp);
-    cmpl(state, threshold);
-    jcc(Assembler::aboveEqual, big);
-
-    lea(temp, ExternalAddress((address)&baz));
-    addl(Address(temp), 1);
-    jmp(done);
-
-    bind(big);
-    lea(temp, ExternalAddress((address)&barf));
-    addl(Address(temp), 1);
-
-    bind(done);
-    pop(temp);
-  }
-
 }
 
 void C1_MacroAssembler::save_profile_rng() {

@@ -810,7 +810,6 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
   return oop_maps;
 }
 
-int foo;
 
 OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
 
@@ -868,8 +867,6 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
         Register bci = rax, method = rbx;
         __ enter();
         OopMap* map = save_live_registers(sasm, 3);
-        __ lea(rbx, ExternalAddress((address)&foo));
-        __ addl(Address(rbx), 1);
         // Retrieve bci
         __ movl(bci, Address(rbp, 2*BytesPerWord));
         // And a pointer to the Method*

@@ -506,12 +506,9 @@ static nmethod* counter_overflow_helper(JavaThread* current, int branch_bci, Met
   return osr_nm;
 }
 
-long c1_overflows;
-
 JRT_BLOCK_ENTRY(address, Runtime1::counter_overflow(JavaThread* current, int bci, Method* method))
   nmethod* osr_nm;
   JRT_BLOCK_NO_ASYNC
-    c1_overflows++;
     osr_nm = counter_overflow_helper(current, bci, method);
     if (osr_nm != nullptr) {
       RegisterMap map(current,

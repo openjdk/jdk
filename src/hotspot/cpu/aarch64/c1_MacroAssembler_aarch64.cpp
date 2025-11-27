@@ -280,60 +280,21 @@ void C1_MacroAssembler::load_parameter(int offset_in_words, Register reg) {
   ldr(reg, Address(rfp, (offset_in_words + 2) * BytesPerWord));
 }
 
-int baz, barf;
-
 // Randomized profile capture.
 
-void C1_MacroAssembler::step_random(Register state, Register temp) {
-  // One of these will be the best for a particular CPU.
-
-  /* Algorithm "xor" from p. 4 of Marsaglia, "Xorshift RNGs" */
-  // movl(temp, state);
-  // sall(temp, 13);
-  // xorl(state, temp);
-  // movl(temp, state);
-  // shrl(temp, 7);
-  // xorl(state, temp);
-  // movl(temp, state);
-  // sall(temp, 5);
-  // xorl(state, temp);
-
+void C1_MacroAssembler::step_random(Register state, Register temp, Register data) {
   if (VM_Version::supports_crc32()) {
     /* CRC used as a psuedo-random-number generator */
     // In effect, the CRC instruction is being used here for its
     // linear feedback shift register. It's unbeatably fast, and
     // plenty good enough for what we need.
-    mov(temp, 1);
-    crc32h(state, state, temp);
+    crc32h(state, state, data);
   } else {
     /* LCG from glibc. */
     mov(temp, 1103515245);
     mulw(state, state, temp);
     addw(state, state, 12345);
   }
-
-  int ratio_shift = exact_log2(ProfileCaptureRatio);
-  unsigned int threshold = (1ull << 32) >> ratio_shift;
-
-  if (getenv("APH_BAZ_BARF")) {
-    Label big, done;
-    push(RegSet::of(temp), sp);
-    movw(rscratch1, threshold);
-    cmp(state, rscratch1);
-    br(HS, big);
-
-    lea(temp, ExternalAddress((address)&baz));
-    incrementw(Address(temp));
-    b(done);
-
-    bind(big);
-    lea(temp, ExternalAddress((address)&barf));
-    incrementw(Address(temp));
-
-    bind(done);
-    pop(RegSet::of(temp), sp);
-  }
-
 }
 
 void C1_MacroAssembler::save_profile_rng() {

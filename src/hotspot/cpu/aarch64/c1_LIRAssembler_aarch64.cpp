@@ -1351,7 +1351,6 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       __ ubfx(rscratch1, r_profile_rng, 32-ratio_shift, ratio_shift);
       __ cbz(rscratch1, *stub->entry());
       __ bind(*stub->continuation());
-      __ block_comment("L1346");
       __ step_random(r_profile_rng, rscratch2);
 
       stub->set_action(lambda, op);
@@ -1505,7 +1504,6 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
         __ ubfx(rscratch1, r_profile_rng, 32-ratio_shift, ratio_shift);
         __ cbz(rscratch1, *profile_stub->entry());
         __ bind(*profile_stub->continuation());
-        __ block_comment("L1508");
         __ step_random(r_profile_rng, rscratch2);
         __ cbz(value, done);
 
@@ -2597,7 +2595,7 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
 }
 
 void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr counter_addr, LIR_Opr dest, LIR_Opr temp_op,
-                                          LIR_Opr freq_op, LIR_Opr step_op,
+                                          LIR_Opr freq_op,
                                           CodeStub* overflow_stub) {
 #ifndef PRODUCT
   if (CommentedAssembly) {
@@ -2667,8 +2665,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr counter_addr, LI
       if (step->is_valid() && overflow_stub) {
         if (!freq_op->is_valid()) {
           if (!step->is_constant()) {
-            __ cmp(step->as_register(), (u1)0);
-            __ br(__ EQ, *overflow_stub->entry());
+            __ cbz(step->as_register(), *overflow_stub->entry());
           } else {
             __ b(*overflow_stub->entry());
             return;
@@ -2703,7 +2700,6 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr counter_addr, LI
     __ ubfx(rscratch1, r_profile_rng, 32 - ratio_shift, ratio_shift);
     __ cbz(rscratch1, *counter_stub->entry());
     __ bind(*counter_stub->continuation());
-    __ block_comment("L2702");
     __ step_random(r_profile_rng, temp);
 
     counter_stub->set_action(lambda, nullptr);
@@ -2835,7 +2831,6 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
     __ ubfx(rscratch1, r_profile_rng, 32-ratio_shift, ratio_shift);
     __ cbz(rscratch1, *stub->entry());
     __ bind(*stub->continuation());
-    __ block_comment("L2834");
     __ step_random(r_profile_rng, temp);
 
     stub->set_action(lambda, op);

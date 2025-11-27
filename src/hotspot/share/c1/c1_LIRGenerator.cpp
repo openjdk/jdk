@@ -929,7 +929,7 @@ void LIRGenerator::profile_branch(If* if_instr, If::Condition cond) {
     LIR_Address* data_addr = new LIR_Address(md_reg, data_offset_reg, data_reg->type());
     LIR_Opr tmp = new_register(T_INT);
     LIR_Opr step = LIR_OprFact::intConst(DataLayout::counter_increment);
-    __ increment_profile_ctr(step, data_addr, LIR_OprFact::intConst(0), tmp, nullptr);
+    __ increment_counter(step, data_addr, LIR_OprFact::intConst(0), tmp, nullptr);
   }
 }
 
@@ -2376,7 +2376,7 @@ void LIRGenerator::do_Goto(Goto* x) {
     LIR_Opr tmp = new_register(T_INT);
     LIR_Opr dummy = LIR_OprFact::intConst(0);
     LIR_Opr inc = LIR_OprFact::intConst(DataLayout::counter_increment);
-    __ increment_profile_ctr(inc, counter_addr, dummy, tmp, nullptr);
+    __ increment_counter(inc, counter_addr, dummy, tmp, nullptr);
   }
 
   // emit phi-instruction move after safepoint since this simplifies
@@ -3187,11 +3187,11 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
     unsigned int freq = (unsigned int)frequency
                          >> ratio_shift << ratio_shift
                          << InvocationCounter::count_shift;
-    __ increment_profile_ctr(step, counter, result, tmp,
-                             LIR_OprFact::intConst(freq), step, overflow, info);
+    __ increment_counter(step, counter, result, tmp,
+                         LIR_OprFact::intConst(freq), overflow, info);
   } else {
-    __ increment_profile_ctr(step, counter, result, tmp,
-                             LIR_OprFact::illegalOpr, step, nullptr, info);
+    __ increment_counter(step, counter, result, tmp,
+                             LIR_OprFact::illegalOpr, nullptr, info);
   }
 }
 

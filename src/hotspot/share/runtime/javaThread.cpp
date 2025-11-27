@@ -524,7 +524,7 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _lock_stack(this),
   _om_cache(this),
 
-  _profile_rng(0) {
+  _profile_rng(-1) {
   set_jni_functions(jni_functions());
 
 #if INCLUDE_JVMCI
