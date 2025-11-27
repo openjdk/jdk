@@ -31,7 +31,7 @@
 
 package compiler.c2;
 
-public class Test8370502 {
+public class TestUnlockNodeNullMemprof {
     public static void main(String[] args) {
         int[] a = new int[0]; // test valid only when size is 0.
         for (int i = 0; i < Integer.valueOf(10000); i++)
