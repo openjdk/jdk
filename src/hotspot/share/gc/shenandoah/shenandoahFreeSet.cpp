@@ -1597,9 +1597,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
       r->set_update_watermark(r->top());
       if (r->is_old()) {
         _partitions.increase_used(ShenandoahFreeSetPartitionId::OldCollector, (req.actual_size() + req.waste()) * HeapWordSize);
-        assert(req.type() == ShenandoahAllocRequest::_alloc_shared_gc_old ||
-               req.type() == ShenandoahAllocRequest::_alloc_shared_gc_promotion ||
-               req.type() == ShenandoahAllocRequest::_alloc_plab, "old-gen allocations use PLAB, shared gc old or shared promotion allocation");
+        assert(req.type() != ShenandoahAllocRequest::_alloc_gclab, "old-gen allocations use PLAB or shared allocation");
         // for plabs, we'll sort the difference between evac and promotion usage when we retire the plab
       } else {
         _partitions.increase_used(ShenandoahFreeSetPartitionId::Collector, (req.actual_size() + req.waste()) * HeapWordSize);
