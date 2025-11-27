@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @summary FIXME
+ * @summary 8372634
  *
  * @requires vm.flagless
  * @library /test/lib /
