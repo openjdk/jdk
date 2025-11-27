@@ -611,11 +611,10 @@ void G1RemSet::scan_collection_set_code_roots(G1ParScanThreadState* pss,
                                               G1GCPhaseTimes::GCParPhases coderoots_phase,
                                               G1GCPhaseTimes::GCParPhases objcopy_phase) {
   EventGCPhaseParallel event;
-
-  G1GCPhaseTimes* p = _g1h->phase_times();
-
   Tickspan code_root_scan_time;
   Tickspan code_root_trim_partially_time;
+
+  G1GCPhaseTimes* p = _g1h->phase_times();
   {
     G1EvacPhaseWithTrimTimeTracker timer(pss, code_root_scan_time, code_root_trim_partially_time);
 
