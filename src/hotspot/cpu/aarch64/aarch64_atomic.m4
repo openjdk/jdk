@@ -236,7 +236,11 @@ GAA_INSN1(I,    I,          w,  ,       NoRes,  Const)
 GAA_INSN1(I,    I,          w,  Acq,    NoRes,  Const)
 dnl
 GAA_INSN1(L,    L,          ,   ,       ,           )
+GAA_INSN1(L,    L,          ,   Acq,    ,           )
 GAA_INSN1(L,    L,          ,   ,       NoRes,      )
+GAA_INSN1(L,    L,          ,   Acq,    NoRes,      )
 GAA_INSN1(L,    L,          ,   ,       ,       Const)
+GAA_INSN1(L,    L,          ,   Acq,    ,       Const)
 GAA_INSN1(L,    L,          ,   ,       NoRes,  Const)
+GAA_INSN1(L,    L,          ,   Acq,    NoRes,  Const)
 dnl

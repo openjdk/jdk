@@ -832,6 +832,17 @@ instruct getAndAddL(indirect mem, iRegLNoSp newval, iRegL incr) %{
   ins_pipe(pipe_serial);
 %}
 
+instruct getAndAddLAcq(indirect mem, iRegLNoSp newval, iRegL incr) %{
+  predicate(needs_acquiring_load_exclusive(n));
+  match(Set newval (GetAndAddL mem incr));
+  ins_cost(VOLATILE_REF_COST+1);
+  format %{ "atomic_add_acq $newval, [$mem], $incr" %}
+  ins_encode %{
+    __ atomic_addal($newval$$Register, $incr$$Register, as_Register($mem$$base));
+  %}
+  ins_pipe(pipe_serial);
+%}
+
 instruct getAndAddLNoRes(indirect mem, Universe dummy, iRegL incr) %{
   predicate(n->as_LoadStore()->result_not_used());
   match(Set dummy (GetAndAddL mem incr));
@@ -839,6 +850,17 @@ instruct getAndAddLNoRes(indirect mem, Universe dummy, iRegL incr) %{
   format %{ "atomic_add noreg, [$mem], $incr" %}
   ins_encode %{
     __ atomic_add(noreg, $incr$$Register, as_Register($mem$$base));
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct getAndAddLAcqNoRes(indirect mem, Universe dummy, iRegL incr) %{
+  predicate(n->as_LoadStore()->result_not_used() && needs_acquiring_load_exclusive(n));
+  match(Set dummy (GetAndAddL mem incr));
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "atomic_add_acq noreg, [$mem], $incr" %}
+  ins_encode %{
+    __ atomic_addal(noreg, $incr$$Register, as_Register($mem$$base));
   %}
   ins_pipe(pipe_serial);
 %}
@@ -853,6 +875,17 @@ instruct getAndAddLConst(indirect mem, iRegLNoSp newval, immLAddSub incr) %{
   ins_pipe(pipe_serial);
 %}
 
+instruct getAndAddLAcqConst(indirect mem, iRegLNoSp newval, immLAddSub incr) %{
+  predicate(needs_acquiring_load_exclusive(n));
+  match(Set newval (GetAndAddL mem incr));
+  ins_cost(VOLATILE_REF_COST+1);
+  format %{ "atomic_add_acq $newval, [$mem], $incr" %}
+  ins_encode %{
+    __ atomic_addal($newval$$Register, $incr$$constant, as_Register($mem$$base));
+  %}
+  ins_pipe(pipe_serial);
+%}
+
 instruct getAndAddLNoResConst(indirect mem, Universe dummy, immLAddSub incr) %{
   predicate(n->as_LoadStore()->result_not_used());
   match(Set dummy (GetAndAddL mem incr));
@@ -860,6 +893,17 @@ instruct getAndAddLNoResConst(indirect mem, Universe dummy, immLAddSub incr) %{
   format %{ "atomic_add noreg, [$mem], $incr" %}
   ins_encode %{
     __ atomic_add(noreg, $incr$$constant, as_Register($mem$$base));
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct getAndAddLAcqNoResConst(indirect mem, Universe dummy, immLAddSub incr) %{
+  predicate(n->as_LoadStore()->result_not_used() && needs_acquiring_load_exclusive(n));
+  match(Set dummy (GetAndAddL mem incr));
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "atomic_add_acq noreg, [$mem], $incr" %}
+  ins_encode %{
+    __ atomic_addal(noreg, $incr$$constant, as_Register($mem$$base));
   %}
   ins_pipe(pipe_serial);
 %}
