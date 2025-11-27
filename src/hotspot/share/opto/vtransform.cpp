@@ -65,10 +65,15 @@ void VTransformOptimize::optimize() {
     worklist_push(vtn);
   }
 
+  // We don't want to iterate too many times. We set some arbitrary limit,
+  // just to catch infinite loops.
+  DEBUG_ONLY( int allowed_steps = 100 * _worklist.length(); )
+
   // Optimize iteratively.
   while (_worklist.is_nonempty()) {
     VTransformNode* vtn = worklist_pop();
     optimize_step(vtn);
+    assert(--allowed_steps > 0, "no endless loop");
   }
 
   DEBUG_ONLY( verify(); )
