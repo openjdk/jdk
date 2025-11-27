@@ -21,26 +21,25 @@
  * questions.
  */
 
-package compiler.c2.irTests.constant;
+package compiler.c2.irTests.constantFold;
 
 import java.util.Optional;
 
 import compiler.lib.ir_framework.Check;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
-import compiler.lib.ir_framework.Run;
 import compiler.lib.ir_framework.Test;
 import compiler.lib.ir_framework.TestFramework;
 
 /*
  * @test
- * @bug 8286190
+ * @bug 8372696
  * @summary Verify constant folding for Optional
  * @library /test/lib /
  * @requires vm.compiler2.enabled
- * @run driver compiler.c2.irTests.constant.TestOptionalFold
+ * @run driver compiler.c2.irTests.constantFold.TestOptional
  */
-public class TestOptionalFold {
+public class TestOptional {
 
     public static void main(String[] args) {
         TestFramework.runWithFlags(
