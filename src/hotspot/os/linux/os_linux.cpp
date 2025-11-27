@@ -159,7 +159,6 @@ physical_memory_size_type os::Linux::_physical_memory = 0;
 address   os::Linux::_initial_thread_stack_bottom = nullptr;
 uintptr_t os::Linux::_initial_thread_stack_size   = 0;
 
-int (*os::Linux::_pthread_getcpuclockid)(pthread_t, clockid_t *) = (int(*)(pthread_t, clockid_t *)) dlsym(RTLD_DEFAULT, "pthread_getcpuclockid");
 pthread_t os::Linux::_main_thread;
 const char * os::Linux::_libc_version = nullptr;
 const char * os::Linux::_libpthread_version = nullptr;
@@ -4871,7 +4870,7 @@ static jlong user_thread_cpu_time(Thread *thread);
 
 static jlong total_thread_cpu_time(Thread *thread) {
     clockid_t clockid;
-    int rc = os::Linux::pthread_getcpuclockid(thread->osthread()->pthread_id(),
+    int rc = pthread_getcpuclockid(thread->osthread()->pthread_id(),
                                               &clockid);
     if (rc == 0) {
       return os::Linux::total_thread_cpu_time(clockid);
@@ -4952,7 +4951,7 @@ static jlong user_thread_cpu_time(Thread *thread) {
                  &ldummy, &ldummy, &ldummy, &ldummy, &ldummy,
                  &user_time, &sys_time);
   if (count != 13) return -1;
-  return ((jlong)sys_time + (jlong)user_time) * (1000000000 / os::Posix::clock_tics_per_second());
+  return (jlong)user_time * (1000000000 / os::Posix::clock_tics_per_second());
 }
 
 void os::current_thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {

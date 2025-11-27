@@ -32,8 +32,6 @@
 class os::Linux {
   friend class os;
 
-  static int (*_pthread_getcpuclockid)(pthread_t, clockid_t *);
-
   static address   _initial_thread_stack_bottom;
   static uintptr_t _initial_thread_stack_size;
 
@@ -139,10 +137,6 @@ class os::Linux {
   // Stack overflow handling
   static bool manually_expand_stack(JavaThread * t, address addr);
   static void expand_stack_to(address bottom);
-
-  static int pthread_getcpuclockid(pthread_t tid, clockid_t *clock_id) {
-    return _pthread_getcpuclockid ? _pthread_getcpuclockid(tid, clock_id) : -1;
-  }
 
   static jlong total_thread_cpu_time(clockid_t clockid);
 
