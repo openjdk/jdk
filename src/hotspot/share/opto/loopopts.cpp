@@ -4302,7 +4302,7 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
       }
       assert(increment.incr()->Opcode() == Op_AddI, "wrong increment code");
 
-      LoopIVStride stride = LoopIVStride();
+      LoopIVStride stride = LoopIVStride(T_INT);
       stride.build(increment.incr());
       if (!stride.is_valid()) {
         continue;

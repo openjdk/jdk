@@ -1411,11 +1411,12 @@ public:
   class LoopIVStride {
     bool _is_valid = false;
 
+    BasicType _iv_bt;
     Node* _stride_node = nullptr;
     Node* _xphi = nullptr;
 
   public:
-    LoopIVStride() {}
+    LoopIVStride(BasicType iv_bt) : _iv_bt(iv_bt) {}
 
     void build(const Node* incr);
 
@@ -2095,12 +2096,12 @@ class CountedLoopConverter {
       _exit_test(_back_control, _loop, _phase),
       _iv_incr(_head, _loop),
       _truncated_increment(_iv_bt),
-      _stride(PhaseIdealLoop::LoopIVStride()) {}
+      _stride(PhaseIdealLoop::LoopIVStride(_iv_bt)) {}
 
     void build();
 
     jlong final_limit_correction() const; // compute adjusted loop limit correction
-    bool is_infinite_loop(const TypeInteger* limit_t) const;
+    bool is_infinite_loop(const Node* limit) const;
 
     bool is_valid() const { return _is_valid; }
 

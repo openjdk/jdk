@@ -457,23 +457,29 @@ PhiNode* PhaseIdealLoop::loop_iv_phi(const Node* xphi, const Node* phi_incr, con
   return phi;
 }
 
-static int check_stride_overflow(jlong final_correction, const TypeInteger* limit_t, BasicType bt) {
+enum StrideOverflowState {
+  Overflow          = -1,
+  NoOverflow        = 0,
+  RequireLimitCheck = 1
+};
+
+static StrideOverflowState check_stride_overflow(jlong final_correction, const TypeInteger* limit_t, BasicType bt) {
   if (final_correction > 0) {
     if (limit_t->lo_as_long() > (max_signed_integer(bt) - final_correction)) {
-      return -1;
+      return Overflow;
     }
     if (limit_t->hi_as_long() > (max_signed_integer(bt) - final_correction)) {
-      return 1;
+      return RequireLimitCheck;
     }
   } else {
     if (limit_t->hi_as_long() < (min_signed_integer(bt) - final_correction)) {
-      return -1;
+      return Overflow;
     }
     if (limit_t->lo_as_long() < (min_signed_integer(bt) - final_correction)) {
-      return 1;
+      return RequireLimitCheck;
     }
   }
-  return 0;
+  return NoOverflow;
 }
 
 Node* PhaseIdealLoop::loop_nest_replace_iv(Node* iv_to_replace, Node* inner_iv, Node* outer_phi, Node* inner_head,
@@ -1646,7 +1652,7 @@ void PhaseIdealLoop::check_counted_loop_shape(IdealLoopTree* loop, Node* x, Basi
   iv_incr.build(exit_test.incr());
   assert(iv_incr.is_valid_with_bt(bt), "no incr");
 
-  LoopIVStride stride = LoopIVStride();
+  LoopIVStride stride = LoopIVStride(bt);
   stride.build(iv_incr.incr());
   assert(stride.is_valid(), "no stride");
 
@@ -1691,7 +1697,7 @@ void PhaseIdealLoop::LoopExitTest::build() {
   // need 'loop()' test to tell if limit is loop invariant
   // ---------
 
-  if (!_phase->ctrl_is_member(_loop, _incr)) { // Swapped trip counter and limit?
+  if (_loop->is_invariant(_incr)) { // Swapped trip counter and limit?
     swap(_incr, _limit);   // Then reverse order into the CmpI
     _mask = BoolTest(_mask).commute(); // And commute the exit test
   }
@@ -1763,6 +1769,12 @@ void PhaseIdealLoop::LoopIVStride::build(const Node* incr) {
     swap(_xphi, _stride_node); // 'incr' is commutative, so ok to swap
   }
 
+  // Iteratively uncast the loop induction variable
+  // until no more CastII/CastLL nodes are found.
+  while (_xphi->Opcode() == Op_Cast(_iv_bt)) {
+    _xphi = _xphi->in(1);
+  }
+
   _is_valid = true;
 }
 
@@ -1823,14 +1835,7 @@ void CountedLoopConverter::LoopStructure::build() {
     return;
   }
 
-  Node* xphi = _stride.xphi();
-  // Iteratively uncast the loop induction variable
-  // until no more CastII/CastLL nodes are found.
-  while (xphi->Opcode() == Op_Cast(_iv_bt)) {
-    xphi = xphi->in(1);
-  }
-
-  _phi = PhaseIdealLoop::loop_iv_phi(xphi, _iv_incr.phi_incr(), _head);
+  _phi = PhaseIdealLoop::loop_iv_phi(_stride.xphi(), _iv_incr.phi_incr(), _head);
   if (_phi == nullptr ||
       (_truncated_increment.outer_trunc() == nullptr && _phi->in(LoopNode::LoopBackControl) != _truncated_increment.incr()) ||
       (_truncated_increment.outer_trunc() != nullptr && _phi->in(LoopNode::LoopBackControl) != _truncated_increment.outer_trunc())) {
@@ -2031,8 +2036,8 @@ bool CountedLoopConverter::is_counted_loop() {
   // ---- Is the loop trip counted? ----
 
   // Check trip counter will end up higher than the limit
-  const TypeInteger* limit_t = igvn->type(_structure.limit())->is_integer(_iv_bt);
-  if (_structure.is_infinite_loop(limit_t)) {
+  const Node* limit = _structure.limit();
+  if (_structure.is_infinite_loop(limit)) {
     return false;
   }
 
@@ -2248,21 +2253,22 @@ bool CountedLoopConverter::is_counted_loop() {
   //            there is no overflow of the iv phi after the first iteration. In this case, we don't need to check (ii)
   //            again and can skip the predicate.
 
-  int sov = check_stride_overflow(_structure.final_limit_correction(), limit_t, _iv_bt);
+  const TypeInteger* limit_t = igvn->type(limit)->is_integer(_iv_bt);
+  StrideOverflowState stride_overflow_state = check_stride_overflow(_structure.final_limit_correction(), limit_t, _iv_bt);
 
   Node* init_control = _head->in(LoopNode::EntryControl);
   const Predicates predicates(init_control);
   const PredicateBlock* loop_limit_check_predicate_block = predicates.loop_limit_check_predicate_block();
 
-  if (sov < 0) {
+  if (stride_overflow_state == Overflow) {
     return false; // Bailout: integer overflow is certain.
   }
 
-  // If sov == 0, limit's type always satisfies the condition, for
+  // If stride_overflow_state == NO_OVERFLOW, limit's type always satisfies the condition, for
   // example, when it is an array length.
 
   _insert_stride_overflow_limit_check = false;
-  if (sov > 0) {
+  if (stride_overflow_state == RequireLimitCheck) {
     // (1) Loop Limit Check Predicate is required because we could not statically prove that
     //     limit + final_correction = adjusted_limit - 1 + stride <= max_int
     assert(!_head->as_Loop()->is_loop_nest_inner_loop(), "loop was transformed");
@@ -2376,8 +2382,9 @@ bool CountedLoopConverter::is_iv_overflowing(const TypeInteger* init_t, jlong st
   return false;
 }
 
-bool CountedLoopConverter::LoopStructure::is_infinite_loop(const TypeInteger* limit_t) const {
+bool CountedLoopConverter::LoopStructure::is_infinite_loop(const Node* limit) const {
   PhaseIterGVN& igvn = _phase->igvn();
+  const TypeInteger* limit_t = igvn.type(limit)->is_integer(_iv_bt);
 
   if (_truncated_increment.outer_trunc() != nullptr) {
     // When there is a truncation, we must be sure that after the truncation
@@ -2539,12 +2546,13 @@ IdealLoopTree* CountedLoopConverter::convert() {
     //
     Node* one = (stride_con > 0) ? igvn->integercon(1, _iv_bt) : igvn->integercon(-1, _iv_bt);
     adjusted_limit = igvn->transform(AddNode::make(adjusted_limit, one, _iv_bt));
-    if (mask == BoolTest::le)
+    if (mask == BoolTest::le) {
       mask = BoolTest::lt;
-    else if (mask == BoolTest::ge)
+    } else if (mask == BoolTest::ge) {
       mask = BoolTest::gt;
-    else
+    } else {
       ShouldNotReachHere();
+    }
   }
   _phase->set_subtree_ctrl(adjusted_limit, false);
 
@@ -2571,43 +2579,43 @@ IdealLoopTree* CountedLoopConverter::convert() {
     igvn->replace_node(phi, nphi);
     phi = nphi->as_Phi();
   }
-    phi = nphi->as_Phi();
-  }
 
   Node* iftrue = back_control;
   const uint iftrue_op = iftrue->Opcode();
   Node* iff = iftrue->in(0);
-  Node* cmp = _structure.exit_test().cmp()->clone();
 
-  cmp->set_req(1, incr);
-  cmp->set_req(2, adjusted_limit);
-  cmp = igvn->register_new_node_with_optimizer(cmp);
-  _phase->set_ctrl(cmp, iff->in(0));
+  // Replace the old CmpNode with new adjusted_limit
+  Node* new_cmp = _structure.exit_test().cmp()->clone();
+  new_cmp->set_req(1, incr);
+  new_cmp->set_req(2, adjusted_limit);
+  new_cmp = igvn->register_new_node_with_optimizer(new_cmp);
+  _phase->set_ctrl(new_cmp, iff->in(0));
 
-  BoolNode* test = iff->in(1)->clone()->as_Bool();
-  const_cast<BoolTest*>(&test->_test)->_test = mask; // Yes, it's a const, but it's a newly cloned node so we should be fine.
-  test->set_req(1, cmp);
-  igvn->register_new_node_with_optimizer(test);
-  _phase->set_ctrl(test, iff->in(0));
+  // Replace the old BoolNode with new CmpNode
+  BoolNode* new_test = iff->in(1)->clone()->as_Bool();
+  const_cast<BoolTest*>(&new_test->_test)->_test = mask; // Yes, it's a const, but it's a newly cloned node so we should be fine.
+  new_test->set_req(1, new_cmp);
+  igvn->register_new_node_with_optimizer(new_test);
+  _phase->set_ctrl(new_test, iff->in(0));
 
   // Replace the old IfNode with a new LoopEndNode
-  Node* lex = igvn->register_new_node_with_optimizer(BaseCountedLoopEndNode::make(iff->in(0),
-                                                                                  test,
+  Node* loop_end = igvn->register_new_node_with_optimizer(BaseCountedLoopEndNode::make(iff->in(0),
+                                                                                  new_test,
                                                                                   _structure.exit_test().cl_prob(),
                                                                                   iff->as_If()->_fcnt,
                                                                                   _iv_bt));
-  IfNode* le = lex->as_If();
+  IfNode* loop_end_exit = loop_end->as_If();
   const uint dd = _phase->dom_depth(iff);
-  _phase->set_idom(le, le->in(0), dd); // Update dominance for loop exit
-  _phase->set_loop(le, _loop);
+  _phase->set_idom(loop_end_exit, loop_end_exit->in(0), dd); // Update dominance for loop exit
+  _phase->set_loop(loop_end_exit, _loop);
 
   // Get the loop-exit control
   Node* iffalse = iff->as_If()->proj_out(!(iftrue_op == Op_IfTrue));
 
   // Need to swap loop-exit and loop-back control?
   if (iftrue_op == Op_IfFalse) {
-    Node* ift2 = igvn->register_new_node_with_optimizer(new IfTrueNode(le));
-    Node* iff2 = igvn->register_new_node_with_optimizer(new IfFalseNode(le));
+    Node* ift2 = igvn->register_new_node_with_optimizer(new IfTrueNode(loop_end_exit));
+    Node* iff2 = igvn->register_new_node_with_optimizer(new IfFalseNode(loop_end_exit));
 
     _loop->_tail = back_control = ift2;
     _phase->set_loop(ift2, _loop);
@@ -2623,27 +2631,27 @@ IdealLoopTree* CountedLoopConverter::convert() {
   } else {
     igvn->rehash_node_delayed(iffalse);
     igvn->rehash_node_delayed(iftrue);
-    iffalse->set_req_X(0, le, igvn);
-    iftrue->set_req_X(0, le, igvn);
+    iffalse->set_req_X(0, loop_end_exit, igvn);
+    iftrue->set_req_X(0, loop_end_exit, igvn);
   }
 
-  _phase->set_idom(iftrue, le, dd + 1);
-  _phase->set_idom(iffalse, le, dd + 1);
+  _phase->set_idom(iftrue, loop_end_exit, dd + 1);
+  _phase->set_idom(iffalse, loop_end_exit, dd + 1);
   assert(iff->outcnt() == 0, "should be dead now");
-  _phase->replace_node_and_forward_ctrl(iff, le); // fix 'get_ctrl'
+  _phase->replace_node_and_forward_ctrl(iff, loop_end_exit); // fix 'get_ctrl'
 
   Node* entry_control = init_control;
   bool strip_mine_loop = _iv_bt == T_INT &&
-      _loop->_child == nullptr &&
-      _structure.sfpt() != nullptr &&
-      !_loop->_has_call &&
-      _phase->is_deleteable_safept(_structure.sfpt());
+                         _loop->_child == nullptr &&
+                         _structure.sfpt() != nullptr &&
+                         !_loop->_has_call &&
+                         _phase->is_deleteable_safept(_structure.sfpt());
   IdealLoopTree* outer_ilt = nullptr;
   if (strip_mine_loop) {
     outer_ilt = _phase->create_outer_strip_mined_loop(init_control,
                                                       _loop,
                                                       _structure.exit_test().cl_prob(),
-                                                      le->_fcnt,
+                                                      loop_end_exit->_fcnt,
                                                       entry_control,
                                                       iffalse);
   }
@@ -2695,7 +2703,7 @@ IdealLoopTree* CountedLoopConverter::convert() {
 
 #ifdef ASSERT
   assert(l->is_valid_counted_loop(_iv_bt), "counted loop shape is messed up");
-  assert(l == _loop->_head && l->phi() == phi && l->loopexit_or_null() == lex, "" );
+  assert(l == _loop->_head && l->phi() == phi && l->loopexit_or_null() == loop_end, "" );
 #endif
 
 #ifndef PRODUCT
@@ -2705,12 +2713,12 @@ IdealLoopTree* CountedLoopConverter::convert() {
   }
 #endif
 
-  _phase->C->print_method(PHASE_AFTER_CLOOPS, 3, l);
-
   // Capture bounds of the loop in the induction variable Phi before
   // subsequent transformation (iteration splitting) obscures the
   // bounds
   l->phi()->as_Phi()->set_type(l->phi()->Value(igvn));
+
+  _phase->C->print_method(PHASE_AFTER_CLOOPS, 3, l);
 
   IdealLoopTree* loop = _loop;
   if (strip_mine_loop) {
@@ -3065,7 +3073,6 @@ Node* LoopLimitNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-//=============================================================================
 // Match increment with optional truncation:
 // CHAR: (i+1)&0x7fff, BYTE: ((i+1)<<8)>>8, or SHORT: ((i+1)<<16)>>16
 void CountedLoopConverter::TruncatedIncrement::build(Node* expr) {
