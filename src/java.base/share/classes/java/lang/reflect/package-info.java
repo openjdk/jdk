@@ -26,33 +26,39 @@
 /**
  * Provides classes and interfaces, in addition to {@link Class java.lang.Class},
  * for obtaining reflective information about Java programs.  Reflection allows
- * programmatic inspection of Java language declarations (JLS {@jls 6.1}),
- * represented by <em>reflected objects</em>, in {@linkplain
- * java.lang.reflect##LanguageJvmModel loaded classes}, which may be
- * unavailable at compile time.  The reflected objects allow {@linkplain
- * java.lang.reflect##accessor programmatic use} of these declarations within
+ * programmatic inspection of structures in loaded classes and interfaces (JVMS
+ * {@jvms 4}), represented by <em>reflected objects</em>.  These structures
+ * {@linkplain ##LanguageJvmModel may represent} Java language declarations (JLS
+ * {@jls 6.1}).  Thus, a reflected object can represent a Java language
+ * declaration in a class or interface not available at compile time, allowing
+ * {@linkplain ##accessor programmatic use} of this declaration within
  * encapsulation and security restrictions.
  *
  * <p>{@link Array} provides static methods to dynamically create and
  * access arrays.
  *
  * <h2 id="accessor">Using the Declarations</h2>
- * The reflection classes provide <em>accessors</em> methods to use the
+ * The reflection classes provide <em>accessor</em> methods to use the
  * underlying declarations represented by reflected objects.  They are
- * convenient for single invocation; for repeated invocations, consider using
- * the {@link java.lang.invoke} library instead.
+ * convenient for single invocation; for repeated invocations, consider
+ * using {@link MethodHandles.Lookup} to produce a {@link MethodHandle} instead.
  *
  * <h3 id="access-control">Access Control</h3>
- * The accessors of a reflected object perform access control against the caller
- * every time they are used, unless that reflected object {@linkplain
- * AccessibleObject#setAccessible(boolean) suppresses checks}.  Due to
- * inheritance, a reflective object is not aware of the class or interface that
- * the underlying declaration is a member of; access checks assume it to be the
- * declaring class or interface, which may be inaccurate. (JLS {@jls 6.6.1},
- * JVMS {@jvms 5.4.4})
+ * An accessor of a reflected object perform access control against the caller
+ * every time the accessor is used, unless that reflected object {@linkplain
+ * AccessibleObject#setAccessible(boolean) suppresses checks}.  For a class or
+ * interface A, core reflection represents a member declared in A and the member
+ * inherited by another class or interface from A with equivalent reflective
+ * objects, with A as the {@linkplain Member#getDeclaringClass() declaring class
+ * or interface}.  Therefore, access checks of such a reflected object assumes
+ * the use happened on the member in A, while in the Java Language and JVM,
+ * the use can happen on an inherited member in another class or interface, and
+ * access control proceeds differently. (JLS {@jls 6.6.1}, JVMS {@jvms 5.4.4})
  *
- * <p>Consider using {@link MethodHandles.Lookup}, which performs a single
- * accurate access check at resolution, with no overhead for later uses.
+ * <p>In contrast, {@link MethodHandles.Lookup} performs a single access check
+ * to produce a {@link MethodHandle} that performs no additional access checks.
+ * If a member is accessed, the single check is performed against the correct
+ * class or interface of the member.
  *
  * <h3 id="conversions">Value Conversions</h3>
  * The accessors perform conversions from accessor arguments to values accepted
@@ -188,4 +194,5 @@
  */
 package java.lang.reflect;
 
+import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
