@@ -33,6 +33,7 @@
 #include "mlib_image.h"
 #include "mlib_ImageConv.h"
 #include "mlib_c_ImageConv.h"
+#include "safe_math.h"
 
 /*
  * This define switches between functions of different data types
@@ -941,6 +942,12 @@ mlib_status CONV_FUNC_MxN_I
   for (l = 0; l < (n + 1); l++) buffs[l] = pbuff + l*swid;
   for (l = 0; l < (n + 1); l++) buffs[l + (n + 1)] = buffs[l];
   buffd = buffs[n] + swid;
+
+  if (!SAFE_TO_MULT(m, n) ||
+      !SAFE_TO_MULT((m * n),
+      (mlib_s32)sizeof(mlib_s32))) {
+    return MLIB_FAILURE;
+  }
 
   if (m*n > MAX_N*MAX_N) {
     k = mlib_malloc(sizeof(mlib_s32)*(m*n));

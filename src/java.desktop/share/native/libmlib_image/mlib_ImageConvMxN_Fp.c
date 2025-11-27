@@ -76,6 +76,7 @@
 #include "mlib_ImageCheck.h"
 #include "mlib_SysMath.h"
 #include "mlib_ImageConv.h"
+#include "safe_math.h"
 
 /***************************************************************/
 static void mlib_ImageConvMxNMulAdd_F32(mlib_f32       *dst,
@@ -271,6 +272,13 @@ mlib_status mlib_convMxNext_f32(mlib_image       *dst,
   mlib_s32 dh = mlib_ImageGetHeight(dst);
   mlib_s32 nch = mlib_ImageGetChannels(dst);
   mlib_s32 i, j, j1, k;
+
+  if (!SAFE_TO_ADD(wid_e, m) ||
+      !SAFE_TO_MULT(3, wid_e + m) ||
+      !SAFE_TO_MULT((3 * wid_e + m),
+      (mlib_d64)sizeof(mlib_d64))) {
+    return MLIB_FAILURE;
+  }
 
   if (3 * wid_e + m > 1024) {
     dsa = mlib_malloc((3 * wid_e + m) * sizeof(mlib_d64));
@@ -628,6 +636,13 @@ mlib_status mlib_convMxNext_d64(mlib_image       *dst,
   mlib_s32 dh = mlib_ImageGetHeight(dst);
   mlib_s32 nch = mlib_ImageGetChannels(dst);
   mlib_s32 i, j, j1, k;
+
+  if (!SAFE_TO_ADD(wid_e, m) ||
+      !SAFE_TO_MULT(3, wid_e + m) ||
+      !SAFE_TO_MULT((3 * wid_e + m),
+      (mlib_d64)sizeof(mlib_d64))) {
+    return MLIB_FAILURE;
+  }
 
   if (3 * wid_e + m > 1024) {
     dsa = mlib_malloc((3 * wid_e + m) * sizeof(mlib_d64));
