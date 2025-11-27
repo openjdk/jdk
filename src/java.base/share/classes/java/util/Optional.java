@@ -73,7 +73,6 @@ public final class Optional<T> {
     /**
      * If non-null, the value; if null, indicates no value is present
      */
-    @Stable
     private final T value;
 
     /**

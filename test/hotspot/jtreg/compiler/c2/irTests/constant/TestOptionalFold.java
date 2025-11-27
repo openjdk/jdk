@@ -51,6 +51,7 @@ public class TestOptionalFold {
         );
     }
 
+    // Ensure both present and empty values can fold
     static final Optional<Integer> ONE = Optional.of(5), TWO = Optional.empty();
 
     @Test
@@ -59,13 +60,8 @@ public class TestOptionalFold {
         return ONE.orElse(7) + TWO.orElse(12);
     }
 
-    @Run(test = "testSum")
-    public void runTestSum() {
-        testSum();
-    }
-
     @Check(test = "testSum")
-    public static void checkTestSum(float res) {
+    public static void checkTestSum(int res) {
         if (res != 5 + 12) {
             throw new RuntimeException("incorrect result: " + res);
         }
