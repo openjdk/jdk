@@ -63,9 +63,9 @@ public class TestPreview extends JavadocTester {
         checkOutput("m/pkg/TestPreviewDeclarationUse.html", true,
                     "<code><a href=\"TestPreviewDeclaration.html\" title=\"interface in pkg\">TestPreviewDeclaration</a></code>");
         checkOutput("m/pkg/TestPreviewAPIUse.html", true,
-                "<a href=\"" + doc + "java.base/preview/Core.html\" title=\"class or interface in preview\" class="
+                "<a href=\"" + doc + "java.base/preview/Core.html\" title=\"class in preview\" class="
                         + "\"external-link\">Core</a><sup class=\"preview-mark\"><a href=\"" + doc + "java.base/pr"
-                        + "eview/Core.html#preview-preview.Core\" title=\"class or interface in preview\" class=\""
+                        + "eview/Core.html#preview-preview.Core\" class=\""
                         + "external-link\">PREVIEW</a>");
         checkOutput("m/pkg/DocAnnotation.html", true,
                 "<span class=\"modifiers\">public @interface </span><span class=\"element-name type-name-label\">DocAnnotation</span>");
@@ -254,7 +254,7 @@ public class TestPreview extends JavadocTester {
         checkOutput("api2/api/API.html", true,
                     "<p><a href=\"#test()\"><code>test()</code></a></p>",
                     "<p><a href=\"#testNoPreviewInSig()\"><code>testNoPreviewInSig()</code></a></p>",
-                    "title=\"class or interface in java.util\" class=\"external-link\">List</a>&lt;<a href=\"API.h"
+                    "title=\"interface in java.util\" class=\"external-link\">List</a>&lt;<a href=\"API.h"
                             + "tml\" title=\"class in api\">API</a><sup class=\"preview-mark\"><a href=\"#preview-"
                             + "api.API\">PREVIEW</a></sup>&gt;");
         checkOutput("api2/api/API2.html", true,

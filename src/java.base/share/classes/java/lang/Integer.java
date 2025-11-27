@@ -41,8 +41,6 @@ import java.util.Optional;
 
 import static java.lang.Character.digit;
 import static java.lang.String.COMPACT_STRINGS;
-import static java.lang.String.LATIN1;
-import static java.lang.String.UTF16;
 
 /**
  * The {@code Integer} class is the {@linkplain
