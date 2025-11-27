@@ -39,6 +39,18 @@ header exports java/awt,java/awt/color,java/awt/desktop,java/awt/dnd,java/awt/ev
 
 -class name java/applet/AudioClip
 
+class name java/awt/Robot
+field name DEFAULT_DELAY descriptor I constantValue 20 flags 19
+field name DEFAULT_STEP_LENGTH descriptor I constantValue 2 flags 19
+method name click descriptor (I)V flags 1
+method name click descriptor ()V flags 1
+method name waitForIdle descriptor (I)V flags 1
+method name glide descriptor (II)V flags 1
+method name glide descriptor (IIII)V flags 1
+method name glide descriptor (IIIIII)V flags 1
+method name type descriptor (I)V flags 21
+method name type descriptor (C)V flags 21
+
 -class name java/beans/AppletInitializer
 
 class name java/beans/Beans
