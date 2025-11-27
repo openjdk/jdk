@@ -1293,7 +1293,7 @@ static jvmtiError
 enableEvents(HandlerNode *node)
 {
     jvmtiError error = JVMTI_ERROR_NONE;
-    int ei = NODE_EI(node);
+    EventIndex ei = NODE_EI(node);
 
     switch (ei) {
         /* The stepping code directly enables/disables stepping as
@@ -1391,7 +1391,7 @@ disableEvents(HandlerNode *node)
     jvmtiError error = JVMTI_ERROR_NONE;
     jvmtiError error2 = JVMTI_ERROR_NONE;
     jthread thread;
-    int ei = NODE_EI(node);
+    EventIndex ei = NODE_EI(node);
 
     switch (ei) {
         /* The stepping code directly enables/disables stepping as
