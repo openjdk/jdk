@@ -598,7 +598,7 @@ void ShenandoahGenerationalHeap::retire_plab(PLAB* plab) {
 // the maximum we're able to transfer from young to old.  This is called at the end of GC, as we prepare
 // for the idle span that precedes the next GC.
 void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_xfer_limit,
-                                                                size_t old_cset_regions, size_t young_cset_regions) {
+                                                                size_t old_trashed_regions, size_t young_trashed_regions) {
   shenandoah_assert_heaplocked();
   // We can limit the old reserve to the size of anticipated promotions:
   // max_old_reserve is an upper bound on memory evacuated from old and promoted to old,
@@ -616,6 +616,11 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
   //                     = OE/YE
   //  =>              OE = YE*SOEP/(100-SOEP)
 
+#define KELVIN_DEBUG
+#ifdef KELVIN_DEBUG
+  log_info(gc)("compute_old_generation_balance(%zu, %zu, %zu)", mutator_xfer_limit, old_trashed_regions, young_trashed_regions);
+#endif
+
   // We have to be careful in the event that SOEP is set to 100 by the user.
   assert(ShenandoahOldEvacPercent <= 100, "Error");
   const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
@@ -623,7 +628,7 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
   ShenandoahOldGeneration* old_gen = old_generation();
   size_t old_capacity = old_gen->max_capacity();
   size_t old_usage = old_gen->used(); // includes humongous waste
-  size_t old_available = ((old_capacity >= old_usage)? old_capacity - old_usage: 0) + old_cset_regions * region_size_bytes;
+  size_t old_available = ((old_capacity >= old_usage)? old_capacity - old_usage: 0) + old_trashed_regions * region_size_bytes;
 
   ShenandoahYoungGeneration* young_gen = young_generation();
   size_t young_capacity = young_gen->max_capacity();
@@ -633,7 +638,7 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
   if (young_available > freeset_available) {
     young_available = freeset_available;
   }
-  young_available += young_cset_regions * region_size_bytes;
+  young_available += young_trashed_regions * region_size_bytes;
 
   // The free set will reserve this amount of memory to hold young evacuations (initialized to the ideal reserve)
   size_t young_reserve = (young_generation()->max_capacity() * ShenandoahEvacReserve) / 100;
@@ -651,7 +656,7 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
   // Decide how much old space we should reserve for a mixed collection
   size_t reserve_for_mixed = 0;
   const size_t old_fragmented_available =
-    old_available - (old_generation()->free_unaffiliated_regions() + old_cset_regions) * region_size_bytes;
+    old_available - (old_generation()->free_unaffiliated_regions() + old_trashed_regions) * region_size_bytes;
 
   if (old_fragmented_available > proposed_max_old) {
     // After we've promoted regions in place, there may be an abundance of old-fragmented available memory,
@@ -724,13 +729,19 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
     // We are running a surplus, so the old region surplus can go to young
     const size_t old_surplus = old_available - old_reserve;
     old_region_surplus = old_surplus / region_size_bytes;
-    const size_t unaffiliated_old_regions = old_generation()->free_unaffiliated_regions() + old_cset_regions;
+    const size_t unaffiliated_old_regions = old_generation()->free_unaffiliated_regions() + old_trashed_regions;
     old_region_surplus = MIN2(old_region_surplus, unaffiliated_old_regions);
+#ifdef KELVIN_DEBUG
+    log_info(gc)(" setting region balance to surplus: %zd", old_region_surplus);
+#endif
     old_generation()->set_region_balance(checked_cast<ssize_t>(old_region_surplus));
   } else if (old_available + mutator_xfer_limit >= old_reserve) {
     // Mutator's xfer limit is sufficient to satisfy our need: transfer all memory from there
     size_t old_deficit = old_reserve - old_available;
     old_region_deficit = (old_deficit + region_size_bytes - 1) / region_size_bytes;
+#ifdef KELVIN_DEBUG
+    log_info(gc)(" setting region balance to deficit: %zd", old_region_deficit);
+#endif
     old_generation()->set_region_balance(0 - checked_cast<ssize_t>(old_region_deficit));
   } else {
    // We'll try to xfer from both mutator excess and from young collector reserve
@@ -770,8 +781,16 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
     // Shrink young_reserve to account for loan to old reserve
     const size_t reserve_xfer_regions = old_region_deficit - mutator_region_xfer_limit;
     young_reserve -= reserve_xfer_regions * region_size_bytes;
+#ifdef KELVIN_DEBUG
+    log_info(gc)(" setting region balance to deficit: %zd", old_region_deficit);
+#endif
     old_generation()->set_region_balance(0 - checked_cast<ssize_t>(old_region_deficit));
   }
+
+#ifdef KELVIN_DEBUG
+  log_info(gc)("compute_old_generation_balance() setting evac_reserve: %zu, old evac reserve: %zu, promo reserve: %zu",
+               young_reserve, reserve_for_mixed, reserve_for_promo);
+#endif
 
   assert(old_region_deficit == 0 || old_region_surplus == 0, "Only surplus or deficit, never both");
   assert(young_reserve + reserve_for_mixed + reserve_for_promo <= old_available + young_available,

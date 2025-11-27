@@ -437,17 +437,17 @@ jint ShenandoahHeap::initialize() {
     post_initialize_heuristics();
 
     // We are initializing free set.  We ignore cset region tallies.
-    size_t young_cset_regions, old_cset_regions, first_old, last_old, num_old;
-    _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
+    size_t young_trashed_regions, old_trashed_regions, first_old, last_old, num_old;
+    _free_set->prepare_to_rebuild(young_trashed_regions, old_trashed_regions, first_old, last_old, num_old);
     if (mode()->is_generational()) {
       ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
       // We cannot call
       //  gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_cset_regions)
       // until after the heap is fully initialized.  So we make up a safe value here.
       size_t allocation_runway = InitialHeapSize / 2;
-      gen_heap->compute_old_generation_balance(allocation_runway, old_cset_regions, young_cset_regions);
+      gen_heap->compute_old_generation_balance(allocation_runway, old_trashed_regions, young_trashed_regions);
     }
-    _free_set->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
+    _free_set->finish_rebuild(young_trashed_regions, old_trashed_regions, num_old);
   }
 
   if (AlwaysPreTouch) {
@@ -2524,9 +2524,8 @@ void ShenandoahHeap::final_update_refs_update_region_states() {
 
 void ShenandoahHeap::rebuild_free_set_within_phase() {
   ShenandoahHeapLocker locker(lock());
-  size_t young_cset_regions, old_cset_regions;
-  size_t first_old_region, last_old_region, old_region_count;
-  _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old_region, last_old_region, old_region_count);
+  size_t young_trashed_regions, old_trashed_regions, first_old_region, last_old_region, old_region_count;
+  _free_set->prepare_to_rebuild(young_trashed_regions, old_trashed_regions, first_old_region, last_old_region, old_region_count);
   // If there are no old regions, first_old_region will be greater than last_old_region
   assert((first_old_region > last_old_region) ||
          ((last_old_region + 1 - first_old_region >= old_region_count) &&
@@ -2545,11 +2544,11 @@ void ShenandoahHeap::rebuild_free_set_within_phase() {
     // available for transfer to old. Note that transfer of humongous regions does not impact available.
     ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
     size_t allocation_runway =
-      gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_cset_regions);
-    gen_heap->compute_old_generation_balance(allocation_runway, old_cset_regions, young_cset_regions);
+      gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_trashed_regions);
+    gen_heap->compute_old_generation_balance(allocation_runway, old_trashed_regions, young_trashed_regions);
   }
   // Rebuild free set based on adjusted generation sizes.
-  _free_set->finish_rebuild(young_cset_regions, old_cset_regions, old_region_count);
+  _free_set->finish_rebuild(young_trashed_regions, old_trashed_regions, old_region_count);
 
   if (mode()->is_generational()) {
     ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();

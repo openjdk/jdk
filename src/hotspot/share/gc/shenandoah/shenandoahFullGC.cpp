@@ -1118,12 +1118,12 @@ void ShenandoahFullGC::phase5_epilog() {
 
     // We also do not expand old generation size following Full GC because we have scrambled age populations and
     // no longer have objects separated by age into distinct regions.
-    size_t young_cset_regions, old_cset_regions, first_old, last_old, num_old;
-    heap->free_set()->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
+    size_t young_trashed_regions, old_trashed_regions, first_old, last_old, num_old;
+    heap->free_set()->prepare_to_rebuild(young_trashed_regions, old_trashed_regions, first_old, last_old, num_old);
     if (heap->mode()->is_generational()) {
       ShenandoahGenerationalFullGC::compute_balances();
     }
-    heap->free_set()->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
+    heap->free_set()->finish_rebuild(young_trashed_regions, old_trashed_regions, num_old);
 
     // Set mark incomplete because the marking bitmaps have been reset except pinned regions.
     _generation->set_mark_incomplete();

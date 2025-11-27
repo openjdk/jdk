@@ -2755,9 +2755,9 @@ void ShenandoahFreeSet::move_regions_from_collector_to_mutator(size_t max_xfer_r
 }
 
 void ShenandoahFreeSet::rebuild() {
-  size_t young_cset_regions, old_cset_regions, first_old_region, last_old_region, old_region_count;
-  prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old_region, last_old_region, old_region_count);
-  finish_rebuild(young_cset_regions, old_cset_regions, old_region_count);
+  size_t young_trashed_regions, old_trashed_regions, first_old_region, last_old_region, old_region_count;
+  prepare_to_rebuild(young_trashed_regions, old_trashed_regions, first_old_region, last_old_region, old_region_count);
+  finish_rebuild(young_trashed_regions, old_trashed_regions, old_region_count);
 }
 
 // Overwrite arguments to represent the amount of memory in each generation that is about to be recycled
@@ -2847,7 +2847,7 @@ void ShenandoahFreeSet::compute_young_and_old_reserves(size_t young_trashed_regi
   shenandoah_assert_heaplocked();
   const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
   ShenandoahOldGeneration* const old_generation = _heap->old_generation();
-  size_t old_available = old_generation->available() + old_trashed_regions * region_size_bytes;
+  size_t old_available = old_generation->available();
   size_t old_unaffiliated_regions = old_generation->free_unaffiliated_regions();
   ShenandoahYoungGeneration* const young_generation = _heap->young_generation();
   size_t young_capacity = young_generation->max_capacity();
@@ -2864,6 +2864,14 @@ void ShenandoahFreeSet::compute_young_and_old_reserves(size_t young_trashed_regi
   size_t young_available = young_capacity - young_generation->used();
   young_available += young_trashed_regions * region_size_bytes;
 
+#define KELVIN_DEBUG
+#ifdef KELVIN_DEBUG
+  log_info(gc)("compute_young_and_old_reserves(%zu, %zu)", young_trashed_regions, old_trashed_regions);
+  log_info(gc)("  (should have called compute_old_generation_balance() before here.");
+  log_info(gc)("   old_available: %zu (including %zu unaffiliated regions)", old_available, old_unaffiliated_regions);
+  log_info(gc)(" young_available: %zu (including %zu unaffiliated regions)", young_available, young_unaffiliated_regions);
+#endif
+
   assert(young_available >= young_unaffiliated_regions * region_size_bytes, "sanity");
   assert(old_available >= old_unaffiliated_regions * region_size_bytes, "sanity");
 
@@ -2871,6 +2879,9 @@ void ShenandoahFreeSet::compute_young_and_old_reserves(size_t young_trashed_regi
   // The generation region transfers take place after we rebuild.  old_region_balance represents number of regions
   // to transfer from old to young.
   ssize_t old_region_balance = old_generation->get_region_balance();
+#ifdef KELVIN_DEBUG
+  log_info(gc)(" old_region_balance is %zd", old_region_balance);
+#endif
   if (old_region_balance != 0) {
 #ifdef ASSERT
     if (old_region_balance > 0) {

@@ -736,24 +736,27 @@ public:
 
   // Examine the existing free set representation, capturing the current state into var arguments:
   //
-  // young_cset_regions is the number of regions currently in the young cset if we are starting to evacuate, or zero
-  //   old_cset_regions is the number of regions currently in the old cset if we are starting a mixed evacuation, or zero
+  // young_trashed_regions is the number of trashed regions (immediate garbage at final mark, cset regions after update refs)
+  //   old_trashed_regions is the number of trashed regions
+  //                       (immediate garbage at final old mark, cset regions after update refs for mixed evac)
   //   first_old_region is the index of the first region that is part of the OldCollector set
   //    last_old_region is the index of the last region that is part of the OldCollector set
   //   old_region_count is the number of regions in the OldCollector set that have memory available to be allocated
-  void prepare_to_rebuild(size_t &young_cset_regions, size_t &old_cset_regions,
+  void prepare_to_rebuild(size_t &young_trashed_regions, size_t &old_trashed_regions,
                           size_t &first_old_region, size_t &last_old_region, size_t &old_region_count);
 
   // At the end of final mark, but before we begin evacuating, heuristics calculate how much memory is required to
   // hold the results of evacuating to young-gen and to old-gen.  These quantities, stored in reserves for their
   // respective generations, are consulted prior to rebuilding the free set (ShenandoahFreeSet) in preparation for
   // evacuation.  When the free set is rebuilt, we make sure to reserve sufficient memory in the collector and
-  // old_collector sets to hold evacuations.
+  // old_collector sets to hold evacuations.  Likewise, at the end of update refs, we rebuild the free set in order
+  // to set aside reserves to be consumed during the next GC cycle.
   //
-  // young_cset_regions is the number of regions currently in the young cset if we are starting to evacuate, or zero
-  //   old_cset_regions is the number of regions currently in the old cset if we are starting a mixed evacuation, or zero
+  // young_trashed_regions is the number of trashed regions (immediate garbage at final mark, cset regions after update refs)
+  //   old_trashed_regions is the number of trashed regions
+  //                       (immediate garbage at final old mark, cset regions after update refs for mixed evac)
   //    num_old_regions is the number of old-gen regions that have available memory for further allocations (excluding old cset)
-  void finish_rebuild(size_t young_cset_regions, size_t old_cset_regions, size_t num_old_regions);
+  void finish_rebuild(size_t young_trashed_regions, size_t old_trashed_regions, size_t num_old_regions);
 
   // When a region is promoted in place, we add the region's available memory if it is greater than plab_min_size()
   // into the old collector partition by invoking this method.

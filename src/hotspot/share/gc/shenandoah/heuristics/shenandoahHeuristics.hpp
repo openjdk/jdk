@@ -226,7 +226,7 @@ public:
 
   virtual void record_requested_gc();
 
-  virtual void choose_collection_set(ShenandoahCollectionSet* collection_set);
+  virtual ssize_t choose_collection_set(ShenandoahCollectionSet* collection_set);
 
   virtual bool can_unload_classes();
 

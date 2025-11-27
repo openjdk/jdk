@@ -34,6 +34,10 @@
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+#undef KELVIN_DEBUG
+#ifdef KELVIN_DEBUG
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
+#endif
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 #include "runtime/globals.hpp"
@@ -103,6 +107,13 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
                      byte_size_in_proper_unit(max_cset),    proper_unit_for_byte_size(max_cset),
                      byte_size_in_proper_unit(min_garbage), proper_unit_for_byte_size(min_garbage));
 
+#undef KELVIN_DEBUG
+#ifdef KELVIN_DEBUG
+  ShenandoahYoungGeneration* young_gen = ShenandoahHeap::heap()->young_generation();
+  log_info(gc)("ShenAdaptiveHeuristics::choose_collection_set_from_regiondata(), young available_with_reserve(): %zu",
+               young_gen->available_with_reserve());
+#endif
+
   // Better select garbage-first regions
   QuickSort::sort(data, size, compare_by_garbage);
 
@@ -123,6 +134,10 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
       cset->add_region(r);
       cur_cset = new_cset;
       cur_garbage = new_garbage;
+#ifdef KELVIN_DEBUG
+      log_info(gc)(" after adding region %zu to cset with live_data: %zu, garbage: %zu, young available_with_reserve: %zu",
+                   r->index(), r->get_live_data_bytes(), r->garbage(), young_gen->available_with_reserve());
+#endif
     }
   }
 }

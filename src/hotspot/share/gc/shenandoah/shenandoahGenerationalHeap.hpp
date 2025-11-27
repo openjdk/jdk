@@ -131,7 +131,7 @@ public:
   bool requires_barriers(stackChunkOop obj) const override;
 
   // Computes the optimal size for the old generation, represented as a surplus or deficit of old regions
-  void compute_old_generation_balance(size_t old_xfer_limit, size_t old_cset_regions, size_t young_cset_regions);
+  void compute_old_generation_balance(size_t old_xfer_limit, size_t old_trashed_regions, size_t young_trashed_regions);
 
   // Balances generations, coalesces and fills old regions if necessary
   void complete_degenerated_cycle();

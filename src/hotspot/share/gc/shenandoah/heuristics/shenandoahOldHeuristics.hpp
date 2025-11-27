@@ -112,9 +112,19 @@ private:
   size_t _included_old_regions;
   size_t _old_evacuation_reserve;
   size_t _old_evacuation_budget;
-  size_t _unfragmented_available;
-  size_t _fragmented_available;
-  size_t _excess_fragmented_available;
+
+  // This represents the amount of memory that can be evacuated from old into initially empty regions during a mixed evacuation.
+  // This is the total amount of unfragmented free memory in old divided by ShenandoahOldEvacWaste.
+  size_t _unspent_unfragmented_old_budget;
+
+  // This represents the amount of memory that can be evacuated from old into initially non-empty regions during a mixed
+  // evacuation.  This is the total amount of initially fragmented free memory in old divided by ShenandoahOldEvacWaste.
+  size_t _unspent_fragmented_old_budget;
+
+  // If there is more available memory in old than is required by the intended mixed evacuation, the amount of excess
+  // memory is represented by _excess_fragmented_old.  To convert this value into a promotion budget, multiply by
+  // ShenandoahOldEvacWaste and divide by ShenandoahPromoWaste.
+  size_t _excess_fragmented_old_budget;
 
   // Compare by live is used to prioritize compaction of old-gen regions.  With old-gen compaction, the goal is
   // to tightly pack long-lived objects into available regions.  In most cases, there has not been an accumulation
@@ -156,8 +166,9 @@ public:
 
   // If young evacuation did not consume all of its available evacuation reserve, add as many additional mixed-
   // evacuation candidate regions into the collection set as will fit within this excess repurposed reserved.
-  // Returns true iff we need to finalize mixed evacs.
-  bool top_off_collection_set();
+  // Returns true iff we need to finalize mixed evacs.  Upon return, the var parameter regions_to_xfer holds the
+  // number of regions to transfer from young to old.
+  bool top_off_collection_set(ssize_t &regions_to_xfer);
 
   // Having added all eligible mixed-evacuation candidates to the collection set, this function updates the total count
   // of how much old-gen memory remains to be evacuated and adjusts the representation of old-gen regions that remain to

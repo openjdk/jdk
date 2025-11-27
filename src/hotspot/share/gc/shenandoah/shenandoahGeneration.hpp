@@ -63,9 +63,10 @@ private:
   // Compute evacuation budgets prior to choosing collection set.
   void compute_evacuation_budgets(ShenandoahHeap* heap);
 
-  // Adjust evacuation budgets after choosing collection set.
+  // Adjust evacuation budgets after choosing collection set.  The argument regions_to_xfer represents regions to be
+  // transfered to old based on decisions made in top_off_collection_set()
   void adjust_evacuation_budgets(ShenandoahHeap* heap,
-                                 ShenandoahCollectionSet* collection_set);
+                                 ShenandoahCollectionSet* collection_set, ssize_t regions_to_xfer);
 
   // Preselect for possible inclusion into the collection set exactly the most
   // garbage-dense regions, including those that satisfy criteria 1 & 2 below,

@@ -146,6 +146,10 @@ public:
 
   // See description in field declaration
   void set_region_balance(ssize_t balance) {
+#undef KELVIN_VERBOSE
+#ifdef KELVIN_VERBOSE
+    log_info(gc)("old_generation->set_region_balance(%zd)", balance);
+#endif
     _region_balance = balance;
   }
   ssize_t get_region_balance() const { return _region_balance; }
