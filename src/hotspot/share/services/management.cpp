@@ -2216,7 +2216,7 @@ JVM_ENTRY(jlong, jmm_GetThreadCpuTimeWithKind(JNIEnv *env, jlong thread_id, jboo
     THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
                "Invalid thread ID", -1);
   }
-  fprintf(stderr, "user_sys_cpu_time != 0: %d\n", user_sys_cpu_time != 0);
+
   JavaThread* java_thread = nullptr;
   if (thread_id == 0) {
     // current thread
