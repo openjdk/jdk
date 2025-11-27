@@ -21,10 +21,10 @@
  * questions.
  */
 
-/* 
+/*
  * @test
  * @bug 6292135
- * @summary Verifies DefaultTableModel.setColumnIdentifiers() doesn't 
+ * @summary Verifies DefaultTableModel.setColumnIdentifiers() doesn't
  *          clear JTable Row Heights
  * @run main TestRowHeightWithColIdentifier
  */
@@ -70,10 +70,10 @@ public class TestRowHeightWithColIdentifier{
             });
             robot.waitForIdle();
             robot.delay(1000);
-            
+
             SwingUtilities.invokeAndWait(() -> {
                 for (int row = 0; row < table.getRowCount(); row++) {
-                    System.out.println("Before table rowHeight " + table.getRowHeight(row)); 
+                    System.out.println("Before table rowHeight " + table.getRowHeight(row));
                 }
                 oldRowHeight = table.getRowHeight(0);
             });
@@ -81,7 +81,7 @@ public class TestRowHeightWithColIdentifier{
             SwingUtilities.invokeAndWait(() -> {
                 model.setColumnIdentifiers(new Object[] {"Check", "it out!"});
                 for (int row = 0; row < table.getRowCount(); row++) {
-                    System.out.println("AFter table rowHeight " + table.getRowHeight(row)); 
+                    System.out.println("AFter table rowHeight " + table.getRowHeight(row));
                 }
                 curRowHeight = table.getRowHeight(0);
             });
@@ -94,6 +94,6 @@ public class TestRowHeightWithColIdentifier{
                     frame.dispose();
                 }
             });
-        }            
+        }
     }
 }
