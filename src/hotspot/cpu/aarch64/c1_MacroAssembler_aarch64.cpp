@@ -282,14 +282,13 @@ void C1_MacroAssembler::load_parameter(int offset_in_words, Register reg) {
 
 // Randomized profile capture.
 
-void C1_MacroAssembler::step_random(Register state, Register temp) {
+void C1_MacroAssembler::step_random(Register state, Register temp, Register data) {
   if (VM_Version::supports_crc32()) {
     /* CRC used as a psuedo-random-number generator */
     // In effect, the CRC instruction is being used here for its
     // linear feedback shift register. It's unbeatably fast, and
     // plenty good enough for what we need.
-    mov(temp, 1);
-    crc32h(state, state, temp);
+    crc32h(state, state, data);
   } else {
     /* LCG from glibc. */
     mov(temp, 1103515245);

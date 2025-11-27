@@ -1343,7 +1343,6 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       __ ubfx(rscratch1, r_profile_rng, 32-ratio_shift, ratio_shift);
       __ cbz(rscratch1, *stub->entry());
       __ bind(*stub->continuation());
-      __ block_comment("L1346");
       __ step_random(r_profile_rng, rscratch2);
 
       stub->set_action(lambda, op);
@@ -2588,7 +2587,7 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
 }
 
 void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr counter_addr, LIR_Opr dest, LIR_Opr temp_op,
-                                          LIR_Opr freq_op, LIR_Opr step_op,
+                                          LIR_Opr freq_op,
                                           CodeStub* overflow_stub) {
 #ifndef PRODUCT
   if (CommentedAssembly) {

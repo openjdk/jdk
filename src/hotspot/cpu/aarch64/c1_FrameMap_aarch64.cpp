@@ -218,10 +218,6 @@ void FrameMap::initialize() {
   }
 
   // The unallocatable registers are at the end
-
-  if (preserve_rheapbase) {
-    map_register(i, r27); r27_opr = LIR_OprFact::single_cpu(i); i++; // rheapbase
-  }
   map_register(i, r28); r28_opr = LIR_OprFact::single_cpu(i); i++; // rthread
   if(PreserveFramePointer) {
     map_register(i, r29); r29_opr = LIR_OprFact::single_cpu(i); i++; // rfp

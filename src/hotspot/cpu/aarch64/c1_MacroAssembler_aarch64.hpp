@@ -114,7 +114,7 @@ using MacroAssembler::null_check;
   void load_parameter(int offset_in_words, Register reg);
 
   // Randomized profile capture
-  void step_random(Register state, Register temp);
+  void step_random(Register state, Register temp, Register data = rthread);
   void save_profile_rng();
   void restore_profile_rng();
 

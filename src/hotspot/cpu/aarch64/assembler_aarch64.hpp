@@ -3230,11 +3230,11 @@ public:
 #undef INSN
 
   // CRC32 instructions
-#define INSN(NAME, c, sf, sz)                                             \
-  void NAME(Register Rd, Register Rn, Register Rm) {                      \
-    starti;                                                               \
-    f(sf, 31), f(0b0011010110, 30, 21), f(0b010, 15, 13), f(c, 12);       \
-    f(sz, 11, 10), rf(Rm, 16), rf(Rn, 5), rf(Rd, 0);                      \
+#define INSN(NAME, c, sf, sz)                                           \
+  void NAME(Register Rd, Register Rn, Register Rm) {                    \
+    starti;                                                             \
+    f(sf, 31), f(0b0011010110, 30, 21), f(0b010, 15, 13), f(c, 12);     \
+    f(sz, 11, 10), zrf(Rm, 16), rf(Rn, 5), rf(Rd, 0);                   \
   }
 
   INSN(crc32b,  0, 0, 0b00);
