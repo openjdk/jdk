@@ -39,9 +39,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "stubGenerator_x86_64.hpp"
-#ifdef COMPILER1
-#include "c1/c1_LIRAssembler.hpp"
-#endif
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
 #include "opto/c2_globals.hpp"

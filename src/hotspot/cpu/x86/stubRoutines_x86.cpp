@@ -28,6 +28,10 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "crc32c.h"
+#include "stubGenerator_x86_64.hpp"
+#ifdef COMPILER1
+#include "c1/c1_LIRAssembler.hpp"
+#endif
 
 // Implementation of the platform-specific part of StubRoutines - for
 // a description of how to extend it, see the stubRoutines.hpp file.
