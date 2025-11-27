@@ -2616,7 +2616,7 @@ class StubGenerator: public StubCodeGenerator {
   //   c_rarg4   - input length
   //
   // Output:
-  //   x0        - input length
+  //   x10       - input length
   //
   address generate_cipherBlockChaining_encryptAESCrypt() {
     assert(UseAESIntrinsics, "need AES instructions (Zvkned extension) support");
@@ -2724,7 +2724,7 @@ class StubGenerator: public StubCodeGenerator {
   //   c_rarg4   - input length
   //
   // Output:
-  //   r0        - input length
+  //   x10       - input length
   //
   address generate_cipherBlockChaining_decryptAESCrypt() {
     assert(UseAESIntrinsics, "need AES instructions (Zvkned extension) support");
