@@ -1374,12 +1374,12 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
   if (!Type::equals(ft, ft_)) {
     stringStream ss;
 
-    ss.print("At node:\n");
+    ss.print_cr("At node:");
     this->dump("\n", false, &ss);
 
     for (uint i = 1; i < req(); ++i) {
       ss.print("in(%d): ", i);
-      if (r->in(i) && phase->type(r->in(i)) == Type::CONTROL) {
+      if (r->in(i) != nullptr && phase->type(r->in(i)) == Type::CONTROL) {
         const Type* ti = phase->type(in(i));
         ti->dump_on(&ss);
       }

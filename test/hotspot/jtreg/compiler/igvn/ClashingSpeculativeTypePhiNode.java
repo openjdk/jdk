@@ -31,30 +31,30 @@
  *                   -XX:-TieredCompilation
  *                   -XX:-UseOnStackReplacement
  *                   -XX:-BackgroundCompilation
- *                   -XX:CompileOnly=compiler.igvn.ClashingSpeculativeTypePhiNode::test1
+ *                   -XX:CompileOnly=${test.main.class}::test1
  *                   -XX:CompileCommand=quiet
  *                   -XX:TypeProfileLevel=222
  *                   -XX:+AlwaysIncrementalInline
  *                   -XX:VerifyIterativeGVN=10
- *                   -XX:CompileCommand=dontinline,compiler.igvn.ClashingSpeculativeTypePhiNode::notInlined1
- *                   compiler.igvn.ClashingSpeculativeTypePhiNode
+ *                   -XX:CompileCommand=dontinline,${test.main.class}::notInlined1
+ *                   ${test.main.class}
  *
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:-TieredCompilation
  *                   -XX:-UseOnStackReplacement
  *                   -XX:-BackgroundCompilation
- *                   -XX:CompileOnly=compiler.igvn.ClashingSpeculativeTypePhiNode::test2
- *                   -XX:CompileOnly=compiler.igvn.ClashingSpeculativeTypePhiNode::inlined3
+ *                   -XX:CompileOnly=${test.main.class}::test2
+ *                   -XX:CompileOnly=${test.main.class}::inlined3
  *                   -XX:CompileCommand=quiet
  *                   -XX:TypeProfileLevel=200
  *                   -XX:+AlwaysIncrementalInline
  *                   -XX:VerifyIterativeGVN=10
- *                   -XX:CompileCommand=dontinline,compiler.igvn.ClashingSpeculativeTypePhiNode::notInlined1
+ *                   -XX:CompileCommand=dontinline,${test.main.class}::notInlined1
  *                   -XX:+StressIncrementalInlining
- *                   compiler.igvn.ClashingSpeculativeTypePhiNode
+ *                   ${test.main.class}
  *
- * @run main compiler.igvn.ClashingSpeculativeTypePhiNode
+ * @run main ${test.main.class}
  */
 
 package compiler.igvn;
