@@ -140,8 +140,8 @@ class PlainConnectionLockTest implements HttpServerAdapters {
         serverExecutor = Executors.newThreadPerTaskExecutor(
                 Thread.ofVirtual().name("Http1Server", 0).factory());
 
-        // On windows, sending 100 concurrent requests may
-        // fail is the server's connection backlog is less than 100.
+        // On Windows, sending 100 concurrent requests may
+        // fail if the server's connection backlog is less than 100.
         // The default backlog is 50. Just make sure the backlog is
         // big enough.
         int backlog = MANY > 50 ? MANY : 50;
