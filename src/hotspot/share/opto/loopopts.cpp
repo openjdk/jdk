@@ -4279,7 +4279,7 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
       return false;
     }
 
-    Node* loop_incr = loop_exit.incr();
+    const Node* loop_incr = loop_exit.incr();
 
     // With an extra phi for the candidate iv?
     // Or the region node is the loop head

@@ -1653,7 +1653,7 @@ void PhaseIdealLoop::check_counted_loop_shape(IdealLoopTree* loop, Node* x, Basi
   PhiNode* phi = loop_iv_phi(stride.xphi(), iv_incr.phi_incr(), x);
   assert(phi != nullptr && phi->in(LoopNode::LoopBackControl) == iv_incr.incr(), "No phi");
 
-  assert(stride.compute_non_zero_stride_con(exit_test.mask(), bt), "illegal condition");
+  assert(stride.compute_non_zero_stride_con(exit_test.mask(), bt) != 0, "illegal condition");
 
   assert(exit_test.mask() != BoolTest::ne, "unexpected condition");
   assert(iv_incr.phi_incr() == nullptr, "bad loop shape");
@@ -1683,7 +1683,7 @@ void PhaseIdealLoop::LoopExitTest::build() {
     return;
   }
 
-  // Find the trip-counter increment & limit.  Limit must be loop invariant.
+  // Find the trip-counter increment & limit. Limit must be loop invariant.
   _incr  = _cmp->in(1);
   _limit = _cmp->in(2);
 
@@ -1756,12 +1756,11 @@ void PhaseIdealLoop::LoopIVStride::build(const Node* incr) {
   // Get merge point
   _xphi = incr->in(1);
   _stride_node = incr->in(2);
-  if (!_stride_node->is_Con()) {     // Oops, swap these
-    if (!_xphi->is_Con()) {     // Is the other guy a constant?
-      return;            // Nope, unknown stride, bail out
+  if (!_stride_node->is_Con()) { // Oops, swap these
+    if (!_xphi->is_Con()) {      // Is the other guy a constant?
+      return;                    // Nope, unknown stride, bail out
     }
-
-    swap(_xphi, _stride_node);        // 'incr' is commutative, so ok to swap
+    swap(_xphi, _stride_node); // 'incr' is commutative, so ok to swap
   }
 
   _is_valid = true;
@@ -1838,9 +1837,9 @@ void CountedLoopConverter::LoopStructure::build() {
     return;
   }
 
-  Node* sfpt = _back_control->in(0)->in(0);
-  if (_loop->_child != nullptr && sfpt->Opcode() == Op_SafePoint) {
-    _safepoint = sfpt->as_SafePoint();
+  Node* safepoint = _back_control->in(0)->in(0);
+  if (_loop->_child != nullptr && safepoint->Opcode() == Op_SafePoint) {
+    _safepoint = safepoint->as_SafePoint();
   } else {
     _safepoint = _phase->find_safepoint(_back_control, _head, _loop);
   }
@@ -2387,11 +2386,11 @@ bool CountedLoopConverter::LoopStructure::is_infinite_loop(const TypeInteger* li
 
     // Example:
     // int i = 0;
-    // while (true)
-    //    sum + = array[i];
-    //    i++;
-    //    i = i && 0x7fff;
-    //  }
+    // while (true) {
+    //   sum + = array[i];
+    //   i++;
+    //   i = i && 0x7fff;
+    // }
     //
     // If the array is shorter than 0x8000 this exits through an AIOOB
     //  - Counted loop transformation is ok
@@ -2563,13 +2562,15 @@ IdealLoopTree* CountedLoopConverter::convert() {
   // Int to prevent (almost) infinite recursion in igvn
   // which can only handle integer types for constants or minint..maxint.
   Node* phi = _structure.phi();
-  if (!TypeInteger::bottom(_iv_bt)->higher_equal(_structure.phi()->bottom_type())) {
+  if (!TypeInteger::bottom(_iv_bt)->higher_equal(phi->bottom_type())) {
     Node* nphi =
-        PhiNode::make(_structure.phi()->in(0), _structure.phi()->in(LoopNode::EntryControl), TypeInteger::bottom(_iv_bt));
-    nphi->set_req(LoopNode::LoopBackControl, _structure.phi()->in(LoopNode::LoopBackControl));
+        PhiNode::make(phi->in(0), phi->in(LoopNode::EntryControl), TypeInteger::bottom(_iv_bt));
+    nphi->set_req(LoopNode::LoopBackControl, phi->in(LoopNode::LoopBackControl));
     nphi = igvn->register_new_node_with_optimizer(nphi);
     _phase->set_ctrl(nphi, _phase->get_ctrl(phi));
-    igvn->replace_node(_structure.phi(), nphi);
+    igvn->replace_node(phi, nphi);
+    phi = nphi->as_Phi();
+  }
     phi = nphi->as_Phi();
   }
 
@@ -5470,8 +5471,8 @@ int PhaseIdealLoop::_loop_invokes=0;// Count of PhaseIdealLoop invokes
 int PhaseIdealLoop::_loop_work=0; // Sum of PhaseIdealLoop x unique
 volatile int PhaseIdealLoop::_long_loop_candidates=0; // Number of long loops seen
 volatile int PhaseIdealLoop::_long_loop_nests=0; // Number of long loops successfully transformed to a nest
-volatile int CountedLoopConverter::_long_loop_counted_loops = 0; // Number of long loops successfully transformed to a
-                                                                 // counted loop
+// Number of long loops successfully transformed to a counted loop
+volatile int CountedLoopConverter::_long_loop_counted_loops = 0;                                               
 void PhaseIdealLoop::print_statistics() {
   tty->print_cr("PhaseIdealLoop=%d, sum _unique=%d, long loops=%d/%d/%d",
                 _loop_invokes,
