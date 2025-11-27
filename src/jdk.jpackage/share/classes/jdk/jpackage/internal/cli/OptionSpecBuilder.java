@@ -177,8 +177,8 @@ final class OptionSpecBuilder<T> {
         return this;
     }
 
-    OptionSpecBuilder<T> validatorExceptionFormatString(UnaryOperator<String> mutator) {
-        validatorBuilder.formatString(mutator.apply(validatorBuilder.formatString().orElse(null)));
+    OptionSpecBuilder<T> validatorExceptionFormatString(UnaryOperator<String> mapper) {
+        validatorBuilder.formatString(mapper.apply(validatorBuilder.formatString().orElse(null)));
         validator = null;
         return this;
     }
@@ -188,8 +188,8 @@ final class OptionSpecBuilder<T> {
         return this;
     }
 
-    OptionSpecBuilder<T> converterExceptionFormatString(UnaryOperator<String> mutator) {
-        converterBuilder.formatString(mutator.apply(converterBuilder.formatString().orElse(null)));
+    OptionSpecBuilder<T> converterExceptionFormatString(UnaryOperator<String> mapper) {
+        converterBuilder.formatString(mapper.apply(converterBuilder.formatString().orElse(null)));
         return this;
     }
 
@@ -199,8 +199,8 @@ final class OptionSpecBuilder<T> {
         return this;
     }
 
-    OptionSpecBuilder<T> validatorExceptionFactory(UnaryOperator<OptionValueExceptionFactory<? extends RuntimeException>> mutator) {
-        return validatorExceptionFactory(mutator.apply(validatorBuilder.exceptionFactory().orElse(null)));
+    OptionSpecBuilder<T> validatorExceptionFactory(UnaryOperator<OptionValueExceptionFactory<? extends RuntimeException>> mapper) {
+        return validatorExceptionFactory(mapper.apply(validatorBuilder.exceptionFactory().orElse(null)));
     }
 
     OptionSpecBuilder<T> converterExceptionFactory(OptionValueExceptionFactory<? extends RuntimeException> v) {
@@ -208,24 +208,24 @@ final class OptionSpecBuilder<T> {
         return this;
     }
 
-    OptionSpecBuilder<T> converterExceptionFactory(UnaryOperator<OptionValueExceptionFactory<? extends RuntimeException>> mutator) {
-        return converterExceptionFactory(mutator.apply(converterBuilder.exceptionFactory().orElse(null)));
+    OptionSpecBuilder<T> converterExceptionFactory(UnaryOperator<OptionValueExceptionFactory<? extends RuntimeException>> mapper) {
+        return converterExceptionFactory(mapper.apply(converterBuilder.exceptionFactory().orElse(null)));
     }
 
     OptionSpecBuilder<T> exceptionFormatString(String v) {
         return validatorExceptionFormatString(v).converterExceptionFormatString(v);
     }
 
-    OptionSpecBuilder<T> exceptionFormatString(UnaryOperator<String> mutator) {
-        return validatorExceptionFormatString(mutator).converterExceptionFormatString(mutator);
+    OptionSpecBuilder<T> exceptionFormatString(UnaryOperator<String> mapper) {
+        return validatorExceptionFormatString(mapper).converterExceptionFormatString(mapper);
     }
 
     OptionSpecBuilder<T> exceptionFactory(OptionValueExceptionFactory<? extends RuntimeException> v) {
         return validatorExceptionFactory(v).converterExceptionFactory(v);
     }
 
-    OptionSpecBuilder<T> exceptionFactory(UnaryOperator<OptionValueExceptionFactory<? extends RuntimeException>> mutator) {
-        return validatorExceptionFactory(mutator).converterExceptionFactory(mutator);
+    OptionSpecBuilder<T> exceptionFactory(UnaryOperator<OptionValueExceptionFactory<? extends RuntimeException>> mapper) {
+        return validatorExceptionFactory(mapper).converterExceptionFactory(mapper);
     }
 
     OptionSpecBuilder<T> converter(ValueConverter<T> v) {
@@ -251,8 +251,8 @@ final class OptionSpecBuilder<T> {
     }
 
     @SuppressWarnings("overloads")
-    OptionSpecBuilder<T> validator(UnaryOperator<Validator.Builder<T, RuntimeException>> mutator) {
-        validatorBuilder = mutator.apply(validatorBuilder);
+    OptionSpecBuilder<T> validator(UnaryOperator<Validator.Builder<T, RuntimeException>> mapper) {
+        validatorBuilder = mapper.apply(validatorBuilder);
         validator = null;
         return this;
     }
@@ -303,8 +303,8 @@ final class OptionSpecBuilder<T> {
         return this;
     }
 
-    OptionSpecBuilder<T> scope(UnaryOperator<Set<OptionScope>> mutator) {
-        return scope(mutator.apply(scope().orElseGet(Set::of)));
+    OptionSpecBuilder<T> scope(UnaryOperator<Set<OptionScope>> mapper) {
+        return scope(mapper.apply(scope().orElseGet(Set::of)));
     }
 
     OptionSpecBuilder<T> inScope(OptionScope... v) {
