@@ -250,7 +250,7 @@ static JVMFlag::Error MaxSizeForHeapAlignment(const char* name, size_t value, bo
   } else
 #endif
   {
-    heap_alignment = GCArguments::compute_heap_alignment();
+    heap_alignment = Arguments::conservative_max_heap_alignment();
   }
 
   return MaxSizeForAlignment(name, value, heap_alignment, verbose);
