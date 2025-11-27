@@ -43,6 +43,7 @@ import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.CDS;
 import jdk.internal.vm.annotation.Stable;
+import jdk.internal.vm.annotation.TrustFinalFields;
 
 /**
  * Container class for immutable collections. Not part of the public API.
