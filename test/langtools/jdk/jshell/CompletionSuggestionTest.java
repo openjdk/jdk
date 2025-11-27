@@ -947,7 +947,7 @@ public class CompletionSuggestionTest extends KullaTesting {
     public void testMultiSnippet() {
         assertCompletion("String s = \"\"; s.len|", true, "length()");
         assertCompletion("String s() { return \"\"; } s().len|", true, "length()");
-        assertCompletion("String s() { return \"\"; } import java.util.List; List.o|", true, "of(");
+        assertCompletion("String s() { return \"\"; } import java.util.List; List.o|", true, "of(", "ofLazy(");
         assertCompletion("String s() { return \"\"; } import java.ut| ", true, "util.");
         assertCompletion("class S { public int length() { return 0; } } new S().len|", true, "length()");
         assertSignature("void f() { } f(|", "void f()");
