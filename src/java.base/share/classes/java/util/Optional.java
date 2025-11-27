@@ -25,7 +25,6 @@
 
 package java.util;
 
-import jdk.internal.vm.annotation.Stable;
 import jdk.internal.vm.annotation.TrustFinalFields;
 
 import java.util.function.Consumer;
