@@ -49,8 +49,8 @@ import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
 @State(Scope.Benchmark)
-@Warmup(iterations = 1, time = 5)
-@Measurement(iterations = 1, time = 5)
+@Warmup(iterations = 5, time = 10)
+@Measurement(iterations = 5, time = 10)
 @BenchmarkMode(Mode.SampleTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @Threads(1)
