@@ -262,9 +262,6 @@ public class ServiceTest {
                     if (mainLauncherAsService) {
                         cmd.addArgument("--launcher-as-service");
                     }
-                    if (isMacAppStore) {
-                        cmd.addArgument("--mac-app-store");
-                    }
                 })
                 .mutate(createTestInitializer()::applyTo)
                 .run();
