@@ -33,7 +33,6 @@ class os::Linux {
   friend class os;
 
   static int (*_pthread_getcpuclockid)(pthread_t, clockid_t *);
-  static int (*_pthread_setname_np)(pthread_t, const char*);
 
   static address   _initial_thread_stack_bottom;
   static uintptr_t _initial_thread_stack_size;
@@ -46,15 +45,13 @@ class os::Linux {
   static GrowableArray<int>* _cpu_to_node;
   static GrowableArray<int>* _nindex_to_node;
 
-  static julong available_memory_in_container();
-
  protected:
 
-  static julong _physical_memory;
+  static physical_memory_size_type _physical_memory;
   static pthread_t _main_thread;
 
-  static julong available_memory();
-  static julong free_memory();
+  static bool available_memory(physical_memory_size_type& value);
+  static bool free_memory(physical_memory_size_type& value);
 
 
   static void initialize_system_info();
@@ -117,8 +114,8 @@ class os::Linux {
   static address   initial_thread_stack_bottom(void)                { return _initial_thread_stack_bottom; }
   static uintptr_t initial_thread_stack_size(void)                  { return _initial_thread_stack_size; }
 
-  static julong physical_memory() { return _physical_memory; }
-  static julong host_swap();
+  static physical_memory_size_type physical_memory() { return _physical_memory; }
+  static bool host_swap(physical_memory_size_type& value);
 
   static intptr_t* ucontext_get_sp(const ucontext_t* uc);
   static intptr_t* ucontext_get_fp(const ucontext_t* uc);
@@ -180,6 +177,23 @@ class os::Linux {
   // May fail (returns false) or succeed (returns true) but not all output fields are available; unavailable
   // fields will contain -1.
   static bool query_process_memory_info(meminfo_t* info);
+
+  // Output structure for query_accurate_process_memory_info() (all values in KB)
+  struct accurate_meminfo_t {
+    ssize_t rss;        // current resident set size
+    ssize_t pss;        // current proportional set size
+    ssize_t pssdirty;   // proportional set size (dirty)
+    ssize_t pssanon;    // proportional set size (anonymous mappings)
+    ssize_t pssfile;    // proportional set size (file mappings)
+    ssize_t pssshmem;   // proportional set size (shared mappings)
+    ssize_t swap;       // swapped out
+    ssize_t swappss;    // proportional set size (swapped out)
+  };
+
+  // Attempts to query accurate memory information from /proc/self/smaps_rollup and return it in the output structure.
+  // May fail (returns false) or succeed (returns true) but not all output fields are available; unavailable
+  // fields will contain -1.
+  static bool query_accurate_process_memory_info(accurate_meminfo_t* info);
 
   // Tells if the user asked for transparent huge pages.
   static bool _thp_requested;

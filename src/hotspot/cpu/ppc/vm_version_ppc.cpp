@@ -80,13 +80,17 @@ void VM_Version::initialize() {
             "%zu on this machine", PowerArchitecturePPC64);
 
   // Power 8: Configure Data Stream Control Register.
-  config_dscr();
+  if (VM_Version::has_mfdscr()) {
+    config_dscr();
+  }
 
   if (!UseSIGTRAP) {
     MSG(TrapBasedICMissChecks);
     MSG(TrapBasedNullChecks);
-    FLAG_SET_ERGO(TrapBasedNullChecks,       false);
-    FLAG_SET_ERGO(TrapBasedICMissChecks,     false);
+    MSG(TrapBasedNMethodEntryBarriers);
+    FLAG_SET_ERGO(TrapBasedNullChecks,           false);
+    FLAG_SET_ERGO(TrapBasedICMissChecks,         false);
+    FLAG_SET_ERGO(TrapBasedNMethodEntryBarriers, false);
   }
 
 #ifdef COMPILER2
@@ -95,7 +99,22 @@ void VM_Version::initialize() {
     FLAG_SET_ERGO(TrapBasedRangeChecks, false);
   }
 
+  if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
+    FLAG_SET_ERGO(UsePopCountInstruction, true);
+  }
+
+  if (PowerArchitecturePPC64 >= 9) {
+    // Performance is good since Power9.
+    if (FLAG_IS_DEFAULT(SuperwordUseVSX)) {
+      FLAG_SET_ERGO(SuperwordUseVSX, true);
+    }
+  }
+
   MaxVectorSize = SuperwordUseVSX ? 16 : 8;
+  if (!SuperwordUseVSX && FLAG_IS_DEFAULT(EnableVectorSupport)) {
+    // VectorSupport intrinsics currently have issues with MaxVectorSize < 16 (JDK-8370803).
+    FLAG_SET_ERGO(EnableVectorSupport, false);
+  }
   if (FLAG_IS_DEFAULT(AlignVector)) {
     FLAG_SET_ERGO(AlignVector, false);
   }
@@ -163,7 +182,8 @@ void VM_Version::initialize() {
   // Create and print feature-string.
   char buf[(num_features+1) * 16]; // Max 16 chars per feature.
   jio_snprintf(buf, sizeof(buf),
-               "ppc64 sha aes%s%s",
+               "ppc64 sha aes%s%s%s",
+               (has_mfdscr()  ? " mfdscr"  : ""),
                (has_darn()    ? " darn"    : ""),
                (has_brw()     ? " brw"     : "")
                // Make sure number of %s matches num_features!
@@ -479,29 +499,11 @@ void VM_Version::determine_features() {
   // Emit code.
   void (*test)(address addr, uint64_t offset)=(void(*)(address addr, uint64_t offset))(void *)a->function_entry();
   uint32_t *code = (uint32_t *)a->pc();
-  // Don't use R0 in ldarx.
   // Keep R3_ARG1 unmodified, it contains &field (see below).
   // Keep R4_ARG2 unmodified, it contains offset = 0 (see below).
-  a->fsqrt(F3, F4);                            // code[0]  -> fsqrt_m
-  a->fsqrts(F3, F4);                           // code[1]  -> fsqrts_m
-  a->isel(R7, R5, R6, 0);                      // code[2]  -> isel_m
-  a->ldarx_unchecked(R7, R3_ARG1, R4_ARG2, 1); // code[3]  -> lxarx_m
-  a->cmpb(R7, R5, R6);                         // code[4]  -> cmpb
-  a->popcntb(R7, R5);                          // code[5]  -> popcntb
-  a->popcntw(R7, R5);                          // code[6]  -> popcntw
-  a->fcfids(F3, F4);                           // code[7]  -> fcfids
-  a->vand(VR0, VR0, VR0);                      // code[8]  -> vand
-  // arg0 of lqarx must be an even register, (arg1 + arg2) must be a multiple of 16
-  a->lqarx_unchecked(R6, R3_ARG1, R4_ARG2, 1); // code[9]  -> lqarx_m
-  a->vcipher(VR0, VR1, VR2);                   // code[10] -> vcipher
-  a->vpmsumb(VR0, VR1, VR2);                   // code[11] -> vpmsumb
-  a->mfdscr(R0);                               // code[12] -> mfdscr
-  a->lxvd2x(VSR0, R3_ARG1);                    // code[13] -> vsx
-  a->ldbrx(R7, R3_ARG1, R4_ARG2);              // code[14] -> ldbrx
-  a->stdbrx(R7, R3_ARG1, R4_ARG2);             // code[15] -> stdbrx
-  a->vshasigmaw(VR0, VR1, 1, 0xF);             // code[16] -> vshasig
-  a->darn(R7);                                 // code[17] -> darn
-  a->brw(R5, R6);                              // code[18] -> brw
+  a->mfdscr(R0);
+  a->darn(R7);
+  a->brw(R5, R6);
   a->blr();
 
   // Emit function to set one cache line to zero. Emit function descriptor and get pointer to it.
@@ -536,23 +538,7 @@ void VM_Version::determine_features() {
 
   // determine which instructions are legal.
   int feature_cntr = 0;
-  if (code[feature_cntr++]) features |= fsqrt_m;
-  if (code[feature_cntr++]) features |= fsqrts_m;
-  if (code[feature_cntr++]) features |= isel_m;
-  if (code[feature_cntr++]) features |= lxarxeh_m;
-  if (code[feature_cntr++]) features |= cmpb_m;
-  if (code[feature_cntr++]) features |= popcntb_m;
-  if (code[feature_cntr++]) features |= popcntw_m;
-  if (code[feature_cntr++]) features |= fcfids_m;
-  if (code[feature_cntr++]) features |= vand_m;
-  if (code[feature_cntr++]) features |= lqarx_m;
-  if (code[feature_cntr++]) features |= vcipher_m;
-  if (code[feature_cntr++]) features |= vpmsumb_m;
   if (code[feature_cntr++]) features |= mfdscr_m;
-  if (code[feature_cntr++]) features |= vsx_m;
-  if (code[feature_cntr++]) features |= ldbrx_m;
-  if (code[feature_cntr++]) features |= stdbrx_m;
-  if (code[feature_cntr++]) features |= vshasig_m;
   if (code[feature_cntr++]) features |= darn_m;
   if (code[feature_cntr++]) features |= brw_m;
 
@@ -649,7 +635,7 @@ void VM_Version::initialize_cpu_information(void) {
   _no_of_cores  = os::processor_count();
   _no_of_threads = _no_of_cores;
   _no_of_sockets = _no_of_cores;
-  snprintf(_cpu_name, CPU_TYPE_DESC_BUF_SIZE, "PowerPC POWER%lu", PowerArchitecturePPC64);
-  snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "PPC %s", cpu_info_string());
+  os::snprintf_checked(_cpu_name, CPU_TYPE_DESC_BUF_SIZE, "PowerPC POWER%lu", PowerArchitecturePPC64);
+  os::snprintf_checked(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "PPC %s", cpu_info_string());
   _initialized = true;
 }

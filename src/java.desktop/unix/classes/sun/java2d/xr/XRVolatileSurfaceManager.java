@@ -35,12 +35,13 @@ import sun.java2d.SurfaceData;
 /**
  * XRender platform implementation of the VolatileSurfaceManager class.
  */
-public class XRVolatileSurfaceManager extends VolatileSurfaceManager {
+public final class XRVolatileSurfaceManager extends VolatileSurfaceManager {
 
     public XRVolatileSurfaceManager(SunVolatileImage vImg, Object context) {
         super(vImg, context);
     }
 
+    @Override
     protected boolean isAccelerationEnabled() {
         return true;
     }
@@ -48,6 +49,7 @@ public class XRVolatileSurfaceManager extends VolatileSurfaceManager {
     /**
      * Create a pixmap-based SurfaceData object
      */
+    @Override
     protected SurfaceData initAcceleratedSurface() {
         SurfaceData sData;
 
@@ -74,6 +76,7 @@ public class XRVolatileSurfaceManager extends VolatileSurfaceManager {
     * XRender should allow copies between different formats and depths.
     * TODO: verify that this assumption is correct.
     */
+    @Override
     protected boolean isConfigValid(GraphicsConfiguration gc) {
         return true;
     }

@@ -324,7 +324,7 @@ Currently only applies to JTReg.
 
 #### TIMEOUT_FACTOR
 
-Currently only applies to JTReg.
+Currently only applies to [JTReg -timeoutFactor](#timeout_factor-1).
 
 #### JAVA_OPTIONS
 
@@ -367,6 +367,10 @@ between the specified revision and the repository tip.
 The report is stored in
 `build/$BUILD/test-results/jcov-output/diff_coverage_report` file.
 
+#### AOT_JDK
+
+See [Testing Ahead-of-time optimizations](#testing-ahead-of-time-optimizations).
+
 ### JTReg keywords
 
 #### JOBS
@@ -379,9 +383,11 @@ never more than *memory size in GB/2*.
 
 #### TIMEOUT_FACTOR
 
-The timeout factor (`-timeoutFactor`).
-
-Defaults to 4.
+The `TIMEOUT_FACTOR` is forwarded to JTReg framework itself
+(`-timeoutFactor`). Also, some test cases that programmatically wait a
+certain amount of time will apply this factor. If we run in forced
+compilation mode (`-Xcomp`), the build system will automatically
+adjust this factor to compensate for less performance. Defaults to 4.
 
 #### FAILURE_HANDLER_TIMEOUT
 
@@ -396,6 +402,13 @@ such implementation class, named Virtual, is currently part of the JDK build in
 the `test/jtreg_test_thread_factory/` directory. This class gets compiled
 during the test image build. The implementation of the Virtual class creates a
 new virtual thread for executing each test class.
+
+#### JVMTI_STRESS_AGENT
+
+Executes JTReg tests with JVM TI stress agent. The stress agent is the part of
+test library and located in `test/lib/jdk/test/lib/jvmti/libJvmtiStressAgent.cpp`.
+The value of this argument is set as JVM TI agent options.
+This mode uses ProblemList-jvmti-stress-agent.txt as an additional exclude list.
 
 #### TEST_MODE
 
@@ -545,6 +558,18 @@ Amount of time to spend in each warmup iteration. Same as specifying `-w
 Specify to have the test run save a log of the values. Accepts the same values
 as `-rff`, i.e., `text`, `csv`, `scsv`, `json`, or `latex`.
 
+#### TEST_JDK
+
+The path to the JDK that will be used to run the benchmarks.
+
+Defaults to `build/<CONF-NAME>/jdk`.
+
+#### BENCHMARKS_JAR
+
+The path to the JAR containing the benchmarks.
+
+Defaults to `test/micro/benchmarks.jar`.
+
 #### VM_OPTIONS
 
 Additional VM arguments to provide to forked off VMs. Same as `-jvmArgs <args>`
@@ -610,6 +635,43 @@ $ make test TEST="jtreg:sun/security/pkcs11/Secmod/AddTrustedCert.java" \
 
 For more notes about the PKCS11 tests, please refer to
 test/jdk/sun/security/pkcs11/README.
+
+### Testing Ahead-of-time Optimizations
+
+One way to improve test coverage of ahead-of-time (AOT) optimizations in
+the JDK is to run existing jtreg test cases in a special "AOT_JDK" mode.
+Example:
+
+```
+$ make test JTREG="AOT_JDK=onestep" \
+    TEST=open/test/hotspot/jtreg/runtime/invokedynamic
+```
+
+In this testing mode, we first perform an AOT training run
+(see https://openjdk.org/jeps/483) of a special test program
+([test/setup_aot/TestSetupAOT.java](../test/setup_aot/TestSetupAOT.java))
+that accesses about 5,0000 classes in the JDK core libraries.
+Optimization artifacts for these classes (such as pre-linked
+lambda expressions, execution profiles, and pre-generated native code)
+are stored into an AOT cache file, which will be used by all the JVMs
+launched by the selected jtreg test cases.
+
+When the jtreg tests call into the core libraries classes that are in
+the AOT cache, we will be able to test the AOT optimizations that were
+used on those classes.
+
+Please note that not all existing jtreg test cases can be executed with
+the AOT_JDK mode. See
+[test/hotspot/jtreg/ProblemList-AotJdk.txt](../test/hotspot/jtreg/ProblemList-AotJdk.txt)
+and [test/jdk/ProblemList-AotJdk.txt](../test/jdk/ProblemList-AotJdk.txt).
+
+Also, test cases that were written specifically to test AOT, such as the tests
+under [test/hotspot/jtreg/runtime/cds](../test/hotspot/jtreg/runtime/cds/),
+cannot be executed with the AOT_JDK mode.
+
+Valid values for `AOT_JDK` are `onestep` and `twostep`. These control how
+the AOT cache is generated. See https://openjdk.org/jeps/514 for details.
+All other values are ignored.
 
 ### Testing with alternative security providers
 

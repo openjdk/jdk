@@ -39,7 +39,7 @@ import java.util.Scanner;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
-public class MFontConfiguration extends FontConfiguration {
+public final class MFontConfiguration extends FontConfiguration {
 
     private static FontConfiguration fontConfig = null;
     private static PlatformLogger logger;
@@ -66,6 +66,7 @@ public class MFontConfiguration extends FontConfiguration {
     /* Needs to be kept in sync with updates in the languages used in
      * the fontconfig files.
      */
+    @Override
     protected void initReorderMap() {
         reorderMap = new HashMap<>();
 
@@ -84,47 +85,20 @@ public class MFontConfiguration extends FontConfiguration {
     /**
      * Sets the OS name and version from environment information.
      */
+    @Override
     protected void setOsNameAndVersion(){
         super.setOsNameAndVersion();
 
         if (osName.equals("Linux")) {
             try {
-                File f;
-                if ((f = new File("/etc/fedora-release")).canRead()) {
-                    osName = "Fedora";
-                    osVersion = getVersionString(f);
-                } else if ((f = new File("/etc/redhat-release")).canRead()) {
-                    osName = "RedHat";
-                    osVersion = getVersionString(f);
-                } else if ((f = new File("/etc/turbolinux-release")).canRead()) {
-                    osName = "Turbo";
-                    osVersion = getVersionString(f);
-                } else if ((f = new File("/etc/SuSE-release")).canRead()) {
-                    osName = "SuSE";
-                    osVersion = getVersionString(f);
-                } else if ((f = new File("/etc/lsb-release")).canRead()) {
-                    /* Ubuntu and (perhaps others) use only lsb-release.
-                     * Syntax and encoding is compatible with java properties.
-                     * For Ubuntu the ID is "Ubuntu".
-                     */
+                File f = new File("/etc/os-release");
+                if (f.canRead()) {
                     Properties props = new Properties();
                     try (FileInputStream fis = new FileInputStream(f)) {
                         props.load(fis);
                     }
-                    osName = extractInfo(props.getProperty("DISTRIB_ID"));
-                    osVersion = extractInfo(props.getProperty("DISTRIB_RELEASE"));
-                } else if ((f = new File("/etc/os-release")).canRead()) {
-                    Properties props = new Properties();
-                    try (FileInputStream fis = new FileInputStream(f)) {
-                        props.load(fis);
-                    }
-                    osName = extractInfo(props.getProperty("NAME"));
+                    osName = extractInfo(props.getProperty("ID"));
                     osVersion = extractInfo(props.getProperty("VERSION_ID"));
-                    if (osName.equals("SLES")) {
-                        osName = "SuSE";
-                    } else {
-                        osName = extractInfo(props.getProperty("ID"));
-                    }
                 }
             } catch (Exception e) {
             }
@@ -157,6 +131,7 @@ public class MFontConfiguration extends FontConfiguration {
 
     private static final String fontsDirPrefix = "$JRE_LIB_FONTS";
 
+    @Override
     protected String mapFileName(String fileName) {
         if (fileName != null && fileName.startsWith(fontsDirPrefix)) {
             return SunFontManager.jreFontDirName
@@ -166,6 +141,7 @@ public class MFontConfiguration extends FontConfiguration {
     }
 
     // overrides FontConfiguration.getFallbackFamilyName
+    @Override
     public String getFallbackFamilyName(String fontName, String defaultFallback) {
         // maintain compatibility with old font.properties files, which
         // either had aliases for TimesRoman & Co. or defined mappings for them.
@@ -176,6 +152,7 @@ public class MFontConfiguration extends FontConfiguration {
         return defaultFallback;
     }
 
+    @Override
     protected String getEncoding(String awtFontName,
             String characterSubsetName) {
         // extract encoding field from XLFD
@@ -202,14 +179,17 @@ public class MFontConfiguration extends FontConfiguration {
         return encoding;
     }
 
+    @Override
     protected Charset getDefaultFontCharset(String fontName) {
         return ISO_8859_1;
     }
 
+    @Override
     protected String getFaceNameFromComponentFontName(String componentFontName) {
         return null;
     }
 
+    @Override
     protected String getFileNameFromComponentFontName(String componentFontName) {
         // for X11, component font name is XLFD
         // if we have a file name already, just use it; otherwise let's see
@@ -222,6 +202,7 @@ public class MFontConfiguration extends FontConfiguration {
         return ((X11FontManager) fontManager).getFileNameFromXLFD(componentFontName);
     }
 
+    @Override
     public HashSet<String> getAWTFontPathSet() {
         HashSet<String> fontDirs = new HashSet<String>();
         short[] scripts = getCoreScripts(0);

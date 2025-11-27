@@ -90,7 +90,9 @@ public class T6406133 extends ToolTester {
         task = tool.getTask(pw, fm, listener, null, null, compilationUnits);
         task.setProcessors(Arrays.asList(processor));
         task.setLocale(locale); //6443132
-        task.call();
+        if (task.call()) {
+            throw new AssertionError("test compilation was expected to fail");
+        }
         if (!processor.locale.equals(locale))
             throw new AssertionError("Error in diagnostic localization during annotation processing");
         String res = useListener ? listener.result : pw.toString();

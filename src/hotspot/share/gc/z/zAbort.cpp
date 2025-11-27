@@ -22,10 +22,10 @@
  */
 
 #include "gc/z/zAbort.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 volatile bool ZAbort::_should_abort = false;
 
 void ZAbort::abort() {
-  Atomic::store(&_should_abort, true);
+  AtomicAccess::store(&_should_abort, true);
 }

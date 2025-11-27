@@ -30,6 +30,8 @@
 #include "utilities/macros.hpp"
 #include "utilities/sizes.hpp"
 
+class stringStream;
+
 class VM_Version : public Abstract_VM_Version {
   friend class VMStructs;
   friend class JVMCIVMStructs;
@@ -197,8 +199,8 @@ class VM_Version : public Abstract_VM_Version {
   union ExtCpuid8Ecx {
     uint32_t value;
     struct {
-      uint32_t cores_per_cpu : 8,
-                             : 24;
+      uint32_t threads_per_cpu : 8,
+                               : 24;
     } bits;
   };
 
@@ -274,7 +276,8 @@ class VM_Version : public Abstract_VM_Version {
         fast_short_rep_mov : 1,
                            : 9,
                  serialize : 1,
-                           : 5,
+                     hybrid: 1,
+                           : 4,
                    cet_ibt : 1,
                            : 2,
               avx512_fp16  : 1,
@@ -300,6 +303,14 @@ class VM_Version : public Abstract_VM_Version {
                      : 1,
               apx_f  : 1,
                      : 10;
+    } bits;
+  };
+
+  union StdCpuidEax29Ecx0 {
+    uint32_t value;
+    struct {
+      uint32_t  apx_nci_ndd_nf  : 1,
+                                : 31;
     } bits;
   };
 
@@ -442,7 +453,8 @@ protected:
     decl(SHA512,            "sha512",            61) /* SHA512 instructions*/ \
     decl(AVX512_FP16,       "avx512_fp16",       62) /* AVX512 FP16 ISA support*/ \
     decl(AVX10_1,           "avx10_1",           63) /* AVX10 512 bit vector ISA Version 1 support*/ \
-    decl(AVX10_2,           "avx10_2",           64) /* AVX10 512 bit vector ISA Version 2 support*/
+    decl(AVX10_2,           "avx10_2",           64) /* AVX10 512 bit vector ISA Version 2 support*/ \
+    decl(HYBRID,            "hybrid",            65) /* Hybrid architecture */
 
 #define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = (bit),
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
@@ -587,6 +599,10 @@ protected:
     StdCpuid24MainLeafEax std_cpuid24_eax;
     StdCpuid24MainLeafEbx std_cpuid24_ebx;
 
+    // cpuid function 0x29 APX Advanced Performance Extensions Leaf
+    // eax = 0x29, ecx = 0
+    StdCpuidEax29Ecx0 std_cpuid29_ebx;
+
     // cpuid function 0xB (processor topology)
     // ecx = 0
     uint32_t     tpl_cpuidB0_eax;
@@ -707,6 +723,7 @@ public:
   static ByteSize std_cpuid0_offset() { return byte_offset_of(CpuidInfo, std_max_function); }
   static ByteSize std_cpuid1_offset() { return byte_offset_of(CpuidInfo, std_cpuid1_eax); }
   static ByteSize std_cpuid24_offset() { return byte_offset_of(CpuidInfo, std_cpuid24_eax); }
+  static ByteSize std_cpuid29_offset() { return byte_offset_of(CpuidInfo, std_cpuid29_ebx); }
   static ByteSize dcp_cpuid4_offset() { return byte_offset_of(CpuidInfo, dcp_cpuid4_eax); }
   static ByteSize sef_cpuid7_offset() { return byte_offset_of(CpuidInfo, sef_cpuid7_eax); }
   static ByteSize sefsl1_cpuid7_offset() { return byte_offset_of(CpuidInfo, sefsl1_cpuid7_eax); }
@@ -756,7 +773,9 @@ public:
     _features.set_feature(CPU_SSE2);
     _features.set_feature(CPU_VZEROUPPER);
   }
-  static void set_apx_cpuFeatures() { _features.set_feature(CPU_APX_F); }
+  static void set_apx_cpuFeatures() {
+    _features.set_feature(CPU_APX_F);
+  }
   static void set_bmi_cpuFeatures() {
     _features.set_feature(CPU_BMI1);
     _features.set_feature(CPU_BMI2);
@@ -791,6 +810,7 @@ public:
   static uint32_t cpu_stepping()          { return _cpuid_info.cpu_stepping(); }
   static int  cpu_family()        { return _cpu;}
   static bool is_P6()             { return cpu_family() >= 6; }
+  static bool is_intel_server_family()    { return cpu_family() == 6 || cpu_family() == 19; }
   static bool is_amd()            { assert_is_initialized(); return _cpuid_info.std_vendor_name_0 == 0x68747541; } // 'htuA'
   static bool is_hygon()          { assert_is_initialized(); return _cpuid_info.std_vendor_name_0 == 0x6F677948; } // 'ogyH'
   static bool is_amd_family()     { return is_amd() || is_hygon(); }
@@ -874,6 +894,7 @@ public:
   static bool supports_avx512_fp16()  { return _features.supports_feature(CPU_AVX512_FP16); }
   static bool supports_hv()           { return _features.supports_feature(CPU_HV); }
   static bool supports_serialize()    { return _features.supports_feature(CPU_SERIALIZE); }
+  static bool supports_hybrid()       { return _features.supports_feature(CPU_HYBRID); }
   static bool supports_f16c()         { return _features.supports_feature(CPU_F16C); }
   static bool supports_pku()          { return _features.supports_feature(CPU_PKU); }
   static bool supports_ospke()        { return _features.supports_feature(CPU_OSPKE); }
@@ -917,11 +938,13 @@ public:
 
   static bool is_intel_cascade_lake();
 
+  static bool is_intel_darkmont();
+
   static int avx3_threshold();
 
   static bool is_intel_tsc_synched_at_init();
 
-  static void insert_features_names(VM_Version::VM_Features features, char* buf, size_t buflen);
+  static void insert_features_names(VM_Version::VM_Features features, stringStream& ss);
 
   // This checks if the JVM is potentially affected by an erratum on Intel CPUs (SKX102)
   // that causes unpredictable behaviour when jcc crosses 64 byte boundaries. Its microcode
@@ -946,7 +969,7 @@ public:
   }
 
   // Intel Core and newer cpus have fast IDIV instruction (excluding Atom).
-  static bool has_fast_idiv()     { return is_intel() && cpu_family() == 6 &&
+  static bool has_fast_idiv()     { return is_intel() && is_intel_server_family() &&
                                            supports_sse3() && _model != 0x1C; }
 
   static bool supports_compare_and_exchange() { return true; }
@@ -972,7 +995,7 @@ public:
     return true;
   }
 
-  constexpr static bool supports_recursive_lightweight_locking() {
+  constexpr static bool supports_recursive_fast_locking() {
     return true;
   }
 
@@ -1070,7 +1093,6 @@ public:
 
   static bool supports_tscinv_ext(void);
 
-  static void initialize_tsc();
   static void initialize_cpu_information(void);
 };
 

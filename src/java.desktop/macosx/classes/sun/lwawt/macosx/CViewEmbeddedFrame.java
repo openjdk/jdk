@@ -39,7 +39,7 @@ import sun.lwawt.LWWindowPeer;
  * This is a part of public API and should not be renamed or moved
  */
 @SuppressWarnings("serial") // JDK implementation class
-public class CViewEmbeddedFrame extends EmbeddedFrame {
+public final class CViewEmbeddedFrame extends EmbeddedFrame {
 
     private final long nsViewPtr;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -599,8 +599,8 @@ public class AnnotationsOnModules extends ModuleTestBase {
                         "1 warning");
             } else if (suppress.equals(DEPRECATED_JAVADOC)) {
                 expected = Arrays.asList(
-                        "module-info.java:1:19: compiler.warn.missing.deprecated.annotation",
                         "module-info.java:2:14: compiler.warn.has.been.deprecated.module: m1x",
+                        "module-info.java:1:19: compiler.warn.missing.deprecated.annotation",
                         "2 warnings");
             } else {
                 expected = Arrays.asList("");

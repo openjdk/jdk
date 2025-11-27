@@ -126,7 +126,7 @@ public class FileMapInfo {
     metadataTypeArray[4] = db.lookupType("InstanceRefKlass");
     metadataTypeArray[5] = db.lookupType("InstanceStackChunkKlass");
     metadataTypeArray[6] = db.lookupType("Method");
-    metadataTypeArray[9] = db.lookupType("MethodData");
+    metadataTypeArray[7] = db.lookupType("MethodData");
     metadataTypeArray[8] = db.lookupType("MethodCounters");
     metadataTypeArray[9] = db.lookupType("ObjArrayKlass");
     metadataTypeArray[10] = db.lookupType("TypeArrayKlass");

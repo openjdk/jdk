@@ -765,6 +765,10 @@ void TemplateInterpreterGenerator::lock_method() {
 //      xcpool: cp cache
 //      stack_pointer: previous sp
 void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
+  // Save ConstMethod* in x15_const_method for later use to avoid loading multiple times
+  Register x15_const_method = x15;
+  __ ld(x15_const_method, Address(xmethod, Method::const_offset()));
+
   // initialize fixed part of activation frame
   if (native_call) {
     __ subi(esp, sp, 14 * wordSize);
@@ -775,8 +779,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ sd(zr, Address(sp, 12 * wordSize));
   } else {
     __ subi(esp, sp, 12 * wordSize);
-    __ ld(t0, Address(xmethod, Method::const_offset()));     // get ConstMethod
-    __ add(xbcp, t0, in_bytes(ConstMethod::codes_offset())); // get codebase
+    __ add(xbcp, x15_const_method, in_bytes(ConstMethod::codes_offset())); // get codebase
     __ subi(sp, sp, 12 * wordSize);
   }
   __ sd(xbcp, Address(sp, wordSize));
@@ -798,9 +801,10 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ sd(fp, Address(sp, 10 * wordSize));
   __ la(fp, Address(sp, 12 * wordSize)); // include ra & fp
 
-  __ ld(xcpool, Address(xmethod, Method::const_offset()));
-  __ ld(xcpool, Address(xcpool, ConstMethod::constants_offset()));
-  __ ld(xcpool, Address(xcpool, ConstantPool::cache_offset()));
+  // Save ConstantPool* in x28_constants for later use to avoid loading multiple times
+  Register x28_constants = x28;
+  __ ld(x28_constants, Address(x15_const_method, ConstMethod::constants_offset()));
+  __ ld(xcpool, Address(x28_constants, ConstantPool::cache_offset()));
   __ sd(xcpool, Address(sp, 3 * wordSize));
   __ sub(t0, xlocals, fp);
   __ srai(t0, t0, Interpreter::logStackElementSize);   // t0 = xlocals - fp();
@@ -812,13 +816,15 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ sd(x19_sender_sp, Address(sp, 9 * wordSize));
   __ sd(zr, Address(sp, 8 * wordSize));
 
-  // Get mirror and store it in the frame as GC root for this Method*
-  __ load_mirror(t2, xmethod, x15, t1);
+  // Get mirror, Resolve ConstantPool* -> InstanceKlass* -> Java mirror
+  // and store it in the frame as GC root for this Method*
+  __ ld(t2, Address(x28_constants, ConstantPool::pool_holder_offset()));
+  __ ld(t2, Address(t2, in_bytes(Klass::java_mirror_offset())));
+  __ resolve_oop_handle(t2, t0, t1);
   __ sd(t2, Address(sp, 4 * wordSize));
 
   if (!native_call) {
-    __ ld(t0, Address(xmethod, Method::const_offset()));
-    __ lhu(t0, Address(t0, ConstMethod::max_stack_offset()));
+    __ lhu(t0, Address(x15_const_method, ConstMethod::max_stack_offset()));
     __ add(t0, t0, MAX2(3, Method::extra_stack_entries()));
     __ slli(t0, t0, 3);
     __ sub(t0, sp, t0);
@@ -1067,9 +1073,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   }
 
   // start execution
-#ifdef ASSERT
   __ verify_frame_setup();
-#endif
 
   // jvmti support
   __ notify_method_entry();
@@ -1142,9 +1146,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     Label L;
     __ ld(x28, Address(xmethod, Method::native_function_offset()));
     ExternalAddress unsatisfied(SharedRuntime::native_method_throw_unsatisfied_link_error_entry());
-    __ la(t, unsatisfied);
-    __ load_long_misaligned(t1, Address(t, 0), t0, 2); // 2 bytes aligned, but not 4 or 8
-
+    __ la(t1, unsatisfied);
     __ bne(x28, t1, L);
     __ call_VM(noreg,
                CAST_FROM_FN_PTR(address,
@@ -1223,15 +1225,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   {
     Label L, Continue;
 
-    // We need an acquire here to ensure that any subsequent load of the
-    // global SafepointSynchronize::_state flag is ordered after this load
-    // of the thread-local polling word. We don't want this poll to
-    // return false (i.e. not safepointing) and a later poll of the global
-    // SafepointSynchronize::_state spuriously to return true.
-    //
-    // This is to avoid a race when we're in a native->Java transition
-    // racing the code which wakes up from a safepoint.
-    __ safepoint_poll(L, true /* at_return */, true /* acquire */, false /* in_nmethod */);
+    __ safepoint_poll(L, true /* at_return */, false /* in_nmethod */);
     __ lwu(t1, Address(xthread, JavaThread::suspend_flags_offset()));
     __ beqz(t1, Continue);
     __ bind(L);
@@ -1255,22 +1249,17 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ mv(t0, _thread_in_Java);
   __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
 
-  if (LockingMode != LM_LEGACY) {
-    // Check preemption for Object.wait()
-    Label not_preempted;
-    __ ld(t1, Address(xthread, JavaThread::preempt_alternate_return_offset()));
-    __ beqz(t1, not_preempted);
-    __ sd(zr, Address(xthread, JavaThread::preempt_alternate_return_offset()));
-    __ jr(t1);
-    __ bind(native_return);
-    __ restore_after_resume(true /* is_native */);
-    // reload result_handler
-    __ ld(result_handler, Address(fp, frame::interpreter_frame_result_handler_offset * wordSize));
-    __ bind(not_preempted);
-  } else {
-    // any pc will do so just use this one for LM_LEGACY to keep code together.
-    __ bind(native_return);
-  }
+  // Check preemption for Object.wait()
+  Label not_preempted;
+  __ ld(t1, Address(xthread, JavaThread::preempt_alternate_return_offset()));
+  __ beqz(t1, not_preempted);
+  __ sd(zr, Address(xthread, JavaThread::preempt_alternate_return_offset()));
+  __ jr(t1);
+  __ bind(native_return);
+  __ restore_after_resume(true /* is_native */);
+  // reload result_handler
+  __ ld(result_handler, Address(fp, frame::interpreter_frame_result_handler_offset * wordSize));
+  __ bind(not_preempted);
 
   // reset_last_Java_frame
   __ reset_last_Java_frame(true);
@@ -1382,7 +1371,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   Label slow_path;
   Label fast_path;
-  __ safepoint_poll(slow_path, true /* at_return */, false /* acquire */, false /* in_nmethod */);
+  __ safepoint_poll(slow_path, true /* at_return */, false /* in_nmethod */);
   __ j(fast_path);
 
   __ bind(slow_path);
@@ -1548,9 +1537,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   }
 
   // start execution
-#ifdef ASSERT
   __ verify_frame_setup();
-#endif
 
   // jvmti support
   __ notify_method_entry();
@@ -1640,6 +1627,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
   Interpreter::_remove_activation_preserving_args_entry = __ pc();
   __ empty_expression_stack();
+  __ restore_bcp(); // We could have returned from deoptimizing this frame, so restore rbcp.
   // Set the popframe_processing bit in pending_popframe_condition
   // indicating that we are currently handling popframe, so that
   // call_VMs that may happen later do not trigger new popframe

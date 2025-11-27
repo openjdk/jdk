@@ -26,8 +26,6 @@
  * @test
  * @summary Sanity test of combinations of the diagnostic flags [+-]AOTRecordTraining and [+-]AOTReplayTraining
  * @requires vm.cds
- * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @requires vm.cds.supports.aot.class.linking
  * @requires vm.flagless
  * @library /test/lib /test/setup_aot /test/hotspot/jtreg/runtime/cds/appcds/test-classes
@@ -38,7 +36,7 @@
  *                 JavacBenchApp$FileManager
  *                 JavacBenchApp$SourceFile
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello.jar Hello
- * @run driver AOTProfileFlags
+ * @run driver/timeout=480 AOTProfileFlags
  */
 
 import jdk.test.lib.cds.CDSTestUtils;

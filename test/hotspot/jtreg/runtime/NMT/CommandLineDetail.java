@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,13 +35,14 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class CommandLineDetail {
 
-  public static void main(String args[]) throws Exception {
-
-    ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-      "-XX:NativeMemoryTracking=detail",
-      "-version");
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldNotContain("error");
-    output.shouldHaveExitValue(0);
-  }
+    public static void main(String args[]) throws Exception {
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+            "-Xlog:nmt=warning",
+            "-XX:NativeMemoryTracking=detail",
+            "-version");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldNotContain("NMT initialization failed");
+        output.shouldNotContain("Could not create the Java Virtual Machine.");
+        output.shouldHaveExitValue(0);
+    }
 }

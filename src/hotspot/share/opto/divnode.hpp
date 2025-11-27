@@ -156,40 +156,45 @@ public:
 };
 
 // Base class for float and double modulus
-class ModFloatingNode : public CallLeafNode {
+class ModFloatingNode : public CallLeafPureNode {
+  TupleNode* make_tuple_of_input_state_and_constant_result(PhaseIterGVN* phase, const Type* con) const;
+
 protected:
-  Node* replace_with_con(PhaseIterGVN* phase, const Type* con);
+  virtual Node* dividend() const = 0;
+  virtual Node* divisor() const = 0;
+  virtual const Type* get_result_if_constant(const Type* dividend, const Type* divisor) const = 0;
 
 public:
-  ModFloatingNode(Compile* C, const TypeFunc* tf, const char *name);
+  ModFloatingNode(Compile* C, const TypeFunc* tf, address addr, const char* name);
+  Node* Ideal(PhaseGVN* phase, bool can_reshape) override;
 };
 
 // Float Modulus
 class ModFNode : public ModFloatingNode {
 private:
-  Node* dividend() const { return in(TypeFunc::Parms + 0); }
-  Node* divisor() const { return in(TypeFunc::Parms + 1); }
+  Node* dividend() const override { return in(TypeFunc::Parms + 0); }
+  Node* divisor() const override { return in(TypeFunc::Parms + 1); }
+  const Type* get_result_if_constant(const Type* dividend, const Type* divisor) const override;
 
 public:
   ModFNode(Compile* C, Node* a, Node* b);
-  virtual int Opcode() const;
-  virtual uint ideal_reg() const { return Op_RegF; }
-  virtual uint size_of() const { return sizeof(*this); }
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  int Opcode() const override;
+  uint ideal_reg() const override { return Op_RegF; }
+  uint size_of() const override { return sizeof(*this); }
 };
 
 // Double Modulus
 class ModDNode : public ModFloatingNode {
 private:
-  Node* dividend() const { return in(TypeFunc::Parms + 0); }
-  Node* divisor() const { return in(TypeFunc::Parms + 2); }
+  Node* dividend() const override { return in(TypeFunc::Parms + 0); }
+  Node* divisor() const override { return in(TypeFunc::Parms + 2); }
+  const Type* get_result_if_constant(const Type* dividend, const Type* divisor) const override;
 
 public:
   ModDNode(Compile* C, Node* a, Node* b);
-  virtual int Opcode() const;
-  virtual uint ideal_reg() const { return Op_RegD; }
-  virtual uint size_of() const { return sizeof(*this); }
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  int Opcode() const override;
+  uint ideal_reg() const override { return Op_RegD; }
+  uint size_of() const override { return sizeof(*this); }
 };
 
 //------------------------------UModINode---------------------------------------
