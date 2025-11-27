@@ -40,24 +40,6 @@ void VTransformGraph::add_vtnode(VTransformNode* vtnode) {
     }                                                 \
   )
 
-// This is similar to IGVN optimization. But we are a bit lazy, and don't care about
-// notification / worklist, since the list of nodes is rather small, and we don't
-// expect optimizations that trickle over the whole graph.
-void VTransformGraph::optimize(VTransform& vtransform) {
-  TRACE_OPTIMIZE( tty->print_cr("\nVTransformGraph::optimize"); )
-
-  ResourceMark rm;
-  VTransformOptimize vtoptimize(_vloop_analyzer, vtransform);
-
-  for (int i = 0; i < _vtnodes.length(); i++) {
-    VTransformNode* vtn = _vtnodes.at(i);
-    vtoptimize.worklist_push(vtn);
-  }
-
-  vtoptimize.optimize();
-  // TODO: verify?
-}
-
 void VTransformOptimize::worklist_push(VTransformNode* vtn) {
   if (_worklist_set.test_set(vtn->_idx)) { return; }
   _worklist.push(vtn);
@@ -69,12 +51,42 @@ VTransformNode* VTransformOptimize::worklist_pop() {
   return vtn;
 }
 
+// This is similar to IGVN optimization. But we are a bit lazy, and don't care about
+// notification / worklist, since the list of nodes is rather small, and we don't
+// expect optimizations that trickle over the whole graph.
+void VTransformGraph::optimize(VTransform& vtransform) {
+  // TODO: streamline invocation?
+  TRACE_OPTIMIZE( tty->print_cr("\nVTransform::optimize"); )
+  ResourceMark rm;
+  VTransformOptimize vtoptimize(_vloop_analyzer, vtransform);
+  vtoptimize.optimize();
+}
+
 void VTransformOptimize::optimize() {
+  // Initialize: push all nodes to worklist.
+  for (int i = 0; i < _vtransform.graph().vtnodes().length(); i++) {
+    VTransformNode* vtn = _vtransform.graph().vtnodes().at(i);
+    worklist_push(vtn);
+  }
+
+  // Optimize iteratively.
   while (_worklist.is_nonempty()) {
     VTransformNode* vtn = worklist_pop();
     optimize_step(vtn);
   }
+
+  DEBUG_ONLY( verify(); )
 }
+
+#ifdef ASSERT
+void VTransformOptimize::verify() {
+  for (int i = 0; i < _vtransform.graph().vtnodes().length(); i++) {
+    VTransformNode* vtn = _vtransform.graph().vtnodes().at(i);
+    assert(!optimize_step(vtn), "Missed optimization during VTransform::optimize for %s", vtn->name());
+    assert(_worklist.is_empty(), "vtnode on worklist despite no progress for %s", vtn->name());
+  }
+}
+#endif
 
 // Return true if (and only if) we made progress.
 bool VTransformOptimize::optimize_step(VTransformNode* vtn) {

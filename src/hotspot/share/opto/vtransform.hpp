@@ -319,6 +319,7 @@ public:
 private:
   VTransformNode* worklist_pop();
   bool optimize_step(VTransformNode* vtn);
+  DEBUG_ONLY( void verify(); )
 };
 
 // Keeps track of the state during "VTransform::apply"
