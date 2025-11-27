@@ -26,7 +26,7 @@
  * @bug 8370502
  * @summary Do not segfault while adding node to IGVN worklist
  *
- * @run main/othervm -Xbatch compiler.c2.Test8370502
+ * @run main/othervm -Xbatch compiler.c2.TestUnlockNodeNullMemprof
  */
 
 package compiler.c2;
@@ -44,7 +44,7 @@ public class TestUnlockNodeNullMemprof {
     static void test(int[] a, int invar) {
         for (int i = 0; i < 1;) {
             a[i] = 0;
-            synchronized (Test8370502.class) {
+            synchronized (TestUnlockNodeNullMemprof.class) {
             }
             for (int j = 0; Integer.valueOf(j) < 1;)
                 j = 0;
