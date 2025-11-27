@@ -21,7 +21,7 @@
  * questions.
  */
 
-package compiler.c2.irTests;
+package compiler.gcbarriers;
 
 import compiler.lib.ir_framework.Arguments;
 import compiler.lib.ir_framework.IR;
@@ -37,7 +37,7 @@ import java.util.Random;
  * @test
  * @bug 8329797
  * @key randomness
- * @summary Test that MinL/MaxL nodes are removed when barriers in loop
+ * @summary Test that MinL/MaxL nodes are removed when GC barriers in loop
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestMinMaxLongLoopBarrier
  */
