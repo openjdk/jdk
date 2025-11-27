@@ -85,7 +85,7 @@ public final class ProgrammaticChange {
         // but we also check other methods to prevent accidental changes
         selectAll(list);
         verify();
-        deselectALl(list);
+        deselectAll(list);
         verify();
 
         // "add" may change the current selection
@@ -150,7 +150,7 @@ public final class ProgrammaticChange {
         }
     }
 
-    private static void deselectALl(List list) {
+    private static void deselectAll(List list) {
         for (int index = 0; index < list.countItems(); index++) {
             list.deselect(index);
         }
