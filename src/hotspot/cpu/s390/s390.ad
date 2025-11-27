@@ -11616,11 +11616,11 @@ instruct vround2D_reg(vecX dst, vecX src, immI8 rmode) %{
 instruct bytes_reverse_short(iRegI dst, iRegI src) %{
   match(Set dst (ReverseBytesS src));
   predicate(UseByteReverseInstruction);
-  ins_cost(DEFAULT_COST);
+  ins_cost(2 * DEFAULT_COST);
   size(8);
 
   format %{ "LRVR   $dst, $src\n\t # byte reverse int"
-            "SRA    $dst, 0x0010\t # right shift by 16" %}
+            "SRA    $dst, 0x0010\t # right shift by 16, sign extended" %}
 
   ins_encode %{
   __ z_lrvr($dst$$Register, $src$$Register);
@@ -11632,11 +11632,11 @@ instruct bytes_reverse_short(iRegI dst, iRegI src) %{
 instruct bytes_reverse_unsigned_short(iRegI dst, iRegI src) %{
   match(Set dst (ReverseBytesUS src));
   predicate(UseByteReverseInstruction);
-  ins_cost(DEFAULT_COST);
+  ins_cost(2 * DEFAULT_COST);
   size(8);
 
   format %{ "LRVR   $dst, $src\n\t # byte reverse int"
-            "SRL    $dst, 0x0010\t # right shift by 16" %}
+            "SRL    $dst, 0x0010\t # right shift by 16, zero extended" %}
 
   ins_encode %{
   __ z_lrvr($dst$$Register, $src$$Register);
