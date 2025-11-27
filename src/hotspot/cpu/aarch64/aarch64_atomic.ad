@@ -548,7 +548,7 @@ instruct weakCompareAndSwapBAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
   ins_cost(VOLATILE_REF_COST);
   effect(KILL cr);
   format %{
-    "cmpxchgb_weak_acq $res = $mem, $oldval, $newval\t# (byte) if $mem == $oldval then $mem <-- $newval"
+    "cmpxchgb_acq_weak $res = $mem, $oldval, $newval\t# (byte) if $mem == $oldval then $mem <-- $newval"
     "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
   ins_encode %{
@@ -566,7 +566,7 @@ instruct weakCompareAndSwapSAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
   ins_cost(VOLATILE_REF_COST);
   effect(KILL cr);
   format %{
-    "cmpxchgs_weak_acq $res = $mem, $oldval, $newval\t# (short) if $mem == $oldval then $mem <-- $newval"
+    "cmpxchgs_acq_weak $res = $mem, $oldval, $newval\t# (short) if $mem == $oldval then $mem <-- $newval"
     "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
   ins_encode %{
@@ -584,7 +584,7 @@ instruct weakCompareAndSwapIAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
   ins_cost(VOLATILE_REF_COST);
   effect(KILL cr);
   format %{
-    "cmpxchgw_weak_acq $res = $mem, $oldval, $newval\t# (int) if $mem == $oldval then $mem <-- $newval"
+    "cmpxchgw_acq_weak $res = $mem, $oldval, $newval\t# (int) if $mem == $oldval then $mem <-- $newval"
     "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
   ins_encode %{
@@ -602,7 +602,7 @@ instruct weakCompareAndSwapLAcq(iRegINoSp res, indirect mem, iRegL oldval, iRegL
   ins_cost(VOLATILE_REF_COST);
   effect(KILL cr);
   format %{
-    "cmpxchg_weak_acq $res = $mem, $oldval, $newval\t# (long) if $mem == $oldval then $mem <-- $newval"
+    "cmpxchg_acq_weak $res = $mem, $oldval, $newval\t# (long) if $mem == $oldval then $mem <-- $newval"
     "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
   ins_encode %{
@@ -620,7 +620,7 @@ instruct weakCompareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN oldval, iRegN
   ins_cost(VOLATILE_REF_COST);
   effect(KILL cr);
   format %{
-    "cmpxchgw_weak_acq $res = $mem, $oldval, $newval\t# (narrow oop) if $mem == $oldval then $mem <-- $newval"
+    "cmpxchgw_acq_weak $res = $mem, $oldval, $newval\t# (narrow oop) if $mem == $oldval then $mem <-- $newval"
     "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
   ins_encode %{
@@ -638,7 +638,7 @@ instruct weakCompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP
   ins_cost(VOLATILE_REF_COST);
   effect(KILL cr);
   format %{
-    "cmpxchg_weak_acq $res = $mem, $oldval, $newval\t# (ptr) if $mem == $oldval then $mem <-- $newval"
+    "cmpxchg_acq_weak $res = $mem, $oldval, $newval\t# (ptr) if $mem == $oldval then $mem <-- $newval"
     "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
   ins_encode %{
@@ -739,7 +739,7 @@ instruct getAndSetPAcq(indirect mem, iRegP newval, iRegPNoSp oldval) %{
 instruct getAndAddI(indirect mem, iRegINoSp newval, iRegIorL2I incr) %{
   match(Set newval (GetAndAddI mem incr));
   ins_cost(2*VOLATILE_REF_COST+1);
-  format %{ "atomic_addw $newval, [$mem], $incr" %}
+  format %{ "get_and_addI $newval, [$mem], $incr" %}
   ins_encode %{
     __ atomic_addw($newval$$Register, $incr$$Register, as_Register($mem$$base));
   %}
@@ -750,7 +750,7 @@ instruct getAndAddIAcq(indirect mem, iRegINoSp newval, iRegIorL2I incr) %{
   predicate(needs_acquiring_load_exclusive(n));
   match(Set newval (GetAndAddI mem incr));
   ins_cost(VOLATILE_REF_COST+1);
-  format %{ "atomic_addw_acq $newval, [$mem], $incr" %}
+  format %{ "get_and_addI_acq $newval, [$mem], $incr" %}
   ins_encode %{
     __ atomic_addalw($newval$$Register, $incr$$Register, as_Register($mem$$base));
   %}
@@ -761,7 +761,7 @@ instruct getAndAddINoRes(indirect mem, Universe dummy, iRegIorL2I incr) %{
   predicate(n->as_LoadStore()->result_not_used());
   match(Set dummy (GetAndAddI mem incr));
   ins_cost(2*VOLATILE_REF_COST);
-  format %{ "atomic_addw noreg, [$mem], $incr" %}
+  format %{ "get_and_addI noreg, [$mem], $incr" %}
   ins_encode %{
     __ atomic_addw(noreg, $incr$$Register, as_Register($mem$$base));
   %}
@@ -772,7 +772,7 @@ instruct getAndAddIAcqNoRes(indirect mem, Universe dummy, iRegIorL2I incr) %{
   predicate(n->as_LoadStore()->result_not_used() && needs_acquiring_load_exclusive(n));
   match(Set dummy (GetAndAddI mem incr));
   ins_cost(VOLATILE_REF_COST);
-  format %{ "atomic_addw_acq noreg, [$mem], $incr" %}
+  format %{ "get_and_addI_acq noreg, [$mem], $incr" %}
   ins_encode %{
     __ atomic_addalw(noreg, $incr$$Register, as_Register($mem$$base));
   %}
@@ -782,7 +782,7 @@ instruct getAndAddIAcqNoRes(indirect mem, Universe dummy, iRegIorL2I incr) %{
 instruct getAndAddIConst(indirect mem, iRegINoSp newval, immIAddSub incr) %{
   match(Set newval (GetAndAddI mem incr));
   ins_cost(2*VOLATILE_REF_COST+1);
-  format %{ "atomic_addw $newval, [$mem], $incr" %}
+  format %{ "get_and_addI $newval, [$mem], $incr" %}
   ins_encode %{
     __ atomic_addw($newval$$Register, $incr$$constant, as_Register($mem$$base));
   %}
@@ -793,7 +793,7 @@ instruct getAndAddIAcqConst(indirect mem, iRegINoSp newval, immIAddSub incr) %{
   predicate(needs_acquiring_load_exclusive(n));
   match(Set newval (GetAndAddI mem incr));
   ins_cost(VOLATILE_REF_COST+1);
-  format %{ "atomic_addw_acq $newval, [$mem], $incr" %}
+  format %{ "get_and_addI_acq $newval, [$mem], $incr" %}
   ins_encode %{
     __ atomic_addalw($newval$$Register, $incr$$constant, as_Register($mem$$base));
   %}
@@ -804,7 +804,7 @@ instruct getAndAddINoResConst(indirect mem, Universe dummy, immIAddSub incr) %{
   predicate(n->as_LoadStore()->result_not_used());
   match(Set dummy (GetAndAddI mem incr));
   ins_cost(2*VOLATILE_REF_COST);
-  format %{ "atomic_addw noreg, [$mem], $incr" %}
+  format %{ "get_and_addI noreg, [$mem], $incr" %}
   ins_encode %{
     __ atomic_addw(noreg, $incr$$constant, as_Register($mem$$base));
   %}
@@ -815,7 +815,7 @@ instruct getAndAddIAcqNoResConst(indirect mem, Universe dummy, immIAddSub incr) 
   predicate(n->as_LoadStore()->result_not_used() && needs_acquiring_load_exclusive(n));
   match(Set dummy (GetAndAddI mem incr));
   ins_cost(VOLATILE_REF_COST);
-  format %{ "atomic_addw_acq noreg, [$mem], $incr" %}
+  format %{ "get_and_addI_acq noreg, [$mem], $incr" %}
   ins_encode %{
     __ atomic_addalw(noreg, $incr$$constant, as_Register($mem$$base));
   %}
@@ -825,7 +825,7 @@ instruct getAndAddIAcqNoResConst(indirect mem, Universe dummy, immIAddSub incr) 
 instruct getAndAddL(indirect mem, iRegLNoSp newval, iRegL incr) %{
   match(Set newval (GetAndAddL mem incr));
   ins_cost(2*VOLATILE_REF_COST+1);
-  format %{ "atomic_add $newval, [$mem], $incr" %}
+  format %{ "get_and_addL $newval, [$mem], $incr" %}
   ins_encode %{
     __ atomic_add($newval$$Register, $incr$$Register, as_Register($mem$$base));
   %}
@@ -836,7 +836,7 @@ instruct getAndAddLAcq(indirect mem, iRegLNoSp newval, iRegL incr) %{
   predicate(needs_acquiring_load_exclusive(n));
   match(Set newval (GetAndAddL mem incr));
   ins_cost(VOLATILE_REF_COST+1);
-  format %{ "atomic_add_acq $newval, [$mem], $incr" %}
+  format %{ "get_and_addL_acq $newval, [$mem], $incr" %}
   ins_encode %{
     __ atomic_addal($newval$$Register, $incr$$Register, as_Register($mem$$base));
   %}
@@ -847,7 +847,7 @@ instruct getAndAddLNoRes(indirect mem, Universe dummy, iRegL incr) %{
   predicate(n->as_LoadStore()->result_not_used());
   match(Set dummy (GetAndAddL mem incr));
   ins_cost(2*VOLATILE_REF_COST);
-  format %{ "atomic_add noreg, [$mem], $incr" %}
+  format %{ "get_and_addL noreg, [$mem], $incr" %}
   ins_encode %{
     __ atomic_add(noreg, $incr$$Register, as_Register($mem$$base));
   %}
@@ -858,7 +858,7 @@ instruct getAndAddLAcqNoRes(indirect mem, Universe dummy, iRegL incr) %{
   predicate(n->as_LoadStore()->result_not_used() && needs_acquiring_load_exclusive(n));
   match(Set dummy (GetAndAddL mem incr));
   ins_cost(VOLATILE_REF_COST);
-  format %{ "atomic_add_acq noreg, [$mem], $incr" %}
+  format %{ "get_and_addL_acq noreg, [$mem], $incr" %}
   ins_encode %{
     __ atomic_addal(noreg, $incr$$Register, as_Register($mem$$base));
   %}
@@ -868,7 +868,7 @@ instruct getAndAddLAcqNoRes(indirect mem, Universe dummy, iRegL incr) %{
 instruct getAndAddLConst(indirect mem, iRegLNoSp newval, immLAddSub incr) %{
   match(Set newval (GetAndAddL mem incr));
   ins_cost(2*VOLATILE_REF_COST+1);
-  format %{ "atomic_add $newval, [$mem], $incr" %}
+  format %{ "get_and_addL $newval, [$mem], $incr" %}
   ins_encode %{
     __ atomic_add($newval$$Register, $incr$$constant, as_Register($mem$$base));
   %}
@@ -879,7 +879,7 @@ instruct getAndAddLAcqConst(indirect mem, iRegLNoSp newval, immLAddSub incr) %{
   predicate(needs_acquiring_load_exclusive(n));
   match(Set newval (GetAndAddL mem incr));
   ins_cost(VOLATILE_REF_COST+1);
-  format %{ "atomic_add_acq $newval, [$mem], $incr" %}
+  format %{ "get_and_addL_acq $newval, [$mem], $incr" %}
   ins_encode %{
     __ atomic_addal($newval$$Register, $incr$$constant, as_Register($mem$$base));
   %}
@@ -890,7 +890,7 @@ instruct getAndAddLNoResConst(indirect mem, Universe dummy, immLAddSub incr) %{
   predicate(n->as_LoadStore()->result_not_used());
   match(Set dummy (GetAndAddL mem incr));
   ins_cost(2*VOLATILE_REF_COST);
-  format %{ "atomic_add noreg, [$mem], $incr" %}
+  format %{ "get_and_addL noreg, [$mem], $incr" %}
   ins_encode %{
     __ atomic_add(noreg, $incr$$constant, as_Register($mem$$base));
   %}
@@ -901,7 +901,7 @@ instruct getAndAddLAcqNoResConst(indirect mem, Universe dummy, immLAddSub incr) 
   predicate(n->as_LoadStore()->result_not_used() && needs_acquiring_load_exclusive(n));
   match(Set dummy (GetAndAddL mem incr));
   ins_cost(VOLATILE_REF_COST);
-  format %{ "atomic_add_acq noreg, [$mem], $incr" %}
+  format %{ "get_and_addL_acq noreg, [$mem], $incr" %}
   ins_encode %{
     __ atomic_addal(noreg, $incr$$constant, as_Register($mem$$base));
   %}

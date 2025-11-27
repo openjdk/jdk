@@ -108,7 +108,7 @@ ifelse($6,Acq,INDENT(predicate(needs_acquiring_load_exclusive(n));),`dnl')
   ins_cost(`'ifelse($6,Acq,,2*)VOLATILE_REF_COST);
   effect(KILL cr);
   format %{
-    "cmpxchg$5`'ifelse($7,Weak,_weak)`'ifelse($6,Acq,_acq,) $res = $mem, $oldval, $newval\t# ($3) if $mem == $oldval then $mem <-- $newval"
+    "cmpxchg$5`'ifelse($6,Acq,_acq,)`'ifelse($7,Weak,_weak) $res = $mem, $oldval, $newval\t# ($3) if $mem == $oldval then $mem <-- $newval"
     "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
   ins_encode %{
@@ -133,7 +133,7 @@ ifelse($1$6,PAcq,INDENT(predicate(needs_acquiring_load_exclusive(n) && (n->as_Lo
   ins_cost(`'ifelse($6,Acq,,2*)VOLATILE_REF_COST);
   effect(KILL cr);
   format %{
-    "cmpxchg$5`'ifelse($7,Weak,_weak)`'ifelse($6,Acq,_acq,) $res = $mem, $oldval, $newval\t# ($3) if $mem == $oldval then $mem <-- $newval"
+    "cmpxchg$5`'ifelse($6,Acq,_acq,)`'ifelse($7,Weak,_weak) $res = $mem, $oldval, $newval\t# ($3) if $mem == $oldval then $mem <-- $newval"
     "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
   ins_encode %{
@@ -218,7 +218,7 @@ ifelse($4$5,AcqNoRes,INDENT(predicate(n->as_LoadStore()->result_not_used() && ne
        `dnl')
   match(Set ifelse($5,NoRes,dummy,newval) (GetAndAdd$1 mem incr));
   ins_cost(`'ifelse($4,Acq,,2*)VOLATILE_REF_COST`'ifelse($5,NoRes,,+1));
-  format %{ "atomic_add$3`'ifelse($4,Acq,_acq) `'ifelse($5,NoRes,noreg,$newval), [$mem], $incr" %}
+  format %{ "get_and_add$1`'ifelse($4,Acq,_acq) `'ifelse($5,NoRes,noreg,$newval), [$mem], $incr" %}
   ins_encode %{
     __ atomic_add`'ifelse($4,Acq,al)$3(`'ifelse($5,NoRes,noreg,$newval$$Register), `'ifelse($6,Const,$incr$$constant,$incr$$Register), as_Register($mem$$base));
   %}
