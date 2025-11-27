@@ -122,6 +122,7 @@ class PlainConnectionLockTest implements HttpServerAdapters {
             response.acquire();
             return true;
         } catch (InterruptedException x) {
+            Thread.currentThread().interrupt();  // Restore the interrupt
             return false;
         }
     }
