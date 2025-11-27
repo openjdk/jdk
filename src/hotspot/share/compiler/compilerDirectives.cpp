@@ -561,6 +561,20 @@ bool DirectiveSet::should_not_inline(ciMethod* inlinee) {
   return false;
 }
 
+bool DirectiveSet::should_delay_inline(ciMethod* inlinee) {
+  inlinee->check_is_loaded();
+  VM_ENTRY_MARK;
+  methodHandle mh(THREAD, inlinee->get_Method());
+
+  if (_inlinematchers != nullptr) {
+    return matches_inline(mh, InlineMatcher::delay_inline);
+  }
+  if (!CompilerDirectivesIgnoreCompileCommandsOption) {
+    return CompilerOracle::should_delay_inline(mh);
+  }
+  return false;
+}
+
 bool DirectiveSet::parse_and_add_inline(char* str, const char*& error_msg) {
   InlineMatcher* m = InlineMatcher::parse_inline_pattern(str, error_msg);
   if (m != nullptr) {
