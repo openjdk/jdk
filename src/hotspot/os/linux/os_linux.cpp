@@ -76,7 +76,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/vmError.hpp"
-#include <bits/types/clockid_t.h>
 #if INCLUDE_JFR
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
