@@ -3321,7 +3321,7 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
       }
       break;
     case Op_VectorBlend:
-      if (UseAVX == 0 && MaxVectorSize < 16) {
+      if (UseAVX == 0 && size_in_bits < 128) {
         return false;
       }
       break;
