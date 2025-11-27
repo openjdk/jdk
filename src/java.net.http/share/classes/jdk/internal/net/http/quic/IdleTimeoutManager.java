@@ -221,7 +221,7 @@ final class IdleTimeoutManager {
         }
         // we start the PING sending timer event only if the QUIC layer idle timeout
         // is lesser than the app layer's desired idle time
-        if (quicIdleTimeout.get() <= maxIdle.toMillis()) {
+        if (quicIdleTimeout.get() < maxIdle.toMillis()) {
             this.stateLock.lock();
             try {
                 if (shutdown.get()) {
