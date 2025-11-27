@@ -11623,8 +11623,8 @@ instruct bytes_reverse_short(iRegI dst, iRegI src) %{
             "SRA    $dst, 0x0010\t # right shift by 16, sign extended" %}
 
   ins_encode %{
-  __ z_lrvr($dst$$Register, $src$$Register);
-  __ z_sra($dst$$Register, 0x0010);
+    __ z_lrvr($dst$$Register, $src$$Register);
+    __ z_sra($dst$$Register, 0x0010);
   %}
   ins_pipe(pipe_class_dummy);
 %}
@@ -11639,8 +11639,8 @@ instruct bytes_reverse_unsigned_short(iRegI dst, iRegI src) %{
             "SRL    $dst, 0x0010\t # right shift by 16, zero extended" %}
 
   ins_encode %{
-  __ z_lrvr($dst$$Register, $src$$Register);
-  __ z_srl($dst$$Register, 0x0010);
+    __ z_lrvr($dst$$Register, $src$$Register);
+    __ z_srl($dst$$Register, 0x0010);
   %}
   ins_pipe(pipe_class_dummy);
 %}
