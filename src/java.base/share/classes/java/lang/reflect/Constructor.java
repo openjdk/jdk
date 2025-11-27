@@ -41,6 +41,7 @@ import sun.reflect.generics.factory.GenericsFactory;
 import sun.reflect.generics.scope.ConstructorScope;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.AnnotationFormatError;
+import java.lang.invoke.MethodHandles;
 import java.util.StringJoiner;
 
 /**
@@ -467,6 +468,8 @@ public final class Constructor<T> extends Executable {
      *              throws an exception.
      * @throws    ExceptionInInitializerError if the initialization provoked
      *              by this method fails.
+     * @see MethodHandles.Lookup#findConstructor
+     * @see MethodHandles.Lookup#unreflectConstructor
      */
     @CallerSensitive
     @ForceInline // to ensure Reflection.getCallerClass optimization

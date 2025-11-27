@@ -45,6 +45,7 @@ import sun.reflect.annotation.AnnotationType;
 import sun.reflect.annotation.AnnotationParser;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.AnnotationFormatError;
+import java.lang.invoke.MethodHandles;
 import java.nio.ByteBuffer;
 import java.util.StringJoiner;
 
@@ -528,6 +529,9 @@ public final class Method extends Executable {
      *              and the method is an instance method.
      * @throws    ExceptionInInitializerError if the initialization
      * provoked by this method fails.
+     * @see MethodHandles.Lookup#findStatic
+     * @see MethodHandles.Lookup#findVirtual
+     * @see MethodHandles.Lookup#unreflect
      */
     @CallerSensitive
     @ForceInline // to ensure Reflection.getCallerClass optimization

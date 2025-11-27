@@ -26,6 +26,7 @@
 package java.lang.reflect;
 
 import java.lang.annotation.Annotation;
+import java.lang.invoke.MethodHandles;
 import java.net.URL;
 import java.security.CodeSource;
 import java.util.Map;
@@ -451,6 +452,10 @@ class Field extends AccessibleObject implements Member {
      *              and the field is an instance field.
      * @throws    ExceptionInInitializerError if the initialization provoked
      *              by this method fails.
+     *
+     * @see MethodHandles.Lookup#findGetter
+     * @see MethodHandles.Lookup#findStaticGetter
+     * @see MethodHandles.Lookup#unreflectGetter
      */
     @CallerSensitive
     @ForceInline // to ensure Reflection.getCallerClass optimization
@@ -881,6 +886,9 @@ class Field extends AccessibleObject implements Member {
      * @throws    ExceptionInInitializerError if the initialization provoked
      *              by this method fails.
      *
+     * @see MethodHandles.Lookup#findSetter
+     * @see MethodHandles.Lookup#findStaticSetter
+     * @see MethodHandles.Lookup#unreflectSetter
      * @see <a href="doc-files/MutationMethods.html">Mutation methods</a>
      */
     @CallerSensitive
