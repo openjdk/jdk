@@ -193,7 +193,6 @@ public:
   const GrowableArray<VTransformNode*>& vtnodes() const { return _vtnodes; }
   const GrowableArray<VTransformNode*>& get_schedule() const { return _schedule; }
 
-  void optimize(VTransform& vtransform);
   bool schedule();
   bool has_store_to_load_forwarding_failure(const VLoopAnalyzer& vloop_analyzer) const;
   float cost_for_vector_loop() const;
@@ -258,7 +257,7 @@ public:
   DEBUG_ONLY( bool has_graph() const { return !_graph.is_empty(); } )
   VTransformGraph& graph() { return _graph; }
 
-  void optimize() { return _graph.optimize(*this); }
+  void optimize();
   bool schedule() { return _graph.schedule(); }
   bool is_profitable() const;
   float cost_for_vector_loop() const { return _graph.cost_for_vector_loop(); }

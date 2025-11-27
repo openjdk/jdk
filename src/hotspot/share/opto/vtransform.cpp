@@ -54,11 +54,10 @@ VTransformNode* VTransformOptimize::worklist_pop() {
 // This is similar to IGVN optimization. But we are a bit lazy, and don't care about
 // notification / worklist, since the list of nodes is rather small, and we don't
 // expect optimizations that trickle over the whole graph.
-void VTransformGraph::optimize(VTransform& vtransform) {
-  // TODO: streamline invocation?
-  TRACE_OPTIMIZE( tty->print_cr("\nVTransform::optimize"); )
+void VTransform::optimize() {
+  NOT_PRODUCT( if (vloop().is_trace_optimization()) { tty->print_cr("\nVTransform::optimize"); } )
   ResourceMark rm;
-  VTransformOptimize vtoptimize(_vloop_analyzer, vtransform);
+  VTransformOptimize vtoptimize(_vloop_analyzer, *this);
   vtoptimize.optimize();
 }
 
