@@ -58,9 +58,20 @@ void VTransformGraph::optimize(VTransform& vtransform) {
   // TODO: verify?
 }
 
+void VTransformOptimize::worklist_push(VTransformNode* vtn) {
+  if (_worklist_set.test_set(vtn->_idx)) { return; }
+  _worklist.push(vtn);
+}
+
+VTransformNode* VTransformOptimize::worklist_pop() {
+  VTransformNode* vtn = _worklist.pop();
+  _worklist_set.remove(vtn->_idx);
+  return vtn;
+}
+
 void VTransformOptimize::optimize() {
   while (_worklist.is_nonempty()) {
-    VTransformNode* vtn = _worklist.pop();
+    VTransformNode* vtn = worklist_pop();
     optimize_step(vtn);
   }
 }

@@ -24,6 +24,7 @@
 #ifndef SHARE_OPTO_VTRANSFORM_HPP
 #define SHARE_OPTO_VTRANSFORM_HPP
 
+#include "libadt/vectset.hpp"
 #include "opto/node.hpp"
 #include "opto/vectorization.hpp"
 #include "opto/vectornode.hpp"
@@ -302,6 +303,7 @@ private:
   VTransform& _vtransform;
 
   GrowableArray<VTransformNode*> _worklist;
+  VectorSet _worklist_set;
 
 public:
   VTransformOptimize(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform) :
@@ -311,14 +313,11 @@ public:
   const VLoopAnalyzer& vloop_analyzer() const { return _vloop_analyzer; }
   VTransform& vtransform() { return _vtransform; }
 
+  void worklist_push(VTransformNode* vtn);
   void optimize();
 
-  void worklist_push(VTransformNode* vtn) {
-    // TODO: check unique?
-    _worklist.push(vtn);
-  }
-
 private:
+  VTransformNode* worklist_pop();
   bool optimize_step(VTransformNode* vtn);
 };
 
