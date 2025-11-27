@@ -72,7 +72,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register basic_lo
 
   null_check_offset = offset();
 
-  lightweight_lock(basic_lock, obj, hdr, temp, rscratch2, slow_case);
+  fast_lock(basic_lock, obj, hdr, temp, rscratch2, slow_case);
 
   return null_check_offset;
 }
@@ -85,7 +85,7 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register basic
   ldr(obj, Address(basic_lock, BasicObjectLock::obj_offset()));
   verify_oop(obj);
 
-  lightweight_unlock(obj, hdr, temp, rscratch2, slow_case);
+  fast_unlock(obj, hdr, temp, rscratch2, slow_case);
 }
 
 

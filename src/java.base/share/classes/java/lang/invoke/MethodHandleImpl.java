@@ -33,7 +33,6 @@ import jdk.internal.constant.MethodTypeDescImpl;
 import jdk.internal.foreign.abi.NativeEntryPoint;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
-import jdk.internal.vm.annotation.AOTRuntimeSetup;
 import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Hidden;
@@ -1536,11 +1535,6 @@ abstract class MethodHandleImpl {
     }
 
     static {
-        runtimeSetup();
-    }
-
-    @AOTRuntimeSetup
-    private static void runtimeSetup() {
         SharedSecrets.setJavaLangInvokeAccess(new JavaLangInvokeAccess() {
             @Override
             public Class<?> getDeclaringClass(Object rmname) {

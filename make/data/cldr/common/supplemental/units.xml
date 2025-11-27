@@ -136,7 +136,7 @@ For terms of use, see http://www.unicode.org/copyright.html
         
         <unitQuantity baseUnit='per-second' quantity='radioactivity'/>
 
-        <unitQuantity baseUnit='portion' quantity='portion' status='simple'/>
+        <unitQuantity baseUnit='part' quantity='portion' status='simple'/>
         
         <unitQuantity baseUnit='bit' quantity='digital' status='simple'/>
         
@@ -181,10 +181,12 @@ For terms of use, see http://www.unicode.org/copyright.html
         <convertUnit source='dram' baseUnit='cubic-meter' factor='gal_to_m3/128*8' systems="ussystem"/>
         <convertUnit source='teaspoon' baseUnit='cubic-meter' factor='gal_to_m3/16*48' systems="ussystem"/>
         <convertUnit source='tablespoon' baseUnit='cubic-meter' factor='gal_to_m3/256' systems="ussystem"/>
+        <convertUnit source='fluid-ounce-metric' baseUnit='cubic-meter' factor='0.03*0.001' systems="metric_adjacent"/>
         <convertUnit source='fluid-ounce-imperial' baseUnit='cubic-meter' factor='gal_imp_to_m3/160' systems="uksystem"/>
         <convertUnit source='fluid-ounce' baseUnit='cubic-meter' factor='gal_to_m3/128' systems="ussystem"/>
         <convertUnit source='jigger' baseUnit='cubic-meter' factor='gal_to_m3*3/128*2' systems="ussystem"/>
         <convertUnit source='cup' baseUnit='cubic-meter' factor='gal_to_m3/16' systems="ussystem"/>
+        <convertUnit source='cup-imperial' baseUnit='cubic-meter' factor='gal_imp_to_m3/16' systems="uksystem"/>
         <convertUnit source='cup-metric' baseUnit='cubic-meter' factor='0.00025'  systems="metric_adjacent"/>
         <convertUnit source='pint' baseUnit='cubic-meter' factor='gal_to_m3/8' systems="ussystem"/>
         <convertUnit source='pint-metric' baseUnit='cubic-meter' factor='0.0005' systems="metric_adjacent"/>
@@ -215,7 +217,7 @@ For terms of use, see http://www.unicode.org/copyright.html
         <convertUnit source='mile' baseUnit='meter' factor='ft_to_m*5280' systems="ussystem uksystem"/>
         <convertUnit source='nautical-mile' baseUnit='meter' factor='1852' systems="ussystem uksystem si_acceptable"/>
         <convertUnit source='mile-scandinavian' baseUnit='meter' factor='10000' systems="metric_adjacent"/>
-        <convertUnit source='100-kilometer' baseUnit='meter' factor='100000' systems="si metric"/>
+        <!--  <convertUnit source='100-kilometer' baseUnit='meter' factor='100000' systems="si metric"/> -->
         <convertUnit source='earth-radius' baseUnit='meter' factor='6.3781E6' systems="astronomical"/>
         <convertUnit source='solar-radius' baseUnit='meter' factor='695700000' systems="astronomical"/>
         <convertUnit source='astronomical-unit' baseUnit='meter' factor='meters_per_AU' systems="astronomical si_acceptable"/>
@@ -265,12 +267,11 @@ For terms of use, see http://www.unicode.org/copyright.html
         <convertUnit source='mole' baseUnit='item' factor='item_per_mole' systems="si metric prefixable"/>
         
         <!-- portion -->
-        <convertUnit source='permillion' baseUnit='portion' factor='1/1000000' systems="metric_adjacent ussystem uksystem"/>
-        <convertUnit source='permyriad' baseUnit='portion' factor='1/10000' systems="metric_adjacent ussystem uksystem"/>
-        <convertUnit source='permille' baseUnit='portion' factor='1/1000' systems="metric_adjacent ussystem uksystem"/>
-        <convertUnit source='percent' baseUnit='portion' factor='1/100' systems="metric_adjacent ussystem uksystem"/>
-        <convertUnit source='karat' baseUnit='portion' factor='1/24' systems="metric_adjacent ussystem uksystem"/>
-        <convertUnit source='portion' baseUnit='portion' systems="metric_adjacent ussystem uksystem"/>
+        <convertUnit source='permyriad' baseUnit='part' factor='1/10000' systems="metric_adjacent ussystem uksystem"/>
+        <convertUnit source='permille' baseUnit='part' factor='1/1000' systems="metric_adjacent ussystem uksystem"/>
+        <convertUnit source='percent' baseUnit='part' factor='1/100' systems="metric_adjacent ussystem uksystem"/>
+        <convertUnit source='karat' baseUnit='part' factor='1/24' systems="metric_adjacent ussystem uksystem"/>
+        <convertUnit source='part' baseUnit='part' systems="metric_adjacent ussystem uksystem"/>
         
         <!-- digital -->
         <convertUnit source='bit' baseUnit='bit' systems="metric_adjacent prefixable ussystem uksystem"/>
@@ -621,15 +622,17 @@ For terms of use, see http://www.unicode.org/copyright.html
             <unitAlias type="liter-per-100kilometers" replacement="liter-per-100-kilometer" reason="deprecated"/>
             <unitAlias type="meter-per-second-squared" replacement="meter-per-square-second" reason="deprecated"/>
             <unitAlias type="millimeter-of-mercury" replacement="millimeter-ofhg" reason="deprecated"/>
-            <unitAlias type="part-per-million" replacement="permillion" reason="deprecated"/>
+            <unitAlias type="part-per-million" replacement="part-per-1e6" reason="deprecated"/>
             <unitAlias type="pound-foot" replacement="pound-force-foot" reason="deprecated"/>
             <unitAlias type="pound-per-square-inch" replacement="pound-force-per-square-inch" reason="deprecated"/>
             <unitAlias type="milligram-per-deciliter" replacement="milligram-ofglucose-per-deciliter" reason="deprecated"/>
             <unitAlias type="metric-ton" replacement="tonne" reason="deprecated"/>
+            <unitAlias type="permillion" replacement="part-per-1e6" reason="deprecated"/>
+            <unitAlias type="portion-per-1e9" replacement="part-per-1e9" reason="deprecated"/>
+            <unitAlias type="portion" replacement="part" reason="deprecated"/>
+            <unitAlias type="million" replacement="1e6" reason="deprecated"/>
          
-            <!-- 
-            <unitAlias type="emu-of-inductance" replacement="abhenry" reason="deprecated"/>
-             -->
+            <!-- Usage aliases -->
             
             <usageAlias type="music-track" replacement="media" reason="deprecated"/>
             <usageAlias type="tv-program" replacement="media" reason="deprecated"/>
