@@ -8309,10 +8309,6 @@ instruct castVVMask(pRegGov dst)
   ins_pipe(pipe_class_empty);
 %}
 
-// ============================================================================
-// Atomic operation instructions
-
-
 // Manifest a CmpU result in an integer register.
 // (src1 < src2) ? -1 : ((src1 > src2) ? 1 : 0)
 instruct cmpU3_reg_reg(iRegINoSp dst, iRegI src1, iRegI src2, rFlagsReg flags)
