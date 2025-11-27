@@ -80,7 +80,6 @@ class Jfr : AllStatic {
   static bool has_sample_request(JavaThread* jt);
   static void check_and_process_sample_request(JavaThread* jt);
   static void on_restoration(const Klass* k, JavaThread* jt);
-  static void init_id(const InstanceKlass* ik, ClassFileParser& parser, JavaThread* jt);
 };
 
 #endif // SHARE_JFR_JFR_HPP

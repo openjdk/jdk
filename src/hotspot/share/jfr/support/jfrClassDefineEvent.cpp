@@ -150,6 +150,7 @@ static inline void send_event(const InstanceKlass* ik, traceid source_id) {
 void JfrClassDefineEvent::on_creation(const InstanceKlass* ik, const ClassFileParser& parser, JavaThread* jt) {
   assert(ik != nullptr, "invariant");
   assert(ik->trace_id() != 0, "invariant");
+  assert(!parser.is_internal(), "invariant");
   assert(jt != nullptr, "invariant");
 
   if (EventClassDefine::is_enabled() && is_not_retransforming(ik, jt)) {
