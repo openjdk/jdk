@@ -36,6 +36,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.test.JUnitAdapter;
@@ -58,7 +60,9 @@ public class MainTest extends JUnitAdapter.TestSrcInitializer {
                 // Print the tool version
                 build().args("--version").expectVersion(),
                 // Print the tool version
-                build().args("foo", "bar").expectErrors(I18N.format("error.non-option-arguments", 2)),
+                // Additional error messages may be printed if the default bundling operation
+                // can not be identified; don't verify these errors in the output.
+                build().args("foo", "bar").stderrMatchType(OutputMatchType.STARTS_WITH).expectErrors(I18N.format("error.non-option-arguments", 2)),
                 // Valid command line requesting to print the full help.
                 build().args("-h").expectFullHelp(),
                 // Valid command line requesting to build a package and print the full help.
@@ -68,12 +72,14 @@ public class MainTest extends JUnitAdapter.TestSrcInitializer {
                 // Valid command line requesting to print the full help and the version of the tool.
                 build().args("--help", "--version").expectVersionWithHelp(),
                 // Invalid command line requesting to print the version of the tool.
-                build().args("foo", "--version").expectErrors(I18N.format("error.non-option-arguments", 1))
+                // Additional error messages may be printed if the default bundling operation
+                // can not be identified; don't verify these errors in the output.
+                build().args("foo", "--version").stderrMatchType(OutputMatchType.STARTS_WITH).expectErrors(I18N.format("error.non-option-arguments", 1))
         ).map(TestSpec.Builder::create).toList();
     }
 
 
-    record TestSpec(List<String> args, int expectedExitCode, List<String> expectedStdout, List<String> expectedStderr) {
+    record TestSpec(List<String> args, int expectedExitCode, ExpectedOutput expectedStdout, ExpectedOutput expectedStderr) {
 
         TestSpec {
             Objects.requireNonNull(args);
@@ -84,15 +90,19 @@ public class MainTest extends JUnitAdapter.TestSrcInitializer {
         void run() {
             var result = ExecutionResult.create(args.toArray(String[]::new));
             assertEquals(expectedExitCode, result.exitCode());
-            assertEquals(expectedStdout, result.stdout());
-            assertEquals(expectedStderr, result.stderr());
+            expectedStdout.test(result.stdout());
+            expectedStderr.test(result.stderr());
         }
 
 
         static final class Builder {
 
             TestSpec create() {
-                return new TestSpec(args, expectedExitCode, expectedStdout, expectedStderr);
+                return new TestSpec(
+                        args,
+                        expectedExitCode,
+                        new ExpectedOutput(expectedStdout, Optional.ofNullable(stdoutMatchType).orElse(OutputMatchType.EQUALS)),
+                        new ExpectedOutput(expectedStderr, Optional.ofNullable(stderrMatchType).orElse(OutputMatchType.EQUALS)));
             }
 
             Builder args(String... v) {
@@ -101,6 +111,16 @@ public class MainTest extends JUnitAdapter.TestSrcInitializer {
 
             Builder args(Collection<String> v) {
                 args.addAll(v);
+                return this;
+            }
+
+            Builder stdoutMatchType(OutputMatchType v) {
+                stdoutMatchType = v;
+                return this;
+            }
+
+            Builder stderrMatchType(OutputMatchType v) {
+                stderrMatchType = v;
                 return this;
             }
 
@@ -164,6 +184,8 @@ public class MainTest extends JUnitAdapter.TestSrcInitializer {
 
             private List<String> args = new ArrayList<>();
             private int expectedExitCode;
+            private OutputMatchType stdoutMatchType;
+            private OutputMatchType stderrMatchType;
             private List<String> expectedStdout = new ArrayList<>();
             private List<String> expectedStderr = new ArrayList<>();
         }
@@ -184,6 +206,37 @@ public class MainTest extends JUnitAdapter.TestSrcInitializer {
             var exitCode = Main.run(new PrintWriter(stdout), new PrintWriter(stderr), args);
 
             return new ExecutionResult(lines(stdout.toString()), lines(stderr.toString()), exitCode);
+        }
+    }
+
+
+    private enum OutputMatchType {
+        EQUALS((_, actual) -> actual),
+        STARTS_WITH((expected, actual) -> {
+            if (expected.size() < actual.size()) {
+                return actual.subList(0, expected.size());
+            }
+            return actual;
+        }),
+        ;
+
+        OutputMatchType(BiFunction<List<String>, List<String>, List<String>> mapper) {
+            this.mapper = Objects.requireNonNull(mapper);
+        }
+
+        private final BiFunction<List<String>, List<String>, List<String>> mapper;
+    }
+
+
+    private record ExpectedOutput(List<String> content, OutputMatchType type) {
+        ExpectedOutput {
+            Objects.requireNonNull(content);
+            Objects.requireNonNull(type);
+        }
+
+        void test(List<String> lines) {
+            var filteredLines = type.mapper.apply(content, lines);
+            assertEquals(content, filteredLines);
         }
     }
 
