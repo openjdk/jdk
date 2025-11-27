@@ -2509,6 +2509,17 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      *                  greater than zero for down/forward
      * @return the non-negative "unit" increment value
      *         for scrolling in the specified direction
+     *         if the layout orientation is {@code VERTICAL},
+     *         it can return 0 for following cases:
+     *         - if list model is empty when
+     *           {@code visibleRect} location's cell index is computed
+     *         - If bounding rectangle computed from {@code visibleRect}
+     *            is outside the list's range of cells
+     *         - While scrolling up,
+     *           - if {@code visibleRect} row is completely visible
+     *             and {@code visibleRect} points to row 0
+     *           - if {@code visibleRect} row is completely visible
+     *             and {@code visibleRect} is the top row of the list
      *
      * @see #getScrollableBlockIncrement
      * @see Scrollable#getScrollableUnitIncrement
