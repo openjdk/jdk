@@ -168,7 +168,7 @@ size_t ShenandoahOldGeneration::get_promoted_expended() const {
 }
 
 bool ShenandoahOldGeneration::can_allocate(const ShenandoahAllocRequest &req) const {
-  assert(req.type() != ShenandoahAllocRequest::_alloc_gclab, "GCLAB pertains only to young-gen memory");
+  assert(req.type() != ShenandoahAllocRequest::_alloc_gclab && req.type() != ShenandoahAllocRequest::_alloc_shared_gc, "GCLAB and shared GC pertain only to young-gen memory");
 
   const size_t requested_bytes = req.size() * HeapWordSize;
   // The promotion reserve may also be used for evacuations. If we can promote this object,
