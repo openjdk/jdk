@@ -46,7 +46,7 @@ define(`CAE_INSN1',
 instruct compareAndExchange$1$7(iReg$2NoSp res, indirect mem, iReg$2 oldval, iReg$2 newval, rFlagsReg cr) %{
 ifelse($7,Acq,INDENT(predicate(needs_acquiring_load_exclusive(n));),`dnl')
   match(Set res (CompareAndExchange$1 mem (Binary oldval newval)));
-  ifelse($7,Acq,'ins_cost(VOLATILE_REF_COST);`,'ins_cost(2 * VOLATILE_REF_COST);`)
+  ins_cost(`'ifelse($7,Acq,,2*)VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
   format %{
     "cmpxchg$5`'ifelse($7,Acq,_acq,) $res = $mem, $oldval, $newval\t# ($3) if $mem == $oldval then $mem <-- $newval"
@@ -69,7 +69,7 @@ ifelse($1$6,PAcq,INDENT(predicate(needs_acquiring_load_exclusive(n) && (n->as_Lo
        $6,Acq,INDENT(predicate(needs_acquiring_load_exclusive(n));),
        `dnl')
   match(Set res (CompareAndExchange$1 mem (Binary oldval newval)));
-  ifelse($6,Acq,'ins_cost(VOLATILE_REF_COST);`,'ins_cost(2 * VOLATILE_REF_COST);`)
+  ins_cost(`'ifelse($6,Acq,,2*)VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
   format %{
     "cmpxchg$5`'ifelse($6,Acq,_acq,) $res = $mem, $oldval, $newval\t# ($3) if $mem == $oldval then $mem <-- $newval"

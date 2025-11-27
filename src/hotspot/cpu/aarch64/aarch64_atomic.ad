@@ -36,7 +36,7 @@
 
 instruct compareAndExchangeB(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
   match(Set res (CompareAndExchangeB mem (Binary oldval newval)));
-  ins_cost(2 * VOLATILE_REF_COST);
+  ins_cost(2*VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
   format %{
     "cmpxchgb $res = $mem, $oldval, $newval\t# (byte) if $mem == $oldval then $mem <-- $newval"
@@ -52,7 +52,7 @@ instruct compareAndExchangeB(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 
 instruct compareAndExchangeS(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
   match(Set res (CompareAndExchangeS mem (Binary oldval newval)));
-  ins_cost(2 * VOLATILE_REF_COST);
+  ins_cost(2*VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
   format %{
     "cmpxchgs $res = $mem, $oldval, $newval\t# (short) if $mem == $oldval then $mem <-- $newval"
@@ -68,7 +68,7 @@ instruct compareAndExchangeS(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 
 instruct compareAndExchangeI(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
   match(Set res (CompareAndExchangeI mem (Binary oldval newval)));
-  ins_cost(2 * VOLATILE_REF_COST);
+  ins_cost(2*VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
   format %{
     "cmpxchgw $res = $mem, $oldval, $newval\t# (int) if $mem == $oldval then $mem <-- $newval"
@@ -83,7 +83,7 @@ instruct compareAndExchangeI(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 
 instruct compareAndExchangeL(iRegLNoSp res, indirect mem, iRegL oldval, iRegL newval, rFlagsReg cr) %{
   match(Set res (CompareAndExchangeL mem (Binary oldval newval)));
-  ins_cost(2 * VOLATILE_REF_COST);
+  ins_cost(2*VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
   format %{
     "cmpxchg $res = $mem, $oldval, $newval\t# (long) if $mem == $oldval then $mem <-- $newval"
@@ -99,7 +99,7 @@ instruct compareAndExchangeL(iRegLNoSp res, indirect mem, iRegL oldval, iRegL ne
 instruct compareAndExchangeN(iRegNNoSp res, indirect mem, iRegN oldval, iRegN newval, rFlagsReg cr) %{
   predicate(n->as_LoadStore()->barrier_data() == 0);
   match(Set res (CompareAndExchangeN mem (Binary oldval newval)));
-  ins_cost(2 * VOLATILE_REF_COST);
+  ins_cost(2*VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
   format %{
     "cmpxchgw $res = $mem, $oldval, $newval\t# (narrow oop) if $mem == $oldval then $mem <-- $newval"
@@ -115,7 +115,7 @@ instruct compareAndExchangeN(iRegNNoSp res, indirect mem, iRegN oldval, iRegN ne
 instruct compareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, rFlagsReg cr) %{
   predicate(n->as_LoadStore()->barrier_data() == 0);
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
-  ins_cost(2 * VOLATILE_REF_COST);
+  ins_cost(2*VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
   format %{
     "cmpxchg $res = $mem, $oldval, $newval\t# (ptr) if $mem == $oldval then $mem <-- $newval"
