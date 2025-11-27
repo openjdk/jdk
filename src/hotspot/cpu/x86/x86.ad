@@ -3320,6 +3320,11 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
         return false;
       }
       break;
+    case Op_VectorBlend:
+      if (UseAVX == 0 && MaxVectorSize < 16) {
+        return false;
+      }
+      break;
     case Op_VectorTest:
       if (UseSSE < 4) {
         return false; // Implementation limitation
