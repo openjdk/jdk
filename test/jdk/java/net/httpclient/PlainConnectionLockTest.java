@@ -144,7 +144,7 @@ class PlainConnectionLockTest implements HttpServerAdapters {
         // fail if the server's connection backlog is less than 100.
         // The default backlog is 50. Just make sure the backlog is
         // big enough.
-        int backlog = MANY > 50 ? MANY : 50;
+        int backlog = Math.max(MANY, 50);
 
         // create a https server for HTTP/1.1
         var loopback = InetAddress.getLoopbackAddress();
