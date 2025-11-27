@@ -49,7 +49,7 @@ public class TestIconRTL {
     private static JOptionPane pane;
 
     static final String INSTRUCTIONS = """
-        A JOptionPane is shown in Motif LookAndFeel. 
+        A JOptionPane is shown in Motif LookAndFeel.
         Test with LTR and RTL Orientation
         If JOptionPane is drawn properly in different orientation,
         then test passed, otherwise it failed.""";
