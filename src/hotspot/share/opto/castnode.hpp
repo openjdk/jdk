@@ -101,21 +101,31 @@ public:
     }
 
     // All the possible combinations of floating/narrowing with example use cases:
-    // used for range checks: the range check CastII is dependent on the range check and if its input's type is narrower
-    // than the type of the range check, it's safe to be removed.
+
+    // Use case example: Range Check CastII
+    // Floating: The Cast is only dependent on the single range check.
+    // Narrowing: The Cast narrows the type to a positive index. If the input to the Cast is narrower, we can safely
+    //            remove the cast because the array access will be safe.
     static const DependencyType FloatingNarrowing;
-    // used after loop opts when Cast nodes' types are widened so Casts that only differ by slightly different types can
-    // common. Given the type carried by the Cast is no longer accurate, removing a Cast because its input has a
-    // narrower type causes the dependency carried by the Cast to be lost. In some corner cases, that could let an array
-    // access float above a check it is dependent on.
+    // Use case example: Widening Cast nodes' types after loop opts: We want to common Casts with slightly different types.
+    // Floating: These Casts only depend on the single control.
+    // NonNarrowing: Even when the input type is narrower, we are not removing the Cast. Otherwise, the dependency
+    //               to the single control is lost, and an array access could float above its range check because we
+    //               just removed the dependency to the range check by removing the Cast. This could lead to an
+    //               out-of-bounds access.
     static const DependencyType FloatingNonNarrowing;
-    // used when an array access is no longer dependent on a single range check (range check smearing for instance). The
-    // array access must remain below all the checks it depends on. If the one it directly depends on (its control input)
-    // is hoisted and the cast floats with it, the risk is that it ends up above other checks it depends on, allowing an
-    // out of bound array access to proceed.
+    // Use case example: An array accesses that is no longer dependent on a single range check (e.g. range check smearing).
+    // NonFloating: The array access must be pinned below all the checks it depends on. If the check it directly depends
+    //              on with a control input is hoisted, we do not hoist the Cast as well. If we allowed the Cast to float,
+    //              we risk that the array access ends up above another check it depends on (we cannot model two control
+    //              dependencies for a node in the IR). This could lead to an out-of-bounds access.
+    // Narrowing: If the Cast does not narrow the input type, then it's safe to remove the cast because the array access
+    //            will be safe.
     static const DependencyType NonFloatingNarrowing;
-    // used when a floating node is sunk out of loop: we don't want the cast that forces the node to be out of loop to
-    // be removed in any case otherwise the sunk node floats back into the loop.
+    // Use case example: Sinking nodes out of a loop
+    // Non-Floating & Non-Narrowing: We don't want the Cast that forces the node to be out of loop to be removed in any
+    //                               case. Otherwise, the sunk node could float back into the loop, undoing the sinking.
+    //                               This Cast is only used for pinning without caring about narrowing types.
     static const DependencyType NonFloatingNonNarrowing;
 
   };
