@@ -27,6 +27,7 @@
 
 #include "cppstdlib/type_traits.hpp"
 #include "gc/shared/oopStorage.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 //////////////////////////////////////////////////////////////////////////////
@@ -131,10 +132,10 @@ class OopStorage::BasicParState {
   const OopStorage* _storage;
   ActiveArray* _active_array;
   size_t _block_count;
-  volatile size_t _next_block;
+  Atomic<size_t> _next_block;
   uint _estimated_thread_count;
   bool _concurrent;
-  volatile size_t _num_dead;
+  Atomic<size_t> _num_dead;
 
   NONCOPYABLE(BasicParState);
 
