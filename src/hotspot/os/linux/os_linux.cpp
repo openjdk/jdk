@@ -76,6 +76,8 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/vmError.hpp"
+#include <bits/types/clockid_t.h>
+#include <ctime>
 #if INCLUDE_JFR
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
@@ -4958,20 +4960,35 @@ int os::open(const char *path, int oflag, int mode) {
   return fd;
 }
 
+// Since kernel v2.6.12 the Linux ABI have had support for encoding the clock types
+// in the last three bits. Setting bit to 001 (CPUCLOCK_VIRT) will result in the kernel
+// returning only user time. POSIX compliant implementations of pthread_getcpuclockid 
+// for the Linux kernel defaults to construct a clockid that with 010 (CPUCLOCK_SCHED)
+// set, which return system+user time, which is what the POSIX standard mandates, see
+// POSIX.1-2024/IEEE Std 1003.1-2024 §3.90.
+static clockid_t get_thread_clockid(Thread* thread, bool full, bool* success) {
+  constexpr clockid_t CPUCLOCK_VIRT = 1;
+
+  clockid_t clockid;
+  int rc = pthread_getcpuclockid(thread->osthread()->pthread_id(), &clockid);
+  if (rc == 0) {
+    clockid = full ? clockid : (clockid & ~3) | CPUCLOCK_VIRT;
+  } else {
+    // It's possible to encounter a terminated native thread that failed
+    // to detach itself from the VM - which should result in ESRCH.
+    assert_status(rc == ESRCH, rc, "pthread_getcpuclockid failed");
+    *success = false;
+  }
+  return clockid;
+}
+
 static jlong user_thread_cpu_time(Thread *thread);
 
 static jlong total_thread_cpu_time(Thread *thread) {
-    clockid_t clockid;
-    int rc = pthread_getcpuclockid(thread->osthread()->pthread_id(),
-                                              &clockid);
-    if (rc == 0) {
-      return os::Linux::total_thread_cpu_time(clockid);
-    } else {
-      // It's possible to encounter a terminated native thread that failed
-      // to detach itself from the VM - which should result in ESRCH.
-      assert_status(rc == ESRCH, rc, "pthread_getcpuclockid failed");
-      return -1;
-    }
+  bool success = true;
+  clockid_t clockid = get_thread_clockid(thread, true, &success);
+
+  return success ? os::Linux::total_thread_cpu_time(clockid) : -1;
 }
 
 // current_thread_cpu_time(bool) and thread_cpu_time(Thread*, bool)
@@ -5005,46 +5022,11 @@ jlong os::thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   }
 }
 
-//  -1 on error.
 static jlong user_thread_cpu_time(Thread *thread) {
-  pid_t  tid = thread->osthread()->thread_id();
-  char *s;
-  char stat[2048];
-  size_t statlen;
-  char proc_name[64];
-  int count;
-  long sys_time, user_time;
-  char cdummy;
-  int idummy;
-  long ldummy;
-  FILE *fp;
+  bool success = true;
+  clockid_t clockid = get_thread_clockid(thread, false, &success);
 
-  os::snprintf_checked(proc_name, 64, "/proc/self/task/%d/stat", tid);
-  fp = os::fopen(proc_name, "r");
-  if (fp == nullptr) return -1;
-  statlen = fread(stat, 1, 2047, fp);
-  stat[statlen] = '\0';
-  fclose(fp);
-
-  // Skip pid and the command string. Note that we could be dealing with
-  // weird command names, e.g. user could decide to rename java launcher
-  // to "java 1.4.2 :)", then the stat file would look like
-  //                1234 (java 1.4.2 :)) R ... ...
-  // We don't really need to know the command string, just find the last
-  // occurrence of ")" and then start parsing from there. See bug 4726580.
-  s = strrchr(stat, ')');
-  if (s == nullptr) return -1;
-
-  // Skip blank chars
-  do { s++; } while (s && isspace((unsigned char) *s));
-
-  count = sscanf(s,"%c %d %d %d %d %d %lu %lu %lu %lu %lu %lu %lu",
-                 &cdummy, &idummy, &idummy, &idummy, &idummy, &idummy,
-                 &ldummy, &ldummy, &ldummy, &ldummy, &ldummy,
-                 &user_time, &sys_time);
-  if (count != 13) return -1;
-
-  return (jlong)user_time * (1000000000 / os::Posix::clock_tics_per_second());
+  return success ? os::Linux::total_thread_cpu_time(clockid) : -1;
 }
 
 void os::current_thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
