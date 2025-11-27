@@ -192,6 +192,10 @@ public class AppContentTest {
             });
 
             target.addInstallVerifier(cmd -> {
+                if (expectedJPackageExitCode != 0) {
+                    return;
+                }
+
                 var appContentRoot = getAppContentRoot(cmd);
 
                 Set<PathVerifier> disabledVerifiers = new HashSet<>();
