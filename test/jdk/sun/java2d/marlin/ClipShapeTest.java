@@ -154,13 +154,12 @@ public final class ClipShapeTest {
     static final AtomicBoolean isMarlin = new AtomicBoolean();
     static final AtomicBoolean isClipRuntime = new AtomicBoolean();
 
+    static final Logger log = Logger.getLogger("sun.java2d.marlin");
+
     static {
         Locale.setDefault(Locale.US);
 
         // FIRST: Get Marlin runtime state from its log:
-
-        // initialize j.u.l Looger:
-        final Logger log = Logger.getLogger("sun.java2d.marlin");
         log.addHandler(new Handler() {
             @Override
             public void publish(LogRecord record) {
