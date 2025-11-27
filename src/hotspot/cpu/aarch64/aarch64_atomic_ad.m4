@@ -31,7 +31,7 @@
 // can't check the type of memory ordering here, so we always emit a
 // STLXR.
 
-// This section is generated from aarch64_atomic.m4
+// This section is generated from aarch64_atomic_ad.m4
 
 dnl Return Arg1 with two spaces before it. We need this because m4
 dnl strips leading spaces from macro args.
@@ -188,7 +188,7 @@ ifelse($1$3,PAcq,INDENT(predicate(needs_acquiring_load_exclusive(n) && (n->as_Lo
        `dnl')
   match(Set oldval (GetAndSet$1 mem newval));
   ins_cost(`'ifelse($4,Acq,,2*)VOLATILE_REF_COST);
-  format %{ "atomic_xchg`'ifelse($3,Acq,_acq)$2  $oldval, $newval, [$mem]" %}
+  format %{ "atomic_xchg$2`'ifelse($3,Acq,_acq)  $oldval, $newval, [$mem]" %}
   ins_encode %{
     __ atomic_xchg`'ifelse($3,Acq,al)$2($oldval$$Register, $newval$$Register, as_Register($mem$$base));
   %}
@@ -218,7 +218,7 @@ ifelse($4$5,AcqNoRes,INDENT(predicate(n->as_LoadStore()->result_not_used() && ne
        `dnl')
   match(Set ifelse($5,NoRes,dummy,newval) (GetAndAdd$1 mem incr));
   ins_cost(`'ifelse($4,Acq,,2*)VOLATILE_REF_COST`'ifelse($5,NoRes,,+1));
-  format %{ "atomic_add`'ifelse($4,Acq,_acq)$3 `'ifelse($5,NoRes,noreg,$newval), [$mem], $incr" %}
+  format %{ "atomic_add$3`'ifelse($4,Acq,_acq) `'ifelse($5,NoRes,noreg,$newval), [$mem], $incr" %}
   ins_encode %{
     __ atomic_add`'ifelse($4,Acq,al)$3(`'ifelse($5,NoRes,noreg,$newval$$Register), `'ifelse($6,Const,$incr$$constant,$incr$$Register), as_Register($mem$$base));
   %}

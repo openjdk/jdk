@@ -31,7 +31,7 @@
 // can't check the type of memory ordering here, so we always emit a
 // STLXR.
 
-// This section is generated from aarch64_atomic.m4
+// This section is generated from aarch64_atomic_ad.m4
 
 
 instruct compareAndExchangeB(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
@@ -696,7 +696,7 @@ instruct getAndSetIAcq(indirect mem, iRegI newval, iRegINoSp oldval) %{
   predicate(needs_acquiring_load_exclusive(n));
   match(Set oldval (GetAndSetI mem newval));
   ins_cost(2*VOLATILE_REF_COST);
-  format %{ "atomic_xchg_acqw  $oldval, $newval, [$mem]" %}
+  format %{ "atomic_xchgw_acq  $oldval, $newval, [$mem]" %}
   ins_encode %{
     __ atomic_xchgalw($oldval$$Register, $newval$$Register, as_Register($mem$$base));
   %}
@@ -718,7 +718,7 @@ instruct getAndSetNAcq(indirect mem, iRegN newval, iRegNNoSp oldval) %{
   predicate(needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() == 0);
   match(Set oldval (GetAndSetN mem newval));
   ins_cost(2*VOLATILE_REF_COST);
-  format %{ "atomic_xchg_acqw  $oldval, $newval, [$mem]" %}
+  format %{ "atomic_xchgw_acq  $oldval, $newval, [$mem]" %}
   ins_encode %{
     __ atomic_xchgalw($oldval$$Register, $newval$$Register, as_Register($mem$$base));
   %}
@@ -750,7 +750,7 @@ instruct getAndAddIAcq(indirect mem, iRegINoSp newval, iRegIorL2I incr) %{
   predicate(needs_acquiring_load_exclusive(n));
   match(Set newval (GetAndAddI mem incr));
   ins_cost(VOLATILE_REF_COST+1);
-  format %{ "atomic_add_acqw $newval, [$mem], $incr" %}
+  format %{ "atomic_addw_acq $newval, [$mem], $incr" %}
   ins_encode %{
     __ atomic_addalw($newval$$Register, $incr$$Register, as_Register($mem$$base));
   %}
@@ -772,7 +772,7 @@ instruct getAndAddIAcqNoRes(indirect mem, Universe dummy, iRegIorL2I incr) %{
   predicate(n->as_LoadStore()->result_not_used() && needs_acquiring_load_exclusive(n));
   match(Set dummy (GetAndAddI mem incr));
   ins_cost(VOLATILE_REF_COST);
-  format %{ "atomic_add_acqw noreg, [$mem], $incr" %}
+  format %{ "atomic_addw_acq noreg, [$mem], $incr" %}
   ins_encode %{
     __ atomic_addalw(noreg, $incr$$Register, as_Register($mem$$base));
   %}
@@ -793,7 +793,7 @@ instruct getAndAddIAcqConst(indirect mem, iRegINoSp newval, immIAddSub incr) %{
   predicate(needs_acquiring_load_exclusive(n));
   match(Set newval (GetAndAddI mem incr));
   ins_cost(VOLATILE_REF_COST+1);
-  format %{ "atomic_add_acqw $newval, [$mem], $incr" %}
+  format %{ "atomic_addw_acq $newval, [$mem], $incr" %}
   ins_encode %{
     __ atomic_addalw($newval$$Register, $incr$$constant, as_Register($mem$$base));
   %}
@@ -815,7 +815,7 @@ instruct getAndAddIAcqNoResConst(indirect mem, Universe dummy, immIAddSub incr) 
   predicate(n->as_LoadStore()->result_not_used() && needs_acquiring_load_exclusive(n));
   match(Set dummy (GetAndAddI mem incr));
   ins_cost(VOLATILE_REF_COST);
-  format %{ "atomic_add_acqw noreg, [$mem], $incr" %}
+  format %{ "atomic_addw_acq noreg, [$mem], $incr" %}
   ins_encode %{
     __ atomic_addalw(noreg, $incr$$constant, as_Register($mem$$base));
   %}
