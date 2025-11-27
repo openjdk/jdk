@@ -12859,22 +12859,15 @@ class StubGenerator: public StubCodeGenerator {
 #endif // INCLUDE_CDS
 }; // end class declaration
 
-#if INCLUDE_CDS
-void StubGenerator_AOTAddressTable_init() {
-  ResourceMark rm;
-  GrowableArray<address> external_addresses;
-  // publish static addresses referred to by aarch64 generator
-  StubGenerator::init_AOTAddressTable(external_addresses);
-  // publish external data addresses defined in nested aarch64 class
-  StubRoutines::aarch64::init_AOTAddressTable(external_addresses);
-  AOTCodeCache::publish_external_addresses(external_addresses);
-}
-#endif // INCLUDE_CDS
-
 void StubGenerator_generate(CodeBuffer* code, BlobId blob_id, AOTStubData* stub_data) {
   StubGenerator g(code, blob_id, stub_data);
 }
 
+#if INCLUDE_CDS
+void StubGenerator_init_AOTAddressTable(GrowableArray<address>& addresses) {
+  StubGenerator::init_AOTAddressTable(addresses);
+}
+#endif // INCLUDE_CDS
 
 #if defined (LINUX)
 

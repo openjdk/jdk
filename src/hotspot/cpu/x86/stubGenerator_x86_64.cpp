@@ -5051,20 +5051,6 @@ void StubGenerator::init_AOTAddressTable(GrowableArray<address>& external_addres
   init_AOTAddressTable_tan(external_addresses);
   init_AOTAddressTable_tanh(external_addresses);
 }
-
-void StubGenerator_AOTAddressTable_init() {
-  ResourceMark rm;
-  GrowableArray<address> external_addresses;
-  // publish static addresses referred to by main x86 generator and
-  // auxiliary x86 generators
-  StubGenerator::init_AOTAddressTable(external_addresses);
-  // publish external data addresses defined in nested x86 class
-  StubRoutines::x86::init_AOTAddressTable(external_addresses);
-#ifdef COMPILER1
-  LIR_Assembler::init_AOTAddressTable(external_addresses);
-#endif
-  AOTCodeCache::publish_external_addresses(external_addresses);
-}
 #endif // INCLUDE_CDS
 
 void StubGenerator_generate(CodeBuffer* code, BlobId blob_id, AOTStubData* stub_data) {

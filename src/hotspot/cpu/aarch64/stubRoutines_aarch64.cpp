@@ -415,6 +415,23 @@ ATTRIBUTE_ALIGNED(64) jdouble StubRoutines::aarch64::_pio2[] = {
 };
 
 #if INCLUDE_CDS
+extern void StubGenerator_init_AOTAddressTable(GrowableArray<address>& addresses);
+
+void StubRoutines::init_AOTAddressTable() {
+  ResourceMark rm;
+  GrowableArray<address> external_addresses;
+  // publish static addresses referred to by aarch64 generator
+  // n.b. we have to use use an extern call here because class
+  // StubGenerator, which provides the static method that knows how to
+  // add the relevant addresses, is declared in a source file rather
+  // than in a separately includeable header.
+  StubGenerator_init_AOTAddressTable(external_addresses);
+  // publish external data addresses defined in nested aarch64 class
+  StubRoutines::aarch64::init_AOTAddressTable(external_addresses);
+  AOTCodeCache::publish_external_addresses(external_addresses);
+}
+
+
 #define ADD(addr) external_addresses.append((address)addr);
 
 void StubRoutines::aarch64::init_AOTAddressTable(GrowableArray<address>& external_addresses) {

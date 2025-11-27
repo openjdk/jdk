@@ -30,3 +30,9 @@
 
 address StubRoutines::crc_table_addr()    { ShouldNotCallThis(); return nullptr; }
 address StubRoutines::crc32c_table_addr() { ShouldNotCallThis(); return nullptr; }
+
+#if INCLUDE_CDS
+// nothing to do for xero
+void StubRoutines::init_AOTAddressTable() {
+}
+#endif // INCLUDE_CDS

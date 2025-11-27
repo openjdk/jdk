@@ -3235,12 +3235,6 @@ class StubGenerator: public StubCodeGenerator {
   }
 }; // end class declaration
 
-#if INCLUDE_CDS
-// nothing to do for arm
-void StubGenerator_AOTAddressTable_init() {
-#endif // INCLUDE_CDS
-}
-
 void StubGenerator_generate(CodeBuffer* code, BlobId blob_id, AOTStubData* stub_data) {
   StubGenerator g(code, blob_id, stub_data);
 }

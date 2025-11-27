@@ -413,6 +413,21 @@ ATTRIBUTE_ALIGNED(64) const julong StubRoutines::x86::_k512_W[] =
 };
 
 #if INCLUDE_CDS
+
+void StubRoutines::init_AOTAddressTable() {
+  ResourceMark rm;
+  GrowableArray<address> external_addresses;
+  // publish static addresses referred to by main x86 generator and
+  // auxiliary x86 generators
+  StubGenerator::init_AOTAddressTable(external_addresses);
+  // publish external data addresses defined in nested x86 class
+  StubRoutines::x86::init_AOTAddressTable(external_addresses);
+#ifdef COMPILER1
+  LIR_Assembler::init_AOTAddressTable(external_addresses);
+#endif
+  AOTCodeCache::publish_external_addresses(external_addresses);
+}
+
 // publish addresses of external data defined in this file which may
 // be referenced from stub or code
 void StubRoutines::x86::init_AOTAddressTable(GrowableArray<address>& external_addresses) {

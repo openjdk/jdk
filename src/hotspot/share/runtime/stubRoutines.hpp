@@ -285,7 +285,7 @@ public:
 #endif
 
 #if INCLUDE_CDS
-  // Initalization
+  // AOT Initalization -- implementation is arch-specific
   static void    init_AOTAddressTable();
 #endif // INCLUDE_CDS
 
