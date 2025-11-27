@@ -50,7 +50,14 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     # add -z,relro (mark relocations read only) for all libs
     # add -z,now ("full relro" - more of the Global Offset Table GOT is marked read only)
     # add --no-as-needed to disable default --as-needed link flag on some GCC toolchains
+    # add --icf=all (Identical Code Folding — merges identical functions)
     BASIC_LDFLAGS="-Wl,-z,defs -Wl,-z,relro -Wl,-z,now -Wl,--no-as-needed -Wl,--exclude-libs,ALL"
+    if test "x$LINKER_TYPE" = "xgold"; then
+      if test x$DEBUG_LEVEL = xrelease; then
+        BASIC_LDFLAGS="$BASIC_LDFLAGS -Wl,--icf=all"
+      fi
+    fi
+
     # Linux : remove unused code+data in link step
     if test "x$ENABLE_LINKTIME_GC" = xtrue; then
       if test "x$OPENJDK_TARGET_CPU" = xs390x; then
@@ -61,6 +68,7 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     fi
 
     BASIC_LDFLAGS_JVM_ONLY=""
+    LDFLAGS_LTO="-flto=auto -fuse-linker-plugin -fno-strict-aliasing"
 
     LDFLAGS_CXX_PARTIAL_LINKING="$MACHINE_FLAG -r"
 
@@ -68,6 +76,7 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     BASIC_LDFLAGS_JVM_ONLY="-mno-omit-leaf-frame-pointer -mstack-alignment=16 \
         -fPIC"
 
+    LDFLAGS_LTO="-flto=auto -fuse-linker-plugin -fno-strict-aliasing"
     LDFLAGS_CXX_PARTIAL_LINKING="$MACHINE_FLAG -r"
 
     if test "x$OPENJDK_TARGET_OS" = xlinux; then
@@ -87,6 +96,7 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     BASIC_LDFLAGS="-opt:ref"
     BASIC_LDFLAGS_JDK_ONLY="-incremental:no"
     BASIC_LDFLAGS_JVM_ONLY="-opt:icf,8 -subsystem:windows"
+    LDFLAGS_LTO="-LTCG:INCREMENTAL"
   fi
 
   if (test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang) \
@@ -148,6 +158,7 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
 
   # Export some intermediate variables for compatibility
   LDFLAGS_CXX_JDK="$DEBUGLEVEL_LDFLAGS_JDK_ONLY"
+  AC_SUBST(LDFLAGS_LTO)
   AC_SUBST(LDFLAGS_CXX_JDK)
   AC_SUBST(LDFLAGS_CXX_PARTIAL_LINKING)
 ])

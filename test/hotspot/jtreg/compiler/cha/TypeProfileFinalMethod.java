@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,7 +25,7 @@
 /*
  * @test
  * @summary test c1 to record type profile with CHA optimization
- * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
+ * @requires vm.flavor == "server" & vm.flagless
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -48,6 +48,7 @@ public class TypeProfileFinalMethod {
            "-Xbatch", "-XX:-UseOnStackReplacement",
            "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
            "-XX:Tier3InvocationThreshold=200", "-XX:Tier4InvocationThreshold=5000",
+           "-XX:CompileCommand=CompileOnly," + Launcher.class.getName() + "::test*",
            Launcher.class.getName());
        OutputAnalyzer output = ProcessTools.executeProcess(pb);
        System.out.println("debug output");
@@ -61,7 +62,7 @@ public class TypeProfileFinalMethod {
        while (matcher.find()) {
          matchCnt++;
        }
-       Asserts.assertEquals(matchCnt, 2);  // inline Child1::m() twice
+       Asserts.assertEquals(2, matchCnt);  // inline Child1::m() twice
     }
 
     static class Launcher {
@@ -86,23 +87,23 @@ public class TypeProfileFinalMethod {
 
         static void addCompilerDirectives() {
             WhiteBox WB = WhiteBox.getWhiteBox();
-            // do not inline getInstance() for test1() and test2()
+            // Directive for test1
             String directive = "[{ match: [\"" + Launcher.class.getName() + "::test1\"]," +
-                "inline:[\"-" + Launcher.class.getName()+"::getInstance()\"] }]";
+                // Do not inline getInstance
+                "inline:[\"-" + Launcher.class.getName()+"::getInstance\"] }]";
             WB.addCompilerDirective(directive);
 
+            // Directive for test2
             directive = "[{ match: [\"" + Launcher.class.getName() + "::test2\"]," +
-                "inline:[\"-" + Launcher.class.getName()+"::getInstance()\"] }]";
-            WB.addCompilerDirective(directive);
-
-            // do not inline test1() for test2() in c1 compilation
-            directive = "[{ match: [\"" + Launcher.class.getName() + "::test2\"]," +
-                "c1: { inline:[\"-" + Launcher.class.getName()+"::test1()\"] } }]";
-            WB.addCompilerDirective(directive);
-
-            // print inline tree for checking
-            directive = "[{ match: [\"" + Launcher.class.getName() + "::test2\"]," +
-                "c2: { PrintInlining: true } }]";
+                // Do not inline getInstance
+                "inline:[\"-" + Launcher.class.getName()+"::getInstance\"]," +
+                // Do not inline test1 in C1 compilation
+                "c1: { inline:[\"-" + Launcher.class.getName()+"::test1\"] }," +
+                // Make sure to inline test1 in C2 compilation
+                "c2: { inline:[\"+" + Launcher.class.getName()+"::test1\"]," +
+                // Print the inline tree for checking
+                "      PrintInlining:true }" +
+                "}]";
             WB.addCompilerDirective(directive);
         }
 
