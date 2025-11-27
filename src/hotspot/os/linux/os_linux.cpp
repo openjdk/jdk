@@ -4951,6 +4951,7 @@ static jlong user_thread_cpu_time(Thread *thread) {
                  &ldummy, &ldummy, &ldummy, &ldummy, &ldummy,
                  &user_time, &sys_time);
   if (count != 13) return -1;
+
   return (jlong)user_time * (1000000000 / os::Posix::clock_tics_per_second());
 }
 
