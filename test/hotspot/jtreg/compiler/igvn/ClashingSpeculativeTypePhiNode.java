@@ -39,7 +39,9 @@
  *                   -XX:CompileCommand=dontinline,compiler.igvn.ClashingSpeculativeTypePhiNode::notInlined1
  *                   compiler.igvn.ClashingSpeculativeTypePhiNode
  *
- *  @run main/othervm -XX:-TieredCompilation
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
+ *                   -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:-TieredCompilation
  *                   -XX:-UseOnStackReplacement
  *                   -XX:-BackgroundCompilation
  *                   -XX:CompileOnly=compiler.igvn.ClashingSpeculativeTypePhiNode::test2
@@ -59,7 +61,7 @@ package compiler.igvn;
 
 public class ClashingSpeculativeTypePhiNode {
     public static void main(String[] args) {
-        // main1();
+        main1();
         main2();
     }
 
@@ -77,12 +79,12 @@ public class ClashingSpeculativeTypePhiNode {
         return inlined1(flag1, false);
         // When inlined1 is inlined
         // return Phi(flag1, inlined2(flag2), null)
-        // inlined2 is speculatively returning C1, from the calls `inlined1(true, true)` in main1
+        // inlined2 is speculatively returning C1, known from the calls `inlined1(true, true)` in main1
         // Phi node gets speculative type C1
         // When inline2 is inlined
         // return Phi[C1](flag1, Phi(false, new C1(), notInlined1()), null)
         // => Phi[C1](flag1, notInlined1(), null)
-        // notInlined1 is speculatively returning C2 from `inline2(false)` in main1
+        // notInlined1 is speculatively returning C2, known from `inline2(false)` in main1
         // return Phi[C1](flag1, notInlined1()[C2], null)
         // Clashing speculative type between Phi's _type (C1) and union of inputs (C2).
     }
