@@ -498,6 +498,9 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
                         RegisterMap::WalkContinuation::skip);
   // Now get the deoptee with a valid map
   frame deoptee = stub_frame.sender(&map);
+  if (exec_mode == Unpack_deopt) {
+    assert(deoptee.is_deoptimized_frame(), "frame is not marked for deoptimization");
+  }
   // Set the deoptee nmethod
   assert(current->deopt_compiled_method() == nullptr, "Pending deopt!");
   nmethod* nm = deoptee.cb()->as_nmethod_or_null();

@@ -2012,11 +2012,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
   assert(off != Type::OffsetTop, "case covered by TypePtr::empty");
   Compile* C = phase->C;
 
-  // If we are loading from a freshly-allocated object, produce a zero,
-  // if the load is provably beyond the header of the object.
-  // (Also allow a variable load from a fresh array to produce zero.)
-  const TypeOopPtr* tinst = tp->isa_oopptr();
-  bool is_instance = (tinst != nullptr) && tinst->is_known_instance_field();
+  // If load can see a previous constant store, use that.
   Node* value = can_see_stored_value(mem, phase);
   if (value != nullptr && value->is_Con()) {
     assert(value->bottom_type()->higher_equal(_type), "sanity");
@@ -2227,13 +2223,16 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     }
   }
 
-  bool is_vect = (_type->isa_vect() != nullptr);
-  if (is_instance && !is_vect) {
-    // If we have an instance type and our memory input is the
-    // programs's initial memory state, there is no matching store,
-    // so just return a zero of the appropriate type -
-    // except if it is vectorized - then we have no zero constant.
-    Node *mem = in(MemNode::Memory);
+  // If we are loading from a freshly-allocated object/array, produce a zero.
+  // Things to check:
+  //   1. Load is beyond the header: headers are not guaranteed to be zero
+  //   2. Load is not vectorized: vectors have no zero constant
+  //   3. Load has no matching store, i.e. the input is the initial memory state
+  const TypeOopPtr* tinst = tp->isa_oopptr();
+  bool is_not_header = (tinst != nullptr) && tinst->is_known_instance_field();
+  bool is_not_vect = (_type->isa_vect() == nullptr);
+  if (is_not_header && is_not_vect) {
+    Node* mem = in(MemNode::Memory);
     if (mem->is_Parm() && mem->in(0)->is_Start()) {
       assert(mem->as_Parm()->_con == TypeFunc::Memory, "must be memory Parm");
       return Type::get_zero_type(_type->basic_type());
