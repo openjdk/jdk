@@ -46,7 +46,7 @@ Node* ConstraintCastNode::Identity(PhaseGVN* phase) {
     // If this cast doesn't carry a type dependency (i.e. not used for type narrowing), we cannot optimize it.
     return this;
   }
-  
+
   // This cast node carries a type dependency. We can remove it if:
   // - Its input has a narrower type
   // - There's a dominating cast with same input but narrower type
