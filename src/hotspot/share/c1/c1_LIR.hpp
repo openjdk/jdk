@@ -1967,7 +1967,7 @@ class LIR_OpIncrementCounter : public LIR_Op {
   LIR_Opr   dest()          const            { return _dest;          }
   LIR_Opr   temp_op()       const            { return _temp_op;       }
   LIR_Opr   freq_op()       const            { return _freq_op;       }
-  CodeStub* overflow_stub() const            { return _overflow_stub;  };
+  CodeStub* overflow_stub() const            { return _overflow_stub; };
 
   virtual void emit_code(LIR_Assembler* masm);
   virtual LIR_OpIncrementCounter* as_OpIncrementCounter() { return this; }
