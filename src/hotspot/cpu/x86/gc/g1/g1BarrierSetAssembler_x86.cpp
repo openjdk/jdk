@@ -89,10 +89,10 @@ void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm
 
 void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                              Register addr, Register count, Register tmp) {
-  Label done;
+  Label L_done;
 
   __ testptr(count, count);
-  __ jcc(Assembler::zero, done);
+  __ jccb(Assembler::zero, L_done);
 
   // Calculate end address in "count".
   Address::ScaleFactor scale = UseCompressedOops ? Address::times_4 : Address::times_8;
@@ -111,31 +111,31 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
   __ shrptr(count, CardTable::card_shift());
   __ addptr(count, tmp);
 
-  Label loop;
+  Label L_loop;
   // Iterate from start card to end card (inclusive).
-  __ bind(loop);
+  __ bind(L_loop);
 
-  Label is_clean_card;
+  Label L_is_clean_card;
   if (UseCondCardMark) {
     __ cmpb(Address(addr, 0), G1CardTable::clean_card_val());
-    __ jcc(Assembler::equal, is_clean_card);
+    __ jccb(Assembler::equal, L_is_clean_card);
   } else {
    __ movb(Address(addr, 0), G1CardTable::dirty_card_val());
   }
 
-  Label next_card;
-  __ bind(next_card);
+  Label L_next_card;
+  __ bind(L_next_card);
   __ addptr(addr, sizeof(CardTable::CardValue));
   __ cmpptr(addr, count);
-  __ jcc(Assembler::belowEqual, loop);
-  __ jmp(done);
+  __ jccb(Assembler::belowEqual, L_loop);
+  __ jmpb(L_done);
 
-  __ bind(is_clean_card);
-  // Card was clean. Dirty card and go to next..
+  __ bind(L_is_clean_card);
+  // Card was clean. Dirty card and go to next.
   __ movb(Address(addr, 0), G1CardTable::dirty_card_val());
-  __ jmp(next_card);
+  __ jmpb(L_next_card);
 
-  __ bind(done);
+  __ bind(L_done);
 }
 
 void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
@@ -157,22 +157,6 @@ void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorator
   }
 }
 
-static void generate_queue_insertion(MacroAssembler* masm, ByteSize index_offset, ByteSize buffer_offset, Label& runtime,
-                                     const Register thread, const Register value, const Register temp) {
-  // This code assumes that buffer index is pointer sized.
-  STATIC_ASSERT(in_bytes(SATBMarkQueue::byte_width_of_index()) == sizeof(intptr_t));
-  // Can we store a value in the given thread's buffer?
-  // (The index field is typed as size_t.)
-  __ movptr(temp, Address(thread, in_bytes(index_offset)));   // temp := *(index address)
-  __ testptr(temp, temp);                                     // index == 0?
-  __ jcc(Assembler::zero, runtime);                           // jump to runtime if index == 0 (full buffer)
-  // The buffer is not full, store value into it.
-  __ subptr(temp, wordSize);                                  // temp := next index
-  __ movptr(Address(thread, in_bytes(index_offset)), temp);   // *(index address) := next index
-  __ addptr(temp, Address(thread, in_bytes(buffer_offset)));  // temp := buffer address + next index
-  __ movptr(Address(temp, 0), value);                         // *(buffer address + next index) := value
-}
-
 static void generate_pre_barrier_fast_path(MacroAssembler* masm,
                                            const Register thread) {
   Address in_progress(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()));
@@ -190,21 +174,40 @@ static void generate_pre_barrier_slow_path(MacroAssembler* masm,
                                            const Register pre_val,
                                            const Register thread,
                                            const Register tmp,
-                                           Label& done,
-                                           Label& runtime) {
+                                           Label& L_done) {
+  Address index_addr(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset()));
+  Address buffer_addr(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset()));
+
+  // This code assumes that buffer index is pointer sized.
+  STATIC_ASSERT(in_bytes(SATBMarkQueue::byte_width_of_index()) == sizeof(intptr_t));
+
+  Label L_runtime;
+
   // Do we need to load the previous value?
   if (obj != noreg) {
     __ load_heap_oop(pre_val, Address(obj, 0), noreg, AS_RAW);
   }
+
   // Is the previous value null?
-  __ cmpptr(pre_val, NULL_WORD);
-  __ jcc(Assembler::equal, done);
-  generate_queue_insertion(masm,
-                           G1ThreadLocalData::satb_mark_queue_index_offset(),
-                           G1ThreadLocalData::satb_mark_queue_buffer_offset(),
-                           runtime,
-                           thread, pre_val, tmp);
-  __ jmp(done);
+  __ testptr(pre_val, pre_val);
+  __ jcc(Assembler::equal, L_done);
+
+  // Can we store a value in the given thread's buffer?
+  // (The index field is typed as size_t.)
+  __ movptr(tmp, index_addr);             // temp := *(index address)
+  __ testptr(tmp, tmp);                   // index == 0?
+  __ jccb(Assembler::zero, L_runtime);    // jump to runtime if index == 0 (full buffer)
+
+  // The buffer is not full, store value into it.
+  __ subptr(tmp, wordSize);               // temp := next index
+  __ movptr(index_addr, tmp);             // *(index address) := next index
+  __ addptr(tmp, buffer_addr);            // temp := buffer address + next index
+  __ movptr(Address(tmp, 0), pre_val);    // *(buffer address + next index) := value
+
+  // Jump out if done, or fall-through to runtime.
+  // "L_done" is far away, so jump cannot be short.
+  __ jmp(L_done);
+  __ bind(L_runtime);
 }
 
 void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
@@ -219,7 +222,6 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
   const Register thread = r15_thread;
 
   Label done;
-  Label runtime;
 
   assert(pre_val != noreg, "check this code");
 
@@ -231,9 +233,7 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
   generate_pre_barrier_fast_path(masm, thread);
   // If marking is not active (*(mark queue active address) == 0), jump to done
   __ jcc(Assembler::equal, done);
-  generate_pre_barrier_slow_path(masm, obj, pre_val, thread, tmp, done, runtime);
-
-  __ bind(runtime);
+  generate_pre_barrier_slow_path(masm, obj, pre_val, thread, tmp, done);
 
   // Determine and save the live input values
   __ push_call_clobbered_registers();
@@ -272,23 +272,23 @@ static void generate_post_barrier(MacroAssembler* masm,
                                   const Register store_addr,
                                   const Register new_val,
                                   const Register tmp1,
-                                  Label& done,
                                   bool new_val_may_be_null) {
 
   assert_different_registers(store_addr, new_val, tmp1, noreg);
 
   Register thread = r15_thread;
 
+  Label L_done;
   // Does store cross heap regions?
   __ movptr(tmp1, store_addr);                                    // tmp1 := store address
   __ xorptr(tmp1, new_val);                                       // tmp1 := store address ^ new value
   __ shrptr(tmp1, G1HeapRegion::LogOfHRGrainBytes);               // ((store address ^ new value) >> LogOfHRGrainBytes) == 0?
-  __ jcc(Assembler::equal, done);
+  __ jccb(Assembler::equal, L_done);
 
   // Crosses regions, storing null?
   if (new_val_may_be_null) {
-    __ cmpptr(new_val, NULL_WORD);                                // new value == null?
-    __ jcc(Assembler::equal, done);
+    __ testptr(new_val, new_val);                                 // new value == null?
+    __ jccb(Assembler::equal, L_done);
   }
 
   __ movptr(tmp1, store_addr);                                    // tmp1 := store address
@@ -298,20 +298,19 @@ static void generate_post_barrier(MacroAssembler* masm,
   __ addptr(tmp1, card_table_addr);                               // tmp1 := card address
   if (UseCondCardMark) {
     __ cmpb(Address(tmp1, 0), G1CardTable::clean_card_val());     // *(card address) == clean_card_val?
-    __ jcc(Assembler::notEqual, done);
+    __ jccb(Assembler::notEqual, L_done);
   }
   // Storing a region crossing, non-null oop, card is clean.
   // Dirty card.
   __ movb(Address(tmp1, 0), G1CardTable::dirty_card_val());       // *(card address) := dirty_card_val
+  __ bind(L_done);
 }
 
 void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
                                                   Register store_addr,
                                                   Register new_val,
                                                   Register tmp) {
-  Label done;
-  generate_post_barrier(masm, store_addr, new_val, tmp, done, true /* new_val_may_be_null */);
-  __ bind(done);
+  generate_post_barrier(masm, store_addr, new_val, tmp, true /* new_val_may_be_null */);
 }
 
 #if defined(COMPILER2)
@@ -354,7 +353,6 @@ void G1BarrierSetAssembler::g1_write_barrier_pre_c2(MacroAssembler* masm,
 void G1BarrierSetAssembler::generate_c2_pre_barrier_stub(MacroAssembler* masm,
                                                          G1PreBarrierStubC2* stub) const {
   Assembler::InlineSkippedInstructionsCounter skip_counter(masm);
-  Label runtime;
   Register obj = stub->obj();
   Register pre_val = stub->pre_val();
   Register thread = stub->thread();
@@ -362,9 +360,8 @@ void G1BarrierSetAssembler::generate_c2_pre_barrier_stub(MacroAssembler* masm,
   assert(stub->tmp2() == noreg, "not needed in this platform");
 
   __ bind(*stub->entry());
-  generate_pre_barrier_slow_path(masm, obj, pre_val, thread, tmp, *stub->continuation(), runtime);
+  generate_pre_barrier_slow_path(masm, obj, pre_val, thread, tmp, *stub->continuation());
 
-  __ bind(runtime);
   generate_c2_barrier_runtime_call(masm, stub, pre_val, CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_pre_entry));
   __ jmp(*stub->continuation());
 }
@@ -374,9 +371,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post_c2(MacroAssembler* masm,
                                                      Register new_val,
                                                      Register tmp,
                                                      bool new_val_may_be_null) {
-  Label done;
-  generate_post_barrier(masm, store_addr, new_val, tmp, done, new_val_may_be_null);
-  __ bind(done);
+  generate_post_barrier(masm, store_addr, new_val, tmp, new_val_may_be_null);
 }
 
 #endif // COMPILER2
@@ -449,7 +444,7 @@ void G1BarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrier
     ce->mem2reg(stub->addr(), stub->pre_val(), T_OBJECT, stub->patch_code(), stub->info(), false /*wide*/);
   }
 
-  __ cmpptr(pre_val_reg, NULL_WORD);
+  __ testptr(pre_val_reg, pre_val_reg);
   __ jcc(Assembler::equal, *stub->continuation());
   ce->store_parameter(stub->pre_val()->as_register(), 0);
   __ call(RuntimeAddress(bs->pre_barrier_c1_runtime_code_blob()->code_begin()));
@@ -465,9 +460,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post_c1(MacroAssembler* masm,
                                                      Register thread,
                                                      Register tmp1,
                                                      Register tmp2 /* unused on x86 */) {
-  Label done;
-  generate_post_barrier(masm, store_addr, new_val, tmp1, done, true /* new_val_may_be_null */);
-  masm->bind(done);
+  generate_post_barrier(masm, store_addr, new_val, tmp1, true /* new_val_may_be_null */);
 }
 
 #define __ sasm->
@@ -490,8 +483,7 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
   Address queue_index(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset()));
   Address buffer(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset()));
 
-  Label done;
-  Label runtime;
+  Label L_done, L_runtime;
 
   // Is marking still active?
   if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
@@ -500,13 +492,13 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
     assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
     __ cmpb(queue_active, 0);
   }
-  __ jcc(Assembler::equal, done);
+  __ jcc(Assembler::equal, L_done);
 
   // Can we store original value in the thread's buffer?
 
   __ movptr(tmp, queue_index);
   __ testptr(tmp, tmp);
-  __ jcc(Assembler::zero, runtime);
+  __ jccb(Assembler::zero, L_runtime);
   __ subptr(tmp, wordSize);
   __ movptr(queue_index, tmp);
   __ addptr(tmp, buffer);
@@ -514,9 +506,9 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
   // prev_val (rax)
   __ load_parameter(0, pre_val);
   __ movptr(Address(tmp, 0), pre_val);
-  __ jmp(done);
+  __ jmp(L_done);
 
-  __ bind(runtime);
+  __ bind(L_runtime);
 
   __ push_call_clobbered_registers();
 
@@ -526,7 +518,7 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
 
   __ pop_call_clobbered_registers();
 
-  __ bind(done);
+  __ bind(L_done);
 
   __ pop_ppx(rdx);
   __ pop_ppx(rax);
