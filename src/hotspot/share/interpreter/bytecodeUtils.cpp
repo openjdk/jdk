@@ -192,9 +192,17 @@ class ExceptionMessageBuilder : public StackObj {
   int do_instruction(int bci);
 
   bool print_NPE_cause0(outputStream *os, int bci, int slot, int max_detail,
-                        bool inner_expr = false, const char *prefix = nullptr);
+                        bool inner_expr, bool because_clause = false);
 
  public:
+  enum class BacktrackNullSlot : int {
+    // This NullPointerException is explicitly constructed
+    NPE_EXPLICIT_CONSTRUCTED = -2,
+    // There cannot be a NullPointerException at the given BCI
+    INVALID_BYTECODE_ENCOUNTERED = -1,
+    // A slot is found
+    FOUND
+  };
 
   // Creates an ExceptionMessageBuilder object and runs the analysis
   // building SimulatedOperandStacks for each bytecode in the given
@@ -214,7 +222,7 @@ class ExceptionMessageBuilder : public StackObj {
   // we return the nr of the slot holding the null reference. If this
   // NPE is created by hand, we return -2 as the slot. If there
   // cannot be a NullPointerException at the bci, -1 is returned.
-  int get_NPE_null_slot(int bci);
+  BacktrackNullSlot get_NPE_null_slot(int bci);
 
   // Prints a java-like expression for the bytecode that pushed
   // the value to the given slot being live at the given bci.
@@ -226,9 +234,10 @@ class ExceptionMessageBuilder : public StackObj {
   //  slot: The slot on the operand stack that contains null.
   //        The slots are numbered from TOS downwards, i.e.,
   //        TOS has the slot number 0, that below 1 and so on.
+  //  because_clause: Whether to prefix with " because ..."
   //
   // Returns false if nothing was printed, else true.
-  bool print_NPE_cause(outputStream *os, int bci, int slot);
+  bool print_NPE_cause(outputStream *os, int bci, int slot, bool because_clause);
 
   // Prints a string describing the failed action.
   void print_NPE_failed_action(outputStream *os, int bci);
@@ -311,7 +320,7 @@ static void print_local_var(outputStream *os, unsigned int bci, Method* method, 
 
       if ((bci >= start) && (bci < end) && (elem->slot == slot)) {
         ConstantPool* cp = method->constants();
-        char *var =  cp->symbol_at(elem->name_cp_index)->as_C_string();
+        char *var = cp->symbol_at(elem->name_cp_index)->as_C_string();
         os->print("%s", var);
 
         return;
@@ -342,6 +351,19 @@ static void print_local_var(outputStream *os, unsigned int bci, Method* method, 
     }
 
     if (found && is_parameter) {
+      // check MethodParameters for a name, if it carries a name
+      int actual_param_index = param_index - 1; // 0 based
+      if (method->has_method_parameters() && actual_param_index < method->method_parameters_length()) {
+        MethodParametersElement elem = method->method_parameters_start()[actual_param_index];
+        if (elem.name_cp_index != 0) {
+          ConstantPool* cp = method->constants();
+          char *var = cp->symbol_at(elem.name_cp_index)->as_C_string();
+          os->print("%s", var);
+          return;
+        }
+      }
+
+      // TODO we should use arg%d forms, 0-based, like core reflection
       os->print("<parameter%d>", param_index);
     } else {
       // This is the best we can do.
@@ -1092,9 +1114,7 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
   return len;
 }
 
-#define INVALID_BYTECODE_ENCOUNTERED -1
-#define NPE_EXPLICIT_CONSTRUCTED -2
-int ExceptionMessageBuilder::get_NPE_null_slot(int bci) {
+ExceptionMessageBuilder::BacktrackNullSlot ExceptionMessageBuilder::get_NPE_null_slot(int bci) {
   // Get the bytecode.
   address code_base = _method->constMethod()->code_base();
   Bytecodes::Code code = Bytecodes::java_code_at(_method, code_base + bci);
@@ -1110,7 +1130,7 @@ int ExceptionMessageBuilder::get_NPE_null_slot(int bci) {
     case Bytecodes::_athrow:
     case Bytecodes::_monitorenter:
     case Bytecodes::_monitorexit:
-      return 0;
+      return static_cast<BacktrackNullSlot>(0);
     case Bytecodes::_iaload:
     case Bytecodes::_faload:
     case Bytecodes::_aaload:
@@ -1119,17 +1139,17 @@ int ExceptionMessageBuilder::get_NPE_null_slot(int bci) {
     case Bytecodes::_saload:
     case Bytecodes::_laload:
     case Bytecodes::_daload:
-      return 1;
+      return static_cast<BacktrackNullSlot>(1);
     case Bytecodes::_iastore:
     case Bytecodes::_fastore:
     case Bytecodes::_aastore:
     case Bytecodes::_bastore:
     case Bytecodes::_castore:
     case Bytecodes::_sastore:
-      return 2;
+      return static_cast<BacktrackNullSlot>(2);
     case Bytecodes::_lastore:
     case Bytecodes::_dastore:
-      return 3;
+      return static_cast<BacktrackNullSlot>(3);
     case Bytecodes::_putfield: {
         int cp_index = Bytes::get_native_u2(code_base + pos);
         ConstantPool* cp = _method->constants();
@@ -1137,7 +1157,7 @@ int ExceptionMessageBuilder::get_NPE_null_slot(int bci) {
         int type_index = cp->signature_ref_index_at(name_and_type_index);
         Symbol* signature = cp->symbol_at(type_index);
         BasicType bt = Signature::basic_type(signature);
-        return type2size[bt];
+        return static_cast<BacktrackNullSlot>(type2size[bt]);
       }
     case Bytecodes::_invokevirtual:
     case Bytecodes::_invokespecial:
@@ -1155,9 +1175,9 @@ int ExceptionMessageBuilder::get_NPE_null_slot(int bci) {
           int     type_index = cp->signature_ref_index_at(name_and_type_index);
           Symbol* signature  = cp->symbol_at(type_index);
           // The 'this' parameter was null. Return the slot of it.
-          return ArgumentSizeComputer(signature).size();
+          return static_cast<BacktrackNullSlot>(ArgumentSizeComputer(signature).size());
         } else {
-          return NPE_EXPLICIT_CONSTRUCTED;
+          return BacktrackNullSlot::NPE_EXPLICIT_CONSTRUCTED;
         }
       }
 
@@ -1165,11 +1185,11 @@ int ExceptionMessageBuilder::get_NPE_null_slot(int bci) {
       break;
   }
 
-  return INVALID_BYTECODE_ENCOUNTERED;
+  return BacktrackNullSlot::INVALID_BYTECODE_ENCOUNTERED;
 }
 
-bool ExceptionMessageBuilder::print_NPE_cause(outputStream* os, int bci, int slot) {
-  if (print_NPE_cause0(os, bci, slot, _max_cause_detail, false, " because \"")) {
+bool ExceptionMessageBuilder::print_NPE_cause(outputStream* os, int bci, int slot, bool because_clause) {
+  if (print_NPE_cause0(os, bci, slot, _max_cause_detail, false, because_clause)) {
     os->print("\" is null");
     return true;
   }
@@ -1182,8 +1202,8 @@ bool ExceptionMessageBuilder::print_NPE_cause(outputStream* os, int bci, int slo
 // at bytecode 'bci'. Compute a message for that bytecode. If
 // necessary (array, field), recur further.
 // At most do max_detail recursions.
-// Prefix is used to print a proper beginning of the whole
-// sentence.
+// because_clause is used to print a "because" prefix when this is
+// not inner_expr ()
 // inner_expr is used to omit some text, like 'static' in
 // inner expressions like array subscripts.
 //
@@ -1191,7 +1211,7 @@ bool ExceptionMessageBuilder::print_NPE_cause(outputStream* os, int bci, int slo
 //
 bool ExceptionMessageBuilder::print_NPE_cause0(outputStream* os, int bci, int slot,
                                                int max_detail,
-                                               bool inner_expr, const char *prefix) {
+                                               bool inner_expr, bool because_clause) {
   assert(bci >= 0, "BCI too low");
   assert(bci < get_size(), "BCI too large");
 
@@ -1227,12 +1247,16 @@ bool ExceptionMessageBuilder::print_NPE_cause0(outputStream* os, int bci, int sl
   }
 
   if (max_detail == _max_cause_detail &&
-      prefix != nullptr &&
+      !inner_expr &&
       code != Bytecodes::_invokevirtual &&
       code != Bytecodes::_invokespecial &&
       code != Bytecodes::_invokestatic &&
       code != Bytecodes::_invokeinterface) {
-    os->print("%s", prefix);
+    if (because_clause) {
+      os->print(" because \"");
+    } else {
+      os->print("\"");
+    }
   }
 
   switch (code) {
@@ -1347,7 +1371,12 @@ bool ExceptionMessageBuilder::print_NPE_cause0(outputStream* os, int bci, int sl
     case Bytecodes::_invokeinterface: {
       int cp_index = Bytes::get_native_u2(code_base + pos);
       if (max_detail == _max_cause_detail && !inner_expr) {
-        os->print(" because the return value of \"");
+        if (because_clause) {
+          os->print(" because t");
+        } else {
+          os->print("T");
+        }
+        os->print("he return value of \"");
       }
       print_method_name(os, _method, cp_index, code);
       return true;
@@ -1440,7 +1469,7 @@ void ExceptionMessageBuilder::print_NPE_failed_action(outputStream *os, int bci)
 }
 
 // Main API
-bool BytecodeUtils::get_NPE_message_at(outputStream* ss, Method* method, int bci) {
+bool BytecodeUtils::get_NPE_message_at(outputStream* ss, Method* method, int bci, NullSlot slot) {
 
   NoSafepointVerifier _nsv;   // Cannot use this object over a safepoint.
 
@@ -1454,15 +1483,22 @@ bool BytecodeUtils::get_NPE_message_at(outputStream* ss, Method* method, int bci
   ResourceMark rm;
   ExceptionMessageBuilder emb(method, bci);
 
+  // Is an explicit slot given?
+  if (slot != NullSlot::SEARCH) {
+    // Search from the given slot in bci in Method.
+    // Omit the failed action.
+    return emb.print_NPE_cause(ss, bci, static_cast<int>(slot), false);
+  }
+
   // The slot of the operand stack that contains the null reference.
   // Also checks for NPE explicitly constructed and returns NPE_EXPLICIT_CONSTRUCTED.
-  int slot = emb.get_NPE_null_slot(bci);
+  ExceptionMessageBuilder::BacktrackNullSlot backtrackSlot = emb.get_NPE_null_slot(bci);
 
   // Build the message.
-  if (slot == NPE_EXPLICIT_CONSTRUCTED) {
+  if (backtrackSlot == ExceptionMessageBuilder::BacktrackNullSlot::NPE_EXPLICIT_CONSTRUCTED) {
     // We don't want to print a message.
     return false;
-  } else if (slot == INVALID_BYTECODE_ENCOUNTERED) {
+  } else if (backtrackSlot == ExceptionMessageBuilder::BacktrackNullSlot::INVALID_BYTECODE_ENCOUNTERED) {
     // We encountered a bytecode that does not dereference a reference.
     DEBUG_ONLY(ss->print("There cannot be a NullPointerException at bci %d of method %s",
                          bci, method->external_name()));
@@ -1472,7 +1508,7 @@ bool BytecodeUtils::get_NPE_message_at(outputStream* ss, Method* method, int bci
     // performed because of the null reference.
     emb.print_NPE_failed_action(ss, bci);
     // Print a description of what is null.
-    if (!emb.print_NPE_cause(ss, bci, slot)) {
+    if (!emb.print_NPE_cause(ss, bci, static_cast<int>(backtrackSlot), true)) {
       // Nothing was printed. End the sentence without the 'because'
       // subordinate sentence.
     }
