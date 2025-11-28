@@ -196,7 +196,7 @@ void GenericWaitBarrier::Cell::disarm(int32_t expected_tag) {
       sp.wait();
     }
   }
-  assert(_outstanding_wakeups.load_acquire() == 0, "Post disarm: Should not have outstanding wakeups");
+  assert(_outstanding_wakeups.load_relaxed() == 0, "Post disarm: Should not have outstanding wakeups");
 }
 
 void GenericWaitBarrier::Cell::wait(int32_t expected_tag) {
