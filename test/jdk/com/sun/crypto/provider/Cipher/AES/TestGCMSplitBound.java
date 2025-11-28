@@ -130,8 +130,8 @@ public class TestGCMSplitBound {
             try {
                 encryptAndDecrypt(key, aad, message, messageSize);
             } catch (Exception e) {
-                throw new RuntimeException("Failed for messageSize " +
-                    Integer.toHexString(messageSize), e);
+                throw new RuntimeException("Failed for messageSize "
+                        + Integer.toHexString(messageSize), e);
             }
         }
     }
