@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ public abstract class LocaleNameProvider extends LocaleServiceProvider {
 
     /**
      * Returns a localized name for the given
-     * <a href="../Locale.html#def_locale_extension">Unicode extension</a> key,
+     * {@linkplain Locale##def_locale_extension Unicode extension} key,
      * and the given locale that is appropriate for display to the user.
      * If the name returned cannot be localized according to {@code locale},
      * this method returns null.
@@ -169,7 +169,7 @@ public abstract class LocaleNameProvider extends LocaleServiceProvider {
 
     /**
      * Returns a localized name for the given
-     * <a href="../Locale.html#def_locale_extension">Unicode extension</a> type,
+     * {@linkplain Locale##def_locale_extension Unicode extension} type,
      * and the given locale that is appropriate for display to the user.
      * If the name returned cannot be localized according to {@code locale},
      * this method returns null.

@@ -48,13 +48,11 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/modRefBarrierSet.hpp"
 #include "gc/shared/oopStorageSet.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/space.hpp"
-#include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/universe.hpp"
@@ -483,11 +481,7 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
   ref_processor()->start_discovery(clear_all_softrefs);
 
   {
-    StrongRootsScope srs(0);
-
-    MarkingNMethodClosure mark_code_closure(&follow_root_closure,
-                                            !NMethodToOopClosure::FixRelocations,
-                                            true);
+    GCTraceTime(Debug, gc, phases) tm_m("Marking From Roots", gc_timer());
 
     // Start tracing from roots, there are 3 kinds of roots in full-gc.
     //
@@ -496,8 +490,13 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
     // strong CLDs.
     ClassLoaderDataGraph::always_strong_cld_do(&follow_cld_closure);
 
-    // 2. Threads stack frames and active nmethods in them.
-    Threads::oops_do(&follow_root_closure, &mark_code_closure);
+    {
+      // 2. Threads stack frames and active nmethods in them.
+      NMethodMarkingScope nmethod_marking_scope;
+      MarkingNMethodClosure mark_code_closure(&follow_root_closure);
+
+      Threads::oops_do(&follow_root_closure, &mark_code_closure);
+    }
 
     // 3. VM internal roots.
     OopStorageSet::strong_oops_do(&follow_root_closure);
@@ -705,6 +704,16 @@ void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
 
   allocate_stacks();
 
+  // Usually, all class unloading work occurs at the end of phase 1, but Serial
+  // full-gc accesses dead-objs' klass to find out the start of next live-obj
+  // during phase 2. This requires klasses of dead-objs to be kept loaded.
+  // Therefore, we declare ClassUnloadingContext at the same level as
+  // full-gc phases, and purge dead classes (invoking
+  // ClassLoaderDataGraph::purge) after all phases of full-gc.
+  ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
+                            false /* unregister_nmethods_during_purge */,
+                            false /* lock_nmethod_free_separately */);
+
   phase1_mark(clear_all_softrefs);
 
   Compacter compacter{gch};
@@ -754,6 +763,13 @@ void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
 
     compacter.phase4_compact();
   }
+
+  // Delete metaspaces for unloaded class loaders and clean up CLDG.
+  ClassLoaderDataGraph::purge(true /* at_safepoint */);
+  DEBUG_ONLY(MetaspaceUtils::verify();)
+
+  // Need to clear claim bits for the next full-gc (specifically phase 1 and 3).
+  ClassLoaderDataGraph::clear_claimed_marks();
 
   restore_marks();
 

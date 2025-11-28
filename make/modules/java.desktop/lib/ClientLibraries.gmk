@@ -51,7 +51,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBMLIB_IMAGE, \
         $(LIBMLIB_IMAGE_CFLAGS), \
     DISABLED_WARNINGS_gcc := unused-function, \
     DISABLED_WARNINGS_clang_mlib_ImageCreate.c := unused-function, \
-    LIBS_unix := $(LIBDL) $(LIBM), \
+    LIBS_unix := $(LIBM), \
 ))
 
 TARGETS += $(BUILD_LIBMLIB_IMAGE)
@@ -177,7 +177,8 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
   endif
 
   LIBSPLASHSCREEN_CFLAGS += -DSPLASHSCREEN -DPNG_NO_MMX_CODE \
-      -DPNG_ARM_NEON_OPT=0 -DPNG_ARM_NEON_IMPLEMENTATION=0
+      -DPNG_ARM_NEON_OPT=0 -DPNG_ARM_NEON_IMPLEMENTATION=0 \
+      -DPNG_LOONGARCH_LSX_OPT=0
 
   ifeq ($(call isTargetOs, linux)+$(call isTargetCpuArch, ppc), true+true)
     LIBSPLASHSCREEN_CFLAGS += -DPNG_POWERPC_VSX_OPT=0
@@ -225,6 +226,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       EXCLUDE_FILES := imageioJPEG.c jpegdecoder.c pngtest.c, \
       EXCLUDES := $(LIBSPLASHSCREEN_EXCLUDES), \
       OPTIMIZATION := SIZE, \
+      LINK_TIME_OPTIMIZATION := true, \
       CFLAGS := $(LIBSPLASHSCREEN_CFLAGS) \
           $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS) \
           $(ICONV_CFLAGS), \
@@ -263,7 +265,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       JDK_LIBS_macosx := libosxapp, \
       LIBS := $(GIFLIB_LIBS) $(LIBJPEG_LIBS) $(LIBZ_LIBS) $(PNG_LIBS) $(ICONV_LIBS), \
       LIBS_unix := $(LIBM) $(LIBPTHREAD), \
-      LIBS_linux := $(LIBDL) $(X_LIBS) -lX11 -lXext, \
+      LIBS_linux := $(X_LIBS) -lX11 -lXext, \
       LIBS_macosx := \
           -framework ApplicationServices \
           -framework Cocoa \

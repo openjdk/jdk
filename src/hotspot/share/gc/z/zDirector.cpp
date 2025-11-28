@@ -21,6 +21,7 @@
  * questions.
  */
 
+#include "cppstdlib/limits.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zDirector.hpp"
@@ -31,8 +32,7 @@
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zStat.hpp"
 #include "logging/log.hpp"
-
-#include <limits>
+#include "runtime/init.hpp"
 
 ZDirector* ZDirector::_director;
 
@@ -302,12 +302,11 @@ static bool is_young_small(const ZDirectorStats& stats) {
 
   // If the freeable memory isn't even 5% of the heap, we can't expect to free up
   // all that much memory, so let's not even try - it will likely be a wasted effort
-  // that takes away CPU power to the hopefullt more profitable major colelction.
+  // that takes away CPU power to the hopefully more profitable major collection.
   return young_used_percent <= 5.0;
 }
 
-template <typename PrintFn = void(*)(size_t, double)>
-static bool is_high_usage(const ZDirectorStats& stats, PrintFn* print_function = nullptr) {
+static bool is_high_usage(const ZDirectorStats& stats, bool log = false) {
   // Calculate amount of free memory available. Note that we take the
   // relocation headroom into account to avoid in-place relocation.
   const size_t soft_max_capacity = stats._heap._soft_max_heap_size;
@@ -316,8 +315,9 @@ static bool is_high_usage(const ZDirectorStats& stats, PrintFn* print_function =
   const size_t free = free_including_headroom - MIN2(free_including_headroom, ZHeuristics::relocation_headroom());
   const double free_percent = percent_of(free, soft_max_capacity);
 
-  if (print_function != nullptr) {
-    (*print_function)(free, free_percent);
+  if (log) {
+    log_debug(gc, director)("Rule Minor: High Usage, Free: %zuMB(%.1f%%)",
+                            free / M, free_percent);
   }
 
   // The heap has high usage if there is less than 5% free memory left
@@ -377,19 +377,7 @@ static bool rule_minor_high_usage(const ZDirectorStats& stats) {
   // such that the allocation rate rule doesn't trigger, but the amount of free
   // memory is still slowly but surely heading towards zero. In this situation,
   // we start a GC cycle to avoid a potential allocation stall later.
-
-  const size_t soft_max_capacity = stats._heap._soft_max_heap_size;
-  const size_t used = stats._heap._used;
-  const size_t free_including_headroom = soft_max_capacity - MIN2(soft_max_capacity, used);
-  const size_t free = free_including_headroom - MIN2(free_including_headroom, ZHeuristics::relocation_headroom());
-  const double free_percent = percent_of(free, soft_max_capacity);
-
-  auto print_function = [&](size_t free, double free_percent) {
-    log_debug(gc, director)("Rule Minor: High Usage, Free: %zuMB(%.1f%%)",
-                            free / M, free_percent);
-  };
-
-  return is_high_usage(stats, &print_function);
+  return is_high_usage(stats, true /* log */);
 }
 
 // Major GC rules
@@ -725,8 +713,8 @@ static ZWorkerCounts select_worker_threads(const ZDirectorStats& stats, uint you
       // Adjust down the old workers so the next minor during major will be less sad
       old_workers = old_workers_clamped;
       // Since collecting the old generation depends on the initial young collection
-      // finishing, we don't want it to have fewer workers than the old generation.
-      young_workers = MAX2(old_workers, young_workers);
+      // finishing, we ideally don't want it to have fewer workers than the old generation.
+      young_workers = clamp(MAX2(old_workers, young_workers), 1u, ZYoungGCThreads);
     } else if (type == ZWorkerSelectionType::minor_during_old) {
       // Adjust young and old workers for minor during old to fit within ConcGCThreads
       young_workers = young_workers_clamped;
@@ -929,6 +917,12 @@ void ZDirector::run_thread() {
   // Main loop
   while (wait_for_tick()) {
     ZDirectorStats stats = sample_stats();
+
+    if (!is_init_completed()) {
+      // Not allowed to start GCs yet
+      continue;
+    }
+
     if (!start_gc(stats)) {
       adjust_gc(stats);
     }
