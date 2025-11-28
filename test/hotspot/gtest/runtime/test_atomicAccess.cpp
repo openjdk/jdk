@@ -141,7 +141,6 @@ TEST_VM(AtomicAccessCmpxchgTest, int32) {
 }
 
 TEST_VM(AtomicAccessCmpxchgTest, int64) {
-  // Check if 64-bit atomics are available on the machine.
   using Support = AtomicAccessCmpxchgTestSupport<int64_t>;
   Support().test();
 }
