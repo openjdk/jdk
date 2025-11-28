@@ -159,9 +159,7 @@ physical_memory_size_type os::Linux::_physical_memory = 0;
 address   os::Linux::_initial_thread_stack_bottom = nullptr;
 uintptr_t os::Linux::_initial_thread_stack_size   = 0;
 
-int (*os::Linux::_pthread_getcpuclockid)(pthread_t, clockid_t *) = nullptr;
 pthread_t os::Linux::_main_thread;
-bool os::Linux::_supports_fast_thread_cpu_time = false;
 const char * os::Linux::_libc_version = nullptr;
 const char * os::Linux::_libpthread_version = nullptr;
 
@@ -1474,29 +1472,6 @@ void os::Linux::capture_initial_stack(size_t max_size) {
 
 ////////////////////////////////////////////////////////////////////////////////
 // time support
-
-void os::Linux::fast_thread_clock_init() {
-  clockid_t clockid;
-  struct timespec tp;
-  int (*pthread_getcpuclockid_func)(pthread_t, clockid_t *) =
-      (int(*)(pthread_t, clockid_t *)) dlsym(RTLD_DEFAULT, "pthread_getcpuclockid");
-
-  // Switch to using fast clocks for thread cpu time if
-  // the clock_getres() returns 0 error code.
-  // Note, that some kernels may support the current thread
-  // clock (CLOCK_THREAD_CPUTIME_ID) but not the clocks
-  // returned by the pthread_getcpuclockid().
-  // If the fast POSIX clocks are supported then the clock_getres()
-  // must return at least tp.tv_sec == 0 which means a resolution
-  // better than 1 sec. This is extra check for reliability.
-
-  if (pthread_getcpuclockid_func &&
-      pthread_getcpuclockid_func(_main_thread, &clockid) == 0 &&
-      clock_getres(clockid, &tp) == 0 && tp.tv_sec == 0) {
-    _supports_fast_thread_cpu_time = true;
-    _pthread_getcpuclockid = pthread_getcpuclockid_func;
-  }
-}
 
 // thread_id is kernel thread id (similar to Solaris LWP id)
 intx os::current_thread_id() { return os::Linux::gettid(); }
@@ -4328,7 +4303,7 @@ OSReturn os::get_native_priority(const Thread* const thread,
 // For reference, please, see IEEE Std 1003.1-2004:
 //   http://www.unix.org/single_unix_specification
 
-jlong os::Linux::fast_thread_cpu_time(clockid_t clockid) {
+jlong os::Linux::total_thread_cpu_time(clockid_t clockid) {
   struct timespec tp;
   int status = clock_gettime(clockid, &tp);
   assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
@@ -4555,8 +4530,6 @@ jint os::init_2(void) {
   DEBUG_ONLY(os::set_mutex_init_done();)
 
   os::Posix::init_2();
-
-  Linux::fast_thread_clock_init();
 
   if (PosixSignals::init() == JNI_ERR) {
     return JNI_ERR;
@@ -4985,14 +4958,14 @@ int os::open(const char *path, int oflag, int mode) {
   return fd;
 }
 
-static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time);
+static jlong user_thread_cpu_time(Thread *thread);
 
-static jlong fast_cpu_time(Thread *thread) {
+static jlong total_thread_cpu_time(Thread *thread) {
     clockid_t clockid;
-    int rc = os::Linux::pthread_getcpuclockid(thread->osthread()->pthread_id(),
+    int rc = pthread_getcpuclockid(thread->osthread()->pthread_id(),
                                               &clockid);
     if (rc == 0) {
-      return os::Linux::fast_thread_cpu_time(clockid);
+      return os::Linux::total_thread_cpu_time(clockid);
     } else {
       // It's possible to encounter a terminated native thread that failed
       // to detach itself from the VM - which should result in ESRCH.
@@ -5009,41 +4982,31 @@ static jlong fast_cpu_time(Thread *thread) {
 // the fast estimate available on the platform.
 
 jlong os::current_thread_cpu_time() {
-  if (os::Linux::supports_fast_thread_cpu_time()) {
-    return os::Linux::fast_thread_cpu_time(CLOCK_THREAD_CPUTIME_ID);
-  } else {
-    // return user + sys since the cost is the same
-    return slow_thread_cpu_time(Thread::current(), true /* user + sys */);
-  }
+  return os::Linux::total_thread_cpu_time(CLOCK_THREAD_CPUTIME_ID);
 }
 
 jlong os::thread_cpu_time(Thread* thread) {
-  // consistent with what current_thread_cpu_time() returns
-  if (os::Linux::supports_fast_thread_cpu_time()) {
-    return fast_cpu_time(thread);
-  } else {
-    return slow_thread_cpu_time(thread, true /* user + sys */);
-  }
+  return total_thread_cpu_time(thread);
 }
 
 jlong os::current_thread_cpu_time(bool user_sys_cpu_time) {
-  if (user_sys_cpu_time && os::Linux::supports_fast_thread_cpu_time()) {
-    return os::Linux::fast_thread_cpu_time(CLOCK_THREAD_CPUTIME_ID);
+  if (user_sys_cpu_time) {
+    return os::Linux::total_thread_cpu_time(CLOCK_THREAD_CPUTIME_ID);
   } else {
-    return slow_thread_cpu_time(Thread::current(), user_sys_cpu_time);
+    return user_thread_cpu_time(Thread::current());
   }
 }
 
 jlong os::thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
-  if (user_sys_cpu_time && os::Linux::supports_fast_thread_cpu_time()) {
-    return fast_cpu_time(thread);
+  if (user_sys_cpu_time) {
+    return total_thread_cpu_time(thread);
   } else {
-    return slow_thread_cpu_time(thread, user_sys_cpu_time);
+    return user_thread_cpu_time(thread);
   }
 }
 
 //  -1 on error.
-static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
+static jlong user_thread_cpu_time(Thread *thread) {
   pid_t  tid = thread->osthread()->thread_id();
   char *s;
   char stat[2048];
@@ -5080,11 +5043,8 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
                  &ldummy, &ldummy, &ldummy, &ldummy, &ldummy,
                  &user_time, &sys_time);
   if (count != 13) return -1;
-  if (user_sys_cpu_time) {
-    return ((jlong)sys_time + (jlong)user_time) * (1000000000 / os::Posix::clock_tics_per_second());
-  } else {
-    return (jlong)user_time * (1000000000 / os::Posix::clock_tics_per_second());
-  }
+
+  return (jlong)user_time * (1000000000 / os::Posix::clock_tics_per_second());
 }
 
 void os::current_thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
