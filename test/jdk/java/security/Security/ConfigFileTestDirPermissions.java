@@ -44,9 +44,18 @@ import java.util.List;
  */
 
 public class ConfigFileTestDirPermissions {
+    private static AutoCloseable restrictedAcl(Path path) throws IOException {
+        AclFileAttributeView view =
+                Files.getFileAttributeView(path, AclFileAttributeView.class);
+        List<AclEntry> originalAcl = List.copyOf(view.getAcl());
+        view.setAcl(List.of(AclEntry.newBuilder().setType(AclEntryType.DENY)
+                .setPrincipal(Files.getOwner(path)).build()));
+        return () -> view.setAcl(originalAcl);
+    }
+
     public static void main(String[] args) throws Exception {
         Path temp = Files.createTempDirectory("JDK-8352728-tmp-");
-        try {
+        try (AutoCloseable a1 = () -> FileUtils.deleteFileTreeUnchecked(temp)) {
             // Copy the jdk to a different directory
             Path originalJdk = Path.of(System.getProperty("test.jdk"));
             Path jdk = temp.resolve("jdk-parent-dir", "jdk");
@@ -54,14 +63,7 @@ public class ConfigFileTestDirPermissions {
             FileUtils.copyDirectory(originalJdk, jdk);
 
             // Remove current user permissions from jdk-parent-dir
-            Path parent = jdk.getParent();
-            AclFileAttributeView view = Files.getFileAttributeView(parent,
-                    AclFileAttributeView.class);
-            List<AclEntry> originalAcl = List.copyOf(view.getAcl());
-            view.setAcl(List.of(AclEntry.newBuilder().setType(AclEntryType.DENY)
-                    .setPrincipal(Files.getOwner(parent)).build()));
-
-            try {
+            try (AutoCloseable a2 = restrictedAcl(jdk.getParent())) {
                 // Make sure the permissions are affecting the current user
                 try {
                     jdk.toRealPath();
@@ -75,13 +77,8 @@ public class ConfigFileTestDirPermissions {
                                 "-Djava.security.debug=properties",
                                 "-XshowSettings:security:properties",
                                 "-version"))).shouldHaveExitValue(0);
-            } finally {
-                view.setAcl(originalAcl);
             }
-        } finally {
-            FileUtils.deleteFileTreeUnchecked(temp);
         }
-
         System.out.println("TEST PASS - OK");
     }
 }
