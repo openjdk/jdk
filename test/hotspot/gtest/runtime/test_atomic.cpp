@@ -290,7 +290,6 @@ TEST_VM(AtomicEnumTest, scoped_enum) {
 enum class AtomicEnumTestScoped64Bit : uint64_t { A, B, C };
 
 TEST_VM(AtomicEnumTest, scoped_enum_64_bit) {
-  // Check if 64-bit atomics are available on the machine.
   const AtomicEnumTestScoped64Bit B = AtomicEnumTestScoped64Bit::B;
   const AtomicEnumTestScoped64Bit C = AtomicEnumTestScoped64Bit::C;
   AtomicTestSupport<AtomicEnumTestScoped64Bit>::test<B, C>();
