@@ -942,25 +942,25 @@ void MacroAssembler::emit_static_call_stub() {
   // CompiledDirectCall::set_to_interpreted knows the
   // exact layout of this stub.
 
+  isb();
+  mov_metadata(rmethod, nullptr);
+
   // Jump to the entry point of the c2i stub.
-  const int stub_start_offset = offset();
-  Label far_jump_metadata, far_jump_entry;
-  ldr(rmethod, far_jump_metadata);
-  ldr(rscratch1, far_jump_entry);
-  br(rscratch1);
-  bind(far_jump_metadata);
-  assert(offset() - stub_start_offset == NativeStaticCallStub::far_jump_metadata_offset,
-         "should be");
-  emit_int64(0);
-  bind(far_jump_entry);
-  assert(offset() - stub_start_offset == NativeStaticCallStub::far_jump_entrypoint_offset,
-         "should be");
-  emit_int64(0);
+  if (codestub_branch_needs_far_jump()) {
+    movptr(rscratch1, 0);
+    br(rscratch1);
+  } else {
+    b(pc());
+  }
 }
 
 int MacroAssembler::static_call_stub_size() {
-  // ldr; ldr; br; zero; zero; zero; zero;
-  return 7 * NativeInstruction::instruction_size;
+  if (!codestub_branch_needs_far_jump()) {
+    // isb; movk; movz; movz; b
+    return 5 * NativeInstruction::instruction_size;
+  }
+  // isb; movk; movz; movz; movk; movz; movz; br
+  return 8 * NativeInstruction::instruction_size;
 }
 
 void MacroAssembler::c2bool(Register x) {

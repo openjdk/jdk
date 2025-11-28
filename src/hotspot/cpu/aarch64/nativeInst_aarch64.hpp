@@ -44,7 +44,6 @@
 // - - - NativeGeneralJump
 // - - NativeIllegalInstruction
 // - - NativeCallTrampolineStub
-// - - NativeStaticCallStub
 // - - NativeMembar
 // - - NativeLdSt
 // - - NativePostCallNop
@@ -95,14 +94,12 @@ protected:
   juint uint_at(int offset) const { return *(juint*)addr_at(offset); }
   address ptr_at(int offset) const { return *(address*)addr_at(offset); }
   oop oop_at(int offset) const { return *(oop*)addr_at(offset); }
-  intptr_t intptr_at(int offset) const { return *(intptr_t*)addr_at(offset); }
 
   void set_char_at(int offset, char c) { *addr_at(offset) = (u_char)c; }
   void set_int_at(int offset, jint i) { *(jint*)addr_at(offset) = i; }
   void set_uint_at(int offset, jint i) { *(juint*)addr_at(offset) = i; }
   void set_ptr_at(int offset, address ptr) { *(address*)addr_at(offset) = ptr; }
   void set_oop_at(int offset, oop o) { *(oop*)addr_at(offset) = o; }
-  void set_intptr_at(int offset, intptr_t iptr) { *(intptr_t*)addr_at(offset) = iptr; }
 
   void wrote(int offset);
 
@@ -454,27 +451,6 @@ inline bool is_NativeCallTrampolineStub_at(address addr) {
 inline NativeCallTrampolineStub* nativeCallTrampolineStub_at(address addr) {
   assert(is_NativeCallTrampolineStub_at(addr), "no call trampoline found");
   return (NativeCallTrampolineStub*)addr;
-}
-
-// Static call stubs.
-class NativeStaticCallStub : public NativeInstruction {
-public:
-
-  enum AArch64_specific_constants {
-    far_jump_metadata_offset      =   3 * 4,
-    far_jump_entrypoint_offset    =   5 * 4
-  };
-
-  void set_metadata_and_destination(intptr_t callee, address entry);
-  void verify_static_stub(const methodHandle& callee, address entry) PRODUCT_RETURN;
-  void verify_instruction_sequence();
-  inline friend NativeStaticCallStub* NativeStaticCallStub_at(address addr);
-};
-
-inline NativeStaticCallStub* NativeStaticCallStub_at(address addr) {
-  NativeStaticCallStub* test = (NativeStaticCallStub*)addr;
-  DEBUG_ONLY(test->verify_instruction_sequence());
-  return test;
 }
 
 class NativeMembar : public NativeInstruction {

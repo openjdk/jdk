@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,8 +226,6 @@ private:
   static void set_stub_to_clean(static_stub_Relocation* static_stub);
 
   // Misc.
-  static void verify_mt_safe_helper(const methodHandle& callee, address entry,
-                                    intptr_t metadata, address destination) PRODUCT_RETURN;
   void print()  PRODUCT_RETURN;
   void verify() PRODUCT_RETURN;
 };

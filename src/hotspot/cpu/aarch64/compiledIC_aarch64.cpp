@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2018, Red Hat Inc. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +79,7 @@ int CompiledDirectCall::to_trampoline_stub_size() {
 
 // Relocation entries for call stub, compiled java to interpreter.
 int CompiledDirectCall::reloc_to_interp_stub() {
-  return 3; // 2 in emit_to_interp_stub + 1 in emit_call
+  return 4; // 3 in emit_to_interp_stub + 1 in emit_call
 }
 
 void CompiledDirectCall::set_to_interpreted(const methodHandle& callee, address entry) {
@@ -86,12 +87,91 @@ void CompiledDirectCall::set_to_interpreted(const methodHandle& callee, address 
   guarantee(stub != nullptr, "stub not found");
 
   // Creation also verifies the object.
-  NativeStaticCallStub* stub_holder = NativeStaticCallStub_at(stub);
+  NativeMovConstReg* method_holder
+    = nativeMovConstReg_at(stub + NativeInstruction::instruction_size);
+
 #ifdef ASSERT
-  _call->verify();
-  stub_holder->verify_static_stub(callee, entry);
+  NativeJump* jump = MacroAssembler::codestub_branch_needs_far_jump()
+                         ? nativeGeneralJump_at(method_holder->next_instruction_address())
+                         : nativeJump_at(method_holder->next_instruction_address());
+  verify_mt_safe(callee, entry, method_holder, jump);
 #endif
-  stub_holder->set_metadata_and_destination((intptr_t)callee(), entry);
+
+  // Update stub.
+  method_holder->set_data((intptr_t)callee());
+  MacroAssembler::pd_patch_instruction(method_holder->next_instruction_address(), entry);
+  ICache::invalidate_range(stub, to_interp_stub_size());
+
+  // If the executing thread observes the updated direct branch at a call site,
+  // it is guaranteed to also observe the updated instructions in the static call
+  // stub, provided the stub is entered only via the direct jump.
+  //
+  // AArch64 stub_via_BL
+  // {
+  // 0:X0=instr:"MOV w0, #2";
+  // 0:X1=instr:"BL .+16";
+  // 0:X10=P1:new;
+  // 0:X11=P1:L0;
+  // }
+  //
+  // P0              |  P1            ;
+  // STR W0, [X10]   |L0:             ;
+  // DC CVAU, X10    |  BL old        ;
+  // DSB ISH         |  B end         ;
+  // IC IVAU, X10    |old:            ;
+  // DSB ISH         |  MOV w0, #0    ;
+  //                 |  RET           ;
+  // STR W1, [X11]   |new:            ;
+  //                 |  MOV w0, #1    ;
+  //                 |  RET           ;
+  //                 |end:            ;
+  // forall(1:X0=0 \/ 1:X0=2)
+  //
+  // However, the static call stub can also be reached via an indirect branch
+  // from the trampoline stub. In that case, the above guarantee does not apply,
+  // so directly removing the 'isb' would not ensure visibility of the updated
+  // instructions when the static call stub is reached through the trampoline stub.
+  //
+  // To ensure correctness, we patch 'isb' to 'nop'. Before doing so, we already update
+  // the 'MOV' instructions and enforce coherence between data writes and
+  // instruction fetches within the same shareability domain by invoking
+  // ICache::invalidate_range(). As confirmed by the litmus test below, when the
+  // executing thread reaches the static call stub:
+  //   - If it observes the 'nop', it will also observe the updated 'MOV's (similarly
+  //     to the case above where the thread reaches patched code via a patched direct
+  //     branch).
+  //   - Otherwise, it will execute the 'isb' - the instruction fetch ensures the
+  //     updated 'MOV's are observed.
+  //
+  // AArch64 stub_via_BR
+  // {
+  // [target] = P1:old;
+  //
+  //                               1:X0 = 0;
+  // 0:X1 = instr:"MOV X0, #3";
+  // 0:X2 = instr:"nop";
+  // 0:X3 = target;                1:X3 = target;
+  // 0:X4 = P1:new;
+  // 0:X5 = P1:patch;
+  // }
+  //
+  // P0                          | P1                        ;
+  // STR W1, [X5]                |  LDR X2, [X3]             ;
+  // DC CVAU, X5                 |  BR X2                    ;
+  // DSB ISH                     |new:                       ;
+  // IC IVAU, X5                 |  ISB                      ;
+  // DSB ISH                     |patch:                     ;
+  // STR W2, [X4]                |  MOV X0, #2               ;
+  // STR X4, [X3]                |  B end                    ;
+  //                             |old:                       ;
+  //                             |  MOV X0, #1               ;
+  //                             |  B end                    ;
+  //                             |end:                       ;
+  // forall (1:X0=1 \/ 1:X0=3)
+  CodeBuffer stub_first_instruction(stub, Assembler::instruction_size);
+  Assembler assembler(&stub_first_instruction);
+  assembler.nop();
+
   // Update jump to call.
   set_destination_mt_safe(stub);
 }
@@ -101,9 +181,16 @@ void CompiledDirectCall::set_stub_to_clean(static_stub_Relocation* static_stub) 
   address stub = static_stub->addr();
   assert(stub != nullptr, "stub not found");
   assert(CompiledICLocker::is_safe(stub), "mt unsafe call");
+  // Patch 'nop' to 'isb'.
+  CodeBuffer stub_first_instruction(stub, Assembler::instruction_size);
+  Assembler assembler(&stub_first_instruction);
+  assembler.isb();
   // Creation also verifies the object.
-  NativeStaticCallStub* stub_holder = NativeStaticCallStub_at(stub);
-  stub_holder->set_metadata_and_destination(0, 0);
+  NativeMovConstReg* method_holder
+    = nativeMovConstReg_at(stub + NativeInstruction::instruction_size);
+  method_holder->set_data(0);
+  NativeJump* jump = nativeJump_at(method_holder->next_instruction_address());
+  jump->set_jump_destination((address)-1);
 }
 
 //-----------------------------------------------------------------------------
@@ -119,7 +206,9 @@ void CompiledDirectCall::verify() {
   address stub = find_stub();
   assert(stub != nullptr, "no stub found for static call");
   // Creation also verifies the object.
-  NativeStaticCallStub* stub_holder = NativeStaticCallStub_at(stub);
+  NativeMovConstReg* method_holder
+    = nativeMovConstReg_at(stub + NativeInstruction::instruction_size);
+  NativeJump* jump = nativeJump_at(method_holder->next_instruction_address());
 
   // Verify state.
   assert(is_clean() || is_call_to_compiled() || is_call_to_interpreted(), "sanity check");

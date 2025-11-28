@@ -390,29 +390,6 @@ void NativeCall::trampoline_jump(CodeBuffer &cbuf, address dest, JVMCI_TRAPS) {
 }
 #endif
 
-#ifndef PRODUCT
-// Mirror the logic in CompiledDirectCall::verify_mt_safe().
-void NativeStaticCallStub::verify_static_stub(const methodHandle& callee, address entry) {
-  intptr_t metadata = intptr_at(far_jump_metadata_offset);
-  address entrypoint = ptr_at(far_jump_entrypoint_offset);
-  CompiledDirectCall::verify_mt_safe_helper(callee, entry, metadata, entrypoint);
-}
-#endif
-
-void NativeStaticCallStub::set_metadata_and_destination(intptr_t callee, address entry) {
-  set_intptr_at(far_jump_metadata_offset, callee);
-  set_ptr_at(far_jump_entrypoint_offset, entry);
-  OrderAccess::release();
-}
-
-void NativeStaticCallStub::verify_instruction_sequence() {
-  if (! (nativeInstruction_at(addr_at(0))->is_ldr_literal() &&
-         nativeInstruction_at(addr_at(NativeInstruction::instruction_size))->is_ldr_literal() &&
-         nativeInstruction_at(addr_at(NativeInstruction::instruction_size * 2))->is_blr())) {
-    fatal("Not expected instructions in static call stub");
-  }
-}
-
 void NativePostCallNop::make_deopt() {
   NativeDeoptInstruction::insert(addr_at(0));
 }
