@@ -88,7 +88,11 @@ public class ExpressionFuzzer {
         comp.compile("--add-modules=jdk.incubator.vector");
 
         // compiler.igvn.templated.InnterTest.main(new String[] {});
-        comp.invoke("compiler.igvn.templated.ExpressionFuzzerInnerTest", "main", new Object[] {new String[] {}});
+        comp.invoke("compiler.igvn.templated.ExpressionFuzzerInnerTest", "main", new Object[] {new String[] {
+            "--add-modules=jdk.incubator.vector",
+            "--add-opens", "jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED",
+            "--add-opens", "java.base/java.lang=ALL-UNNAMED"
+        }});
     }
 
     // Generate a Java source file as String

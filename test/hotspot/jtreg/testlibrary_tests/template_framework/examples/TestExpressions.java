@@ -59,7 +59,11 @@ public class TestExpressions {
         comp.compile("--add-modules=jdk.incubator.vector");
 
         // p.xyz.InnterTest.main(new String[] {});
-        comp.invoke("p.xyz.InnerTest", "main", new Object[] {new String[] {}});
+        comp.invoke("p.xyz.InnerTest", "main", new Object[] {new String[] {
+            "--add-modules=jdk.incubator.vector",
+            "--add-opens", "jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED",
+            "--add-opens", "java.base/java.lang=ALL-UNNAMED"
+        }});
     }
 
     // Generate a Java source file as String
