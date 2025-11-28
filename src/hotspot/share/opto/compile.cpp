@@ -2260,13 +2260,11 @@ void Compile::process_late_inline_calls_no_inline(PhaseIterGVN& igvn) {
 bool Compile::optimize_loops(PhaseIterGVN& igvn, LoopOptsMode mode) {
   if (_loop_opts_cnt > 0) {
     while (major_progress() && (_loop_opts_cnt > 0)) {
-      tty->print_cr("XXX %d %ld %d", __LINE__, _comp_arena.size_in_bytes(), unique());
       TracePhase tp(_t_idealLoop);
       PhaseIdealLoop::optimize(igvn, mode);
       _loop_opts_cnt--;
       if (failing())  return false;
       if (major_progress()) print_method(PHASE_PHASEIDEALLOOP_ITERATIONS, 2);
-      tty->print_cr("XXXXXX %d %ld %d", __LINE__, _comp_arena.size_in_bytes(), unique());
     }
   }
   return true;
@@ -2461,31 +2459,25 @@ void Compile::Optimize() {
   if((_loop_opts_cnt > 0) && (has_loops() || has_split_ifs())) {
     {
       TracePhase tp(_t_idealLoop);
-      tty->print_cr("XXX %d %ld %d", __LINE__, _comp_arena.size_in_bytes(), unique());
       PhaseIdealLoop::optimize(igvn, LoopOptsDefault);
       _loop_opts_cnt--;
       if (major_progress()) print_method(PHASE_PHASEIDEALLOOP1, 2);
       if (failing())  return;
-      tty->print_cr("XXXXXX %d %ld %d", __LINE__, _comp_arena.size_in_bytes(), unique());
     }
     // Loop opts pass if partial peeling occurred in previous pass
     if(PartialPeelLoop && major_progress() && (_loop_opts_cnt > 0)) {
       TracePhase tp(_t_idealLoop);
-      tty->print_cr("XXX %d %ld %d", __LINE__, _comp_arena.size_in_bytes(), unique());
       PhaseIdealLoop::optimize(igvn, LoopOptsSkipSplitIf);
       _loop_opts_cnt--;
       if (major_progress()) print_method(PHASE_PHASEIDEALLOOP2, 2);
       if (failing())  return;
-      tty->print_cr("XXXXXX %d %ld %d", __LINE__, _comp_arena.size_in_bytes(), unique());
     }
     // Loop opts pass for loop-unrolling before CCP
     if(major_progress() && (_loop_opts_cnt > 0)) {
       TracePhase tp(_t_idealLoop);
-      tty->print_cr("XXX %d %ld %d", __LINE__, _comp_arena.size_in_bytes(), unique());
       PhaseIdealLoop::optimize(igvn, LoopOptsSkipSplitIf);
       _loop_opts_cnt--;
       if (major_progress()) print_method(PHASE_PHASEIDEALLOOP3, 2);
-      tty->print_cr("XXXXXX %d %ld %d", __LINE__, _comp_arena.size_in_bytes(), unique());
     }
     if (!failing()) {
       // Verify that last round of loop opts produced a valid graph
@@ -3021,7 +3013,6 @@ void Compile::optimize_logic_cones(PhaseIterGVN &igvn) {
 //------------------------------Code_Gen---------------------------------------
 // Given a graph, generate code for it
 void Compile::Code_Gen() {
-  tty->print_cr("XXX %d %ld", __LINE__, _comp_arena.size_in_bytes());
   if (failing()) {
     return;
   }
@@ -3063,7 +3054,6 @@ void Compile::Code_Gen() {
     return;
   }
   _cfg = &cfg;
-  tty->print_cr("XXX %d %ld", __LINE__, _comp_arena.size_in_bytes());
   {
     TracePhase tp(_t_scheduler);
     bool success = cfg.do_global_code_motion();

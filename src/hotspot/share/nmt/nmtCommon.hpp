@@ -70,7 +70,7 @@ enum NMT_TrackingLevel {
 
 // Number of stack frames to capture. This is a
 // build time decision.
-const int NMT_TrackingStackDepth = 10;
+const int NMT_TrackingStackDepth = 4;
 
 // A few common utilities for native memory tracking
 class NMTUtil : AllStatic {
