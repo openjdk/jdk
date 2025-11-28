@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "runtime/atomic.hpp"
 
 class Thread;
 class Monitor;
@@ -87,7 +88,7 @@ class SATBMarkQueueSet: public PtrQueueSet {
 
   DEFINE_PAD_MINUS_SIZE(1, DEFAULT_PADDING_SIZE, 0);
   PaddedEnd<BufferNode::Stack> _list;
-  volatile size_t _count_and_process_flag;
+  Atomic<size_t> _count_and_process_flag;
   // These are rarely (if ever) changed, so same cache line as count.
   size_t _process_completed_buffers_threshold;
   size_t _buffer_enqueue_threshold;
@@ -148,12 +149,12 @@ public:
   // The number of buffers in the list.  Racy and not updated atomically
   // with the set of completed buffers.
   size_t completed_buffers_num() const {
-    return _count_and_process_flag >> 1;
+    return _count_and_process_flag.load_relaxed() >> 1;
   }
 
   // Return true if completed buffers should be processed.
   bool process_completed_buffers() const {
-    return (_count_and_process_flag & 1) != 0;
+    return (_count_and_process_flag.load_relaxed() & 1) != 0;
   }
 
 #ifndef PRODUCT
