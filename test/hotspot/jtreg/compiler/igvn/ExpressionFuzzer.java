@@ -85,7 +85,7 @@ public class ExpressionFuzzer {
         comp.addJavaSourceCode("compiler.igvn.templated.ExpressionFuzzerInnerTest", generate(comp));
 
         // Compile the source file.
-        comp.compile();
+        comp.compile("--add-modules=jdk.incubator.vector");
 
         // compiler.igvn.templated.InnterTest.main(new String[] {});
         comp.invoke("compiler.igvn.templated.ExpressionFuzzerInnerTest", "main", new Object[] {new String[] {}});

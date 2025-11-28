@@ -56,7 +56,7 @@ public class TestExpressions {
         comp.addJavaSourceCode("p.xyz.InnerTest", generate(comp));
 
         // Compile the source file.
-        comp.compile();
+        comp.compile("--add-modules=jdk.incubator.vector");
 
         // p.xyz.InnterTest.main(new String[] {});
         comp.invoke("p.xyz.InnerTest", "main", new Object[] {new String[] {}});
