@@ -28,7 +28,7 @@
  *          All non-incubator cases are tested in TestVerify.java.
  * @modules jdk.incubator.vector
  * @library /test/lib /
- * @run driver verify.tests.TestVerifyIncubatorVector
+ * @run driver ${test.main.class}
  */
 
 package verify.tests;

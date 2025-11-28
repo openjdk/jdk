@@ -23,13 +23,13 @@
 
 /*
  * @test
- * @bug 8359412
+ * @bug 8359412 8370922
  * @summary Demonstrate the use of Expressions from the Template Library.
  * @modules java.base/jdk.internal.misc
  * @modules jdk.incubator.vector
  * @library /test/lib /
  * @compile ../../../compiler/lib/verify/Verify.java
- * @run main template_framework.examples.TestExpressions
+ * @run main ${test.main.class}
  */
 
 package template_framework.examples;
