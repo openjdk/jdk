@@ -119,7 +119,13 @@ jobs:
           sudo apt install --only-upgrade apt
           sudo apt install gcc-${{ inputs.gcc-major-version }}${{ inputs.gcc-package-suffix }} g++-${{ inputs.gcc-major-version }}${{ inputs.gcc-package-suffix }} libxrandr-dev${{ steps.arch.outputs.suffix }} libxtst-dev${{ steps.arch.outputs.suffix }} libcups2-dev${{ steps.arch.outputs.suffix }} libasound2-dev${{ steps.arch.outputs.suffix }} ${{ inputs.apt-extra-packages }}
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ inputs.gcc-major-version }} 100 --slave /usr/bin/g++ g++ /usr/bin/g++-${{ inputs.gcc-major-version }}
-          sudo apt install libfontconfig1-dev:${{ inputs.apt-architecture }}
+          sudo apt install libfontconfig1-dev:${{ inputs.apt-architecture }} \
+            libx11-dev:${{ inputs.apt-architecture }} \
+            libxext-dev:${{ inputs.apt-architecture }} \
+            libxrender-dev:${{ inputs.apt-architecture }} \
+            libxrandr-dev:${{ inputs.apt-architecture }} \
+            libxtst-dev:${{ inputs.apt-architecture }} \
+            libxt-dev:${{ inputs.apt-architecture }}
 
       - name: 'Configure'
         run: >
