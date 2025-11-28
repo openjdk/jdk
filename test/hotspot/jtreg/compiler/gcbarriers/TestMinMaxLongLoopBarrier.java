@@ -39,7 +39,7 @@ import java.util.Random;
  * @key randomness
  * @summary Test that MinL/MaxL nodes are removed when GC barriers in loop
  * @library /test/lib /
- * @run driver compiler.c2.irTests.TestMinMaxLongLoopBarrier
+ * @run driver ${test.main.class}
  */
 public class TestMinMaxLongLoopBarrier {
     private static final Random RANDOM = Utils.getRandomInstance();
