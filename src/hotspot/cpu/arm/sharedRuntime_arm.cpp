@@ -70,7 +70,7 @@ public:
 
 
   enum RegisterLayout {
-    fpu_save_size = FloatRegisterImpl::number_of_registers,
+    fpu_save_size = FloatRegister::number_of_registers,
 #ifndef __SOFTFP__
     D0_offset = 0,
 #endif
@@ -139,8 +139,8 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm,
     if (VM_Version::has_vfp3_32()) {
       __ fpush(FloatRegisterSet(D16, 16));
     } else {
-      if (FloatRegisterImpl::number_of_registers > 32) {
-        assert(FloatRegisterImpl::number_of_registers == 64, "nb fp registers should be 64");
+      if (FloatRegister::number_of_registers > 32) {
+        assert(FloatRegister::number_of_registers == 64, "nb fp registers should be 64");
         __ sub(SP, SP, 32 * wordSize);
       }
     }
@@ -182,8 +182,8 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_lr
     if (VM_Version::has_vfp3_32()) {
       __ fpop(FloatRegisterSet(D16, 16));
     } else {
-      if (FloatRegisterImpl::number_of_registers > 32) {
-        assert(FloatRegisterImpl::number_of_registers == 64, "nb fp registers should be 64");
+      if (FloatRegister::number_of_registers > 32) {
+        assert(FloatRegister::number_of_registers == 64, "nb fp registers should be 64");
         __ add(SP, SP, 32 * wordSize);
       }
     }
