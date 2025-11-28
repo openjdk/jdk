@@ -30,6 +30,7 @@
  * @requires container.support
  * @requires !vm.asan
  * @library /test/lib
+ * @modules java.base/jdk.internal.platform
  * @build TestPidsLimit
  * @run driver/timeout=480 TestPidsLimit
  */
@@ -49,7 +50,7 @@ public class TestPidsLimit {
     private static final int UNLIMITED_PIDS_DOCKER = -1;
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker()) {
+        if (!DockerTestUtils.canTestDocker() || !DockerTestUtils.canUseResourceLimits()) {
             return;
         }
 

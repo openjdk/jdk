@@ -55,7 +55,7 @@ public class TestLimitsUpdating {
     private static final String imageName = Common.imageName("limitsUpdatingJDK");
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker()) {
+        if (!DockerTestUtils.canTestDocker() || !DockerTestUtils.canUseResourceLimits()) {
             return;
         }
 

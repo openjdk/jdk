@@ -34,6 +34,7 @@
  * @modules java.base/jdk.internal.platform
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
+ *          java.base/jdk.internal.platform
  *          java.management
  *          jdk.jartool/sun.tools.jar
  * @build JfrReporter jdk.test.whitebox.WhiteBox

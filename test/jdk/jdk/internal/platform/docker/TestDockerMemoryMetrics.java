@@ -45,7 +45,7 @@ public class TestDockerMemoryMetrics {
     private static final String imageName = Common.imageName("metrics-memory");
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker()) {
+        if (!DockerTestUtils.canTestDocker() || !DockerTestUtils.canUseResourceLimits()) {
             return;
         }
 
