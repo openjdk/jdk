@@ -55,17 +55,11 @@ public class TestExpressions {
         // Add a java source file.
         comp.addJavaSourceCode("p.xyz.InnerTest", generate(comp));
 
-        // TODO: see what flags we can remove here
-
         // Compile the source file.
-        comp.compile("--add-modules=jdk.incubator.vector");
+        comp.compile();
 
         // p.xyz.InnterTest.main(new String[] {});
-        comp.invoke("p.xyz.InnerTest", "main", new Object[] {new String[] {
-            "--add-modules=jdk.incubator.vector",
-            "--add-opens", "jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED",
-            "--add-opens", "java.base/java.lang=ALL-UNNAMED"
-        }});
+        comp.invoke("p.xyz.InnerTest", "main", new Object[] {new String[] {}});
     }
 
     // Generate a Java source file as String
