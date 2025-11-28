@@ -50,6 +50,9 @@ public:
     return basic_plus_adr(base, base, offset);
   }
   Node* basic_plus_adr(Node* base, Node* ptr, Node* offset) {
+    if (base != C->top() && C->get_alias_index(_igvn.type(base)->is_ptr()) == Compile::AliasIdxRaw) {
+      base = C->top();
+    }
     Node* adr = new AddPNode(base, ptr, offset);
     return transform_later(adr);
   }
@@ -144,11 +147,10 @@ private:
                             Node* slice_idx,
                             Node* slice_len,
                             Node* dest_size);
-  bool generate_block_arraycopy(Node** ctrl, MergeMemNode** mem, Node* io,
+  bool generate_block_arraycopy(Node** ctrl, MergeMemNode** mem,
                                 const TypePtr* adr_type,
                                 BasicType basic_elem_type,
-                                AllocateNode* alloc,
-                                Node* src,  Node* src_offset,
+                                Node* src, Node* src_offset,
                                 Node* dest, Node* dest_offset,
                                 Node* dest_size, bool dest_uninitialized);
   MergeMemNode* generate_slow_arraycopy(ArrayCopyNode *ac,

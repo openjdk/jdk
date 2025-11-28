@@ -3785,7 +3785,9 @@ Node* ConnectionGraph::get_addp_base(Node *addp) {
       int opcode = uncast_base->Opcode();
       assert(opcode == Op_ConP || opcode == Op_ThreadLocal ||
              opcode == Op_CastX2P || uncast_base->is_DecodeNarrowPtr() ||
+             (_igvn->C->is_osr_compilation() && uncast_base->is_Parm() && uncast_base->as_Parm()->_con == TypeFunc::Parms)||
              (uncast_base->is_Mem() && (uncast_base->bottom_type()->isa_rawptr() != nullptr)) ||
+             (uncast_base->is_Mem() && (uncast_base->bottom_type()->isa_klassptr() != nullptr)) ||
              is_captured_store_address(addp), "sanity");
     }
   }
@@ -4380,7 +4382,6 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
   uint new_index_start = (uint) _compile->num_alias_types();
   VectorSet visited;
   ideal_nodes.clear(); // Reset for use with set_map/get_map.
-  uint unique_old = _compile->unique();
 
   //  Phase 1:  Process possible allocations from alloc_worklist.
   //  Create instance types for the CheckCastPP for allocations where possible.
@@ -4515,6 +4516,22 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
             alloc_worklist.append_if_missing(use);
           }
         }
+        for (UseIterator i(ptn); i.has_next(); i.next()) {
+          PointsToNode* use = i.get();
+          Node* n = use->ideal_node();
+          if (visited.test(n->_idx) || n->outcnt() == 0) {
+            continue;
+          }
+          if (n->is_Type()) {
+            assert(use->is_LocalVar(), "");
+            assert(n->is_CheckCastPP() ||
+                   n->is_EncodeP() ||
+                   n->is_DecodeN() ||
+                   (n->is_ConstraintCast() && n->Opcode() == Op_CastPP) || n->is_Phi(), "");
+
+            alloc_worklist.append_if_missing(n);
+          }
+        }
 
         // An allocation may have an Initialize which has raw stores. Scan
         // the users of the raw allocation result and push AddP users
@@ -4644,7 +4661,10 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
                  use->is_EncodeNarrowPtr() ||
                  use->is_DecodeNarrowPtr() ||
                  (use->is_ConstraintCast() && use->Opcode() == Op_CastPP)) {
-        alloc_worklist.append_if_missing(use);
+        assert(visited.test(use->_idx) || alloc_worklist.contains(use), "");
+        if (!visited.test(use->_idx)) {
+          alloc_worklist.append_if_missing(use);
+        }
 #ifdef ASSERT
       } else if (use->is_Mem()) {
         assert(use->in(MemNode::Address) != n, "EA: missing allocation reference path");

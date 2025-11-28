@@ -1313,7 +1313,7 @@ void PhaseMacroExpand::expand_allocate_common(
     initial_slow_test = nullptr;
   }
 
-  bool allocation_has_use = (alloc->result_cast() != nullptr);
+  bool allocation_has_use = (alloc->result_cast() != nullptr) || (alloc->initialization() != nullptr && alloc->initialization()->is_complete_with_arraycopy());
   if (!allocation_has_use) {
     InitializeNode* init = alloc->initialization();
     if (init != nullptr) {
@@ -1753,7 +1753,7 @@ PhaseMacroExpand::initialize_object(AllocateNode* alloc,
                                     Node* size_in_bytes) {
   InitializeNode* init = alloc->initialization();
   // Store the klass & mark bits
-  Node* mark_node = alloc->make_ideal_mark(&_igvn, object, control, rawmem);
+  Node* mark_node = alloc->make_ideal_mark(&_igvn, control, rawmem);
   if (!mark_node->is_Con()) {
     transform_later(mark_node);
   }
@@ -1946,7 +1946,7 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       uint step_size = AllocatePrefetchStepSize;
       uint distance = AllocatePrefetchDistance;
       for ( intx i = 0; i < lines; i++ ) {
-        prefetch_adr = new AddPNode( old_eden_top, new_eden_top,
+        prefetch_adr = new AddPNode( top(), new_eden_top,
                                             _igvn.MakeConX(distance) );
         transform_later(prefetch_adr);
         prefetch = new PrefetchAllocationNode( i_o, prefetch_adr );

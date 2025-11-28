@@ -379,12 +379,12 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
                                            bool disjoint_bases,
                                            bool length_never_negative,
                                            RegionNode* slow_region) {
+  Node* orig_dest = dest;
   if (slow_region == nullptr) {
     slow_region = new RegionNode(1);
     transform_later(slow_region);
   }
 
-  Node* original_dest = dest;
   bool  dest_needs_zeroing   = false;
   bool  acopy_to_uninitialized = false;
 
@@ -412,6 +412,7 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
       assert(dest->is_CheckCastPP(), "sanity");
       assert(dest->in(0)->in(0) == init, "dest pinned");
       adr_type = TypeRawPtr::BOTTOM;  // all initializations are into raw memory
+      dest = dest->in(1);
       // From this point on, every exit path is responsible for
       // initializing any non-copied parts of the object to zero.
       // Also, if this flag is set we make sure that arraycopy interacts properly
@@ -424,7 +425,6 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
     // No zeroing elimination needed here.
     alloc                  = nullptr;
     acopy_to_uninitialized = false;
-    //original_dest        = dest;
     //dest_needs_zeroing   = false;
   }
 
@@ -557,10 +557,9 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
         MergeMemNode* local_mem = MergeMemNode::make(mem);
         transform_later(local_mem);
 
-        didit = generate_block_arraycopy(&local_ctrl, &local_mem, local_io,
-                                         adr_type, basic_elem_type, alloc,
-                                         src, src_offset, dest, dest_offset,
-                                         dest_size, acopy_to_uninitialized);
+        didit = generate_block_arraycopy(&local_ctrl, &local_mem, adr_type,
+                                         basic_elem_type, src, src_offset,
+                                         dest, dest_offset, dest_size, acopy_to_uninitialized);
         if (didit) {
           // Present the results of the block-copying fast call.
           result_region->init_req(bcopy_path, local_ctrl);
@@ -641,7 +640,7 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
 
         // (At this point we can assume disjoint_bases, since types differ.)
         int ek_offset = in_bytes(ObjArrayKlass::element_klass_offset());
-        Node* p1 = basic_plus_adr(dest_klass, ek_offset);
+        Node* p1 = basic_plus_adr(top(), dest_klass, ek_offset);
         Node* n1 = LoadKlassNode::make(_igvn, C->immutable_memory(), p1, TypeRawPtr::BOTTOM);
         Node* dest_elem_klass = transform_later(n1);
         Node* cv = generate_checkcast_arraycopy(&local_ctrl, &local_mem,
@@ -842,7 +841,7 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
   _igvn.replace_node(_callprojs.fallthrough_catchproj, *ctrl);
 
 #ifdef ASSERT
-  const TypeOopPtr* dest_t = _igvn.type(dest)->is_oopptr();
+  const TypeOopPtr* dest_t = _igvn.type(orig_dest)->is_oopptr();
   if (dest_t->is_known_instance()) {
     ArrayCopyNode* ac = nullptr;
     assert(ArrayCopyNode::may_modify(dest_t, (*ctrl)->in(0)->as_MemBar(), &_igvn, ac), "dependency on arraycopy lost");
@@ -981,11 +980,10 @@ void PhaseMacroExpand::generate_clear_array(Node* ctrl, MergeMemNode* merge_mem,
   merge_mem->set_memory_at(alias_idx, mem);
 }
 
-bool PhaseMacroExpand::generate_block_arraycopy(Node** ctrl, MergeMemNode** mem, Node* io,
+bool PhaseMacroExpand::generate_block_arraycopy(Node** ctrl, MergeMemNode** mem,
                                                 const TypePtr* adr_type,
                                                 BasicType basic_elem_type,
-                                                AllocateNode* alloc,
-                                                Node* src,  Node* src_offset,
+                                                Node* src, Node* src_offset,
                                                 Node* dest, Node* dest_offset,
                                                 Node* dest_size, bool dest_uninitialized) {
   // See if there is an advantage from block transfer.
@@ -1133,7 +1131,7 @@ Node* PhaseMacroExpand::generate_checkcast_arraycopy(Node** ctrl, MergeMemNode**
   // look in each non-null element's class, at the desired klass's
   // super_check_offset, for the desired klass.
   int sco_offset = in_bytes(Klass::super_check_offset_offset());
-  Node* p3 = basic_plus_adr(dest_elem_klass, sco_offset);
+  Node* p3 = basic_plus_adr(top(), dest_elem_klass, sco_offset);
   Node* n3 = new LoadINode(nullptr, *mem /*memory(p3)*/, p3, _igvn.type(p3)->is_ptr(), TypeInt::INT, MemNode::unordered);
   Node* check_offset = ConvI2X(transform_later(n3));
   Node* check_value  = dest_elem_klass;

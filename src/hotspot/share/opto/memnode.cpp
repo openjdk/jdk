@@ -947,6 +947,7 @@ bool LoadNode::is_immutable_value(Node* adr) {
 Node* LoadNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, const Type* rt, BasicType bt, MemOrd mo,
                      ControlDependency control_dependency, bool require_atomic_access, bool unaligned, bool mismatched, bool unsafe, uint8_t barrier_data) {
   Compile* C = gvn.C;
+  assert(adr->is_top() || C->get_alias_index(gvn.type(adr)->is_ptr()) == C->get_alias_index(adr_type), "");
 
   // sanity check the alias category against the created node type
   assert(!(adr_type->isa_oopptr() &&
@@ -2563,7 +2564,9 @@ Node* LoadNode::klass_identity_common(PhaseGVN* phase) {
            ) {
           int mirror_field = in_bytes(Klass::java_mirror_offset());
           if (tkls->offset() == mirror_field) {
-            return adr2->in(AddPNode::Base);
+            const TypeKlassPtr* tkls2 = phase->type(adr2->in(AddPNode::Address))->isa_klassptr();
+            assert(tkls2->offset() == 0, "");
+            return adr2->in(AddPNode::Address);
           }
         }
       }
@@ -2690,6 +2693,7 @@ Node* LoadRangeNode::Identity(PhaseGVN* phase) {
 StoreNode* StoreNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, BasicType bt, MemOrd mo, bool require_atomic_access) {
   assert((mo == unordered || mo == release), "unexpected");
   Compile* C = gvn.C;
+  assert(adr_type == nullptr || adr->is_top() || C->get_alias_index(gvn.type(adr)->is_ptr()) == C->get_alias_index(adr_type), "");
   assert(C->get_alias_index(adr_type) != Compile::AliasIdxRaw ||
          ctl != nullptr, "raw memory operations should have control edge");
 
@@ -4117,7 +4121,11 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
 
   int unit = BytesPerLong;
   if ((offset % unit) != 0) {
-    Node* adr = new AddPNode(dest, dest, phase->MakeConX(offset));
+    Node* base = dest;
+    if (phase->type(dest)->isa_oopptr() == nullptr) {
+      base = phase->C->top();
+    }
+    Node* adr = new AddPNode(base, dest, phase->MakeConX(offset));
     adr = phase->transform(adr);
     const TypePtr* atp = TypeRawPtr::BOTTOM;
     mem = StoreNode::make(*phase, ctl, mem, adr, atp, phase->zerocon(T_INT), T_INT, MemNode::unordered);
@@ -4152,7 +4160,12 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
 
   // Bulk clear double-words
   Node* zsize = phase->transform(new SubXNode(zend, zbase) );
-  Node* adr = phase->transform(new AddPNode(dest, dest, start_offset) );
+  Node* adr = nullptr;
+  if (phase->C->get_alias_index(phase->type(dest)->is_ptr()) == Compile::AliasIdxRaw) {
+    adr = phase->transform(new AddPNode(phase->C->top(), dest, start_offset) );
+  } else {
+    adr = phase->transform(new AddPNode(dest, dest, start_offset) );
+  }
   mem = new ClearArrayNode(ctl, mem, zsize, adr, false);
   return phase->transform(mem);
 }
@@ -4176,7 +4189,11 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
                        start_offset, phase->MakeConX(done_offset), phase);
   }
   if (done_offset < end_offset) { // emit the final 32-bit store
-    Node* adr = new AddPNode(dest, dest, phase->MakeConX(done_offset));
+    Node* base = dest;
+    if (phase->type(dest)->isa_oopptr() == nullptr) {
+      base = phase->C->top();
+    }
+    Node* adr = new AddPNode(base, dest, phase->MakeConX(done_offset));
     adr = phase->transform(adr);
     const TypePtr* atp = TypeRawPtr::BOTTOM;
     mem = StoreNode::make(*phase, ctl, mem, adr, atp, phase->zerocon(T_INT), T_INT, MemNode::unordered);
@@ -4960,7 +4977,7 @@ Node* InitializeNode::capture_store(StoreNode* st, intptr_t start,
     else
       ins_req(i, C->top());     // build a new edge
   }
-  Node* new_st = st->clone();
+  Node* new_st = st->make_with_adr_type(TypeRawPtr::BOTTOM);
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   new_st->set_req(MemNode::Control, in(Control));
   new_st->set_req(MemNode::Memory,  prev_mem);
