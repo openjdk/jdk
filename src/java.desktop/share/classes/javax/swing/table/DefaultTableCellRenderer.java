@@ -32,7 +32,9 @@ import java.awt.Component;
 import java.awt.Color;
 import java.awt.Rectangle;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import sun.swing.DefaultLookup;
 import sun.swing.SwingUtilities2;
