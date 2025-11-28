@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @summary Test functionality of IntGenerator implementations.
+ * @summary Test functionality of Verify implementations.
+ *          Vector incubator classes are tested in TestVerifyIncubatorVector.java.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @run driver verify.tests.TestVerify

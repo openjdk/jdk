@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key randomness
  * @summary Test functionality of Verify implementations for vector incubator classes.
  *          All non-incubator cases are tested in TestVerify.java.
  * @modules jdk.incubator.vector
@@ -46,6 +47,7 @@ public class TestVerifyIncubatorVector {
     public static void main(String[] args) {
         testArrayFloat16();
         testRawFloat16();
+        testRandom();
     }
 
     public static void testArrayFloat16() {
@@ -68,24 +70,48 @@ public class TestVerifyIncubatorVector {
     }
 
     public static void testRawFloat16() {
-        Float16 nan1 =  Float16.valueOf(Float.intBitsToFloat(0x7f800001));
-        Float16 nan2 =  Float16.valueOf(Float.intBitsToFloat(0x7fffffff));
+        Float16 nan1 = Float16.shortBitsToFloat16((short)0xFFFF);
+        Float16 nan2 = Float16.shortBitsToFloat16((short)0x7FFF);
+        if (!Float16.isNaN(nan1)) { throw new RuntimeException("must be NaN"); }
+        if (!Float16.isNaN(nan2)) { throw new RuntimeException("must be NaN"); }
+        if (Float16.float16ToRawShortBits(nan1) != (short)0xFFFF) { throw new RuntimeException("wrong bits"); }
+        if (Float16.float16ToRawShortBits(nan2) != (short)0x7FFF) { throw new RuntimeException("wrong bits"); }
 
-        //float[] arrF1 = new float[]{nanF1};
-        //float[] arrF2 = new float[]{nanF2};
+        Float16[] arr1 = new Float16[]{nan1};
+        Float16[] arr2 = new Float16[]{nan2};
 
-        //Verify.checkEQ(nanF1, Float.NaN);
-        //Verify.checkEQ(nanF1, nanF1);
-        //Verify.checkEQWithRawBits(nanF1, nanF1);
+        Verify.checkEQ(nan1, Float16.NaN);
+        Verify.checkEQ(nan1, nan1);
+        Verify.checkEQWithRawBits(nan1, nan1);
         Verify.checkEQ(nan1, nan2);
 
-        //Verify.checkEQ(arrF1, arrF1);
-        //Verify.checkEQWithRawBits(arrF1, arrF1);
-        //Verify.checkEQ(arrF1, arrF2);
+        Verify.checkEQ(arr1, arr1);
+        Verify.checkEQWithRawBits(arr1, arr1);
+        Verify.checkEQ(arr1, arr2);
 
-        //checkNEWithRawBits(nanF1, nanF2);
+        checkNEWithRawBits(nan1, nan2);
 
-        //checkNEWithRawBits(arrF1, arrF2);
+        checkNEWithRawBits(arr1, arr2);
+    }
+
+    public static void testRandom() {
+        // Testing all 2^16 * 2^16 = 2^32 would take a bit long, so we randomly sample instead.
+        for (int i = 0; i < 10_000; i++) {
+            short bitsA = (short)RANDOM.nextInt();
+            short bitsB = (short)RANDOM.nextInt();
+            Float16 a = Float16.shortBitsToFloat16(bitsA);
+            Float16 b = Float16.shortBitsToFloat16(bitsB);
+            if (bitsA == bitsB) {
+                Verify.checkEQWithRawBits(a, b);
+            } else {
+                checkNEWithRawBits(a, b);
+            }
+            if (a.equals(b)) {
+                Verify.checkEQ(a, b);
+            } else {
+                checkNE(a, b);
+            }
+        }
     }
 
     public static void checkNE(Object a, Object b) {
