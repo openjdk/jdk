@@ -916,7 +916,11 @@ public final class Http3Connection implements AutoCloseable {
             // QUIC connection to prevent it from being idle terminated.
             final boolean generateTraffic = this.presentInConnPool
                     && this.exchanges.isEmpty()
-                    && this.reservedStreamCount.get() == 0;
+                    && this.reservedStreamCount.get() == 0
+                    // a connection in the pool could be marked as
+                    // finalStream (for example when it receives a GOAWAY). we don't want
+                    // to generate explicit QUIC traffic for such connections too.
+                    && !this.finalStream;
             if (debug.on()) {
                 debug.log("QUIC traffic generation required = " + generateTraffic);
             }
