@@ -381,9 +381,9 @@ class methodHandle;
   do_intrinsic(_compareToLU,              java_lang_StringLatin1,compareToLU_name, compareTo_indexOf_signature,  F_S)   \
   do_intrinsic(_compareToUL,              java_lang_StringUTF16, compareToUL_name, compareTo_indexOf_signature,  F_S)   \
    do_signature(compareTo_indexOf_signature,                     "([B[B)I")                                             \
-   do_name(     compareTo_name,                                  "compareTo")                                           \
-   do_name(     compareToLU_name,                                "compareToUTF16")                                      \
-   do_name(     compareToUL_name,                                "compareToLatin1")                                     \
+   do_name(     compareTo_name,                                  "compareTo0")                                          \
+   do_name(     compareToLU_name,                                "compareToUTF16_0")                                    \
+   do_name(     compareToUL_name,                                "compareToLatin1_0")                                   \
   do_intrinsic(_indexOfL,                 java_lang_StringLatin1,indexOf_name, compareTo_indexOf_signature,      F_S)   \
   do_intrinsic(_indexOfU,                 java_lang_StringUTF16, indexOf_name, compareTo_indexOf_signature,      F_S)   \
   do_intrinsic(_indexOfUL,                java_lang_StringUTF16, indexOfUL_name, compareTo_indexOf_signature,    F_S)   \

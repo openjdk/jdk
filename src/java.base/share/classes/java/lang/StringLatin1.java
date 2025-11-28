@@ -27,6 +27,7 @@ package java.lang;
 
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
@@ -39,12 +40,10 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import static java.lang.String.LATIN1;
 import static java.lang.String.UTF16;
-import static java.lang.String.checkIndex;
-import static java.lang.String.checkOffset;
 
 final class StringLatin1 {
     static char charAt(byte[] value, int index) {
-        checkIndex(index, value.length);
+        String.checkIndex(index, value.length);
         return (char)(value[index] & 0xff);
     }
 
@@ -97,33 +96,91 @@ final class StringLatin1 {
         return false;
     }
 
-    @IntrinsicCandidate
+    /**
+     * Lexicographically compares two Latin-1 strings as specified in
+     * {@link String#compareTo(String) String::compareTo}.
+     *
+     * @param value byte array containing characters encoded in Latin-1
+     * @param other byte array containing characters encoded in Latin-1
+     *
+     * @throws NullPointerException if {@code value} or {@code other} is null
+     */
     static int compareTo(byte[] value, byte[] other) {
-        int len1 = value.length;
-        int len2 = other.length;
-        return compareTo(value, other, len1, len2);
+        Objects.requireNonNull(value);
+        Objects.requireNonNull(other);
+        return compareTo0(value, other);
     }
 
+    @IntrinsicCandidate
+    private static int compareTo0(byte[] value, byte[] other) {
+        return compareTo(value, other, value.length, other.length);
+    }
+
+    /**
+     * Lexicographically compares two Latin-1 strings as specified in
+     * {@link String#compareTo(String) String::compareTo}.
+     *
+     * @param value byte array containing characters encoded in Latin-1
+     * @param other byte array containing characters encoded in Latin-1
+     * @param len1 the number of {@code value} bytes to compare
+     * @param len2 the number of {@code other} bytes to compare
+     *
+     * @throws NullPointerException if {@code value} or {@code other} is null
+     * @throws StringIndexOutOfBoundsException if {@code len1} or {@code len2}
+     * is either negative or greater than the length of {@code value} or
+     * {@code other}, respectively
+     */
     static int compareTo(byte[] value, byte[] other, int len1, int len2) {
+        Objects.requireNonNull(value);
+        Objects.requireNonNull(other);
+        String.checkOffset(len1, length(value));
+        String.checkOffset(len2, length(other));
         int lim = Math.min(len1, len2);
         int k = ArraysSupport.mismatch(value, other, lim);
         return (k < 0) ? len1 - len2 : getChar(value, k) - getChar(other, k);
     }
 
-    @IntrinsicCandidate
+    /**
+     * Lexicographically compares a Latin-1 string against a UTF-16 string as
+     * specified in {@link String#compareTo(String) String::compareTo}.
+     *
+     * @param value byte array containing characters encoded in Latin-1
+     * @param other byte array containing characters encoded in UTF-16
+     *
+     * @throws NullPointerException if {@code value} or {@code other} is null
+     */
     static int compareToUTF16(byte[] value, byte[] other) {
+        Objects.requireNonNull(value);
+        Objects.requireNonNull(other);
+        return compareToUTF16_0(value, other);
+    }
+
+    @IntrinsicCandidate
+    private static int compareToUTF16_0(byte[] value, byte[] other) {
         int len1 = length(value);
         int len2 = StringUTF16.length(other);
         return compareToUTF16Values(value, other, len1, len2);
     }
 
-    /*
-     * Checks the boundary and then compares the byte arrays.
+    /**
+     * Lexicographically compares a Latin-1 string against a UTF-16 string as
+     * specified in {@link String#compareTo(String) String::compareTo}.
+     *
+     * @param value byte array containing characters encoded in Latin-1
+     * @param other byte array containing characters encoded in UTF-16
+     * @param len1 the number of {@code value} bytes to compare
+     * @param len2 the number of {@code char}s (not bytes!) from {@code other} to compare
+     *
+     * @throws NullPointerException if {@code value} or {@code other} is null
+     * @throws StringIndexOutOfBoundsException if {@code len1} or {@code len2}
+     * is either negative or greater than the length of {@code value} or
+     * the number of {@code char}s in {@code other}, respectively
      */
     static int compareToUTF16(byte[] value, byte[] other, int len1, int len2) {
-        checkOffset(len1, length(value));
-        checkOffset(len2, StringUTF16.length(other));
-
+        Objects.requireNonNull(value);
+        Objects.requireNonNull(other);
+        String.checkOffset(len1, length(value));
+        String.checkOffset(len2, StringUTF16.length(other));
         return compareToUTF16Values(value, other, len1, len2);
     }
 
@@ -139,9 +196,12 @@ final class StringLatin1 {
         return len1 - len2;
     }
 
+    /**
+     * Case-insensitive {@link #compareTo(byte[], byte[]) compareTo}.
+     */
     static int compareToCI(byte[] value, byte[] other) {
-        int len1 = value.length;
-        int len2 = other.length;
+        int len1 = value.length;    // Implicit null check on `value`
+        int len2 = other.length;    // Implicit null check on `other`
         int lim = Math.min(len1, len2);
         for (int k = 0; k < lim; k++) {
             if (value[k] != other[k]) {
@@ -159,7 +219,12 @@ final class StringLatin1 {
         return len1 - len2;
     }
 
+    /**
+     * Case-insensitive {@link #compareToUTF16(byte[], byte[]) compareToUTF16}.
+     */
     static int compareToCI_UTF16(byte[] value, byte[] other) {
+        Objects.requireNonNull(value);
+        Objects.requireNonNull(other);
         int len1 = length(value);
         int len2 = StringUTF16.length(other);
         int lim = Math.min(len1, len2);
