@@ -4961,16 +4961,17 @@ int os::open(const char *path, int oflag, int mode) {
 // Since kernel v2.6.12 the Linux ABI have had support for encoding the clock types
 // in the last three bits. Setting bit to 001 (CPUCLOCK_VIRT) will result in the kernel
 // returning only user time. POSIX compliant implementations of pthread_getcpuclockid
-// for the Linux kernel defaults to construct a clockid that with 010 (CPUCLOCK_SCHED)
+// for the Linux kernel defaults to construct a clockid with 010 (CPUCLOCK_SCHED)
 // set, which return system+user time, which is what the POSIX standard mandates, see
 // POSIX.1-2024/IEEE Std 1003.1-2024 §3.90.
-static clockid_t get_thread_clockid(Thread* thread, bool full, bool* success) {
+static clockid_t get_thread_clockid(Thread* thread, bool total, bool* success) {
+  constexpr clockid_t CLOCK_TYPE_MASK = 3;
   constexpr clockid_t CPUCLOCK_VIRT = 1;
 
   clockid_t clockid;
   int rc = pthread_getcpuclockid(thread->osthread()->pthread_id(), &clockid);
   if (rc == 0) {
-    clockid = full ? clockid : (clockid & ~3) | CPUCLOCK_VIRT;
+    clockid = total ? clockid : (clockid & ~CLOCK_TYPE_MASK) | CPUCLOCK_VIRT;
   } else {
     // It's possible to encounter a terminated native thread that failed
     // to detach itself from the VM - which should result in ESRCH.
