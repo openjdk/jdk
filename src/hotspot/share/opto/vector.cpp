@@ -431,7 +431,6 @@ Node* PhaseVector::expand_vbox_alloc_node(VectorBoxAllocateNode* vbox_alloc,
   // The store should be captured by InitializeNode and turned into initialized store later.
   Node* field_store = gvn.transform(kit.access_store_at(vec_obj,
                                                         vec_field,
-                                                        vec_adr_type,
                                                         arr,
                                                         TypeOopPtr::make_from_klass(field->type()->as_klass()),
                                                         T_OBJECT,

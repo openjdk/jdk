@@ -567,11 +567,10 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason,
       // Weblogic sometimes mutates the detail message of exceptions
       // using reflection.
       int offset = java_lang_Throwable::get_detailMessage_offset();
-      const TypePtr* adr_typ = ex_con->add_offset(offset);
 
       Node *adr = basic_plus_adr(ex_node, ex_node, offset);
       const TypeOopPtr* val_type = TypeOopPtr::make_from_klass(env()->String_klass());
-      Node *store = access_store_at(ex_node, adr, adr_typ, null(), val_type, T_OBJECT, IN_HEAP);
+      Node* store = access_store_at(ex_node, adr, null(), val_type, T_OBJECT, IN_HEAP);
 
       if (!method()->has_exception_handlers()) {
         // We don't need to preserve the stack if there's no handler as the entire frame is going to be popped anyway.
@@ -1575,8 +1574,6 @@ Node* GraphKit::make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
                           uint8_t barrier_data) {
   int adr_idx = C->get_alias_index(_gvn.type(adr)->isa_ptr());
   assert(adr_idx != Compile::AliasIdxTop, "use other make_load factory" );
-  const TypePtr* adr_type = nullptr; // debug-mode-only argument
-  DEBUG_ONLY(adr_type = C->get_adr_type(adr_idx));
   Node* mem = memory(adr_idx);
   Node* ld = LoadNode::make(_gvn, ctl, mem, adr, t, bt, mo, control_dependency, require_atomic_access, unaligned, mismatched, unsafe, barrier_data);
   ld = _gvn.transform(ld);
@@ -1603,8 +1600,6 @@ Node* GraphKit::store_to_memory(Node* ctl, Node* adr, Node *val, BasicType bt,
                                 int barrier_data) {
   int adr_idx = C->get_alias_index(_gvn.type(adr)->isa_ptr());
   assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory" );
-  const TypePtr* adr_type = nullptr;
-  DEBUG_ONLY(adr_type = C->get_adr_type(adr_idx));
   Node *mem = memory(adr_idx);
   Node* st = StoreNode::make(_gvn, ctl, mem, adr, val, bt, mo, require_atomic_access);
   if (unaligned) {
@@ -1629,7 +1624,6 @@ Node* GraphKit::store_to_memory(Node* ctl, Node* adr, Node *val, BasicType bt,
 
 Node* GraphKit::access_store_at(Node* obj,
                                 Node* adr,
-                                const TypePtr* adr_type,
                                 Node* val,
                                 const Type* val_type,
                                 BasicType bt,
@@ -1658,7 +1652,6 @@ Node* GraphKit::access_store_at(Node* obj,
 
 Node* GraphKit::access_load_at(Node* obj,   // containing obj
                                Node* adr,   // actual address to store val at
-                               const TypePtr* adr_type,
                                const Type* val_type,
                                BasicType bt,
                                DecoratorSet decorators) {
@@ -1692,7 +1685,6 @@ Node* GraphKit::access_load(Node* adr,   // actual address to load val at
 
 Node* GraphKit::access_atomic_cmpxchg_val_at(Node* obj,
                                              Node* adr,
-                                             const TypePtr* adr_type,
                                              int alias_idx,
                                              Node* expected_val,
                                              Node* new_val,
@@ -1710,7 +1702,6 @@ Node* GraphKit::access_atomic_cmpxchg_val_at(Node* obj,
 
 Node* GraphKit::access_atomic_cmpxchg_bool_at(Node* obj,
                                               Node* adr,
-                                              const TypePtr* adr_type,
                                               int alias_idx,
                                               Node* expected_val,
                                               Node* new_val,
@@ -1728,7 +1719,6 @@ Node* GraphKit::access_atomic_cmpxchg_bool_at(Node* obj,
 
 Node* GraphKit::access_atomic_xchg_at(Node* obj,
                                       Node* adr,
-                                      const TypePtr* adr_type,
                                       int alias_idx,
                                       Node* new_val,
                                       const Type* value_type,
@@ -1745,7 +1735,6 @@ Node* GraphKit::access_atomic_xchg_at(Node* obj,
 
 Node* GraphKit::access_atomic_add_at(Node* obj,
                                      Node* adr,
-                                     const TypePtr* adr_type,
                                      int alias_idx,
                                      Node* new_val,
                                      const Type* value_type,
@@ -1791,7 +1780,7 @@ Node* GraphKit::load_array_element(Node* ary, Node* idx, const TypeAryPtr* aryty
   if (elembt == T_NARROWOOP) {
     elembt = T_OBJECT; // To satisfy switch in LoadNode::make()
   }
-  Node* ld = access_load_at(ary, adr, arytype, elemtype, elembt,
+  Node* ld = access_load_at(ary, adr, elemtype, elembt,
                             IN_HEAP | IS_ARRAY | (set_ctrl ? C2_CONTROL_DEPENDENT_LOAD : 0));
   return ld;
 }
@@ -4099,12 +4088,11 @@ Node* GraphKit::load_String_value(Node* str, bool set_ctrl) {
   int value_offset = java_lang_String::value_offset();
   const TypeInstPtr* string_type = TypeInstPtr::make(TypePtr::NotNull, C->env()->String_klass(),
                                                      false, nullptr, 0);
-  const TypePtr* value_field_type = string_type->add_offset(value_offset);
   const TypeAryPtr* value_type = TypeAryPtr::make(TypePtr::NotNull,
                                                   TypeAry::make(TypeInt::BYTE, TypeInt::POS),
                                                   ciTypeArrayKlass::make(T_BYTE), true, 0);
   Node* p = basic_plus_adr(str, str, value_offset);
-  Node* load = access_load_at(str, p, value_field_type, value_type, T_OBJECT,
+  Node* load = access_load_at(str, p, value_type, T_OBJECT,
                               IN_HEAP | (set_ctrl ? C2_CONTROL_DEPENDENT_LOAD : 0) | MO_UNORDERED);
   return load;
 }
@@ -4116,10 +4104,9 @@ Node* GraphKit::load_String_coder(Node* str, bool set_ctrl) {
   int coder_offset = java_lang_String::coder_offset();
   const TypeInstPtr* string_type = TypeInstPtr::make(TypePtr::NotNull, C->env()->String_klass(),
                                                      false, nullptr, 0);
-  const TypePtr* coder_field_type = string_type->add_offset(coder_offset);
 
   Node* p = basic_plus_adr(str, str, coder_offset);
-  Node* load = access_load_at(str, p, coder_field_type, TypeInt::BYTE, T_BYTE,
+  Node* load = access_load_at(str, p, TypeInt::BYTE, T_BYTE,
                               IN_HEAP | (set_ctrl ? C2_CONTROL_DEPENDENT_LOAD : 0) | MO_UNORDERED);
   return load;
 }
@@ -4128,9 +4115,8 @@ void GraphKit::store_String_value(Node* str, Node* value) {
   int value_offset = java_lang_String::value_offset();
   const TypeInstPtr* string_type = TypeInstPtr::make(TypePtr::NotNull, C->env()->String_klass(),
                                                      false, nullptr, 0);
-  const TypePtr* value_field_type = string_type->add_offset(value_offset);
 
-  access_store_at(str,  basic_plus_adr(str, value_offset), value_field_type,
+  access_store_at(str,  basic_plus_adr(str, value_offset),
                   value, TypeAryPtr::BYTES, T_OBJECT, IN_HEAP | MO_UNORDERED);
 }
 
@@ -4138,9 +4124,8 @@ void GraphKit::store_String_coder(Node* str, Node* value) {
   int coder_offset = java_lang_String::coder_offset();
   const TypeInstPtr* string_type = TypeInstPtr::make(TypePtr::NotNull, C->env()->String_klass(),
                                                      false, nullptr, 0);
-  const TypePtr* coder_field_type = string_type->add_offset(coder_offset);
 
-  access_store_at(str, basic_plus_adr(str, coder_offset), coder_field_type,
+  access_store_at(str, basic_plus_adr(str, coder_offset),
                   value, TypeInt::BYTE, T_BYTE, IN_HEAP | MO_UNORDERED);
 }
 
