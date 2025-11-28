@@ -125,17 +125,6 @@
 
 #define REG_BCP context_x[22]
 
-address os::current_stack_pointer() {
-#if defined(__clang__) || defined(__llvm__)
-  void *sp;
-  __asm__("mov %0, " SPELL_REG_SP : "=r"(sp));
-  return (address) sp;
-#else
-  register void *sp __asm__ (SPELL_REG_SP);
-  return (address) sp;
-#endif
-}
-
 char* os::non_memory_address_word() {
   // Must never look like an address returned by reserve_memory,
   // even in its subfields (as defined by the CPU immediate fields,

@@ -202,17 +202,6 @@
 # define context_err uc_mcontext.__gregs[_REG_ERR]
 #endif
 
-address os::current_stack_pointer() {
-#if defined(__clang__) || defined(__llvm__)
-  void *esp;
-  __asm__("mov %%" SPELL_REG_SP ", %0":"=r"(esp));
-  return (address) esp;
-#else
-  register void *esp __asm__ (SPELL_REG_SP);
-  return (address) esp;
-#endif
-}
-
 char* os::non_memory_address_word() {
   // Must never look like an address returned by reserve_memory,
   // even in its subfields (as defined by the CPU immediate fields,

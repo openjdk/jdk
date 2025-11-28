@@ -31,6 +31,7 @@
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/nativeStack.hpp"
 #include "utilities/ostream.hpp"
 #ifdef __APPLE__
 # include <mach/mach_time.h>
@@ -1109,5 +1110,9 @@ class os: AllStatic {
 // It'd also be eligible for inlining on many platforms.
 
 extern "C" int SpinPause();
+
+ALWAYSINLINE address os::current_stack_pointer() {
+  return NativeStack::current();
+}
 
 #endif // SHARE_RUNTIME_OS_HPP
