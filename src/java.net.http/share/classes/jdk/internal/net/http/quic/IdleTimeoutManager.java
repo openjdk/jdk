@@ -675,14 +675,9 @@ final class IdleTimeoutManager {
             // check if the connection will potentially idle terminate before the next
             // ping check is scheduled, if yes, then initiate a app layer traffic
             // generation check now
-            try {
-                final long idleTerminationAt = Math.addExact(lastPktAt, this.idleTimeoutNanos);
-                final long nextPingCheck = Math.addExact(now, this.pingFrequencyNanos);
-                if (idleTerminationAt <= nextPingCheck) {
-                    return true;
-                }
-            } catch (ArithmeticException ae) {
-                // it's OK to trigger a potentially unnecessary app layer check in this case
+            final long idleTerminationAt = lastPktAt + this.idleTimeoutNanos;
+            final long nextPingCheck = now + this.pingFrequencyNanos;
+            if (idleTerminationAt - nextPingCheck <= 0) {
                 return true;
             }
             // connection appears to be receiving traffic, no need to initiate app layer
