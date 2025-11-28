@@ -358,10 +358,10 @@ public abstract class UnixFileSystemProvider
             if (attrs == null) {
                 break;
             }
-            UnixFileKey fileKey = attrs.fileKey();
             if (!attrs.isSymbolicLink()) {
                 break;
             }
+            UnixFileKey fileKey = attrs.fileKey();
             if (!fileKeys.add(fileKey)) {
                 throw new UnixException(ELOOP);
             }
