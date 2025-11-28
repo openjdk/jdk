@@ -32,7 +32,7 @@ import compiler.lib.template_framework.DataName;
  * The {@link Float16Type} models Java's {@link Float16} type.
  * TODO: corresponding class for short impl.
  */
-public final class Float16Type implements CodeGenerationDataNameType {
+final class Float16Type implements CodeGenerationDataNameType {
     private static final Generator<Short> GEN_FLOAT16 = Generators.G.float16s();
 
     // We only need one static instance of the class.
@@ -62,5 +62,6 @@ public final class Float16Type implements CodeGenerationDataNameType {
     }
 
     // TODO: find a way to get a common abstraction, maybe move it up?
+    // Maybe find a common scalar numeric type, and then have library for all of it? But then we always need incubator...
     //public Object callLibraryRNG() {
 }

@@ -73,6 +73,12 @@ public final class Operations {
                      .collect(Collectors.toList());
     }
 
+    private static void addComparisonOperations(List<Expression> ops, String operatorName, CodeGenerationDataNameType type) {
+        for (String mask : List.of("==", "!=", "<", ">", "<=", ">=")) {
+            ops.add(Expression.make(BOOLEANS, "(" + operatorName + "(", type, ", ", type, ")" + mask + "0)"));
+        }
+    }
+
     private static List<Expression> generatePrimitiveOperations() {
         List<Expression> ops = new ArrayList<>();
 
@@ -113,6 +119,8 @@ public final class Operations {
             ops.add(Expression.make(BOOLEANS, "(", type, " < ",  type, ")"));
             ops.add(Expression.make(BOOLEANS, "(", type, " >= ", type, ")"));
             ops.add(Expression.make(BOOLEANS, "(", type, " <= ", type, ")"));
+            addComparisonOperations(ops, type.boxedTypeName() + ".compare", type);
+            addComparisonOperations(ops, type.boxedTypeName() + ".compareUnsigned", type); // ugt, uge, ule, ult
         });
 
         CodeGenerationDataNameType.FLOATING_TYPES.stream().forEach(type -> {
@@ -131,6 +139,7 @@ public final class Operations {
             ops.add(Expression.make(BOOLEANS, "(", type, " < ",  type, ")"));
             ops.add(Expression.make(BOOLEANS, "(", type, " >= ", type, ")"));
             ops.add(Expression.make(BOOLEANS, "(", type, " <= ", type, ")"));
+            addComparisonOperations(ops, type.boxedTypeName() + ".compare", type);
         });
 
         // ------------ byte -------------
@@ -142,7 +151,6 @@ public final class Operations {
         ops.add(Expression.make(INTS,  "Byte.compareUnsigned(", BYTES, ", ", BYTES, ")"));
         ops.add(Expression.make(INTS,  "Byte.toUnsignedInt(",   BYTES, ")"));
         ops.add(Expression.make(LONGS, "Byte.toUnsignedLong(",  BYTES, ")"));
-        // TODO: think about implementing compare (un)signed for le/ge/lt/gt/eg/ne.
 
         // ------------ char -------------
         // Cast and ternary operator handled above.
@@ -284,8 +292,8 @@ public final class Operations {
         ops.add(Expression.make(FLOAT16, "Float16.abs(", FLOAT16, ")"));
         ops.add(Expression.make(FLOAT16, "Float16.add(", FLOAT16, ",", FLOAT16, ")"));
         ops.add(Expression.make(INTS, "Float16.compare(", FLOAT16, ",", FLOAT16, ")"));
+        addComparisonOperations(ops, "Float16.compare", FLOAT16);
         ops.add(Expression.make(INTS, "(", FLOAT16, ").compareTo(",  FLOAT16, ")"));
-        // TODO: consider le/gt/...
         ops.add(Expression.make(FLOAT16, "Float16.copySign(", FLOAT16, ",", FLOAT16, ")"));
         ops.add(Expression.make(FLOAT16, "Float16.divide(", FLOAT16, ",", FLOAT16, ")"));
         ops.add(Expression.make(BOOLEANS, "", FLOAT16, ".equals(", FLOAT16, ")"));
