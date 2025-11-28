@@ -616,7 +616,7 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
   //                     = OE/YE
   //  =>              OE = YE*SOEP/(100-SOEP)
 
-#define KELVIN_DEBUG
+#undef KELVIN_DEBUG
 #ifdef KELVIN_DEBUG
   log_info(gc)("compute_old_generation_balance(%zu, %zu, %zu)", mutator_xfer_limit, old_trashed_regions, young_trashed_regions);
 #endif

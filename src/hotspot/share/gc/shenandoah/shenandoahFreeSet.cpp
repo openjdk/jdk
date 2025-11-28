@@ -2866,7 +2866,7 @@ void ShenandoahFreeSet::compute_young_and_old_reserves(size_t young_trashed_regi
   size_t young_available = young_capacity - young_generation->used();
   young_available += young_trashed_regions * region_size_bytes;
 
-#define KELVIN_DEBUG
+#undef KELVIN_DEBUG
 #ifdef KELVIN_DEBUG
   log_info(gc)("compute_young_and_old_reserves(%zu, %zu)", young_trashed_regions, old_trashed_regions);
   log_info(gc)("  (should have called compute_old_generation_balance() before here.");
