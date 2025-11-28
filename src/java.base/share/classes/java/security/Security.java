@@ -273,21 +273,23 @@ public final class Security {
                         throw new InternalError(
                                 "Cyclic include of '" + path + "'");
                     }
-                } catch (IOException ignore) {}
+                } catch (IOException e) {
+                    throw new InternalError("Failed to check cyclic " +
+                            "inclusion of '" + path + "'", e);
+                }
             }
         }
 
         private static void loadFromPath(Path path, LoadingMode mode)
                 throws IOException {
-            boolean isRegularFile = Files.isRegularFile(path);
-            if (!isRegularFile && Files.isDirectory(path)) {
+            if (Files.isDirectory(path)) {
                 throw new IOException("Is a directory");
             }
             try (InputStream is = Files.newInputStream(path)) {
                 checkCyclicInclude(path);
                 reset(mode);
                 Path previousPath = currentPath;
-                currentPath = isRegularFile ? path : null;
+                currentPath = Files.isRegularFile(path) ? path : null;
                 activePaths.add(path);
                 try {
                     debugLoad(true, path);
