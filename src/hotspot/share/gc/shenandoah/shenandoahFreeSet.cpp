@@ -2780,6 +2780,10 @@ void ShenandoahFreeSet::finish_rebuild(size_t young_cset_regions, size_t old_cse
   establish_old_collector_alloc_bias();
   _partitions.assert_bounds(true, _old_trash_not_in_bounds);
   log_status();
+  if (_heap->mode()->is_generational()) {
+    // Clear the region balance until it is adjusted in preparation for a subsequent GC cycle.
+    _heap->old_generation()->set_region_balance(0);
+  }
   // Even though we have finished rebuild, old trashed regions may not yet have been recycled, so leave
   // _old_trash_not_in_bounds as is.  Following rebuild, old trashed regions may reside in Mutator, Collector,
   // or OldCollector partitions.

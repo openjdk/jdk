@@ -448,9 +448,6 @@ jint ShenandoahHeap::initialize() {
       gen_heap->compute_old_generation_balance(allocation_runway, old_trashed_regions, young_trashed_regions);
     }
     _free_set->finish_rebuild(young_trashed_regions, old_trashed_regions, num_old);
-    if (mode()->is_generational()) {
-     old_generation()->set_region_balance(0);
-    }
   }
 
   if (AlwaysPreTouch) {
@@ -2557,7 +2554,6 @@ void ShenandoahHeap::rebuild_free_set_within_phase() {
     ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
     ShenandoahOldGeneration* old_gen = gen_heap->old_generation();
     old_gen->heuristics()->evaluate_triggers(first_old_region, last_old_region, old_region_count, num_regions());
-    old_gen->set_region_balance(0);
   }
 }
 
