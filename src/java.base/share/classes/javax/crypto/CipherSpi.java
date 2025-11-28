@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -953,6 +953,88 @@ public abstract class CipherSpi {
         throw new UnsupportedOperationException(
             "The underlying Cipher implementation "
             +  "does not support this method");
+    }
+
+    /**
+     * Export a derived key based on the current cryptographic state and
+     * additional context.
+     *
+     * <p>This method is designed to enable the generation of additional
+     * keys for use in various cryptographic operations, ensuring that key
+     * material can be securely derived from the existing encryption or
+     * decryption state.
+     *
+     * <p>This method guarantees that an encryption cipher and a decryption
+     * cipher, if initialized with the same symmetric key or a matching
+     * asymmetric key pair and equivalent parameters, will produce identical
+     * derived keys when the same arguments are provided.
+     *
+     * @param algorithm the algorithm of the derived key
+     * @param context a byte array representing additional data or context
+     *          information that influences the key derivation process.
+     *          The derived key should be unique to the given context.
+     *          A cipher implementation may accept a {@code null} value.
+     * @param length the desired length of the derived key in bytes
+     *
+     * @return the derived key
+     *
+     * @throws UnsupportedOperationException if this method has not been
+     *          overridden by an implementation
+     * @throws IllegalArgumentException if one or more of the input arguments
+     *          are invalid
+     * @throws IllegalStateException if this {@code Cipher} object is in a wrong
+     *          state (e.g., has not been initialized)
+     *
+     * @implSpec The default implementation throws an
+     * {@code UnsupportedOperationException}.
+     *
+     * @since 26
+     */
+    protected SecretKey engineExportKey(String algorithm, byte[] context, int length) {
+        throw new UnsupportedOperationException(
+                "The underlying Cipher implementation "
+                        +  "does not support this method");
+    }
+
+    /**
+     * Export derived data based on the current cryptographic state and
+     * additional context.
+     *
+     * <p>This method is designed to enable the generation of additional
+     * secret data for use in various later operations, ensuring that data
+     * can be securely derived from the existing encryption or
+     * decryption state.
+     *
+     * <p>This method guarantees that an encryption cipher and a decryption
+     * cipher, if initialized with the same symmetric key or a matching
+     * asymmetric key pair and equivalent parameters, will produce identical
+     * derived data when the same arguments are provided.
+     *
+     * @param context a byte array representing additional data or context
+     *          information that influences the key derivation process.
+     *          The derived key should be unique to the given context.
+     *          A cipher implementation may accept a {@code null} value.
+     * @param length the desired length of the derived data
+     *
+     * @return the derived data
+     *
+     * @throws UnsupportedOperationException if this method has not been
+     *          overridden by an implementation or the derived data is not
+     *          extractable
+     * @throws IllegalArgumentException if one or more of the input arguments
+     *          are invalid
+     * @throws IllegalStateException if this {@code Cipher} object is in a wrong
+     *          state (e.g., has not been initialized)
+     *
+     * @implSpec The default implementation throws an
+     * {@code UnsupportedOperationException}.
+     *
+     * @since 26
+     */
+    protected byte[] engineExportData(byte[] context, int length) {
+        throw new UnsupportedOperationException(
+                "The underlying Cipher implementation "
+                        +  "does not support this method");
     }
 
     /**

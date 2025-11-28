@@ -2578,6 +2578,93 @@ public class Cipher {
     }
 
     /**
+     * Export a derived key based on the current cryptographic state and
+     * additional context.
+     *
+     * <p>This method is designed to enable the generation of additional
+     * keys for use in various cryptographic operations, ensuring that key
+     * material can be securely derived from the existing encryption or
+     * decryption state.
+     *
+     * <p>This method guarantees that an encryption cipher and a decryption
+     * cipher, if initialized with the same symmetric key or a matching
+     * asymmetric key pair and equivalent parameters, will produce identical
+     * derived keys when the same arguments are provided.
+     *
+     * @param algorithm the algorithm of the derived key
+     * @param context a byte array representing additional data or context
+     *          information that influences the key derivation process.
+     *          The derived key should be unique to the given context.
+     *          A cipher implementation may accept a {@code null} value.
+     * @param length the desired length of the derived key in bytes
+     *          (must be greater than 0)
+     *
+     * @return the derived key
+     *
+     * @throws UnsupportedOperationException if the corresponding method in the
+     *          {@code CipherSpi} is not supported
+     * @throws IllegalArgumentException if one or more of the input arguments
+     *          are invalid
+     * @throws IllegalStateException if this {@code Cipher} object is in a wrong
+     *          state (e.g., has not been initialized)
+     * @throws NullPointerException if {@code algorithm} is {@code null}
+     *
+     * @since 26
+     */
+    public SecretKey exportKey(String algorithm, byte[] context, int length) {
+        Objects.requireNonNull(algorithm);
+        if (length <= 0) {
+            throw new IllegalArgumentException("length cannot be negative");
+        }
+        checkCipherState();
+        chooseFirstProvider();
+        return spi.engineExportKey(algorithm, context, length);
+    }
+
+
+    /**
+     * Export derived data based on the current cryptographic state and
+     * additional context.
+     *
+     * <p>This method is designed to enable the generation of additional
+     * secret data for use in various later operations, ensuring that data
+     * can be securely derived from the existing encryption or
+     * decryption state.
+     *
+     * <p>This method guarantees that an encryption cipher and a decryption
+     * cipher, if initialized with the same symmetric key or a matching
+     * asymmetric key pair and equivalent parameters, will produce identical
+     * derived data when the same arguments are provided.
+     *
+     * @param context a byte array representing additional data or context
+     *          information that influences the key derivation process.
+     *          The derived key should be unique to the given context.
+     *          A cipher implementation may accept a {@code null} value.
+     * @param length the desired length of the derived data
+     *          (must be greater than 0)
+     *
+     * @return the derived data
+     *
+     * @throws UnsupportedOperationException if the corresponding method in the
+     *          {@code CipherSpi} is not supported or the derived data is not
+     *          extractable
+     * @throws IllegalArgumentException if one or more of the input arguments
+     *          are invalid
+     * @throws IllegalStateException if this {@code Cipher} object is in a wrong
+     *          state (e.g., has not been initialized)
+     *
+     * @since 26
+     */
+    public byte[] exportData(byte[] context, int length) {
+        if (length <= 0) {
+            throw new IllegalArgumentException("length cannot be negative");
+        }
+        checkCipherState();
+        chooseFirstProvider();
+        return spi.engineExportData(context, length);
+    }
+
+    /**
      * Unwrap a previously wrapped key.
      *
      * @param wrappedKey the key to be unwrapped
