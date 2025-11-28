@@ -28,7 +28,7 @@
  * @summary Verifies no painting spillover in Win L&F
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @run main/manual TestPaintSpillOverBug 
+ * @run main/manual TestPaintSpillOverBug
  */
 
 import javax.swing.JFrame;
@@ -76,7 +76,7 @@ public class TestPaintSpillOverBug {
         clickMe.add(" ");
         bar.add(clickMe);
         f.setJMenuBar(bar);
-        f.setSize(600, 200); 
+        f.setSize(600, 200);
         return f;
     }
 }
