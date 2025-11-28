@@ -61,7 +61,7 @@ public final class Operations {
 
     public static final List<Expression> FLOAT16_OPERATIONS = generateFloat16Operations();
 
-    public static final List<Expression> NUMERIC_OPERATIONS = concat(
+    public static final List<Expression> SCALAR_NUMERIC_OPERATIONS = concat(
             PRIMITIVE_OPERATIONS,
             FLOAT16_OPERATIONS
     );

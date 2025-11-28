@@ -99,7 +99,7 @@ public class TestExpressions {
             );
         });
 
-        for (Expression operation : Operations.NUMERIC_OPERATIONS) {
+        for (Expression operation : Operations.SCALAR_NUMERIC_OPERATIONS) {
             tests.add(withConstantsTemplate.asToken(operation));
         }
 

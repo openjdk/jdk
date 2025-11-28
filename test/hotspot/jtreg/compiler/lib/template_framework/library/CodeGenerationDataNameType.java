@@ -173,6 +173,7 @@ public interface CodeGenerationDataNameType extends DataName.Type {
         longs(),
         floats(),
         doubles(),
+        booleans(),
         float16()
     );
 }
