@@ -325,7 +325,7 @@ class JavaThread: public Thread {
   bool                  _is_in_VTMS_transition;          // thread is in virtual thread mount state transition
   bool                  _is_disable_suspend;             // JVMTI suspend is temporarily disabled; used on current thread only
   bool                  _is_in_java_upcall;              // JVMTI is doing a Java upcall, so JVMTI events must be hidden
-  bool                  _jvmti_events_disabled;          // JVMTI events disabled manually
+  int                   _jvmti_events_disabled;          // JVMTI events disabled manually
   bool                  _VTMS_transition_mark;           // used for sync between VTMS transitions and disablers
   bool                  _on_monitor_waited_event;        // Avoid callee arg processing for enterSpecial when posting waited event
   ObjectMonitor*        _contended_entered_monitor;      // Monitor for pending monitor_contended_entered callback
@@ -749,13 +749,13 @@ public:
   void set_is_in_VTMS_transition(bool val);
 
   bool is_disable_suspend() const                { return _is_disable_suspend; }
-  void toggle_is_disable_suspend()               { _is_disable_suspend = !_is_disable_suspend; };
+  void toggle_is_disable_suspend()               { _is_disable_suspend = !_is_disable_suspend; }
 
   bool is_in_java_upcall() const                 { return _is_in_java_upcall; }
-  void toggle_is_in_java_upcall()                { _is_in_java_upcall = !_is_in_java_upcall; };
+  void toggle_is_in_java_upcall()                { _is_in_java_upcall = !_is_in_java_upcall; }
 
-  void disable_jvmti_events()           { _jvmti_events_disabled = true; };
-  void enable_jvmti_events()            { _jvmti_events_disabled = false; };
+  void disable_jvmti_events()                    { _jvmti_events_disabled++; }
+  void enable_jvmti_events()                     { _jvmti_events_disabled--; }
 
   bool VTMS_transition_mark() const              { return AtomicAccess::load(&_VTMS_transition_mark); }
   void set_VTMS_transition_mark(bool val)        { AtomicAccess::store(&_VTMS_transition_mark, val); }
@@ -765,7 +765,7 @@ public:
   // - is in an interruptLock or similar critical section (_is_disable_suspend)
   // - JVMTI is making a Java upcall (_is_in_java_upcall)
   bool should_hide_jvmti_events() const          { return _is_in_VTMS_transition || _is_disable_suspend
-    || _is_in_java_upcall || _jvmti_events_disabled; }
+    || _is_in_java_upcall || _jvmti_events_disabled != 0; }
 
   bool on_monitor_waited_event()             { return _on_monitor_waited_event; }
   void set_on_monitor_waited_event(bool val) { _on_monitor_waited_event = val; }
