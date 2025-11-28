@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
     // "Chained" decompressor methods.
     //
 
+    @Override
     public void setReader(ImageReader reader) {
         if(decompressor != null) {
             decompressor.setReader(reader);
@@ -102,6 +103,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         super.setReader(reader);
     }
 
+    @Override
     public void setMetadata(IIOMetadata metadata) {
         if(decompressor != null) {
             decompressor.setMetadata(metadata);
@@ -109,6 +111,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         super.setMetadata(metadata);
     }
 
+    @Override
     public void setPhotometricInterpretation(int photometricInterpretation) {
         if(decompressor != null) {
             decompressor.setPhotometricInterpretation(photometricInterpretation);
@@ -116,6 +119,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         super.setPhotometricInterpretation(photometricInterpretation);
     }
 
+    @Override
     public void setCompression(int compression) {
         if(decompressor != null) {
             decompressor.setCompression(compression);
@@ -123,6 +127,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         super.setCompression(compression);
     }
 
+    @Override
     public void setPlanar(boolean planar) {
         if(decompressor != null) {
             decompressor.setPlanar(planar);
@@ -130,6 +135,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         super.setPlanar(planar);
     }
 
+    @Override
     public void setSamplesPerPixel(int samplesPerPixel) {
         if(decompressor != null) {
             decompressor.setSamplesPerPixel(samplesPerPixel);
@@ -137,6 +143,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         super.setSamplesPerPixel(samplesPerPixel);
     }
 
+    @Override
     public void setBitsPerSample(int[] bitsPerSample) {
         if(decompressor != null) {
             decompressor.setBitsPerSample(bitsPerSample);
@@ -144,6 +151,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         super.setBitsPerSample(bitsPerSample);
     }
 
+    @Override
     public void setSampleFormat(int[] sampleFormat) {
         if(decompressor != null) {
             decompressor.setSampleFormat(sampleFormat);
@@ -151,6 +159,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         super.setSampleFormat(sampleFormat);
     }
 
+    @Override
     public void setExtraSamples(int[] extraSamples) {
         if(decompressor != null) {
             decompressor.setExtraSamples(extraSamples);
@@ -158,6 +167,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         super.setExtraSamples(extraSamples);
     }
 
+    @Override
     public void setColorMap(char[] colorMap) {
         if(decompressor != null) {
             decompressor.setColorMap(colorMap);
@@ -165,6 +175,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         super.setColorMap(colorMap);
     }
 
+    @Override
     public void setStream(ImageInputStream stream) {
         if(decompressor != null) {
             decompressor.setStream(stream);
@@ -173,6 +184,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         }
     }
 
+    @Override
     public void setOffset(long offset) {
         if(decompressor != null) {
             decompressor.setOffset(offset);
@@ -180,6 +192,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         super.setOffset(offset);
     }
 
+    @Override
     public void setByteCount(int byteCount) throws IOException {
         if(decompressor != null) {
             decompressor.setByteCount(byteCount);
@@ -187,6 +200,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         super.setByteCount(byteCount);
     }
 
+    @Override
     public void setSrcMinX(int srcMinX) {
         if(decompressor != null) {
             decompressor.setSrcMinX(srcMinX);
@@ -194,6 +208,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         super.setSrcMinX(srcMinX);
     }
 
+    @Override
     public void setSrcMinY(int srcMinY) {
         if(decompressor != null) {
             decompressor.setSrcMinY(srcMinY);
@@ -201,6 +216,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         super.setSrcMinY(srcMinY);
     }
 
+    @Override
     public void setSrcWidth(int srcWidth) {
         if(decompressor != null) {
             decompressor.setSrcWidth(srcWidth);
@@ -208,6 +224,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         super.setSrcWidth(srcWidth);
     }
 
+    @Override
     public void setSrcHeight(int srcHeight) {
         if(decompressor != null) {
             decompressor.setSrcHeight(srcHeight);
@@ -215,6 +232,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         super.setSrcHeight(srcHeight);
     }
 
+    @Override
     public void setSourceXOffset(int sourceXOffset) {
         if(decompressor != null) {
             decompressor.setSourceXOffset(sourceXOffset);
@@ -222,6 +240,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         super.setSourceXOffset(sourceXOffset);
     }
 
+    @Override
     public void setDstXOffset(int dstXOffset) {
         if(decompressor != null) {
             decompressor.setDstXOffset(dstXOffset);
@@ -229,6 +248,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         super.setDstXOffset(dstXOffset);
     }
 
+    @Override
     public void setSourceYOffset(int sourceYOffset) {
         if(decompressor != null) {
             decompressor.setSourceYOffset(sourceYOffset);
@@ -236,6 +256,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         super.setSourceYOffset(sourceYOffset);
     }
 
+    @Override
     public void setDstYOffset(int dstYOffset) {
         if(decompressor != null) {
             decompressor.setDstYOffset(dstYOffset);
@@ -260,6 +281,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
     }
     */
 
+    @Override
     public void setSourceBands(int[] sourceBands) {
         if(decompressor != null) {
             decompressor.setSourceBands(sourceBands);
@@ -267,6 +289,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         super.setSourceBands(sourceBands);
     }
 
+    @Override
     public void setDestinationBands(int[] destinationBands) {
         if(decompressor != null) {
             decompressor.setDestinationBands(destinationBands);
@@ -274,6 +297,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         super.setDestinationBands(destinationBands);
     }
 
+    @Override
     public void setImage(BufferedImage image) {
         if(decompressor != null) {
             ColorModel cm = image.getColorModel();
@@ -287,6 +311,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         super.setImage(image);
     }
 
+    @Override
     public void setDstMinX(int dstMinX) {
         if(decompressor != null) {
             decompressor.setDstMinX(dstMinX);
@@ -294,6 +319,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         super.setDstMinX(dstMinX);
     }
 
+    @Override
     public void setDstMinY(int dstMinY) {
         if(decompressor != null) {
             decompressor.setDstMinY(dstMinY);
@@ -301,6 +327,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         super.setDstMinY(dstMinY);
     }
 
+    @Override
     public void setDstWidth(int dstWidth) {
         if(decompressor != null) {
             decompressor.setDstWidth(dstWidth);
@@ -308,6 +335,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         super.setDstWidth(dstWidth);
     }
 
+    @Override
     public void setDstHeight(int dstHeight) {
         if(decompressor != null) {
             decompressor.setDstHeight(dstHeight);
@@ -315,6 +343,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         super.setDstHeight(dstHeight);
     }
 
+    @Override
     public void setActiveSrcMinX(int activeSrcMinX) {
         if(decompressor != null) {
             decompressor.setActiveSrcMinX(activeSrcMinX);
@@ -322,6 +351,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         super.setActiveSrcMinX(activeSrcMinX);
     }
 
+    @Override
     public void setActiveSrcMinY(int activeSrcMinY) {
         if(decompressor != null) {
             decompressor.setActiveSrcMinY(activeSrcMinY);
@@ -329,6 +359,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         super.setActiveSrcMinY(activeSrcMinY);
     }
 
+    @Override
     public void setActiveSrcWidth(int activeSrcWidth) {
         if(decompressor != null) {
             decompressor.setActiveSrcWidth(activeSrcWidth);
@@ -336,6 +367,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         super.setActiveSrcWidth(activeSrcWidth);
     }
 
+    @Override
     public void setActiveSrcHeight(int activeSrcHeight) {
         if(decompressor != null) {
             decompressor.setActiveSrcHeight(activeSrcHeight);
@@ -353,6 +385,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         }
     }
 
+    @Override
     public void beginDecoding() {
         if(decompressor != null) {
             decompressor.beginDecoding();
@@ -445,6 +478,7 @@ public class TIFFYCbCrDecompressor extends TIFFDecompressor {
         }
     }
 
+    @Override
     public void decodeRaw(byte[] buf,
                           int dstOffset,
                           int bitsPerPixel,
