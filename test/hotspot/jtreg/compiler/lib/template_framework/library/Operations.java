@@ -274,22 +274,40 @@ public final class Operations {
     private static List<Expression> generateFloat16Operations() {
         List<Expression> ops = new ArrayList<>();
 
+        // Casts.
+        CodeGenerationDataNameType.INTEGRAL_AND_FLOATING_TYPES.stream().forEach(type -> {
+            if (type == CHARS) { return; }
+            ops.add(Expression.make(FLOAT16, "Float16.valueOf(", type, ")"));
+            ops.add(Expression.make(type, "", FLOAT16, "." + type.name() + "Value()"));
+        });
+
         ops.add(Expression.make(FLOAT16, "Float16.abs(", FLOAT16, ")"));
         ops.add(Expression.make(FLOAT16, "Float16.add(", FLOAT16, ",", FLOAT16, ")"));
-
-        ops.add(Expression.make(BYTES, "(", FLOAT16, ").byteValue()"));
-
         ops.add(Expression.make(INTS, "Float16.compare(", FLOAT16, ",", FLOAT16, ")"));
         ops.add(Expression.make(INTS, "(", FLOAT16, ").compareTo(",  FLOAT16, ")"));
         // TODO: consider le/gt/...
         ops.add(Expression.make(FLOAT16, "Float16.copySign(", FLOAT16, ",", FLOAT16, ")"));
         ops.add(Expression.make(FLOAT16, "Float16.divide(", FLOAT16, ",", FLOAT16, ")"));
-
-        ops.add(Expression.make(DOUBLES, "(", FLOAT16, ").doubleValue()"));
-
+        ops.add(Expression.make(BOOLEANS, "", FLOAT16, ".equals(", FLOAT16, ")"));
         ops.add(Expression.make(SHORTS, "Float16.float16ToRawShortBits(", FLOAT16, ")"));
-
-        // TODO: add all
+        ops.add(Expression.make(SHORTS, "Float16.float16ToShortBits(", FLOAT16, ")"));
+        ops.add(Expression.make(FLOAT16, "Float16.fma(", FLOAT16, ",", FLOAT16, ", ", FLOAT16, ")"));
+        ops.add(Expression.make(INTS, "Float16.getExponent(", FLOAT16, ")"));
+        ops.add(Expression.make(BOOLEANS, "Float16.isFinite(", FLOAT16, ")"));
+        ops.add(Expression.make(BOOLEANS, "Float16.isInfinite(", FLOAT16, ")"));
+        ops.add(Expression.make(BOOLEANS, "Float16.isNaN(", FLOAT16, ")"));
+        ops.add(Expression.make(FLOAT16, "Float16.max(", FLOAT16, ",", FLOAT16, ")"));
+        ops.add(Expression.make(FLOAT16, "Float16.min(", FLOAT16, ",", FLOAT16, ")"));
+        ops.add(Expression.make(FLOAT16, "Float16.multiply(", FLOAT16, ",", FLOAT16, ")"));
+        ops.add(Expression.make(FLOAT16, "Float16.negate(", FLOAT16, ")"));
+        ops.add(Expression.make(FLOAT16, "Float16.nextDown(", FLOAT16, ")"));
+        ops.add(Expression.make(FLOAT16, "Float16.nextUp(", FLOAT16, ")"));
+        ops.add(Expression.make(FLOAT16, "Float16.scalb(", FLOAT16, ", ", INTS, ")"));
+        ops.add(Expression.make(FLOAT16, "Float16.shortBitsToFloat16(", SHORTS, ")"));
+        ops.add(Expression.make(FLOAT16, "Float16.signum(", FLOAT16, ")"));
+        ops.add(Expression.make(FLOAT16, "Float16.sqrt(", FLOAT16, ")"));
+        ops.add(Expression.make(FLOAT16, "Float16.subtract(", FLOAT16, ",", FLOAT16, ")"));
+        ops.add(Expression.make(FLOAT16, "Float16.ulp(", FLOAT16, ")"));
 
         // Make sure the list is not modifiable.
         return List.copyOf(ops);

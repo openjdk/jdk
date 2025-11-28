@@ -47,7 +47,7 @@ public class TestVerifyIncubatorVector {
     public static void main(String[] args) {
         testArrayFloat16();
         testRawFloat16();
-        testRandom();
+        testFloat16Random();
     }
 
     public static void testArrayFloat16() {
@@ -94,7 +94,7 @@ public class TestVerifyIncubatorVector {
         checkNEWithRawBits(arr1, arr2);
     }
 
-    public static void testRandom() {
+    public static void testFloat16Random() {
         // Testing all 2^16 * 2^16 = 2^32 would take a bit long, so we randomly sample instead.
         for (int i = 0; i < 10_000; i++) {
             short bitsA = (short)RANDOM.nextInt();
