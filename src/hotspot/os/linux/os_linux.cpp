@@ -4970,7 +4970,7 @@ static clockid_t get_thread_clockid(Thread* thread, bool full, bool* success) {
   clockid_t clockid;
   int rc = pthread_getcpuclockid(thread->osthread()->pthread_id(), &clockid);
   if (rc == 0) {
-    clockid = full ? clockid : (clockid & ~3) | CPUCLOCK_VIRT;
+    clockid = full ? clockid : (clockid & ~2) | CPUCLOCK_VIRT;
   } else {
     // It's possible to encounter a terminated native thread that failed
     // to detach itself from the VM - which should result in ESRCH.
