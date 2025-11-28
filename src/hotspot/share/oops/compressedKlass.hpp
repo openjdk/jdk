@@ -98,7 +98,6 @@ class Klass;
 // If compressed klass pointers then use narrowKlass.
 typedef juint  narrowKlass;
 
-// For UseCompressedClassPointers.
 class CompressedKlassPointers : public AllStatic {
   friend class VMStructs;
   friend class ArchiveBuilder;
@@ -161,7 +160,6 @@ public:
 
   // Initialization sequence:
   // 1) Parse arguments. The following arguments take a role:
-  //      - UseCompressedClassPointers
   //      - UseCompactObjectHeaders
   //      - Xshare on off dump
   //      - CompressedClassSpaceSize

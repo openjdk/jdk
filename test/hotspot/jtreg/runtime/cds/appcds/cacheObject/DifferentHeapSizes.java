@@ -84,7 +84,7 @@ public class DifferentHeapSizes {
                 } else {
                     result
                         .assertAbnormalExit("Unable to use shared archive.",
-                                            "The saved state of UseCompressedOops and UseCompressedClassPointers is different from runtime, CDS will be disabled.");
+                                            "The saved state of UseCompressedOops (1) is different from runtime (0), CDS will be disabled.");
                 }
             }
         }

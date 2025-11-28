@@ -39,7 +39,6 @@ public class MaxMetaspaceSizeTest {
             "-Xshare:off",
             "-Xmx1g",
             "-XX:MaxMetaspaceSize=4K",
-            "-XX:+UseCompressedClassPointers",
             "-XX:CompressedClassSpaceSize=1g",
             "--version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());

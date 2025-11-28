@@ -36,7 +36,6 @@ public class TestHotSpotVMConfig extends HotSpotVMConfigAccess {
     }
 
     public final boolean useCompressedOops = getFlag("UseCompressedOops", Boolean.class);
-    public final boolean useCompressedClassPointers = getFlag("UseCompressedClassPointers", Boolean.class);
 
     public final long narrowOopBase = getFieldValue("CompilerToVM::Data::Universe_narrow_oop_base", Long.class, "address");
     public final int narrowOopShift = getFieldValue("CompilerToVM::Data::Universe_narrow_oop_shift", Integer.class, "int");

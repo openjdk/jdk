@@ -75,7 +75,6 @@
   }
 
   static bool narrow_klass_use_complex_address() {
-    assert(UseCompressedClassPointers, "only for compressed klass code");
     return (CompressedKlassPointers::shift() <= 3);
   }
 

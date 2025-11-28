@@ -37,8 +37,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main/othervm -XX:+UseCompressedOops -XX:+UseCompressedClassPointers FieldDensityTest
- * @run main/othervm -XX:+UseCompressedOops -XX:-UseCompressedClassPointers FieldDensityTest
+ * @run main/othervm -XX:+UseCompressedOops FieldDensityTest
  */
 
 import java.lang.reflect.Field;

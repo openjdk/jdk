@@ -668,12 +668,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
       SystemDictionaryShared::validate_before_archiving(InstanceKlass::cast(klass));
       dump_region->allocate(sizeof(address));
     }
-#ifdef _LP64
-    // More strict alignments needed for UseCompressedClassPointers
-    if (UseCompressedClassPointers) {
-      alignment = nth_bit(ArchiveBuilder::precomputed_narrow_klass_shift());
-    }
-#endif
+    alignment = nth_bit(ArchiveBuilder::precomputed_narrow_klass_shift());
   } else if (src_info->msotype() == MetaspaceObj::SymbolType) {
     // Symbols may be allocated by using AllocateHeap, so their sizes
     // may be less than size_in_bytes() indicates.
@@ -1137,20 +1132,17 @@ class RelocateBufferToRequested : public BitMapClosure {
   }
 };
 
-#ifdef _LP64
 int ArchiveBuilder::precomputed_narrow_klass_shift() {
-  // Legacy Mode:
-  //    We use 32 bits for narrowKlass, which should cover the full 4G Klass range. Shift can be 0.
+  // Standard Mode:
+  //    We use 32 bits for narrowKlass, which should cover a full 4G Klass range. Shift can be 0.
   // CompactObjectHeader Mode:
   //    narrowKlass is much smaller, and we use the highest possible shift value to later get the maximum
   //    Klass encoding range.
   //
   // Note that all of this may change in the future, if we decide to correct the pre-calculated
   // narrow Klass IDs at archive load time.
-  assert(UseCompressedClassPointers, "Only needed for compressed class pointers");
   return UseCompactObjectHeaders ?  CompressedKlassPointers::max_shift() : 0;
 }
-#endif // _LP64
 
 void ArchiveBuilder::relocate_to_requested() {
   if (!ro_region()->is_packed()) {

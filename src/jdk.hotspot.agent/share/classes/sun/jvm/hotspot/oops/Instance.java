@@ -57,10 +57,8 @@ public class Instance extends Oop {
   public static long getHeaderSize() {
     if (VM.getVM().isCompactObjectHeadersEnabled()) {
       return Oop.getHeaderSize();
-    } else if (VM.getVM().isCompressedKlassPointersEnabled()) {
-      return typeSize - VM.getVM().getIntSize();
     } else {
-      return typeSize;
+      return typeSize - VM.getVM().getIntSize();
     }
   }
 
