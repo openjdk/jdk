@@ -706,50 +706,43 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     if (new_outer_size < size) {
       return nullptr;
     }
-    MallocHeader::asan_unpoison_header_footer(memblock);
-    const size_t old_size = MallocTracker::malloc_header(memblock)->size();
-
-    // Observe MallocLimit
-    if ((size > old_size) && MemTracker::check_exceeds_limit(size - old_size, mem_tag)) {
-      return nullptr;
-    }
+    MallocHeader* header = MallocHeader::kill_block(memblock);
+    const size_t old_size = header->size();
 
     // Perform integrity checks on and mark the old block as dead *before* calling the real realloc(3) since it
     // may invalidate the old block, including its header.
-    MallocHeader* header = MallocHeader::resolve_checked(memblock);
     assert(mem_tag == header->mem_tag(), "weird NMT type mismatch (new:\"%s\" != old:\"%s\")\n",
            NMTUtil::tag_to_name(mem_tag), NMTUtil::tag_to_name(header->mem_tag()));
-    const MallocHeader::FreeInfo free_info = header->free_info();
-
-    header->mark_block_as_dead();
-
-    // the real realloc
-    void* const new_outer_ptr = permit_forbidden_function::realloc(header, new_outer_size);
-
-    if (new_outer_ptr == nullptr) {
-      // realloc(3) failed and the block still exists.
-      // We have however marked it as dead, revert this change.
-      header->revive();
-      MallocHeader::asan_poison_header_footer(memblock);
-      return nullptr;
-    }
-    // realloc(3) succeeded, variable header now points to invalid memory and we need to deaccount the old block.
-    MemTracker::deaccount(free_info);
-
-    // After a successful realloc(3), we account the resized block with its new size
-    // to NMT.
-    void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, mem_tag, stack);
+    bool success = false;
+    // Observe MallocLimit
+    if (!((size > old_size) && MemTracker::check_exceeds_limit(size - old_size, mem_tag))) {
+      // If realloc succeeds, the header is freed. Get FreeInfo before that.
+      MallocHeader::FreeInfo free_info = header->free_info();
+      void* const new_outer_ptr = permit_forbidden_function::realloc(header, new_outer_size);
+      if (new_outer_ptr != nullptr) {
+        // realloc(3) succeeded, variable header now points to invalid memory and we need to deaccount the old block.
+        MemTracker::deaccount(free_info);
+        // After a successful realloc(3), we account the resized block with its new size
+        // to NMT.
+        void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, mem_tag, stack);
 
 #ifdef ASSERT
-    assert(old_size == free_info.size, "Sanity");
-    if (ZapCHeap && old_size < size) {
-      // We also zap the newly extended region.
-      ::memset((char*)new_inner_ptr + old_size, uninitBlockPad, size - old_size);
-    }
+        if (ZapCHeap && old_size < size) {
+          // We also zap the newly extended region.
+          ::memset((char*)new_inner_ptr + old_size, uninitBlockPad, size - old_size);
+        }
 #endif
 
-    rc = new_inner_ptr;
-
+        success = true;
+        rc = new_inner_ptr;
+      }
+    }
+    if (!success) {
+      // realloc(3) failed and the block still exists.
+      // We have however marked it as dead, revert this change.
+      MallocHeader::revive_block(memblock);
+      return nullptr;
+    }
   } else {
 
     // NMT disabled.

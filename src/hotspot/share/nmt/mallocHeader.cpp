@@ -76,3 +76,20 @@ void MallocHeader::print_block_on_error(outputStream* st, address bad_address, a
     os::print_hex_dump(st, from1, to2, 1);
   }
 }
+
+MallocHeader* MallocHeader::kill_block(void* memblock) {
+  MallocHeader* header = (MallocHeader*)memblock - 1;
+  ASAN_UNPOISON_MEMORY_REGION(header, sizeof(MallocHeader));
+  ASAN_UNPOISON_MEMORY_REGION(header->footer_address(), sizeof(uint16_t));
+  resolve_checked(memblock);
+  header->mark_block_as_dead();
+  return header;
+}
+
+MallocHeader* MallocHeader::revive_block(void* memblock) {
+  MallocHeader* header = (MallocHeader*)memblock - 1;
+  header->revive();
+  ASAN_POISON_MEMORY_REGION(header->footer_address(), sizeof(uint16_t));
+  ASAN_POISON_MEMORY_REGION(header, sizeof(MallocHeader));
+  return header;
+}

@@ -134,16 +134,9 @@ public:
   inline MallocHeader(size_t size, MemTag mem_tag, uint32_t mst_marker);
 
   inline static size_t malloc_overhead() { return sizeof(MallocHeader) + sizeof(uint16_t); }
-  static void asan_poison_header_footer(void* addr) {
-    MallocHeader* header = (MallocHeader*)addr - 1;
-    ASAN_POISON_MEMORY_REGION(header->footer_address(), sizeof(uint16_t));
-    ASAN_POISON_MEMORY_REGION(header, sizeof(MallocHeader));
-  }
-  static void asan_unpoison_header_footer(void* addr) {
-    MallocHeader* header = (MallocHeader*)addr - 1;
-    ASAN_UNPOISON_MEMORY_REGION(header, sizeof(MallocHeader));
-    ASAN_UNPOISON_MEMORY_REGION(header->footer_address(), sizeof(uint16_t));
-  }
+
+  static MallocHeader* kill_block(void* memblock);
+  static MallocHeader* revive_block(void* memblock);
 
   inline size_t size()  const { return _size; }
   inline MemTag mem_tag() const { return _mem_tag; }
