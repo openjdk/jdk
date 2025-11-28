@@ -46,7 +46,7 @@ import java.util.stream.IntStream;
 import compiler.lib.compile_framework.*;
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateToken;
-import static compiler.lib.template_framework.Template.body;
+import static compiler.lib.template_framework.Template.scope;
 import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.$;
 import compiler.lib.template_framework.library.CodeGenerationDataNameType;
@@ -101,7 +101,7 @@ public class ExpressionFuzzer {
 
         // Create the body for the test. We use it twice: compiled and reference.
         // Execute the expression and catch expected Exceptions.
-        var bodyTemplate = Template.make("expression", "arguments", "checksum", (Expression expression, List<Object> arguments, String checksum) -> body(
+        var bodyTemplate = Template.make("expression", "arguments", "checksum", (Expression expression, List<Object> arguments, String checksum) -> scope(
             """
             try {
             """,
@@ -169,14 +169,14 @@ public class ExpressionFuzzer {
                 default -> throw new RuntimeException("not handled: " + type.name());
             };
             StringPair cmp = cmps.get(RANDOM.nextInt(cmps.size()));
-            return body(
+            return scope(
                 ", ", cmp.s0(), type.con(), cmp.s1()
             );
         });
 
         // Checksum method: returns not just the value, but also does some range / bit checks.
         //                  This gives us enhanced verification on the range / bits of the result type.
-        var checksumTemplate = Template.make("expression", "checksum", (Expression expression, String checksum) -> body(
+        var checksumTemplate = Template.make("expression", "checksum", (Expression expression, String checksum) -> scope(
             let("returnType", expression.returnType),
             """
             @ForceInline
@@ -203,7 +203,7 @@ public class ExpressionFuzzer {
 
         // We need to prepare some random values to pass into the test method. We generate the values
         // once, and pass the same values into both the compiled and reference method.
-        var valueTemplate = Template.make("name", "type", (String name, CodeGenerationDataNameType type) -> body(
+        var valueTemplate = Template.make("name", "type", (String name, CodeGenerationDataNameType type) -> scope(
             "#type #name = ",
             (type instanceof PrimitiveType pt) ? pt.callLibraryRNG() : type.con(),
             ";\n"
@@ -215,7 +215,7 @@ public class ExpressionFuzzer {
         //
         // To ensure that both the compiled and reference method use the same constraint, we put
         // the computation in a ForceInline method.
-        var constrainArgumentMethodTemplate = Template.make("name", "type", (String name, CodeGenerationDataNameType type) -> body(
+        var constrainArgumentMethodTemplate = Template.make("name", "type", (String name, CodeGenerationDataNameType type) -> scope(
             """
             @ForceInline
             public static #type constrain_#name(#type v) {
@@ -249,7 +249,7 @@ public class ExpressionFuzzer {
             """
         ));
 
-        var constrainArgumentTemplate = Template.make("name", (String name) -> body(
+        var constrainArgumentTemplate = Template.make("name", (String name) -> scope(
             """
             #name = constrain_#name(#name);
             """
@@ -281,7 +281,7 @@ public class ExpressionFuzzer {
                     }
                 }
             }
-            return body(
+            return scope(
                 let("methodArguments",
                     methodArguments.stream().map(ma -> ma.name).collect(Collectors.joining(", "))),
                 let("methodArgumentsWithTypes",

@@ -1331,8 +1331,8 @@ public class TestModules extends JavadocTester {
         checkOutput("moduleB/testpkg3mdlB/package-summary.html", true,
                 """
                     <a href="https://docs.oracle.com/javase/9/docs/api/java.base/java/lang/String.ht\
-                    ml" title="class or interface in java.lang" class="external-link"><code>Link to \
-                    String Class</code></a>""");
+                    ml" title="class in java.lang" class="external-link"><code>Link to String Class<\
+                    /code></a>""");
         checkOutput("moduleB/testpkg3mdlB/package-summary.html", true,
                 """
                     <a href="https://docs.oracle.com/javase/9/docs/api/java.base/java/lang/package-s\
