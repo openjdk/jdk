@@ -80,7 +80,7 @@ public class DefRendererSerialize {
 
       JFrame frame = new JFrame("DefRendererSerialize");
       frame.add(table);
-     
+
       frame.pack();
       return frame;
    }
