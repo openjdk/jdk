@@ -657,8 +657,13 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(NeoverseN1Errata1542419, true);
   }
 
-  if (NeoverseN1Errata1542419 && !has_neoverse_n1_errata_1542419()) {
-    warning("NeoverseN1Errata1542419 is set for the CPU not having Neoverse N1 errata 1542419");
+  if (NeoverseN1Errata1542419) {
+    if (!has_neoverse_n1_errata_1542419()) {
+      warning("NeoverseN1Errata1542419 is set for the CPU not having Neoverse N1 errata 1542419");
+    }
+    if (FLAG_IS_DEFAULT(UseDeferredICacheInvalidation)) {
+      FLAG_SET_DEFAULT(UseDeferredICacheInvalidation, true);
+    }
   }
 
   // Construct the "features" string

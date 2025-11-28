@@ -33,59 +33,79 @@
 extern THREAD_LOCAL ICacheInvalidationContext* current_icache_invalidation_context;
 
 inline void ICacheInvalidationContext::pd_init() {
-  if (NeoverseN1Errata1542419 && _needs_invalidation) {
+  if (UseDeferredICacheInvalidation && _needs_invalidation) {
     current_icache_invalidation_context = this;
   }
 }
 
 inline bool ICacheInvalidationContext::deferred_invalidation() {
-  if (NeoverseN1Errata1542419 && current_icache_invalidation_context != nullptr) {
-    assert(current_icache_invalidation_context->_needs_invalidation, "ICacheInvalidationContext::deferred_invalidation must be invoked when icache invalidation is needed");
+  if (UseDeferredICacheInvalidation && current_icache_invalidation_context != nullptr) {
+    assert(current_icache_invalidation_context->_needs_invalidation,
+           "ICacheInvalidationContext::deferred_invalidation must be invoked "
+           "when icache invalidation is needed");
     return true;
   }
   return false;
 }
 
 inline void ICacheInvalidationContext::pd_invalidate_icache() {
-  if (NeoverseN1Errata1542419 && _needs_invalidation) {
-    // Errata 1542419: Neoverse N1 cores with the 'COHERENT_ICACHE' feature may fetch stale
-    // instructions when software depends on prefetch-speculation-protection
-    // instead of explicit synchronization.
-    //
-    // Neoverse-N1 implementation mitigates the errata 1542419 with a workaround:
-    // - Disable coherent icache.
-    // - Trap IC IVAU instructions.
-    // - Execute:
-    //   - tlbi vae3is, xzr
-    //   - dsb sy
-    // - Ignore trapped IC IVAU instructions.
-    //
-    // `tlbi vae3is, xzr` invalidates all translation entries (all VAs, all possible levels).
-    // It waits for all memory accesses using in-scope old translation information to complete
-    // before it is considered complete.
-    //
-    // As this workaround has significant overhead, Arm Neoverse N1 (MP050) Software Developer
-    // Errata Notice version 29.0 suggests:
-    //
-    // "Since one TLB inner-shareable invalidation is enough to avoid this erratum, the number
-    // of injected TLB invalidations should be minimized in the trap handler to mitigate
-    // the performance impact due to this workaround."
+  if (UseDeferredICacheInvalidation && _needs_invalidation) {
+
+    // For deferred icache invalidation, we expect hardware dcache
+    // and icache to be coherent: CTR_EL0.IDC == 1 and CTR_EL0.DIC == 1
+    // An exception is Neoverse N1 with erratum 1542419, which requires
+    // a use of 'IC IVAU' instruction. In such a case, we expect
+    // CTR_EL0.DIC == 0.
 #ifdef ASSERT
-    unsigned int cache_info = 0;
-    asm volatile ("mrs\t%0, ctr_el0":"=r" (cache_info));
+    static unsigned int cache_info = 0;
+    if (cache_info == 0) {
+      asm volatile ("mrs\t%0, ctr_el0":"=r" (cache_info));
+    }
     constexpr unsigned int CTR_IDC_SHIFT = 28;
     constexpr unsigned int CTR_DIC_SHIFT = 29;
     assert(((cache_info >> CTR_IDC_SHIFT) & 0x1) != 0x0, "Expect CTR_EL0.IDC to be enabled");
-    assert(((cache_info >> CTR_DIC_SHIFT) & 0x1) == 0x0, "Expect CTR_EL0.DIC to be disabled");
+    if (NeoverseN1Errata1542419) {
+      assert(((cache_info >> CTR_DIC_SHIFT) & 0x1) == 0x0, "Expect CTR_EL0.DIC to be disabled for Neoverse N1 with erratum 1542419");
+    } else {
+      assert(((cache_info >> CTR_DIC_SHIFT) & 0x1) != 0x0, "Expect CTR_EL0.DIC to be enabled");
+    }
 #endif
 
-    // As the address for icache invalidation is not relevant
-    // and IC IVAU instruction is ignored, we use XZR in it.
-    asm volatile("dsb ish       \n"
-                 "ic  ivau, xzr \n"
-                 "dsb ish       \n"
-                 "isb           \n"
-                 : : : "memory");
+    asm volatile("dsb ish" : : : "memory");
+
+    if (NeoverseN1Errata1542419) {
+      // Errata 1542419: Neoverse N1 cores with the 'COHERENT_ICACHE' feature
+      // may fetch stale instructions when software depends on
+      // prefetch-speculation-protection instead of explicit synchronization.
+      //
+      // Neoverse-N1 implementation mitigates the errata 1542419 with a
+      // workaround:
+      // - Disable coherent icache.
+      // - Trap IC IVAU instructions.
+      // - Execute:
+      //   - tlbi vae3is, xzr
+      //   - dsb sy
+      // - Ignore trapped IC IVAU instructions.
+      //
+      // `tlbi vae3is, xzr` invalidates all translation entries (all VAs, all
+      // possible levels). It waits for all memory accesses using in-scope old
+      // translation information to complete before it is considered complete.
+      //
+      // As this workaround has significant overhead, Arm Neoverse N1 (MP050)
+      // Software Developer Errata Notice version 29.0 suggests:
+      //
+      // "Since one TLB inner-shareable invalidation is enough to avoid this
+      // erratum, the number of injected TLB invalidations should be minimized
+      // in the trap handler to mitigate the performance impact due to this
+      // workaround."
+      // As the address for icache invalidation is not relevant and
+      // IC IVAU instruction is ignored, we use XZR in it.
+      asm volatile("ic  ivau, xzr \n"
+                   "dsb ish       \n"
+                   : : : "memory");
+    }
+
+    asm volatile("isb" : : : "memory");
 
     current_icache_invalidation_context = nullptr;
   }

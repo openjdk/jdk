@@ -879,8 +879,7 @@ void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
     ShouldNotReachHere();
   }
 
-  if (NeoverseN1Errata1542419) {
-    // Instruction cache invalidation per barrier is expensive on Neoverse N1 having erratum 1542419.
+  if (UseDeferredICacheInvalidation) {
     // Defer the ICache invalidation to a later point where multiple patches can be handled together.
     //
     // Note: We rely on the fact that this function is only called from places where deferred invalidation
