@@ -1124,6 +1124,7 @@ void ShenandoahFullGC::phase5_epilog() {
       ShenandoahGenerationalFullGC::compute_balances();
     }
     heap->free_set()->finish_rebuild(young_trashed_regions, old_trashed_regions, num_old);
+    heap->old_generation()->set_region_balance(0);
 
     // Set mark incomplete because the marking bitmaps have been reset except pinned regions.
     _generation->set_mark_incomplete();

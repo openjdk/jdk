@@ -480,6 +480,7 @@ private:
   void rendezvous_threads(const char* name);
   void recycle_trash();
 public:
+  // The following two functions rebuild the free set at the of GC, in preparation for an idle phase.
   void rebuild_free_set(bool concurrent);
   void rebuild_free_set_within_phase();
   void notify_gc_progress();

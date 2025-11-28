@@ -2754,11 +2754,13 @@ void ShenandoahFreeSet::move_regions_from_collector_to_mutator(size_t max_xfer_r
                      byte_size_in_proper_unit(old_collector_xfer), proper_unit_for_byte_size(old_collector_xfer));
 }
 
+#ifdef KELVIN_DEPRECATE
 void ShenandoahFreeSet::rebuild() {
   size_t young_trashed_regions, old_trashed_regions, first_old_region, last_old_region, old_region_count;
   prepare_to_rebuild(young_trashed_regions, old_trashed_regions, first_old_region, last_old_region, old_region_count);
   finish_rebuild(young_trashed_regions, old_trashed_regions, old_region_count);
 }
+#endif
 
 // Overwrite arguments to represent the amount of memory in each generation that is about to be recycled
 void ShenandoahFreeSet::prepare_to_rebuild(size_t &young_trashed_regions, size_t &old_trashed_regions,

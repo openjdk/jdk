@@ -728,11 +728,13 @@ public:
 
   void clear();
 
+#ifdef KELVIN_DEPRECATE
   // Rebuild the free set.  This combines the effects of prepare_to_rebuild() and finish_rebuild() with no intervening
   // efforts to rebalance generation sizes.  When the free set is rebuild, we reserve sufficient memory within the
   // collector partition (and, for generational mode, the old collector partition) based on the amount reserved
   // by heuristics to support the next planned evacuation effort.
   void rebuild();
+#endif
 
   // Examine the existing free set representation, capturing the current state into var arguments:
   //

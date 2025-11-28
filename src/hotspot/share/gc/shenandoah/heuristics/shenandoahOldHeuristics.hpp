@@ -168,7 +168,7 @@ public:
   // evacuation candidate regions into the collection set as will fit within this excess repurposed reserved.
   // Returns true iff we need to finalize mixed evacs.  Upon return, the var parameter regions_to_xfer holds the
   // number of regions to transfer from young to old.
-  bool top_off_collection_set(ssize_t &regions_to_xfer);
+  bool top_off_collection_set(ssize_t &add_regions_to_old);
 
   // Having added all eligible mixed-evacuation candidates to the collection set, this function updates the total count
   // of how much old-gen memory remains to be evacuated and adjusts the representation of old-gen regions that remain to

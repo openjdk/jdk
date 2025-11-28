@@ -179,7 +179,7 @@ ssize_t ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollec
                doing_promote_in_place? "true": "false", preselected_candidates, immediate_percent);
 #endif
 
-  ssize_t regions_to_xfer = 0;
+  ssize_t add_regions_to_old = 0;
   if (doing_promote_in_place || (preselected_candidates > 0) || (immediate_percent <= ShenandoahImmediateThreshold)) {
     // Only young collections need to prime the collection set.
     bool need_to_finalize_mixed = false;
@@ -195,7 +195,7 @@ ssize_t ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollec
       // enough consolidated garbage to make effective use of young-gen evacuation reserve.  If there is still
       // young-gen reserve available following selection of the young-gen collection set, see if we can use
       // this memory to expand the old-gen evacuation collection set.
-      need_to_finalize_mixed |= heap->old_generation()->heuristics()->top_off_collection_set(regions_to_xfer);
+      need_to_finalize_mixed |= heap->old_generation()->heuristics()->top_off_collection_set(add_regions_to_old);
       if (need_to_finalize_mixed) {
         heap->old_generation()->heuristics()->finalize_mixed_evacs();
       }
@@ -216,7 +216,7 @@ ssize_t ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollec
                                            regular_regions_promoted_free,
                                            immediate_regions,
                                            immediate_garbage);
-  return regions_to_xfer;
+  return add_regions_to_old;
 }
 
 

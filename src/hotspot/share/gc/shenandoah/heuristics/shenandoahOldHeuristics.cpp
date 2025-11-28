@@ -412,7 +412,7 @@ bool ShenandoahOldHeuristics::finalize_mixed_evacs() {
   return (_included_old_regions > 0);
 }
 
-bool ShenandoahOldHeuristics::top_off_collection_set(ssize_t &regions_to_xfer) {
+bool ShenandoahOldHeuristics::top_off_collection_set(ssize_t &add_regions_to_old) {
   if (unprocessed_old_collection_candidates() == 0) {
     return false;
   } else {
@@ -465,7 +465,7 @@ bool ShenandoahOldHeuristics::top_off_collection_set(ssize_t &regions_to_xfer) {
     if (regions_for_old_expansion > 0) {
       log_info(gc)("Augmenting old-gen evacuation budget from unexpended young-generation reserve by %zu regions",
                    regions_for_old_expansion);
-      regions_to_xfer = regions_for_old_expansion;
+      add_regions_to_old = regions_for_old_expansion;
       size_t budget_supplement = region_size_bytes * regions_for_old_expansion;
       size_t supplement_without_waste = (size_t) (((double) budget_supplement) / ShenandoahOldEvacWaste);
       _old_evacuation_budget += supplement_without_waste;
@@ -483,7 +483,7 @@ bool ShenandoahOldHeuristics::top_off_collection_set(ssize_t &regions_to_xfer) {
 
       return add_old_regions_to_cset();
     } else {
-      regions_to_xfer = 0;
+      add_regions_to_old = 0;
       return false;
     }
   }
