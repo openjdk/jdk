@@ -1865,6 +1865,10 @@ bool Matcher::is_reg2reg_move(MachNode* m) {
   return false;
 }
 
+bool Matcher::is_register_biasing_candidate(const MachNode* mdef, int oper_index) {
+  return false;
+}
+
 bool Matcher::is_generic_vector(MachOper* opnd)  {
   ShouldNotReachHere();  // generic vector operands not supported
   return false;
