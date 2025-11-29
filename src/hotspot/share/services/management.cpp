@@ -1095,7 +1095,8 @@ static void do_thread_dump(ThreadDumpResult* dump_result,
 //               maxDepth == 0  requests no stack trace.
 //   infoArray - array of ThreadInfo objects
 //
-// QQQ - Why does this method return a value instead of void?
+// This method returns jint for historical reasons.
+// The value has no meaning, it is always 0.  The one caller never uses it, this method could equally be void.
 JVM_ENTRY(jint, jmm_GetThreadInfo(JNIEnv *env, jlongArray ids, jint maxDepth, jobjectArray infoArray))
   // Check if threads is null
   if (ids == nullptr || infoArray == nullptr) {
@@ -1141,7 +1142,7 @@ JVM_ENTRY(jint, jmm_GetThreadInfo(JNIEnv *env, jlongArray ids, jint maxDepth, jo
     for (int i = 0; i < num_threads; i++) {
       jlong tid = ids_ah->long_at(i);
       JavaThread* jt = dump_result.t_list()->find_JavaThread_from_java_tid(tid);
-      if (jt == nullptr) {
+      if (jt == nullptr || !Thread::is_JavaThread_protected_by_TLH(jt)) {
         // if the thread does not exist or now it is terminated,
         // create dummy snapshot
         dump_result.add_thread_snapshot();
