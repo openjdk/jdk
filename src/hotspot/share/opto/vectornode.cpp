@@ -1046,6 +1046,25 @@ Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return nullptr;
 }
 
+// Traverses a chain of VectorMaskCast and returns the first non VectorMaskCast node.
+//
+// Due to the unique nature of vector masks, for specific IR patterns,
+// VectorMaskCast does not affect the output results. For example:
+//   (VectorStoreMask (VectorMaskCast ... (VectorLoadMask x))) => (x)
+//   x remains to be a bool vector with no changes.
+// This function can be used to eliminate the VectorMaskCast in such patterns.
+Node* VectorNode::uncast_mask(Node* n) {
+  while (n->Opcode() == Op_VectorMaskCast) {
+    Node* in1 = n->in(1);
+    if (!in1->isa_Vector()) {
+      break;
+    }
+    assert(n->as_Vector()->length() == in1->as_Vector()->length(), "vector length must match");
+    n = in1;
+  }
+  return n;
+}
+
 // Return initial Pack node. Additional operands added with add_opd() calls.
 PackNode* PackNode::make(Node* s, uint vlen, BasicType bt) {
   const TypeVect* vt = TypeVect::make(bt, vlen);
@@ -1452,10 +1471,11 @@ Node* VectorLoadMaskNode::Identity(PhaseGVN* phase) {
 
 Node* VectorStoreMaskNode::Identity(PhaseGVN* phase) {
   // Identity transformation on boolean vectors.
-  //   VectorStoreMask (VectorLoadMask bv) elem_size ==> bv
+  //   VectorStoreMask (VectorMaskCast ... VectorLoadMask bv) elem_size ==> bv
   //   vector[n]{bool} => vector[n]{t} => vector[n]{bool}
-  if (in(1)->Opcode() == Op_VectorLoadMask) {
-    return in(1)->in(1);
+  Node* in1 = VectorNode::uncast_mask(in(1));
+  if (in1->Opcode() == Op_VectorLoadMask && length() == in1->as_Vector()->length()) {
+    return in1->in(1);
   }
   return this;
 }
@@ -1885,11 +1905,12 @@ Node* VectorMaskOpNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 }
 
 Node* VectorMaskCastNode::Identity(PhaseGVN* phase) {
-  Node* in1 = in(1);
-  // VectorMaskCast (VectorMaskCast x) => x
-  if (in1->Opcode() == Op_VectorMaskCast &&
-      vect_type()->eq(in1->in(1)->bottom_type())) {
-      return in1->in(1);
+  // (VectorMaskCast (VectorMaskCast ... x)) => (x)
+  // If the types of the input and output nodes in a VectorMaskCast chain are
+  // exactly the same, the intermediate VectorMaskCast nodes can be eliminated.
+  Node* n = VectorNode::uncast_mask(this);
+  if (vect_type()->eq(n->bottom_type())) {
+      return n;
   }
   return this;
 }
