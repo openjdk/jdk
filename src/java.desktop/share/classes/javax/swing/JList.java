@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2507,8 +2507,20 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      *                    {@code SwingConstants.VERTICAL}
      * @param direction less or equal to zero to scroll up/back,
      *                  greater than zero for down/forward
-     * @return the "unit" increment for scrolling in the specified direction;
-     *         always positive
+     * @return the non-negative "unit" increment value
+     *         for scrolling in the specified direction
+     *         if the layout orientation is {@code VERTICAL},
+     *         it can return 0 for following cases:
+     *         - if list model is empty when
+     *           {@code visibleRect} location's cell index is computed
+     *         - If bounding rectangle computed from {@code visibleRect}
+     *            is outside the list's range of cells
+     *         - While scrolling up,
+     *           - if {@code visibleRect} row is completely visible
+     *             and {@code visibleRect} points to row 0
+     *           - if {@code visibleRect} row is completely visible
+     *             and {@code visibleRect} is the top row of the list
+     *
      * @see #getScrollableBlockIncrement
      * @see Scrollable#getScrollableUnitIncrement
      * @throws IllegalArgumentException if {@code visibleRect} is {@code null}, or
@@ -2529,7 +2541,8 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
                 /* Scroll Down */
                 if (direction > 0) {
                     Rectangle r = getCellBounds(row, row);
-                    return (r == null) ? 0 : r.height - (visibleRect.y - r.y);
+                    return (r == null) ? 0 :
+                            ((r.height - (visibleRect.y - r.y)) < 0) ? 0 : r.height - (visibleRect.y - r.y);
                 }
                 /* Scroll Up */
                 else {
