@@ -212,14 +212,32 @@ public class TestSegments {
     }
 
     @Test
-    public void testSegmentOOBMessage() {
+    public void testSegmentAccessOOBMessage() {
         try {
             var segment = Arena.global().allocate(10, 1);
             segment.getAtIndex(ValueLayout.JAVA_INT, 2);
+            fail("Expected IndexOutOfBoundsException was not thrown");
         } catch (IndexOutOfBoundsException ex) {
-            assertTrue(ex.getMessage().contains("Out of bound access"));
-            assertTrue(ex.getMessage().contains("offset = 8"));
-            assertTrue(ex.getMessage().contains("length = 4"));
+            assertTrue(ex.getMessage().startsWith("Out of bound access"));
+            assertTrue(ex.getMessage().endsWith("attempting to access an element of length 4 at offset 8 " +
+                    "which is outside the valid range 0 <= offset+length < byteSize (=10)"));
+        } catch (Exception ex) {
+            fail("Unexpected exception type thrown: " + ex);
+        }
+    }
+
+    @Test
+    public void testSegmentSliceOOBMessage() {
+        try {
+            var segment = Arena.global().allocate(10, 1);
+            var slice = segment.asSlice(8, 4);
+            fail("Expected IndexOutOfBoundsException was not thrown");
+        } catch (IndexOutOfBoundsException ex) {
+            assertTrue(ex.getMessage().startsWith("Out of bound access"));
+            assertTrue(ex.getMessage().endsWith("attempting to get slice of length 4 at offset 8 " +
+                    "which is outside the valid range 0 <= offset+length < byteSize (=10)"));
+        } catch (Exception ex) {
+            fail("Unexpected exception type thrown: " + ex);
         }
     }
 
