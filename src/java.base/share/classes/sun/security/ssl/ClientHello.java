@@ -1144,6 +1144,11 @@ final class ClientHello {
                         "The ClientHello.legacy_version field is not TLS 1.2");
             }
 
+            if (shc.conContext.inputRecord.t13keyChangeHsExceedsRecordBoundary()) {
+                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                                    "CLIENT_HELLO messages must align with a record boundary");
+            }
+
             // The client may send a dummy change_cipher_spec record
             // immediately after the first ClientHello.
             shc.conContext.consumers.putIfAbsent(
