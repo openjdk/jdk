@@ -84,8 +84,7 @@ public:
   ProcSmapsParser(FILE* f);
   ~ProcSmapsParser();
 
-  // Starts or continues parsing. Returns true on success,
-  // false on EOF or on error.
+  // Starts or continues parsing. Returns true iff a mapping was parsed.
   bool parse_next(ProcSmapsInfo& out);
 };
 
