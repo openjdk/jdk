@@ -1,6 +1,4 @@
 
-    static $abstractvectortype$ bv_[[TEST]] = $abstractvectortype$.broadcast(SPECIES, ($type$)10);
-
     @Test(dataProvider = "$type$UnaryOpProvider")
     static void [[TEST]]$vectorteststype$WithMemOp(IntFunction<$type$[]> fa) {
 [[KERNEL]]
