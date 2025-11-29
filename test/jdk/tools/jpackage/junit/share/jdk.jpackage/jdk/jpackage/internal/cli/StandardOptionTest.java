@@ -24,6 +24,7 @@ package jdk.jpackage.internal.cli;
 
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
+import static jdk.jpackage.internal.cli.TestUtils.assertExceptionListEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -61,6 +62,7 @@ import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
 import jdk.jpackage.internal.util.StringBundle;
 import jdk.jpackage.test.Comm;
 import jdk.jpackage.test.JUnitAdapter;
+import jdk.jpackage.test.JUnitUtils;
 import jdk.jpackage.test.TKit;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -207,6 +209,48 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
         assertEquals(I18N.format("ERR_InvalidInstallerType", name), ex.getMessage());
     }
 
+    @ParameterizedTest
+    @EnumSource(OptionMutatorTest.TestType.class)
+    public void test_pathOptionMutator(OptionMutatorTest.TestType type) {
+        new OptionMutatorTest<>(StandardOption.pathOptionMutator(), StandardValueConverter.pathConv())
+                .validValue("file.txt")
+                .invalidValue("\0")
+                .cmdlineErrorFormatKeys("error.parameter-not-path")
+                .propertyFileErrorFormatKeys("error.properties-parameter-not-path")
+                .test(OptionSpecBuilder.create(Path.class), type);
+    }
+
+    @ParameterizedTest
+    @EnumSource(OptionMutatorTest.TestType.class)
+    public void test_directoryOptionMutator(OptionMutatorTest.TestType type, @TempDir Path workDir) {
+        new OptionMutatorTest<>(StandardOption.directoryOptionMutator(), StandardValueConverter.pathConv())
+                .validValue(workDir.toString())
+                .invalidValue(workDir.resolve("nonexistent").toString())
+                .cmdlineErrorFormatKeys("error.parameter-not-directory")
+                .propertyFileErrorFormatKeys("error.properties-parameter-not-directory")
+                .test(OptionSpecBuilder.create(Path.class), type);
+    }
+
+    @ParameterizedTest
+    @EnumSource(OptionMutatorTest.TestType.class)
+    public void test_fileOptionMutator(OptionMutatorTest.TestType type, @TempDir Path workDir) throws IOException {
+        var test = new OptionMutatorTest<>(StandardOption.fileOptionMutator(), StandardValueConverter.pathConv())
+                .invalidValue(workDir.resolve("nonexistent").toString())
+                .cmdlineErrorFormatKeys("error.parameter-not-file")
+                .propertyFileErrorFormatKeys("error.properties-parameter-not-file");
+
+        switch (type) {
+            case TEST_CMDLINE_VALID, TEST_PROPERTY_FILE_VALID -> {
+                var file = workDir.resolve("file.txt");
+                Files.createFile(file);
+                test.validValue(file.toString());
+            }
+            default -> {}
+        }
+
+        test.test(OptionSpecBuilder.create(Path.class), type);
+    }
+
     @Test
     public void test_booleanOptionMutator() {
 
@@ -219,6 +263,13 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
 
         // Expect the option is not found.
         assertFalse(option.containsIn(empty));
+    }
+
+    @Test
+    public void test_booleanOptionMutator_in_property_file() {
+        new OptionMutatorTest<>(StandardOption.booleanOptionMutator(), StandardValueConverter.booleanConv())
+                .validValue(Boolean.TRUE.toString())
+                .test(OptionSpecBuilder.create(Boolean.class), OptionMutatorTest.TestType.TEST_PROPERTY_FILE_VALID);
     }
 
     @ParameterizedTest
@@ -388,6 +439,100 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
                 Arguments.of("'\\' a ", List.of("' a")),
                 Arguments.of("\"" + "\\\"".repeat(10000) + "A", List.of("\"".repeat(10000) + "A"))
         );
+    }
+
+
+    static final class OptionMutatorTest<T> {
+
+        enum TestType {
+            TEST_CMDLINE_VALID,
+            TEST_PROPERTY_FILE_VALID,
+            TEST_CMDLINE_INVALID,
+            TEST_PROPERTY_FILE_INVALID;
+        }
+
+        OptionMutatorTest(Consumer<OptionSpecBuilder<T>> testee, ValueConverter<T> conv) {
+            this.testee = Objects.requireNonNull(testee);
+            this.conv = Objects.requireNonNull(conv);
+        }
+
+        void test(OptionSpecBuilder<T> specBuilder, TestType type) {
+            var srcSpec = specBuilder.name("foo").mutate(testee).createOptionSpec();
+            OptionSpec<T> spec;
+
+            var propertyFile = Path.of("foo.properties");
+
+            switch (type) {
+                case TEST_PROPERTY_FILE_VALID, TEST_PROPERTY_FILE_INVALID -> {
+                    spec = new StandardOptionContext().forFile(propertyFile).mapOptionSpec(srcSpec);
+                }
+                default -> {
+                    spec = srcSpec;
+                }
+            }
+
+            StringToken token;
+            switch (type) {
+                case TEST_CMDLINE_VALID, TEST_PROPERTY_FILE_VALID -> {
+                    token = StringToken.of(Objects.requireNonNull(validValue));
+                }
+                default -> {
+                    token = StringToken.of(Objects.requireNonNull(invalidValue));
+                }
+            }
+
+            var result = spec.converter().orElseThrow().convert(spec.name(), token);
+
+            switch (type) {
+                case TEST_CMDLINE_VALID, TEST_PROPERTY_FILE_VALID -> {
+                    var expected = conv.convert(token.value());
+                    var actual = result.orElseThrow();
+
+                    if (spec.valueType().isArray()) {
+                        JUnitUtils.assertArrayEquals(expected, actual);
+                    } else {
+                        assertEquals(expected, actual);
+                    }
+                }
+                case TEST_CMDLINE_INVALID -> {
+                    assertExceptionListEquals(cmdlineErrorFormatKeys.stream().map(key -> {
+                        return new JPackageException(I18N.format(key, token.value(), spec.name().formatForCommandLine()));
+                    }).map(JUnitUtils::removeExceptionCause).toList(), result.errors().stream().map(JUnitUtils::removeExceptionCause).toList());
+                }
+                case TEST_PROPERTY_FILE_INVALID -> {
+                    assertExceptionListEquals(propertyFileErrorFormatKeys.stream().map(key -> {
+                        return new JPackageException(I18N.format(key, token.value(), spec.name().name(), propertyFile));
+                    }).map(JUnitUtils::removeExceptionCause).toList(), result.errors().stream().map(JUnitUtils::removeExceptionCause).toList());
+                }
+            }
+        }
+
+        OptionMutatorTest<T> validValue(String v) {
+            validValue = v;
+            return this;
+        }
+
+        OptionMutatorTest<T> invalidValue(String v) {
+            invalidValue = v;
+            return this;
+        }
+
+        OptionMutatorTest<T> cmdlineErrorFormatKeys(String... v) {
+            cmdlineErrorFormatKeys = List.of(v);
+            return this;
+        }
+
+        OptionMutatorTest<T> propertyFileErrorFormatKeys(String... v) {
+            propertyFileErrorFormatKeys = List.of(v);
+            return this;
+        }
+
+        private final Consumer<OptionSpecBuilder<T>> testee;
+        private final ValueConverter<T> conv;
+        private List<String> cmdlineErrorFormatKeys;
+        private List<String> propertyFileErrorFormatKeys;
+        private String validValue;
+        private String invalidValue;
     }
 
 

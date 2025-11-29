@@ -513,6 +513,12 @@ public final class StandardOption {
     static Consumer<OptionSpecBuilder<Path>> directoryOptionMutator() {
         return builder -> {
             builder.mutate(pathOptionMutator())
+            .mutate(createOptionSpecBuilderMutator((b, context) -> {
+                context.asFileSource().ifPresent(propertyFile -> {
+                    b.validatorExceptionFactory(forMessageWithOptionValueAndName(propertyFile));
+                    b.validatorExceptionFormatString("error.properties-parameter-not-directory");
+                });
+            }))
             .validator(StandardValidator.IS_DIRECTORY)
             .validatorExceptionFactory(ERROR_WITH_VALUE_AND_OPTION_NAME)
             .validatorExceptionFormatString("error.parameter-not-directory");
