@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8350582 8340312 8369995 8372004
+ * @bug 8350582 8340312 8369995 8372004 8371333
  * @library /test/lib /javax/net/ssl/templates
  * @summary Correct the parsing of the ssl value in javax.net.debug
  * @run junit DebugPropertyValuesTest
@@ -65,7 +65,11 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
         debugMessages.put("record", List.of("handshake, length =", "WRITE:"));
         debugMessages.put("session", List.of("Session initialized:"));
         debugMessages.put("sslctx",
-                List.of("trigger seeding of SecureRandom"));
+                List.of("trigger seeding of SecureRandom",
+                // Available list should finish with this style
+                "TLS_EMPTY_RENEGOTIATION_INFO_SCSV]",
+                "Ignore disabled cipher suites for protocols:" +
+                        "\\[TLSv1.3, TLSv1.2\\]"));
         debugMessages.put("ssl", List.of("jdk.tls.keyLimits:"));
         debugMessages.put("trustmanager",
                 List.of("adding as trusted certificates"));
