@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8349139
+ * @key randomness
  * @summary C2: Div looses dependency on condition that guarantees divisor not null in counted loop
  * @library /test/lib /
  * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestDivDependentOnMainLoopGuard::*
