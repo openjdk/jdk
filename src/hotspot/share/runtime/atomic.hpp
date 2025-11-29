@@ -75,6 +75,7 @@
 //     v.release_store(x) -> void
 //     v.release_store_fence(x) -> void
 //     v.compare_exchange(x, y [, o]) -> T
+//     v.exchange(x [, o]) -> T
 //
 // (2) All atomic types are default constructible.
 //
@@ -92,7 +93,6 @@
 // (3) Atomic pointers and atomic integers additionally provide
 //
 //   member functions:
-//     v.exchange(x [, o]) -> T
 //     v.add_then_fetch(i [, o]) -> T
 //     v.sub_then_fetch(i [, o]) -> T
 //     v.fetch_then_add(i [, o]) -> T
@@ -102,10 +102,7 @@
 // type of i must be signed, or both must be unsigned. Atomic pointers perform
 // element arithmetic.
 //
-// (4) An atomic translated type additionally provides the exchange
-// function if its associated atomic decayed type provides that function.
-//
-// (5) Atomic integers additionally provide
+// (4) Atomic integers additionally provide
 //
 //   member functions:
 //     v.and_then_fetch(x [, o]) -> T
@@ -115,7 +112,7 @@
 //     v.fetch_then_or(x [, o]) -> T
 //     v.fetch_then_xor(x [, o]) -> T
 //
-// (6) Atomic pointers additionally provide
+// (5) Atomic pointers additionally provide
 //
 //   nested types:
 //     ElementType -> std::remove_pointer_t<T>
@@ -126,9 +123,6 @@
 // the AtomicAccess names. Some of the naming choices are also to make them
 // stand out a little more when used in surrounding non-atomic code. Without
 // the "AtomicAccess::" qualifier, some of those names are easily overlooked.
-//
-// Atomic bytes don't provide exchange(). This is because that operation
-// hasn't been implemented for 1 byte values. That could be changed if needed.
 //
 // Atomic for 2 byte integers is not supported. This is because atomic
 // operations of that size have not been implemented. There haven't been
@@ -184,14 +178,7 @@ private:
 
   // Helper base classes, providing various parts of the APIs.
   template<typename T> class CommonCore;
-  template<typename T> class SupportsExchange;
   template<typename T> class SupportsArithmetic;
-
-  // Support conditional exchange() for atomic translated types.
-  template<typename T> class HasExchange;
-  template<typename T> class DecayedHasExchange;
-  template<typename Derived, typename T, bool = DecayedHasExchange<T>::value>
-  class TranslatedExchange;
 
 public:
   template<typename T, Category = category<T>()>
@@ -275,15 +262,7 @@ public:
                      atomic_memory_order order = memory_order_conservative) {
     return AtomicAccess::cmpxchg(value_ptr(), compare_value, new_value, order);
   }
-};
 
-template<typename T>
-class AtomicImpl::SupportsExchange : public CommonCore<T> {
-protected:
-  explicit SupportsExchange(T value) : CommonCore<T>(value) {}
-  ~SupportsExchange() = default;
-
-public:
   T exchange(T new_value,
              atomic_memory_order order = memory_order_conservative) {
     return AtomicAccess::xchg(this->value_ptr(), new_value, order);
@@ -291,7 +270,7 @@ public:
 };
 
 template<typename T>
-class AtomicImpl::SupportsArithmetic : public SupportsExchange<T> {
+class AtomicImpl::SupportsArithmetic : public CommonCore<T> {
   // Guarding the AtomicAccess calls with constexpr checking of Offset produces
   // better compile-time error messages.
   template<typename Offset>
@@ -311,7 +290,7 @@ class AtomicImpl::SupportsArithmetic : public SupportsExchange<T> {
   }
 
 protected:
-  explicit SupportsArithmetic(T value) : SupportsExchange<T>(value) {}
+  explicit SupportsArithmetic(T value) : CommonCore<T>(value) {}
   ~SupportsArithmetic() = default;
 
 public:
@@ -424,54 +403,8 @@ public:
 
 // Atomic translated type
 
-// Test whether Atomic<T> has exchange().
 template<typename T>
-class AtomicImpl::HasExchange {
-  template<typename Check> static void* test(decltype(&Check::exchange));
-  template<typename> static int test(...);
-  using test_type = decltype(test<Atomic<T>>(nullptr));
-public:
-  static constexpr bool value = std::is_pointer_v<test_type>;
-};
-
-// Test whether the atomic decayed type associated with T has exchange().
-template<typename T>
-class AtomicImpl::DecayedHasExchange {
-  using Translator = PrimitiveConversions::Translate<T>;
-  using Decayed = typename Translator::Decayed;
-
-  // "Unit test" HasExchange<>.
-  static_assert(HasExchange<int>::value);
-  static_assert(HasExchange<int*>::value);
-  static_assert(!HasExchange<char>::value);
-
-public:
-  static constexpr bool value = HasExchange<Decayed>::value;
-};
-
-// Base class for atomic translated type if atomic decayed type doesn't have
-// exchange().
-template<typename Derived, typename T, bool>
-class AtomicImpl::TranslatedExchange {};
-
-// Base class for atomic translated type if atomic decayed type does have
-// exchange().
-template<typename Derived, typename T>
-class AtomicImpl::TranslatedExchange<Derived, T, true> {
-public:
-  T exchange(T new_value,
-             atomic_memory_order order = memory_order_conservative) {
-    return static_cast<Derived*>(this)->exchange_impl(new_value, order);
-  }
-};
-
-template<typename T>
-class AtomicImpl::Atomic<T, AtomicImpl::Category::Translated>
-  : public TranslatedExchange<Atomic<T>, T>
-{
-  // Give TranslatedExchange<> access to exchange_impl() if needed.
-  friend class TranslatedExchange<Atomic<T>, T>;
-
+class AtomicImpl::Atomic<T, AtomicImpl::Category::Translated> {
   using Translator = PrimitiveConversions::Translate<T>;
   using Decayed = typename Translator::Decayed;
 
@@ -533,12 +466,7 @@ public:
                                            order));
   }
 
-private:
-  // Implementation of exchange() if needed.
-  // Exclude when not needed, to prevent reference to non-existent function
-  // of atomic decayed type if someone explicitly instantiates Atomic<T>.
-  template<typename Dep = Decayed, ENABLE_IF(HasExchange<Dep>::value)>
-  T exchange_impl(T new_value, atomic_memory_order order) {
+  T exchange(T new_value, atomic_memory_order order = memory_order_conservative) {
     return recover(_value.exchange(decay(new_value), order));
   }
 };

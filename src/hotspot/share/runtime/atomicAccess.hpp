@@ -419,8 +419,8 @@ private:
   struct XchgImpl;
 
   // Platform-specific implementation of xchg.  Support for sizes
-  // of 4, and sizeof(intptr_t) are required.  The class is a function
-  // object that must be default constructable, with these requirements:
+  // of 1, 4, and 8 are required.  The class is a function object
+  // that must be default constructable, with these requirements:
   //
   // - dest is of type T*.
   // - exchange_value is of type T.
