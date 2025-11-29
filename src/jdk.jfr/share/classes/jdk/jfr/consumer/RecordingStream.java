@@ -41,6 +41,7 @@ import jdk.jfr.EventSettings;
 import jdk.jfr.EventType;
 import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
+import jdk.jfr.internal.PlatformRecorder;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.util.Utils;
@@ -77,6 +78,7 @@ public final class RecordingStream implements AutoCloseable, EventStream {
         }
     }
 
+    private final PlatformRecording platformRecording;
     private final Recording recording;
     private final Instant creationTime;
     private final EventDirectoryStream directoryStream;
@@ -95,23 +97,29 @@ public final class RecordingStream implements AutoCloseable, EventStream {
     }
 
     private RecordingStream(Map<String, String> settings) {
-        this.recording = new Recording();
-        this.creationTime = Instant.now();
-        this.recording.setName("Recording Stream: " + creationTime);
-        try {
-            PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
-            this.directoryStream = new EventDirectoryStream(
-                null,
-                pr,
-                configurations(),
-                false
-            );
-        } catch (IOException ioe) {
-            this.recording.close();
-            throw new IllegalStateException(ioe.getMessage());
-        }
-        if (!settings.isEmpty()) {
-            recording.setSettings(settings);
+        PrivateAccess access = PrivateAccess.getInstance();
+        PlatformRecorder recorder = access.getPlatformRecorder();
+        // The lock ensures that a Recording object can't leak out
+        // before the stream has been initialized
+        synchronized (recorder) {
+            this.recording = access.newRecording(this);
+            this.platformRecording = access.getPlatformRecording(recording);
+            this.creationTime = Instant.now();
+            this.recording.setName("Recording Stream: " + creationTime);
+            try {
+                this.directoryStream = new EventDirectoryStream(
+                    null,
+                    platformRecording,
+                    configurations(),
+                    false
+                );
+            } catch (IOException ioe) {
+                this.recording.close();
+                throw new IllegalStateException(ioe.getMessage());
+            }
+            if (!settings.isEmpty()) {
+                recording.setSettings(settings);
+            }
         }
     }
 
@@ -326,7 +334,7 @@ public final class RecordingStream implements AutoCloseable, EventStream {
     @Override
     public void close() {
         directoryStream.setChunkCompleteHandler(null);
-        recording.close();
+        platformRecording.close();
         directoryStream.close();
     }
 
@@ -337,8 +345,7 @@ public final class RecordingStream implements AutoCloseable, EventStream {
 
     @Override
     public void start() {
-        PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
-        long startNanos = pr.start();
+        long startNanos = platformRecording.start();
         updateOnCompleteHandler();
         directoryStream.start(startNanos);
     }
@@ -360,8 +367,7 @@ public final class RecordingStream implements AutoCloseable, EventStream {
      */
     @Override
     public void startAsync() {
-        PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
-        long startNanos = pr.start();
+        long startNanos = platformRecording.start();
         updateOnCompleteHandler();
         directoryStream.startAsync(startNanos);
     }
@@ -392,7 +398,7 @@ public final class RecordingStream implements AutoCloseable, EventStream {
         boolean stopped = false;
         try {
             try (StreamBarrier sb = directoryStream.activateStreamBarrier()) {
-                stopped = recording.stop();
+                stopped = platformRecording.stop("Stopped by user");
                 directoryStream.setCloseOnComplete(false);
                 sb.setStreamEnd(recording.getStopTime().toEpochMilli());
             }
