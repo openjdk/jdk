@@ -59,15 +59,23 @@
           "fail, resulting in stop-the-world full GCs.")                    \
           range(0,100)                                                      \
                                                                             \
-  product(double, ShenandoahMinOldGenGrowthPercent, 12.5, EXPERIMENTAL,     \
+  product(double, ShenandoahMinOldGenGrowthPercent, 50, EXPERIMENTAL,       \
           "(Generational mode only) If the usage within old generation "    \
           "has grown by at least this percent of its live memory size "     \
-          "at completion of the most recent old-generation marking "        \
-          "effort, heuristics may trigger the start of a new old-gen "      \
-          "collection.")                                                    \
+          "at the start of the previous old-generation marking effort, "    \
+          "heuristics may trigger the start of a new old-gen collection.")  \
           range(0.0,100.0)                                                  \
                                                                             \
-  product(uintx, ShenandoahIgnoreOldGrowthBelowPercentage,10, EXPERIMENTAL, \
+  product(double, ShenandoahMinOldGenGrowthHeapPercent, 10, EXPERIMENTAL,   \
+          "(Generational mode only) If the usage within old generation "    \
+          "has grown by at least this percent of the total heap size "      \
+          "since live memory at the start of the previous old-generation "  \
+          "marking effort, heuristics may trigger the start of a new "      \
+          "old-gen collection.")                                            \
+          range(0.0,100.0)                                                  \
+                                                                            \
+  product(uintx, ShenandoahIgnoreOldGrowthBelowPercentage,                  \
+          25, EXPERIMENTAL,                                                 \
           "(Generational mode only) If the total usage of the old "         \
           "generation is smaller than this percent, we do not trigger "     \
           "old gen collections even if old has grown, except when "         \
