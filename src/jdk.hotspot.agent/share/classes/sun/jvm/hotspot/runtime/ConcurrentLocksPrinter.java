@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ public class ConcurrentLocksPrinter {
     private void fillLocks() {
         VM vm = VM.getVM();
         SystemDictionary sysDict = vm.getSystemDictionary();
-        Klass absOwnSyncKlass = sysDict.getAbstractOwnableSynchronizerKlass();
+        InstanceKlass absOwnSyncKlass = sysDict.getAbstractOwnableSynchronizerKlass();
         ObjectHeap heap = vm.getObjectHeap();
         // may be not loaded at all
         if (absOwnSyncKlass != null) {

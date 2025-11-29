@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ public class ObjectHeap {
 
   /** iterate objects of given Klass. param 'includeSubtypes' tells whether to
    *  include objects of subtypes or not */
-  public void iterateObjectsOfKlass(HeapVisitor visitor, final Klass k, boolean includeSubtypes) {
+  public void iterateObjectsOfKlass(HeapVisitor visitor, final InstanceKlass k, boolean includeSubtypes) {
     if (includeSubtypes) {
       if (k.isFinal()) {
         // do the simpler "exact" klass loop
@@ -124,7 +124,7 @@ public class ObjectHeap {
   }
 
   /** iterate objects of given Klass (objects of subtypes included) */
-  public void iterateObjectsOfKlass(HeapVisitor visitor, final Klass k) {
+  public void iterateObjectsOfKlass(HeapVisitor visitor, final InstanceKlass k) {
     iterateObjectsOfKlass(visitor, k, true);
   }
 

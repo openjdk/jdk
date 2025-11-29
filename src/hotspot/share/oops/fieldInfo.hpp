@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "oops/typeArrayOop.hpp"
+#include "utilities/accessFlags.hpp"
 #include "utilities/unsigned5.hpp"
 #include "utilities/vmEnums.hpp"
 

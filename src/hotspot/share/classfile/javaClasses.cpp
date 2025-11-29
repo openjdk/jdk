@@ -1093,8 +1093,7 @@ void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protecti
   set_modifiers(mirror(), computed_modifiers);
   // Set the raw access_flags, this is used by reflection instead of modifier flags.
   // The Java code for array classes gets the access flags from the element type.
-  assert(!k->is_array_klass() || k->access_flags().as_unsigned_short() == 0, "access flags are not set for arrays");
-  set_raw_access_flags(mirror(), k->access_flags().as_unsigned_short());
+  set_raw_access_flags(mirror(), k->is_array_klass() ? 0 : InstanceKlass::cast(k)->access_flags().as_unsigned_short());
 
   InstanceMirrorKlass* mk = InstanceMirrorKlass::cast(mirror->klass());
   assert(oop_size(mirror()) == mk->instance_size(k), "should have been set");
