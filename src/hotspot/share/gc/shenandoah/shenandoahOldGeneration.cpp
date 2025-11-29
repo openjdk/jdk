@@ -605,10 +605,11 @@ void ShenandoahOldGeneration::log_failed_promotion(LogStream& ls, Thread* thread
     const size_t promotion_reserve = get_promoted_reserve();
     const size_t promotion_expended = get_promoted_expended();
 
-    ls.print_cr("Promotion failed, size %zu, has plab? %s, PLAB remaining: %zu"
+    ResourceMark resources; // for thread name
+    ls.print_cr("Promotion failed for %s, size %zu, has plab? %s, PLAB remaining: %zu"
                 ", plab promotions %s, promotion reserve: %zu, promotion expended: %zu"
                 ", old capacity: %zu, old_used: %zu, old unaffiliated regions: %zu",
-                size * HeapWordSize, plab == nullptr? "no": "yes",
+                thread->name(), size * HeapWordSize, plab == nullptr? "no": "yes",
                 words_remaining * HeapWordSize, promote_enabled, promotion_reserve, promotion_expended,
                 max_capacity(), used(), free_unaffiliated_regions());
 
@@ -619,7 +620,7 @@ void ShenandoahOldGeneration::log_failed_promotion(LogStream& ls, Thread* thread
   }
 }
 
-void ShenandoahOldGeneration::handle_evacuation(HeapWord* obj, size_t words, bool promotion) {
+void ShenandoahOldGeneration::handle_evacuation(HeapWord* obj, size_t words) const {
   // Only register the copy of the object that won the evacuation race.
   _card_scan->register_object_without_lock(obj);
 
