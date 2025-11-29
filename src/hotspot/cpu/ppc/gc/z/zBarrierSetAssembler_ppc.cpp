@@ -950,6 +950,21 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
   __ b(*stub->continuation());
 }
 
+void ZBarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path) {
+  // Load the oop from the weak handle
+  __ ld(obj, 0, obj);
+
+  // Check if oop is okay
+  __ ld(tmp, in_bytes(ZThreadLocalData::mark_bad_mask_offset()), R16_thread);
+
+  // Test reference against bad mask. If mask bad, then we need to fix it up.
+  __ and_(tmp, obj, tmp);
+  __ bne(CR0, slow_path);
+
+  // Uncolor oop if okay
+  __ srdi(obj, obj, ZPointerLoadShift);
+}
+
 #undef __
 #endif // COMPILER2
 

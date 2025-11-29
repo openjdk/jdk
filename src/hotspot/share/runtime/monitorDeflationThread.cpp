@@ -88,6 +88,8 @@ void MonitorDeflationThread::monitor_deflation_thread_entry(JavaThread* jt, TRAP
       }
     }
 
+    log_debug(monitorinflation)("Starting deflation cycle");
+
     (void)ObjectSynchronizer::deflate_idle_monitors();
 
     if (log_is_enabled(Debug, monitorinflation)) {
