@@ -515,13 +515,6 @@ int MacroAssembler::patch_narrow_klass(address insn_addr, narrowKlass n) {
   return 2 * NativeInstruction::instruction_size;
 }
 
-address MacroAssembler::target_addr_for_insn_or_null(address insn_addr) {
-  if (NativeInstruction::is_ldrw_to_zr(insn_addr)) {
-    return nullptr;
-  }
-  return MacroAssembler::target_addr_for_insn(insn_addr);
-}
-
 void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool in_nmethod, Register tmp) {
   ldr(tmp, Address(rthread, JavaThread::polling_word_offset()));
   if (at_return) {
