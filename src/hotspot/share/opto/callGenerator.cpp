@@ -707,6 +707,7 @@ void CallGenerator::do_late_inline_helper() {
       C->env()->notice_inlined_method(inline_cg()->method());
     }
     C->set_inlining_progress(true);
+    C->record_optimization_event(OptEvent_FunctionInlining);
     C->set_do_cleanup(kit.stopped()); // path is dead; needs cleanup
     kit.replace_call(call, result, true, do_asserts);
   }

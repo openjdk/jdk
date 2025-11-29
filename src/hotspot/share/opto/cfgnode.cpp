@@ -30,6 +30,7 @@
 #include "opto/addnode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
+#include "opto/compile.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/loopnode.hpp"
@@ -2157,10 +2158,11 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     uin = unique_input(phase, true);
   }
   if (uin == top) {             // Simplest case: no alive inputs.
-    if (can_reshape)            // IGVN transformation
+    if (can_reshape) {          // IGVN transformation
       return top;
-    else
+    } else {
       return nullptr;              // Identity will return TOP
+    }
   } else if (uin != nullptr) {
     // Only one not-null unique input path is left.
     // Determine if this input is backedge of a loop.
@@ -2279,8 +2281,9 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if( opt != nullptr ) {
       if( opt == unsafe_id || is_unsafe_data_reference(opt) ) {
         // Found dead loop.
-        if( can_reshape )
+        if( can_reshape ) {
           return top;
+        }
         // We can't return top if we are in Parse phase - cut inputs only
         // to stop further optimizations for this phi. Identity will return TOP.
         assert(req() == 3, "only diamond merge phi here");
@@ -3135,4 +3138,3 @@ void BlackholeNode::format(PhaseRegAlloc* ra, outputStream* st) const {
   st->cr();
 }
 #endif
-
