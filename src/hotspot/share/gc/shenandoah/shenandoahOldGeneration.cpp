@@ -619,7 +619,7 @@ void ShenandoahOldGeneration::log_failed_promotion(LogStream& ls, Thread* thread
   }
 }
 
-void ShenandoahOldGeneration::handle_evacuation(HeapWord* obj, size_t words, bool promotion) {
+void ShenandoahOldGeneration::handle_evacuation(HeapWord* obj, size_t words) const {
   // Only register the copy of the object that won the evacuation race.
   _card_scan->register_object_without_lock(obj);
 
