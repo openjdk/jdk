@@ -1745,6 +1745,10 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
 
     os::check_core_dump_prerequisites(buffer, sizeof(buffer));
 
+    // Jfr::on_vm_shutdown should be called before installing crash handler for error reporting
+    // because LeakProfiler::emit_events() would kick both VM Operation and long-running execution.
+    JFR_ONLY(Jfr::on_vm_shutdown(static_cast<VMErrorType>(_id) == OOM_JAVA_HEAP_FATAL, true);)
+
     // reset signal handlers or exception filter; make sure recursive crashes
     // are handled properly.
     install_secondary_signal_handler();
@@ -1897,8 +1901,6 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
 
     log.set_fd(-1);
   }
-
-  JFR_ONLY(Jfr::on_vm_shutdown(static_cast<VMErrorType>(_id) == OOM_JAVA_HEAP_FATAL, true);)
 
   if (PrintNMTStatistics) {
     fdStream fds(fd_out);

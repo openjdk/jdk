@@ -397,6 +397,7 @@ JfrRecorderService::JfrRecorderService() :
 
 enum RecorderState {
   STOPPED,
+  STOPPED_WITH_ERROR,
   RUNNING
 };
 
@@ -423,6 +424,10 @@ static void stop_recorder() {
 
 bool JfrRecorderService::is_recording() {
   return recorder_state == RUNNING;
+}
+
+bool JfrRecorderService::is_recording_stopped_with_error() {
+  return recorder_state == STOPPED_WITH_ERROR;
 }
 
 void JfrRecorderService::start() {
@@ -509,6 +514,7 @@ void JfrRecorderService::rotate(int msgs) {
   if (msgs & MSGBIT(MSG_VM_ERROR)) {
     stop();
     vm_error_rotation();
+    set_recorder_state(STOPPED, STOPPED_WITH_ERROR);
     return;
   }
   if (_storage.control().to_disk()) {
