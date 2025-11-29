@@ -42,12 +42,8 @@ public class IntegerComparison {
     int[] i2;
     int[] res;
     long[] resLong;
-    Object[] resObject;
-    Object ro1;
-    Object ro2;
-    Object[] resClass;
-    Class rc1;
-    Class rc2;
+    float[] resFloat;
+    double[] resDouble;
 
     @Setup
     public void setup() {
@@ -56,17 +52,16 @@ public class IntegerComparison {
         i2 = new int[INVOCATIONS];
         res = new int[INVOCATIONS];
         resLong = new long[INVOCATIONS];
-        resObject = new Object[INVOCATIONS];
-        ro1 = new Object();
-        ro2 = new Object();
-        resClass = new Class[INVOCATIONS];
-        rc1 = Float.class;
-        rc2 = Double.class;
+        resFloat = new float[INVOCATIONS];
+        resDouble = new double[INVOCATIONS];
         for (int i = 0; i < INVOCATIONS; i++) {
             i1[i] = random.nextInt(INVOCATIONS);
             i2[i] = random.nextInt(INVOCATIONS);
         }
     }
+
+    // --------- result: int ---------
+    //      Signed comparison
 
     @Benchmark
     public void equalInteger() {
@@ -110,8 +105,55 @@ public class IntegerComparison {
         }
     }
 
-    // --------- result: long ---------
+    //      Unsigned comparison
 
+    @Benchmark
+    public void equalIntegerUnsigned() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            res[i] = Integer.compareUnsigned(i1[i], i2[i]) == 0 ? 1 : 2;
+        }
+    }
+
+    @Benchmark
+    public void notEqualIntegerUnsigned() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            res[i] = Integer.compareUnsigned(i1[i], i2[i]) != 0 ? 1 : 2;
+        }
+    }
+
+    @Benchmark
+    public void lessIntegerUnsigned() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            res[i] = Integer.compareUnsigned(i1[i], i2[i]) < 0 ? 1 : 2;
+        }
+    }
+
+    @Benchmark
+    public void lessEqualIntegerUnsigned() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            res[i] = Integer.compareUnsigned(i1[i], i2[i]) <= 0 ? 1 : 2;
+        }
+    }
+
+    @Benchmark
+    public void greaterIntegerUnsigned() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            res[i] = Integer.compareUnsigned(i1[i], i2[i]) > 0 ? 1 : 2;
+        }
+    }
+
+    @Benchmark
+    public void greaterEqualIntegerUnsigned() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            res[i] = Integer.compareUnsigned(i1[i], i2[i]) >= 0 ? 1 : 2;
+        }
+    }
+
+
+    // --------- result: long ---------
+    //      Signed comparison
+
+    @Benchmark
     public void equalIntegerResLong() {
         for (int i = 0; i < INVOCATIONS; i++) {
             resLong[i] = (i1[i] == i2[i]) ? Long.MAX_VALUE : Long.MIN_VALUE;
@@ -125,6 +167,7 @@ public class IntegerComparison {
         }
     }
 
+    @Benchmark
     public void lessIntegerResLong() {
         for (int i = 0; i < INVOCATIONS; i++) {
             resLong[i] = (i1[i] < i2[i]) ? Long.MAX_VALUE : Long.MIN_VALUE;
@@ -138,6 +181,7 @@ public class IntegerComparison {
         }
     }
 
+    @Benchmark
     public void greaterIntegerResLong() {
         for (int i = 0; i < INVOCATIONS; i++) {
             resLong[i] = (i1[i] > i2[i]) ? Long.MAX_VALUE : Long.MIN_VALUE;
@@ -148,6 +192,228 @@ public class IntegerComparison {
     public void greaterEqualIntegerResLong() {
         for (int i = 0; i < INVOCATIONS; i++) {
             resLong[i] = (i1[i] >= i2[i]) ? Long.MAX_VALUE : Long.MIN_VALUE;
+        }
+    }
+
+    //      Unsigned comparison
+
+    @Benchmark
+    public void equalIntegerUnsignedResLong() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resLong[i] = Integer.compareUnsigned(i1[i], i2[i]) == 0 ? Long.MAX_VALUE : Long.MIN_VALUE;
+        }
+    }
+
+    @Benchmark
+    public void notEqualIntegerUnsignedResLong() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resLong[i] = Integer.compareUnsigned(i1[i], i2[i]) != 0 ? Long.MAX_VALUE : Long.MIN_VALUE;
+        }
+    }
+
+    @Benchmark
+    public void lessIntegerUnsignedResLong() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resLong[i] = Integer.compareUnsigned(i1[i], i2[i]) < 0 ? Long.MAX_VALUE : Long.MIN_VALUE;
+        }
+    }
+
+    @Benchmark
+    public void lessEqualIntegerUnsignedResLong() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resLong[i] = Integer.compareUnsigned(i1[i], i2[i]) <= 0 ? Long.MAX_VALUE : Long.MIN_VALUE;
+        }
+    }
+
+    @Benchmark
+    public void greaterIntegerUnsignedResLong() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resLong[i] = Integer.compareUnsigned(i1[i], i2[i]) > 0 ? Long.MAX_VALUE : Long.MIN_VALUE;
+        }
+    }
+
+    @Benchmark
+    public void greaterEqualIntegerUnsignedResLong() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resLong[i] = Integer.compareUnsigned(i1[i], i2[i]) >= 0 ? Long.MAX_VALUE : Long.MIN_VALUE;
+        }
+    }
+
+    // --------- result: float ---------
+    //      Signed comparison
+
+    @Benchmark
+    public void equalIntegerResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (i1[i] == i2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void notEqualIntegerResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (i1[i] != i2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void lessIntegerResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (i1[i] < i2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void lessEqualIntegerResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (i1[i] <= i2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void greaterIntegerResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (i1[i] > i2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void greaterEqualIntegerResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (i1[i] >= i2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    //      Unsigned comparison
+
+    @Benchmark
+    public void equalIntegerUnsignedResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = Integer.compareUnsigned(i1[i], i2[i]) == 0 ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void notEqualIntegerUnsignedResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = Integer.compareUnsigned(i1[i], i2[i]) != 0 ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void lessIntegerUnsignedResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = Integer.compareUnsigned(i1[i], i2[i]) < 0 ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void lessEqualIntegerUnsignedResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = Integer.compareUnsigned(i1[i], i2[i]) <= 0 ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void greaterIntegerUnsignedResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = Integer.compareUnsigned(i1[i], i2[i]) > 0 ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void greaterEqualIntegerUnsignedResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = Integer.compareUnsigned(i1[i], i2[i]) >= 0 ? 0.1f : 0.2f;
+        }
+    }
+
+    // --------- result: double ---------
+    //      Signed comparison
+
+    @Benchmark
+    public void equalIntegerResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (i1[i] == i2[i]) ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void notEqualIntegerResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (i1[i] != i2[i]) ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void lessIntegerResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (i1[i] < i2[i]) ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void lessEqualIntegerResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (i1[i] <= i2[i]) ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void greaterIntegerResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (i1[i] > i2[i]) ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void greaterEqualIntegerResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (i1[i] >= i2[i]) ? 0.1 : 0.2;
+        }
+    }
+
+    //      Unsigned comparison
+
+    @Benchmark
+    public void equalIntegerUnsignedResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = Integer.compareUnsigned(i1[i], i2[i]) == 0 ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void notEqualIntegerUnsignedResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = Integer.compareUnsigned(i1[i], i2[i]) != 0 ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void lessIntegerUnsignedResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = Integer.compareUnsigned(i1[i], i2[i]) < 0 ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void lessEqualIntegerUnsignedResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = Integer.compareUnsigned(i1[i], i2[i]) <= 0 ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void greaterIntegerUnsignedResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = Integer.compareUnsigned(i1[i], i2[i]) > 0 ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void greaterEqualIntegerUnsignedResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = Integer.compareUnsigned(i1[i], i2[i]) >= 0 ? 0.1 : 0.2;
         }
     }
 }
