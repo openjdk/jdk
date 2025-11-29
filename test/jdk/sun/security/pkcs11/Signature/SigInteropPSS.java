@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,15 @@
  * questions.
  */
 
-import java.security.*;
-import java.security.spec.*;
-import java.security.interfaces.*;
+import jtreg.SkippedException;
+
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
+import java.security.Signature;
+import java.security.spec.MGF1ParameterSpec;
+import java.security.spec.PSSParameterSpec;
 
 /*
  * @test
@@ -53,9 +59,7 @@ public class SigInteropPSS extends PKCS11Test {
         try {
             sigPkcs11 = Signature.getInstance("RSASSA-PSS", p);
         } catch (NoSuchAlgorithmException e) {
-            System.out.println("Skip testing RSASSA-PSS" +
-                " due to no support");
-            return;
+            throw new SkippedException("No support for RSASSA-PSS");
         }
 
         Signature sigSunRsaSign =
