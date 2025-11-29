@@ -50,6 +50,7 @@ static fio_fd emergency_fd = invalid_fd;
 static const int64_t chunk_file_header_size = 68;
 static const size_t chunk_file_extension_length = sizeof chunk_file_jfr_ext - 1;
 static char _dump_path[JVM_MAXPATHLEN] = { 0 };
+static char _dumped_file[JVM_MAXPATHLEN] = { 0 };
 
 /*
  * The emergency dump logic is restrictive when it comes to
@@ -99,7 +100,12 @@ static bool open_emergency_dump_fd(const char* path) {
   }
   assert(emergency_fd == invalid_fd, "invariant");
   emergency_fd = open_exclusivly(path);
-  return emergency_fd != invalid_fd;
+  if (emergency_fd != invalid_fd) {
+    strncpy(_dumped_file, path, JVM_MAXPATHLEN - 1);
+    return true;
+  } else {
+    return false;
+  }
 }
 
 static void close_emergency_dump_file() {
@@ -150,7 +156,7 @@ static void report(outputStream* st, bool emergency_file_opened, const char* rep
   assert(st != nullptr, "invariant");
   if (emergency_file_opened) {
     st->print_raw("# JFR recording file will be written. Location: ");
-    st->print_raw_cr(_path_buffer);
+    st->print_raw_cr(_dumped_file);
     st->print_raw_cr("#");
   } else if (repository_path != nullptr) {
     st->print_raw("# The JFR repository may contain useful JFR files. Location: ");
@@ -182,7 +188,7 @@ void JfrEmergencyDump::on_vm_error_report(outputStream* st, const char* reposito
   assert(st != nullptr, "invariant");
   Thread* thread = Thread::current_or_null_safe();
   if (thread != nullptr) {
-    report(st, open_emergency_dump_file(), repository_path);
+    report(st, *_dumped_file != '\0', repository_path);
   } else if (repository_path != nullptr) {
     // a non-attached thread will not be able to write anything later
     report(st, false, repository_path);

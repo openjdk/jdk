@@ -70,6 +70,7 @@ class JfrRecorder : public JfrCHeapObj {
   static void destroy();
   static void start_recording();
   static bool is_recording();
+  static bool is_recording_stopped_with_error();
   static void stop_recording();
 };
 

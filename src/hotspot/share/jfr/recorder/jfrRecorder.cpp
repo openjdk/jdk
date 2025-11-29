@@ -483,6 +483,10 @@ bool JfrRecorder::is_recording() {
   return JfrRecorderService::is_recording();
 }
 
+bool JfrRecorder::is_recording_stopped_with_error() {
+  return JfrRecorderService::is_recording_stopped_with_error();
+}
+
 void JfrRecorder::stop_recording() {
   _post_box->post(MSG_STOP);
 }
