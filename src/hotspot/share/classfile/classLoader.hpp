@@ -245,6 +245,7 @@ class ClassLoader: AllStatic {
   // Canonicalizes path names, so strcmp will work properly. This is mainly
   // to avoid confusing the zip library
   static char* get_canonical_path(const char* orig, Thread* thread);
+  static char* get_slash_delimited_canonical_path(const char* orig);
   static const char* file_name_for_class_name(const char* class_name,
                                               int class_name_len);
   static PackageEntry* get_package_entry(Symbol* pkg_name, ClassLoaderData* loader_data);

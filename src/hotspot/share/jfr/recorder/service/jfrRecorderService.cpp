@@ -39,6 +39,7 @@
 #include "jfr/recorder/storage/jfrStorageControl.hpp"
 #include "jfr/recorder/stringpool/jfrStringPool.hpp"
 #include "jfr/support/jfrDeprecationManager.hpp"
+#include "jfr/support/jfrSymbolTable.inline.hpp"
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTime.hpp"
@@ -450,6 +451,7 @@ void JfrRecorderService::clear() {
 void JfrRecorderService::pre_safepoint_clear() {
   _storage.clear();
   JfrStackTraceRepository::clear();
+  JfrSymbolTable::allocate_next_epoch();
 }
 
 void JfrRecorderService::invoke_safepoint_clear() {
@@ -558,6 +560,7 @@ void JfrRecorderService::pre_safepoint_write() {
   }
   write_storage(_storage, _chunkwriter);
   write_stacktrace(_stack_trace_repository, _chunkwriter, true);
+  JfrSymbolTable::allocate_next_epoch();
 }
 
 void JfrRecorderService::invoke_safepoint_write() {

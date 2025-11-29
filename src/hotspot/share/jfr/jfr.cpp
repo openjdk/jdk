@@ -22,6 +22,7 @@
  *
  */
 
+#include "classfile/classFileParser.hpp"
 #include "jfr/instrumentation/jfrEventClassTransformer.hpp"
 #include "jfr/jfr.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
@@ -31,6 +32,7 @@
 #include "jfr/recorder/repository/jfrEmergencyDump.hpp"
 #include "jfr/recorder/repository/jfrRepository.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
+#include "jfr/support/jfrClassDefineEvent.hpp"
 #include "jfr/support/jfrKlassExtension.hpp"
 #include "jfr/support/jfrResolution.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
@@ -78,12 +80,14 @@ void Jfr::on_unloading_classes() {
 }
 
 void Jfr::on_klass_creation(InstanceKlass*& ik, ClassFileParser& parser, TRAPS) {
+  JfrTraceId::assign(ik);
   if (IS_EVENT_OR_HOST_KLASS(ik)) {
     JfrEventClassTransformer::on_klass_creation(ik, parser, THREAD);
-    return;
-  }
-  if (JfrMethodTracer::in_use()) {
+  } else if (JfrMethodTracer::in_use()) {
     JfrMethodTracer::on_klass_creation(ik, parser, THREAD);
+  }
+  if (!parser.is_internal()) {
+    JfrClassDefineEvent::on_creation(ik, parser, THREAD);
   }
 }
 
@@ -167,4 +171,12 @@ bool Jfr::on_flight_recorder_option(const JavaVMOption** option, char* delimiter
 
 bool Jfr::on_start_flight_recording_option(const JavaVMOption** option, char* delimiter) {
   return JfrOptionSet::parse_start_flight_recording_option(option, delimiter);
+}
+
+void Jfr::on_restoration(const Klass* k, JavaThread* jt) {
+  assert(k != nullptr, "invariant");
+  JfrTraceId::restore(k);
+  if (k->is_instance_klass()) {
+    JfrClassDefineEvent::on_restoration(InstanceKlass::cast(k), jt);
+  }
 }
