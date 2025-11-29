@@ -23,6 +23,7 @@
  *
  */
 
+#include "cppstdlib/cstdlib.hpp"
 #include "jvm.h"
 #include "libperfstat_aix.hpp"
 #include "memory/allocation.inline.hpp"
@@ -46,7 +47,6 @@
 #include <sys/resource.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <stdlib.h>
 #include <unistd.h>
 
 typedef struct {

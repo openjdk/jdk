@@ -23,12 +23,12 @@
  *
  */
 
-#include <stdlib.h> // do not reorder
-#include <stdint.h> // do not reorder
-
+#include "cppstdlib/cstdlib.hpp"
 #include "immediate_aarch64.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+#include <stdint.h>
 
 // there are at most 2^13 possible logical immediate encodings
 // however, some combinations of immr and imms are invalid

@@ -141,7 +141,7 @@ struct ByteswapImpl : public ByteswapFallbackImpl<T, N> {};
  *****************************************************************************/
 #elif defined(TARGET_COMPILER_visCPP)
 
-#include <cstdlib>
+#include "cppstdlib/cstdlib.hpp"
 
 #pragma intrinsic(_byteswap_ushort)
 #pragma intrinsic(_byteswap_ulong)

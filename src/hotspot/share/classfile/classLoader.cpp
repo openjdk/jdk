@@ -42,6 +42,7 @@
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"
+#include "cppstdlib/cstdlib.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "jimage.hpp"
@@ -81,7 +82,6 @@
 #include "utilities/utf8.hpp"
 
 #include <ctype.h>
-#include <stdlib.h>
 
 // Entry point in java.dll for path canonicalization
 

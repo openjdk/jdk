@@ -23,6 +23,7 @@
  */
 
 #include "classfile/classLoader.hpp"
+#include "cppstdlib/cstdlib.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "jvmtifiles/jvmti.h"
