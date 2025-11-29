@@ -1257,6 +1257,12 @@ public class IRNode {
         machOnly(MEM_TO_REG_SPILL_COPY, "MemToRegSpillCopy");
     }
 
+    public static final String MEM_TO_REG_SPILL_COPY_TYPE = COMPOSITE_PREFIX + "MEM_TO_REG_SPILL_COPY_TYPE" + POSTFIX;
+    static {
+        String regex = START + "MemToRegSpillCopy" + MID + IS_REPLACED + ".*" + END;
+        machOnly(MEM_TO_REG_SPILL_COPY_TYPE, regex);
+    }
+
     public static final String MIN = PREFIX + "MIN" + POSTFIX;
     static {
         beforeMatchingNameRegex(MIN, "Min(I|L)");
