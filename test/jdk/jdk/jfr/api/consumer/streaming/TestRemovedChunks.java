@@ -32,6 +32,7 @@ import jdk.jfr.consumer.RecordingStream;
 /**
  * @test
  * @summary Tests that a stream can gracefully handle chunk being removed
+ * @requires os.arch != "s390x"
  * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib

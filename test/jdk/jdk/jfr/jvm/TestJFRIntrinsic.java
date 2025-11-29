@@ -24,6 +24,7 @@
 /**
  * @test
  * @summary Intrinsic for JFR
+ * @requires os.arch != "s390x"
  * @requires vm.hasJFR
  * @library /test/lib
  *

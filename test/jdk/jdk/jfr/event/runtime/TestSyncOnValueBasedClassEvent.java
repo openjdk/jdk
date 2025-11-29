@@ -35,6 +35,7 @@ import jdk.test.lib.jfr.Events;
 /**
  * @test
  * @bug 8242263
+ * @requires os.arch != "s390x"
  * @requires vm.hasJFR
  * @requires vm.flagless
  * @library /test/lib

@@ -30,6 +30,7 @@ import jdk.jfr.Recording;
 
 /**
  * @test
+ * @requires os.arch != "s390x"
  * @summary Tests that the getEventWriter call to write_checkpoint correctly
  *          reports returning an oop
  * @bug 8347463
