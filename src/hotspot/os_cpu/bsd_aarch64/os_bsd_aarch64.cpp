@@ -38,6 +38,7 @@
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
@@ -521,10 +522,6 @@ void os::current_thread_enable_wx(WXMode mode) {
 }
 #endif
 
-static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
-  *(jlong *) dst = *(const jlong *) src;
-}
-
 extern "C" {
   int SpinPause() {
     // We don't use StubRoutines::aarch64::spin_wait stub in order to
@@ -588,14 +585,14 @@ extern "C" {
     if (from > to) {
       const jlong *end = from + count;
       while (from < end)
-        atomic_copy64(from++, to++);
+        AtomicAccess::store(to++, AtomicAccess::load(from++));
     }
     else if (from < to) {
       const jlong *end = from;
       from += count - 1;
       to   += count - 1;
       while (from >= end)
-        atomic_copy64(from--, to--);
+        AtomicAccess::store(to--, AtomicAccess::load(from--));
     }
   }
 
