@@ -336,9 +336,6 @@ void SafepointSynchronize::begin() {
   EventSafepointBegin begin_event;
   SafepointTracing::begin(VMThread::vm_op_type());
 
-  log_trace(safepoint)("Suspending GC threads");
-  Universe::heap()->safepoint_synchronize_begin();
-
   // By getting the Threads_lock, we assure that no threads are about to start or
   // exit. It is released again in SafepointSynchronize::end().
   log_trace(safepoint)("Blocking threads from starting/exiting");
@@ -370,6 +367,11 @@ void SafepointSynchronize::begin() {
   // Arms the safepoint, _current_jni_active_count and _waiting_to_block must be set before.
   log_trace(safepoint)("Arming safepoint using %s wait barrier", _wait_barrier->description());
   arm_safepoint();
+
+  // Safepoint has been armed for Java threads, as the Java threads rolling to safepoint,
+  // GC threads synchronization will be processed concurrently.
+  log_trace(safepoint)("Suspending GC threads");
+  Universe::heap()->safepoint_synchronize_begin();
 
   // Will spin until all threads are safe.
   int iterations = synchronize_threads(safepoint_limit_time, nof_threads, &initial_running);
