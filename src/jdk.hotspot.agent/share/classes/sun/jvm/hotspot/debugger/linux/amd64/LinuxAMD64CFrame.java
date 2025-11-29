@@ -29,10 +29,12 @@ import sun.jvm.hotspot.debugger.amd64.*;
 import sun.jvm.hotspot.debugger.linux.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.cdbg.basic.*;
+import sun.jvm.hotspot.runtime.*;
+import sun.jvm.hotspot.runtime.amd64.*;
 
 public final class LinuxAMD64CFrame extends BasicCFrame {
 
-   public static LinuxAMD64CFrame getTopFrame(LinuxDebugger dbg, Address rip, ThreadContext context) {
+   public static LinuxAMD64CFrame getTopFrame(LinuxDebugger dbg, Address rsp, Address rip, ThreadContext context) {
       Address libptr = dbg.findLibPtrByAddress(rip);
       Address cfa = context.getRegisterAsAddress(AMD64ThreadContext.RBP);
       DwarfParser dwarf = null;
@@ -45,7 +47,7 @@ public final class LinuxAMD64CFrame extends BasicCFrame {
           // DWARF processing should succeed when the frame is native
           // but it might fail if Common Information Entry (CIE) has language
           // personality routine and/or Language Specific Data Area (LSDA).
-          return new LinuxAMD64CFrame(dbg, cfa, rip, dwarf, true);
+          return new LinuxAMD64CFrame(dbg, rsp, cfa, rip, dwarf, true);
         }
 
         cfa = context.getRegisterAsAddress(dwarf.getCFARegister())
@@ -53,19 +55,20 @@ public final class LinuxAMD64CFrame extends BasicCFrame {
       }
 
       return (cfa == null) ? null
-                           : new LinuxAMD64CFrame(dbg, cfa, rip, dwarf);
+                           : new LinuxAMD64CFrame(dbg, rsp, cfa, rip, dwarf);
    }
 
-   private LinuxAMD64CFrame(LinuxDebugger dbg, Address cfa, Address rip, DwarfParser dwarf) {
-      this(dbg, cfa, rip, dwarf, false);
+   private LinuxAMD64CFrame(LinuxDebugger dbg, Address rsp, Address cfa, Address rip, DwarfParser dwarf) {
+      this(dbg, rsp, cfa, rip, dwarf, false);
    }
 
-   private LinuxAMD64CFrame(LinuxDebugger dbg, Address cfa, Address rip, DwarfParser dwarf, boolean finalFrame) {
-      this(dbg, cfa, rip, dwarf, finalFrame, false);
+   private LinuxAMD64CFrame(LinuxDebugger dbg, Address rsp, Address cfa, Address rip, DwarfParser dwarf, boolean finalFrame) {
+      this(dbg, rsp, cfa, rip, dwarf, finalFrame, false);
    }
 
-   private LinuxAMD64CFrame(LinuxDebugger dbg, Address cfa, Address rip, DwarfParser dwarf, boolean finalFrame, boolean use1ByteBeforeToLookup) {
+   private LinuxAMD64CFrame(LinuxDebugger dbg, Address rsp, Address cfa, Address rip, DwarfParser dwarf, boolean finalFrame, boolean use1ByteBeforeToLookup) {
       super(dbg.getCDebugger());
+      this.rsp = rsp;
       this.cfa = cfa;
       this.rip = rip;
       this.dbg = dbg;
@@ -107,7 +110,14 @@ public final class LinuxAMD64CFrame extends BasicCFrame {
          (!isNative || (isNative && nextCFA.greaterThan(cfa)));
    }
 
-   private Address getNextCFA(DwarfParser nextDwarf, ThreadContext context, Address senderFP) {
+   private Address getNextRSP() {
+     // next RSP should be previous slot of return address.
+     var bp = dwarf == null ? cfa.addOffsetTo(ADDRESS_SIZE) // top of BP points callser BP
+                            : cfa.addOffsetTo(dwarf.getReturnAddressOffsetFromCFA());
+     return bp.addOffsetTo(ADDRESS_SIZE);
+   }
+
+   private Address getNextCFA(DwarfParser nextDwarf, ThreadContext context, Address senderFP, Address senderPC) {
      Address nextCFA;
      boolean isNative = false;
 
@@ -115,13 +125,17 @@ public final class LinuxAMD64CFrame extends BasicCFrame {
        senderFP = cfa.getAddressAt(0);  // RBP by default
      }
 
-     if (nextDwarf == null) { // Next frame is Java
+     if (VM.getVM().getCodeCache().contains(senderPC)) { // Next frame is Java
        nextCFA = (dwarf == null) ? senderFP // Current frame is Java
                                  : cfa.getAddressAt(dwarf.getBasePointerOffsetFromCFA()); // Current frame is Native
      } else { // Next frame is Native
-       if (dwarf == null) { // Current frame is Java
+       if (VM.getVM().getCodeCache().contains(pc())) { // Current frame is Java
          nextCFA = senderFP.addOffsetTo(-nextDwarf.getBasePointerOffsetFromCFA());
        } else { // Current frame is Native
+         if (nextDwarf == null) { // maybe runtime entrypoint (_start())
+           throw new DebuggerException("nextDwarf is null even though native call");
+         }
+
          isNative = true;
          int nextCFAReg = nextDwarf.getCFARegister();
          if (nextCFAReg == AMD64ThreadContext.RBP) {
@@ -130,10 +144,7 @@ public final class LinuxAMD64CFrame extends BasicCFrame {
            Address nextRBP = rbp.getAddressAt(0);
            nextCFA = nextRBP.addOffsetTo(-nextDwarf.getBasePointerOffsetFromCFA());
          } else if (nextCFAReg == AMD64ThreadContext.RSP) {
-           // next RSP should be previous slot of return address.
-           Address nextRSP = cfa.addOffsetTo(dwarf.getReturnAddressOffsetFromCFA())
-                                .addOffsetTo(ADDRESS_SIZE);
-           nextCFA = nextRSP.addOffsetTo(nextDwarf.getCFAOffset());
+           nextCFA = getNextRSP().addOffsetTo(nextDwarf.getCFAOffset());
          } else {
            throw new DebuggerException("Unsupported CFA register: " + nextCFAReg);
          }
@@ -153,16 +164,21 @@ public final class LinuxAMD64CFrame extends BasicCFrame {
 
    @Override
    public CFrame sender(ThreadProxy th) {
-     return sender(th, null, null);
+     return sender(th, null, null, null);
    }
 
    @Override
-   public CFrame sender(ThreadProxy th, Address fp, Address pc) {
+   public CFrame sender(ThreadProxy th, Address sp, Address fp, Address pc) {
      if (finalFrame) {
        return null;
      }
 
      ThreadContext context = th.getContext();
+
+     Address nextRSP = sp != null ? sp : getNextRSP();
+     if (nextRSP == null) {
+       return null;
+     }
 
      Address nextPC = pc != null ? pc : getNextPC(dwarf != null);
      if (nextPC == null) {
@@ -183,13 +199,16 @@ public final class LinuxAMD64CFrame extends BasicCFrame {
          // DWARF processing should succeed when the frame is native
          // but it might fail if Common Information Entry (CIE) has language
          // personality routine and/or Language Specific Data Area (LSDA).
-         return new LinuxAMD64CFrame(dbg, null, nextPC, nextDwarf, true);
+         return null;
        }
      }
 
-     Address nextCFA = getNextCFA(nextDwarf, context, fp);
-     return nextCFA == null ? null
-                            : new LinuxAMD64CFrame(dbg, nextCFA, nextPC, nextDwarf, false, fallback);
+     try {
+       Address nextCFA = getNextCFA(nextDwarf, context, fp, nextPC);
+       return new LinuxAMD64CFrame(dbg, nextRSP, nextCFA, nextPC, nextDwarf, false, fallback);
+     } catch (DebuggerException _) {
+       return null;
+     }
    }
 
    private DwarfParser createDwarfParser(Address pc) throws DebuggerException {
@@ -210,8 +229,14 @@ public final class LinuxAMD64CFrame extends BasicCFrame {
      return nextDwarf;
    }
 
+   @Override
+   public Frame toFrame() {
+     return new AMD64Frame(rsp, cfa, rip);
+   }
+
    // package/class internals only
    private static final int ADDRESS_SIZE = 8;
+   private Address rsp;
    private Address rip;
    private Address cfa;
    private LinuxDebugger dbg;
