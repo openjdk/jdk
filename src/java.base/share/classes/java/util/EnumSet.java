@@ -501,4 +501,10 @@ public abstract sealed class EnumSet<E extends Enum<E>> extends AbstractSet<E>
         throws java.io.InvalidObjectException {
         throw new java.io.InvalidObjectException("Proxy required");
     }
+
+    @Override
+    public Spliterator<E> spliterator() {
+        return Spliterators.spliterator(this,
+                Spliterator.DISTINCT | Spliterator.SORTED | Spliterator.ORDERED | Spliterator.NONNULL);
+    }
 }
