@@ -875,9 +875,9 @@ public:
   const KnownBits<julong> _bits;
 
   static const TypeLong* make(jlong con);
-  static const TypeLong* make_unsigned(julong ucon);
   // must always specify w
   static const TypeLong* make(jlong lo, jlong hi, int widen);
+  static const TypeLong* make_unsigned(julong lo, julong hi, int widen);
   static const Type* make_or_top(const TypeIntPrototype<jlong, julong>& t, int widen);
 
   // Check for single integer

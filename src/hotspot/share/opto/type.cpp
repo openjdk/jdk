@@ -41,11 +41,9 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/ostream.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/stringUtils.hpp"
-
-#include <type_traits>
 
 // Portions of code courtesy of Clifford Click
 
@@ -1919,13 +1917,14 @@ const TypeLong* TypeLong::make(jlong con) {
                        WidenMin, false))->hashcons()->is_long();
 }
 
-const TypeLong* TypeLong::make_unsigned(julong ucon) {
-  return make_or_top(TypeIntPrototype<jlong, julong>{{min_jlong, max_jlong}, {ucon, ucon}, {0, 0}}, WidenMin)->is_long();
-}
-
 const TypeLong* TypeLong::make(jlong lo, jlong hi, int widen) {
   assert(lo <= hi, "must be legal bounds");
   return make_or_top(TypeIntPrototype<jlong, julong>{{lo, hi}, {0, max_julong}, {0, 0}}, widen)->is_long();
+}
+
+const TypeLong* TypeLong::make_unsigned(julong lo, julong hi, int widen) {
+  assert(lo <= hi, "must be legal bounds");
+  return make_or_top(TypeIntPrototype<jlong, julong>{{min_jlong, max_jlong}, {lo, hi}, {0, 0}}, widen)->is_long();
 }
 
 const Type* TypeLong::make_or_top(const TypeIntPrototype<jlong, julong>& t, int widen) {

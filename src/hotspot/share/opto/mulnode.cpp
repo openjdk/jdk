@@ -35,9 +35,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-#include <cstdint>
-#include <type_traits>
-
 // Portions of code courtesy of Clifford Click
 
 
@@ -597,72 +594,56 @@ Node* MulDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
 //=============================================================================
 //------------------------------Value------------------------------------------
+template <typename T>
+static const TypeLong* range_fold(const T t1_lo, const T t1_hi, const T t2_lo, const T t2_hi, const int widen) {
+  auto multiply = [](const T lo, const T hi) -> T {
+    return std::is_signed<T>::value ? multiply_high_signed(lo, hi) : multiply_high_unsigned(lo, hi);
+  };
+  auto make = [](T lo, T hi, int widen) -> const TypeLong* {
+    return std::is_signed<T>::value ? TypeLong::make(lo, hi, widen) : TypeLong::make_unsigned(lo, hi, widen);
+  };
+  T p00 = multiply(t1_lo, t2_lo);
+  T p01 = multiply(t1_lo, t2_hi);
+  T p10 = multiply(t1_hi, t2_lo);
+  T p11 = multiply(t1_hi, t2_hi);
+  T lo = MIN4(p00, p01, p10, p11);
+  T hi = MAX4(p00, p01, p10, p11);
+  return make(lo, hi, widen);
+}
+
 const Type* MulHiLNode::Value(PhaseGVN* phase) const {
   const Type* t1 = phase->type(in(1));
   const Type* t2 = phase->type(in(2));
-
   // Either input is TOP ==> the result is TOP
   if (t1 == Type::TOP || t2 == Type::TOP) {
     return Type::TOP;
   }
-  // Either input is ZERO, the result always ZERO
-  if (t1 == TypeLong::ZERO || t2 == TypeLong::ZERO) {
-    return TypeLong::ZERO;
-  }
 
   const TypeLong* longType1 = t1->is_long();
   const TypeLong* longType2 = t2->is_long();
-
-  // Both are constant, directly compute the result.
-  if (longType1->is_con() && longType2->is_con()) {
-    jlong highResult = multiply_high_signed(longType1->get_con(), longType2->get_con());
-    return TypeLong::make(highResult);
-  }
-
-  // If the 64-bit result cannot overflow and its sign is known, the result is constant.
-  const IntegerTypeMultiplication<jlong> multiplication(longType1, longType2);
-  if (!multiplication.does_overflow()) {
-    const TypeLong* result = multiplication.compute()->is_long();
-    if (result->_lo >= 0) {
-      return TypeLong::ZERO;
-    }
-    if (result->_hi < 0) {
-      return TypeLong::MINUS_1;
-    }
-  }
-
-  return bottom_type();
+  return range_fold<jlong>(longType1->_lo, longType1->_hi,
+                           longType2->_lo, longType2->_hi,
+                           MIN2(longType1->_widen, longType2->_widen));
 }
 
 const Type* UMulHiLNode::Value(PhaseGVN* phase) const {
   const Type* t1 = phase->type(in(1));
   const Type* t2 = phase->type(in(2));
-
   // Either input is TOP ==> the result is TOP
   if (t1 == Type::TOP || t2 == Type::TOP) {
     return Type::TOP;
-  }
-  // Either input is ZERO, the result always ZERO
-  if (t1 == TypeLong::ZERO || t2 == TypeLong::ZERO) {
-    return TypeLong::ZERO;
   }
 
   const TypeLong* longType1 = t1->is_long();
   const TypeLong* longType2 = t2->is_long();
 
-  // Both are constant, directly compute the result.
-  if (longType1->is_con() && longType2->is_con()) {
-    julong highResult = multiply_high_unsigned(longType1->get_con(), longType2->get_con());
-    return TypeLong::make_unsigned(highResult);
-  }
-
-  // Range-based fold: if both inputs fit in 32-bit unsigned, high word is guaranteed zero.
-  // If both inputs are within the unsigned 32-bit range, the upper 64 bits of the 128-bit result are always zero.
-  if (longType1->_uhi <= max_juint && longType2->_uhi <= max_juint) {
-    return TypeLong::ZERO;
-  }
-
-  return bottom_type();
+  julong p00 = multiply_high_unsigned(longType1->_ulo, longType2->_ulo);
+  julong p01 = multiply_high_unsigned(longType1->_ulo, longType2->_uhi);
+  julong p10 = multiply_high_unsigned(longType1->_uhi, longType2->_ulo);
+  julong p11 = multiply_high_unsigned(longType1->_uhi, longType2->_uhi);
+  julong lo = MIN4(p00, p01, p10, p11);
+  julong hi = MAX4(p00, p01, p10, p11);
+  return TypeLong::make_unsigned(lo, hi, MAX2(longType1->_widen, longType2->_widen));
 }
 
 template<typename IntegerType>
