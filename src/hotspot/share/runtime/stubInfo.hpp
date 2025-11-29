@@ -678,6 +678,11 @@ public:
   static int  c1_offset(StubId id);
   static int  c2_offset(StubId id);
   static int  stubgen_offset(StubId id);
+
+  // Convert a stub id to a unique, zero-based offset in the range of
+  // stub ids for a given blob in the stubgen stub group.
+
+  static int  stubgen_offset_in_blob(BlobId blob_id, StubId id);
 };
 
 

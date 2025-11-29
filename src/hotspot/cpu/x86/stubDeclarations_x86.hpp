@@ -161,6 +161,12 @@
   do_arch_entry(x86, compiler, pshuffle_byte_flip_mask,                 \
                 pshuffle_byte_flip_mask_addr,                           \
                 pshuffle_byte_flip_mask_addr)                           \
+  do_arch_entry(x86, compiler, pshuffle_byte_flip_mask,                 \
+                pshuffle_byte_flip_mask_00ba_addr,                      \
+                pshuffle_byte_flip_mask_00ba_addr)                      \
+  do_arch_entry(x86, compiler, pshuffle_byte_flip_mask,                 \
+                pshuffle_byte_flip_mask_dc00_addr,                      \
+                pshuffle_byte_flip_mask_dc00_addr)                      \
   /* x86_64 exposes these 3 stubs via a generic entry array */          \
   /* other arches use arch-specific entries */                          \
   /* this really needs rationalising */                                 \
@@ -168,6 +174,9 @@
   do_stub(compiler, string_indexof_linear_uu)                           \
   do_stub(compiler, string_indexof_linear_ul)                           \
   do_stub(compiler, pshuffle_byte_flip_mask_sha512)                     \
+  do_arch_entry(x86, compiler, pshuffle_byte_flip_mask_sha512,          \
+                pshuffle_byte_flip_mask_ymm_lo_addr_sha512,             \
+                pshuffle_byte_flip_mask_ymm_lo_addr_sha512)             \
   do_arch_entry(x86, compiler, pshuffle_byte_flip_mask_sha512,          \
                 pshuffle_byte_flip_mask_addr_sha512,                    \
                 pshuffle_byte_flip_mask_addr_sha512)                    \
