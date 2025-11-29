@@ -480,6 +480,10 @@ bool CompilerOracle::should_not_inline(const methodHandle& method) {
   return check_predicate(CompileCommandEnum::DontInline, method) || check_predicate(CompileCommandEnum::Exclude, method);
 }
 
+bool CompilerOracle::should_delay_inline(const methodHandle& method) {
+  return (check_predicate(CompileCommandEnum::DelayInline, method));
+}
+
 bool CompilerOracle::should_print(const methodHandle& method) {
   return check_predicate(CompileCommandEnum::Print, method);
 }
