@@ -366,17 +366,23 @@ void frame::deoptimize(JavaThread* thread) {
 
 #ifdef ASSERT
   if (thread != nullptr) {
-    frame check = thread->last_frame();
-    if (is_older(check.id())) {
-      RegisterMap map(thread,
-                      RegisterMap::UpdateMap::skip,
-                      RegisterMap::ProcessFrames::include,
-                      RegisterMap::WalkContinuation::skip);
-      while (id() != check.id()) {
-        check = check.sender(&map);
+    frame fr = thread->last_frame();
+    RegisterMap map(thread,
+                    RegisterMap::UpdateMap::skip,
+                    RegisterMap::ProcessFrames::include,
+                    !is_heap_frame() ? RegisterMap::WalkContinuation::skip : RegisterMap::WalkContinuation::include);
+    intptr_t* fr_id = fr.id();
+    while (id() != fr_id) {
+      fr = fr.sender(&map);
+      if (fr.is_heap_frame()) {
+        assert(is_heap_frame(), "");
+        frame derel_fr = map.stack_chunk()->derelativize(fr);
+        fr_id = derel_fr.id();
+      } else {
+        fr_id = fr.id();
       }
-      assert(check.is_deoptimized_frame(), "missed deopt");
     }
+    assert(fr.is_deoptimized_frame(), "missed deopt");
   }
 #endif // ASSERT
 }
