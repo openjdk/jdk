@@ -220,9 +220,8 @@ VM_CollectForMetadataAllocation::VM_CollectForMetadataAllocation(ClassLoaderData
                                                                  size_t size,
                                                                  Metaspace::MetadataType mdtype,
                                                                  uint gc_count_before,
-                                                                 uint full_gc_count_before,
-                                                                 GCCause::Cause gc_cause)
-    : VM_GC_Collect_Operation(gc_count_before, gc_cause, full_gc_count_before, true),
+                                                                 uint full_gc_count_before)
+    : VM_GC_Collect_Operation(gc_count_before, GCCause::_metadata_GC_threshold, full_gc_count_before, true),
       _result(nullptr), _size(size), _mdtype(mdtype), _loader_data(loader_data) {
   assert(_size != 0, "An allocation should always be requested with this operation.");
   AllocTracer::send_allocation_requiring_gc_event(_size * HeapWordSize, GCId::peek());
@@ -231,8 +230,11 @@ VM_CollectForMetadataAllocation::VM_CollectForMetadataAllocation(ClassLoaderData
 void VM_CollectForMetadataAllocation::doit() {
   SvcGCMarker sgcm(SvcGCMarker::FULL);
 
-  CollectedHeap* heap = Universe::heap();
-  GCCauseSetter gccs(heap, _gc_cause);
+  // Note: GCCauseSetter is intentionally not used here.
+  // The specific GC cause is set directly in downstream calls that initiate
+  // collections, allowing us to accurately reflect different situations:
+  // - A typical metadata allocation failure triggers a collection.
+  // - As a last resort, a collection clears soft references if prior attempts fail.
 
   // Check again if the space is available.  Another thread
   // may have similarly failed a metadata allocation and induced
@@ -255,8 +257,10 @@ void VM_CollectForMetadataAllocation::doit() {
   }
 #endif
 
+  CollectedHeap* heap = Universe::heap();
+
   // Don't clear the soft refs yet.
-  heap->collect_as_vm_thread(GCCause::_metadata_GC_threshold);
+  heap->collect_as_vm_thread(_gc_cause);
   // After a GC try to allocate without expanding.  Could fail
   // and expansion will be tried below.
   _result = _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
