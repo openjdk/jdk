@@ -46,6 +46,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.SimpleFileServer;
 import com.sun.net.httpserver.SimpleFileServer.OutputLevel;
@@ -90,6 +91,9 @@ public class SimpleFileServerTest {
             FileUtils.deleteFileTreeWithRetry(TEST_DIR);
         }
         Files.createDirectories(TEST_DIR);
+        // For improving performance, pre-create a file for range header support tests.
+        var tempRoot = Files.createDirectory(TEST_DIR.resolve("rangeTestFilePrep"));
+        Files.writeString(tempRoot.resolve("aFile.txt"), "0123456789", CREATE);
     }
 
     @Test
@@ -110,6 +114,96 @@ public class SimpleFileServerTest {
             assertEquals(response.headers().firstValue("content-type").get(), "text/plain");
             assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
             assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
+            assertEquals(response.headers().firstValue("accept-ranges").get(), "bytes");
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test(dataProvider = "singleRanges")
+    public void testSingleRangedRangeFileGET(String rangeSpec, String expectedRangeSpec, String expectedBody) throws Exception {
+        var root = TEST_DIR.resolve("rangeTestFilePrep");
+        var file = root.resolve("aFile.txt");
+        var lastModified = getLastModified(file);
+        var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
+
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(server, "aFile.txt"))
+                    .header("Range", "bytes=" + rangeSpec)
+                    .build();
+            var response = client.send(request, BodyHandlers.ofString());
+            assertEquals(response.statusCode(), 206);
+            assertEquals(response.body(), expectedBody);
+            assertEquals(response.headers().firstValue("content-type").get(), "text/plain");
+            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
+            assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
+            assertEquals(response.headers().firstValue("accept-ranges").get(), "bytes");
+            assertEquals(response.headers().firstValue("content-range").get(), "bytes " + expectedRangeSpec + "/10");
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @DataProvider(name = "singleRanges")
+    public Object[][] singleRangeProvider() {
+        return new Object[][]{
+                // The file content is "123456789" (9 bytes)
+                // {rangeSpec, expectedRangeSpec, expectedBody}
+                {"0-3", "0-3", "0123"},
+                {"2-5", "2-5", "2345"},
+                {"6-9", "6-9", "6789"},
+                {"0-",  "0-9", "0123456789"},
+                {"3-",  "3-9", "3456789"},
+                {"-3",  "7-9", "789"},
+                {"-1",  "9-9", "9"},
+                {"-999", "0-9", "0123456789"}
+        };
+    }
+
+    @Test
+    public void testMultipleRangesFileGET() throws Exception {
+        var root = TEST_DIR.resolve("rangeTestFilePrep");
+        var file = root.resolve("aFile.txt");
+        var lastModified = getLastModified(file);
+
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(server, "aFile.txt"))
+                    .header("Range", "bytes=1-2,4-5,7-")
+                    .build();
+            var response = client.send(request, BodyHandlers.ofString());
+            assertEquals(response.statusCode(), 206);
+            String contentType = response.headers().firstValue("content-type").orElse("");
+            assertTrue(contentType.startsWith("multipart/byteranges; boundary="));
+
+            String boundary = contentType.substring("multipart/byteranges; boundary=".length());
+            String[] parts = response.body().split(Pattern.quote("--" + boundary));
+            assertEquals(parts.length, 5);  // 3 parts + preamble + epilogue
+            {
+                String[] firstPartLines = parts[1].trim().split("\r\n");
+                assertEquals(firstPartLines[0], "Content-Type: text/plain");
+                assertEquals(firstPartLines[1], "Content-Range: bytes 1-2/10");
+                assertEquals(firstPartLines[3], "12");
+            }
+            {
+                String[] secondPartLines = parts[2].trim().split("\r\n");
+                assertEquals(secondPartLines[0], "Content-Type: text/plain");
+                assertEquals(secondPartLines[1], "Content-Range: bytes 4-5/10");
+                assertEquals(secondPartLines[3], "45");
+            }
+            {
+                String[] thirdPartLines = parts[3].trim().split("\r\n");
+                assertEquals(thirdPartLines[0], "Content-Type: text/plain");
+                assertEquals(thirdPartLines[1], "Content-Range: bytes 7-9/10");
+                assertEquals(thirdPartLines[3], "789");
+            }
+            assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
+            assertEquals(response.headers().firstValue("accept-ranges").get(), "bytes");
         } finally {
             server.stop(0);
         }
@@ -221,6 +315,7 @@ public class SimpleFileServerTest {
             assertEquals(response.headers().firstValue("content-type").get(), "text/plain");
             assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
             assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
+            assertEquals(response.headers().firstValue("accept-ranges").get(), "bytes");
             assertEquals(response.body(), "");
         } finally {
             server.stop(0);
@@ -412,6 +507,46 @@ public class SimpleFileServerTest {
             assertEquals(response.statusCode(), 404);
             assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
             assertEquals(response.body(), expectedBody);
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @DataProvider(name = "invalidRanges")
+    public Object[][] invalidRangeProvider() {
+        return new Object[][]{
+                // The file content is "123456789" (9 bytes)
+                // {unit, rangeSpec}
+                {"meows", "1-2"},
+                {"bytes", "3-meow"},
+                {"bytes", "meow-5"},
+                {"bytes", "100-"},
+                {"bytes", "100-120"},
+                {"bytes", "1-2,3-4,500-600"}
+        };
+    }
+
+    @Test(dataProvider = "invalidRanges")
+    public void testInvalidRangeGET(String unit, String rangeSpec) throws Exception {
+        var root = TEST_DIR.resolve("rangeTestFilePrep");
+        var file = root.resolve("aFile.txt");
+        var lastModified = getLastModified(file);
+
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(server, "aFile.txt"))
+                    .header("Range", unit + "=" + rangeSpec)
+                    .build();
+            var response = client.send(request, BodyHandlers.ofString());
+
+            assertEquals(response.statusCode(), 416);
+            assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
+            assertEquals(response.headers().firstValue("content-range").get(), "bytes */10");
+            assertEquals(response.headers().firstValue("content-length").get(), "0");
+            assertEquals(response.headers().firstValue("accept-ranges").get(), "bytes");
+            assertEquals(response.body(), "");
         } finally {
             server.stop(0);
         }
