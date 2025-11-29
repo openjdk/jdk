@@ -1864,14 +1864,19 @@ void SystemDictionary::add_nest_host_error(const constantPoolHandle& pool,
   {
     MutexLocker ml(Thread::current(), SystemDictionary_lock);
     ResolutionErrorEntry* entry = ResolutionErrorTable::find_entry(pool, which);
-    if (entry != nullptr && entry->nest_host_error() == nullptr) {
+    if (entry == nullptr) {
+      // Only add a new entry to the resolution error table if one hasn't been found for this
+      // constant pool index. In this case resolution succeeded but there's an error in this nest host
+      // that we use the table to record.
+      assert(pool->resolved_klass_at(which) != nullptr, "klass should be resolved if there is no entry");
+      ResolutionErrorTable::add_entry(pool, which, message);
+    } else {
       // An existing entry means we had a true resolution failure (LinkageError) with our nest host, but we
       // still want to add the error message for the higher-level access checks to report. We should
       // only reach here under the same error condition, so we can ignore the potential race with setting
-      // the message. If we see it is already set then we can ignore it.
+      // the message, and set it again.
+      assert(entry->nest_host_error() == nullptr || strcmp(entry->nest_host_error(), message) == 0, "should be the same message");
       entry->set_nest_host_error(message);
-    } else {
-      ResolutionErrorTable::add_entry(pool, which, message);
     }
   }
 }
