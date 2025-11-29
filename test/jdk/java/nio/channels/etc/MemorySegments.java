@@ -26,6 +26,8 @@
  * @bug 8333849 8358958
  * @summary Test ByteChannel and AsycnhronousByteChannel implementations with ByteBuffers
  *    that are views of a MemorySegment
+ * @library /test/lib
+ * @build jdk.test.lib.net.IPSupport
  * @run junit/othervm MemorySegments
  */
 
@@ -54,6 +56,8 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import static java.nio.file.StandardOpenOption.*;
 
+import jdk.test.lib.net.IPSupport;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -68,6 +72,11 @@ class MemorySegments {
      */
     static Stream<Supplier<Arena>> arenaSuppliers() {
         return Stream.of(Arena::global, Arena::ofAuto, Arena::ofConfined, Arena::ofShared);
+    }
+
+    @BeforeAll
+    static void setup() {
+        IPSupport.printPlatformSupport(System.out);
     }
 
     /**
