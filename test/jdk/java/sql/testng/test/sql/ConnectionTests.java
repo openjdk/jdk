@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,29 +22,22 @@
  */
 package test.sql;
 
-import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import util.BaseTest;
 import util.StubConnection;
 
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.*;
 
-public class PreparedStatementTests extends BaseTest {
+public class ConnectionTests extends BaseTest {
 
-    private PreparedStatement pstmt;
+    protected StubConnection conn;
 
     @BeforeMethod
     public void setUpMethod() throws Exception {
-        pstmt = new StubConnection().prepareStatement("Select * from foo were bar = ?");
-    }
-
-    @AfterMethod
-    public void tearDownMethod() throws Exception {
-        pstmt.close();
+        conn = new StubConnection();
     }
 
     /*
@@ -53,7 +46,7 @@ public class PreparedStatementTests extends BaseTest {
      */
     @Test(dataProvider = "validEnquotedLiteralValues")
     public void test00(String s, String expected) throws SQLException {
-        assertEquals(pstmt.enquoteLiteral(s), expected);
+        assertEquals(conn.enquoteLiteral(s), expected);
     }
 
     /*
@@ -62,7 +55,7 @@ public class PreparedStatementTests extends BaseTest {
      */
     @Test(expectedExceptions = NullPointerException.class)
     public void test01() throws SQLException {
-        pstmt.enquoteLiteral(null);
+        conn.enquoteLiteral(null);
     }
 
     /*
@@ -70,7 +63,7 @@ public class PreparedStatementTests extends BaseTest {
      */
     @Test(dataProvider = "validIdentifierValues")
     public void test02(String s, boolean alwaysQuote, String expected) throws SQLException {
-        assertEquals(pstmt.enquoteIdentifier(s, alwaysQuote), expected);
+        assertEquals(conn.enquoteIdentifier(s, alwaysQuote), expected);
     }
 
     /*
@@ -80,7 +73,7 @@ public class PreparedStatementTests extends BaseTest {
     @Test(dataProvider = "invalidIdentifierValues",
             expectedExceptions = SQLException.class)
     public void test03(String s, boolean alwaysQuote) throws SQLException {
-        pstmt.enquoteIdentifier(s, alwaysQuote);
+        conn.enquoteIdentifier(s, alwaysQuote);
     }
 
     /*
@@ -90,7 +83,7 @@ public class PreparedStatementTests extends BaseTest {
     @Test(dataProvider = "trueFalse",
             expectedExceptions = NullPointerException.class)
     public void test04(boolean alwaysQuote) throws SQLException {
-        pstmt.enquoteIdentifier(null, alwaysQuote);
+        conn.enquoteIdentifier(null, alwaysQuote);
     }
 
     /*
@@ -98,7 +91,7 @@ public class PreparedStatementTests extends BaseTest {
      */
     @Test(dataProvider = "simpleIdentifierValues")
     public void test05(String s, boolean expected) throws SQLException {
-        assertEquals(pstmt.isSimpleIdentifier(s), expected);
+        assertEquals(conn.isSimpleIdentifier(s), expected);
     }
 
     /*
@@ -107,7 +100,7 @@ public class PreparedStatementTests extends BaseTest {
      */
     @Test(expectedExceptions = NullPointerException.class)
     public void test06() throws SQLException {
-        pstmt.isSimpleIdentifier(null);
+        conn.isSimpleIdentifier(null);
     }
 
     /*
@@ -116,7 +109,7 @@ public class PreparedStatementTests extends BaseTest {
      */
     @Test(dataProvider = "validEnquotedNCharLiteralValues")
     public void test07(String s, String expected) throws SQLException {
-        assertEquals(pstmt.enquoteNCharLiteral(s), expected);
+        assertEquals(conn.enquoteNCharLiteral(s), expected);
     }
 
     /*
@@ -125,6 +118,6 @@ public class PreparedStatementTests extends BaseTest {
      */
     @Test(expectedExceptions = NullPointerException.class)
     public void test08() throws SQLException {
-        pstmt.enquoteNCharLiteral(null);
+        conn.enquoteNCharLiteral(null);
     }
 }
