@@ -114,18 +114,19 @@ void ShenandoahHeapRegionCounters::update() {
       _timestamp->set_value(os::elapsed_counter());
 
       {
+        ShenandoahMarkingContext* context = heap->marking_context();
         ShenandoahHeapLocker locker(heap->lock());
         size_t rs = ShenandoahHeapRegion::region_size_bytes();
         size_t num_regions = heap->num_regions();
         for (uint i = 0; i < num_regions; i++) {
           ShenandoahHeapRegion* r = heap->get_region(i);
           jlong data = 0;
-          data |= ((100 * r->used() / rs)                & PERCENT_MASK) << USED_SHIFT;
-          data |= ((100 * r->get_live_data_bytes() / rs) & PERCENT_MASK) << LIVE_SHIFT;
-          data |= ((100 * r->get_tlab_allocs() / rs)     & PERCENT_MASK) << TLAB_SHIFT;
-          data |= ((100 * r->get_gclab_allocs() / rs)    & PERCENT_MASK) << GCLAB_SHIFT;
-          data |= ((100 * r->get_plab_allocs() / rs)     & PERCENT_MASK) << PLAB_SHIFT;
-          data |= ((100 * r->get_shared_allocs() / rs)   & PERCENT_MASK) << SHARED_SHIFT;
+          data |= ((100 * r->used() / rs)                          & PERCENT_MASK) << USED_SHIFT;
+          data |= ((100 * r->get_live_data_bytes(context, i) / rs) & PERCENT_MASK) << LIVE_SHIFT;
+          data |= ((100 * r->get_tlab_allocs() / rs)               & PERCENT_MASK) << TLAB_SHIFT;
+          data |= ((100 * r->get_gclab_allocs() / rs)              & PERCENT_MASK) << GCLAB_SHIFT;
+          data |= ((100 * r->get_plab_allocs() / rs)               & PERCENT_MASK) << PLAB_SHIFT;
+          data |= ((100 * r->get_shared_allocs() / rs)             & PERCENT_MASK) << SHARED_SHIFT;
 
           data |= (r->age() & AGE_MASK) << AGE_SHIFT;
           data |= (r->affiliation() & AFFILIATION_MASK) << AFFILIATION_SHIFT;
