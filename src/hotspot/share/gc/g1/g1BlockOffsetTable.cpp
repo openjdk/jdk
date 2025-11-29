@@ -32,7 +32,7 @@
 
 size_t G1BlockOffsetTable::compute_size(size_t mem_region_words) {
   size_t number_of_slots = (mem_region_words / CardTable::card_size_in_words());
-  return os::align_up_vm_allocation_granularity(number_of_slots);
+  return os::align_up_vm_page_size(number_of_slots);
 }
 
 G1BlockOffsetTable::G1BlockOffsetTable(MemRegion heap, G1RegionToSpaceMapper* storage) :

@@ -36,7 +36,7 @@ class JfrVirtualMemory : public JfrCHeapObj {
   const u1* _reserved_high; // highest address of reservation
   u1* _top; // current allocation address
   const u1* _commit_point; // synch points for committing new memory
-  size_t _physical_commit_size_request_words; // aligned to os::vm_allocation_granularity()
+  size_t _physical_commit_size_request_words; // aligned to os::vm_page_size()
   size_t _aligned_datum_size_bytes; // datum alignment
 
   bool commit_memory_block();

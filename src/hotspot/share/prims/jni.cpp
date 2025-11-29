@@ -2429,7 +2429,7 @@ DEFINE_NEWSCALARARRAY(jdoubleArray,  new_doubleArray, Double,
 static char* get_bad_address() {
   static char* bad_address = nullptr;
   if (bad_address == nullptr) {
-    size_t size = os::vm_allocation_granularity();
+    size_t size = os::vm_page_size();
     bad_address = os::reserve_memory(size, mtInternal);
     if (bad_address != nullptr) {
       os::protect_memory(bad_address, size, os::MEM_PROT_READ,

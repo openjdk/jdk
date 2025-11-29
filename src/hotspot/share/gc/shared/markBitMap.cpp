@@ -30,7 +30,7 @@ void MarkBitMap::print_on(outputStream* st, const char* prefix) const {
 }
 
 size_t MarkBitMap::compute_size(size_t heap_size) {
-  return os::align_up_vm_allocation_granularity(heap_size / mark_distance());
+  return os::align_up_vm_page_size(heap_size / mark_distance());
 }
 
 size_t MarkBitMap::mark_distance() {

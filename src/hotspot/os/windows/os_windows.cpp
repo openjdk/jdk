@@ -2994,7 +2994,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
                                          bool should_inject_error = false) {
   char * p_buf;
   // note: at setup time we guaranteed that NUMAInterleaveGranularity was aligned up to a page size
-  size_t page_size = UseLargePages ? _large_page_size : os::vm_allocation_granularity();
+  size_t page_size = UseLargePages ? _large_page_size : os::vm_page_size();
   size_t chunk_size = UseNUMAInterleaving ? NUMAInterleaveGranularity : page_size;
 
   // first reserve enough address space in advance since we want to be
@@ -3235,9 +3235,9 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
 // Windows prevents multiple thread from remapping over each other so this loop is thread-safe.
 static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc, MemTag mem_tag) {
   assert(is_aligned(alignment, os::vm_allocation_granularity()),
-      "Alignment must be a multiple of allocation granularity (page size)");
-  assert(is_aligned(size, os::vm_allocation_granularity()),
-      "Size must be a multiple of allocation granularity (page size)");
+      "Alignment must be a multiple of allocation granularity");
+  assert(is_aligned(size, os::vm_page_size()),
+      "Size must be a multiple of page size");
 
   size_t extra_size = size + alignment;
   assert(extra_size >= size, "overflow, size is too large to allow alignment");
