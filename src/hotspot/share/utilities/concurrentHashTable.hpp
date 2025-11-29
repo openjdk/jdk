@@ -451,8 +451,7 @@ class ConcurrentHashTable : public CHeapObj<MT> {
 
   // All callbacks for get are under critical sections. Other callbacks may be
   // under critical section or may have locked parts of table. Calling any
-  // methods on the table during a callback is not supported.Only MultiGetHandle
-  // supports multiple gets.
+  // methods on the table during a callback is not supported.
 
   // Get methods return true on found item with LOOKUP_FUNC and FOUND_FUNC is
   // called.
@@ -537,18 +536,6 @@ class ConcurrentHashTable : public CHeapObj<MT> {
   // Moves all nodes from this table to to_cht with new hash code.
   // Must be done at a safepoint.
   void rehash_nodes_to(Thread* thread, ConcurrentHashTable<CONFIG, MT>* to_cht);
-
-  // Scoped multi getter.
-  class MultiGetHandle : private ScopedCS {
-   public:
-    MultiGetHandle(Thread* thread, ConcurrentHashTable<CONFIG, MT>* cht)
-      : ScopedCS(thread, cht) {}
-    // In the MultiGetHandle scope you can lookup items matching LOOKUP_FUNC.
-    // The VALUEs are safe as long as you never save the VALUEs outside the
-    // scope, e.g. after ~MultiGetHandle().
-    template <typename LOOKUP_FUNC>
-    VALUE* get(LOOKUP_FUNC& lookup_f, bool* grow_hint = nullptr);
-  };
 
  private:
   class BucketsOperation;
