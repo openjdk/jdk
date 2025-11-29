@@ -31,6 +31,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/xmlstream.hpp"
 #ifdef ASSERT
 #include "runtime/atomicAccess.hpp"
 #endif
@@ -213,6 +214,7 @@ public:
   }
 
   void print_state(outputStream* st) const;
+  void print_state_xml(xmlStream* st) const;
   DEBUG_ONLY(void print_map(outputStream* st) const;)
   DEBUG_ONLY(void verify() const;)
 
@@ -373,6 +375,7 @@ public:
   }
 
   static void print_state(outputStream* st);
+  static void print_state_xml(xmlStream* st);
   static void print_map(outputStream* st);
   DEBUG_ONLY(static void verify();)
 };
