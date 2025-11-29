@@ -105,8 +105,6 @@ class java_lang_String : AllStatic {
   static Handle create_from_symbol(const Symbol* symbol, TRAPS);
   static Handle create_from_platform_dependent_str(const char* str, TRAPS);
 
-  static void set_compact_strings(bool value);
-
   static int value_offset() { CHECK_INIT(_value_offset); }
   static int coder_offset() { CHECK_INIT(_coder_offset); }
 

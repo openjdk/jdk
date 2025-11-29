@@ -35,9 +35,7 @@ import static org.testng.Assert.*;
  * @library /test/lib
  * @build jdk.test.lib.util.SerializationUtils
  * @summary Tests Compact String. This one is testing StringBuffer serialization
- *          among -XX:+CompactStrings/-XX:-CompactStrings/LegacyStringBuffer
- * @run testng/othervm -XX:+CompactStrings CompactStringBufferSerialization
- * @run testng/othervm -XX:-CompactStrings CompactStringBufferSerialization
+ * @run testng/othervm CompactStringBufferSerialization
  */
 
 public class CompactStringBufferSerialization {

@@ -33,7 +33,7 @@
  * @requires vm.gc == "Parallel" | vm.gc == "null"
  *
  * @compile -XDstringConcat=inline TestStringObjectInitialization.java
- * @run main/othervm/timeout=300 -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:-CompactStrings
+ * @run main/othervm/timeout=300 -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops
  *                               -XX:-UseG1GC -XX:+UseParallelGC
  *                               compiler.stringopts.TestStringObjectInitialization
  */

@@ -38,8 +38,6 @@ import jdk.test.whitebox.WhiteBox;
  * @requires vm.flagless
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -Xverify:all HiddenClassUnloading
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -Xverify:all -XX:-CompactStrings HiddenClassUnloading
  */
 public class HiddenClassUnloading {
     public static void main(String[] args) throws Throwable {

@@ -33,8 +33,7 @@ import static org.testng.Assert.assertTrue;
  * @bug 8054307 8077559 8351443
  * @summary Tests Compact String. This test is testing StringBuilder
  *          behavior related to Compact String.
- * @run testng/othervm/timeout=480 -XX:+CompactStrings CompactStringBuilder
- * @run testng/othervm/timeout=480 -XX:-CompactStrings CompactStringBuilder
+ * @run testng/othervm/timeout=480 CompactStringBuilder
  * @run testng/othervm/timeout=480 -Xcomp CompactStringBuilder
  */
 

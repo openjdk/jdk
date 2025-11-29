@@ -26,7 +26,7 @@
  * @summary tests StringJoiner OOME when joining sub-max-length Strings
  * @modules java.base/jdk.internal.util
  * @requires vm.bits == "64" & os.maxMemory > 4G
- * @run testng/othervm -Xmx4g -XX:+CompactStrings StringJoinerOomUtf16Test
+ * @run testng/othervm -Xmx4g StringJoinerOomUtf16Test
  */
 
 import org.testng.annotations.Test;
