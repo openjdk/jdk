@@ -79,7 +79,8 @@ private:
   static const char *COMPILATION_THREAD_ID_PROPERTY;
   static const char *METHOD_NAME_PROPERTY;
   static const char *BLOCK_NAME_PROPERTY;
-  static const char *BLOCK_DOMINATOR_PROPERTY;
+  static const char *BLOCK_IMMEDIATE_DOMINATOR_PROPERTY;
+  static const char *BLOCK_DOMINATOR_DEPTH_PROPERTY;
   static const char *BLOCK_ELEMENT;
   static const char *SUCCESSORS_ELEMENT;
   static const char *SUCCESSOR_ELEMENT;
