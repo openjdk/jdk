@@ -22,13 +22,15 @@
  */
 package jdk.vm.ci.meta;
 
+import jdk.vm.ci.meta.annotation.Annotated;
+import jdk.vm.ci.meta.annotation.AnnotationsInfo;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
-import java.util.BitSet;
 
 /**
  * Represents a resolved Java method. Methods, like fields and types, are resolved through
@@ -486,4 +488,20 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
      * responsibility to ensure the same speculation log is used throughout a compilation.
      */
     SpeculationLog getSpeculationLog();
+
+    /**
+     * Gets the class file info for the parameter annotations on this method
+     * or {@code null} if no such info exists.
+     */
+    default AnnotationsInfo getParameterAnnotationInfo() {
+        return null;
+    }
+
+    /**
+     * Gets the class file info for the default value of the annotation element represented
+     * by this method or {@code null} if no such info exists.
+     */
+    default AnnotationsInfo getAnnotationDefaultInfo() {
+        return null;
+    }
 }

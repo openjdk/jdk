@@ -107,6 +107,10 @@ public final class UnresolvedJavaType implements JavaType {
 
     @Override
     public ResolvedJavaType resolve(ResolvedJavaType accessingClass) {
-        return accessingClass.lookupType(this, true);
+        ResolvedJavaType type = accessingClass.lookupType(this, true);
+        if (type == null) {
+            throw new NoClassDefFoundError(toClassName());
+        }
+        return type;
     }
 }
