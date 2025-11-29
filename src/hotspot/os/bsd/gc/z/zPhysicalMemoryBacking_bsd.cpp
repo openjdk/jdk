@@ -104,7 +104,7 @@ bool ZPhysicalMemoryBacking::commit_inner(zbacking_offset offset, size_t length)
                       untype(offset) / M, untype(to_zbacking_offset_end(offset, length)) / M, length / M);
 
   const uintptr_t addr = _base + untype(offset);
-  const void* const res = mmap((void*)addr, length, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+  const void* const res = mmap((void*)addr, length, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_ANONYMOUS | MAP_PRIVATE, bsd_mmap_fd, 0);
   if (res == MAP_FAILED) {
     ZErrno err;
     log_error(gc)("Failed to commit memory (%s)", err.to_string());
@@ -151,7 +151,7 @@ size_t ZPhysicalMemoryBacking::uncommit(zbacking_offset offset, size_t length) c
                       untype(offset) / M, untype(to_zbacking_offset_end(offset, length)) / M, length / M);
 
   const uintptr_t start = _base + untype(offset);
-  const void* const res = mmap((void*)start, length, PROT_NONE, MAP_FIXED | MAP_ANONYMOUS | MAP_PRIVATE | MAP_NORESERVE, -1, 0);
+  const void* const res = mmap((void*)start, length, PROT_NONE, MAP_FIXED | MAP_ANONYMOUS | MAP_PRIVATE | MAP_NORESERVE, bsd_mmap_fd, 0);
   if (res == MAP_FAILED) {
     ZErrno err;
     log_error(gc)("Failed to uncommit memory (%s)", err.to_string());
@@ -172,7 +172,7 @@ void ZPhysicalMemoryBacking::unmap(zaddress_unsafe addr, size_t size) const {
   // Note that we must keep the address space reservation intact and just detach
   // the backing memory. For this reason we map a new anonymous, non-accessible
   // and non-reserved page over the mapping instead of actually unmapping.
-  const void* const res = mmap((void*)untype(addr), size, PROT_NONE, MAP_FIXED | MAP_ANONYMOUS | MAP_PRIVATE | MAP_NORESERVE, -1, 0);
+  const void* const res = mmap((void*)untype(addr), size, PROT_NONE, MAP_FIXED | MAP_ANONYMOUS | MAP_PRIVATE | MAP_NORESERVE, bsd_mmap_fd, 0);
   if (res == MAP_FAILED) {
     ZErrno err;
     fatal("Failed to map memory (%s)", err.to_string());
