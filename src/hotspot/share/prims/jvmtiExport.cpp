@@ -3159,31 +3159,19 @@ void JvmtiObjectAllocEventCollector::record_allocation(oop obj) {
   _allocated->push(OopHandle(JvmtiExport::jvmti_oop_storage(), obj));
 }
 
-// Disable collection of VMObjectAlloc events
-NoJvmtiVMObjectAllocMark::NoJvmtiVMObjectAllocMark() : _collector(nullptr) {
-  // a no-op if VMObjectAlloc event is not enabled
-  if (!JvmtiExport::should_post_vm_object_alloc()) {
-    return;
-  }
+NoJvmtiEventsMark::NoJvmtiEventsMark() {
   Thread* thread = Thread::current_or_null();
   if (thread != nullptr && thread->is_Java_thread())  {
     JavaThread* current_thread = JavaThread::cast(thread);
-    JvmtiThreadState *state = current_thread->jvmti_thread_state();
-    if (state != nullptr) {
-      JvmtiVMObjectAllocEventCollector *collector;
-      collector = state->get_vm_object_alloc_event_collector();
-      if (collector != nullptr && collector->is_enabled()) {
-        _collector = collector;
-        _collector->set_enabled(false);
-      }
-    }
+    current_thread->disable_jvmti_events();
   }
 }
 
-// Re-Enable collection of VMObjectAlloc events (if previously enabled)
-NoJvmtiVMObjectAllocMark::~NoJvmtiVMObjectAllocMark() {
-  if (was_enabled()) {
-    _collector->set_enabled(true);
+NoJvmtiEventsMark::~NoJvmtiEventsMark() {
+  Thread* thread = Thread::current_or_null();
+  if (thread != nullptr && thread->is_Java_thread())  {
+    JavaThread* current_thread = JavaThread::cast(thread);
+    current_thread->enable_jvmti_events();
   }
 };
 

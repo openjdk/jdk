@@ -184,6 +184,7 @@ static size_t archive_object_size(oopDesc* archive_object) {
 oop AOTStreamedHeapLoader::allocate_object(oopDesc* archive_object, markWord mark, size_t size, TRAPS) {
   assert(!archive_object->is_stackChunk(), "no such objects are archived");
 
+  NoJvmtiEventsMark njem;
   oop heap_object;
 
   Klass* klass = archive_object->klass();
