@@ -40,7 +40,7 @@ public:
                         Symbol* error, const char* error_msg,
                         Symbol* cause, const char* cause_msg);
 
-  static void add_entry(const constantPoolHandle& pool, int cp_index, const char* message);
+  static void add_entry(const constantPoolHandle& pool, int cp_index, const char* nest_host_error);
 
   // find error given the constant pool and constant pool index
   static ResolutionErrorEntry* find_entry(const constantPoolHandle& pool, int cp_index);
@@ -66,41 +66,33 @@ public:
 
 
 class ResolutionErrorEntry : public CHeapObj<mtClass> {
- private:
   Symbol*           _error;
   const char*       _message;
   Symbol*           _cause;
   const char*       _cause_msg;
   const char*       _nest_host_error;
 
-  NONCOPYABLE(ResolutionErrorEntry);
-
  public:
+  NONCOPYABLE(ResolutionErrorEntry);
   // The incoming message and cause_msg are copied to the C-Heap.
   ResolutionErrorEntry(Symbol* error, const char* message,
                        Symbol* cause, const char* cause_msg);
-
-  // The incoming nest host error message is already in the C-Heap.
-  ResolutionErrorEntry(const char* message):
-        _error(nullptr),
-        _message(nullptr),
-        _cause(nullptr),
-        _cause_msg(nullptr),
-        _nest_host_error(message) {}
+  ResolutionErrorEntry(const char* nest_host_error);
 
   ~ResolutionErrorEntry();
 
-  // The incoming nest host error message is already in the C-Heap.
-  void set_nest_host_error(const char* message) {
-    _nest_host_error = message;
+  void set_nest_host_error(const char* nest_host_error) {
+    assert(nest_host_error != nullptr, "must be non-null string");
+    FREE_C_HEAP_ARRAY(char, _nest_host_error);
+    _nest_host_error = os::strdup(nest_host_error);
   }
 
 
-  Symbol*            error() const              { return _error; }
-  const char*        message() const            { return _message; }
-  Symbol*            cause() const              { return _cause; }
-  const char*        cause_msg() const          { return _cause_msg; }
-  const char*        nest_host_error() const    { return _nest_host_error; }
+  Symbol*     error() const           { return _error; }
+  const char* message() const         { return _message; }
+  Symbol*     cause() const           { return _cause; }
+  const char* cause_msg() const       { return _cause_msg; }
+  const char* nest_host_error() const { return _nest_host_error; }
 };
 
 #endif // SHARE_CLASSFILE_RESOLUTIONERRORS_HPP

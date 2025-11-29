@@ -312,7 +312,7 @@ InstanceKlass* InstanceKlass::nest_host(TRAPS) {
       ss.print("Nest host resolution of %s with host %s failed: ",
                this->external_name(), target_host_class);
       java_lang_Throwable::print(PENDING_EXCEPTION, &ss);
-      const char* msg = ss.as_string(true /* on C-heap */);
+      const char* msg = ss.freeze();
       constantPoolHandle cph(THREAD, constants());
       SystemDictionary::add_nest_host_error(cph, _nest_host_index, msg);
       CLEAR_PENDING_EXCEPTION;
@@ -356,7 +356,7 @@ InstanceKlass* InstanceKlass::nest_host(TRAPS) {
                  k->external_name(),
                  k->class_loader_data()->loader_name_and_id(),
                  error);
-        const char* msg = ss.as_string(true /* on C-heap */);
+        const char* msg = ss.freeze();
         constantPoolHandle cph(THREAD, constants());
         SystemDictionary::add_nest_host_error(cph, _nest_host_index, msg);
         log_trace(class, nestmates)("%s", msg);
