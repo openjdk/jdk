@@ -29,6 +29,7 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import com.sun.source.doctree.AttributeTree.ValueKind;
@@ -134,6 +135,7 @@ public class DocCommentParser {
     private boolean inPre = false;
 
     private final Map<Name, TagParser> tagParsers;
+    private final Set<String> customTags;
 
     /**
      * Creates a parser for a documentation comment.
@@ -142,8 +144,9 @@ public class DocCommentParser {
      * @param diagSource the source in which the comment was found
      * @param comment the comment
      */
-    public DocCommentParser(ParserFactory fac, DiagnosticSource diagSource, Comment comment) {
-        this(fac, diagSource, comment, false);
+    public DocCommentParser(ParserFactory fac, DiagnosticSource diagSource, Comment comment,
+                            Set<String> customTags) {
+        this(fac, diagSource, comment, customTags, false);
     }
 
     /**
@@ -160,13 +163,14 @@ public class DocCommentParser {
      * @param comment the comment
      * @param isHtmlFile whether the comment is the entire content of an HTML file
      */
-    public DocCommentParser(ParserFactory fac, DiagnosticSource diagSource,
-                            Comment comment, boolean isHtmlFile) {
+    public DocCommentParser(ParserFactory fac, DiagnosticSource diagSource, Comment comment,
+                            Set<String> customTags, boolean isHtmlFile) {
         this.fac = fac;
         this.diags = fac.log.diags;
         this.diagSource = diagSource;
         this.comment = comment.stripIndent();
         names = fac.names;
+        this.customTags = customTags;
         this.isHtmlFile = isHtmlFile;
         textKind = isHtmlFile ? DocTree.Kind.TEXT : getTextKind(comment);
         m = fac.docTreeMaker;
@@ -556,12 +560,15 @@ public class DocCommentParser {
             if (isIdentifierStart(ch)) {
                 Name name = readTagName();
                 TagParser tp = tagParsers.get(name);
+                if (tp == null && customTags.contains(name.toString())) {
+                    tp = tagParsers.get(names.fromString("note"));
+                }
                 if (tp == null) {
                     List<DCTree> content = blockContent();
                     return m.at(p).newUnknownBlockTagTree(name, content);
                 } else {
                     if (tp.allowsBlock()) {
-                        return tp.parse(p, TagParser.Kind.BLOCK);
+                        return tp.parse(p, TagParser.Kind.BLOCK, name.toString());
                     } else {
                         return erroneous("dc.bad.inline.tag", p);
                     }
@@ -656,6 +663,9 @@ public class DocCommentParser {
             }
             Name name = readTagName();
             TagParser tp = tagParsers.get(name);
+            if (tp == null && customTags.contains(name.toString())) {
+                tp = tagParsers.get(names.fromString("note"));
+            }
             if (tp == null) {
                 skipWhitespace();
                 DCTree text = inlineText(WhitespaceRetentionPolicy.REMOVE_ALL);
@@ -666,7 +676,7 @@ public class DocCommentParser {
                     skipWhitespace();
                 }
                 if (tp.allowsInline()) {
-                    DCEndPosTree<?> tree = (DCEndPosTree<?>) tp.parse(p, TagParser.Kind.INLINE);
+                    DCEndPosTree<?> tree = (DCEndPosTree<?>) tp.parse(p, TagParser.Kind.INLINE, name.toString());
                     return tree.setEndPos(bp);
                 } else { // handle block tags (for example, @see) in inline content
                     DCTree text = inlineText(WhitespaceRetentionPolicy.REMOVE_ALL); // skip content
@@ -1971,6 +1981,15 @@ public class DocCommentParser {
             return treeKind;
         }
 
+        // Overridden by parsers for bimodal tags with variable tag names
+        DCTree parse(int pos, Kind kind, String name) throws ParseException {
+            if (!name.equals(treeKind.tagName)) {
+                throw new IllegalArgumentException(name);
+            }
+            return parse(pos, kind);
+        }
+
+        // Overridden by parsers for bimodal tags
         DCTree parse(int pos, Kind kind) throws ParseException {
             if (kind != this.kind && this.kind != Kind.EITHER) {
                 throw new IllegalArgumentException(kind.toString());
@@ -2114,6 +2133,30 @@ public class DocCommentParser {
                     DCReference ref = reference(ReferenceParser.Mode.MEMBER_OPTIONAL);
                     List<DCTree> label = inlineContent();
                     return m.at(pos).newLinkPlainTree(ref, label);
+                }
+            },
+
+            // @note [attributes] body
+            new TagParser(TagParser.Kind.EITHER, DCTree.Kind.NOTE) {
+                @Override
+                public DCTree parse(int pos, Kind kind, String tagName) throws ParseException {
+                    skipWhitespace();
+                    List<DCTree> attributes = List.nil();
+                    if (ch == '[') {
+                        nextChar();
+                        attributes = tagAttrs(']');
+                        if (ch != ']') {
+                            throw new ParseException("dc.unexpected.content");
+                        }
+                        nextChar();
+                    }
+                    skipWhitespace();
+                    List<DCTree> body = switch (kind) {
+                        case BLOCK -> blockContent();
+                        case INLINE -> inlineContent();
+                        default -> throw new IllegalArgumentException(kind.toString());
+                    };
+                    return m.at(pos).newNoteTree(tagName, attributes, body, kind == Kind.INLINE);
                 }
             },
 
@@ -2272,7 +2315,7 @@ public class DocCommentParser {
                 @Override
                 DCTree parse(int pos) throws ParseException {
                     skipWhitespace();
-                    List<DCTree> attributes = tagAttrs();
+                    List<DCTree> attributes = tagAttrs(':');
                     // expect "}" or ":"
                     if (ch == '}') {
                         nextChar();
@@ -2302,54 +2345,6 @@ public class DocCommentParser {
                     } else {
                         throw new ParseException("dc.unexpected.content");
                     }
-                }
-
-                /*
-                 * Reads a series of inline snippet tag attributes.
-                 *
-                 * Attributes are terminated by the first of ":" (colon) or
-                 * an unmatched "}" (closing curly).
-                 */
-                private List<DCTree> tagAttrs() {
-                    ListBuffer<DCTree> attrs = new ListBuffer<>();
-                    skipWhitespace();
-                    while (bp < buflen && isIdentifierStart(ch)) {
-                        int namePos = bp;
-                        Name name = readAttributeName();
-                        skipWhitespace();
-                        List<DCTree> value = null;
-                        ValueKind vkind = ValueKind.EMPTY;
-                        if (ch == '=') {
-                            ListBuffer<DCTree> v = new ListBuffer<>();
-                            nextChar();
-                            skipWhitespace();
-                            if (ch == '\'' || ch == '"') {
-                                newline = false;
-                                vkind = (ch == '\'') ? ValueKind.SINGLE : ValueKind.DOUBLE;
-                                char quote = ch;
-                                nextChar();
-                                textStart = bp;
-                                while (bp < buflen && ch != quote) {
-                                    nextChar();
-                                }
-                                addPendingText(v, bp - 1, DocTree.Kind.TEXT);
-                                nextChar();
-                            } else {
-                                vkind = ValueKind.UNQUOTED;
-                                textStart = bp;
-                                // Stop on '}' and ':' for them to be re-consumed by non-attribute parts of tag
-                                while (bp < buflen && (ch != '}' && ch != ':' && !isUnquotedAttrValueTerminator(ch))) {
-                                    nextChar();
-                                }
-                                addPendingText(v, bp - 1, DocTree.Kind.TEXT);
-                            }
-                            skipWhitespace();
-                            value = v.toList();
-                        }
-                        DCAttribute attr = m.at(namePos).newAttributeTree(name, vkind, value);
-                        attrs.add(attr);
-                    }
-                    return attrs.toList();
                 }
             },
 
@@ -2472,6 +2467,54 @@ public class DocCommentParser {
             tagParsers.put(names.fromString(p.getTreeKind().tagName), p);
 
         return tagParsers;
+    }
+
+    /*
+     * Reads a series of inline snippet tag attributes.
+     *
+     * Attributes are terminated by the first of terminator char or
+     * an unmatched "}" (closing curly).
+     */
+    private List<DCTree> tagAttrs(char terminator) {
+        ListBuffer<DCTree> attrs = new ListBuffer<>();
+        skipWhitespace();
+        while (bp < buflen && isIdentifierStart(ch)) {
+            int namePos = bp;
+            Name name = readAttributeName();
+            skipWhitespace();
+            List<DCTree> value = null;
+            ValueKind vkind = ValueKind.EMPTY;
+            if (ch == '=') {
+                ListBuffer<DCTree> v = new ListBuffer<>();
+                nextChar();
+                skipWhitespace();
+                if (ch == '\'' || ch == '"') {
+                    newline = false;
+                    vkind = (ch == '\'') ? ValueKind.SINGLE : ValueKind.DOUBLE;
+                    char quote = ch;
+                    nextChar();
+                    textStart = bp;
+                    while (bp < buflen && ch != quote) {
+                        nextChar();
+                    }
+                    addPendingText(v, bp - 1, DocTree.Kind.TEXT);
+                    nextChar();
+                } else {
+                    vkind = ValueKind.UNQUOTED;
+                    textStart = bp;
+                    // Stop on '}' and terminator for them to be re-consumed by non-attribute parts of tag
+                    while (bp < buflen && (ch != '}' && ch != terminator && !isUnquotedAttrValueTerminator(ch))) {
+                        nextChar();
+                    }
+                    addPendingText(v, bp - 1, DocTree.Kind.TEXT);
+                }
+                skipWhitespace();
+                value = v.toList();
+            }
+            DCAttribute attr = m.at(namePos).newAttributeTree(name, vkind, value);
+            attrs.add(attr);
+        }
+        return attrs.toList();
     }
 
 }

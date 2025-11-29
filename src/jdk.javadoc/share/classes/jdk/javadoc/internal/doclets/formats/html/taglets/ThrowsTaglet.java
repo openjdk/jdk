@@ -169,7 +169,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     @Override
-    public Output inherit(Element dst, Element src, DocTree tag, boolean isFirstSentence) {
+    public Output inherit(ExecutableElement dst, ExecutableElement src, DocTree tag, boolean isFirstSentence) {
         // This method shouldn't be called because {@inheritDoc} tags inside
         // exception tags aren't dealt with individually. {@inheritDoc} tags
         // inside exception tags are collectively dealt with in
@@ -634,11 +634,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         }
         DocFinder.Result<Map<ThrowsTree, ExecutableElement>> result;
         try {
-            if (src.isPresent()) {
-                result = utils.docFinder().search(src.get(), criterion);
-            } else {
-                result = utils.docFinder().find(holder, criterion);
-            }
+            result = utils.docFinder().searchInherited(holder, src.orElse(null), criterion);
         } catch (Failure.NotExceptionType
                  | Failure.ExceptionTypeNotFound
                  | Failure.UnsupportedTypeParameter x) {

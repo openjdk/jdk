@@ -32,7 +32,6 @@ import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
 
-import com.sun.source.doctree.UnknownBlockTagTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
