@@ -28,6 +28,7 @@
 #include "nmt/memTag.hpp"
 #include "nmt/memTracker.hpp"
 #include "runtime/os.hpp"
+#include "sanitizers/address.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/nativeCallStack.hpp"
@@ -50,6 +51,7 @@ void MallocHeader::print_block_on_error(outputStream* st, address bad_address, a
   st->print_cr("NMT Block at " PTR_FORMAT ", corruption at: " PTR_FORMAT ": ",
                p2i(this), p2i(bad_address));
   if (MemTracker::tracking_level() == NMT_TrackingLevel::NMT_detail) {
+    asan_unpoison_self();
     MallocHeader* mh = (MallocHeader*)block_address;
     NativeCallStack stack;
     if (MallocSiteTable::access_stack(stack, *mh)) {
@@ -59,6 +61,7 @@ void MallocHeader::print_block_on_error(outputStream* st, address bad_address, a
       st->print_cr("allocation-site cannot be shown since the marker is also corrupted.");
     }
     st->print_cr("");
+    asan_poison_self();
   }
 
   static const size_t min_dump_length = 256;
