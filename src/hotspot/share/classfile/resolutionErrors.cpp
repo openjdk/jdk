@@ -126,6 +126,23 @@ ResolutionErrorEntry::~ResolutionErrorEntry() {
   }
 }
 
+// If we found a nest host error, but also need a resolution error at this cp index,
+// merge in resolution error data.
+void ResolutionErrorEntry::merge(Symbol* error, const char* message,
+                                 Symbol* cause, const char* cause_msg) {
+  ShouldNotReachHere();
+  assert(_error == nullptr && error != nullptr, "should only be called for null resolution error");
+  _error = error;
+  _message = message != nullptr ? os::strdup(message) : nullptr;
+  _cause = cause;
+  _cause_msg = cause_msg != nullptr ? os::strdup(cause_msg) : nullptr;
+
+  Symbol::maybe_increment_refcount(_error);
+  Symbol::maybe_increment_refcount(_cause);
+
+  assert(_nest_host_error != nullptr, "Should already have nest host error");
+}
+
 class ResolutionErrorDeleteIterate : StackObj {
   ConstantPool* p;
 
