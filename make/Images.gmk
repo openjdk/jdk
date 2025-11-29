@@ -282,29 +282,63 @@ else
 endif
 CMDS_TARGET_SUBDIR := bin
 
-# Param 1 - either JDK or JRE
+# In case of Windows and --with-external-symbols-in-bundles=public:
+# Copy *.stripped.pdb files to images, renamed to *.pdb.
+ifeq ($(call isTargetOs, windows)+$(SHIP_DEBUG_SYMBOLS), true+public)
+  rename_stripped = $(patsubst %.stripped.pdb,%.pdb,$1)
+
+  SetupCopyStrippedDebuginfo = \
+      $(foreach m, $(ALL_$1_MODULES), \
+        $(eval $(call SetupCopyFiles, COPY_$1_LIBS_DEBUGINFO_$m, \
+            SRC := $(SUPPORT_OUTPUTDIR)/modules_libs/$m, \
+            DEST := $($1_IMAGE_DIR)/$(LIBS_TARGET_SUBDIR), \
+            FILES := $(filter %.stripped.pdb, \
+                $(call FindDebuginfoFiles,$(SUPPORT_OUTPUTDIR)/modules_libs/$m)), \
+            NAME_MACRO := rename_stripped \
+        )) \
+        $(eval $1_TARGETS += $$(COPY_$1_LIBS_DEBUGINFO_$m)) \
+        $(eval $(call SetupCopyFiles, COPY_$1_CMDS_DEBUGINFO_$m, \
+            SRC := $(SUPPORT_OUTPUTDIR)/modules_cmds/$m, \
+            DEST := $($1_IMAGE_DIR)/$(CMDS_TARGET_SUBDIR), \
+            FILES := $(filter %.stripped.pdb, \
+                $(call FindDebuginfoFiles,$(SUPPORT_OUTPUTDIR)/modules_cmds/$m)), \
+            NAME_MACRO := rename_stripped \
+        )) \
+        $(eval $1_TARGETS += $$(COPY_$1_CMDS_DEBUGINFO_$m)) \
+      )
+
+  # No space before argument to avoid having to put $(strip ) everywhere in implementation above.
+  $(call SetupCopyStrippedDebuginfo,JDK)
+  $(call SetupCopyStrippedDebuginfo,JRE)
+endif
+
+# Copy debug info files into symbols bundle.
+# In case of Windows and --with-external-symbols-in-bundles=public, take care to remove *.stripped.pdb files
 SetupCopyDebuginfo = \
     $(foreach m, $(ALL_$1_MODULES), \
+      $(eval DBGFILES := $(call FindDebuginfoFiles, $(SUPPORT_OUTPUTDIR)/modules_libs/$m)) \
+      $(eval DBGFILES := $(if $(filter true+public,$(call isTargetOs,windows)+$(SHIP_DEBUG_SYMBOLS)), \
+        $(filter-out %.stripped.pdb,$(DBGFILES)),$(DBGFILES)) \
+      ) \
       $(eval $(call SetupCopyFiles, COPY_$1_LIBS_DEBUGINFO_$m, \
           SRC := $(SUPPORT_OUTPUTDIR)/modules_libs/$m, \
           DEST := $($1_IMAGE_DIR)/$(LIBS_TARGET_SUBDIR), \
-          FILES := $(call FindDebuginfoFiles, \
-              $(SUPPORT_OUTPUTDIR)/modules_libs/$m), \
+          FILES := $(DBGFILES), \
       )) \
       $(eval $1_TARGETS += $$(COPY_$1_LIBS_DEBUGINFO_$m)) \
+      $(eval DBGFILES := $(call FindDebuginfoFiles, $(SUPPORT_OUTPUTDIR)/modules_cmds/$m)) \
+      $(eval DBGFILES := $(if $(filter true+public,$(call isTargetOs,windows)+$(SHIP_DEBUG_SYMBOLS)), \
+        $(filter-out %.stripped.pdb,$(DBGFILES)),$(DBGFILES)) \
+      ) \
       $(eval $(call SetupCopyFiles, COPY_$1_CMDS_DEBUGINFO_$m, \
           SRC := $(SUPPORT_OUTPUTDIR)/modules_cmds/$m, \
           DEST := $($1_IMAGE_DIR)/$(CMDS_TARGET_SUBDIR), \
-          FILES := $(call FindDebuginfoFiles, \
-              $(SUPPORT_OUTPUTDIR)/modules_cmds/$m), \
+          FILES := $(DBGFILES), \
       )) \
       $(eval $1_TARGETS += $$(COPY_$1_CMDS_DEBUGINFO_$m)) \
     )
 
-# No space before argument to avoid having to put $(strip ) everywhere in
-# implementation above.
-$(call SetupCopyDebuginfo,JDK)
-$(call SetupCopyDebuginfo,JRE)
+# No space before argument to avoid having to put $(strip ) everywhere in implementation above.
 $(call SetupCopyDebuginfo,SYMBOLS)
 
 ################################################################################
