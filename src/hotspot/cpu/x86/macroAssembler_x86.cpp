@@ -4749,6 +4749,168 @@ Address MacroAssembler::argument_address(RegisterOrConstant arg_slot,
   return Address(rsp, scale_reg, scale_factor, offset);
 }
 
+// Handle the receiver type profile update given the "recv" klass.
+//
+// Normally updates the ReceiverData (RD) that starts at "mdp" + "mdp_offset".
+// If there are no matching or claimable receiver entries in RD, updates
+// the polymorphic counter.
+//
+// This code expected to run by either the interpreter or JIT-ed code, without
+// extra synchronization. For safety, receiver cells are claimed atomically, which
+// avoids grossly misrepresenting the profiles under concurrent updates. For speed,
+// counter updates are not atomic.
+//
+void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_offset) {
+  int base_receiver_offset   = in_bytes(ReceiverTypeData::receiver_offset(0));
+  int end_receiver_offset    = in_bytes(ReceiverTypeData::receiver_offset(ReceiverTypeData::row_limit()));
+  int poly_count_offset      = in_bytes(CounterData::count_offset());
+  int receiver_step          = in_bytes(ReceiverTypeData::receiver_offset(1)) - base_receiver_offset;
+  int receiver_to_count_step = in_bytes(ReceiverTypeData::receiver_count_offset(0)) - base_receiver_offset;
+
+  // Adjust for MDP offsets. Slots are pointer-sized, so is the global offset.
+  assert(is_aligned(mdp_offset, BytesPerWord), "sanity");
+  base_receiver_offset += mdp_offset;
+  end_receiver_offset  += mdp_offset;
+  poly_count_offset    += mdp_offset;
+
+  // Scale down to optimize encoding. Slots are pointer-sized.
+  assert(is_aligned(base_receiver_offset,   BytesPerWord), "sanity");
+  assert(is_aligned(end_receiver_offset,    BytesPerWord), "sanity");
+  assert(is_aligned(poly_count_offset,      BytesPerWord), "sanity");
+  assert(is_aligned(receiver_step,          BytesPerWord), "sanity");
+  assert(is_aligned(receiver_to_count_step, BytesPerWord), "sanity");
+  base_receiver_offset   >>= LogBytesPerWord;
+  end_receiver_offset    >>= LogBytesPerWord;
+  poly_count_offset      >>= LogBytesPerWord;
+  receiver_step          >>= LogBytesPerWord;
+  receiver_to_count_step >>= LogBytesPerWord;
+
+#ifdef ASSERT
+  // We are about to walk the MDO slots without asking for offsets.
+  // Check that our math hits all the right spots.
+  for (uint c = 0; c < ReceiverTypeData::row_limit(); c++) {
+    int real_recv_offset  = mdp_offset + in_bytes(ReceiverTypeData::receiver_offset(c));
+    int real_count_offset = mdp_offset + in_bytes(ReceiverTypeData::receiver_count_offset(c));
+    int offset = base_receiver_offset + receiver_step*c;
+    int count_offset = offset + receiver_to_count_step;
+    assert((offset << LogBytesPerWord) == real_recv_offset, "receiver slot math");
+    assert((count_offset << LogBytesPerWord) == real_count_offset, "receiver count math");
+  }
+  int real_poly_count_offset = mdp_offset + in_bytes(CounterData::count_offset());
+  assert(poly_count_offset << LogBytesPerWord == real_poly_count_offset, "poly counter math");
+#endif
+
+  // Corner case: no profile table. Increment poly counter and exit.
+  if (ReceiverTypeData::row_limit() == 0) {
+    addptr(Address(mdp, poly_count_offset, Address::times_ptr), DataLayout::counter_increment);
+    return;
+  }
+
+  // The update code uses CAS, which wants RAX register specifically, *and* it needs
+  // other important registers untouched. Therefore, we need to shift any important
+  // registers from RAX into some other spare register. If we have a spare register,
+  // we are forced to save it on stack here. But since it implies RAX is in our use,
+  // we can then save on RAX push/pops near the CAS.
+  Register offset = rscratch1;
+  Register spare_reg = noreg;
+  if (recv == rax || mdp == rax) {
+    spare_reg = (recv != rbx && mdp != rbx) ? rbx :
+                (recv != rcx && mdp != rcx) ? rcx :
+                rdx;
+    assert_different_registers(mdp, recv, offset, spare_reg);
+
+    push(spare_reg);
+    if (recv == rax) {
+      movptr(spare_reg, recv);
+      recv = spare_reg;
+    } else {
+      assert(mdp == rax, "Remaining case");
+      movptr(spare_reg, mdp);
+      mdp = spare_reg;
+    }
+  }
+
+  // None of the important registers are in RAX after this shuffle.
+  assert_different_registers(rax, mdp, recv, offset);
+
+  Label L_loop, L_loop_nulls, L_found_recv, L_not_null, L_count_update;
+
+  // Optimistic: search for already set up receiver.
+  //
+  // This code is effectively:
+  //   for (i = 0; i < receiver_count(); i++) {
+  //     if (receiver(i) == recv)  goto found_recv;
+  //   }
+  movptr(offset, base_receiver_offset);
+  bind(L_loop);
+    cmpptr(recv, Address(mdp, offset, Address::times_ptr));
+    jccb(Assembler::equal, L_found_recv);
+  addptr(offset, receiver_step);
+  cmpptr(offset, end_receiver_offset);
+  jccb(Assembler::notEqual, L_loop);
+
+  // Receiver is not found in current profile. Search for the empty slot and try to claim it.
+  // Since this claim is racy, we need to make sure that rows are only claimed once.
+  // This makes sure we never overwrite a row for another receiver and never duplicate
+  // the receivers in the list.
+  //
+  // This code is effectively:
+  //   for (i = 0; i < receiver_count(); i++) {
+  //     if (receiver(i) == null)  CAS(&receiver(i), null -> recv);
+  //     if (receiver(i) == recv)  goto found_recv;
+  //   }
+  //
+  // Note: It is tempting to combine this search with the optimistic loop above,
+  // and claim the first nullptr slot without checking the rest of the table.
+  // But, profiling code should tolerate free slots in MDO, for example, to allow cleaning up
+  // rows for unloaded receivers.
+  //
+  movptr(offset, base_receiver_offset);
+  bind(L_loop_nulls);
+    cmpptr(Address(mdp, offset, Address::times_ptr), NULL_WORD);
+    jccb(Assembler::notEqual, L_not_null);
+      // Atomically swing receiver slot: null -> recv.
+      // If we have not shifted anything from RAX, we better save and restore it here.
+      if (spare_reg == noreg) {
+        push(rax);
+      }
+      xorptr(rax, rax);
+      cmpxchgptr(recv, Address(mdp, offset, Address::times_ptr));
+      if (spare_reg == noreg) {
+        pop(rax);
+      }
+      // CAS failure means something had claimed the slot concurrently.
+      // It can be the same receiver we want, or something else.
+      // Fall-through to check the slot contents.
+    bind(L_not_null);
+    cmpptr(recv, Address(mdp, offset, Address::times_ptr));
+    jccb(Assembler::equal, L_found_recv);
+  addptr(offset, receiver_step);
+  cmpptr(offset, end_receiver_offset);
+  jccb(Assembler::notEqual, L_loop_nulls);
+
+  // Falling through from search/install loops: receiver did not match any saved receiver,
+  // and there is no empty row for it. Increment poly counter instead.
+  // Effectively: offset = CounterData::count_offset();
+  movptr(offset, poly_count_offset);
+  jmpb(L_count_update);
+
+  // Found a receiver, convert its slot offset to corresponding count offset.
+  // Effectively: offset = &receiver_count[index_of(found_recv)] - mdp;
+  bind(L_found_recv);
+  addptr(offset, receiver_to_count_step);
+
+  bind(L_count_update);
+  addptr(Address(mdp, offset, Address::times_ptr), DataLayout::counter_increment);
+
+  // About to return to outer code: restore affected registers.
+  // Taking this branch implies some important register was shifted from RAX.
+  if (spare_reg != noreg) {
+    movptr(rax, spare_reg);
+    pop(spare_reg);
+  }
+}
+
 void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* file, int line) {
   if (!VerifyOops) return;
 
