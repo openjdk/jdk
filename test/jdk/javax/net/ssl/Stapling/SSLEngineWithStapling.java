@@ -105,7 +105,7 @@ public class SSLEngineWithStapling {
      * including specific handshake messages, and might be best examined
      * after gaining some familiarity with this application.
      */
-    private static final boolean debug = true;
+    private static final boolean debug = false;
 
     private SSLEngine clientEngine;     // client Engine
     private ByteBuffer clientOut;       // write side of clientEngine
