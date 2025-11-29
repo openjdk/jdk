@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package gc.arguments;
 /*
  * @test TestParallelGCThreads
  * @bug 8059527 8081382
+ * @requires vm.gc == null
  * @summary Tests argument processing for ParallelGCThreads
  * @library /test/lib
  * @library /
@@ -56,7 +57,7 @@ public class TestParallelGCThreads {
   private static final String printFlagsFinalPattern = " *uint *" + flagName + " *:?= *(\\d+) *\\{product\\} *";
 
   public static void testDefaultValue()  throws Exception {
-    OutputAnalyzer output = GCArguments.executeLimitedTestJava(
+    OutputAnalyzer output = GCArguments.executeTestJava(
       "-XX:+UnlockExperimentalVMOptions", "-XX:+PrintFlagsFinal", "-version");
 
     String value = output.firstMatch(printFlagsFinalPattern, 1);
@@ -64,10 +65,10 @@ public class TestParallelGCThreads {
     try {
       Asserts.assertNotNull(value, "Couldn't find uint flag " + flagName);
 
-      Long longValue = new Long(value);
+      Long longValue = Long.valueOf(value);
 
       // Sanity check that we got a non-zero value.
-      Asserts.assertNotEquals(longValue, "0");
+      Asserts.assertNotEquals(longValue, 0L);
 
       output.shouldHaveExitValue(0);
     } catch (Exception e) {
@@ -86,6 +87,9 @@ public class TestParallelGCThreads {
     if (GC.Parallel.isSupported()) {
       supportedGC.add("Parallel");
     }
+    if (GC.Z.isSupported()) {
+      supportedGC.add("Z");
+    }
 
     if (supportedGC.isEmpty()) {
       throw new SkippedException("Skipping test because none of G1/Parallel is supported.");
@@ -93,7 +97,7 @@ public class TestParallelGCThreads {
 
     for (String gc : supportedGC) {
       // Make sure the VM does not allow ParallelGCThreads set to 0
-      OutputAnalyzer output = GCArguments.executeLimitedTestJava(
+      OutputAnalyzer output = GCArguments.executeTestJava(
           "-XX:+Use" + gc + "GC",
           "-XX:ParallelGCThreads=0",
           "-XX:+PrintFlagsFinal",
@@ -122,7 +126,7 @@ public class TestParallelGCThreads {
   }
 
   public static long getParallelGCThreadCount(String... flags) throws Exception {
-    OutputAnalyzer output = GCArguments.executeLimitedTestJava(flags);
+    OutputAnalyzer output = GCArguments.executeTestJava(flags);
     output.shouldHaveExitValue(0);
     String stdout = output.getStdout();
     return FlagsValue.getFlagLongValue("ParallelGCThreads", stdout);
