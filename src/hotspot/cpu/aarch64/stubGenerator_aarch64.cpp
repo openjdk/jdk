@@ -689,9 +689,8 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     {
-      // Number of stp instructions we'll unroll
-      const int unroll =
-        MacroAssembler::zero_words_block_size / 2;
+      // Process any remaining blocks not handled by the stub.
+      const int unroll = MacroAssembler::zero_words_block_size / 2;
       // Clear the remaining blocks.
       Label loop;
       __ subs(cnt, cnt, unroll * 2);
@@ -709,7 +708,6 @@ class StubGenerator: public StubCodeGenerator {
 
     return start;
   }
-
 
   typedef enum {
     copy_forwards = 1,
