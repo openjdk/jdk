@@ -27,17 +27,35 @@
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include CPU_HEADER(gc/z/zAddress)
+#include OS_HEADER(gc/z/zAddress)
 
 // One bit that denotes where the heap start. All uncolored
 // oops have this bit set, plus an offset within the heap.
-extern uintptr_t  ZAddressHeapBase;
-extern uintptr_t  ZAddressHeapBaseShift;
+extern uintptr_t ZAddressHeapBase;
+extern size_t    ZAddressHeapBaseShift;
 
-// Describes the maximal offset inside the heap.
+// The min and max shift allowed for the heap base. The max is
+// the limit that our ZForwardingEntry encoding can handle.
+// The recommended initial min shift is the largest shift which
+// allows the smallest ZMarkPartialArrayMinSize.
+const size_t     ZAddressHeapBaseMaxShift = 44; // 16TB
+const size_t     ZAddressHeapBaseRecommendInitalMinShift = 42; // 4TB
+const size_t     ZAddressHeapBaseMinShift = 34; // 16GB
+
+// Max size limits for MaxHeapSize and the platforms available address space.
+const size_t     ZAddressMaxCapacityLimit = size_t(1) << 44; // 16TB
+extern size_t    ZAddressPlatformMaxAddressSpace;
+
+// Describes the offset inside the heap.
 extern size_t    ZAddressOffsetBits;
 const  size_t    ZAddressOffsetShift = 0;
 extern uintptr_t ZAddressOffsetMask;
+
+// Describes the computational max offset inside the heap.
 extern size_t    ZAddressOffsetMax;
+
+// Describes the reserved upper limit for offset inside the heap.
+extern size_t    ZAddressOffsetUpperLimit;
 
 // Describes the maximal offset inside the backing storage.
 extern size_t    ZBackingOffsetMax;
@@ -310,18 +328,27 @@ public:
 
 class ZGlobalsPointers : public AllStatic {
 private:
+  static size_t ZAddressPlatformHeapBaseMaxShift;
+  static size_t ZAddressMaxHeapRequiredHeapBaseShift;
+  static size_t ZAddressMaxHeapRecommendedHeapBaseShift;
+  static size_t ZAddressInitialHeapBaseShift;
+
   static void set_good_masks();
   static void pd_set_good_masks();
 
 public:
   static void initialize();
 
+  static void set_heap_limits(uintptr_t heap_base, uintptr_t heap_upper_limit);
+
+  static size_t initial_heap_base_shift();
+  static size_t next_heap_base_shift(size_t heap_base_shift);
+  static void validate_heap_base_shift(size_t heap_base_shift);
+
   static void flip_young_mark_start();
   static void flip_young_relocate_start();
   static void flip_old_mark_start();
   static void flip_old_relocate_start();
-
-  static size_t min_address_offset_request();
 };
 
 #endif // SHARE_GC_Z_ZADDRESS_HPP

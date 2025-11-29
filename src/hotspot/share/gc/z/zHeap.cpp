@@ -380,6 +380,7 @@ void ZHeap::print_globals_on(outputStream* st) const {
   st->print_cr("ZGC Globals:");
   st->print_cr(" Young Collection:   %s/%u", ZGeneration::young()->phase_to_string(), ZGeneration::young()->seqnum());
   st->print_cr(" Old Collection:     %s/%u", ZGeneration::old()->phase_to_string(), ZGeneration::old()->seqnum());
+  st->print_cr(" Offset Upper Limit: " EXACTFMT " (" PTR_FORMAT ")", EXACTFMTARGS(ZAddressOffsetUpperLimit), ZAddressOffsetUpperLimit);
   st->print_cr(" Offset Max:         " EXACTFMT " (" PTR_FORMAT ")", EXACTFMTARGS(ZAddressOffsetMax), ZAddressOffsetMax);
   st->print_cr(" Page Size Small:    %zuM", ZPageSizeSmall / M);
   if (ZPageSizeMediumEnabled) {
