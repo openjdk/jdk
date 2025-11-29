@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,35 @@
  *
  */
 
-#ifndef SHARE_JFR_UTILITIES_JFRSPINLOCKHELPER_HPP
-#define SHARE_JFR_UTILITIES_JFRSPINLOCKHELPER_HPP
+#ifndef SHARE_UTILITIES_SPINCRITICALSECTION_HPP
+#define SHARE_UTILITIES_SPINCRITICALSECTION_HPP
 
 #include "runtime/javaThread.hpp"
 
-class JfrSpinlockHelper {
- private:
+// Ad-hoc mutual exclusion primitive: spin critical section,
+// which employs a spin lock.
+//
+// We use this critical section only for low-contention code, and
+// when it is know that the duration is short. To be used where
+// we're concerned about native mutex_t or HotSpot Mutex:: latency.
+// The class uses low-level leaf-lock primitives to implement
+// synchronization. Not for general synchronization use.
+class SpinCriticalSection {
+private:
+  // We use int type as 32-bit atomic operation is the most performant
+  // compared to  smaller/larger types.
   volatile int* const _lock;
 
- public:
-  JfrSpinlockHelper(volatile int* lock) : _lock(lock) {
-    Thread::SpinAcquire(_lock);
+  static void spin_acquire(volatile int* Lock);
+  static void spin_release(volatile int* Lock);
+public:
+  NONCOPYABLE(SpinCriticalSection);
+  SpinCriticalSection(volatile int* lock) : _lock(lock) {
+    spin_acquire(_lock);
   }
-
-  ~JfrSpinlockHelper() {
-    Thread::SpinRelease(_lock);
+  ~SpinCriticalSection() {
+    spin_release(_lock);
   }
 };
 
-#endif // SHARE_JFR_UTILITIES_JFRSPINLOCKHELPER_HPP
+#endif // SHARE_UTILITIES_SPINCRITICALSECTION_HPP
