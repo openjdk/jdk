@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,19 @@
 
 /*
  * @test
- * @bug 4944439
+ * @bug 4944439 8372609
  * @summary Confirm that numbers where all digits after the decimal separator are 0
  *          and which are between Long.MIN_VALUE and Long.MAX_VALUE are returned
  *          as Long(not double).
  * @run junit Bug4944439
  */
 
-import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.stream.Stream;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -47,21 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 public class Bug4944439 {
 
-    // Save JVM default locale
-    private static final Locale savedLocale = Locale.getDefault();
-    private static final DecimalFormat df = new DecimalFormat();
-
-    // Set JVM default locale to US for testing
-    @BeforeAll
-    static void initAll() {
-        Locale.setDefault(Locale.US);
-    }
-
-    // Restore JVM default locale
-    @AfterAll
-    static void tearDownAll() {
-        Locale.setDefault(savedLocale);
-    }
+    private static final NumberFormat df = NumberFormat.getInstance(Locale.US);
 
     // Check return type and value returned by DecimalFormat.parse() for longs
     @ParameterizedTest
