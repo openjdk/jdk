@@ -44,6 +44,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
+import jdk.test.lib.thread.TestThreadFactory;
 import nsk.share.TestFailure;
 import nsk.share.test.StressOptions;
 import nsk.share.test.Stresser;
@@ -82,16 +83,19 @@ public class StressTest implements Runnable {
     @Option(name="ignoreTestFailures", default_value="false", description="ignore failures of the executed tests")
     private boolean ignoreTestFailures;
 
-    class Worker extends Thread {
+    class Worker implements Runnable {
         private final Random rand;
 
         private volatile DefMethTest failedTest;
         private Throwable reason;
         private volatile long executedTests = 0;
 
-        public Worker(String id, long seed) {
-            setName(id);
-            this.rand = new Random(seed);
+        private final Thread thread;
+
+         Worker(String id, long seed) {
+             this.rand = new Random(seed);
+             this.thread = TestThreadFactory.newThread(this, id);
+             thread.setName(id);
         }
 
         @Override
@@ -247,13 +251,13 @@ public class StressTest implements Runnable {
         }
 
         for (Worker worker : workers) {
-            worker.start();
+            worker.thread.start();
         }
     }
 
     private void interruptWorkers() {
         for (Worker worker : workers) {
-            worker.interrupt();
+            worker.thread.interrupt();
         }
     }
 
@@ -261,14 +265,14 @@ public class StressTest implements Runnable {
         boolean isFailed = false;
 
         for (Worker worker : workers) {
-            while (worker.isAlive()) {
+            while (worker.thread.isAlive()) {
                 try {
-                    worker.join();
+                    worker.thread.join();
                 } catch (InterruptedException e) {}
             }
 
             System.out.printf("%s: %s (executed: %d)\n",
-                    worker.getName(),
+                    worker.thread.getName(),
                     worker.isFailed() ? "FAILED: " + worker.getFailedTest() : "PASSED",
                     worker.getExecutedTests());
 
@@ -288,7 +292,7 @@ public class StressTest implements Runnable {
 
     private boolean workersAlive() {
         for (Worker worker : workers) {
-            if (!worker.isAlive()) {
+            if (!worker.thread.isAlive()) {
                 return false;
             }
         }
