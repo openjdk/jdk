@@ -289,9 +289,31 @@ public class BufferedImage extends java.awt.Image
      * Constructs a {@code BufferedImage} of one of the predefined
      * image types.  The {@code ColorSpace} for the image is the
      * default sRGB space.
+     * {@code BufferedImage} is a type that supports only one tile.
+     * The pixels are stored in a {@code DataBuffer}.
+     * A {@code DataBuffer} is a container for one or more banks of
+     * Java primitive arrays so the number of samples that can be
+     * stored are limited by the maximum size of a Java array.
+     * This is at most {@code Integer.MAX_VALUE}.
+     * The number of samples per-pixel for an {@code imageType} affect
+     * the maximum. For example if an image format uses bytes to store
+     * separately each of the four samples in an ARGB pixel format image,
+     * it will only be able to hold one fourth as many pixels as an image
+     * that uses an int to store all four samples.
+     * For example {@code TYPE_4BYTE_ABGR} may use 4 bytes to store a pixel
+     * whereas {@code TYPE_INT_ARGB} may use a single int.
+     * So the maximum number of pixels in a {@code BufferedImage} is
+     * format dependent.
      * @param width     width of the created image
      * @param height    height of the created image
      * @param imageType type of the created image
+     * @throws IllegalArgumentException if {@code width} or {@code height} is
+     *          not greater than zero.
+     * @throws IllegalArgumentException if the multiplication product of
+     *          {@code width}, {@code height}, and the number of samples per pixel
+     *          for the specified format exceeds the maximum length of a Java array.
+     * @throws IllegalArgumentException if the {@code imageType} is not one of
+     *         the pre-defined recognized image types.
      * @see ColorSpace
      * @see #TYPE_INT_RGB
      * @see #TYPE_INT_ARGB
@@ -310,6 +332,37 @@ public class BufferedImage extends java.awt.Image
     public BufferedImage(int width,
                          int height,
                          int imageType) {
+
+        if (width <= 0 || height <= 0) {
+            throw new IllegalArgumentException(
+                     "width " + width + " height " + height + " must both be > 0");
+        }
+        long lsz = (long)width * height;
+        if (lsz > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException(
+                     "width " + width + " height " + height + " overflow int");
+        }
+        /* most BufferedImage formats use one data buffer element per pixel.
+         * But for the NBYTE formats the BufferedImage implementation
+         * uses an interleaved raster which has a ByteDataBuffer of a single bank,
+         * so either 3 or 4 bytes is used for each pixel.
+         */
+        int spp = 1;
+        switch (imageType) {
+           case TYPE_3BYTE_BGR:
+               spp = 3;
+               break;
+           case TYPE_4BYTE_ABGR:
+           case TYPE_4BYTE_ABGR_PRE:
+               spp = 4;
+               break;
+        }
+        if ((spp != 1) && (lsz * spp > Integer.MAX_VALUE)) {
+            throw new IllegalArgumentException(
+                    "width " + width + " height " + height + " * " +
+                     spp + " samples per pixel overflow int");
+        }
+
         switch (imageType) {
         case TYPE_INT_RGB:
             {
@@ -520,6 +573,11 @@ public class BufferedImage extends java.awt.Image
      * @param height    height of the created image
      * @param imageType type of the created image
      * @param cm        {@code IndexColorModel} of the created image
+     * @throws IllegalArgumentException if {@code width} or {@code height} is
+     *          not greater than zero.
+     * @throws IllegalArgumentException if the multiplication product of
+     *          {@code width} and {@code height}
+     *          exceeds the maximum length of a Java array.
      * @throws IllegalArgumentException   if the imageType is not
      * TYPE_BYTE_BINARY or TYPE_BYTE_INDEXED or if the imageType is
      * TYPE_BYTE_BINARY and the color map has more than 16 entries.
@@ -530,6 +588,17 @@ public class BufferedImage extends java.awt.Image
                           int height,
                           int imageType,
                           IndexColorModel cm) {
+
+         if (width <= 0 || height <= 0) {
+             throw new IllegalArgumentException(
+                      "width " + width + " height " + height + " must both be > 0");
+         }
+         long lsz = (long)width * height;
+         if (lsz > Integer.MAX_VALUE) {
+             throw new IllegalArgumentException(
+                      "width " + width + " height " + height + " overflow int");
+         }
+
         if (cm.hasAlpha() && cm.isAlphaPremultiplied()) {
             throw new IllegalArgumentException("This image types do not have "+
                                                "premultiplied alpha.");
@@ -599,18 +668,13 @@ public class BufferedImage extends java.awt.Image
      * components.
      * @throws IllegalArgumentException if
      *          {@code raster} is incompatible with {@code cm}
+     * @throws IllegalArgumentException if
+     *          {@code raster} {@code minX} or {@code minY} is not zero
      * @see ColorModel
      * @see Raster
      * @see WritableRaster
      */
 
-
-/*
- *
- *  FOR NOW THE CODE WHICH DEFINES THE RASTER TYPE IS DUPLICATED BY DVF
- *  SEE THE METHOD DEFINERASTERTYPE @ RASTEROUTPUTMANAGER
- *
- */
     public BufferedImage (ColorModel cm,
                           WritableRaster raster,
                           boolean isRasterPremultiplied,
