@@ -239,6 +239,7 @@ Metachunk* ChunkManager::get_chunk_locked(chunklevel_t preferred_level, chunklev
 // !! Note: this may invalidate the chunk. Do not access the chunk after
 //    this function returns !!
 void ChunkManager::return_chunk(Metachunk* c) {
+  DEBUG_ONLY(c->zap();)
   MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
   return_chunk_locked(c);
 }
