@@ -50,6 +50,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
+#include "runtime/icache.hpp"
 #include "utilities/debug.hpp"
 
 static ZNMethodData* gc_data(const nmethod* nm) {
@@ -201,8 +202,12 @@ void ZNMethod::register_nmethod(nmethod* nm) {
 
   log_register(nm);
 
-  // Patch nmethod barriers
-  nmethod_patch_barriers(nm);
+  {
+    ICacheInvalidationContext icic(needs_barrier_patching(nm));
+
+    // Patch nmethod barriers
+    nmethod_patch_barriers(nm);
+  }
 
   // Register nmethod
   ZNMethodTable::register_nmethod(nm);
@@ -366,9 +371,13 @@ public:
         const uintptr_t prev_color = ZNMethod::color(nm);
         assert(prev_color != ZPointerStoreGoodMask, "Potentially non-monotonic transition");
 
-        // Heal oops and potentially mark young objects if there is a concurrent young collection.
-        ZUncoloredRootProcessOopClosure cl(prev_color);
-        ZNMethod::nmethod_oops_do_inner(nm, &cl);
+        {
+          ICacheInvalidationContext icic(ZNMethod::needs_non_immediate_oops_patching(nm));
+
+          // Heal oops and potentially mark young objects if there is a concurrent young collection.
+          ZUncoloredRootProcessOopClosure cl(prev_color);
+          ZNMethod::nmethod_oops_do_inner(nm, &cl);
+        }
 
         // Disarm for marking and relocation, but leave the remset bits so this isn't store good.
         // This makes sure the mutator still takes a slow path to fill in the nmethod epoch for
@@ -418,4 +427,16 @@ void ZNMethod::unlink(ZWorkers* workers, bool unloading_occurred) {
 
 void ZNMethod::purge() {
   ClassUnloadingContext::context()->purge_and_free_nmethods();
+}
+
+bool ZNMethod::needs_icache_invalidation(nmethod* nm) {
+  return needs_barrier_patching(nm) || needs_non_immediate_oops_patching(nm);
+}
+
+bool ZNMethod::needs_barrier_patching(nmethod* nm) {
+  return gc_data(nm)->barriers()->is_nonempty();
+}
+
+bool ZNMethod::needs_non_immediate_oops_patching(nmethod* nm) {
+  return gc_data(nm)->has_non_immediate_oops();
 }

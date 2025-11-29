@@ -879,6 +879,15 @@ void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
     ShouldNotReachHere();
   }
 
+  if (UseDeferredICacheInvalidation) {
+    // Defer the ICache invalidation to a later point where multiple patches can be handled together.
+    //
+    // Note: We rely on the fact that this function is only called from places where deferred invalidation
+    // is safe. This assumption helps to avoid overhead of accessing thread-local data here.
+    assert(ICacheInvalidationContext::deferred_invalidation(), "ICache invalidation should be deferred");
+    return;
+  }
+
   ICache::invalidate_word((address)patch_addr);
 }
 

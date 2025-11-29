@@ -71,6 +71,26 @@ class AbstractICache : AllStatic {
   static void invalidate_range(address start, int nbytes);
 };
 
+class ICacheInvalidationContext : StackObj {
+ private:
+  NONCOPYABLE(ICacheInvalidationContext);
+
+  bool _needs_invalidation;
+
+  void pd_init();
+  void pd_invalidate_icache();
+
+ public:
+  ICacheInvalidationContext(bool needs_invalidation) : _needs_invalidation(needs_invalidation) {
+    pd_init();
+  }
+
+  ~ICacheInvalidationContext() {
+    pd_invalidate_icache();
+  }
+
+  static bool deferred_invalidation();
+};
 
 // Must be included before the definition of ICacheStubGenerator
 // because ICacheStubGenerator uses ICache definitions.
@@ -128,5 +148,14 @@ class ICacheStubGenerator : public StubCodeGenerator {
 
   void generate_icache_flush(ICache::flush_icache_stub_t* flush_icache_stub);
 };
+
+#ifndef PD_ICACHE_INVALIDATION_CONTEXT
+  // Default implementation: do nothing
+  inline void ICacheInvalidationContext::pd_init() {}
+  inline void ICacheInvalidationContext::pd_invalidate_icache() {}
+  inline bool ICacheInvalidationContext::deferred_invalidation() {
+    return false;
+  }
+#endif
 
 #endif // SHARE_RUNTIME_ICACHE_HPP
