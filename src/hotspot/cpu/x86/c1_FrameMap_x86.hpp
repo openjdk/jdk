@@ -127,8 +127,10 @@
   }
 
   static int adjust_reg_range(int range) {
-    // Reduce the number of available regs (to free r12) in case of compressed oops
-    if (UseCompressedOops) return range - 1;
+    // Reduce the number of available regs (to free r12 or r14) in
+    // case of compressed oops and randomized profile captures.
+    if (UseCompressedOops && ProfileCaptureRatio > 1) return range - 2;
+    if (UseCompressedOops || ProfileCaptureRatio > 1) return range - 1;
     return range;
   }
 
