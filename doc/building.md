@@ -352,6 +352,11 @@ on some strategies to deal with this.
 It is recommended that you use at least macOS 14 and Xcode 15.4, but
 earlier versions may also work.
 
+Starting with Xcode 26, introduced in macOS 26, the Metal toolchain no longer
+comes bundled with Xcode, so it needs to be installed separately. This can
+either be done via the Xcode's Settings/Components UI, or in the command line
+calling `xcodebuild -downloadComponent metalToolchain`.
+
 The standard macOS environment contains the basic tooling needed to build, but
 for external libraries a package manager is recommended. The JDK uses
 [homebrew](https://brew.sh/) in the examples, but feel free to use whatever
