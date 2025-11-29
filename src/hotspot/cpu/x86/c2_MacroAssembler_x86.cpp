@@ -1050,14 +1050,22 @@ void C2_MacroAssembler::signum_fp(int opcode, XMMRegister dst, XMMRegister zero,
   Label DONE_LABEL;
 
   if (opcode == Op_SignumF) {
-    ucomiss(dst, zero);
+    if (VM_Version::supports_avx10_2()) {
+      ucomxss(dst, zero);
+    } else {
+      ucomiss(dst, zero);
+    }
     jcc(Assembler::equal, DONE_LABEL);    // handle special case +0.0/-0.0, if argument is +0.0/-0.0, return argument
     jcc(Assembler::parity, DONE_LABEL);   // handle special case NaN, if argument NaN, return NaN
     movflt(dst, one);
     jcc(Assembler::above, DONE_LABEL);
     xorps(dst, ExternalAddress(StubRoutines::x86::vector_float_sign_flip()), noreg);
   } else if (opcode == Op_SignumD) {
-    ucomisd(dst, zero);
+    if (VM_Version::supports_avx10_2()) {
+      ucomxsd(dst, zero);
+    } else {
+      ucomisd(dst, zero);
+    }
     jcc(Assembler::equal, DONE_LABEL);    // handle special case +0.0/-0.0, if argument is +0.0/-0.0, return argument
     jcc(Assembler::parity, DONE_LABEL);   // handle special case NaN, if argument NaN, return NaN
     movdbl(dst, one);
