@@ -83,6 +83,7 @@ public interface MessageType {
         FILE("file", "File", "java.io"),
         FILE_OBJECT("file object", "JavaFileObject", "javax.tools"),
         PATH("path", "Path", "java.nio.file"),
+        PATTERN("pattern", "PatternDescription", "com.sun.tools.javac.comp.ExhaustivenessComputer"),
         NAME("name", "Name", "com.sun.tools.javac.util"),
         LONG("long", "long", null),
         NUMBER("number", "int", null),

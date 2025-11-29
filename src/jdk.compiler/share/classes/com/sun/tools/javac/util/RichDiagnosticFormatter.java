@@ -47,8 +47,12 @@ import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
+import com.sun.tools.javac.comp.ExhaustivenessComputer.BindingPattern;
+import com.sun.tools.javac.comp.ExhaustivenessComputer.EnumConstantPattern;
+import com.sun.tools.javac.comp.ExhaustivenessComputer.RecordPattern;
 import static com.sun.tools.javac.util.LayoutCharacters.*;
 import static com.sun.tools.javac.util.RichDiagnosticFormatter.RichConfiguration.*;
+import java.util.Arrays;
 
 /**
  * A rich diagnostic formatter is a formatter that provides better integration
@@ -208,6 +212,7 @@ public class RichDiagnosticFormatter extends
      * @param arg the argument to be translated
      */
     protected void preprocessArgument(Object arg) {
+        //TODO: preprocess for patterns
         if (arg instanceof Type type) {
             preprocessType(type);
         }
@@ -224,6 +229,17 @@ public class RichDiagnosticFormatter extends
             for (Object o : iterable) {
                 preprocessArgument(o);
             }
+        }
+        else if (arg instanceof BindingPattern bp) {
+            preprocessArgument(bp.type());
+        }
+        else if (arg instanceof RecordPattern rp) {
+            preprocessArgument(rp.type());
+            Arrays.stream(rp.nested())
+                  .forEach(this::preprocessArgument);
+        }
+        else if (arg instanceof EnumConstantPattern ep) {
+            preprocessArgument(ep.type());
         }
     }
 
