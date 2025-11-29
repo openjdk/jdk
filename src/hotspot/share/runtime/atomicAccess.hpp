@@ -635,7 +635,6 @@ inline void AtomicAccess::dec(D volatile* dest, atomic_memory_order order) {
   STATIC_ASSERT(std::is_pointer<D>::value || std::is_integral<D>::value);
   using I = std::conditional_t<std::is_pointer<D>::value, ptrdiff_t, D>;
   // Assumes two's complement integer representation.
-  #pragma warning(suppress: 4146)
   AtomicAccess::add(dest, I(-1), order);
 }
 
@@ -652,7 +651,6 @@ inline D AtomicAccess::sub(D volatile* dest, I sub_value, atomic_memory_order or
   STATIC_ASSERT(sizeof(I) <= sizeof(AddendType));
   AddendType addend = sub_value;
   // Assumes two's complement integer representation.
-  #pragma warning(suppress: 4146) // In case AddendType is not signed.
   return AtomicAccess::add(dest, -addend, order);
 }
 
