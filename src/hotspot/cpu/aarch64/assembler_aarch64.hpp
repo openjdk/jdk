@@ -2962,6 +2962,18 @@ template<typename R, typename... Rx>
     rf(Vn, 5), rf(Vd, 0);
   }
 
+  // frecps - Floating-point Reciprocal Step
+  void frecps(FloatRegister Vd, FloatRegister Vn, FloatRegister Vm, SIMD_RegVariant type) {
+    assert(type == D || type == S, "Wrong type for frecps");
+    starti;
+    f(0b010111100, 31, 23),
+    f(type == D ? 1 : 0, 22);
+    f(1, 21);
+    rf(Vm, 16);
+    f(0b111111, 15, 10);
+    rf(Vn, 5), rf(Vd, 0);
+  }
+
   // (long) {a, b} -> (a + b)
   void addpd(FloatRegister Vd, FloatRegister Vn) {
     starti;
