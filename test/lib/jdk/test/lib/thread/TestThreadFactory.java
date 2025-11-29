@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,27 @@ import java.util.concurrent.ThreadFactory;
 
 public class TestThreadFactory {
 
-    private static ThreadFactory threadFactory = "Virtual".equals(System.getProperty("test.thread.factory"))
-            ? virtualThreadFactory() : platformThreadFactory();
+    public enum TestThreadFactoryType {
+        NONE, VIRTUAL
+    }
+
+    private final static TestThreadFactoryType testThreadFactoryType =
+            "Virtual".equals(System.getProperty("test.thread.factory"))
+                    ? TestThreadFactoryType.VIRTUAL
+                    : TestThreadFactoryType.NONE;
+
+    private final static ThreadFactory threadFactory =
+            testThreadFactoryType == TestThreadFactoryType.VIRTUAL
+                    ? virtualThreadFactory()
+                    : platformThreadFactory();
+
+    public static TestThreadFactoryType testThreadFactoryType() {
+        return testThreadFactoryType;
+    }
+
+    public static boolean isTestThreadFactorySet() {
+        return !testThreadFactoryType.equals(TestThreadFactoryType.NONE);
+    }
 
     public static Thread newThread(Runnable task) {
         return threadFactory.newThread(task);
