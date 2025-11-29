@@ -2459,7 +2459,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 this.signum() == result.signum()) :
             "Bad signum of this and/or its root.";
 
-        BigDecimal thisAbs = this.abs(), resAbs = result.abs();
+        BigDecimal rad = this.abs(), resAbs = result.abs();
         RoundingMode rm = mc.roundingMode;
         if (this.signum() < 0) {
             if (rm == RoundingMode.FLOOR) {
@@ -2467,6 +2467,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             } else if (mc.roundingMode == RoundingMode.CEILING) {
                 rm = RoundingMode.DOWN;
             }
+        }
+
+        if (n < 0) {
+            n = -n;
+            rad = ONE.divide(rad, result.scale * n, RoundingMode.DOWN);
         }
 
         BigDecimal ulp = resAbs.ulp();
@@ -2481,16 +2486,16 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         case DOWN:
         case FLOOR:
             assert
-                resAbs.pow(n).compareTo(thisAbs)     <= 0 &&
-                neighborUp.pow(n).compareTo(thisAbs) > 0:
+                resAbs.pow(n).compareTo(rad)     <= 0 &&
+                neighborUp.pow(n).compareTo(rad) > 0:
             "Power of result out for bounds rounding " + rm;
             return true;
 
         case UP:
         case CEILING:
             assert
-                resAbs.pow(n).compareTo(thisAbs)       >= 0 &&
-                neighborDown.pow(n).compareTo(thisAbs) < 0:
+                resAbs.pow(n).compareTo(rad)       >= 0 &&
+                neighborDown.pow(n).compareTo(rad) < 0:
             "Power of result out for bounds rounding " + rm;
             return true;
 
@@ -2498,9 +2503,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         case HALF_DOWN:
         case HALF_EVEN:
         case HALF_UP:
-            BigDecimal err = resAbs.pow(n).subtract(thisAbs).abs();
-            BigDecimal errUp = neighborUp.pow(n).subtract(thisAbs);
-            BigDecimal errDown =  thisAbs.subtract(neighborDown.pow(n));
+            BigDecimal err = resAbs.pow(n).subtract(rad).abs();
+            BigDecimal errUp = neighborUp.pow(n).subtract(rad);
+            BigDecimal errDown =  rad.subtract(neighborDown.pow(n));
             // All error values should be positive so don't need to
             // compare absolute values.
 
