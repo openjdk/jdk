@@ -48,13 +48,13 @@ class TrialParserFactory extends ParserFactory {
     }
 
     @Override
-    public JavacParser newParser(CharSequence input, boolean keepDocComments, boolean keepEndPos, boolean keepLineMap) {
+    public JavacParser newParser(CharSequence input, boolean keepDocComments, boolean keepLineMap) {
         com.sun.tools.javac.parser.Lexer lexer = scannerFactory.newScanner(input, keepDocComments);
-        return new TrialParser(this, lexer, keepDocComments, keepLineMap, keepEndPos);
+        return new TrialParser(this, lexer, keepDocComments, keepLineMap);
     }
 
     @Override
-    public JavacParser newParser(CharSequence input, boolean keepDocComments, boolean keepEndPos, boolean keepLineMap, boolean parseModuleInfo) {
-        return newParser(input, keepDocComments, keepEndPos, keepLineMap);
+    public JavacParser newParser(CharSequence input, boolean keepDocComments, boolean keepLineMap, boolean parseModuleInfo) {
+        return newParser(input, keepDocComments, keepLineMap);
     }
 }

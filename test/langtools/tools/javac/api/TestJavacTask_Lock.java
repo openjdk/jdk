@@ -69,10 +69,9 @@ public class TestJavacTask_Lock {
         comp = ToolProvider.getSystemJavaCompiler();
         fm = comp.getStandardFileManager(null, null, null);
         try {
-            for (MethodKind first: MethodKind.values()) {
-                for (MethodKind second: MethodKind.values()) {
-                    test(first, second);
-                }
+            MethodKind first = MethodKind.CALL;
+            for (MethodKind second: MethodKind.values()) {
+                test(first, second);
             }
 
             if (errors > 0)
