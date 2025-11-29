@@ -25,6 +25,7 @@
 
 package java.awt.image;
 
+import java.util.Objects;
 
 /**
  * The {@code Kernel} class defines a matrix that describes how a
@@ -59,7 +60,7 @@ public class Kernel implements Cloneable {
      * @param width         width of the kernel
      * @param height        height of the kernel
      * @param data          kernel data in row major order
-     * @throws IllegalArgumentException if {@code data} is null
+     * @throws NullPointerException if {@code data} is null
      * @throws IllegalArgumentException if {@code width} or {@code height}
      *         is not positive
      * @throws IllegalArgumentException if product of {@code width} and
@@ -69,9 +70,7 @@ public class Kernel implements Cloneable {
      *         {@code height}
      */
     public Kernel(int width, int height, float[] data) {
-        if (data == null) {
-            throw new IllegalArgumentException("Data must not be null");
-        }
+        Objects.requireNonNull(data, "Data must not be null");
         if ((width <= 0) || (height <= 0)) {
             throw new IllegalArgumentException("Invalid width or height");
         }
