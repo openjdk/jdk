@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -468,6 +469,7 @@ public:
   void print_codes(int flags = 0) const { print_codes_on(tty, flags); }
   void print_codes_on(outputStream* st, int flags = 0) const;
   void print_codes_on(int from, int to, outputStream* st, int flags = 0) const;
+  void print_opto_method_size(int size);
 
   // method parameters
   bool has_method_parameters() const
