@@ -375,16 +375,28 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
   }
 
-  if (UseSHA && VM_Version::supports_sha3()) {
-    // Auto-enable UseSHA3Intrinsics on hardware with performance benefit.
-    // Note that the evaluation of UseSHA3Intrinsics shows better performance
+  if (UseSHA) {
+    // No need to check VM_Version::supports_sha3(), since a fallback GPR intrinsic implementation is provided.
+    if (FLAG_IS_DEFAULT(UseSHA3Intrinsics)) {
+      FLAG_SET_DEFAULT(UseSHA3Intrinsics, true);
+    }
+  } else if (UseSHA3Intrinsics) {
+    // Matches the documented and tested behavior: the -UseSHA option disables all SHA intrinsics.
+    warning("UseSHA3Intrinsics requires that UseSHA is enabled.");
+    FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
+  }
+
+  if (UseSHA3Intrinsics && VM_Version::supports_sha3()) {
+    // Auto-enable UseSIMDForSHA3Intrinsic on hardware with performance benefit.
+    // Note that the evaluation of SHA3 extension Intrinsics shows better performance
     // on Apple and Qualcomm silicon but worse performance on Neoverse V1 and N2.
     if (_cpu == CPU_APPLE || _cpu == CPU_QUALCOMM) {  // Apple or Qualcomm silicon
-      if (FLAG_IS_DEFAULT(UseSHA3Intrinsics)) {
-        FLAG_SET_DEFAULT(UseSHA3Intrinsics, true);
+      if (FLAG_IS_DEFAULT(UseSIMDForSHA3Intrinsic)) {
+        FLAG_SET_DEFAULT(UseSIMDForSHA3Intrinsic, true);
       }
     }
-  } else if (UseSHA3Intrinsics && UseSIMDForSHA3Intrinsic) {
+  }
+  if (UseSHA3Intrinsics && UseSIMDForSHA3Intrinsic && !VM_Version::supports_sha3()) {
     warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
   }
