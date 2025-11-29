@@ -31,9 +31,42 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * The {@code Array} class provides static methods to dynamically create and
  * access Java arrays.
  *
- * <p>{@code Array} permits widening conversions to occur during a get or set
- * operation, but throws an {@code IllegalArgumentException} if a narrowing
- * conversion would occur.
+ * <p id="value-conversion">
+ * {@code Array} declares {@link #get get} and {@link #set set} access
+ * operations with overloads for all primitive types.  They convert their
+ * retrieved and new values depending on whether the array's component type
+ * is primitive or reference:
+ * <ul>
+ * <li>If the array component type is a primitive type P:
+ *     <ul>
+ *     <li>{@link #get get} wraps the retrieved value in an instance of the
+ *         {@linkplain java.lang##wrapperClass wrapper class} of P.
+ *     <li>The get overload for primitive type O converts the retrieved value
+ *         from P to O via an identity conversion (JLS {@jls 5.1.1}) or a
+ *         widening primitive conversion (JLS {@jls 5.1.2}), or throws an {@code
+ *         IllegalArgumentException} if no such conversion exists.
+ *     <li>{@link #set set} requires the new value to be an instance of a
+ *         wrapper class, or throws an {@code IllegalArgumentException}. The
+ *         new value is unwrapped (JLS {@jls 5.1.8}) to a value of the wrapper
+ *         class's corresponding primitive type I, and then converted from I to
+ *         P via an identity conversion or a widening primitive conversion, or
+ *         throws an {@code IllegalArgumentException} if no such conversion
+ *         exists.
+ *     <li>The set overload for primitive type I converts the new value from
+ *         I to P via an identity conversion or a widening primitive conversion,
+ *         or throws an {@code IllegalArgumentException} if no such conversion
+ *         exists.
+ *     </ul>
+ * <li>If the array component type is a reference type R:
+ *     <ul>
+ *     <li>{@code get} performs no conversion.
+ *     <li>The primitive get overloads throw an {@code IllegalArgumentException}.
+ *     <li>{@code set} converts the new value to R as if through a narrowing
+ *         reference conversion (JLS {@jls 5.1.6.3}), but throws an {@code
+ *         IllegalArgumentException} instead of a {@code ClassCastException}.
+ *     <li>The primitive set overloads throw an {@code IllegalArgumentException}.
+ *     </ul>
+ * </ul>
  *
  * @author Nakul Saraiya
  * @since 1.1
@@ -297,17 +330,17 @@ class Array {
 
     /**
      * Sets the value of the indexed component of the specified array
-     * object to the specified new value.  The new value is first
-     * automatically unwrapped if the array has a primitive component
-     * type.
+     * object to the specified new value after {@linkplain ##value-conversion
+     * possible conversions}.
+     *
      * @param array the array
      * @param index the index into the array
      * @param value the new value of the indexed component
      * @throws    NullPointerException If the specified object argument
      * is null
      * @throws    IllegalArgumentException If the specified object argument
-     * is not an array, or if the array component type is primitive and
-     * an unwrapping conversion fails
+     * is not an array, if the array component type is primitive and the
+     * unboxing conversion fails, or if the identity or widening conversion fails
      * @throws    ArrayIndexOutOfBoundsException If the specified {@code index}
      * argument is negative, or if it is greater than or equal to
      * the length of the specified array
