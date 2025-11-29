@@ -24,6 +24,7 @@
  */
 
 #include "asm/assembler.inline.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "compiler/disassembler.hpp"
 #include "code/compiledIC.hpp"
 #include "jvm.h"
@@ -1552,4 +1553,202 @@ void VM_Version::initialize_cpu_information(void) {
   os::snprintf_checked(_cpu_name, CPU_TYPE_DESC_BUF_SIZE, "s390 %s", VM_Version::get_model_string());
   os::snprintf_checked(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "s390 %s", cpu_info_string());
   _initialized = true;
+}
+
+bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
+  assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
+  switch(id) {
+    case vmIntrinsics::_ghash_processBlocks:
+      if (has_Crypto_GHASH()) {
+        return true;
+      }
+      break;
+    case vmIntrinsics::_aescrypt_encryptBlock:
+    case vmIntrinsics::_aescrypt_decryptBlock:
+    case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:
+    case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
+    case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:
+    case vmIntrinsics::_electronicCodeBook_decryptAESCrypt:
+    case vmIntrinsics::_galoisCounterMode_AESCrypt:
+      if(has_Crypto_AES()) {
+        return true;
+      }
+      break;
+    case vmIntrinsics::_counterMode_AESCrypt:
+      if(has_Crypto_AES_CTR()) {
+        return true;
+      }
+      break;
+    case vmIntrinsics::_sha_implCompress:
+      if(has_Crypto_SHA1() && has_Crypto_SHA()) {
+        return true;
+      }
+      break;
+    case vmIntrinsics::_sha2_implCompress:
+      if(has_Crypto_SHA256() && has_Crypto_SHA()) {
+        return true;
+      }
+      break;
+    case vmIntrinsics::_sha5_implCompress:
+      if(has_Crypto_SHA512() && has_Crypto_SHA()) {
+        return true;
+      }
+      break;
+    case vmIntrinsics::_digestBase_implCompressMB:
+      if((has_Crypto_SHA1() || has_Crypto_SHA256() || has_Crypto_SHA512()) && has_Crypto_SHA()) {
+        return true;
+      }
+      break;
+    case vmIntrinsics::_updateCRC32:
+    case vmIntrinsics::_updateBytesCRC32:
+    case vmIntrinsics::_updateByteBufferCRC32:
+    case vmIntrinsics::_updateBytesCRC32C:
+    case vmIntrinsics::_updateDirectByteBufferCRC32C:
+    case vmIntrinsics::_multiplyToLen:
+    case vmIntrinsics::_montgomeryMultiply:
+    case vmIntrinsics::_montgomerySquare:
+    case vmIntrinsics::_getShortUnaligned:
+    case vmIntrinsics::_getCharUnaligned:
+    case vmIntrinsics::_getIntUnaligned:
+    case vmIntrinsics::_getLongUnaligned:
+    case vmIntrinsics::_putShortUnaligned:
+    case vmIntrinsics::_putCharUnaligned:
+    case vmIntrinsics::_putIntUnaligned:
+    case vmIntrinsics::_putLongUnaligned:
+    case vmIntrinsics::_fmaD:
+    case vmIntrinsics::_fmaF:
+    case vmIntrinsics::_dabs:
+    case vmIntrinsics::_dsqrt:
+    case vmIntrinsics::_dsqrt_strict:
+    case vmIntrinsics::_dsin:
+    case vmIntrinsics::_dcos:
+    case vmIntrinsics::_dtan:
+    case vmIntrinsics::_dlog:
+    case vmIntrinsics::_dlog10:
+    case vmIntrinsics::_dexp:
+    case vmIntrinsics::_dpow:
+    case vmIntrinsics::_isInstance:
+    case vmIntrinsics::_floatToFloat16:
+    case vmIntrinsics::_float16ToFloat:
+    case vmIntrinsics::_dsinh:
+    case vmIntrinsics::_dtanh:
+    case vmIntrinsics::_dcbrt:
+    case vmIntrinsics::_Reference_get0:
+    case vmIntrinsics::_Preconditions_checkIndex:
+    case vmIntrinsics::_getReferenceVolatile:
+    case vmIntrinsics::_compareAndSetLong:
+    case vmIntrinsics::_compareAndSetInt:
+    case vmIntrinsics::_arraycopy:
+    case vmIntrinsics::_compareAndSetReference:
+    case vmIntrinsics::_equalsL:
+    case vmIntrinsics::_clone:
+    case vmIntrinsics::_getShort:
+    case vmIntrinsics::_getByte:
+    case vmIntrinsics::_getInt:
+    case vmIntrinsics::_reverseBytes_i:
+    case vmIntrinsics::_currentThread:
+    case vmIntrinsics::_getLong:
+    case vmIntrinsics::_getCharStringU:
+    case vmIntrinsics::_putCharStringU:
+    case vmIntrinsics::_getClass:
+    case vmIntrinsics::_max:
+    case vmIntrinsics::_getReferenceAcquire:
+    case vmIntrinsics::_putByte:
+    case vmIntrinsics::_compressStringC:
+    case vmIntrinsics::_numberOfLeadingZeros_l:
+    case vmIntrinsics::_numberOfLeadingZeros_i:
+    case vmIntrinsics::_getChar:
+    case vmIntrinsics::_putReferenceVolatile:
+    case vmIntrinsics::_maxL:
+    case vmIntrinsics::_currentCarrierThread:
+    case vmIntrinsics::_allocateUninitializedArray:
+    case vmIntrinsics::_min:
+    case vmIntrinsics::_doubleToRawLongBits:
+    case vmIntrinsics::_longBitsToDouble:
+    case vmIntrinsics::_indexOfL_char:
+    case vmIntrinsics::_Reference_refersTo0:
+    case vmIntrinsics::_getIntVolatile:
+    case vmIntrinsics::_getAndAddInt:
+    case vmIntrinsics::_hashCode:
+    case vmIntrinsics::_countPositives:
+    case vmIntrinsics::_allocateInstance:
+    case vmIntrinsics::_indexOfL:
+    case vmIntrinsics::_indexOfIL:
+    case vmIntrinsics::_putReferenceRelease:
+    case vmIntrinsics::_fullFence:
+    case vmIntrinsics::_storeStoreFence:
+    case vmIntrinsics::_storeFence:
+    case vmIntrinsics::_inflateStringC:
+    case vmIntrinsics::_getCallerClass:
+    case vmIntrinsics::_getSuperclass:
+    case vmIntrinsics::_numberOfTrailingZeros_i:
+    case vmIntrinsics::_numberOfTrailingZeros_l:
+    case vmIntrinsics::_compareToL:
+    case vmIntrinsics::_identityHashCode:
+    case vmIntrinsics::_currentTimeMillis:
+    case vmIntrinsics::_addExactL:
+    case vmIntrinsics::_intBitsToFloat:
+    case vmIntrinsics::_newArray:
+    case vmIntrinsics::_bitCount_i:
+    case vmIntrinsics::_getReference:
+    case vmIntrinsics::_copyOf:
+    case vmIntrinsics::_Preconditions_checkLongIndex:
+//    case vmIntrinsics::_vectorizedMismatch:
+    case vmIntrinsics::_PhantomReference_clear0:
+    case vmIntrinsics::_putInt:
+    case vmIntrinsics::_putLong:
+    case vmIntrinsics::_inflateStringB:
+    case vmIntrinsics::_blackhole:
+    case vmIntrinsics::_divideUnsigned_i:
+    case vmIntrinsics::_remainderUnsigned_i:
+    case vmIntrinsics::_divideUnsigned_l:
+    case vmIntrinsics::_remainderUnsigned_l:
+    case vmIntrinsics::_putChar:
+    case vmIntrinsics::_getCharVolatile:
+    case vmIntrinsics::_floatToRawIntBits:
+    case vmIntrinsics::_Class_cast:
+    case vmIntrinsics::_isAssignableFrom:
+    case vmIntrinsics::_copyOfRange:
+    case vmIntrinsics::_isHidden:
+    case vmIntrinsics::_putReference:
+    case vmIntrinsics::_isCompileConstant:
+    case vmIntrinsics::_getAndAddLong:
+    case vmIntrinsics::_getLongVolatile:
+    case vmIntrinsics::_nanoTime:
+    case vmIntrinsics::_reverseBytes_c:
+    case vmIntrinsics::_minL:
+    case vmIntrinsics::_equalsB:
+    case vmIntrinsics::_addExactI:
+    case vmIntrinsics::_iabs:
+    case vmIntrinsics::_getReferenceOpaque:
+    case vmIntrinsics::_compareAndExchangeReference:
+    case vmIntrinsics::_roundF:
+    case vmIntrinsics::_encodeAsciiArray:
+    case vmIntrinsics::_toBytesStringU:
+    case vmIntrinsics::_Reference_clear0:
+    case vmIntrinsics::_compressStringB:
+    case vmIntrinsics::_PhantomReference_refersTo0:
+    case vmIntrinsics::_getBoolean:
+    case vmIntrinsics::_putBoolean:
+    case vmIntrinsics::_getBooleanVolatile:
+    case vmIntrinsics::_putBooleanVolatile:
+    case vmIntrinsics::_getByteVolatile:
+    case vmIntrinsics::_getShortVolatile:
+    case vmIntrinsics::_floatToIntBits:
+    case vmIntrinsics::_getFloat:
+    case vmIntrinsics::_getFloatVolatile:
+    case vmIntrinsics::_doubleToLongBits:
+    case vmIntrinsics::_getDouble:
+    case vmIntrinsics::_getDoubleVolatile:
+    case vmIntrinsics::_bitCount_l:
+    case vmIntrinsics::_putShort:
+    case vmIntrinsics::_weakCompareAndSetReference:
+    case vmIntrinsics::_getAndSetReference:
+    case vmIntrinsics::_indexOfUL:
+    case vmIntrinsics::_profileBoolean:
+      return true;
+    default:
+      return false;
+  }
+  return false;
 }
