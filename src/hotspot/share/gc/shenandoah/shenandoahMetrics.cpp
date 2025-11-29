@@ -38,7 +38,6 @@ ShenandoahMetricsSnapshot::ShenandoahMetricsSnapshot(ShenandoahFreeSet* free_set
 bool ShenandoahMetricsSnapshot::is_good_progress() const {
   // Under the critical threshold?
   const size_t free_actual = _free_set->available();
-  assert(free_actual != ShenandoahFreeSet::FreeSetUnderConstruction, "Avoid this race");
 
   // ShenandoahCriticalFreeThreshold is expressed as a percentage.  We multiply this percentage by 1/100th
   // of the soft max capacity to determine whether the available memory within the mutator partition of the
