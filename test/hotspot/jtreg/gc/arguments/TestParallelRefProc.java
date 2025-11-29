@@ -28,7 +28,7 @@ package gc.arguments;
  * @summary Test defaults processing for -XX:+ParallelRefProcEnabled.
  * @library /test/lib
  * @library /
- * @requires vm.gc.Serial & vm.gc.G1
+ * @requires vm.gc == null
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI gc.arguments.TestParallelRefProc
