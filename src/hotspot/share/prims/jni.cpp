@@ -867,8 +867,8 @@ static void jni_invoke_static(JNIEnv *env, JavaValue* result, jobject receiver, 
   // Create object to hold arguments for the JavaCall, and associate it with
   // the jni parser
   ResourceMark rm(THREAD);
-  int number_of_parameters = method->size_of_parameters();
-  JavaCallArguments java_args(number_of_parameters);
+  int size_of_parameters = method->size_of_parameters();
+  JavaCallArguments java_args(size_of_parameters);
 
   assert(method->is_static(), "method should be static");
 

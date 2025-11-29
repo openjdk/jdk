@@ -729,6 +729,14 @@ int Method::extra_stack_words() {
   return extra_stack_entries() * Interpreter::stackElementSize;
 }
 
+u2 Method::number_of_parameters() const {
+  u2 count = 0;
+  for (SignatureStream ss(signature()); !ss.at_return_type(); ss.next()) {
+    count++;
+  }
+  return count;
+}
+
 bool Method::compute_has_loops_flag() {
   BytecodeStream bcs(methodHandle(Thread::current(), this));
   Bytecodes::Code bc;
