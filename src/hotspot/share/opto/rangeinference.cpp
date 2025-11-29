@@ -25,7 +25,6 @@
 #include "opto/rangeinference.hpp"
 #include "opto/type.hpp"
 #include "utilities/intn_t.hpp"
-#include "utilities/tuple.hpp"
 
 // If the cardinality of a TypeInt is below this threshold, use min widen, see
 // TypeIntPrototype<S, U>::normalize_widen
@@ -688,6 +687,8 @@ template class TypeIntPrototype<intn_t<1>, uintn_t<1>>;
 template class TypeIntPrototype<intn_t<2>, uintn_t<2>>;
 template class TypeIntPrototype<intn_t<3>, uintn_t<3>>;
 template class TypeIntPrototype<intn_t<4>, uintn_t<4>>;
+template class TypeIntPrototype<intn_t<5>, uintn_t<5>>;
+template class TypeIntPrototype<intn_t<6>, uintn_t<6>>;
 
 // Compute the meet of 2 types. When dual is true, the subset relation in CT is
 // reversed. This means that the result of 2 CTs would be the intersection of
@@ -709,10 +710,7 @@ const Type* TypeIntHelper::int_type_xmeet(const CT* i1, const Type* t2) {
 
     if (!i1->_is_dual) {
       // meet (a.k.a union)
-      return CT::make_or_top(TypeIntPrototype<S, U>{{MIN2(i1->_lo, i2->_lo), MAX2(i1->_hi, i2->_hi)},
-                                                    {MIN2(i1->_ulo, i2->_ulo), MAX2(i1->_uhi, i2->_uhi)},
-                                                    {i1->_bits._zeros & i2->_bits._zeros, i1->_bits._ones & i2->_bits._ones}},
-                             MAX2(i1->_widen, i2->_widen), false);
+      return int_type_union(i1, i2);
     } else {
       // join (a.k.a intersection)
       return CT::make_or_top(TypeIntPrototype<S, U>{{MAX2(i1->_lo, i2->_lo), MIN2(i1->_hi, i2->_hi)},
