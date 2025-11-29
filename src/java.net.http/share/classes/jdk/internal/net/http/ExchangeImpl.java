@@ -581,6 +581,18 @@ abstract class ExchangeImpl<T> {
         // Needed for HTTP/2 to subscribe a dummy subscriber and close the stream
     }
 
+    /**
+     * {@return {@code true}, if it is allowed to cancel the request timer on
+     * response body subscriber termination; {@code false}, otherwise}
+     *
+     * @param webSocket indicates if the associated request is a WebSocket handshake
+     * @param statusCode the status code of the associated response
+     */
+    static boolean cancelTimerOnResponseBodySubscriberTermination(
+            boolean webSocket, int statusCode) {
+        return webSocket || statusCode < 100 || statusCode >= 200;
+    }
+
     /* The following methods have separate HTTP/1.1 and HTTP/2 implementations */
 
     abstract CompletableFuture<ExchangeImpl<T>> sendHeadersAsync();
