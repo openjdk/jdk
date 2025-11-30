@@ -23,6 +23,8 @@
  * questions.
  */
 
+// -- This file was mechanically generated: Do not edit! -- //
+
 package java.util;
 
 import java.util.concurrent.CountedCompleter;
@@ -39,8 +41,49 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *
  * There are also additional algorithms, invoked from the Dual-Pivot
  * Quicksort such as merging sort, sorting network, heap sort, mixed
- * (pin, simple and pair) insertion sort, counting sort and parallel
- * merge sort.
+ * insertion sort, counting sort and parallel merge sort. The actual
+ * sorting algorithm depends on the data type and array size.<p>
+ *
+ * <b>Type: int/long/float/double</b><p>
+ *
+ * If the array size is small, invoke mixed insertion sort on non-leftmost
+ * parts or insertion sort on leftmost part.<p>
+ *
+ * Then try merging sort which is the best on almost sorted arrays.<p>
+ *
+ * On the next step check the recursion depth to avoid quadratic time
+ * with heap sort.<p>
+ *
+ * Then apply Quicksort with two pivots on random data, otherwise
+ * run one-pivot Quicksort.<p>
+ *
+ * <b>Type: float/double</b><p>
+ *
+ * Floating-point values require additional steps to process
+ * negative zeros -0.0 and NaNs (Not-a-Number) before sorting and
+ * re-arrange negative zeros at the end.<p>
+ *
+ * <b>Type: byte</b><p>
+ *
+ * Invoke insertion sort, if the array size is small, otherwise switch
+ * to counting sort.<p>
+ *
+ * <b>Type: char/short</b><p>
+ *
+ * Invoke counting sort on large array, otherwise run insertion sort
+ * on small array.<p>
+ *
+ * On the next step check the recursion depth to avoid quadratic time
+ * with counting sort.<p>
+ *
+ * Then apply Quicksort with two pivots on random data, otherwise
+ * run one-pivot Quicksort.<p>
+ *
+ * <b>Parallel sorting (int/long/float/double)</b><p>
+ *
+ * If the array size is small, sequential sort is run. Otherwise
+ * invoke parallel merge sort (the recursion depth depends on
+ * parallelism level), then run parallel Quicksort.
  *
  * @author Vladimir Yaroslavskiy
  * @author Jon Bentley
@@ -61,19 +104,19 @@ final class DualPivotQuicksort {
     /* --------------------- Insertion sort --------------------- */
 
     /**
-     * Max size of array to use insertion sort (the best for shuffle data).
+     * Max size of array to use insertion sort (the best on shuffle data).
      */
-    private static final int MAX_INSERTION_SORT_SIZE = 51;
+    private static final int MAX_INSERTION_SORT_SIZE = 37;
 
     /* ---------------------- Merging sort ---------------------- */
 
     /**
-     * Min size of array to use merging sort (the best for stagger data).
+     * Min size of array to use merging sort (the best on stagger data).
      */
     private static final int MIN_MERGING_SORT_SIZE = 512;
 
     /**
-     * Min size of run to continue scanning (the best for stagger data).
+     * Min size of run to continue scanning (the best on stagger data).
      */
     private static final int MIN_RUN_SIZE = 64;
 
@@ -85,19 +128,19 @@ final class DualPivotQuicksort {
     /* ---------------------- Digital sort ---------------------- */
 
     /**
-     * Min size of array to use counting sort (the best for random data).
+     * Min size of array to use counting sort (the best on random data).
      */
     private static final int MIN_COUNTING_SORT_SIZE = 640;
 
     /**
-     * Min size of array to use numerical sort (the best for repeated data).
+     * Min size of array to use numerical sort (the best on repeated data).
      */
     private static final int MIN_NUMERICAL_SORT_SIZE = 9 << 10;
 
     /* --------------------- Parallel sort ---------------------- */
 
     /**
-     * Min size of array to perform sorting in parallel (the best for stagger data).
+     * Min size of array to perform sorting in parallel (the best on stagger data).
      */
     private static final int MIN_PARALLEL_SORT_SIZE = 3 << 10;
 
@@ -205,6 +248,8 @@ final class DualPivotQuicksort {
         return po.partition(a, low, high, pivotIndex1, pivotIndex2);
     }
 
+// #[int]
+
     /**
      * Sorts the specified range of the array using parallel merge
      * sort and/or Dual-Pivot Quicksort.<p>
@@ -252,9 +297,9 @@ final class DualPivotQuicksort {
             }
 
             /*
-             * Invoke insertion sort on small leftmost part.
+             * Invoke adaptive insertion sort on small leftmost part.
              */
-            if (size < MAX_INSERTION_SORT_SIZE) {
+            if (size < MAX_INSERTION_SORT_SIZE + bits * 5) {
                 sort(int.class, a, Unsafe.ARRAY_INT_BASE_OFFSET,
                     low, high, DualPivotQuicksort::insertionSort);
                 return;
@@ -546,8 +591,8 @@ final class DualPivotQuicksort {
     /**
      * Sorts the specified range of the array using mixed insertion sort.<p>
      *
-     * Mixed insertion sort is combination of pin insertion sort,
-     * simple insertion sort and pair insertion sort.<p>
+     * Mixed insertion sort is combination of pin insertion sort
+     * and pair insertion sort.<p>
      *
      * In the context of Dual-Pivot Quicksort, the pivot element
      * from the left part plays the role of sentinel, because it
@@ -561,24 +606,9 @@ final class DualPivotQuicksort {
      */
     static void mixedInsertionSort(int[] a, int low, int high) {
         /*
-         * Split part for pin and pair insertion sorts.
+         * Split the array for pin and pair insertion sorts.
          */
-        int end = high - 3 * ((high - low) >> 3 << 1);
-
-        /*
-         * Invoke simple insertion sort on small part.
-         */
-        if (end == high) {
-            for (int i; ++low < high; ) {
-                int ai = a[i = low];
-
-                while (ai < a[i - 1]) {
-                    a[i] = a[--i];
-                }
-                a[i] = ai;
-            }
-            return;
-        }
+        int end = high - ((3 * ((high - low) >> 2)) & ~1);
 
         /*
          * Start with pin insertion sort.
@@ -1058,9 +1088,9 @@ final class DualPivotQuicksort {
             }
 
             /*
-             * Invoke insertion sort on small leftmost part.
+             * Invoke adaptive insertion sort on small leftmost part.
              */
-            if (size < MAX_INSERTION_SORT_SIZE) {
+            if (size < MAX_INSERTION_SORT_SIZE + bits * 5) {
                 sort(long.class, a, Unsafe.ARRAY_LONG_BASE_OFFSET,
                     low, high, DualPivotQuicksort::insertionSort);
                 return;
@@ -1352,8 +1382,8 @@ final class DualPivotQuicksort {
     /**
      * Sorts the specified range of the array using mixed insertion sort.<p>
      *
-     * Mixed insertion sort is combination of pin insertion sort,
-     * simple insertion sort and pair insertion sort.<p>
+     * Mixed insertion sort is combination of pin insertion sort
+     * and pair insertion sort.<p>
      *
      * In the context of Dual-Pivot Quicksort, the pivot element
      * from the left part plays the role of sentinel, because it
@@ -1367,24 +1397,9 @@ final class DualPivotQuicksort {
      */
     static void mixedInsertionSort(long[] a, int low, int high) {
         /*
-         * Split part for pin and pair insertion sorts.
+         * Split the array for pin and pair insertion sorts.
          */
-        int end = high - 3 * ((high - low) >> 3 << 1);
-
-        /*
-         * Invoke simple insertion sort on small part.
-         */
-        if (end == high) {
-            for (int i; ++low < high; ) {
-                long ai = a[i = low];
-
-                while (ai < a[i - 1]) {
-                    a[i] = a[--i];
-                }
-                a[i] = ai;
-            }
-            return;
-        }
+        int end = high - ((3 * ((high - low) >> 2)) & ~1);
 
         /*
          * Start with pin insertion sort.
@@ -2009,7 +2024,7 @@ final class DualPivotQuicksort {
 
             } else { // Partitioning with one pivot
 
-                indices = partitionWithOnePivot(a, low, high, e3);
+                indices = partitionWithOnePivot(a, low, high, e3, e3);
 
                 /*
                  * Sort the right part (possibly in parallel), excluding
@@ -2117,11 +2132,12 @@ final class DualPivotQuicksort {
      * @param a the array for partitioning
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
-     * @param pivotIndex the index of single pivot
+     * @param pivotIndex1 the index of single pivot
+     * @param pivotIndex2 the index of single pivot
      * @return indices of parts after partitioning
      */
     private static int[] partitionWithOnePivot(
-            char[] a, int low, int high, int pivotIndex) {
+            char[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
         /*
          * Pointers to the right and left parts.
          */
@@ -2132,7 +2148,7 @@ final class DualPivotQuicksort {
          * Use the third of the five sorted elements as the pivot.
          * This value is inexpensive approximation of the median.
          */
-        char pivot = a[pivotIndex];
+        char pivot = a[pivotIndex1];
 
         /*
          * The first element to be sorted is moved to the
@@ -2141,7 +2157,7 @@ final class DualPivotQuicksort {
          * back into its final position, and excluded from
          * the next subsequent sorting.
          */
-        a[pivotIndex] = a[lower];
+        a[pivotIndex1] = a[lower];
 
         /*
          * Dutch National Flag partitioning
@@ -2254,8 +2270,8 @@ final class DualPivotQuicksort {
             int[] count2 = new int[1 << 8];
 
             for (int i = low; i < high; ++i) {
-                ++count1[ a[i]        & 0xFF];
-                ++count2[(a[i] >>> 8) & 0xFF];
+                ++count1[  a[i]        & 0xFF];
+                ++count2[((a[i] >>> 8) & 0xFF)];
             }
 
             /*
@@ -2279,11 +2295,11 @@ final class DualPivotQuicksort {
             if (processDigit2) {
                 if (processDigit1) {
                     for (int i = size; i > 0; ) {
-                        a[--count2[(b[--i] >>> 8) & 0xFF]] = b[i];
+                        a[--count2[((b[--i] >>> 8) & 0xFF)]] = b[i];
                     }
                 } else {
                     for (int i = high; i > low; ) {
-                        b[--count2[(a[--i] >>> 8) & 0xFF] - low] = a[i];
+                        b[--count2[((a[--i] >>> 8) & 0xFF)] - low] = a[i];
                     }
                 }
             }
@@ -2295,38 +2311,6 @@ final class DualPivotQuicksort {
                 System.arraycopy(b, 0, a, low, size);
             }
         }
-    }
-
-    /**
-     * Checks the count array and then computes the histogram.
-     *
-     * @param count the count array
-     * @param total the total number of elements
-     * @param low the index of the first element, inclusive
-     * @return {@code true} if the digit must be processed, otherwise {@code false}
-     */
-    private static boolean processDigit(int[] count, int total, int low) {
-        /*
-         * Check if we can skip the given digit.
-         */
-        for (int c : count) {
-            if (c == total) {
-                return false;
-            }
-            if (c > 0) {
-                break;
-            }
-        }
-
-        /*
-         * Compute the histogram.
-         */
-        count[0] += low;
-
-        for (int i = 0; ++i < count.length; ) {
-            count[i] += count[i - 1];
-        }
-        return true;
     }
 
 // #[short]
@@ -2454,7 +2438,7 @@ final class DualPivotQuicksort {
 
             } else { // Partitioning with one pivot
 
-                indices = partitionWithOnePivot(a, low, high, e3);
+                indices = partitionWithOnePivot(a, low, high, e3, e3);
 
                 /*
                  * Sort the right part (possibly in parallel), excluding
@@ -2562,11 +2546,12 @@ final class DualPivotQuicksort {
      * @param a the array for partitioning
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
-     * @param pivotIndex the index of single pivot
+     * @param pivotIndex1 the index of single pivot
+     * @param pivotIndex2 the index of single pivot
      * @return indices of parts after partitioning
      */
     private static int[] partitionWithOnePivot(
-            short[] a, int low, int high, int pivotIndex) {
+            short[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
         /*
          * Pointers to the right and left parts.
          */
@@ -2577,7 +2562,7 @@ final class DualPivotQuicksort {
          * Use the third of the five sorted elements as the pivot.
          * This value is inexpensive approximation of the median.
          */
-        short pivot = a[pivotIndex];
+        short pivot = a[pivotIndex1];
 
         /*
          * The first element to be sorted is moved to the
@@ -2586,7 +2571,7 @@ final class DualPivotQuicksort {
          * back into its final position, and excluded from
          * the next subsequent sorting.
          */
-        a[pivotIndex] = a[lower];
+        a[pivotIndex1] = a[lower];
 
         /*
          * Dutch National Flag partitioning
@@ -2766,7 +2751,7 @@ final class DualPivotQuicksort {
      */
     static void sort(float[] a, int parallelism, int low, int high) {
         /*
-         * Phase 1. Count the number of negative zero -0.0f,
+         * Phase 1. Count the number of negative zero -0.0,
          * turn them into positive zero, and move all NaNs
          * to the end of the array.
          */
@@ -2775,7 +2760,7 @@ final class DualPivotQuicksort {
         for (int k = high; k > low; ) {
             float ak = a[--k];
 
-            if (Float.floatToRawIntBits(ak) == FLOAT_NEGATIVE_ZERO) { // ak is -0.0f
+            if (Float.floatToRawIntBits(ak) == FLOAT_NEGATIVE_ZERO) { // ak is -0.0
                 negativeZeroCount++;
                 a[k] = 0.0f;
             } else if (ak != ak) { // ak is Not-a-Number (NaN)
@@ -2796,7 +2781,7 @@ final class DualPivotQuicksort {
 
         /*
          * Phase 3. Turn the required number of positive
-         * zeros 0.0f back into negative zeros -0.0f.
+         * zeros 0.0 back into negative zeros -0.0.
          */
         if (++negativeZeroCount == 1) {
             return;
@@ -2817,7 +2802,7 @@ final class DualPivotQuicksort {
         }
 
         /*
-         * Replace 0.0f by negative zeros -0.0f.
+         * Replace 0.0 by negative zeros -0.0.
          */
         while (--negativeZeroCount > 0) {
             a[++high] = -0.0f;
@@ -2848,9 +2833,9 @@ final class DualPivotQuicksort {
             }
 
             /*
-             * Invoke insertion sort on small leftmost part.
+             * Invoke adaptive insertion sort on small leftmost part.
              */
-            if (size < MAX_INSERTION_SORT_SIZE) {
+            if (size < MAX_INSERTION_SORT_SIZE + bits * 5) {
                 sort(float.class, a, Unsafe.ARRAY_FLOAT_BASE_OFFSET,
                     low, high, DualPivotQuicksort::insertionSort);
                 return;
@@ -3142,8 +3127,8 @@ final class DualPivotQuicksort {
     /**
      * Sorts the specified range of the array using mixed insertion sort.<p>
      *
-     * Mixed insertion sort is combination of pin insertion sort,
-     * simple insertion sort and pair insertion sort.<p>
+     * Mixed insertion sort is combination of pin insertion sort
+     * and pair insertion sort.<p>
      *
      * In the context of Dual-Pivot Quicksort, the pivot element
      * from the left part plays the role of sentinel, because it
@@ -3157,24 +3142,9 @@ final class DualPivotQuicksort {
      */
     static void mixedInsertionSort(float[] a, int low, int high) {
         /*
-         * Split part for pin and pair insertion sorts.
+         * Split the array for pin and pair insertion sorts.
          */
-        int end = high - 3 * ((high - low) >> 3 << 1);
-
-        /*
-         * Invoke simple insertion sort on small part.
-         */
-        if (end == high) {
-            for (int i; ++low < high; ) {
-                float ai = a[i = low];
-
-                while (ai < a[i - 1]) {
-                    a[i] = a[--i];
-                }
-                a[i] = ai;
-            }
-            return;
-        }
+        int end = high - ((3 * ((high - low) >> 2)) & ~1);
 
         /*
          * Start with pin insertion sort.
@@ -3629,7 +3599,7 @@ final class DualPivotQuicksort {
      */
     static void sort(double[] a, int parallelism, int low, int high) {
         /*
-         * Phase 1. Count the number of negative zero -0.0d,
+         * Phase 1. Count the number of negative zero -0.0,
          * turn them into positive zero, and move all NaNs
          * to the end of the array.
          */
@@ -3638,7 +3608,7 @@ final class DualPivotQuicksort {
         for (int k = high; k > low; ) {
             double ak = a[--k];
 
-            if (Double.doubleToRawLongBits(ak) == DOUBLE_NEGATIVE_ZERO) { // ak is -0.0d
+            if (Double.doubleToRawLongBits(ak) == DOUBLE_NEGATIVE_ZERO) { // ak is -0.0
                 negativeZeroCount++;
                 a[k] = 0.0d;
             } else if (ak != ak) { // ak is Not-a-Number (NaN)
@@ -3659,7 +3629,7 @@ final class DualPivotQuicksort {
 
         /*
          * Phase 3. Turn the required number of positive
-         * zeros 0.0d back into negative zeros -0.0d.
+         * zeros 0.0 back into negative zeros -0.0.
          */
         if (++negativeZeroCount == 1) {
             return;
@@ -3680,7 +3650,7 @@ final class DualPivotQuicksort {
         }
 
         /*
-         * Replace 0.0d by negative zeros -0.0d.
+         * Replace 0.0 by negative zeros -0.0.
          */
         while (--negativeZeroCount > 0) {
             a[++high] = -0.0d;
@@ -3711,9 +3681,9 @@ final class DualPivotQuicksort {
             }
 
             /*
-             * Invoke insertion sort on small leftmost part.
+             * Invoke adaptive insertion sort on small leftmost part.
              */
-            if (size < MAX_INSERTION_SORT_SIZE) {
+            if (size < MAX_INSERTION_SORT_SIZE + bits * 5) {
                 sort(double.class, a, Unsafe.ARRAY_DOUBLE_BASE_OFFSET,
                     low, high, DualPivotQuicksort::insertionSort);
                 return;
@@ -4005,8 +3975,8 @@ final class DualPivotQuicksort {
     /**
      * Sorts the specified range of the array using mixed insertion sort.<p>
      *
-     * Mixed insertion sort is combination of pin insertion sort,
-     * simple insertion sort and pair insertion sort.<p>
+     * Mixed insertion sort is combination of pin insertion sort
+     * and pair insertion sort.<p>
      *
      * In the context of Dual-Pivot Quicksort, the pivot element
      * from the left part plays the role of sentinel, because it
@@ -4020,24 +3990,9 @@ final class DualPivotQuicksort {
      */
     static void mixedInsertionSort(double[] a, int low, int high) {
         /*
-         * Split part for pin and pair insertion sorts.
+         * Split the array for pin and pair insertion sorts.
          */
-        int end = high - 3 * ((high - low) >> 3 << 1);
-
-        /*
-         * Invoke simple insertion sort on small part.
-         */
-        if (end == high) {
-            for (int i; ++low < high; ) {
-                double ai = a[i = low];
-
-                while (ai < a[i - 1]) {
-                    a[i] = a[--i];
-                }
-                a[i] = ai;
-            }
-            return;
-        }
+        int end = high - ((3 * ((high - low) >> 2)) & ~1);
 
         /*
          * Start with pin insertion sort.
@@ -4468,10 +4423,44 @@ final class DualPivotQuicksort {
         a[p] = value;
     }
 
+    /**
+     * Checks the count array and then computes the histogram.
+     *
+     * @param count the count array
+     * @param total the total number of elements
+     * @param low the index of the first element, inclusive
+     * @return {@code true} if the digit must be processed, otherwise {@code false}
+     */
+    private static boolean processDigit(int[] count, int total, int low) {
+        /*
+         * Check if we can skip the given digit.
+         */
+        for (int c : count) {
+            if (c == total) {
+                return false;
+            }
+            if (c > 0) {
+                break;
+            }
+        }
+
+        /*
+         * Compute the histogram.
+         */
+        count[0] += low;
+
+        for (int i = 0; ++i < count.length; ) {
+            count[i] += count[i - 1];
+        }
+        return true;
+    }
+
 // #[class]
 
     /**
      * Implementation of parallel sorting.
+     *
+     * @param <T> the class of array
      */
     private static final class Sorter<T> extends CountedCompleter<Void> {
 
@@ -4549,6 +4538,8 @@ final class DualPivotQuicksort {
 
     /**
      * Implementation of parallel merging.
+     *
+     * @param <T> the class of array
      */
     private static final class Merger<T> extends CountedCompleter<Void> {
 
