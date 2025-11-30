@@ -78,13 +78,13 @@ void ResolutionErrorTable::add_entry(const constantPoolHandle& pool, int cp_inde
 
 // create new nest host error entry
 void ResolutionErrorTable::add_entry(const constantPoolHandle& pool, int cp_index,
-                                     const char* message)
+                                     const char* nest_host_error)
 {
   assert_locked_or_safepoint(SystemDictionary_lock);
-  assert(!pool.is_null() && message != nullptr, "adding null obj");
+  assert(!pool.is_null() && nest_host_error != nullptr, "adding null obj");
 
   ResolutionErrorKey key(pool(), cp_index);
-  ResolutionErrorEntry *entry = new ResolutionErrorEntry(message);
+  ResolutionErrorEntry *entry = new ResolutionErrorEntry(nest_host_error);
   _resolution_error_table->put(key, entry);
 }
 
@@ -108,22 +108,22 @@ ResolutionErrorEntry::ResolutionErrorEntry(Symbol* error, const char* message,
   Symbol::maybe_increment_refcount(_cause);
 }
 
+ResolutionErrorEntry::ResolutionErrorEntry(const char* nest_host_error):
+        _error(nullptr),
+        _message(nullptr),
+        _cause(nullptr),
+        _cause_msg(nullptr),
+        _nest_host_error(nest_host_error) {
+}
+
 ResolutionErrorEntry::~ResolutionErrorEntry() {
   // decrement error refcount
   Symbol::maybe_decrement_refcount(_error);
   Symbol::maybe_decrement_refcount(_cause);
 
-  if (_message != nullptr) {
-    FREE_C_HEAP_ARRAY(char, _message);
-  }
-
-  if (_cause_msg != nullptr) {
-    FREE_C_HEAP_ARRAY(char, _cause_msg);
-  }
-
-  if (nest_host_error() != nullptr) {
-    FREE_C_HEAP_ARRAY(char, nest_host_error());
-  }
+  FREE_C_HEAP_ARRAY(char, _message);
+  FREE_C_HEAP_ARRAY(char, _cause_msg);
+  FREE_C_HEAP_ARRAY(char, _nest_host_error);
 }
 
 class ResolutionErrorDeleteIterate : StackObj {
