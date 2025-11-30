@@ -29,36 +29,30 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.invoke.*;
-import java.lang.reflect.Field;
 
-/// Indicates all instance final fields in the annotated class should be trusted
-/// as constants by compilers in `ciField::is_constant`.
+/// Indicates all instance final fields declared in the annotated class should
+/// be trusted as constants by compilers in `ciField::is_constant`.
 ///
 /// The compiler already treats static final fields and instance final fields in
 /// record classes and hidden classes as constant.  All classes in select
 /// packages (Defined in `trust_final_non_static_fields` in `ciField.cpp`) in
-/// the boot class loader also have their instance final fields trusted.
+/// the boot class loader also have their instance final fields trusted.  This
+/// annotation is not necessary in these cases.
 ///
 /// The [Stable] annotation treats fields as constants once they are not the
-/// zero or null value.  In comparison, a final instance field trusted by this
-/// annotation can trust zero and null values.
+/// zero or null value.  In comparison, a non-stable final instance field
+/// trusted by this annotation can treat zero and null values as constants.
 ///
-/// As a result, this should be used on classes where package-wide trusting is
-/// not possible due to backward compatibility concerns, such as for `java.util`
-/// classes.
+/// This annotation is suitable when constant treatment of final fields is
+/// performance sensitive, yet package-wide final field constant treatment may
+/// be at risk from user final field modifications.
 ///
-/// A separate flag [Field#isTrustedFinal()] prevents core reflection from
-/// modifying the value of a field via [Field#set].  ([VarHandle] already blocks
-/// modification for all `final` fields, and [MethodHandle] setter for trusted
-/// final fields can only be created with the `IMPL_LOOKUP`)  This is currently
-/// handled by `fieldDescriptor::is_trusted_final`, distinct from the trusting
-/// mechanism in the compiler.  This mechanism protects the static final fields
-/// and instance final fields in record and hidden classes, but does not cover
-/// stable fields, final fields in the classes in the select packages, or final
-/// fields in classes specified by this annotation.
+/// See `constant-folding.md` design document in the same directory as this file
+/// for an overview and the best practices around constant folding, including
+/// for this annotation.
 ///
-/// This annotation is only recognized on privileged code and is ignored elsewhere.
+/// This annotation is only recognized on classes from the boot and platform
+/// class loaders and is ignored elsewhere.
 ///
 /// @since 26
 @Retention(RetentionPolicy.RUNTIME)
