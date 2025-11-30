@@ -114,6 +114,7 @@ intx AOTMetaspace::_relocation_delta;
 char* AOTMetaspace::_requested_base_address;
 Array<Method*>* AOTMetaspace::_archived_method_handle_intrinsics = nullptr;
 bool AOTMetaspace::_use_optimized_module_handling = true;
+int volatile AOTMetaspace::_preimage_static_archive_dumped = 0;
 FileMapInfo* AOTMetaspace::_output_mapinfo = nullptr;
 
 // The CDS archive is divided into the following regions:
@@ -1056,7 +1057,21 @@ void AOTMetaspace::exercise_runtime_cds_code(TRAPS) {
   CDSProtectionDomain::to_file_URL("dummy.jar", Handle(), CHECK);
 }
 
+bool AOTMetaspace::preimage_static_archive_dumped() {
+  assert(CDSConfig::is_dumping_preimage_static_archive(), "Required");
+  return AtomicAccess::load_acquire(&_preimage_static_archive_dumped) == 1;
+}
+
 void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS) {
+  if (CDSConfig::is_dumping_preimage_static_archive()) {
+    // When dumping to the AOT configuration file ensure this function is only executed once.
+    // Multiple invocations may happen via JCmd, during VM exit or other means (in the future)
+    // from different threads and possibly concurrently.
+    if (AtomicAccess::cmpxchg(&_preimage_static_archive_dumped, 0, 1) != 0) {
+      return;
+    }
+  }
+
   if (CDSConfig::is_dumping_classic_static_archive()) {
     // We are running with -Xshare:dump
     load_classes(CHECK);
@@ -1355,8 +1370,11 @@ bool AOTMetaspace::try_link_class(JavaThread* current, InstanceKlass* ik) {
     ik->link_class(THREAD);
     if (HAS_PENDING_EXCEPTION) {
       ResourceMark rm(THREAD);
-      aot_log_warning(aot)("Preload Warning: Verification failed for %s",
-                    ik->external_name());
+      oop message = java_lang_Throwable::message(current->pending_exception());
+      aot_log_warning(aot)("Preload Warning: Verification failed for %s because a %s was thrown: %s",
+                            ik->external_name(),
+                            current->pending_exception()->klass()->external_name(),
+                            message == nullptr ? "(no message)" : java_lang_String::as_utf8_string(message));
       CLEAR_PENDING_EXCEPTION;
       SystemDictionaryShared::set_class_has_failed_verification(ik);
     } else {
