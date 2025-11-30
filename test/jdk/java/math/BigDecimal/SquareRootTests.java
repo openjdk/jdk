@@ -201,9 +201,9 @@ public class SquareRootTests {
             BigDecimal bd2 = bd1.multiply(ONE_TENTH);
 
             for (BigDecimal bd : List.of(bd0, bd1, bd2)) {
-                for (int precision = 1; i < 20; i++) {
+                for (int prec = 1; prec < 20; prec++) {
                     for (RoundingMode rm : modes) {
-                        MathContext mc = new MathContext(precision, rm);
+                        MathContext mc = new MathContext(prec, rm);
                         failures += compareSqrtImplementations(bd, mc);
                     }
                 }
