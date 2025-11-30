@@ -2454,24 +2454,19 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * </ul>
      */
     private boolean rootnResultAssertions(BigDecimal result, MathContext mc, int n) {
-        // The starting value and result should be nonzero and have the same sign.
-        assert (result.signum() != 0 &&
-                this.signum() == result.signum()) :
-            "Bad signum of this and/or its root.";
-
         BigDecimal rad = this.abs(), resAbs = result.abs();
         RoundingMode rm = mc.roundingMode;
         if (this.signum() < 0) {
             if (rm == RoundingMode.FLOOR) {
                 rm = RoundingMode.UP;
-            } else if (mc.roundingMode == RoundingMode.CEILING) {
+            } else if (rm == RoundingMode.CEILING) {
                 rm = RoundingMode.DOWN;
             }
         }
 
+        int nAbs = Math.abs(n);
         if (n < 0) {
-            n = -n;
-            rad = ONE.divide(rad, result.scale * n, RoundingMode.DOWN);
+            rad = ONE.divide(rad, result.scale * nAbs, RoundingMode.DOWN);
         }
 
         BigDecimal ulp = resAbs.ulp();
@@ -2486,26 +2481,30 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         case DOWN:
         case FLOOR:
             assert
-                resAbs.pow(n).compareTo(rad)     <= 0 &&
-                neighborUp.pow(n).compareTo(rad) > 0:
-            "Power of result out for bounds rounding " + rm;
+                resAbs.pow(nAbs).compareTo(rad)     <= 0 &&
+                (n > 0
+                        ? neighborUp.pow(nAbs).compareTo(rad) >  0
+                        : neighborUp.pow(nAbs).compareTo(rad) >= 0) // Inverse radicand is not exact
+                : "Power of result out for bounds rounding " + rm;
             return true;
 
         case UP:
         case CEILING:
             assert
-                resAbs.pow(n).compareTo(rad)       >= 0 &&
-                neighborDown.pow(n).compareTo(rad) < 0:
-            "Power of result out for bounds rounding " + rm;
+                resAbs.pow(nAbs).compareTo(rad)       >= 0 &&
+                (n > 0
+                        ? neighborDown.pow(nAbs).compareTo(rad) <  0
+                        : neighborDown.pow(nAbs).compareTo(rad) <= 0) // Inverse radicand is not exact
+                : "Power of result out for bounds rounding " + rm;
             return true;
 
 
         case HALF_DOWN:
         case HALF_EVEN:
         case HALF_UP:
-            BigDecimal err = resAbs.pow(n).subtract(rad).abs();
-            BigDecimal errUp = neighborUp.pow(n).subtract(rad);
-            BigDecimal errDown =  rad.subtract(neighborDown.pow(n));
+            BigDecimal err = resAbs.pow(nAbs).subtract(rad).abs();
+            BigDecimal errUp = neighborUp.pow(nAbs).subtract(rad);
+            BigDecimal errDown =  rad.subtract(neighborDown.pow(nAbs));
             // All error values should be positive so don't need to
             // compare absolute values.
 

@@ -31,7 +31,8 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
 import java.math.RoundingMode;
-import java.util.List;
+import java.util.*;
+import java.util.stream.IntStream;
 
 import static java.math.BigDecimal.ONE;
 import static java.math.BigDecimal.TWO;
@@ -142,31 +143,38 @@ public class SquareRootTests {
         return failures;
     }
 
+    private static RoundingMode positiveRoundingMode(RoundingMode rm) {
+        return rm == RoundingMode.FLOOR   ? RoundingMode.UP :
+               rm == RoundingMode.CEILING ? RoundingMode.DOWN : rm;
+    }
+
     /**
-     * Probe inputs with one digit of precision, 1 ... 9 and those
-     * values scaled by 10^-1, 0.1, ... 0.9.
+     * Probe inputs with one digit of precision, ±1 ... ±9 and those
+     * values scaled by 10^-1, ±0.1, ... ±0.9.
      */
     private static int oneDigitTests() {
         int failures = 0;
 
-        List<BigDecimal> oneToNine =
-            List.of(ONE,        TWO,        valueOf(3),
-                    valueOf(4), valueOf(5), valueOf(6),
-                    valueOf(7), valueOf(8), valueOf(9));
-
-        List<RoundingMode> modes =
-            List.of(RoundingMode.UP,      RoundingMode.DOWN,
-                    RoundingMode.CEILING, RoundingMode.FLOOR,
-                    RoundingMode.HALF_UP, RoundingMode.HALF_DOWN, RoundingMode.HALF_EVEN);
+        List<BigDecimal> oneToNine = IntStream.rangeClosed(1, 9).mapToObj(BigDecimal::valueOf).toList();
+        List<RoundingMode> modes = new ArrayList<>(Arrays.asList(RoundingMode.values()));
+        modes.remove(RoundingMode.UNNECESSARY);
 
         for (int i = 1; i < 20; i++) {
             for (RoundingMode rm : modes) {
+                MathContext mc = new MathContext(i, rm);
+                MathContext positiveMC = new MathContext(i, positiveRoundingMode(rm));
                 for (BigDecimal bd  : oneToNine) {
-                    MathContext mc = new MathContext(i, rm);
+                    failures += compareSqrtImplementations(bd, mc);
+                    BigDecimal minus_bd = bd.negate();
+                    System.out.println(minus_bd + " " + mc);
+                    failures += compare(minus_bd.rootn( 3, mc), bd.rootn( 3, positiveMC).negate(), true, "one digit");
+                    failures += compare(minus_bd.rootn(-3, mc), bd.rootn(-3, positiveMC).negate(), true, "one digit");
 
+                    bd = bd.scaleByPowerOfTen(-1);
                     failures += compareSqrtImplementations(bd, mc);
-                    bd = bd.multiply(ONE_TENTH);
-                    failures += compareSqrtImplementations(bd, mc);
+                    minus_bd = bd.negate();
+                    failures += compare(minus_bd.rootn( 3, mc), bd.rootn( 3, positiveMC).negate(), true, "one digit");
+                    failures += compare(minus_bd.rootn(-3, mc), bd.rootn(-3, positiveMC).negate(), true, "one digit");
                 }
             }
         }
