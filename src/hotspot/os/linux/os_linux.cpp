@@ -4958,7 +4958,7 @@ int os::open(const char *path, int oflag, int mode) {
   return fd;
 }
 
-// Since kernel v2.6.12 the Linux ABI have had support for encoding the clock types
+// Since kernel v2.6.12 the Linux ABI has had support for encoding the clock types
 // in the last three bits. Setting bit to 001 (CPUCLOCK_VIRT) will result in the kernel
 // returning only user time. POSIX compliant implementations of pthread_getcpuclockid
 // for the Linux kernel defaults to construct a clockid with 010 (CPUCLOCK_SCHED)
