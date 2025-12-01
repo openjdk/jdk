@@ -64,11 +64,10 @@ define CreateDebugSymbols
         endif
 
         ifeq ($(call isTargetOs, windows), true)
-          $1_EXTRA_LDFLAGS += -debug "-map:$$($1_SYMBOLS_DIR)/$$($1_BASENAME).map"
+          $1_EXTRA_LDFLAGS += -debug "-pdb:$$($1_SYMBOLS_DIR)/$$($1_BASENAME).pdb" \
+              "-map:$$($1_SYMBOLS_DIR)/$$($1_BASENAME).map"
           ifeq ($(SHIP_DEBUG_SYMBOLS), public)
-            $1_EXTRA_LDFLAGS += "-pdbstripped:$$($1_SYMBOLS_DIR)/$$($1_BASENAME).pdb" "-pdb:$$($1_SYMBOLS_DIR)/$$($1_BASENAME).full.pdb"
-          else
-            $1_EXTRA_LDFLAGS += "-pdb:$$($1_SYMBOLS_DIR)/$$($1_BASENAME).pdb"
+            $1_EXTRA_LDFLAGS += "-pdbstripped:$$($1_SYMBOLS_DIR)/$$($1_BASENAME).stripped.pdb"
           endif
         endif
 
