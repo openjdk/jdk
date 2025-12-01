@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, JetBrains s.r.o.. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,9 +68,17 @@ static jclass sjc_CAccessibility = NULL;
     jobject axComponent = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility,
                                                              sjm_getCurrentAccessiblePopupMenu,
                                                              fAccessible, fComponent);
+    CHECK_EXCEPTION();
+    if (axComponent == NULL) {
+        return nil;
+    }
 
     CommonComponentAccessibility *currentElement = [CommonComponentAccessibility createWithAccessible:axComponent
                                                             withEnv:env withView:self->fView isCurrent:YES];
+    (*env)->DeleteLocalRef(env, axComponent);
+    if (currentElement == nil) {
+        return nil;
+    }
 
     NSArray *children = [CommonComponentAccessibility childrenOfParent:currentElement
                                 withEnv:env
