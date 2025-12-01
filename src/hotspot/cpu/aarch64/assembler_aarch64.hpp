@@ -3159,7 +3159,7 @@ private:
     int h = (size == 0b01) ? ((lane >> 2) & 1) : ((lane >> 1) & 1);
     int l = (size == 0b01) ? ((lane >> 1) & 1) : (lane & 1);
     int m = lane & 1;
-    assert((size == 0b10 ? lane < 4 : lane < 7))
+    assert((size == 0b10 ? lane < 4 : lane < 7));
     f(0, 31), f(q, 30), f(1, 29), f(0b01111, 28, 24), f(size, 23, 22), f(l, 21), f(m, 20);
     rf(Vm, 16), f(0b1010, 15, 12), f(h, 11), f(0, 10), rf(Vn, 5), rf(Vd, 0);
   }
