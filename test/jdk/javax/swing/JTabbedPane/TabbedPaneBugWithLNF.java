@@ -27,7 +27,7 @@
  * @summary Verifies getBaseline causes NPE for Nimbus L&F
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @run main TabbedPaneBugWithLNF
+ * @run main/manual TabbedPaneBugWithLNF
  */
 
 import java.awt.event.ActionEvent;
