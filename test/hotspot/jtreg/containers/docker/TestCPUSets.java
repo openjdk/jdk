@@ -53,11 +53,8 @@ public class TestCPUSets {
     private static final String imageName = Common.imageName("cpusets");
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker() || !DockerTestUtils.canUseResourceLimits()) {
-            return;
-        }
-
-
+        DockerTestUtils.checkCanTestDocker();
+        DockerTestUtils.checkCanUseResourceLimits();
         Common.prepareWhiteBox();
         DockerTestUtils.buildJdkContainerImage(imageName);
 

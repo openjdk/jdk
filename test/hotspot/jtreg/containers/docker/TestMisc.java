@@ -49,10 +49,7 @@ public class TestMisc {
     private static final String imageName = Common.imageName("misc");
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker()) {
-            return;
-        }
-
+        DockerTestUtils.checkCanTestDocker();
         Common.prepareWhiteBox();
         DockerTestUtils.buildJdkContainerImage(imageName);
 
@@ -102,9 +99,7 @@ public class TestMisc {
     // a direct mapping there.
     private static void testPrintContainerInfoCPUShares() throws Exception {
         // Test won't work on cgv1 rootless since resource limits don't work there.
-        if (!DockerTestUtils.canUseResourceLimits()) {
-            return;
-        }
+        DockerTestUtils.checkCanUseResourceLimits();
         // Anything less than 1024 should return the back-mapped cpu-shares value without
         // rounding to next multiple of 1024 (on cg v2). Only ensure that we get
         // 'cpu_shares: <back-mapped-value>' over 'cpu_shares: no shares'.

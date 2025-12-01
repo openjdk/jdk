@@ -96,10 +96,7 @@ public class TestJcmdWithSideCar {
     private static final String NET_BIND_SERVICE = "--cap-add=NET_BIND_SERVICE";
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker()) {
-            return;
-        }
-
+        DockerTestUtils.checkCanTestDocker();
         DockerTestUtils.buildJdkContainerImage(IMAGE_NAME);
 
         try {

@@ -50,10 +50,8 @@ public class TestPidsLimit {
     private static final int UNLIMITED_PIDS_DOCKER = -1;
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker() || !DockerTestUtils.canUseResourceLimits()) {
-            return;
-        }
-
+        DockerTestUtils.checkCanTestDocker();
+        DockerTestUtils.checkCanUseResourceLimits();
         DockerTestUtils.buildJdkContainerImage(imageName);
 
         try {

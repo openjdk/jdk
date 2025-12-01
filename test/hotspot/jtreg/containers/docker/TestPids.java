@@ -55,10 +55,8 @@ public class TestPids {
     static final String warning_kernel_no_pids_support = "WARNING: Your kernel does not support pids limit capabilities";
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker() || !DockerTestUtils.canUseResourceLimits()) {
-            return;
-        }
-
+        DockerTestUtils.checkCanTestDocker();
+        DockerTestUtils.checkCanUseResourceLimits();
         Common.prepareWhiteBox();
         DockerTestUtils.buildJdkContainerImage(imageName);
 

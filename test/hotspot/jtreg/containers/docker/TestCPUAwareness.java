@@ -48,9 +48,8 @@ public class TestCPUAwareness {
     private static final int availableCPUs = Runtime.getRuntime().availableProcessors();
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker() || !DockerTestUtils.canUseResourceLimits()) {
-            return;
-        }
+        DockerTestUtils.checkCanTestDocker();
+        DockerTestUtils.checkCanUseResourceLimits();
 
         System.out.println("Test Environment: detected availableCPUs = " + availableCPUs);
         DockerTestUtils.buildJdkContainerImage(imageName);

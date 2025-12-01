@@ -43,10 +43,8 @@ public class TestDockerBasic {
     private static final String imageName = Common.imageName("javaDockerBasic");
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker() || !DockerTestUtils.canUseResourceLimits()) {
-            return;
-        }
-
+        DockerTestUtils.checkCanTestDocker();
+        DockerTestUtils.checkCanUseResourceLimits();
         DockerTestUtils.buildJdkContainerImage(imageName);
 
         try {

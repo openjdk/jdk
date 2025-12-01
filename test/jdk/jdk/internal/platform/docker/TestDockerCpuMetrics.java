@@ -46,9 +46,8 @@ public class TestDockerCpuMetrics {
     private static final String imageName = Common.imageName("metrics-cpu");
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker() || !DockerTestUtils.canUseResourceLimits()) {
-            return;
-        }
+        DockerTestUtils.checkCanTestDocker();
+        DockerTestUtils.checkCanUseResourceLimits();
 
         // These tests create a docker image and run this image with
         // varying docker cpu options.  The arguments passed to the docker

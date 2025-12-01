@@ -63,7 +63,7 @@ public class TestJcmd {
 
 
     public static void main(String[] args) throws Exception {
-        DockerTestUtils.canTestDocker();
+        DockerTestUtils.checkCanTestDocker();
 
         // podman versions below 3.3.1 hava a bug where cross-container testing with correct
         // permissions fails. See JDK-8273216

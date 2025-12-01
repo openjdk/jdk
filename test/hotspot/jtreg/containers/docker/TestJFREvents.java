@@ -62,9 +62,7 @@ public class TestJFREvents {
 
     public static void main(String[] args) throws Exception {
         System.out.println("Test Environment: detected availableCPUs = " + availableCPUs);
-        if (!DockerTestUtils.canTestDocker()) {
-            return;
-        }
+        DockerTestUtils.checkCanTestDocker();
 
         // If cgroups is not configured, report success.
         Metrics metrics = Metrics.systemMetrics();

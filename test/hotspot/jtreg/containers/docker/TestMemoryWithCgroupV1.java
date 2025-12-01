@@ -52,10 +52,8 @@ public class TestMemoryWithCgroupV1 {
             return;
         }
         if ("cgroupv1".equals(metrics.getProvider())) {
-            if (!DockerTestUtils.canTestDocker() || !DockerTestUtils.canUseResourceLimits()) {
-                return;
-            }
-
+            DockerTestUtils.checkCanTestDocker();
+            DockerTestUtils.checkCanUseResourceLimits();
             Common.prepareWhiteBox();
             DockerTestUtils.buildJdkContainerImage(imageName);
 

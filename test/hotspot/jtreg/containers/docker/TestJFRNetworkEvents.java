@@ -49,10 +49,7 @@ public class TestJFRNetworkEvents {
 
     public static void main(String[] args) throws Exception {
         System.out.println("Test Environment: detected availableCPUs = " + availableCPUs);
-        if (!DockerTestUtils.canTestDocker()) {
-            return;
-        }
-
+        DockerTestUtils.checkCanTestDocker();
         DockerTestUtils.buildJdkContainerImage(imageName);
 
         try {

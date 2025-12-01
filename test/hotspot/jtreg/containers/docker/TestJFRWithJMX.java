@@ -74,9 +74,7 @@ public class TestJFRWithJMX {
     static final AtomicReference<String> ipAddr = new AtomicReference();
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker()) {
-            throw new SkippedException("Docker is not supported on this host");
-        }
+        DockerTestUtils.checkCanTestDocker();
 
         if (DockerTestUtils.isPodman() & !Platform.isRoot()) {
             throw new SkippedException("test cannot be run under rootless podman configuration");

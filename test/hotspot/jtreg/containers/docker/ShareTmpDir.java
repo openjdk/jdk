@@ -51,10 +51,7 @@ public class ShareTmpDir {
     private static final String imageName = Common.imageName("sharetmpdir");
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker()) {
-            return;
-        }
-
+        DockerTestUtils.checkCanTestDocker();
         DockerTestUtils.buildJdkContainerImage(imageName);
 
         try {

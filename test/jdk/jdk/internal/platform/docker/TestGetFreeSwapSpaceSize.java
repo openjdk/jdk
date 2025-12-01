@@ -43,10 +43,8 @@ public class TestGetFreeSwapSpaceSize {
     private static final String imageName = Common.imageName("osbeanSwapSpace");
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker() || !DockerTestUtils.canUseResourceLimits()) {
-            return;
-        }
-
+        DockerTestUtils.checkCanTestDocker();
+        DockerTestUtils.checkCanUseResourceLimits();
         DockerTestUtils.buildJdkContainerImage(imageName);
 
         try {

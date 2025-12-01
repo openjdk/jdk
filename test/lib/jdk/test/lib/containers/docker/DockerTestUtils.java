@@ -95,16 +95,12 @@ public class DockerTestUtils {
     }
 
     /**
-     * Convenience method, will check if docker engine is available and usable;
-     * will print the appropriate message when not available.
+     * Checks if the docker engine is available and usable, throws an exception if not.
      *
-     * @return true if docker engine is available
      * @throws Exception
      */
-    public static boolean canTestDocker() throws Exception {
-        if (isDockerEngineAvailable()) {
-            return true;
-        } else {
+    public static void checkCanTestDocker() throws Exception {
+        if (!isDockerEngineAvailable()) {
             throw new SkippedException("Docker engine is not available on this system");
         }
     }
@@ -136,16 +132,13 @@ public class DockerTestUtils {
     }
 
     /**
-     * Determine if the engine can use resource limits.
+     * Checks if the engine can use resource limits, throws an exception if not.
      *
-     * @return true if resource limits are supported in the current configuration
      * @throws Exception
      */
-    public static boolean canUseResourceLimits() throws Exception {
+    public static void checkCanUseResourceLimits() throws Exception {
         if (isRootless() && "cgroupv1".equals(metrics.getProvider())) {
             throw new SkippedException("Resource limits are not available on this system");
-        } else {
-            return true;
         }
     }
 

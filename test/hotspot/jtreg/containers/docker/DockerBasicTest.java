@@ -46,10 +46,7 @@ public class DockerBasicTest {
     private static final String imageNameAndTag = Common.imageName("basic");
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker()) {
-            return;
-        }
-
+        DockerTestUtils.checkCanTestDocker();
         DockerTestUtils.buildJdkContainerImage(imageNameAndTag);
 
         try {
