@@ -3045,11 +3045,11 @@ bool LibraryCallKit::inline_native_time_funcs(address funcAddr, const char* func
 
 //--------------------inline_native_vthread_start_transition--------------------
 // inline void startTransition(boolean is_mount);
-// inline void endFirstTransition();
+// inline void startFinalTransition();
 // Pseudocode of implementation:
 //
-// java_lang_Thread::set_is_in_VTMS_transition(vthread, true);
-// carrier->set_is_in_VTMS_transition(true);
+// java_lang_Thread::set_is_in_vthread_transition(vthread, true);
+// carrier->set_is_in_vthread_transition(true);
 // OrderAccess::storeload();
 // int disable_requests = java_lang_Thread::vthread_transition_disable_count(vthread)
 //                        + global_vthread_transition_disable_count();
