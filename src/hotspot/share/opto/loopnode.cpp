@@ -5372,7 +5372,7 @@ void PhaseIdealLoop::print_statistics() {
 // Build a verify-only PhaseIdealLoop, and see that it agrees with "this".
 void PhaseIdealLoop::verify() const {
   ResourceMark rm;
-  ResourceMark rm2(C->idealloop_arena());
+  ResourceMark rm_idealloop_arena(C->idealloop_arena());
   bool old_progress = C->major_progress();
   bool success = true;
 

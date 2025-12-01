@@ -1331,7 +1331,7 @@ public:
 #ifdef ASSERT
     ResourceMark rm;
     Compile* C = Compile::current();
-    ResourceMark rm2(C->idealloop_arena());
+    ResourceMark rm_idealloop_arena(C->idealloop_arena());
     Compile::TracePhase tp(_t_idealLoopVerify);
     PhaseIdealLoop v(igvn);
 #endif
@@ -1342,7 +1342,7 @@ public:
   static void optimize(PhaseIterGVN &igvn, LoopOptsMode mode) {
     ResourceMark rm;
     Compile* C = Compile::current();
-    ResourceMark rm2(C->idealloop_arena());
+    ResourceMark rm_idealloop_arena(C->idealloop_arena());
     PhaseIdealLoop v(igvn, mode);
 
     if (!C->failing()) {

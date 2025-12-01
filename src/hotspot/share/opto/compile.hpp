@@ -371,7 +371,7 @@ class Compile : public Phase {
 
   // Compilation environment.
   Arena                 _comp_arena;            // Arena with lifetime equivalent to Compile
-  ResourceArea          _idealloop_arena;
+  ResourceArea          _idealloop_arena;       // For data whose lifetime is a pass of loop optimizations
   void*                 _barrier_set_state;     // Potential GC barrier state for Compile
   ciEnv*                _env;                   // CI interface
   DirectiveSet*         _directive;             // Compiler directive
