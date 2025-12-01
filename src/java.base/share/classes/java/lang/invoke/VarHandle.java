@@ -2040,7 +2040,7 @@ public abstract sealed class VarHandle implements Constable
             // This is still a hot path if vh is not constant - in this case,
             // asType is the bottleneck for constant folding, unfortunately
             var result = vh.getMethodHandle(mode).asType(symbolicMethodTypeInvoker);
-            if (constant == MethodHandleImpl.CONSTANT_PENDING && cache == null) {
+            if (constant != MethodHandleImpl.CONSTANT_NO && cache == null) {
                 adaptedMh = result;
             }
             return result;
