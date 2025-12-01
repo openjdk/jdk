@@ -1110,11 +1110,24 @@ public:
   // Be sure to do the hash_delete game in the "rehash" variant.
   void raise_bottom_type(const Type* new_type);
 
+  // Get the memory which this node produces
+  const TypePtr* out_adr_type() const;
+
+  // Get the memory which this node consumes, it must include the out_adr_type, since if the node
+  // produces some memory, it also kills that memory, which is a form of consuming
+  const TypePtr* in_adr_type() const { return in_adr_type_impl(); }
+
   // Get the address type with which this node uses and/or defs memory,
   // or null if none.  The address type is conservatively wide.
   // Returns non-null for calls, membars, loads, stores, etc.
   // Returns TypePtr::BOTTOM if the node touches memory "broadly".
-  virtual const class TypePtr *adr_type() const { return nullptr; }
+  const TypePtr* adr_type() const;
+
+private:
+  virtual const TypePtr* out_adr_type_impl() const { return nullptr; }
+  virtual const TypePtr* in_adr_type_impl() const { return out_adr_type_impl(); }
+
+public:
 
   // Return an existing node which computes the same function as this node.
   // The optimistic combined algorithm requires this to return a Node which

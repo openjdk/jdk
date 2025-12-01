@@ -33,7 +33,7 @@
 const TypeFunc* ArrayCopyNode::_arraycopy_type_Type = nullptr;
 
 ArrayCopyNode::ArrayCopyNode(Compile* C, bool alloc_tightly_coupled, bool has_negative_length_guard)
-  : CallNode(arraycopy_type(), nullptr, TypePtr::BOTTOM),
+  : CallNode(arraycopy_type(), nullptr, TypePtr::BOTTOM, TypePtr::BOTTOM),
     _kind(None),
     _alloc_tightly_coupled(alloc_tightly_coupled),
     _has_negative_length_guard(has_negative_length_guard),

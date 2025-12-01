@@ -459,10 +459,18 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
         }
       }
     }
-    if (n->adr_type() != nullptr) {
-      stringStream adr_type_stream;
-      n->adr_type()->dump_on(&adr_type_stream);
-      print_prop("adr_type", adr_type_stream.freeze());
+    if (n->in_adr_type() != nullptr) {
+      stringStream out_adr_type_stream;
+      if (n->out_adr_type() == nullptr) {
+        out_adr_type_stream.print("null");
+      } else {
+        n->out_adr_type()->dump_on(&out_adr_type_stream);
+      }
+      print_prop("out_adr_type", out_adr_type_stream.freeze());
+
+      stringStream in_adr_type_stream;
+      n->in_adr_type()->dump_on(&in_adr_type_stream);
+      print_prop("in_adr_type", in_adr_type_stream.freeze());
     }
 
     if (C->cfg() != nullptr) {
@@ -600,13 +608,13 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
       t->dump_on(&s2);
     } else if( t == Type::MEMORY ) {
       s2.print("  Memory:");
-      MemNode::dump_adr_type(node->adr_type(), &s2);
+      MemNode::dump_adr_type(node->out_adr_type(), &s2);
     }
 
     assert(s2.size() < sizeof(buffer), "size in range");
     print_prop("dump_spec", buffer);
 
-    const TypePtr* adr_type = node->adr_type();
+    const TypePtr* adr_type = node->in_adr_type();
     if (adr_type != nullptr && C->have_alias_type(adr_type)) {
       Compile::AliasType* at = C->alias_type(adr_type);
       if (at != nullptr) {
@@ -854,7 +862,7 @@ void IdealGraphPrinter::print_field(const Node* node) {
 }
 
 ciField* IdealGraphPrinter::get_field(const Node* node) {
-  const TypePtr* adr_type = node->adr_type();
+  const TypePtr* adr_type = node->in_adr_type();
   Compile::AliasType* atp = nullptr;
   if (C->have_alias_type(adr_type)) {
     atp = C->alias_type(adr_type);
@@ -877,7 +885,7 @@ ciField* IdealGraphPrinter::find_source_field_of_array_access(const Node* node, 
   }
 
   do {
-    if (node->adr_type() != nullptr && node->adr_type()->isa_aryptr()) {
+    if (node->in_adr_type() != nullptr && node->in_adr_type()->isa_aryptr()) {
       // Only process array accesses. Pattern match to find actual field source access.
       node = get_load_node(node);
       if (node != nullptr) {

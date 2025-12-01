@@ -89,6 +89,7 @@
 #include "utilities/copy.hpp"
 #include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
 
 // -------------------- Compile::mach_constant_base_node -----------------------
 // Constant table base node singleton.
@@ -2398,6 +2399,8 @@ void Compile::Optimize() {
 
   if (failing())  return;
 
+  DEBUG_ONLY(verify_memory_graph());
+
   if (has_loops()) {
     print_method(PHASE_BEFORE_LOOP_OPTS, 2);
   }
@@ -2515,6 +2518,8 @@ void Compile::Optimize() {
   if (failing())  return;
 
   C->clear_major_progress(); // ensure that major progress is now clear
+
+  DEBUG_ONLY(verify_memory_graph());
 
   process_for_post_loop_opts_igvn(igvn);
 
@@ -3314,8 +3319,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     // If the pure call is not supported, then lower to a CallLeaf.
     if (!Matcher::match_rule_supported(Op_CallLeafPure)) {
       CallNode* call = n->as_Call();
-      CallNode* new_call = new CallLeafNode(call->tf(), call->entry_point(),
-                                            call->_name, TypeRawPtr::BOTTOM);
+      CallNode* new_call = new CallLeafNode(call->tf(), call->entry_point(), call->_name, nullptr, nullptr);
       new_call->init_req(TypeFunc::Control, call->in(TypeFunc::Control));
       new_call->init_req(TypeFunc::I_O, C->top());
       new_call->init_req(TypeFunc::Memory, C->top());
@@ -4419,6 +4423,110 @@ void Compile::verify_graph_edges(bool no_dead_code, const Unique_Node_List* root
     }
   }
 }
+
+// At each node, verify the soundness of the memory graph
+void Compile::verify_memory_graph() {
+  auto verify_edge = [&](Node* use, Node* def) {
+    assert(def != nullptr, "must have a memory input");
+    const TypePtr* use_in_adr = use->in_adr_type();
+    const TypePtr* def_out_adr = def->out_adr_type();
+    // A node cannot use more than what its memory input produces
+    if (!C->must_alias(use_in_adr, get_alias_index(def_out_adr))) {
+      stringStream ss;
+      ss.print(", in: ");
+      if (def_out_adr == nullptr) {
+        ss.print("nullptr");
+      } else {
+        def_out_adr->dump_on(&ss);
+      }
+      ss.print(", out: ");
+      use_in_adr->dump_on(&ss);
+      assert(false, "Use %s consumes more than def %s produces%s", use->Name(), def->Name(), ss.as_string());
+    }
+  };
+
+  auto verify_node = [&](Node* n) {
+    const TypePtr* out_adr = n->out_adr_type();
+    const TypePtr* in_adr = n->in_adr_type();
+
+    // out_adr_type verifies that it is contained in in_adr_type, we do it again for explicitness
+    if (!n->is_Start() && out_adr != nullptr && in_adr != TypePtr::BOTTOM && in_adr != out_adr) {
+      stringStream ss;
+      ss.print(", in: ");
+      if (in_adr == nullptr) {
+        ss.print("nullptr");
+      } else {
+        in_adr->dump_on(&ss);
+      }
+      ss.print(", out: ");
+      out_adr->dump_on(&ss);
+      assert(false, "Node %s: in_adr_type must contain out_adr_type%s", n->Name(), ss.as_string());
+    }
+
+    if (in_adr == nullptr) {
+      // Since in_adr == nullptr, out_adr == nullptr, too, or n is Start
+      return;
+    }
+
+    // These should have the same in_adr and out_adr
+    if (n->is_Proj() || n->is_memory_phi() || n->is_MergeMem() || n->is_MemBar()) {
+      if (in_adr != out_adr) {
+        stringStream ss;
+        ss.print(", in: ");
+        in_adr->dump_on(&ss);
+        ss.print(", out: ");
+        if (out_adr == nullptr) {
+          ss.print("nullptr");
+        } else {
+          out_adr->dump_on(&ss);
+        }
+        assert(false, "Node %s: in_adr_type should be the same as out_adr_type%s", n->Name(), ss.as_string());
+      }
+    }
+
+    if (n->is_MergeMem()) {
+      return;
+    }
+
+    if (n->is_Mem()) {
+      // This case includes LoadStore
+      verify_edge(n, n->in(MemNode::Memory));
+    } else if (n->is_Proj()) {
+      if (!n->is_NarrowMemProj()) {
+        verify_edge(n, n->in(0));
+      }
+    } else if (n->is_Phi()) {
+      for (uint i = 1; i < n->req(); i++) {
+        verify_edge(n, n->in(i));
+      }
+    } else if (n->bottom_type()->base() == Type::Tuple) {
+      verify_edge(n, n->in(TypeFunc::Memory));
+    } else if (n->is_ClearArray()) {
+      verify_edge(n, n->in(1));
+    } else if (n->Opcode() == Op_StrComp || n->Opcode() == Op_StrEquals || n->Opcode() == Op_StrIndexOf || n->Opcode() == Op_StrIndexOfChar ||
+               n->Opcode() == Op_StrCompressedCopy || n->Opcode() == Op_StrInflatedCopy || n->Opcode() == Op_AryEq ||
+               n->Opcode() == Op_CountPositives || n->Opcode() == Op_VectorizedHashCode || n->Opcode() == Op_EncodeISOArray) {
+      verify_edge(n, n->in(1));
+    } else {
+      assert(false, "unexpected memory consumer %s", n->Name());
+    }
+  };
+
+  ResourceMark rm;
+  Unique_Node_List wq;
+  wq.push(root());
+  for (uint i = 0; i < wq.size(); i++) {
+    Node* n = wq.at(i);
+    verify_node(n);
+
+    for (uint j = 0; j < n->req(); j++) {
+      Node* in = n->in(j);
+      if (in != nullptr) {
+        wq.push(in);
+      }
+    }
+  }
+}
 #endif
 
 // The Compile object keeps track of failure reasons separately from the ciEnv.
@@ -5462,7 +5570,7 @@ Node* Compile::make_debug_print_call(const char* str, address call_addr, PhaseGV
                               Node* parm6) const {
   Node* str_node = gvn->transform(new ConPNode(TypeRawPtr::make(((address) str))));
   const TypeFunc* type = OptoRuntime::debug_print_Type(parm0, parm1, parm2, parm3, parm4, parm5, parm6);
-  Node* call = new CallLeafNode(type, call_addr, "debug_print", TypeRawPtr::BOTTOM);
+  Node* call = new CallLeafNode(type, call_addr, "debug_print", nullptr, nullptr);
 
   // find the most suitable control input
   Unique_Node_List worklist, candidates;

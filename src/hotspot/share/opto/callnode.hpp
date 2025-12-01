@@ -71,7 +71,6 @@ public:
   virtual int Opcode() const;
   virtual bool pinned() const { return true; };
   virtual const Type *bottom_type() const;
-  virtual const TypePtr *adr_type() const { return TypePtr::BOTTOM; }
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual void  calling_convention( BasicType* sig_bt, VMRegPair *parm_reg, uint length ) const;
@@ -82,6 +81,10 @@ public:
   virtual void  dump_spec(outputStream *st) const;
   virtual void  dump_compact_spec(outputStream *st) const;
 #endif
+
+private:
+  virtual const TypePtr* in_adr_type_impl() const { return nullptr; }
+  virtual const TypePtr* out_adr_type_impl() const { return TypePtr::BOTTOM; }
 };
 
 //------------------------------StartOSRNode-----------------------------------
@@ -341,10 +344,10 @@ class SafePointNode : public MultiNode {
 
 protected:
   JVMState* const _jvms;      // Pointer to list of JVM State objects
-  // Many calls take *all* of memory as input,
-  // but some produce a limited subset of that memory as output.
-  // The adr_type reports the call's behavior as a store, not a load.
-  const TypePtr*  _adr_type;  // What type of memory does this node produce?
+  // Java calls consume and produce all memory, pure calls do not consume or produce memory,
+  // runtime calls have various memory effects
+  const TypePtr*  _out_adr_type;
+  const TypePtr*  _in_adr_type;
   ReplacedNodes   _replaced_nodes; // During parsing: list of pair of nodes from calls to GraphKit::replace_in_map()
   bool            _has_ea_local_in_scope; // NoEscape or ArgEscape objects in JVM States
 
@@ -355,10 +358,11 @@ protected:
 public:
   SafePointNode(uint edges, JVMState* jvms,
                 // A plain safepoint advertises no memory effects (null):
-                const TypePtr* adr_type = nullptr)
+                const TypePtr* out_adr_type = nullptr, const TypePtr* in_adr_type = nullptr)
     : MultiNode( edges ),
       _jvms(jvms),
-      _adr_type(adr_type),
+      _out_adr_type(out_adr_type),
+      _in_adr_type(in_adr_type),
       _has_ea_local_in_scope(false)
   {
     init_class_id(Class_SafePoint);
@@ -512,8 +516,7 @@ public:
   virtual bool           pinned() const { return true; }
   virtual const Type*    Value(PhaseGVN* phase) const;
   virtual const Type*    bottom_type() const { return Type::CONTROL; }
-  virtual const TypePtr* adr_type() const { return _adr_type; }
-  void set_adr_type(const TypePtr* adr_type) { _adr_type = adr_type; }
+  void set_out_adr_type(const TypePtr* adr_type) { _out_adr_type = adr_type; }
   virtual Node          *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual Node*          Identity(PhaseGVN* phase);
   virtual uint           ideal_reg() const { return 0; }
@@ -524,6 +527,10 @@ public:
 #ifndef PRODUCT
   virtual void           dump_spec(outputStream *st) const;
 #endif
+
+private:
+  virtual const TypePtr* out_adr_type_impl() const { return _out_adr_type; }
+  virtual const TypePtr* in_adr_type_impl() const { return _in_adr_type; }
 };
 
 //------------------------------SafePointScalarObjectNode----------------------
@@ -696,8 +703,8 @@ public:
   CallGenerator*  _generator;   // corresponding CallGenerator for some late inline calls
   const char*     _name;        // Printable name, if _method is null
 
-  CallNode(const TypeFunc* tf, address addr, const TypePtr* adr_type, JVMState* jvms = nullptr)
-    : SafePointNode(tf->domain()->cnt(), jvms, adr_type),
+  CallNode(const TypeFunc* tf, address addr, const TypePtr* out_adr_type, const TypePtr* in_adr_type, JVMState* jvms = nullptr)
+    : SafePointNode(tf->domain()->cnt(), jvms, out_adr_type, in_adr_type),
       _tf(tf),
       _entry_point(addr),
       _cnt(COUNT_UNKNOWN),
@@ -782,7 +789,7 @@ protected:
   bool    _arg_escape;             // ArgEscape in parameter list
 public:
   CallJavaNode(const TypeFunc* tf , address addr, ciMethod* method)
-    : CallNode(tf, addr, TypePtr::BOTTOM),
+    : CallNode(tf, addr, TypePtr::BOTTOM, TypePtr::BOTTOM),
       _method(method),
       _optimized_virtual(false),
       _override_symbolic_info(false),
@@ -827,11 +834,12 @@ public:
       C->add_macro_node(this);
     }
   }
-  CallStaticJavaNode(const TypeFunc* tf, address addr, const char* name, const TypePtr* adr_type)
+  CallStaticJavaNode(const TypeFunc* tf, address addr, const char* name, const TypePtr* out_adr_type, const TypePtr* in_adr_type)
     : CallJavaNode(tf, addr, nullptr) {
     init_class_id(Class_CallStaticJava);
     // This node calls a runtime stub, which often has narrow memory effects.
-    _adr_type = adr_type;
+    _out_adr_type = out_adr_type;
+    _in_adr_type = in_adr_type;
     _name = name;
   }
 
@@ -891,8 +899,8 @@ protected:
   virtual uint size_of() const; // Size is bigger
 public:
   CallRuntimeNode(const TypeFunc* tf, address addr, const char* name,
-                  const TypePtr* adr_type, JVMState* jvms = nullptr)
-    : CallNode(tf, addr, adr_type, jvms)
+                  const TypePtr* out_adr_type, const TypePtr* in_adr_type, JVMState* jvms = nullptr)
+    : CallNode(tf, addr, out_adr_type, in_adr_type, jvms)
   {
     init_class_id(Class_CallRuntime);
     _name = name;
@@ -912,8 +920,8 @@ public:
 class CallLeafNode : public CallRuntimeNode {
 public:
   CallLeafNode(const TypeFunc* tf, address addr, const char* name,
-               const TypePtr* adr_type)
-    : CallRuntimeNode(tf, addr, name, adr_type)
+               const TypePtr* out_adr_type, const TypePtr* in_adr_type)
+    : CallRuntimeNode(tf, addr, name, out_adr_type, in_adr_type)
   {
     init_class_id(Class_CallLeaf);
   }
@@ -942,9 +950,7 @@ protected:
   TupleNode* make_tuple_of_input_state_and_top_return_values(const Compile* C) const;
 
 public:
-  CallLeafPureNode(const TypeFunc* tf, address addr, const char* name,
-                   const TypePtr* adr_type)
-      : CallLeafNode(tf, addr, name, adr_type) {
+  CallLeafPureNode(const TypeFunc* tf, address addr, const char* name) : CallLeafNode(tf, addr, name, nullptr, nullptr) {
     init_class_id(Class_CallLeafPure);
   }
   int Opcode() const override;
@@ -957,8 +963,8 @@ public:
 class CallLeafNoFPNode : public CallLeafNode {
 public:
   CallLeafNoFPNode(const TypeFunc* tf, address addr, const char* name,
-                   const TypePtr* adr_type)
-    : CallLeafNode(tf, addr, name, adr_type)
+                   const TypePtr* out_adr_type, const TypePtr* in_adr_type)
+    : CallLeafNode(tf, addr, name, out_adr_type, in_adr_type)
   {
     init_class_id(Class_CallLeafNoFP);
   }
@@ -975,8 +981,8 @@ protected:
   virtual uint size_of() const; // Size is bigger
 public:
   CallLeafVectorNode(const TypeFunc* tf, address addr, const char* name,
-                   const TypePtr* adr_type, uint num_bits)
-    : CallLeafNode(tf, addr, name, adr_type), _num_bits(num_bits)
+                   const TypePtr* out_adr_type, const TypePtr* in_adr_type, uint num_bits)
+    : CallLeafNode(tf, addr, name, out_adr_type, in_adr_type), _num_bits(num_bits)
   {
   }
   virtual int   Opcode() const;
@@ -1172,8 +1178,8 @@ protected:
   void set_eliminated_lock_counter() PRODUCT_RETURN;
 
 public:
-  AbstractLockNode(const TypeFunc *tf)
-    : CallNode(tf, nullptr, TypeRawPtr::BOTTOM),
+  AbstractLockNode(const TypeFunc *tf, const TypePtr* out_adr_type, const TypePtr* in_adr_type)
+    : CallNode(tf, nullptr, out_adr_type, in_adr_type),
       _kind(Regular)
   {
 #ifndef PRODUCT
@@ -1254,7 +1260,7 @@ public:
 
   virtual int Opcode() const;
   virtual uint size_of() const; // Size is bigger
-  LockNode(Compile* C, const TypeFunc *tf) : AbstractLockNode( tf ) {
+  LockNode(Compile* C, const TypeFunc *tf) : AbstractLockNode(tf, TypeRawPtr::BOTTOM, TypePtr::BOTTOM) {
     init_class_id(Class_Lock);
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
@@ -1279,7 +1285,7 @@ private:
 public:
   virtual int Opcode() const;
   virtual uint size_of() const; // Size is bigger
-  UnlockNode(Compile* C, const TypeFunc *tf) : AbstractLockNode( tf )
+  UnlockNode(Compile* C, const TypeFunc *tf) : AbstractLockNode(tf, TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM)
 #ifdef ASSERT
     , _dbg_jvms(nullptr)
 #endif

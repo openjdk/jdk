@@ -43,6 +43,7 @@
 #include "opto/type.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stringUtils.hpp"
 
@@ -1128,6 +1129,70 @@ void Node::raise_bottom_type(const Type* new_type) {
     }
     n->set_type(new_type);
   }
+}
+
+const TypePtr* Node::out_adr_type() const {
+  const TypePtr* res = out_adr_type_impl();
+
+#ifdef ASSERT
+  // Verify that in_adr_type contains out_adr_type, except for Start, obviously it consumes nothing
+  if (is_Start() || (is_Proj() && in(0)->is_Start())) {
+    return res;
+  }
+
+  const TypePtr* in_type;
+  if (is_Proj()) {
+    in_type = in(0)->in_adr_type();
+  } else {
+    in_type = in_adr_type();
+  }
+  // For some reasons, Raw can be used as Bot (see GraphKit::set_output_for_allocation for
+  // example), so be lenient here
+  if (res != nullptr && in_type != TypePtr::BOTTOM && in_type != TypeRawPtr::BOTTOM && res != in_type) {
+    stringStream ss;
+    ss.print(", out: ");
+    res->dump_on(&ss);
+    ss.print(", in: ");
+    if (in_type == nullptr) {
+      ss.print("nullptr");
+    } else {
+      in_type->dump_on(&ss);
+    }
+    assert(false, "Node %s: in_adr_type must contain out_adr_type%s", Name(), ss.as_string());
+  }
+
+  // Unless this node is pinned, we must either have no out_adr_type or have the same out_adr_type
+  // and in_adr_type. This is because we DO NOT know how to compute the anti-dependency of any
+  // other node (see PhaseIdealLoop::get_late_ctrl and InstructForm::needs_anti_dependence_check).
+  if (!is_Proj() && !pinned() && res != nullptr && res != in_type) {
+    stringStream ss;
+    ss.print(", out: ");
+    res->dump_on(&ss);
+    ss.print(", in: ");
+    in_type->dump_on(&ss);
+    assert(false, "Node %s: cannot compute anti-dependency%s", Name(), ss.as_string());
+  }
+#endif // ASSERT
+
+  return res;
+}
+
+const TypePtr* Node::adr_type() const {
+  // Only makes sense if in_adr_type == out_adr_type or out_adr_type == nullptr, otherwise it would
+  // be ambiguous
+  const TypePtr* in_type = in_adr_type();
+#ifdef ASSERT
+  const TypePtr* out_type = out_adr_type();
+  if (in_type != out_type && out_type != nullptr) {
+    stringStream ss;
+    ss.print(", in: ");
+    in_type->dump_on(&ss);
+    ss.print(", out: ");
+    out_type->dump_on(&ss);
+    assert(false, "ambiguous result for %s%s", Name(), ss.as_string());
+  }
+#endif // ASSERT
+  return in_type;
 }
 
 //------------------------------Identity---------------------------------------

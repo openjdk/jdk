@@ -1075,13 +1075,13 @@ PhiNode* PhiNode::make(Node* r, Node* x, const Type *t, const TypePtr* at) {
 PhiNode* PhiNode::make(Node* r, Node* x) {
   const Type*    t  = x->bottom_type();
   const TypePtr* at = nullptr;
-  if (t == Type::MEMORY)  at = flatten_phi_adr_type(x->adr_type());
+  if (t == Type::MEMORY)  at = flatten_phi_adr_type(x->out_adr_type());
   return make(r, x, t, at);
 }
 PhiNode* PhiNode::make_blank(Node* r, Node* x) {
   const Type*    t  = x->bottom_type();
   const TypePtr* at = nullptr;
-  if (t == Type::MEMORY)  at = flatten_phi_adr_type(x->adr_type());
+  if (t == Type::MEMORY)  at = flatten_phi_adr_type(x->out_adr_type());
   return new PhiNode(r, t, at);
 }
 

@@ -1245,7 +1245,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
   msfpt->_has_ea_local_in_scope = sfpt->has_ea_local_in_scope();
 
   // Advertise the correct memory effects (for anti-dependence computation).
-  msfpt->set_adr_type(sfpt->adr_type());
+  msfpt->set_adr_type(sfpt->out_adr_type());
 
   // Allocate a private array of RegMasks.  These RegMasks are not shared.
   msfpt->_in_rms = NEW_RESOURCE_ARRAY( RegMask, cnt );

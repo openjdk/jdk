@@ -66,7 +66,7 @@ public:
   Node* make_leaf_call(Node* ctrl, Node* mem,
                        const TypeFunc* call_type, address call_addr,
                        const char* call_name,
-                       const TypePtr* adr_type,
+                       const TypePtr* out_adr_type,
                        Node* parm0 = nullptr, Node* parm1 = nullptr,
                        Node* parm2 = nullptr, Node* parm3 = nullptr,
                        Node* parm4 = nullptr, Node* parm5 = nullptr,

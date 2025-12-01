@@ -65,7 +65,7 @@ static Node *step_through_mergemem(PhaseGVN *phase, MergeMemNode *mmem,  const T
 //=============================================================================
 uint MemNode::size_of() const { return sizeof(*this); }
 
-const TypePtr *MemNode::adr_type() const {
+const TypePtr* MemNode::in_adr_type_impl() const {
   Node* adr = in(Address);
   if (adr == nullptr)  return nullptr; // node is dead
   const TypePtr* cross_check = nullptr;
@@ -3911,7 +3911,6 @@ const Type* SCMemProjNode::Value(PhaseGVN* phase) const
 LoadStoreNode::LoadStoreNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at, const Type* rt, uint required )
   : Node(required),
     _type(rt),
-    _adr_type(at),
     _barrier_data(0)
 {
   init_req(MemNode::Control, c  );
@@ -3919,6 +3918,7 @@ LoadStoreNode::LoadStoreNode( Node *c, Node *mem, Node *adr, Node *val, const Ty
   init_req(MemNode::Address, adr);
   init_req(MemNode::ValueIn, val);
   init_class_id(Class_LoadStore);
+  DEBUG_ONLY(_adr_type = at; adr_type();)
 }
 
 //------------------------------Value-----------------------------------------
@@ -3993,6 +3993,12 @@ MemBarNode* LoadStoreNode::trailing_membar() const {
 
 uint LoadStoreNode::size_of() const { return sizeof(*this); }
 
+const TypePtr* LoadStoreNode::out_adr_type_impl() const {
+  const TypePtr* cross_check = nullptr;
+  DEBUG_ONLY(cross_check = _adr_type);
+  return MemNode::calculate_adr_type(in(MemNode::Memory)->bottom_type(), cross_check);
+}
+
 //=============================================================================
 //----------------------------------LoadStoreConditionalNode--------------------
 LoadStoreConditionalNode::LoadStoreConditionalNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex ) : LoadStoreNode(c, mem, adr, val, nullptr, TypeInt::BOOL, 5) {
@@ -4010,7 +4016,7 @@ const Type* LoadStoreConditionalNode::Value(PhaseGVN* phase) const {
 
 //=============================================================================
 //-------------------------------adr_type--------------------------------------
-const TypePtr* ClearArrayNode::adr_type() const {
+const TypePtr* ClearArrayNode::out_adr_type_impl() const {
   Node *adr = in(3);
   if (adr == nullptr)  return nullptr; // node is dead
   return MemNode::calculate_adr_type(adr->bottom_type());
@@ -4316,9 +4322,13 @@ Node *MemBarNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
 //------------------------------Value------------------------------------------
 const Type* MemBarNode::Value(PhaseGVN* phase) const {
-  if( !in(0) ) return Type::TOP;
-  if( phase->type(in(0)) == Type::TOP )
+  if (in(0) == nullptr || phase->type(in(0)) == Type::TOP) {
     return Type::TOP;
+  }
+  if (in_adr_type() != nullptr && in(TypeFunc::Memory)->is_top()) {
+    // The memory input died, this node should be dead, too
+    return Type::TOP;
+  }
   return TypeTuple::MEMBAR;
 }
 
@@ -5868,7 +5878,7 @@ static void verify_memory_slice(const MergeMemNode* m, int alias_idx, Node* n) {
     n = n->as_MergeMem()->memory_at(alias_idx);
   }
   Compile* C = Compile::current();
-  const TypePtr* n_adr_type = n->adr_type();
+  const TypePtr* n_adr_type = n->out_adr_type();
   if (n == m->empty_memory()) {
     // Implicit copy of base_memory()
   } else if (n_adr_type != TypePtr::BOTTOM) {
@@ -5909,9 +5919,9 @@ Node* MergeMemNode::memory_at(uint alias_idx) const {
     n = base_memory();
     assert(Node::in_dump()
            || n == nullptr || n->bottom_type() == Type::TOP
-           || n->adr_type() == nullptr // address is TOP
-           || n->adr_type() == TypePtr::BOTTOM
-           || n->adr_type() == TypeRawPtr::BOTTOM
+           || n->out_adr_type() == nullptr // address is TOP
+           || n->out_adr_type() == TypePtr::BOTTOM
+           || n->out_adr_type() == TypeRawPtr::BOTTOM
            || n->is_NarrowMemProj()
            || !Compile::current()->do_aliasing(),
            "must be a wide memory");

@@ -345,7 +345,7 @@ const Node* MachNode::get_base_and_disp(intptr_t &offset, const TypePtr* &adr_ty
 
 
 //---------------------------------adr_type---------------------------------
-const class TypePtr *MachNode::adr_type() const {
+const class TypePtr* MachNode::out_adr_type_impl() const {
   intptr_t offset = 0;
   const TypePtr *adr_type = TYPE_PTR_SENTINAL;  // attempt computing adr_type
   const Node *base = get_base_and_disp(offset, adr_type);
@@ -641,22 +641,6 @@ const Type *MachProjNode::bottom_type() const {
   return Type::mreg2type[_ideal_reg];
 }
 
-const TypePtr *MachProjNode::adr_type() const {
-  if (bottom_type() == Type::MEMORY) {
-    // in(0) might be a narrow MemBar; otherwise we will report TypePtr::BOTTOM
-    Node* ctrl = in(0);
-    if (ctrl == nullptr)  return nullptr; // node is dead
-    const TypePtr* adr_type = ctrl->adr_type();
-    #ifdef ASSERT
-    if (!VMError::is_error_reported() && !Node::in_dump())
-      assert(adr_type != nullptr, "source must have adr_type");
-    #endif
-    return adr_type;
-  }
-  assert(bottom_type()->base() != Type::Memory, "no other memories?");
-  return nullptr;
-}
-
 #ifndef PRODUCT
 void MachProjNode::dump_spec(outputStream *st) const {
   ProjNode::dump_spec(st);
@@ -682,7 +666,7 @@ const RegMask &MachReturnNode::in_RegMask( uint idx ) const {
   return _in_rms[idx];
 }
 
-const TypePtr *MachReturnNode::adr_type() const {
+const TypePtr *MachReturnNode::out_adr_type_impl() const {
   // most returns and calls are assumed to consume & modify all of memory
   // the matcher will copy non-wide adr_types from ideal originals
   return _adr_type;
@@ -869,7 +853,7 @@ JVMState *MachHaltNode::jvms() const {
 
 uint MachMemBarNode::size_of() const { return sizeof(*this); }
 
-const TypePtr *MachMemBarNode::adr_type() const {
+const TypePtr *MachMemBarNode::out_adr_type_impl() const {
   return _adr_type;
 }
 

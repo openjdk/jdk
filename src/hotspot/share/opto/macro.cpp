@@ -126,8 +126,8 @@ CallNode* PhaseMacroExpand::make_slow_call(CallNode *oldcall, const TypeFunc* sl
 
   // Slow-path call
  CallNode *call = leaf_name
-   ? (CallNode*)new CallLeafNode      ( slow_call_type, slow_call, leaf_name, TypeRawPtr::BOTTOM )
-   : (CallNode*)new CallStaticJavaNode( slow_call_type, slow_call, OptoRuntime::stub_name(slow_call), TypeRawPtr::BOTTOM );
+   ? (CallNode*)new CallLeafNode      (slow_call_type, slow_call, leaf_name, TypeRawPtr::BOTTOM, oldcall->in_adr_type())
+   : (CallNode*)new CallStaticJavaNode(slow_call_type, slow_call, OptoRuntime::stub_name(slow_call), TypeRawPtr::BOTTOM, oldcall->in_adr_type());
 
   // Slow path call has no side-effects, uses few values
   copy_predefined_input_for_runtime_call(slow_path, oldcall, call );
@@ -1442,7 +1442,7 @@ void PhaseMacroExpand::expand_allocate_common(
   // Generate slow-path call
   CallNode *call = new CallStaticJavaNode(slow_call_type, slow_call_address,
                                OptoRuntime::stub_name(slow_call_address),
-                               TypePtr::BOTTOM);
+                               TypePtr::BOTTOM, TypePtr::BOTTOM);
   call->init_req(TypeFunc::Control,   slow_region);
   call->init_req(TypeFunc::I_O,       top());    // does no i/o
   call->init_req(TypeFunc::Memory,    slow_mem); // may gc ptrs
@@ -1723,7 +1723,7 @@ void PhaseMacroExpand::expand_dtrace_alloc_probe(AllocateNode* alloc, Node* oop,
                                           CAST_FROM_FN_PTR(address,
                                           static_cast<int (*)(JavaThread*, oopDesc*)>(SharedRuntime::dtrace_object_alloc)),
                                           "dtrace_object_alloc",
-                                          TypeRawPtr::BOTTOM);
+                                          TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM);
 
     // Get base of thread-local storage area
     Node* thread = new ThreadLocalNode();
@@ -2657,8 +2657,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       case Op_ModD:
       case Op_ModF: {
         CallNode* mod_macro = n->as_Call();
-        CallNode* call = new CallLeafPureNode(mod_macro->tf(), mod_macro->entry_point(),
-                                              mod_macro->_name, TypeRawPtr::BOTTOM);
+        CallNode* call = new CallLeafPureNode(mod_macro->tf(), mod_macro->entry_point(), mod_macro->_name);
         call->init_req(TypeFunc::Control, mod_macro->in(TypeFunc::Control));
         call->init_req(TypeFunc::I_O, C->top());
         call->init_req(TypeFunc::Memory, C->top());

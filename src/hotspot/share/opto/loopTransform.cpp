@@ -4024,8 +4024,8 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   Node* result_ctrl;
   Node* result_mem;
   const TypeFunc* call_type = OptoRuntime::array_fill_Type();
-  CallLeafNode *call = new CallLeafNoFPNode(call_type, fill,
-                                            fill_name, TypeAryPtr::get_array_body_type(t));
+  const TypeAryPtr* adr_type = TypeAryPtr::get_array_body_type(t);
+  CallLeafNode *call = new CallLeafNoFPNode(call_type, fill, fill_name, adr_type, adr_type);
   uint cnt = 0;
   call->init_req(TypeFunc::Parms + cnt++, from);
   call->init_req(TypeFunc::Parms + cnt++, store_value);

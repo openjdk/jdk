@@ -362,9 +362,6 @@ public:
   // If it returns (MachOper*)-1, this means there are multiple memories.
   virtual const MachOper* memory_operand() const { return nullptr; }
 
-  // Call "get_base_and_disp" to decide which category of memory is used here.
-  virtual const class TypePtr *adr_type() const;
-
   // Apply peephole rule(s) to this instruction
   virtual int peephole(Block *block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc *ra_);
 
@@ -401,6 +398,12 @@ public:
   virtual void dump_spec(outputStream *st) const; // Print per-node info
   void         dump_format(PhaseRegAlloc *ra, outputStream *st) const; // access to virtual
 #endif
+
+private:
+  // Although it is technically incorrect to assume the memory here is produced, for MachNode, it
+  // should be fine since the compiler does not distinguish in_adr_type and out_adr_type, for now.
+  // Call "get_base_and_disp" to decide which category of memory is used here.
+  virtual const TypePtr* out_adr_type_impl() const;
 };
 
 //------------------------------MachIdealNode----------------------------
@@ -768,7 +771,6 @@ public:
   };
   virtual int   Opcode() const;
   virtual const Type *bottom_type() const;
-  virtual const TypePtr *adr_type() const;
   virtual const RegMask& in_RegMask(uint) const { return RegMask::EMPTY; }
   virtual const RegMask &out_RegMask() const { return _rout; }
   virtual uint  ideal_reg() const { return _ideal_reg; }
@@ -841,7 +843,9 @@ public:
 
   virtual const RegMask &in_RegMask(uint) const;
   virtual bool pinned() const { return true; };
-  virtual const TypePtr *adr_type() const;
+
+private:
+  virtual const TypePtr* out_adr_type_impl() const;
 };
 
 //------------------------------MachSafePointNode-----------------------------
@@ -1067,7 +1071,9 @@ public:
   }
 
   void set_adr_type(const TypePtr* atp) { _adr_type = atp; }
-  virtual const TypePtr *adr_type() const;
+
+private:
+  virtual const TypePtr* out_adr_type_impl() const;
 };
 
 

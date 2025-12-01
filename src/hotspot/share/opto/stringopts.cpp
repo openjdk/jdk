@@ -212,7 +212,7 @@ class StringConcat : public ResourceObj {
       const TypePtr* no_memory_effects = nullptr;
       Compile* C = _stringopts->C;
       CallStaticJavaNode* call = new CallStaticJavaNode(call_type, call_addr, "uncommon_trap",
-                                                        no_memory_effects);
+                                                        no_memory_effects, TypePtr::BOTTOM);
       for (int e = 0; e < TypeFunc::Parms; e++) {
         call->init_req(e, uct->in(e));
       }

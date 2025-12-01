@@ -1280,6 +1280,9 @@ public:
   // Verify bi-directional correspondence of edges
   void verify_bidirectional_edges(Unique_Node_List& visited, const Unique_Node_List* root_and_safepoints = nullptr) const;
 
+  // Verify that the memory graph is sound
+  void verify_memory_graph() PRODUCT_RETURN;
+
   // End-of-run dumps.
   static void print_statistics() PRODUCT_RETURN;
 
