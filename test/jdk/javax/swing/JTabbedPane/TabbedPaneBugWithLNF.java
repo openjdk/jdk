@@ -53,7 +53,7 @@ public class TabbedPaneBugWithLNF {
         Click on it, which will change the lookandfeel.
         Verify if child tabs have scrolled back to starting child tab
         i.e., 'Testing Tab0', where as the selected tab is still 'Testing Tab9'.
-        If it does, press Fail 
+        If it does, press Fail
         else if focus of the child Tab is still at "Testing Tab9" press Pass.""";
 
     public static void main(String[] args) throws Exception {
