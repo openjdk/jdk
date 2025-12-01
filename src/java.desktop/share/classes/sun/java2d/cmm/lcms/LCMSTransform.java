@@ -121,8 +121,7 @@ final class LCMSTransform implements ColorTransform {
         }
         LCMS.colorConvert(tfm.ID, in.width, in.height, in.offset,
                           in.nextRowOffset, out.offset, out.nextRowOffset,
-                          in.dataArray, out.dataArray,
-                          in.dataType, out.dataType);
+                          in.dataArray, out.dataArray);
         Reference.reachabilityFence(tfm); // prevent deallocation of "tfm.ID"
     }
 

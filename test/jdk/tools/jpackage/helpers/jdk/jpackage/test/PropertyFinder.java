@@ -30,7 +30,6 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
-import jdk.jpackage.test.AdditionalLauncher.PropertyFile;
 
 final class PropertyFinder {
 

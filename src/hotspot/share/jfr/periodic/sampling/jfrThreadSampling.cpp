@@ -217,7 +217,7 @@ static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame,
           const PcDesc* const pc_desc = get_pc_desc(sampled_nm, sampled_pc);
           if (is_valid(pc_desc)) {
             intptr_t* const synthetic_sp = sender_sp - sampled_nm->frame_size();
-            top_frame = frame(synthetic_sp, synthetic_sp, sender_sp, pc_desc->real_pc(sampled_nm), sampled_nm);
+            top_frame = frame(synthetic_sp, synthetic_sp, sender_sp - 2, pc_desc->real_pc(sampled_nm), sampled_nm);
             in_continuation = is_in_continuation(top_frame, jt);
             return true;
           }
