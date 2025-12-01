@@ -292,6 +292,12 @@ public final class ModulePatcher {
             return r;
         }
 
+        private void ensureOpen() throws IOException {
+            if (closed) {
+                throw new IOException("ModuleReader is closed");
+            }
+        }
+
         /**
          * Finds a resources in the patch locations. Returns null if not found
          * or the name is "module-info.class" as that cannot be overridden.
@@ -415,12 +421,6 @@ public final class ModulePatcher {
             closed = true;
             closeAll(finders);
             delegate().close();
-        }
-
-        private void ensureOpen() throws IOException {
-            if (closed) {
-                throw new IOException("ModuleReader is closed");
-            }
         }
     }
 
