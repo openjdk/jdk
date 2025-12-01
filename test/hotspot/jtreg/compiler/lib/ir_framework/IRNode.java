@@ -523,13 +523,13 @@ public class IRNode {
 
     public static final String CHECKCAST_ARRAY = PREFIX + "CHECKCAST_ARRAY" + POSTFIX;
     static {
-        String regex = "(((?i:cmp|CLFI|CLR).*precise \\[.*:|.*(?i:mov|mv|or).*precise \\[.*:.*\\R.*(cmp|CMP|CLR))" + END;
+        String regex = "(((?i:cmp|CLFI|CLR).*aryklassptr:\\[.*:Constant|.*(?i:mov|mv|or).*aryklassptr:\\[.*:Constant.*\\R.*(cmp|CMP|CLR))" + END;
         optoOnly(CHECKCAST_ARRAY, regex);
     }
 
     public static final String CHECKCAST_ARRAY_OF = COMPOSITE_PREFIX + "CHECKCAST_ARRAY_OF" + POSTFIX;
     static {
-        String regex = "(((?i:cmp|CLFI|CLR).*precise \\[.*" + IS_REPLACED + ":|.*(?i:mov|mv|or).*precise \\[.*" + IS_REPLACED + ":.*\\R.*(cmp|CMP|CLR))" + END;
+        String regex = "(((?i:cmp|CLFI|CLR).*aryklassptr:\\[.*" + IS_REPLACED + ":.*:Constant|.*(?i:mov|mv|or).*aryklassptr:\\[.*" + IS_REPLACED + ":.*:Constant.*\\R.*(cmp|CMP|CLR))" + END;
         optoOnly(CHECKCAST_ARRAY_OF, regex);
     }
 
@@ -3220,10 +3220,9 @@ public class IRNode {
 
     // @ matches the start character of the pattern
     // (\w+: ?)+ tries to match the pattern 'ptrtype:' or 'stable:' with optional trailing whitespaces
-    // (\w/)* tries to match the pattern 'a/b/`
-    // (\w$)* tries to match the pattern 'c$d$'
+    // [\\w/\\$] tries to match the pattern such as 'a/b/', 'a/b', or '/b' but also nested class such as '$c' or '$c$d'
     // \b asserts that the next character is a word character
-    private static final String LOAD_STORE_PREFIX = "@(\\w+: ?)+(\\w/)*(\\w$)*\\b";
+    private static final String LOAD_STORE_PREFIX = "@(\\w+: ?)+[\\w/\\$]*\\b";
     // ( \([^\)]+\))? tries to match the pattern ' (f/g,h/i/j)'
     // :\w+ tries to match the pattern ':NotNull'
     // .* tries to match the remaining of the pattern
