@@ -216,9 +216,10 @@ ciField::ciField(fieldDescriptor *fd) :
 static bool trust_final_non_static_fields(ciInstanceKlass* holder) {
   if (holder == nullptr)
     return false;
-  // Explicit opt-in from system classes
-  if (holder->trust_final_fields())
+  if (holder->trust_final_fields()) {
+    // Explicit opt-in from system classes
     return true;
+  }
   // Even if general trusting is disabled, trust system-built closures in these packages.
   if (holder->is_in_package("java/lang/invoke") || holder->is_in_package("sun/invoke") ||
       holder->is_in_package("java/lang/reflect") || holder->is_in_package("jdk/internal/reflect") ||
