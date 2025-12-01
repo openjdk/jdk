@@ -31,18 +31,6 @@
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
 
-// Each ShenandoahHeapRegion is associated with a ShenandoahFreeSetPartitionId.
-enum class ShenandoahFreeSetPartitionId : uint8_t {
-  Mutator,                      // Region is in the Mutator free set: available memory is available to mutators.
-  Collector,                    // Region is in the Collector free set: available memory is reserved for evacuations.
-  OldCollector,                 // Region is in the Old Collector free set:
-                                //    available memory is reserved for old evacuations and for promotions.
-  NotFree                       // Region is in no free set: it has no available memory.  Consult region affiliation
-                                //    to determine whether this retired region is young or old.  If young, the region
-                                //    is considered to be part of the Mutator partition.  (When we retire from the
-                                //    Collector partition, we decrease total_region_count for Collector and increaese
-                                //    for Mutator, making similar adjustments to used (net impact on available is neutral).
-};
 
 // ShenandoahRegionPartitions provides an abstraction to help organize the implementation of ShenandoahFreeSet.  This
 // class implements partitioning of regions into distinct sets.  Each ShenandoahHeapRegion is either in the Mutator free set,

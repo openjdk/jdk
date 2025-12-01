@@ -26,6 +26,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHALLOCATOR_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHALLOCATOR_HPP
 
+#include "gc/shenandoah/shenandoahFreeSetPartitionId.hpp"
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -36,6 +37,7 @@ enum class ShenandoahFreeSetPartitionId : uint8_t;
 class ShenandoahHeapRegion;
 class ShenandoahAllocRequest;
 
+template <ShenandoahFreeSetPartitionId ALLOC_PARTITION>
 class ShenandoahAllocator : public CHeapObj<mtGC> {
 protected:
   struct ShenandoahAllocRegion {
@@ -46,7 +48,6 @@ protected:
   PaddedEnd<ShenandoahAllocRegion>*  _alloc_regions;
   uint  const                        _alloc_region_count;
   ShenandoahFreeSet* const           _free_set;
-  ShenandoahFreeSetPartitionId const _alloc_partition_id;
   const char*                        _alloc_partition_name;
   bool                               _yield_to_safepoint = false;
 
@@ -81,7 +82,7 @@ protected:
 public:
   static constexpr uint             MAX_ALLOC_REGION_COUNT = 128;
 
-  ShenandoahAllocator(uint alloc_region_count, ShenandoahFreeSet* free_set, ShenandoahFreeSetPartitionId alloc_partition_id);
+  ShenandoahAllocator(uint alloc_region_count, ShenandoahFreeSet* free_set);
   virtual ~ShenandoahAllocator() { }
 
   // Handle the allocation request.
@@ -93,7 +94,7 @@ public:
 /*
  * Allocator impl for mutator
  */
-class ShenandoahMutatorAllocator : public ShenandoahAllocator {
+class ShenandoahMutatorAllocator : public ShenandoahAllocator<ShenandoahFreeSetPartitionId::Mutator> {
   static THREAD_LOCAL uint _alloc_start_index;
   uint alloc_start_index() override;
 #ifdef ASSERT
@@ -104,7 +105,7 @@ public:
   ShenandoahMutatorAllocator(ShenandoahFreeSet* free_set);
 };
 
-class ShenandoahCollectorAllocator : public ShenandoahAllocator {
+class ShenandoahCollectorAllocator : public ShenandoahAllocator<ShenandoahFreeSetPartitionId::Collector> {
   uint alloc_start_index() override;
 #ifdef ASSERT
   void verify(ShenandoahAllocRequest& req) override;
@@ -116,7 +117,7 @@ public:
 // Currently ShenandoahOldCollectorAllocator delegate allocation handling to ShenandoahFreeSet,
 // because of the complexity in plab allocation where we have specialised logic to handle card table size alignment.
 // We will make ShenandoahOldCollectorAllocator use compare-and-swap/atomic operation later.
-class ShenandoahOldCollectorAllocator : public ShenandoahAllocator {
+class ShenandoahOldCollectorAllocator : public ShenandoahAllocator<ShenandoahFreeSetPartitionId::OldCollector> {
   uint alloc_start_index() override;
 #ifdef ASSERT
   void verify(ShenandoahAllocRequest& req) override;

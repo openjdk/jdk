@@ -3175,7 +3175,7 @@ int ShenandoahFreeSet::reserve_alloc_regions(ShenandoahFreeSetPartitionId partit
 
 template<ShenandoahFreeSetPartitionId ALLOC_PARTITION>
 int ShenandoahFreeSet::reserve_alloc_regions(int regions_to_reserve, size_t min_free_words, ShenandoahHeapRegion** reserved_regions) {
-  assert(0 < regions_to_reserve && regions_to_reserve <= (int) ShenandoahAllocator::MAX_ALLOC_REGION_COUNT, "Sanity check");
+  assert(0 < regions_to_reserve && regions_to_reserve <= (int) ShenandoahAllocator<ALLOC_PARTITION>::MAX_ALLOC_REGION_COUNT, "Sanity check");
   shenandoah_assert_heaplocked();
   if (ALLOC_PARTITION == ShenandoahFreeSetPartitionId::Mutator) {
     update_allocation_bias();
@@ -3198,7 +3198,7 @@ template<ShenandoahFreeSetPartitionId ALLOC_PARTITION, typename Iter>
 int ShenandoahFreeSet::reserve_alloc_regions_internal(Iter iterator, int const regions_to_reserve, size_t min_free_words, ShenandoahHeapRegion** reserved_regions) {
   ShenandoahAffiliation affiliation = ALLOC_PARTITION == ShenandoahFreeSetPartitionId::OldCollector ? OLD_GENERATION : YOUNG_GENERATION;
   bool use_affiliated_first = ALLOC_PARTITION != ShenandoahFreeSetPartitionId::Mutator;
-  ShenandoahHeapRegion* free_heap_regions[ShenandoahAllocator::MAX_ALLOC_REGION_COUNT];
+  ShenandoahHeapRegion* free_heap_regions[ShenandoahAllocator<ALLOC_PARTITION>::MAX_ALLOC_REGION_COUNT];
   int free_heap_region_count = 0;
   int reserved_regions_count = 0;
 
