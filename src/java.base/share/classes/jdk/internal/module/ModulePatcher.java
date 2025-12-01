@@ -292,6 +292,9 @@ public final class ModulePatcher {
             return r;
         }
 
+        /**
+         * Throws an IOException if the ModuleReader is closed.
+         */
         private void ensureOpen() throws IOException {
             if (closed) {
                 throw new IOException("ModuleReader is closed");

@@ -29,6 +29,7 @@ import java.net.URI;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -43,6 +44,43 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class PatchedModuleReaderTest {
 
+    private static ModuleReference patchedModuleRef;
+
+    @BeforeAll
+    static void beforeAll() {
+        patchedModuleRef = ModuleFinder.ofSystem()
+                .find("java.base")
+                .orElseThrow();
+    }
+
+    /*
+     * Verifies that the resource that was patched into a module
+     * is found by the ModuleReader.
+     */
+    @Test
+    void testPatchedResourcePresence() throws Exception {
+        try (ModuleReader reader = patchedModuleRef.open()) {
+            String resourceName = "java/lang/PatchedFoo.class";
+            Optional<URI> res = reader.find(resourceName);
+            assertTrue(res.isPresent(), resourceName + " is missing in "
+                    + patchedModuleRef.descriptor().name() + " module");
+        }
+    }
+
+    /*
+     * Verifies the ModuleReader against a resource which isn't
+     * expected to be part of the patched module.
+     */
+    @Test
+    void testNonExistentResource() throws Exception {
+        try (ModuleReader reader = patchedModuleRef.open()) {
+            String nonExistentResource = "foo/bar/NonExistent.class";
+            Optional<URI> res = reader.find(nonExistentResource);
+            assertTrue(res.isEmpty(), "unexpected resource " + nonExistentResource
+                    + " in " + patchedModuleRef.descriptor().name() + " module");
+        }
+    }
+
     /*
      * This test opens a ModuleReader for a patched module, accumulates
      * the Stream of resources from that ModuleReader and then closes that
@@ -51,24 +89,10 @@ class PatchedModuleReaderTest {
      * operations on the Stream of resources.
      */
     @Test
-    void testIOExceptionUponClose() throws Exception {
-        final ModuleReference mref = ModuleFinder.ofSystem()
-                .find("java.base")
-                .orElseThrow();
-        final ModuleReader reader;
-        final Stream<String> resources;
-        final String nonExistentResource = "foo/bar/NonExistent.class";
-        // open the ModuleReader
-        try (var _ = reader = mref.open()) {
-            // verify we are using the patched module
-            final String resourceName = "java/lang/PatchedFoo.class";
-            final Optional<URI> res = reader.find(resourceName);
-            assertTrue(res.isPresent(), resourceName + " is missing in "
-                    + mref.descriptor().name() + " module");
-            // test a non-existent resource
-            assertTrue(reader.find(nonExistentResource).isEmpty(),
-                    "unexpected resource " + nonExistentResource + " in "
-                            + mref.descriptor().name() + " module");
+    void testIOExceptionAfterClose() throws Exception {
+        ModuleReader reader;
+        Stream<String> resources;
+        try (var _ = reader = patchedModuleRef.open()) {
             // hold on to the available resources, to test them after the
             // ModuleReader is closed
             resources = reader.list();
@@ -85,6 +109,7 @@ class PatchedModuleReaderTest {
         });
 
         // repeat the test for a non-existent resource
+        String nonExistentResource = "foo/bar/NonExistent.class";
         assertThrows(IOException.class, () -> reader.read(nonExistentResource),
                 "ModuleReader.read(String)");
         assertThrows(IOException.class, () -> reader.open(nonExistentResource),
