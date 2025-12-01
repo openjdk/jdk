@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHFREESETPARTITION_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHFREESETPARTITION_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHFREESETPARTITIONID_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHFREESETPARTITIONID_HPP
 
 // Each ShenandoahHeapRegion is associated with a ShenandoahFreeSetPartitionId.
 enum class ShenandoahFreeSetPartitionId : uint8_t {
@@ -39,4 +39,4 @@ enum class ShenandoahFreeSetPartitionId : uint8_t {
                                 //    for Mutator, making similar adjustments to used (net impact on available is neutral).
 };
 
-#endif //SHARE_GC_SHENANDOAH_SHENANDOAHFREESETPARTITION_HPP
+#endif //SHARE_GC_SHENANDOAH_SHENANDOAHFREESETPARTITIONID_HPP
