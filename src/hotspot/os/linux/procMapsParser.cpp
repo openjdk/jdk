@@ -50,7 +50,14 @@ ProcSmapsParser::~ProcSmapsParser() {
 
 bool ProcSmapsParser::read_line() {
   _line[0] = '\0';
-  return ::fgets(_line, _linelen, _f) != nullptr;
+
+  if (::fgets(_line, _linelen, _f) == nullptr) {
+    // On error or EOF, ensure deterministic empty buffer
+    _line[0] = '\0';
+    return false;
+  } else {
+    return true;
+  }
 }
 
 bool ProcSmapsParser::is_header_line() {
