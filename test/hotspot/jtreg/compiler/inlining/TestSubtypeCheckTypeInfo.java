@@ -65,10 +65,12 @@ public class TestSubtypeCheckTypeInfo {
         if (analyzer.getStderr().contains("Server VM")) {
             List<String> output = analyzer.asLinesWithoutVMWarnings();
 
-            if (parseOutput(output)) {
+            int total = 18; // 18 test cases in total
+            int success = parseOutput(output);
+            if (success == total) {
                 System.out.println("TEST PASSED");
             } else {
-                System.out.println("TEST FAILED");
+                System.out.printf("TEST FAILED: %d out of %d test cases passed\n", success, total);
                 System.out.println(analyzer.getOutput());
                 throw new AssertionError("TEST FAILED");
             }
@@ -344,19 +346,22 @@ public class TestSubtypeCheckTypeInfo {
     /* =========================================================== */
 
     // Parse compilation log (-XX:+PrintCompilation -XX:+PrintInlining output).
-    static boolean parseOutput(List<String> output) {
-        boolean result = true;
-        Pattern compilation = Pattern.compile("^\\d+\\s+\\d+\\s+b\\s+");
+    static int parseOutput(List<String> output) {
+        int successCount = 0;
+        Pattern compilation = Pattern.compile("^\\d+\\s+\\d+.*");
         StringBuilder inlineTree = new StringBuilder();
         for (String line : output) {
             // Detect start of next compilation.
             if (compilation.matcher(line).matches()) {
                 // Parse output for previous compilation.
-                result &= validateInliningOutput(inlineTree.toString());
+                successCount += (validateInliningOutput(inlineTree.toString()) ? 1 : 0);
+                inlineTree = new StringBuilder(); // reset
             }
             inlineTree.append(line);
         }
-        return result;
+        // Process last compilation
+        successCount += (validateInliningOutput(inlineTree.toString()) ? 1 : 0);
+        return successCount;
     }
 
     // Sample:
@@ -371,17 +376,17 @@ public class TestSubtypeCheckTypeInfo {
             try {
                 Method testMethod = TestSubtypeCheckTypeInfo.class.getDeclaredMethod(testName, A.class, boolean.class);
                 if (!validate(inlineTree, testMethod.getAnnotation(InlineSuccess.class)) ||
-                        !validate(inlineTree, testMethod.getAnnotation(InlineFailure.class))) {
+                    !validate(inlineTree, testMethod.getAnnotation(InlineFailure.class))) {
                     return false;
                 }
                 System.out.println(": SUCCESS");
                 return true;
             } catch (NoSuchMethodException e) {
                 System.out.println(": FAILURE: Missing test info for " + testName + ": " + inlineTree);
-                return false;
+                throw new InternalError(e);
             }
         } else {
-            return true; // not a test method; ignored
+            return false; // not a test method; ignored
         }
     }
 
