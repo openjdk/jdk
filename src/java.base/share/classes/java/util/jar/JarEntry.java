@@ -114,6 +114,10 @@ public class JarEntry extends ZipEntry {
      * validate each signer's certificate chain, and determining whether
      * to trust the entry signed by the signers.
      *
+     * <p>The returned array is a new array (a shallow copy) whose elements are
+     * the same {@link Certificate} objects. Modifying the returned array does
+     * not affect the internal state of this {@code JarEntry}.
+     *
      * @return the {@code Certificate} objects for this entry, or
      * {@code null} if none.
      *
@@ -139,6 +143,10 @@ public class JarEntry extends ZipEntry {
      * validate each signer's certificate chain, and determining whether
      * to trust the entry signed by the signers.
      *
+     * <p>The returned array is a new array (a shallow copy) whose elements are
+     * the same {@link CodeSigner} objects. Modifying the returned array does
+     * not affect the internal state of this {@code JarEntry}.
+     * 
      * @return the {@code CodeSigner} objects for this entry, or
      * {@code null} if none.
      *
