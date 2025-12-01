@@ -31,7 +31,6 @@ import java.util.Objects;
 import java.util.Optional;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.Application;
-import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.Package.Stub;
 import jdk.jpackage.internal.model.PackageType;
@@ -44,7 +43,7 @@ final class PackageBuilder {
         this.type = Objects.requireNonNull(type);
     }
 
-    Package create() throws ConfigException {
+    Package create() {
         final var validatedName = validatedName();
 
         Path relativeInstallDir;
@@ -208,8 +207,7 @@ final class PackageBuilder {
         });
     }
 
-    private static Path mapInstallDir(Path installDir, PackageType pkgType)
-            throws ConfigException {
+    private static Path mapInstallDir(Path installDir, PackageType pkgType) {
         var ex = buildConfigException("error.invalid-install-dir", installDir).create();
 
         if (installDir.getNameCount() == 0) {
