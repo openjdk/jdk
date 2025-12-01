@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,7 +200,21 @@ public enum JDBCType implements SQLType {
     /**
      * Identifies the generic SQL type {@code TIMESTAMP_WITH_TIMEZONE}.
      */
-    TIMESTAMP_WITH_TIMEZONE(Types.TIMESTAMP_WITH_TIMEZONE);
+    TIMESTAMP_WITH_TIMEZONE(Types.TIMESTAMP_WITH_TIMEZONE),
+
+    /* JDBC 4.5 Types */
+
+    /**
+     * Identifies the generic SQL type {@code DECFLOAT}.
+     * @since 26
+     */
+    DECFLOAT(Types.DECFLOAT),
+
+    /**
+     * Identifies the generic SQL type {@code JSON}.
+     * @since 26
+     */
+    JSON(Types.JSON);
 
     /**
      * The Integer value for the JDBCType.  It maps to a value in

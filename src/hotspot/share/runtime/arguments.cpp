@@ -1478,10 +1478,10 @@ void Arguments::set_conservative_max_heap_alignment() {
   // the alignments imposed by several sources: any requirements from the heap
   // itself and the maximum page size we may run the VM with.
   size_t heap_alignment = GCConfig::arguments()->conservative_max_heap_alignment();
-  _conservative_max_heap_alignment = MAX4(heap_alignment,
+  _conservative_max_heap_alignment = MAX3(heap_alignment,
                                           os::vm_allocation_granularity(),
-                                          os::max_page_size(),
-                                          GCArguments::compute_heap_alignment());
+                                          os::max_page_size());
+  assert(is_power_of_2(_conservative_max_heap_alignment), "Expected to be a power-of-2");
 }
 
 jint Arguments::set_ergonomics_flags() {
@@ -1589,8 +1589,8 @@ void Arguments::set_heap_size() {
     }
 
     if (UseCompressedOops) {
-      size_t heap_end = HeapBaseMinAddress + MaxHeapSize;
-      size_t max_coop_heap = max_heap_for_compressed_oops();
+      uintptr_t heap_end = HeapBaseMinAddress + MaxHeapSize;
+      uintptr_t max_coop_heap = max_heap_for_compressed_oops();
 
       // Limit the heap size to the maximum possible when using compressed oops
       if (heap_end < max_coop_heap) {
@@ -1607,7 +1607,7 @@ void Arguments::set_heap_size() {
           aot_log_info(aot)("UseCompressedOops disabled due to "
                             "max heap %zu > compressed oop heap %zu. "
                             "Please check the setting of MaxRAMPercentage %5.2f.",
-                            reasonable_max, max_coop_heap, MaxRAMPercentage);
+                            reasonable_max, (size_t)max_coop_heap, MaxRAMPercentage);
           FLAG_SET_ERGO(UseCompressedOops, false);
         } else {
           reasonable_max = max_coop_heap;
