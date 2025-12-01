@@ -30,13 +30,6 @@ import java.util.HexFormat;
 
 /*
  * @test
- * @library /test/lib
- * @key randomness
- * @modules java.base/sun.security.provider:+open
- * @run main/othervm ML_DSA_Intrinsic_Test -XX:+UnlockDiagnosticVMOptions -XX:-UseDilithiumIntrinsics
- */
-/*
- * @test
  * @requires os.simpleArch == "x64"
  * @library /test/lib
  * @key randomness
