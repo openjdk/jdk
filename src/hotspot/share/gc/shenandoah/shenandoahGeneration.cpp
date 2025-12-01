@@ -498,7 +498,6 @@ size_t ShenandoahGeneration::select_aged_regions(const size_t old_promotion_rese
 
   const size_t pip_used_threshold = (ShenandoahHeapRegion::region_size_bytes() * ShenandoahGenerationalMinPIPUsage) / 100;
 
-  size_t promo_potential = 0;
   size_t candidates = 0;
 
   // Tracks the padding of space above top in regions eligible for promotion in place
@@ -604,27 +603,6 @@ size_t ShenandoahGeneration::select_aged_regions(const size_t old_promotion_rese
         sorted_regions[candidates]._region = r;
         sorted_regions[candidates++]._live_data = r->get_live_data_bytes();
       }
-    } else {
-      // We only evacuate & promote objects from regular regions whose garbage() is above old-garbage-threshold.
-      // Objects in tenure-worthy regions with less garbage are promoted in place. These take a different path to
-      // old-gen.  Regions excluded from promotion because their garbage content is too low (causing us to anticipate that
-      // the region would be promoted in place) may be eligible for evacuation promotion by the time promotion takes
-      // place during a subsequent GC pass because more garbage is found within the region between now and then.  This
-      // should not happen if we are properly adapting the tenure age.  The theory behind adaptive tenuring threshold
-      // is to choose the youngest age that demonstrates no "significant" further loss of population since the previous
-      // age.  If not this, we expect the tenure age to demonstrate linear population decay for at least two population
-      // samples, whereas we expect to observe exponential population decay for ages younger than the tenure age.
-      //
-      // In the case that certain regions which were anticipated to be promoted in place need to be promoted by
-      // evacuation, it may be the case that there is not sufficient reserve within old-gen to hold evacuation of
-      // these regions.  The likely outcome is that these regions will not be selected for evacuation or promotion
-      // in the current cycle and we will anticipate that they will be promoted in the next cycle.  This will cause
-      // us to reserve more old-gen memory so that these objects can be promoted in the subsequent cycle.
-      if (heap->is_aging_cycle() && heap->age_census()->is_tenurable(r->age() + 1)) {
-        if (r->garbage() >= old_garbage_threshold) {
-          promo_potential += r->get_live_data_bytes();
-        }
-      }
     }
     // Note that we keep going even if one region is excluded from selection.
     // Subsequent regions may be selected if they have smaller live data.
@@ -657,33 +635,36 @@ size_t ShenandoahGeneration::select_aged_regions(const size_t old_promotion_rese
       ShenandoahHeapRegion* const region = sorted_regions[i]._region;
       const size_t region_live_data = sorted_regions[i]._live_data;
       const size_t promotion_need = (size_t) (region_live_data * ShenandoahPromoEvacWaste);
-      if (old_consumed + promotion_need <= old_promotion_reserve) {
-        old_consumed += promotion_need;
-        candidate_regions_for_promotion_by_copy[region->index()] = true;
-        selected_regions++;
-        selected_live += region_live_data;
-      } else {
-        // We rejected this promotable region from the collection set because we had no room to hold its copy.
-        // Add this region to promo potential for next GC.
-        promo_potential += region_live_data;
-        assert(!candidate_regions_for_promotion_by_copy[region->index()], "Shouldn't be selected");
+      if (old_consumed + promotion_need > old_promotion_reserve) {
+        // We rejected the remaining promotable regions from the collection set because we had no room to hold their evacuees.
+        break;
       }
-      // We keep going even if one region is excluded from selection because we need to accumulate all eligible
-      // regions that are not preselected into promo_potential
+
+      old_consumed += promotion_need;
+      candidate_regions_for_promotion_by_copy[region->index()] = true;
+      selected_regions++;
+      selected_live += region_live_data;
     }
+
     log_debug(gc, ergo)("Preselected %zu regions containing " PROPERFMT " live data,"
                         " consuming: " PROPERFMT " of budgeted: " PROPERFMT,
                         selected_regions, PROPERFMTARGS(selected_live), PROPERFMTARGS(old_consumed), PROPERFMTARGS(old_promotion_reserve));
   }
 
   const uint tenuring_threshold = heap->age_census()->tenuring_threshold();
-  const size_t tenurable_next_cycle = heap->age_census()->get_tenurable_bytes(tenuring_threshold - 1);
   const size_t tenurable_this_cycle = heap->age_census()->get_tenurable_bytes(tenuring_threshold);
+  size_t tenurable_next_cycle = heap->age_census()->get_tenurable_bytes(tenuring_threshold - 1);
 
-  log_info(gc, ergo)("Promotion potential: " PROPERFMT ", tenurable next cycle: " PROPERFMT ", tenurable this cycle: " PROPERFMT ", selected for promotion: " PROPERFMT ,
-                     PROPERFMTARGS(promo_potential), PROPERFMTARGS(tenurable_next_cycle), PROPERFMTARGS(tenurable_this_cycle), PROPERFMTARGS(old_consumed));
+  // Don't include the bytes we expect to promote in this cycle, in the next
+  assert(tenurable_next_cycle >= tenurable_this_cycle,
+         "Tenurable next cycle (" PROPERFMT ") should include tenurable this cycle (" PROPERFMT ")",
+         PROPERFMTARGS(tenurable_next_cycle), PROPERFMTARGS(tenurable_this_cycle));
 
-  heap->old_generation()->set_pad_for_promote_in_place(promote_in_place_pad);
+  tenurable_next_cycle -= tenurable_this_cycle;
+
+  log_info(gc, ergo)("Tenurable next cycle: " PROPERFMT ", tenurable this cycle: " PROPERFMT ", selected for promotion: " PROPERFMT ,
+                     PROPERFMTARGS(tenurable_next_cycle), PROPERFMTARGS(tenurable_this_cycle), PROPERFMTARGS(old_consumed));
+
   heap->old_generation()->set_promotion_potential(tenurable_next_cycle);
 
   assert(old_consumed <= old_promotion_reserve, "Consumed more (%zu) than we reserved (%zu)", old_consumed, old_promotion_reserve);
