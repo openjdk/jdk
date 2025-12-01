@@ -4806,32 +4806,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
     return;
   }
 
-  // The update code uses CAS, which wants RAX register specifically, *and* it needs
-  // other important registers untouched. Therefore, we need to shift any important
-  // registers from RAX into some other spare register. If we have a spare register,
-  // we are forced to save it on stack here. But since it implies RAX is in our use,
-  // we can then save on RAX push/pops near the CAS.
   Register offset = rscratch1;
-  Register spare_reg = noreg;
-  if (recv == rax || mdp == rax) {
-    spare_reg = (recv != rbx && mdp != rbx) ? rbx :
-                (recv != rcx && mdp != rcx) ? rcx :
-                rdx;
-    assert_different_registers(mdp, recv, offset, spare_reg);
-
-    push(spare_reg);
-    if (recv == rax) {
-      movptr(spare_reg, recv);
-      recv = spare_reg;
-    } else {
-      assert(mdp == rax, "Remaining case");
-      movptr(spare_reg, mdp);
-      mdp = spare_reg;
-    }
-  }
-
-  // None of the important registers are in RAX after this shuffle.
-  assert_different_registers(rax, mdp, recv, offset);
 
   Label L_loop, L_loop_nulls, L_found_recv, L_not_null, L_count_update;
 
@@ -4860,25 +4835,62 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   //     if (receiver(i) == recv)  goto found_recv;
   //   }
   //
+  // This loop is fully executed for polymorphic case, therefore its performance should
+  // be reasonably fast. Atomic installation path should be rare, hide any extra complexity
+  // there.
+  //
   // Note: It is tempting to combine this search with the optimistic loop above,
   // and claim the first nullptr slot without checking the rest of the table.
-  // But, profiling code should tolerate free slots in MDO, for example, to allow cleaning up
-  // rows for unloaded receivers.
+  // But, profiling code should tolerate free slots in MDO. Therefore, we need to let
+  // the first scan to complete, before trying to install new slots.
   //
   movptr(offset, base_receiver_offset);
   bind(L_loop_nulls);
     cmpptr(Address(mdp, offset, Address::times_ptr), NULL_WORD);
     jccb(Assembler::notEqual, L_not_null);
       // Atomically swing receiver slot: null -> recv.
-      // If we have not shifted anything from RAX, we better save and restore it here.
-      if (spare_reg == noreg) {
+
+      // The update code uses CAS, which wants RAX register specifically, *and* it needs
+      // other important registers untouched, as they form the address. Therefore, we need
+      // to shift any important registers from RAX into some other spare register. If we
+      // have a spare register, we are forced to save it on stack here.
+
+      Register spare_reg = noreg;
+      Register shifted_mdp = mdp;
+      Register shifted_recv = recv;
+      if (recv == rax || mdp == rax) {
+        spare_reg = (recv != rbx && mdp != rbx) ? rbx :
+                    (recv != rcx && mdp != rcx) ? rcx :
+                    rdx;
+        assert_different_registers(mdp, recv, offset, spare_reg);
+
+        push(spare_reg);
+        if (recv == rax) {
+          movptr(spare_reg, recv);
+          shifted_recv = spare_reg;
+        } else {
+          assert(mdp == rax, "Remaining case");
+          movptr(spare_reg, mdp);
+          shifted_mdp = spare_reg;
+        }
+      } else {
         push(rax);
       }
+
+      // None of the important registers are in RAX after this shuffle.
+      assert_different_registers(rax, shifted_mdp, shifted_recv, offset);
+
       xorptr(rax, rax);
-      cmpxchgptr(recv, Address(mdp, offset, Address::times_ptr));
-      if (spare_reg == noreg) {
+      cmpxchgptr(shifted_recv, Address(shifted_mdp, offset, Address::times_ptr));
+
+      // Unshift registers. If we have the spare reg, this implies we can
+      if (spare_reg != noreg) {
+        movptr(rax, spare_reg);
+        pop(spare_reg);
+      } else {
         pop(rax);
       }
+
       // CAS failure means something had claimed the slot concurrently.
       // It can be the same receiver we want, or something else.
       // Fall-through to check the slot contents.
@@ -4902,13 +4914,6 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
 
   bind(L_count_update);
   addptr(Address(mdp, offset, Address::times_ptr), DataLayout::counter_increment);
-
-  // About to return to outer code: restore affected registers.
-  // Taking this branch implies some important register was shifted from RAX.
-  if (spare_reg != noreg) {
-    movptr(rax, spare_reg);
-    pop(spare_reg);
-  }
 }
 
 void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* file, int line) {
