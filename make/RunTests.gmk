@@ -1157,6 +1157,7 @@ define SetupRunJtregTestBody
 	      $$(EXPR) $$($1_PASSED) + $$($1_FAILED) + $$($1_ERROR) + $$($1_SKIPPED))) \
 	, \
 	  $$(eval $1_PASSED_AND_RUNTIME_SKIPPED := 0) \
+	  $$(eval $1_PASSED := 0) \
 	  $$(eval $1_RUNTIME_SKIPPED := 0) \
 	  $$(eval $1_SKIPPED := 0) \
 	  $$(eval $1_FAILED := 0) \

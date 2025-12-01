@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,11 @@ public class TestSeeLinkAnchor extends JavadocTester {
             """
                     Link to <a href="../p2/package-summary.html#package-p2-heading"><code>heading in package p2</code></a>""",
             """
-                    Plain link to <a href="../p2/Class2.html#class2-sub-heading">sub heading above</a></div>""",
+                    Plain link to <a href="../p2/Class2.html#class2-sub-heading">heading in Class2</a></div>""",
+            """
+                    <li><a href="#main">unqualified link to heading above</a></li>
+                    <li><a href="#main">qualified link to heading above</a></li>
+                    """,
             """
                     <li><a href="../p2/Class2.html#class2main">See main heading in p2.Class2</a></li>
                     <li><a href="../p2/package-summary.html#package-p2-heading">See heading in p2</a></li>
@@ -89,13 +93,19 @@ public class TestSeeLinkAnchor extends JavadocTester {
                     Plain link <a href="../p1/Class1.html#main">to Class1</a>.""");
         checkOrder("p2/package-summary.html",
             """
-                    <a href="Class2.html#class2-sub-heading">See sub heading in p2.Class2</a>""");
+                    <li><a href="Class2.html#class2-sub-heading">See sub heading in p2.Class2</a></li>
+                    <li><a href="#package-p2-heading">local qualified link</a></li>
+                    <li><a href="#package-p2-heading">local unqualified link</a></li>
+                    """);
 
         checkOrder("p2/doc-files/file.html",
             """
                     Plain link to <a href="../../p1/Class1.html#main">heading in p1.ClassA</a>.""",
             """
-                    <a href="../Class2.html#class2main">See main heading in p2.ClassB</a>""");
+                    <li><a href="../Class2.html#class2main">See main heading in p2.ClassB</a></li>
+                    <li><a href="../package-summary.html#package-p2-heading">package link</a></li>
+                    <li><a href="#package-p2-html-file-heading">local anchor</a></li>
+                    """);
     }
 
     @Test
@@ -112,12 +122,57 @@ public class TestSeeLinkAnchor extends JavadocTester {
         checkOrder("m1/module-summary.html",
             """
                     <a href="../m2/com/m2/Class2.html#main-heading">See main heading in Class2</a>""");
+        checkOrder("m1/com/m1/package-summary.html",
+            """
+                    <div class="block"><a href="#package-anchor">Link to local anchor</a>.
+                    """,
+            """
+                    <span id="package-anchor" class="search-tag-result">package-anchor</span></div>
+                    """,
+            """
+                    <ul class="tag-list">
+                    <li><a href="#package-anchor">unqualified local anchor</a></li>
+                    <li><a href="#package-anchor">qualified local anchor</a></li>
+                    <li><a href="#package-anchor">fully qualified local anchor</a></li>
+                    </ul>
+                    """);
         checkOrder("m1/com/m1/Class1.html",
             """
                     <a href="../../../m2/com/m2/Class2.html#sub"><code>sub heading in Class2</code></a>.""",
             """
-                    <li><a href="../../../m2/com/m2/Class2.html#main-heading">See main heading in Class2</a></li>
-                    <li><a href="../../module-summary.html#module-m1-heading">See heading in module m1</a></li>
+                    <p>More links:
+                    <ul>
+                    <li><a href="../../../m2/com/m2/Class2.html#sub">qualified remote link</a></li>
+                    <li><a href="../../../m2/com/m2/Class2.html#sub">unqualified remote link</a></li>
+                    <li><a href="../../module-summary.html#module-m1-heading">module anchor link</a></li>
+                    <li><a href="package-summary.html#package-anchor">package anchor link</a></li>
+                    <li><a href="#class1-anchor">qualified local anchor link</a></li>
+                    <li><a href="#class1-anchor">unqualified local anchor link</a></li>
+                    </ul>
+                    """,
+            """
+                    <dt>See Also:</dt>
+                    <dd>
+                    <ul class="tag-list">
+                    <li><a href="../../../m2/com/m2/Class2.html#main-heading">qualified remote link</a></li>
+                    <li><a href="../../../m2/com/m2/Class2.html#main-heading">unqualified remote link</a></li>
+                    <li><a href="../../module-summary.html#module-m1-heading">module anchor link</a></li>
+                    <li><a href="package-summary.html#package-anchor">package anchor link</a></li>
+                    <li><a href="#class1-anchor">qualified local anchor link</a></li>
+                    <li><a href="#class1-anchor">unqualified local anchor link</a></li>
+                    </ul>
+                    """);
+        checkOrder("m2/module-summary.html",
+            """
+                    <a href="com/m2/package-summary.html#pkg-heading">Plain link to local anchor</a>.""");
+        checkOrder("m2/com/m2/package-summary.html",
+            """
+                    <a href="#pkg-heading">Plain link to local anchor</a>.
+                    """,
+            """
+                    <ul class="tag-list">
+                    <li><a href="#pkg-heading">See local anchor</a></li>
+                    </ul>
                     """);
         checkOrder("m2/com/m2/Class2.html",
             """
@@ -126,9 +181,14 @@ public class TestSeeLinkAnchor extends JavadocTester {
                     Plain link to <a href="#sub">sub heading above</a>.""");
         checkOrder("m2/doc-files/file.html",
             """
-                    Link to <a href="../com/m2/Class2.html#main-heading"><code>heading in Class2</code></a>.""",
+                    Link to <a href="../com/m2/Class2.html#main-heading"><code>heading in Class2</code></a>.
+                    <a href="#docfile-heading">Plain link to local anchor</a>.
+                    """,
             """
-                    <li><a href="../../m1/module-summary.html#module-m1-heading">Heading in module m1</a></li>""");
+                    <ul class="tag-list">
+                    <li><a href="../../m1/module-summary.html#module-m1-heading">Heading in module m1</a></li>
+                    <li><a href="#docfile-heading">See local anchor</a></li>
+                    """);
     }
 
     @Test
@@ -197,7 +257,9 @@ public class TestSeeLinkAnchor extends JavadocTester {
                     <h2 id="main">Class1 Main</h2>
                     Link to {@link p2##package-p2-heading heading in package p2}
                     <h3>Class1 Sub</h3>
-                    Plain link to {@linkplain p2.Class2##class2-sub-heading sub heading above}
+                    Plain link to {@linkplain p2.Class2##class2-sub-heading heading in Class2}
+                    @see ##main unqualified link to heading above
+                    @see p1.Class1##main qualified link to heading above
                     """)
                 .addMembers(mb)
                 .write(src);
@@ -216,6 +278,8 @@ public class TestSeeLinkAnchor extends JavadocTester {
                      * <h2>Package p2</h2>
                      *
                      * @see p2.Class2##class2-sub-heading See sub heading in p2.Class2
+                     * @see p2##package-p2-heading local qualified link
+                     * @see ##package-p2-heading local unqualified link
                      */
                     package p2;
                     """);
@@ -227,6 +291,8 @@ public class TestSeeLinkAnchor extends JavadocTester {
                     <body><h1>Package p2 HTML File</h1>
                     Plain link to {@linkplain p1.Class1##main heading in p1.ClassA}.
                     @see p2.Class2##class2main See main heading in p2.ClassB
+                    @see p2##package-p2-heading package link
+                    @see ##package-p2-html-file-heading local anchor
                     </body>
                     </html>
                     """);
@@ -235,13 +301,33 @@ public class TestSeeLinkAnchor extends JavadocTester {
     void generateModuleSources() throws Exception {
         new ModuleBuilder(tb, "m1")
                 .exports("com.m1")
+                .requires("m2")
                 .classes("""
                     package com.m1;
+
+                    import com.m2.Class2;
+
                     /**
                      * Link to the {@link m2/com.m2.Class2##sub sub heading in Class2}.
                      *
-                     * @see m2/com.m2.Class2##main-heading See main heading in Class2
-                     * @see m1/##module-m1-heading See heading in module m1
+                     * <p>More links:
+                     * <ul>
+                     * <li>{@linkplain com.m2.Class2##sub qualified remote link}</li>
+                     * <li>{@linkplain Class2##sub unqualified remote link}</li>
+                     * <li>{@linkplain m1/##module-m1-heading module anchor link}</li>
+                     * <li>{@linkplain com.m1##package-anchor package anchor link}</li>
+                     * <li>{@linkplain Class1##class1-anchor qualified local anchor link}</li>
+                     * <li>{@linkplain ##class1-anchor unqualified local anchor link}</li>
+                     * </ul>
+                     *
+                     * <p>{@index class1-anchor}
+                     *
+                     * @see com.m2.Class2##main-heading  qualified remote link
+                     * @see Class2##main-heading unqualified remote link
+                     * @see m1/##module-m1-heading module anchor link
+                     * @see com.m1##package-anchor package anchor link
+                     * @see Class1##class1-anchor qualified local anchor link
+                     * @see ##class1-anchor unqualified local anchor link
                      */
                     public class Class1 {}
                     """)
@@ -250,6 +336,17 @@ public class TestSeeLinkAnchor extends JavadocTester {
                     @see m2/com.m2.Class2##main-heading See main heading in Class2
                     """)
                 .write(src);
+        tb.writeFile(src.resolve("m1/com/m1/package-info.java"), """
+                    /**
+                     * {@linkplain ##package-anchor Link to local anchor}.
+                     * {@index package-anchor}
+                     *
+                     * @see ##package-anchor unqualified local anchor
+                     * @see com.m1##package-anchor qualified local anchor
+                     * @see m1/com.m1##package-anchor fully qualified local anchor
+                     */
+                    package com.m1;
+                    """);
         new ModuleBuilder(tb, "m2")
                 .exports("com.m2")
                 .classes("""
@@ -264,14 +361,30 @@ public class TestSeeLinkAnchor extends JavadocTester {
                     public class Class2 {}
                     """)
                 .write(src);
+        tb.writeFile(src.resolve("m2/com/m2/package.html"), """
+                    <html>
+                    <head><title>Package com.m2</title></head>
+                    <body>
+                    {@linkplain ##pkg-heading Plain link to local anchor}.
+
+                    <h2 id="pkg-heading">Package com.m2</h2>
+
+                    @see ##pkg-heading See local anchor
+                    </body>
+                    </html>
+                    """);
         Path docFiles = src.resolve("m2").resolve("doc-files");
         tb.writeFile(docFiles.resolve("file.html"),
                 """
                     <html>
                     <head><title>Module m2 HTML File</title></head>
-                    <body><h1>Module m2 HTML File</h1>
+                    <body>
+                    <h1 id=docfile-heading>Module m2 HTML File</h1>
                     Link to {@link com.m2.Class2##main-heading heading in Class2}.
+                    {@linkplain ##docfile-heading Plain link to local anchor}.
+
                     @see m1/##module-m1-heading Heading in module m1
+                    @see ##docfile-heading See local anchor
                     </body>
                     </html>
                     """);
