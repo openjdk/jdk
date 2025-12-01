@@ -34,8 +34,11 @@ import static jdk.jpackage.internal.cli.StandardBundlingOperation.SIGN_MAC_APP_I
 
 import java.util.Optional;
 import jdk.jpackage.internal.cli.Options;
+import jdk.jpackage.internal.model.AppImageBundleType;
 import jdk.jpackage.internal.model.MacPackage;
 import jdk.jpackage.internal.model.Package;
+import jdk.jpackage.internal.summary.StandardProperty;
+import jdk.jpackage.internal.util.PathUtils;
 
 public class MacBundlingEnvironment extends DefaultBundlingEnvironment {
 
@@ -73,6 +76,12 @@ public class MacBundlingEnvironment extends DefaultBundlingEnvironment {
         final var env = buildEnv().create(options, app);
 
         final var pkg = createSignAppImagePackage(app, env);
+
+        OptionUtils.summary(options).put(StandardProperty.MAC_SIGN_APP_IMAGE_OPERATION,
+                AppImageBundleType.MAC_APP_IMAGE.label(),
+                PathUtils.normalizedAbsolutePath(env.appImageDir()));
+
+        OptionUtils.finalizeAndPrintSummary(options, pkg, Log::verbose);
 
         buildPipeline(pkg).create().execute(env, pkg, env.appImageDir());
     }

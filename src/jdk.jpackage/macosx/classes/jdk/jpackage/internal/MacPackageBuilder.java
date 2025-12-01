@@ -29,9 +29,12 @@ import static jdk.jpackage.internal.MacPackagingPipeline.LayoutUtils.packagerLay
 
 import java.nio.file.Files;
 import java.util.Objects;
+import java.util.Optional;
 import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.MacPackage;
 import jdk.jpackage.internal.model.MacPackageMixin;
+import jdk.jpackage.internal.summary.SummaryAccumulator;
+import jdk.jpackage.internal.summary.StandardWarning;
 
 final class MacPackageBuilder {
 
@@ -41,6 +44,11 @@ final class MacPackageBuilder {
 
     MacPackageBuilder predefinedAppImageSigned(boolean  v) {
         predefinedAppImageSigned = v;
+        return this;
+    }
+
+    MacPackageBuilder summary(SummaryAccumulator v) {
+        summary = v;
         return this;
     }
 
@@ -60,16 +68,22 @@ final class MacPackageBuilder {
         pkg = pkgBuilder.create();
 
         var macPkg = MacPackage.create(pkg, new MacPackageMixin.Stub(pkg.predefinedAppImage().map(v -> predefinedAppImageSigned)));
-        validatePredefinedAppImage(macPkg);
+        summary().ifPresent(s -> {
+            validatePredefinedAppImage(s, macPkg);
+        });
         return macPkg;
     }
 
-    private static void validatePredefinedAppImage(MacPackage pkg) {
+    private Optional<SummaryAccumulator> summary() {
+        return Optional.ofNullable(summary);
+    }
+
+    private static void validatePredefinedAppImage(SummaryAccumulator summary, MacPackage pkg) {
         if (pkg.predefinedAppImageSigned().orElse(false)) {
             pkg.predefinedAppImage().ifPresent(predefinedAppImage -> {
                 var thePackageFile = PackageFile.getPathInAppImage(APPLICATION_LAYOUT);
                 if (!Files.exists(predefinedAppImage.resolve(thePackageFile))) {
-                    Log.info(I18N.format("warning.per.user.app.image.signed", thePackageFile));
+                    summary.put(StandardWarning.MAC_SIGNED_PREDEFINED_APP_IMAGE_WITHOUT_PACKAGE_FILE, thePackageFile);
                 }
             });
         }
@@ -77,4 +91,5 @@ final class MacPackageBuilder {
 
     private final PackageBuilder pkgBuilder;
     private boolean predefinedAppImageSigned;
+    private SummaryAccumulator summary;
 }

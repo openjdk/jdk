@@ -129,6 +129,8 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
         Objects.requireNonNull(app);
         Objects.requireNonNull(pipelineBuilder);
 
+        OptionUtils.finalizeAndPrintSummary(options, app, Log::verbose);
+
         final var outputDir = PathUtils.normalizedAbsolutePath(OptionUtils.outputDir(options).resolve(app.appImageDirName()));
 
         Log.verbose(I18N.getString("message.create-app-image"));
@@ -170,6 +172,8 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
         Objects.requireNonNull(createPipelineBuilder);
         Objects.requireNonNull(pipelineBuilderMutatorFactory);
 
+        OptionUtils.finalizeAndPrintSummary(options, pkg, Log::verbose);
+
         var pipelineBuilder = Objects.requireNonNull(createPipelineBuilder.apply(pkg));
 
         // Delete an old output package file (if any) before creating a new one.
@@ -194,6 +198,9 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
     @Override
     public void createBundle(BundlingOperationDescriptor op, Options cmdline) {
         final var bundler = getBundlerSupplier(op).get().orElseThrow();
+
+        cmdline = OptionUtils.addSummary(cmdline);
+
         Optional<Path> permanentWorkDirectory = Optional.empty();
         try (var tempDir = new TempDirectory(cmdline)) {
             if (!tempDir.deleteOnClose()) {
