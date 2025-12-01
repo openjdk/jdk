@@ -83,7 +83,7 @@ public class DefRendererSerialize {
                     ostream.flush();
                     serializedObject = bytes.toByteArray();
                 } catch (IOException ioex) {
-                    ioex.printStackTrace();
+                    throw new RuntimeException(ioex);
                 }
 
                 if (serializedObject == null) {
@@ -99,7 +99,9 @@ public class DefRendererSerialize {
                     if (!(fg == destcr.getForeground()) || !(bg == destcr.getBackground())) {
                         throw new RuntimeException("Deserialized foreground and background color not same");
                     }
-                } catch (IOException | ClassNotFoundException e) {}
+                } catch (IOException | ClassNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
 
                 frame.add(table);
 
