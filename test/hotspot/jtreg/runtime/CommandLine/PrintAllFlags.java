@@ -27,7 +27,6 @@
  * @summary Test that +PrintFlagsFinal print the same options when +UnlockExperimentalVMOptions and
  *  +UnlockDiagnosticVMOptions are set than when they aren't.
  * @requires vm.flagless
- * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run driver PrintAllFlags
  */
