@@ -31,6 +31,8 @@ import java.net.http.HttpResponse;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
+
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.test.lib.net.SimpleSSLContext;
@@ -49,7 +51,7 @@ import jdk.test.lib.security.SecurityUtils;
 
 /*
  * @test
- * @bug 8239594
+ * @bug 8239594 8371887
  * @summary This test verifies that the TLS version handshake respects ssl context
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext TlsContextTest
@@ -101,9 +103,25 @@ public class TlsContextTest implements HttpServerAdapters {
      * Tests various scenarios between client and server tls handshake with valid http
      */
     @Test(dataProvider = "scenarios")
-    public void testVersionProtocols(SSLContext context,
+    public void testVersionProtocolsNoParams(SSLContext context,
                                      Version version,
                                      String expectedProtocol) throws Exception {
+        runTest(context, version, expectedProtocol, false);
+    }
+
+    /**
+     * Tests various scenarios between client and server tls handshake with valid http,
+     * but with empty SSLParameters
+     */
+    @Test(dataProvider = "scenarios")
+    public void testVersionProtocolsEmptyParams(SSLContext context,
+                                             Version version,
+                                             String expectedProtocol) throws Exception {
+        runTest(context, version, expectedProtocol, true);
+    }
+
+    private void runTest(SSLContext context, Version version, String expectedProtocol,
+                         boolean setEmptyParams) throws Exception {
         // for HTTP/3 we won't accept to set the version to HTTP/3 on the
         //    client if we don't have TLSv1.3; We will set the version
         //    on the request instead in that case.
@@ -111,8 +129,11 @@ public class TlsContextTest implements HttpServerAdapters {
                 : HttpClient.newBuilder().version(version);
         var reqBuilder = HttpRequest.newBuilder(new URI(https2URI));
 
+        if (setEmptyParams) {
+            builder.sslParameters(new SSLParameters());
+        }
         HttpClient client = builder.sslContext(context)
-                                      .build();
+                .build();
         if (version == HTTP_3) {
             // warmup to obtain AltService
             client.send(reqBuilder.version(HTTP_2).GET().build(), ofString());
