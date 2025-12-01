@@ -63,6 +63,7 @@ public:
 
   uint _risk_bias;              // Index of LRG which we want to avoid color
   uint _copy_bias;              // Index of LRG which we want to share color
+  uint _copy_bias2;             // Index of second LRG which we want to share color
 
   uint _next;                   // Index of next LRG in linked list
   uint _prev;                   // Index of prev LRG in linked list
@@ -128,7 +129,7 @@ public:
   // count of bits in the current mask.
   int get_invalid_mask_size() const { return _mask_size; }
   const RegMask &mask() const { return _mask; }
-  void set_mask( const RegMask &rm ) { _mask = rm; DEBUG_ONLY(_msize_valid=0;)}
+  void set_mask(const RegMask& rm) { _mask.assignFrom(rm); DEBUG_ONLY(_msize_valid = 0;) }
   void init_mask(Arena* arena) { new (&_mask) RegMask(arena); }
   void and_with( const RegMask &rm ) { _mask.and_with(rm); DEBUG_ONLY(_msize_valid=0;)}
   void subtract( const RegMask &rm ) { _mask.subtract(rm); DEBUG_ONLY(_msize_valid=0;)}
@@ -703,6 +704,8 @@ private:
   OptoReg::Name choose_color(LRG& lrg);
   // Helper function which implements biasing heuristic
   OptoReg::Name bias_color(LRG& lrg);
+  // Helper function which implements color biasing
+  OptoReg::Name select_bias_lrg_color(LRG& lrg);
 
   // Split uncolorable live ranges
   // Return new number of live ranges
