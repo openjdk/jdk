@@ -709,6 +709,7 @@ public final class DateTimeFormatterBuilder {
             }
             // Replace the modified parser with the updated one
             active.printerParsers.set(activeValueParser, basePP);
+            checkField(basePP);
         } else {
             // The new Parser becomes the active parser
             active.valueParserIndex = appendInternal(pp);
@@ -2379,20 +2380,31 @@ public final class DateTimeFormatterBuilder {
         }
 
         // Update the onlyChronoField flag if the printer/parser uses non-ChronoField instances
-        TemporalField field = null;
+        checkField(pp);
+        active.printerParsers.add(pp);
+        active.valueParserIndex = -1;
+        return active.printerParsers.size() - 1;
+    }
+
+    /**
+     * Update the onlyChronoField flag if the printer/parser uses non-ChronoField instances
+     * @param pp the printer-parser
+     */
+    private void checkField(DateTimePrinterParser pp) {
+        TemporalField field;
         if (pp instanceof NumberPrinterParser npp) {
             field = npp.field;
         } else if (pp instanceof TextPrinterParser tpp) {
             field = tpp.field;
         } else if (pp instanceof DefaultValueParser dvp) {
             field = dvp.field;
+        } else {
+            return;
         }
-        if (field != null && !(field instanceof ChronoField)) {
+
+        if (!(field instanceof ChronoField)) {
             active.onlyChronoField = false;
         }
-        active.printerParsers.add(pp);
-        active.valueParserIndex = -1;
-        return active.printerParsers.size() - 1;
     }
 
     //-----------------------------------------------------------------------
