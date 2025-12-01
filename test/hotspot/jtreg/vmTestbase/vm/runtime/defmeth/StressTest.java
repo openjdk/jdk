@@ -95,7 +95,6 @@ public class StressTest implements Runnable {
          Worker(String id, long seed) {
              this.rand = new Random(seed);
              this.thread = TestThreadFactory.newThread(this, id);
-             thread.setName(id);
         }
 
         @Override
