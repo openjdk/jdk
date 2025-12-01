@@ -60,9 +60,11 @@ $(call FillFindCache, \
 ifneq ($(LIBS_DIR), )
   DEPS += $(call FindFiles, $(LIBS_DIR))
   ifeq ($(call isTargetOs, windows)+$(SHIP_DEBUG_SYMBOLS), true+public)
-    # For public debug symbols on Windows, we have to filter out full pdbs
+    # For public debug symbols on Windows, we have to use stripped pdbs and rename them
+    rename_stripped = $(patsubst %.stripped.pdb,%.pdb,$1)
     LIBS_DIR_FILTERED := $(subst modules_libs,modules_libs_filtered, $(LIBS_DIR))
-    FILES_LIBS := $(filter-out %.full.pdb, $(call FindFiles, $(LIBS_DIR)))
+    FILES_LIBS := $(filter-out %.pdb, $(call FindFiles, $(LIBS_DIR))) \
+        $(filter %.stripped.pdb, $(call FindFiles, $(LIBS_DIR)))
     $(eval $(call SetupCopyFiles, COPY_FILTERED_LIBS, \
         SRC := $(LIBS_DIR), \
         DEST := $(LIBS_DIR_FILTERED), \
@@ -78,9 +80,11 @@ endif
 ifneq ($(CMDS_DIR), )
   DEPS += $(call FindFiles, $(CMDS_DIR))
   ifeq ($(call isTargetOs, windows)+$(SHIP_DEBUG_SYMBOLS), true+public)
-    # For public debug symbols on Windows, we have to filter out full pdbs
+    # For public debug symbols on Windows, we have to use stripped pdbs and rename them
+    rename_stripped = $(patsubst %.stripped.pdb,%.pdb,$1)
     CMDS_DIR_FILTERED := $(subst modules_cmds,modules_cmds_filtered, $(CMDS_DIR))
-    FILES_CMDS := $(filter-out %.full.pdb, $(call FindFiles, $(CMDS_DIR)))
+    FILES_CMDS := $(filter-out %.pdb, $(call FindFiles, $(CMDS_DIR))) \
+        $(filter %.stripped.pdb, $(call FindFiles, $(CMDS_DIR)))
     $(eval $(call SetupCopyFiles, COPY_FILTERED_CMDS, \
         SRC := $(CMDS_DIR), \
         DEST := $(CMDS_DIR_FILTERED), \
