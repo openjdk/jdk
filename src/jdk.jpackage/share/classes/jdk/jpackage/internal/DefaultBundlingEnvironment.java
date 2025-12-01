@@ -130,6 +130,8 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
         Objects.requireNonNull(app);
         Objects.requireNonNull(pipelineBuilder);
 
+        OptionUtils.finalizeAndPrintSummary(options, app, Log::verbose);
+
         if (EXIT_AFTER_CONFIGURATION_PHASE.getFrom(options)) {
             return;
         }
@@ -175,6 +177,8 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
         Objects.requireNonNull(createPipelineBuilder);
         Objects.requireNonNull(pipelineBuilderMutatorFactory);
 
+        OptionUtils.finalizeAndPrintSummary(options, pkg, Log::verbose);
+
         if (EXIT_AFTER_CONFIGURATION_PHASE.getFrom(options)) {
             return;
         }
@@ -203,6 +207,9 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
     @Override
     public void createBundle(BundlingOperationDescriptor op, Options cmdline) {
         final var bundler = getBundlerSupplier(op).get().orElseThrow();
+
+        cmdline = OptionUtils.addSummary(cmdline);
+
         Optional<Path> permanentWorkDirectory = Optional.empty();
         try (var tempDir = new TempDirectory(cmdline, Globals.instance().objectFactory())) {
             if (!tempDir.deleteOnClose()) {

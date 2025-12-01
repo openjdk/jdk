@@ -33,7 +33,6 @@ import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.MacHelper.ResolvableCertificateRequest;
 import jdk.jpackage.test.MacHelper.SignKeyOption;
 import jdk.jpackage.test.MacHelper.SignKeyOptionWithKeychain;
@@ -189,12 +188,12 @@ public class SigningPackageTwoStepTest {
     }
 
     private static void configureOutputValidator(JPackageCommand cmd, boolean signAppImage, boolean signPackage) {
-        var signedPredefinedAppImageWarning = JPackageStringBundle.MAIN.cannedFormattedString(
+        var signedPredefinedAppImageWarning = JPackageCommand.makeSummaryWarning(
                 "warning.per.user.app.image.signed",
                 PackageFile.getPathInAppImage(Path.of("")));
 
         var signedInstallerFromUnsignedPredefinedAppImageWarning =
-                JPackageStringBundle.MAIN.cannedFormattedString("warning.unsigned.app.image", "pkg");
+                JPackageCommand.makeSummaryWarning("warning.unsigned.app.image", "pkg");
 
         // The warnings are mutually exclusive
         final Optional<CannedFormattedString> expected;

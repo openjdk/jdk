@@ -52,6 +52,7 @@ import jdk.jpackage.internal.util.function.ThrowingSupplier;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.ConfigurationTarget;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageStringBundle;
@@ -92,18 +93,52 @@ public class AppContentTest {
     }
 
     @Test(ifOS = MACOS)
-    @Parameter({"apps", "warning.non.standard.contents.sub.dir"})
-    @Parameter({"apps/dukeplug.png", "warning.app.content.is.not.dir"})
-    public void testWarnings(String testPath, String warningId) throws Exception {
-        final var appContentValue = TKit.TEST_SRC_ROOT.resolve(testPath);
-        final var expectedWarning = JPackageStringBundle.MAIN.cannedFormattedString(
-                warningId, appContentValue);
-
+    @Parameter("NOT_DIRECTORY")
+    @Parameter("NON_STANDARD_DIRECTOTY_NAME")
+    public void testWarnings(AppContentWarning type) throws Exception {
         JPackageCommand.helloAppImage()
-            .addArguments("--app-content", appContentValue)
+            .mutate(cmd -> {
+                for (var appContent: type.initAppContent()) {
+                    cmd.addArguments("--app-content", appContent);
+                }
+            })
             .setFakeRuntime()
-            .validateOut(expectedWarning)
+            .validateOut(Stream.concat(
+                    Stream.of(JPackageStringBundle.MAIN.cannedFormattedString("warning.non-standard-app-content")),
+                    type.expectedWarnings().stream()
+            ).toArray(CannedFormattedString[]::new))
             .executeIgnoreExitCode();
+    }
+
+    public enum AppContentWarning {
+        NOT_DIRECTORY("warning.non-standard-app-content.not-dir", Path.of("apps/dukeplug.png")),
+        NON_STANDARD_DIRECTOTY_NAME("warning.non-standard-app-content.non-standard-dir-name", Path.of("apps")),
+        ;
+
+        AppContentWarning(String formatKey, Path appContent) {
+            this.formatKey = Objects.requireNonNull(formatKey);
+            this.appContent = TKit.TEST_SRC_ROOT.resolve(appContent);
+        }
+
+        List<Path> initAppContent() {
+            return List.of(appContent);
+        }
+
+        List<CannedFormattedString> expectedWarnings() {
+            switch (this) {
+                case NOT_DIRECTORY -> {
+                    return List.of(JPackageStringBundle.MAIN.cannedFormattedString(formatKey, appContent));
+                }
+                case NON_STANDARD_DIRECTOTY_NAME -> {
+                    return List.of(JPackageStringBundle.MAIN.cannedFormattedString(formatKey, appContent.getFileName(), appContent));
+                }
+            }
+
+            throw new UnsupportedOperationException();
+        }
+
+        private final String formatKey;
+        private Path appContent;
     }
 
     public static Collection<Object[]> test() {

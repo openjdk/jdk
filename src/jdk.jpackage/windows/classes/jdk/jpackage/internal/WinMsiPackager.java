@@ -321,9 +321,6 @@ final class WinMsiPackager implements Consumer<PackagingPipeline.Builder> {
         data.put("JpProductCode", pkg.productCode().toString());
         data.put("JpProductUpgradeCode", pkg.upgradeCode().toString());
 
-        Log.verbose(I18N.format("message.product-code", pkg.productCode()));
-        Log.verbose(I18N.format("message.upgrade-code", pkg.upgradeCode()));
-
         data.put("JpAllowUpgrades", "yes");
         if (!pkg.isRuntimeInstaller()) {
             data.put("JpAllowDowngrades", "yes");

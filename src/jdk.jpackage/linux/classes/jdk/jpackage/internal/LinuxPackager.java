@@ -24,6 +24,8 @@
  */
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.LinuxSystemEnvironment.isWithRequiredPackagesSearch;
+
 import java.io.IOException;
 import java.lang.System.Logger.Level;
 import java.nio.file.Path;
@@ -48,7 +50,7 @@ abstract class LinuxPackager<T extends LinuxPackage> implements Consumer<Packagi
         this.env = Objects.requireNonNull(env);
         this.pkg = Objects.requireNonNull(pkg);
         this.outputDir = Objects.requireNonNull(outputDir);
-        this.withRequiredPackagesLookup = sysEnv.soLookupAvailable() && sysEnv.nativePackageType().equals(pkg.type());
+        this.withRequiredPackagesLookup = isWithRequiredPackagesSearch(sysEnv, pkg);
 
         customActions = List.of(
                 DesktopIntegration.create(env, pkg),
@@ -138,9 +140,7 @@ abstract class LinuxPackager<T extends LinuxPackage> implements Consumer<Packagi
             neededLibPackages = findRequiredPackages();
             LOGGER.log(Level.TRACE, "Runtime image requires: {0}", neededLibPackages);
         } else {
-            neededLibPackages = Collections.emptyList();
-            Log.info(I18N.format("message.not-default-bundler-no-dependencies-lookup",
-                    pkg.asStandardPackageType().orElseThrow().suffix().substring(1)));
+            neededLibPackages = Collections.emptyList();;
         }
 
         LOGGER.log(Level.TRACE, "Features of the package require: {0}", caPackages);
