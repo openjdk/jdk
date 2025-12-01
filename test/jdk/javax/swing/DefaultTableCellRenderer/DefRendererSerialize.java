@@ -69,13 +69,12 @@ public class DefRendererSerialize {
                 DefaultTableCellRenderer tcr = new DefaultTableCellRenderer();
                 table.setDefaultRenderer(table.getColumnClass(1), tcr);
 
-                // If this try block is removed, table text remains black on white.
-
                 fg = tcr.getForeground();
                 bg = tcr.getBackground();
                 System.out.println("renderer fg " + fg + " bg " + bg);
                 tcr = (DefaultTableCellRenderer) table.getDefaultRenderer(table.getColumnClass(1));
 
+                // If this try block is removed, table text remains black on white.
                 byte[] serializedObject = null;
                 try {
                     ByteArrayOutputStream bytes = new ByteArrayOutputStream();
@@ -98,7 +97,7 @@ public class DefRendererSerialize {
                     }
                     System.out.println("deserialized renderer fg " + fg + " bg " + bg);
                     if (!(fg == destcr.getForeground()) || !(bg == destcr.getBackground())) {
-                        throw new RuntimeException("Desrialized foreground and background color not same");
+                        throw new RuntimeException("Deserialized foreground and background color not same");
                     }
                 } catch (IOException | ClassNotFoundException e) {}
 
