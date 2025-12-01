@@ -1673,6 +1673,7 @@ const int ObjectAlignmentInBytes = 8;
   /* new oopmap storage allocation */                                       \
   develop(intx, MinOopMapAllocation,     8,                                 \
           "Minimum number of OopMap entries in an OopMapSet")               \
+          range(0, max_intx)                                                \
                                                                             \
   /* recompilation */                                                       \
   product_pd(intx, CompileThreshold,                                        \
