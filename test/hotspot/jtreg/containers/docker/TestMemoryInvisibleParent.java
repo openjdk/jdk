@@ -33,6 +33,7 @@ import java.nio.file.Path;
 import java.nio.file.Files;
 import java.util.ArrayList;
 
+import jdk.test.lib.Platform;
 import jtreg.SkippedException;
 
 /*
@@ -64,6 +65,9 @@ public class TestMemoryInvisibleParent {
         if (DockerTestUtils.isRootless()) {
             throw new SkippedException("Test skipped in rootless mode");
         }
+        if (!Platform.isRoot()) {
+            throw new SkippedException("Test should be run as root");
+        }
         DockerTestUtils.buildJdkContainerImage(imageName);
 
         if ("cgroupv1".equals(metrics.getProvider())) {
@@ -84,16 +88,16 @@ public class TestMemoryInvisibleParent {
         Common.logNewTestCase("Cgroup V1 hidden parent memory limit: " + valueToSet);
 
         try {
-        String cgroupParent = setParentWithLimit(valueToSet);
-        DockerRunOptions opts = new DockerRunOptions(imageName, "/jdk/bin/java", "-version", "-Xlog:os+container=trace");
-        opts.appendTestJavaOptions = false;
-        if (DockerTestUtils.isPodman()) {
-            // Podman needs to run this test with engine option --cgroup-manager=cgroupfs
-            opts.addEngineOpts("--cgroup-manager", "cgroupfs");
-        }
-        opts.addDockerOpts("--cgroup-parent=/" + cgroupParent);
-        Common.run(opts)
-              .shouldContain("Hierarchical Memory Limit is: " + expectedValue);
+            String cgroupParent = setParentWithLimit(valueToSet);
+            DockerRunOptions opts = new DockerRunOptions(imageName, "/jdk/bin/java", "-version", "-Xlog:os+container=trace");
+            opts.appendTestJavaOptions = false;
+            if (DockerTestUtils.isPodman()) {
+                // Podman needs to run this test with engine option --cgroup-manager=cgroupfs
+                opts.addEngineOpts("--cgroup-manager", "cgroupfs");
+            }
+            opts.addDockerOpts("--cgroup-parent=/" + cgroupParent);
+            Common.run(opts)
+                  .shouldContain("Hierarchical Memory Limit is: " + expectedValue);
         } finally {
             // Reset the parent memory limit to unlimited (-1)
             setParentWithLimit(UNLIMITED);
