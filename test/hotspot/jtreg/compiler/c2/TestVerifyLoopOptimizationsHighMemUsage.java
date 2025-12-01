@@ -320,7 +320,7 @@ public class TestVerifyLoopOptimizationsHighMemUsage {
         }
         return sum;
     }
-    
+
     public static void main(String[] strArr) {
         TestVerifyLoopOptimizationsHighMemUsage _instance = new TestVerifyLoopOptimizationsHighMemUsage();
         for (int i = 0; i < 10; i++ ) {
