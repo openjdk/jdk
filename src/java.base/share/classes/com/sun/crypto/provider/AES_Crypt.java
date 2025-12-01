@@ -935,10 +935,8 @@ final class AES_Crypt extends SymmetricCipher {
             prevKey = key.clone();
         }
 
-        if (decrypting) {
-            if (sessionKd == null) {
-                sessionKd = genInvRoundKeys(sessionKe, rounds);
-            }
+        if (decrypting && (sessionKd == null)) {
+            sessionKd = genInvRoundKeys(sessionKe, rounds);
         }
     }
 
