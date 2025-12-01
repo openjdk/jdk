@@ -58,7 +58,7 @@ class PatchedModuleReaderTest {
      * is found by the ModuleReader.
      */
     @Test
-    void testPatchedResourcePresence() throws Exception {
+    void testResourceFound() throws Exception {
         try (ModuleReader reader = patchedModuleRef.open()) {
             String resourceName = "java/lang/PatchedFoo.class";
             Optional<URI> res = reader.find(resourceName);
@@ -72,7 +72,7 @@ class PatchedModuleReaderTest {
      * expected to be part of the patched module.
      */
     @Test
-    void testNonExistentResource() throws Exception {
+    void testResourceNotFound() throws Exception {
         try (ModuleReader reader = patchedModuleRef.open()) {
             String nonExistentResource = "foo/bar/NonExistent.class";
             Optional<URI> res = reader.find(nonExistentResource);
