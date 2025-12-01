@@ -23,6 +23,22 @@
 
 /*
  * @test id=with-default-wait
+ * @summary this test verifies that the correct connection is
+ *          used when a request is retried on a new connection
+ *          due to stream limit reached.
+ *          The maxBidiStreams limit is artificially set to 1.
+ *          This configuration uses the default wait for a stream
+ *          to become available before retrying.
+ *          Different configurations are tested if possible,
+ *          with both HTTP/3 only and HTTP/2 HTTP/3 with altsvc.
+ *          In one case the HTTP/3 only server will be listening
+ *          on the same port as the HTTP/2 server, with the
+ *          HTTP/2 server advertising an AltService on a different
+ *          port. In another case the AltService will be on the
+ *          same port as the HTTP/2 server and the HTTP/3 server
+ *          will be on a different port. In all case, the test
+ *          verifies that the right connection is picked up
+ *          for the retry.
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer
  *        jdk.test.lib.Asserts
@@ -36,6 +52,22 @@
 
 /*
  * @test id=with-no-wait
+ * @summary this test verifies that the correct connection is
+ *          used when a request is retried on a new connection
+ *          due to stream limit reached.
+ *          The maxBidiStreams limit is artificially set to 1.
+ *          This configuration retries immediately on a new
+ *          connection when no stream is available.
+ *          Different configurations are tested if possible,
+ *          with both HTTP/3 only and HTTP/2 HTTP/3 with altsvc.
+ *          In one case the HTTP/3 only server will be listening
+ *          on the same port as the HTTP/2 server, with the
+ *          HTTP/2 server advertising an AltService on a different
+ *          port. In another case the AltService will be on the
+ *          same port as the HTTP/2 server and the HTTP/3 server
+ *          will be on a different port. In all case, the test
+ *          verifies that the right connection is picked up
+ *          for the retry.
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer
  *        jdk.test.lib.Asserts
