@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -64,6 +65,13 @@ class PatchedModuleReaderTest {
             Optional<URI> res = reader.find(resourceName);
             assertTrue(res.isPresent(), resourceName + " is missing in "
                     + patchedModuleRef.descriptor().name() + " module");
+            URI uri = res.get();
+            assertEquals("file", uri.getScheme(),
+                    "unexpected scheme in resource URI " + uri);
+            assertTrue(uri.getPath().endsWith(resourceName),
+                    "unexpected path component " + uri.getPath()
+                            + " in resource URI " + uri);
+
         }
     }
 
