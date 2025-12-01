@@ -311,7 +311,7 @@ public final class ModulePatcher {
          * Finds a resource of the given name in the patched module.
          */
         public Resource findResource(String name) throws IOException {
-            ensureOpen();
+            assert !closed : "module reader is closed";
             // patch locations
             Resource r = findResourceInPatch(name);
             if (r != null)
