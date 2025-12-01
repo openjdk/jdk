@@ -29,7 +29,7 @@
  * However, the following notice accompanied the original version of this
  * file and, per its terms, should not be removed:
  *
- * libpng version 1.6.47
+ * libpng version 1.6.51
  *
  * Copyright (c) 2018-2025 Cosmin Truta
  * Copyright (c) 1998-2002,2004,2006-2016,2018 Glenn Randers-Pehrson
@@ -248,25 +248,13 @@
   /* NOTE: PNGCBAPI always defaults to PNGCAPI. */
 
 #  if defined(PNGAPI) && !defined(PNG_USER_PRIVATEBUILD)
-#     error "PNG_USER_PRIVATEBUILD must be defined if PNGAPI is changed"
+#     error PNG_USER_PRIVATEBUILD must be defined if PNGAPI is changed
 #  endif
 
-#  if (defined(_MSC_VER) && _MSC_VER < 800) ||\
-      (defined(__BORLANDC__) && __BORLANDC__ < 0x500)
-   /* older Borland and MSC
-    * compilers used '__export' and required this to be after
-    * the type.
-    */
-#    ifndef PNG_EXPORT_TYPE
-#      define PNG_EXPORT_TYPE(type) type PNG_IMPEXP
-#    endif
-#    define PNG_DLL_EXPORT __export
-#  else /* newer compiler */
-#    define PNG_DLL_EXPORT __declspec(dllexport)
-#    ifndef PNG_DLL_IMPORT
-#      define PNG_DLL_IMPORT __declspec(dllimport)
-#    endif
-#  endif /* compiler */
+#  define PNG_DLL_EXPORT __declspec(dllexport)
+#  ifndef PNG_DLL_IMPORT
+#    define PNG_DLL_IMPORT __declspec(dllimport)
+#  endif
 
 #else /* !Windows */
 #  if (defined(__IBMC__) || defined(__IBMCPP__)) && defined(__OS2__)
@@ -508,7 +496,7 @@
 #if CHAR_BIT == 8 && UCHAR_MAX == 255
    typedef unsigned char png_byte;
 #else
-#  error "libpng requires 8-bit bytes"
+#  error libpng requires 8-bit bytes
 #endif
 
 #if INT_MIN == -32768 && INT_MAX == 32767
@@ -516,7 +504,7 @@
 #elif SHRT_MIN == -32768 && SHRT_MAX == 32767
    typedef short png_int_16;
 #else
-#  error "libpng requires a signed 16-bit type"
+#  error libpng requires a signed 16-bit integer type
 #endif
 
 #if UINT_MAX == 65535
@@ -524,7 +512,7 @@
 #elif USHRT_MAX == 65535
    typedef unsigned short png_uint_16;
 #else
-#  error "libpng requires an unsigned 16-bit type"
+#  error libpng requires an unsigned 16-bit integer type
 #endif
 
 #if INT_MIN < -2147483646 && INT_MAX > 2147483646
@@ -532,7 +520,7 @@
 #elif LONG_MIN < -2147483646 && LONG_MAX > 2147483646
    typedef long int png_int_32;
 #else
-#  error "libpng requires a signed 32-bit (or more) type"
+#  error libpng requires a signed 32-bit (or longer) integer type
 #endif
 
 #if UINT_MAX > 4294967294U
@@ -540,7 +528,7 @@
 #elif ULONG_MAX > 4294967294U
    typedef unsigned long int png_uint_32;
 #else
-#  error "libpng requires an unsigned 32-bit (or more) type"
+#  error libpng requires an unsigned 32-bit (or longer) integer type
 #endif
 
 /* Prior to 1.6.0, it was possible to disable the use of size_t and ptrdiff_t.
@@ -621,10 +609,6 @@ typedef const png_fixed_point * png_const_fixed_point_p;
 typedef size_t                * png_size_tp;
 typedef const size_t          * png_const_size_tp;
 
-#ifdef PNG_STDIO_SUPPORTED
-typedef FILE            * png_FILE_p;
-#endif
-
 #ifdef PNG_FLOATING_POINT_SUPPORTED
 typedef double       * png_doublep;
 typedef const double * png_const_doublep;
@@ -645,6 +629,15 @@ typedef double          * * png_doublepp;
 
 /* Pointers to pointers to pointers; i.e., pointer to array */
 typedef char            * * * png_charppp;
+
+#ifdef PNG_STDIO_SUPPORTED
+/* With PNG_STDIO_SUPPORTED it was possible to use I/O streams that were
+ * not necessarily stdio FILE streams, to allow building Windows applications
+ * before Win32 and Windows CE applications before WinCE 3.0, but that kind
+ * of support has long been discontinued.
+ */
+typedef FILE            * png_FILE_p; /* [Deprecated] */
+#endif
 
 #endif /* PNG_BUILDING_SYMBOL_TABLE */
 

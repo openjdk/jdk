@@ -29,7 +29,7 @@
  * However, the following notice accompanied the original version of this
  * file and, per its terms, should not be removed:
  *
- * Copyright (c) 2018 Cosmin Truta
+ * Copyright (c) 2018-2025 Cosmin Truta
  * Copyright (c) 1998-2002,2004,2006-2014,2016 Glenn Randers-Pehrson
  * Copyright (c) 1996-1997 Andreas Dilger
  * Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.
