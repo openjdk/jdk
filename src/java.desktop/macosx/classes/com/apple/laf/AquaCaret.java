@@ -108,6 +108,7 @@ public final class AquaCaret extends DefaultCaret
     private boolean shouldSelectAllOnFocus = true;
     @Override
     public void focusGained(final FocusEvent e) {
+        dragActive = true;
         final JTextComponent component = getComponent();
         if (!component.isEnabled() || !component.isEditable()) {
             super.focusGained(e);

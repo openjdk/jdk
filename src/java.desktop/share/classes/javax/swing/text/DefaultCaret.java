@@ -368,6 +368,13 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
 
     private int savedBlinkRate = 0;
     private boolean isBlinkRateSaved = false;
+    private volatile long lastClickMillis;
+
+    /**
+     * Indicates whether text selection is currently active.
+     */
+    protected boolean dragActive = false;
+
     // --- FocusListener methods --------------------------
 
     /**
@@ -410,6 +417,7 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
      * @see FocusListener#focusLost
      */
     public void focusLost(FocusEvent e) {
+        dragActive = false;
         setVisible(false);
         setSelectionVisible((e.getCause() == FocusEvent.Cause.ACTIVATION ||
                 e.getOppositeComponent() instanceof JRootPane) &&
@@ -539,6 +547,8 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
         int nclicks = SwingUtilities2.getAdjustedClickCount(getComponent(), e);
 
         if (SwingUtilities.isLeftMouseButton(e)) {
+            lastClickMillis = e.getWhen();
+            dragActive = true;
             if (e.isConsumed()) {
                 shouldHandleRelease = true;
             } else {
@@ -632,7 +642,9 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
      * @see MouseMotionListener#mouseDragged
      */
     public void mouseDragged(MouseEvent e) {
-        if ((! e.isConsumed()) && SwingUtilities.isLeftMouseButton(e)) {
+
+        boolean isOutdated = (e.getWhen() < lastClickMillis);
+        if ((! e.isConsumed()) && SwingUtilities.isLeftMouseButton(e) && !isOutdated && dragActive) {
             moveCaret(e);
         }
     }
