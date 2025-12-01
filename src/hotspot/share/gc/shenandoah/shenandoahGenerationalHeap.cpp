@@ -208,13 +208,13 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
 
   assert(ShenandoahThreadLocalData::is_evac_allowed(thread), "must be enclosed in oom-evac scope");
 
-  ShenandoahHeapRegion* r = heap_region_containing(p);
-  assert(!r->is_humongous(), "never evacuate humongous objects");
+  ShenandoahHeapRegion* from_region = heap_region_containing(p);
+  assert(!from_region->is_humongous(), "never evacuate humongous objects");
 
-  ShenandoahAffiliation target_gen = r->affiliation();
-  // gc_generation() can change asynchronously and should not be used here.
-  assert(active_generation() != nullptr, "Error");
-  if (active_generation()->is_young() && target_gen == YOUNG_GENERATION) {
+  // Try to keep the object in the same generation
+  const ShenandoahAffiliation target_gen = from_region->affiliation();
+
+  if (target_gen == YOUNG_GENERATION) {
     markWord mark = p->mark();
     if (mark.is_marked()) {
       // Already forwarded.
@@ -224,26 +224,31 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
     if (mark.has_displaced_mark_helper()) {
       // We don't want to deal with MT here just to ensure we read the right mark word.
       // Skip the potential promotion attempt for this one.
-    } else if (age_census()->is_tenurable(r->age() + mark.age())) {
-      oop result = try_evacuate_object(p, thread, r, OLD_GENERATION);
+    } else if (age_census()->is_tenurable(from_region->age() + mark.age())) {
+      // If the object is tenurable, try to promote it
+      oop result = try_evacuate_object<YOUNG_GENERATION, OLD_GENERATION>(p, thread, from_region->age());
+
+      // If we failed to promote this aged object, we'll fall through to code below and evacuate to young-gen.
       if (result != nullptr) {
         return result;
       }
-      // If we failed to promote this aged object, we'll fall through to code below and evacuate to young-gen.
     }
+    return try_evacuate_object<YOUNG_GENERATION, YOUNG_GENERATION>(p, thread, from_region->age());
   }
-  return try_evacuate_object(p, thread, r, target_gen);
+
+  assert(target_gen == OLD_GENERATION, "Expected evacuation to old");
+  return try_evacuate_object<OLD_GENERATION, OLD_GENERATION>(p, thread, from_region->age());
 }
 
 // try_evacuate_object registers the object and dirties the associated remembered set information when evacuating
 // to OLD_GENERATION.
-oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapRegion* from_region,
-                                        ShenandoahAffiliation target_gen) {
+template<ShenandoahAffiliation FROM_GENERATION, ShenandoahAffiliation TO_GENERATION>
+oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint from_region_age) {
   bool alloc_from_lab = true;
   bool has_plab = false;
   HeapWord* copy = nullptr;
   size_t size = ShenandoahForwarding::size(p);
-  bool is_promotion = (target_gen == OLD_GENERATION) && from_region->is_young();
+  constexpr bool is_promotion = (TO_GENERATION == OLD_GENERATION) && (FROM_GENERATION == YOUNG_GENERATION);
 
 #ifdef ASSERT
   if (ShenandoahOOMDuringEvacALot &&
@@ -252,7 +257,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
   } else {
 #endif
     if (UseTLAB) {
-      switch (target_gen) {
+      switch (TO_GENERATION) {
         case YOUNG_GENERATION: {
           copy = allocate_from_gclab(thread, size);
           if ((copy == nullptr) && (size < ShenandoahThreadLocalData::gclab_size(thread))) {
@@ -300,7 +305,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
     if (copy == nullptr) {
       // If we failed to allocate in LAB, we'll try a shared allocation.
       if (!is_promotion || !has_plab || (size > PLAB::min_size())) {
-        ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(size, target_gen, is_promotion);
+        ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(size, TO_GENERATION, is_promotion);
         copy = allocate_memory(req);
         alloc_from_lab = false;
       }
@@ -314,8 +319,8 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
 #endif
 
   if (copy == nullptr) {
-    if (target_gen == OLD_GENERATION) {
-      if (from_region->is_young()) {
+    if (TO_GENERATION == OLD_GENERATION) {
+      if (FROM_GENERATION == YOUNG_GENERATION) {
         // Signal that promotion failed. Will evacuate this old object somewhere in young gen.
         old_generation()->handle_failed_promotion(thread, size);
         return nullptr;
@@ -327,14 +332,12 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
     }
 
     control_thread()->handle_alloc_failure_evac(size);
-
     oom_evac_handler()->handle_out_of_memory_during_evacuation();
-
     return ShenandoahBarrierSet::resolve_forwarded(p);
   }
 
   if (ShenandoahEvacTracking) {
-    evac_tracker()->begin_evacuation(thread, size * HeapWordSize, from_region->affiliation(), target_gen);
+    evac_tracker()->begin_evacuation(thread, size * HeapWordSize, FROM_GENERATION, TO_GENERATION);
   }
 
   // Copy the object:
@@ -342,8 +345,8 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
   oop copy_val = cast_to_oop(copy);
 
   // Update the age of the evacuated object
-  if (target_gen == YOUNG_GENERATION && is_aging_cycle()) {
-    ShenandoahHeap::increase_object_age(copy_val, from_region->age() + 1);
+  if (TO_GENERATION == YOUNG_GENERATION && is_aging_cycle()) {
+    increase_object_age(copy_val, from_region_age + 1);
   }
 
   // Try to install the new forwarding pointer.
@@ -360,18 +363,12 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
 
     if (ShenandoahEvacTracking) {
       // Record that the evacuation succeeded
-      evac_tracker()->end_evacuation(thread, size * HeapWordSize, from_region->affiliation(), target_gen);
+      evac_tracker()->end_evacuation(thread, size * HeapWordSize, FROM_GENERATION, TO_GENERATION);
     }
 
-    if (target_gen == OLD_GENERATION) {
-      old_generation()->handle_evacuation(copy, size, from_region->is_young());
-    } else {
-      // When copying to the old generation above, we don't care
-      // about recording object age in the census stats.
-      assert(target_gen == YOUNG_GENERATION, "Error");
+    if (TO_GENERATION == OLD_GENERATION) {
+      old_generation()->handle_evacuation(copy, size);
     }
-    shenandoah_assert_correct(nullptr, copy_val);
-    return copy_val;
   }  else {
     // Failed to evacuate. We need to deal with the object that is left behind. Since this
     // new allocation is certainly after TAMS, it will be considered live in the next cycle.
@@ -382,7 +379,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
       // For LAB allocations, it is enough to rollback the allocation ptr. Either the next
       // object will overwrite this stale copy, or the filler object on LAB retirement will
       // do this.
-      switch (target_gen) {
+      switch (TO_GENERATION) {
         case YOUNG_GENERATION: {
           ShenandoahThreadLocalData::gclab(thread)->undo_allocation(copy, size);
           break;
@@ -405,13 +402,15 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
       // we have to keep the fwdptr initialized and pointing to our (stale) copy.
       assert(size >= ShenandoahHeap::min_fill_size(), "previously allocated object known to be larger than min_size");
       fill_with_object(copy, size);
-      shenandoah_assert_correct(nullptr, copy_val);
-      // For non-LAB allocations, the object has already been registered
     }
-    shenandoah_assert_correct(nullptr, result);
-    return result;
   }
+  shenandoah_assert_correct(nullptr, result);
+  return result;
 }
+
+template oop ShenandoahGenerationalHeap::try_evacuate_object<YOUNG_GENERATION, YOUNG_GENERATION>(oop p, Thread* thread, uint from_region_age);
+template oop ShenandoahGenerationalHeap::try_evacuate_object<YOUNG_GENERATION, OLD_GENERATION>(oop p, Thread* thread, uint from_region_age);
+template oop ShenandoahGenerationalHeap::try_evacuate_object<OLD_GENERATION, OLD_GENERATION>(oop p, Thread* thread, uint from_region_age);
 
 inline HeapWord* ShenandoahGenerationalHeap::allocate_from_plab(Thread* thread, size_t size, bool is_promotion) {
   assert(UseTLAB, "TLABs should be enabled");

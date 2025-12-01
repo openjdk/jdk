@@ -179,7 +179,7 @@ public:
   void log_failed_promotion(LogStream& ls, Thread* thread, size_t size) const;
 
   // A successful evacuation re-dirties the cards and registers the object with the remembered set
-  void handle_evacuation(HeapWord* obj, size_t words, bool promotion);
+  void handle_evacuation(HeapWord* obj, size_t words) const;
 
   // Clear the flag after it is consumed by the control thread
   bool clear_failed_evacuation() {
