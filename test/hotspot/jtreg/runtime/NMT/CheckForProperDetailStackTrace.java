@@ -63,7 +63,7 @@ public class CheckForProperDetailStackTrace {
     private static final Path SRC_DIR = Paths.get(TEST_SRC, "src");
     private static final Path MODS_DIR = Paths.get(TEST_CLASSES, "mods");
 
-    // Windows could have stripped pdbs in some configurations which do not have source information
+    // In some configurations on Windows, we could have stripped pdbs which do not have source information.
     private static boolean expectSourceInformation = Platform.isLinux() ||
         (Platform.isWindows() && !WhiteBox.getWhiteBox().shipsPublicDebugInfo());
 
