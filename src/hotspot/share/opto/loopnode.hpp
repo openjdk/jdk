@@ -1969,6 +1969,8 @@ public:
 
   Node* ensure_node_and_inputs_are_above_pre_end(CountedLoopEndNode* pre_end, Node* node);
 
+  Node* new_assertion_predicate_opaque_init(Node* entry_control, Node* init, Node* int_zero);
+
   bool try_make_short_running_loop(IdealLoopTree* loop, jint stride_con, const Node_List& range_checks, const uint iters_limit);
 
   ConINode* intcon(jint i);
