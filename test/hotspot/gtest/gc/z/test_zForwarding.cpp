@@ -41,7 +41,7 @@ using namespace testing;
 
 #define CAPTURE(expression) CAPTURE1(expression)
 
-class ZForwardingTest : public ZTest {
+class ZForwardingTest : public ZVMTest {
 public:
   // Setup and tear down
   ZHeap*            _old_heap;

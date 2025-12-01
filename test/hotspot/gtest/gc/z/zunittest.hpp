@@ -41,7 +41,7 @@ inline std::ostream& operator<<(std::ostream& str, const ZVirtualMemory& vmem) {
 }
 
 class ZAddressOffsetMaxSetter {
-  friend class ZTest;
+  friend class ZVMTest;
 
 private:
   size_t _old_max;
@@ -61,6 +61,21 @@ public:
 };
 
 class ZTest : public testing::Test {
+private:
+  unsigned int _rand_seed;
+
+protected:
+  ZTest()
+    : _rand_seed(static_cast<unsigned int>(::testing::UnitTest::GetInstance()->random_seed())) {}
+
+  int random() {
+    const int next_seed = os::next_random(_rand_seed);
+    _rand_seed = static_cast<unsigned int>(next_seed);
+    return next_seed;
+  }
+};
+
+class ZVMTest : public ZTest {
 public:
   class ZAddressReserver {
     ZVirtualMemoryReserver* _reserver;
@@ -106,7 +121,6 @@ public:
 
 private:
   ZAddressOffsetMaxSetter _zaddress_offset_max_setter;
-  unsigned int _rand_seed;
 
   void skip_all_tests() {
     // Skipping from the constructor currently works, but according to the
@@ -117,9 +131,8 @@ private:
   }
 
 protected:
-  ZTest()
-    : _zaddress_offset_max_setter(ZAddressOffsetMax),
-      _rand_seed(static_cast<unsigned int>(::testing::UnitTest::GetInstance()->random_seed())) {
+  ZVMTest()
+    : _zaddress_offset_max_setter(ZAddressOffsetMax) {
     if (!is_os_supported()) {
       // If the OS does not support ZGC do not run initialization, as it may crash the VM.
       skip_all_tests();
@@ -138,12 +151,9 @@ protected:
       _zaddress_offset_max_setter._old_mask = ZAddressOffsetMask;
       return true;
     }();
-  }
 
-  int random() {
-    const int next_seed = os::next_random(_rand_seed);
-    _rand_seed = static_cast<unsigned int>(next_seed);
-    return next_seed;
+    // Silence unused variable warning
+    (void)runs_once;
   }
 
   bool is_os_supported() {
