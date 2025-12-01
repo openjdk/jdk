@@ -633,7 +633,12 @@ public class PackagingPipelineTest {
         Package create() {
             return new Package.Stub(
                     app,
-                    new PackageType() {},
+                    new PackageType() {
+                        @Override
+                        public String label() {
+                            throw new UnsupportedOperationException();
+                        }
+                    },
                     "the-package",
                     "My package",
                     "1.0",

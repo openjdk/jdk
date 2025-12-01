@@ -119,7 +119,7 @@ public class DefaultBundlingEnvironmentTest extends JUnitAdapter {
         // #2 - jpackage should bail out earlier).
         //
 
-        final var type = op.packageTypeValue();
+        final var type = op.bundleTypeValue();
         final int iterationCount;
         if (op.bundleType() instanceof AppImageBundleType) {
             iterationCount = 1;

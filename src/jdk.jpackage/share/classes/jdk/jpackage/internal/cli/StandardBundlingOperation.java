@@ -24,8 +24,6 @@
  */
 package jdk.jpackage.internal.cli;
 
-import static jdk.jpackage.internal.model.AppImageBundleType.APP_IMAGE;
-
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -34,6 +32,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.model.AppImageBundleType;
 import jdk.jpackage.internal.model.BundleType;
 import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.internal.model.PackageType;
@@ -45,16 +44,16 @@ import jdk.jpackage.internal.util.SetBuilder;
  * Standard jpackage operations.
  */
 public enum StandardBundlingOperation implements BundlingOperationOptionScope {
-    CREATE_WIN_APP_IMAGE(APP_IMAGE, "^(?!(linux-|mac-|win-exe-|win-msi-))", OperatingSystem.WINDOWS),
-    CREATE_LINUX_APP_IMAGE(APP_IMAGE, "^(?!(win-|mac-|linux-rpm-|linux-deb-))", OperatingSystem.LINUX),
-    CREATE_MAC_APP_IMAGE(APP_IMAGE, "^(?!(linux-|win-|mac-dmg-|mac-pkg-))", OperatingSystem.MACOS),
+    CREATE_WIN_APP_IMAGE(AppImageBundleType.WIN_APP_IMAGE, "^(?!(linux-|mac-|win-exe-|win-msi-))", OperatingSystem.WINDOWS),
+    CREATE_LINUX_APP_IMAGE(AppImageBundleType.LINUX_APP_IMAGE, "^(?!(win-|mac-|linux-rpm-|linux-deb-))", OperatingSystem.LINUX),
+    CREATE_MAC_APP_IMAGE(AppImageBundleType.MAC_APP_IMAGE, "^(?!(linux-|win-|mac-dmg-|mac-pkg-))", OperatingSystem.MACOS),
     CREATE_WIN_EXE(StandardPackageType.WIN_EXE, "^(?!(linux-|mac-|win-msi-))", OperatingSystem.WINDOWS),
     CREATE_WIN_MSI(StandardPackageType.WIN_MSI, "^(?!(linux-|mac-|win-exe-))", OperatingSystem.WINDOWS),
     CREATE_LINUX_RPM(StandardPackageType.LINUX_RPM, "^(?!(win-|mac-|linux-deb-))", OperatingSystem.LINUX),
     CREATE_LINUX_DEB(StandardPackageType.LINUX_DEB, "^(?!(win-|mac-|linux-rpm-))", OperatingSystem.LINUX),
     CREATE_MAC_PKG(StandardPackageType.MAC_PKG, "^(?!(linux-|win-|mac-dmg-))", OperatingSystem.MACOS),
     CREATE_MAC_DMG(StandardPackageType.MAC_DMG, "^(?!(linux-|win-|mac-pkg-))", OperatingSystem.MACOS),
-    SIGN_MAC_APP_IMAGE(APP_IMAGE, OperatingSystem.MACOS, Verb.SIGN);
+    SIGN_MAC_APP_IMAGE(AppImageBundleType.MAC_APP_IMAGE, OperatingSystem.MACOS, Verb.SIGN);
 
     /**
      * Supported values of the {@link BundlingOperationDescriptor#verb()} property.
@@ -101,8 +100,8 @@ public enum StandardBundlingOperation implements BundlingOperationOptionScope {
         return os;
     }
 
-    public String packageTypeValue() {
-        if (bundleType.equals(APP_IMAGE)) {
+    public String bundleTypeValue() {
+        if (bundleType instanceof AppImageBundleType) {
             return "app-image";
         } else {
             return ((StandardPackageType)bundleType).suffix().substring(1);
@@ -127,7 +126,7 @@ public enum StandardBundlingOperation implements BundlingOperationOptionScope {
 
     @Override
     public BundlingOperationDescriptor descriptor() {
-        return new BundlingOperationDescriptor(os(), packageTypeValue(), descriptorVerb.value());
+        return new BundlingOperationDescriptor(os(), bundleTypeValue(), descriptorVerb.value());
     }
 
     public static Optional<StandardBundlingOperation> valueOf(BundlingOperationDescriptor descriptor) {

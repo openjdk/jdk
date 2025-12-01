@@ -24,19 +24,22 @@
  */
 package jdk.jpackage.internal.model;
 
+import java.util.Objects;
+
 /**
  * Standard native package types.
  */
 public enum StandardPackageType implements PackageType {
-    WIN_MSI(".msi"),
-    WIN_EXE(".exe"),
-    LINUX_DEB(".deb"),
-    LINUX_RPM(".rpm"),
-    MAC_PKG(".pkg"),
-    MAC_DMG(".dmg");
+    WIN_MSI("bundle-type.win-msi", ".msi"),
+    WIN_EXE("bundle-type.win-exe", ".exe"),
+    LINUX_DEB("bundle-type.linux-deb", ".deb"),
+    LINUX_RPM("bundle-type.linux-rpm", ".rpm"),
+    MAC_PKG("bundle-type.mac-pkg", ".pkg"),
+    MAC_DMG("bundle-type.mac-dmg", ".dmg");
 
-    StandardPackageType(String suffix) {
-        this.suffix = suffix;
+    StandardPackageType(String key, String suffix) {
+        this.key = Objects.requireNonNull(key);
+        this.suffix = Objects.requireNonNull(suffix);
     }
 
     /**
@@ -48,5 +51,11 @@ public enum StandardPackageType implements PackageType {
         return suffix;
     }
 
+    @Override
+    public String label() {
+        return I18N.getString(key);
+    }
+
+    private final String key;
     private final String suffix;
 }

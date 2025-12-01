@@ -250,7 +250,7 @@ final class OptionsAnalyzer {
             return error("ERR_NoInstallerEntryPoint", mapFormatArguments(optionSpec));
         } else {
             return error("ERR_InvalidTypeOption", mapFormatArguments(
-                    optionSpec, bundlingOperation.packageTypeValue()));
+                    optionSpec, bundlingOperation.bundleTypeValue()));
         }
     }
 
@@ -270,9 +270,10 @@ final class OptionsAnalyzer {
             if (obj instanceof BundleType bundleType) {
                 return bundleType;
             } else {
-                return typeOption.spec()
+                var spec = new StandardOptionContext(os).mapOptionSpec(typeOption.spec());
+                return spec
                         .converter().orElseThrow()
-                        .convert(typeOption.spec().name(), StringToken.of(((String[])obj)[0]))
+                        .convert(spec.name(), StringToken.of(((String[])obj)[0]))
                         .orElseThrow();
             }
         }).map(bundleType -> {

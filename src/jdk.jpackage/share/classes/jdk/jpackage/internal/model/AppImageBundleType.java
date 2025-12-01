@@ -24,11 +24,28 @@
  */
 package jdk.jpackage.internal.model;
 
+import java.util.Objects;
+
 /**
  * App image bundle type.
  *
  * @see StandardPackageType
  */
 public enum AppImageBundleType implements BundleType {
-    APP_IMAGE
+
+    WIN_APP_IMAGE("bundle-type.win-app"),
+    LINUX_APP_IMAGE("bundle-type.linux-app"),
+    MAC_APP_IMAGE("bundle-type.mac-app"),
+    ;
+
+    private AppImageBundleType(String key) {
+        this.key = Objects.requireNonNull(key);
+    }
+
+    @Override
+    public String label() {
+        return I18N.getString(key);
+    }
+
+    private final String key;
 }

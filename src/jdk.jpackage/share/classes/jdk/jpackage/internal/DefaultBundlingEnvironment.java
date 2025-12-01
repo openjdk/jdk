@@ -42,17 +42,13 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.cli.CliBundlingEnvironment;
 import jdk.jpackage.internal.cli.Options;
 import jdk.jpackage.internal.cli.StandardBundlingOperation;
-import jdk.jpackage.internal.model.AppImageBundleType;
 import jdk.jpackage.internal.model.Application;
-import jdk.jpackage.internal.model.BundleType;
 import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.Package;
-import jdk.jpackage.internal.model.StandardPackageType;
 import jdk.jpackage.internal.util.Result;
 
 class DefaultBundlingEnvironment implements CliBundlingEnvironment {
@@ -198,7 +194,7 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
 
             var bundleType = OptionUtils.bundlingOperation(cmdline).bundleType();
 
-            Log.verbose(I18N.format("message.bundle-created", I18N.getString(bundleTypeDescription(bundleType, op.os()))));
+            Log.verbose(I18N.format("message.bundle-created", bundleType.label()));
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         } finally {
@@ -217,55 +213,6 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
         return Optional.ofNullable(bundlers.get(op)).orElseThrow(() -> {
             throw new NoSuchElementException(String.format("Unsupported bundling operation: %s", op));
         });
-    }
-
-    private String bundleTypeDescription(BundleType type, OperatingSystem os) {
-        switch (type) {
-            case StandardPackageType stdType -> {
-                switch (stdType) {
-                    case WIN_MSI -> {
-                        return "bundle-type.win-msi";
-                    }
-                    case WIN_EXE -> {
-                        return "bundle-type.win-exe";
-                    }
-                    case LINUX_DEB -> {
-                        return "bundle-type.linux-deb";
-                    }
-                    case LINUX_RPM -> {
-                        return "bundle-type.linux-rpm";
-                    }
-                    case MAC_DMG -> {
-                        return "bundle-type.mac-dmg";
-                    }
-                    case MAC_PKG -> {
-                        return "bundle-type.mac-pkg";
-                    }
-                    default -> {
-                        throw new AssertionError();
-                    }
-                }
-            }
-            case AppImageBundleType appImageType -> {
-                switch (os) {
-                    case WINDOWS -> {
-                        return "bundle-type.win-app";
-                    }
-                    case LINUX -> {
-                        return "bundle-type.linux-app";
-                    }
-                    case MACOS -> {
-                        return "bundle-type.mac-app";
-                    }
-                    default -> {
-                        throw new AssertionError();
-                    }
-                }
-            }
-            default -> {
-                throw new AssertionError();
-            }
-        }
     }
 
 

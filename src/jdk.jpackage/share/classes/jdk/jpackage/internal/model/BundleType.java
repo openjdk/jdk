@@ -29,4 +29,11 @@ package jdk.jpackage.internal.model;
 /**
  * Generic bundle type. E.g.: application image, rpm, msi are all bundle types.
  */
-public sealed interface BundleType permits PackageType, AppImageBundleType {}
+public sealed interface BundleType permits PackageType, AppImageBundleType {
+
+    /**
+     * Returns a user-facing label of this bundle type.
+     * @return a user-facing label of this bundle type.
+     */
+    String label();
+}

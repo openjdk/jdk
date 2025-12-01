@@ -55,6 +55,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.model.AppImageBundleType;
 import jdk.jpackage.internal.model.BundleType;
 import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.internal.model.JPackageException;
@@ -107,14 +108,14 @@ public final class StandardOption {
             .scope(StandardBundlingOperation.values()).inScope(NOT_BUILDING_APP_IMAGE)
             .converterExceptionFactory(ERROR_WITH_VALUE).converterExceptionFormatString("ERR_InvalidInstallerType")
             .converter(str -> {
-                Objects.requireNonNull(str);
-                return Stream.of(StandardBundlingOperation.values()).filter(bundlingOperation -> {
-                    return bundlingOperation.packageTypeValue().equals(str);
-                }).map(StandardBundlingOperation::bundleType).findFirst().orElseThrow(IllegalArgumentException::new);
+                return parseBundleType(str, OperatingSystem.current());
             })
             .description("help.option.type" + resourceKeySuffix(OperatingSystem.current()))
             .mutate(createOptionSpecBuilderMutator((b, context) -> {
                 b.description("help.option.type" + resourceKeySuffix(context.os()));
+                b.converter(str -> {
+                    return parseBundleType(str, context.os());
+                });
             })).create();
 
     public static final OptionValue<Path> INPUT = directoryOption("input").addAliases("i")
@@ -663,6 +664,23 @@ public final class StandardOption {
 
                     return new AdditionalLauncher(launcherName, propertyFile);
                 }).defaultArrayValue(new AdditionalLauncher[0]).createArray();
+    }
+
+    private static BundleType parseBundleType(String str, OperatingSystem appImageOS) {
+        Objects.requireNonNull(str);
+        Objects.requireNonNull(appImageOS);
+
+        return Stream.of(StandardBundlingOperation.values()).filter(bundlingOperation -> {
+            return bundlingOperation.bundleTypeValue().equals(str);
+        })
+        .filter(bundlingOperation -> {
+            // Skip app image bundle type if it is from another platform.
+            return !(bundlingOperation.bundleType() instanceof AppImageBundleType)
+                    || (bundlingOperation.os() == appImageOS);
+        })
+        .map(StandardBundlingOperation::bundleType)
+        .findFirst()
+        .orElseThrow(IllegalArgumentException::new);
     }
 
     private static String resourceKeySuffix(OperatingSystem os) {
