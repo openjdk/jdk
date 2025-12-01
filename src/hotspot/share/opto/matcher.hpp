@@ -333,6 +333,12 @@ public:
 
   static bool vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen);
 
+  // Identify if a vector mask operation prefers the input/output mask to be
+  // saved with a predicate type or not.
+  // - Return true if it prefers a predicate type (i.e. TypeVectMask).
+  // - Return false if it prefers a general vector type (i.e. TypeVectA to TypeVectZ).
+  static bool mask_op_prefers_predicate(int opcode, const TypeVect* vt);
+
   static const RegMask* predicate_reg_mask(void);
 
   // Vector width in bytes
@@ -506,6 +512,8 @@ public:
   DEBUG_ONLY( bool verify_after_postselect_cleanup(); )
 
  public:
+  static bool is_register_biasing_candidate(const MachNode* mdef, int oper_index);
+
   // This routine is run whenever a graph fails to match.
   // If it returns, the compiler should bailout to interpreter without error.
   // In non-product mode, SoftMatchFailure is false to detect non-canonical

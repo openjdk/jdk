@@ -25,6 +25,7 @@
 #ifndef SHARE_RUNTIME_ATOMICACCESS_HPP
 #define SHARE_RUNTIME_ATOMICACCESS_HPP
 
+#include "cppstdlib/type_traits.hpp"
 #include "memory/allocation.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
@@ -33,8 +34,6 @@
 #include "utilities/bytes.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/macros.hpp"
-
-#include <type_traits>
 
 enum atomic_memory_order {
   // The modes that align with C++11 are intended to
@@ -420,8 +419,8 @@ private:
   struct XchgImpl;
 
   // Platform-specific implementation of xchg.  Support for sizes
-  // of 4, and sizeof(intptr_t) are required.  The class is a function
-  // object that must be default constructable, with these requirements:
+  // of 1, 4, and 8 are required.  The class is a function object
+  // that must be default constructable, with these requirements:
   //
   // - dest is of type T*.
   // - exchange_value is of type T.

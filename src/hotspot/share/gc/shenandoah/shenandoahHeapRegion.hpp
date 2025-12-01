@@ -366,6 +366,9 @@ public:
   // Allocation (return nullptr if full)
   inline HeapWord* allocate(size_t word_size, const ShenandoahAllocRequest& req);
 
+  // Allocate fill after top
+  inline HeapWord* allocate_fill(size_t word_size);
+
   inline void clear_live_data();
   void set_live_data(size_t s);
 
@@ -492,7 +495,7 @@ public:
   }
 
 private:
-  void decrement_humongous_waste() const;
+  void decrement_humongous_waste();
   void do_commit();
   void do_uncommit();
 
