@@ -1,4 +1,4 @@
-Constant Folding in the Hotspot Compiler
+Constant Folding
 ===
 
 Hotspot compiler can fold constant field value access when it constructs its IR
@@ -102,27 +102,3 @@ instance final fields in eligible system classes per rule 5 above.
 Note that a `Field` object also models a field declaration in the JVM like a
 `ciField`, so an inherited field in a subclass or subinterface shares the
 `trustedFinal` setting.
-
-### Make Final Mean Final
-
-As noted for `Field.trustedFinal`, protections are missing for some system
-classes.  The effort to make final mean final, that all illegal final field
-modifications must use `--enable-final-field-mutation` and `--add-opens`,
-represents a step toward this goal.
-
-In JEP 500, when `--illegal-final-field-mutation=deny`, a final field `f` is
-still mutable if for some module `M` (including the unnamed module) that could
-perform final field mutation, one of the following stands:
-
-1. `f` is a public field declared in a public class, and the package
-   of the declaring class is exported by the containing module to `M`.
-2. The package of the declaring class of `f` is open to `M`.
-3. `f` is in `M`.
-
-This set of rules is more complex than the existing logic in `fieldDescriptor`,
-and being in `jdk.internal.module.ModuleBootstrap`, is not easy to export to
-the JVM runtime.  In addition, the performance implication of enabling final
-field mutation on the command line may also be concerning to users.
-
-In conclusion, trusting based on final field mutation settings is possible, but
-whether the cost is worth the return is under investigation.
