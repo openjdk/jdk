@@ -63,6 +63,7 @@ public:
 
   uint _risk_bias;              // Index of LRG which we want to avoid color
   uint _copy_bias;              // Index of LRG which we want to share color
+  uint _copy_bias2;             // Index of second LRG which we want to share color
 
   uint _next;                   // Index of next LRG in linked list
   uint _prev;                   // Index of prev LRG in linked list
@@ -703,6 +704,8 @@ private:
   OptoReg::Name choose_color(LRG& lrg);
   // Helper function which implements biasing heuristic
   OptoReg::Name bias_color(LRG& lrg);
+  // Helper function which implements color biasing
+  OptoReg::Name select_bias_lrg_color(LRG& lrg);
 
   // Split uncolorable live ranges
   // Return new number of live ranges

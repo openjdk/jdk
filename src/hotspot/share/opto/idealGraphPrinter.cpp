@@ -88,6 +88,7 @@ void PrintProperties::print_lrg_properties(const LRG &lrg, const char *buffer) {
   print_property(true, "score", lrg.score());
   print_property((lrg._risk_bias != 0), "risk_bias", lrg._risk_bias);
   print_property((lrg._copy_bias != 0), "copy_bias", lrg._copy_bias);
+  print_property((lrg._copy_bias2 != 0), "copy_bias2", lrg._copy_bias2);
   print_property(lrg.is_singledef(), "is_singledef");
   print_property(lrg.is_multidef(), "is_multidef");
   print_property(lrg._is_oop, "is_oop");
