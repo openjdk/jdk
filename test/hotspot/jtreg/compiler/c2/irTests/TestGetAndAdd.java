@@ -29,7 +29,7 @@ import java.lang.invoke.VarHandle;
 
 /*
  * @test
- * bug 8308444
+ * @bug 8308444
  * @summary verify that the correct node is matched for atomic getAndAdd
  * @requires os.simpleArch == "x64"
  * @requires vm.compiler2.enabled
@@ -75,8 +75,8 @@ public class TestGetAndAdd {
     @IR(counts = {IRNode.X86_LOCK_ADDB_IMM, "1"}, phase = CompilePhase.FINAL_CODE)
     @IR(counts = {IRNode.X86_LOCK_XADDB, "3"}, phase = CompilePhase.FINAL_CODE)
     public static void addB() {
-        B.getAndAdd(b2);
-        B.getAndAdd((byte)1);
+        var _ = (byte) B.getAndAdd(b2);
+        var _ = (byte) B.getAndAdd((byte)1);
         b2 = (byte)B.getAndAdd(b2);
     }
 
@@ -85,8 +85,8 @@ public class TestGetAndAdd {
     @IR(counts = {IRNode.X86_LOCK_ADDS_IMM, "1"}, phase = CompilePhase.FINAL_CODE)
     @IR(counts = {IRNode.X86_LOCK_XADDS, "3"}, phase = CompilePhase.FINAL_CODE)
     public static void addS() {
-        S.getAndAdd(s2);
-        S.getAndAdd((short)1);
+        var _ = (short) S.getAndAdd(s2);
+        var _ = (short) S.getAndAdd((short)1);
         s2 = (short)S.getAndAdd(s2);
     }
 
@@ -95,8 +95,8 @@ public class TestGetAndAdd {
     @IR(counts = {IRNode.X86_LOCK_ADDI_IMM, "1"}, phase = CompilePhase.FINAL_CODE)
     @IR(counts = {IRNode.X86_LOCK_XADDI, "3"}, phase = CompilePhase.FINAL_CODE)
     public static void addI() {
-        I.getAndAdd(i2);
-        I.getAndAdd(1);
+        var _ = (int) I.getAndAdd(i2);
+        var _ = (int) I.getAndAdd(1);
         i2 = (int)I.getAndAdd(i2);
     }
 
@@ -105,8 +105,8 @@ public class TestGetAndAdd {
     @IR(counts = {IRNode.X86_LOCK_ADDL_IMM, "1"}, phase = CompilePhase.FINAL_CODE)
     @IR(counts = {IRNode.X86_LOCK_XADDL, "3"}, phase = CompilePhase.FINAL_CODE)
     public static void addL() {
-        L.getAndAdd(l2);
-        L.getAndAdd(1L);
+        var _ = (long) L.getAndAdd(l2);
+        var _ = (long) L.getAndAdd(1L);
         l2 = (long)L.getAndAdd(l2);
     }
 }
