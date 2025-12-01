@@ -427,7 +427,7 @@ HeapWord* ShenandoahOldCollectorAllocator::allocate(ShenandoahAllocRequest& req,
   // Record the plab configuration for this result and register the object.
   if (obj != nullptr) {
     old_gen->configure_plab_for_current_thread(req);
-    if (req.type() == ShenandoahAllocRequest::_alloc_shared_gc) {
+    if (!req.is_lab_alloc()) {
       // Register the newly allocated object while we're holding the global lock since there's no synchronization
       // built in to the implementation of register_object().  There are potential races when multiple independent
       // threads are allocating objects, some of which might span the same card region.  For example, consider
