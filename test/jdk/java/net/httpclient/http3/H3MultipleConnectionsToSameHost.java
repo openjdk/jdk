@@ -23,7 +23,7 @@
 
 /*
  * @test id=with-continuations
- * @bug 8087112
+ * @bug 8087112 8372409
  * @requires os.family != "windows" | ( os.name != "Windows 10" & os.name != "Windows Server 2016"
  *                                      & os.name != "Windows Server 2019" )
  * @library /test/lib /test/jdk/java/net/httpclient/lib
@@ -46,7 +46,7 @@
  */
 /*
  * @test id=without-continuations
- * @bug 8087112
+ * @bug 8087112 8372409
  * @requires os.family == "windows" & ( os.name == "Windows 10" | os.name == "Windows Server 2016"
  *                                     | os.name == "Windows Server 2019" )
  * @library /test/lib /test/jdk/java/net/httpclient/lib
@@ -71,7 +71,7 @@
  */
 /*
  * @test id=useNioSelector
- * @bug 8087112
+ * @bug 8087112 8372409
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http2.Http2TestServer
@@ -96,7 +96,7 @@
  */
 /*
  * @test id=reno-cc
- * @bug 8087112
+ * @bug 8087112 8372409
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http2.Http2TestServer
