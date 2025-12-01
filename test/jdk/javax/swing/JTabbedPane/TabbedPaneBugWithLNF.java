@@ -75,19 +75,19 @@ public class TabbedPaneBugWithLNF {
         tabPane = new JTabbedPane(JTabbedPane.BOTTOM,JTabbedPane.SCROLL_TAB_LAYOUT);
 
         tabPane.addTab("Testing Tab0", testBtn = new JButton("Test Button0"));
-                
+
         tabPane.addTab("Testing Tab1", testBtn = new JButton("Test Button1"));
 
         tabPane.addTab("Testing Tab2", testBtn = new JButton("Test Button2"));
-               
+
         tabPane.addTab("Testing Tab3", testBtn = new JButton("Test Button3"));
-                
+
         tabPane.addTab("Testing Tab4", testBtn = new JButton("Test Button4"));
-              
+
         tabPane.addTab("Testing Tab5", testBtn = new JButton("Test Button5"));
-                
+
         tabPane.addTab("Testing Tab6", testBtn = new JButton("Test Button6"));
-                
+
         tabPane.addTab("Testing Tab7", testBtn = new JButton("Test Button7"));
         tabPane.addTab("Testing Tab8", testBtn = new JButton("Test Button8"));
         JButton myBtn = null;
