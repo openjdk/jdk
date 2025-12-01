@@ -225,6 +225,7 @@ public final class ModulePatcher {
         private final ModuleReference mref;
         private final URL delegateCodeSourceURL;
         private volatile ModuleReader delegate;
+        private volatile boolean closed;
 
         /**
          * Creates the ModuleReader to reads resources in a patched module.
@@ -310,7 +311,7 @@ public final class ModulePatcher {
          * Finds a resource of the given name in the patched module.
          */
         public Resource findResource(String name) throws IOException {
-
+            ensureOpen();
             // patch locations
             Resource r = findResourceInPatch(name);
             if (r != null)
@@ -354,6 +355,7 @@ public final class ModulePatcher {
 
         @Override
         public Optional<URI> find(String name) throws IOException {
+            ensureOpen();
             Resource r = findResourceInPatch(name);
             if (r != null) {
                 URI uri = URI.create(r.getURL().toString());
@@ -365,6 +367,7 @@ public final class ModulePatcher {
 
         @Override
         public Optional<InputStream> open(String name) throws IOException {
+            ensureOpen();
             Resource r = findResourceInPatch(name);
             if (r != null) {
                 return Optional.of(r.getInputStream());
@@ -375,6 +378,7 @@ public final class ModulePatcher {
 
         @Override
         public Optional<ByteBuffer> read(String name) throws IOException {
+            ensureOpen();
             Resource r = findResourceInPatch(name);
             if (r != null) {
                 ByteBuffer bb = r.getByteBuffer();
@@ -398,6 +402,7 @@ public final class ModulePatcher {
 
         @Override
         public Stream<String> list() throws IOException {
+            ensureOpen();
             Stream<String> s = delegate().list();
             for (ResourceFinder finder : finders) {
                 s = Stream.concat(s, finder.list());
@@ -407,8 +412,15 @@ public final class ModulePatcher {
 
         @Override
         public void close() throws IOException {
+            closed = true;
             closeAll(finders);
             delegate().close();
+        }
+
+        private void ensureOpen() throws IOException {
+            if (closed) {
+                throw new IOException("ModuleReader is closed");
+            }
         }
     }
 
