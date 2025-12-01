@@ -65,8 +65,10 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager {
 
         this.trustedCerts = trustedCerts;
 
-        SSLLogger.logFine("ssl,trustmanager", "adding as trusted certificates",
-                (Object[]) trustedCerts.toArray(new X509Certificate[0]));
+        if (SSLLogger.isOn() && SSLLogger.isOn("ssl,trustmanager")) {
+            SSLLogger.fine("adding as trusted certificates",
+                    (Object[])trustedCerts.toArray(new X509Certificate[0]));
+        }
     }
 
     X509TrustManagerImpl(String validatorType, PKIXBuilderParameters params) {
@@ -80,9 +82,10 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager {
         trustedCerts = v.getTrustedCertificates();
         serverValidator = v;
 
-        SSLLogger.logFine("ssl,trustmanager",
-                "adding as trusted certificates",
-                (Object[]) trustedCerts.toArray(new X509Certificate[0]));
+        if (SSLLogger.isOn() && SSLLogger.isOn("ssl,trustmanager")) {
+            SSLLogger.fine("adding as trusted certificates",
+                    (Object[])trustedCerts.toArray(new X509Certificate[0]));
+        }
     }
 
     @Override
@@ -282,8 +285,10 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager {
                     null, checkClientTrusted ? null : authType);
         }
 
-        SSLLogger.logFine("ssl,trustmanager", "Found trusted certificate",
-                trustedChain[trustedChain.length - 1]);
+        if (SSLLogger.isOn() && SSLLogger.isOn("ssl,trustmanager")) {
+            SSLLogger.fine("Found trusted certificate",
+                    trustedChain[trustedChain.length - 1]);
+        }
     }
 
     private Validator getValidator(String variant) {
@@ -314,8 +319,9 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager {
                     hostname = new SNIHostName(sniName.getEncoded());
                 } catch (IllegalArgumentException iae) {
                     // unlikely to happen, just in case ...
-                    SSLLogger.logInfo("ssl,trustmanager",
-                            "Illegal server name: " + sniName);
+                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl,trustmanager")) {
+                        SSLLogger.fine("Illegal server name: " + sniName);
+                    }
                 }
             }
 
