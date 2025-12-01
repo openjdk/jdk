@@ -38,18 +38,18 @@ import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
 @State(Scope.Benchmark)
-@Warmup(iterations = 5, time = 10)
-@Measurement(iterations = 5, time = 10)
+@Warmup(iterations = 2, time = 5)
+@Measurement(iterations = 5, time = 5)
 @BenchmarkMode(Mode.SampleTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @Threads(1)
-@Fork(value = 5)
-public class CPUTime {
+@Fork(value = 10)
+public class ThreadMXBeanBench {
     static final ThreadMXBean mxThreadBean = ManagementFactory.getThreadMXBean();
     static long user; // To avoid dead-code elimination
 
     @Benchmark
-    public void execute() throws Throwable {
+    public void getCurrentThreadUserTime() throws Throwable {
         user = mxThreadBean.getCurrentThreadUserTime();
     }
 }
