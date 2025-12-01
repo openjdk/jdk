@@ -24,64 +24,112 @@
 /*
  * @test
  * @bug 4337898
+ * @key headful
  * @summary Verifies Serializing DefaultTableCellRenderer doesn't change colors
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
- * @run main/manual DefRendererSerialize
+ * @run main DefRendererSerialize
  */
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-
+import java.awt.Color;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Robot;
 import javax.swing.JFrame;
 import javax.swing.JTable;
-import javax.swing.UIManager;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.SwingUtilities;
+import java.util.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 public class DefRendererSerialize {
 
-    static final String INSTRUCTIONS = """
-        A JTable is shown
-        If the table text is black on white and not black on gray,
-        then test passed, otherwise it failed.""";
+    private static JFrame frame;
+    private static JTable table;
+    private static volatile DefaultTableCellRenderer tcr;
+    private static String[][] rowData = { {"1-1","1-2","1-3"},
+                                          {"2-1","","2-3"},
+                                          {"3-1","3-2","3-3"} };
 
-    public static void main(String[] args) throws Exception {
-        UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
-        PassFailJFrame.builder()
-                .title("DefRendererSerialize Instructions")
-                .instructions(INSTRUCTIONS)
-                .columns(20)
-                .testUI(DefRendererSerialize::createTestUI)
-                .build()
-                .awaitAndCheck();
+    private static String[] columnData = {"Column 1", "Column 2", "Column 3"};
+    private static volatile Rectangle tableRect;
+    private static volatile Point tableOnScreen;
+    private static volatile Point p;
+    private static Color fg, bg;
+
+    public static void main (String[] args) throws Exception {
+        try {
+
+            SwingUtilities.invokeAndWait(() -> {
+                frame = new JFrame();
+                table = new JTable(rowData, columnData);
+
+                DefaultTableCellRenderer tcr = new DefaultTableCellRenderer();
+                table.setDefaultRenderer(table.getColumnClass(1), tcr);
+
+                // If this try block is removed, table text remains black on white.
+
+                fg = tcr.getForeground();
+                bg = tcr.getBackground();
+                System.out.println("renderer fg " + fg + " bg " + bg);
+                tcr = (DefaultTableCellRenderer) table.getDefaultRenderer(table.getColumnClass(1));
+
+                byte[] serializedObject = null;
+                try {
+                    ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+                    ObjectOutputStream ostream = new ObjectOutputStream(bytes);
+                    ostream.writeObject(tcr);
+                    ostream.flush();
+                    serializedObject = bytes.toByteArray();
+                } catch (IOException ioex) {
+                    ioex.printStackTrace();
+                }
+
+                if (serializedObject == null) {
+                    throw new RuntimeException("FAILED: Serialized byte array in null");
+                }
+                try {
+                    DefaultTableCellRenderer destcr;
+                    try (ObjectInputStream inputStream =
+                            new ObjectInputStream(new ByteArrayInputStream(serializedObject))) {
+                        destcr = (DefaultTableCellRenderer) inputStream.readObject();
+                    }
+                    System.out.println("deserialized renderer fg " + fg + " bg " + bg);
+                    if (!(fg == destcr.getForeground()) || !(bg == destcr.getBackground())) {
+                        throw new RuntimeException("Desrialized foreground and background color not same");
+                    }
+                } catch (IOException | ClassNotFoundException e) {}
+
+                frame.add(table);
+
+                frame.pack();
+                frame.setLocationRelativeTo(null);
+                frame.setVisible(true);
+            });
+            Robot robot = new Robot();
+            robot.waitForIdle();
+            robot.delay(1000);
+            SwingUtilities.invokeAndWait(() -> {
+                tableRect = table.getCellRect(1, 1, true);
+                tableOnScreen = table.getLocationOnScreen();
+
+                p = new Point(tableOnScreen.x + tableRect.x + tableRect.width / 2,
+                                tableOnScreen.y + tableRect.y + tableRect.height / 2);
+
+            });
+            Color pixelColor = robot.getPixelColor(p.x, p.y);
+            System.out.println("pixelColor " + pixelColor);
+            if (!pixelColor.equals(Color.white)) {
+                throw new RuntimeException("Serializing DefaultTableCellRenderer changes colors");
+            }
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
+        }
     }
-
-    static JFrame createTestUI() {
-      String[][] rowData = { {"1-1","1-2","1-3"},
-                             {"2-1","2-2","2-3"},
-                             {"3-1","3-2","3-3"} };
-
-      String[] columnData = {"Column 1", "Column 2", "Column 3"};
-
-      JTable table = new JTable(rowData, columnData);
-
-      table.setDefaultRenderer(table.getColumnClass(1),
-                               new DefaultTableCellRenderer());
-
-      // If this try block is removed, table text remains black on white.
-
-      try {
-         ObjectOutputStream ostream = new ObjectOutputStream(new ByteArrayOutputStream());
-         ostream.writeObject(table.getDefaultRenderer(table.getColumnClass(1)));
-      } catch (IOException ioex) {
-         ioex.printStackTrace();
-      }
-
-      JFrame frame = new JFrame("DefRendererSerialize");
-      frame.add(table);
-
-      frame.pack();
-      return frame;
-   }
 }
