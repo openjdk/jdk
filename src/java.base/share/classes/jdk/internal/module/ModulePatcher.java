@@ -441,12 +441,7 @@ public final class ModulePatcher {
 
         @Override
         public Resource find(String name) throws IOException {
-            final JarEntry entry;
-            try {
-                entry = jf.getJarEntry(name);
-            } catch (IllegalStateException ise) {
-                throw new IOException(ise);
-            }
+            JarEntry entry = jf.getJarEntry(name);
             if (entry == null)
                 return null;
 
@@ -479,11 +474,7 @@ public final class ModulePatcher {
                 }
                 @Override
                 public InputStream getInputStream() throws IOException {
-                    try {
-                        return jf.getInputStream(entry);
-                    } catch (IllegalStateException ise) {
-                        throw new IOException(ise);
-                    }
+                    return jf.getInputStream(entry);
                 }
                 @Override
                 public int getContentLength() throws IOException {
@@ -495,11 +486,7 @@ public final class ModulePatcher {
 
         @Override
         public Stream<String> list() throws IOException {
-            try {
-                return jf.stream().map(JarEntry::getName);
-            } catch (IllegalStateException ise) {
-                throw new IOException(ise);
-            }
+            return jf.stream().map(JarEntry::getName);
         }
     }
 
