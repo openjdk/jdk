@@ -81,7 +81,7 @@ size_t G1Arguments::conservative_max_heap_alignment() {
                            ? G1HeapRegion::max_ergonomics_size()
                            : G1HeapRegion::max_region_size();
 
-  return MAX2(region_size, calculate_heap_alignment(SpaceAlignment));
+  return calculate_heap_alignment(region_size);
 }
 
 void G1Arguments::initialize_verification_types() {
