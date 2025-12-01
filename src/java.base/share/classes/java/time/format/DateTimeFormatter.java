@@ -1480,11 +1480,12 @@ public final class DateTimeFormatter {
      * @param resolverFields  the fields to use during resolving, null for all fields
      * @param chrono  the chronology to use, null for no override
      * @param zone  the zone to use, null for no override
+     * @param onlyChronoField  flag indicating whether this formatter only uses ChronoField instances
      */
     DateTimeFormatter(CompositePrinterParser printerParser,
             Locale locale, DecimalStyle decimalStyle,
             ResolverStyle resolverStyle, Set<TemporalField> resolverFields,
-            Chronology chrono, ZoneId zone) {
+            Chronology chrono, ZoneId zone, boolean onlyChronoField) {
         this.printerParser = Objects.requireNonNull(printerParser, "printerParser");
         this.resolverFields = resolverFields;
         this.locale = Objects.requireNonNull(locale, "locale");
@@ -1492,7 +1493,7 @@ public final class DateTimeFormatter {
         this.resolverStyle = Objects.requireNonNull(resolverStyle, "resolverStyle");
         this.chrono = chrono;
         this.zone = zone;
-        this.onlyChronoField = printerParser.onlyChronoField();
+        this.onlyChronoField = onlyChronoField;
     }
 
     //-----------------------------------------------------------------------
@@ -1530,7 +1531,7 @@ public final class DateTimeFormatter {
         if (this.locale.equals(locale)) {
             return this;
         }
-        return new DateTimeFormatter(printerParser, locale, decimalStyle, resolverStyle, resolverFields, chrono, zone);
+        return new DateTimeFormatter(printerParser, locale, decimalStyle, resolverStyle, resolverFields, chrono, zone, onlyChronoField);
     }
 
     /**
@@ -1576,7 +1577,7 @@ public final class DateTimeFormatter {
                 Objects.equals(z, zone)) {
             return this;
         } else {
-            return new DateTimeFormatter(printerParser, locale, ds, resolverStyle, resolverFields, c, z);
+            return new DateTimeFormatter(printerParser, locale, ds, resolverStyle, resolverFields, c, z, onlyChronoField);
         }
     }
 
@@ -1602,7 +1603,7 @@ public final class DateTimeFormatter {
         if (this.decimalStyle.equals(decimalStyle)) {
             return this;
         }
-        return new DateTimeFormatter(printerParser, locale, decimalStyle, resolverStyle, resolverFields, chrono, zone);
+        return new DateTimeFormatter(printerParser, locale, decimalStyle, resolverStyle, resolverFields, chrono, zone, onlyChronoField);
     }
 
     //-----------------------------------------------------------------------
@@ -1656,7 +1657,7 @@ public final class DateTimeFormatter {
         if (Objects.equals(this.chrono, chrono)) {
             return this;
         }
-        return new DateTimeFormatter(printerParser, locale, decimalStyle, resolverStyle, resolverFields, chrono, zone);
+        return new DateTimeFormatter(printerParser, locale, decimalStyle, resolverStyle, resolverFields, chrono, zone, onlyChronoField);
     }
 
     //-----------------------------------------------------------------------
@@ -1713,7 +1714,7 @@ public final class DateTimeFormatter {
         if (Objects.equals(this.zone, zone)) {
             return this;
         }
-        return new DateTimeFormatter(printerParser, locale, decimalStyle, resolverStyle, resolverFields, chrono, zone);
+        return new DateTimeFormatter(printerParser, locale, decimalStyle, resolverStyle, resolverFields, chrono, zone, onlyChronoField);
     }
 
     //-----------------------------------------------------------------------
@@ -1755,7 +1756,7 @@ public final class DateTimeFormatter {
         if (Objects.equals(this.resolverStyle, resolverStyle)) {
             return this;
         }
-        return new DateTimeFormatter(printerParser, locale, decimalStyle, resolverStyle, resolverFields, chrono, zone);
+        return new DateTimeFormatter(printerParser, locale, decimalStyle, resolverStyle, resolverFields, chrono, zone, onlyChronoField);
     }
 
     //-----------------------------------------------------------------------
@@ -1821,7 +1822,7 @@ public final class DateTimeFormatter {
         if (Objects.equals(this.resolverFields, fields)) {
             return this;
         }
-        return new DateTimeFormatter(printerParser, locale, decimalStyle, resolverStyle, fields, chrono, zone);
+        return new DateTimeFormatter(printerParser, locale, decimalStyle, resolverStyle, fields, chrono, zone, onlyChronoField);
     }
 
     /**
@@ -1870,7 +1871,7 @@ public final class DateTimeFormatter {
         if (resolverFields != null) {
             resolverFields = Collections.unmodifiableSet(new HashSet<>(resolverFields));
         }
-        return new DateTimeFormatter(printerParser, locale, decimalStyle, resolverStyle, resolverFields, chrono, zone);
+        return new DateTimeFormatter(printerParser, locale, decimalStyle, resolverStyle, resolverFields, chrono, zone, onlyChronoField);
     }
 
     //-----------------------------------------------------------------------
