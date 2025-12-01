@@ -8923,7 +8923,7 @@ bool LibraryCallKit::inline_profileBoolean() {
 
 bool LibraryCallKit::inline_isCompileConstant() {
   Node* n = argument(0);
-  set_result(n->is_Con() ? intcon(1) : intcon(0));
+  set_result(n->is_Con() ? intcon(1) : intcon(2));
   return true;
 }
 

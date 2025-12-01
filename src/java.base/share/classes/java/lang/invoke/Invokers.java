@@ -621,7 +621,7 @@ class Invokers {
     @ForceInline
     /*non-public*/
     static void checkCustomized(MethodHandle mh) {
-        if (MethodHandleImpl.isCompileConstant(mh)) {
+        if (MethodHandleImpl.isCompileConstant(mh) != MethodHandleImpl.CONSTANT_YES) {
             return; // no need to customize a MH when the instance is known to JIT
         }
         if (mh.form.customized == null) { // fast approximate check that the underlying form is already customized

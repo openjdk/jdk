@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2016,14 +2016,34 @@ public abstract sealed class VarHandle implements Constable
         final Class<?> returnType;
         final int type;
         final int mode;
+        // The cache for adapted MH if the access site has a constant VH
+        // that does not match the erased type for.
+        @Stable MethodHandle adaptedMh;
 
-        public AccessDescriptor(MethodType symbolicMethodType, int type, int mode) {
+        AccessDescriptor(MethodType symbolicMethodType, int type, int mode) {
             this.symbolicMethodTypeExact = symbolicMethodType;
             this.symbolicMethodTypeErased = symbolicMethodType.erase();
             this.symbolicMethodTypeInvoker = symbolicMethodType.insertParameterTypes(0, VarHandle.class);
             this.returnType = symbolicMethodType.returnType();
             this.type = type;
             this.mode = mode;
+        }
+
+        @ForceInline
+        MethodHandle adaptedMethodHandle(VarHandle vh) {
+            var constant = MethodHandleImpl.isCompileConstant(vh);
+            var cache = adaptedMh;
+            if (constant == MethodHandleImpl.CONSTANT_YES && cache != null) {
+                return cache;
+            }
+
+            // This is still a hot path if vh is not constant - in this case,
+            // asType is the bottleneck for constant folding, unfortunately
+            var result = vh.getMethodHandle(mode).asType(symbolicMethodTypeInvoker);
+            if (constant == MethodHandleImpl.CONSTANT_PENDING && cache == null) {
+                adaptedMh = result;
+            }
+            return result;
         }
     }
 
