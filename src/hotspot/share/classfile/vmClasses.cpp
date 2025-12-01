@@ -241,7 +241,7 @@ void vmClasses::resolve_shared_class(InstanceKlass* klass, ClassLoaderData* load
     return;
   }
 
-  EventClassLoad class_load;
+  EventClassLoad class_load_event;
 
   // add super and interfaces first
   InstanceKlass* super = klass->super();
@@ -265,8 +265,8 @@ void vmClasses::resolve_shared_class(InstanceKlass* klass, ClassLoaderData* load
   klass->add_to_hierarchy(THREAD);
   assert(klass->is_loaded(), "Must be in at least loaded state");
 
-  if (class_load.should_commit()) {
-    JFR_ONLY(SystemDictionary::post_class_load_event(&class_load, klass, loader_data);)
+  if (class_load_event.should_commit()) {
+    JFR_ONLY(SystemDictionary::post_class_load_event(&class_load_event, klass, loader_data);)
   }
 }
 

@@ -1185,7 +1185,7 @@ void SystemDictionary::preload_class(Handle class_loader, InstanceKlass* ik, TRA
   }
 #endif
 
-  EventClassLoad class_load;
+  EventClassLoad class_load_event;
 
   ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(class_loader());
   oop java_mirror = ik->archived_java_mirror();
@@ -1208,11 +1208,10 @@ void SystemDictionary::preload_class(Handle class_loader, InstanceKlass* ik, TRA
     update_dictionary(THREAD, ik, loader_data);
   }
 
-  if (class_load.should_commit()) {
-    JFR_ONLY(post_class_load_event(&class_load, ik, loader_data);)
+  if (class_load_event.should_commit()) {
+    JFR_ONLY(post_class_load_event(&class_load_event, ik, loader_data);)
   }
 
-  assert(java_lang_Class::module(java_mirror) != nullptr, "must have been archived");
   assert(ik->is_loaded(), "Must be in at least loaded state");
 }
 
