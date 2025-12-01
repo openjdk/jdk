@@ -982,7 +982,9 @@ public:
                                    JVMState* jvms, bool allow_inline, float profile_factor, ciKlass* speculative_receiver_type = nullptr,
                                    bool allow_intrinsics = true);
   bool should_delay_inlining(ciMethod* call_method, JVMState* jvms) {
-    return C->directive()->should_delay_inline(call_method) ||
+    return AlwaysIncrementalInline ||
+           should_stress_inlining() ||
+           directive()->should_delay_inline(call_method) ||
            should_delay_string_inlining(call_method, jvms) ||
            should_delay_boxing_inlining(call_method, jvms) ||
            should_delay_vector_inlining(call_method, jvms);
@@ -1105,7 +1107,6 @@ public:
   void inline_incrementally_cleanup(PhaseIterGVN& igvn);
   void inline_incrementally(PhaseIterGVN& igvn);
   bool should_stress_inlining() { return StressIncrementalInlining && (random() % 2) == 0; }
-  bool should_delay_inlining() { return AlwaysIncrementalInline || should_stress_inlining(); }
   void inline_string_calls(bool parse_time);
   void inline_boxing_calls(PhaseIterGVN& igvn);
   bool optimize_loops(PhaseIterGVN& igvn, LoopOptsMode mode);

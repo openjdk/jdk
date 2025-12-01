@@ -240,8 +240,6 @@ public class TestSubtypeCheckTypeInfo {
         }
     }
 
-    /* =========================================================== */
-
     @InlineFailure
     // @ 2   compiler.inlining.TestSubtypeCheckTypeInfo::lateInlineInstanceOfCondPost (17 bytes)   inline (hot)   late inline succeeded
     // @ 9   compiler.inlining.TestSubtypeCheckTypeInfo$A::m (0 bytes)   failed to inline: virtual call
@@ -264,8 +262,6 @@ public class TestSubtypeCheckTypeInfo {
         }
     }
 
-    /* =========================================================== */
-
     @InlineFailure
     // Inlining _isInstance on constant Class compiler/inlining/TestSubtypeCheckTypeInfo$B
     // @ 2   compiler.inlining.TestSubtypeCheckTypeInfo::lateInlineIsInstanceCondPre (19 bytes)   inline (hot)   late inline succeeded
@@ -276,8 +272,6 @@ public class TestSubtypeCheckTypeInfo {
             a.m();
         }
     }
-
-    /* =========================================================== */
 
     @InlineFailure
     // Inlining _isInstance on constant Class compiler/inlining/TestSubtypeCheckTypeInfo$B
