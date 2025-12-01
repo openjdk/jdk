@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8367002
+ * @bug 8367002 8370766
  * @summary Compilers might not generate handlers for recursive exceptions
  *
  * @compile IllegalAccessInCatch.jasm
