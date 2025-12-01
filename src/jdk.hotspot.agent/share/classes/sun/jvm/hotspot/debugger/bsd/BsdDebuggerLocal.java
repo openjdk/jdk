@@ -77,7 +77,7 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
     // CDebugger support
     private BsdCDebugger cdbg;
 
-    // loadObjectList are filled by attach0 method
+    // loadObjectList is filled by attach0 method
     private List<LoadObject> loadObjectList;
 
     private List<JavaThread> javaThreadList;
