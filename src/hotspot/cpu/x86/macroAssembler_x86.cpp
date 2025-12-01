@@ -4808,8 +4808,8 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
 
   Register offset = rscratch1;
 
-  Label L_loop_search_receiver, L_loop_search_empty, L_loop_install;
-  Label L_found_recv, L_found_empty, L_polymorphic, L_count_update;
+  Label L_loop_search_receiver, L_loop_search_empty;
+  Label L_restart, L_found_recv, L_found_empty, L_polymorphic, L_count_update;
 
   // The code here recognizes three major cases:
   //   A. Fastest: receiver found in the table
@@ -4823,7 +4823,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   // only claimed once. This makes sure we never overwrite a row for another receiver
   // and never duplicate the receivers in the list.
   //
-  // It is tempting to combine these search into a single loop, and claim the first
+  // It is tempting to combine these cases into a single loop, and claim the first
   // free slot without checking the rest of the table. But, profiling code should tolerate
   // free slots in MDO. Therefore, the receiver we need might be _after_ the free slot.
   // Therefore, we need to let at least full scan to complete, before trying to install
@@ -4831,6 +4831,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   //
   // This code is effectively:
   //
+  // restart:
   //   // Fastest: receiver is already installed
   //   for (i = 0; i < receiver_count(); i++) {
   //     if (receiver(i) == recv) goto found_recv(i);
@@ -4838,16 +4839,14 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   //
   //   // Fast: no receiver, but profile is full
   //   for (i = 0; i < receiver_count(); i++) {
-  //     if (receiver(i) == null) goto found_null;
+  //     if (receiver(i) == null) goto found_null(i);
   //   }
   //   goto polymorphic
   //
   //   // Slow: try to install receiver
-  // found_null:
-  //   for (i = 0; i < receiver_count(); i++) {
-  //     CAS(&receiver(i), null -> recv);
-  //     if (receiver(i) == recv) goto found_recv(i);
-  //   }
+  // found_null(i):
+  //   CAS(&receiver(i), null, recv);
+  //   goto restart
   //
   // polymorphic:
   //   count++;
@@ -4856,6 +4855,8 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   // found_recv(i):
   //   *receiver_count(i)++
   //
+
+  bind(L_restart);
 
   // Fastest: receiver is already installed
   movptr(offset, base_receiver_offset);
@@ -4878,63 +4879,55 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
 
   // Slow: try to install receiver
   bind(L_found_empty);
-  movptr(offset, base_receiver_offset);
-  bind(L_loop_install);
-    // Atomically swing receiver slot: null -> recv.
-    //
-    // For code density reasons, we can skip testing if current slot is really nullptr:
-    // the search loops above already checked there is at least one nullptr, are we are
-    // in transient state here.
-    //
-    // The update code uses CAS, which wants RAX register specifically, *and* it needs
-    // other important registers untouched, as they form the address. Therefore, we need
-    // to shift any important registers from RAX into some other spare register. If we
-    // have a spare register, we are forced to save it on stack here.
 
-    Register spare_reg = noreg;
-    Register shifted_mdp = mdp;
-    Register shifted_recv = recv;
-    if (recv == rax || mdp == rax) {
-      spare_reg = (recv != rbx && mdp != rbx) ? rbx :
-                  (recv != rcx && mdp != rcx) ? rcx :
-                  rdx;
-      assert_different_registers(mdp, recv, offset, spare_reg);
+  // Atomically swing receiver slot: null -> recv.
+  //
+  // The update code uses CAS, which wants RAX register specifically, *and* it needs
+  // other important registers untouched, as they form the address. Therefore, we need
+  // to shift any important registers from RAX into some other spare register. If we
+  // have a spare register, we are forced to save it on stack here.
 
-      push(spare_reg);
-      if (recv == rax) {
-        movptr(spare_reg, recv);
-        shifted_recv = spare_reg;
-      } else {
-        assert(mdp == rax, "Remaining case");
-        movptr(spare_reg, mdp);
-        shifted_mdp = spare_reg;
-      }
+  Register spare_reg = noreg;
+  Register shifted_mdp = mdp;
+  Register shifted_recv = recv;
+  if (recv == rax || mdp == rax) {
+    spare_reg = (recv != rbx && mdp != rbx) ? rbx :
+                (recv != rcx && mdp != rcx) ? rcx :
+                rdx;
+    assert_different_registers(mdp, recv, offset, spare_reg);
+
+    push(spare_reg);
+    if (recv == rax) {
+      movptr(spare_reg, recv);
+      shifted_recv = spare_reg;
     } else {
-      push(rax);
+      assert(mdp == rax, "Remaining case");
+      movptr(spare_reg, mdp);
+      shifted_mdp = spare_reg;
     }
+  } else {
+    push(rax);
+  }
 
-    // None of the important registers are in RAX after this shuffle.
-    assert_different_registers(rax, shifted_mdp, shifted_recv, offset);
+  // None of the important registers are in RAX after this shuffle.
+  assert_different_registers(rax, shifted_mdp, shifted_recv, offset);
 
-    xorptr(rax, rax);
-    cmpxchgptr(shifted_recv, Address(shifted_mdp, offset, Address::times_ptr));
+  xorptr(rax, rax);
+  cmpxchgptr(shifted_recv, Address(shifted_mdp, offset, Address::times_ptr));
 
-    // Unshift registers.
-    if (recv == rax || mdp == rax) {
-      movptr(rax, spare_reg);
-      pop(spare_reg);
-    } else {
-      pop(rax);
-    }
+  // Unshift registers.
+  if (recv == rax || mdp == rax) {
+    movptr(rax, spare_reg);
+    pop(spare_reg);
+  } else {
+    pop(rax);
+  }
 
-    // CAS failure means something had claimed the slot concurrently.
-    // It can be the same receiver we want, or something else.
-    // Check the slot contents.
-    cmpptr(recv, Address(mdp, offset, Address::times_ptr));
-    jccb(Assembler::equal, L_found_recv);
-  addptr(offset, receiver_step);
-  cmpptr(offset, end_receiver_offset);
-  jccb(Assembler::notEqual, L_loop_install);
+  // CAS success means the slot now has the receiver we want. CAS failure means
+  // something had claimed the slot concurrently: it can be the same receiver we want,
+  // or something else. Since this is a slow path, we can optimize for code density,
+  // and just restart the search from the beginning.
+  jmpb(L_restart);
 
   // Counter updates:
 
