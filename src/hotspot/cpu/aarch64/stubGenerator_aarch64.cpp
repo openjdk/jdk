@@ -7140,6 +7140,15 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // P256 Montgomery Multiplication.
+  // Implements the method protected void mult(long[] a, long[] b, long[] r) {}
+  // of the sun.security.util.math.intpoly.MontgomeryIntegerPolynomialP256 class
+  //
+  // a (long[5]) = c_rarg0
+  // b (long[5]) = c_rarg1
+  // r (long[5]) = c_rarg2
+  //
+  // Note that each arg represents a 256-bit integer broken into 52-bit limbs
   address generate_intpoly_montgomeryMult_P256() {
 
     __ align(CodeEntryAlignment);
@@ -7152,172 +7161,230 @@ class StubGenerator: public StubCodeGenerator {
     const Register b = c_rarg1;
     const Register result = c_rarg2;
 
+    //Omit 3rd limb of modulus since it is 0
     static const int64_t modulus[5] = {
-      0x000fffffffffffffL, 0x00000fffffffffffL, 0x0000000000000000L,
-      0x0000001000000000L, 0x0000ffffffff0000L 
+      0x000fffffffffffffL, 0x00000fffffffffffL,
+      0x0000001000000000L, 0x0000ffffffff0000L
     };
 
-    Register c_ptr = r9;
-    Register a_i = r10;
-    Register c_idx = r10; //c_idx is not used at the same time as a_i
-    Register limb_mask_scalar = r11;
-    Register b_j = r12;
-    Register mod_j = r12;
-    Register mod_ptr = r13;
-    Register mul_tmp = r14;
-    Register n = r15;
+    int shift1 = 12; // 64 - bits per limb
+    int shift2 = 52; // bits per limb
 
-    FloatRegister low_01 = v16;
-    FloatRegister low_23 = v17;
-    FloatRegister low_4x = v18;
-    FloatRegister high_01 = v19;
-    FloatRegister high_23 = v20;
-    FloatRegister high_4x = v21;
-    FloatRegister modmul_low = v22;
-    FloatRegister modmul_high = v23;
-    FloatRegister c_01 = v24;
-    FloatRegister c_23 = v25;
-    FloatRegister limb_mask = v28;
-    FloatRegister tmp = v29;
+    // GPRs that are used throughout loop
+    Register b_j = r3;
+    Register mod_ptr = r4;
+    Register limb_mask_scalar = r5;
+    Register c_ptr = r6;
 
-    int shift1 = 12;
-    int shift2 = 52; //bits per limb
+    // These neon registers remain constant through the main loop
+    FloatRegister limb_mask = v0;
+    FloatRegister mask_32_vec = v1;
+    FloatRegister b_lows = v2;
+    FloatRegister b_highs = v3;
+    FloatRegister mod_lows = v4;
+    FloatRegister mod_highs = v5;
 
     // Push callee saved registers on to the stack
     RegSet callee_saved = RegSet::range(r19, r28);
     __ push(callee_saved, sp);
-      
+
     // Allocate space on the stack for carry values and zero memory
     __ sub(sp, sp, 80);
     __ mov(c_ptr, sp);
-    __ eor(a_i, a_i, a_i);
+    __ eor(b_j, b_j, b_j); //Create a 0 reg to clear memory
     for (int i = 0; i < 10; i++) {
-      __ str(a_i, Address(sp, i * 8));
+      __ str(b_j, Address(sp, i * 8));
     }
 
     // Calculate limb mask
-    __ mov(limb_mask_scalar, -UCONST64(1) >> (64 - shift2));
-    __ dup(limb_mask, __ T2D, limb_mask_scalar);
+      __ mov(limb_mask_scalar, -UCONST64(1) >> (64 - shift2));
+      __ dup(limb_mask, __ T2D, limb_mask_scalar);
 
-    // Get pointer for modulus
+    // Calculate 32-bit mask
+    {
+      Register mask_32 = r7;
+      __ mov(mask_32, (UCONST64(1) << 32) - 1);
+      __ dup(mask_32_vec, __ T2D, mask_32);
+    }
+
+    // Load modulus and input array b
     __ lea(mod_ptr, ExternalAddress((address)modulus));
+    __ ld2(b_lows, b_highs, __ T4S, Address(b));
+    __ ld2(mod_lows, mod_highs, __ T4S, Address(mod_ptr));
+    __ ldr(b_j, Address(b, 32));
 
     for (int i = 0; i < 5; i++) {
-      // Load a_i into scalar_mult register and increment by 64 bits
-      __ ldr(a_i, Address(a, i * 8));
+      Register c_idx = r10;
+      Register mul_tmp = r11;
+      Register scalar_ai = r12;
 
-      // Iterate through b, multiplying each limb by a_i 
+      FloatRegister A = v6;
+      FloatRegister B = v7;
+      FloatRegister C = v8;
+      FloatRegister D = v16;
+      FloatRegister a_i = v17;
+      FloatRegister n = v18;
+      FloatRegister middle = v19;
+      FloatRegister tmp = v20;
+      FloatRegister modmul_low = v21;
+      FloatRegister modmul_high = v22;
+      FloatRegister c_01 = v23;
+      FloatRegister c_23 = v24;
+      FloatRegister low_34 = v25;
+      FloatRegister low_01 = v26;
+      FloatRegister low_23 = v27;
+      FloatRegister low_4x = v28;
+      FloatRegister high_01 = v29;
+      FloatRegister high_23 = v30;
+      FloatRegister high_4x = v31;
+
+      // Load a_i and increment by 8 bytes
+      __ ldr(scalar_ai, a);
+      __ ld1(a_i, __ D, 0, __ post(a, 8));
+
+      // Start computing final multiply with GPR since it is not
+      // worth it to vectorize a single mult
+      __ mul(mul_tmp, scalar_ai, b_j);
+      __ mov(low_4x, Assembler::D, 0, mul_tmp);
+      __ umulh(mul_tmp, scalar_ai, b_j);
+      __ mov(high_4x, Assembler::D, 0, mul_tmp);
+
+      // Iterate through b, multiplying each limb by a_i
       // storing low and high parts in separate vectors.
       // Compute high[i] = high[i] << shift1 | (low[i] >>> shift2)
       // and low[i] &= LIMB_MASK
-      __ ldr(b_j, Address(b));
-      __ mul(mul_tmp, a_i, b_j);
-      __ mov(low_01, Assembler::D, 0, mul_tmp);
-      __ umulh(mul_tmp, a_i, b_j);
-      __ mov(high_01, Assembler::D, 0, mul_tmp);
 
-      __ ldr(b_j, Address(b, 8));
-      __ mul(mul_tmp, a_i, b_j);
-      __ mov(low_01, Assembler::D, 1, mul_tmp);
-      __ umulh(mul_tmp, a_i, b_j);
-      __ mov(high_01, Assembler::D, 1, mul_tmp);
-      
+      // Calculus low_01 and high_01
+      __ umullv(A, __ T2D, b_lows, __ T2S, a_i, __ S, 0);
+      __ umullv(B, __ T2D, b_highs, __ T2S, a_i, __ S, 0);
+      __ umullv(C, __ T2D, b_lows, __ T2S, a_i, __ S, 1);
+      __ umullv(D, __ T2D, b_highs, __ T2S, a_i, __ S, 1);
+
+      __ andr(middle, __ T16B, B, mask_32_vec);
+      __ ushr(tmp, __ T2D, A, 32);
+      __ addv(middle, __ T2D, middle, tmp);
+      __ addv(middle, __ T2D, middle, C);
+
+      __ shl(low_01, __ T2D, middle, 32);
+      __ andr(tmp, __ T16B, A, mask_32_vec);
+      __ orr(low_01, __ T16B, low_01, tmp);
+
+      __ ushr(high_01, __ T2D, middle, 32);
+      __ addv(high_01, __ T2D, high_01, D);
+      __ ushr(tmp, __ T2D, B, 32);
+      __ addv(high_01, __ T2D, high_01, tmp);
+
       __ shl(high_01, __ T2D, high_01, shift1);
       __ ushr(tmp, __ T2D, low_01, shift2);
       __ orr(high_01, __ T16B, high_01, tmp);
-      __ andr(low_01, __ T2D, low_01, limb_mask);
-        
-      __ ldr(b_j, Address(b, 16));
-      __ mul(mul_tmp, a_i, b_j);
-      __ mov(low_23, Assembler::D, 0, mul_tmp);
-      __ umulh(mul_tmp, a_i, b_j);
-      __ mov(high_23, Assembler::D, 0, mul_tmp);
+      __ andr(low_01, __ T16B, low_01, limb_mask);
 
-      __ ldr(b_j, Address(b, 24));
-      __ mul(mul_tmp, a_i, b_j);
-      __ mov(low_23, Assembler::D, 1, mul_tmp);
-      __ umulh(mul_tmp, a_i, b_j);
-      __ mov(high_23, Assembler::D, 1, mul_tmp);
+      // Calculate low_23 and high_23
+      __ umull2v(A, __ T2D, b_lows, __ T4S, a_i, __ S, 0);
+      __ umull2v(B, __ T2D, b_highs, __ T4S, a_i, __ S, 0);
+      __ umull2v(C, __ T2D, b_lows, __ T4S, a_i, __ S, 1);
+      __ umull2v(D, __ T2D, b_highs, __ T4S, a_i, __ S, 1);
+
+      __ andr(middle, __ T16B, B, mask_32_vec);
+      __ ushr(tmp, __ T2D, A, 32);
+      __ addv(middle, __ T2D, middle, tmp);
+      __ addv(middle, __ T2D, middle, C);
+
+      __ shl(low_23, __ T2D, middle, 32);
+      __ andr(tmp, __ T16B, A, mask_32_vec);
+      __ orr(low_23, __ T16B, low_23, tmp);
+
+      __ ushr(high_23, __ T2D, middle, 32);
+      __ addv(high_23, __ T2D, high_23, D);
+      __ ushr(tmp, __ T2D, B, 32);
+      __ addv(high_23, __ T2D, high_23, tmp);
 
       __ shl(high_23, __ T2D, high_23, shift1);
       __ ushr(tmp, __ T2D, low_23, shift2);
       __ orr(high_23, __ T16B, high_23, tmp);
-      __ andr(low_23, __ T2D, low_23, limb_mask);
+      __ andr(low_23, __ T16B, low_23, limb_mask);
 
-      __ ldr(b_j, Address(b, 32));
-      __ mul(mul_tmp, a_i, b_j);
-      __ mov(low_4x, Assembler::D, 0, mul_tmp);
-      __ umulh(mul_tmp, a_i, b_j);
-      __ mov(high_4x, Assembler::D, 0, mul_tmp);
-
+      // Finish computing high_4x
       __ shl(high_4x, __ T2D, high_4x, shift1);
       __ ushr(tmp, __ T2D, low_4x, shift2);
       __ orr(high_4x, __ T16B, high_4x, tmp);
-      __ andr(low_4x, __ T2D, low_4x, limb_mask);
-        
-      // Load c_i and perform
+      __ andr(low_4x, __ T16B, low_4x, limb_mask);
+
       // low_0 += c_i
       // n = low_0 & limb_mask
       __ eor(c_01, __ T2D, c_01, c_01);
       __ ld1(c_01, __ D, 0, c_ptr);
       __ addv(low_01, __ T2D, low_01, c_01);
-      __ mov(n, low_01, __ D, 0);
-      __ andr(n, n, limb_mask_scalar);
-      
-      // Iterate through the modulus, multiplying each limb by n and 
+      __ andr(n, __ T16B, low_01, limb_mask);
+
+      // Iterate through the modulus, multiplying each limb by n and
       // storing low and high parts in separate vectors.
       // Compute high += modmul_high << shift1 | (modmul_low >>> shift2);
       // and low += modmul_low & LIMB_MASK
-      __ ldr(mod_j, Address(mod_ptr));
-      __ mul(mul_tmp, n, mod_j);
-      __ mov(modmul_low, Assembler::D, 0, mul_tmp);
-      __ umulh(mul_tmp, n, mod_j);
-      __ mov(modmul_high, Assembler::D, 0, mul_tmp);
 
-      __ ldr(mod_j, Address(mod_ptr, 8)); 
-      __ mul(mul_tmp, n, mod_j);
-      __ mov(modmul_low, Assembler::D, 1, mul_tmp);
-      __ umulh(mul_tmp, n, mod_j);
-      __ mov(modmul_high, Assembler::D, 1, mul_tmp);
+      // Calculate modmul_low and modmul_high for modulus[0] and modulus[1]
+      __ umullv(A, __ T2D, mod_lows, __ T2S, n, __ S, 0);
+      __ umullv(B, __ T2D, mod_highs, __ T2S, n, __ S, 0);
+      __ umullv(C, __ T2D, mod_lows, __ T2S, n, __ S, 1);
+      __ umullv(D, __ T2D, mod_highs, __ T2S, n, __ S, 1);
+
+      __ andr(middle, __ T16B, B, mask_32_vec);
+      __ ushr(tmp, __ T2D, A, 32);
+      __ addv(middle, __ T2D, middle, tmp);
+      __ addv(middle, __ T2D, middle, C);
+
+      __ shl(modmul_low, __ T2D, middle, 32);
+      __ andr(tmp, __ T16B, A, mask_32_vec);
+      __ orr(modmul_low, __ T16B, modmul_low, tmp);
+
+      __ ushr(modmul_high, __ T2D, middle, 32);
+      __ addv(modmul_high, __ T2D, modmul_high, D);
+      __ ushr(tmp, __ T2D, B, 32);
+      __ addv(modmul_high, __ T2D, modmul_high, tmp);
 
       __ shl(modmul_high, __ T2D, modmul_high, shift1);
       __ ushr(tmp, __ T2D, modmul_low, shift2);
       __ orr(modmul_high, __ T16B, modmul_high, tmp);
       __ addv(high_01, __ T2D, high_01, modmul_high);
-      __ andr(modmul_low, __ T2D, modmul_low, limb_mask);
+      __ andr(modmul_low, __ T16B, modmul_low, limb_mask);
       __ addv(low_01, __ T2D, low_01, modmul_low);
 
-      __ ldr(mod_j, Address(mod_ptr, 16));
-      __ mul(mul_tmp, n, mod_j);
-      __ mov(modmul_low, Assembler::D, 0, mul_tmp);
-      __ umulh(mul_tmp, n, mod_j);
-      __ mov(modmul_high, Assembler::D, 0, mul_tmp);
+      // Calculate modmul_low and modmul_high for modulus[3] and modulus[4].
+      // Can omit modulus[2] since it is 0
+      __ umull2v(A, __ T2D, mod_lows, __ T4S, n, __ S, 0);
+      __ umull2v(B, __ T2D, mod_highs, __ T4S, n, __ S, 0);
+      __ umull2v(C, __ T2D, mod_lows, __ T4S, n, __ S, 1);
+      __ umull2v(D, __ T2D, mod_highs, __ T4S, n, __ S, 1);
 
-      __ ldr(mod_j, Address(mod_ptr, 24));
-      __ mul(mul_tmp, n, mod_j);
-      __ mov(modmul_low, Assembler::D, 1, mul_tmp);
-      __ umulh(mul_tmp, n, mod_j);
-      __ mov(modmul_high, Assembler::D, 1, mul_tmp);
+      __ andr(middle, __ T16B, B, mask_32_vec);
+      __ ushr(tmp, __ T2D, A, 32);
+      __ addv(middle, __ T2D, middle, tmp);
+      __ addv(middle, __ T2D, middle, C);
 
-      __ shl(modmul_high, __ T2D, modmul_high, shift1);
-      __ ushr(tmp, __ T2D, modmul_low, shift2);
-      __ orr(modmul_high, __ T16B, modmul_high, tmp);
-      __ addv(high_23, __ T2D, high_23, modmul_high);
-      __ andr(modmul_low, __ T2D, modmul_low, limb_mask);
-      __ addv(low_23, __ T2D, low_23, modmul_low);
+      __ shl(modmul_low, __ T2D, middle, 32);
+      __ andr(tmp, __ T16B, A, mask_32_vec);
+      __ orr(modmul_low, __ T16B, modmul_low, tmp);
 
-      __ ldr(mod_j, Address(mod_ptr, 32));
-      __ mul(mul_tmp, n, mod_j);
-      __ mov(modmul_low, Assembler::D, 0, mul_tmp);
-      __ umulh(mul_tmp, n, mod_j);
-      __ mov(modmul_high, Assembler::D, 0, mul_tmp);
+      __ ushr(modmul_high, __ T2D, middle, 32);
+      __ addv(modmul_high, __ T2D, modmul_high, D);
+      __ ushr(tmp, __ T2D, B, 32);
+      __ addv(modmul_high, __ T2D, modmul_high, tmp);
 
       __ shl(modmul_high, __ T2D, modmul_high, shift1);
       __ ushr(tmp, __ T2D, modmul_low, shift2);
       __ orr(modmul_high, __ T16B, modmul_high, tmp);
-      __ addv(high_4x, __ T2D, high_4x, modmul_high);
-      __ andr(modmul_low, __ T2D, modmul_low, limb_mask);
-      __ addv(low_4x, __ T2D, low_4x, modmul_low);
+      __ andr(modmul_low, __ T16B, modmul_low, limb_mask);
+
+      //Need to shift around vectors to get right layout bc of no modulus[2]
+      __ ins(low_34, __ D, low_23, 0, 1);
+      __ ins(low_34, __ D, low_4x, 1, 0);
+      __ addv(low_34, __ T2D, low_34, modmul_low);
+
+      __ eor(tmp, __ T16B, tmp, tmp);
+      __ ins(tmp, __ D, modmul_high, 1, 0); // tmp = [0, nn3]
+      __ addv(high_23, __ T2D, high_23, tmp);
+      __ ins(tmp, __ D, modmul_high, 0, 1); // tmp = [nn4, nn3]
+      __ addv(high_4x, __ T2D, high_4x, tmp);
 
       // Compute carry values
       // c_i+1 += low_1 + high_0 + (low_0 >>> shift2)
@@ -7333,20 +7400,18 @@ class StubGenerator: public StubCodeGenerator {
       // Add high values to c
       __ addv(c_01, __ T2D, c_01, high_01);
       __ addv(c_23, __ T2D, c_23, high_23);
+      __ addv(c_23, __ T2D, c_23, low_34);
 
       // Reorder low vectors to enable simd ops
-      // clear tmp_4x and put low_0 in first lane
       __ ins(tmp, __ D, low_01, 0, 1);
       __ ins(tmp, __ D, low_23, 1, 0);
       __ addv(c_01, __ T2D, c_01, tmp);
-      __ ins(tmp, __ D, low_23, 0, 1);
-      __ ins(tmp, __ D, low_4x, 1, 0);
-      __ addv(c_23, __ T2D, c_23, tmp);
 
+      // clear tmp_4x and put low_0 in first lane
       // Shift low_0 and add to c_i+1
       __ ushr(low_01, __ T2D, low_01, shift2);
       __ eor(tmp, __ T16B, tmp, tmp); //zero out tmp
-      __ ins(tmp, __ D, low_01, 0, 0); 
+      __ ins(tmp, __ D, low_01, 0, 0);
       __ addv(c_01, __ T2D, c_01, tmp);
 
       // Write back carry values to stack
@@ -7354,8 +7419,8 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     // Final carry propagate and write result
-
-    Register tmp_0 = r10;
+    Register mod_j = r3; // b_j is not used after loop
+    Register tmp = r6; // c_ptr is not used after loop
     Register c0 = r19;
     Register c1 = r20;
     Register c2 = r21;
@@ -7374,14 +7439,14 @@ class StubGenerator: public StubCodeGenerator {
     // c8 += (c7 >>> BITS_PER_LIMB);
     // c9 += (c8 >>> BITS_PER_LIMB);
 
-    __ lsr(tmp_0, c5, shift2);
-    __ add(c6, c6, tmp_0);
-    __ lsr(tmp_0, c6, shift2);
-    __ add(c7, c7, tmp_0);
-    __ lsr(tmp_0, c7, shift2);
-    __ add(c8, c8, tmp_0);
-    __ lsr(tmp_0, c8, shift2);
-    __ add(c9, c9, tmp_0);
+    __ lsr(tmp, c5, shift2);
+    __ add(c6, c6, tmp);
+    __ lsr(tmp, c6, shift2);
+    __ add(c7, c7, tmp);
+    __ lsr(tmp, c7, shift2);
+    __ add(c8, c8, tmp);
+    __ lsr(tmp, c8, shift2);
+    __ add(c9, c9, tmp);
 
     __ andr(c5, c5, limb_mask_scalar);
     __ andr(c6, c6, limb_mask_scalar);
@@ -7391,41 +7456,40 @@ class StubGenerator: public StubCodeGenerator {
     // c0 = c5 - modulus[0];
     // c1 = c6 - modulus[1] + (c0 >> BITS_PER_LIMB);
     // c0 &= LIMB_MASK;
-    // c2 = c7 + (c1 >> BITS_PER_LIMB); 
+    // c2 = c7 + (c1 >> BITS_PER_LIMB);
     // c1 &= LIMB_MASK;
     // c3 = c8 - modulus[3] + (c2 >> BITS_PER_LIMB);
     // c2 &= LIMB_MASK;
     // c4 = c9 - modulus[4] + (c3 >> BITS_PER_LIMB);
     // c3 &= LIMB_MASK;
-
     __ ldr(mod_j, Address(mod_ptr));
     __ sub(c0, c5, mod_j);
 
     __ ldr(mod_j, Address(mod_ptr, 8));
     __ sub(c1, c6, mod_j);
-    __ asr(tmp_0, c0, shift2);
-    __ add(c1, c1, tmp_0);
+    __ asr(tmp, c0, shift2);
+    __ add(c1, c1, tmp);
 
-    __ ldr(mod_j, Address(mod_ptr, 16));
+    // Modulus[2] is zero
     __ asr(c2, c1, shift2);
     __ add(c2, c2, c7);
 
-    __ ldr(mod_j, Address(mod_ptr, 24));
+    __ ldr(mod_j, Address(mod_ptr, 16));
     __ sub(c3, c8, mod_j);
-    __ asr(tmp_0, c2, shift2);
-    __ add(c3, c3, tmp_0);
+    __ asr(tmp, c2, shift2);
+    __ add(c3, c3, tmp);
 
-    __ ldr(mod_j, Address(mod_ptr, 32));
+    __ ldr(mod_j, Address(mod_ptr, 24));
     __ sub(c4, c9, mod_j);
-    __ asr(tmp_0, c3, shift2);
-    __ add(c4, c4, tmp_0);
+    __ asr(tmp, c3, shift2);
+    __ add(c4, c4, tmp);
 
     // Apply limb mask
     __ andr(c0, c0, limb_mask_scalar);
     __ andr(c1, c1, limb_mask_scalar);
     __ andr(c2, c2, limb_mask_scalar);
     __ andr(c3, c3, limb_mask_scalar);
-    
+
     // Final write back
     // mask = c4 >> 63
     // r[0] = ((c5 & mask) | (c0 & ~mask));
@@ -7434,46 +7498,45 @@ class StubGenerator: public StubCodeGenerator {
     // r[3] = ((c8 & mask) | (c3 & ~mask));
     // r[4] = ((c9 & mask) | (c4 & ~mask));
 
-    Register res_0 = r9;
-    Register res_1 = r10;
-    Register res_2 = r11;
-    Register res_3 = r12;
-    Register res_4 = r13;
-    Register mask = r14;
-    Register nmask = r15;
-    Register tmp_1 = r19;
+    Register res_0 = r11;
+    Register res_1 = r12;
+    Register res_2 = r13;
+    Register res_3 = r14;
+    Register res_4 = r15;
+    Register mask = r7;
+    Register nmask = r10;
 
-    RegSet res = RegSet::range(r9, r13);
+    RegSet res = RegSet::range(r11, r15);
 
     __ asr(mask, c4, 63);
     __ mvn(nmask, mask);
 
     __ andr(res_0, c5, mask);
-    __ andr(tmp_1, c0, nmask);
-    __ orr(res_0, res_0, tmp_1);
+    __ andr(tmp, c0, nmask);
+    __ orr(res_0, res_0, tmp);
 
     __ andr(res_1, c6, mask);
-    __ andr(tmp_1, c1, nmask);
-    __ orr(res_1, res_1, tmp_1);
+    __ andr(tmp, c1, nmask);
+    __ orr(res_1, res_1, tmp);
 
     __ andr(res_2, c7, mask);
-    __ andr(tmp_1, c2, nmask);
-    __ orr(res_2, res_2, tmp_1);
+    __ andr(tmp, c2, nmask);
+    __ orr(res_2, res_2, tmp);
 
     __ andr(res_3, c8, mask);
-    __ andr(tmp_1, c3, nmask);
-    __ orr(res_3, res_3, tmp_1);
+    __ andr(tmp, c3, nmask);
+    __ orr(res_3, res_3, tmp);
 
     __ andr(res_4, c9, mask);
-    __ andr(tmp_1, c4, nmask);
-    __ orr(res_4, res_4, tmp_1);
+    __ andr(tmp, c4, nmask);
+    __ orr(res_4, res_4, tmp);
 
     __ str(res_0, result);
     __ str(res_1, Address(result, 8));
     __ str(res_2, Address(result, 16));
     __ str(res_3, Address(result, 24));
     __ str(res_4, Address(result, 32));
-      
+
     // End intrinsic call
     __ pop(callee_saved, sp);
     __ leave(); // required for proper stackwalking of RuntimeStub frame
