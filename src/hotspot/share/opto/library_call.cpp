@@ -31,6 +31,7 @@
 #include "gc/shared/barrierSet.hpp"
 #include "jfr/support/jfrIntrinsics.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/accessDecorators.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "opto/addnode.hpp"
@@ -58,6 +59,7 @@
 #include "runtime/objectMonitor.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -3670,16 +3672,16 @@ void LibraryCallKit::extend_setCurrentThread(Node* jt, Node* thread) {
   Node* vthread_offset = basic_plus_adr(jt, in_bytes(THREAD_LOCAL_OFFSET_JFR + VTHREAD_OFFSET_JFR));
 
   // False branch, is carrierThread.
-  Node* thread_equal_carrierThread = _gvn.transform(new IfFalseNode(iff_thread_not_equal_carrierThread));
+  set_control(_gvn.transform(new IfFalseNode(iff_thread_not_equal_carrierThread)));
   // Store release
-  store_to_memory(thread_equal_carrierThread, vthread_offset, _gvn.intcon(0), T_BOOLEAN, MemNode::release, true);
+  access_store_at(jt, vthread_offset, TypeRawPtr::BOTTOM, intcon(0), TypeInt::BOOL, T_BOOLEAN, IN_NATIVE | MO_RELEASE);
+  Node* thread_equal_carrierThread = control();
   Node* vthread_false_memory = reset_memory();
-
-  set_all_memory(input_memory_state);
 
   // True branch, is virtual thread.
   Node* thread_not_equal_carrierThread = _gvn.transform(new IfTrueNode(iff_thread_not_equal_carrierThread));
   set_control(thread_not_equal_carrierThread);
+  set_all_memory(input_memory_state);
 
   // Load the raw epoch value from the vthread.
   Node* epoch_offset = basic_plus_adr(thread, java_lang_Thread::jfr_epoch_offset());
@@ -3745,7 +3747,7 @@ void LibraryCallKit::extend_setCurrentThread(Node* jt, Node* thread) {
   store_to_memory(control(), thread_local_excluded_offset, _gvn.transform(exclusion), T_BOOLEAN, MemNode::unordered, true);
 
   // Store release
-  store_to_memory(control(), vthread_offset, _gvn.intcon(1), T_BOOLEAN, MemNode::release, true);
+  access_store_at(jt, vthread_offset, TypeRawPtr::BOTTOM, intcon(1), TypeInt::BOOL, T_BOOLEAN, IN_NATIVE | MO_RELEASE);
   Node* vthread_true_memory = reset_memory();
 
   RegionNode* thread_compare_rgn = new RegionNode(PATH_LIMIT);
