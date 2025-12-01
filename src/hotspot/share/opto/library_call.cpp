@@ -4760,19 +4760,6 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
     return true;
   }
 
-  // Constant folding in fast path checks doesn't trivially happen because
-  // object header is not a constant.  We must check and fetch explicitly.
-  const TypeInstPtr* t = _gvn.type(obj)->isa_instptr();
-  if (t != nullptr && t->const_oop() != nullptr) {
-    jint hash = t->const_oop()->identity_hash_or_zero();
-    if (hash != 0) {
-      result_reg->init_req(_fast_path, control());
-      result_val->init_req(_fast_path, _gvn.intcon(hash));
-      set_result(result_reg, result_val);
-      return true;
-    }
-  }
-
   // We only go to the fast case code if we pass a number of guards.  The
   // paths which do not pass are accumulated in the slow_region.
   RegionNode* slow_region = new RegionNode(1);
@@ -4788,6 +4775,19 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
     // After null check, get the object's klass.
     Node* obj_klass = load_object_klass(obj);
     generate_virtual_guard(obj_klass, slow_region);
+  }
+
+  // Constant folding in fast path checks doesn't trivially happen because
+  // object header is not a constant.  We must check and fetch explicitly.
+  const TypeInstPtr* t = _gvn.type(obj)->isa_instptr();
+  if (t != nullptr && t->const_oop() != nullptr) {
+    jint hash = t->const_oop()->identity_hash_or_zero();
+    if (hash != 0) {
+      result_reg->init_req(_fast_path, control());
+      result_val->init_req(_fast_path, _gvn.intcon(hash));
+      set_result(result_reg, result_val);
+      return true;
+    }
   }
 
   // Get the header out of the object, use LoadMarkNode when available
