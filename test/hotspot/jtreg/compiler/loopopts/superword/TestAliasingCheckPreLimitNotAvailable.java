@@ -27,7 +27,7 @@
  * @summary Test where the pre_init was pinned before the pre-loop but after the
  *          Auto_Vectorization_Check, and so it should not be used for the auto
  *          vectorization aliasing check, to avoid a bad (circular) graph.
- * @requires vm.gc == "ZGC" | vm.gc == "null"
+ * @requires vm.gc.Z
  * @run main/othervm
  *      -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:CompileCommand=compileonly,*TestAliasingCheckPreLimitNotAvailable::test
@@ -42,7 +42,7 @@
 /*
  * @test id=all-flags-no-stress-seed
  * @bug 8371146
- * @requires vm.gc == "ZGC" | vm.gc == "null"
+ * @requires vm.gc.Z
  * @run main/othervm
  *      -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:CompileCommand=compileonly,*TestAliasingCheckPreLimitNotAvailable::test
