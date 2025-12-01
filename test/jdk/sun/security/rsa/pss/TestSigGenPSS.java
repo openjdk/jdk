@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,20 @@
  * questions.
  */
 
+import jtreg.SkippedException;
+
 import java.io.IOException;
-import java.security.*;
-import java.security.spec.*;
+import java.security.KeyFactory;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.Provider;
+import java.security.PublicKey;
+import java.security.Security;
+import java.security.Signature;
+import java.security.SecureRandom;
+import java.security.spec.MGF1ParameterSpec;
+import java.security.spec.PSSParameterSpec;
 import java.util.HexFormat;
 import java.util.List;
 
@@ -31,6 +42,7 @@ import java.util.List;
  * @test
  * @bug 8146293
  * @summary Known Answer Tests based on NIST 186-3 at:
+ * @library /test/lib/
  * @compile SigRecord.java
  * @run main/othervm TestSigGenPSS
  */
@@ -61,16 +73,14 @@ public class TestSigGenPSS {
     }
 
     public static void main(String[] args) throws Exception {
-        //for (Provider provider : Security.getProviders()) {
         Provider p = Security.getProvider(
                 System.getProperty("test.provider.name", "SunRsaSign"));
         Signature sig;
         try {
             sig = Signature.getInstance("RSASSA-PSS", p);
         } catch (NoSuchAlgorithmException e) {
-            System.out.println("Skip testing RSASSA-PSS" +
-                " due to no support");
-            return;
+            throw new SkippedException("Skip testing RSASSA-PSS" +
+                                       " due to no support");
         }
 
         boolean success = true;

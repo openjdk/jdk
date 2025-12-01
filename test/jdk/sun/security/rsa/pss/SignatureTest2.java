@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,11 +20,33 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import java.security.*;
+import jtreg.SkippedException;
+
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.SignatureException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.security.spec.*;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.MGF1ParameterSpec;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.PSSParameterSpec;
+import java.security.spec.RSAPrivateKeySpec;
+import java.security.spec.RSAPublicKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.IntStream;
 import static javax.crypto.Cipher.PRIVATE_KEY;
 import static javax.crypto.Cipher.PUBLIC_KEY;
@@ -35,6 +57,7 @@ import static javax.crypto.Cipher.PUBLIC_KEY;
  * @summary Create a signature for RSASSA-PSS and get its signed data.
  *          re-initiate the signature with the public key. The signature
  *          can be verified by acquired signed data.
+ * @library /test/lib/
  * @run main SignatureTest2 768
  * @run main SignatureTest2 1024
  * @run main SignatureTest2 1025
@@ -75,8 +98,10 @@ public class SignatureTest2 {
 
     private static final String SIG_ALG = "RSASSA-PSS";
 
+    private static final List<String> skippedAlgs = new ArrayList<>();
+
     private static PSSParameterSpec genPSSParameter(String digestAlgo,
-        int digestLen, int keySize) {
+                                                    int digestLen, int keySize) {
         // pick a salt length based on the key length and digestAlgo
         int saltLength = keySize/8 - digestLen - 2;
         if (saltLength < 0) {
@@ -109,6 +134,10 @@ public class SignatureTest2 {
         }
         )));
 
+        if (!skippedAlgs.isEmpty()) {
+            throw new SkippedException("Some algorithms were skipped " +
+                                       skippedAlgs);
+        }
     }
 
     private static KeyPair generateKeys(String keyalg, int size)
@@ -151,6 +180,12 @@ public class SignatureTest2 {
             int digestLen = MessageDigest.getInstance(digestAlg).getDigestLength();
             PSSParameterSpec params = genPSSParameter(digestAlg, digestLen, keySize);
             if (params == null) {
+                skippedAlgs.add(
+                        String.format("[digestAlg: %s, digestLen: %d, " +
+                                      "keysize: %d]",
+                                digestAlg,
+                                digestLen,
+                                keySize));
                 System.out.println("Skip test due to short key size");
                 return;
             }
