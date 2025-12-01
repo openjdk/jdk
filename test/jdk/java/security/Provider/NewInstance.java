@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,21 +26,34 @@
  * @bug 8039853
  * @summary Provider.Service.newInstance() does not work with current
             JDK JGSS Mechanisms
+ * @library /test/lib
  */
 
-import java.security.*;
-import java.util.*;
+
+import jtreg.SkippedException;
+
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
+import java.security.Security;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class NewInstance {
 
     public static void main(String[] args) throws Exception {
-        for (Provider p : Security.getProviders()) {
+
+        System.out.println("Removing SunPCSC provider from the list (A smartcard might not be installed).");
+        final List<Provider> providers = Arrays.stream(Security.getProviders())
+                .filter(provider -> !provider.getName().equals("SunPCSC"))
+                .collect(Collectors.toList());
+
+        for (Provider p : providers) {
             System.out.println("---------");
             System.out.println(p.getName() + ":" + p.getInfo());
-            if (p.getName().equals("SunPCSC")) {
-                System.out.println("A smartcard might not be installed. Skip test.");
-                continue;
-            }
             Set<Provider.Service> set = p.getServices();
             Iterator<Provider.Service> i = set.iterator();
 

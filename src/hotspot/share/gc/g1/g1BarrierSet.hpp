@@ -84,10 +84,6 @@ class G1BarrierSet: public CardTableBarrierSet {
   // Update the given thread's card table (byte map) base to the current card table's.
   void update_card_table_base(Thread* thread);
 
-  virtual bool card_mark_must_follow_store() const {
-    return true;
-  }
-
   // Add "pre_val" to a set of objects that may have been disconnected from the
   // pre-marking object graph. Prefer the version that takes location, as it
   // can avoid touching the heap unnecessarily.
@@ -103,8 +99,7 @@ class G1BarrierSet: public CardTableBarrierSet {
   template <DecoratorSet decorators, typename T>
   void write_ref_field_pre(T* field);
 
-  inline void write_region(MemRegion mr);
-  void write_region(JavaThread* thread, MemRegion mr);
+  virtual void write_region(MemRegion mr);
 
   template <DecoratorSet decorators = DECORATORS_NONE, typename T>
   void write_ref_field_post(T* field);
@@ -122,8 +117,8 @@ class G1BarrierSet: public CardTableBarrierSet {
 
   // Callbacks for runtime accesses.
   template <DecoratorSet decorators, typename BarrierSetT = G1BarrierSet>
-  class AccessBarrier: public ModRefBarrierSet::AccessBarrier<decorators, BarrierSetT> {
-    typedef ModRefBarrierSet::AccessBarrier<decorators, BarrierSetT> ModRef;
+  class AccessBarrier: public CardTableBarrierSet::AccessBarrier<decorators, BarrierSetT> {
+    typedef CardTableBarrierSet::AccessBarrier<decorators, BarrierSetT> CardTableBS;
     typedef BarrierSet::AccessBarrier<decorators, BarrierSetT> Raw;
 
   public:

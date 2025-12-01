@@ -24,6 +24,7 @@
  */
 package jdk.jpackage.internal.model;
 
+import java.lang.module.ModuleFinder;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -43,10 +44,26 @@ public interface RuntimeBuilder {
      * @param appImageLayout the app image where to create Java runtime.
      * @throws PackagerException if packaging error occurs
      */
-    void create(AppImageLayout appImageLayout) throws PackagerException;
+    void create(AppImageLayout appImageLayout);
 
     /**
-     * Gets the default set of paths where to find Java modules.
+     * Returns {@code true} if "--strip-native-commands" was not used with jlink.
+     * Default implementation returns {@code false}.
+     *
+     * @return {@code true} if "--strip-native-commands" was not used with jlink
+     */
+    default boolean withNativeCommands() {
+        return false;
+    }
+
+    /**
+     * Gets the default set of paths where jlink should look up for system Java
+     * modules.
+     *
+     * <p>
+     * These paths are for {@code jlink} command. Using them with
+     * {@link ModuleFinder#of(Path...)} may not work as expected: attempt to find
+     * "java.base" module in these paths will fail.
      *
      * @return the default set of paths where to find Java modules
      */

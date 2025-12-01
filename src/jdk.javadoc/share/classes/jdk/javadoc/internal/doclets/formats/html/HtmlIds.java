@@ -120,6 +120,7 @@ public class HtmlIds {
     static final HtmlId THEME_OS = HtmlId.of("theme-os");
     static final HtmlId THEME_PANEL = HtmlId.of("theme-panel");
     static final HtmlId UNNAMED_PACKAGE_ANCHOR = HtmlId.of("unnamed-package");
+    static final HtmlId TOC_ORDER_TOGGLE = HtmlId.of("toc-lexical-order-toggle");
     private static final String FIELDS_INHERITANCE = "fields-inherited-from-class-";
     private static final String METHODS_INHERITANCE = "methods-inherited-from-class-";
     private static final String NESTED_CLASSES_INHERITANCE = "nested-classes-inherited-from-class-";
