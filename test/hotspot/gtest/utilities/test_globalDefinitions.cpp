@@ -22,7 +22,6 @@
  */
 
 #include "cppstdlib/type_traits.hpp"
-#include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -220,10 +219,9 @@ TEST(globalDefinitions, array_size) {
 
 #define check_format(format, value, expected)                  \
   do {                                                         \
-    ResourceMark rm;                                           \
     stringStream out;                                          \
     out.print((format), (value));                              \
-    const char* result = out.as_string();                      \
+    const char* result = out.base();                           \
     EXPECT_STREQ((result), (expected)) << "Failed with"        \
         << " format '"   << (format)   << "'"                  \
         << " value '"    << (value);                           \
