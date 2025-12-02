@@ -44,7 +44,7 @@ public:
     }
   }
 
-  size_t parallel_region_stride() override { return 8; };
+  size_t parallel_region_stride() override { return 8; }
 
   bool is_thread_safe() override {
     return _closure->is_thread_safe();
@@ -66,7 +66,7 @@ public:
     }
   }
 
-  size_t parallel_region_stride() override { return 8; };
+  size_t parallel_region_stride() override { return 8; }
 
   bool is_thread_safe() override {
     return _closure->is_thread_safe();
