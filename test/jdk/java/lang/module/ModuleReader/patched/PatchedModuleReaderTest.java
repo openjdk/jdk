@@ -107,6 +107,10 @@ class PatchedModuleReaderTest {
         } // close the ModuleReader
 
         // verify IOException is thrown by the closed ModuleReader
+
+        assertThrows(IOException.class, () -> reader.list(),
+                "ModuleReader.list()");
+
         resources.forEach(rn -> {
             assertThrows(IOException.class, () -> reader.read(rn),
                     "ModuleReader.read(String)");
