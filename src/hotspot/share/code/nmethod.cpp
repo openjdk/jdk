@@ -1504,8 +1504,18 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
   CodeBuffer dst(this);
   while (iter.next()) {
 #ifdef USE_TRAMPOLINE_STUB_FIX_OWNER
-    // Direct calls may no longer be in range and the use of a trampoline may now be required.
-    // Instead, allow trampoline relocations to update their owners and perform the necessary checks.
+    // After an nmethod is moved, some direct call sites may end up out of range.
+    // CallRelocation::fix_relocation_after_move() assumes the target is always
+    // reachable and does not check branch range. Calling it without range checks
+    // could cause us to write an offset too large for the instruction.
+    //
+    // If a call site has a trampoline, we skip the normal call relocation. The
+    // associated trampoline_stub_Relocation will handle the call and the
+    // trampoline, including range checks and updating the branch as needed.
+    //
+    // If no trampoline exists, we can assume the call target is always
+    // reachable and therefore within direct branch range, so calling
+    // CallRelocation::fix_relocation_after_move() is safe.
     if (iter.reloc()->is_call()) {
       address trampoline = trampoline_stub_Relocation::get_trampoline_for(iter.reloc()->addr(), this);
       if (trampoline != nullptr) {
