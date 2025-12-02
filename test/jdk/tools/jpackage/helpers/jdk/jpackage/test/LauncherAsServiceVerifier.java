@@ -149,7 +149,11 @@ public final class LauncherAsServiceVerifier {
             applyToAdditionalLauncher(target);
         }
         target.test().ifPresent(pkg -> {
-            pkg.addInstallVerifier(this::verifyLauncherExecuted);
+            pkg.addInstallVerifier(cmd -> {
+                if (!MacHelper.isForAppStore(cmd)) {
+                    verifyLauncherExecuted(cmd);
+                }
+            });
         });
     }
 
@@ -239,7 +243,9 @@ public final class LauncherAsServiceVerifier {
     }
 
     static boolean launcherAsService(JPackageCommand cmd, String launcherName) {
-        if (cmd.isMainLauncher(launcherName)) {
+        if (MacHelper.isForAppStore(cmd)) {
+            return false;
+        } else if (cmd.isMainLauncher(launcherName)) {
             return PropertyFinder.findLauncherProperty(cmd, null,
                     PropertyFinder.cmdlineBooleanOption("--launcher-as-service"),
                     PropertyFinder.nop(),

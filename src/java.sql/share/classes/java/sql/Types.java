@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -338,6 +338,27 @@ public class Types {
      * @since 1.8
      */
     public static final int TIMESTAMP_WITH_TIMEZONE = 2014;
+
+
+    //--------------------------JDBC 4.5 -----------------------------
+
+    /**
+     * The constant in the Java programming language, sometimes referred to
+     * as a type code, that identifies the generic SQL type
+     * {@code DECFLOAT}.
+     *
+     * @since 26
+     */
+    public static final int DECFLOAT = 2015;
+
+    /**
+     * The constant in the Java programming language, sometimes referred to
+     * as a type code, that identifies the generic SQL type
+     * {@code JSON}.
+     *
+     * @since 26
+     */
+    public static final int JSON = 2016;
 
     // Prevent instantiation
     private Types() {}
