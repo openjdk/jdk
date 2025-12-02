@@ -897,11 +897,23 @@
           "Randomize loop peeling decision")                                \
                                                                             \
   product(bool, HotCodeHeap, false, EXPERIMENTAL,                           \
-          "Enable the code heap for hot C2 nmethods")                      \
+          "Enable the code heap for hot C2 nmethods")                       \
                                                                             \
-  product(double, HotCodeMinMethodFrequency, 0.001, DIAGNOSTIC,             \
-          "Minimum frequency of a method to be considered actively used")   \
+  product(double, HotCodeSampleRatio, 0.8, DIAGNOSTIC,                      \
+          "Ratio of samples from hot nmethods to consider grouping done")   \
           range(0.0, 1.0)                                                   \
+                                                                            \
+  product(double, HotCodeSteadyThreshold, 0.05, DIAGNOSTIC,                 \
+          "Ratio of new to total C2 nmethods to be considered steady")      \
+          range(0.0, 1.0)                                                   \
+                                                                            \
+  product(uintx, HotCodeIntervalSeconds, 300,                               \
+          "Time between hot code grouping runs")                            \
+          range(0, max_juint)                                               \
+                                                                            \
+  product(uintx, HotCodeSampleSeconds, 120,                                 \
+          "Amount of time to sample application")                           \
+          range(0, max_juint)                                               \
 
 // end of C2_FLAGS
 

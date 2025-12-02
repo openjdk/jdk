@@ -37,45 +37,11 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/hashTable.hpp"
 
-#include <math.h>
 
-enum class State {
-  NotStarted,
-  Profiling,
-  Grouping,
-  Waiting
-};
-
-enum class ProfilingResult {
-  Failure,
-  Success
-};
-
-class HotCodeGrouperThread : public NonJavaThread {
- public:
-  void run() override {
-    HotCodeGrouper::group_nmethods_loop();
-  }
-  const char* name()      const override { return "Hot Code Grouper Thread"; }
-  const char* type_name() const override { return "HotCodeGrouperThread"; }
-};
-
-NonJavaThread* HotCodeGrouper::_nmethod_grouper_thread = nullptr;
-NMethodList    HotCodeGrouper::_unregistered_nmethods;
-bool           HotCodeGrouper::_is_initialized = false;
-
-static volatile int _state = static_cast<int>(State::NotStarted);
-
-static size_t _new_c2_nmethods_count = 0;
-static size_t _total_c2_nmethods_count = 0;
-
-static State get_state() {
-  return static_cast<State>(AtomicAccess::load_acquire(&_state));
-}
-
-static void set_state(State new_state) {
-  AtomicAccess::release_store(&_state, static_cast<int>(new_state));
-}
+// Initalize static variables
+bool   HotCodeGrouper::_is_initialized = false;
+size_t HotCodeGrouper::_new_c2_nmethods_count = 0;
+size_t HotCodeGrouper::_total_c2_nmethods_count = 0;
 
 void HotCodeGrouper::initialize() {
   if (!HotCodeHeap) {
@@ -86,328 +52,137 @@ void HotCodeGrouper::initialize() {
   assert(NMethodRelocation, "HotCodeGrouper requires NMethodRelocation enabled");
   assert(HotCodeHeapSize > 0, "HotCodeHeapSize must be non-zero to use HotCodeGrouper");
 
-  _nmethod_grouper_thread = new HotCodeGrouperThread();
-  if (os::create_thread(_nmethod_grouper_thread, os::os_thread)) {
-    os::start_thread(_nmethod_grouper_thread);
+  NonJavaThread* nmethod_grouper_thread = new HotCodeGrouper();
+  if (os::create_thread(nmethod_grouper_thread, os::os_thread)) {
+    os::start_thread(nmethod_grouper_thread);
   } else {
     vm_exit_during_initialization("Failed to create C2 nmethod grouper thread");
   }
   _is_initialized = true;
 }
 
-static void wait_for_c2_code_size_exceeding_threshold() {
-  log_info(hotcodegrouper)("Waiting for C2 code size to exceed threshold for profiling...");
-  MonitorLocker ml(HotCodeGrouper_lock, Mutex::_no_safepoint_check_flag);
-  ml.wait();  // Wait without timeout until notified
-  log_info(hotcodegrouper)("C2 code size threshold exceeded, starting profiling...");
-}
-
-static void wait_for_new_c2_nmethods() {
-  set_state(State::Waiting);
-  log_info(hotcodegrouper)("Waiting for new C2 nmethods for profiling...");
-  MonitorLocker ml(HotCodeGrouper_lock, Mutex::_no_safepoint_check_flag);
-  ml.wait();  // Wait without timeout until notified
-  log_info(hotcodegrouper)("New C2 nmethods detected, starting profiling...");
-}
-
-class GetPCTask : public SuspendedThreadTask {
- private:
-  address _pc;
-
-  void do_task(const SuspendedThreadTaskContext& context) override{
-    JavaThread* jt = JavaThread::cast(context.thread());
-    if (jt->thread_state() != _thread_in_native && jt->thread_state() != _thread_in_Java) {
-      return;
-    }
-    _pc = os::fetch_frame_from_context(context.ucontext(), nullptr, nullptr);
-  }
-
- public:
-  GetPCTask(JavaThread* thread) : SuspendedThreadTask(thread), _pc(nullptr) {}
-
-  address pc() const {
-    return _pc;
-  }
-};
-
-static inline int64_t get_monotonic_ms() {
-  return os::javaTimeNanos() / 1000000;
-}
-
-static inline int64_t max_sampling_period_ms() {
-  // Use a maximum sampling period of 15 milliseconds.
-  return 15;
-}
-
-static inline int64_t rand_sampling_period_ms() {
-  // Use a random sampling period between 5 and 15 milliseconds.
-  return os::random() % 11 + 5;
-}
-
-static double margin_of_error() {
-  return 0.0005; // 0.05%
-}
-
-static double z_score() {
-  return 1.96; // 95% confidence
-}
-
-static int min_samples() {
-  // We identify hot nmethods by calculating their frequency in the collected samples.
-  // We want to be confident that the identified hot nmethods are indeed hot.
-  // To do that, we need to collect enough samples so that the margin of error
-  // in the calculated frequencies is reasonably low.
-  //
-  // For example, to achieve a margin of error of 0.05% at a confidence level of 95%,
-  // to detect a frequency of 0.1%, we need about 15,000 samples.
-  // The formula is: n = (Z^2 * p * (1 - p)) / E^2
-  // where Z is the Z-score (1.96 for 95% confidence), p is the estimated frequency (0.001),
-  // and E is the margin of error (0.0005).
-
-  return (z_score() * z_score() * HotCodeMinMethodFrequency * (1 - HotCodeMinMethodFrequency)) / (margin_of_error() * margin_of_error());
-}
-
-static inline int64_t time_ms_for_samples(int samples, int64_t sampling_period_ms) {
-  return samples * sampling_period_ms;
-}
-
-using NMethodSamples = ResizeableHashTable<nmethod*, int, AnyObj::C_HEAP, mtCompiler>;
-
-static inline bool steady_nmethod_count(int new_nmethods_count, int total_nmethods_count) {
-  if (total_nmethods_count == 0) {
+static inline bool steady_nmethod_count(size_t new_nmethods_count, size_t total_nmethods_count) {
+  if (total_nmethods_count <= 0) {
+    log_trace(hotcodegrouper)("C2 nmethod count not steady. Total C2 nmethods %ld <= 0", total_nmethods_count);
     return false;
   }
-  constexpr double steady_threshold = 0.05; // 5%
-  const double fraction_new = (double)new_nmethods_count / total_nmethods_count;
-  return fraction_new < steady_threshold;
+
+  const double ratio_new = (double)new_nmethods_count / total_nmethods_count;
+  bool is_steady_nmethod_count = ratio_new < HotCodeSteadyThreshold;
+
+  log_info(hotcodegrouper)("C2 nmethod count %s", is_steady_nmethod_count ? "steady" : "not steady");
+  log_trace(hotcodegrouper)("\t- New: %ld. Total: %ld. Ratio: %f. Threshold: %f", new_nmethods_count, total_nmethods_count, ratio_new, HotCodeSteadyThreshold);
+
+  return is_steady_nmethod_count;
 }
 
-class ThreadSampler : public StackObj {
- private:
-  static const int INITIAL_TABLE_SIZE = 109;
-
-  NMethodSamples _samples;
-
-  int _total_samples;
-  int _total_nmethods_samples;
-  int _unregistered_nmethods_samples;
-
- public:
-  ThreadSampler() : _samples(INITIAL_TABLE_SIZE, min_samples()), _total_samples(0), _total_nmethods_samples(0), _unregistered_nmethods_samples(0) {}
-
-  void run() {
-    MutexLocker ml(Threads_lock);
-
-    for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
-      if (jt->is_hidden_from_external_view() ||
-          jt->in_deopt_handler() ||
-          (jt->thread_state() != _thread_in_native && jt->thread_state() != _thread_in_Java)) {
-        continue;
-      }
-
-      GetPCTask task(jt);
-      task.run();
-      address pc = task.pc();
-      if (pc == nullptr) {
-        continue;
-      }
-
-      _total_samples++;
-
-      if (!Interpreter::contains(pc) && CodeCache::contains(pc)) {
-        nmethod* nm = CodeCache::find_blob_fast(pc)->as_nmethod_or_null();
-        if (nm != nullptr) {
-          bool created = false;
-          int *count = _samples.put_if_absent(nm, 0, &created);
-          (*count)++;
-          _total_nmethods_samples++;
-          if (created) {
-            _samples.maybe_grow();
-          }
-          nm->mark_as_maybe_on_stack();
-        }
-      }
-    }
-  }
-
-  ProfilingResult collect_samples() {
-    set_state(State::Profiling);
-
-    log_info(hotcodegrouper)("Profiling nmethods");
-
-    const int64_t max_needed_time_ms = 2 * time_ms_for_samples(min_samples(), max_sampling_period_ms());
-    const int64_t start_time = get_monotonic_ms();
-
-    while (true) {
-      const int nmethod_count_start = _samples.number_of_entries();
-      run();
-      const int nmethod_count_end = _samples.number_of_entries();
-      const int new_nmethods_this_iteration = nmethod_count_end - nmethod_count_start;
-      const bool have_enough_samples = _total_samples >= min_samples();
-      const bool is_nmethod_count_steady =
-          steady_nmethod_count(new_nmethods_this_iteration, nmethod_count_end);
-
-      if (have_enough_samples && is_nmethod_count_steady) {
-        log_info(hotcodegrouper)(
-            "Profiling complete: collected %d samples with %d nmethods (added "
-            "%d new nmethods)",
-            _total_samples, nmethod_count_end, new_nmethods_this_iteration);
-        break;
-      }
-
-      // Check timeout
-      if (get_monotonic_ms() - start_time >= max_needed_time_ms) {
-        // Enough samples but nmethod count not stable:
-        // Proceed with grouping (we have statistical confidence, even if
-        // nmethods still being added)
-        if (have_enough_samples && !is_nmethod_count_steady) {
-          log_info(hotcodegrouper)(
-              "Timeout: collected %d samples but nmethod count not steady (%d "
-              "new/%d total = %.2f%%). Proceeding with grouping.",
-              _total_samples, new_nmethods_this_iteration, nmethod_count_end,
-              100.0 * new_nmethods_this_iteration / nmethod_count_end);
-          break;
-        }
-
-        log_info(hotcodegrouper)(
-            "Timeout: insufficient samples (%d/%d, nmethod count %s). "
-            "Profiling failed.",
-            _total_samples, min_samples(),
-            is_nmethod_count_steady ? "steady" : "unstable");
-        return ProfilingResult::Failure;
-      }
-
-      os::naked_sleep(rand_sampling_period_ms());
-    }
-
-    return ProfilingResult::Success;
-  }
-
-  const NMethodSamples& samples() const {
-    return _samples;
-  }
-
-  int total_samples() const {
-    return _total_samples;
-  }
-
-  void exclude_unregistered_nmethods(const NMethodList& unregistered) {
-    NMethodListIterator it(unregistered.head());
-    while (!it.is_empty()) {
-      nmethod* nm = *it.next();
-      int* count = _samples.get(nm);
-      if (count != nullptr) {
-        _unregistered_nmethods_samples += *count;
-        *count = 0;
-      }
-    }
-  }
-};
-
-void HotCodeGrouper::group_nmethods_loop() {
-  wait_for_c2_code_size_exceeding_threshold();
-
+void HotCodeGrouper::run() {
   while (true) {
+    os::naked_sleep(HotCodeIntervalSeconds * 1000);
+
     ResourceMark rm;
+
+    { // Acquire CodeCache_lock and check if c2 nmethod count is steady
+      MutexLocker ml_CodeCache_lock(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+      bool is_steady_nmethod_count = steady_nmethod_count(_new_c2_nmethods_count, _total_c2_nmethods_count);
+      _new_c2_nmethods_count = 0;
+
+      if (!is_steady_nmethod_count) {
+        continue;
+      }
+    }
+
+    // Sample application and group hot nmethods
     ThreadSampler sampler;
-
-    if (sampler.collect_samples() != ProfilingResult::Failure) {
-      group_nmethods(sampler);
-    }
-    wait_for_new_c2_nmethods();
+    sampler.do_sampling();
+    do_grouping(sampler);
   }
 }
 
-class HotCodeHeapCandidates : public StackObj {
- private:
-  NMethodList _hot_candidates;
+void HotCodeGrouper::do_grouping(ThreadSampler& sampler) {
+  while (sampler.has_candidates()) {
 
- public:
-  void find_hot(const NMethodSamples& samples, int total_samples) {
-    auto func = [&](nmethod* nm, uint64_t count) {
-      double frequency = (double) count / total_samples;
-      if (frequency < HotCodeMinMethodFrequency) {
-        return;
-      }
+    double ratio_from_hot = sampler.get_hot_sample_ratio();
+    log_trace(hotcodegrouper)("Ratio of samples from hot code heap: %f", ratio_from_hot);
+    if (ratio_from_hot > HotCodeSampleRatio) {
+      break;
+    }
 
-      if (CodeCache::get_code_blob_type(nm) != CodeBlobType::MethodHot) {
-        log_trace(hotcodegrouper)("\tFound candidate nm: <%p> method: <%s> count: <" UINT64_FORMAT "> frequency: <%f>", nm, nm->method()->external_name(), count, frequency);
-        _hot_candidates.add(nm);
-      }
-    };
-    samples.iterate_all(func);
-  }
+    nmethod* nm = sampler.get_candidate();
 
-  void relocate_hot() {
-    NMethodListIterator it(_hot_candidates.head());
-    while (!it.is_empty()) {
-      nmethod* nm = *it.next();
+    MutexLocker ml_Compile_lock(Compile_lock);
+    MutexLocker ml_CompiledIC_lock(CompiledIC_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker ml_CodeCache_lock(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
-      log_trace(hotcodegrouper)("\tRelocating nm: <%p> method: <%s>", nm, nm->method()->external_name());
+    // Verify that nmethod address is still valid and not in hot code heap
+    nmethod* found_nm = CodeCache::find_blob(nm)->as_nmethod_or_null();
+    if (nm != found_nm || !nm->is_in_use() || CodeCache::get_code_blob_type(nm) == CodeBlobType::MethodHot) {
+      continue;
+    }
 
+    { // Relocate caller
       CompiledICLocker ic_locker(nm);
-      nm->relocate(CodeBlobType::MethodHot);
+      if (nm->relocate(CodeBlobType::MethodHot) != nullptr) {
+        sampler.update_sample_count(nm);
+      }
+    }
+
+    // Loop over relocations to relocate callees
+    RelocIterator relocIter(nm);
+    while (relocIter.next()) {
+
+      // Check is a call
+      Relocation* reloc = relocIter.reloc();
+      if(!reloc->is_call()) {
+        continue;
+      }
+
+      // Find the call destination address
+      address dest = ((CallRelocation*) reloc)->destination();
+
+      // Check if the destination is to something in the code cache
+      if (!CodeCache::contains(dest)) {
+        continue;
+      }
+
+      // Check if the destination is an nmethod
+      nmethod* dest_nm = CodeCache::find_blob(dest)->as_nmethod_or_null();
+      if (dest_nm == nullptr || dest_nm->method() == nullptr) {
+        continue;
+      }
+
+      // Retrieve the latest nmethod for the destination's Method.
+      // Due to relocation or recompilation, the destination may not yet reference
+      // the Method’s most up to date nmethod.
+      nmethod* actual_dest_nm = dest_nm->method()->code();
+
+      // Check is valid
+      if (actual_dest_nm == nullptr || !actual_dest_nm->is_in_use() || !actual_dest_nm->is_compiled_by_c2() || CodeCache::get_code_blob_type(actual_dest_nm) == CodeBlobType::MethodHot) {
+        continue;
+      }
+
+      { // Relocate callee
+        CompiledICLocker ic_locker(actual_dest_nm);
+        if (actual_dest_nm->relocate(CodeBlobType::MethodHot) != nullptr) {
+          sampler.update_sample_count(actual_dest_nm);
+        }
+      }
     }
   }
-};
-
-void HotCodeGrouper::group_nmethods(ThreadSampler& sampler) {
-  ResourceMark rm;
-  MutexLocker ml_Compile_lock(Compile_lock);
-  MutexLocker ml_CompiledIC_lock(CompiledIC_lock,
-                                 Mutex::_no_safepoint_check_flag);
-  MutexLocker ml_CodeCache_lock(CodeCache_lock,
-                                Mutex::_no_safepoint_check_flag);
-  set_state(State::Grouping);
-  int total_samples = sampler.total_samples();
-  log_info(hotcodegrouper)("Profiling results: %d samples, %d nmethods, %d unregistered nmethods",
-      total_samples, sampler.samples().number_of_entries(), (int)_unregistered_nmethods.size());
-
-  sampler.exclude_unregistered_nmethods(_unregistered_nmethods);
-  _unregistered_nmethods.clear();
-
-  // TODO: We might want to update nmethods GC status to prevent them from
-  // getting cold.
-
-  HotCodeHeapCandidates candidates;
-  candidates.find_hot(sampler.samples(), sampler.total_samples());
-  candidates.relocate_hot();
-}
-
-static size_t get_c2_code_size() {
-  for (CodeHeap *ch : *CodeCache::nmethod_heaps()) {
-    switch (ch->code_blob_type()) {
-      case CodeBlobType::All:
-      case CodeBlobType::MethodNonProfiled:
-        return ch->allocated_capacity();
-      default:
-        break;
-    }
-  }
-  ShouldNotReachHere(); // We always have at least one CodeHeap for C2 nmethods.
-  return 0;
-}
-
-static size_t min_c2_code_size() {
-  // We start profiling when we have at least 16MB of C2 nmethods.
-  return 16 * M; // TODO: Make this configurable.
-}
-
-static bool percent_exceeds(size_t value, size_t total, size_t percent) {
-  return (value * 100) > percent * total;
 }
 
 void HotCodeGrouper::unregister_nmethod(nmethod* nm) {
-  assert_locked_or_safepoint(CodeCache_lock);
+  assert_lock_strong(CodeCache_lock);
   if (!_is_initialized) {
     return;
   }
 
-  if (get_state() == State::Profiling) {
-    _unregistered_nmethods.add(nm);
+  if (!nm->is_compiled_by_c2()) {
+    return;
   }
 
-  if (!nm->is_compiled_by_c2()) {
+  if (CodeCache::get_code_blob_type(nm) == CodeBlobType::MethodHot) {
+    // Nmethods in the hot code heap do not count towards total C2 nmethods.
     return;
   }
 
@@ -416,7 +191,7 @@ void HotCodeGrouper::unregister_nmethod(nmethod* nm) {
 }
 
 void HotCodeGrouper::register_nmethod(nmethod* nm) {
-  assert_locked_or_safepoint(CodeCache_lock);
+  assert_lock_strong(CodeCache_lock);
   if (!_is_initialized) {
     return;
   }
@@ -425,31 +200,13 @@ void HotCodeGrouper::register_nmethod(nmethod* nm) {
     return; // Only C2 nmethods are relocated to HotCodeHeap.
   }
 
-  // CodeCache_lock is held, so we can safely increment the count.
-  _total_c2_nmethods_count++;
-
-  if (get_state() == State::NotStarted &&
-      get_c2_code_size() >= min_c2_code_size()) {
-    MonitorLocker ml(HotCodeGrouper_lock, Mutex::_no_safepoint_check_flag);
-    ml.notify();
-    return;
-  }
-
   if (CodeCache::get_code_blob_type(nm) == CodeBlobType::MethodHot) {
-    // Nmethods in the hot code heap are not new. They are copies of existing nmethods.
+    // Nmethods in the hot code heap do not count towards total C2 nmethods.
     return;
   }
 
   // CodeCache_lock is held, so we can safely increment the count.
   _new_c2_nmethods_count++;
-
-  if (get_state() == State::Waiting &&
-      percent_exceeds(_new_c2_nmethods_count, _total_c2_nmethods_count, 5)) {
-    log_info(hotcodegrouper)("New C2 nmethods count exceeded threshold: %zu. Total C2 nmethods count: %zu %d",
-                  _new_c2_nmethods_count, _total_c2_nmethods_count, CodeCache::nmethod_count());
-    _new_c2_nmethods_count = 0;
-    MonitorLocker ml(HotCodeGrouper_lock, Mutex::_no_safepoint_check_flag);
-    ml.notify();
-  }
+  _total_c2_nmethods_count++;
 }
 #endif // COMPILER2

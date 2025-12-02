@@ -26,26 +26,29 @@
 #ifndef SHARE_RUNTIME_HOTCODEGROUPER_HPP
 #define SHARE_RUNTIME_HOTCODEGROUPER_HPP
 
-#include "memory/allStatic.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "utilities/linkedlist.hpp"
 #include "utilities/pair.hpp"
-
-using NMethodList = LinkedListImpl<nmethod*>;
-using NMethodListIterator = LinkedListIterator<nmethod*>;
+#include "runtime/hotCodeSampler.hpp"
 
 class ThreadSampler;
 
-class HotCodeGrouper : public AllStatic {
+class HotCodeGrouper : public NonJavaThread {
  private:
-  static NonJavaThread* _nmethod_grouper_thread;
-  static NMethodList _unregistered_nmethods;
   static bool _is_initialized;
 
-  static void group_nmethods(ThreadSampler& sampler);
+  static size_t _new_c2_nmethods_count;
+  static size_t _total_c2_nmethods_count;
+
+  void do_grouping(ThreadSampler& sampler);
 
  public:
-  static void group_nmethods_loop();
+
+  void run() override;
+
+  virtual const char* name()      const override { return "Hot Code Grouper Thread"; }
+  virtual const char* type_name() const override { return "HotCodeGrouper"; }
+
   static void initialize();
   static void unregister_nmethod(nmethod* nm);
   static void register_nmethod(nmethod* nm);
