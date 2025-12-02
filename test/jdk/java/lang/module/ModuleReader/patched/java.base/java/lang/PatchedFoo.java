@@ -1,5 +1,5 @@
 /*
- * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,20 +19,8 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+package java.lang;
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALHEAP_INLINE_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALHEAP_INLINE_HPP
-
-#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
-
-#include "gc/shenandoah/shenandoahAgeCensus.hpp"
-#include "gc/shenandoah/shenandoahHeapRegion.hpp"
-
-inline bool ShenandoahGenerationalHeap::is_tenurable(const ShenandoahHeapRegion* r) const {
-  return _age_census->is_tenurable(r->age());
+public class PatchedFoo {
 }
-
-
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALHEAP_INLINE_HPP
