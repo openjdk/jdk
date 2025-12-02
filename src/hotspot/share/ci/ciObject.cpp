@@ -223,6 +223,30 @@ bool ciObject::should_be_constant() {
   return handle() == nullptr;
 }
 
+
+// ------------------------------------------------------------------
+// ciObject::identity_hash_or_no_hash
+//
+// The identity hash code of an object, if a hash has been computed.
+jint ciObject::identity_hash_or_no_hash() {
+  if (!is_null_object()) {
+    { // Handle identity hash as if it were a field.
+      ciConstant value = check_constant_value_cache(IDENTITY_HASH_OFFSET, T_INT);
+      if (value.is_valid()) {
+        return value.as_int();
+      }
+    }
+    VM_ENTRY_MARK;
+    oop obj = get_oop();
+    jint identity_hash = checked_cast<jint>(obj->fast_identity_hash_or_no_hash());
+    add_to_constant_value_cache(IDENTITY_HASH_OFFSET,
+                                ciConstant(T_INT, identity_hash));
+    return identity_hash;
+  } else {
+    return markWord::no_hash;
+  }
+}
+
 // ------------------------------------------------------------------
 // ciObject::identity_hash_or_zero
 //

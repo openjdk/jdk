@@ -59,6 +59,7 @@ ciType* ciInstance::java_mirror_type() {
 // ------------------------------------------------------------------
 // ciInstance::field_value_impl
 ciConstant ciInstance::field_value_impl(BasicType field_btype, int offset) {
+  assert(offset > 0, "out-of-bounds offset: %d", offset);
   ciConstant value = check_constant_value_cache(offset, field_btype);
   if (value.is_valid()) {
     return value;

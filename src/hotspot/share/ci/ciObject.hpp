@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,7 @@ private:
       ciConstant value() const { return _value; }
   };
 
+  const int IDENTITY_HASH_OFFSET = -1;
   GrowableArray<ConstantValue>* _constant_values = nullptr;
 
 protected:
@@ -183,7 +184,7 @@ public:
     return (ciTypeArray*)this;
   }
 
-  jint identity_hash_or_zero();
+  jint identity_hash_or_no_hash();
 
   // Print debugging output about this ciObject.
   void print(outputStream* st);

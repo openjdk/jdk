@@ -4760,6 +4760,17 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
     return true;
   }
 
+  const TypeInstPtr* t = _gvn.type(obj)->isa_instptr();
+  if (t != nullptr && t->const_oop() != nullptr) {
+    jint identity_hash = t->const_oop()->identity_hash_or_no_hash();
+    if (identity_hash != markWord::no_hash) {
+      result_reg->init_req(_fast_path, control());
+      result_val->init_req(_fast_path, _gvn.intcon(identity_hash));
+      set_result(result_reg, result_val);
+      return true;
+    }
+  }
+
   // We only go to the fast case code if we pass a number of guards.  The
   // paths which do not pass are accumulated in the slow_region.
   RegionNode* slow_region = new RegionNode(1);
