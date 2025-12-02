@@ -47,8 +47,7 @@ import java.io.OutputStreamWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.net.URL;
-import java.net.UnknownHostException;
+import java.net.URI;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -118,8 +117,8 @@ public class SubjectAltNameIPv6 {
         }
 
         SSLSocketFactory sf = new SimpleSSLContext().get().getSocketFactory();
-        URL url = new URL("https://[::1]:" + serverPort + "/index.html");
-        HttpsURLConnection conn = (HttpsURLConnection)url.openConnection();
+        URI uri = new URI("https://[::1]:" + serverPort + "/index.html");
+        HttpsURLConnection conn = (HttpsURLConnection)uri.toURL().openConnection();
 
         /*
          * Simulate an external JSSE implementation.
