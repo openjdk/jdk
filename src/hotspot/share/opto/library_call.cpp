@@ -4102,6 +4102,7 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
       phi->add_req(makecon(TypeInstPtr::make(env()->Object_klass()->java_mirror())));
     }
     // Check for interface after array since this checks AccessFlags offset into InstanceKlass.
+    // In other words, we are accessing subtype-specific information, so we need to determine the subtype first.
     if (generate_interface_guard(kls, region) != nullptr) {
       // A guard was added.  If the guard is taken, it was an interface.
       phi->add_req(null());
