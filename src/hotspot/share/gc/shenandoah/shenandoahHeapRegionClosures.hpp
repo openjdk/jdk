@@ -44,8 +44,6 @@ public:
     }
   }
 
-  size_t parallel_region_stride() override { return 8; }
-
   bool is_thread_safe() override {
     return _closure->is_thread_safe();
   }
@@ -65,8 +63,6 @@ public:
       _closure->heap_region_do(r);
     }
   }
-
-  size_t parallel_region_stride() override { return 8; }
 
   bool is_thread_safe() override {
     return _closure->is_thread_safe();
