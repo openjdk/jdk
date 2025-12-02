@@ -71,19 +71,6 @@ import org.w3c.dom.NodeList;
  * @summary jpackage with long version number
  * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
- * @requires (jpackage.test.SQETest != null)
- * @build jdk.jpackage.test.*
- * @requires (os.family == "windows")
- * @compile -Xlint:all -Werror WinLongVersionTest.java
- * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=WinLongVersionTest.test
- */
-
-/*
- * @test
- * @summary jpackage with long version number
- * @library /test/jdk/tools/jpackage/helpers
- * @key jpackagePlatformPackage
  * @requires (jpackage.test.SQETest == null)
  * @build jdk.jpackage.test.*
  * @requires (os.family == "windows")

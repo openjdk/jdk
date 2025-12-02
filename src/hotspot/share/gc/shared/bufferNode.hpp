@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@
 #ifndef SHARE_GC_SHARED_BUFFERNODE_HPP
 #define SHARE_GC_SHARED_BUFFERNODE_HPP
 
+#include "cppstdlib/limits.hpp"
 #include "gc/shared/freeListAllocator.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/lockFreeStack.hpp"
 #include "utilities/macros.hpp"
-
-#include <limits>
 
 class BufferNode {
   using InternalSizeType = LP64_ONLY(uint32_t) NOT_LP64(uint16_t);
@@ -39,7 +39,7 @@ class BufferNode {
 
   InternalSizeType _index;
   InternalSizeType _capacity;
-  BufferNode* volatile _next;
+  Atomic<BufferNode*> _next;
   void* _buffer[1];             // Pseudo flexible array member.
 
   BufferNode(InternalSizeType capacity)
@@ -59,11 +59,11 @@ public:
     return std::numeric_limits<InternalSizeType>::max();
   }
 
-  static BufferNode* volatile* next_ptr(BufferNode& bn) { return &bn._next; }
+  static Atomic<BufferNode*>* next_ptr(BufferNode& bn) { return &bn._next; }
   typedef LockFreeStack<BufferNode, &next_ptr> Stack;
 
-  BufferNode* next() const     { return _next;  }
-  void set_next(BufferNode* n) { _next = n;     }
+  BufferNode* next() const     { return _next.load_relaxed(); }
+  void set_next(BufferNode* n) { _next.store_relaxed(n); }
   size_t index() const         { return _index; }
 
   void set_index(size_t i)     {

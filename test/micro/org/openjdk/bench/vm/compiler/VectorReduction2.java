@@ -28,6 +28,10 @@ import org.openjdk.jmh.infra.*;
 import java.util.concurrent.TimeUnit;
 import java.util.Random;
 
+/**
+ * Note: there is a corresponding IR test:
+ * test/hotspot/jtreg/compiler/loopopts/superword/TestReductions.java
+ */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)

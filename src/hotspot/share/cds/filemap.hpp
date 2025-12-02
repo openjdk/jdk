@@ -27,12 +27,14 @@
 
 #include "cds/aotMetaspace.hpp"
 #include "cds/archiveUtils.hpp"
+#include "cds/heapShared.hpp"
 #include "include/cds.h"
 #include "logging/logLevel.hpp"
 #include "memory/allocation.hpp"
 #include "oops/array.hpp"
 #include "oops/compressedOops.hpp"
 #include "utilities/align.hpp"
+#include "utilities/bitMap.hpp"
 
 // To understand the layout of the CDS archive file:
 //
@@ -43,7 +45,6 @@
 static const int JVM_IDENT_MAX = 256;
 
 class AOTClassLocationConfig;
-class ArchiveHeapInfo;
 class BitMapView;
 class CHeapBitMap;
 class ClassFileStream;
@@ -114,6 +115,7 @@ private:
   bool   _compact_headers;                        // value of UseCompactObjectHeaders
   uintx  _max_heap_size;                          // java max heap size during dumping
   CompressedOops::Mode _narrow_oop_mode;          // compressed oop encoding mode
+  bool    _object_streaming_mode;                 // dump was created for object streaming
   bool    _compressed_oops;                       // save the flag UseCompressedOops
   bool    _compressed_class_ptrs;                 // save the flag UseCompressedClassPointers
   int     _narrow_klass_pointer_bits;             // save number of bits in narrowKlass
@@ -139,11 +141,11 @@ private:
                                         // some expensive operations.
   bool   _has_aot_linked_classes;       // Was the CDS archive created with -XX:+AOTClassLinking
   bool   _has_full_module_graph;        // Does this CDS archive contain the full archived module graph?
-  HeapRootSegments _heap_root_segments; // Heap root segments info
-  size_t _heap_oopmap_start_pos;        // The first bit in the oopmap corresponds to this position in the heap.
-  size_t _heap_ptrmap_start_pos;        // The first bit in the ptrmap corresponds to this position in the heap.
   size_t _rw_ptrmap_start_pos;          // The first bit in the ptrmap corresponds to this position in the rw region
   size_t _ro_ptrmap_start_pos;          // The first bit in the ptrmap corresponds to this position in the ro region
+
+  ArchiveMappedHeapHeader _mapped_heap_header;
+  ArchiveStreamedHeapHeader _streamed_heap_header;
 
   // The following are parameters that affect MethodData layout.
   u1      _compiler_type;
@@ -192,6 +194,7 @@ public:
   char* cloned_vtables()                   const { return from_mapped_offset<char*>(_cloned_vtables_offset); }
   char* early_serialized_data()            const { return from_mapped_offset<char*>(_early_serialized_data_offset); }
   char* serialized_data()                  const { return from_mapped_offset<char*>(_serialized_data_offset); }
+  bool object_streaming_mode()             const { return _object_streaming_mode; }
   const char* jvm_ident()                  const { return _jvm_ident; }
   char* requested_base_address()           const { return _requested_base_address; }
   char* mapped_base_address()              const { return _mapped_base_address; }
@@ -201,23 +204,25 @@ public:
   bool compressed_class_pointers()         const { return _compressed_class_ptrs; }
   int narrow_klass_pointer_bits()          const { return _narrow_klass_pointer_bits; }
   int narrow_klass_shift()                 const { return _narrow_klass_shift; }
-  HeapRootSegments heap_root_segments()    const { return _heap_root_segments; }
   bool has_full_module_graph()             const { return _has_full_module_graph; }
-  size_t heap_oopmap_start_pos()           const { return _heap_oopmap_start_pos; }
-  size_t heap_ptrmap_start_pos()           const { return _heap_ptrmap_start_pos; }
   size_t rw_ptrmap_start_pos()             const { return _rw_ptrmap_start_pos; }
   size_t ro_ptrmap_start_pos()             const { return _ro_ptrmap_start_pos; }
+
+  // Heap archiving
+  const ArchiveMappedHeapHeader*   mapped_heap()   const { return &_mapped_heap_header; }
+  const ArchiveStreamedHeapHeader* streamed_heap() const { return &_streamed_heap_header; }
+
+  void set_streamed_heap_header(ArchiveStreamedHeapHeader header) { _streamed_heap_header = header; }
+  void set_mapped_heap_header(ArchiveMappedHeapHeader header) { _mapped_heap_header = header; }
 
   void set_has_platform_or_app_classes(bool v)   { _has_platform_or_app_classes = v; }
   void set_cloned_vtables(char* p)               { set_as_offset(p, &_cloned_vtables_offset); }
   void set_early_serialized_data(char* p)        { set_as_offset(p, &_early_serialized_data_offset); }
   void set_serialized_data(char* p)              { set_as_offset(p, &_serialized_data_offset); }
   void set_mapped_base_address(char* p)          { _mapped_base_address = p; }
-  void set_heap_root_segments(HeapRootSegments segments) { _heap_root_segments = segments; }
-  void set_heap_oopmap_start_pos(size_t n)       { _heap_oopmap_start_pos = n; }
-  void set_heap_ptrmap_start_pos(size_t n)       { _heap_ptrmap_start_pos = n; }
   void set_rw_ptrmap_start_pos(size_t n)         { _rw_ptrmap_start_pos = n; }
   void set_ro_ptrmap_start_pos(size_t n)         { _ro_ptrmap_start_pos = n; }
+
   void copy_base_archive_name(const char* name);
 
   void set_class_location_config(AOTClassLocationConfig* table) {
@@ -273,7 +278,6 @@ private:
 
   static FileMapInfo* _current_info;
   static FileMapInfo* _dynamic_archive_info;
-  static bool _heap_pointers_need_patching;
   static bool _memory_mapping_failed;
 
 public:
@@ -286,7 +290,7 @@ public:
 
   void log_paths(const char* msg, int start_idx, int end_idx);
 
-  FileMapInfo(const char* full_apth, bool is_static);
+  FileMapInfo(const char* full_path, bool is_static);
   ~FileMapInfo();
   static void free_current_info();
 
@@ -303,11 +307,12 @@ public:
   address narrow_oop_base()    const { return header()->narrow_oop_base(); }
   int     narrow_oop_shift()   const { return header()->narrow_oop_shift(); }
   uintx   max_heap_size()      const { return header()->max_heap_size(); }
-  HeapRootSegments heap_root_segments() const { return header()->heap_root_segments(); }
   size_t  core_region_alignment() const { return header()->core_region_alignment(); }
-  size_t  heap_oopmap_start_pos() const { return header()->heap_oopmap_start_pos(); }
-  size_t  heap_ptrmap_start_pos() const { return header()->heap_ptrmap_start_pos(); }
 
+  const ArchiveMappedHeapHeader*   mapped_heap()   const { return header()->mapped_heap(); }
+  const ArchiveStreamedHeapHeader* streamed_heap() const { return header()->streamed_heap(); }
+
+  bool object_streaming_mode()                const { return header()->object_streaming_mode(); }
   CompressedOops::Mode narrow_oop_mode()      const { return header()->narrow_oop_mode(); }
 
   char* cloned_vtables()                      const { return header()->cloned_vtables(); }
@@ -324,6 +329,7 @@ public:
   bool is_mapped()                            const { return _is_mapped; }
   void set_is_mapped(bool v)                        { _is_mapped = v; }
   const char* full_path()                     const { return _full_path; }
+  char* map_heap_region(FileMapRegion* r, char* addr, size_t bytes);
 
   void set_requested_base(char* b)                  { header()->set_requested_base(b); }
   char* requested_base_address()           const    { return header()->requested_base_address(); }
@@ -359,27 +365,34 @@ public:
   // File manipulation.
   bool  open_as_input() NOT_CDS_RETURN_(false);
   void  open_as_output();
+  void  prepare_for_writing();
   void  write_header();
   void  write_region(int region, char* base, size_t size,
                      bool read_only, bool allow_exec);
   size_t remove_bitmap_zeros(CHeapBitMap* map);
-  char* write_bitmap_region(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_ptrmap, ArchiveHeapInfo* heap_info,
+  char* write_bitmap_region(CHeapBitMap* rw_ptrmap,
+                            CHeapBitMap* ro_ptrmap,
+                            ArchiveMappedHeapInfo* mapped_heap_info,
+                            ArchiveStreamedHeapInfo* streamed_heap_info,
                             size_t &size_in_bytes);
-  size_t write_heap_region(ArchiveHeapInfo* heap_info);
+  size_t write_mapped_heap_region(ArchiveMappedHeapInfo* heap_info) NOT_CDS_JAVA_HEAP_RETURN_(0);
+  size_t write_streamed_heap_region(ArchiveStreamedHeapInfo* heap_info) NOT_CDS_JAVA_HEAP_RETURN_(0);
   void  write_bytes(const void* buffer, size_t count);
   void  write_bytes_aligned(const void* buffer, size_t count);
   size_t  read_bytes(void* buffer, size_t count);
   static size_t readonly_total();
   MapArchiveResult map_regions(int regions[], int num_regions, char* mapped_base_address, ReservedSpace rs);
   void  unmap_regions(int regions[], int num_regions);
+
+  // Object loading support
+  void  stream_heap_region() NOT_CDS_JAVA_HEAP_RETURN;
   void  map_or_load_heap_region() NOT_CDS_JAVA_HEAP_RETURN;
-  void  fixup_mapped_heap_region() NOT_CDS_JAVA_HEAP_RETURN;
-  void  patch_heap_embedded_pointers() NOT_CDS_JAVA_HEAP_RETURN;
+
   bool  has_heap_region()  NOT_CDS_JAVA_HEAP_RETURN_(false);
-  MemRegion get_heap_region_requested_range() NOT_CDS_JAVA_HEAP_RETURN_(MemRegion());
   bool  read_region(int i, char* base, size_t size, bool do_commit);
   char* map_bitmap_region();
   bool  map_aot_code_region(ReservedSpace rs);
+  char* map_forwarding_region();
   void  unmap_region(int i);
   void  close();
   bool  is_open() { return _file_open; }
@@ -434,25 +447,17 @@ public:
   const char* vm_version() {
     return header()->jvm_ident();
   }
+  bool  can_use_heap_region();
 
  private:
   bool  open_for_read();
   void  seek_to_position(size_t pos);
-  bool  map_heap_region_impl() NOT_CDS_JAVA_HEAP_RETURN_(false);
-  void  dealloc_heap_region() NOT_CDS_JAVA_HEAP_RETURN;
-  bool  can_use_heap_region();
-  bool  load_heap_region() NOT_CDS_JAVA_HEAP_RETURN_(false);
-  bool  map_heap_region() NOT_CDS_JAVA_HEAP_RETURN_(false);
-  void  init_heap_region_relocation();
+
   MapArchiveResult map_region(int i, intx addr_delta, char* mapped_base_address, ReservedSpace rs);
   bool  relocate_pointers_in_core_regions(intx addr_delta);
-
-  static MemRegion _mapped_heap_memregion;
+  char* map_auxiliary_region(int region_index, bool read_only);
 
 public:
-  address heap_region_dumptime_address() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
-  address heap_region_requested_address() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
-  narrowOop encoded_heap_region_dumptime_address();
 
 private:
 

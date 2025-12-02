@@ -22,9 +22,8 @@
  *
  */
 
-#include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.hpp"
+#include "cds/heapShared.inline.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
@@ -249,6 +248,10 @@ void Klass::copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos, int len
 
 
 void Klass::initialize(TRAPS) {
+  ShouldNotReachHere();
+}
+
+void Klass::initialize_preemptable(TRAPS) {
   ShouldNotReachHere();
 }
 
@@ -614,8 +617,7 @@ GrowableArray<Klass*>* Klass::compute_secondary_supers(int num_extra_slots,
 
 // subklass links.  Used by the compiler (and vtable initialization)
 // May be cleaned concurrently, so must use the Compile_lock.
-// The log parameter is for clean_weak_klass_links to report unlinked classes.
-Klass* Klass::subklass(bool log) const {
+Klass* Klass::subklass() const {
   // Need load_acquire on the _subklass, because it races with inserts that
   // publishes freshly initialized data.
   for (Klass* chain = AtomicAccess::load_acquire(&_subklass);
@@ -626,11 +628,6 @@ Klass* Klass::subklass(bool log) const {
   {
     if (chain->is_loader_alive()) {
       return chain;
-    } else if (log) {
-      if (log_is_enabled(Trace, class, unload)) {
-        ResourceMark rm;
-        log_trace(class, unload)("unlinking class (subclass): %s", chain->external_name());
-      }
     }
   }
   return nullptr;
@@ -701,15 +698,20 @@ void Klass::append_to_sibling_list() {
   DEBUG_ONLY(verify();)
 }
 
-void Klass::clean_subklass() {
+// The log parameter is for clean_weak_klass_links to report unlinked classes.
+Klass* Klass::clean_subklass(bool log) {
   for (;;) {
     // Need load_acquire, due to contending with concurrent inserts
     Klass* subklass = AtomicAccess::load_acquire(&_subklass);
     if (subklass == nullptr || subklass->is_loader_alive()) {
-      return;
+      return subklass;
+    }
+    if (log && log_is_enabled(Trace, class, unload)) {
+      ResourceMark rm;
+      log_trace(class, unload)("unlinking class (subclass): %s", subklass->external_name());
     }
     // Try to fix _subklass until it points at something not dead.
-    AtomicAccess::cmpxchg(&_subklass, subklass, subklass->next_sibling());
+    AtomicAccess::cmpxchg(&_subklass, subklass, subklass->next_sibling(log));
   }
 }
 
@@ -728,8 +730,7 @@ void Klass::clean_weak_klass_links(bool unloading_occurred, bool clean_alive_kla
     assert(current->is_loader_alive(), "just checking, this should be live");
 
     // Find and set the first alive subklass
-    Klass* sub = current->subklass(true);
-    current->clean_subklass();
+    Klass* sub = current->clean_subklass(true);
     if (sub != nullptr) {
       stack.push(sub);
     }
@@ -874,11 +875,10 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   // modify the CLD list outside a safepoint.
   if (class_loader_data() == nullptr) {
     set_class_loader_data(loader_data);
-
-    // Add to class loader list first before creating the mirror
-    // (same order as class file parsing)
-    loader_data->add_class(this);
   }
+  // Add to class loader list first before creating the mirror
+  // (same order as class file parsing)
+  loader_data->add_class(this);
 
   Handle loader(THREAD, loader_data->class_loader());
   ModuleEntry* module_entry = nullptr;
@@ -899,7 +899,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   if (this->has_archived_mirror_index()) {
     ResourceMark rm(THREAD);
     log_debug(aot, mirror)("%s has raw archived mirror", external_name());
-    if (ArchiveHeapLoader::is_in_use()) {
+    if (HeapShared::is_archived_heap_in_use()) {
       bool present = java_lang_Class::restore_archived_mirror(this, loader, module_handle,
                                                               protection_domain,
                                                               CHECK);

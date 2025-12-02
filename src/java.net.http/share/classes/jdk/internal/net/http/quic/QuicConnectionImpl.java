@@ -334,7 +334,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         this.connectionId = this.endpoint.idFactory().newConnectionId();
         this.logTag = logTagFormat.formatted(labelId);
         this.dbgTag = dbgTag(quicInstance, logTag);
-        this.congestionController = new QuicRenoCongestionController(dbgTag);
+        this.congestionController = createCongestionController(dbgTag, rttEstimator);
         this.originalVersion = this.quicVersion = firstFlightVersion == null
                 ? QuicVersion.firstFlightVersion(quicInstance.getAvailableVersions())
                 : firstFlightVersion;
@@ -364,6 +364,16 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 ? new QuicTransportParameters()
                 : quicInstance.getTransportParameters();
         if (debug.on()) debug.log("Quic Connection Created");
+    }
+
+    private static QuicCongestionController createCongestionController
+            (String dbgTag, QuicRttEstimator rttEstimator) {
+        String algo = System.getProperty("jdk.internal.httpclient.quic.congestionController", "cubic");
+        if (algo.equalsIgnoreCase("reno")) {
+            return new QuicRenoCongestionController(dbgTag, rttEstimator);
+        } else {
+            return new QuicCubicCongestionController(dbgTag, rttEstimator);
+        }
     }
 
     @Override
@@ -591,6 +601,11 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             SSLHandshakeException sslHandshakeException = null;
             if (!handshakeCF.isDone()) {
                 sslHandshakeException = sslHandshakeException(cause);
+                if (Log.errors()) {
+                    Log.logError("%s QUIC handshake failed: %s"
+                            .formatted(logTag(), cause));
+                    Log.logError(cause);
+                }
                 handshakeCF.completeExceptionally(sslHandshakeException);
             }
             if (!handshakeReachedPeerCF.isDone()) {
@@ -1972,7 +1987,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             case NONE -> throw new InternalError("Unrecognized packet type");
         }
         // packet has been processed successfully - connection isn't idle (RFC-9000, section 10.1)
-        this.terminator.keepAlive();
+        this.terminator.markActive();
         if (packetSpace != null) {
             packetSpace.packetReceived(
                     packetType,
@@ -2804,7 +2819,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         // RFC-9000, section 10.1: An endpoint also restarts its idle timer when sending
         // an ack-eliciting packet ...
         if (packet.isAckEliciting()) {
-            this.terminator.keepAlive();
+            this.terminator.markActive();
         }
     }
 

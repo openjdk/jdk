@@ -1759,25 +1759,43 @@ void StubGenerator::roundDeclast(XMMRegister xmm_reg) {
   __ vaesdeclast(xmm8, xmm8, xmm_reg, Assembler::AVX_512bit);
 }
 
+// Check incoming byte offset against the int[] len. key is the pointer to the int[0].
+// This check happens often, so it is important for it to be very compact.
+void StubGenerator::check_key_offset(Register key, int offset, int load_size) {
+#ifdef ASSERT
+  Address key_length(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT));
+  assert((offset + load_size) % 4 == 0, "Alignment is good: %d + %d", offset, load_size);
+  int end_offset = (offset + load_size) / 4;
+  Label L_good;
+  __ cmpl(key_length, end_offset);
+  __ jccb(Assembler::greaterEqual, L_good);
+  __ hlt();
+  __ bind(L_good);
+#endif
+}
 
 // Utility routine for loading a 128-bit key word in little endian format
 void StubGenerator::load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask) {
+  check_key_offset(key, offset, 16);
   __ movdqu(xmmdst, Address(key, offset));
   __ pshufb(xmmdst, xmm_shuf_mask);
 }
 
 void StubGenerator::load_key(XMMRegister xmmdst, Register key, int offset, Register rscratch) {
+  check_key_offset(key, offset, 16);
   __ movdqu(xmmdst, Address(key, offset));
   __ pshufb(xmmdst, ExternalAddress(key_shuffle_mask_addr()), rscratch);
 }
 
 void StubGenerator::ev_load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask) {
+  check_key_offset(key, offset, 16);
   __ movdqu(xmmdst, Address(key, offset));
   __ pshufb(xmmdst, xmm_shuf_mask);
   __ evshufi64x2(xmmdst, xmmdst, xmmdst, 0x0, Assembler::AVX_512bit);
 }
 
 void StubGenerator::ev_load_key(XMMRegister xmmdst, Register key, int offset, Register rscratch) {
+  check_key_offset(key, offset, 16);
   __ movdqu(xmmdst, Address(key, offset));
   __ pshufb(xmmdst, ExternalAddress(key_shuffle_mask_addr()), rscratch);
   __ evshufi64x2(xmmdst, xmmdst, xmmdst, 0x0, Assembler::AVX_512bit);
@@ -3205,12 +3223,12 @@ void StubGenerator::ghash16_encrypt_parallel16_avx512(Register in, Register out,
 
   //AES round 9
   roundEncode(AESKEY2, B00_03, B04_07, B08_11, B12_15);
-  ev_load_key(AESKEY2, key, 11 * 16, rbx);
   //AES rounds up to 11 (AES192) or 13 (AES256)
   //AES128 is done
   __ cmpl(NROUNDS, 52);
   __ jcc(Assembler::less, last_aes_rnd);
   __ bind(aes_192);
+  ev_load_key(AESKEY2, key, 11 * 16, rbx);
   roundEncode(AESKEY1, B00_03, B04_07, B08_11, B12_15);
   ev_load_key(AESKEY1, key, 12 * 16, rbx);
   roundEncode(AESKEY2, B00_03, B04_07, B08_11, B12_15);
@@ -3506,10 +3524,10 @@ void StubGenerator::aesgcm_avx512(Register in, Register len, Register ct, Regist
                                     false, true, false, false, false, ghashin_offset, aesout_offset, HashKey_32);
 
   ghash16_avx512(false, true, false, false, true, in, pos, avx512_subkeyHtbl, AAD_HASHx, SHUF_MASK, stack_offset, 16 * 16, 0, HashKey_16);
+  __ addl(pos, 16 * 16);
 
   __ bind(MESG_BELOW_32_BLKS);
   __ subl(len, 16 * 16);
-  __ addl(pos, 16 * 16);
   gcm_enc_dec_last_avx512(len, in, pos, AAD_HASHx, SHUF_MASK, avx512_subkeyHtbl, ghashin_offset, HashKey_16, true, true);
 
   __ bind(GHASH_DONE);
@@ -3998,13 +4016,15 @@ void StubGenerator::aesgcm_avx2(Register in, Register len, Register ct, Register
   const Register rounds = r10;
   const XMMRegister ctr_blockx = xmm9;
   const XMMRegister aad_hashx = xmm8;
-  Label encrypt_done, encrypt_by_8_new, encrypt_by_8;
+  Label encrypt_done, encrypt_by_8_new, encrypt_by_8, exit;
 
   //This routine should be called only for message sizes of 128 bytes or more.
   //Macro flow:
   //process 8 16 byte blocks in initial_num_blocks.
   //process 8 16 byte blocks at a time until all are done 'encrypt_by_8_new  followed by ghash_last_8'
   __ xorl(pos, pos);
+  __ cmpl(len, 128);
+  __ jcc(Assembler::less, exit);
 
   //Generate 8 constants for htbl
   generateHtbl_8_block_avx2(subkeyHtbl);
@@ -4072,6 +4092,7 @@ void StubGenerator::aesgcm_avx2(Register in, Register len, Register ct, Register
   __ vpxor(xmm0, xmm0, xmm0, Assembler::AVX_128bit);
   __ vpxor(xmm13, xmm13, xmm13, Assembler::AVX_128bit);
 
+  __ bind(exit);
  }
 
 #undef __

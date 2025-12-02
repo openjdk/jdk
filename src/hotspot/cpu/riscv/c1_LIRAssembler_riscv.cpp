@@ -377,12 +377,20 @@ int LIR_Assembler::emit_deopt_handler() {
 
   int offset = code_offset();
 
-  __ auipc(ra, 0);
-  __ far_jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
+  Label start;
+  __ bind(start);
+
+  __ far_call(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
+
+  int entry_offset = __ offset();
+  __ j(start);
+
   guarantee(code_offset() - offset <= deopt_handler_size(), "overflow");
+  assert(code_offset() - entry_offset >= NativePostCallNop::first_check_size,
+         "out of bounds read in post-call NOP check");
   __ end_a_stub();
 
-  return offset;
+  return entry_offset;
 }
 
 void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
@@ -1350,6 +1358,7 @@ void LIR_Assembler::align_call(LIR_Code code) {
 }
 
 void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
+  Assembler::IncompressibleScope scope(_masm);
   address call = __ reloc_call(Address(op->addr(), rtype));
   if (call == nullptr) {
     bailout("reloc call address stub overflow");
@@ -1360,6 +1369,7 @@ void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
 }
 
 void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
+  Assembler::IncompressibleScope scope(_masm);
   address call = __ ic_call(op->addr());
   if (call == nullptr) {
     bailout("reloc call address stub overflow");
@@ -1841,6 +1851,10 @@ void LIR_Assembler::leal(LIR_Opr addr, LIR_Opr dest, LIR_PatchCode patch_code, C
 
 void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* args, LIR_Opr tmp, CodeEmitInfo* info) {
   assert(!tmp->is_valid(), "don't need temporary");
+
+  Assembler::IncompressibleScope scope(_masm);
+  // Post call nops must be natural aligned due to cmodx rules.
+  align_call(lir_rtcall);
 
   __ rt_call(dest);
 

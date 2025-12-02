@@ -149,7 +149,7 @@ define SetupExecuteBody
   endif
 
   $1_VARDEPS := $$($1_COMMAND) $$($1_PRE_COMMAND) $$($1_POST_COMMAND)
-  $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS)
+  $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, $$($1_BASE)_exec.vardeps)
 
   ifneq ($$($1_PRE_COMMAND), )
 

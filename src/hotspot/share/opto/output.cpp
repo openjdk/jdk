@@ -992,7 +992,6 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
   MachCallNode      *mcall;
 
   int safepoint_pc_offset = current_offset;
-  bool is_method_handle_invoke = false;
   bool return_oop = false;
   bool has_ea_local_in_scope = sfn->_has_ea_local_in_scope;
   bool arg_escape = false;
@@ -1004,12 +1003,7 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
   } else {
     mcall = mach->as_MachCall();
 
-    // Is the call a MethodHandle call?
     if (mcall->is_MachCallJava()) {
-      if (mcall->as_MachCallJava()->_method_handle_invoke) {
-        assert(C->has_method_handle_invokes(), "must have been set during call generation");
-        is_method_handle_invoke = true;
-      }
       arg_escape = mcall->as_MachCallJava()->_arg_escape;
     }
 
@@ -1192,7 +1186,6 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
       jvms->bci(),
       jvms->should_reexecute(),
       rethrow_exception,
-      is_method_handle_invoke,
       return_oop,
       has_ea_local_in_scope,
       arg_escape,
@@ -1354,24 +1347,19 @@ CodeBuffer* PhaseOutput::init_buffer() {
 
   // nmethod and CodeBuffer count stubs & constants as part of method's code.
   // class HandlerImpl is platform-specific and defined in the *.ad files.
-  int exception_handler_req = HandlerImpl::size_exception_handler() + MAX_stubs_size; // add marginal slop for handler
   int deopt_handler_req     = HandlerImpl::size_deopt_handler()     + MAX_stubs_size; // add marginal slop for handler
   stub_req += MAX_stubs_size;   // ensure per-stub margin
   code_req += MAX_inst_size;    // ensure per-instruction margin
 
   if (StressCodeBuffers)
-    code_req = const_req = stub_req = exception_handler_req = deopt_handler_req = 0x10;  // force expansion
+    code_req = const_req = stub_req = deopt_handler_req = 0x10;  // force expansion
 
   int total_req =
           const_req +
           code_req +
           pad_req +
           stub_req +
-          exception_handler_req +
           deopt_handler_req;               // deopt handler
-
-  if (C->has_method_handle_invokes())
-    total_req += deopt_handler_req;  // deopt MH handler
 
   CodeBuffer* cb = code_buffer();
   cb->set_const_section_alignment(constant_table().alignment());
@@ -1799,20 +1787,11 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
   // Only java methods have exception handlers and deopt handlers
   // class HandlerImpl is platform-specific and defined in the *.ad files.
   if (C->method()) {
-    // Emit the exception handler code.
-    _code_offsets.set_value(CodeOffsets::Exceptions, HandlerImpl::emit_exception_handler(masm));
     if (C->failing()) {
       return; // CodeBuffer::expand failed
     }
     // Emit the deopt handler code.
     _code_offsets.set_value(CodeOffsets::Deopt, HandlerImpl::emit_deopt_handler(masm));
-
-    // Emit the MethodHandle deopt handler code (if required).
-    if (C->has_method_handle_invokes() && !C->failing()) {
-      // We can use the same code as for the normal deopt handler, we
-      // just need a different entry point address.
-      _code_offsets.set_value(CodeOffsets::DeoptMH, HandlerImpl::emit_deopt_handler(masm));
-    }
   }
 
   // One last check for failed CodeBuffer::expand:

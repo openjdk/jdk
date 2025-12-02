@@ -29,7 +29,8 @@
  * 4098741 4099404 4101481 4106658 4106662 4106664 4108738 4110936 4122840
  * 4125885 4134034 4134300 4140009 4141750 4145457 4147295 4147706 4162198
  * 4162852 4167494 4170798 4176114 4179818 4212072 4212073 4216742 4217661
- * 4243011 4243108 4330377 4233840 4241880 4833877 8008577 8227313 8174269
+ * 4243011 4243108 4330377 4233840 4241880 4833877 6177299 8008577 8227313
+ * 8174269 8369050
  * @summary Regression tests for NumberFormat and associated classes
  * @library /java/text/testlib
  * @build HexDumpReader TestUtils
@@ -56,10 +57,13 @@ import java.util.*;
 import java.math.BigDecimal;
 import java.io.*;
 import java.math.BigInteger;
+
 import sun.util.resources.LocaleData;
 
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class NumberRegression {
@@ -1772,7 +1776,7 @@ public class NumberRegression {
                 "2%", "1%", "2%", "2%", "1%",
                 "0%", "0%", "1%", "1%", "1%",
                 "0", "2", "0.2", "0.6", "0.04",
-                "0.04", "0.000", "0.002",
+                "0.04", "0.001", "0.002",
         };
         for (int i = 0; i < input.length; i++) {
             DecimalFormat format = new DecimalFormat(pattern[i]);
@@ -1846,6 +1850,41 @@ public class NumberRegression {
             fail("FAIL: normal parse failed. expected: " + inputNum +
                     ", got: " + parsed);
         }
+    }
+
+    /**
+     * 6177299: DecimalFormat w/ multiplier applied may incorrectly return
+     * a Double as Long.MAX_VALUE.
+     */
+    @Test
+    void largePosParseTest() {
+        var df = NumberFormat.getPercentInstance(Locale.ENGLISH); // Default w/ multiplier 100
+        // Parsed string after multiplier applied is beyond long range
+        assertEquals(9.223372036854777E18,
+                assertDoesNotThrow(() -> df.parse("922,337,203,685,477,700,000%")));
+        // Fails before 6177299 fix and returns as long
+        assertEquals(9.223372036854776E18,
+                assertDoesNotThrow(() -> df.parse("922,337,203,685,477,600,000%")));
+        // Within long range -> Expect to get longs as long as ulp >= 1
+        assertEquals((long) 9.223372036854775E18,
+                assertDoesNotThrow(() -> df.parse("922,337,203,685,477,500,000%")));
+    }
+
+    /**
+     * 6177299: Negative version of above test.
+     */
+    @Test
+    void largeNegParseTest() {
+        var df = NumberFormat.getPercentInstance(Locale.ENGLISH); // Default w/ multiplier 100
+        // Parsed string after multiplier applied is beyond long range
+        assertEquals(-9.223372036854777E18,
+                assertDoesNotThrow(() -> df.parse("-922,337,203,685,477,700,000%")));
+        // Fails before 6177299 fix and returns as long
+        assertEquals(-9.223372036854776E18,
+                assertDoesNotThrow(() -> df.parse("-922,337,203,685,477,600,000%")));
+        // Within long range -> Expect to get longs as long as ulp >= 1
+        assertEquals((long) -9.223372036854775E18,
+                assertDoesNotThrow(() -> df.parse("-922,337,203,685,477,500,000%")));
     }
 }
 
