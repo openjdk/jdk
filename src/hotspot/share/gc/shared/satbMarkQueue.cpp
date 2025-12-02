@@ -27,7 +27,6 @@
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
@@ -85,28 +84,28 @@ SATBMarkQueueSet::~SATBMarkQueueSet() {
 // remains set until the count is reduced to zero.
 
 // Increment count.  If count > threshold, set flag, else maintain flag.
-static void increment_count(volatile size_t* cfptr, size_t threshold) {
+static void increment_count(Atomic<size_t>* cfptr, size_t threshold) {
   size_t old;
-  size_t value = AtomicAccess::load(cfptr);
+  size_t value = cfptr->load_relaxed();
   do {
     old = value;
     value += 2;
     assert(value > old, "overflow");
     if (value > threshold) value |= 1;
-    value = AtomicAccess::cmpxchg(cfptr, old, value);
+    value = cfptr->compare_exchange(old, value);
   } while (value != old);
 }
 
 // Decrement count.  If count == 0, clear flag, else maintain flag.
-static void decrement_count(volatile size_t* cfptr) {
+static void decrement_count(Atomic<size_t>* cfptr) {
   size_t old;
-  size_t value = AtomicAccess::load(cfptr);
+  size_t value = cfptr->load_relaxed();
   do {
     assert((value >> 1) != 0, "underflow");
     old = value;
     value -= 2;
     if (value <= 1) value = 0;
-    value = AtomicAccess::cmpxchg(cfptr, old, value);
+    value = cfptr->compare_exchange(old, value);
   } while (value != old);
 }
 
@@ -332,7 +331,7 @@ void SATBMarkQueueSet::print_all(const char* msg) {
 #endif // PRODUCT
 
 void SATBMarkQueueSet::abandon_completed_buffers() {
-  AtomicAccess::store(&_count_and_process_flag, size_t(0));
+  _count_and_process_flag.store_relaxed(0u);
   BufferNode* buffers_to_delete = _list.pop_all();
   while (buffers_to_delete != nullptr) {
     BufferNode* bn = buffers_to_delete;
