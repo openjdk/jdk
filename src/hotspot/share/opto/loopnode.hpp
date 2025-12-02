@@ -674,7 +674,7 @@ public:
       _head(head), _tail(tail),
       _phase(phase),
       _local_loop_unroll_limit(0), _local_loop_unroll_factor(0),
-      _body(Compile::current()->idealloop_arena()),
+      _body(Compile::current()->ideal_loop_arena()),
       _nest(0), _irreducible(0), _has_call(0), _has_sfpt(0), _rce_candidate(0),
       _has_range_checks(0), _has_range_checks_computed(0),
       _safepts(nullptr),
@@ -1223,7 +1223,7 @@ private:
   // Compute the Ideal Node to Loop mapping
   PhaseIdealLoop(PhaseIterGVN& igvn, LoopOptsMode mode) :
     PhaseTransform(Ideal_Loop),
-    _loop_or_ctrl(igvn.C->idealloop_arena()),
+    _loop_or_ctrl(igvn.C->ideal_loop_arena()),
     _igvn(igvn),
     _verify_me(nullptr),
     _verify_only(false),
@@ -1238,7 +1238,7 @@ private:
   // or only verify that the graph is valid if verify_me is null.
   PhaseIdealLoop(PhaseIterGVN& igvn, const PhaseIdealLoop* verify_me = nullptr) :
     PhaseTransform(Ideal_Loop),
-    _loop_or_ctrl(igvn.C->idealloop_arena()),
+    _loop_or_ctrl(igvn.C->ideal_loop_arena()),
     _igvn(igvn),
     _verify_me(verify_me),
     _verify_only(verify_me == nullptr),
@@ -1328,7 +1328,7 @@ public:
 #ifdef ASSERT
     ResourceMark rm;
     Compile* C = Compile::current();
-    ResourceMark rm_idealloop_arena(C->idealloop_arena());
+    ResourceMark rm_ideal_loop_arena(C->ideal_loop_arena());
     Compile::TracePhase tp(_t_idealLoopVerify);
     PhaseIdealLoop v(igvn);
 #endif
@@ -1339,7 +1339,7 @@ public:
   static void optimize(PhaseIterGVN &igvn, LoopOptsMode mode) {
     ResourceMark rm;
     Compile* C = Compile::current();
-    ResourceMark rm_idealloop_arena(C->idealloop_arena());
+    ResourceMark rm_ideal_loop_arena(C->ideal_loop_arena());
     PhaseIdealLoop v(igvn, mode);
 
     if (!C->failing()) {
