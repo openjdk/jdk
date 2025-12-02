@@ -84,7 +84,7 @@ class JVMTIEndTransition : public StackObj {
         _current->rebind_to_jvmti_thread_state_of(_vthread());
       }
       DEBUG_ONLY(bool is_virtual = java_lang_VirtualThread::is_instance(_current->jvmti_vthread()));
-      assert((_is_mount && is_virtual) || (!_is_mount && !is_virtual), "wrong identity");
+      assert(_is_mount == is_virtual, "wrong identity");
     }
   }
   ~JVMTIEndTransition() {
