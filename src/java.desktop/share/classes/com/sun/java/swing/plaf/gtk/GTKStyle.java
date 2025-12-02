@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,6 +142,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
         return GTKPainter.INSTANCE;
     }
 
+    @Override
     protected Color getColorForState(SynthContext context, ColorType type) {
         if (type == ColorType.FOCUS || type == GTKColorType.BLACK) {
             return BLACK_COLOR;
@@ -292,6 +293,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
         return font;
     }
 
+    @Override
     protected Font getFontForState(SynthContext context) {
         Font propFont = UIManager
                               .getFont(context.getRegion().getName() + ".font");
@@ -1053,6 +1055,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
             this.size = size;
         }
 
+        @Override
         public void paintIcon(SynthContext context, Graphics g, int x,
                               int y, int w, int h) {
             Icon icon = getIcon(context);
@@ -1067,6 +1070,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
             }
         }
 
+        @Override
         public int getIconWidth(SynthContext context) {
             Icon icon = getIcon(context);
 
@@ -1076,6 +1080,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
             return 0;
         }
 
+        @Override
         public int getIconHeight(SynthContext context) {
             Icon icon = getIcon(context);
 
@@ -1135,6 +1140,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
             this.methodName = methodName;
         }
 
+        @Override
         @SuppressWarnings("deprecation")
         public Object createValue(UIDefaults table) {
             try {
