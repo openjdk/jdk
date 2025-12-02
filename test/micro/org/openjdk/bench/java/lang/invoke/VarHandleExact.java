@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,16 +69,21 @@ public class VarHandleExact {
 
     @Benchmark
     public void exact_exactInvocation() {
-        exact.set(data, (long) 42);
+        var _ = (long) exact.getAndAdd(data, (long) 42);
     }
 
     @Benchmark
     public void generic_genericInvocation() {
-        generic.set(data, 42);
+        var _ = (long) generic.getAndAdd(data, 42);
+    }
+
+    @Benchmark
+    public void generic_returnDroppingInvocation() {
+        generic.getAndAdd(data, (long) 42);
     }
 
     @Benchmark
     public void generic_exactInvocation() {
-        generic.set(data, (long) 42);
+        var _ = (long) generic.getAndAdd(data, (long) 42);
     }
 }

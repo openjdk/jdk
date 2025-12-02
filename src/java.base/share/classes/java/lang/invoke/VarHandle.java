@@ -2032,15 +2032,17 @@ public abstract sealed class VarHandle implements Constable
         @ForceInline
         MethodHandle adaptedMethodHandle(VarHandle vh) {
             var constant = MethodHandleImpl.isCompileConstant(vh);
-            var cache = adaptedMh;
-            if (constant == MethodHandleImpl.CONSTANT_YES && cache != null) {
-                return cache;
+            if (constant == MethodHandleImpl.CONSTANT_YES) {
+                var cache = adaptedMh;
+                if (cache != null) {
+                    return cache;
+                }
             }
 
             // This is still a hot path if vh is not constant - in this case,
             // asType is the bottleneck for constant folding, unfortunately
             var result = vh.getMethodHandle(mode).asType(symbolicMethodTypeInvoker);
-            if (constant != MethodHandleImpl.CONSTANT_NO && cache == null) {
+            if (constant != MethodHandleImpl.CONSTANT_NO) {
                 adaptedMh = result;
             }
             return result;
