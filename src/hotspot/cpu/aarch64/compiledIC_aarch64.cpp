@@ -168,12 +168,16 @@ void CompiledDirectCall::set_to_interpreted(const methodHandle& callee, address 
   //                             |  B end                    ;
   //                             |end:                       ;
   // forall (1:X0=1 \/ 1:X0=3)
-  CodeBuffer stub_first_instruction(stub, Assembler::instruction_size);
-  Assembler assembler(&stub_first_instruction);
-  assembler.nop();
+
+  NativeJump::insert(stub, stub + NativeJump::instruction_size);
+
+  address trampoline_stub_addr = _call->get_trampoline();
+  if (trampoline_stub_addr != nullptr) {
+    nativeCallTrampolineStub_at(trampoline_stub_addr)->set_destination(stub);
+  }
 
   // Update jump to call.
-  set_destination_mt_safe(stub);
+  _call->set_destination(stub);
 }
 
 void CompiledDirectCall::set_stub_to_clean(static_stub_Relocation* static_stub) {

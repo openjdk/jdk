@@ -238,6 +238,14 @@ void NativeJump::set_jump_destination(address dest) {
   ICache::invalidate_range(instruction_address(), instruction_size);
 };
 
+// Atomic insertion of jump to target.
+void NativeJump::insert(address code_pos, address target) {
+  intptr_t offset = target - code_pos;
+  uint32_t insn = 0b000101 << 26;
+  Instruction_aarch64::spatch((address)&insn, 25, 0, offset >> 2);
+  AtomicAccess::store((volatile uint32_t*)code_pos, insn);
+}
+  
 //-------------------------------------------------------------------
 
 address NativeGeneralJump::jump_destination() const {
