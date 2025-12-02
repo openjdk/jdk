@@ -2497,6 +2497,9 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
     /**
      * Returns the distance to scroll to expose the next or previous
      * row (for vertical scrolling) or column (for horizontal scrolling).
+     * The scrolling distance returned will be positive,
+     * unless scrolling location for the specified parameters is already
+     * at its furthest extent, in which case it will return zero.
      * <p>
      * For horizontal scrolling, if the layout orientation is {@code VERTICAL},
      * then the list's font size is returned (or {@code 1} if the font is
@@ -2507,19 +2510,8 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      *                    {@code SwingConstants.VERTICAL}
      * @param direction less or equal to zero to scroll up/back,
      *                  greater than zero for down/forward
-     * @return the non-negative "unit" increment value
+     * @return the non-negative "unit" increment
      *         for scrolling in the specified direction
-     *         if the layout orientation is {@code VERTICAL},
-     *         it can return 0 for following cases:
-     *         - if list model is empty when
-     *           {@code visibleRect} location's cell index is computed
-     *         - If bounding rectangle computed from {@code visibleRect}
-     *            is outside the list's range of cells
-     *         - While scrolling up,
-     *           - if {@code visibleRect} row is completely visible
-     *             and {@code visibleRect} points to row 0
-     *           - if {@code visibleRect} row is completely visible
-     *             and {@code visibleRect} is the top row of the list
      *
      * @see #getScrollableBlockIncrement
      * @see Scrollable#getScrollableUnitIncrement
