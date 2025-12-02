@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @summary  Test verify that object allocation sampling is disabled during AOT.
+ * @summary The test verifies that object allocation sampling is disabled during AOT.
  *
  * Don't remove 'modules' line, it triggers the crash.
  * @modules java.management
