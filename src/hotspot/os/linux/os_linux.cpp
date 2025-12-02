@@ -4966,30 +4966,32 @@ int os::open(const char *path, int oflag, int mode) {
 // clock CPUCLOCK_SCHED (0b010) which reports the thread's consumed system+user
 // time (as mandated by the POSIX standard POSIX.1-2024/IEEE Std 1003.1-2024
 // §3.90).
-//
-// The out parameter success is required to be initialized to true.
-static clockid_t get_thread_clockid(Thread* thread, bool total, bool* success) {
+static bool get_thread_clockid(Thread* thread, clockid_t* clockid, bool total) {
   constexpr clockid_t CLOCK_TYPE_MASK = 3;
   constexpr clockid_t CPUCLOCK_VIRT = 1;
 
-  clockid_t clockid;
-  int rc = pthread_getcpuclockid(thread->osthread()->pthread_id(), &clockid);
-  if (rc == 0) {
-    clockid = total ? clockid : (clockid & ~CLOCK_TYPE_MASK) | CPUCLOCK_VIRT;
-  } else {
+  int rc = pthread_getcpuclockid(thread->osthread()->pthread_id(), clockid);
+  if (rc != 0) {
     // It's possible to encounter a terminated native thread that failed
     // to detach itself from the VM - which should result in ESRCH.
     assert_status(rc == ESRCH, rc, "pthread_getcpuclockid failed");
-    *success = false;
+    return false;
   }
-  return clockid;
+
+  if (!total) {
+    clockid_t clockid_tmp = *clockid;
+    clockid_tmp = (clockid_tmp & ~CLOCK_TYPE_MASK) | CPUCLOCK_VIRT;
+    *clockid = clockid_tmp;
+  }
+
+  return true;
 }
 
 static jlong user_thread_cpu_time(Thread *thread);
 
 static jlong total_thread_cpu_time(Thread *thread) {
-  bool success = true;
-  clockid_t clockid = get_thread_clockid(thread, true, &success);
+  clockid_t clockid;
+  bool success = get_thread_clockid(thread, &clockid, true);
 
   return success ? os::Linux::thread_cpu_time(clockid) : -1;
 }
@@ -5026,8 +5028,8 @@ jlong os::thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
 }
 
 static jlong user_thread_cpu_time(Thread *thread) {
-  bool success = true;
-  clockid_t clockid = get_thread_clockid(thread, false, &success);
+  clockid_t clockid;
+  bool success = get_thread_clockid(thread, &clockid, false);
 
   return success ? os::Linux::thread_cpu_time(clockid) : -1;
 }
