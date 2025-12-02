@@ -84,9 +84,6 @@
           "many consecutive young-gen collections have been "               \
           "completed following the preceding old-gen collection.")          \
                                                                             \
-  product(bool, ShenandoahGenerationalAdaptiveTenuring, true, EXPERIMENTAL, \
-          "(Generational mode only) Dynamically adapt tenuring age.")       \
-                                                                            \
   product(bool, ShenandoahGenerationalCensusIgnoreOlderCohorts, true,       \
                                                                EXPERIMENTAL,\
           "(Generational mode only) Ignore mortality rates older than the " \

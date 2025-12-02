@@ -57,21 +57,14 @@ ShenandoahAgeCensus::ShenandoahAgeCensus(uint max_workers)
     // Sentinel value
     _tenuring_threshold[i] = MAX_COHORTS;
   }
-  if (ShenandoahGenerationalAdaptiveTenuring) {
-    _local_age_tables = NEW_C_HEAP_ARRAY(AgeTable*, _max_workers, mtGC);
-    CENSUS_NOISE(_local_noise = NEW_C_HEAP_ARRAY(ShenandoahNoiseStats, max_workers, mtGC);)
-    for (uint i = 0; i < _max_workers; i++) {
-      _local_age_tables[i] = new AgeTable(false);
-      CENSUS_NOISE(_local_noise[i].clear();)
-    }
-  } else {
-    _local_age_tables = nullptr;
+
+  _local_age_tables = NEW_C_HEAP_ARRAY(AgeTable*, _max_workers, mtGC);
+  CENSUS_NOISE(_local_noise = NEW_C_HEAP_ARRAY(ShenandoahNoiseStats, max_workers, mtGC);)
+  for (uint i = 0; i < _max_workers; i++) {
+    _local_age_tables[i] = new AgeTable(false);
+    CENSUS_NOISE(_local_noise[i].clear();)
   }
   _epoch = MAX_SNAPSHOTS - 1;  // see prepare_for_census_update()
-
-  if (!ShenandoahGenerationalAdaptiveTenuring) {
-    _tenuring_threshold[_epoch] = InitialTenuringThreshold;
-  }
 }
 
 ShenandoahAgeCensus::~ShenandoahAgeCensus() {
@@ -154,7 +147,6 @@ void ShenandoahAgeCensus::prepare_for_census_update() {
 // and compute the new tenuring threshold.
 void ShenandoahAgeCensus::update_census(size_t age0_pop) {
   prepare_for_census_update();
-  assert(ShenandoahGenerationalAdaptiveTenuring, "Only update census when adaptive tenuring is enabled");
   assert(_global_age_tables[_epoch]->is_clear(), "Dirty decks");
   CENSUS_NOISE(assert(_global_noise[_epoch].is_clear(), "Dirty decks");)
 
@@ -208,11 +200,7 @@ void ShenandoahAgeCensus::reset_global() {
 
 // Reset the local age tables, clearing any partial census.
 void ShenandoahAgeCensus::reset_local() {
-  if (!ShenandoahGenerationalAdaptiveTenuring) {
-    assert(_local_age_tables == nullptr, "Error");
-    return;
-  }
-  for (uint i = 0; i < _max_workers; i++) {
+for (uint i = 0; i < _max_workers; i++) {
     _local_age_tables[i]->clear();
     CENSUS_NOISE(_local_noise[i].clear();)
   }
@@ -234,10 +222,6 @@ bool ShenandoahAgeCensus::is_clear_global() {
 
 // Is local census information clear?
 bool ShenandoahAgeCensus::is_clear_local() {
-  if (!ShenandoahGenerationalAdaptiveTenuring) {
-    assert(_local_age_tables == nullptr, "Error");
-    return true;
-  }
   for (uint i = 0; i < _max_workers; i++) {
     bool clear = _local_age_tables[i]->is_clear();
     CENSUS_NOISE(clear |= _local_noise[i].is_clear();)
@@ -271,7 +255,6 @@ void ShenandoahAgeCensus::update_total() {
 #endif // !PRODUCT
 
 void ShenandoahAgeCensus::update_tenuring_threshold() {
-  assert(ShenandoahGenerationalAdaptiveTenuring, "Only update when adaptive tenuring is enabled");
   uint tt = compute_tenuring_threshold();
   assert(tt <= MAX_COHORTS, "Out of bounds");
   _tenuring_threshold[_epoch] = tt;
