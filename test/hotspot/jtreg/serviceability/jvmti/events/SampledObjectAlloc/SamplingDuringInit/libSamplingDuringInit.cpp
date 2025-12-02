@@ -24,11 +24,24 @@
 #include "jvmti.h"
 #include "jvmti_common.hpp"
 
+#include <atomic>
+
 extern "C" {
+
+// SampledObjectAlloc event might be triggered on any thread
+static std::atomic<int> events_counter(0);
 
 JNIEXPORT void JNICALL
 SampledObjectAlloc(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jobject object, jclass object_klass, jlong size) {
-  LOG("Sampled object\n");
+  events_counter++;
+  LOG("Sampled object, events_counter = %d\n", events_counter.load());
+}
+
+void JNICALL
+VMDeath(jvmtiEnv *jvmti, JNIEnv* jni) {
+  if (events_counter == 0) {
+    fatal(jni, "SampledObjectAlloc events counter shouldn't be zero");
+  }
 }
 
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
@@ -53,6 +66,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
   memset(&callbacks, 0, sizeof(callbacks));
   callbacks.SampledObjectAlloc = &SampledObjectAlloc;
+  callbacks.VMDeath = &VMDeath;
 
   err = jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
   check_jvmti_error(err, "SetEventCallbacks");
@@ -61,6 +75,9 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
    */
   err = jvmti->SetHeapSamplingInterval(10);
   check_jvmti_error(err, "SetHeapSamplingInterval");
+
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, nullptr);
+  check_jvmti_error(err, "SetEventNotificationMode");
 
   err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_SAMPLED_OBJECT_ALLOC, nullptr);
   check_jvmti_error(err, "SetEventNotificationMode");

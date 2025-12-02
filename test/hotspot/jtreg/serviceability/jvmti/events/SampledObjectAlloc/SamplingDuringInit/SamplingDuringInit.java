@@ -23,16 +23,24 @@
 
 /**
  * @test
+ * @bug 8372039
  * @summary The test verifies that object allocation sampling is disabled during AOT.
  *
  * Don't remove 'modules' line, it triggers the crash.
  * @modules java.management
  *
+ * @run main/othervm/native -agentlib:SamplingDuringInit SamplingDuringInit
  * @run main/othervm/native -agentlib:SamplingDuringInit -XX:-UseCompressedOops SamplingDuringInit
  */
 
 public class SamplingDuringInit {
 
+    public static Object[] tmp = new Object[1000];
     public static void main(String[] args) throws Exception {
+        // Allocate some objects to trigger Sampling even if
+        // all JDK classes are preloaded.
+        for (int i = 0; i < tmp.length; i++) {
+            tmp[i] = new String("tmp" + i);
+        }
     }
 }
