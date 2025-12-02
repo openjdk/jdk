@@ -248,25 +248,6 @@ jint ciObject::identity_hash_or_no_hash() {
 }
 
 // ------------------------------------------------------------------
-// ciObject::identity_hash_or_zero
-//
-// The identity hash code of an object, if a hash has been computed.
-jint ciObject::identity_hash_or_zero() {
-  VM_ENTRY_MARK;
-  if (!is_null_object()) {
-    markWord mark = get_oop()->mark_acquire();
-    if (UseObjectMonitorTable || !mark.has_monitor()) {
-      jint hash = mark.hash();
-      if (hash != 0) {
-        return hash;
-      }
-    }
-  }
-  return 0;
-}
-
-
-// ------------------------------------------------------------------
 // ciObject::print
 //
 // Print debugging output about this ciObject.

@@ -46,7 +46,7 @@ public class IdentityHashCodeFold {
 
     @Test
     @IR(failOn = {IRNode.ADD_I})
-    public long testSum() {
+    public int testSum() {
         return a.hashCode() + System.identityHashCode(b);
     }
 
