@@ -82,7 +82,7 @@ JfrSymbolTableEntry<T, IdType>::JfrSymbolTableEntry(unsigned hash, const T& data
 template <typename T, typename IdType>
 bool JfrSymbolTableEntry<T, IdType>::on_equals(const char* str) {
   assert(str != nullptr, "invariant");
-  return strncmp((const char*)this->literal(), str, strlen(str)) == 0;
+  return strcmp((const char*)this->literal(), str) == 0;
 }
 
 static const constexpr unsigned max_capacity = 1 << 30;
