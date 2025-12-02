@@ -1402,6 +1402,7 @@ bool PhiNode::try_clean_memory_phi(PhaseIterGVN* igvn) {
       Node* other_phi_input = in(j);
       if (other_phi_input != nullptr && other_phi_input == merge_mem->base_memory() && !is_data_loop(region, phi_input, igvn)) {
         // merge_mem is a successor memory to other_phi_input, and is not pinned inside the diamond, so push it out.
+        // Only proceed if the transformation doesn't create a data loop
         // This will allow the diamond to collapse completely if there are no other phis left.
         igvn->replace_node(this, merge_mem);
         return true;
