@@ -82,7 +82,7 @@ final class SigningIdentityBuilder {
         return this;
     }
 
-    Optional<SigningConfig> create() throws ConfigException {
+    Optional<SigningConfig> create() {
         if (signingIdentity == null && certificateSelector == null) {
             return Optional.empty();
         } else {
@@ -90,11 +90,11 @@ final class SigningIdentityBuilder {
         }
     }
 
-    private Optional<Keychain> validatedKeychain() throws ConfigException {
+    private Optional<Keychain> validatedKeychain() {
         return Optional.ofNullable(keychain).map(Keychain::new);
     }
 
-    private SigningIdentity validatedSigningIdentity() throws ConfigException {
+    private SigningIdentity validatedSigningIdentity() {
         if (signingIdentity != null) {
             return new SigningIdentityImpl(signingIdentity);
         }
@@ -142,7 +142,7 @@ final class SigningIdentityBuilder {
     }
 
     private static X509Certificate selectSigningIdentity(List<X509Certificate> certs,
-            CertificateSelector certificateSelector, Optional<Keychain> keychain) throws ConfigException {
+            CertificateSelector certificateSelector, Optional<Keychain> keychain) {
         Objects.requireNonNull(certificateSelector);
         Objects.requireNonNull(keychain);
         switch (certs.size()) {
