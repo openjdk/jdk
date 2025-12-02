@@ -37,6 +37,7 @@ class ZWorkers;
 
 class ZRelocationSet {
   template <bool> friend class ZRelocationSetIteratorImpl;
+  friend class ZRelocationSetInstallTask;
 
 private:
   ZGeneration*         _generation;

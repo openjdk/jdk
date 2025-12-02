@@ -71,8 +71,8 @@ ZPage* ZPage::clone_for_promotion() const {
   return page;
 }
 
-bool ZPage::requires_barriers() const {
-  return is_old() || AtomicAccess::load(&_relocate_promoted);
+bool ZPage::allows_raw_null() const {
+  return is_young() && !AtomicAccess::load(&_relocate_promoted);
 }
 
 void ZPage::set_is_relocate_promoted() {

@@ -217,7 +217,7 @@ static void deoptimize_allocation(JavaThread* thread) {
 
 void ZBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {
   const ZPage* const page = ZHeap::heap()->page(to_zaddress(new_obj));
-  if (page->requires_barriers()) {
+  if (!page->allows_raw_null()) {
     // We promised C2 that its allocations would end up in young gen. This object
     // is too old to guarantee that. Take a few steps in the interpreter instead,
     // which does not elide barriers based on the age of an object.

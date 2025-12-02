@@ -69,11 +69,18 @@ private:
     return ZRelocate::compute_to_age(page->age());
   }
 
+  void track_if_promoted(ZPage* page, ZForwarding* forwarding, ZArray<ZPage*>& relocate_promoted) {
+    if (forwarding->is_promotion()) {
+      page->set_is_relocate_promoted();
+      relocate_promoted.append(page);
+    }
+  }
+
 public:
-  ZRelocationSetInstallTask(ZForwardingAllocator* allocator, const ZRelocationSetSelector* selector, ZRelocationSet* relocation_set)
+  ZRelocationSetInstallTask(ZRelocationSet* relocation_set, const ZRelocationSetSelector* selector)
     : ZTask("ZRelocationSetInstallTask"),
       _relocation_set(relocation_set),
-      _allocator(allocator),
+      _allocator(&relocation_set->_allocator),
       _forwardings(nullptr),
       _nforwardings((size_t)selector->selected_small()->length() + (size_t)selector->selected_medium()->length()),
       _small(selector->selected_small()),
@@ -94,13 +101,6 @@ public:
 
   ~ZRelocationSetInstallTask() {
     assert(_allocator->is_full(), "Should be full");
-  }
-
-  void track_if_promoted(ZPage* page, ZForwarding* forwarding, ZArray<ZPage*>& relocate_promoted) {
-    if (forwarding->is_promotion()) {
-      page->set_is_relocate_promoted();
-      relocate_promoted.append(page);
-    }
   }
 
   virtual void work() {
@@ -129,9 +129,7 @@ public:
       SuspendibleThreadSet::yield();
     }
 
-    if (!relocate_promoted.is_empty()) {
-      _relocation_set->register_relocate_promoted(relocate_promoted);
-    }
+    _relocation_set->register_relocate_promoted(relocate_promoted);
   }
 
   ZForwarding** forwardings() const {
@@ -171,7 +169,7 @@ ZArray<ZPage*>* ZRelocationSet::relocate_promoted_pages() {
 
 void ZRelocationSet::install(const ZRelocationSetSelector* selector) {
   // Install relocation set
-  ZRelocationSetInstallTask task(&_allocator, selector, this);
+  ZRelocationSetInstallTask task(this, selector);
   workers()->run(&task);
 
   _forwardings = task.forwardings();
@@ -213,6 +211,10 @@ void ZRelocationSet::register_flip_promoted(const ZArray<ZPage*>& pages) {
 }
 
 void ZRelocationSet::register_relocate_promoted(const ZArray<ZPage*>& pages) {
+  if (pages.is_empty()) {
+    return;
+  }
+
   ZLocker<ZLock> locker(&_promotion_lock);
   for (ZPage* const page : pages) {
     assert(!_relocate_promoted_pages.contains(page), "no duplicates allowed");

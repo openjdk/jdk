@@ -104,7 +104,7 @@ public:
 
   ZPageAge age() const;
 
-  bool requires_barriers() const;
+  bool allows_raw_null() const;
   void set_is_relocate_promoted();
 
   uint32_t seqnum() const;
