@@ -1146,9 +1146,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     Label L;
     __ ld(x28, Address(xmethod, Method::native_function_offset()));
     ExternalAddress unsatisfied(SharedRuntime::native_method_throw_unsatisfied_link_error_entry());
-    __ la(t, unsatisfied);
-    __ load_long_misaligned(t1, Address(t, 0), t0, 2); // 2 bytes aligned, but not 4 or 8
-
+    __ la(t1, unsatisfied);
     __ bne(x28, t1, L);
     __ call_VM(noreg,
                CAST_FROM_FN_PTR(address,

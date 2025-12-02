@@ -379,7 +379,7 @@ public enum ClassFileFormatVersion {
      * @since 26
      *
      * @see <a
-     * href="https://docs.oracle.com/javase/specs/jvms/se26/html/index.html">
+     * href="https://docs.oracle.com/en/java/javase/26/docs/specs/jvms/index.html">
      * <cite>The Java Virtual Machine Specification, Java SE 26 Edition</cite></a>
      */
     RELEASE_26(70),
@@ -433,6 +433,7 @@ public enum ClassFileFormatVersion {
      * ClassFileFormatVersion.valueOf(Runtime.Version.parse("17"))}
      *
      * @param rv runtime version to map to a class file format version
+     * @throws NullPointerException if {@code rv} is {@code null}
      * @throws IllegalArgumentException if the feature of version
      * argument is greater than the feature of the platform version.
      */
