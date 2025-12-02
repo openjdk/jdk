@@ -33,8 +33,6 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.Collator;
-import java.util.Collection;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -47,6 +45,7 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -324,13 +323,12 @@ public enum Option {
 
         @Override
         protected void help(Log log) {
-            List<String> releases = new ArrayList<>();
+            StringJoiner sj = new StringJoiner(", ");
             for(Source source :  Source.values()) {
                 if (source.isSupported())
-                    releases.add(source.name);
+                    sj.add(source.name);
             }
-            String formatted = formatAbbreviatedList(releases);
-            super.help(log, log.localize(PrefixKind.JAVAC, descrKey, formatted));
+            super.help(log, log.localize(PrefixKind.JAVAC, descrKey, sj.toString()));
         }
     },
 
@@ -346,13 +344,12 @@ public enum Option {
 
         @Override
         protected void help(Log log) {
-            List<String> releases = new ArrayList<>();
+            StringJoiner sj = new StringJoiner(", ");
             for(Target target :  Target.values()) {
                 if (target.isSupported())
-                    releases.add(target.name);
+                    sj.add(target.name);
             }
-            String formatted = formatAbbreviatedList(releases);
-            super.help(log, log.localize(PrefixKind.JAVAC, descrKey, formatted));
+            super.help(log, log.localize(PrefixKind.JAVAC, descrKey, sj.toString()));
         }
     },
 
@@ -367,8 +364,15 @@ public enum Option {
                                                                                            false))
                                                  .collect(Collectors.toCollection(LinkedHashSet :: new));
 
-            String formatted = formatAbbreviatedList(platforms);
-            super.help(log, log.localize(PrefixKind.JAVAC, descrKey, formatted));
+            StringBuilder targets = new StringBuilder();
+            String delim = "";
+            for (String platform : platforms) {
+                targets.append(delim);
+                targets.append(platform);
+                delim = ", ";
+            }
+
+            super.help(log, log.localize(PrefixKind.JAVAC, descrKey, targets.toString()));
         }
     },
 
@@ -1363,29 +1367,6 @@ public enum Option {
 
         // Finally, show the description
         log.printRawLines(WriterKind.STDOUT, LARGE_INDENT + descr.replace("\n", "\n" + LARGE_INDENT));
-    }
-
-    private static String formatAbbreviatedList(Collection<String> values) {
-        List<String> list = (values instanceof List)
-                ? (List<String>) values
-                : new ArrayList<>(values);
-
-        int size = list.size();
-        if (size == 0) {
-            return "";
-        }
-        if (size <= 6) {
-            return String.join(", ", list);
-        }
-        StringJoiner sj = new StringJoiner(", ");
-        for (int i = 0; i < 3; i++) {
-            sj.add(list.get(i));
-        }
-        sj.add("...");
-        for (int i = size - 3; i < size; i++) {
-            sj.add(list.get(i));
-        }
-        return sj.toString();
     }
 
     /**
