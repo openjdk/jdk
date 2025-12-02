@@ -1482,8 +1482,9 @@ Node* PhiNode::Identity(PhaseGVN* phase) {
     Node* phi_reg = region();
     for (DUIterator_Fast imax, i = phi_reg->fast_outs(imax); i < imax; i++) {
       Node* u = phi_reg->fast_out(i);
-      assert(!u->is_Phi() || (u->in(0) == phi_reg && u->req() == phi_len), "");
+      assert(!u->is_Phi() || u->in(0) == phi_reg, "");
       if (u->is_Phi() && u->as_Phi()->type() == Type::MEMORY && u->adr_type() == TypePtr::BOTTOM &&
+          u->req() == phi_len &&
           has_same_inputs_as(u)) {
         return u;
       }
