@@ -586,7 +586,6 @@ java/net/MulticastSocket/Test.java                              7145658,8308807 
 
 # jdk_nio
 
-java/nio/channels/Channels/SocketChannelStreams.java            8317838 aix-ppc64
 java/nio/channels/AsyncCloseAndInterrupt.java                   8368290 macosx-26.0.1
 
 java/nio/channels/DatagramChannel/AdaptorMulticasting.java      8308807,8144003 aix-ppc64,macosx-all
