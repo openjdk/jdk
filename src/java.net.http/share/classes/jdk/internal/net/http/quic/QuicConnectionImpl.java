@@ -1987,7 +1987,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             case NONE -> throw new InternalError("Unrecognized packet type");
         }
         // packet has been processed successfully - connection isn't idle (RFC-9000, section 10.1)
-        this.terminator.keepAlive();
+        this.terminator.markActive();
         if (packetSpace != null) {
             packetSpace.packetReceived(
                     packetType,
@@ -2819,7 +2819,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         // RFC-9000, section 10.1: An endpoint also restarts its idle timer when sending
         // an ack-eliciting packet ...
         if (packet.isAckEliciting()) {
-            this.terminator.keepAlive();
+            this.terminator.markActive();
         }
     }
 
