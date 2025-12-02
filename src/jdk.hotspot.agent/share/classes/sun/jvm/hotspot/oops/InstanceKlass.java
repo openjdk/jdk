@@ -62,9 +62,9 @@ public class InstanceKlass extends Klass {
   private static int CLASS_STATE_FULLY_INITIALIZED;
   private static int CLASS_STATE_INITIALIZATION_ERROR;
 
-  public long     getAccessFlags()      { return            accessFlags.getValue(this);  }
+  public long     getAccessFlags()          { return            accessFlags.getValue(this); }
   // Convenience routine
-  public AccessFlags getAccessFlagsObj(){ return new AccessFlags(getAccessFlags());      }
+  public AccessFlags getAccessFlagsObj()    { return new AccessFlags(getAccessFlags()); }
 
   public boolean isPublic()                 { return getAccessFlagsObj().isPublic(); }
   public boolean isFinal()                  { return getAccessFlagsObj().isFinal(); }
