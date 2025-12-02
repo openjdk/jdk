@@ -63,7 +63,6 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   err = jvmti->SetHeapSamplingInterval(10);
   check_jvmti_error(err, "SetHeapSamplingInterval");
 
-
   err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_SAMPLED_OBJECT_ALLOC, nullptr);
   check_jvmti_error(err, "SetEventNotificationMode");
 
