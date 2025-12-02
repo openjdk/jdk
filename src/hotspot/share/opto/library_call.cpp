@@ -4782,7 +4782,7 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   // object header is not a constant.  We must check and fetch explicitly.
   const TypeInstPtr* t = _gvn.type(obj)->isa_instptr();
   if (t != nullptr && t->const_oop() != nullptr) {
-    jint hash = t->const_oop()->identity_hash_or_zero();
+    jint hash = t->const_oop()->identity_hash_or_no_hash();
     if (hash != 0) {
       result_reg->init_req(_fast_path, control());
       result_val->init_req(_fast_path, _gvn.intcon(hash));
