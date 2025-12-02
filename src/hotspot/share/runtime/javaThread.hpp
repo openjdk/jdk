@@ -764,8 +764,9 @@ public:
   // - is in a VTMS transition (_is_in_VTMS_transition)
   // - is in an interruptLock or similar critical section (_is_disable_suspend)
   // - JVMTI is making a Java upcall (_is_in_java_upcall)
-  bool should_hide_jvmti_events() const          { return _is_in_VTMS_transition || _is_disable_suspend
-    || _is_in_java_upcall || _jvmti_events_disabled != 0; }
+  bool should_hide_jvmti_events() const {
+    return _is_in_VTMS_transition || _is_disable_suspend || _is_in_java_upcall || _jvmti_events_disabled != 0;
+  }
 
   bool on_monitor_waited_event()             { return _on_monitor_waited_event; }
   void set_on_monitor_waited_event(bool val) { _on_monitor_waited_event = val; }
