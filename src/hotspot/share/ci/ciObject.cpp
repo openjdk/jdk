@@ -227,24 +227,24 @@ bool ciObject::should_be_constant() {
 // ------------------------------------------------------------------
 // ciObject::identity_hash_or_no_hash
 //
-// The identity hash code of an object, if a hash has been computed.
-jint ciObject::identity_hash_or_no_hash() {
+// The identity hash code of an object or an empty constant if a hash is not computed yet.
+// Observed value is cached, so it doesn't change during compilation.
+ciConstant ciObject::identity_hash() {
   if (!is_null_object()) {
-    { // Handle identity hash as if it were a field.
-      ciConstant value = check_constant_value_cache(IDENTITY_HASH_OFFSET, T_INT);
-      if (value.is_valid()) {
-        return value.as_int();
-      }
+    // Handle identity hash as if it were a field.
+    ciConstant value = check_constant_value_cache(IDENTITY_HASH_OFFSET, T_INT);
+    if (!value.is_valid()) {
+      VM_ENTRY_MARK;
+      jint identity_hash = checked_cast<jint>(get_oop()->fast_identity_hash_or_no_hash());
+      value = ciConstant(T_INT, identity_hash);
+      // Cache observed state so it doesn't change during compilation.
+      add_to_constant_value_cache(IDENTITY_HASH_OFFSET, value);
     }
-    VM_ENTRY_MARK;
-    oop obj = get_oop();
-    jint identity_hash = checked_cast<jint>(obj->fast_identity_hash_or_no_hash());
-    add_to_constant_value_cache(IDENTITY_HASH_OFFSET,
-                                ciConstant(T_INT, identity_hash));
-    return identity_hash;
-  } else {
-    return markWord::no_hash;
+    if (value.as_int() != markWord::no_hash) {
+      return value;
+    }
   }
+  return ciConstant(); // no hash computed
 }
 
 // ------------------------------------------------------------------

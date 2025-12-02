@@ -184,7 +184,7 @@ public:
     return (ciTypeArray*)this;
   }
 
-  jint identity_hash_or_no_hash();
+  ciConstant identity_hash();
 
   // Print debugging output about this ciObject.
   void print(outputStream* st);
