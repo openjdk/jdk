@@ -307,9 +307,13 @@ HeapWord* ParallelScavengeHeap::mem_allocate_cas_noexpand(size_t size, bool is_t
 
 HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size, bool is_tlab) {
   for (uint loop_count = 0; /* empty */; ++loop_count) {
-    HeapWord* result = mem_allocate_cas_noexpand(size, is_tlab);
-    if (result != nullptr) {
-      return result;
+    HeapWord* result;
+    {
+      ConditionalMutexLocker locker(Heap_lock, !is_init_completed());
+      result = mem_allocate_cas_noexpand(size, is_tlab);
+      if (result != nullptr) {
+        return result;
+      }
     }
 
     // Read total_collections() under the lock so that multiple
@@ -326,10 +330,15 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size, bool is_tlab) {
       }
 
       if (!is_init_completed()) {
-        // Can't do GC; try heap expansion to satisfy the request.
-        result = expand_heap_and_allocate(size, is_tlab);
-        if (result != nullptr) {
-          return result;
+        // Double checked locking, this ensure that is_init_completed() does not
+        // transition while expanding the heap.
+        MonitorLocker ml(InitCompleted_lock, Monitor::_no_safepoint_check_flag);
+        if (!is_init_completed()) {
+          // Can't do GC; try heap expansion to satisfy the request.
+          result = expand_heap_and_allocate(size, is_tlab);
+          if (result != nullptr) {
+            return result;
+          }
         }
       }
 

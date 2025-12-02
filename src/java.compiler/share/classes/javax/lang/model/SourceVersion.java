@@ -476,7 +476,7 @@ public enum SourceVersion {
      * @since 26
      *
      * @see <a
-     * href="https://docs.oracle.com/javase/specs/jls/se26/html/index.html">
+     * href="https://docs.oracle.com/en/java/javase/26/docs/specs/jls/index.html">
      * <cite>The Java Language Specification, Java SE 26 Edition</cite></a>
      */
     RELEASE_26,
