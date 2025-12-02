@@ -617,7 +617,7 @@ public:
     // '-XX:VerifyIterativeGVN=1000'
     return ((VerifyIterativeGVN % 10000) / 1000) == 1;
   }
-  static bool is_verify_extra() {
+  static bool is_verify_invariants() {
     // '-XX:VerifyIterativeGVN=10000'
     return ((VerifyIterativeGVN % 100000) / 10000) == 1;
   }

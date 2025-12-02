@@ -1077,7 +1077,7 @@ void PhaseIterGVN::verify_optimize() {
   if (is_verify_Value() ||
       is_verify_Ideal() ||
       is_verify_Identity() ||
-      is_verify_extra()) {
+      is_verify_invariants()) {
     ResourceMark rm;
     Unique_Node_List worklist;
     bool failure = false;
@@ -1089,7 +1089,7 @@ void PhaseIterGVN::verify_optimize() {
       if (is_verify_Ideal())    { failure |= verify_Ideal_for(n, false); }
       if (is_verify_Ideal())    { failure |= verify_Ideal_for(n, true); }
       if (is_verify_Identity()) { failure |= verify_Identity_for(n); }
-      if (is_verify_extra())    { failure |= verify_node_invariants_for(n); }
+      if (is_verify_invariants()) { failure |= verify_node_invariants_for(n); }
       // traverse all inputs and outputs
       for (uint i = 0; i < n->req(); i++) {
         if (n->in(i) != nullptr) {
