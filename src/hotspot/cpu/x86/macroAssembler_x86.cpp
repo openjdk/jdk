@@ -4816,18 +4816,19 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   //   B. Fast: no receiver in the table, and the table is full
   //   C. Slow: no receiver in the table, free slots in the table
   //
-  // The performance of cases A and B is important, this is where bulk of the code
-  // would end up executing. Well-behaved code, especially with larger TypeProfileWidth,
-  // would almost exclusively be in case A. The case C performance is not essential,
-  // its job is to deal with installation races. We need to make sure that rows are
-  // only claimed once. This makes sure we never overwrite a row for another receiver
-  // and never duplicate the receivers in the list.
+  // The case A performance is most important, as perfectly-behaved code would end up
+  // there, especially with larger TypeProfileWidth. The case B performance is
+  // important as well, this is where bulk of code would land for normally megamorphic
+  // cases. The case C performance is not essential, its job is to deal with installation
+  // races, we optimize for code density instead. Case C needs to make sure that receiver
+  // rows are only claimed once. This makes sure we never overwrite a row for another
+  // receiver and never duplicate the receivers in the list, making profile type-accurate.
   //
-  // It is tempting to combine these cases into a single loop, and claim the first
-  // free slot without checking the rest of the table. But, profiling code should tolerate
-  // free slots in MDO. Therefore, the receiver we need might be _after_ the free slot.
-  // Therefore, we need to let at least full scan to complete, before trying to install
-  // new slots.
+  // It is very tempting to handle these cases in a single loop, and claim the first slot
+  // without checking the rest of the table. But, profiling code should tolerate free slots
+  // in the table, as class unloading can clear them. After such cleanup, the receiver
+  // we need might be _after_ the free slot. Therefore, we need to let at least full scan
+  // to complete, before trying to install new slots.
   //
   // This code is effectively:
   //
