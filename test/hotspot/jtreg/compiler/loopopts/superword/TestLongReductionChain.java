@@ -35,7 +35,7 @@ import java.util.Random;
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=1000 -XX:MaxVectorSize=8 -Xbatch
  *                   -XX:CompileCommand=compileonly,${test.main.class}::test
  *                   ${test.main.class}
- * @run driver ${test.main.class}
+ * @run main ${test.main.class}
  */
 
 public class TestLongReductionChain {

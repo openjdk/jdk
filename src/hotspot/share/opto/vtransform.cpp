@@ -41,8 +41,9 @@ void VTransformGraph::add_vtnode(VTransformNode* vtnode) {
   )
 
 void VTransformOptimize::worklist_push(VTransformNode* vtn) {
-  if (_worklist_set.test_set(vtn->_idx)) { return; }
-  _worklist.push(vtn);
+  if (!_worklist_set.test_set(vtn->_idx)) {
+    _worklist.push(vtn);
+  }
 }
 
 VTransformNode* VTransformOptimize::worklist_pop() {
