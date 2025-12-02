@@ -385,10 +385,10 @@ public sealed class PacketSpaceManager implements PacketSpace
             }
             packetEmitter.checkAbort(PacketSpaceManager.this.packetNumberSpace);
             // Handle is called from within the executor
-            var nextDeadline = this.nextDeadline;
+            Deadline newDeadline;
             Deadline now = now();
-            congestionController.updatePacer(now);
             do {
+                congestionController.updatePacer(now);
                 transmitNow = false;
                 var closed = !isOpenForTransmission();
                 if (closed) {
@@ -534,16 +534,17 @@ public sealed class PacketSpaceManager implements PacketSpace
                     packetEmitter.ptoBackoffIncreased(PacketSpaceManager.this, backoff);
                 }
 
-                // if nextDeadline is not Deadline.MAX the task will be
+                // if newDeadline is not Deadline.MAX the task will be
                 // automatically rescheduled.
                 if (debug.on()) debug.log("handle: refreshing deadline");
-                nextDeadline = computeNextDeadline();
-            } while(!nextDeadline.isAfter(now));
+                newDeadline = computeNextDeadline();
+                now = now();
+            } while(!newDeadline.isAfter(now));
 
-            logNoDeadline(nextDeadline, true);
-            if (Deadline.MAX.equals(nextDeadline)) return;
+            logNoDeadline(newDeadline, true);
+            if (Deadline.MAX.equals(newDeadline)) return;
             // we have a new deadline
-            packetEmitter.reschedule(this, nextDeadline);
+            packetEmitter.reschedule(this, newDeadline);
         }
 
         /**

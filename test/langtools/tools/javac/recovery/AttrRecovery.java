@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8301580 8322159 8333107 8332230 8338678 8351260 8366196
+ * @bug 8301580 8322159 8333107 8332230 8338678 8351260 8366196 8372336
  * @summary Verify error recovery w.r.t. Attr
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -32,11 +32,14 @@
  * @run main AttrRecovery
  */
 
+import com.sun.source.tree.MemberReferenceTree;
+import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -392,6 +395,104 @@ public class AttrRecovery extends TestRunner {
 
         if (!Objects.equals(actual, expected)) {
             error("Expected: " + expected + ", but got: " + actual);
+        }
+    }
+
+    @Test //JDK-8372336
+    public void testCompletionFailureNoBreakInvocation() throws Exception {
+        Path curPath = Path.of(".");
+        Path lib = curPath.resolve("lib");
+        Path classes = lib.resolve("classes");
+        Files.createDirectories(classes);
+        new JavacTask(tb)
+            .outdir(classes)
+            .sources("""
+                     package test;
+                     public class Intermediate extends Base {}
+                     """,
+                     """
+                     package test;
+                     public class Base {
+                         public int get() {
+                             return -1;
+                         }
+                     }
+                     """)
+            .run()
+            .writeAll();
+
+        Files.delete(classes.resolve("test").resolve("Base.class"));
+
+        record TestCase(String code, String... expectedErrors) {}
+        TestCase[] testCases = new TestCase[] {
+            new TestCase("""
+                         package test;
+                         public class Test {
+                             private void test(Intermediate i) {
+                                 int j = i != null ? i.get() : -1;
+                             }
+                         }
+                         """,
+                         "Test.java:4:30: compiler.err.cant.access: test.Base, (compiler.misc.class.file.not.found: test.Base)",
+                         "1 error"),
+            new TestCase("""
+                         package test;
+                         public class Test {
+                             private void test(Intermediate i) {
+                                 i.get();
+                             }
+                         }
+                         """,
+                         "Test.java:4:10: compiler.err.cant.access: test.Base, (compiler.misc.class.file.not.found: test.Base)",
+                         "1 error")
+        };
+
+        for (TestCase tc : testCases) {
+            List<String> actual = new JavacTask(tb)
+                    .options("-XDrawDiagnostics", "-XDdev")
+                    .classpath(classes)
+                    .sources(tc.code())
+                    .outdir(curPath)
+                    .callback(task -> {
+                        task.addTaskListener(new TaskListener() {
+                            @Override
+                            public void finished(TaskEvent e) {
+                                if (e.getKind() != TaskEvent.Kind.ANALYZE) {
+                                    return ;
+                                }
+                                Trees trees = Trees.instance(task);
+                                new TreePathScanner<Void, Void>() {
+                                    @Override
+                                    public Void visitMethodInvocation(MethodInvocationTree node, Void p) {
+                                        if (!node.toString().contains("super")) {
+                                            verifyElement();
+                                        }
+                                        return super.visitMethodInvocation(node, p);
+                                    }
+                                    @Override
+                                    public Void visitMemberReference(MemberReferenceTree node, Void p) {
+                                        verifyElement();
+                                        return super.visitMemberReference(node, p);
+                                    }
+                                    private void verifyElement() {
+                                        Element el = trees.getElement(getCurrentPath());
+                                        if (!el.getSimpleName().contentEquals("get")) {
+                                            error("Expected good Element, but got: " + el);
+                                        }
+                                    }
+                                }.scan(e.getCompilationUnit(), null);
+                            }
+                        });
+                    })
+                    .run(Expect.FAIL)
+                    .writeAll()
+                    .getOutputLines(OutputKind.DIRECT);
+
+            List<String> expected = List.of(tc.expectedErrors);
+
+            if (!Objects.equals(actual, expected)) {
+                error("Expected: " + expected + ", but got: " + actual);
+            }
         }
     }
 }
