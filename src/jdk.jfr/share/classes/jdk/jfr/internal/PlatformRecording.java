@@ -750,7 +750,7 @@ public final class PlatformRecording implements AutoCloseable {
             // Mitigate races against other processes
             FileLock l = fc.tryLock();
             if (l == null) {
-                Logger.log(LogTag.JFR, LogLevel.WARN, "Dump operation skipped for recording \"" + name + "\" (" + id + "). File " + path.getRealPathText() + " is locked by other dump operation or activity.");
+                Logger.log(LogTag.JFR, LogLevel.INFO, "Dump operation skipped for recording \"" + name + "\" (" + id + "). File " + path.getRealPathText() + " is locked by other dump operation or activity.");
                 return;
             }
             long bytes = cc.transferTo(fc);
