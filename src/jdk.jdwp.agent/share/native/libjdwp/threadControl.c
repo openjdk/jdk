@@ -70,6 +70,7 @@ typedef struct ThreadNode {
     unsigned int popFrameEvent : 1;
     unsigned int popFrameProceed : 1;
     unsigned int popFrameThread : 1;
+    unsigned int frameGeneration_accessed:1; /* true if frameGeneration accessed to produce a FrameID */
     EventIndex current_ei; /* Used to determine if we are currently handling an event on this thread. */
     jobject pendingStop;   /* Object we are throwing to stop the thread (ThreadReferenceImpl.stop). */
     jint suspendCount;     /* Number of outstanding suspends from the debugger. */
@@ -606,6 +607,7 @@ freeUnusedVThreadNode(JNIEnv *env, ThreadNode* node)
         !node->popFrameEvent &&
         !node->popFrameProceed &&
         !node->popFrameThread &&
+        !node->frameGeneration_accessed &&
         node->pendingStop == NULL)
     {
         removeNode(node);
@@ -2673,6 +2675,7 @@ threadControl_getFrameGeneration(jthread thread)
 
         if (node != NULL) {
             frameGeneration = node->frameGeneration;
+            node->frameGeneration_accessed = JNI_TRUE;
         }
     }
     debugMonitorExit(threadLock);
