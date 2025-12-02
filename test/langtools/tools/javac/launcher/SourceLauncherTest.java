@@ -799,6 +799,22 @@ public class SourceLauncherTest extends TestRunner {
         }
 
     @Test
+    public void testPrivateConstructor(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+                """
+                class PrivateConstructor {
+                    private PrivateConstructor() {}
+                    void main() {}
+                }
+                """);
+        testError(base.resolve("PrivateConstructor.java"), "",
+                """
+                error: no non-private zero argument constructor found in class PrivateConstructor
+                remove private from existing constructor or define as:
+                   public PrivateConstructor()""");
+    }
+
+    @Test
     public void testAbstractClassInstanceMain(Path base) throws IOException {
         tb.writeJavaFiles(base,
                           """
@@ -904,14 +920,6 @@ public class SourceLauncherTest extends TestRunner {
         }
     }
 
-    void checkContains(String name, String found, String expect) {
-        expect = expect.replace("\n", tb.lineSeparator);
-        out.println(name + ": " + found);
-        if (!found.contains(expect)) {
-            error("Expected output not found: " + expect);
-        }
-    }
-
     void checkEqual(String name, List<String> found, List<String> expect) {
         out.println(name + ": " + found);
         tb.checkEqual(expect, found);
@@ -939,7 +947,6 @@ public class SourceLauncherTest extends TestRunner {
     }
 
     void checkFault(String name, Throwable found, String expect) {
-        expect = expect.replace("\n", tb.lineSeparator);
         out.println(name + ": " + found);
         if (found == null) {
             error("No exception thrown; expected Fault");
@@ -947,8 +954,14 @@ public class SourceLauncherTest extends TestRunner {
             if (!(found instanceof Fault)) {
                 error("Unexpected exception; expected Fault");
             }
-            if (!(found.getMessage().equals(expect))) {
-                error("Unexpected detail message; expected: " + expect);
+            String actual = found.getMessage();
+            List<String> actualLines = actual.lines().toList();
+            List<String> expectLines = expect.lines().toList();
+            if (!(actualLines.equals(expectLines))) {
+                error("Unexpected detail message; expected: \n"
+                      + expect.indent(2)
+                      + "\nactual:\n"
+                      + actual.indent(2));
             }
         }
     }
