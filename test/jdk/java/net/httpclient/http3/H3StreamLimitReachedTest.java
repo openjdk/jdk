@@ -125,7 +125,7 @@ import static org.testng.Assert.assertFalse;
 
 public class H3StreamLimitReachedTest implements HttpServerAdapters {
 
-    private static final String CLASS_NAME = H3ConnectionPoolTest.class.getSimpleName();
+    private static final String CLASS_NAME = H3StreamLimitReachedTest.class.getSimpleName();
 
     static int altsvcPort, https2Port, http3Port;
     static Http3TestServer http3OnlyServer;
