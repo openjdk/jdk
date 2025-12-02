@@ -31,7 +31,6 @@ SampledObjectAlloc(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jobject object,
   LOG("Sampled object\n");
 }
 
-
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jvmtiEnv* jvmti = nullptr;
   jvmtiCapabilities caps;
