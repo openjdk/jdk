@@ -713,13 +713,16 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     // may invalidate the old block, including its header.
     assert(mem_tag == header->mem_tag(), "weird NMT type mismatch (new:\"%s\" != old:\"%s\")\n",
            NMTUtil::tag_to_name(mem_tag), NMTUtil::tag_to_name(header->mem_tag()));
-    bool success = false;
+    bool within_malloc_limit = !((size > old_size) && MemTracker::check_exceeds_limit(size - old_size, mem_tag));
+    bool success = within_malloc_limit;
     // Observe MallocLimit
-    if (!((size > old_size) && MemTracker::check_exceeds_limit(size - old_size, mem_tag))) {
+    if (success) {
       // If realloc succeeds, the header is freed. Get FreeInfo before that.
       MallocHeader::FreeInfo free_info = header->free_info();
       void* const new_outer_ptr = permit_forbidden_function::realloc(header, new_outer_size);
-      if (new_outer_ptr != nullptr) {
+      bool realloc_succeeded = new_outer_ptr != nullptr;
+      success = realloc_succeeded;
+      if (success) {
         // realloc(3) succeeded, variable header now points to invalid memory and we need to deaccount the old block.
         MemTracker::deaccount(free_info);
         // After a successful realloc(3), we account the resized block with its new size

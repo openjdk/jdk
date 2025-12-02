@@ -124,6 +124,7 @@ class MallocHeader {
   inline static OutTypeParam resolve_checked_impl(InTypeParam memblock);
 
 public:
+  static constexpr size_t footer_size = sizeof(uint16_t);
   // Contains all of the necessary data to to deaccount block with NMT.
   struct FreeInfo {
     const size_t size;
@@ -133,10 +134,10 @@ public:
 
   inline MallocHeader(size_t size, MemTag mem_tag, uint32_t mst_marker);
 
-  inline static size_t malloc_overhead() { return sizeof(MallocHeader) + sizeof(uint16_t); }
+  inline static size_t malloc_overhead() { return sizeof(MallocHeader) + footer_size; }
 
   static MallocHeader* kill_block(void* memblock);
-  static MallocHeader* revive_block(void* memblock);
+  static void revive_block(void* memblock);
 
   inline size_t size()  const { return _size; }
   inline MemTag mem_tag() const { return _mem_tag; }

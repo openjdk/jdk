@@ -198,22 +198,20 @@ TEST_VM_FATAL_ERROR_MSG(NMT, memory_corruption_call_stack, ".*header canary.*") 
 static void test_write_header() {
   const size_t SIZE = 10;
   char* p = (char*)os::malloc(SIZE, mtTest);
-  uint16_t* canary_ptr = (uint16_t*)((char*)p - sizeof(uint16_t));
-  *canary_ptr = 1;
+  // sizeof(MallocHeader) == 16, pick anywheree in [p - 16, p)
+  *(uint16_t*)((char*)p - 5) = 1;
 }
 
 static void test_read_header() {
   const size_t SIZE = 10;
   char* p = (char*)os::malloc(SIZE, mtTest);
-  uint16_t* canary_ptr = (uint16_t*)((char*)p - sizeof(uint16_t));
-  uint16_t read_canary = 0;
-  read_canary = *canary_ptr;
+  // sizeof(MallocHeader) == 16, pick anywheree in [p - 16, p)
+  uint16_t read_canary = *(uint16_t*)((char*)p - 5);
 }
 
 static void test_write_footer() {
   const size_t SIZE = 10;
   char* p = (char*)os::malloc(SIZE, mtTest);
-  MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
   uint16_t* footer_ptr = (uint16_t*)(p + SIZE);
   *footer_ptr = 1;
 }
@@ -221,7 +219,6 @@ static void test_write_footer() {
 static void test_read_footer() {
   const size_t SIZE = 10;
   char* p = (char*)os::malloc(SIZE, mtTest);
-  MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
   uint16_t* footer_ptr = (uint16_t*)(p + SIZE);
   uint16_t read_footer = *footer_ptr;
 }
@@ -230,24 +227,22 @@ static void test_write_header_after_realloc() {
   const size_t SIZE = 10;
   char* p = (char*)os::malloc(SIZE, mtTest);
   p = (char*)os::realloc(p, 2 * SIZE, mtTest);
-  uint16_t* canary_ptr = (uint16_t*)((char*)p - sizeof(uint16_t));
-  *canary_ptr = 1;
+  // sizeof(MallocHeader) == 16, pick anywheree in [p - 16, p)
+  *(uint16_t*)((char*)p - 5) = 1;
 }
 
 static void test_read_header_after_realloc() {
   const size_t SIZE = 10;
   char* p = (char*)os::malloc(SIZE, mtTest);
   p = (char*)os::realloc(p, 2 * SIZE, mtTest);
-  uint16_t* canary_ptr = (uint16_t*)((char*)p - sizeof(uint16_t));
-  uint16_t read_canary = 0;
-  read_canary = *canary_ptr;
+  // sizeof(MallocHeader) == 16, pick anywheree in [p - 16, p)
+  uint16_t read_canary = *(uint16_t*)((char*)p - 5);
 }
 
 static void test_write_footer_after_realloc() {
   const size_t SIZE = 10;
   char* p = (char*)os::malloc(SIZE, mtTest);
   p = (char*)os::realloc(p, 2 * SIZE, mtTest);
-  MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
   uint16_t* footer_ptr = (uint16_t*)(p + 2 * SIZE);
   *footer_ptr = 1;
 }
@@ -256,7 +251,6 @@ static void test_read_footer_after_realloc() {
   const size_t SIZE = 10;
   char* p = (char*)os::malloc(SIZE, mtTest);
   p = (char*)os::realloc(p, 2 * SIZE, mtTest);
-  MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
   uint16_t* footer_ptr = (uint16_t*)(p + 2 * SIZE);
   uint16_t read_footer = *footer_ptr;
 }
