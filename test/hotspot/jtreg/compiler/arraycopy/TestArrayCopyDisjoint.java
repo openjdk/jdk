@@ -26,7 +26,7 @@ import java.util.Random;
 
 /**
  * @test
- * @bug 8251871 8285301
+ * @bug 8251871 8285301 8371964
  * @summary Optimize arrayCopy using AVX-512 masked instructions.
  *
  * @run main/othervm/timeout=600 -XX:-TieredCompilation -Xbatch -XX:+IgnoreUnrecognizedVMOptions
