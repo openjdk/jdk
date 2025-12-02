@@ -569,7 +569,7 @@ GetJavaProperties(JNIEnv* env)
     /*
      *  user.language
      *  user.script, user.country, user.variant (if user's environment specifies them)
-     *  file.encoding
+     *  native.encoding
      */
     {
         /*

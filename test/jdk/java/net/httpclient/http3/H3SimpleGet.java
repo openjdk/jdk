@@ -148,6 +148,18 @@
  *                      H3SimpleGet
  */
 
+/*
+ * @test id=reno-cc
+ * @bug 8087112
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestUtil
+ *        jdk.httpclient.test.lib.http2.Http2TestServer
+ * @run testng/othervm/timeout=480 -Djdk.internal.httpclient.quic.congestionController=reno
+ *                     H3SimpleGet
+ * @summary send multiple GET requests using Reno congestion controller
+ */
+
+
 // Interesting additional settings for debugging and manual testing:
 // -----------------------------------------------------------------
 // -Djdk.httpclient.HttpClient.log=requests,errors,quic:retransmit:control,http3
