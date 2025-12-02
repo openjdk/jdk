@@ -145,7 +145,12 @@ public class SuspendWithObjectMonitorWaitBase {
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length > 2) {
+        if (args.length == 0) {
+            System.err.println("Invalid number of arguments, there should be at least a test_case given.");
+            usage();
+        }
+
+        if (args.length > 3) {
             System.err.println("Invalid number of arguments, there are too many arguments.");
             usage();
         }
@@ -159,11 +164,29 @@ public class SuspendWithObjectMonitorWaitBase {
             throw ule;
         }
 
+        int testCase = 0;
         int timeMax = 0;
         for (int argIndex = 0; argIndex < args.length; argIndex++) {
-            if ("-p".equals(args[argIndex])) {
+            if (args[argIndex].equals("-p")) {
                 // Handle optional -p arg regardless of position.
                 printDebug = true;
+                continue;
+            }
+
+            if (testCase == 0) {
+                try {
+                    // testCase must be the first non-optional arg.
+                    testCase = Integer.parseUnsignedInt(args[argIndex]);
+                    log("testCase = " + testCase);
+                } catch (NumberFormatException nfe) {
+                    System.err.println("'" + args[argIndex] +
+                            "': invalid test_case value.");
+                    usage();
+                }
+                if (testCase < 1 || testCase > 3) {
+                    System.err.println("Invalid test_case value: '" + testCase + "'");
+                    usage();
+                }
                 continue;
             }
 
@@ -180,7 +203,33 @@ public class SuspendWithObjectMonitorWaitBase {
                 timeMax = DEF_TIME_MAX;
             }
         }
-        SuspendWithObjectMonitorWaitBase test = new SuspendWithObjectMonitorWaitBase();
+
+        if (timeMax == 0) {
+            timeMax = DEF_TIME_MAX;
+        }
+        log("timeMax = " + timeMax);
+
+        if (testCase == 0) {
+            // Just -p was given.
+            System.err.println("Invalid number of arguments, no test_case given.");
+            usage();
+        }
+
+        SuspendWithObjectMonitorWaitBase test = null;
+        switch (testCase) {
+            case 1:
+                test = new SuspendWithObjectMonitorWait1();
+                break;
+            case 2:
+                test = new SuspendWithObjectMonitorWait2();
+                break;
+            case 3:
+                test = new SuspendWithObjectMonitorWait3();
+                break;
+            default:
+                // Impossible
+                break;
+        }
         int result = test.run(timeMax, System.out);
         System.exit(result + exit_delta);
     }

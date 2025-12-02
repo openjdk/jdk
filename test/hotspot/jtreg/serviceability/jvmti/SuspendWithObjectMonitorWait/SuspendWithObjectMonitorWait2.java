@@ -28,7 +28,7 @@
  * @requires vm.jvmti
  * @library /test/lib
  * @compile SuspendWithObjectMonitorWait2.java
- * @run main/othervm/native -agentlib:SuspendWithObjectMonitorWait SuspendWithObjectMonitorWait2
+ * @run main/othervm/native -agentlib:SuspendWithObjectMonitorWait SuspendWithObjectMonitorWait2 2
  */
 
 import java.io.PrintStream;
@@ -79,7 +79,7 @@ public class SuspendWithObjectMonitorWait2 extends SuspendWithObjectMonitorWaitB
         SuspendWithObjectMonitorWaitWorker waiter;    // waiter thread
         SuspendWithObjectMonitorWaitWorker resumer;    // resumer thread
 
-        System.out.println("About to execute for " + timeMax + " seconds.");
+        System.out.println("Test 2: About to execute for " + timeMax + " seconds.");
 
         long start_time = System.currentTimeMillis();
         while (System.currentTimeMillis() < start_time + (timeMax * 1000)) {
