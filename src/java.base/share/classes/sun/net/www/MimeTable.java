@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,9 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.net.FileNameMap;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Locale;
-import java.util.Hashtable;
+import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
@@ -43,10 +44,9 @@ public final class MimeTable implements FileNameMap {
     private static final int HASH_MARK = '#';
 
     /** Keyed by file extension (with the .), returns MimeEntries */
-    private final Hashtable<String, MimeEntry> extensionMap = new Hashtable<>();
+    private final Map<String, MimeEntry> extensionMap = load();
 
     private MimeTable() {
-        load();
     }
 
     private static final class DefaultInstanceHolder {
@@ -76,7 +76,7 @@ public final class MimeTable implements FileNameMap {
         }
     }
 
-    private void add(MimeEntry m) {
+    private static void add(MimeEntry m, Map<String, MimeEntry> extensionMap) {
         String[] exts = m.getExtensions();
         if (exts == null) {
             return;
@@ -102,7 +102,6 @@ public final class MimeTable implements FileNameMap {
         }
 
         return extensionMap.get(ext);
-
     }
 
     /**
@@ -128,11 +127,9 @@ public final class MimeTable implements FileNameMap {
         // If either no optional fragment was present, or the entry was not
         // found with the fragment stripped, then try again with the full name
         return findByFileExtension(fname);
-
     }
 
-    private synchronized void load() {
-        Properties entries = new Properties();
+    private static Map<String, MimeEntry> load() {
         File file;
         InputStream in;
 
@@ -144,7 +141,7 @@ public final class MimeTable implements FileNameMap {
             } catch (FileNotFoundException e) {
                 System.err.println("Warning: " + file.getPath()
                                    + " mime table not found.");
-                return;
+                return Map.of();
             }
         } else {
             in = MimeTable.class.getResourceAsStream("content-types.properties");
@@ -152,15 +149,16 @@ public final class MimeTable implements FileNameMap {
                 throw new InternalError("default mime table not found");
         }
 
+        Properties entries = new Properties();
         try (in) {
             entries.load(in);
         } catch (IOException e) {
             System.err.println("Warning: " + e.getMessage());
         }
-        parse(entries);
+        return parse(entries);
     }
 
-    private void parse(Properties entries) {
+    private static Map<String, MimeEntry> parse(Properties entries) {
         // first, strip out the platform-specific temp file template
         String tempFileTemplate = (String)entries.get("temp.file.template");
         if (tempFileTemplate != null) {
@@ -168,12 +166,15 @@ public final class MimeTable implements FileNameMap {
         }
 
         // now, parse the mime-type spec's
+        var extensionMap = new HashMap<String, MimeEntry>();
         Enumeration<?> types = entries.propertyNames();
         while (types.hasMoreElements()) {
             String type = (String)types.nextElement();
             String attrs = entries.getProperty(type);
-            parse(type, attrs);
+            MimeEntry newEntry = parse(type, attrs);
+            add(newEntry, extensionMap);
         }
+        return Map.copyOf(extensionMap);
     }
 
     //
@@ -203,7 +204,7 @@ public final class MimeTable implements FileNameMap {
     // associated with.
     //
 
-    private void parse(String type, String attrs) {
+    private static MimeEntry parse(String type, String attrs) {
         MimeEntry newEntry = new MimeEntry(type);
 
         // REMIND handle embedded ';' and '|' and literal '"'
@@ -212,8 +213,7 @@ public final class MimeTable implements FileNameMap {
             String pair = tokenizer.nextToken();
             parse(pair, newEntry);
         }
-
-        add(newEntry);
+        return newEntry;
     }
 
     private static void parse(String pair, MimeEntry entry) {
