@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /*
  * @test
  * @bug 8372787
- * @summary verify the behaviour of ModuleReader when using --patch-module
+ * @summary Test the behaviour of ModuleReader when using --patch-module
  * @comment patch the java.base module with a test specific resource
  * @compile/module=java.base java/lang/PatchedFoo.java
  * @run junit/othervm ${test.main.class}
