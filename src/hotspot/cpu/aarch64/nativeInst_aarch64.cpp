@@ -245,7 +245,7 @@ void NativeJump::insert(address code_pos, address target) {
   Instruction_aarch64::spatch((address)&insn, 25, 0, offset >> 2);
   AtomicAccess::store((volatile uint32_t*)code_pos, insn);
 }
-  
+
 //-------------------------------------------------------------------
 
 address NativeGeneralJump::jump_destination() const {

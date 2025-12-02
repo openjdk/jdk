@@ -127,17 +127,19 @@ void CompiledDirectCall::set_to_interpreted(const methodHandle& callee, address 
   //                 |end:            ;
   // forall(1:X0=0 \/ 1:X0=2)
   //
-  // However, the static call stub can also be reached via an indirect branch
-  // from the trampoline stub. In that case, the above guarantee does not apply,
-  // so directly removing the 'isb' would not ensure visibility of the updated
-  // instructions when the static call stub is reached through the trampoline stub.
+  // Generally, we keep the trampoline destination and the call destination
+  // the same, which means the static call stub is also reachable via an
+  // indirect branch from the trampoline stub. In that case, the above
+  // guarantee does not apply, so directly removing the 'isb' would not
+  // ensure visibility of the updated instructions when the static call
+  // stub is reached through the trampoline stub.
   //
-  // To ensure correctness, we patch 'isb' to 'nop'. Before doing so, we already update
-  // the 'MOV' instructions and enforce coherence between data writes and
+  // To ensure correctness, we patch 'isb' to 'b .+4'. Before doing so, we already
+  // update the 'MOV' instructions and enforce coherence between data writes and
   // instruction fetches within the same shareability domain by invoking
   // ICache::invalidate_range(). As confirmed by the litmus test below, when the
   // executing thread reaches the static call stub:
-  //   - If it observes the 'nop', it will also observe the updated 'MOV's (similarly
+  //   - If it observes the 'b .+4', it will also observe the updated 'MOV's (similarly
   //     to the case above where the thread reaches patched code via a patched direct
   //     branch).
   //   - Otherwise, it will execute the 'isb' - the instruction fetch ensures the
@@ -149,7 +151,7 @@ void CompiledDirectCall::set_to_interpreted(const methodHandle& callee, address 
   //
   //                               1:X0 = 0;
   // 0:X1 = instr:"MOV X0, #3";
-  // 0:X2 = instr:"nop";
+  // 0:X2 = instr:"b .+4";
   // 0:X3 = target;                1:X3 = target;
   // 0:X4 = P1:new;
   // 0:X5 = P1:patch;
@@ -185,7 +187,7 @@ void CompiledDirectCall::set_stub_to_clean(static_stub_Relocation* static_stub) 
   address stub = static_stub->addr();
   assert(stub != nullptr, "stub not found");
   assert(CompiledICLocker::is_safe(stub), "mt unsafe call");
-  // Patch 'nop' to 'isb'.
+  // Patch 'b .+4' to 'isb'.
   CodeBuffer stub_first_instruction(stub, Assembler::instruction_size);
   Assembler assembler(&stub_first_instruction);
   assembler.isb();

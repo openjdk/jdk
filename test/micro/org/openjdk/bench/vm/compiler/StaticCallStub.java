@@ -59,14 +59,10 @@ public class StaticCallStub {
             callInterpreted(i); // Make sure this is excluded from compilation
     }
 
-    @Fork(value = 1, jvmArgs = {
-        "-XX:+SegmentedCodeCache -XX:ReservedCodeCacheSize=200M"
-    })
-    public static class StaticCallStubNear extends StaticCallStub {}
+    @Fork(value = 1, jvmArgs = { "-XX:+SegmentedCodeCache", "-XX:ReservedCodeCacheSize=200M"})
+    public static class NearJump extends StaticCallStub {}
 
-    @Fork(value = 1, jvmArgs = {
-        "-XX:+SegmentedCodeCache -XX:ReservedCodeCacheSize=256M"
-    })
-    public static class StaticCallStubFar extends StaticCallStub {}
+    @Fork(value = 1, jvmArgs = {"-XX:+SegmentedCodeCache", "-XX:ReservedCodeCacheSize=256M"})
+    public static class FarJump extends StaticCallStub {}
 
 }
