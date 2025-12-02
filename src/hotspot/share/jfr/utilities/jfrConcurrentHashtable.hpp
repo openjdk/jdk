@@ -121,10 +121,8 @@ class JfrConcurrentHashTableHost : public JfrConcurrentHashtable<T, IdType, Tabl
   // id retrieval
   IdType id(unsigned hash, const T& data);
 
-  void clear();
   bool is_empty() const;
   bool is_nonempty() const { return !is_empty(); }
-
 
   template <typename Functor>
   void iterate_value(Functor& f);

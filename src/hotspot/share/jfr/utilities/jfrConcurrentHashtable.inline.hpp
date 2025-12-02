@@ -38,7 +38,7 @@ template <typename T, typename IdType, template <typename, typename> class Table
 inline void JfrConcurrentAscendingId<T, IdType, TableEntry>::on_link(TableEntry<T, IdType>* entry) {
   assert(entry != nullptr, "invariant");
   assert(entry->id() == 0, "invariant");
-  entry->set_id(AtomicAccess::fetch_then_and(&_id, static_cast<IdType>(1)));
+  entry->set_id(AtomicAccess::fetch_then_add(&_id, static_cast<IdType>(1)));
 }
 
 template <typename T, typename IdType, template <typename, typename> class TableEntry>
@@ -111,11 +111,6 @@ inline JfrConcurrentHashTableHost<T, IdType, TableEntry, Callback, TABLE_CAPACIT
 template <typename T, typename IdType, template <typename, typename> class TableEntry, typename Callback, unsigned TABLE_CAPACITY>
 inline JfrConcurrentHashTableHost<T, IdType, TableEntry, Callback, TABLE_CAPACITY>::JfrConcurrentHashTableHost(Callback* cb, unsigned initial_capacity /* 0 */) :
   JfrConcurrentHashtable<T, IdType, TableEntry>(initial_capacity == 0 ? TABLE_CAPACITY : initial_capacity), _callback(cb) {}
-
-template <typename T, typename IdType, template <typename, typename> class TableEntry, typename Callback, unsigned TABLE_CAPACITY>
-inline JfrConcurrentHashTableHost<T, IdType, TableEntry, Callback, TABLE_CAPACITY>::~JfrConcurrentHashTableHost() {
-  clear();
-}
 
 template <typename T, typename IdType, template <typename, typename> class TableEntry, typename Callback, unsigned TABLE_CAPACITY>
 inline bool JfrConcurrentHashTableHost<T, IdType, TableEntry, Callback, TABLE_CAPACITY>::is_empty() const {
@@ -213,10 +208,9 @@ class JfrConcurrentHashtableClear {
 };
 
 template <typename T, typename IdType, template <typename, typename> class TableEntry, typename Callback, unsigned TABLE_CAPACITY>
-inline void JfrConcurrentHashTableHost<T, IdType, TableEntry, Callback, TABLE_CAPACITY>::clear() {
+inline JfrConcurrentHashTableHost<T, IdType, TableEntry, Callback, TABLE_CAPACITY>::~JfrConcurrentHashTableHost() {
   JfrConcurrentHashtableClear<Entry, Callback> cls(_callback);
   this->iterate(cls);
-  memset((void*)this->bucket_addr(0), 0, this->capacity() * sizeof(typename JfrConcurrentHashtable<T, IdType, TableEntry>::Bucket));
 }
 
 template <typename Entry, typename Functor>
