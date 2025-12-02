@@ -76,9 +76,6 @@ NET_ThrowNew(JNIEnv *env, int errorNumber, char *msg) {
         jio_snprintf(fullMsg, sizeof(fullMsg), "socket closed: %s", msg);
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", fullMsg);
         break;
-    case EINTR:
-        JNU_ThrowByName(env, JNU_JAVAIOPKG "InterruptedIOException", msg);
-        break;
     default:
         errno = errorNumber;
         JNU_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", msg);
