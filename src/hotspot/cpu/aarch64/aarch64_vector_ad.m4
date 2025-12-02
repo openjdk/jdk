@@ -191,6 +191,8 @@ source %{
       case Op_XorReductionV:
       case Op_MinReductionV:
       case Op_MaxReductionV:
+      case Op_UMinReductionV:
+      case Op_UMaxReductionV:
         // Reductions with less than 8 bytes vector length are
         // not supported.
         if (length_in_bytes < 8) {
@@ -368,6 +370,8 @@ source %{
         return !VM_Version::use_neon_for_vector(vt->length_in_bytes());
       case Op_MinReductionV:
       case Op_MaxReductionV:
+      case Op_UMinReductionV:
+      case Op_UMaxReductionV:
         // For BYTE/SHORT/INT/FLOAT/DOUBLE types, we may prefer using NEON
         // instructions rather than SVE partial operations.
         return vt->element_basic_type() == T_LONG ||
@@ -2497,6 +2501,32 @@ REDUCE_MAXMIN_INT_PREDICATE(min, I, iRegIorL2I, MinReductionV)
 REDUCE_MAXMIN_INT_PREDICATE(min, L, iRegL,      MinReductionV)
 REDUCE_MAXMIN_FP_PREDICATE(min, F, fsrc, MinReductionV, sve_fminv, fmins)
 REDUCE_MAXMIN_FP_PREDICATE(min, D, dsrc, MinReductionV, sve_fminv, fmind)
+
+// -------------------- Vector reduction unsigned min/max ----------------------
+
+// reduction uminI
+REDUCE_MAXMIN_I_NEON(umin, UMinReductionV)
+REDUCE_MAXMIN_I_SVE(umin, UMinReductionV)
+
+// reduction uminL
+REDUCE_MAXMIN_L_NEON(umin, UMinReductionV)
+REDUCE_MAXMIN_L_SVE(umin, UMinReductionV)
+
+// reduction umin - predicated
+REDUCE_MAXMIN_INT_PREDICATE(umin, I, iRegIorL2I, UMinReductionV)
+REDUCE_MAXMIN_INT_PREDICATE(umin, L, iRegL,      UMinReductionV)
+
+// reduction umaxI
+REDUCE_MAXMIN_I_NEON(umax, UMaxReductionV)
+REDUCE_MAXMIN_I_SVE(umax, UMaxReductionV)
+
+// reduction umaxL
+REDUCE_MAXMIN_L_NEON(umax, UMaxReductionV)
+REDUCE_MAXMIN_L_SVE(umax, UMaxReductionV)
+
+// reduction umax - predicated
+REDUCE_MAXMIN_INT_PREDICATE(umax, I, iRegIorL2I, UMaxReductionV)
+REDUCE_MAXMIN_INT_PREDICATE(umax, L, iRegL,      UMaxReductionV)
 
 // ------------------------------ Vector reinterpret ---------------------------
 

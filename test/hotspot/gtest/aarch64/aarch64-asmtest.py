@@ -1871,6 +1871,12 @@ generate(ThreeRegNEONOp,
           ["sminp", "sminp", "8B"], ["sminp", "sminp", "16B"],
           ["sminp", "sminp", "4H"], ["sminp", "sminp", "8H"],
           ["sminp", "sminp", "2S"], ["sminp", "sminp", "4S"],
+          ["uminp", "uminp", "8B"], ["uminp", "uminp", "16B"],
+          ["uminp", "uminp", "4H"], ["uminp", "uminp", "8H"],
+          ["uminp", "uminp", "2S"], ["uminp", "uminp", "4S"],
+          ["umaxp", "umaxp", "8B"], ["umaxp", "umaxp", "16B"],
+          ["umaxp", "umaxp", "4H"], ["umaxp", "umaxp", "8H"],
+          ["umaxp", "umaxp", "2S"], ["umaxp", "umaxp", "4S"],
           ["sqdmulh", "sqdmulh", "4H"], ["sqdmulh", "sqdmulh", "8H"],
           ["sqdmulh", "sqdmulh", "2S"], ["sqdmulh", "sqdmulh", "4S"],
           ["shsubv", "shsub", "8B"], ["shsubv", "shsub", "16B"],
@@ -2252,7 +2258,7 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        ["uqsub", "ZPZ", "m", "dn"],
                       ])
 
-generate(SVEReductionOp, [["andv", 0], ["orv", 0], ["eorv", 0], ["smaxv", 0], ["sminv", 0],
+generate(SVEReductionOp, [["andv", 0], ["orv", 0], ["eorv", 0], ["smaxv", 0], ["sminv", 0], ["umaxv", 0], ["uminv", 0],
                           ["fminv", 2], ["fmaxv", 2], ["fadda", 2], ["uaddv", 0]])
 
 generate(AddWideNEONOp,

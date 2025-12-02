@@ -1041,6 +1041,22 @@ public:
   virtual int Opcode() const;
 };
 
+//------------------------------UMinReductionVNode--------------------------------------
+// Vector unsigned min byte, short, int, long as a reduction
+class UMinReductionVNode : public ReductionNode {
+public:
+  UMinReductionVNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------UMaxReductionVNode--------------------------------------
+// Vector unsigned max byte, short, int, long as a reduction
+class UMaxReductionVNode : public ReductionNode {
+public:
+  UMaxReductionVNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  virtual int Opcode() const;
+};
+
 //------------------------------CompressVNode--------------------------------------
 // Vector compress
 class CompressVNode: public VectorNode {
