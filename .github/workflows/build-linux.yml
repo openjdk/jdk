@@ -120,15 +120,15 @@ jobs:
           sudo apt install \
             gcc-${{ inputs.gcc-major-version }}${{ inputs.gcc-package-suffix }} \
             g++-${{ inputs.gcc-major-version }}${{ inputs.gcc-package-suffix }} \
-            libcups2-dev${{ steps.arch.outputs.suffix }} \
             libasound2-dev${{ steps.arch.outputs.suffix }} \
-            libfontconfig1-dev:${{ steps.arch.outputs.suffix }} \
-            libx11-dev:${{ steps.arch.outputs.suffix }} \
-            libxext-dev:${{ steps.arch.outputs.suffix }} \
-            libxrender-dev:${{ steps.arch.outputs.suffix }} \
-            libxrandr-dev:${{ steps.arch.outputs.suffix }} \
-            libxtst-dev:${{ steps.arch.outputs.suffix }} \
-            libxt-dev:${{ steps.arch.outputs.suffix }} \
+            libcups2-dev${{ steps.arch.outputs.suffix }} \
+            libfontconfig1-dev${{ steps.arch.outputs.suffix }} \
+            libx11-dev${{ steps.arch.outputs.suffix }} \
+            libxext-dev${{ steps.arch.outputs.suffix }} \
+            libxrandr-dev${{ steps.arch.outputs.suffix }} \
+            libxrender-dev${{ steps.arch.outputs.suffix }} \
+            libxt-dev${{ steps.arch.outputs.suffix }} \
+            libxtst-dev${{ steps.arch.outputs.suffix }} \
             ${{ inputs.apt-extra-packages }}
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ inputs.gcc-major-version }} 100 --slave /usr/bin/g++ g++ /usr/bin/g++-${{ inputs.gcc-major-version }}
 
