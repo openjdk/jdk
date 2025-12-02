@@ -210,6 +210,9 @@ inline D AtomicAccess::PlatformAdd<8>::add_then_fetch(D volatile* dest, I inc,
 // The return value is the (unchanged) value from memory as it was when the
 // replacement succeeded.
 template<>
+struct AtomicAccess::PlatformXchg<1> : AtomicAccess::XchgUsingCmpxchg<1> {};
+
+template<>
 template<typename T>
 inline T AtomicAccess::PlatformXchg<4>::operator()(T volatile* dest,
                                                    T exchange_value,

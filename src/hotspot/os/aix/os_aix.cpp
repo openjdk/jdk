@@ -1038,6 +1038,8 @@ static void* dll_load_library(const char *filename, int *eno, char *ebuf, int eb
     dflags |= RTLD_MEMBER;
   }
 
+  Events::log_dll_message(nullptr, "Attempting to load shared library %s", filename);
+
   void* result;
   const char* error_report = nullptr;
   JFR_ONLY(NativeLibraryLoadEvent load_event(filename, &result);)
