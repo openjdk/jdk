@@ -4958,12 +4958,16 @@ int os::open(const char *path, int oflag, int mode) {
   return fd;
 }
 
-// Since kernel v2.6.12 the Linux ABI has had support for encoding the clock types
-// in the last three bits. Setting bit to 001 (CPUCLOCK_VIRT) will result in the kernel
-// returning only user time. POSIX compliant implementations of pthread_getcpuclockid
-// for the Linux kernel defaults to construct a clockid with 010 (CPUCLOCK_SCHED)
-// set, which return system+user time, which is what the POSIX standard mandates, see
-// POSIX.1-2024/IEEE Std 1003.1-2024 §3.90.
+// Since kernel v2.6.12 the Linux ABI has had support for encoding the clock
+// types in the last three bits. Bit 2 indicates whether a cpu clock refers to a
+// thread or a process. Bits 1 and 0 give the type: PROF=0, VIRT=1, SCHED=2, or
+// FD=3. The clock CPUCLOCK_VIRT (0b001) reports the thread's consumed user
+// time. POSIX compliant implementations of pthread_getcpuclockid return the
+// clock CPUCLOCK_SCHED (0b010) which reports the thread's consumed system+user
+// time (as mandated by the POSIX standard POSIX.1-2024/IEEE Std 1003.1-2024
+// §3.90).
+//
+// The out parameter success is required to be initialized to true.
 static clockid_t get_thread_clockid(Thread* thread, bool total, bool* success) {
   constexpr clockid_t CLOCK_TYPE_MASK = 3;
   constexpr clockid_t CPUCLOCK_VIRT = 1;
