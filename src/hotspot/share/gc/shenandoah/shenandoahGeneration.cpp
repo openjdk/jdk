@@ -76,6 +76,10 @@ public:
     }
   }
 
+  // The default of parallel_region_stride is 4094, which is designed for super light workload,
+  // Resetting bitmaps is not really light because it needs to reset chunks of memory for marking bitmaps.
+  // For a 31G heap resetting bitmaps could take more than 60ms for single thread, we should use a small
+  // parallel region stride for ShenandoahResetBitmapClosure.
   size_t parallel_region_stride() override { return 8; }
 
   bool is_thread_safe() override { return true; }
