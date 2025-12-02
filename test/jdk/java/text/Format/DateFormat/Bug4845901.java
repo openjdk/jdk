@@ -28,7 +28,7 @@
  * the same time zone abbreviation for standard and daylight saving
  * time.
  * @library /java/text/testlib
- * @run junit Bug4845901
+ * @run junit/othervm Bug4845901
  */
 
 import org.junit.jupiter.api.Assumptions;
