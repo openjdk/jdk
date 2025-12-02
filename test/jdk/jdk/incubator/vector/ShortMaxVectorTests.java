@@ -1227,6 +1227,13 @@ public class ShortMaxVectorTests extends AbstractVectorTest {
     }
 
     @DataProvider
+    public Object[][] maskLongProvider() {
+        return LONG_MASK_GENERATORS.stream().
+                map(f -> new Object[]{f}).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
     public Object[][] maskCompareOpProvider() {
         return BOOLEAN_MASK_COMPARE_GENERATOR_PAIRS.stream().map(List::toArray).
                 toArray(Object[][]::new);
@@ -6794,6 +6801,107 @@ public class ShortMaxVectorTests extends AbstractVectorTest {
         assertArraysEquals(r, a, b, ShortMaxVectorTests::beq);
     }
 
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskEqualsShortMaxVectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT * INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                var av = SPECIES.loadMask(a, i);
+                var bv = SPECIES.loadMask(b, i);
+                boolean equals = av.equals(bv);
+                int to = i + SPECIES.length();
+                Assert.assertEquals(equals, Arrays.equals(a, i, to, b, i, to));
+            }
+        }
+    }
+
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskAndShortMaxVectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT * INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                var av = SPECIES.loadMask(a, i);
+                var bv = SPECIES.loadMask(b, i);
+                var cv = av.and(bv);
+                cv.intoArray(r, i);
+            }
+        }
+        assertArraysEquals(r, a, b, ShortMaxVectorTests::band);
+    }
+
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskOrShortMaxVectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT * INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                var av = SPECIES.loadMask(a, i);
+                var bv = SPECIES.loadMask(b, i);
+                var cv = av.or(bv);
+                cv.intoArray(r, i);
+            }
+        }
+        assertArraysEquals(r, a, b, ShortMaxVectorTests::bor);
+    }
+
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskXorShortMaxVectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT * INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                var av = SPECIES.loadMask(a, i);
+                var bv = SPECIES.loadMask(b, i);
+                var cv = av.xor(bv);
+                cv.intoArray(r, i);
+            }
+        }
+        assertArraysEquals(r, a, b, ShortMaxVectorTests::bxor);
+    }
+
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskAndNotShortMaxVectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT * INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                var av = SPECIES.loadMask(a, i);
+                var bv = SPECIES.loadMask(b, i);
+                var cv = av.andNot(bv);
+                cv.intoArray(r, i);
+            }
+        }
+        assertArraysEquals(r, a, b, ShortMaxVectorTests::bandNot);
+    }
+
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskEqShortMaxVectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT * INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                var av = SPECIES.loadMask(a, i);
+                var bv = SPECIES.loadMask(b, i);
+                var cv = av.eq(bv);
+                cv.intoArray(r, i);
+            }
+        }
+        assertArraysEquals(r, a, b, ShortMaxVectorTests::beq);
+    }
+
     @Test(dataProvider = "maskProvider")
     static void maskHashCodeShortMaxVectorTestsSmokeTest(IntFunction<boolean[]> fa) {
         boolean[] a = fa.apply(SPECIES.length());
@@ -6896,6 +7004,20 @@ public class ShortMaxVectorTests extends AbstractVectorTest {
                 }
             }
         }
+    }
+
+    private static final long LONG_MASK_BITS = 0xFFFFFFFFFFFFFFFFL >>> (64 - SPECIES.length());
+
+    @Test(dataProvider = "maskLongProvider")
+    static void maskFromToLongShortMaxVectorTests(IntFunction<Long> fa) {
+        long a = fa.apply(SPECIES.length());
+        long r = -1;
+
+        for (int ic = 0; ic < INVOC_COUNT * INVOC_COUNT; ic++) {
+            var vmask = VectorMask.fromLong(SPECIES, a);
+            r = vmask.toLong();
+        }
+        Assert.assertEquals(r, (a & LONG_MASK_BITS));
     }
 
 
