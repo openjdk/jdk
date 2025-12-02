@@ -421,6 +421,9 @@ public final class ModulePatcher {
 
         @Override
         public void close() throws IOException {
+            if (closed) {
+                return;
+            }
             closed = true;
             closeAll(finders);
             delegate().close();
