@@ -26,8 +26,10 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHFREESETPARTITIONID_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHFREESETPARTITIONID_HPP
 
+#include "utilities/globalDefinitions.hpp"
+
 // Each ShenandoahHeapRegion is associated with a ShenandoahFreeSetPartitionId.
-enum ShenandoahFreeSetPartitionId : uint8_t {
+enum class ShenandoahFreeSetPartitionId : uint8_t {
   Mutator,                      // Region is in the Mutator free set: available memory is available to mutators.
   Collector,                    // Region is in the Collector free set: available memory is reserved for evacuations.
   OldCollector,                 // Region is in the Old Collector free set:
