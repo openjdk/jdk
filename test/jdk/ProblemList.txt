@@ -179,7 +179,7 @@ java/awt/Mixing/AWT_Mixing/JSliderInGlassPaneOverlapping.java 8158801 windows-al
 java/awt/Mixing/AWT_Mixing/JSliderOverlapping.java 8158801 windows-all
 java/awt/Mixing/AWT_Mixing/JSpinnerInGlassPaneOverlapping.java 8158801 windows-all
 java/awt/Mixing/AWT_Mixing/JSpinnerOverlapping.java 8158801 windows-all
-java/awt/Mixing/AWT_Mixing/JTableInGlassPaneOverlapping.java 8158801 windows-all
+java/awt/Mixing/AWT_Mixing/JTableInGlassPaneOverlapping.java 8158801,8357360 windows-all,linux-all
 java/awt/Mixing/AWT_Mixing/JTableOverlapping.java 8158801 windows-all
 java/awt/Mixing/AWT_Mixing/JTextAreaInGlassPaneOverlapping.java 8158801 windows-all
 java/awt/Mixing/AWT_Mixing/JTextAreaOverlapping.java 8158801 windows-all
@@ -748,9 +748,9 @@ jdk/incubator/vector/LoadJsvmlTest.java                         8305390 windows-
 # jdk_jfr
 
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8338127 generic-all
+jdk/jfr/event/oldobject/TestEmergencyDumpAtOOM.java             8371014 aix-ppc64,linux-ppc64le
 jdk/jfr/event/oldobject/TestShenandoah.java                     8342951 generic-all
 jdk/jfr/event/runtime/TestResidentSetSizeEvent.java             8309846 aix-ppc64
-jdk/jfr/jvm/TestWaste.java                                      8369949 generic-all
 
 ############################################################################
 
