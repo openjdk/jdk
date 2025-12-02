@@ -1036,22 +1036,15 @@ public class JarFile extends ZipFile {
         if (jv == null || jvInitialized) {
             return;
         }
-        try {
-            // mark the current thread as initializing
-            // the JAR verifier
-            ScopedValue.where(IN_VERIFIER_INIT, true).call(
-                    new ScopedValue.CallableOp<Void, Exception>() {
-                        @Override
-                        public Void call() {
-                            initializeVerifier();
-                            jvInitialized = true;
-                            return null;
-                        }
-                    });
-        } catch (Exception e) {
-            // should not happen
-            throw new AssertionError(e);
-        }
+        // mark the current thread as initializing
+        // the JAR verifier
+        ScopedValue.where(IN_VERIFIER_INIT, true).run(new Runnable() {
+            @Override
+            public void run() {
+                initializeVerifier();
+                jvInitialized = true;
+            }
+        });
     }
 
     /**
