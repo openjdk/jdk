@@ -275,8 +275,11 @@ public final class Security {
                                 "Cyclic include of '" + path + "'");
                     }
                 } catch (IOException e) {
-                    throw new InternalError("Failed to check cyclic " +
-                            "inclusion of '" + path + "'", e);
+                    if (sdebug != null) {
+                        sdebug.println("skipped exception when checking for " +
+                                "cyclic inclusion of " + path + ":");
+                        e.printStackTrace();
+                    }
                 }
             }
         }
