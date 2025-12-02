@@ -26,22 +26,22 @@
  * @bug 8370502
  * @summary Do not segfault while adding node to IGVN worklist
  *
- * @run main/othervm -Xbatch compiler.c2.TestUnlockNodeNullMemprof
+ * @run main/othervm -Xbatch ${test.main.class}
  */
 
 package compiler.c2;
 
 public class TestUnlockNodeNullMemprof {
     public static void main(String[] args) {
-        int[] a = new int[0]; // test valid only when size is 0.
-        for (int i = 0; i < Integer.valueOf(10000); i++)
+        int[] a = new int[0]; // test only valid when size is 0.
+        for (int i = 0; i < Integer.valueOf(10000); i++) // test only valid with boxed loop limit
             try {
-                test(a, 0);
+                test(a);
             } catch (ArrayIndexOutOfBoundsException e) {
             }
     }
 
-    static void test(int[] a, int invar) {
+    static void test(int[] a) {
         for (int i = 0; i < 1;) {
             a[i] = 0;
             synchronized (TestUnlockNodeNullMemprof.class) {
