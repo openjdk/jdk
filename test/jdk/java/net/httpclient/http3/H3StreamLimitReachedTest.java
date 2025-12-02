@@ -39,6 +39,8 @@
  *          will be on a different port. In all case, the test
  *          verifies that the right connection is picked up
  *          for the retry.
+ * @bug 8372951
+ * @comment this test also tests bug 8372951
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer
  *        jdk.test.lib.Asserts
@@ -46,7 +48,7 @@
  *        jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors,http3,quic:control
  *                     -Djdk.internal.httpclient.debug=false
- *                     -Djdk.httpclient.quic.maxBidiStreams=1
+ *                     -Djdk.internal.httpclient.quic.maxBidiStreams=1
  *                     H3StreamLimitReachedTest
  */
 
@@ -68,6 +70,8 @@
  *          will be on a different port. In all case, the test
  *          verifies that the right connection is picked up
  *          for the retry.
+ * @bug 8372951
+ * @comment this test also tests bug 8372951
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer
  *        jdk.test.lib.Asserts
@@ -75,7 +79,7 @@
  *        jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors,http3,quic:control
  *                     -Djdk.internal.httpclient.debug=false
- *                     -Djdk.httpclient.quic.maxBidiStreams=1
+ *                     -Djdk.internal.httpclient.quic.maxBidiStreams=1
  *                     -Djdk.httpclient.http3.maxStreamLimitTimeout=0
  *                     -Djdk.httpclient.retryOnStreamlimit=9
  *                     H3StreamLimitReachedTest
