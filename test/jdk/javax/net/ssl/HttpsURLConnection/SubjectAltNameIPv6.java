@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 8369950
+ * @summary Test that the HttpsURLConnection does not set IPv6 address literals for SNI hostname during TLS handshake
  * @library /test/lib
- * @summary TLS connection to IPv6 address fails with BCJSSE due to IllegalArgumentException
  * @run main/othervm SubjectAltNameIPv6
  */
 
@@ -38,18 +38,6 @@ import jdk.test.lib.net.SimpleSSLContext;
 import jtreg.SkippedException;
 
 public class SubjectAltNameIPv6 {
-    /*
-     * =============================================================
-     * Set the various variables needed for the tests, then
-     * specify what tests to run on each side.
-     */
-
-    /*
-     * Should we run the client or server in a separate thread?
-     * Both sides can throw exceptions, but do you have a preference
-     * as to which side should be the main thread.
-     */
-    static boolean separateServerThread = true;
 
     /*
      * Is the server ready to serve?
@@ -60,15 +48,6 @@ public class SubjectAltNameIPv6 {
      * Turn on SSL debugging?
      */
     static boolean debug = false;
-
-    /*
-     * If the client or server is doing some kind of object creation
-     * that the other side depends on, and that thread prematurely
-     * exits, you may experience a hang.  The test harness will
-     * terminate all hung threads after its timeout has expired,
-     * currently 3 minutes by default, but you might try to be
-     * smart about it....
-     */
 
     /*
      * Define the server side of the test.
@@ -94,7 +73,6 @@ public class SubjectAltNameIPv6 {
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(sslOS));
         bw.write("HTTP/1.1 200 OK\r\n\r\n\r\n");
         bw.flush();
-        Thread.sleep(5000);
         sslSocket.close();
     }
 
@@ -128,16 +106,11 @@ public class SubjectAltNameIPv6 {
         }
     }
 
-    /*
-     * =============================================================
-     * The remainder is just support stuff
-     */
-
     // use any free port by default
     volatile int serverPort = 0;
 
+    // stores an exception thrown by server in a separate thread
     volatile Exception serverException = null;
-    volatile Exception clientException = null;
 
     public static void main(String[] args) throws Exception {
 
@@ -153,7 +126,6 @@ public class SubjectAltNameIPv6 {
         new SubjectAltNameIPv6();
     }
 
-    Thread clientThread = null;
     Thread serverThread = null;
 
     /*
@@ -162,79 +134,40 @@ public class SubjectAltNameIPv6 {
      * Fork off the other side, then do your work.
      */
     SubjectAltNameIPv6() throws Exception {
-        if (separateServerThread) {
-            startServer(true);
-            startClient(false);
-        } else {
-            startClient(true);
-            startServer(false);
-        }
+        startServer();
+        startClient();
 
         /*
          * Wait for other side to close down.
          */
-        if (separateServerThread) {
-            serverThread.join();
-        } else {
-            clientThread.join();
-        }
+        serverThread.join();
 
-        /*
-         * When we get here, the test is pretty much over.
-         *
-         * If the main thread excepted, that propagates back
-         * immediately.  If the other thread threw an exception, we
-         * should report back.
-         */
         if (serverException != null)
             throw serverException;
-        if (clientException != null)
-            throw clientException;
     }
 
-    void startServer(boolean newThread) throws Exception {
-        if (newThread) {
-            serverThread = new Thread() {
-                public void run() {
-                    try {
-                        doServerSide();
-                    } catch (Exception e) {
-                        /*
-                         * Our server thread just died.
-                         *
-                         * Release the client, if not active already...
-                         */
-                        System.err.println("Server died:");
-                        serverReady = true;
-                        serverException = e;
-                    }
+    void startServer() throws Exception {
+        serverThread = new Thread() {
+            public void run() {
+                try {
+                    doServerSide();
+                } catch (Exception e) {
+                    /*
+                     * Our server thread just died.
+                     *
+                     * Release the client, if not active already...
+                     */
+                    System.err.println("Server died:");
+                    serverReady = true;
+                    serverException = e;
                 }
-            };
-            serverThread.start();
-        } else {
-            doServerSide();
-        }
+            }
+        };
+        serverThread.start();
     }
 
-    void startClient(boolean newThread) throws Exception {
-        if (newThread) {
-            clientThread = new Thread() {
-                public void run() {
-                    try {
-                        doClientSide();
-                    } catch (Exception e) {
-                        /*
-                         * Our client thread just died.
-                         */
-                        System.err.println("Client died...");
-                        clientException = e;
-                    }
-                }
-            };
-            clientThread.start();
-        } else {
-            doClientSide();
-        }
+    void startClient() throws Exception {
+        doClientSide();
     }
 
     /*
