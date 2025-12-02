@@ -254,9 +254,10 @@ public final class Security {
                                 "from a non-regular properties file " +
                                 "(e.g. HTTP served file)");
                     }
-                    // We perform symlinks resolution on currentPath under the
-                    // rationale that the original file writer is the one who
-                    // decided where the relative includes should resolve.
+                    // We perform symlinks resolution on currentPath
+                    // under the rationale that the person writing the
+                    // original properties file is the one who decides
+                    // where the relative includes should resolve.
                     path = currentPath.toRealPath().resolveSibling(path);
                 }
                 loadFromPath(path, LoadingMode.APPEND);
