@@ -33,6 +33,7 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.Preconditions;
+import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import sun.nio.ch.DirectBuffer;
 
@@ -402,9 +403,7 @@ public abstract sealed class AbstractMemorySegmentImpl
         try {
             checkBounds(offset, length);
         } catch (IndexOutOfBoundsException e) {
-            String msg = String.format("Out of bound access on segment %s; attempting to get slice of length %d at offset %d " +
-                    "which is outside the valid range 0 <= offset+length < byteSize (=%d)", this, length, offset, this.length);
-            throw new IndexOutOfBoundsException(msg);
+            throwOutOfBounds(offset, length, /* isSlice = */ true);
         }
     }
 
@@ -413,9 +412,7 @@ public abstract sealed class AbstractMemorySegmentImpl
         try {
             checkBounds(offset, length);
         } catch (IndexOutOfBoundsException e) {
-            String msg = String.format("Out of bound access on segment %s; attempting to access an element of length %d at offset %d " +
-                    "which is outside the valid range 0 <= offset+length < byteSize (=%d)", this, length, offset, this.length);
-            throw new IndexOutOfBoundsException(msg);
+            throwOutOfBounds(offset, length, /* isSlice = */ false);
         }
     }
 
@@ -427,6 +424,15 @@ public abstract sealed class AbstractMemorySegmentImpl
                 offset > this.length - length) {
             throw new IndexOutOfBoundsException();
         }
+    }
+
+    @DontInline
+    private void throwOutOfBounds(long offset, long length, boolean isSlice) {
+        String action = isSlice ? "get slice" : "access an element";
+        String msg = String.format("Out of bound access on segment %s; attempting to %s of length %d at offset %d " +
+                        "which is outside the valid range 0 <= offset+length < byteSize (=%d)",
+                this, action, length, offset, this.length);
+        throw new IndexOutOfBoundsException(msg);
     }
 
     @Override
