@@ -1482,18 +1482,10 @@ Node* PhiNode::Identity(PhaseGVN* phase) {
     Node* phi_reg = region();
     for (DUIterator_Fast imax, i = phi_reg->fast_outs(imax); i < imax; i++) {
       Node* u = phi_reg->fast_out(i);
-      if (u->is_Phi() && u->as_Phi()->type() == Type::MEMORY &&
-          u->adr_type() == TypePtr::BOTTOM && u->in(0) == phi_reg &&
-          u->req() == phi_len) {
-        for (uint j = 1; j < phi_len; j++) {
-          if (in(j) != u->in(j)) {
-            u = nullptr;
-            break;
-          }
-        }
-        if (u != nullptr) {
-          return u;
-        }
+      assert(!u->is_Phi() || (u->in(0) == phi_reg && u->req() == phi_len), "");
+      if (u->is_Phi() && u->as_Phi()->type() == Type::MEMORY && u->adr_type() == TypePtr::BOTTOM &&
+          has_same_inputs_as(u)) {
+        return u;
       }
     }
   }
@@ -2687,6 +2679,21 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Phi (VB ... VB) => VB (Phi ...) (Phi ...)
   if (EnableVectorReboxing && can_reshape && progress == nullptr && type()->isa_oopptr()) {
     progress = merge_through_phi(this, phase->is_IterGVN());
+  }
+
+  if (can_reshape && type() == Type::MEMORY && adr_type() == TypePtr::BOTTOM) {
+    PhaseIterGVN* igvn = phase->is_IterGVN();
+    uint phi_len = req();
+    Node* phi_reg = region();
+    for (DUIterator_Fast imax, i = phi_reg->fast_outs(imax); i < imax; i++) {
+      Node* u = phi_reg->fast_out(i);
+      assert(!u->is_Phi() || (u->in(0) == phi_reg && u->req() == phi_len), "");
+      if (u->is_Phi() && u->as_Phi()->type() == Type::MEMORY && u->adr_type() != TypePtr::BOTTOM &&
+          has_same_inputs_as(u)) {
+        igvn->replace_node(u, this);
+        --i; --imax;
+      }
+    }
   }
 
   return progress;              // Return any progress
