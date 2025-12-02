@@ -35,6 +35,7 @@ import java.util.Spliterator;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class EnumSetSpliteratorTest {
@@ -71,11 +72,18 @@ public class EnumSetSpliteratorTest {
         assertEquals(List.of(Large.values()), EnumSet.allOf(Large.class).stream().toList());
     }
 
+    private static final int EXPECTED_CHARACTERISTICS = (
+            Spliterator.DISTINCT | Spliterator.SORTED | Spliterator.ORDERED |
+                    Spliterator.NONNULL | Spliterator.SIZED | Spliterator.SUBSIZED);
+
     private static void assertSpliteratorCharacteristics(EnumSet<?> enumSet) {
         Spliterator<?> spliterator = enumSet.spliterator();
         assertTrue(spliterator.hasCharacteristics(Spliterator.DISTINCT), "Missing DISTINCT");
         assertTrue(spliterator.hasCharacteristics(Spliterator.SORTED), "Missing SORTED");
         assertTrue(spliterator.hasCharacteristics(Spliterator.ORDERED), "Missing ORDERED");
         assertTrue(spliterator.hasCharacteristics(Spliterator.NONNULL), "Missing NONNULL");
+        assertTrue(spliterator.hasCharacteristics(Spliterator.SIZED), "Missing SIZED");
+        assertTrue(spliterator.hasCharacteristics(Spliterator.SUBSIZED), "Missing SUBSIZED");
+        asserEquals(EXPECTED_CHARACTERISTICS, spliterator.characteristics(), "Unexpected characteristics");
     }
 }
