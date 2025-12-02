@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @key stress randomness
  * @bug 8370519
  * @summary C2: Hit MemLimit when running with +VerifyLoopOptimizations
  * @run main/othervm -XX:CompileCommand=compileonly,*TestVerifyLoopOptimizationsHighMemUsage*::* -XX:-TieredCompilation -Xbatch
