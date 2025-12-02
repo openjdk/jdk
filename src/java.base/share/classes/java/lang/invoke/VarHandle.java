@@ -2016,9 +2016,10 @@ public abstract sealed class VarHandle implements Constable
         final Class<?> returnType;
         final int type;
         final int mode;
-        // The cache for adapted MH if the access site has a constant VH
-        // that does not match the erased type for.
-        @Stable MethodHandle adaptedMh;
+        // The cache for last adapted MH if the access site has a VH that does
+        // not match the erased type for.  It can be safely reused if VH is
+        // discovered to be a constant during C2 compilation.
+        @Stable MethodHandle lastAdaption;
 
         AccessDescriptor(MethodType symbolicMethodType, int type, int mode) {
             this.symbolicMethodTypeExact = symbolicMethodType;
@@ -2031,21 +2032,15 @@ public abstract sealed class VarHandle implements Constable
 
         @ForceInline
         MethodHandle adaptedMethodHandle(VarHandle vh) {
-            var constant = MethodHandleImpl.isCompileConstant(vh);
-            if (constant == MethodHandleImpl.CONSTANT_YES) {
-                var cache = adaptedMh;
+            if (MethodHandleImpl.isCompileConstant(vh)) {
+                var cache = lastAdaption;
                 if (cache != null) {
                     return cache;
                 }
             }
 
-            // This is still a hot path if vh is not constant - in this case,
-            // asType is the bottleneck for constant folding, unfortunately
-            var result = vh.getMethodHandle(mode).asType(symbolicMethodTypeInvoker);
-            if (constant != MethodHandleImpl.CONSTANT_NO) {
-                adaptedMh = result;
-            }
-            return result;
+            // Keep capturing - vh may suddenly get promoted to a constant by C2
+            return lastAdaption = vh.getMethodHandle(mode).asType(symbolicMethodTypeInvoker);
         }
     }
 

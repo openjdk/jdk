@@ -621,16 +621,13 @@ abstract class MethodHandleImpl {
         return result;
     }
 
-    static final int CONSTANT_PENDING = 0;
-    static final int CONSTANT_YES = 1;
-    static final int CONSTANT_NO = 2;
-
-    // Intrinsified by C2. Returns 0 if not ready, 1 if obj is a compile-time constant,
-    // 2 if obj is not a compile-time constant.
+    // Intrinsified by C2. Returns true if obj is a compile-time constant.
+    // Note that a non-constant value may be subsequently promoted to a constant,
+    // so a false return value does not indicate obj is definitely not a constant.
     @Hidden
     @jdk.internal.vm.annotation.IntrinsicCandidate
-    static int isCompileConstant(Object obj) {
-        return CONSTANT_PENDING;
+    static boolean isCompileConstant(Object obj) {
+        return false;
     }
 
     static MethodHandle makeGuardWithTest(MethodHandle test,
