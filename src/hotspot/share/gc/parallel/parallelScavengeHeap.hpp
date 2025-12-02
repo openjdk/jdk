@@ -119,6 +119,9 @@ class ParallelScavengeHeap : public CollectedHeap {
   void print_tracing_info() const override;
   void stop() override {};
 
+  // Returns true if a young GC should be attempted, false if a full GC is preferred.
+  bool should_attempt_young_gc() const;
+
 public:
   ParallelScavengeHeap() :
     CollectedHeap(),
@@ -199,7 +202,6 @@ public:
   bool requires_barriers(stackChunkOop obj) const override;
 
   MemRegion reserved_region() const { return _reserved; }
-  HeapWord* base() const { return _reserved.start(); }
 
   // Memory allocation.
   HeapWord* mem_allocate(size_t size) override;

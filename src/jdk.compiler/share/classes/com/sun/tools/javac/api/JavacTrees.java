@@ -413,7 +413,18 @@ public class JavacTrees extends DocTrees {
             }
 
             if (ref.qualifierExpression == null) {
-                tsym = env.enclClass.sym;
+                // Resolve target for unqualified reference based on declaring element
+                tsym = switch (path.getLeaf().getKind()) {
+                    case PACKAGE -> env.toplevel.packge;
+                    case MODULE -> env.toplevel.modle;
+                    case COMPILATION_UNIT ->
+                        // Treat unqualified reference in legacy package.html as package reference.
+                        // Unqualified references in doc-files only need to work locally, so null is fine.
+                        path.getCompilationUnit().getSourceFile().isNameCompatible("package", JavaFileObject.Kind.HTML)
+                                ? env.toplevel.packge
+                                : null;
+                    default -> env.enclClass.sym;  // Class or class member reference
+                };
                 memberName = (Name) ref.memberName;
             } else {
                 // Check if qualifierExpression is a type or package, using the methods javac provides.
@@ -470,8 +481,15 @@ public class JavacTrees extends DocTrees {
                 }
             }
 
-            if (memberName == null)
+            if (memberName == null) {
                 return tsym;
+            } else if (tsym == null || tsym.getKind() == ElementKind.PACKAGE || tsym.getKind() == ElementKind.MODULE) {
+                return null;  // Non-null member name in non-class context
+            }
+
+            if (tsym.type.isPrimitive()) {
+                return null;
+            }
 
             final List<Type> paramTypes;
             if (ref.paramTypes == null)

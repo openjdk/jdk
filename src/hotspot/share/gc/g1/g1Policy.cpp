@@ -669,7 +669,6 @@ bool G1Policy::should_retain_evac_failed_region(uint index) const {
 }
 
 void G1Policy::record_pause_start_time() {
-  assert(!_g1h->is_shutting_down(), "Invariant!");
   Ticks now = Ticks::now();
   _cur_pause_start_sec = now.seconds();
 
@@ -1026,15 +1025,12 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
 
 G1IHOPControl* G1Policy::create_ihop_control(const G1OldGenAllocationTracker* old_gen_alloc_tracker,
                                              const G1Predictions* predictor) {
-  if (G1UseAdaptiveIHOP) {
-    return new G1AdaptiveIHOPControl(InitiatingHeapOccupancyPercent,
-                                     old_gen_alloc_tracker,
-                                     predictor,
-                                     G1ReservePercent,
-                                     G1HeapWastePercent);
-  } else {
-    return new G1StaticIHOPControl(InitiatingHeapOccupancyPercent, old_gen_alloc_tracker);
-  }
+  return new G1IHOPControl(InitiatingHeapOccupancyPercent,
+                           old_gen_alloc_tracker,
+                           G1UseAdaptiveIHOP,
+                           predictor,
+                           G1ReservePercent,
+                           G1HeapWastePercent);
 }
 
 bool G1Policy::update_ihop_prediction(double mutator_time_s,
@@ -1279,12 +1275,6 @@ void G1Policy::decide_on_concurrent_start_pause() {
   // the end of the pause (it's only set for the duration of a
   // concurrent start pause).
   assert(!collector_state()->in_concurrent_start_gc(), "pre-condition");
-
-  // We should not be starting a concurrent start pause if the concurrent mark
-  // thread is terminating.
-  if (_g1h->is_shutting_down()) {
-    return;
-  }
 
   if (collector_state()->initiate_conc_mark_if_possible()) {
     // We had noticed on a previous pause that the heap occupancy has
