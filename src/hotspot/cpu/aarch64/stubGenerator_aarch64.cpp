@@ -7312,7 +7312,7 @@ class StubGenerator: public StubCodeGenerator {
 
       // low_0 += c_i
       // n = low_0 & limb_mask
-      __ eor(c_01, __ T2D, c_01, c_01);
+      __ eor(c_01, __ T16B, c_01, c_01);
       __ ld1(c_01, __ D, 0, c_ptr);
       __ addv(low_01, __ T2D, low_01, c_01);
       __ andr(n, __ T16B, low_01, limb_mask);
