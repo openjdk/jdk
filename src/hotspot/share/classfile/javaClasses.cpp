@@ -25,9 +25,8 @@
 #include "cds/aotMetaspace.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
 #include "cds/archiveBuilder.hpp"
-#include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.hpp"
+#include "cds/heapShared.inline.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -978,7 +977,7 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
   }
 
   if (k->in_aot_cache() && k->has_archived_mirror_index()) {
-    if (ArchiveHeapLoader::is_in_use()) {
+    if (HeapShared::is_archived_heap_in_use()) {
       bool present = restore_archived_mirror(k, Handle(), Handle(), Handle(), CHECK);
       assert(present, "Missing archived mirror for %s", k->external_name());
       return;
@@ -1242,10 +1241,7 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
 
   if (!k->is_array_klass()) {
     // - local static final fields with initial values were initialized at dump time
-
-    // create the init_lock
-    typeArrayOop r = oopFactory::new_typeArray(T_INT, 0, CHECK_(false));
-    set_init_lock(mirror(), r);
+    assert(init_lock(mirror()) != nullptr, "allocated during AOT assembly");
 
     if (protection_domain.not_null()) {
       set_protection_domain(mirror(), protection_domain());
@@ -1335,11 +1331,6 @@ oop java_lang_Class::class_data(oop java_class) {
 void java_lang_Class::set_class_data(oop java_class, oop class_data) {
   assert(_classData_offset != 0, "must be set");
   java_class->obj_field_put(_classData_offset, class_data);
-}
-
-void java_lang_Class::set_reflection_data(oop java_class, oop reflection_data) {
-  assert(_reflectionData_offset != 0, "must be set");
-  java_class->obj_field_put(_reflectionData_offset, reflection_data);
 }
 
 void java_lang_Class::set_class_loader(oop java_class, oop loader) {
@@ -1484,7 +1475,6 @@ Klass* java_lang_Class::array_klass_acquire(oop java_class) {
   return k;
 }
 
-
 void java_lang_Class::release_set_array_klass(oop java_class, Klass* klass) {
   assert(klass->is_klass() && klass->is_array_klass(), "should be array klass");
   java_class->release_metadata_field_put(_array_klass_offset, klass);
@@ -1588,11 +1578,6 @@ int java_lang_Class::modifiers(oop the_class_mirror) {
 void java_lang_Class::set_modifiers(oop the_class_mirror, u2 value) {
   assert(_modifiers_offset != 0, "offsets should have been initialized");
   the_class_mirror->char_field_put(_modifiers_offset, value);
-}
-
-int java_lang_Class::raw_access_flags(oop the_class_mirror) {
-  assert(_raw_access_flags_offset != 0, "offsets should have been initialized");
-  return the_class_mirror->char_field(_raw_access_flags_offset);
 }
 
 void java_lang_Class::set_raw_access_flags(oop the_class_mirror, u2 value) {

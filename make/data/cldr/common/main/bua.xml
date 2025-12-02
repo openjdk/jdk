@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2025 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="bua"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="bua">буряад</language>
+			<language type="en">англи</language>
+		</languages>
+		<scripts>
+			<script type="Cyrl">кирил</script>
+		</scripts>
+		<territories>
+			<territory type="RU">Ород Улас</territory>
+		</territories>
+		<measurementSystemNames>
+			<measurementSystemName type="metric">Мэтрик</measurementSystemName>
+			<measurementSystemName type="UK">ЕБ</measurementSystemName>
+			<measurementSystemName type="US">АНУ</measurementSystemName>
+		</measurementSystemNames>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[а б в г д её ж з и й к л м н о ө п р с т у ү ф х һ ц ч ш щ ъ ы ь э ю я]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary" draft="contributed">[{а́} {е́} {и́} {о́} {у́} {ы́} {э́} {ю́} {я́}]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘‚ &quot;“„ « » ( ) \[ \] \{ \} § @ * / \&amp; #]</exemplarCharacters>
+	</characters>
+	<delimiters>
+		<quotationStart>«</quotationStart>
+		<quotationEnd>»</quotationEnd>
+		<alternateQuotationStart>„</alternateQuotationStart>
+		<alternateQuotationEnd>“</alternateQuotationEnd>
+	</delimiters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1">нэгэдүгээр һара</month>
+							<month type="2">хоёрдугаар һара</month>
+							<month type="3">гурбадугаар һара</month>
+							<month type="4">дүрбэдүгээр һара</month>
+							<month type="5">табадугаар һара</month>
+							<month type="6">зургадугаар һара</month>
+							<month type="7">долодугаар һара</month>
+							<month type="8">наймадугаар һара</month>
+							<month type="9">юһэдүгээр һара</month>
+							<month type="10">арбадугаар һара</month>
+							<month type="11">арбан нэгэдүгээр һара</month>
+							<month type="12">арбан хоёрдугаар һара</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="narrow">
+							<day type="sun">Ни</day>
+							<day type="mon">Да</day>
+							<day type="tue">Ми</day>
+							<day type="wed">Һа</day>
+							<day type="thu">Пү</day>
+							<day type="fri">Ба</day>
+							<day type="sat">Би</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">нима</day>
+							<day type="mon">дабаа</day>
+							<day type="tue">мигмар</day>
+							<day type="wed">һарба</day>
+							<day type="thu">пүрбэ</day>
+							<day type="fri">баасан</day>
+							<day type="sat">бимба</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="GyMMMd">G y MM 'һарын' d</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">G y MM 'һарын' d, E</dateFormatItem>
+						<dateFormatItem id="MMMd">MM 'һарын' d</dateFormatItem>
+						<dateFormatItem id="MMMEd">E, MM 'һарын' d</dateFormatItem>
+						<dateFormatItem id="MMMMd">MM 'һарын' d</dateFormatItem>
+						<dateFormatItem id="yMd">dd.MM.y</dateFormatItem>
+						<dateFormatItem id="yMMMd">y 'оной' MM 'һарын' d</dateFormatItem>
+						<dateFormatItem id="yMMMEd">y 'оной' MM 'һарын' d, E</dateFormatItem>
+						<dateFormatItem id="yMMMM">y 'оной' MMMM</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">G y MM 'һарын' d–d</greatestDifference>
+							<greatestDifference id="G">G y MM 'һарын' d – G y MM 'һарын' d</greatestDifference>
+							<greatestDifference id="M">G y MM 'һарын' d – MM 'һарын' d</greatestDifference>
+							<greatestDifference id="y">G y MM 'һарын' d – y MM 'һарын' d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">G y MM 'һарын' d, E – MM 'һарын' d, E</greatestDifference>
+							<greatestDifference id="G">G y MM 'һарын' d, E – G y MM 'һарын' d, E</greatestDifference>
+							<greatestDifference id="M">G y MM 'һарын' d, E – MM 'һарын' d, E</greatestDifference>
+							<greatestDifference id="y">G y MM 'һарын' d, E – y MM 'һарын' d, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d">MM 'һарын' d – d</greatestDifference>
+							<greatestDifference id="M">MM 'һарын' d – MM 'һарын' d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d">MM 'һарын' d, E – MM 'һарын' d, E</greatestDifference>
+							<greatestDifference id="M">MM 'һарын' d, E – MM 'һарын' d, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M">y MMM – MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">y 'оной' MMM d – d</greatestDifference>
+							<greatestDifference id="M">y 'оной' MM 'һарын' d – MM 'һарын' d</greatestDifference>
+							<greatestDifference id="y">y 'оной' MMMM d – y 'оной' MMMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d">y 'оной' MM 'һарын' d, E – y 'оной' MM 'һарын' d, E</greatestDifference>
+							<greatestDifference id="M">E, MM 'һарын' d – E, MM 'һарын' d, y</greatestDifference>
+							<greatestDifference id="y">E, MM 'һарын' d, y – E, MM 'һарын' d, y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M">y 'оной' MMMM – MMMM</greatestDifference>
+							<greatestDifference id="y">y 'оной' MMMM – y 'оной' MMMM</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="year">
+				<relative type="-1">үнгэрэгшэ жэл</relative>
+				<relative type="0">энэ жэл</relative>
+				<relative type="1">хойто жэл</relative>
+			</field>
+			<field type="month">
+				<relative type="-1">үнгэрэгшэ һара</relative>
+				<relative type="0">энэ һара</relative>
+				<relative type="1">хойто һара</relative>
+			</field>
+			<field type="week">
+				<relative type="-1">үнгэрэгшэ долоон хоног</relative>
+				<relative type="0">энэ долоон хоног</relative>
+				<relative type="1">хойто долоон хоног</relative>
+			</field>
+			<field type="day">
+				<relative type="-1">үсэгэлдэр</relative>
+				<relative type="0">мүнөө</relative>
+				<relative type="1">үглөөдэр</relative>
+			</field>
+			<field type="sun">
+				<relative type="-1">үнгэрэгшэ нима</relative>
+				<relative type="0">энэ нима</relative>
+				<relative type="1">хойто нима</relative>
+			</field>
+		</fields>
+		<timeZoneNames>
+			<metazone type="GMT">
+				<long>
+					<standard>Гринвичын саг</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal>,</decimal>
+			<group> </group>
+		</symbols>
+		<percentFormats numberSystem="latn">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+	</numbers>
+</ldml>

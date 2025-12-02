@@ -41,7 +41,7 @@ class CDSHeapVerifier : public KlassClosure {
   class SharedSecretsAccessorFinder;
   class TraceFields;
 
-  int _archived_objs;
+  size_t _archived_objs;
   int _problems;
 
   struct StaticFieldInfo {

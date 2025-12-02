@@ -34,6 +34,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 abstract class Function {
+    private static final long NANOS_PER_SECOND = 1_000_000_000L;
 
     interface FunctionFactory {
         Function newFunction();
@@ -164,14 +165,30 @@ abstract class Function {
     private static final class AverageDuration extends Function {
         private long seconds;
         private long nanos;
-        private int count;
+        private long count;
+        private boolean hasOverflowed;
 
         @Override
         public void add(Object value) {
-            if (value instanceof Duration duration) {
-                seconds += duration.getSeconds();
-                nanos += duration.getNano();
-                count++;
+            if (hasOverflowed) {
+                return;
+            }
+            if (value instanceof Duration d) {
+                try {
+                    // Code copied from Duration::plus
+                    long secondsToAdd = d.getSeconds();
+                    long nanosToAdd = d.getNano();
+                    if ((secondsToAdd | nanosToAdd) == 0) {
+                        return;
+                    }
+                    long s = Math.addExact(seconds, secondsToAdd);
+                    seconds = Math.addExact(s, nanosToAdd / NANOS_PER_SECOND);
+                    nanos = nanos + nanosToAdd % NANOS_PER_SECOND;
+                    count++;
+                } catch (ArithmeticException ae) {
+                    hasOverflowed = true;
+                    count = 0;
+                }
             }
         }
 
@@ -345,13 +362,29 @@ abstract class Function {
         private long seconds;
         private long nanos;
         private boolean hasValue;
+        private boolean hasOverflowed;
 
         @Override
         public void add(Object value) {
+            if (hasOverflowed) {
+                return;
+            }
             if (value instanceof Duration n) {
-                seconds += n.getSeconds();
-                nanos += n.getNano();
-                hasValue = true;
+                try {
+                    // Code copied from Duration::plus
+                    long secondsToAdd = n.getSeconds();
+                    long nanosToAdd = n.getNano();
+                    if ((secondsToAdd | nanosToAdd) == 0) {
+                        return;
+                    }
+                    long s = Math.addExact(seconds, secondsToAdd);
+                    seconds = Math.addExact(s, nanosToAdd / NANOS_PER_SECOND);
+                    nanos = nanos + nanosToAdd % NANOS_PER_SECOND;
+                    hasValue = true;
+                } catch (ArithmeticException ae) {
+                    hasOverflowed = true;
+                    hasValue = false;
+                }
             }
         }
 
@@ -363,13 +396,22 @@ abstract class Function {
 
     private static final class SumLong extends Function {
         private boolean hasValue = false;
+        private boolean hasOverflowed;
         private long sum = 0;
 
         @Override
         public void add(Object value) {
+            if (hasOverflowed) {
+                return;
+            }
             if (value instanceof Number n) {
-                sum += n.longValue();
-                hasValue = true;
+                try {
+                    sum = Math.addExact(sum, n.longValue());
+                    hasValue = true;
+                } catch (ArithmeticException ae) {
+                    hasOverflowed = true;
+                    hasValue = false;
+                }
             }
         }
 
@@ -436,7 +478,11 @@ abstract class Function {
                 return null;
             }
             if (isIntegral(first) && isIntegral(last)) {
-                return last.longValue() - first.longValue();
+                try {
+                    return Math.subtractExact(last.longValue(), first.longValue());
+                } catch (ArithmeticException ae) {
+                    return null;
+                }
             }
             if (first instanceof Float f && last instanceof Float l) {
                 return l - f;
@@ -528,7 +574,7 @@ abstract class Function {
         @Override
         public void add(Object value) {
             if (value instanceof Duration duration) {
-                long nanos = 1_000_000_000L * duration.getSeconds() + duration.getNano();
+                double nanos = 1_000_000_000.0 * duration.getSeconds() + duration.getNano();
                 function.add(nanos);
             }
         }
