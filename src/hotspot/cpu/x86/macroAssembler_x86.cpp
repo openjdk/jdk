@@ -4828,7 +4828,8 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   // without checking the rest of the table. But, profiling code should tolerate free slots
   // in the table, as class unloading can clear them. After such cleanup, the receiver
   // we need might be _after_ the free slot. Therefore, we need to let at least full scan
-  // to complete, before trying to install new slots.
+  // to complete, before trying to install new slots. Splitting the code in several tight
+  // loops also helpfully optimizes for cases A and B.
   //
   // This code is effectively:
   //
