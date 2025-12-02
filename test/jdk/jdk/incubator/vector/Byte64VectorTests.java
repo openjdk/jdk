@@ -1232,6 +1232,13 @@ public class Byte64VectorTests extends AbstractVectorTest {
     }
 
     @DataProvider
+    public Object[][] maskLongProvider() {
+        return LONG_MASK_GENERATORS.stream().
+                map(f -> new Object[]{f}).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
     public Object[][] maskCompareOpProvider() {
         return BOOLEAN_MASK_COMPARE_GENERATOR_PAIRS.stream().map(List::toArray).
                 toArray(Object[][]::new);
@@ -6809,6 +6816,107 @@ public class Byte64VectorTests extends AbstractVectorTest {
         assertArraysEquals(r, a, b, Byte64VectorTests::beq);
     }
 
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskEqualsByte64VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT * INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                var av = SPECIES.loadMask(a, i);
+                var bv = SPECIES.loadMask(b, i);
+                boolean equals = av.equals(bv);
+                int to = i + SPECIES.length();
+                Assert.assertEquals(equals, Arrays.equals(a, i, to, b, i, to));
+            }
+        }
+    }
+
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskAndByte64VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT * INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                var av = SPECIES.loadMask(a, i);
+                var bv = SPECIES.loadMask(b, i);
+                var cv = av.and(bv);
+                cv.intoArray(r, i);
+            }
+        }
+        assertArraysEquals(r, a, b, Byte64VectorTests::band);
+    }
+
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskOrByte64VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT * INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                var av = SPECIES.loadMask(a, i);
+                var bv = SPECIES.loadMask(b, i);
+                var cv = av.or(bv);
+                cv.intoArray(r, i);
+            }
+        }
+        assertArraysEquals(r, a, b, Byte64VectorTests::bor);
+    }
+
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskXorByte64VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT * INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                var av = SPECIES.loadMask(a, i);
+                var bv = SPECIES.loadMask(b, i);
+                var cv = av.xor(bv);
+                cv.intoArray(r, i);
+            }
+        }
+        assertArraysEquals(r, a, b, Byte64VectorTests::bxor);
+    }
+
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskAndNotByte64VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT * INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                var av = SPECIES.loadMask(a, i);
+                var bv = SPECIES.loadMask(b, i);
+                var cv = av.andNot(bv);
+                cv.intoArray(r, i);
+            }
+        }
+        assertArraysEquals(r, a, b, Byte64VectorTests::bandNot);
+    }
+
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskEqByte64VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT * INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                var av = SPECIES.loadMask(a, i);
+                var bv = SPECIES.loadMask(b, i);
+                var cv = av.eq(bv);
+                cv.intoArray(r, i);
+            }
+        }
+        assertArraysEquals(r, a, b, Byte64VectorTests::beq);
+    }
+
     @Test(dataProvider = "maskProvider")
     static void maskHashCodeByte64VectorTestsSmokeTest(IntFunction<boolean[]> fa) {
         boolean[] a = fa.apply(SPECIES.length());
@@ -6913,6 +7021,20 @@ public class Byte64VectorTests extends AbstractVectorTest {
         }
     }
 
+    private static final long LONG_MASK_BITS = 0xFFFFFFFFFFFFFFFFL >>> (64 - SPECIES.length());
+
+    @Test(dataProvider = "maskLongProvider")
+    static void maskFromToLongByte64VectorTests(IntFunction<Long> fa) {
+        long a = fa.apply(SPECIES.length());
+        long r = -1;
+
+        for (int ic = 0; ic < INVOC_COUNT * INVOC_COUNT; ic++) {
+            var vmask = VectorMask.fromLong(SPECIES, a);
+            r = vmask.toLong();
+        }
+        Assert.assertEquals(r, (a & LONG_MASK_BITS));
+    }
+
     @DataProvider
     public static Object[][] longMaskProvider() {
         return new Object[][]{
@@ -6927,7 +7049,7 @@ public class Byte64VectorTests extends AbstractVectorTest {
     static void maskFromToLongByte64VectorTestsSmokeTest(long inputLong) {
         var vmask = VectorMask.fromLong(SPECIES, inputLong);
         long outputLong = vmask.toLong();
-        Assert.assertEquals(outputLong, (inputLong & (((0xFFFFFFFFFFFFFFFFL >>> (64 - SPECIES.length()))))));
+        Assert.assertEquals(outputLong, (inputLong & LONG_MASK_BITS));
     }
 
     @DataProvider
