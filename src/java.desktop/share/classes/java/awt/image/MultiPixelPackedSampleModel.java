@@ -343,7 +343,7 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * coordinates are not in bounds.
      * @param x         the X coordinate of the specified pixel
      * @param y         the Y coordinate of the specified pixel
-     * @param b         the band to return, which is assumed to be 0
+     * @param b         the band to return, which must be 0
      * @param data      the {@code DataBuffer} containing the image
      *                  data
      * @return the specified band containing the sample of the specified
@@ -374,7 +374,7 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * coordinates are not in bounds.
      * @param x the X coordinate of the specified pixel
      * @param y the Y coordinate of the specified pixel
-     * @param b the band to return, which is assumed to be 0
+     * @param b the band to set, which must be 0
      * @param s the input sample as an {@code int}
      * @param data the {@code DataBuffer} where image data is stored
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
@@ -448,6 +448,9 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * not in bounds, or if {@code obj} is not {@code null} or
      * not large enough to hold the pixel data
      * @see #setDataElements(int, int, Object, DataBuffer)
+     * @throws NullPointerException if {@code data} is {@code null}.
+     * @throws ArrayIndexOutOfBoundsException if the coordinates are
+     * not in bounds, or if {code obj} is too small to hold the output.
      */
     public Object getDataElements(int x, int y, Object obj, DataBuffer data) {
         if ((x < 0) || (y < 0) || (x >= width) || (y >= height)) {
@@ -527,8 +530,11 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * @param data the {@code DataBuffer} where image data is stored
      * @return an array containing the specified pixel.
      * @throws ArrayIndexOutOfBoundsException if the coordinates
-     *  are not in bounds
+     * are not in bounds, or if {@code iArray} is too small to hold the output.
      * @see #setPixel(int, int, int[], DataBuffer)
+     * @throws NullPointerException if {@code data} is {@code null}.
+     * @throws ArrayIndexOutOfBoundsException if the coordinates are
+     * not in bounds, or if {@code iArray} is too small to hold the output.
      */
     public int[] getPixel(int x, int y, int[] iArray, DataBuffer data) {
         if ((x < 0) || (y < 0) || (x >= width) || (y >= height)) {
@@ -588,6 +594,9 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * @param obj a primitive array containing pixel data
      * @param data the {@code DataBuffer} containing the image data
      * @see #getDataElements(int, int, Object, DataBuffer)
+     * @throws NullPointerException if {@code obj} or {@code data} is {@code null}.
+     * @throws ArrayIndexOutOfBoundsException if the coordinates are
+     * not in bounds, or if {@code obj} is too small to hold the input.
      */
     public void setDataElements(int x, int y, Object obj, DataBuffer data) {
         if ((x < 0) || (y < 0) || (x >= width) || (y >= height)) {
@@ -638,6 +647,9 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * @param iArray the input pixel in an {@code int} array
      * @param data the {@code DataBuffer} containing the image data
      * @see #getPixel(int, int, int[], DataBuffer)
+     * @throws NullPointerException if {@code iArray} or {@code data} is {@code null}.
+     * @throws ArrayIndexOutOfBoundsException if the coordinates are
+     * not in bounds, or if {@code iArray} is too small to hold the input.
      */
     public void setPixel(int x, int y, int[] iArray, DataBuffer data) {
         if ((x < 0) || (y < 0) || (x >= width) || (y >= height)) {
