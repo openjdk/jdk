@@ -45,7 +45,6 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     return JNI_ERR;
   }
 
-
   memset(&caps, 0, sizeof(caps));
   caps.can_generate_sampled_object_alloc_events = 1;
   if (jvmti->AddCapabilities(&caps) != JVMTI_ERROR_NONE) {
