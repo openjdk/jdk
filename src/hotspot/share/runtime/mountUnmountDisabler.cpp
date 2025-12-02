@@ -80,14 +80,11 @@ class JVMTIEndTransition : public StackObj {
     _current(current), _vthread(current, vthread), _is_mount(is_mount), _is_thread_start(is_thread_start) {
     assert(DoJVMTIVirtualThreadTransitions || !JvmtiExport::can_support_virtual_threads(), "sanity check");
     if (DoJVMTIVirtualThreadTransitions && MountUnmountDisabler::notify_jvmti_events()) {
-      bool is_virtual = java_lang_VirtualThread::is_instance(_current->jvmti_vthread());
-      bool should_rebind = (_is_mount && !is_virtual) || (!_is_mount && is_virtual);
-      if (should_rebind) {
-        // We rebinded on start_transition but the mount/unmount operation
-        // failed so now we need to rebind to the original state.
-        _current->rebind_to_jvmti_thread_state_of(_is_mount ? _vthread() : _current->threadObj());
-        OrderAccess::fence();  // dont reorder with clear of transition flags
+      if (_is_mount) {
+        _current->rebind_to_jvmti_thread_state_of(_vthread());
       }
+      DEBUG_ONLY(bool is_virtual = java_lang_VirtualThread::is_instance(_current->jvmti_vthread()));
+      assert((_is_mount && is_virtual) || (!_is_mount && !is_virtual), "wrong identity");
     }
   }
   ~JVMTIEndTransition() {
