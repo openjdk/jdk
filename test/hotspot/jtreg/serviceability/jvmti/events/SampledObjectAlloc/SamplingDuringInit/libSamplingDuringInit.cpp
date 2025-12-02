@@ -24,7 +24,6 @@
 #include "jvmti.h"
 #include "jvmti_common.hpp"
 
-
 extern "C" {
 
 JNIEXPORT void JNICALL
