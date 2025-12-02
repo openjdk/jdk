@@ -24,8 +24,10 @@
 /*
  * @test
  * @bug 8369950
- * @summary Test that the HttpsURLConnection does not set IPv6 address literals for SNI hostname during TLS handshake
+ * @summary Test that the HttpsURLConnection does not set IPv6 address literals for
+ *          SNI hostname during TLS handshake
  * @library /test/lib
+ * @comment Add -Djavax.net.debug=all to the following line to enable SSL debugging
  * @run main/othervm SubjectAltNameIPv6
  */
 
@@ -47,6 +49,8 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import jdk.test.lib.net.IPSupport;
 import jdk.test.lib.net.SimpleSSLContext;
@@ -57,12 +61,13 @@ public class SubjectAltNameIPv6 {
     /*
      * Is the server ready to serve?
      */
-    volatile static boolean serverReady = false;
+    private final CountDownLatch serverReady = new CountDownLatch(1);
 
-    /*
-     * Turn on SSL debugging?
-     */
-    static boolean debug = Boolean.getBoolean("test.debug");
+    // use any free port by default
+    volatile int serverPort = 0;
+
+    // stores an exception thrown by server in a separate thread
+    volatile Exception serverException = null;
 
     /*
      * Define the server side of the test.
@@ -74,14 +79,16 @@ public class SubjectAltNameIPv6 {
         SSLServerSocketFactory sslssf =
             new SimpleSSLContext().get().getServerSocketFactory();
         SSLServerSocket sslServerSocket =
-            (SSLServerSocket) sslssf.createServerSocket(serverPort, 0, InetAddress.getByName("[::1]"));
+            (SSLServerSocket) sslssf.createServerSocket(
+                    serverPort, 0,
+                    InetAddress.getByName("[::1]"));
         sslServerSocket.setEnabledProtocols(new String[]{"TLSv1.3"});
         serverPort = sslServerSocket.getLocalPort();
 
         /*
-         * Signal Client, we're ready for his connect.
+         * Signal the client, the server is ready to accept connection.
          */
-        serverReady = true;
+        serverReady.countDown();
 
         SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
         OutputStream sslOS = sslSocket.getOutputStream();
@@ -102,8 +109,12 @@ public class SubjectAltNameIPv6 {
         /*
          * Wait for server to get started.
          */
-        while (!serverReady) {
-            Thread.sleep(50);
+        boolean ready = serverReady.await(10, TimeUnit.SECONDS);
+        if (!ready) {
+            throw new RuntimeException("Server timed out.");
+        }
+        if (serverException != null) {
+            throw new RuntimeException("Server failed to start.", serverException);
         }
 
         SSLSocketFactory sf = new SimpleSSLContext().get().getSocketFactory();
@@ -121,19 +132,10 @@ public class SubjectAltNameIPv6 {
         }
     }
 
-    // use any free port by default
-    volatile int serverPort = 0;
-
-    // stores an exception thrown by server in a separate thread
-    volatile Exception serverException = null;
-
     public static void main(String[] args) throws Exception {
 
         if (!IPSupport.hasIPv6()) {
             throw new SkippedException("Skipping test - IPv6 is not supported");
-        }
-        if (debug) {
-            System.setProperty("javax.net.debug", "all");
         }
         /*
          * Start the tests.
@@ -150,7 +152,7 @@ public class SubjectAltNameIPv6 {
      */
     SubjectAltNameIPv6() throws Exception {
         startServer();
-        startClient();
+        doClientSide();
 
         /*
          * Wait for other side to close down.
@@ -161,28 +163,21 @@ public class SubjectAltNameIPv6 {
             throw serverException;
     }
 
-    void startServer() throws Exception {
-        serverThread = new Thread() {
-            public void run() {
-                try {
-                    doServerSide();
-                } catch (Exception e) {
-                    /*
-                     * Our server thread just died.
-                     *
-                     * Release the client, if not active already...
-                     */
-                    System.err.println("Server died:");
-                    serverReady = true;
-                    serverException = e;
-                }
+    void startServer() {
+        serverThread = new Thread(() -> {
+            try {
+                doServerSide();
+            } catch (Exception e) {
+                /*
+                 * Our server thread just died.
+                 *
+                 * Store the exception and release the client.
+                 */
+                serverException = e;
+                serverReady.countDown();
             }
-        };
+        });
         serverThread.start();
-    }
-
-    void startClient() throws Exception {
-        doClientSide();
     }
 
     /*
@@ -199,8 +194,10 @@ public class SubjectAltNameIPv6 {
                 return wrap.getSupportedCipherSuites();
             }
             @Override
-            public Socket createSocket(Socket s, String host, int port, boolean autoClose) throws IOException {
-                final SSLSocket so = (SSLSocket) wrap.createSocket(s, host, port, autoClose);
+            public Socket createSocket(Socket s, String host, int port, boolean autoClose)
+                    throws IOException {
+                final SSLSocket so =
+                        (SSLSocket) wrap.createSocket(s, host, port, autoClose);
                 return new SSLSocket() {
                     @Override
                     public void connect(SocketAddress endpoint,
@@ -324,19 +321,19 @@ public class SubjectAltNameIPv6 {
                 };
             }
             @Override
-            public Socket createSocket(String h, int p) throws IOException, UnknownHostException {
+            public Socket createSocket(String h, int p) {
                 return null;
             }
             @Override
-            public Socket createSocket(String h, int p, InetAddress ipa, int lp) throws IOException, UnknownHostException {
+            public Socket createSocket(String h, int p, InetAddress ipa, int lp) {
                 return null;
             }
             @Override
-            public Socket createSocket(InetAddress h, int p) throws IOException {
+            public Socket createSocket(InetAddress h, int p) {
                 return null;
             }
             @Override
-            public Socket createSocket(InetAddress a, int p, InetAddress l, int lp) throws IOException {
+            public Socket createSocket(InetAddress a, int p, InetAddress l, int lp) {
                 return null;
             }
         };
