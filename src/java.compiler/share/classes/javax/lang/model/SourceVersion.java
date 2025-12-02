@@ -83,6 +83,12 @@ public enum SourceVersion {
      *      preview, flexible constructor bodies in third preview)
      *  25: module import declarations, compact source files and
      *      instance main methods, and flexible constructor bodies
+     *      (primitive Types in Patterns, instanceof, and switch in
+     *      second preview, module Import Declarations in third
+     *      preview)
+     *  26: no changes (primitive Types in Patterns, instanceof, and
+     *      switch in second preview, module Import Declarations in fourth
+     *      preview)
      */
 
     /**
