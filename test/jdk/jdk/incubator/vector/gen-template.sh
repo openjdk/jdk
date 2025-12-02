@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -514,8 +514,8 @@ gen_reduction_op "ADD" "+" "" "0"
 gen_reduction_op "MUL" "*" "" "1"
 gen_reduction_op_func "MIN" "(\$type\$) Math.min" "" "\$Wideboxtype\$.\$MaxValue\$"
 gen_reduction_op_func "MAX" "(\$type\$) Math.max" "" "\$Wideboxtype\$.\$MinValue\$"
-gen_reduction_op_func "UMIN" "(\$type\$) VectorMath.minUnsigned" "BITWISE" "\$Wideboxtype\$.\$MaxValue\$"
-gen_reduction_op_func "UMAX" "(\$type\$) VectorMath.maxUnsigned" "BITWISE" "\$Wideboxtype\$.\$MinValue\$"
+gen_reduction_op_func "UMIN" "(\$type\$) VectorMath.minUnsigned" "BITWISE" "(\$type\$)-1"
+gen_reduction_op_func "UMAX" "(\$type\$) VectorMath.maxUnsigned" "BITWISE" "(\$type\$)0"
 gen_reduction_op_func "FIRST_NONZERO" "firstNonZero" "" "(\$type\$) 0"
 
 # Boolean reductions.

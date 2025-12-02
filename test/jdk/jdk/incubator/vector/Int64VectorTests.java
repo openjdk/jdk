@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4233,7 +4233,7 @@ public class Int64VectorTests extends AbstractVectorTest {
     }
 
     static int UMINReduce(int[] a, int idx) {
-        int res = Integer.MAX_VALUE;
+        int res = (int)-1;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = (int) VectorMath.minUnsigned(res, a[i]);
         }
@@ -4242,7 +4242,7 @@ public class Int64VectorTests extends AbstractVectorTest {
     }
 
     static int UMINReduceAll(int[] a) {
-        int res = Integer.MAX_VALUE;
+        int res = (int)-1;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (int) VectorMath.minUnsigned(res, UMINReduce(a, i));
         }
@@ -4254,7 +4254,7 @@ public class Int64VectorTests extends AbstractVectorTest {
     static void UMINReduceInt64VectorTests(IntFunction<int[]> fa) {
         int[] a = fa.apply(SPECIES.length());
         int[] r = fr.apply(SPECIES.length());
-        int ra = Integer.MAX_VALUE;
+        int ra = (int)-1;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
@@ -4264,7 +4264,7 @@ public class Int64VectorTests extends AbstractVectorTest {
         }
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Integer.MAX_VALUE;
+            ra = (int)-1;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 ra = (int) VectorMath.minUnsigned(ra, av.reduceLanes(VectorOperators.UMIN));
@@ -4276,7 +4276,7 @@ public class Int64VectorTests extends AbstractVectorTest {
     }
 
     static int UMINReduceMasked(int[] a, int idx, boolean[] mask) {
-        int res = Integer.MAX_VALUE;
+        int res = (int)-1;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = (int) VectorMath.minUnsigned(res, a[i]);
@@ -4286,7 +4286,7 @@ public class Int64VectorTests extends AbstractVectorTest {
     }
 
     static int UMINReduceAllMasked(int[] a, boolean[] mask) {
-        int res = Integer.MAX_VALUE;
+        int res = (int)-1;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (int) VectorMath.minUnsigned(res, UMINReduceMasked(a, i, mask));
         }
@@ -4300,7 +4300,7 @@ public class Int64VectorTests extends AbstractVectorTest {
         int[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Integer> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        int ra = Integer.MAX_VALUE;
+        int ra = (int)-1;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
@@ -4310,7 +4310,7 @@ public class Int64VectorTests extends AbstractVectorTest {
         }
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Integer.MAX_VALUE;
+            ra = (int)-1;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 ra = (int) VectorMath.minUnsigned(ra, av.reduceLanes(VectorOperators.UMIN, vmask));
@@ -4322,7 +4322,7 @@ public class Int64VectorTests extends AbstractVectorTest {
     }
 
     static int UMAXReduce(int[] a, int idx) {
-        int res = Integer.MIN_VALUE;
+        int res = (int)0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = (int) VectorMath.maxUnsigned(res, a[i]);
         }
@@ -4331,7 +4331,7 @@ public class Int64VectorTests extends AbstractVectorTest {
     }
 
     static int UMAXReduceAll(int[] a) {
-        int res = Integer.MIN_VALUE;
+        int res = (int)0;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (int) VectorMath.maxUnsigned(res, UMAXReduce(a, i));
         }
@@ -4343,7 +4343,7 @@ public class Int64VectorTests extends AbstractVectorTest {
     static void UMAXReduceInt64VectorTests(IntFunction<int[]> fa) {
         int[] a = fa.apply(SPECIES.length());
         int[] r = fr.apply(SPECIES.length());
-        int ra = Integer.MIN_VALUE;
+        int ra = (int)0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
@@ -4353,7 +4353,7 @@ public class Int64VectorTests extends AbstractVectorTest {
         }
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Integer.MIN_VALUE;
+            ra = (int)0;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 ra = (int) VectorMath.maxUnsigned(ra, av.reduceLanes(VectorOperators.UMAX));
@@ -4365,7 +4365,7 @@ public class Int64VectorTests extends AbstractVectorTest {
     }
 
     static int UMAXReduceMasked(int[] a, int idx, boolean[] mask) {
-        int res = Integer.MIN_VALUE;
+        int res = (int)0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = (int) VectorMath.maxUnsigned(res, a[i]);
@@ -4375,7 +4375,7 @@ public class Int64VectorTests extends AbstractVectorTest {
     }
 
     static int UMAXReduceAllMasked(int[] a, boolean[] mask) {
-        int res = Integer.MIN_VALUE;
+        int res = (int)0;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (int) VectorMath.maxUnsigned(res, UMAXReduceMasked(a, i, mask));
         }
@@ -4389,7 +4389,7 @@ public class Int64VectorTests extends AbstractVectorTest {
         int[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Integer> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        int ra = Integer.MIN_VALUE;
+        int ra = (int)0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
@@ -4399,7 +4399,7 @@ public class Int64VectorTests extends AbstractVectorTest {
         }
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Integer.MIN_VALUE;
+            ra = (int)0;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 ra = (int) VectorMath.maxUnsigned(ra, av.reduceLanes(VectorOperators.UMAX, vmask));

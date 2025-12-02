@@ -2858,9 +2858,9 @@ public abstract class IntVector extends AbstractVector<Integer> {
             case VECTOR_OP_MAX: return (v, m) ->
                     toBits(v.rOp(MIN_OR_INF, m, (i, a, b) -> (int) Math.max(a, b)));
             case VECTOR_OP_UMIN: return (v, m) ->
-                    toBits(v.rOp(MAX_OR_INF, m, (i, a, b) -> (int) VectorMath.minUnsigned(a, b)));
+                    toBits(v.rOp((int)-1, m, (i, a, b) -> (int) VectorMath.minUnsigned(a, b)));
             case VECTOR_OP_UMAX: return (v, m) ->
-                    toBits(v.rOp(MIN_OR_INF, m, (i, a, b) -> (int) VectorMath.maxUnsigned(a, b)));
+                    toBits(v.rOp((int)0, m, (i, a, b) -> (int) VectorMath.maxUnsigned(a, b)));
             case VECTOR_OP_SUADD: return (v, m) ->
                     toBits(v.rOp((int)0, m, (i, a, b) -> (int) VectorMath.addSaturatingUnsigned(a, b)));
             case VECTOR_OP_AND: return (v, m) ->
