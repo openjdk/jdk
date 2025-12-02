@@ -1089,7 +1089,7 @@ void PhaseIterGVN::verify_optimize() {
       if (is_verify_Ideal())    { failure |= verify_Ideal_for(n, false); }
       if (is_verify_Ideal())    { failure |= verify_Ideal_for(n, true); }
       if (is_verify_Identity()) { failure |= verify_Identity_for(n); }
-      if (is_verify_extra())    { failure |= verify_extra_for(n); }
+      if (is_verify_extra())    { failure |= verify_node_invariants_for(n); }
       // traverse all inputs and outputs
       for (uint i = 0; i < n->req(); i++) {
         if (n->in(i) != nullptr) {
@@ -2062,7 +2062,7 @@ bool PhaseIterGVN::verify_Identity_for(Node* n) {
 }
 
 // Some other verifications that are no specific to a particular transformation
-bool PhaseIterGVN::verify_extra_for(Node* n) {
+bool PhaseIterGVN::verify_node_invariants_for(Node* n) {
   if (n->is_AddP()) {
     Node* addp = n->in(AddPNode::Address);
     if (!addp->is_AddP()) {

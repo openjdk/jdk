@@ -493,7 +493,7 @@ public:
   bool verify_Value_for(Node* n, bool strict = false);
   bool verify_Ideal_for(Node* n, bool can_reshape);
   bool verify_Identity_for(Node* n);
-  bool verify_extra_for(Node* n);
+  bool verify_node_invariants_for(Node* n);
   void verify_empty_worklist(Node* n);
 #endif
 
