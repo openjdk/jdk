@@ -44,7 +44,6 @@ import jdk.jpackage.internal.resources.ResourceLocator;
 import jdk.jpackage.internal.util.PListReader;
 import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
 import jdk.jpackage.internal.util.function.ThrowingSupplier;
-import jdk.jpackage.test.AdditionalLauncher.PropertyFile;
 import jdk.jpackage.test.LauncherShortcut.StartupDirectory;
 import org.xml.sax.SAXException;
 
@@ -444,7 +443,7 @@ public final class LauncherVerifier {
         return PropertyFinder.findLauncherProperty(cmd, launcherName,
                 PropertyFinder.cmdlineOptionWithValue("--description"),
                 PropertyFinder.launcherPropertyFile("description"),
-                PropertyFinder.nop()
+                PropertyFinder.appImageFileLauncher(cmd, launcherName, "description")
         ).orElseGet(() -> {
             if (cmd.isMainLauncher(launcherName)) {
                 return cmd.mainLauncherName();
