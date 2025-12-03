@@ -95,6 +95,7 @@ public:
     _arraycopy_type_Type =  TypeFunc::make(domain, range);
   }
 
+  const TypePtr* get_src_adr_type(PhaseGVN* phase) const;
 private:
   ArrayCopyNode(Compile* C, bool alloc_tightly_coupled, bool has_negative_length_guard);
 

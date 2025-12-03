@@ -383,6 +383,10 @@ const TypePtr* ArrayCopyNode::get_address_type(PhaseGVN* phase, const TypePtr* a
   return atp->add_offset(Type::OffsetBot);
 }
 
+const TypePtr* ArrayCopyNode::get_src_adr_type(PhaseGVN* phase) const {
+  return get_address_type(phase, _src_type, in(Src));
+}
+
 void ArrayCopyNode::array_copy_test_overlap(PhaseGVN *phase, bool can_reshape, bool disjoint_bases, int count, Node*& forward_ctl, Node*& backward_ctl) {
   Node* ctl = in(TypeFunc::Control);
   if (!disjoint_bases && count > 1) {
