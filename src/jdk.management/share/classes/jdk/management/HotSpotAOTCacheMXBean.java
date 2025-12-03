@@ -75,7 +75,7 @@ public interface HotSpotAOTCacheMXBean extends PlatformManagedObject {
    *
    * <p>For more information about creating and using the AOT artifacts, and detailed
    * specification of the corresponding JVM command-line options, please refer
-   * to <a href="https://openjdk.org/jeps/483">483</a> and <a href="https://openjdk.org/jeps/514">514</a>.
+   * to <a href="https://openjdk.org/jeps/483">JEP 483</a> and <a href="https://openjdk.org/jeps/514">JEP 514</a>.
    *
    * <p>Note: Currently there are no APIs to start an AOT recording. AOT recordings must be
    * started using JVM command-line options such as -XX:AOTCacheOutput.
