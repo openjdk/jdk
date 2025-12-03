@@ -27,6 +27,7 @@ package jdk.jpackage.internal;
 import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 
 import java.io.IOException;
+import java.lang.System.Logger.Level;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +36,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.model.Logger;
 
 
 public final class Codesign {
@@ -97,7 +99,7 @@ public final class Codesign {
         var exec = Executor.of(Stream.concat(
                 cmdline.stream(),
                 Stream.of(path.toString())).toArray(String[]::new)
-        ).saveOutput(true);
+        ).saveOutput(true).setLogger(LOGGER).setLoggerLevel(Level.DEBUG);
         configureExecutor.ifPresent(configure -> configure.accept(exec));
 
         if (exec.execute() != 0) {
@@ -116,4 +118,5 @@ public final class Codesign {
 
     private final List<String> cmdline;
     private final Optional<Consumer<Executor>> configureExecutor;
+    private final static System.Logger LOGGER = Logger.MAC_SIGN.get();
 }
