@@ -136,8 +136,8 @@ public:
 
   inline static size_t malloc_overhead() { return sizeof(MallocHeader) + footer_size; }
 
-  static MallocHeader* kill_block(void* memblock);
-  static void revive_block(void* memblock);
+  inline static MallocHeader* kill_block(void* memblock);
+  inline static void revive_block(void* memblock);
 
   inline size_t size()  const { return _size; }
   inline MemTag mem_tag() const { return _mem_tag; }

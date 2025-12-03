@@ -77,18 +77,3 @@ void MallocHeader::print_block_on_error(outputStream* st, address bad_address, a
   }
 }
 
-MallocHeader* MallocHeader::kill_block(void* memblock) {
-  MallocHeader* header = (MallocHeader*)memblock - 1;
-  ASAN_UNPOISON_MEMORY_REGION(header, sizeof(MallocHeader));
-  ASAN_UNPOISON_MEMORY_REGION(header->footer_address(), footer_size);
-  resolve_checked(memblock);
-  header->mark_block_as_dead();
-  return header;
-}
-
-void MallocHeader::revive_block(void* memblock) {
-  MallocHeader* header = (MallocHeader*)memblock - 1;
-  header->revive();
-  ASAN_POISON_MEMORY_REGION(header->footer_address(), footer_size);
-  ASAN_POISON_MEMORY_REGION(header, sizeof(MallocHeader));
-}
