@@ -76,16 +76,7 @@ public:
     }
   }
 
-  // The default of parallel_region_stride is 0, ShenandoahHeap::parallel_heap_region_iterate will determine
-  // the value based on number of regions and active worker threads if regions number is more than 4096.
-  // The default behavior is designed for super light workload e.g. ShenandoahInitMarkUpdateRegionStateClosure,
-  // which is just few instruction to capture TAMS for each region.
-  // Resetting bitmaps is not really lightweight workload because it needs to reset chunks of memory for
-  // marking bitmaps, it doesn't need to be done for each region, the default logic can't distribute the task
-  // evenly to all active workers.
-  // Using a smaller value here yields better task distribution for a lumpy workload. The task will be split
-  // into smaller batches with 8 regions in batch, the worker processes more regions w/o needs to reset bitmaps
-  // will process more batches, but overall all workers will be saturated throughout the whole concurrent reset phase.
+  // Bitmap reset task is heavy-weight and benefits from much smaller tasks than the default.
   size_t parallel_region_stride() override { return 8; }
 
   bool is_thread_safe() override { return true; }

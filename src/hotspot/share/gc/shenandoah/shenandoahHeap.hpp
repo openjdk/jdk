@@ -113,10 +113,6 @@ public:
 class ShenandoahHeapRegionClosure : public StackObj {
 public:
   virtual void heap_region_do(ShenandoahHeapRegion* r) = 0;
-  // Default to global value ShenandoahParallelRegionStride, When it is set to 0,
-  // ShenandoahHeap::parallel_heap_region_iterate will derive a reasonable value based
-  // on active worker threads and number of regions.
-  // For some lumpy workload, the value can be overridden for better task distribution.
   virtual size_t parallel_region_stride() { return ShenandoahParallelRegionStride; }
   virtual bool is_thread_safe() { return false; }
 };
