@@ -106,7 +106,7 @@ public class GetXSpace {
         Space(String name) {
             this.name = name;
             long[] sizes = new long[4];
-            if (Platform.isWindows() & isCDDrive(name)) {
+            if (Platform.isWindows() && isCDDrive(name)) {
                 try {
                     getCDDriveSpace(name, sizes);
                 } catch (IOException e) {
@@ -184,7 +184,7 @@ public class GetXSpace {
 
         out.format("%s (%d):%n", s.name(), s.size());
         String fmt = "  %-4s total = %12d free = %12d usable = %12d%n";
-        String method = Platform.isWindows() & isCDDrive(s.name()) ? "getCDDriveSpace" : "getSpace";
+        String method = Platform.isWindows() && isCDDrive(s.name()) ? "getCDDriveSpace" : "getSpace";
         out.format(fmt, method, s.total(), s.free(), s.available());
         out.format(fmt, "getXSpace", ts, fs, us);
 
