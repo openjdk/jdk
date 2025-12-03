@@ -34,41 +34,37 @@
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
-import java.util.HashSet;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class PrintAllFlags {
-    public static void main(String args[]) throws Exception {
-        Set<String> optNameSet = new HashSet<>();
-        var optPattern = Pattern.compile("\\s*\\w+\\s\\w+\\s+=");
-        var pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+PrintFlagsFinal", "-version");
-        var output = new OutputAnalyzer(pb.start());
-        for (var line : output.asLines()) {
-            var m = optPattern.matcher(line);
-            if (m.find()) {
-                optNameSet.add(m.group());
-            }
-        }
-        if (optNameSet.isEmpty()) {
-            throw new RuntimeException("Sanity test failed: no match for option pattern in first output");
-        }
+    private static final Pattern optPattern = Pattern.compile("\\s*\\w+\\s\\w+\\s+=");
 
+    public static void main(String args[]) throws Exception {
+        var pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+PrintFlagsFinal", "-version");
+        var flagsFinal = makeOptionNameSet(new OutputAnalyzer(pb.start()));
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-XX:+UnlockExperimentalVMOptions", "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintFlagsFinal", "-version");
-        output = new OutputAnalyzer(pb.start());
-        for (var line : output.asLines()) {
-            var m = optPattern.matcher(line);
-            if (m.find()) {
-                if (!optNameSet.contains(m.group())) {
-                    output.reportDiagnosticSummary();
-                    System.err.println("VMOption names from first run:");
-                    optNameSet.forEach(System.err::println);
-                    throw new RuntimeException("'" + m.group() +
-                            "' not expected in PrintFlagsFinal output without vs with unlocked options");
-                }
-            }
-        }
+        var flagsFinalUnlocked = makeOptionNameSet(new OutputAnalyzer(pb.start()));
 
+        if (!flagsFinal.equals(flagsFinalUnlocked)) {
+            throw new RuntimeException("+PrintFlagsFinal should produce the same output" +
+                    " whether or not UnlockExperimentalVMOptions and UnlockDiagnosticVMOptions are set");
+        }
     }
+
+    private static Set<String> makeOptionNameSet(OutputAnalyzer output) {
+        Set<String> optNameSet = output.asLines().stream()
+                .map(optPattern::matcher)
+                .filter(Matcher::find)
+                .map(Matcher::group)
+                .collect(Collectors.toSet());
+        if (optNameSet.isEmpty()) {
+            throw new RuntimeException("Sanity test failed: no match for option pattern in process output");
+        }
+        return optNameSet;
+    }
+
 }
