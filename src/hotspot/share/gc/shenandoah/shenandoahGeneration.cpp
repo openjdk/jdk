@@ -527,7 +527,6 @@ size_t ShenandoahGeneration::select_aged_regions(const size_t old_promotion_rese
   assert_no_in_place_promotions();
 
   auto const heap = ShenandoahGenerationalHeap::heap();
-  ShenandoahYoungGeneration* young_gen = heap->young_generation();
   ShenandoahFreeSet* free_set = heap->free_set();
   bool* const candidate_regions_for_promotion_by_copy = heap->collection_set()->preselected_regions();
   ShenandoahMarkingContext* const ctx = heap->marking_context();
@@ -565,7 +564,6 @@ size_t ShenandoahGeneration::select_aged_regions(const size_t old_promotion_rese
   size_t pip_mutator_bytes = 0;
   size_t pip_collector_bytes = 0;
 
-  size_t min_remnant_size = PLAB::min_size() * HeapWordSize;
   for (idx_t i = 0; i < num_regions; i++) {
     ShenandoahHeapRegion* const r = heap->get_region(i);
     if (r->is_empty() || !r->has_live() || !r->is_young() || !r->is_regular()) {
