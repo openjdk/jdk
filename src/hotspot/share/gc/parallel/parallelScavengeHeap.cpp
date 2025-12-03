@@ -893,9 +893,16 @@ void ParallelScavengeHeap::resize_after_young_gc(bool is_survivor_overflowing) {
   if (!is_survivor_overflowing) {
     assert(old_gen()->capacity_in_bytes() >= old_gen()->min_gen_size(), "inv");
 
-    // Upper bound for a single step shrink; both min_gen_size constraint and per-step delta.
-    const size_t max_shrink_bytes = MIN2(old_gen()->capacity_in_bytes() - old_gen()->min_gen_size(),
-                                         SpaceAlignment);
+    // Old gen min_gen_size constraint.
+    const size_t max_shrink_bytes_gen_size_constraint = old_gen()->capacity_in_bytes() - old_gen()->min_gen_size();
+
+    // Per-step delta to avoid too aggressive shrinking.
+    const size_t max_shrink_bytes_per_step_constraint = SpaceAlignment;
+
+    // Combining the above two constraints.
+    const size_t max_shrink_bytes = MIN2(max_shrink_bytes_gen_size_constraint,
+                                         max_shrink_bytes_per_step_constraint);
+
     size_t shrink_bytes = _size_policy->compute_old_gen_shrink_bytes(old_gen()->free_in_bytes(), max_shrink_bytes);
 
     assert(old_gen()->capacity_in_bytes() >= shrink_bytes, "inv");
