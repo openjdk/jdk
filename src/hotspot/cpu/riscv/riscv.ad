@@ -1049,15 +1049,10 @@ class HandlerImpl {
 
  public:
 
-  static int emit_exception_handler(C2_MacroAssembler *masm);
   static int emit_deopt_handler(C2_MacroAssembler* masm);
 
-  static uint size_exception_handler() {
-    return MacroAssembler::far_branch_size();
-  }
-
   static uint size_deopt_handler() {
-    // count auipc + far branch
+    // count far call + j
     return NativeInstruction::instruction_size + MacroAssembler::far_branch_size();
   }
 };
@@ -1838,25 +1833,6 @@ uint MachUEPNode::size(PhaseRegAlloc* ra_) const
 
 //=============================================================================
 
-// Emit exception handler code.
-int HandlerImpl::emit_exception_handler(C2_MacroAssembler* masm)
-{
-  // auipc t1, #exception_blob_entry_point
-  // jr (offset)t1
-  // Note that the code buffer's insts_mark is always relative to insts.
-  // That's why we must use the macroassembler to generate a handler.
-  address base = __ start_a_stub(size_exception_handler());
-  if (base == nullptr) {
-    ciEnv::current()->record_failure("CodeCache is full");
-    return 0;  // CodeBuffer::expand failed
-  }
-  int offset = __ offset();
-  __ far_jump(RuntimeAddress(OptoRuntime::exception_blob()->entry_point()));
-  assert(__ offset() - offset <= (int) size_exception_handler(), "overflow");
-  __ end_a_stub();
-  return offset;
-}
-
 // Emit deopt handler code.
 int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm)
 {
@@ -1867,12 +1843,19 @@ int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm)
   }
   int offset = __ offset();
 
-  __ auipc(ra, 0);
-  __ far_jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
+  Label start;
+  __ bind(start);
+
+  __ far_call(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
+
+  int entry_offset = __ offset();
+  __ j(start);
 
   assert(__ offset() - offset <= (int) size_deopt_handler(), "overflow");
+  assert(__ offset() - entry_offset >= NativePostCallNop::first_check_size,
+         "out of bounds read in post-call NOP check");
   __ end_a_stub();
-  return offset;
+  return entry_offset;
 
 }
 // REQUIRED MATCHER CODE
@@ -2067,6 +2050,10 @@ MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* original_opnd,
 
 bool Matcher::is_reg2reg_move(MachNode* m) {
   ShouldNotReachHere(); // generic vector operands not supported
+  return false;
+}
+
+bool Matcher::is_register_biasing_candidate(const MachNode* mdef, int oper_index) {
   return false;
 }
 

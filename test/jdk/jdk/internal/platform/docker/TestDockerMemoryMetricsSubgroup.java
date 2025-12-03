@@ -58,10 +58,7 @@ public class TestDockerMemoryMetricsSubgroup {
             System.out.println("Cgroup not configured.");
             return;
         }
-        if (!DockerTestUtils.canTestDocker()) {
-            System.out.println("Unable to run docker tests.");
-            return;
-        }
+        DockerTestUtils.checkCanTestDocker();
 
         ContainerRuntimeVersionTestUtils.checkContainerVersionSupported();
 

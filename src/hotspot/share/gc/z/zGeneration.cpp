@@ -191,7 +191,8 @@ void ZGeneration::flip_age_pages(const ZRelocationSetSelector* selector) {
   ZRendezvousHandshakeClosure cl;
   Handshake::execute(&cl);
 
-  _relocate.barrier_flip_promoted_pages(_relocation_set.flip_promoted_pages());
+  _relocate.barrier_promoted_pages(_relocation_set.flip_promoted_pages(),
+                                   _relocation_set.relocate_promoted_pages());
 }
 
 static double fragmentation_limit(ZGenerationId generation) {

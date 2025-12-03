@@ -101,6 +101,8 @@ import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
 import java.util.Objects;
 
+import jdk.internal.util.DecimalDigits;
+
 /**
  * A year-month in the ISO-8601 calendar system, such as {@code 2007-12}.
  * <p>
@@ -1213,18 +1215,17 @@ public final class YearMonth
     public String toString() {
         int absYear = Math.abs(year);
         StringBuilder buf = new StringBuilder(9);
-        if (absYear < 1000) {
+        if (absYear < 10000) {
             if (year < 0) {
-                buf.append(year - 10000).deleteCharAt(1);
-            } else {
-                buf.append(year + 10000).deleteCharAt(0);
+                buf.append('-');
             }
+            DecimalDigits.appendQuad(buf, absYear);
         } else {
             buf.append(year);
         }
-        return buf.append(month < 10 ? "-0" : "-")
-            .append(month)
-            .toString();
+        buf.append('-');
+        DecimalDigits.appendPair(buf, month);
+        return buf.toString();
     }
 
     //-----------------------------------------------------------------------
