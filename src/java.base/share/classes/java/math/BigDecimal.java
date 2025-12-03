@@ -2298,6 +2298,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         long resultScale = normScale / nAbs;
         if (n > 0) {
             // Round the root with the specified settings
+            boolean increment = false;
             if (halfWay) { // half-way rounding
                 BigInteger[] rootRem = workingInt.rootnAndRemainder(nAbs);
                 // remove the one-tenth digit
@@ -2305,7 +2306,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 root = quotRem10[0];
                 resultScale--;
 
-                boolean increment = false;
                 int digit = quotRem10[1].intValue();
                 if (digit > 5) {
                     increment = true;
@@ -2317,10 +2317,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                         increment = true;
                     }
                 }
-
-                if (increment) {
-                    root = root.add(1L);
-                }
             } else {
                 switch (mc.roundingMode) {
                 case DOWN, FLOOR -> root = workingInt.rootn(nAbs); // No need to round
@@ -2330,12 +2326,16 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                     root = rootRem[0];
                     // Check if remainder is non-zero
                     if (rootRem[1].signum != 0 || !working.isInteger())
-                        root = root.add(1L);
+                        increment = true;
                 }
 
                 default -> throw new AssertionError("Unexpected value for RoundingMode: " + mc.roundingMode);
                 }
             }
+            if (increment) {
+                root = root.add(1L);
+            }
+
             result = new BigDecimal(root, checkScale(root, resultScale), mc); // mc ensures no increase of precision
         } else { // Handle negative degrees
             root = workingInt.rootn(nAbs);
@@ -2360,12 +2360,12 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 result = result.subtract(ulp);
             }
 
+            boolean increment = false;
             if (halfWay) {
                 // remove the one-tenth digit from result
                 BigInteger[] quotRem10 = result.unscaledValue().divideAndRemainder(BigInteger.TEN);
                 result = new BigDecimal(quotRem10[0], checkScaleNonZero(result.scale - 1L));
 
-                boolean increment = false;
                 int digit = quotRem10[1].intValue();
                 if (digit > 5) {
                     increment = true;
@@ -2377,10 +2377,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                         increment = true;
                     }
                 }
-
-                if (increment) {
-                    result = result.add(result.ulp());
-                }
             } else {
                 switch (mc.roundingMode) {
                 case DOWN, FLOOR -> {} // result is already rounded down
@@ -2388,11 +2384,14 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 case UP, CEILING -> {
                     // Check if remainder is non-zero
                     if (cmp != 0 || ONE.compareMagnitude(inverse.multiply(x)) != 0)
-                        result = result.add(result.ulp());
+                        increment = true;
                 }
 
                 default -> throw new AssertionError("Unexpected value for RoundingMode: " + mc.roundingMode);
                 }
+            }
+            if (increment) {
+                result = result.add(result.ulp(), mc); // mc ensures no increase of precision
             }
         }
         // Test numerical properties at full precision before any scale adjustments.
@@ -2465,8 +2464,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         }
 
         int nAbs = Math.abs(n);
+        BigDecimal divisor = null;
         if (n < 0) {
-            rad = ONE.divide(rad, result.scale * nAbs, RoundingMode.DOWN);
+            divisor = rad;
+            int inverseScale = checkScale((result.scale + (resAbs.isPowerOfTen() ? 1L : 0L)) * nAbs);
+            rad = ONE.divide(divisor, inverseScale, RoundingMode.DOWN);
         }
 
         BigDecimal ulp = resAbs.ulp();
@@ -2480,21 +2482,25 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         switch (rm) {
         case DOWN:
         case FLOOR:
+            int neighborUpToN_comp_rad = neighborUp.pow(nAbs).compareTo(rad);
             assert
-                resAbs.pow(nAbs).compareTo(rad)     <= 0 &&
-                (n > 0
-                        ? neighborUp.pow(nAbs).compareTo(rad) >  0
-                        : neighborUp.pow(nAbs).compareTo(rad) >= 0) // Inverse radicand is not exact
+                resAbs.pow(nAbs).compareTo(rad) <= 0 &&
+               (neighborUpToN_comp_rad           > 0 ||
+                neighborUpToN_comp_rad          == 0 && n < 0 &&
+                // Inverse radicand must not be exact
+                rad.multiply(divisor).compareTo(ONE) != 0)
                 : "Power of result out for bounds rounding " + rm;
             return true;
 
         case UP:
         case CEILING:
+            int neighborDownToN_comp_rad = neighborDown.pow(nAbs).compareTo(rad);
             assert
-                resAbs.pow(nAbs).compareTo(rad)       >= 0 &&
-                (n > 0
-                        ? neighborDown.pow(nAbs).compareTo(rad) <  0
-                        : neighborDown.pow(nAbs).compareTo(rad) <= 0) // Inverse radicand is not exact
+                 resAbs.pow(nAbs).compareTo(rad) >= 0 &&
+                (neighborDownToN_comp_rad         < 0 ||
+                 neighborDownToN_comp_rad == 0 && n < 0 &&
+                 // Inverse radicand must not be exact
+                 rad.multiply(divisor).compareTo(ONE) != 0)
                 : "Power of result out for bounds rounding " + rm;
             return true;
 
@@ -2504,17 +2510,20 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         case HALF_UP:
             BigDecimal err = resAbs.pow(nAbs).subtract(rad).abs();
             BigDecimal errUp = neighborUp.pow(nAbs).subtract(rad);
-            BigDecimal errDown =  rad.subtract(neighborDown.pow(nAbs));
-            // All error values should be positive so don't need to
-            // compare absolute values.
+            BigDecimal errDown = rad.subtract(neighborDown.pow(nAbs));
+            // All error values should be positive or non-negative
+            // so don't need to compare absolute values.
 
             int err_comp_errUp = err.compareTo(errUp);
             int err_comp_errDown = err.compareTo(errDown);
 
             assert
-                errUp.signum()   == 1 &&
-                errDown.signum() == 1 :
-            "Errors of neighbors powered don't have correct signs";
+                 errUp.signum()   == 1 &&
+                (errDown.signum() == 1 ||
+                 errDown.signum() == 0 && n < 0 &&
+                 // Inverse radicand must not be exact
+                 rad.multiply(divisor).compareTo(ONE) != 0)
+            : "Errors of neighbors powered don't have correct signs";
 
             // For breaking a half-way tie, the return value may
             // have a larger error than one of the neighbors. For
