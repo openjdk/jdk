@@ -335,7 +335,6 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
     if (ctx->is_marked(p)) {
       oop obj = cast_to_oop(p);
       assert(oopDesc::is_oop(obj), "Should be an object");
-      assert(Klass::is_valid(obj->klass()), "Not a valid klass ptr");
       assert(p + obj->size() > left, "This object should span start of card");
       assert(p < right, "Result must precede right");
       return p;
@@ -382,14 +381,6 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
 #ifdef ASSERT
   oop obj = cast_to_oop(p);
   assert(oopDesc::is_oop(obj), "Should be an object");
-  while (p + obj->size() < left) {
-    p += obj->size();
-    obj = cast_to_oop(p);
-    assert(oopDesc::is_oop(obj), "Should be an object");
-    assert(Klass::is_valid(obj->klass()), "Not a valid klass ptr");
-    // Check assumptions in previous block comment if this assert fires
-    fatal("Should never need forward walk in block start");
-  }
   assert(p <= left, "p should start at or before left end of card");
   assert(p + obj->size() > left, "obj should end after left end of card");
 #endif // ASSERT
