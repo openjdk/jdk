@@ -2463,7 +2463,7 @@ class StubGenerator: public StubCodeGenerator {
   // Inputs:
   //   c_rarg0   - source byte array address
   //   c_rarg1   - destination byte array address
-  //   c_rarg2   - K (key) in little endian int array
+  //   c_rarg2   - sessionKe (key) in little endian int array
   //
   address generate_aescrypt_encryptBlock() {
     assert(UseAESIntrinsics, "need AES instructions (Zvkned extension) support");
@@ -2542,7 +2542,7 @@ class StubGenerator: public StubCodeGenerator {
   // Inputs:
   //   c_rarg0   - source byte array address
   //   c_rarg1   - destination byte array address
-  //   c_rarg2   - K (key) in little endian int array
+  //   c_rarg2   - sessionKe (key) in little endian int array
   //
   address generate_aescrypt_decryptBlock() {
     assert(UseAESIntrinsics, "need AES instructions (Zvkned extension) support");

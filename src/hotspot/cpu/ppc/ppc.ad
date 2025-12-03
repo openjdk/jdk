@@ -2088,17 +2088,11 @@ class HandlerImpl {
 
  public:
 
-  static int emit_exception_handler(C2_MacroAssembler *masm);
   static int emit_deopt_handler(C2_MacroAssembler* masm);
-
-  static uint size_exception_handler() {
-    // The exception_handler is a b64_patchable.
-    return MacroAssembler::b64_patchable_size;
-  }
 
   static uint size_deopt_handler() {
     // The deopt_handler is a bl64_patchable.
-    return MacroAssembler::bl64_patchable_size;
+    return MacroAssembler::bl64_patchable_size + BytesPerInstWord;
   }
 
 };
@@ -2114,22 +2108,6 @@ public:
 
 source %{
 
-int HandlerImpl::emit_exception_handler(C2_MacroAssembler *masm) {
-  address base = __ start_a_stub(size_exception_handler());
-  if (base == nullptr) {
-    ciEnv::current()->record_failure("CodeCache is full");
-    return 0;  // CodeBuffer::expand failed
-  }
-
-  int offset = __ offset();
-  __ b64_patchable((address)OptoRuntime::exception_blob()->content_begin(),
-                       relocInfo::runtime_call_type);
-  assert(__ offset() - offset == (int)size_exception_handler(), "must be fixed size");
-  __ end_a_stub();
-
-  return offset;
-}
-
 // The deopt_handler is like the exception handler, but it calls to
 // the deoptimization blob instead of jumping to the exception blob.
 int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
@@ -2140,12 +2118,23 @@ int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
   }
 
   int offset = __ offset();
+
+  Label start;
+  __ bind(start);
+
   __ bl64_patchable((address)SharedRuntime::deopt_blob()->unpack(),
                         relocInfo::runtime_call_type);
+
+  int entry_offset = __ offset();
+
+  __ b(start);
+
   assert(__ offset() - offset == (int) size_deopt_handler(), "must be fixed size");
+  assert(__ offset() - entry_offset >= NativePostCallNop::first_check_size,
+         "out of bounds read in post-call NOP check");
   __ end_a_stub();
 
-  return offset;
+  return entry_offset;
 }
 
 //=============================================================================
@@ -2391,6 +2380,10 @@ MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* original_opnd,
 
 bool Matcher::is_reg2reg_move(MachNode* m) {
   ShouldNotReachHere();  // generic vector operands not supported
+  return false;
+}
+
+bool Matcher::is_register_biasing_candidate(const MachNode* mdef, int oper_index) {
   return false;
 }
 
@@ -6328,36 +6321,8 @@ instruct loadConD_Ex(regD dst, immD src) %{
 // Prefetch instructions.
 // Must be safe to execute with invalid address (cannot fault).
 
-// Special prefetch versions which use the dcbz instruction.
-instruct prefetch_alloc_zero(indirectMemory mem, iRegLsrc src) %{
-  match(PrefetchAllocation (AddP mem src));
-  predicate(AllocatePrefetchStyle == 3);
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "PREFETCH $mem, 2, $src \t// Prefetch write-many with zero" %}
-  size(4);
-  ins_encode %{
-    __ dcbz($src$$Register, $mem$$base$$Register);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
-instruct prefetch_alloc_zero_no_offset(indirectMemory mem) %{
-  match(PrefetchAllocation mem);
-  predicate(AllocatePrefetchStyle == 3);
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "PREFETCH $mem, 2 \t// Prefetch write-many with zero" %}
-  size(4);
-  ins_encode %{
-    __ dcbz($mem$$base$$Register);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
 instruct prefetch_alloc(indirectMemory mem, iRegLsrc src) %{
   match(PrefetchAllocation (AddP mem src));
-  predicate(AllocatePrefetchStyle != 3);
   ins_cost(MEMORY_REF_COST);
 
   format %{ "PREFETCH $mem, 2, $src \t// Prefetch write-many" %}
@@ -6370,7 +6335,6 @@ instruct prefetch_alloc(indirectMemory mem, iRegLsrc src) %{
 
 instruct prefetch_alloc_no_offset(indirectMemory mem) %{
   match(PrefetchAllocation mem);
-  predicate(AllocatePrefetchStyle != 3);
   ins_cost(MEMORY_REF_COST);
 
   format %{ "PREFETCH $mem, 2 \t// Prefetch write-many" %}
