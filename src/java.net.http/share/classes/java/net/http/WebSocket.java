@@ -146,8 +146,13 @@ public interface WebSocket {
          *
          * @implSpec
          * A connection timeout applies to the entire connection phase, from the
-         * moment a connection is requested until it is established. The elapsed
-         * time includes any WebSocket and SSL/TLS handshakes.
+         * moment a connection is requested until it is established.
+         * Implementations are recommended to ensure that the connection timeout
+         * covers any WebSocket and SSL/TLS handshakes.
+         *
+         * @implNote
+         * The built-in JDK implementation of the connection timeout covers any
+         * WebSocket and SSL/TLS handshakes.
          *
          * @param timeout
          *         the timeout, non-{@linkplain Duration#isNegative() negative},

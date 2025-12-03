@@ -314,8 +314,13 @@ public abstract class HttpClient implements AutoCloseable {
          *
          * @implSpec
          * A connection timeout applies to the entire connection phase, from the
-         * moment a connection is requested until it is established. The elapsed
-         * time includes any SSL/TLS handshake.
+         * moment a connection is requested until it is established.
+         * Implementations are recommended to ensure that the connection timeout
+         * covers any SSL/TLS handshakes.
+         *
+         * @implNote
+         * The built-in JDK implementation of the connection timeout covers any
+         * SSL/TLS handshakes.
          *
          * @param duration the duration to allow the underlying connection to be
          *                 established
