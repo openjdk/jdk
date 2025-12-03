@@ -446,7 +446,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
     private SizeSequence rowModel;
     private boolean dragEnabled;
     private boolean surrendersFocusOnKeystroke;
-    private PropertyChangeListener editorRemover = null;
+    private transient PropertyChangeListener editorRemover = null;
     /**
      * The last value of getValueIsAdjusting from the column selection models
      * columnSelectionChanged notification. Used to test if a repaint is
@@ -5547,7 +5547,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
     static class GenericEditor extends DefaultCellEditor {
 
         Class<?>[] argTypes = new Class<?>[]{String.class};
-        java.lang.reflect.Constructor<?> constructor;
+        transient java.lang.reflect.Constructor<?> constructor;
         Object value;
 
         public GenericEditor() {
@@ -6008,7 +6008,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         dragEnabled = newDragEnabled;
 
         surrendersFocusOnKeystroke = f.get("surrendersFocusOnKeystroke", false);
-        editorRemover = (PropertyChangeListener) f.get("editorRemover", null);
+
         columnSelectionAdjusting = f.get("columnSelectionAdjusting", false);
         rowSelectionAdjusting = f.get("rowSelectionAdjusting", false);
         printError = (Throwable) f.get("printError", null);
