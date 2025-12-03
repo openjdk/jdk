@@ -80,10 +80,11 @@ void ShenandoahYoungHeuristics::choose_young_collection_set(ShenandoahCollection
           "Adaptive CSet Selection for YOUNG. Max Evacuation: %zu%s, Actual Free: %zu%s.",
           byte_size_in_proper_unit(max_cset), proper_unit_for_byte_size(max_cset),
           byte_size_in_proper_unit(actual_free), proper_unit_for_byte_size(actual_free));
-
+  ShenandoahMarkingContext* context = ShenandoahHeap::heap()->marking_context();
   for (size_t idx = 0; idx < size; idx++) {
-    ShenandoahHeapRegion* r = data[idx].get_region();
-    if (cset->is_preselected(r->index())) {
+    ShenandoahHeapRegion* const r = data[idx].get_region();
+    const size_t region_index = r->index();
+    if (cset->is_preselected(region_index)) {
       continue;
     }
 
@@ -91,15 +92,15 @@ void ShenandoahYoungHeuristics::choose_young_collection_set(ShenandoahCollection
     // because there is insufficient room in old-gen to hold their to-be-promoted live objects or because
     // they are to be promoted in place.
     if (!heap->is_tenurable(r)) {
-      const size_t new_cset = cur_cset + r->get_live_data_bytes();
-      const size_t region_garbage = r->garbage();
+      const size_t new_cset = cur_cset + r->get_live_data_bytes(context, region_index);
+      const size_t region_garbage = r->garbage(context, region_index);
       const size_t new_garbage = cur_young_garbage + region_garbage;
       const bool add_regardless = (region_garbage > ignore_threshold) && (new_garbage < min_garbage);
       assert(r->is_young(), "Only young candidates expected in the data array");
       if ((new_cset <= max_cset) && (add_regardless || (region_garbage > garbage_threshold))) {
         cur_cset = new_cset;
         cur_young_garbage = new_garbage;
-        cset->add_region(r);
+        cset->add_region(r, context, region_index);
       }
     }
   }

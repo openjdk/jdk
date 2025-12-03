@@ -108,19 +108,20 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
 
   size_t cur_cset = 0;
   size_t cur_garbage = 0;
-
+  ShenandoahMarkingContext* context = ShenandoahHeap::heap()->marking_context();
   for (size_t idx = 0; idx < size; idx++) {
     ShenandoahHeapRegion* r = data[idx].get_region();
-
-    size_t new_cset    = cur_cset + r->get_live_data_bytes();
-    size_t new_garbage = cur_garbage + r->garbage();
+    size_t region_index = r->index();
+    size_t region_garbage = r->garbage(context, region_index);
+    size_t new_cset    = cur_cset + r->get_live_data_bytes(context, region_index);
+    size_t new_garbage = cur_garbage + region_garbage;
 
     if (new_cset > max_cset) {
       break;
     }
 
-    if ((new_garbage < min_garbage) || (r->garbage() > garbage_threshold)) {
-      cset->add_region(r);
+    if ((new_garbage < min_garbage) || (region_garbage > garbage_threshold)) {
+      cset->add_region(r, context, r->index());
       cur_cset = new_cset;
       cur_garbage = new_garbage;
     }
