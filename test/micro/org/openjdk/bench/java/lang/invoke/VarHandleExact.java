@@ -74,7 +74,7 @@ public class VarHandleExact {
 
     @Benchmark
     public void generic_genericInvocation() {
-        var _ = (long) generic.getAndAdd(data, 42);
+        generic.getAndAdd(data, 42);
     }
 
     @Benchmark

@@ -2016,10 +2016,24 @@ public abstract sealed class VarHandle implements Constable
         final Class<?> returnType;
         final int type;
         final int mode;
-        // The cache for last adapted MH if the access site has a VH that does
-        // not match the erased type for.  It can be safely reused if VH is
-        // discovered to be a constant during C2 compilation.
-        @Stable MethodHandle lastAdaption;
+
+        // Adaption mechanism to reduce overhead for non-exact access.
+        // This heuristic assumes that each sigpoly VH call site usually sees
+        // exactly one VarHandle instance.  Each sigpoly VH call site already
+        // has a dedicated AccessDescriptor.
+        // (See MethodHandleNatives::varHandleOperationLinkerMethod)
+        // However, for correctness, we must verify the incoming VarHandle;
+        // adaptedMethodHandle may be inlined by different callers.
+        // In the long run, we wish to put a specific-type invoker that converts
+        // from one fixed type (symbolicMethodTypeInvoker) to another (the
+        // invocation type of the underlying MemberName, or MH for indirect VH),
+        // perform a foldable lookup with a hash table, and hope C2 inline it
+        // all.
+
+        // Object indirection is the only way to ensure the vh and mh are not
+        // from two writes (they must not be tearable)
+        private record Adaption(VarHandle vh, MethodHandle mh) {}
+        private @Stable Adaption adaption;
 
         AccessDescriptor(MethodType symbolicMethodType, int type, int mode) {
             this.symbolicMethodTypeExact = symbolicMethodType;
@@ -2032,15 +2046,19 @@ public abstract sealed class VarHandle implements Constable
 
         @ForceInline
         MethodHandle adaptedMethodHandle(VarHandle vh) {
-            if (MethodHandleImpl.isCompileConstant(vh)) {
-                var cache = lastAdaption;
-                if (cache != null) {
-                    return cache;
-                }
+            var cache = adaption;
+            if (cache != null && cache.vh == vh) {
+                return cache.mh;
             }
 
-            // Keep capturing - vh may suddenly get promoted to a constant by C2
-            return lastAdaption = vh.getMethodHandle(mode).asType(symbolicMethodTypeInvoker);
+            var mh = vh.getMethodHandle(mode).asType(symbolicMethodTypeInvoker);
+            if (cache == null) {
+                // Reduce costly object allocation - if our assumption stands,
+                // the first adaption works, and we don't want allocations for
+                // every VH invocation.
+                adaption = new Adaption(vh, mh);
+            }
+            return mh;
         }
     }
 

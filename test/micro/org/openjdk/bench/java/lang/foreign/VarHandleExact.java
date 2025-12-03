@@ -74,16 +74,21 @@ public class VarHandleExact {
 
     @Benchmark
     public void exact_exactInvocation() {
-        exact.set(data, (long) 0, 42);
+        var _ = (int) exact.getAndAdd(data, (long) 0, 42);
     }
 
     @Benchmark
     public void generic_genericInvocation() {
-        generic.set(data, 0, 42);
+        generic.getAndAdd(data, 0, 42);
+    }
+
+    @Benchmark
+    public void generic_returnDroppingInvocation() {
+        generic.getAndAdd(data, (long) 0, 42);
     }
 
     @Benchmark
     public void generic_exactInvocation() {
-        generic.set(data, (long) 0, 42);
+        var _ = (int) generic.getAndAdd(data, (long) 0, 42);
     }
 }
