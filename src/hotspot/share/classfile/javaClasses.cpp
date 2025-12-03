@@ -1091,9 +1091,6 @@ void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protecti
   // Set the modifiers flag.
   u2 computed_modifiers = k->compute_modifier_flags();
   set_modifiers(mirror(), computed_modifiers);
-  // Set the raw access_flags, this is used by reflection instead of modifier flags.
-  // The Java code for array classes gets the access flags from the element type.
-  set_raw_access_flags(mirror(), k->is_array_klass() ? 0 : InstanceKlass::cast(k)->access_flags().as_unsigned_short());
 
   InstanceMirrorKlass* mk = InstanceMirrorKlass::cast(mirror->klass());
   assert(oop_size(mirror()) == mk->instance_size(k), "should have been set");
@@ -1102,6 +1099,8 @@ void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protecti
 
   // It might also have a component mirror.  This mirror must already exist.
   if (k->is_array_klass()) {
+    // The Java code for array classes gets the access flags from the element type.
+    set_raw_access_flags(mirror(), 0);
     if (k->is_typeArray_klass()) {
       BasicType type = TypeArrayKlass::cast(k)->element_type();
       if (is_scratch) {
@@ -1128,6 +1127,8 @@ void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protecti
     // and java_mirror in this klass.
   } else {
     assert(k->is_instance_klass(), "Must be");
+    // Set the raw access_flags, this is used by reflection instead of modifier flags.
+    set_raw_access_flags(mirror(), InstanceKlass::cast(k)->access_flags().as_unsigned_short());
     initialize_mirror_fields(InstanceKlass::cast(k), mirror, protection_domain, classData, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       // If any of the fields throws an exception like OOM remove the klass field
