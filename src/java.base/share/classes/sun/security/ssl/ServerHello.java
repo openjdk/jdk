@@ -625,8 +625,7 @@ final class ServerHello {
             // Only one key share is selected by the server, so at most one
             // possession will contain the pre-derived shared secret.
             for (var pos : shc.handshakePossessions) {
-                if (pos instanceof KEMKeyExchange.KEMSenderPossession xp
-                        && xp.getKey() != null) {
+                if (pos instanceof KEMKeyExchange.KEMSenderPossession xp) {
                     handshakeSecret = xp.getKey();
                     break;
                 }
