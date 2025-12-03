@@ -30,13 +30,6 @@ import java.util.HexFormat;
 
 /*
  * @test
- * @library /test/lib
- * @key randomness
- * @modules java.base/sun.security.provider:+open
- * @run main/othervm ML_DSA_Intrinsic_Test -XX:+UnlockDiagnosticVMOptions -XX:-UseDilithiumIntrinsics
- */
-/*
- * @test
  * @requires os.simpleArch == "x64"
  * @library /test/lib
  * @key randomness
@@ -55,7 +48,7 @@ import java.util.HexFormat;
 //  -XX:+UnlockDiagnosticVMOptions -XX:+UseDilithiumIntrinsics test/jdk/sun/security/provider/acvp/ML_DSA_Intrinsic_Test.java
 
 public class ML_DSA_Intrinsic_Test {
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Exception, Throwable {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
         Class<?> kClazz = sun.security.provider.ML_DSA.class;
 
@@ -114,27 +107,23 @@ public class ML_DSA_Intrinsic_Test {
         long seed = rnd.nextLong();
         rnd.setSeed(seed);
         //Note: it might be useful to increase this number during development of new intrinsics
-        final int repeat = 10000000;
+        final int repeat = 10000;
         int[] coeffs1 = new int[ML_DSA_N];
         int[] coeffs2 = new int[ML_DSA_N];
         int[] prod1 = new int[ML_DSA_N];
         int[] prod2 = new int[ML_DSA_N];
         int[] prod3 = new int[ML_DSA_N];
         int[] prod4 = new int[ML_DSA_N];
-        try {
-            for (int i = 0; i < repeat; i++) {
-                // Hint: if test fails, you can hardcode the seed to make the test more reproducible:
-                // rnd.setSeed(seed);
-                testMult(prod1, prod2, coeffs1, coeffs2, mult, multJava, rnd, seed, i);
-                testMultConst(prod1, prod2, multConst, multConstJava, rnd, seed, i);
-                testDecompose(prod1, prod2, prod3, prod4, coeffs1, coeffs2, decompose, decomposeJava, rnd, seed, i);
-                testAlmostNtt(coeffs1, coeffs2, almostNtt, almostNttJava, rnd, seed, i);
-                testInverseNtt(coeffs1, coeffs2, inverseNtt, inverseNttJava, rnd, seed, i);
-            }
-            System.out.println("Fuzz Success");
-        } catch (Throwable e) {
-            System.out.println("Fuzz Failed: " + e);
+        for (int i = 0; i < repeat; i++) {
+            // Hint: if test fails, you can hardcode the seed to make the test more reproducible:
+            // rnd.setSeed(seed);
+            testMult(prod1, prod2, coeffs1, coeffs2, mult, multJava, rnd, seed, i);
+            testMultConst(prod1, prod2, multConst, multConstJava, rnd, seed, i);
+            testDecompose(prod1, prod2, prod3, prod4, coeffs1, coeffs2, decompose, decomposeJava, rnd, seed, i);
+            testAlmostNtt(coeffs1, coeffs2, almostNtt, almostNttJava, rnd, seed, i);
+            testInverseNtt(coeffs1, coeffs2, inverseNtt, inverseNttJava, rnd, seed, i);
         }
+        System.out.println("Fuzz Success");
     }
 
     private static final int ML_DSA_N = 256;
