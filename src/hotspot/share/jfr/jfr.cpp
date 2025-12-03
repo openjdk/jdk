@@ -156,7 +156,7 @@ void Jfr::on_vm_shutdown(bool emit_old_object_samples, bool emit_event_shutdown,
 }
 
 void Jfr::on_vm_error_report(outputStream* st) {
-  assert(!JfrRecorder::is_recording(), "JFR should be stopped at erorr reporting");
+  assert(!JfrRecorder::is_recording(), "JFR should be stopped at error reporting");
   if (JfrRecorder::is_recording_stopped_with_error()) {
     JfrRepository::on_vm_error_report(st);
   }
