@@ -324,6 +324,7 @@ class JavaThread: public Thread {
   volatile bool         _carrier_thread_suspended;       // Carrier thread is externally suspended
   bool                  _is_disable_suspend;             // JVMTI suspend is temporarily disabled; used on current thread only
   bool                  _is_in_java_upcall;              // JVMTI is doing a Java upcall, so JVMTI events must be hidden
+  int                   _jvmti_events_disabled;          // JVMTI events disabled manually
   bool                  _on_monitor_waited_event;        // Avoid callee arg processing for enterSpecial when posting waited event
   ObjectMonitor*        _contended_entered_monitor;      // Monitor for pending monitor_contended_entered callback
 #endif
@@ -754,16 +755,21 @@ public:
   }
 
   bool is_disable_suspend() const                { return _is_disable_suspend; }
-  void toggle_is_disable_suspend()               { _is_disable_suspend = !_is_disable_suspend; };
+  void toggle_is_disable_suspend()               { _is_disable_suspend = !_is_disable_suspend; }
 
   bool is_in_java_upcall() const                 { return _is_in_java_upcall; }
-  void toggle_is_in_java_upcall()                { _is_in_java_upcall = !_is_in_java_upcall; };
+  void toggle_is_in_java_upcall()                { _is_in_java_upcall = !_is_in_java_upcall; }
+
+  void disable_jvmti_events()                    { _jvmti_events_disabled++; }
+  void enable_jvmti_events()                     { _jvmti_events_disabled--; }
 
   // Temporarily skip posting JVMTI events for safety reasons when executions is in a critical section:
   // - is in a vthread transition (_is_in_vthread_transition)
   // - is in an interruptLock or similar critical section (_is_disable_suspend)
   // - JVMTI is making a Java upcall (_is_in_java_upcall)
-  bool should_hide_jvmti_events() const          { return _is_in_vthread_transition || _is_disable_suspend || _is_in_java_upcall; }
+  bool should_hide_jvmti_events() const {
+    return _is_in_vthread_transition || _is_disable_suspend || _is_in_java_upcall || _jvmti_events_disabled != 0;
+  }
 
   bool on_monitor_waited_event()             { return _on_monitor_waited_event; }
   void set_on_monitor_waited_event(bool val) { _on_monitor_waited_event = val; }

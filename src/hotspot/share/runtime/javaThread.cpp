@@ -450,6 +450,7 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _carrier_thread_suspended(false),
   _is_disable_suspend(false),
   _is_in_java_upcall(false),
+  _jvmti_events_disabled(0),
   _on_monitor_waited_event(false),
   _contended_entered_monitor(nullptr),
 #endif
