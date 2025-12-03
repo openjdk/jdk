@@ -78,8 +78,6 @@ compiler/c2/aarch64/TestStaticCallStub.java 8359963 linux-aarch64,macosx-aarch64
 
 serviceability/jvmti/NMethodRelocation/NMethodRelocationTest.java 8369150 generic-all
 
-compiler/arguments/TestCodeEntryAlignment.java 8372703 generic-x64
-
 #############################################################################
 
 # :hotspot_gc
