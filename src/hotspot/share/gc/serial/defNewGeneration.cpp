@@ -236,7 +236,10 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
   // These values are exported as performance counters.
   uintx size = _virtual_space.reserved_size();
   _max_survivor_size = compute_survivor_size(size, SpaceAlignment);
-  _max_eden_size = size - (2*_max_survivor_size);
+
+  // Eden might grow to be as large as the entire young generation, so the
+  // maximum size is the entire virtual space.
+  _max_eden_size = size;
 
   // allocate the performance counters
 
