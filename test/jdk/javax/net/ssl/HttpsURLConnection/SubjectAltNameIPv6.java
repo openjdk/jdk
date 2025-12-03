@@ -27,8 +27,9 @@
  * @summary Test that the HttpsURLConnection does not set IPv6 address literals for
  *          SNI hostname during TLS handshake
  * @library /test/lib
- * @comment Add -Djavax.net.debug=all to the following line to enable SSL debugging
- * @run main/othervm SubjectAltNameIPv6
+ * @comment Insert -Djavax.net.debug=all into the following lines to enable SSL debugging
+ * @run main/othervm SubjectAltNameIPv6 127.0.0.1
+ * @run main/othervm SubjectAltNameIPv6 [::1]
  */
 
 import javax.net.ssl.HandshakeCompletedListener;
@@ -50,6 +51,7 @@ import java.net.SocketAddress;
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import jdk.test.lib.net.IPSupport;
 import jdk.test.lib.net.SimpleSSLContext;
@@ -68,6 +70,12 @@ public class SubjectAltNameIPv6 {
     // stores an exception thrown by server in a separate thread
     volatile Exception serverException = null;
 
+    // SSLSocket object created by HttpsClient internally
+    SSLSocket clientSSLSocket = null;
+
+    // the hostname the server socket is bound to
+    String hostName;
+
     /*
      * Define the server side of the test.
      *
@@ -80,7 +88,7 @@ public class SubjectAltNameIPv6 {
         SSLServerSocket sslServerSocket =
             (SSLServerSocket) sslssf.createServerSocket(
                     serverPort, 0,
-                    InetAddress.getByName("[::1]"));
+                    InetAddress.getByName(hostName));
         sslServerSocket.setEnabledProtocols(new String[]{"TLSv1.3"});
         serverPort = sslServerSocket.getLocalPort();
 
@@ -117,14 +125,22 @@ public class SubjectAltNameIPv6 {
         }
 
         SSLSocketFactory sf = new SimpleSSLContext().get().getSocketFactory();
-        URI uri = new URI("https://[::1]:" + serverPort + "/index.html");
+        URI uri = new URI("https://" + hostName + ":" + serverPort + "/index.html");
         HttpsURLConnection conn = (HttpsURLConnection)uri.toURL().openConnection();
 
         /*
-         * Simulate an external JSSE implementation.
+         * Simulate an external JSSE implementation and store the client SSLSocket
+         * used internally.
          */
-        conn.setSSLSocketFactory(wrapSocketFactory(sf));
+        conn.setSSLSocketFactory(wrapSocketFactory(sf,
+                sslSocket -> clientSSLSocket = sslSocket));
         conn.getInputStream();
+
+        var sniSN = clientSSLSocket.getSSLParameters().getServerNames();
+        if( sniSN != null && !sniSN.isEmpty()) {
+            throw new RuntimeException("SNI server name '" +
+                    sniSN.getFirst() + "' must not be set.");
+        }
 
         if (conn.getResponseCode() == -1) {
             throw new RuntimeException("getResponseCode() returns -1");
@@ -139,7 +155,7 @@ public class SubjectAltNameIPv6 {
         /*
          * Start the tests.
          */
-        new SubjectAltNameIPv6();
+        new SubjectAltNameIPv6(args[0]);
     }
 
     Thread serverThread = null;
@@ -149,7 +165,8 @@ public class SubjectAltNameIPv6 {
      *
      * Fork off the other side, then do your work.
      */
-    SubjectAltNameIPv6() throws Exception {
+    SubjectAltNameIPv6(String host) throws Exception {
+        hostName = host;
         startServer();
         doClientSide();
 
@@ -182,7 +199,7 @@ public class SubjectAltNameIPv6 {
     /*
      * Wraps SSLSocketImpl to simulate a different JSSE implementation
      */
-    private static SSLSocketFactory wrapSocketFactory(final SSLSocketFactory wrap) {
+    private static SSLSocketFactory wrapSocketFactory(final SSLSocketFactory wrap, final Consumer<SSLSocket> store) {
         return new SSLSocketFactory() {
             @Override
             public String[] getDefaultCipherSuites() {
@@ -197,6 +214,10 @@ public class SubjectAltNameIPv6 {
                     throws IOException {
                 final SSLSocket so =
                         (SSLSocket) wrap.createSocket(s, host, port, autoClose);
+
+                // store the underlying SSLSocket for later use
+                store.accept(so);
+
                 return new SSLSocket() {
                     @Override
                     public void connect(SocketAddress endpoint,
