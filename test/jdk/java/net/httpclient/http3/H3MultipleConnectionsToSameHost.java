@@ -37,7 +37,7 @@
  *                     -Djdk.internal.httpclient.quic.poller.usePlatformThreads=false
  *                     -Djdk.httpclient.quic.maxEndpoints=-1
  *                     -Djdk.httpclient.http3.maxStreamLimitTimeout=0
- *                     -Djdk.httpclient.quic.maxBidiStreams=2
+ *                     -Djdk.internal.httpclient.quic.maxBidiStreams=2
  *                     -Djdk.httpclient.retryOnStreamlimit=50
  *                     -Djdk.httpclient.HttpClient.log=errors,http3,quic:retransmit
  *                     -Dsimpleget.requests=100
@@ -61,7 +61,7 @@
  *                     -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations
  *                     -Djdk.httpclient.quic.maxEndpoints=-1
  *                     -Djdk.httpclient.http3.maxStreamLimitTimeout=0
- *                     -Djdk.httpclient.quic.maxBidiStreams=2
+ *                     -Djdk.internal.httpclient.quic.maxBidiStreams=2
  *                     -Djdk.httpclient.retryOnStreamlimit=50
  *                     -Djdk.httpclient.HttpClient.log=errors,http3,quic:retransmit
  *                     -Dsimpleget.requests=100
@@ -85,7 +85,7 @@
  *                     -Djdk.internal.httpclient.quic.useNioSelector=true
  *                     -Djdk.httpclient.http3.maxStreamLimitTimeout=0
  *                     -Djdk.httpclient.quic.maxEndpoints=1
- *                     -Djdk.httpclient.quic.maxBidiStreams=2
+ *                     -Djdk.internal.httpclient.quic.maxBidiStreams=2
  *                     -Djdk.httpclient.retryOnStreamlimit=50
  *                     -Djdk.httpclient.HttpClient.log=errors,http3,quic:hs:retransmit
  *                     -Dsimpleget.requests=100
@@ -109,7 +109,7 @@
  *                     -Djdk.httpclient.quic.maxPtoBackoff=9
  *                     -Djdk.httpclient.http3.maxStreamLimitTimeout=0
  *                     -Djdk.httpclient.quic.maxEndpoints=1
- *                     -Djdk.httpclient.quic.maxBidiStreams=2
+ *                     -Djdk.internal.httpclient.quic.maxBidiStreams=2
  *                     -Djdk.httpclient.retryOnStreamlimit=50
  *                     -Djdk.httpclient.HttpClient.log=errors,http3,quic:hs:retransmit
  *                     -Dsimpleget.requests=100
@@ -239,7 +239,7 @@ public class H3MultipleConnectionsToSameHost implements HttpServerAdapters {
             long done = System.nanoTime();
             System.out.println("Initialization and warmup took "+ TimeUnit.NANOSECONDS.toMillis(done-prestart)+" millis");
             // Thread.sleep(30000);
-            int maxBidiStreams = Utils.getIntegerNetProperty("jdk.httpclient.quic.maxBidiStreams", 100);
+            int maxBidiStreams = Utils.getIntegerNetProperty("jdk.internal.httpclient.quic.maxBidiStreams", 100);
             long timeout = MAX_STREAM_LIMIT_WAIT_TIMEOUT;
 
             Set<String> connections = new ConcurrentSkipListSet<>();
