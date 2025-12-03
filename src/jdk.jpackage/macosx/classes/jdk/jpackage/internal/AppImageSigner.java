@@ -60,10 +60,8 @@ final class AppImageSigner {
             try {
                 new AppImageSigner(Codesigners.create(signingCfg)).sign(app, appImage);
             } catch (CodesignException ex) {
-                LOGGER.log(Level.ERROR, ex);
                 throw handleCodesignException(app, ex);
             } catch (ExceptionBox ex) {
-                LOGGER.log(Level.ERROR, ex);
                 if (ex.getCause() instanceof CodesignException codesignEx) {
                     handleCodesignException(app, codesignEx);
                 }
@@ -88,8 +86,9 @@ final class AppImageSigner {
         @Override
         public boolean test(Path path) {
             boolean result = testInternal(path);
-            LOGGER.log(Level.TRACE, "{0}: {1}", path, result ?
-                    "Will be explicitely signed" : "Will be skipped from signing");
+            if (!result) {
+                LOGGER.log(Level.TRACE, "{0}: {1}", path, "Will be skipped from signing");
+            }
             return result;
         }
 
@@ -170,7 +169,6 @@ final class AppImageSigner {
                 return origPerms;
             }
         } catch (IOException ex) {
-            LOGGER.log(Level.ERROR, ex);
             throw new UncheckedIOException(ex);
         }
     }
@@ -180,8 +178,6 @@ final class AppImageSigner {
         // user to diagnose issues when using --mac-app-image-sign-identity.
         // In addition add possible reason for failure. For example
         // "--app-content" can fail "codesign".
-
-        LOGGER.log(Level.ERROR, ex);
 
         if (!app.contentDirs().isEmpty()) {
             Log.info(I18N.getString("message.codesign.failed.reason.app.content"));
@@ -233,8 +229,6 @@ final class AppImageSigner {
         @Override
         public void accept(Path path) {
             findCodesigner(path).orElseThrow(() -> {
-                LOGGER.log(Level.ERROR, "No codesigner for {0} path",
-                        PathUtils.normalizedAbsolutePathString(path));
                 return new IllegalArgumentException(String.format("No codesigner for %s path",
                         PathUtils.normalizedAbsolutePathString(path)));
             }).accept(path);
