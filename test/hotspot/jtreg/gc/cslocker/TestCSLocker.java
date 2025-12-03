@@ -38,7 +38,6 @@ import static gc.testlibrary.Allocation.blackHole;
 
 public class TestCSLocker extends Thread
 {
-    static int timeoutMillis = 5000;
     public static void main(String args[]) throws Exception {
         // start garbage producer thread
         GarbageProducer garbageProducer = new GarbageProducer(1000000, 10);
