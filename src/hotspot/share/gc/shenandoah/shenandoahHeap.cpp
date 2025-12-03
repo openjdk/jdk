@@ -1040,7 +1040,7 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
       if (req.is_promotion()) {
         // Shared promotion.
         const size_t actual_size = req.actual_size() * HeapWordSize;
-        log_debug(gc, alloc)("Expend shared promotion of %zu bytes", actual_size);
+        log_debug(gc, plab)("Expend shared promotion of %zu bytes", actual_size);
         old_generation()->expend_promoted(actual_size);
       }
     }
