@@ -24,4 +24,6 @@
 
 #include "utilities/globalDefinitions.hpp"
 
+class ICacheInvalidationContext;
+
 NOT_PRODUCT(THREAD_LOCAL ICacheInvalidationContext* current_icache_invalidation_context = nullptr;)
