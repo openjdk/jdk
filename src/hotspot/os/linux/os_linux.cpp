@@ -216,22 +216,27 @@ bool os::is_containerized() {
 }
 
 bool os::Container::memory_limit(physical_memory_size_type& value) {
-  assert(is_containerized(), "must be running containerized");
-  return OSContainer::memory_limit_in_bytes(value);
+  if (OSContainer::memory_limit_in_bytes(value) && value != value_unlimited) {
+    return true;
+  }
+  return false;
 }
 
 bool os::Container::memory_soft_limit(physical_memory_size_type& value) {
-  assert(is_containerized(), "must be running containerized");
-  return OSContainer::memory_soft_limit_in_bytes(value);
+  if (OSContainer::memory_soft_limit_in_bytes(value) && value != 0) {
+    return true;
+  }
+  return false;
 }
 
 bool os::Container::memory_throttle_limit(physical_memory_size_type& value) {
-  assert(is_containerized(), "must be running containerized");
-  return OSContainer::memory_throttle_limit_in_bytes(value);
+  if (OSContainer::memory_throttle_limit_in_bytes(value) && value != value_unlimited) {
+    return true;
+  }
+  return false;
 }
 
 bool os::Container::used_memory(physical_memory_size_type& value) {
-  assert(is_containerized(), "must be running containerized");
   return OSContainer::memory_usage_in_bytes(value);
 }
 
@@ -249,7 +254,6 @@ bool os::Machine::available_memory(physical_memory_size_type& value) {
 }
 
 bool os::Container::available_memory(physical_memory_size_type& value) {
-  assert(is_containerized(), "must be running containerized");
   return OSContainer::available_memory_in_bytes(value);
 }
 
@@ -322,7 +326,6 @@ bool os::Machine::total_swap_space(physical_memory_size_type& value) {
 }
 
 bool os::Container::total_swap_space(physical_memory_size_type& value) {
-  assert(is_containerized(), "must be running containerized");
   physical_memory_size_type mem_swap_limit = value_unlimited;
   physical_memory_size_type memory_limit = value_unlimited;
   if (OSContainer::memory_and_swap_limit_in_bytes(mem_swap_limit) &&
@@ -374,7 +377,6 @@ bool os::Machine::free_swap_space(physical_memory_size_type& value) {
 }
 
 bool os::Container::free_swap_space(physical_memory_size_type& value) {
-  assert(is_containerized(), "must be running containerized");
   return OSContainer::available_swap_in_bytes(value);
 }
 
@@ -4835,7 +4837,6 @@ int os::Machine::active_processor_count() {
 }
 
 bool os::Container::processor_count(double& value) {
-  assert(is_containerized(), "must be running containerized");
   return OSContainer::active_processor_count(value);
 }
 

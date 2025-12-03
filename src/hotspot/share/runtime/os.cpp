@@ -2223,42 +2223,34 @@ bool os::is_containerized() {
 }
 
 bool os::Container::processor_count(double& value) {
-  ShouldNotReachHere();
-  return 0.0;
+  return false;
 }
 
 bool os::Container::available_memory(physical_memory_size_type& value) {
-  ShouldNotReachHere();
   return false;
 }
 
 bool os::Container::used_memory(physical_memory_size_type& value) {
-  ShouldNotReachHere();
   return false;
 }
 
 bool os::Container::total_swap_space(physical_memory_size_type& value) {
-  ShouldNotReachHere();
   return false;
 }
 
 bool os::Container::free_swap_space(physical_memory_size_type& value) {
-  ShouldNotReachHere();
   return false;
 }
 
 bool os::Container::memory_limit(physical_memory_size_type& value) {
-  ShouldNotReachHere();
   return false;
 }
 
 bool os::Container::memory_soft_limit(physical_memory_size_type& value) {
-  ShouldNotReachHere();
   return false;
 }
 
 bool os::Container::memory_throttle_limit(physical_memory_size_type& value) {
-  ShouldNotReachHere();
   return false;
 }
 #endif

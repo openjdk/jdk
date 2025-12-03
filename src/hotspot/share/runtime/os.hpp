@@ -371,7 +371,6 @@ class os: AllStatic {
   // (currently only cgroup-based Linux runtimes). If the process is running inside a
   // containerized environment, methods from this class report the effective limits imposed
   // by the container, which may be more restrictive than what os::Machine reports.
-  // These methods are not safe to use unless `os::is_containerized()` is true.
   class Container : AllStatic {
   public:
     [[nodiscard]] static bool processor_count(double& value); // Returns the core-equivalent CPU quota
