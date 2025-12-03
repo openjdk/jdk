@@ -68,6 +68,7 @@ static jclass sjc_CAccessibility = NULL;
                                                              sjm_getCurrentAccessiblePopupMenu,
                                                              fAccessible, fComponent);
 
+    CHECK_EXCEPTION();
     if (axComponent == nil) {
         return nil;
     }
