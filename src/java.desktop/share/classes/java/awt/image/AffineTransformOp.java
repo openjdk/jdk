@@ -189,7 +189,7 @@ public class AffineTransformOp implements BufferedImageOp, RasterOp {
      * application provides a {@code dst} that is always returned.
      * If {@code dst} is {@code null} and a destination {code BufferedImage}
      * with the transformed dimensions cannot be created, the {@code src}
-     * dimensions may be substituted.
+     * dimensions will be substituted.
      *
      * <p>
      * If the upper-left corner coordinates of the rectangle are
@@ -329,7 +329,7 @@ public class AffineTransformOp implements BufferedImageOp, RasterOp {
      * application provides a {@code dst} that is always returned.
      * If {@code dst} is {@code null} and a destination {code Raster}
      * with the transformed dimensions cannot be created, the {@code src}
-     * dimensions may be substituted.
+     * dimensions will be substituted.
      * <p>
      * If the upper-left corner coordinates of rectangle are negative then
      * this part of the rectangle is not drawn.  If the coordinates
