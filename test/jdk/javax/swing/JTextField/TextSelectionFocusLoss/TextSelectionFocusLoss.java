@@ -35,6 +35,7 @@ import jdk.test.lib.Platform;
 /*
  * @test
  * @key headful
+ * @requires (os.family == "windows")
  * @bug 8319880
  * @summary verify that JTextField text selection stop if ended during loss of window focus
  * @library /test/lib
@@ -81,36 +82,22 @@ public class TextSelectionFocusLoss {
                 robot.mouseMove(dx, y);
             }
 
-            if (Platform.isOSX()) {
-                robot.keyPress(KeyEvent.VK_META);
-                robot.keyPress(KeyEvent.VK_TAB);
-                robot.keyRelease(KeyEvent.VK_TAB);
-                robot.keyRelease(KeyEvent.VK_META);
-            } else {
-                robot.keyPress(KeyEvent.VK_ALT);
-                robot.keyPress(KeyEvent.VK_TAB);
-                robot.keyRelease(KeyEvent.VK_TAB);
-                robot.keyRelease(KeyEvent.VK_ALT);
-            }
+            robot.keyPress(KeyEvent.VK_ALT);
+            robot.keyPress(KeyEvent.VK_TAB);
+            robot.keyRelease(KeyEvent.VK_TAB);
+            robot.keyRelease(KeyEvent.VK_ALT);
 
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
-            if (Platform.isOSX()) {
-                robot.keyPress(KeyEvent.VK_META);
-                robot.keyPress(KeyEvent.VK_TAB);
-                robot.keyRelease(KeyEvent.VK_TAB);
-                robot.keyRelease(KeyEvent.VK_META);
-            } else {
-                robot.keyPress(KeyEvent.VK_ALT);
-                robot.keyPress(KeyEvent.VK_TAB);
-                robot.keyRelease(KeyEvent.VK_TAB);
-                robot.keyRelease(KeyEvent.VK_ALT);
-            }
+            robot.keyPress(KeyEvent.VK_ALT);
+            robot.keyPress(KeyEvent.VK_TAB);
+            robot.keyRelease(KeyEvent.VK_TAB);
+            robot.keyRelease(KeyEvent.VK_ALT);
 
             String expected = "hihititi";
             typeString(expected);
             if (!textField.getText().equals(expected)) {
-                throw new RuntimeException("Test failed: text is  " + textField.getText());
+                throw new RuntimeException("Test failed: text is " + textField.getText());
             }
             System.out.println("Test succeeded");
         } finally {
