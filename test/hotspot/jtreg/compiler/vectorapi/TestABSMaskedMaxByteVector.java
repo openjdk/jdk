@@ -44,8 +44,8 @@ public class TestABSMaskedMaxByteVector {
     }
 
     @Test
-    @IR(failOn = {IRNode.ABS_VB}, applyIfAnd={"MaxVectorSize", " <= 8 ", "UseAVX", "0"}, applyIfPlatform={"x64", "true"}, applyIfCPUFeature={"sse4.1", "true"})
-    @IR(counts = {IRNode.ABS_VB, "1"}, applyIf={"MaxVectorSize", " > 8 "}, applyIfPlatform={"x64", "true"}, applyIfCPUFeature={"sse4.1", "true"})
+    @IR(failOn = {IRNode.ABS_VB}, applyIfAnd = {"MaxVectorSize", " <= 8 ", "UseAVX", "0"}, applyIfPlatform = {"x64", "true"}, applyIfCPUFeature = {"sse4.1", "true"})
+    @IR(counts = {IRNode.ABS_VB, "1"}, applyIf = {"MaxVectorSize", " > 8 "}, applyIfPlatform = {"x64", "true"}, applyIfCPUFeature = {"sse4.1", "true"})
     public void test() {
         assert ByteVector.broadcast(BSP, (byte)-4)
                          .lanewise(VectorOperators.ABS, VectorMask.fromLong(BSP, 0xF))
