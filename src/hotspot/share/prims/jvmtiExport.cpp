@@ -1357,14 +1357,14 @@ JvmtiThreadState* JvmtiExport::hide_single_stepping(JavaThread *thread) {
 bool JvmtiExport::has_frame_pop_for_top_frame(JavaThread *current) {
   assert(current == JavaThread::current(), "must be");
   JvmtiThreadState *state = current->jvmti_thread_state();
-  if (state == nullptr) {
+  if (state == nullptr || !state->is_enabled(JVMTI_EVENT_FRAME_POP)) {
     return false;
   }
   JvmtiEnvThreadStateIterator it(state);
   int top_frame_num = state->count_frames();
   for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
-    if (ets->has_frame_pops() && ets->is_enabled(JVMTI_EVENT_FRAME_POP) &&
-        ets->is_frame_pop(top_frame_num)) {
+    if (ets->has_frame_pops() && ets->is_frame_pop(top_frame_num)) {
+      assert(ets->is_enabled(JVMTI_EVENT_FRAME_POP), "sanity check");
       return true;
     }
   }
@@ -1887,6 +1887,10 @@ void JvmtiExport::post_method_entry(JavaThread *thread, Method* method, frame cu
 }
 
 void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame current_frame) {
+  JvmtiThreadState* state = thread->jvmti_thread_state();
+  if (state == nullptr) {
+    return;
+  }
   // At this point we only have the address of a "raw result" and
   // we just call into the interpreter to convert this into a jvalue.
   // This method always makes transition to vm and back where GC can happen.
@@ -1905,14 +1909,12 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
   if (is_reference_type(type)) {
     result = Handle(thread, oop_result);
   }
-  JvmtiThreadState* state; // should be initialized in vm state only
   JavaThread* current = thread; // for JRT_BLOCK
-  bool need_processing;
+
   JRT_BLOCK
-    state = get_jvmti_thread_state(thread);
-    need_processing = state != nullptr && current_frame.is_interpreted_frame();
-    if (need_processing) {
+    if (state != nullptr) {
       if (state->is_enabled(JVMTI_EVENT_METHOD_EXIT)) {
+        assert(state->is_interp_only_mode(), "sanity check");
         // Deferred saving Object result into value.
         if (is_reference_type(type)) {
           value.l = JNIHandles::make_local(thread, result());
@@ -1926,7 +1928,7 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
       post_method_exit_inner(thread, mh, state, false /* not exception exit */, current_frame, value);
     }
   JRT_BLOCK_END
-  if (need_processing) {
+  if (state != nullptr) {
     // The JRT_BLOCK_END can safepoint in ThreadInVMfromJava destructor. Now it is safe to allow
     // adding FramePop event requests as no safepoint can happen before removing activation.
     state->clr_top_frame_is_exiting();
