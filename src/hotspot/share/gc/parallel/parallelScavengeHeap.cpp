@@ -307,9 +307,13 @@ HeapWord* ParallelScavengeHeap::mem_allocate_cas_noexpand(size_t size, bool is_t
 
 HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size, bool is_tlab) {
   for (uint loop_count = 0; /* empty */; ++loop_count) {
-    HeapWord* result = mem_allocate_cas_noexpand(size, is_tlab);
-    if (result != nullptr) {
-      return result;
+    HeapWord* result;
+    {
+      ConditionalMutexLocker locker(Heap_lock, !is_init_completed());
+      result = mem_allocate_cas_noexpand(size, is_tlab);
+      if (result != nullptr) {
+        return result;
+      }
     }
 
     // Read total_collections() under the lock so that multiple
@@ -326,10 +330,15 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size, bool is_tlab) {
       }
 
       if (!is_init_completed()) {
-        // Can't do GC; try heap expansion to satisfy the request.
-        result = expand_heap_and_allocate(size, is_tlab);
-        if (result != nullptr) {
-          return result;
+        // Double checked locking, this ensure that is_init_completed() does not
+        // transition while expanding the heap.
+        MonitorLocker ml(InitCompleted_lock, Monitor::_no_safepoint_check_flag);
+        if (!is_init_completed()) {
+          // Can't do GC; try heap expansion to satisfy the request.
+          result = expand_heap_and_allocate(size, is_tlab);
+          if (result != nullptr) {
+            return result;
+          }
         }
       }
 
@@ -343,11 +352,6 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size, bool is_tlab) {
       if (op.gc_succeeded()) {
         assert(is_in_or_null(op.result()), "result not in heap");
         return op.result();
-      }
-
-      if (is_shutting_down()) {
-        stall_for_vm_shutdown();
-        return nullptr;
       }
     }
 
@@ -368,6 +372,55 @@ void ParallelScavengeHeap::do_full_collection(bool clear_all_soft_refs) {
   // No need for max-compaction in this context.
   const bool should_do_max_compaction = false;
   PSParallelCompact::invoke(clear_all_soft_refs, should_do_max_compaction);
+}
+
+bool ParallelScavengeHeap::should_attempt_young_gc() const {
+  const bool ShouldRunYoungGC = true;
+  const bool ShouldRunFullGC = false;
+
+  if (!_young_gen->to_space()->is_empty()) {
+    log_debug(gc, ergo)("To-space is not empty; run full-gc instead.");
+    return ShouldRunFullGC;
+  }
+
+  // Check if the predicted promoted bytes will overflow free space in old-gen.
+  PSAdaptiveSizePolicy* policy = _size_policy;
+
+  size_t avg_promoted = (size_t) policy->padded_average_promoted_in_bytes();
+  size_t promotion_estimate = MIN2(avg_promoted, _young_gen->used_in_bytes());
+  // Total free size after possible old gen expansion
+  size_t free_in_old_gen_with_expansion = _old_gen->max_gen_size() - _old_gen->used_in_bytes();
+
+  log_trace(gc, ergo)("average_promoted %zu; padded_average_promoted %zu",
+              (size_t) policy->average_promoted_in_bytes(),
+              (size_t) policy->padded_average_promoted_in_bytes());
+
+  if (promotion_estimate >= free_in_old_gen_with_expansion) {
+    log_debug(gc, ergo)("Run full-gc; predicted promotion size >= max free space in old-gen: %zu >= %zu",
+      promotion_estimate, free_in_old_gen_with_expansion);
+    return ShouldRunFullGC;
+  }
+
+  if (UseAdaptiveSizePolicy) {
+    // Also checking OS has enough free memory to commit and expand old-gen.
+    // Otherwise, the recorded gc-pause-time might be inflated to include time
+    // of OS preparing free memory, resulting in inaccurate young-gen resizing.
+    assert(_old_gen->committed().byte_size() >= _old_gen->used_in_bytes(), "inv");
+    // Use uint64_t instead of size_t for 32bit compatibility.
+    uint64_t free_mem_in_os;
+    if (os::free_memory(free_mem_in_os)) {
+      size_t actual_free = (size_t)MIN2(_old_gen->committed().byte_size() - _old_gen->used_in_bytes() + free_mem_in_os,
+                                        (uint64_t)SIZE_MAX);
+      if (promotion_estimate > actual_free) {
+        log_debug(gc, ergo)("Run full-gc; predicted promotion size > free space in old-gen and OS: %zu > %zu",
+          promotion_estimate, actual_free);
+        return ShouldRunFullGC;
+      }
+    }
+  }
+
+  // No particular reasons to run full-gc, so young-gc.
+  return ShouldRunYoungGC;
 }
 
 static bool check_gc_heap_free_limit(size_t free_bytes, size_t capacity_bytes) {
@@ -516,17 +569,18 @@ void ParallelScavengeHeap::collect(GCCause::Cause cause) {
   VMThread::execute(&op);
 }
 
-void ParallelScavengeHeap::collect_at_safepoint(bool full) {
+void ParallelScavengeHeap::collect_at_safepoint(bool is_full) {
   assert(!GCLocker::is_active(), "precondition");
   bool clear_soft_refs = GCCause::should_clear_all_soft_refs(_gc_cause);
 
-  if (!full) {
-    bool success = PSScavenge::invoke(clear_soft_refs);
-    if (success) {
+  if (!is_full && should_attempt_young_gc()) {
+    bool young_gc_success = PSScavenge::invoke(clear_soft_refs);
+    if (young_gc_success) {
       return;
     }
-    // Upgrade to Full-GC if young-gc fails
+    log_debug(gc, heap)("Upgrade to Full-GC since Young-gc failed.");
   }
+
   const bool should_do_max_compaction = false;
   PSParallelCompact::invoke(clear_soft_refs, should_do_max_compaction);
 }

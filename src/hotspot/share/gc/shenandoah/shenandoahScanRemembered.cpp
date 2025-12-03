@@ -250,6 +250,8 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
 
   HeapWord* right = MIN2(region->top(), end_range_of_interest);
   HeapWord* end_of_search_next = MIN2(right, tams);
+  // Since end_range_of_interest may not align on a card boundary, last_relevant_card_index is conservative.  Not all of the
+  // memory within the last relevant card's span is < right.
   size_t last_relevant_card_index;
   if (end_range_of_interest == _end_of_heap) {
     last_relevant_card_index = _rs->card_index_for_addr(end_range_of_interest - 1);
@@ -352,9 +354,8 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
             return nullptr;
           }
         } while (!starts_object(following_card_index));
-        assert(_rs->addr_for_card_index(following_card_index) + get_first_start(following_card_index),
-               "Result must precede right");
-        return _rs->addr_for_card_index(following_card_index) + get_first_start(following_card_index);
+        HeapWord* result_candidate = _rs->addr_for_card_index(following_card_index) + get_first_start(following_card_index);
+        return (result_candidate >= right)? nullptr: result_candidate;
       }
     }
   }
@@ -378,24 +379,20 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
   //    evacuation phase) of young collections. This is never called
   //    during global collections during marking or update refs..
   // 4. Every allocation under TAMS updates the object start array.
+#ifdef ASSERT
   oop obj = cast_to_oop(p);
   assert(oopDesc::is_oop(obj), "Should be an object");
-#ifdef ASSERT
-#define WALK_FORWARD_IN_BLOCK_START true
-#else
-#define WALK_FORWARD_IN_BLOCK_START false
-#endif // ASSERT
-  while (WALK_FORWARD_IN_BLOCK_START && p + obj->size() < left) {
+  while (p + obj->size() < left) {
     p += obj->size();
     obj = cast_to_oop(p);
     assert(oopDesc::is_oop(obj), "Should be an object");
     assert(Klass::is_valid(obj->klass()), "Not a valid klass ptr");
     // Check assumptions in previous block comment if this assert fires
-    guarantee(false, "Should never need forward walk in block start");
+    fatal("Should never need forward walk in block start");
   }
-#undef WALK_FORWARD_IN_BLOCK_START
   assert(p <= left, "p should start at or before left end of card");
   assert(p + obj->size() > left, "obj should end after left end of card");
+#endif // ASSERT
   return p;
 }
 

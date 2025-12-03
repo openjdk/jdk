@@ -611,22 +611,23 @@ void G1RemSet::scan_collection_set_code_roots(G1ParScanThreadState* pss,
                                               G1GCPhaseTimes::GCParPhases coderoots_phase,
                                               G1GCPhaseTimes::GCParPhases objcopy_phase) {
   EventGCPhaseParallel event;
-
   Tickspan code_root_scan_time;
   Tickspan code_root_trim_partially_time;
-  G1EvacPhaseWithTrimTimeTracker timer(pss, code_root_scan_time, code_root_trim_partially_time);
 
   G1GCPhaseTimes* p = _g1h->phase_times();
+  {
+    G1EvacPhaseWithTrimTimeTracker timer(pss, code_root_scan_time, code_root_trim_partially_time);
 
-  G1ScanCodeRootsClosure cl(_scan_state, pss, worker_id);
-  // Code roots work distribution occurs inside the iteration method. So scan all collection
-  // set regions for all threads.
-  _g1h->collection_set_iterate_increment_from(&cl, worker_id);
+    G1ScanCodeRootsClosure cl(_scan_state, pss, worker_id);
+    // Code roots work distribution occurs inside the iteration method. So scan all collection
+    // set regions for all threads.
+    _g1h->collection_set_iterate_increment_from(&cl, worker_id);
+
+    p->record_or_add_thread_work_item(coderoots_phase, worker_id, cl.code_roots_scanned(), G1GCPhaseTimes::CodeRootsScannedNMethods);
+  }
 
   p->record_or_add_time_secs(coderoots_phase, worker_id, code_root_scan_time.seconds());
   p->add_time_secs(objcopy_phase, worker_id, code_root_trim_partially_time.seconds());
-
-  p->record_or_add_thread_work_item(coderoots_phase, worker_id, cl.code_roots_scanned(), G1GCPhaseTimes::CodeRootsScannedNMethods);
 
   event.commit(GCId::current(), worker_id, G1GCPhaseTimes::phase_name(coderoots_phase));
 }
@@ -992,10 +993,11 @@ class G1MergeHeapRootsTask : public WorkerTask {
     }
   };
 
-  // Closure to make sure that the marking bitmap is clear for any old region in
-  // the collection set.
-  // This is needed to be able to use the bitmap for evacuation failure handling.
-  class G1ClearBitmapClosure : public G1HeapRegionClosure {
+  // Closure to prepare the collection set regions for evacuation failure, i.e. make
+  // sure that the mark bitmap is clear for any old region in the collection set.
+  //
+  // These mark bitmaps record the evacuation failed objects.
+  class G1PrepareRegionsForEvacFailClosure : public G1HeapRegionClosure {
     G1CollectedHeap* _g1h;
     G1RemSetScanState* _scan_state;
     bool _initial_evacuation;
@@ -1018,18 +1020,12 @@ class G1MergeHeapRootsTask : public WorkerTask {
       // the pause occurs during the Concurrent Cleanup for Next Mark phase.
       // Only at that point the region's bitmap may contain marks while being in the collection
       // set at the same time.
-      //
-      // There is one exception: shutdown might have aborted the Concurrent Cleanup for Next
-      // Mark phase midway, which might have also left stale marks in old generation regions.
-      // There might actually have been scheduled multiple collections, but at that point we do
-      // not care that much about performance and just do the work multiple times if needed.
-      return (_g1h->collector_state()->clear_bitmap_in_progress() ||
-              _g1h->is_shutting_down()) &&
-              hr->is_old();
+      return _g1h->collector_state()->clear_bitmap_in_progress() &&
+             hr->is_old();
     }
 
   public:
-    G1ClearBitmapClosure(G1CollectedHeap* g1h, G1RemSetScanState* scan_state, bool initial_evacuation) :
+    G1PrepareRegionsForEvacFailClosure(G1CollectedHeap* g1h, G1RemSetScanState* scan_state, bool initial_evacuation) :
       _g1h(g1h),
       _scan_state(scan_state),
       _initial_evacuation(initial_evacuation)
@@ -1178,8 +1174,8 @@ public:
 
     // Preparation for evacuation failure handling.
     {
-      G1ClearBitmapClosure clear(g1h, _scan_state, _initial_evacuation);
-      g1h->collection_set_iterate_increment_from(&clear, &_hr_claimer, worker_id);
+      G1PrepareRegionsForEvacFailClosure prepare_evac_failure(g1h, _scan_state, _initial_evacuation);
+      g1h->collection_set_iterate_increment_from(&prepare_evac_failure, &_hr_claimer, worker_id);
     }
   }
 };

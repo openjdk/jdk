@@ -87,6 +87,9 @@
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif
+#ifdef COMPILER2
+#include "opto/runtime.hpp"
+#endif
 #if INCLUDE_JFR
 #include "jfr/jfr.inline.hpp"
 #endif
@@ -601,6 +604,11 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
       // The deferred StackWatermarkSet::after_unwind check will be performed in
       // * OptoRuntime::handle_exception_C_helper for C2 code
       // * exception_handler_for_pc_helper via Runtime1::handle_exception_from_callee_id for C1 code
+#ifdef COMPILER2
+      if (nm->compiler_type() == compiler_c2) {
+        return OptoRuntime::exception_blob()->entry_point();
+      }
+#endif // COMPILER2
       return nm->exception_begin();
     }
   }
@@ -801,6 +809,8 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
   // determine handler bci, if any
   EXCEPTION_MARK;
 
+  Handle orig_exception(THREAD, exception());
+
   int handler_bci = -1;
   int scope_depth = 0;
   if (!force_unwind) {
@@ -822,7 +832,7 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
         // thrown (bugs 4307310 and 4546590). Set "exception" reference
         // argument to ensure that the correct exception is thrown (4870175).
         recursive_exception_occurred = true;
-        exception = Handle(THREAD, PENDING_EXCEPTION);
+        exception.replace(PENDING_EXCEPTION);
         CLEAR_PENDING_EXCEPTION;
         if (handler_bci >= 0) {
           bci = handler_bci;
@@ -851,8 +861,10 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
 
   // If the compiler did not anticipate a recursive exception, resulting in an exception
   // thrown from the catch bci, then the compiled exception handler might be missing.
-  // This is rare.  Just deoptimize and let the interpreter handle it.
+  // This is rare.  Just deoptimize and let the interpreter rethrow the original
+  // exception at the original bci.
   if (t == nullptr && recursive_exception_occurred) {
+    exception.replace(orig_exception()); // restore original exception
     bool make_not_entrant = false;
     return Deoptimization::deoptimize_for_missing_exception_handler(nm, make_not_entrant);
   }
