@@ -58,6 +58,7 @@
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/keepStackGCProcessed.hpp"
+#include "runtime/mountUnmountDisabler.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/prefetch.inline.hpp"
@@ -1690,7 +1691,7 @@ static void jvmti_mount_end(JavaThread* current, ContinuationWrapper& cont, fram
   AnchorMark am(current, top);  // Set anchor so that the stack is walkable.
 
   JRT_BLOCK
-    JvmtiVTMSTransitionDisabler::VTMS_vthread_mount((jthread)vth.raw_value(), false);
+    MountUnmountDisabler::end_transition(current, vth(), true /*is_mount*/, false /*is_thread_start*/);
 
     if (current->pending_contended_entered_event()) {
       // No monitor JVMTI events for ObjectLocker case.
@@ -2629,19 +2630,21 @@ intptr_t* ThawBase::handle_preempted_continuation(intptr_t* sp, Continuation::pr
   DEBUG_ONLY(verify_frame_kind(top, preempt_kind);)
   NOT_PRODUCT(int64_t tid = _thread->monitor_owner_id();)
 
-#if INCLUDE_JVMTI
   // Finish the VTMS transition.
-  assert(_thread->is_in_VTMS_transition(), "must be");
+  assert(_thread->is_in_vthread_transition(), "must be");
   bool is_vthread = Continuation::continuation_scope(_cont.continuation()) == java_lang_VirtualThread::vthread_scope();
   if (is_vthread) {
-    if (JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
+#if INCLUDE_JVMTI
+    if (MountUnmountDisabler::notify_jvmti_events()) {
       jvmti_mount_end(_thread, _cont, top, preempt_kind);
-    } else {
-      _thread->set_is_in_VTMS_transition(false);
-      java_lang_Thread::set_is_in_VTMS_transition(_thread->vthread(), false);
+    } else
+#endif
+    { // Faster version of MountUnmountDisabler::end_transition() to avoid
+      // unnecessary extra instructions from jvmti_mount_end().
+      java_lang_Thread::set_is_in_vthread_transition(_thread->vthread(), false);
+      _thread->set_is_in_vthread_transition(false);
     }
   }
-#endif
 
   if (fast_case) {
     // If we thawed in the slow path the runtime stub/native wrapper frame already

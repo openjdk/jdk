@@ -32,10 +32,10 @@
 #define VIRTUAL_THREAD  "Ljava/lang/VirtualThread;"
 
 static JNINativeMethod methods[] = {
-    { "notifyJvmtiStart",          "()V",  (void *)&JVM_VirtualThreadStart },
-    { "notifyJvmtiEnd",            "()V",  (void *)&JVM_VirtualThreadEnd },
-    { "notifyJvmtiMount",          "(Z)V", (void *)&JVM_VirtualThreadMount },
-    { "notifyJvmtiUnmount",        "(Z)V", (void *)&JVM_VirtualThreadUnmount },
+    { "endFirstTransition",       "()V",  (void *)&JVM_VirtualThreadEndFirstTransition },
+    { "startFinalTransition",     "()V",  (void *)&JVM_VirtualThreadStartFinalTransition },
+    { "startTransition",          "(Z)V", (void *)&JVM_VirtualThreadStartTransition },
+    { "endTransition",            "(Z)V", (void *)&JVM_VirtualThreadEndTransition },
     { "notifyJvmtiDisableSuspend", "(Z)V", (void *)&JVM_VirtualThreadDisableSuspend },
     { "postPinnedEvent",           "(" STR ")V", (void *)&JVM_VirtualThreadPinnedEvent },
     { "takeVirtualThreadListToUnblock", "()" VIRTUAL_THREAD, (void *)&JVM_TakeVirtualThreadListToUnblock},
