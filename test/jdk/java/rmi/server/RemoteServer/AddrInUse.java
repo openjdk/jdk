@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4111507 8372857
+ * @bug 4111507
  * @summary retryServerSocket should not retry on BindException
  *
  * @run main/othervm AddrInUse
