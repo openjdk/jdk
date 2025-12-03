@@ -86,9 +86,9 @@ void AOTMappedHeapWriter::init() {
   if (CDSConfig::is_dumping_heap()) {
     Universe::heap()->collect(GCCause::_java_lang_system_gc);
 
-    _buffer_offset_to_source_obj_table = new BufferOffsetToSourceObjectTable(/*size (prime)*/36137, /*max size*/1 * M);
+    _buffer_offset_to_source_obj_table = new (mtClassShared) BufferOffsetToSourceObjectTable(/*size (prime)*/36137, /*max size*/1 * M);
     _dumped_interned_strings = new (mtClass)DumpedInternedStrings(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE);
-    _fillers = new FillersTable();
+    _fillers = new (mtClassShared) FillersTable();
     _requested_bottom = nullptr;
     _requested_top = nullptr;
 
