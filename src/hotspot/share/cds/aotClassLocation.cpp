@@ -965,7 +965,7 @@ bool AOTClassLocationConfig::validate(const char* cache_filename, bool has_aot_l
 
   log_locations(cache_filename, /*is_write=*/false);
 
-  const char* const jrt = ClassLoader::get_jrt_entry()->name();
+  const char* jrt = ClassLoader::get_jrt_entry()->name();
   log_info(class, path)("Checking [0] (modules image)");
   bool success = class_location_at(0)->check(jrt, has_aot_linked_classes);
   log_info(class, path)("Modules image %s validation: %s", jrt, success ? "passed" : "failed");
