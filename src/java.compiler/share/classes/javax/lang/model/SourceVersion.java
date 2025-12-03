@@ -83,6 +83,10 @@ public enum SourceVersion {
      *      preview, flexible constructor bodies in third preview)
      *  25: module import declarations, compact source files and
      *      instance main methods, and flexible constructor bodies
+     *      (primitive Types in Patterns, instanceof, and switch in
+     *      third preview)
+     *  26: no changes (primitive Types in Patterns, instanceof, and
+     *      switch in in fourth preview)
      */
 
     /**
@@ -476,7 +480,7 @@ public enum SourceVersion {
      * @since 26
      *
      * @see <a
-     * href="https://docs.oracle.com/javase/specs/jls/se26/html/index.html">
+     * href="https://docs.oracle.com/en/java/javase/26/docs/specs/jls/index.html">
      * <cite>The Java Language Specification, Java SE 26 Edition</cite></a>
      */
     RELEASE_26,
