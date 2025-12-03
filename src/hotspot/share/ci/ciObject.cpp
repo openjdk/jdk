@@ -225,7 +225,7 @@ bool ciObject::should_be_constant() {
 
 
 // ------------------------------------------------------------------
-// ciObject::identity_hash_or_no_hash
+// ciObject::identity_hash
 //
 // The identity hash code of an object or an empty constant if a hash is not computed yet.
 // Observed value is cached, so it doesn't change during compilation.
