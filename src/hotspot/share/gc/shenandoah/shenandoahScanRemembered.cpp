@@ -361,8 +361,8 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
 
   // Recall that we already dealt with the co-initial object case above
   assert(p < left, "obj should start before left");
-  // While it is safe to ask an object its size in the loop that
-  // follows, the (ifdef'd out) loop should never be needed.
+  // While it is safe to ask an object its size in the block that
+  // follows, the (ifdef'd out) block should never be needed.
   // 1. we ask this question only for regions in the old generation, and those
   //    that are not humongous regions
   // 2. there is no direct allocation ever by mutators in old generation
@@ -381,7 +381,6 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
 #ifdef ASSERT
   oop obj = cast_to_oop(p);
   assert(oopDesc::is_oop(obj), "Should be an object");
-  assert(p <= left, "p should start at or before left end of card");
   assert(p + obj->size() > left, "obj should end after left end of card");
 #endif // ASSERT
   return p;
