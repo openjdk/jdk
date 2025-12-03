@@ -826,7 +826,7 @@ uint CallNode::match_edge(uint idx) const {
 // Determine whether the call could modify the field of the specified
 // instance at the specified offset.
 //
-bool CallNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) {
+bool CallNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) const {
   assert((t_oop != nullptr), "sanity");
   if (is_call_to_arraycopystub() && strcmp(_name, "unsafe_arraycopy") != 0) {
     const TypeTuple* args = _tf->domain();
@@ -2380,7 +2380,7 @@ void AbstractLockNode::log_lock_optimization(Compile *C, const char * tag, Node*
   }
 }
 
-bool CallNode::may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeOopPtr* t_oop, PhaseValues* phase) {
+bool CallNode::may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeOopPtr* t_oop, PhaseValues* phase) const {
   if (dest_t->is_known_instance() && t_oop->is_known_instance()) {
     return dest_t->instance_id() == t_oop->instance_id();
   }

@@ -183,7 +183,7 @@ public:
   virtual bool guaranteed_safepoint()  { return false; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 
-  virtual bool may_modify(const TypeOopPtr* t_oop, PhaseValues* phase);
+  virtual bool may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) const;
 
   bool is_alloc_tightly_coupled() const { return _alloc_tightly_coupled; }
 
