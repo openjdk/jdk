@@ -94,6 +94,7 @@ gc/shenandoah/TestEvilSyncBug.java#generational 8345501 generic-all
 gc/shenandoah/TestRetainObjects.java#no-tlab 8361099 generic-all
 gc/shenandoah/TestSieveObjects.java#no-tlab 8361099 generic-all
 gc/shenandoah/TestSieveObjects.java#no-tlab-genshen 8361099 generic-all
+gc/cslocker/TestCSLocker.java 8373025 generic-all
 
 #############################################################################
 
@@ -139,6 +140,9 @@ serviceability/sa/ClhsdbPstack.java#core          8318754 macosx-aarch64
 serviceability/sa/TestJmapCore.java               8318754 macosx-aarch64
 serviceability/sa/TestJmapCoreMetaspace.java      8318754 macosx-aarch64
 
+serviceability/sa/ClhsdbScanOops.java#parallel    8373022 generic-all
+serviceability/sa/ClhsdbScanOops.java#serial      8373022 generic-all
+
 serviceability/sa/ClhsdbThreadContext.java        8356704 windows-x64
 
 serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStressTest.java 8315980 linux-all,windows-x64
@@ -183,3 +187,9 @@ vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEa
 vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Multi/Multi005/TestDescription.java 8076494 windows-x64
 
 vmTestbase/nsk/monitoring/ThreadMXBean/findMonitorDeadlockedThreads/find006/TestDescription.java 8310144 macosx-aarch64
+
+vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded001/TestDescription.java 8373022 generic-all
+vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded002/TestDescription.java 8373022 generic-all
+vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded003/TestDescription.java 8373022 generic-all
+vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded004/TestDescription.java 8373022 generic-all
+vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded005/TestDescription.java 8373022 generic-all
