@@ -891,14 +891,15 @@ void ParallelScavengeHeap::resize_after_young_gc(bool is_survivor_overflowing) {
 
   // Consider if should shrink old-gen
   if (!is_survivor_overflowing) {
-    // Upper bound for a single step shrink
-    size_t max_shrink_bytes = SpaceAlignment;
+    assert(old_gen()->capacity_in_bytes() >= old_gen()->min_gen_size(), "inv");
+
+    // Upper bound for a single step shrink; both min_gen_size constraint and per-step delta.
+    const size_t max_shrink_bytes = MIN2(old_gen()->capacity_in_bytes() - old_gen()->min_gen_size(),
+                                         SpaceAlignment);
     size_t shrink_bytes = _size_policy->compute_old_gen_shrink_bytes(old_gen()->free_in_bytes(), max_shrink_bytes);
 
-    assert(old_gen()->capacity_in_bytes() >= old_gen()->min_gen_size(), "inv);
-    const size_t max_shrink_bytes = old_gen()->capacity_in_bytes() - old_gen()->min_gen_size();
-    // Subject to the min_gen_size contraint.
-    shrink_bytes = MIN2(shrink_bytes, max_shrink_bytes);
+    assert(old_gen()->capacity_in_bytes() >= shrink_bytes, "inv");
+    assert(old_gen()->capacity_in_bytes() - shrink_bytes >= old_gen()->min_gen_size(), "inv");
 
     if (shrink_bytes != 0) {
       if (MinHeapFreeRatio != 0) {
