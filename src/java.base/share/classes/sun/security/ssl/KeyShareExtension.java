@@ -301,7 +301,8 @@ final class KeyShareExtension {
                     chc.handshakePossessions.add(pos);
                     // May need more possession types in the future.
                     if (pos instanceof NamedGroupPossession ||
-                            pos instanceof KEMKeyExchange.KEMReceiverPossession) {
+                            pos instanceof
+                            KEMKeyExchange.KEMReceiverPossession) {
                         return pos.encode();
                     }
                 }
@@ -569,7 +570,8 @@ final class KeyShareExtension {
                 SSLPossession[] poses = ke.createPossessions(shc);
                 for (SSLPossession pos : poses) {
                     if (!(pos instanceof NamedGroupPossession ||
-                            pos instanceof KEMKeyExchange.KEMSenderPossession)) {
+                            pos instanceof
+                            KEMKeyExchange.KEMSenderPossession)) {
                         // May need more possession types in the future.
                         continue;
                     }
@@ -581,23 +583,22 @@ final class KeyShareExtension {
                     // For KEM, perform encapsulation using the client’s public
                     // key (KEMCredentials). The resulting encapsulated message
                     // becomes the key_share value sent to the client. The
-                    // shared secret derived from encapsulation is stored in the
-                    // KEMSenderPossession for later use in the TLS key schedule.
+                    // shared secret derived from encapsulation is stored in
+                    // the KEMSenderPossession for later use in the TLS key
+                    // schedule.
                     if (pos instanceof KEMKeyExchange.KEMSenderPossession xp) {
-                        for (SSLCredentials cred : shc.handshakeCredentials) {
-                            if (cred instanceof KEMKeyExchange.KEMCredentials kcred
-                                    && ng.equals(kcred.namedGroup)) {
-                                String name = ((NamedParameterSpec) ng.keAlgParamSpec).
-                                        getName();
-                                KAKeyDerivation handshakeKD = new KAKeyDerivation(
-                                        name, ng, shc, null, null,
-                                        kcred.getKeyshare());
-                                var encaped = handshakeKD.encapsulate(
-                                        "TlsHandshakeSecret");
-                                xp.setKey(encaped.key());
-                                keyShare = new KeyShareEntry(ng.id,
-                                        encaped.encapsulation());
-                            }
+                        if (cd instanceof KEMKeyExchange.KEMCredentials kcred
+                                && ng.equals(kcred.namedGroup)) {
+                            String name = ((NamedParameterSpec)
+                                    ng.keAlgParamSpec).getName();
+                            KAKeyDerivation handshakeKD = new KAKeyDerivation(
+                                    name, ng, shc, null, null,
+                                    kcred.getKeyShare());
+                            var encaped = handshakeKD.encapsulate(
+                                    "TlsHandshakeSecret");
+                            xp.setKey(encaped.key());
+                            keyShare = new KeyShareEntry(ng.id,
+                                    encaped.encapsulation());
                         }
                     } else {
                         keyShare = new KeyShareEntry(ng.id, pos.encode());
@@ -720,7 +721,8 @@ final class KeyShareExtension {
         if (cred == null) return false;
 
         if (cred instanceof NamedGroupCredentials namedGroupCred) {
-            if (namedGroupCred instanceof KEMKeyExchange.KEMCredentials kemCred) {
+            if (namedGroupCred instanceof KEMKeyExchange.KEMCredentials
+                    kemCred) {
                 AlgorithmParameterSpec paramSpec = kemCred.getNamedGroup().
                         keAlgParamSpec;
                 String algName = (paramSpec instanceof NamedParameterSpec nps) ?

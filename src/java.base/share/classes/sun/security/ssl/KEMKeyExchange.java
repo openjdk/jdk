@@ -25,14 +25,19 @@
 package sun.security.ssl;
 
 import java.io.IOException;
-import java.security.*;
+import java.security.GeneralSecurityException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
+import java.security.Provider;
+import java.security.ProviderException;
+import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.spec.NamedParameterSpec;
+import javax.crypto.SecretKey;
 
 import sun.security.ssl.NamedGroup.NamedGroupSpec;
-import sun.security.util.*;
 import sun.security.x509.X509Key;
-
-import javax.crypto.SecretKey;
 
 /**
  * Specifics for single or hybrid Key exchanges based on KEM
@@ -47,7 +52,7 @@ final class KEMKeyExchange {
         final NamedGroup namedGroup;
         // Unlike other credentials, we directly store the key share
         // value here, no need to convert to a key
-        final byte[] keyshare;
+        private final byte[] keyshare;
 
         KEMCredentials(byte[] keyshare, NamedGroup namedGroup) {
             this.keyshare = keyshare;
@@ -64,7 +69,7 @@ final class KEMKeyExchange {
                     "KEMCredentials stores raw keyshare, not a PublicKey");
         }
 
-        public byte[] getKeyshare() {
+        public byte[] getKeyShare() {
             return keyshare;
         }
 
@@ -74,16 +79,14 @@ final class KEMKeyExchange {
         }
 
         /**
-         * Parse the encoded Point into the KEMCredentials using the
-         * namedGroup.
+         * Instantiates a KEMCredentials object
          */
         static KEMCredentials valueOf(NamedGroup namedGroup,
-                byte[] encodedPoint) throws IOException,
-                GeneralSecurityException {
+                byte[] encodedPoint) {
 
             if (namedGroup.spec != NamedGroupSpec.NAMED_GROUP_KEM) {
                 throw new RuntimeException(
-                        "Credentials decoding:  Not KEM named group");
+                        "Credentials decoding: Not KEM named group");
             }
 
             if (encodedPoint == null || encodedPoint.length == 0) {
@@ -94,8 +97,9 @@ final class KEMKeyExchange {
         }
     }
 
-    static class KEMPossession implements SSLPossession {
+    private static class KEMPossession implements SSLPossession {
         private final NamedGroup namedGroup;
+
         public KEMPossession(NamedGroup ng) {
             this.namedGroup = ng;
         }
@@ -111,9 +115,10 @@ final class KEMKeyExchange {
 
         KEMReceiverPossession(NamedGroup namedGroup, SecureRandom random) {
             super(namedGroup);
+            String algName = null;
             try {
                 // For KEM: This receiver side (client) generates a key pair.
-                String algName = ((NamedParameterSpec)namedGroup.keAlgParamSpec).
+                algName = ((NamedParameterSpec)namedGroup.keAlgParamSpec).
                         getName();
                 Provider provider = namedGroup.getProvider();
                 KeyPairGenerator kpg = (provider != null) ?
@@ -125,7 +130,8 @@ final class KEMKeyExchange {
                 publicKey = kp.getPublic();
             } catch (GeneralSecurityException e) {
                 throw new RuntimeException(
-                        "Could not generate XDH keypair", e);
+                        "Could not generate keypair for algorithm: " +
+                        algName, e);
             }
         }
 
@@ -139,29 +145,33 @@ final class KEMKeyExchange {
             throw new ProviderException("Unsupported key type: " + publicKey);
         }
 
-        public PublicKey getPublicKey() {
+        // Package-private
+        PublicKey getPublicKey() {
             return publicKey;
         }
 
-        public PrivateKey getPrivateKey() {
+        // Package-private
+        PrivateKey getPrivateKey() {
             return privateKey;
         }
     }
 
     static final class KEMSenderPossession extends KEMPossession {
 
-        public SecretKey getKey() {
-            return key;
-        }
-
-        public void setKey(SecretKey key) {
-            this.key = key;
-        }
-
         private SecretKey key;
 
         KEMSenderPossession(NamedGroup namedGroup) {
             super(namedGroup);
+        }
+
+        // Package-private
+        SecretKey getKey() {
+            return key;
+        }
+
+        // Package-private
+        void setKey(SecretKey key) {
+            this.key = key;
         }
 
         @Override
@@ -187,17 +197,17 @@ final class KEMKeyExchange {
                     for (SSLCredentials cred : context.handshakeCredentials) {
                         if (cred instanceof KEMCredentials kcred &&
                                 ng.equals(kcred.namedGroup)) {
-                            String name = ((NamedParameterSpec) ng.keAlgParamSpec).
-                                    getName();
+                            String name = ((NamedParameterSpec)
+                                    ng.keAlgParamSpec).getName();
                             return new KAKeyDerivation(name, ng, context,
                                     kposs.getPrivateKey(), null,
-                                    kcred.getKeyshare());
+                                    kcred.getKeyShare());
                         }
                     }
                 }
             }
             context.conContext.fatal(Alert.HANDSHAKE_FAILURE,
-                    "No sufficient XDHE key agreement "
+                    "No suitable KEM key agreement "
                     + "parameters negotiated");
             return null;
         }

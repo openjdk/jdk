@@ -30,7 +30,9 @@
  * @bug 8247630 8314323
  * @summary Use two key share entries
  * @library /test/lib
- * @run main/othervm -Djdk.tls.namedGroups=x25519,secp256r1,secp384r1,X25519MLKEM768,SecP256r1MLKEM768,SecP384r1MLKEM1024 HRRKeyShares
+ * @run main/othervm
+ *     -Djdk.tls.namedGroups=x25519,secp256r1,secp384r1,X25519MLKEM768,SecP256r1MLKEM768,SecP384r1MLKEM1024
+ *     HRRKeyShares
  */
 
 import java.io.ByteArrayOutputStream;
@@ -350,7 +352,8 @@ public class HRRKeyShares {
 
         try {
             // Now we're expecting to reissue the ClientHello, this time
-            // with a secp384r1 share.
+            // with a key share for the HRR requested named
+            // group (hrrNamedGroup).
             cTOs.compact();
             clientResult = engine.wrap(clientOut, cTOs);
             logResult("client wrap: ", clientResult);

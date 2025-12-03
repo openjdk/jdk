@@ -565,26 +565,31 @@ final class ServerHello {
                     clientHello);
             shc.serverHelloRandom = shm.serverRandom;
 
-            // Key Encapsulation Mechanism (KEM):
-            //  The decapsulator (the client) publishes a public key, and the
-            //  encapsulator (the server) uses it to generate:
-            //  - the shared secret
-            //  - the encapsulation (ciphertext), which is sent back to the client.
+            // For key derivation, we will either use the traditional Key
+            // Agreement (KA) model or the Key Encapsulation Mechanism (KEM)
+            // model, depending on what key exchange group is used.
+            //
+            // In JSSE for KA flow, the server usually generates its key
+            // share and then derives the shared secret after receiving the
+            // client's share. However, this is changed for KEM: the server
+            // must perform both actions — derive the secret and generate
+            // the key encapsulation message at the same time during
+            // encapsulation in SHKeyShareProducer.
             //
             // Traditional Key Agreement (KA):
-            //  Both peers perform similar operations: generate a key share,
-            //  send it, and compute a shared secret upon receiving the peer's
-            //  key share.
+            //   - Both peers generate a key share and exchange it.
+            //   - Each peer computes a shared secret upon receiving the
+            //     other's key share.
             //
-            // In JSSE, the server usually generates its key share and then
-            // derives the secret after receiving the client's share (KA).
-            // However, this is changed for KEM: the server (as encapsulator)
-            // must perform both actions — derive the secret and generate the
-            // encapsulated message at the same time during encapsulation
-            // in SHKeyShareProducer.
-            // The derived shared secret must be stored in a KEMSenderPossession
-            // so it can be retrieved for handshake traffic secret derivation
-            // later.
+            // Key Encapsulation Mechanism (KEM):
+            //  The decapsulator (the client) publishes a public key, and
+            //  the encapsulator (the server) uses it to generate:
+            //  - the shared secret
+            //  - the key encapsulation message, which is sent back to the
+            //    client.
+            //  - The derived shared secret must be stored in a
+            //    KEMSenderPossession so it can be retrieved for handshake
+            //    traffic secret derivation later.
 
             // Produce extensions for ServerHello handshake message.
             SSLExtension[] serverHelloExtensions =

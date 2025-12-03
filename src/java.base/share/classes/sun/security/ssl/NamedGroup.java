@@ -24,7 +24,6 @@
  */
 package sun.security.ssl;
 
-import com.sun.crypto.provider.DH;
 import java.io.IOException;
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
@@ -40,7 +39,6 @@ import javax.crypto.KeyAgreement;
 import javax.crypto.spec.DHParameterSpec;
 import sun.security.ssl.ECDHKeyExchange.ECDHEPossession;
 import sun.security.util.CurveDB;
-import sun.security.util.Hybrid;
 
 /**
  * An enum containing all known named groups for use in TLS.
@@ -235,19 +233,19 @@ enum NamedGroup {
             NamedGroupSpec.NAMED_GROUP_KEM,
             ProtocolVersion.PROTOCOLS_OF_13,
             Hybrid.X25519_MLKEM768,
-            DH.PROVIDER),
+            DHasKEM.PROVIDER),
 
     SECP256R1MLKEM768(0x11eb, "SecP256r1MLKEM768",
             NamedGroupSpec.NAMED_GROUP_KEM,
             ProtocolVersion.PROTOCOLS_OF_13,
             Hybrid.SECP256R1_MLKEM768,
-            DH.PROVIDER),
+            DHasKEM.PROVIDER),
 
     SECP384R1MLKEM1024(0x11ed, "SecP384r1MLKEM1024",
             NamedGroupSpec.NAMED_GROUP_KEM,
             ProtocolVersion.PROTOCOLS_OF_13,
             Hybrid.SECP384R1_MLKEM1024,
-            DH.PROVIDER),
+            DHasKEM.PROVIDER),
 
     // Elliptic Curves (RFC 4492)
     //
@@ -314,11 +312,10 @@ enum NamedGroup {
             try {
                 // Skip AlgorithmParameters for KEMs (not supported)
                 if (namedGroupSpec == NamedGroupSpec.NAMED_GROUP_KEM) {
-                    Provider p = getProvider();
-                    if (p == null) {
+                    if (defaultProvider == null) {
                         KeyFactory.getInstance(name);
                     } else {
-                        KeyFactory.getInstance(name, p);
+                        KeyFactory.getInstance(name, defaultProvider);
                     }
                 } else {
                     // ECDHE or others: use AlgorithmParameters as before

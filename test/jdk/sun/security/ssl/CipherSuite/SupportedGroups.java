@@ -48,14 +48,14 @@ import javax.net.ssl.SSLServerSocket;
 public class SupportedGroups extends SSLSocketTemplate {
 
     private static volatile int index;
-    private static final String[][][] protocolForClassic = {
+    private static final String[][][] protocolsForClassic = {
         {{"TLSv1.3"}, {"TLSv1.3"}},
         {{"TLSv1.3", "TLSv1.2"}, {"TLSv1.2"}},
         {{"TLSv1.2"}, {"TLSv1.3", "TLSv1.2"}},
         {{"TLSv1.2"}, {"TLSv1.2"}}
     };
 
-    private static final String[][][] protocolForHybrid = {
+    private static final String[][][] protocolsForHybrid = {
             {{"TLSv1.3"}, {"TLSv1.3"}},
             {{"TLSv1.3", "TLSv1.2"}, {"TLSv1.3"}},
             {{"TLSv1.3"}, {"TLSv1.3", "TLSv1.2"}}
@@ -98,7 +98,8 @@ public class SupportedGroups extends SSLSocketTemplate {
         System.setProperty("jdk.tls.namedGroups", args[0]);
 
         boolean hybridGroup = hybridNamedGroup(args[0]);
-        String[][][] protocols = hybridGroup ? protocolForHybrid : protocolForClassic;
+        String[][][] protocols = hybridGroup ?
+                protocolsForHybrid : protocolsForClassic;
 
         for (index = 0; index < protocols.length; index++) {
             (new SupportedGroups(protocols)).run();

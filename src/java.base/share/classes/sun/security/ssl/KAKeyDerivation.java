@@ -24,7 +24,6 @@
  */
 package sun.security.ssl;
 
-import sun.security.util.Hybrid;
 import sun.security.util.RawKeySpec;
 
 import javax.crypto.KDF;
@@ -38,6 +37,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.PublicKey;
 import sun.security.util.KeyUtil;
 
@@ -51,7 +51,7 @@ public class KAKeyDerivation implements SSLKeyDerivation {
     private final PrivateKey localPrivateKey;
     private final PublicKey peerPublicKey;
     private final byte[] keyshare;
-    private final java.security.Provider provider;
+    private final Provider provider;
 
     // Constructor called by Key Agreement
     KAKeyDerivation(String algorithmName,
@@ -115,7 +115,8 @@ public class KAKeyDerivation implements SSLKeyDerivation {
         }
     }
 
-    private SecretKey deriveHandshakeSecret(String label, SecretKey sharedSecret)
+    private SecretKey deriveHandshakeSecret(String label,
+            SecretKey sharedSecret)
             throws GeneralSecurityException, IOException {
         SecretKey earlySecret = null;
         SecretKey saltSecret = null;
@@ -158,13 +159,17 @@ public class KAKeyDerivation implements SSLKeyDerivation {
      * This method is called by the server to perform KEM encapsulation.
      * It uses the client's public key (sent by the client as a keyshare)
      * to encapsulate a shared secret and returns the encapsulated message.
+     *
+     * Package-private, used from KeyShareExtension.SHKeyShareProducer::
+     * produce().
      */
-    public KEM.Encapsulated encapsulate(String algorithm)
+    KEM.Encapsulated encapsulate(String algorithm)
             throws IOException {
         SecretKey sharedSecret = null;
 
         if (keyshare == null) {
-            throw new IOException("No keyshare available for KEM encapsulation");
+            throw new IOException("No keyshare available for KEM " +
+                    "encapsulation");
         }
 
         try {

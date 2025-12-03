@@ -56,7 +56,7 @@ public class KeyPairGeneratorBench extends CryptoBase {
     protected static Provider getInternalJce() {
         try {
             Class<?> dhClazz = Class.forName("com.sun.crypto.provider.DH");
-            return (Provider) (dhClazz.getField("PROVIDER").get(null));
+            return (Provider) dhClazz.getField("PROVIDER").get(null);
         } catch (ReflectiveOperationException exc) {
             throw new RuntimeException(exc);
         }
