@@ -720,8 +720,7 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
       // If realloc succeeds, the header is freed. Get FreeInfo before that.
       MallocHeader::FreeInfo free_info = header->free_info();
       void* const new_outer_ptr = permit_forbidden_function::realloc(header, new_outer_size);
-      bool realloc_succeeded = new_outer_ptr != nullptr;
-      success = realloc_succeeded;
+      success = new_outer_ptr != nullptr;;
       if (success) {
         // realloc(3) succeeded, variable header now points to invalid memory and we need to deaccount the old block.
         MemTracker::deaccount(free_info);
@@ -736,7 +735,6 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
         }
 #endif
 
-        success = true;
         rc = new_inner_ptr;
       }
     }
