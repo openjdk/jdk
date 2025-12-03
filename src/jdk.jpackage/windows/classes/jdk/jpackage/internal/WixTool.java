@@ -89,7 +89,7 @@ public enum WixTool {
         }
     }
 
-    static WixToolset createToolset() throws ConfigException {
+    static WixToolset createToolset() {
         Function<List<ToolLookupResult>, Map<WixTool, ToolInfo>> conv = lookupResults -> {
             return lookupResults.stream().filter(ToolLookupResult::isValid).collect(Collectors.
                     groupingBy(lookupResult -> {

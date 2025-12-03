@@ -67,11 +67,12 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/osThread.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/synchronizer.inline.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframeArray.hpp"
@@ -85,6 +86,9 @@
 #include "utilities/xmlstream.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
+#endif
+#ifdef COMPILER2
+#include "opto/runtime.hpp"
 #endif
 #if INCLUDE_JFR
 #include "jfr/jfr.inline.hpp"
@@ -264,6 +268,46 @@ void SharedRuntime::print_ic_miss_histogram() {
     tty->print_cr("Total IC misses: %7d", tot_misses);
   }
 }
+
+#ifdef COMPILER2
+// Runtime methods for printf-style debug nodes (same printing format as fieldDescriptor::print_on_for)
+void SharedRuntime::debug_print_value(jboolean x) {
+  tty->print_cr("boolean %d", x);
+}
+
+void SharedRuntime::debug_print_value(jbyte x) {
+  tty->print_cr("byte %d", x);
+}
+
+void SharedRuntime::debug_print_value(jshort x) {
+  tty->print_cr("short %d", x);
+}
+
+void SharedRuntime::debug_print_value(jchar x) {
+  tty->print_cr("char %c %d", isprint(x) ? x : ' ', x);
+}
+
+void SharedRuntime::debug_print_value(jint x) {
+  tty->print_cr("int %d", x);
+}
+
+void SharedRuntime::debug_print_value(jlong x) {
+  tty->print_cr("long " JLONG_FORMAT, x);
+}
+
+void SharedRuntime::debug_print_value(jfloat x) {
+  tty->print_cr("float %f", x);
+}
+
+void SharedRuntime::debug_print_value(jdouble x) {
+  tty->print_cr("double %lf", x);
+}
+
+void SharedRuntime::debug_print_value(oopDesc* x) {
+  x->print();
+}
+#endif // COMPILER2
+
 #endif // PRODUCT
 
 
@@ -525,9 +569,6 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
   assert(frame::verify_return_pc(return_address), "must be a return address: " INTPTR_FORMAT, p2i(return_address));
   assert(current->frames_to_pop_failed_realloc() == 0 || Interpreter::contains(return_address), "missed frames to pop?");
 
-  // Reset method handle flag.
-  current->set_is_method_handle_return(false);
-
 #if INCLUDE_JVMCI
   // JVMCI's ExceptionHandlerStub expects the thread local exception PC to be clear
   // and other exception handler continuations do not read it
@@ -542,8 +583,6 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
   CodeBlob* blob = CodeCache::find_blob(return_address);
   nmethod* nm = (blob != nullptr) ? blob->as_nmethod_or_null() : nullptr;
   if (nm != nullptr) {
-    // Set flag if return address is a method handle call site.
-    current->set_is_method_handle_return(nm->is_method_handle_return(return_address));
     // native nmethods don't have exception handlers
     assert(!nm->is_native_method() || nm->method()->is_continuation_enter_intrinsic(), "no exception handler");
     assert(nm->header_begin() != nm->exception_begin(), "no exception handler");
@@ -565,6 +604,11 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
       // The deferred StackWatermarkSet::after_unwind check will be performed in
       // * OptoRuntime::handle_exception_C_helper for C2 code
       // * exception_handler_for_pc_helper via Runtime1::handle_exception_from_callee_id for C1 code
+#ifdef COMPILER2
+      if (nm->compiler_type() == compiler_c2) {
+        return OptoRuntime::exception_blob()->entry_point();
+      }
+#endif // COMPILER2
       return nm->exception_begin();
     }
   }
@@ -642,10 +686,13 @@ address SharedRuntime::get_poll_stub(address pc) {
            "polling page safepoint stub not created yet");
     stub = SharedRuntime::polling_page_safepoint_handler_blob()->entry_point();
   }
-  log_debug(safepoint)("... found polling page %s exception at pc = "
-                       INTPTR_FORMAT ", stub =" INTPTR_FORMAT,
+  log_trace(safepoint)("Polling page exception: thread = " INTPTR_FORMAT " [%d], pc = "
+                       INTPTR_FORMAT " (%s), stub = " INTPTR_FORMAT,
+                       p2i(Thread::current()),
+                       Thread::current()->osthread()->thread_id(),
+                       p2i(pc),
                        at_poll_return ? "return" : "loop",
-                       (intptr_t)pc, (intptr_t)stub);
+                       p2i(stub));
   return stub;
 }
 
@@ -752,7 +799,8 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
     if (t != nullptr) {
       return nm->code_begin() + t->pco();
     } else {
-      return Deoptimization::deoptimize_for_missing_exception_handler(nm);
+      bool make_not_entrant = true;
+      return Deoptimization::deoptimize_for_missing_exception_handler(nm, make_not_entrant);
     }
   }
 #endif // INCLUDE_JVMCI
@@ -760,6 +808,8 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
   ScopeDesc* sd = nm->scope_desc_at(ret_pc);
   // determine handler bci, if any
   EXCEPTION_MARK;
+
+  Handle orig_exception(THREAD, exception());
 
   int handler_bci = -1;
   int scope_depth = 0;
@@ -782,7 +832,7 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
         // thrown (bugs 4307310 and 4546590). Set "exception" reference
         // argument to ensure that the correct exception is thrown (4870175).
         recursive_exception_occurred = true;
-        exception = Handle(THREAD, PENDING_EXCEPTION);
+        exception.replace(PENDING_EXCEPTION);
         CLEAR_PENDING_EXCEPTION;
         if (handler_bci >= 0) {
           bci = handler_bci;
@@ -808,6 +858,17 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
 
   ExceptionHandlerTable table(nm);
   HandlerTableEntry *t = table.entry_for(catch_pco, handler_bci, scope_depth);
+
+  // If the compiler did not anticipate a recursive exception, resulting in an exception
+  // thrown from the catch bci, then the compiled exception handler might be missing.
+  // This is rare.  Just deoptimize and let the interpreter rethrow the original
+  // exception at the original bci.
+  if (t == nullptr && recursive_exception_occurred) {
+    exception.replace(orig_exception()); // restore original exception
+    bool make_not_entrant = false;
+    return Deoptimization::deoptimize_for_missing_exception_handler(nm, make_not_entrant);
+  }
+
   if (t == nullptr && (nm->is_compiled_by_c1() || handler_bci != -1)) {
     // Allow abbreviated catch tables.  The idea is to allow a method
     // to materialize its exceptions without committing to the exact
@@ -1972,7 +2033,7 @@ void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThrea
   ExceptionMark em(current);
 
   // Check if C2_MacroAssembler::fast_unlock() or
-  // C2_MacroAssembler::fast_unlock_lightweight() unlocked an inflated
+  // C2_MacroAssembler::fast_unlock() unlocked an inflated
   // monitor before going slow path.  Since there is no safepoint
   // polling when calling into the VM, we can be sure that the monitor
   // hasn't been deallocated.
@@ -1985,7 +2046,6 @@ void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThrea
     if (!m->try_enter(current, /*check_for_recursion*/ false)) {
       // Some other thread acquired the lock (or the monitor was
       // deflated). Either way we are done.
-      current->dec_held_monitor_count();
       return;
     }
   }
@@ -2005,20 +2065,6 @@ void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThrea
 JRT_LEAF(void, SharedRuntime::complete_monitor_unlocking_C(oopDesc* obj, BasicLock* lock, JavaThread* current))
   assert(current == JavaThread::current(), "pre-condition");
   SharedRuntime::monitor_exit_helper(obj, lock, current);
-JRT_END
-
-// This is only called when CheckJNICalls is true, and only
-// for virtual thread termination.
-JRT_LEAF(void,  SharedRuntime::log_jni_monitor_still_held())
-  assert(CheckJNICalls, "Only call this when checking JNI usage");
-  if (log_is_enabled(Debug, jni)) {
-    JavaThread* current = JavaThread::current();
-    int64_t vthread_id = java_lang_Thread::thread_id(current->vthread());
-    int64_t carrier_id = java_lang_Thread::thread_id(current->threadObj());
-    log_debug(jni)("VirtualThread (tid: " INT64_FORMAT ", carrier id: " INT64_FORMAT
-                   ") exiting with Objects still locked by JNI MonitorEnter.",
-                   vthread_id, carrier_id);
-  }
 JRT_END
 
 #ifndef PRODUCT
@@ -2520,6 +2566,7 @@ ArchivedAdapterTable AdapterHandlerLibrary::_aot_adapter_handler_table;
 #endif // INCLUDE_CDS
 static const int AdapterHandlerLibrary_size = 16*K;
 BufferBlob* AdapterHandlerLibrary::_buffer = nullptr;
+volatile uint AdapterHandlerLibrary::_id_counter = 0;
 
 BufferBlob* AdapterHandlerLibrary::buffer_blob() {
   assert(_buffer != nullptr, "should be initialized");
@@ -2600,7 +2647,9 @@ void AdapterHandlerLibrary::initialize() {
 }
 
 AdapterHandlerEntry* AdapterHandlerLibrary::new_entry(AdapterFingerPrint* fingerprint) {
-  return AdapterHandlerEntry::allocate(fingerprint);
+  uint id = (uint)AtomicAccess::add((int*)&_id_counter, 1);
+  assert(id > 0, "we can never overflow because AOT cache cannot contain more than 2^32 methods");
+  return AdapterHandlerEntry::allocate(id, fingerprint);
 }
 
 AdapterHandlerEntry* AdapterHandlerLibrary::get_simple_adapter(const methodHandle& method) {
@@ -2754,8 +2803,8 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
 
 void AdapterHandlerLibrary::lookup_aot_cache(AdapterHandlerEntry* handler) {
   ResourceMark rm;
-  const char* name = AdapterHandlerLibrary::name(handler->fingerprint());
-  const uint32_t id = AdapterHandlerLibrary::id(handler->fingerprint());
+  const char* name = AdapterHandlerLibrary::name(handler);
+  const uint32_t id = AdapterHandlerLibrary::id(handler);
 
   CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::Adapter, id, name);
   if (blob != nullptr) {
@@ -2850,8 +2899,8 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterHandlerEntry* handler,
   handler->set_adapter_blob(adapter_blob);
   if (!is_transient && AOTCodeCache::is_dumping_adapter()) {
     // try to save generated code
-    const char* name = AdapterHandlerLibrary::name(handler->fingerprint());
-    const uint32_t id = AdapterHandlerLibrary::id(handler->fingerprint());
+    const char* name = AdapterHandlerLibrary::name(handler);
+    const uint32_t id = AdapterHandlerLibrary::id(handler);
     bool success = AOTCodeCache::store_code_blob(*adapter_blob, AOTCodeEntry::Adapter, id, name);
     assert(success || !AOTCodeCache::is_dumping_adapter(), "caching of adapter must be disabled");
   }
@@ -2991,11 +3040,22 @@ void AdapterHandlerEntry::link() {
 }
 
 void AdapterHandlerLibrary::link_aot_adapters() {
+  uint max_id = 0;
   assert(AOTCodeCache::is_using_adapter(), "AOT adapters code should be available");
-  _aot_adapter_handler_table.iterate([](AdapterHandlerEntry* entry) {
+  /* It is possible that some adapters generated in assembly phase are not stored in the cache.
+   * That implies adapter ids of the adapters in the cache may not be contiguous.
+   * If the size of the _aot_adapter_handler_table is used to initialize _id_counter, then it may
+   * result in collision of adapter ids between AOT stored handlers and runtime generated handlers.
+   * To avoid such situation, initialize the _id_counter with the largest adapter id among the AOT stored handlers.
+   */
+  _aot_adapter_handler_table.iterate_all([&](AdapterHandlerEntry* entry) {
     assert(!entry->is_linked(), "AdapterHandlerEntry is already linked!");
     entry->link();
+    max_id = MAX2(max_id, entry->id());
   });
+  // Set adapter id to the maximum id found in the AOTCache
+  assert(_id_counter == 0, "Did not expect new AdapterHandlerEntry to be created at this stage");
+  _id_counter = max_id;
 }
 
 // This method is called during production run to lookup simple adapters
@@ -3340,33 +3400,12 @@ JRT_LEAF(void, SharedRuntime::OSR_migration_end( intptr_t* buf) )
   FREE_C_HEAP_ARRAY(intptr_t, buf);
 JRT_END
 
-bool AdapterHandlerLibrary::contains(const CodeBlob* b) {
-  bool found = false;
-#if INCLUDE_CDS
-  if (AOTCodeCache::is_using_adapter()) {
-    auto findblob_archived_table = [&] (AdapterHandlerEntry* handler) {
-      return (found = (b == CodeCache::find_blob(handler->get_i2c_entry())));
-    };
-    _aot_adapter_handler_table.iterate(findblob_archived_table);
-  }
-#endif // INCLUDE_CDS
-  if (!found) {
-    auto findblob_runtime_table = [&] (AdapterFingerPrint* key, AdapterHandlerEntry* a) {
-      return (found = (b == CodeCache::find_blob(a->get_i2c_entry())));
-    };
-    assert_locked_or_safepoint(AdapterHandlerLibrary_lock);
-    _adapter_handler_table->iterate(findblob_runtime_table);
-  }
-  return found;
+const char* AdapterHandlerLibrary::name(AdapterHandlerEntry* handler) {
+  return handler->fingerprint()->as_basic_args_string();
 }
 
-const char* AdapterHandlerLibrary::name(AdapterFingerPrint* fingerprint) {
-  return fingerprint->as_basic_args_string();
-}
-
-uint32_t AdapterHandlerLibrary::id(AdapterFingerPrint* fingerprint) {
-  unsigned int hash = fingerprint->compute_hash();
-  return hash;
+uint32_t AdapterHandlerLibrary::id(AdapterHandlerEntry* handler) {
+  return handler->id();
 }
 
 void AdapterHandlerLibrary::print_handler_on(outputStream* st, const CodeBlob* b) {
@@ -3374,27 +3413,27 @@ void AdapterHandlerLibrary::print_handler_on(outputStream* st, const CodeBlob* b
 #if INCLUDE_CDS
   if (AOTCodeCache::is_using_adapter()) {
     auto findblob_archived_table = [&] (AdapterHandlerEntry* handler) {
-      if (b == CodeCache::find_blob(handler->get_i2c_entry())) {
+      if (b == handler->adapter_blob()) {
         found = true;
         st->print("Adapter for signature: ");
         handler->print_adapter_on(st);
-        return true;
+        return false; // abort iteration
       } else {
-        return false; // keep looking
+        return true; // keep looking
       }
     };
     _aot_adapter_handler_table.iterate(findblob_archived_table);
   }
 #endif // INCLUDE_CDS
   if (!found) {
-    auto findblob_runtime_table = [&] (AdapterFingerPrint* key, AdapterHandlerEntry* a) {
-      if (b == CodeCache::find_blob(a->get_i2c_entry())) {
+    auto findblob_runtime_table = [&] (AdapterFingerPrint* key, AdapterHandlerEntry* handler) {
+      if (b == handler->adapter_blob()) {
         found = true;
         st->print("Adapter for signature: ");
-        a->print_adapter_on(st);
-        return true;
+        handler->print_adapter_on(st);
+        return false; // abort iteration
       } else {
-        return false; // keep looking
+        return true; // keep looking
       }
     };
     assert_locked_or_safepoint(AdapterHandlerLibrary_lock);
