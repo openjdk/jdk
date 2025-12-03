@@ -903,7 +903,10 @@ void ParallelScavengeHeap::resize_after_young_gc(bool is_survivor_overflowing) {
           return;
         }
       }
-      old_gen()->shrink(shrink_bytes);
+      if (old_gen()->min_gen_size() + shrink_bytes <= old_gen()->capacity_in_bytes()) {
+        // Only if after-shrinking still respects the min_gen_size constraint.
+        old_gen()->shrink(shrink_bytes);
+      }
     }
   }
 }
