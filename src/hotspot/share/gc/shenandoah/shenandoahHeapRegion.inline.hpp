@@ -260,7 +260,7 @@ inline void ShenandoahHeapRegion::increase_live_data_gc_words(size_t s) {
 }
 
 inline void ShenandoahHeapRegion::internal_increase_live_data(size_t s) {
-  size_t new_live_data = AtomicAccess::add(&_live_data, s, memory_order_relaxed);
+  AtomicAccess::add(&_live_data, s, memory_order_relaxed);
 }
 
 inline void ShenandoahHeapRegion::clear_live_data() {
