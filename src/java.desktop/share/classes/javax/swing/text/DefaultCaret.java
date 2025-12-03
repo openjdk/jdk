@@ -642,7 +642,6 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
      * @see MouseMotionListener#mouseDragged
      */
     public void mouseDragged(MouseEvent e) {
-
         boolean isOutdated = (e.getWhen() < lastClickMillis);
         if ((! e.isConsumed()) && SwingUtilities.isLeftMouseButton(e) && !isOutdated && dragActive) {
             moveCaret(e);
