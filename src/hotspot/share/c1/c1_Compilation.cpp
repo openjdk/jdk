@@ -294,7 +294,7 @@ void Compilation::emit_code_epilog(LIR_Assembler* assembler) {
     return;
   }
 
-  // generate code or slow cases
+  // generate code for slow cases
   assembler->emit_slow_case_stubs();
   CHECK_BAILOUT();
 
