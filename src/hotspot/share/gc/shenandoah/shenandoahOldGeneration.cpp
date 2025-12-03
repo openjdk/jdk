@@ -168,7 +168,7 @@ size_t ShenandoahOldGeneration::get_promoted_expended() const {
 }
 
 bool ShenandoahOldGeneration::can_allocate(const ShenandoahAllocRequest &req) const {
-  assert(req.type() != ShenandoahAllocRequest::_alloc_gclab, "GCLAB pertains only to young-gen memory");
+  assert(req.is_old(), "Must be old allocation request");
 
   const size_t requested_bytes = req.size() * HeapWordSize;
   // The promotion reserve may also be used for evacuations. If we can promote this object,
@@ -180,7 +180,7 @@ bool ShenandoahOldGeneration::can_allocate(const ShenandoahAllocRequest &req) co
     return true;
   }
 
-  if (req.type() == ShenandoahAllocRequest::_alloc_plab) {
+  if (req.is_lab_alloc()) {
     // The promotion reserve cannot accommodate this plab request. Check if we still have room for
     // evacuations. Note that we cannot really know how much of the plab will be used for evacuations,
     // so here we only check that some evacuation reserve still exists.
@@ -196,36 +196,29 @@ bool ShenandoahOldGeneration::can_allocate(const ShenandoahAllocRequest &req) co
 void
 ShenandoahOldGeneration::configure_plab_for_current_thread(const ShenandoahAllocRequest &req) {
   // Note: Even when a mutator is performing a promotion outside a LAB, we use a 'shared_gc' request.
-  if (req.is_gc_alloc()) {
-    const size_t actual_size = req.actual_size() * HeapWordSize;
-    if (req.type() ==  ShenandoahAllocRequest::_alloc_plab) {
-      // We've created a new plab. Now we configure it whether it will be used for promotions
-      // and evacuations - or just evacuations.
-      Thread* thread = Thread::current();
-      ShenandoahThreadLocalData::reset_plab_promoted(thread);
+  assert(req.is_gc_alloc() && req.is_old() && req.is_lab_alloc(), "Must be a plab alloc request");
+  const size_t actual_size = req.actual_size() * HeapWordSize;
+  // We've created a new plab. Now we configure it whether it will be used for promotions
+  // and evacuations - or just evacuations.
+  Thread* thread = Thread::current();
+  ShenandoahThreadLocalData::reset_plab_promoted(thread);
 
-      // The actual size of the allocation may be larger than the requested bytes (due to alignment on card boundaries).
-      // If this puts us over our promotion budget, we need to disable future PLAB promotions for this thread.
-      if (can_promote(actual_size)) {
-        // Assume the entirety of this PLAB will be used for promotion.  This prevents promotion from overreach.
-        // When we retire this plab, we'll unexpend what we don't really use.
-        log_debug(gc, plab)("Thread can promote using PLAB of %zu bytes. Expended: %zu, available: %zu",
-                            actual_size, get_promoted_expended(), get_promoted_reserve());
-        expend_promoted(actual_size);
-        ShenandoahThreadLocalData::enable_plab_promotions(thread);
-        ShenandoahThreadLocalData::set_plab_actual_size(thread, actual_size);
-      } else {
-        // Disable promotions in this thread because entirety of this PLAB must be available to hold old-gen evacuations.
-        ShenandoahThreadLocalData::disable_plab_promotions(thread);
-        ShenandoahThreadLocalData::set_plab_actual_size(thread, 0);
-        log_debug(gc, plab)("Thread cannot promote using PLAB of %zu bytes. Expended: %zu, available: %zu, mixed evacuations? %s",
-                            actual_size, get_promoted_expended(), get_promoted_reserve(), BOOL_TO_STR(ShenandoahHeap::heap()->collection_set()->has_old_regions()));
-      }
-    } else if (req.is_promotion()) {
-      // Shared promotion.
-      log_debug(gc, plab)("Expend shared promotion of %zu bytes", actual_size);
-      expend_promoted(actual_size);
-    }
+  // The actual size of the allocation may be larger than the requested bytes (due to alignment on card boundaries).
+  // If this puts us over our promotion budget, we need to disable future PLAB promotions for this thread.
+  if (can_promote(actual_size)) {
+    // Assume the entirety of this PLAB will be used for promotion.  This prevents promotion from overreach.
+    // When we retire this plab, we'll unexpend what we don't really use.
+    log_debug(gc, plab)("Thread can promote using PLAB of %zu bytes. Expended: %zu, available: %zu",
+                        actual_size, get_promoted_expended(), get_promoted_reserve());
+    expend_promoted(actual_size);
+    ShenandoahThreadLocalData::enable_plab_promotions(thread);
+    ShenandoahThreadLocalData::set_plab_actual_size(thread, actual_size);
+  } else {
+    // Disable promotions in this thread because entirety of this PLAB must be available to hold old-gen evacuations.
+    ShenandoahThreadLocalData::disable_plab_promotions(thread);
+    ShenandoahThreadLocalData::set_plab_actual_size(thread, 0);
+    log_debug(gc, plab)("Thread cannot promote using PLAB of %zu bytes. Expended: %zu, available: %zu, mixed evacuations? %s",
+                        actual_size, get_promoted_expended(), get_promoted_reserve(), BOOL_TO_STR(ShenandoahHeap::heap()->collection_set()->has_old_regions()));
   }
 }
 
