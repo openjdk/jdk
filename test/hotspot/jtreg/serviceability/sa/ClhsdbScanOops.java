@@ -61,7 +61,7 @@ public class ClhsdbScanOops {
         try {
             ClhsdbLauncher test = new ClhsdbLauncher();
             // This test assumes that no GC should happen during its execution.
-            // Setting the initial heap size to a reasonable high number avoids
+            // Setting the initial heap size to a reasonably high number avoids
             // running a GC.
             theApp = LingeredApp.startApp(gc, "-XX:InitialHeapSize=100M");
 
