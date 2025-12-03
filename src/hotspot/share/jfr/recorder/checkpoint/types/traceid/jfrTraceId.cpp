@@ -109,6 +109,7 @@ static void check_klass(const Klass* klass) {
 
 void JfrTraceId::assign(const Klass* klass) {
   assert(klass != nullptr, "invariant");
+  assert(klass->trace_id() == 0, "invariant");
   klass->set_trace_id(next_class_id());
   check_klass(klass);
   const Klass* const super = klass->super();

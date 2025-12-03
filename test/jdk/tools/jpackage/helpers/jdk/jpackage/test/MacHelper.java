@@ -793,8 +793,17 @@ public final class MacHelper {
                 PropertyFinder.cmdlineOptionWithValue("--mac-package-identifier").or(
                         PropertyFinder.cmdlineOptionWithValue("--main-class").map(getPackageIdFromClassName)
                 ),
-                PropertyFinder.appImageFile(AppImageFile::mainLauncherClassName).map(getPackageIdFromClassName)
+                PropertyFinder.appImageFileOptional(AppImageFile::mainLauncherClassName).map(getPackageIdFromClassName)
         ).orElseGet(cmd::name);
+    }
+
+    public static boolean isForAppStore(JPackageCommand cmd) {
+        return PropertyFinder.findAppProperty(cmd,
+                PropertyFinder.cmdlineBooleanOption("--mac-app-store"),
+                PropertyFinder.appImageFile(appImageFile -> {
+                    return Boolean.toString(appImageFile.macAppStore());
+                })
+        ).map(Boolean::parseBoolean).orElse(false);
     }
 
     public static boolean isXcodeDevToolsInstalled() {

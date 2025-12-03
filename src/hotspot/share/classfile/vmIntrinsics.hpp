@@ -649,10 +649,10 @@ class methodHandle;
   do_intrinsic(_Continuation_unpin,        jdk_internal_vm_Continuation, unpin_name, void_method_signature, F_SN)       \
                                                                                                                         \
   /* java/lang/VirtualThread */                                                                                         \
-  do_intrinsic(_notifyJvmtiVThreadStart, java_lang_VirtualThread, notifyJvmtiStart_name, void_method_signature, F_RN)   \
-  do_intrinsic(_notifyJvmtiVThreadEnd, java_lang_VirtualThread, notifyJvmtiEnd_name, void_method_signature, F_RN)       \
-  do_intrinsic(_notifyJvmtiVThreadMount, java_lang_VirtualThread, notifyJvmtiMount_name, bool_void_signature, F_RN)     \
-  do_intrinsic(_notifyJvmtiVThreadUnmount, java_lang_VirtualThread, notifyJvmtiUnmount_name, bool_void_signature, F_RN) \
+  do_intrinsic(_vthreadEndFirstTransition, java_lang_VirtualThread, endFirstTransition_name, void_method_signature, F_RN) \
+  do_intrinsic(_vthreadStartFinalTransition, java_lang_VirtualThread, startFinalTransition_name, void_method_signature, F_RN) \
+  do_intrinsic(_vthreadStartTransition, java_lang_VirtualThread, startTransition_name, bool_void_signature, F_RN)       \
+  do_intrinsic(_vthreadEndTransition, java_lang_VirtualThread, endTransition_name, bool_void_signature, F_RN)           \
   do_intrinsic(_notifyJvmtiVThreadDisableSuspend, java_lang_VirtualThread, notifyJvmtiDisableSuspend_name, bool_void_signature, F_SN) \
                                                                                                                         \
   /* support for UnsafeConstants */                                                                                     \
