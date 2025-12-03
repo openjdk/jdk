@@ -28,7 +28,6 @@
  * @summary Sanity test for HotSpotAOTCache MXBean
  * @requires vm.cds.write.archived.java.heap
  * @library /test/jdk/lib/testlibrary /test/lib
- *          /test/hotspot/jtreg/runtime/cds/appcds/aotCache/test-classes
  * @build HotSpotAOTCacheMXBeanTest
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar HotSpotAOTCacheMXBeanApp
  * @run driver HotSpotAOTCacheMXBeanTest
