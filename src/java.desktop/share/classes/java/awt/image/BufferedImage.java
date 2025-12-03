@@ -289,6 +289,7 @@ public class BufferedImage extends java.awt.Image
      * Constructs a {@code BufferedImage} of one of the predefined
      * image types.  The {@code ColorSpace} for the image is the
      * default sRGB space.
+     * <p>
      * {@code BufferedImage} is a type that supports only one tile.
      * The pixels are stored in a {@code DataBuffer}.
      * A {@code DataBuffer} is a container for one or more banks of
@@ -296,14 +297,15 @@ public class BufferedImage extends java.awt.Image
      * stored are limited by the maximum size of a Java array.
      * This is at most {@code Integer.MAX_VALUE}.
      * The number of samples per-pixel for an {@code imageType} affect
-     * the maximum. For example if an image format uses bytes to store
+     * the maximum. For example, if an image format uses bytes to store
      * separately each of the four samples in an ARGB pixel format image,
      * it will only be able to hold one fourth as many pixels as an image
      * that uses an int to store all four samples.
-     * For example {@code TYPE_4BYTE_ABGR} may use 4 bytes to store a pixel
+     * For example, {@code TYPE_4BYTE_ABGR} may use 4 bytes to store a pixel
      * whereas {@code TYPE_INT_ARGB} may use a single int.
      * So the maximum number of pixels in a {@code BufferedImage} is
      * format dependent.
+     *
      * @param width     width of the created image
      * @param height    height of the created image
      * @param imageType type of the created image
@@ -340,7 +342,7 @@ public class BufferedImage extends java.awt.Image
         long lsz = (long)width * height;
         if (lsz > Integer.MAX_VALUE) {
             throw new IllegalArgumentException(
-                     "width " + width + " height " + height + " overflow int");
+                     "width " + width + " * height " + height + " overflow int");
         }
         /* most BufferedImage formats use one data buffer element per pixel.
          * But for the NBYTE formats the BufferedImage implementation
@@ -669,12 +671,11 @@ public class BufferedImage extends java.awt.Image
      * @throws IllegalArgumentException if
      *          {@code raster} is incompatible with {@code cm}
      * @throws IllegalArgumentException if
-     *          {@code raster} {@code minX} or {@code minY} is not zero
+     *          {@code raster}, {@code minX} or {@code minY} is not zero
      * @see ColorModel
      * @see Raster
      * @see WritableRaster
      */
-
     public BufferedImage (ColorModel cm,
                           WritableRaster raster,
                           boolean isRasterPremultiplied,
