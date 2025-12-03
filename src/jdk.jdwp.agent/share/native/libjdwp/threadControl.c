@@ -70,6 +70,7 @@ typedef struct ThreadNode {
     unsigned int popFrameEvent : 1;
     unsigned int popFrameProceed : 1;
     unsigned int popFrameThread : 1;
+    unsigned int frameGeneration_accessed:1; /* true if frameGeneration accessed to produce a FrameID */
     EventIndex current_ei; /* Used to determine if we are currently handling an event on this thread. */
     jobject pendingStop;   /* Object we are throwing to stop the thread (ThreadReferenceImpl.stop). */
     jint suspendCount;     /* Number of outstanding suspends from the debugger. */
@@ -264,7 +265,8 @@ findThread(ThreadList *list, jthread thread)
          */
         if ( !gdata->jvmtiCallBacksCleared ) {
             // The thread better not be on the runningThreads list if the TLS lookup failed.
-            // It might be on the runningVThreads list because VIRTUAL_THREAD_END events
+            // It might be on the runningVThreads list because of how ThreadNodes for vthreads
+            // can be recreated just before terminating, or because VIRTUAL_THREAD_END events
             // might not be enabled, so we don't check runningVThreads.
             JDI_ASSERT(!nonTlsSearch(getEnv(), &runningThreads, thread));
         } else {
@@ -639,6 +641,7 @@ freeUnusedVThreadNode(JNIEnv *env, ThreadNode* node)
         !node->popFrameEvent &&
         !node->popFrameProceed &&
         !node->popFrameThread &&
+        !node->frameGeneration_accessed &&
         node->pendingStop == NULL)
     {
         removeNode(node);
@@ -2761,6 +2764,7 @@ threadControl_getFrameGeneration(jthread thread)
 
         if (node != NULL) {
             frameGeneration = node->frameGeneration;
+            node->frameGeneration_accessed = JNI_TRUE;
         }
     }
     debugMonitorExit(threadLock);
