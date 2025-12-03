@@ -152,10 +152,10 @@ public class VectorBulkOperationsArray {
     public static final int REPETITIONS = 64 * 64;
 
     @CompilerControl(CompilerControl.Mode.INLINE)
-    public static int offsetLoad(int i) { return i % 64; }
+    public static int offsetLoad(int i) { return i & 63; } // bits 0-7, value from 0-63
 
     @CompilerControl(CompilerControl.Mode.INLINE)
-    public static int offsetStore(int i) { return (i / 64) % 64; }
+    public static int offsetStore(int i) { return (i >> 8) & 63; } // bits 8-15, value from 0-63
 
     @Param("42")
     private int seed;
