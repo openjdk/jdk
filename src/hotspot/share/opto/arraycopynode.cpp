@@ -670,7 +670,7 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return mem;
 }
 
-bool ArrayCopyNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) {
+bool ArrayCopyNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) const {
   Node* dest = in(ArrayCopyNode::Dest);
   if (dest->is_top()) {
     return false;
