@@ -1366,27 +1366,35 @@ public:
 
 class ZPromoteBarrierTask : public ZTask {
 private:
-  ZArrayParallelIterator<ZPage*> _iter;
+  ZArrayParallelIterator<ZPage*> _flip_promoted_iter;
+  ZArrayParallelIterator<ZPage*> _relocate_promoted_iter;
 
 public:
-  ZPromoteBarrierTask(const ZArray<ZPage*>* pages)
+  ZPromoteBarrierTask(const ZArray<ZPage*>* flip_promoted_pages,
+                      const ZArray<ZPage*>* relocate_promoted_pages)
     : ZTask("ZPromoteBarrierTask"),
-      _iter(pages) {}
+      _flip_promoted_iter(flip_promoted_pages),
+      _relocate_promoted_iter(relocate_promoted_pages) {}
 
   virtual void work() {
     SuspendibleThreadSetJoiner sts_joiner;
 
-    for (ZPage* page; _iter.next(&page);) {
-      // When promoting an object (and before relocate start), we must ensure that all
-      // contained zpointers are store good. The marking code ensures that for non-null
-      // pointers, but null pointers are ignored. This code ensures that even null pointers
-      // are made store good, for the promoted objects.
-      page->object_iterate([&](oop obj) {
-        ZIterator::basic_oop_iterate_safe(obj, ZBarrier::promote_barrier_on_young_oop_field);
-      });
+    auto promote_barriers = [&](ZArrayParallelIterator<ZPage*>* iter) {
+      for (ZPage* page; iter->next(&page);) {
+        // When promoting an object (and before relocate start), we must ensure that all
+        // contained zpointers are store good. The marking code ensures that for non-null
+        // pointers, but null pointers are ignored. This code ensures that even null pointers
+        // are made store good, for the promoted objects.
+        page->object_iterate([&](oop obj) {
+          ZIterator::basic_oop_iterate_safe(obj, ZBarrier::promote_barrier_on_young_oop_field);
+        });
 
-      SuspendibleThreadSet::yield();
-    }
+        SuspendibleThreadSet::yield();
+      }
+    };
+
+    promote_barriers(&_flip_promoted_iter);
+    promote_barriers(&_relocate_promoted_iter);
   }
 };
 
@@ -1395,8 +1403,9 @@ void ZRelocate::flip_age_pages(const ZArray<ZPage*>* pages) {
   workers()->run(&flip_age_task);
 }
 
-void ZRelocate::barrier_flip_promoted_pages(const ZArray<ZPage*>* pages) {
-  ZPromoteBarrierTask promote_barrier_task(pages);
+void ZRelocate::barrier_promoted_pages(const ZArray<ZPage*>* flip_promoted_pages,
+                                       const ZArray<ZPage*>* relocate_promoted_pages) {
+  ZPromoteBarrierTask promote_barrier_task(flip_promoted_pages, relocate_promoted_pages);
   workers()->run(&promote_barrier_task);
 }
 
