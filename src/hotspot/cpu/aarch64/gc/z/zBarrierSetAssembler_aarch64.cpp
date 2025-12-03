@@ -884,7 +884,10 @@ void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
     //
     // Note: We rely on the fact that this function is only called from places where deferred invalidation
     // is safe. This assumption helps to avoid overhead of accessing thread-local data here.
-    assert(ICacheInvalidationContext::deferred_invalidation(), "ICache invalidation should be deferred");
+    assert(ICacheInvalidationContext::current() != nullptr, "ICache invalidation context should be set");
+    assert(ICacheInvalidationContext::current()->mode() == ICacheInvalidation::DEFERRED ||
+           ICacheInvalidationContext::current()->mode() == ICacheInvalidation::NOT_NEEDED,
+           "ICache invalidation should be deferred or unneeded");
     return;
   }
 

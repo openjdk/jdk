@@ -438,5 +438,6 @@ bool ZNMethod::needs_barrier_patching(nmethod* nm) {
 }
 
 bool ZNMethod::needs_non_immediate_oops_patching(nmethod* nm) {
+  assert(gc_data(nm)->has_non_immediate_oops() == nm->has_non_immediate_oops(), "Inconsistent non-immed oops state");
   return gc_data(nm)->has_non_immediate_oops();
 }

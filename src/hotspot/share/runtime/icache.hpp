@@ -71,25 +71,53 @@ class AbstractICache : AllStatic {
   static void invalidate_range(address start, int nbytes);
 };
 
+enum class ICacheInvalidation : uint8_t {
+  NOT_NEEDED = 0,
+  IMMEDIATE  = 1,
+  DEFERRED   = 2
+};
+
 class ICacheInvalidationContext : StackObj {
  private:
   NONCOPYABLE(ICacheInvalidationContext);
 
-  bool _needs_invalidation;
+  address _code;
+  int _size;
+  ICacheInvalidation _mode;
 
   void pd_init();
   void pd_invalidate_icache();
 
+  NOT_PRODUCT(static ICacheInvalidationContext* pd_current());
+
  public:
-  ICacheInvalidationContext(bool needs_invalidation) : _needs_invalidation(needs_invalidation) {
+  // Hardware optimized icache invalidation which does not depend on what code is invalidated.
+  ICacheInvalidationContext(ICacheInvalidation mode) : _code(nullptr), _size(0), _mode(mode) {
     pd_init();
   }
 
-  ~ICacheInvalidationContext() {
-    pd_invalidate_icache();
+  ICacheInvalidationContext(bool needs_invalidation)
+      : ICacheInvalidationContext(needs_invalidation
+                                     ? ICacheInvalidation::DEFERRED
+                                     : ICacheInvalidation::NOT_NEEDED) {}
+
+  // Use hardware optimized icache invalidation if possible,
+  // Otherwise invalidate the specified code range.
+  ICacheInvalidationContext(address code, int size) : _code(code), _size(size), _mode(ICacheInvalidation::DEFERRED) {
+    pd_init();
   }
 
-  static bool deferred_invalidation();
+  ~ICacheInvalidationContext();
+
+#ifdef ASSERT
+  static ICacheInvalidationContext* current() {
+    return pd_current();
+  }
+#endif
+
+  ICacheInvalidation mode() const {
+    return _mode;
+  }
 };
 
 // Must be included before the definition of ICacheStubGenerator
@@ -153,9 +181,23 @@ class ICacheStubGenerator : public StubCodeGenerator {
   // Default implementation: do nothing
   inline void ICacheInvalidationContext::pd_init() {}
   inline void ICacheInvalidationContext::pd_invalidate_icache() {}
-  inline bool ICacheInvalidationContext::deferred_invalidation() {
-    return false;
+#ifdef ASSERT
+  inline ICacheInvalidationContext* ICacheInvalidationContext::pd_current() {
+    Unimplemented();
+    return nullptr;
   }
-#endif
+#endif // ASSERT
+#endif // PD_ICACHE_INVALIDATION_CONTEXT
+
+inline ICacheInvalidationContext::~ICacheInvalidationContext() {
+  pd_invalidate_icache();
+  if (_code != nullptr) {
+    assert(_mode == ICacheInvalidation::DEFERRED, "sanity");
+    assert(_size > 0, "size must be positive");
+    ICache::invalidate_range(_code, _size);
+    _code = nullptr;
+    _size = 0;
+  }
+}
 
 #endif // SHARE_RUNTIME_ICACHE_HPP

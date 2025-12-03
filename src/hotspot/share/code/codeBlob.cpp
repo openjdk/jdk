@@ -331,6 +331,10 @@ RuntimeBlob::RuntimeBlob(
   : CodeBlob(name, kind, cb, size, header_size, frame_complete, frame_size, oop_maps, caller_must_gc_arguments,
              align_up(cb->total_relocation_size(), oopSize))
 {
+  // Optimize ICache invalidation by batching it for the whole blob if
+  // possible.
+  ICacheInvalidationContext icic(code_begin(), code_size());
+
   cb->copy_code_and_locs_to(this);
 }
 

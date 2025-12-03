@@ -30,32 +30,23 @@
 
 #define PD_ICACHE_INVALIDATION_CONTEXT
 
-extern THREAD_LOCAL ICacheInvalidationContext* current_icache_invalidation_context;
+NOT_PRODUCT(extern THREAD_LOCAL ICacheInvalidationContext* current_icache_invalidation_context;)
 
 inline void ICacheInvalidationContext::pd_init() {
-  if (UseDeferredICacheInvalidation && _needs_invalidation) {
-    current_icache_invalidation_context = this;
+  assert(current_icache_invalidation_context == nullptr, "nested ICacheInvalidationContext not supported");
+  NOT_PRODUCT(current_icache_invalidation_context = this);
+  if (_mode == ICacheInvalidation::DEFERRED && _code == nullptr && !UseDeferredICacheInvalidation) {
+    _mode = ICacheInvalidation::IMMEDIATE;
   }
 }
 
-inline bool ICacheInvalidationContext::deferred_invalidation() {
-  if (UseDeferredICacheInvalidation && current_icache_invalidation_context != nullptr) {
-    assert(current_icache_invalidation_context->_needs_invalidation,
-           "ICacheInvalidationContext::deferred_invalidation must be invoked "
-           "when icache invalidation is needed");
-    return true;
-  }
-  return false;
+#ifdef ASSERT
+inline ICacheInvalidationContext* ICacheInvalidationContext::pd_current() {
+  return current_icache_invalidation_context;
 }
+#endif
 
-inline void ICacheInvalidationContext::pd_invalidate_icache() {
-  if (UseDeferredICacheInvalidation && _needs_invalidation) {
-
-    // For deferred icache invalidation, we expect hardware dcache
-    // and icache to be coherent: CTR_EL0.IDC == 1 and CTR_EL0.DIC == 1
-    // An exception is Neoverse N1 with erratum 1542419, which requires
-    // a use of 'IC IVAU' instruction. In such a case, we expect
-    // CTR_EL0.DIC == 0.
+inline void assert_hardware_cache_coherency() {
 #ifdef ASSERT
     static unsigned int cache_info = 0;
     if (cache_info == 0) {
@@ -70,6 +61,16 @@ inline void ICacheInvalidationContext::pd_invalidate_icache() {
       assert(((cache_info >> CTR_DIC_SHIFT) & 0x1) != 0x0, "Expect CTR_EL0.DIC to be enabled");
     }
 #endif
+}
+
+inline void ICacheInvalidationContext::pd_invalidate_icache() {
+  if (_mode == ICacheInvalidation::DEFERRED && UseDeferredICacheInvalidation) {
+    // For deferred icache invalidation, we expect hardware dcache
+    // and icache to be coherent: CTR_EL0.IDC == 1 and CTR_EL0.DIC == 1
+    // An exception is Neoverse N1 with erratum 1542419, which requires
+    // a use of 'IC IVAU' instruction. In such a case, we expect
+    // CTR_EL0.DIC == 0.
+    assert_hardware_cache_coherency();
 
     asm volatile("dsb ish" : : : "memory");
 
@@ -106,9 +107,11 @@ inline void ICacheInvalidationContext::pd_invalidate_icache() {
     }
 
     asm volatile("isb" : : : "memory");
-
-    current_icache_invalidation_context = nullptr;
   }
+  NOT_PRODUCT(current_icache_invalidation_context = nullptr);
+  _code = nullptr;
+  _size = 0;
+  _mode = ICacheInvalidation::NOT_NEEDED;
 }
 
 // Interface for updating the instruction cache.  Whenever the VM
@@ -122,7 +125,16 @@ class ICache : public AbstractICache {
     __builtin___clear_cache((char *)addr, (char *)(addr + 4));
   }
   static void invalidate_range(address start, int nbytes) {
-    __builtin___clear_cache((char *)start, (char *)(start + nbytes));
+    if (NeoverseN1Errata1542419) {
+      assert_hardware_cache_coherency();
+      asm volatile("dsb ish       \n"
+                   "ic  ivau, xzr \n"
+                   "dsb ish       \n"
+                   "isb           \n"
+                   : : : "memory");
+    } else {
+      __builtin___clear_cache((char *)start, (char *)(start + nbytes));
+    }
   }
 };
 

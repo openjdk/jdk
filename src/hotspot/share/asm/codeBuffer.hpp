@@ -106,6 +106,7 @@ class CodeSection {
   int         _skipped_instructions_size;
   int8_t      _index;           // my section number (SECT_INST, etc.)
   CodeBuffer* _outer;           // enclosing CodeBuffer
+  bool        _has_non_immediate_oops;
 
   // (Note:  _locs_point used to be called _last_reloc_offset.)
 
@@ -121,6 +122,7 @@ class CodeSection {
     _locs_own      = false;
     _scratch_emit  = false;
     _skipped_instructions_size = 0;
+    _has_non_immediate_oops = false;
     DEBUG_ONLY(_index = -1);
     DEBUG_ONLY(_outer = (CodeBuffer*)badAddress);
   }
@@ -280,6 +282,10 @@ class CodeSection {
   // Ensure there's enough space left in the current section.
   // Return true if there was an expansion.
   bool maybe_expand_to_ensure_remaining(csize_t amount);
+
+  bool has_non_immediate_oops() const {
+    return _has_non_immediate_oops;
+  }
 
 #ifndef PRODUCT
   void decode();
@@ -850,6 +856,12 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     if (!oop_recorder()->is_unused()) {
       oop_recorder()->copy_values_to(nm);
     }
+  }
+
+  bool has_non_immediate_oops() const {
+    return _consts.has_non_immediate_oops()
+        || _insts.has_non_immediate_oops()
+        || _stubs.has_non_immediate_oops();
   }
 
   void block_comment(ptrdiff_t offset, const char* comment) PRODUCT_RETURN;

@@ -26,6 +26,7 @@
 #include "asm/macroAssembler.hpp"
 #include "code/nmethod.hpp"
 #include "code/relocInfo.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "nativeInst_aarch64.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/safepoint.hpp"
@@ -55,9 +56,29 @@ void Relocation::pd_set_data_value(address x, bool verify_only) {
     break;
   }
 
-  if (ICacheInvalidationContext::deferred_invalidation()) {
-    // Instruction cache invalidation per relocation can be expensive, e.g. on Neoverse N1 having erratum 1542419.
+  if (UseDeferredICacheInvalidation) {
     // Defer the ICache invalidation to a later point where multiple patches can be handled together.
+    //
+    // Note: We rely on the fact that this function is only called from places where deferred invalidation
+    // is safe. This assumption helps to avoid overhead of accessing thread-local data here.
+    assert(ICacheInvalidationContext::current() != nullptr, "ICache invalidation context should be set");
+    assert(ICacheInvalidationContext::current()->mode() == ICacheInvalidation::DEFERRED ||
+           ICacheInvalidationContext::current()->mode() == ICacheInvalidation::NOT_NEEDED,
+           "ICache invalidation should be deferred or unneeded");
+#ifdef ASSERT
+    if (_binding != nullptr && _binding->code() != nullptr) {
+      nmethod *nm = _binding->code();
+      if (!(BarrierSet::barrier_set()->barrier_set_nmethod()->is_armed(nm) ||
+            SafepointSynchronize::is_at_safepoint() ||
+            nm->is_unloading())) {
+        ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
+        assert(nm->is_not_installed(),
+             "ICache invalidation context should only be used for armed "
+             "or unloading or not installed nmethod or at safepoint");
+
+      }
+    }
+#endif
     return;
   }
 

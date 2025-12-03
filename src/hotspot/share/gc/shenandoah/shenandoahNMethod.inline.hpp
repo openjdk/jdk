@@ -67,6 +67,9 @@ void ShenandoahNMethod::oops_do(OopClosure* oops, bool fix_relocations) {
 
 void ShenandoahNMethod::heal_nmethod_metadata(ShenandoahNMethod* nmethod_data) {
   ShenandoahEvacuateUpdateMetadataClosure cl;
+  ICacheInvalidationContext icic(nmethod_data->_has_non_immed_oops);
+  
+  assert(nmethod_data->_has_non_immed_oops == nmethod_data->_nm->has_non_immediate_oops(), "Inconsistent non-immed oops state");
   nmethod_data->oops_do(&cl, true /*fix relocation*/);
 }
 

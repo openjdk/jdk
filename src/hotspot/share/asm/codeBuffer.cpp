@@ -365,6 +365,10 @@ void CodeSection::relocate(address at, RelocationHolder const& spec, int format)
 
   // If it has data, insert the prefix, as (data_prefix_tag | data1), data2.
   end->initialize(this, reloc);
+  if (rtype == relocInfo::oop_type &&
+      !((oop_Relocation*)reloc)->oop_is_immediate()) {
+    _has_non_immediate_oops = true;
+  }
 }
 
 void CodeSection::initialize_locs(int locs_capacity) {
@@ -745,9 +749,6 @@ void CodeBuffer::copy_code_to(CodeBlob* dest_blob) {
 
   // Done moving code bytes; were they the right size?
   assert((int)align_up(dest.total_content_size(), oopSize) == dest_blob->content_size(), "sanity");
-
-  // Flush generated code
-  ICache::invalidate_range(dest_blob->code_begin(), dest_blob->code_size());
 }
 
 // Move all my code into another code buffer.  Consult applicable
@@ -930,8 +931,12 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
   // Needs to be initialized when calling fix_relocation_after_move.
   cb.blob()->set_ctable_begin(cb.consts()->start());
 
-  // Move all the code and relocations to the new blob:
-  relocate_code_to(&cb);
+  {
+    ICacheInvalidationContext icic(ICacheInvalidation::NOT_NEEDED);
+
+    // Move all the code and relocations to the new blob:
+    relocate_code_to(&cb);
+  }
 
   // some internal addresses, _last_insn _last_label, are used during code emission,
   // adjust them in expansion

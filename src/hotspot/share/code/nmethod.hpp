@@ -274,7 +274,8 @@ class nmethod : public CodeBlob {
           _has_scoped_access:1,        // used by for shared scope closure (scopedMemoryAccess.cpp)
           _has_flushed_dependencies:1, // Used for maintenance of dependencies (under CodeCache_lock)
           _is_unlinked:1,              // mark during class unloading
-          _load_reported:1;            // used by jvmti to track if an event has been posted for this nmethod
+          _load_reported:1,            // used by jvmti to track if an event has been posted for this nmethod
+          _has_non_immediate_oops:1;
 
   enum DeoptimizationStatus : u1 {
     not_marked,
@@ -773,6 +774,8 @@ public:
   }
 
   int   comp_level() const                        { return _comp_level; }
+
+  bool  has_non_immediate_oops() const            { return _has_non_immediate_oops; }
 
   // Support for oops in scopes and relocs:
   // Note: index 0 is reserved for null.
