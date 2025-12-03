@@ -233,14 +233,6 @@ inline ConcurrentHashTable<CONFIG, MT>::
   GlobalCounter::critical_section_end(_thread, _cs_context);
 }
 
-template <typename CONFIG, MemTag MT>
-template <typename LOOKUP_FUNC>
-inline typename CONFIG::Value* ConcurrentHashTable<CONFIG, MT>::
-  MultiGetHandle::get(LOOKUP_FUNC& lookup_f, bool* grow_hint)
-{
-  return ScopedCS::_cht->internal_get(ScopedCS::_thread, lookup_f, grow_hint);
-}
-
 // HaveDeletables
 template <typename CONFIG, MemTag MT>
 template <typename EVALUATE_FUNC>
