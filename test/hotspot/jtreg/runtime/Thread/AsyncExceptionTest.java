@@ -90,10 +90,10 @@ public class AsyncExceptionTest extends Thread {
 
     public void internalRun2() {
         try {
-            Integer myLocalCount = 1;
-            Integer myLocalCount2 = 1;
+            int myLocalCount = 1;
+            int myLocalCount2 = 1;
 
-            while(myLocalCount > 0) {
+            while (myLocalCount > 0) {
                 myLocalCount2 = (myLocalCount % 3) / 2;
                 myLocalCount -= 1;
             }
