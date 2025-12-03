@@ -23,12 +23,12 @@
  * questions.
  */
 
-package com.sun.crypto.provider;
+package sun.security.ssl;
 
+import sun.security.ssl.Hybrid;
 import sun.security.util.ArrayUtil;
 import sun.security.util.CurveDB;
 import sun.security.util.ECUtil;
-import sun.security.util.Hybrid;
 import sun.security.util.NamedCurve;
 
 import javax.crypto.DecapsulateException;
@@ -58,62 +58,80 @@ import java.util.Map;
 import static sun.security.util.SecurityConstants.PROVIDER_VER;
 
 /**
- * The DH provider is a KEM abstraction layer over traditional DH based
- * key exchange. It models DH/ECDH/XDH as KEMs, like post-quantum algorithms,
- * so DH/ECDH/XDH can be used in hybrid key exchange, alongside post-quantum
- * KEMs.
+ * The DHasKEM class presents a KEM abstraction layer over traditional
+ * DH-based key exchange, which can be used for either straight
+ * ECDH/XDH or TLS hybrid key exchanges.
+ *
+ * This class can be alongside standard full post-quantum KEMs
+ * when hybrid implementations are required.
  */
-public class DH implements KEMSpi {
+public class DHasKEM implements KEMSpi {
 
-    // DH in its own private provider so we always getInstance from here.
+    // DHasKEM in its own private provider so we always getInstance from here.
     public static final Provider PROVIDER = new ProviderImpl();
 
+    // This is an internal provider used in the JSSE code for DH-as-KEM
+    // and Hybrid KEM support. It doesn't actually get installed in the
+    // system's list of security providers that is searched at runtime.
+    // JSSE loads this provider internally.
+    // It registers Hybrid KeyPairGenerator, KeyFactory, and KEM
+    // implementations for hybrid named groups as Provider services.
     private static class ProviderImpl extends Provider {
         @java.io.Serial
         private static final long serialVersionUID = 0L;
         private ProviderImpl() {
-            super("InternalJCE", PROVIDER_VER, "");
-            put("KEM.DH", DH.class.getName());
+            super("InternalJCEDHasKEM", PROVIDER_VER,
+                    "Internal DHasKEM provider");
+            put("KEM.DH", DHasKEM.class.getName());
 
             // Hybrid KeyPairGenerator/KeyFactory/KEM
 
             // The order of shares in the concatenation for group name
-            // X25519MLKEM768 has been reversed. This is due to historical
-            // reasons.
+            // X25519MLKEM768 has been reversed. This is due to IETF
+            // historical reasons.
             var attrs = Map.of("name", "X25519MLKEM768", "left", "ML-KEM-768",
                     "right", "X25519");
             putService(new HybridService(this, "KeyPairGenerator",
-                    "X25519MLKEM768", "sun.security.util.Hybrid$KeyPairGeneratorImpl",
+                    "X25519MLKEM768",
+                    "sun.security.ssl.Hybrid$KeyPairGeneratorImpl",
                     null, attrs));
             putService(new HybridService(this, "KEM",
-                    "X25519MLKEM768", "sun.security.util.Hybrid$KEMImpl",
+                    "X25519MLKEM768",
+                    "sun.security.ssl.Hybrid$KEMImpl",
                     null, attrs));
             putService(new HybridService(this, "KeyFactory",
-                    "X25519MLKEM768", "sun.security.util.Hybrid$KeyFactoryImpl",
+                    "X25519MLKEM768",
+                    "sun.security.ssl.Hybrid$KeyFactoryImpl",
                     null, attrs));
 
             attrs = Map.of("name", "SecP256r1MLKEM768", "left", "secp256r1",
                     "right", "ML-KEM-768");
             putService(new HybridService(this, "KeyPairGenerator",
-                    "SecP256r1MLKEM768", "sun.security.util.Hybrid$KeyPairGeneratorImpl",
+                    "SecP256r1MLKEM768",
+                    "sun.security.ssl.Hybrid$KeyPairGeneratorImpl",
                     null, attrs));
             putService(new HybridService(this, "KEM",
-                    "SecP256r1MLKEM768", "sun.security.util.Hybrid$KEMImpl",
+                    "SecP256r1MLKEM768",
+                    "sun.security.ssl.Hybrid$KEMImpl",
                     null, attrs));
             putService(new HybridService(this, "KeyFactory",
-                    "SecP256r1MLKEM768", "sun.security.util.Hybrid$KeyFactoryImpl",
+                    "SecP256r1MLKEM768",
+                    "sun.security.ssl.Hybrid$KeyFactoryImpl",
                     null, attrs));
 
             attrs = Map.of("name", "SecP384r1MLKEM1024", "left", "secp384r1",
                     "right", "ML-KEM-1024");
             putService(new HybridService(this, "KeyPairGenerator",
-                    "SecP384r1MLKEM1024", "sun.security.util.Hybrid$KeyPairGeneratorImpl",
+                    "SecP384r1MLKEM1024",
+                    "sun.security.ssl.Hybrid$KeyPairGeneratorImpl",
                     null, attrs));
             putService(new HybridService(this, "KEM",
-                    "SecP384r1MLKEM1024", "sun.security.util.Hybrid$KEMImpl",
+                    "SecP384r1MLKEM1024",
+                    "sun.security.ssl.Hybrid$KEMImpl",
                     null, attrs));
             putService(new HybridService(this, "KeyFactory",
-                    "SecP384r1MLKEM1024", "sun.security.util.Hybrid$KeyFactoryImpl",
+                    "SecP384r1MLKEM1024",
+                    "sun.security.ssl.Hybrid$KeyFactoryImpl",
                     null, attrs));
         }
     }
@@ -165,18 +183,18 @@ public class DH implements KEMSpi {
 
         @Override
         public int engineSecretSize() {
-            return params.Nsecret;
+            return params.secretLen;
         }
 
         @Override
         public int engineEncapsulationSize() {
-            return params.Npk;
+            return params.publicKeyLen;
         }
 
         @Override
         public SecretKey engineDecapsulate(byte[] encapsulation, int from,
                 int to, String algorithm) throws DecapsulateException {
-            if (encapsulation.length != params.Npk) {
+            if (encapsulation.length != params.publicKeyLen) {
                 throw new DecapsulateException("incorrect encapsulation size");
             }
             try {
@@ -191,13 +209,14 @@ public class DH implements KEMSpi {
         }
 
         private SecretKey sub(SecretKey key, int from, int to) {
-            if (from == 0 && to == params.Nsecret) {
+            if (from == 0 && to == params.secretLen) {
                 return key;
             } else if ("RAW".equalsIgnoreCase(key.getFormat())) {
                 byte[] km = key.getEncoded();
                 if (km == null) {
                     // Should not happen if format is "RAW"
-                    throw new UnsupportedOperationException("Key extract failed");
+                    throw new UnsupportedOperationException(
+                            "Key extract failed");
                 } else {
                     return new SecretKeySpec(km, from, to - from,
                             key.getAlgorithm());
@@ -248,18 +267,18 @@ public class DH implements KEMSpi {
         X448(56, 56,
                 "XDH", "XDH", NamedParameterSpec.X448),
         ;
-        private final int Nsecret;
-        private final int Npk;
+        private final int secretLen;
+        private final int publicKeyLen;
         private final String kaAlgorithm;
         private final String keyAlgorithm;
         private final AlgorithmParameterSpec spec;
 
 
-        Params(int Nsecret, int Npk, String kaAlgorithm, String keyAlgorithm,
-                AlgorithmParameterSpec spec) {
+        Params(int secretLen, int publicKeyLen, String kaAlgorithm,
+                String keyAlgorithm, AlgorithmParameterSpec spec) {
             this.spec = spec;
-            this.Nsecret = Nsecret;
-            this.Npk = Npk;
+            this.secretLen = secretLen;
+            this.publicKeyLen = publicKeyLen;
             this.kaAlgorithm = kaAlgorithm;
             this.keyAlgorithm = keyAlgorithm;
         }
@@ -285,12 +304,13 @@ public class DH implements KEMSpi {
             } else {
                 byte[] uArray = ((XECPublicKey) k).getU().toByteArray();
                 ArrayUtil.reverse(uArray);
-                return Arrays.copyOf(uArray, Npk);
+                return Arrays.copyOf(uArray, publicKeyLen);
             }
         }
 
         private PublicKey DeserializePublicKey(byte[] data) throws
-                IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+                IOException, NoSuchAlgorithmException,
+                InvalidKeySpecException {
             KeySpec keySpec;
             if (isEC()) {
                 NamedCurve curve = (NamedCurve) this.spec;
@@ -302,7 +322,8 @@ public class DH implements KEMSpi {
                 keySpec = new XECPublicKeySpec(
                         this.spec, new BigInteger(1, data));
             }
-            return KeyFactory.getInstance(keyAlgorithm).generatePublic(keySpec);
+            return KeyFactory.getInstance(keyAlgorithm).
+                    generatePublic(keySpec);
         }
 
         private SecretKey DH(String alg, PrivateKey skE, PublicKey pkR)
