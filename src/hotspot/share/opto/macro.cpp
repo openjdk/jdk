@@ -261,6 +261,61 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
   }
 }
 
+// Scan the memory graph upwards from a starting node to an arraycopy. Given an elemnt from the destination array,
+// check whether the element from the source array that was copied into the given destination element is modified
+// after the arraycopy. This assumes that the destination array is scalar replacable but the source is not.
+bool src_elem_not_modified_after_arraycopy(const ArrayCopyNode* ac, const Node* start, const Node* mem, const intptr_t offset, PhaseGVN* phase) {
+  assert(mem != nullptr, "sanity");
+  if (mem == ac) {
+    return true;
+  }
+
+  // Loop in the memory graph
+  if (mem == start) {
+    return false;
+  }
+
+  const TypeOopPtr* src_ptr_ty = ac->get_src_adr_type(phase)->is_oopptr();
+  const int src_alias_idx = phase->C->get_alias_index(src_ptr_ty);
+
+  if (const ProjNode* proj = mem->isa_Proj(); proj != nullptr && proj->_con == TypeFunc::Memory) {
+    if (proj->in(0) == ac) {
+      // base case
+      return true;
+    }
+    if (const CallNode* call = proj->in(0)->isa_Call(); call != nullptr) {
+      if (!call->may_modify(src_ptr_ty, phase)) {
+        return src_elem_not_modified_after_arraycopy(ac, start, call->memory(), offset, phase);
+      }
+
+      // TODO: arraycopy to different part of array at constant pos, constant length
+      // TODO: arraycopy to different part of array at variable pos, constant length
+
+      return false;
+    }
+  } else if (const MergeMemNode* mm = mem->isa_MergeMem(); mm != nullptr) {
+    return src_elem_not_modified_after_arraycopy(ac, start, mm->memory_at(src_alias_idx), offset, phase) &&
+           src_elem_not_modified_after_arraycopy(ac, start, mm->base_memory(), offset, phase); // TODO: really needed
+  } else if (const StoreNode* store = mem->isa_Store(); store != nullptr) {
+    const TypePtr* store_ptr_ty = store->adr_type();
+    const int store_alias_idx = phase->C->get_alias_index(store_ptr_ty);
+    if (store_alias_idx != src_alias_idx) {
+      return src_elem_not_modified_after_arraycopy(ac, start, store->in(StoreNode::Memory), offset, phase);
+    }
+
+    // TODO: check if store is within the region of the source array that was copied, constant base, constant length
+    // TODO: check if store is within the region of the source array that was copied, variable base, constant length
+
+    return false;
+  }
+  // TODO: phi
+  // TODO: clear array nodes
+  // TODO: SCMemProj nodes
+  // TODO: StrInflatedCopy
+
+  return false;
+}
+
 // Generate loads from source of the arraycopy for fields of
 // destination needed at a deoptimization point
 Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, Node* ctl, Node* mem, BasicType ft, const Type *ftype, AllocateNode *alloc) {
@@ -297,7 +352,7 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
         adr_type = _igvn.type(base)->is_ptr()->add_offset(off);
         if (ac->in(ArrayCopyNode::Src) == ac->in(ArrayCopyNode::Dest)) {
           // Don't emit a new load from src if src == dst but try to get the value from memory instead
-          return value_from_mem(ac->in(TypeFunc::Memory), ctl, ft, ftype, adr_type->isa_oopptr(), alloc);
+          return value_from_mem(ac, ctl, ft, ftype, adr_type->isa_oopptr(), alloc);
         }
       } else {
         Node* diff = _igvn.transform(new SubINode(ac->in(ArrayCopyNode::SrcPos), ac->in(ArrayCopyNode::DestPos)));
@@ -441,21 +496,22 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
 }
 
 // Search the last value stored into the object's field.
-Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, Node *sfpt_ctl, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, AllocateNode *alloc) {
+Node *PhaseMacroExpand::value_from_mem(Node *origin, Node* ctl, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, AllocateNode *alloc) {
   assert(adr_t->is_known_instance_field(), "instance required");
   int instance_id = adr_t->instance_id();
   assert((uint)instance_id == alloc->_idx, "wrong allocation");
 
   int alias_idx = C->get_alias_index(adr_t);
   int offset = adr_t->offset();
+  Node* orig_mem = origin->in(TypeFunc::Memory);
   Node *start_mem = C->start()->proj_out_or_null(TypeFunc::Memory);
   Node *alloc_ctrl = alloc->in(TypeFunc::Control);
   Node *alloc_mem = alloc->proj_out_or_null(TypeFunc::Memory, /*io_use:*/false);
   assert(alloc_mem != nullptr, "Allocation without a memory projection.");
   VectorSet visited;
 
-  bool done = sfpt_mem == alloc_mem;
-  Node *mem = sfpt_mem;
+  bool done = orig_mem == alloc_mem;
+  Node *mem = orig_mem;
   while (!done) {
     if (visited.test_set(mem->_idx)) {
       return nullptr;  // found a loop, give up
@@ -535,14 +591,21 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, Node *sfpt_ctl, BasicType
         }
       }
     } else if (mem->is_ArrayCopy()) {
-      Node* ctl = mem->in(0);
-      Node* m = mem->in(TypeFunc::Memory);
-      if (sfpt_ctl->is_Proj() && sfpt_ctl->as_Proj()->is_uncommon_trap_proj()) {
+      // Rematerialize the scalar-replaced array. If possible, pin the loads to the uncommon path of the uncommon trap.
+      // Check for each element of the source array, whether it was modified. If not, pin both memory and control to
+      // the uncommon path. Otherwise, use the contol and memory state of the arraycopy. Control and memory state must
+      // come from the same source to prevent anti-dependence problems in the backend.
+      ArrayCopyNode* ac = mem->as_ArrayCopy();
+      Node* ac_ctl = ac->control();
+      Node* ac_mem = ac->memory();
+      int ac_src_alias_idx = C->get_alias_index(ac->in(ArrayCopyNode::Src)->get_ptr_type());
+      if (ctl->is_Proj() && ctl->as_Proj()->is_uncommon_trap_proj() &&
+          src_elem_not_modified_after_arraycopy(ac, origin, orig_mem, offset, &_igvn)) {
         // pin the loads in the uncommon trap path
-        ctl = sfpt_ctl;
-        m = sfpt_mem;
+        ac_ctl = ctl;
+        ac_mem = orig_mem;
       }
-      return make_arraycopy_load(mem->as_ArrayCopy(), offset, ctl, m, ft, ftype, alloc);
+      return make_arraycopy_load(ac, offset, ac_ctl, ac_mem, ft, ftype, alloc);
     }
   }
   // Something go wrong.
@@ -852,7 +915,7 @@ SafePointScalarObjectNode* PhaseMacroExpand::create_scalarized_object_descriptio
 
     const TypeOopPtr *field_addr_type = res_type->add_offset(offset)->isa_oopptr();
 
-    Node *field_val = value_from_mem(sfpt->memory(), sfpt->control(), basic_elem_type, field_type, field_addr_type, alloc);
+    Node *field_val = value_from_mem(sfpt, sfpt->control(), basic_elem_type, field_type, field_addr_type, alloc);
 
     // We weren't able to find a value for this field,
     // give up on eliminating this allocation.
