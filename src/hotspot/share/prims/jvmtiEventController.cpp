@@ -1072,10 +1072,6 @@ JvmtiEventController::is_global_event(jvmtiEvent event_type) {
 void
 JvmtiEventController::set_user_enabled(JvmtiEnvBase *env, JavaThread *thread, oop thread_oop,
                                        jvmtiEvent event_type, bool enabled) {
-  if (event_type == JVMTI_EVENT_OBJECT_FREE) {
-    JvmtiEventControllerPrivate::flush_object_free_events(env);
-  }
-
   if (Threads::number_of_threads() == 0) {
     // during early VM start-up locks don't exist, but we are safely single threaded,
     // call the functionality without holding the JvmtiThreadState_lock.
@@ -1084,6 +1080,11 @@ JvmtiEventController::set_user_enabled(JvmtiEnvBase *env, JavaThread *thread, oo
     Thread* current = Thread::current();
     HandleMark hmi(current);
     Handle thread_oop_h = Handle(current, thread_oop);
+
+    if (event_type == JVMTI_EVENT_OBJECT_FREE) {
+      JvmtiEventControllerPrivate::flush_object_free_events(env);
+    }
+
     MutexLocker mu(JvmtiThreadState_lock);
     JvmtiEventControllerPrivate::set_user_enabled(env, thread, thread_oop_h, event_type, enabled);
   }

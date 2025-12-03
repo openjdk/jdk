@@ -159,9 +159,7 @@ physical_memory_size_type os::Linux::_physical_memory = 0;
 address   os::Linux::_initial_thread_stack_bottom = nullptr;
 uintptr_t os::Linux::_initial_thread_stack_size   = 0;
 
-int (*os::Linux::_pthread_getcpuclockid)(pthread_t, clockid_t *) = nullptr;
 pthread_t os::Linux::_main_thread;
-bool os::Linux::_supports_fast_thread_cpu_time = false;
 const char * os::Linux::_libc_version = nullptr;
 const char * os::Linux::_libpthread_version = nullptr;
 
@@ -1475,29 +1473,6 @@ void os::Linux::capture_initial_stack(size_t max_size) {
 ////////////////////////////////////////////////////////////////////////////////
 // time support
 
-void os::Linux::fast_thread_clock_init() {
-  clockid_t clockid;
-  struct timespec tp;
-  int (*pthread_getcpuclockid_func)(pthread_t, clockid_t *) =
-      (int(*)(pthread_t, clockid_t *)) dlsym(RTLD_DEFAULT, "pthread_getcpuclockid");
-
-  // Switch to using fast clocks for thread cpu time if
-  // the clock_getres() returns 0 error code.
-  // Note, that some kernels may support the current thread
-  // clock (CLOCK_THREAD_CPUTIME_ID) but not the clocks
-  // returned by the pthread_getcpuclockid().
-  // If the fast POSIX clocks are supported then the clock_getres()
-  // must return at least tp.tv_sec == 0 which means a resolution
-  // better than 1 sec. This is extra check for reliability.
-
-  if (pthread_getcpuclockid_func &&
-      pthread_getcpuclockid_func(_main_thread, &clockid) == 0 &&
-      clock_getres(clockid, &tp) == 0 && tp.tv_sec == 0) {
-    _supports_fast_thread_cpu_time = true;
-    _pthread_getcpuclockid = pthread_getcpuclockid_func;
-  }
-}
-
 // thread_id is kernel thread id (similar to Solaris LWP id)
 intx os::current_thread_id() { return os::Linux::gettid(); }
 int os::current_process_id() {
@@ -1770,7 +1745,9 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     {EM_LOONGARCH,   EM_LOONGARCH, ELFCLASS64, ELFDATA2LSB, (char*)"LoongArch"},
   };
 
-#if    (defined AMD64)
+#if  (defined IA32)
+  static  Elf32_Half running_arch_code=EM_386;
+#elif   (defined AMD64) || (defined X32)
   static  Elf32_Half running_arch_code=EM_X86_64;
 #elif  (defined __sparc) && (defined _LP64)
   static  Elf32_Half running_arch_code=EM_SPARCV9;
@@ -1804,7 +1781,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   static  Elf32_Half running_arch_code=EM_LOONGARCH;
 #else
     #error Method os::dll_load requires that one of following is defined:\
-        AARCH64, ALPHA, ARM, AMD64, LOONGARCH64, M68K, MIPS, MIPSEL, PARISC, __powerpc__, __powerpc64__, RISCV, S390, SH, __sparc
+        AARCH64, ALPHA, ARM, AMD64, IA32, LOONGARCH64, M68K, MIPS, MIPSEL, PARISC, __powerpc__, __powerpc64__, RISCV, S390, SH, __sparc
 #endif
 
   // Identify compatibility class for VM's architecture and library's architecture
@@ -1866,6 +1843,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 }
 
 void * os::Linux::dlopen_helper(const char *filename, char *ebuf, int ebuflen) {
+#ifndef IA32
   bool ieee_handling = IEEE_subnormal_handling_OK();
   if (!ieee_handling) {
     Events::log_dll_message(nullptr, "IEEE subnormal handling check failed before loading %s", filename);
@@ -1888,9 +1866,16 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf, int ebuflen) {
   // numerical "accuracy", but we need to protect Java semantics first
   // and foremost. See JDK-8295159.
 
+  // This workaround is ineffective on IA32 systems because the MXCSR
+  // register (which controls flush-to-zero mode) is not stored in the
+  // legacy fenv.
+
   fenv_t default_fenv;
   int rtn = fegetenv(&default_fenv);
   assert(rtn == 0, "fegetenv must succeed");
+#endif // IA32
+
+  Events::log_dll_message(nullptr, "Attempting to load shared library %s", filename);
 
   void* result;
   JFR_ONLY(NativeLibraryLoadEvent load_event(filename, &result);)
@@ -1910,6 +1895,7 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf, int ebuflen) {
   } else {
     Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     log_info(os)("shared library load of %s was successful", filename);
+#ifndef IA32
     // Quickly test to make sure subnormals are correctly handled.
     if (! IEEE_subnormal_handling_OK()) {
       // We just dlopen()ed a library that mangled the floating-point flags.
@@ -1935,6 +1921,7 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf, int ebuflen) {
         assert(false, "fesetenv didn't work");
       }
     }
+#endif // IA32
   }
   return result;
 }
@@ -2433,6 +2420,7 @@ void os::Linux::print_uptime_info(outputStream* st) {
   if (ret == 0) {
     os::print_dhm(st, "OS uptime:", (long) sinfo.uptime);
   }
+  assert(ret == 0, "sysinfo failed: %s", os::strerror(errno));
 }
 
 bool os::Linux::print_container_info(outputStream* st) {
@@ -2597,7 +2585,8 @@ void os::print_memory_info(outputStream* st) {
 
   // values in struct sysinfo are "unsigned long"
   struct sysinfo si;
-  sysinfo(&si);
+  int ret = sysinfo(&si);
+  assert(ret == 0, "sysinfo failed: %s", os::strerror(errno));
   physical_memory_size_type phys_mem = physical_memory();
   st->print(", physical " PHYS_MEM_TYPE_FORMAT "k",
             phys_mem >> 10);
@@ -2605,10 +2594,12 @@ void os::print_memory_info(outputStream* st) {
   (void)os::available_memory(avail_mem);
   st->print("(" PHYS_MEM_TYPE_FORMAT "k free)",
             avail_mem >> 10);
-  st->print(", swap " UINT64_FORMAT "k",
-            ((jlong)si.totalswap * si.mem_unit) >> 10);
-  st->print("(" UINT64_FORMAT "k free)",
-            ((jlong)si.freeswap * si.mem_unit) >> 10);
+  if (ret == 0) {
+    st->print(", swap " UINT64_FORMAT "k",
+              ((jlong)si.totalswap * si.mem_unit) >> 10);
+    st->print("(" UINT64_FORMAT "k free)",
+              ((jlong)si.freeswap * si.mem_unit) >> 10);
+  }
   st->cr();
   st->print("Page Sizes: ");
   _page_sizes.print_on(st);
@@ -2991,6 +2982,10 @@ size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
   return page_size;
 }
 
+void os::numa_set_thread_affinity(Thread* thread, int node) {
+  Linux::numa_set_thread_affinity(thread->osthread()->thread_id(), node);
+}
+
 void os::numa_make_global(char *addr, size_t bytes) {
   Linux::numa_interleave_memory(addr, bytes);
 }
@@ -3173,6 +3168,8 @@ bool os::Linux::libnuma_init() {
                                               libnuma_dlsym(handle, "numa_set_bind_policy")));
       set_numa_bitmask_isbitset(CAST_TO_FN_PTR(numa_bitmask_isbitset_func_t,
                                                libnuma_dlsym(handle, "numa_bitmask_isbitset")));
+      set_numa_bitmask_clearbit(CAST_TO_FN_PTR(numa_bitmask_clearbit_func_t,
+                                               libnuma_dlsym(handle, "numa_bitmask_clearbit")));
       set_numa_bitmask_equal(CAST_TO_FN_PTR(numa_bitmask_equal_func_t,
                                             libnuma_dlsym(handle, "numa_bitmask_equal")));
       set_numa_distance(CAST_TO_FN_PTR(numa_distance_func_t,
@@ -3187,20 +3184,32 @@ bool os::Linux::libnuma_init() {
                                             libnuma_dlsym(handle, "numa_set_preferred")));
       set_numa_get_run_node_mask(CAST_TO_FN_PTR(numa_get_run_node_mask_func_t,
                                                 libnuma_v2_dlsym(handle, "numa_get_run_node_mask")));
+      set_numa_sched_setaffinity(CAST_TO_FN_PTR(numa_sched_setaffinity_func_t,
+                                                libnuma_v2_dlsym(handle, "numa_sched_setaffinity")));
+      set_numa_allocate_cpumask(CAST_TO_FN_PTR(numa_allocate_cpumask_func_t,
+                                               libnuma_v2_dlsym(handle, "numa_allocate_cpumask")));
 
       if (numa_available() != -1) {
         set_numa_all_nodes((unsigned long*)libnuma_dlsym(handle, "numa_all_nodes"));
         set_numa_all_nodes_ptr((struct bitmask **)libnuma_dlsym(handle, "numa_all_nodes_ptr"));
         set_numa_nodes_ptr((struct bitmask **)libnuma_dlsym(handle, "numa_nodes_ptr"));
+        set_numa_all_cpus_ptr((struct bitmask **)libnuma_dlsym(handle, "numa_all_cpus_ptr"));
         set_numa_interleave_bitmask(_numa_get_interleave_mask());
         set_numa_membind_bitmask(_numa_get_membind());
         set_numa_cpunodebind_bitmask(_numa_get_run_node_mask());
+
         // Create an index -> node mapping, since nodes are not always consecutive
         _nindex_to_node = new (mtInternal) GrowableArray<int>(0, mtInternal);
         rebuild_nindex_to_node_map();
+
         // Create a cpu -> node mapping
         _cpu_to_node = new (mtInternal) GrowableArray<int>(0, mtInternal);
         rebuild_cpu_to_node_map();
+
+        // Create a node -> CPUs mapping
+        _numa_affinity_masks = new (mtInternal) GrowableArray<struct bitmask*>(0, mtInternal);
+        build_numa_affinity_masks();
+
         return true;
       }
     }
@@ -3234,6 +3243,42 @@ size_t os::Linux::default_guard_size(os::ThreadType thr_type) {
   // guard pages, only enable glibc guard page for non-Java threads.
   // (Remember: compiler thread is a Java thread, too!)
   return ((thr_type == java_thread || thr_type == compiler_thread) ? 0 : os::vm_page_size());
+}
+
+void os::Linux::build_numa_affinity_masks() {
+  // We only build the affinity masks if running libnuma v2 (_numa_node_to_cpus_v2
+  // is available) and we have the affinity mask of the process when it started.
+  if (_numa_node_to_cpus_v2 == nullptr || _numa_all_cpus_ptr == nullptr) {
+    return;
+  }
+
+  // It's important that we respect any user configuration by removing the
+  // CPUs we're not allowed to run on from the affinity mask. For example,
+  // if the user runs the JVM with "numactl -C 0-1,4-5" on a machine with
+  // the following NUMA setup:
+  // NUMA 0: CPUs 0-3, NUMA 1: CPUs 4-7
+  // We expect to get the following affinity masks:
+  // Affinity masks: idx 0 = (0, 1), idx 1 = (4, 5)
+
+  const int num_nodes = get_existing_num_nodes();
+  const unsigned num_cpus = (unsigned)os::processor_count();
+
+  for (int i = 0; i < num_nodes; i++) {
+    struct bitmask* affinity_mask = _numa_allocate_cpumask();
+
+    // Fill the affinity mask with all CPUs belonging to NUMA node i
+    _numa_node_to_cpus_v2(i, affinity_mask);
+
+    // Clear the bits of all CPUs that the process is not allowed to
+    // execute tasks on
+    for (unsigned j = 0; j < num_cpus; j++) {
+      if (!_numa_bitmask_isbitset(_numa_all_cpus_ptr, j)) {
+        _numa_bitmask_clearbit(affinity_mask, j);
+      }
+    }
+
+    _numa_affinity_masks->push(affinity_mask);
+  }
 }
 
 void os::Linux::rebuild_nindex_to_node_map() {
@@ -3351,6 +3396,25 @@ int os::Linux::numa_node_to_cpus(int node, unsigned long *buffer, int bufferlen)
   return -1;
 }
 
+void os::Linux::numa_set_thread_affinity(pid_t tid, int node) {
+  // We only set affinity if running libnuma v2 (_numa_sched_setaffinity
+  // is available) and we have all affinity mask
+  if (_numa_sched_setaffinity == nullptr ||
+      _numa_all_cpus_ptr == nullptr ||
+      _numa_affinity_masks->is_empty()) {
+    return;
+  }
+
+  if (node == -1) {
+    // If the node is -1, the affinity is reverted to the original affinity
+    // of the thread when the VM was started
+    _numa_sched_setaffinity(tid, _numa_all_cpus_ptr);
+  } else {
+    // Normal case, set the affinity to the corresponding affinity mask
+    _numa_sched_setaffinity(tid, _numa_affinity_masks->at(node));
+  }
+}
+
 int os::Linux::get_node_by_cpu(int cpu_id) {
   if (cpu_to_node() != nullptr && cpu_id >= 0 && cpu_id < cpu_to_node()->length()) {
     return cpu_to_node()->at(cpu_id);
@@ -3360,6 +3424,7 @@ int os::Linux::get_node_by_cpu(int cpu_id) {
 
 GrowableArray<int>* os::Linux::_cpu_to_node;
 GrowableArray<int>* os::Linux::_nindex_to_node;
+GrowableArray<struct bitmask*>* os::Linux::_numa_affinity_masks;
 os::Linux::sched_getcpu_func_t os::Linux::_sched_getcpu;
 os::Linux::numa_node_to_cpus_func_t os::Linux::_numa_node_to_cpus;
 os::Linux::numa_node_to_cpus_v2_func_t os::Linux::_numa_node_to_cpus_v2;
@@ -3371,17 +3436,21 @@ os::Linux::numa_interleave_memory_func_t os::Linux::_numa_interleave_memory;
 os::Linux::numa_interleave_memory_v2_func_t os::Linux::_numa_interleave_memory_v2;
 os::Linux::numa_set_bind_policy_func_t os::Linux::_numa_set_bind_policy;
 os::Linux::numa_bitmask_isbitset_func_t os::Linux::_numa_bitmask_isbitset;
+os::Linux::numa_bitmask_clearbit_func_t os::Linux::_numa_bitmask_clearbit;
 os::Linux::numa_bitmask_equal_func_t os::Linux::_numa_bitmask_equal;
 os::Linux::numa_distance_func_t os::Linux::_numa_distance;
 os::Linux::numa_get_membind_func_t os::Linux::_numa_get_membind;
 os::Linux::numa_get_interleave_mask_func_t os::Linux::_numa_get_interleave_mask;
 os::Linux::numa_get_run_node_mask_func_t os::Linux::_numa_get_run_node_mask;
+os::Linux::numa_sched_setaffinity_func_t os::Linux::_numa_sched_setaffinity;
+os::Linux::numa_allocate_cpumask_func_t os::Linux::_numa_allocate_cpumask;
 os::Linux::numa_move_pages_func_t os::Linux::_numa_move_pages;
 os::Linux::numa_set_preferred_func_t os::Linux::_numa_set_preferred;
 os::Linux::NumaAllocationPolicy os::Linux::_current_numa_policy;
 unsigned long* os::Linux::_numa_all_nodes;
 struct bitmask* os::Linux::_numa_all_nodes_ptr;
 struct bitmask* os::Linux::_numa_nodes_ptr;
+struct bitmask* os::Linux::_numa_all_cpus_ptr;
 struct bitmask* os::Linux::_numa_interleave_bitmask;
 struct bitmask* os::Linux::_numa_membind_bitmask;
 struct bitmask* os::Linux::_numa_cpunodebind_bitmask;
@@ -4236,7 +4305,7 @@ OSReturn os::get_native_priority(const Thread* const thread,
 // For reference, please, see IEEE Std 1003.1-2004:
 //   http://www.unix.org/single_unix_specification
 
-jlong os::Linux::fast_thread_cpu_time(clockid_t clockid) {
+jlong os::Linux::total_thread_cpu_time(clockid_t clockid) {
   struct timespec tp;
   int status = clock_gettime(clockid, &tp);
   assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
@@ -4463,8 +4532,6 @@ jint os::init_2(void) {
   DEBUG_ONLY(os::set_mutex_init_done();)
 
   os::Posix::init_2();
-
-  Linux::fast_thread_clock_init();
 
   if (PosixSignals::init() == JNI_ERR) {
     return JNI_ERR;
@@ -4893,14 +4960,14 @@ int os::open(const char *path, int oflag, int mode) {
   return fd;
 }
 
-static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time);
+static jlong user_thread_cpu_time(Thread *thread);
 
-static jlong fast_cpu_time(Thread *thread) {
+static jlong total_thread_cpu_time(Thread *thread) {
     clockid_t clockid;
-    int rc = os::Linux::pthread_getcpuclockid(thread->osthread()->pthread_id(),
+    int rc = pthread_getcpuclockid(thread->osthread()->pthread_id(),
                                               &clockid);
     if (rc == 0) {
-      return os::Linux::fast_thread_cpu_time(clockid);
+      return os::Linux::total_thread_cpu_time(clockid);
     } else {
       // It's possible to encounter a terminated native thread that failed
       // to detach itself from the VM - which should result in ESRCH.
@@ -4917,41 +4984,31 @@ static jlong fast_cpu_time(Thread *thread) {
 // the fast estimate available on the platform.
 
 jlong os::current_thread_cpu_time() {
-  if (os::Linux::supports_fast_thread_cpu_time()) {
-    return os::Linux::fast_thread_cpu_time(CLOCK_THREAD_CPUTIME_ID);
-  } else {
-    // return user + sys since the cost is the same
-    return slow_thread_cpu_time(Thread::current(), true /* user + sys */);
-  }
+  return os::Linux::total_thread_cpu_time(CLOCK_THREAD_CPUTIME_ID);
 }
 
 jlong os::thread_cpu_time(Thread* thread) {
-  // consistent with what current_thread_cpu_time() returns
-  if (os::Linux::supports_fast_thread_cpu_time()) {
-    return fast_cpu_time(thread);
-  } else {
-    return slow_thread_cpu_time(thread, true /* user + sys */);
-  }
+  return total_thread_cpu_time(thread);
 }
 
 jlong os::current_thread_cpu_time(bool user_sys_cpu_time) {
-  if (user_sys_cpu_time && os::Linux::supports_fast_thread_cpu_time()) {
-    return os::Linux::fast_thread_cpu_time(CLOCK_THREAD_CPUTIME_ID);
+  if (user_sys_cpu_time) {
+    return os::Linux::total_thread_cpu_time(CLOCK_THREAD_CPUTIME_ID);
   } else {
-    return slow_thread_cpu_time(Thread::current(), user_sys_cpu_time);
+    return user_thread_cpu_time(Thread::current());
   }
 }
 
 jlong os::thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
-  if (user_sys_cpu_time && os::Linux::supports_fast_thread_cpu_time()) {
-    return fast_cpu_time(thread);
+  if (user_sys_cpu_time) {
+    return total_thread_cpu_time(thread);
   } else {
-    return slow_thread_cpu_time(thread, user_sys_cpu_time);
+    return user_thread_cpu_time(thread);
   }
 }
 
 //  -1 on error.
-static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
+static jlong user_thread_cpu_time(Thread *thread) {
   pid_t  tid = thread->osthread()->thread_id();
   char *s;
   char stat[2048];
@@ -4988,11 +5045,8 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
                  &ldummy, &ldummy, &ldummy, &ldummy, &ldummy,
                  &user_time, &sys_time);
   if (count != 13) return -1;
-  if (user_sys_cpu_time) {
-    return ((jlong)sys_time + (jlong)user_time) * (1000000000 / os::Posix::clock_tics_per_second());
-  } else {
-    return (jlong)user_time * (1000000000 / os::Posix::clock_tics_per_second());
-  }
+
+  return (jlong)user_time * (1000000000 / os::Posix::clock_tics_per_second());
 }
 
 void os::current_thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
@@ -5071,7 +5125,7 @@ int os::get_core_path(char* buffer, size_t bufferSize) {
 
     if (core_pattern[0] == '|') {
       written = jio_snprintf(buffer, bufferSize,
-                             "\"%s\" (or dumping to %s/core.%d)",
+                             "\"%s\" (alternatively, falling back to %s/core.%d)",
                              &core_pattern[1], p, current_process_id());
     } else if (pid_pos != nullptr) {
       *pid_pos = '\0';
