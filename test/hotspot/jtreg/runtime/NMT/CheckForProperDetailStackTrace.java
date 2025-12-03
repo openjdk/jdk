@@ -64,8 +64,8 @@ public class CheckForProperDetailStackTrace {
     private static final Path MODS_DIR = Paths.get(TEST_CLASSES, "mods");
 
     // In some configurations on Windows, we could have stripped pdbs which do not have source information.
-    private static boolean expectSourceInformation = Platform.isLinux() ||
-        (Platform.isWindows() && !WhiteBox.getWhiteBox().shipsPublicDebugInfo());
+    private static boolean expectSourceInformation = (Platform.isLinux() || Platform.isWindows()) &&
+        WhiteBox.getWhiteBox().shipsFullDebugInfo();
 
     /* The stack trace we look for by default. Note that :: has been replaced by .*
        to make sure it matches even if the symbol is not unmangled.

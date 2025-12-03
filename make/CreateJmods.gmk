@@ -69,7 +69,7 @@ ifneq ($(LIBS_DIR), )
         SRC := $(LIBS_DIR), \
         DEST := $(LIBS_DIR_FILTERED), \
         FILES := $(FILES_LIBS), \
-        NAME_MACRO := rename_stripped \
+        NAME_MACRO := rename_stripped, \
     ))
     DEPS += $(COPY_FILTERED_LIBS)
     JMOD_FLAGS += --libs $(LIBS_DIR_FILTERED)
@@ -89,7 +89,7 @@ ifneq ($(CMDS_DIR), )
         SRC := $(CMDS_DIR), \
         DEST := $(CMDS_DIR_FILTERED), \
         FILES := $(FILES_CMDS), \
-        NAME_MACRO := rename_stripped \
+        NAME_MACRO := rename_stripped, \
     ))
     DEPS += $(COPY_FILTERED_CMDS)
     JMOD_FLAGS += --cmds $(CMDS_DIR_FILTERED)
