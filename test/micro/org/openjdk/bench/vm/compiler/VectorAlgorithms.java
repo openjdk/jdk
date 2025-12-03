@@ -42,7 +42,8 @@ import org.openjdk.jmh.annotations.*;
 @Measurement(iterations = 3, time = 1)
 @Fork(value = 1, jvmArgs = {"--add-modules=jdk.incubator.vector"})
 public class VectorAlgorithms {
-    private static final VectorSpecies<Integer> SPECIES_I = IntVector.SPECIES_512;
+    private static final VectorSpecies<Integer> SPECIES_I    = IntVector.SPECIES_PREFERRED;
+    private static final VectorSpecies<Integer> SPECIES_I512 = IntVector.SPECIES_512;
 
     @Param({"640000"})
     public int SIZE;
@@ -128,15 +129,15 @@ public class VectorAlgorithms {
     //public void scanAddI_VectorAPI_shift_blend_add() {
     //    // Using Naive Parallel Algorithm: Hills and Steele
     //    int sum = 0;
-    //    for (int i = 0; i < SPECIES_I.loopBound(AI.length); i += SPECIES_I.length()) {
-    //        IntVector v = IntVector.fromArray(SPECIES_I, AI, i);
-    //        v = v.add(v.lanewise(VectorOperators.LSHL, 1 ).blend(0, VectorMask.fromLong(SPECIES_I, 0b1111111111111110)));
-    //        v = v.add(v.lanewise(VectorOperators.LSHL, 2 ).blend(0, VectorMask.fromLong(SPECIES_I, 0b1111111111111100)));
-    //        v = v.add(v.lanewise(VectorOperators.LSHL, 4 ).blend(0, VectorMask.fromLong(SPECIES_I, 0b1111111111110000)));
-    //        v = v.add(v.lanewise(VectorOperators.LSHL, 8 ).blend(0, VectorMask.fromLong(SPECIES_I, 0b1111111100000000)));
+    //    for (int i = 0; i < SPECIES_I512.loopBound(AI.length); i += SPECIES_I512.length()) {
+    //        IntVector v = IntVector.fromArray(SPECIES_I512, AI, i);
+    //        v = v.add(v.lanewise(VectorOperators.LSHL, 1 ).blend(0, VectorMask.fromLong(SPECIES_I512, 0b1111111111111110)));
+    //        v = v.add(v.lanewise(VectorOperators.LSHL, 2 ).blend(0, VectorMask.fromLong(SPECIES_I512, 0b1111111111111100)));
+    //        v = v.add(v.lanewise(VectorOperators.LSHL, 4 ).blend(0, VectorMask.fromLong(SPECIES_I512, 0b1111111111110000)));
+    //        v = v.add(v.lanewise(VectorOperators.LSHL, 8 ).blend(0, VectorMask.fromLong(SPECIES_I512, 0b1111111100000000)));
     //        v = v.add(sum);
     //        v.intoArray(RI, i);
-    //        sum = v.lane(SPECIES_I.length() - 1);
+    //        sum = v.lane(SPECIES_I512.length() - 1);
     //    }
     //}
 
@@ -144,23 +145,23 @@ public class VectorAlgorithms {
     //public void scanAddI_VectorAPI_permute_add() {
     //    // Using Naive Parallel Algorithm: Hills and Steele
     //    int sum = 0;
-    //    var shf1 = VectorShuffle.fromArray(SPECIES_I, new int[]{-1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14}, 0);
-    //    var shf2 = VectorShuffle.fromArray(SPECIES_I, new int[]{-1, -1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13}, 0);
-    //    var shf3 = VectorShuffle.fromArray(SPECIES_I, new int[]{-1, -1, -1, -1,  0,  1,  2,  3,  4,  6,  7,  8,  9, 10, 11, 12}, 0);
-    //    var shf4 = VectorShuffle.fromArray(SPECIES_I, new int[]{-1, -1, -1, -1, -1, -1, -1, -1,  0,  1,  2,  3,  4,  6,  7,  8}, 0);
-    //    var mask1 = VectorMask.fromLong(SPECIES_I, 0b1111111111111110);
-    //    var mask2 = VectorMask.fromLong(SPECIES_I, 0b1111111111111100);
-    //    var mask3 = VectorMask.fromLong(SPECIES_I, 0b1111111111110000);
-    //    var mask4 = VectorMask.fromLong(SPECIES_I, 0b1111111100000000);
-    //    for (int i = 0; i < SPECIES_I.loopBound(AI.length); i += SPECIES_I.length()) {
-    //        IntVector v = IntVector.fromArray(SPECIES_I, AI, i);
+    //    var shf1 = VectorShuffle.fromArray(SPECIES_I512, new int[]{-1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14}, 0);
+    //    var shf2 = VectorShuffle.fromArray(SPECIES_I512, new int[]{-1, -1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13}, 0);
+    //    var shf3 = VectorShuffle.fromArray(SPECIES_I512, new int[]{-1, -1, -1, -1,  0,  1,  2,  3,  4,  6,  7,  8,  9, 10, 11, 12}, 0);
+    //    var shf4 = VectorShuffle.fromArray(SPECIES_I512, new int[]{-1, -1, -1, -1, -1, -1, -1, -1,  0,  1,  2,  3,  4,  6,  7,  8}, 0);
+    //    var mask1 = VectorMask.fromLong(SPECIES_I512, 0b1111111111111110);
+    //    var mask2 = VectorMask.fromLong(SPECIES_I512, 0b1111111111111100);
+    //    var mask3 = VectorMask.fromLong(SPECIES_I512, 0b1111111111110000);
+    //    var mask4 = VectorMask.fromLong(SPECIES_I512, 0b1111111100000000);
+    //    for (int i = 0; i < SPECIES_I512.loopBound(AI.length); i += SPECIES_I512.length()) {
+    //        IntVector v = IntVector.fromArray(SPECIES_I512, AI, i);
     //        v = v.add(v.rearrange(shf1), mask1);
     //        v = v.add(v.rearrange(shf2), mask2);
     //        v = v.add(v.rearrange(shf3), mask3);
     //        v = v.add(v.rearrange(shf4), mask4);
     //        v = v.add(sum);
     //        v.intoArray(RI, i);
-    //        sum = v.lane(SPECIES_I.length() - 1);
+    //        sum = v.lane(SPECIES_I512.length() - 1);
     //    }
     //}
 }

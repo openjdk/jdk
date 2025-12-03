@@ -27,6 +27,7 @@
  * @summary Test auto vectorization and Vector API with some vector
  *          algorithms. Related benchmark: VectorAlgorithms.java
  * @library /test/lib /
+ * @modules jdk.incubator.vector
  * @run driver ${test.main.class}
  */
 
@@ -36,6 +37,7 @@ import java.util.Map;
 import java.util.HashMap;
 import jdk.test.lib.Utils;
 import java.util.Random;
+import jdk.incubator.vector.*;
 
 import compiler.lib.ir_framework.*;
 import compiler.lib.generators.*;
@@ -53,6 +55,8 @@ public class TestVectorAlgorithms {
     private static final Random RANDOM = Utils.getRandomInstance();
     private static final RestrictableGenerator<Integer> INT_GEN = Generators.G.ints();
 
+    private static final VectorSpecies<Integer> SPECIES_I = IntVector.SPECIES_PREFERRED;
+
     interface TestFunction {
         Object run();
     }
@@ -63,24 +67,35 @@ public class TestVectorAlgorithms {
 
     public static void main(String[] args) {
         TestFramework framework = new TestFramework();
+        framework.addFlags("--add-modules=jdk.incubator.vector");
         framework.start();
     }
 
     public TestVectorAlgorithms () {
+        // IMPORTANT:
+        //   If you want to use some array but do NOT modify it: just use it.
+        //   If you want to use it and DO want to modify it: clone it. This
+        //   ensures that each test gets a separate copy, and that when we
+        //   capture the modified arrays they are different for every method
+        //   and run.
         testGroups.put("reduceAddI", new HashMap<String,TestFunction>());
-        testGroups.get("reduceAddI").put("reduceAddI_loop",        () -> { return reduceAddI_loop(aI.clone()); });
-        testGroups.get("reduceAddI").put("reduceAddI_reassociate", () -> { return reduceAddI_reassociate(aI.clone()); });
+        testGroups.get("reduceAddI").put("reduceAddI_loop",                           () -> { return reduceAddI_loop(aI); });
+        testGroups.get("reduceAddI").put("reduceAddI_reassociate",                    () -> { return reduceAddI_reassociate(aI); });
+        testGroups.get("reduceAddI").put("reduceAddI_VectorAPI_naive",                () -> { return reduceAddI_VectorAPI_naive(aI); });
+        testGroups.get("reduceAddI").put("reduceAddI_VectorAPI_reduction_after_loop", () -> { return reduceAddI_VectorAPI_reduction_after_loop(aI); });
     }
 
     @Warmup(100)
     @Run(test = {"reduceAddI_loop",
-                 "reduceAddI_reassociate"})
+                 "reduceAddI_reassociate",
+                 "reduceAddI_VectorAPI_naive",
+                 "reduceAddI_VectorAPI_reduction_after_loop"})
     public void runTests(RunInfo info) {
         // Repeat many times, so that we also have multiple iterations for post-warmup to potentially recompile
         int iters = info.isWarmUp() ? 1 : 20;
         for (int iter = 0; iter < iters; iter++) {
             // Set up random inputs, random size is important to stress tails.
-            int size = 500_000 + RANDOM.nextInt(100_000);
+            int size = 100_000 + RANDOM.nextInt(10_000);
             aI = new int[size];
             G.fill(INT_GEN, aI);
 
@@ -111,9 +126,14 @@ public class TestVectorAlgorithms {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,    "> 0",
+                  IRNode.ADD_REDUCTION_VI, "> 0",
+                  IRNode.ADD_VI,           "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     public int reduceAddI_loop(int[] a) {
         int sum = 0;
         for (int i = 0; i < a.length; i++) {
+            // Relying on simple reduction loop should vectorize since JDK26.
             sum += a[i];
         }
         return sum;
@@ -122,8 +142,8 @@ public class TestVectorAlgorithms {
     @Test
     public int reduceAddI_reassociate(int[] a) {
         int sum = 0;
-        int i = 0;
-        for (; i < a.length - 3; i+=4) {
+        int i;
+        for (i = 0; i < a.length - 3; i+=4) {
             // Unroll 4x, reassociate inside.
             sum += a[i] + a[i + 1] + a[i + 2] + a[i + 3];
         }
@@ -133,5 +153,33 @@ public class TestVectorAlgorithms {
         }
         return sum;
     }
-}
 
+    @Test
+    public int reduceAddI_VectorAPI_naive(int[] a) {
+        var sum = 0;
+        int i;
+        for (i = 0; i < SPECIES_I.loopBound(a.length); i += SPECIES_I.length()) {
+            IntVector v = IntVector.fromArray(SPECIES_I, a, i);
+            sum += v.reduceLanes(VectorOperators.ADD);
+        }
+        for (; i < a.length; i++) {
+            sum += a[i];
+        }
+        return sum;
+    }
+
+    @Test
+    public int reduceAddI_VectorAPI_reduction_after_loop(int[] a) {
+        var acc = IntVector.broadcast(SPECIES_I, 0);
+        int i;
+        for (i = 0; i < SPECIES_I.loopBound(a.length); i += SPECIES_I.length()) {
+            IntVector v = IntVector.fromArray(SPECIES_I, a, i);
+            acc = acc.add(v);
+        }
+        int sum = acc.reduceLanes(VectorOperators.ADD);
+        for (; i < a.length; i++) {
+            sum += a[i];
+        }
+        return sum;
+    }
+}
