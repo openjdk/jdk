@@ -23,16 +23,18 @@
  * questions.
  */
 
-package sun.security.util;
+package sun.security.ssl;
 
-import com.sun.crypto.provider.DH;
+import sun.security.util.ArrayUtil;
+import sun.security.util.CurveDB;
+import sun.security.util.ECUtil;
+import sun.security.util.RawKeySpec;
 import sun.security.x509.X509Key;
 
 import javax.crypto.DecapsulateException;
 import javax.crypto.KEM;
 import javax.crypto.KEMSpi;
 import javax.crypto.SecretKey;
-import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -52,24 +54,26 @@ import java.security.spec.*;
 import java.util.Arrays;
 import java.util.Locale;
 
+/**
+ * The Hybrid class wraps two underlying algorithms (left and right sides)
+ * in a single TLS hybrid named group.
+ * It implements:
+ *  - Hybrid KeyPair generation
+ *  - Hybrid KeyFactory for decoding concatenated hybrid public keys
+ *  - Hybrid KEM implementation for performing encapsulation and
+ *    decapsulation over two underlying algorithms (traditional
+ *    algorithm and post-quantum KEM algorithm)
+ */
 public class Hybrid {
 
-    public record SecretKeyImpl(SecretKey k1, SecretKey k2) implements SecretKey {
-        @Override
-        public String getAlgorithm() {
-            return "Hybrid";
-        }
+    public static final NamedParameterSpec X25519_MLKEM768 =
+            new NamedParameterSpec("X25519MLKEM768");
 
-        @Override
-        public String getFormat() {
-            return null;
-        }
+    public static final NamedParameterSpec SECP256R1_MLKEM768 =
+            new NamedParameterSpec("SecP256r1MLKEM768");
 
-        @Override
-        public byte[] getEncoded() {
-            return null;
-        }
-    }
+    public static final NamedParameterSpec SECP384R1_MLKEM1024 =
+            new NamedParameterSpec("SecP384r1MLKEM1024");
 
     private static AlgorithmParameterSpec getSpec(String name) {
         if (APS.isGenericEC(name)) {
@@ -98,13 +102,13 @@ public class Hybrid {
     /**
      * Returns a KEM instance for each side of the hybrid algorithm.
      * For traditional key exchange algorithms, we use the DH-based KEM
-     * implementation provided by DH.PROVIDER.
+     * implementation provided by DHasKEM.PROVIDER.
      * For ML-KEM post-quantum algorithms, we obtain a KEM instance
      * using the given algorithm name.
      */
     private static KEM getKEM(String name) throws NoSuchAlgorithmException {
         if (APS.isGenericEC(name) || APS.isXDH(name)) {
-            return KEM.getInstance("DH", DH.PROVIDER);
+            return KEM.getInstance("DH", DHasKEM.PROVIDER);
         } else {
             return KEM.getInstance(name);
         }
@@ -137,15 +141,7 @@ public class Hybrid {
 
         @Override
         public void initialize(int keysize, SecureRandom random) {
-            try {
-                left.initialize(leftSpec, random);
-                right.initialize(rightSpec, random);
-            } catch (InvalidParameterException ipe) {
-                throw ipe;
-            } catch (Exception e) {
-                throw new ProviderException("Failed to initialize hybrid " +
-                        "keypair generator", e);
-            }
+            // NO-OP (do nothing)
         }
 
         @Override
@@ -153,8 +149,10 @@ public class Hybrid {
             var kp1 = left.generateKeyPair();
             var kp2 = right.generateKeyPair();
             return new KeyPair(
-                    new PublicKeyImpl("Hybrid", kp1.getPublic(), kp2.getPublic()),
-                    new PrivateKeyImpl("Hybrid", kp1.getPrivate(), kp2.getPrivate()));
+                    new PublicKeyImpl("Hybrid", kp1.getPublic(),
+                            kp2.getPublic()),
+                    new PrivateKeyImpl("Hybrid", kp1.getPrivate(),
+                            kp2.getPrivate()));
         }
     }
 
@@ -230,12 +228,13 @@ public class Hybrid {
 
                     return new PublicKeyImpl("Hybrid", leftKey, rightKey);
                 } catch (Exception e) {
-                    throw new InvalidKeySpecException("Failed to decode hybrid" +
-                            " key", e);
+                    throw new InvalidKeySpecException("Failed to decode " +
+                            "hybrid key", e);
                 }
             }
 
             throw new InvalidKeySpecException(
+                    "KeySpec type:" +
                     keySpec.getClass().getName() + " not supported");
         }
 
@@ -256,8 +255,8 @@ public class Hybrid {
         }
 
         @Override
-        protected <T extends KeySpec> T engineGetKeySpec(Key key, Class<T> keySpec)
-                throws InvalidKeySpecException {
+        protected <T extends KeySpec> T engineGetKeySpec(Key key,
+                Class<T> keySpec) throws InvalidKeySpecException {
             throw new UnsupportedOperationException();
         }
 
@@ -271,7 +270,8 @@ public class Hybrid {
         private final KEM left;
         private final KEM right;
 
-        public KEMImpl(String left, String right) throws NoSuchAlgorithmException {
+        public KEMImpl(String left, String right)
+                throws NoSuchAlgorithmException {
             this.left = getKEM(left);
             this.right = getKEM(right);
         }
@@ -282,15 +282,16 @@ public class Hybrid {
                 InvalidAlgorithmParameterException, InvalidKeyException {
             if (publicKey instanceof PublicKeyImpl pk) {
                 return new Handler(left.newEncapsulator(pk.left, secureRandom),
-                        right.newEncapsulator(pk.right, secureRandom), null, null);
+                        right.newEncapsulator(pk.right, secureRandom),
+                        null, null);
             }
             throw new InvalidKeyException();
         }
 
         @Override
         public DecapsulatorSpi engineNewDecapsulator(PrivateKey privateKey,
-                AlgorithmParameterSpec spec) throws InvalidAlgorithmParameterException,
-                InvalidKeyException {
+                AlgorithmParameterSpec spec)
+                throws InvalidAlgorithmParameterException, InvalidKeyException {
             if (privateKey instanceof PrivateKeyImpl pk) {
                 return new Handler(null, null, left.newDecapsulator(pk.left),
                         right.newDecapsulator(pk.right));
@@ -356,8 +357,8 @@ public class Hybrid {
         public SecretKey engineDecapsulate(byte[] encapsulation, int from,
                 int to, String algorithm) throws DecapsulateException {
             var left = Arrays.copyOf(encapsulation, ld.encapsulationSize());
-            var right = Arrays.copyOfRange(encapsulation, ld.encapsulationSize(),
-                    encapsulation.length);
+            var right = Arrays.copyOfRange(encapsulation,
+                    ld.encapsulationSize(), encapsulation.length);
             if (from == 0 && ld.secretSize() + rd.secretSize() == to) {
                 return new SecretKeyImpl(ld.decapsulate(left),
                         rd.decapsulate(right));
@@ -367,6 +368,24 @@ public class Hybrid {
                         " to = " + to + ", expected total secret size = " +
                         (ld.secretSize() + rd.secretSize()));
             }
+        }
+    }
+
+    public record SecretKeyImpl(SecretKey k1, SecretKey k2)
+            implements SecretKey {
+        @Override
+        public String getAlgorithm() {
+            return "Generic";
+        }
+
+        @Override
+        public String getFormat() {
+            return null;
+        }
+
+        @Override
+        public byte[] getEncoded() {
+            return null;
         }
     }
 
@@ -427,7 +446,7 @@ public class Hybrid {
         // standard encoding format for a hybrid private key.
         @Override
         public byte[] getEncoded() {
-            return new byte[0];
+            return null;
         }
     }
 
@@ -440,13 +459,4 @@ public class Hybrid {
             return name != null && name.equals("X25519");
         }
     }
-
-    public static final NamedParameterSpec X25519_MLKEM768 =
-            new NamedParameterSpec("X25519MLKEM768");
-
-    public static final NamedParameterSpec SECP256R1_MLKEM768 =
-            new NamedParameterSpec("SecP256r1MLKEM768");
-
-    public static final NamedParameterSpec SECP384R1_MLKEM1024 =
-            new NamedParameterSpec("SecP384r1MLKEM1024");
 }
