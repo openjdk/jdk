@@ -847,7 +847,6 @@ typedef struct GtkApi {
 gboolean gtk_load(JNIEnv *env, GtkVersion version, gboolean verbose);
 gboolean gtk_check_version(GtkVersion version);
 
-typedef struct _GThreadFunctions GThreadFunctions;
 static void (*fp_gdk_threads_init)(void);
 static void (*fp_gdk_threads_enter)(void);
 static void (*fp_gdk_threads_leave)(void);
