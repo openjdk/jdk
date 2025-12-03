@@ -48,52 +48,91 @@ public class VectorAlgorithms {
     @Param({"640000"})
     public int SIZE;
 
-    public static int[] AI;
-    public static int[] RI;
+    public static int[] aI;
 
     @Setup
     public void init() {
-        AI = new int[SIZE];
-        RI = new int[SIZE];
+        aI = new int[SIZE];
     }
 
-    //@Benchmark
-    //public int reduceAddI_loop() {
-    //    int sum = 0;
-    //    for (int i = 0; i < AI.length; i++) {
-    //        sum += AI[i];
-    //    }
-    //    return sum;
-    //}
+    // ------------------------------------------------------------------------------------------
+    //               Benchmarks just forward arguments and returns.
+    // ------------------------------------------------------------------------------------------
 
-    //@Benchmark
-    //public int reduceAddI_loop_reassociate() {
-    //    int sum = 0;
-    //    for (int i = 0; i < AI.length; i+=4) {
-    //        sum += (AI[i + 0] + AI[i + 1]) + (AI[i + 2] + AI[i + 3]);
-    //    }
-    //    return sum;
-    //}
+    @Benchmark
+    public int bench_reduceAddI_loop() {
+        return reduceAddI_loop(aI);
+    }
 
-    //@Benchmark
-    //public int reduceAddI_VectorAPI_naive() {
-    //    var sum = 0;
-    //    for (int i = 0; i < SPECIES_I.loopBound(AI.length); i += SPECIES_I.length()) {
-    //        IntVector v = IntVector.fromArray(SPECIES_I, AI, i);
-    //        sum += v.reduceLanes(VectorOperators.ADD);
-    //    }
-    //    return sum;
-    //}
+    @Benchmark
+    public int bench_reduceAddI_reassociate() {
+        return reduceAddI_reassociate(aI);
+    }
 
-    //@Benchmark
-    //public int reduceAddI_VectorAPI_reduction_after_loop() {
-    //    var acc = IntVector.broadcast(SPECIES_I, 0);
-    //    for (int i = 0; i < SPECIES_I.loopBound(AI.length); i += SPECIES_I.length()) {
-    //        IntVector v = IntVector.fromArray(SPECIES_I, AI, i);
-    //        acc = acc.add(v);
-    //    }
-    //    return acc.reduceLanes(VectorOperators.ADD);
-    //}
+    @Benchmark
+    public int bench_reduceAddI_VectorAPI_naive() {
+        return reduceAddI_VectorAPI_naive(aI);
+    }
+
+    @Benchmark
+    public int bench_reduceAddI_VectorAPI_reduction_after_loop() {
+        return reduceAddI_VectorAPI_reduction_after_loop(aI);
+    }
+
+    // ------------------------------------------------------------------------------------------
+    //               Below: just copied from TestVectorAlgorithms.java
+    //               Only stripped @Test and @IR annotations.
+    // ------------------------------------------------------------------------------------------
+
+    public int reduceAddI_loop(int[] a) {
+        int sum = 0;
+        for (int i = 0; i < a.length; i++) {
+            // Relying on simple reduction loop should vectorize since JDK26.
+            sum += a[i];
+        }
+        return sum;
+    }
+
+    public int reduceAddI_reassociate(int[] a) {
+        int sum = 0;
+        int i;
+        for (i = 0; i < a.length - 3; i+=4) {
+            // Unroll 4x, reassociate inside.
+            sum += a[i] + a[i + 1] + a[i + 2] + a[i + 3];
+        }
+        for (; i < a.length; i++) {
+            // Tail
+            sum += a[i];
+        }
+        return sum;
+    }
+
+    public int reduceAddI_VectorAPI_naive(int[] a) {
+        var sum = 0;
+        int i;
+        for (i = 0; i < SPECIES_I.loopBound(a.length); i += SPECIES_I.length()) {
+            IntVector v = IntVector.fromArray(SPECIES_I, a, i);
+            sum += v.reduceLanes(VectorOperators.ADD);
+        }
+        for (; i < a.length; i++) {
+            sum += a[i];
+        }
+        return sum;
+    }
+
+    public int reduceAddI_VectorAPI_reduction_after_loop(int[] a) {
+        var acc = IntVector.broadcast(SPECIES_I, 0);
+        int i;
+        for (i = 0; i < SPECIES_I.loopBound(a.length); i += SPECIES_I.length()) {
+            IntVector v = IntVector.fromArray(SPECIES_I, a, i);
+            acc = acc.add(v);
+        }
+        int sum = acc.reduceLanes(VectorOperators.ADD);
+        for (; i < a.length; i++) {
+            sum += a[i];
+        }
+        return sum;
+    }
 
     //@Benchmark
     //public void scanAddI_loop() {
