@@ -171,8 +171,8 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       LIBSPLASHSCREEN_CFLAGS += -DPNG_POWERPC_VSX_OPT=0
     endif
 
-    # The external libpng submitted in the jdk is a reduced version
-    # which does not contain .png_init_filter_functions_vsx.
+    # The libpng bundled with jdk is a reduced version which does not
+    # contain .png_init_filter_functions_vsx.
     # Therefore we need to disable PNG_POWERPC_VSX_OPT explicitly by setting
     # it to 0. If this define is not set, it would be automatically set to 2,
     # because
