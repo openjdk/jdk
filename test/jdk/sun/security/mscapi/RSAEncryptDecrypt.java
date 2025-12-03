@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,10 @@
  *     RSA cipher in the SunMSCAPI crypto provider. NOTE: The RSA cipher is
  *     absent from the SunMSCAPI provider in OpenJDK builds.
  * @requires os.family == "windows"
+ * @library /test/lib/
  */
+
+import jtreg.SkippedException;
 
 import javax.crypto.Cipher;
 import java.security.GeneralSecurityException;
@@ -55,8 +58,7 @@ public class RSAEncryptDecrypt {
             cipher = Cipher.getInstance("RSA", "SunMSCAPI");
 
         } catch (GeneralSecurityException e) {
-            System.out.println("Cipher not supported by provider, skipping...");
-            return;
+            throw new SkippedException("Cipher not supported by provider");
         }
 
         cipher.init(Cipher.ENCRYPT_MODE, publicKey);
