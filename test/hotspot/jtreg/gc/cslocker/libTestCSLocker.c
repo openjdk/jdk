@@ -22,7 +22,12 @@
  */
 
 #include <jni.h>
+
+#ifdef WINDOWS
+#include <windows.h>
+#else
 #include <unistd.h>
+#endif
 
 static volatile int release_critical = 0;
 
@@ -36,9 +41,12 @@ JNIEXPORT jboolean JNICALL Java_gc_cslocker_CSLocker_criticalSection
         retval = JNI_FALSE;
     } else {
       // Wait for 5 seconds
+#ifdef WINDOWS
+      Sleep(5000);
+#else
       sleep(5);
+#endif
     }
-
 
     (*env)->ReleasePrimitiveArrayCritical(env, array, nativeArray, 0);
     return retval;
