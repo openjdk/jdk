@@ -861,23 +861,23 @@ pid_t os::Bsd::gettid() {
   }
 }
 
-// Returns the uid of a process or -1 on error
+// Returns the uid of a process or -1 on error.
 uid_t os::Bsd::get_process_uid(pid_t pid) {
-    struct kinfo_proc kp;
-    size_t size = sizeof kp;
-    int mib_kern[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PID, pid};
-    if (sysctl(mib_kern, 4, &kp, &size, nullptr, 0) == 0) {
-        if (size > 0 && kp.kp_proc.p_pid == pid) {
-            return kp.kp_eproc.e_ucred.cr_uid;
-        }
+  struct kinfo_proc kp;
+  size_t size = sizeof kp;
+  int mib_kern[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PID, pid};
+  if (sysctl(mib_kern, 4, &kp, &size, nullptr, 0) == 0) {
+    if (size > 0 && kp.kp_proc.p_pid == pid) {
+      return kp.kp_eproc.e_ucred.cr_uid;
     }
-    return (uid_t)-1;
+  }
+  return (uid_t)-1;
 }
 
-// Returns true if the process is running as root
+// Returns true if the process is running as root.
 bool os::Bsd::is_process_root(pid_t pid) {
-    uid_t uid = get_process_uid(pid);
-    return (uid != (uid_t)-1) ? os::Posix::is_root(uid) : false;
+  uid_t uid = get_process_uid(pid);
+  return (uid != (uid_t)-1) ? os::Posix::is_root(uid) : false;
 }
 
 #ifdef __APPLE__

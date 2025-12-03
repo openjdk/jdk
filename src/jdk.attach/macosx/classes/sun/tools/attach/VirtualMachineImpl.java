@@ -75,11 +75,11 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         // attach mechanism in the target VM by sending it a QUIT signal.
         // Then we attempt to find the socket file again.
         // In macOS the socket file is located in per-user temp directory.
-        String tempDir = getTempDirFromPid(pid);
-        File socket_file = new File(tempDir, ".java_pid" + pid);
+        String tempdir = getTempDirFromPid(pid);
+        File socket_file = new File(tempdir, ".java_pid" + pid);
         socket_path = socket_file.getPath();
         if (!socket_file.exists()) {
-            File f = createAttachFile(tempDir, pid);
+            File f = createAttachFile(tempdir, pid);
             try {
                 checkCatchesAndSendQuitTo(pid, false);
 
@@ -220,8 +220,8 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         }
     }
 
-    private File createAttachFile(String dir, int pid) throws IOException {
-        File f = new File(dir, ".attach_pid" + pid);
+    private File createAttachFile(String tmpdir, int pid) throws IOException {
+        File f = new File(tmpdir, ".attach_pid" + pid);
         createAttachFile0(f.getPath());
         return f;
     }
