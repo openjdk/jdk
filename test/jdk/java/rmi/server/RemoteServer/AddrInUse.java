@@ -34,7 +34,7 @@ import java.rmi.server.ExportException;
 
 public class AddrInUse {
 
-    private static volatile Throwable failure = null;
+    private static volatile Throwable registryExportFailure = null;
 
     public static void main(String[] args) throws Exception {
         /*
@@ -59,7 +59,7 @@ public class AddrInUse {
                 try {
                     LocateRegistry.createRegistry(port);
                 } catch (Throwable t) {
-                    failure = t;
+                    registryExportFailure = t;
                 }
             }, "ExportRegistry-Thread");
 
@@ -71,16 +71,15 @@ public class AddrInUse {
              * the test with a timeout
              */
             exportRegistryThread.join();
-            Throwable ex = failure;
-            if (ex == null) {
+            if (registryExportFailure == null) {
                 throw new RuntimeException(
                         "TEST FAILED: export on already-bound port succeeded");
             }
-            if (!(ex instanceof ExportException)) {
+            if (!(registryExportFailure instanceof ExportException)) {
                 throw new RuntimeException(
-                        "TEST FAILED: unexpected exception occurred", ex);
+                        "TEST FAILED: unexpected exception occurred", registryExportFailure);
             }
-            System.err.println("TEST PASSED, received expected exception: " + ex);
+            System.err.println("TEST PASSED, received expected exception: " + registryExportFailure);
         }
     }
 }
