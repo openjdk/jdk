@@ -34,6 +34,7 @@
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
+import java.io.IOException;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -43,19 +44,17 @@ public class PrintAllFlags {
     private static final Pattern optPattern = Pattern.compile("\\s*\\w+\\s\\w+\\s+=");
 
     public static void main(String args[]) throws Exception {
-        var pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+PrintFlagsFinal", "-version");
-        var flagsFinal = makeOptionNameSet(new OutputAnalyzer(pb.start()));
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        var flagsFinal = runAndMakeVMOptionSet("-XX:+PrintFlagsFinal", "-version");
+        var flagsFinalUnlocked = runAndMakeVMOptionSet(
                 "-XX:+UnlockExperimentalVMOptions", "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintFlagsFinal", "-version");
-        var flagsFinalUnlocked = makeOptionNameSet(new OutputAnalyzer(pb.start()));
-
         if (!flagsFinal.equals(flagsFinalUnlocked)) {
             throw new RuntimeException("+PrintFlagsFinal should produce the same output" +
                     " whether or not UnlockExperimentalVMOptions and UnlockDiagnosticVMOptions are set");
         }
     }
 
-    private static Set<String> makeOptionNameSet(OutputAnalyzer output) {
+    private static Set<String> runAndMakeVMOptionSet(String... args) throws IOException {
+        var output = new OutputAnalyzer(ProcessTools.createLimitedTestJavaProcessBuilder(args).start());
         Set<String> optNameSet = output.asLines().stream()
                 .map(optPattern::matcher)
                 .filter(Matcher::find)
