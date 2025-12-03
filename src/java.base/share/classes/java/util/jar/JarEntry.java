@@ -91,7 +91,7 @@ public class JarEntry extends ZipEntry {
     }
 
     /**
-     * Returns an array containing the {@code Certificate} objects for this entry, or
+     * Returns the {@code Certificate} objects for this entry, or
      * {@code null} if none. This method can only be called once
      * the {@code JarEntry} has been completely verified by reading
      * from the entry input stream until the end of the stream has been
@@ -114,6 +114,8 @@ public class JarEntry extends ZipEntry {
      * validate each signer's certificate chain, and determining whether
      * to trust the entry signed by the signers.
      *
+     * <p>This method will return a new array each time it is invoked.
+     *
      * @return the {@code Certificate} objects for this entry, or
      * {@code null} if none.
      *
@@ -123,7 +125,7 @@ public class JarEntry extends ZipEntry {
     }
 
     /**
-     * Returns an array containing the {@code CodeSigner} objects for this entry, or
+     * Returns the {@code CodeSigner} objects for this entry, or
      * {@code null} if none. This method can only be called once
      * the {@code JarEntry} has been completely verified by reading
      * from the entry input stream until the end of the stream has been
@@ -138,6 +140,8 @@ public class JarEntry extends ZipEntry {
      * such as using a {@link java.security.cert.CertPathValidator} to
      * validate each signer's certificate chain, and determining whether
      * to trust the entry signed by the signers.
+     *
+     * <p>This method will return a new array each time it is invoked.
      *
      * @return the {@code CodeSigner} objects for this entry, or
      * {@code null} if none.
