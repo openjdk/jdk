@@ -108,8 +108,7 @@
           "(Generational mode only) Cohort mortality rates below this "     \
           "value will be treated as indicative of longevity, leading to "   \
           "tenuring. A lower value delays tenuring, a higher value hastens "\
-          "it. Used only when ShenandoahGenerationalhenAdaptiveTenuring is "\
-          "enabled.")                                                       \
+          "it.")                                                            \
           range(0.001,0.999)                                                \
                                                                             \
   product(size_t, ShenandoahGenerationalTenuringCohortPopulationThreshold,  \
