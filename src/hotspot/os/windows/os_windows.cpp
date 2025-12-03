@@ -1715,6 +1715,8 @@ static int _print_module(const char* fname, address base_address,
 // same architecture as Hotspot is running on
 void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   log_info(os)("attempting shared library load of %s", name);
+  Events::log_dll_message(nullptr, "Attempting to load shared library %s", name);
+
   void* result;
   JFR_ONLY(NativeLibraryLoadEvent load_event(name, &result);)
   result = LoadLibrary(name);
@@ -2795,7 +2797,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         if (cb != nullptr && cb->is_nmethod()) {
           nmethod* nm = cb->as_nmethod();
           frame fr = os::fetch_frame_from_context((void*)exceptionInfo->ContextRecord);
-          address deopt = nm->deopt_handler_begin();
+          address deopt = nm->deopt_handler_entry();
           assert(nm->insts_contains_inclusive(pc), "");
           nm->set_original_pc(&fr, pc);
           // Set pc to handler
