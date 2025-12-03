@@ -78,27 +78,29 @@ public class FrameVisualTest {
                         frames[finalJ].setUndecorated(true);
                         frames[finalJ].setBackground(Color.WHITE);
                         frames[finalJ].setVisible(true);
+                        System.out.println("Frame " + finalJ + " created");
                     });
+                }
 
-                    robot.delay(1000);
+                robot.delay(1000);
 
-                    for (index = i; index < batchEnd; index++) {
-                        int finalIndex = index;
-                        EventQueue.invokeAndWait(() -> {
-                            p = frames[finalIndex].getLocation();
-                            d = frames[finalIndex].getSize();
-                        });
-                        Rectangle rect = new Rectangle(p, d);
-                        BufferedImage img = robot.createScreenCapture(rect);
-                        if (chkImgBackgroundColor(img)) {
-                            try {
-                                ImageIO.write(img, "png",
-                                        new File("Frame_"
-                                                + finalIndex + ".png"));
-                            } catch (IOException ignored) {}
-                            throw new RuntimeException("Frame visual test " +
-                                    "failed with non-white background color");
-                        }
+                for (index = i; index < batchEnd; index++) {
+                    int finalIndex = index;
+                    System.out.println("Frame " + finalIndex + " testing");
+                    EventQueue.invokeAndWait(() -> {
+                        p = frames[finalIndex].getLocation();
+                        d = frames[finalIndex].getSize();
+                    });
+                    Rectangle rect = new Rectangle(p, d);
+                    BufferedImage img = robot.createScreenCapture(rect);
+                    if (chkImgBackgroundColor(img)) {
+                        try {
+                            ImageIO.write(img, "png",
+                                    new File("Frame_"
+                                            + finalIndex + ".png"));
+                        } catch (IOException ignored) {}
+                        throw new RuntimeException("Frame visual test " +
+                                "failed with non-white background color");
                     }
                 }
             } finally {
@@ -106,6 +108,7 @@ public class FrameVisualTest {
                 for (index = batchStart; index < batchEnd; index++) {
                     EventQueue.invokeAndWait(() -> {
                         if (frames[index] != null) {
+                            System.out.println("Frame " + index + " disposed");
                             frames[index].dispose();
                         }
                     });
