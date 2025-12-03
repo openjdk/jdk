@@ -144,7 +144,7 @@ public:
     {
       ShenandoahReentrantLocker locker(nm_data->lock());
 
-      // Heal oops and disarm
+      // Heal oops
       if (_bs->is_armed(nm)) {
         ShenandoahEvacOOMScope oom_evac_scope;
         ShenandoahNMethod::heal_nmethod_metadata(nm_data);
