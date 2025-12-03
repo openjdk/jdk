@@ -32,7 +32,14 @@
 
 package compiler.loopopts.superword;
 
+import java.util.Map;
+import java.util.HashMap;
+import jdk.test.lib.Utils;
+import java.util.Random;
+
 import compiler.lib.ir_framework.*;
+import compiler.lib.generators.*;
+import static compiler.lib.generators.Generators.G;
 import compiler.lib.verify.*;
 
 /**
@@ -43,8 +50,88 @@ import compiler.lib.verify.*;
  *   micro/org/openjdk/bench/vm/compiler/VectorAlgorithms.java
  */
 public class TestVectorAlgorithms {
+    private static final Random RANDOM = Utils.getRandomInstance();
+    private static final RestrictableGenerator<Integer> INT_GEN = Generators.G.ints();
+
+    interface TestFunction {
+        Object run();
+    }
+
+    Map<String, Map<String, TestFunction>> testGroups = new HashMap<String, Map<String, TestFunction>>();
+
+    int[] aI;
 
     public static void main(String[] args) {
+        TestFramework framework = new TestFramework();
+        framework.start();
+    }
+
+    public TestVectorAlgorithms () {
+        testGroups.put("reduceAddI", new HashMap<String,TestFunction>());
+        testGroups.get("reduceAddI").put("reduceAddI_loop",        () -> { return reduceAddI_loop(aI.clone()); });
+        testGroups.get("reduceAddI").put("reduceAddI_reassociate", () -> { return reduceAddI_reassociate(aI.clone()); });
+    }
+
+    @Warmup(100)
+    @Run(test = {"reduceAddI_loop",
+                 "reduceAddI_reassociate"})
+    public void runTests(RunInfo info) {
+        // Repeat many times, so that we also have multiple iterations for post-warmup to potentially recompile
+        int iters = info.isWarmUp() ? 1 : 20;
+        for (int iter = 0; iter < iters; iter++) {
+            // Set up random inputs, random size is important to stress tails.
+            int size = 500_000 + RANDOM.nextInt(100_000);
+            aI = new int[size];
+            G.fill(INT_GEN, aI);
+
+            // Run all tests
+            for (Map.Entry<String, Map<String,TestFunction>> group_entry : testGroups.entrySet()) {
+                String group_name = group_entry.getKey();
+                Map<String, TestFunction> group = group_entry.getValue();
+                Object gold = null;
+                String gold_name = "NONE";
+                for (Map.Entry<String,TestFunction> entry : group.entrySet()) {
+                    String name = entry.getKey();
+                    TestFunction test = entry.getValue();
+                    Object result = test.run();
+                    if (gold == null) {
+                        gold = result;
+                        gold_name = name;
+                    } else {
+                        try {
+                            Verify.checkEQ(gold, result);
+                        } catch (VerifyException e) {
+                            throw new RuntimeException("Verify.checkEQ failed for group " + group_name +
+                                                       ", gold " + gold_name + ", test " + name, e);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    public int reduceAddI_loop(int[] a) {
+        int sum = 0;
+        for (int i = 0; i < a.length; i++) {
+            sum += a[i];
+        }
+        return sum;
+    }
+
+    @Test
+    public int reduceAddI_reassociate(int[] a) {
+        int sum = 0;
+        int i = 0;
+        for (; i < a.length - 3; i+=4) {
+            // Unroll 4x, reassociate inside.
+            sum += a[i] + a[i + 1] + a[i + 2] + a[i + 3];
+        }
+        for (; i < a.length; i++) {
+            // Tail
+            sum += a[i];
+        }
+        return sum;
     }
 }
 
