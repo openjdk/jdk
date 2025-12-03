@@ -26,6 +26,9 @@
 #define SHARE_UTILITIES_SPINCRITICALSECTION_HPP
 
 #include "runtime/javaThread.hpp"
+#include "runtime/safepointVerifiers.hpp"
+#include "runtime/thread.hpp"
+#include "utilities/macros.hpp"
 
 // Ad-hoc mutual exclusion primitive: spin critical section,
 // which employs a spin lock.
@@ -40,12 +43,15 @@ private:
   // We use int type as 32-bit atomic operation is the most performant
   // compared to  smaller/larger types.
   volatile int* const _lock;
+  DEBUG_ONLY(NoSafepointVerifier _nsv;)
 
   static void spin_acquire(volatile int* Lock);
   static void spin_release(volatile int* Lock);
 public:
   NONCOPYABLE(SpinCriticalSection);
-  SpinCriticalSection(volatile int* lock) : _lock(lock) {
+  SpinCriticalSection(volatile int* lock)
+    : _lock(lock)
+      DEBUG_ONLY(COMMA _nsv(Thread::current_or_null_safe() != nullptr)) {
     spin_acquire(_lock);
   }
   ~SpinCriticalSection() {
