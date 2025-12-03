@@ -215,6 +215,7 @@
   <Event name="ClassDefine" category="Java Virtual Machine, Class Loading" label="Class Define" thread="true" stackTrace="true" startTime="false">
     <Field type="Class" name="definedClass" label="Defined Class" />
     <Field type="ClassLoader" name="definingClassLoader" label="Defining Class Loader" />
+    <Field type="Symbol" name="source" label="Source" />
   </Event>
 
   <Event name="ClassRedefinition" category="Java Virtual Machine, Class Loading" label="Class Redefinition" thread="false" stackTrace="false" startTime="false">
