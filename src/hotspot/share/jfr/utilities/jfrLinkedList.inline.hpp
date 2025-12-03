@@ -30,10 +30,10 @@
 #include "runtime/atomicAccess.hpp"
 
 template <typename NodeType, typename AllocPolicy>
-JfrLinkedList<NodeType, AllocPolicy>::JfrLinkedList() : _head(nullptr) {}
+inline JfrLinkedList<NodeType, AllocPolicy>::JfrLinkedList() : _head(nullptr) {}
 
 template <typename NodeType, typename AllocPolicy>
-bool JfrLinkedList<NodeType, AllocPolicy>::initialize() {
+inline bool JfrLinkedList<NodeType, AllocPolicy>::initialize() {
   return true;
 }
 
@@ -140,7 +140,7 @@ inline NodeType* JfrLinkedList<NodeType, AllocPolicy>::cut() {
 }
 
 template <typename NodeType, typename AllocPolicy>
-void JfrLinkedList<NodeType, AllocPolicy>::clear() {
+inline void JfrLinkedList<NodeType, AllocPolicy>::clear() {
   cut();
 }
 
