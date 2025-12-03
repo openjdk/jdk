@@ -30,17 +30,17 @@ import sun.management.Util;
 import sun.management.VMManagement;
 
 /**
-  * Implementation class for the AOT Cache subsystem.
-  *
-  * ManagementFactory.getRuntimeMXBean() returns an instance
-  * of this class.
-  */
+ * Implementation class for the AOT Cache subsystem.
+ *
+ * ManagementFactory.getRuntimeMXBean() returns an instance
+ * of this class.
+ */
 public class HotSpotAOTCacheImpl implements HotSpotAOTCacheMXBean {
 
     private final VMManagement jvm;
     /**
-      * Constructor of HotSpotAOTCacheImpl class.
-      */
+     * Constructor of HotSpotAOTCacheImpl class.
+     */
     HotSpotAOTCacheImpl(VMManagement vm) {
         this.jvm = vm;
     }

@@ -46,53 +46,53 @@ import javax.management.ObjectName;
  * @since 26
  */
 public interface HotSpotAOTCacheMXBean extends PlatformManagedObject {
-  /**
-   * If an AOT recording is in progress, ends the recording. This operation completes
-   * after the AOT artifacts have been completely written.
-   *
-   * <p>The JVM will start recording AOT artifacts upon start-up if certain JVM options are
-   * given in the command-line. The recording will stop when the JVM exits, or when
-   * the {@code endRecording} method is called. Examples:
-   *
-   * <p> java -XX:AOTCacheOutput=app.aot ....
-   *
-   * <blockquote>
-   *    The JVM will record optimization information about the current application
-   *    that will be used to generate the AOT cache file app.aot. In a future execution of this application,
-   *    -XX:AOTCache=app.aot can be provided to improve the application's
-   *    start-up and warm-up performance.
-   * </blockquote>
-   *
-   * <p> java -XX:AOTMode=record -XX:AOTConfiguration=app.aotconfig ....
-   *
-   * <blockquote>
-   *    The JVM will record optimization information about the current application
-   *    into the AOT configuration file app.aotconfig. Subsequently, an AOT cache
-   *    file can be created with the command:
-   *
-   *    <p>java -XX:AOTMode=create -XX:AOTConfiguration=app.aotconfig  -XX:AOTCache=app.aot ...
-   *  </blockquote>
-   *
-   * <p>For more information about creating and using the AOT artifacts, and detailed
-   * specification of the corresponding JVM command-line options, please refer
-   * to <a href="https://openjdk.org/jeps/483">JEP 483</a> and <a href="https://openjdk.org/jeps/514">JEP 514</a>.
-   *
-   * <p>Note: Currently there are no APIs to start an AOT recording. AOT recordings must be
-   * started using JVM command-line options such as -XX:AOTCacheOutput.
-   *
-   * <p> There are also no APIs to querying whether the AOT recording is in progress, or what AOT
-   * artifacts are being recorded.
-   *
-   * <p> It is possible for an application to end its own AOT recording programatically, but that
-   * would require a change to the application’s own logic.  Even when such a change would
-   * be feasible, training-specific logic injected into the application reduces the necessary
-   * similarity between training runs and production runs.  Therefore, some AOT training
-   * procedures rely on an external agent to select the correct moment to end training.
-   * In this way the selected length of training produces the correct set of AOT
-   * optimizations in the AOT archive, without interfering with the application code.
-   *
-   * @return {@code true} if a recording was in progress and has been ended
-   * successfully; {@code false} otherwise.
-   */
-   public boolean endRecording();
+    /**
+     * If an AOT recording is in progress, ends the recording. This operation completes
+     * after the AOT artifacts have been completely written.
+     *
+     * <p>The JVM will start recording AOT artifacts upon start-up if certain JVM options are
+     * given in the command-line. The recording will stop when the JVM exits, or when
+     * the {@code endRecording} method is called. Examples:
+     *
+     * <p> java -XX:AOTCacheOutput=app.aot ....
+     *
+     * <blockquote>
+     *    The JVM will record optimization information about the current application
+     *    that will be used to generate the AOT cache file app.aot. In a future execution of this application,
+     *    -XX:AOTCache=app.aot can be provided to improve the application's
+     *    start-up and warm-up performance.
+     * </blockquote>
+     *
+     * <p> java -XX:AOTMode=record -XX:AOTConfiguration=app.aotconfig ....
+     *
+     * <blockquote>
+     *    The JVM will record optimization information about the current application
+     *    into the AOT configuration file app.aotconfig. Subsequently, an AOT cache
+     *    file can be created with the command:
+     *
+     *    <p>java -XX:AOTMode=create -XX:AOTConfiguration=app.aotconfig  -XX:AOTCache=app.aot ...
+     *  </blockquote>
+     *
+     * <p>For more information about creating and using the AOT artifacts, and detailed
+     * specification of the corresponding JVM command-line options, please refer
+     * to <a href="https://openjdk.org/jeps/483">JEP 483</a> and <a href="https://openjdk.org/jeps/514">JEP 514</a>.
+     *
+     * <p>Note: Currently there are no APIs to start an AOT recording. AOT recordings must be
+     * started using JVM command-line options such as -XX:AOTCacheOutput.
+     *
+     * <p> There are also no APIs to querying whether the AOT recording is in progress, or what AOT
+     * artifacts are being recorded.
+     *
+     * <p> It is possible for an application to end its own AOT recording programatically, but that
+     * would require a change to the application’s own logic.  Even when such a change would
+     * be feasible, training-specific logic injected into the application reduces the necessary
+     * similarity between training runs and production runs.  Therefore, some AOT training
+     * procedures rely on an external agent to select the correct moment to end training.
+     * In this way the selected length of training produces the correct set of AOT
+     * optimizations in the AOT archive, without interfering with the application code.
+     *
+     * @return {@code true} if a recording was in progress and has been ended
+     * successfully; {@code false} otherwise.
+     */
+    public boolean endRecording();
 }
