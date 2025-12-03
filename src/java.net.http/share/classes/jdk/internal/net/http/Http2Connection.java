@@ -1378,6 +1378,8 @@ class Http2Connection implements Closeable {
 
     private void handleGoAway(final GoAwayFrame frame) {
         final long lastProcessedStream = frame.getLastStream();
+        final int errorCode = frame.getErrorCode();
+
         assert lastProcessedStream >= 0 : "unexpected last stream id: "
                 + lastProcessedStream + " in GOAWAY frame";
 
@@ -1399,7 +1401,16 @@ class Http2Connection implements Closeable {
             }
             prevLastProcessed = lastProcessedStreamInGoAway.get();
         }
-        handlePeerUnprocessedStreams(lastProcessedStreamInGoAway.get());
+
+        // RFC 9113 section 5.4.1: A GOAWAY frame with a non-zero error code indicates
+        // a connection error. The server MUST close the TCP connection after sending
+        // the GOAWAY frame. We should fail all pending requests with the error information
+        // from the GOAWAY frame rather than waiting for "Connection closed by peer".
+        if (errorCode != ErrorFrame.NO_ERROR) {
+            handleGoAwayWithError(frame, lastProcessedStreamInGoAway.get(), errorCode);
+        } else {
+            handlePeerUnprocessedStreams(lastProcessedStreamInGoAway.get());
+        }
     }
 
     private void handlePeerUnprocessedStreams(final long lastProcessedStream) {
@@ -1417,6 +1428,68 @@ class Http2Connection implements Closeable {
             debug.log(numClosed.get() + " stream(s), with id greater than " + lastProcessedStream
                     + ", will be closed as unprocessed");
         }
+    }
+
+    /**
+     * Handles a GOAWAY frame that was received with a non-zero error code, indicating
+     * a connection error. Per RFC 9113 section 5.4.1, the server will close the TCP
+     * connection after sending such a GOAWAY frame. This method fails all pending
+     * requests with meaningful error information from the GOAWAY frame.
+     *
+     * @param frame the GOAWAY frame received
+     * @param lastProcessedStream the last stream ID processed by the peer
+     * @param errorCode the HTTP/2 error code from the GOAWAY frame
+     */
+    private void handleGoAwayWithError(final GoAwayFrame frame,
+                                       final long lastProcessedStream,
+                                       final int errorCode) {
+        // Extract debug data from the GOAWAY frame
+        final byte[] debugData = frame.getDebugData();
+        final String debugInfo = debugData.length > 0
+                ? new String(debugData, UTF_8)
+                : "";
+
+        // Create a meaningful error message with the error code and debug data
+        final String errorName = ErrorFrame.stringForCode(errorCode);
+        final String errorMsg = debugInfo.isEmpty()
+                ? String.format("Received GOAWAY with error code %s (0x%x)",
+                        errorName, errorCode)
+                : String.format("Received GOAWAY with error code %s (0x%x): %s",
+                        errorName, errorCode, debugInfo);
+
+        if (debug.on()) {
+            debug.log("Handling GOAWAY with error: %s", errorMsg);
+        }
+
+        // Create the termination cause with the error information
+        final Http2TerminationCause cause = Http2TerminationCause.forH2Error(errorCode, errorMsg);
+
+        // Fail all streams appropriately:
+        // - Streams with ID > lastProcessedStream were not processed and can be retried
+        // - Streams with ID <= lastProcessedStream were being processed and should fail with the error
+        final AtomicInteger numUnprocessed = new AtomicInteger();
+        final AtomicInteger numFailed = new AtomicInteger();
+
+        streams.forEach((id, stream) -> {
+            if (id > lastProcessedStream) {
+                // Stream was not processed by the peer - mark as unprocessed for retry
+                stream.closeAsUnprocessed();
+                numUnprocessed.incrementAndGet();
+            } else {
+                // Stream was being processed - fail it with the connection error
+                final IOException error = new IOException(errorMsg);
+                stream.connectionClosing(error);
+                numFailed.incrementAndGet();
+            }
+        });
+
+        if (debug.on()) {
+            debug.log("%d stream(s) marked as unprocessed, %d stream(s) failed due to GOAWAY error",
+                    numUnprocessed.get(), numFailed.get());
+        }
+
+        // Terminate the connection immediately
+        close(cause);
     }
 
     /**
