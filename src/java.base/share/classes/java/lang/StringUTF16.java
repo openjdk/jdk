@@ -389,9 +389,34 @@ final class StringUTF16 {
         return n;
     }
 
-    // compressedCopy char[] -> byte[]
-    @IntrinsicCandidate
+    /**
+     * Exhaustively copies Latin-1 characters from a {@code char} array to a
+     * Latin-1 string byte array.
+     * <p>
+     * This effectively <em>compresses</em> the content from a 2 byte per
+     * character representation to a 1 byte one.
+     *
+     * @param src the source {@code char} array
+     * @param srcOff the start index of the source {@code char} array {@code src}
+     * @param dst the target Latin-1 string byte array
+     * @param dstOff the start index of the target byte array {@code dst}
+     * @param len the maximum number of characters to copy
+     * @return the number of characters copied
+     *
+     * @throws NullPointerException if {@code src} or {@code dst} is null
+     * @throws StringIndexOutOfBoundsException if {@code srcOff} or
+     * {@code dstOff}, in combination with {@code len}, exceeds the bounds of
+     * {@code src} or {@code dst}, respectively
+     */
     static int compress(char[] src, int srcOff, byte[] dst, int dstOff, int len) {
+        String.checkBoundsOffCount(srcOff, len, src.length);    // Implicit null check on `src`
+        String.checkBoundsOffCount(dstOff, len, dst.length);    // Implicit null check on `dst`
+        return compress0(src, srcOff, dst, dstOff, len);
+    }
+
+    // inline_string_copy(compress=true) char[] -> byte[]
+    @IntrinsicCandidate
+    private static int compress0(char[] src, int srcOff, byte[] dst, int dstOff, int len) {
         for (int i = 0; i < len; i++) {
             char c = src[srcOff];
             if (c > 0xff) {
@@ -404,11 +429,35 @@ final class StringUTF16 {
         return len;
     }
 
-    // compressedCopy byte[] -> byte[]
-    @IntrinsicCandidate
+    /**
+     * Exhaustively copies Latin-1 characters from a UTF-16 string byte array to
+     * a Latin-1 one.
+     * <p>
+     * This effectively <em>compresses</em> the content from a 2 byte per
+     * character representation to a 1 byte one.
+     *
+     * @param src the source UTF-16 string byte array
+     * @param srcOff the start index of the source byte array {@code src}
+     * @param dst the target Latin-1 string byte array
+     * @param dstOff the start index of the target byte array {@code dst}
+     * @param len the number of characters to copy
+     * @return the number of characters copied
+     *
+     * @throws NullPointerException if {@code src} or {@code dst} is null
+     * @throws StringIndexOutOfBoundsException if {@code srcOff} or
+     * {@code dstOff}, in combination with {@code len}, exceeds the bounds of
+     * {@code src} or {@code dst}, respectively
+     */
     static int compress(byte[] src, int srcOff, byte[] dst, int dstOff, int len) {
-        // We need a range check here because 'getChar' has no checks
+        Objects.requireNonNull(src);
         checkBoundsOffCount(srcOff, len, src);
+        String.checkBoundsOffCount(dstOff, len, dst.length);    // Implicit null check on `dst`
+        return compress0(src, srcOff, dst, dstOff, len);
+    }
+
+    // inline_string_copy(compress=true) byte[] -> byte[]
+    @IntrinsicCandidate
+    private static int compress0(byte[] src, int srcOff, byte[] dst, int dstOff, int len) {
         for (int i = 0; i < len; i++) {
             char c = getChar(src, srcOff);
             if (c > 0xff) {
@@ -1735,15 +1784,6 @@ final class StringUTF16 {
                     putChar(val, i, c2);
                 }
             }
-        }
-    }
-
-    // inflatedCopy byte[] -> byte[]
-    static void inflate(byte[] src, int srcOff, byte[] dst, int dstOff, int len) {
-        // We need a range check here because 'putChar' has no checks
-        checkBoundsOffCount(dstOff, len, dst);
-        for (int i = 0; i < len; i++) {
-            putChar(dst, dstOff++, src[srcOff++] & 0xff);
         }
     }
 

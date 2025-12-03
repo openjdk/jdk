@@ -1448,11 +1448,11 @@ bool LibraryCallKit::inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae) {
 }
 //---------------------------inline_string_copy---------------------
 // compressIt == true --> generate a compressed copy operation (compress char[]/byte[] to byte[])
-//   int StringUTF16.compress(char[] src, int srcOff, byte[] dst, int dstOff, int len)
-//   int StringUTF16.compress(byte[] src, int srcOff, byte[] dst, int dstOff, int len)
+//   int StringUTF16.compress0(char[] src, int srcOff, byte[] dst, int dstOff, int len)
+//   int StringUTF16.compress0(byte[] src, int srcOff, byte[] dst, int dstOff, int len)
 // compressIt == false --> generate an inflated copy operation (inflate byte[] to char[]/byte[])
-//   void StringLatin1.inflate(byte[] src, int srcOff, char[] dst, int dstOff, int len)
-//   void StringLatin1.inflate(byte[] src, int srcOff, byte[] dst, int dstOff, int len)
+//   void StringLatin1.inflate0(byte[] src, int srcOff, char[] dst, int dstOff, int len)
+//   void StringLatin1.inflate0(byte[] src, int srcOff, byte[] dst, int dstOff, int len)
 bool LibraryCallKit::inline_string_copy(bool compress) {
   if (too_many_traps(Deoptimization::Reason_intrinsic)) {
     return false;
@@ -1482,8 +1482,13 @@ bool LibraryCallKit::inline_string_copy(bool compress) {
          (!compress && src_elem == T_BYTE && (dst_elem == T_BYTE || dst_elem == T_CHAR)),
          "Unsupported array types for inline_string_copy");
 
-  src = must_be_not_null(src, true);
-  dst = must_be_not_null(dst, true);
+  if (VerifyIntrinsicChecks) {
+      src = must_be_not_null(src, true);
+      dst = must_be_not_null(dst, true);
+      if (stopped()) {
+        return true;
+      }
+    }
 
   // Convert char[] offsets to byte[] offsets
   bool convert_src = (compress && src_elem == T_BYTE);
@@ -1495,10 +1500,12 @@ bool LibraryCallKit::inline_string_copy(bool compress) {
   }
 
   // Range checks
-  generate_string_range_check(src, src_offset, length, convert_src);
-  generate_string_range_check(dst, dst_offset, length, convert_dst);
-  if (stopped()) {
-    return true;
+  if (VerifyIntrinsicChecks) {
+    generate_string_range_check(src, src_offset, length, convert_src, true);
+    generate_string_range_check(dst, dst_offset, length, convert_dst, true);
+    if (stopped()) {
+      return true;
+    }
   }
 
   Node* src_start = array_element_address(src, src_offset, src_elem);

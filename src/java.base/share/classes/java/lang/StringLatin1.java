@@ -920,18 +920,69 @@ final class StringLatin1 {
                           LATIN1);
     }
 
-    // inflatedCopy byte[] -> char[]
-    @IntrinsicCandidate
+    /**
+     * Exhaustively copies characters from a Latin-1 string byte array to the
+     * given {@code char} array.
+     * <p>
+     * This effectively <em>inflates</em> the content from a 1 byte per
+     * character representation to a 2 byte one.
+     *
+     * @param src the source Latin-1 string byte array
+     * @param srcOff the start index of the source byte array {@code src}
+     * @param dst the target {@code char} array
+     * @param dstOff the start index of the target {@code char} array {@code dst}
+     * @param len the maximum number of characters to copy
+     *
+     * @throws NullPointerException if {@code src} or {@code dst} is null
+     * @throws StringIndexOutOfBoundsException if {@code srcOff} or
+     * {@code dstOff}, in combination with {@code len}, exceeds the bounds of
+     * {@code src} or {@code dst}, respectively
+     */
     static void inflate(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
+        String.checkBoundsOffCount(srcOff, len, src.length);    // Implicit null check on `src`
+        String.checkBoundsOffCount(dstOff, len, dst.length);    // Implicit null check on `dst`
+        inflate0(src, srcOff, dst, dstOff, len);
+    }
+
+    // inline_string_copy(compress=false) byte[] -> char[]
+    @IntrinsicCandidate
+    private static void inflate0(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
         for (int i = 0; i < len; i++) {
             dst[dstOff++] = (char)(src[srcOff++] & 0xff);
         }
     }
 
-    // inflatedCopy byte[] -> byte[]
-    @IntrinsicCandidate
+    /**
+     * Exhaustively copies characters from a Latin-1 string byte array to a
+     * UTF-16 string one.
+     * <p>
+     * This effectively <em>inflates</em> the content from a 1 byte per
+     * character representation to a 2 byte one.
+     *
+     * @param src the source Latin-1 string byte array
+     * @param srcOff the start index of the source byte array {@code src}
+     * @param dst the target UTF-16 string byte array
+     * @param dstOff the start index of the target byte array {@code dst}
+     * @param len the maximum number of characters to copy
+     *
+     * @throws NullPointerException if {@code src} or {@code dst} is null
+     * @throws StringIndexOutOfBoundsException if {@code srcOff} or
+     * {@code dstOff}, in combination with {@code len}, exceeds the bounds of
+     * {@code src} or {@code dst}, respectively
+     */
     static void inflate(byte[] src, int srcOff, byte[] dst, int dstOff, int len) {
-        StringUTF16.inflate(src, srcOff, dst, dstOff, len);
+        String.checkBoundsOffCount(srcOff, len, src.length);    // Implicit null check on `src`
+        Objects.requireNonNull(dst);
+        StringUTF16.checkBoundsOffCount(dstOff, len, dst);
+        inflate0(src, srcOff, dst, dstOff, len);
+    }
+
+    // inline_string_copy(compress=false) byte[] -> byte[]
+    @IntrinsicCandidate
+    private static void inflate0(byte[] src, int srcOff, byte[] dst, int dstOff, int len) {
+        for (int i = 0; i < len; i++) {
+            StringUTF16.putChar(dst, dstOff++, src[srcOff++] & 0xff);
+        }
     }
 
     static class CharsSpliterator implements Spliterator.OfInt {
