@@ -750,6 +750,7 @@ jdk/jfr/event/compiler/TestCodeSweeper.java                     8338127 generic-
 jdk/jfr/event/oldobject/TestEmergencyDumpAtOOM.java             8371014 aix-ppc64,linux-ppc64le
 jdk/jfr/event/oldobject/TestShenandoah.java                     8342951 generic-all
 jdk/jfr/event/runtime/TestResidentSetSizeEvent.java             8309846 aix-ppc64
+jdk/jfr/jvm/TestWaste.java                                      8371630 generic-all
 
 ############################################################################
 
