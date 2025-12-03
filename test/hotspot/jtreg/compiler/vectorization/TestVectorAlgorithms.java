@@ -160,6 +160,8 @@ public class TestVectorAlgorithms {
         int i;
         for (i = 0; i < SPECIES_I.loopBound(a.length); i += SPECIES_I.length()) {
             IntVector v = IntVector.fromArray(SPECIES_I, a, i);
+            // reduceLanes in loop is better than scalar performance, but still
+            // relatively slow.
             sum += v.reduceLanes(VectorOperators.ADD);
         }
         for (; i < a.length; i++) {
@@ -174,6 +176,9 @@ public class TestVectorAlgorithms {
         int i;
         for (i = 0; i < SPECIES_I.loopBound(a.length); i += SPECIES_I.length()) {
             IntVector v = IntVector.fromArray(SPECIES_I, a, i);
+            // Element-wide addition into a vector of partial sums is much faster.
+            // Now, we only need to do a reduceLanes after the loop.
+            // This works because int-addition is associative and commutative.
             acc = acc.add(v);
         }
         int sum = acc.reduceLanes(VectorOperators.ADD);
