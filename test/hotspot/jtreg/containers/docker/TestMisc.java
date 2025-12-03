@@ -46,14 +46,10 @@ import jtreg.SkippedException;
 
 
 public class TestMisc {
-    private static final Metrics metrics = Metrics.systemMetrics();
     private static final String imageName = Common.imageName("misc");
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker()) {
-            return;
-        }
-
+        DockerTestUtils.checkCanTestDocker();
         Common.prepareWhiteBox();
         DockerTestUtils.buildJdkContainerImage(imageName);
 
@@ -102,14 +98,8 @@ public class TestMisc {
     // Test the mapping function on cgroups v2. Should also pass on cgroups v1 as it's
     // a direct mapping there.
     private static void testPrintContainerInfoCPUShares() throws Exception {
-        // Test won't work on cgv1 rootless podman since resource limits don't
-        // work there.
-        if ("cgroupv1".equals(metrics.getProvider()) &&
-            DockerTestUtils.isPodman() &&
-            DockerTestUtils.isRootless()) {
-            throw new SkippedException("Resource limits required for testPrintContainerInfoCPUShares(). " +
-                                       "This is cgv1 with podman in rootless mode. Test skipped.");
-        }
+        // Test won't work on cgv1 rootless since resource limits don't work there.
+        DockerTestUtils.checkCanUseResourceLimits();
         // Anything less than 1024 should return the back-mapped cpu-shares value without
         // rounding to next multiple of 1024 (on cg v2). Only ensure that we get
         // 'cpu_shares: <back-mapped-value>' over 'cpu_shares: no shares'.

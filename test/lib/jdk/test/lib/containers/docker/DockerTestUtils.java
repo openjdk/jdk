@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import jdk.internal.platform.Metrics;
 import jdk.test.lib.Container;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -47,6 +48,7 @@ import jtreg.SkippedException;
 public class DockerTestUtils {
     private static boolean isDockerEngineAvailable = false;
     private static boolean wasDockerEngineChecked = false;
+    private static final Metrics metrics = Metrics.systemMetrics();
 
     // Specifies how many lines to copy from child STDOUT to main test output.
     // Having too many lines in the main test output will result
@@ -93,16 +95,12 @@ public class DockerTestUtils {
     }
 
     /**
-     * Convenience method, will check if docker engine is available and usable;
-     * will print the appropriate message when not available.
+     * Checks if the docker engine is available and usable, throws an exception if not.
      *
-     * @return true if docker engine is available
      * @throws Exception
      */
-    public static boolean canTestDocker() throws Exception {
-        if (isDockerEngineAvailable()) {
-            return true;
-        } else {
+    public static void checkCanTestDocker() throws Exception {
+        if (!isDockerEngineAvailable()) {
             throw new SkippedException("Docker engine is not available on this system");
         }
     }
@@ -131,6 +129,17 @@ public class DockerTestUtils {
 
     private static String getEngineInfo(String format) throws Exception {
         return execute(Container.ENGINE_COMMAND, "info", "-f", format).getStdout();
+    }
+
+    /**
+     * Checks if the engine can use resource limits, throws an exception if not.
+     *
+     * @throws Exception
+     */
+    public static void checkCanUseResourceLimits() throws Exception {
+        if (isRootless() && "cgroupv1".equals(metrics.getProvider())) {
+            throw new SkippedException("Resource limits are not available on this system");
+        }
     }
 
     /**

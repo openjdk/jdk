@@ -42,10 +42,7 @@ public class TestUseContainerSupport {
     private static final String imageName = Common.imageName("useContainerSupport");
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker()) {
-            return;
-        }
-
+        DockerTestUtils.checkCanTestDocker();
         DockerTestUtils.buildJdkContainerImage(imageName);
 
         try {
