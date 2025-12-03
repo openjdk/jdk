@@ -29,7 +29,7 @@
  * @library /test/lib
  * @run build TestScaffold VMConnection TargetListener TargetAdapter
  * @run compile -g MethodInvokeWithTraceOnTest.java
- * @run driver MethodInvokeWithTraceOnTest
+ * @run driver MethodInvokeWithTraceOnTest -XX:InitialHeapSize=100M
  */
 
 import com.sun.jdi.*;
