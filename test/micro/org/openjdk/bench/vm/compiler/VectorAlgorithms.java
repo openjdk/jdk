@@ -34,6 +34,12 @@ import org.openjdk.jmh.annotations.*;
  *
  * Please only modify this benchark in synchronization with the IR test:
  *   test/hotspot/jtreg/compiler/vectorization/TestVectorAlgorithms.java
+ *
+ * You may want to play with the following VM flags:
+ *  - Disable auto vectorization:
+ *      -XX:+UnlockDiagnosticVMOptions -XX:AutoVectorizationOverrideProfitability=0
+ *  - Smaller vector size:
+ *      -XX:MaxVectorSize=16
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
