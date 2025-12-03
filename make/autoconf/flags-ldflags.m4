@@ -76,11 +76,7 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     BASIC_LDFLAGS_JVM_ONLY="-mno-omit-leaf-frame-pointer -mstack-alignment=16 \
         -fPIC"
 
-    if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-      LDFLAGS_LTO="-flto=auto -Wl,-object_path_lto,lto.o -fuse-linker-plugin -fno-strict-aliasing"
-    else
-      LDFLAGS_LTO="-flto=auto -fuse-linker-plugin -fno-strict-aliasing"
-    fi
+    LDFLAGS_LTO="-flto=auto -fuse-linker-plugin -fno-strict-aliasing"
     LDFLAGS_CXX_PARTIAL_LINKING="$MACHINE_FLAG -r"
 
     if test "x$OPENJDK_TARGET_OS" = xlinux; then
