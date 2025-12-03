@@ -84,6 +84,6 @@ public class EnumSetSpliteratorTest {
         assertTrue(spliterator.hasCharacteristics(Spliterator.NONNULL), "Missing NONNULL");
         assertTrue(spliterator.hasCharacteristics(Spliterator.SIZED), "Missing SIZED");
         assertTrue(spliterator.hasCharacteristics(Spliterator.SUBSIZED), "Missing SUBSIZED");
-        asserEquals(EXPECTED_CHARACTERISTICS, spliterator.characteristics(), "Unexpected characteristics");
+        assertEquals(EXPECTED_CHARACTERISTICS, spliterator.characteristics(), "Unexpected characteristics");
     }
 }
