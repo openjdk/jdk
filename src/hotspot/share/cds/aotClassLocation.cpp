@@ -61,7 +61,7 @@ protected:
 
   // Add one path to this stream.
   void add_one_path(const char* path) {
-    _array.append(ClassLoader::get_slash_delimited_canonical_path(path));
+    _array.append(path);
   }
 
   // Add all paths specified in cp; cp must be from -classpath or -Xbootclasspath/a.
@@ -451,12 +451,11 @@ void AOTClassLocationConfig::dumptime_init(JavaThread* current) {
 }
 
 void AOTClassLocationConfig::dumptime_init_helper(TRAPS) {
-  ResourceMark rm(THREAD);
+  ResourceMark rm;
   GrowableClassLocationArray tmp_array;
   AllClassLocationStreams all_css;
-  const char* const jrt_entry_name = ClassLoader::get_slash_delimited_canonical_path(ClassLoader::get_jrt_entry()->name());
 
-  AOTClassLocation* jrt = AOTClassLocation::allocate(THREAD, jrt_entry_name,
+  AOTClassLocation* jrt = AOTClassLocation::allocate(THREAD, ClassLoader::get_jrt_entry()->name(),
                                                0, Group::MODULES_IMAGE,
                                                /*from_cpattr*/false, /*is_jrt*/true);
   log_info(class, path)("path [%d] = (modules image)", tmp_array.length());
@@ -966,7 +965,7 @@ bool AOTClassLocationConfig::validate(const char* cache_filename, bool has_aot_l
 
   log_locations(cache_filename, /*is_write=*/false);
 
-  const char* const jrt = ClassLoader::get_slash_delimited_canonical_path(ClassLoader::get_jrt_entry()->name());
+  const char* const jrt = ClassLoader::get_jrt_entry()->name();
   log_info(class, path)("Checking [0] (modules image)");
   bool success = class_location_at(0)->check(jrt, has_aot_linked_classes);
   log_info(class, path)("Modules image %s validation: %s", jrt, success ? "passed" : "failed");
@@ -1077,7 +1076,7 @@ void AOTClassLocationConfig::print_on(outputStream* st) const {
     const AOTClassLocation* cs = class_location_at(i);
     const char* path;
     if (i == 0) {
-      path = ClassLoader::get_slash_delimited_canonical_path(ClassLoader::get_jrt_entry()->name());
+      path = ClassLoader::get_jrt_entry()->name();
     } else {
       path = cs->path();
     }

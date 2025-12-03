@@ -69,7 +69,6 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.hpp"
 #include "runtime/perfData.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/management.hpp"
@@ -1526,21 +1525,6 @@ char* ClassLoader::get_canonical_path(const char* orig, Thread* thread) {
     return nullptr;
   }
   return canonical_path;
-}
-
-// Caller needs ResourceMark.
-char* ClassLoader::get_slash_delimited_canonical_path(const char* orig) {
-  char* cp = get_canonical_path(orig, Thread::current());
-#ifdef _WINDOWS
-  const char separator = os::file_separator()[0];
-  const char slash = '/';
-  char* replace = cp;
-  while ((replace = strchr(replace, separator)) != nullptr) {
-    *replace = slash;
-    ++replace;
-  }
-#endif
-  return cp;
 }
 
 void ClassLoader::create_javabase() {
