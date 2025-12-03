@@ -79,6 +79,7 @@ import com.sun.source.doctree.LiteralTree;
 import com.sun.source.doctree.RawTextTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
+import com.sun.source.doctree.UnknownBlockTagTree;
 import com.sun.source.util.DocTreePath;
 import com.sun.source.util.SimpleDocTreeVisitor;
 
@@ -907,12 +908,13 @@ public abstract class HtmlDocletWriter {
      * @param refMemName the name of the member being referenced.  This should
      * be null or empty string if no member is being referenced.
      * @param label the label for the external link.
+     * @param title the title for the link
      * @param style optional style for the link.
      * @param code true if the label should be code font.
      * @return the link
      */
     public Content getCrossClassLink(TypeElement classElement, String refMemName,
-                                     Content label, HtmlStyle style, boolean code) {
+                                     Content label, String title, HtmlStyle style, boolean code) {
         if (classElement != null) {
             String className = utils.getSimpleName(classElement);
             PackageElement packageElement = utils.containingPackage(classElement);
@@ -930,9 +932,7 @@ public abstract class HtmlDocletWriter {
                 DocLink link = configuration.extern.getExternalLink(packageElement, pathToRoot,
                                 className + ".html", refMemName);
                 return links.createLink(link,
-                    (label == null) || label.isEmpty() ? defaultLabel : label, style,
-                    resources.getText("doclet.Href_Class_Or_Interface_Title",
-                        getLocalizedPackageName(packageElement)), true);
+                    (label == null) || label.isEmpty() ? defaultLabel : label, style, title, true);
             }
         }
         return null;
@@ -2493,6 +2493,24 @@ public abstract class HtmlDocletWriter {
 
     public void addPreviewInfo(Element forWhat, Content target) {
         if (utils.isPreviewAPI(forWhat)) {
+            // Preview note tag may be used to provide an alternative preview note.
+            String previewNoteTag = configuration.getOptions().previewNoteTag();
+            if (previewNoteTag != null) {
+                List<? extends UnknownBlockTagTree> tags = utils.getBlockTags(forWhat,
+                        t -> t.getTagName().equals(previewNoteTag), UnknownBlockTagTree.class);
+                if (tags != null && !tags.isEmpty()) {
+                    if (tags.size() > 1) {
+                        messages.warning(utils.getCommentHelper(forWhat).getDocTreePath(tags.get(1)),
+                                "doclet.PreviewMultipleNotes", utils.getSimpleName(forWhat));
+                    }
+                    var previewDiv = HtmlTree.DIV(HtmlStyles.previewBlock);
+                    previewDiv.setId(htmlIds.forPreviewSection(forWhat));
+                    previewDiv.add(HtmlTree.DIV(HtmlStyles.previewComment,
+                            commentTagsToContent(forWhat, tags.getFirst().getContent(), false)));
+                    target.add(previewDiv);
+                    return;
+                }
+            }
             //in Java platform:
             var previewDiv = HtmlTree.DIV(HtmlStyles.previewBlock);
             previewDiv.setId(htmlIds.forPreviewSection(forWhat));

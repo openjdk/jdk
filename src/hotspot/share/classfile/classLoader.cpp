@@ -25,11 +25,11 @@
 #include "cds/aotClassLocation.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
+#include "cds/dynamicArchive.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.inline.hpp"
 #include "classfile/classLoaderData.inline.hpp"
-#include "classfile/classLoaderExt.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/klassFactory.hpp"
@@ -80,8 +80,8 @@
 #include "utilities/ostream.hpp"
 #include "utilities/utf8.hpp"
 
-#include <stdlib.h>
 #include <ctype.h>
+#include <stdlib.h>
 
 // Entry point in java.dll for path canonicalization
 
@@ -412,31 +412,30 @@ ClassFileStream* ClassPathImageEntry::open_stream(JavaThread* current, const cha
 //
 ClassFileStream* ClassPathImageEntry::open_stream_for_loader(JavaThread* current, const char* name, ClassLoaderData* loader_data) {
   jlong size;
-  JImageLocationRef location = (*JImageFindResource)(jimage_non_null(), "", get_jimage_version_string(), name, &size);
+  JImageLocationRef location = 0;
 
-  if (location == 0) {
-    TempNewSymbol class_name = SymbolTable::new_symbol(name);
-    TempNewSymbol pkg_name = ClassLoader::package_from_class_name(class_name);
+  TempNewSymbol class_name = SymbolTable::new_symbol(name);
+  TempNewSymbol pkg_name = ClassLoader::package_from_class_name(class_name);
 
-    if (pkg_name != nullptr) {
-      if (!Universe::is_module_initialized()) {
-        location = (*JImageFindResource)(jimage_non_null(), JAVA_BASE_NAME, get_jimage_version_string(), name, &size);
-      } else {
-        PackageEntry* package_entry = ClassLoader::get_package_entry(pkg_name, loader_data);
-        if (package_entry != nullptr) {
-          ResourceMark rm(current);
-          // Get the module name
-          ModuleEntry* module = package_entry->module();
-          assert(module != nullptr, "Boot classLoader package missing module");
-          assert(module->is_named(), "Boot classLoader package is in unnamed module");
-          const char* module_name = module->name()->as_C_string();
-          if (module_name != nullptr) {
-            location = (*JImageFindResource)(jimage_non_null(), module_name, get_jimage_version_string(), name, &size);
-          }
+  if (pkg_name != nullptr) {
+    if (!Universe::is_module_initialized()) {
+      location = (*JImageFindResource)(jimage_non_null(), JAVA_BASE_NAME, get_jimage_version_string(), name, &size);
+    } else {
+      PackageEntry* package_entry = ClassLoader::get_package_entry(pkg_name, loader_data);
+      if (package_entry != nullptr) {
+        ResourceMark rm(current);
+        // Get the module name
+        ModuleEntry* module = package_entry->module();
+        assert(module != nullptr, "Boot classLoader package missing module");
+        assert(module->is_named(), "Boot classLoader package is in unnamed module");
+        const char* module_name = module->name()->as_C_string();
+        if (module_name != nullptr) {
+          location = (*JImageFindResource)(jimage_non_null(), module_name, get_jimage_version_string(), name, &size);
         }
       }
     }
   }
+
   if (location != 0) {
     if (UsePerfData) {
       ClassLoader::perf_sys_classfile_bytes_read()->inc(size);
@@ -750,7 +749,7 @@ void ClassLoader::add_to_boot_append_entries(ClassPathEntry *new_entry) {
     if (_last_append_entry == nullptr) {
       _last_append_entry = new_entry;
       assert(first_append_entry() == nullptr, "boot loader's append class path entry list not empty");
-      Atomic::release_store(&_first_append_entry_list, new_entry);
+      AtomicAccess::release_store(&_first_append_entry_list, new_entry);
     } else {
       _last_append_entry->set_next(new_entry);
       _last_append_entry = new_entry;
@@ -1192,10 +1191,7 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
   oop loader = ik->class_loader();
   char* src = (char*)stream->source();
   if (src == nullptr) {
-    if (loader == nullptr) {
-      // JFR classes
-      ik->set_shared_classpath_index(0);
-    }
+    ik->set_shared_classpath_index(-1); // unsupported location
     return;
   }
 
@@ -1283,7 +1279,29 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
   const char* const file_name = file_name_for_class_name(class_name,
                                                          ik->name()->utf8_length());
   assert(file_name != nullptr, "invariant");
-  ClassLoaderExt::record_result_for_builtin_loader(checked_cast<s2>(classpath_index), ik, redefined);
+  record_result_for_builtin_loader(checked_cast<s2>(classpath_index), ik, redefined);
+}
+
+void ClassLoader::record_result_for_builtin_loader(s2 classpath_index, InstanceKlass* result, bool redefined) {
+  assert(CDSConfig::is_dumping_archive(), "sanity");
+
+  oop loader = result->class_loader();
+  if (SystemDictionary::is_system_class_loader(loader)) {
+    AOTClassLocationConfig::dumptime_set_has_app_classes();
+  } else if (SystemDictionary::is_platform_class_loader(loader)) {
+    AOTClassLocationConfig::dumptime_set_has_platform_classes();
+  } else {
+    precond(loader == nullptr);
+  }
+
+  if (CDSConfig::is_dumping_preimage_static_archive() || CDSConfig::is_dumping_dynamic_archive()) {
+    if (!AOTClassLocationConfig::dumptime()->is_valid_classpath_index(classpath_index, result)) {
+      classpath_index = -1;
+    }
+  }
+
+  AOTClassLocationConfig::dumptime_update_max_used_index(classpath_index);
+  result->set_shared_classpath_index(classpath_index);
 }
 
 void ClassLoader::record_hidden_class(InstanceKlass* ik) {
@@ -1307,6 +1325,17 @@ void ClassLoader::record_hidden_class(InstanceKlass* ik) {
       ik->set_shared_classpath_index(0);
     }
   }
+}
+
+void ClassLoader::append_boot_classpath(ClassPathEntry* new_entry) {
+  if (CDSConfig::is_using_archive()) {
+    warning("Sharing is only supported for boot loader classes because bootstrap classpath has been appended");
+    FileMapInfo::current_info()->set_has_platform_or_app_classes(false);
+    if (DynamicArchive::is_mapped()) {
+      FileMapInfo::dynamic_info()->set_has_platform_or_app_classes(false);
+    }
+  }
+  add_to_boot_append_entries(new_entry);
 }
 #endif // INCLUDE_CDS
 

@@ -45,15 +45,6 @@
  * @run main/timeout=1600 MapLoops
  */
 
-/*
- * @test
- * @summary Exercise multithreaded maps, using only heavy monitors.
- * @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch == "ppc64" | os.arch == "ppc64le" | os.arch == "riscv64" | os.arch == "s390x"
- * @requires vm.debug
- * @library /test/lib
- * @run main/othervm/timeout=1600 -XX:LockingMode=0 -XX:+VerifyHeavyMonitors MapLoops
- */
-
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.util.List;

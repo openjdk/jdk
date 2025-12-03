@@ -48,6 +48,8 @@ import java.nio.channels.UnresolvedAddressException;
 import java.nio.channels.UnsupportedAddressTypeException;
 import java.util.Enumeration;
 import java.util.Objects;
+import java.lang.LazyConstant;
+import java.util.function.Supplier;
 
 import sun.net.ext.ExtendedSocketOptions;
 import sun.net.util.IPAddressUtil;
@@ -92,6 +94,16 @@ public class Net {
      */
     static boolean useExclusiveBind() {
         return EXCLUSIVE_BIND;
+    }
+
+    private static final LazyConstant<Boolean> SHUTDOWN_WRITE_BEFORE_CLOSE = LazyConstant.of(new Supplier<Boolean>() {
+        @Override  public Boolean get() { return shouldShutdownWriteBeforeClose0(); }});
+
+    /**
+     * Tells whether a TCP connection should be shutdown for writing before closing.
+     */
+    static boolean shouldShutdownWriteBeforeClose() {
+        return SHUTDOWN_WRITE_BEFORE_CLOSE.get();
     }
 
     /**
@@ -461,6 +473,8 @@ public class Net {
      * Returns 1 for Windows and -1 for Linux/Mac OS
      */
     private static native int isExclusiveBindAvailable();
+
+    private static native boolean shouldShutdownWriteBeforeClose0();
 
     private static native boolean shouldSetBothIPv4AndIPv6Options0();
 

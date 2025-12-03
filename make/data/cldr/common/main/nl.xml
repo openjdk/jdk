@@ -37,7 +37,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ang">Oudengels</language>
 			<language type="ann">Obolo</language>
 			<language type="anp">Angika</language>
-			<language type="apc" draft="contributed">Levantijns-Arabisch</language>
+			<language type="apc">Levantijns-Arabisch</language>
 			<language type="ar">Arabisch</language>
 			<language type="ar_001">modern standaard Arabisch</language>
 			<language type="arc">Aramees</language>
@@ -87,6 +87,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bkm">Kom</language>
 			<language type="bla">Siksika</language>
 			<language type="blo">Anii</language>
+			<language type="blt" draft="contributed">Tai Dam</language>
 			<language type="bm">Bambara</language>
 			<language type="bn">Bengaals</language>
 			<language type="bo">Tibetaans</language>
@@ -122,6 +123,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chp">Chipewyan</language>
 			<language type="chr">Cherokee</language>
 			<language type="chy">Cheyenne</language>
+			<language type="cic" draft="contributed">Chickasaw</language>
 			<language type="ckb">Soranî</language>
 			<language type="ckb" alt="menu">Koerdisch, Soranî</language>
 			<language type="ckb" alt="variant">Koerdisch, Soranî</language>
@@ -240,6 +242,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hil">Hiligaynon</language>
 			<language type="hit">Hettitisch</language>
 			<language type="hmn">Hmong</language>
+			<language type="hnj" draft="contributed">Hmong Njua</language>
 			<language type="ho">Hiri Motu</language>
 			<language type="hr">Kroatisch</language>
 			<language type="hsb">Oppersorbisch</language>
@@ -287,6 +290,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kcg">Tyap</language>
 			<language type="kde">Makonde</language>
 			<language type="kea">Kaapverdisch Creools</language>
+			<language type="kek" draft="contributed">Qʼeqchiʼ</language>
 			<language type="ken">Kenyang</language>
 			<language type="kfo">Koro</language>
 			<language type="kg">Kongo</language>
@@ -321,6 +325,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ksf">Bafia</language>
 			<language type="ksh">Kölsch</language>
 			<language type="ku">Koerdisch</language>
+			<language type="ku" menu="core">Koerdisch</language>
+			<language type="ku" menu="extension">Kurmanci</language>
 			<language type="kum">Koemuks</language>
 			<language type="kut">Kutenai</language>
 			<language type="kv">Komi</language>
@@ -412,7 +418,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="nb">Noors - Bokmål</language>
 			<language type="nd">Noord-Ndebele</language>
 			<language type="nds">Nedersaksisch</language>
-			<language type="nds_NL" draft="contributed">Nederduits</language>
+			<language type="nds_NL">Nederduits</language>
 			<language type="ne">Nepalees</language>
 			<language type="new">Newari</language>
 			<language type="ng">Ndonga</language>
@@ -592,6 +598,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="tr">Turks</language>
 			<language type="tru">Turoyo</language>
 			<language type="trv">Taroko</language>
+			<language type="trw" draft="contributed">Torwali</language>
 			<language type="ts">Tsonga</language>
 			<language type="tsd">Tsakonisch</language>
 			<language type="tsi">Tsimshian</language>
@@ -663,8 +670,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</languages>
 		<scripts>
 			<script type="Adlm">Adlam</script>
-			<script type="Afak" draft="contributed">Defaka</script>
-			<script type="Aghb" draft="contributed">Kaukasisch Albanees</script>
+			<script type="Afak">Defaka</script>
+			<script type="Aghb">Kaukasisch Albanees</script>
 			<script type="Arab">Arabisch</script>
 			<script type="Arab" alt="variant">Perso-Arabisch</script>
 			<script type="Aran">Nastaliq</script>
@@ -672,11 +679,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Armn">Armeens</script>
 			<script type="Avst">Avestaans</script>
 			<script type="Bali">Balinees</script>
-			<script type="Bamu" draft="contributed">Bamoun</script>
-			<script type="Bass" draft="contributed">Bassa Vah</script>
+			<script type="Bamu">Bamoun</script>
+			<script type="Bass">Bassa Vah</script>
 			<script type="Batk">Batak</script>
 			<script type="Beng">Bengaals</script>
-			<script type="Bhks" draft="contributed">Bhaiksuki</script>
+			<script type="Berf" draft="contributed">Beria Erfe</script>
+			<script type="Bhks">Bhaiksuki</script>
 			<script type="Blis">Blissymbolen</script>
 			<script type="Bopo">Bopomofo</script>
 			<script type="Brah">Brahmi</script>
@@ -687,33 +695,35 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Cans">Verenigde Canadese Aboriginal-symbolen</script>
 			<script type="Cari">Carisch</script>
 			<script type="Cher">Cherokee</script>
-			<script type="Chrs" draft="contributed">Chorasmisch</script>
+			<script type="Chrs">Chorasmisch</script>
 			<script type="Cirt">Cirth</script>
 			<script type="Copt">Koptisch</script>
-			<script type="Cpmn" draft="contributed">Cypro-Minoïsch</script>
+			<script type="Cpmn">Cypro-Minoïsch</script>
 			<script type="Cprt">Cyprisch</script>
 			<script type="Cyrl">Cyrillisch</script>
 			<script type="Cyrs">Oudkerkslavisch Cyrillisch</script>
 			<script type="Deva">Devanagari</script>
-			<script type="Diak" draft="contributed">Dives Akuru</script>
-			<script type="Dogr" draft="contributed">Dogra</script>
+			<script type="Diak">Dives Akuru</script>
+			<script type="Dogr">Dogra</script>
 			<script type="Dsrt">Deseret</script>
-			<script type="Dupl" draft="contributed">Duployan snelschrift</script>
+			<script type="Dupl">Duployan snelschrift</script>
 			<script type="Egyd">Egyptisch demotisch</script>
 			<script type="Egyh">Egyptisch hiëratisch</script>
 			<script type="Egyp">Egyptische hiërogliefen</script>
-			<script type="Elba" draft="contributed">Elbasan</script>
-			<script type="Elym" draft="contributed">Elymaisch</script>
+			<script type="Elba">Elbasan</script>
+			<script type="Elym">Elymaisch</script>
 			<script type="Ethi">Ethiopisch</script>
+			<script type="Gara" draft="contributed">Garay</script>
 			<script type="Geok">Georgisch Khutsuri</script>
 			<script type="Geor">Georgisch</script>
 			<script type="Glag">Glagolitisch</script>
-			<script type="Gong" draft="contributed">Gunjala Gondi</script>
-			<script type="Gonm" draft="contributed">Masaram Gondi</script>
+			<script type="Gong">Gunjala Gondi</script>
+			<script type="Gonm">Masaram Gondi</script>
 			<script type="Goth">Gothisch</script>
-			<script type="Gran" draft="contributed">Grantha</script>
+			<script type="Gran">Grantha</script>
 			<script type="Grek">Grieks</script>
 			<script type="Gujr">Gujarati</script>
+			<script type="Gukh" draft="contributed">Gurung Khema</script>
 			<script type="Guru">Gurmukhi</script>
 			<script type="Hanb">Han met Bopomofo</script>
 			<script type="Hang">Hangul</script>
@@ -723,29 +733,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Hans" alt="stand-alone">vereenvoudigd Chinees</script>
 			<script type="Hant">traditioneel</script>
 			<script type="Hant" alt="stand-alone">traditioneel Chinees</script>
-			<script type="Hatr" draft="contributed">Hatran</script>
+			<script type="Hatr">Hatran</script>
 			<script type="Hebr">Hebreeuws</script>
 			<script type="Hira">Hiragana</script>
-			<script type="Hluw" draft="contributed">Anatolische hiërogliefen</script>
+			<script type="Hluw">Anatolische hiërogliefen</script>
 			<script type="Hmng">Pahawh Hmong</script>
-			<script type="Hmnp" draft="contributed">Nyiakeng Puachue Hmong</script>
+			<script type="Hmnp">Nyiakeng Puachue Hmong</script>
 			<script type="Hrkt">Katakana of Hiragana</script>
 			<script type="Hung">Oudhongaars</script>
 			<script type="Inds">Indus</script>
 			<script type="Ital">Oud-italisch</script>
 			<script type="Java">Javaans</script>
 			<script type="Jpan">Japans</script>
-			<script type="Jurc" draft="contributed">Jurchen</script>
+			<script type="Jurc">Jurchen</script>
 			<script type="Kali">Kayah Li</script>
 			<script type="Kana">Katakana</script>
 			<script type="Kawi" draft="contributed">Kawi-taal</script>
 			<script type="Khar">Kharoshthi</script>
 			<script type="Khmr">Khmer</script>
-			<script type="Khoj" draft="contributed">Khojki</script>
-			<script type="Kits" draft="contributed">Kitaans kleinschrift</script>
+			<script type="Khoj">Khojki</script>
+			<script type="Kits">Kitaans kleinschrift</script>
 			<script type="Knda">Kannada</script>
 			<script type="Kore">Koreaans</script>
-			<script type="Kpel" draft="contributed">Kpelle</script>
+			<script type="Kpel">Kpelle</script>
+			<script type="Krai" draft="contributed">Kirat Rai</script>
 			<script type="Kthi">Kaithi</script>
 			<script type="Lana">Lanna</script>
 			<script type="Laoo">Laotiaans</script>
@@ -756,44 +767,45 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Limb">Limbu</script>
 			<script type="Lina">Lineair A</script>
 			<script type="Linb">Lineair B</script>
-			<script type="Lisu" draft="contributed">Fraser</script>
-			<script type="Loma" draft="contributed">Loma</script>
+			<script type="Lisu">Fraser</script>
+			<script type="Loma">Loma</script>
 			<script type="Lyci">Lycisch</script>
 			<script type="Lydi">Lydisch</script>
-			<script type="Mahj" draft="contributed">Mahajani</script>
-			<script type="Maka" draft="contributed">Makasar</script>
+			<script type="Mahj">Mahajani</script>
+			<script type="Maka">Makasar</script>
 			<script type="Mand">Mandaeans</script>
 			<script type="Mani">Manicheaans</script>
-			<script type="Marc" draft="contributed">Marchen</script>
+			<script type="Marc">Marchen</script>
 			<script type="Maya">Mayahiërogliefen</script>
-			<script type="Medf" draft="contributed">Medefaidrin</script>
-			<script type="Mend" draft="contributed">Mende</script>
-			<script type="Merc" draft="contributed">Meroitisch cursief</script>
+			<script type="Medf">Medefaidrin</script>
+			<script type="Mend">Mende</script>
+			<script type="Merc">Meroitisch cursief</script>
 			<script type="Mero">Meroïtisch</script>
 			<script type="Mlym">Malayalam</script>
 			<script type="Mong">Mongools</script>
 			<script type="Moon">Moon</script>
-			<script type="Mroo" draft="contributed">Mro</script>
+			<script type="Mroo">Mro</script>
 			<script type="Mtei">Meitei</script>
-			<script type="Mult" draft="contributed">Multani</script>
+			<script type="Mult">Multani</script>
 			<script type="Mymr">Birmaans</script>
 			<script type="Nagm" draft="contributed">Nag Mundari</script>
-			<script type="Nand" draft="contributed">Nandinagari</script>
-			<script type="Narb" draft="contributed">Oud Noord-Arabisch</script>
-			<script type="Nbat" draft="contributed">Nabateaans</script>
-			<script type="Newa" draft="contributed">Newari</script>
+			<script type="Nand">Nandinagari</script>
+			<script type="Narb">Oud Noord-Arabisch</script>
+			<script type="Nbat">Nabateaans</script>
+			<script type="Newa">Newari</script>
 			<script type="Nkgb" draft="contributed">Naxi Geba</script>
 			<script type="Nkoo">N’Ko</script>
-			<script type="Nshu" draft="contributed">Nüshu</script>
+			<script type="Nshu">Nüshu</script>
 			<script type="Ogam">Ogham</script>
 			<script type="Olck">Ol Chiki</script>
+			<script type="Onao" draft="contributed">Ol Onal</script>
 			<script type="Orkh">Orkhon</script>
 			<script type="Orya">Odia</script>
-			<script type="Osge" draft="contributed">Osage</script>
+			<script type="Osge">Osage</script>
 			<script type="Osma">Osmanya</script>
-			<script type="Ougr" draft="contributed">Oud Oeigoers</script>
-			<script type="Palm" draft="contributed">Palmyreens</script>
-			<script type="Pauc" draft="contributed">Pau Cin Hau</script>
+			<script type="Ougr">Oud Oeigoers</script>
+			<script type="Palm">Palmyreens</script>
+			<script type="Pauc">Pau Cin Hau</script>
 			<script type="Perm">Oudpermisch</script>
 			<script type="Phag">Phags-pa</script>
 			<script type="Phli">Inscriptioneel Pahlavi</script>
@@ -809,19 +821,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Runr">Runic</script>
 			<script type="Samr">Samaritaans</script>
 			<script type="Sara">Sarati</script>
-			<script type="Sarb" draft="contributed">Oud Zuid-Arabisch</script>
+			<script type="Sarb">Oud Zuid-Arabisch</script>
 			<script type="Saur">Saurashtra</script>
 			<script type="Sgnw">SignWriting</script>
 			<script type="Shaw">Shavian</script>
-			<script type="Shrd" draft="contributed">Sharada</script>
-			<script type="Sidd" draft="contributed">Siddham</script>
-			<script type="Sind" draft="contributed">Sindhi</script>
+			<script type="Shrd">Sharada</script>
+			<script type="Sidd">Siddham</script>
+			<script type="Sidt" draft="contributed">Sidetisch</script>
+			<script type="Sind">Sindhi</script>
 			<script type="Sinh">Singalees</script>
-			<script type="Sogd" draft="contributed">Sogdisch</script>
-			<script type="Sogo" draft="contributed">Oud Sogdisch</script>
-			<script type="Sora" draft="contributed">Sora Sompeng</script>
-			<script type="Soyo" draft="contributed">Soyombo</script>
+			<script type="Sogd">Sogdisch</script>
+			<script type="Sogo">Oud Sogdisch</script>
+			<script type="Sora">Sora Sompeng</script>
+			<script type="Soyo">Soyombo</script>
 			<script type="Sund">Soendanees</script>
+			<script type="Sunu" draft="contributed">Sunuwar</script>
 			<script type="Sylo">Syloti Nagri</script>
 			<script type="Syrc">Syriac</script>
 			<script type="Syre">Estrangelo Aramees</script>
@@ -834,6 +848,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Taml">Tamil</script>
 			<script type="Tang" draft="contributed">Tangut</script>
 			<script type="Tavt">Tai Viet</script>
+			<script type="Tayo" draft="contributed">Tai Yo</script>
 			<script type="Telu">Telugu</script>
 			<script type="Teng">Tengwar</script>
 			<script type="Tfng">Tifinagh</script>
@@ -842,19 +857,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Tibt">Tibetaans</script>
 			<script type="Tirh" draft="contributed">Tirhuta</script>
 			<script type="Tnsa" draft="contributed">Tangsa</script>
+			<script type="Todr" draft="contributed">Todhri</script>
+			<script type="Tols" draft="contributed">Tolong Siki</script>
 			<script type="Toto">Totoschrift</script>
+			<script type="Tutg" draft="contributed">Tulu-Tigalari</script>
 			<script type="Ugar">Ugaritisch</script>
 			<script type="Vaii">Vai</script>
 			<script type="Visp">Zichtbare spraak</script>
 			<script type="Vith" draft="contributed">Vithkuqi</script>
 			<script type="Wara" draft="contributed">Varang Kshiti</script>
-			<script type="Wcho" draft="contributed">Wancho</script>
-			<script type="Wole" draft="contributed">Woleai</script>
+			<script type="Wcho">Wancho</script>
+			<script type="Wole">Woleai</script>
 			<script type="Xpeo">Oudperzisch</script>
 			<script type="Xsux">Sumero-Akkadian Cuneiform</script>
 			<script type="Yezi" draft="contributed">Jezidi</script>
 			<script type="Yiii">Yi</script>
-			<script type="Zanb" draft="contributed">vierkant Zanabazar</script>
+			<script type="Zanb">vierkant Zanabazar</script>
 			<script type="Zinh">Overgeërfd</script>
 			<script type="Zmth">wiskundige notatie</script>
 			<script type="Zsye">emoji</script>
@@ -949,7 +967,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="CN">China</territory>
 			<territory type="CO">Colombia</territory>
 			<territory type="CP">Clipperton</territory>
-			<territory type="CQ" draft="contributed">Sark</territory>
+			<territory type="CQ">Sark</territory>
 			<territory type="CR">Costa Rica</territory>
 			<territory type="CU">Cuba</territory>
 			<territory type="CV">Kaapverdië</territory>
@@ -1305,35 +1323,56 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<key type="colNumeric">Numeriek sorteren</key>
 			<key type="colStrength">Sorteervoorrang</key>
 			<key type="currency">valuta</key>
+			<key type="em">Emoji-presentatie</key>
 			<key type="hc">uursysteem (12 of 24)</key>
 			<key type="lb">stijl regelafbreking</key>
+			<key type="lw">Regelafbreking binnen woorden</key>
 			<key type="ms">maatsysteem</key>
 			<key type="numbers">cijfers</key>
+			<key type="ss">Zinsafbreking na afk.</key>
 			<key type="timezone">Tijdzone</key>
 			<key type="va">Landvariant</key>
 			<key type="x">Privégebruik</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">Boeddhistische kalender</type>
+			<type key="calendar" type="buddhist" scope="core">Boeddhistisch</type>
 			<type key="calendar" type="chinese">Chinese kalender</type>
+			<type key="calendar" type="chinese" scope="core">Chinees</type>
 			<type key="calendar" type="coptic">Koptische kalender</type>
+			<type key="calendar" type="coptic" scope="core">Koptisch</type>
 			<type key="calendar" type="dangi">Dangi-kalender</type>
+			<type key="calendar" type="dangi" scope="core">Dangi</type>
 			<type key="calendar" type="ethiopic">Ethiopische kalender</type>
+			<type key="calendar" type="ethiopic" scope="core">Ethiopisch</type>
 			<type key="calendar" type="ethiopic-amete-alem">Ethiopische Amete Alem-kalender</type>
+			<type key="calendar" type="ethiopic-amete-alem" scope="core">Ethiopische Amete Alem</type>
 			<type key="calendar" type="gregorian">Gregoriaanse kalender</type>
+			<type key="calendar" type="gregorian" scope="core">Gregoriaans</type>
 			<type key="calendar" type="hebrew">Hebreeuwse kalender</type>
+			<type key="calendar" type="hebrew" scope="core">Hebreeuws</type>
 			<type key="calendar" type="indian">Indiase nationale kalender</type>
+			<type key="calendar" type="indian" scope="core" draft="contributed">Indiaas nationaal</type>
 			<type key="calendar" type="islamic">Islamitische kalender</type>
+			<type key="calendar" type="islamic" scope="core">Islamitisch</type>
 			<type key="calendar" type="islamic-civil">Islamitische kalender (cyclisch)</type>
+			<type key="calendar" type="islamic-civil" scope="core">Islamitisch (cyclisch)</type>
 			<type key="calendar" type="islamic-rgsa" draft="contributed">Islamitische kalender (Saudi–Arabië)</type>
 			<type key="calendar" type="islamic-tbla" draft="contributed">Islamitische kalender (epoche)</type>
+			<type key="calendar" type="islamic-tbla" scope="core" draft="contributed">Hijri (tabulair, astronomische epoche)</type>
 			<type key="calendar" type="islamic-umalqura">Islamitische kalender (Umm al-Qura)</type>
+			<type key="calendar" type="islamic-umalqura" scope="core">Islamitisch (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">ISO-8601-kalender</type>
 			<type key="calendar" type="japanese">Japanse kalender</type>
+			<type key="calendar" type="japanese" scope="core">Japans</type>
 			<type key="calendar" type="persian">Perzische kalender</type>
+			<type key="calendar" type="persian" scope="core">Perzisch</type>
 			<type key="calendar" type="roc">Kalender van de Chinese Republiek</type>
+			<type key="calendar" type="roc" scope="core">van de Chinese Republiek</type>
 			<type key="cf" type="account">financiële valutanotatie</type>
+			<type key="cf" type="account" scope="core">financieel</type>
 			<type key="cf" type="standard">standaard valutanotatie</type>
+			<type key="cf" type="standard" scope="core">standaard</type>
 			<type key="colAlternate" type="non-ignorable" draft="contributed">Symbolen sorteren</type>
 			<type key="colAlternate" type="shifted" draft="contributed">Sorteren zonder symbolen</type>
 			<type key="colBackwards" type="no" draft="contributed">Normaal sorteren op accenten</type>
@@ -1343,23 +1382,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper" draft="contributed">Eerst sorteren op hoofdletters</type>
 			<type key="colCaseLevel" type="no" draft="contributed">Niet hoofdlettergevoelig sorteren</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Hoofdlettergevoelig sorteren</type>
-			<type key="collation" type="big5han">Traditioneel-Chinese sorteervolgorde - Big5</type>
 			<type key="collation" type="compat">vorige sorteervolgorde, voor compatibiliteit</type>
+			<type key="collation" type="compat" scope="core">Compatibiliteit</type>
 			<type key="collation" type="dictionary">Woordenboeksorteervolgorde</type>
+			<type key="collation" type="dictionary" scope="core">Woordenboek</type>
 			<type key="collation" type="ducet">standaard Unicode-sorteervolgorde</type>
+			<type key="collation" type="ducet" scope="core">standaard Unicode</type>
 			<type key="collation" type="emoji" draft="contributed">emojisorteervolgorde</type>
 			<type key="collation" type="eor" draft="contributed">Europese sorteerregels</type>
-			<type key="collation" type="gb2312han">Vereenvoudigd-Chinese sorteervolgorde - GB2312</type>
 			<type key="collation" type="phonebook">Telefoonboeksorteervolgorde</type>
+			<type key="collation" type="phonebook" scope="core">Telefoonboek</type>
 			<type key="collation" type="phonetic">Fonetische sorteervolgorde</type>
+			<type key="collation" type="phonetic" scope="core">Fonetisch</type>
 			<type key="collation" type="pinyin">Pinyinsorteervolgorde</type>
+			<type key="collation" type="pinyin" scope="core">Pinyin</type>
 			<type key="collation" type="search">algemeen zoeken</type>
+			<type key="collation" type="search" scope="core">zoeken</type>
 			<type key="collation" type="searchjl" draft="contributed">Zoeken op eerste Hangul-medeklinker</type>
 			<type key="collation" type="standard">standaard sorteervolgorde</type>
+			<type key="collation" type="standard" scope="core">standaard</type>
 			<type key="collation" type="stroke">Streeksorteervolgorde</type>
+			<type key="collation" type="stroke" scope="core">streek</type>
 			<type key="collation" type="traditional">Traditionele sorteervolgorde</type>
+			<type key="collation" type="traditional" scope="core">traditioneel</type>
 			<type key="collation" type="unihan">Sorteervolgorde radicalen/strepen</type>
+			<type key="collation" type="unihan" scope="core">radicalen/strepen</type>
 			<type key="collation" type="zhuyin">Zhuyinvolgorde</type>
+			<type key="collation" type="zhuyin" scope="core">Zhuyin</type>
 			<type key="colNormalization" type="no" draft="contributed">Zonder normalisatie sorteren</type>
 			<type key="colNormalization" type="yes" draft="contributed">Unicode genormaliseerd sorteren</type>
 			<type key="colNumeric" type="no" draft="contributed">Cijfers afzonderlijk sorteren</type>
@@ -1372,18 +1421,35 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="d0" type="fwidth">Volledige breedte</type>
 			<type key="d0" type="hwidth">Halve breedte</type>
 			<type key="d0" type="npinyin" draft="contributed">Numeriek</type>
+			<type key="em" type="default" scope="core">standaard</type>
+			<type key="em" type="emoji" scope="core">emoji</type>
+			<type key="em" type="text" scope="core">tekst</type>
 			<type key="hc" type="h11">12-uursysteem (0-11)</type>
+			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">12-uursysteem (1-12)</type>
+			<type key="hc" type="h12" scope="core">12 (1–12)</type>
 			<type key="hc" type="h23">24-uursysteem (0-23)</type>
+			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">24-uursysteem (1-24)</type>
+			<type key="hc" type="h24" scope="core">24 (1–24)</type>
 			<type key="lb" type="loose">losse stijl regelafbreking</type>
+			<type key="lb" type="loose" scope="core">los</type>
 			<type key="lb" type="normal">normale stijl regelafbreking</type>
+			<type key="lb" type="normal" scope="core">normaal</type>
 			<type key="lb" type="strict">strikte stijl regelafbreking</type>
+			<type key="lb" type="strict" scope="core">strikt</type>
+			<type key="lw" type="breakall" scope="core">breek alles af</type>
+			<type key="lw" type="keepall" scope="core">behoud alles</type>
+			<type key="lw" type="normal" scope="core">normaal</type>
+			<type key="lw" type="phrase" scope="core">behoud in zinnen</type>
 			<type key="m0" type="bgn">BGN</type>
 			<type key="m0" type="ungegn">UNGEGN</type>
 			<type key="ms" type="metric">metriek stelsel</type>
+			<type key="ms" type="metric" scope="core">metriek</type>
 			<type key="ms" type="uksystem">Brits imperiaal stelsel</type>
+			<type key="ms" type="uksystem" scope="core">VK</type>
 			<type key="ms" type="ussystem">Amerikaans imperiaal stelsel</type>
+			<type key="ms" type="ussystem" scope="core">VS</type>
 			<type key="numbers" type="ahom" draft="contributed">Ahom cijfers</type>
 			<type key="numbers" type="arab">Arabisch-Indische cijfers</type>
 			<type key="numbers" type="arabext">uitgebreide Arabisch-Indische cijfers</type>
@@ -1469,6 +1535,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="vaii">Vai cijfers</type>
 			<type key="numbers" type="wara" draft="contributed">Warang Citi cijfers</type>
 			<type key="numbers" type="wcho" draft="contributed">Wancho cijfers</type>
+			<type key="ss" type="none" scope="core">uit</type>
+			<type key="ss" type="standard" scope="core">aan</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">metriek</measurementSystemName>
@@ -1569,14 +1637,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<pattern draft="contributed">{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
-					<intervalFormats>
-						<intervalFormatItem id="Bh">
-							<greatestDifference id="B" draft="contributed">h B – h B</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B" draft="contributed">h:mm B – h:mm B</greatestDifference>
-						</intervalFormatItem>
-					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="chinese">
@@ -1742,10 +1802,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQQ" draft="contributed">QQQQ U</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatItem id="h">
-							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h–h a</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a</greatestDifference>
 							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
@@ -1755,54 +1811,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a v</greatestDifference>
 							<greatestDifference id="h" draft="contributed">h:mm–h:mm a v</greatestDifference>
 							<greatestDifference id="m" draft="contributed">h:mm–h:mm a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hv">
-							<greatestDifference id="a" draft="contributed">h a – h a v</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h–h a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Md">
-							<greatestDifference id="d" draft="contributed">MM-dd – MM-dd</greatestDifference>
-							<greatestDifference id="M" draft="contributed">MM-dd – MM-dd</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="MEd">
-							<greatestDifference id="d" draft="contributed">MM-dd, E – MM-dd, E</greatestDifference>
-							<greatestDifference id="M" draft="contributed">MM-dd, E – MM-dd, E</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="MMMd">
-							<greatestDifference id="M" draft="contributed">MMM d – MMM d</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d" draft="contributed">MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="M" draft="contributed">MMM d, E – MMM d, E</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yM">
-							<greatestDifference id="M" draft="contributed">y-MM – y-MM</greatestDifference>
-							<greatestDifference id="y" draft="contributed">y-MM – y-MM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yMd">
-							<greatestDifference id="d" draft="contributed">y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="M" draft="contributed">y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="y" draft="contributed">y-MM-dd – y-MM-dd</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d" draft="contributed">y-MM-dd, E – y-MM-dd, E</greatestDifference>
-							<greatestDifference id="M" draft="contributed">y-MM-dd, E – y-MM-dd, E</greatestDifference>
-							<greatestDifference id="y" draft="contributed">y-MM-dd, E – y-MM-dd, E</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yMMM">
-							<greatestDifference id="y" draft="contributed">U MMM – U MMM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="M" draft="contributed">U MMM d – MMM d</greatestDifference>
-							<greatestDifference id="y" draft="contributed">U MMM d – U MMM d</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d" draft="contributed">U MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="M" draft="contributed">U MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="y" draft="contributed">U MMM d, E – U MMM d, E</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="y" draft="contributed">U MMMM – U MMMM</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -1870,14 +1878,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<pattern draft="contributed">{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
-					<intervalFormats>
-						<intervalFormatItem id="Bh">
-							<greatestDifference id="B" draft="contributed">h B – h B</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B" draft="contributed">h:mm B – h:mm B</greatestDifference>
-						</intervalFormatItem>
-					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="dangi">
@@ -1956,14 +1956,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQ" draft="contributed">QQQ r (U)</dateFormatItem>
 						<dateFormatItem id="yyyyQQQQ" draft="contributed">QQQQ r (U)</dateFormatItem>
 					</availableFormats>
-					<intervalFormats>
-						<intervalFormatItem id="Bh">
-							<greatestDifference id="B" draft="contributed">h B – h B</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B" draft="contributed">h:mm B – h:mm B</greatestDifference>
-						</intervalFormatItem>
-					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="ethiopic">
@@ -1986,16 +1978,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraNames>
-						<era type="0" draft="contributed">tijdperk 0</era>
-						<era type="1" draft="contributed">tijdperk 1</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0" draft="contributed">era 0</era>
-						<era type="1" draft="contributed">era 1</era>
-					</eraAbbr>
-				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
@@ -2039,25 +2021,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<pattern draft="contributed">{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
-					<intervalFormats>
-						<intervalFormatItem id="Bh">
-							<greatestDifference id="B" draft="contributed">h B – h B</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B" draft="contributed">h:mm B – h:mm B</greatestDifference>
-						</intervalFormatItem>
-					</intervalFormats>
 				</dateTimeFormats>
-			</calendar>
-			<calendar type="ethiopic-amete-alem">
-				<eras>
-					<eraNames>
-						<era type="0" draft="contributed">tijdperk 0</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0" draft="contributed">era 0</era>
-					</eraAbbr>
-				</eras>
 			</calendar>
 			<calendar type="generic">
 				<dateFormats>
@@ -2091,12 +2055,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat type="atTime">
 							<pattern>{1} 'om' {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} 'om' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
+							<pattern>{1} 'om' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
 							<pattern>{1} 'om' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2116,7 +2086,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<availableFormats>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyM" draft="contributed">M/y G</dateFormatItem>
 						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMEd" draft="contributed">E d/M/y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E d MMM y G</dateFormatItem>
@@ -2448,12 +2420,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat type="atTime">
 							<pattern>{1} 'om' {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} 'om' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
+							<pattern>{1} 'om' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
 							<pattern>{1} 'om' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2470,7 +2448,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<availableFormats>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyM">M/y G</dateFormatItem>
 						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMEd">E d/M/y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E d MMM y G</dateFormatItem>
@@ -2661,14 +2641,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MEd" draft="contributed">E d MMM</dateFormatItem>
 						<dateFormatItem id="y" draft="contributed">y</dateFormatItem>
 					</availableFormats>
-					<intervalFormats>
-						<intervalFormatItem id="Bh">
-							<greatestDifference id="B" draft="contributed">h B – h B</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B" draft="contributed">h:mm B – h:mm B</greatestDifference>
-						</intervalFormatItem>
-					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="indian">
@@ -2733,14 +2705,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<pattern draft="contributed">{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
-					<intervalFormats>
-						<intervalFormatItem id="Bh">
-							<greatestDifference id="B" draft="contributed">h B – h B</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B" draft="contributed">h:mm B – h:mm B</greatestDifference>
-						</intervalFormatItem>
-					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="islamic">
@@ -2824,14 +2788,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<pattern draft="contributed">{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
-					<intervalFormats>
-						<intervalFormatItem id="Bh">
-							<greatestDifference id="B" draft="contributed">h B – h B</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B" draft="contributed">h:mm B – h:mm B</greatestDifference>
-						</intervalFormatItem>
-					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="japanese">
@@ -2929,14 +2885,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<pattern draft="contributed">{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
-					<intervalFormats>
-						<intervalFormatItem id="Bh">
-							<greatestDifference id="B" draft="contributed">h B – h B</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B" draft="contributed">h:mm B – h:mm B</greatestDifference>
-						</intervalFormatItem>
-					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="persian">
@@ -2983,14 +2931,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<pattern draft="contributed">{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
-					<intervalFormats>
-						<intervalFormatItem id="Bh">
-							<greatestDifference id="B" draft="contributed">h B – h B</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B" draft="contributed">h:mm B – h:mm B</greatestDifference>
-						</intervalFormatItem>
-					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="roc">
@@ -3043,14 +2983,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<pattern draft="contributed">{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
-					<intervalFormats>
-						<intervalFormatItem id="Bh">
-							<greatestDifference id="B" draft="contributed">h B – h B</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B" draft="contributed">h:mm B – h:mm B</greatestDifference>
-						</intervalFormatItem>
-					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
@@ -3558,11 +3490,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat type="daylight">zomertijd in {0}</regionFormat>
 			<regionFormat type="standard">standaardtijd in {0}</regionFormat>
 			<zone type="Pacific/Honolulu">
-				<short>
-					<generic draft="contributed">HST</generic>
-					<standard draft="contributed">HST</standard>
-					<daylight draft="contributed">HDT</daylight>
-				</short>
 				<exemplarCity>Honolulu</exemplarCity>
 			</zone>
 			<zone type="Etc/UTC">
@@ -3573,20 +3500,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Etc/Unknown">
 				<exemplarCity>onbekende stad</exemplarCity>
 			</zone>
-			<zone type="Europe/Tirane">
-				<exemplarCity>Tirana</exemplarCity>
-			</zone>
 			<zone type="Asia/Yerevan">
 				<exemplarCity>Jerevan</exemplarCity>
-			</zone>
-			<zone type="America/Argentina/Rio_Gallegos">
-				<exemplarCity>Río Gallegos</exemplarCity>
-			</zone>
-			<zone type="America/Argentina/Tucuman">
-				<exemplarCity>Tucumán</exemplarCity>
-			</zone>
-			<zone type="America/Cordoba">
-				<exemplarCity>Córdoba</exemplarCity>
 			</zone>
 			<zone type="Europe/Vienna">
 				<exemplarCity>Wenen</exemplarCity>
@@ -3602,18 +3517,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/St_Barthelemy">
 				<exemplarCity>Saint-Barthélemy</exemplarCity>
-			</zone>
-			<zone type="America/Cuiaba">
-				<exemplarCity>Cuiabá</exemplarCity>
-			</zone>
-			<zone type="America/Belem">
-				<exemplarCity>Belém</exemplarCity>
-			</zone>
-			<zone type="America/Sao_Paulo">
-				<exemplarCity>São Paulo</exemplarCity>
-			</zone>
-			<zone type="America/Maceio">
-				<exemplarCity>Maceió</exemplarCity>
 			</zone>
 			<zone type="America/St_Johns">
 				<exemplarCity>Saint John’s</exemplarCity>
@@ -3705,7 +3608,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Bisjkek</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
+				<exemplarCity>Kanton</exemplarCity>
 			</zone>
 			<zone type="America/St_Kitts">
 				<exemplarCity>Saint Kitts</exemplarCity>
@@ -3740,17 +3643,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Indian/Maldives">
 				<exemplarCity>Maldiven</exemplarCity>
 			</zone>
-			<zone type="America/Mazatlan">
-				<exemplarCity>Mazatlán</exemplarCity>
-			</zone>
 			<zone type="America/Mexico_City">
 				<exemplarCity>Mexico-Stad</exemplarCity>
 			</zone>
 			<zone type="America/Cancun">
 				<exemplarCity>Cancun</exemplarCity>
-			</zone>
-			<zone type="Pacific/Noumea">
-				<exemplarCity>Nouméa</exemplarCity>
 			</zone>
 			<zone type="Pacific/Marquesas">
 				<exemplarCity>Marquesaseilanden</exemplarCity>
@@ -3803,9 +3700,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Riyadh">
 				<exemplarCity>Riyad</exemplarCity>
 			</zone>
-			<zone type="Indian/Mahe">
-				<exemplarCity>Mahé</exemplarCity>
-			</zone>
 			<zone type="Africa/Khartoum">
 				<exemplarCity>Khartoem</exemplarCity>
 			</zone>
@@ -3817,9 +3711,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Lower_Princes">
 				<exemplarCity>Beneden Prinsen Kwartier</exemplarCity>
-			</zone>
-			<zone type="Africa/Lome">
-				<exemplarCity>Lomé</exemplarCity>
 			</zone>
 			<zone type="Asia/Dushanbe">
 				<exemplarCity>Doesjanbe</exemplarCity>
@@ -3886,9 +3777,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>West-Afrikaanse tijd</generic>
-					<standard>West-Afrikaanse standaardtijd</standard>
-					<daylight>West-Afrikaanse zomertijd</daylight>
+					<standard>West-Afrikaanse tijd</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -4295,6 +4184,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard draft="contributed">GMT</standard>
 				</short>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic draft="contributed">Groenlandse tijd</generic>
+					<standard draft="contributed">Groenlandse standaardtijd</standard>
+					<daylight draft="contributed">Groenlandse zomertijd</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>Oost-Groenlandse tijd</generic>
@@ -4324,6 +4220,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Guyaanse tijd</standard>
 				</long>
 			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>Hawaii-Aleoetische standaardtijd</standard>
+				</long>
+				<short>
+					<standard>HAST</standard>
+				</short>
+			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
 					<generic>Hawaii-Aleoetische tijd</generic>
@@ -4331,9 +4235,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Hawaii-Aleoetische zomertijd</daylight>
 				</long>
 				<short>
-					<generic draft="contributed">HAT</generic>
-					<standard draft="contributed">HAST</standard>
-					<daylight draft="contributed">HADT</daylight>
+					<generic>HAT</generic>
+					<standard>HAST</standard>
+					<daylight>HADT</daylight>
 				</short>
 			</metazone>
 			<metazone type="Hong_Kong">
@@ -4779,6 +4683,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Chuukse tijd</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic draft="contributed">Turkse tijd</generic>
+					<standard draft="contributed">Turkse standaardtijd</standard>
+					<daylight draft="contributed">Turkse zomertijd</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Turkmeense tijd</generic>
@@ -4931,14 +4842,247 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</percentFormat>
 			</percentFormatLength>
 		</percentFormats>
+		<currencyFormats numberSystem="adlm">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="arabext">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="bali">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="beng">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="brah">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="cakm">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="cham">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="deva">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="fullwide">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="gong">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="gonm">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="gujr">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="guru">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="hanidec">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="java">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="kali">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="khmr">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="knda">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="lana">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="lanatham">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="laoo">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤ #,##0.00;¤ -#,##0.00</pattern>
-					<pattern alt="noCurrency" draft="contributed">#,##0.00</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤ #,##0.00;(¤ #,##0.00)</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
 					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
@@ -4962,6 +5106,259 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="10000000000000" count="other">¤ 00 bln'.'</pattern>
 					<pattern type="100000000000000" count="one">¤ 000 bln'.'</pattern>
 					<pattern type="100000000000000" count="other">¤ 000 bln'.'</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="lepc">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="limb">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="mlym">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="mong">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="mtei">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="mymr">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="mymrshan">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="nkoo">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="olck">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="orya">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="osma">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="rohg">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="saur">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="shrd">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="sora">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="sund">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="takr">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="talu">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="tamldec">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="telu">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="thai">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="tibt">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="vaii">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤ -#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -5927,6 +6324,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="ZWD">
 				<displayName>Zimbabwaanse dollar</displayName>
 			</currency>
+			<currency type="ZWG">
+				<displayName>Zimbabwe Gold</displayName>
+				<displayName count="one">Zimbabwe Gold</displayName>
+				<displayName count="other">Zimbabwe Gold</displayName>
+				<symbol>ZiG</symbol>
+			</currency>
 			<currency type="ZWL">
 				<displayName draft="contributed">Zimbabwaanse dollar (2009)</displayName>
 			</currency>
@@ -6178,11 +6581,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-item">
 				<gender>neuter</gender>
 				<displayName>onderdelen</displayName>
-				<unitPattern count="one">{0} ond.</unitPattern>
+				<unitPattern count="one">{0} onderdeel</unitPattern>
 				<unitPattern count="other">{0} onderdelen</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part">
+				<displayName>deel</displayName>
+				<unitPattern count="one">{0} deel</unitPattern>
+				<unitPattern count="other">{0} delen</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
 				<gender>common</gender>
+				<displayName>parts per million</displayName>
+				<unitPattern count="one">{0} part per million</unitPattern>
+				<unitPattern count="other">{0} parts per million</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<gender>neuter</gender>
@@ -6202,6 +6613,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-mole">
 				<gender>common</gender>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<unitPattern count="one">{0} glucose</unitPattern>
+				<unitPattern count="other">{0} glucose</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<gender>common</gender>
@@ -6793,6 +7208,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} millimeter-kwikdruk</unitPattern>
 				<unitPattern count="other">{0} millimeter-kwikdruk</unitPattern>
 			</unit>
+			<unit type="pressure-ofhg">
+				<displayName draft="contributed">kwik</displayName>
+				<unitPattern count="one" draft="contributed">{0} kwik</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} kwik</unitPattern>
+			</unit>
 			<unit type="pressure-inch-ofhg">
 				<displayName>inch-kwikdruk</displayName>
 				<unitPattern count="one">{0} inch-kwikdruk</unitPattern>
@@ -6985,6 +7405,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} metrische cup</unitPattern>
 				<unitPattern count="other">{0} metrische cup</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<displayName draft="contributed">metrische fluid ounces</displayName>
+				<unitPattern count="one" draft="contributed">{0} metrische fluid ounce</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} metrische fluid ounces</unitPattern>
+			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>acre-feet</displayName>
 				<unitPattern count="one">{0} acre-foot</unitPattern>
@@ -7089,20 +7514,82 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} imp. quart</unitPattern>
 				<unitPattern count="other">{0} imp. quarts</unitPattern>
 			</unit>
+			<unit type="angle-steradian">
+				<displayName>ste­ra­diaal</displayName>
+				<unitPattern count="one">{0} ste­ra­diaal</unitPattern>
+				<unitPattern count="other">{0} ste­ra­dialen</unitPattern>
+			</unit>
+			<unit type="concentr-katal">
+				<displayName>katal</displayName>
+				<unitPattern count="one">{0} katal</unitPattern>
+				<unitPattern count="other">{0} katals</unitPattern>
+			</unit>
+			<unit type="electric-coulomb">
+				<displayName draft="contributed">coulomb</displayName>
+				<unitPattern count="one" draft="contributed">{0} coulomb</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} coulomb</unitPattern>
+			</unit>
+			<unit type="electric-farad">
+				<displayName draft="contributed">farad</displayName>
+				<unitPattern count="one" draft="contributed">{0} farad</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} farad</unitPattern>
+			</unit>
+			<unit type="electric-henry">
+				<displayName>henry</displayName>
+				<unitPattern count="one">{0} henry</unitPattern>
+				<unitPattern count="other">{0} henry's</unitPattern>
+			</unit>
+			<unit type="electric-siemens">
+				<displayName>siemens</displayName>
+				<unitPattern count="one">{0} siemens</unitPattern>
+				<unitPattern count="other">{0} siemens</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName draft="contributed">calorieën [IT]</displayName>
+				<unitPattern count="one" draft="contributed">{0} calorie [IT]</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} calorieën [IT]</unitPattern>
+			</unit>
+			<unit type="energy-becquerel">
+				<displayName draft="contributed">becquerel</displayName>
+				<unitPattern count="one" draft="contributed">{0} becquerel</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} becquerels</unitPattern>
+			</unit>
+			<unit type="energy-sievert">
+				<displayName draft="contributed">sievert</displayName>
+				<unitPattern count="one" draft="contributed">{0} sievert</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} sieverts</unitPattern>
+			</unit>
+			<unit type="energy-gray">
+				<displayName draft="contributed">gray</displayName>
+				<unitPattern count="one" draft="contributed">{0} gray</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} gray</unitPattern>
+			</unit>
+			<unit type="force-kilogram-force">
+				<displayName>kilogramkracht</displayName>
+				<unitPattern count="one">{0} kilogramkracht</unitPattern>
+				<unitPattern count="other">{0} kilogramkracht</unitPattern>
+			</unit>
+			<unit type="magnetic-tesla">
+				<displayName>tesla</displayName>
+				<unitPattern count="one">{0} tesla</unitPattern>
+				<unitPattern count="other">{0} tesla</unitPattern>
+			</unit>
+			<unit type="magnetic-weber">
+				<displayName>weber</displayName>
+				<unitPattern count="one">{0} weber</unitPattern>
+				<unitPattern count="other">{0} weber</unitPattern>
+			</unit>
 			<unit type="speed-light-speed">
 				<gender>neuter</gender>
-				<displayName>licht</displayName>
-				<unitPattern count="one">{0} licht</unitPattern>
-				<unitPattern count="other">{0} licht</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<gender>common</gender>
+				<displayName>parts per billion</displayName>
+				<unitPattern count="one">{0} part per billion</unitPattern>
+				<unitPattern count="other">{0} parts per billion</unitPattern>
 			</unit>
 			<unit type="duration-night">
 				<gender>common</gender>
-				<displayName>nachten</displayName>
-				<unitPattern count="one">{0} nacht</unitPattern>
-				<unitPattern count="other">{0} nachten</unitPattern>
 				<perUnitPattern>{0} per nacht</perUnitPattern>
 			</unit>
 			<coordinateUnit>
@@ -7173,11 +7660,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ond.</unitPattern>
 				<unitPattern count="other">{0} ond.</unitPattern>
 			</unit>
+			<unit type="concentr-part">
+				<displayName>deel</displayName>
+				<unitPattern count="one">{0} deel</unitPattern>
+				<unitPattern count="other">{0} delen</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
+				<displayName>parts/million</displayName>
+			</unit>
 			<unit type="concentr-percent">
 				<displayName>procent</displayName>
 			</unit>
 			<unit type="concentr-permille">
 				<displayName>promille</displayName>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>Glc</displayName>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>l/km</displayName>
@@ -7448,10 +7946,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} imp. qt</unitPattern>
 				<unitPattern count="other">{0} imp. qt</unitPattern>
 			</unit>
+			<unit type="energy-calorie-it">
+				<displayName draft="contributed">cal-IT</displayName>
+			</unit>
 			<unit type="speed-light-speed">
 				<displayName>licht</displayName>
 				<unitPattern count="one">{0} licht</unitPattern>
 				<unitPattern count="other">{0} licht</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e9">
+				<displayName>parts/billion</displayName>
 			</unit>
 			<unit type="duration-night">
 				<displayName>nachten</displayName>
@@ -7487,8 +7991,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="area-square-inch">
 				<perUnitPattern>{0}/in²</perUnitPattern>
 			</unit>
+			<unit type="concentr-part">
+				<displayName>deel</displayName>
+				<unitPattern count="one">{0} deel</unitPattern>
+				<unitPattern count="other">{0} delen</unitPattern>
+			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>Glc</displayName>
 			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
 				<unitPattern count="one">{0} m/gUK</unitPattern>
@@ -7606,16 +8118,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} sn</unitPattern>
 				<unitPattern count="other">{0} sn</unitPattern>
 			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>cal-IT</displayName>
+			</unit>
 			<unit type="speed-light-speed">
-				<displayName>licht</displayName>
 				<unitPattern count="one">{0}licht</unitPattern>
 				<unitPattern count="other">{0}licht</unitPattern>
-			</unit>
-			<unit type="duration-night">
-				<displayName>nachten</displayName>
-				<unitPattern count="one">{0} nacht</unitPattern>
-				<unitPattern count="other">{0} nachten</unitPattern>
-				<perUnitPattern>{0}/nacht</perUnitPattern>
 			</unit>
 		</unitLength>
 	</units>

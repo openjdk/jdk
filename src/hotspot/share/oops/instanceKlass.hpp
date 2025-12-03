@@ -143,8 +143,6 @@ class InstanceKlass: public Klass {
  protected:
   InstanceKlass(const ClassFileParser& parser, KlassKind kind = Kind, ReferenceType reference_type = REF_NONE);
 
-  void* operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, bool use_class_space, TRAPS) throw();
-
  public:
   InstanceKlass();
 
@@ -276,6 +274,7 @@ class InstanceKlass: public Klass {
 
   // Fields information is stored in an UNSIGNED5 encoded stream (see fieldInfo.hpp)
   Array<u1>*          _fieldinfo_stream;
+  Array<u1>*          _fieldinfo_search_table;
   Array<FieldStatus>* _fields_status;
 
   // embedded Java vtable follows here
@@ -398,6 +397,9 @@ class InstanceKlass: public Klass {
   Array<u1>* fieldinfo_stream() const { return _fieldinfo_stream; }
   void set_fieldinfo_stream(Array<u1>* fis) { _fieldinfo_stream = fis; }
 
+  Array<u1>* fieldinfo_search_table() const { return _fieldinfo_search_table; }
+  void set_fieldinfo_search_table(Array<u1>* table) { _fieldinfo_search_table = table; }
+
   Array<FieldStatus>* fields_status() const {return _fields_status; }
   void set_fields_status(Array<FieldStatus>* array) { _fields_status = array; }
 
@@ -438,6 +440,9 @@ public:
   // Call this only if you know that the nest host has been initialized.
   InstanceKlass* nest_host_not_null() {
     assert(_nest_host != nullptr, "must be");
+    return _nest_host;
+  }
+  InstanceKlass* nest_host_or_null() {
     return _nest_host;
   }
   // Used to construct informative IllegalAccessError messages at a higher level,
@@ -499,7 +504,7 @@ public:
                                        ClassLoaderData* loader_data,
                                        TRAPS);
 
-  JavaThread* init_thread()  { return Atomic::load(&_init_thread); }
+  JavaThread* init_thread()  { return AtomicAccess::load(&_init_thread); }
   const char* init_thread_name() {
     return init_thread()->name_raw();
   }
@@ -513,7 +518,7 @@ public:
   bool is_being_initialized() const        { return init_state() == being_initialized; }
   bool is_in_error_state() const           { return init_state() == initialization_error; }
   bool is_reentrant_initialization(Thread *thread)  { return thread == _init_thread; }
-  ClassState  init_state() const           { return Atomic::load_acquire(&_init_state); }
+  ClassState  init_state() const           { return AtomicAccess::load_acquire(&_init_state); }
   const char* init_state_name() const;
   bool is_rewritten() const                { return _misc_flags.rewritten(); }
 
@@ -533,6 +538,7 @@ public:
   void initialize_with_aot_initialized_mirror(TRAPS);
   void assert_no_clinit_will_run_for_aot_initialized_class() const NOT_DEBUG_RETURN;
   void initialize(TRAPS);
+  void initialize_preemptable(TRAPS);
   void link_class(TRAPS);
   bool link_class_or_fail(TRAPS); // returns false on failure
   void rewrite_class(TRAPS);
@@ -777,8 +783,8 @@ public:
                                     u2 method_index);
 
   // jmethodID support
-  jmethodID get_jmethod_id(const methodHandle& method_h);
-  void ensure_space_for_methodids(int start_offset = 0);
+  jmethodID get_jmethod_id(Method* method);
+  void make_methods_jmethod_ids();
   jmethodID jmethod_id_or_null(Method* method);
   void update_methods_jmethod_cache();
 
@@ -805,7 +811,6 @@ public:
   // additional member function to return a handle
   instanceHandle allocate_instance_handle(TRAPS);
 
-  objArrayOop allocate_objArray(int n, int length, TRAPS);
   // Helper function
   static instanceOop register_finalizer(instanceOop i, TRAPS);
 
@@ -903,8 +908,14 @@ public:
     return static_cast<const InstanceKlass*>(k);
   }
 
+  // This hides Klass::super(). The _super of an InstanceKlass is
+  // always an InstanceKlass (or nullptr)
+  InstanceKlass* super() const {
+    return (Klass::super() == nullptr) ? nullptr : InstanceKlass::cast(Klass::super());
+  }
+
   virtual InstanceKlass* java_super() const {
-    return (super() == nullptr) ? nullptr : cast(super());
+    return InstanceKlass::super();
   }
 
   // Sizing (in words)
@@ -973,7 +984,7 @@ public:
   static void deallocate_methods(ClassLoaderData* loader_data,
                                  Array<Method*>* methods);
   void static deallocate_interfaces(ClassLoaderData* loader_data,
-                                    const Klass* super_klass,
+                                    const InstanceKlass* super_klass,
                                     Array<InstanceKlass*>* local_interfaces,
                                     Array<InstanceKlass*>* transitive_interfaces);
   void static deallocate_record_components(ClassLoaderData* loader_data,
@@ -1049,13 +1060,13 @@ private:
   void set_init_thread(JavaThread *thread)  {
     assert((thread == JavaThread::current() && _init_thread == nullptr) ||
            (thread == nullptr && _init_thread == JavaThread::current()), "Only one thread is allowed to own initialization");
-    Atomic::store(&_init_thread, thread);
+    AtomicAccess::store(&_init_thread, thread);
   }
 
-  inline jmethodID* methods_jmethod_ids_acquire() const;
-  inline void release_set_methods_jmethod_ids(jmethodID* jmeths);
-  // This nulls out jmethodIDs for all methods in 'klass'
-  static void clear_jmethod_ids(InstanceKlass* klass);
+  jmethodID* methods_jmethod_ids_acquire() const;
+  void release_set_methods_jmethod_ids(jmethodID* jmeths);
+  // This nulls out obsolete jmethodIDs for all methods in 'klass'.
+  static void clear_obsolete_jmethod_ids(InstanceKlass* klass);
   jmethodID update_jmethod_id(jmethodID* jmeths, Method* method, int idnum);
 
 public:
@@ -1190,7 +1201,7 @@ public:
 class JNIid: public CHeapObj<mtClass> {
   friend class VMStructs;
  private:
-  Klass*             _holder;
+  InstanceKlass*     _holder;
   JNIid*             _next;
   int                _offset;
 #ifdef ASSERT
@@ -1199,11 +1210,11 @@ class JNIid: public CHeapObj<mtClass> {
 
  public:
   // Accessors
-  Klass* holder() const           { return _holder; }
+  InstanceKlass* holder() const   { return _holder; }
   int offset() const              { return _offset; }
   JNIid* next()                   { return _next; }
   // Constructor
-  JNIid(Klass* holder, int offset, JNIid* next);
+  JNIid(InstanceKlass* holder, int offset, JNIid* next);
   // Identifier lookup
   JNIid* find(int offset);
 
@@ -1217,7 +1228,7 @@ class JNIid: public CHeapObj<mtClass> {
   bool is_static_field_id() const { return _is_static_field_id; }
   void set_is_static_field_id()   { _is_static_field_id = true; }
 #endif
-  void verify(Klass* holder);
+  void verify(InstanceKlass* holder);
 };
 
 // An iterator that's used to access the inner classes indices in the

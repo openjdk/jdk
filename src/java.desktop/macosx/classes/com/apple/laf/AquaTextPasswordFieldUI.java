@@ -37,7 +37,7 @@ import javax.swing.text.*;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 
-public class AquaTextPasswordFieldUI extends AquaTextFieldUI {
+public final class AquaTextPasswordFieldUI extends AquaTextFieldUI {
     private static final RecyclableSingleton<CapsLockSymbolPainter> capsLockPainter = new RecyclableSingletonFromDefaultConstructor<CapsLockSymbolPainter>(CapsLockSymbolPainter.class);
     static CapsLockSymbolPainter getCapsLockPainter() {
         return capsLockPainter.get();
@@ -84,7 +84,7 @@ public class AquaTextPasswordFieldUI extends AquaTextFieldUI {
         getCapsLockPainter().paintBorder(component, g, bounds.x, bounds.y, bounds.width, bounds.height);
     }
 
-    protected class AquaPasswordView extends PasswordView {
+    protected final class AquaPasswordView extends PasswordView {
         public AquaPasswordView(final Element elem) {
             super(elem);
             setupDefaultEchoCharacter();
@@ -99,7 +99,7 @@ public class AquaTextPasswordFieldUI extends AquaTextFieldUI {
         }
     }
 
-    static class CapsLockSymbolPainter extends KeyAdapter implements Border, UIResource {
+    static final class CapsLockSymbolPainter extends KeyAdapter implements Border, UIResource {
         protected Shape capsLockShape;
         protected Shape getCapsLockShape() {
             if (capsLockShape != null) return capsLockShape;

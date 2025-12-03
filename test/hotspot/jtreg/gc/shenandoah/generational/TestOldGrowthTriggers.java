@@ -25,6 +25,7 @@
 /*
  * @test id=generational
  * @summary Test that growth of old-gen triggers old-gen marking
+ * @key intermittent
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @run driver TestOldGrowthTriggers
@@ -57,17 +58,17 @@ public class TestOldGrowthTriggers {
             for (int i = 0; i < ArraySize; i++) {
                 int replaceIndex = r.nextInt(ArraySize);
                 int deriveIndex = r.nextInt(ArraySize);
-                switch (i & 0x3) {
-                    case 0:
+                switch (i & 0x7) {
+                    case 0,1,2:
                         // creates new old BigInteger, releases old BigInteger,
                         // may create ephemeral data while computing gcd
                         array[replaceIndex] = array[replaceIndex].gcd(array[deriveIndex]);
                         break;
-                    case 1:
+                    case 3,4:
                         // creates new old BigInteger, releases old BigInteger
                         array[replaceIndex] = array[replaceIndex].multiply(array[deriveIndex]);
                         break;
-                    case 2,3:
+                    case 5,6,7:
                         // do nothing, let all objects in the array age to increase pressure on old generation
                         break;
                 }

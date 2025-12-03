@@ -30,7 +30,7 @@
 #include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 
 class ResolutionErrorKey {
   ConstantPool* _cpool;
@@ -53,7 +53,7 @@ class ResolutionErrorKey {
   }
 };
 
-using InternalResolutionErrorTable = ResourceHashtable<ResolutionErrorKey, ResolutionErrorEntry*, 107, AnyObj::C_HEAP, mtClass,
+using InternalResolutionErrorTable = HashTable<ResolutionErrorKey, ResolutionErrorEntry*, 107, AnyObj::C_HEAP, mtClass,
                   ResolutionErrorKey::hash,
                   ResolutionErrorKey::equals>;
 
@@ -73,7 +73,7 @@ void ResolutionErrorTable::add_entry(const constantPoolHandle& pool, int cp_inde
 
   ResolutionErrorKey key(pool(), cp_index);
   ResolutionErrorEntry *entry = new ResolutionErrorEntry(error, message, cause, cause_msg);
-  _resolution_error_table->put(key, entry);
+  _resolution_error_table->put_when_absent(key, entry);
 }
 
 // create new nest host error entry
@@ -85,7 +85,7 @@ void ResolutionErrorTable::add_entry(const constantPoolHandle& pool, int cp_inde
 
   ResolutionErrorKey key(pool(), cp_index);
   ResolutionErrorEntry *entry = new ResolutionErrorEntry(message);
-  _resolution_error_table->put(key, entry);
+  _resolution_error_table->put_when_absent(key, entry);
 }
 
 // find entry in the table
@@ -125,6 +125,15 @@ ResolutionErrorEntry::~ResolutionErrorEntry() {
     FREE_C_HEAP_ARRAY(char, nest_host_error());
   }
 }
+
+void ResolutionErrorEntry::set_nest_host_error(const char* message) {
+  // If a message is already set, free it.
+  if (nest_host_error() != nullptr) {
+    FREE_C_HEAP_ARRAY(char, _nest_host_error);
+  }
+  _nest_host_error = message;
+}
+
 
 class ResolutionErrorDeleteIterate : StackObj {
   ConstantPool* p;

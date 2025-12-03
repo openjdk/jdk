@@ -38,6 +38,7 @@
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/virtualizationSupport.hpp"
 
@@ -49,7 +50,7 @@ VM_Version::CpuidInfo VM_Version::_cpuid_info = { 0, };
 
 #define DECLARE_CPU_FEATURE_NAME(id, name, bit) name,
 const char* VM_Version::_features_names[] = { CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_NAME)};
-#undef DECLARE_CPU_FEATURE_FLAG
+#undef DECLARE_CPU_FEATURE_NAME
 
 // Address of instruction which causes SEGV
 address VM_Version::_cpuinfo_segv_addr = nullptr;
@@ -61,7 +62,7 @@ address VM_Version::_cpuinfo_segv_addr_apx = nullptr;
 address VM_Version::_cpuinfo_cont_addr_apx = nullptr;
 
 static BufferBlob* stub_blob;
-static const int stub_size = 2000;
+static const int stub_size = 2550;
 
 int VM_Version::VM_Features::_features_bitmap_size = sizeof(VM_Version::VM_Features::_features_bitmap) / BytesPerLong;
 
@@ -72,10 +73,12 @@ extern "C" {
   typedef void (*get_cpu_info_stub_t)(void*);
   typedef void (*detect_virt_stub_t)(uint32_t, uint32_t*);
   typedef void (*clear_apx_test_state_t)(void);
+  typedef void (*getCPUIDBrandString_stub_t)(void*);
 }
 static get_cpu_info_stub_t get_cpu_info_stub = nullptr;
 static detect_virt_stub_t detect_virt_stub = nullptr;
 static clear_apx_test_state_t clear_apx_test_state_stub = nullptr;
+static getCPUIDBrandString_stub_t getCPUIDBrandString_stub = nullptr;
 
 bool VM_Version::supports_clflush() {
   // clflush should always be available on x86_64
@@ -138,7 +141,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     const uint32_t CPU_FAMILY_486 = (4 << CPU_FAMILY_SHIFT);
     bool use_evex = FLAG_IS_DEFAULT(UseAVX) || (UseAVX > 2);
 
-    Label detect_486, cpu486, detect_586, std_cpuid1, std_cpuid4, std_cpuid24;
+    Label detect_486, cpu486, detect_586, std_cpuid1, std_cpuid4, std_cpuid24, std_cpuid29;
     Label sef_cpuid, sefsl1_cpuid, ext_cpuid, ext_cpuid1, ext_cpuid5, ext_cpuid7;
     Label ext_cpuid8, done, wrapup, vector_save_restore, apx_save_restore_warning;
     Label legacy_setup, save_restore_except, legacy_save_restore, start_simd_check;
@@ -338,6 +341,16 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movl(Address(rsi, 4), rdx);
 
     //
+    // cpuid(0x29) APX NCI NDD NF (EAX = 29H, ECX = 0).
+    //
+    __ bind(std_cpuid29);
+    __ movl(rax, 0x29);
+    __ movl(rcx, 0);
+    __ cpuid();
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::std_cpuid29_offset())));
+    __ movl(Address(rsi, 0), rbx);
+
+    //
     // cpuid(0x24) Converged Vector ISA Main Leaf (EAX = 24H, ECX = 0).
     //
     __ bind(std_cpuid24);
@@ -440,7 +453,6 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ andl(rax, Address(rbp, in_bytes(VM_Version::xem_xcr0_offset()))); // xcr0 bits apx_f
     __ jcc(Assembler::equal, vector_save_restore);
 
-#ifndef PRODUCT
     bool save_apx = UseAPX;
     VM_Version::set_apx_cpuFeatures();
     UseAPX = true;
@@ -457,7 +469,6 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movq(Address(rsi, 8), r31);
 
     UseAPX = save_apx;
-#endif
     __ bind(vector_save_restore);
     //
     // Check if OS has enabled XGETBV instruction to access XCR0
@@ -1017,18 +1028,6 @@ void VM_Version::get_processor_features() {
     _features.clear_feature(CPU_AVX10_2);
   }
 
-  // Currently APX support is only enabled for targets supporting AVX512VL feature.
-  bool apx_supported = os_supports_apx_egprs() && supports_apx_f() && supports_avx512vl();
-  if (UseAPX && !apx_supported) {
-    warning("UseAPX is not supported on this CPU, setting it to false");
-    FLAG_SET_DEFAULT(UseAPX, false);
-  } else if (FLAG_IS_DEFAULT(UseAPX)) {
-    FLAG_SET_DEFAULT(UseAPX, apx_supported ? true : false);
-  }
-
-  if (!UseAPX) {
-    _features.clear_feature(CPU_APX_F);
-  }
 
   if (UseAVX < 2) {
     _features.clear_feature(CPU_AVX2);
@@ -1052,6 +1051,7 @@ void VM_Version::get_processor_features() {
       _features.clear_feature(CPU_VZEROUPPER);
       _features.clear_feature(CPU_AVX512BW);
       _features.clear_feature(CPU_AVX512VL);
+      _features.clear_feature(CPU_APX_F);
       _features.clear_feature(CPU_AVX512DQ);
       _features.clear_feature(CPU_AVX512_VNNI);
       _features.clear_feature(CPU_AVX512_VAES);
@@ -1071,8 +1071,20 @@ void VM_Version::get_processor_features() {
     }
   }
 
+    // Currently APX support is only enabled for targets supporting AVX512VL feature.
+  bool apx_supported = os_supports_apx_egprs() && supports_apx_f() && supports_avx512vl();
+  if (UseAPX && !apx_supported) {
+    warning("UseAPX is not supported on this CPU, setting it to false");
+    FLAG_SET_DEFAULT(UseAPX, false);
+  }
+
+  if (!UseAPX) {
+    _features.clear_feature(CPU_APX_F);
+  }
+
   if (FLAG_IS_DEFAULT(IntelJccErratumMitigation)) {
     _has_intel_jcc_erratum = compute_has_intel_jcc_erratum();
+    FLAG_SET_ERGO(IntelJccErratumMitigation, _has_intel_jcc_erratum);
   } else {
     _has_intel_jcc_erratum = IntelJccErratumMitigation;
   }
@@ -1100,21 +1112,20 @@ void VM_Version::get_processor_features() {
     }
   }
 
-  char buf[2048];
-  size_t cpu_info_size = jio_snprintf(
-              buf, sizeof(buf),
-              "(%u cores per cpu, %u threads per core) family %d model %d stepping %d microcode 0x%x",
-              cores_per_cpu(), threads_per_core(),
-              cpu_family(), _model, _stepping, os::cpu_microcode_revision());
-  assert(cpu_info_size > 0, "not enough temporary space allocated");
+  stringStream ss(2048);
+  if (supports_hybrid()) {
+    ss.print("(hybrid)");
+  } else {
+    ss.print("(%u cores per cpu, %u threads per core)", cores_per_cpu(), threads_per_core());
+  }
+  ss.print(" family %d model %d stepping %d microcode 0x%x",
+           cpu_family(), _model, _stepping, os::cpu_microcode_revision());
+  ss.print(", ");
+  int features_offset = (int)ss.size();
+  insert_features_names(_features, ss);
 
-  insert_features_names(_features, buf + cpu_info_size, sizeof(buf) - cpu_info_size);
-
-  _cpu_info_string = os::strdup(buf);
-
-  _features_string = extract_features_string(_cpu_info_string,
-                                             strnlen(_cpu_info_string, sizeof(buf)),
-                                             cpu_info_size);
+  _cpu_info_string = ss.as_string(true);
+  _features_string = _cpu_info_string + features_offset;
 
   // Use AES instructions if available.
   if (supports_aes()) {
@@ -1249,21 +1260,18 @@ void VM_Version::get_processor_features() {
 
   // Kyber Intrinsics
   // Currently we only have them for AVX512
-#ifdef _LP64
   if (supports_evex() && supports_avx512bw()) {
       if (FLAG_IS_DEFAULT(UseKyberIntrinsics)) {
           UseKyberIntrinsics = true;
       }
   } else
-#endif
   if (UseKyberIntrinsics) {
      warning("Intrinsics for ML-KEM are not available on this CPU.");
      FLAG_SET_DEFAULT(UseKyberIntrinsics, false);
   }
 
   // Dilithium Intrinsics
-  // Currently we only have them for AVX512
-  if (supports_evex() && supports_avx512bw()) {
+  if (UseAVX > 1) {
       if (FLAG_IS_DEFAULT(UseDilithiumIntrinsics)) {
           UseDilithiumIntrinsics = true;
       }
@@ -1481,16 +1489,6 @@ void VM_Version::get_processor_features() {
           UseUnalignedLoadStores = true; // use movdqu on newest ZX cpus
         }
       }
-      if (supports_sse4_2()) {
-        if (FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
-          FLAG_SET_DEFAULT(UseSSE42Intrinsics, true);
-        }
-      } else {
-        if (UseSSE42Intrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
-          warning("SSE4.2 intrinsics require SSE4.2 instructions or higher. Intrinsics will be disabled.");
-        }
-        FLAG_SET_DEFAULT(UseSSE42Intrinsics, false);
-      }
     }
 
     if (FLAG_IS_DEFAULT(AllocatePrefetchInstr) && supports_3dnow_prefetch()) {
@@ -1534,16 +1532,6 @@ void VM_Version::get_processor_features() {
       } else {
         UseXmmI2D = false;
       }
-    }
-    if (supports_sse4_2()) {
-      if (FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
-        FLAG_SET_DEFAULT(UseSSE42Intrinsics, true);
-      }
-    } else {
-      if (UseSSE42Intrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
-        warning("SSE4.2 intrinsics require SSE4.2 instructions or higher. Intrinsics will be disabled.");
-      }
-      FLAG_SET_DEFAULT(UseSSE42Intrinsics, false);
     }
 
     // some defaults for AMD family 15h
@@ -1633,16 +1621,6 @@ void VM_Version::get_processor_features() {
           UseUnalignedLoadStores = true; // use movdqu on newest Intel cpus
         }
       }
-      if (supports_sse4_2()) {
-        if (FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
-          FLAG_SET_DEFAULT(UseSSE42Intrinsics, true);
-        }
-      } else {
-        if (UseSSE42Intrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
-          warning("SSE4.2 intrinsics require SSE4.2 instructions or higher. Intrinsics will be disabled.");
-        }
-        FLAG_SET_DEFAULT(UseSSE42Intrinsics, false);
-      }
     }
     if (is_atom_family() || is_knights_family()) {
 #ifdef COMPILER2
@@ -1698,12 +1676,21 @@ void VM_Version::get_processor_features() {
 
 #ifdef COMPILER2
   if (FLAG_IS_DEFAULT(OptimizeFill)) {
-    if (MaxVectorSize < 32 || !VM_Version::supports_avx512vlbw()) {
+    if (MaxVectorSize < 32 || (!EnableX86ECoreOpts && !VM_Version::supports_avx512vlbw())) {
       OptimizeFill = false;
     }
   }
 #endif
-
+  if (supports_sse4_2()) {
+    if (FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
+      FLAG_SET_DEFAULT(UseSSE42Intrinsics, true);
+    }
+  } else {
+    if (UseSSE42Intrinsics && !FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
+      warning("SSE4.2 intrinsics require SSE4.2 instructions or higher. Intrinsics will be disabled.");
+    }
+    FLAG_SET_DEFAULT(UseSSE42Intrinsics, false);
+  }
   if (UseSSE42Intrinsics) {
     if (FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic)) {
       UseVectorizedMismatchIntrinsic = true;
@@ -2105,13 +2092,17 @@ bool VM_Version::is_intel_cascade_lake() {
   return is_intel_skylake() && _stepping >= 5;
 }
 
+bool VM_Version::is_intel_darkmont() {
+  return is_intel() && is_intel_server_family() && (_model == 0xCC || _model == 0xDD);
+}
+
 // avx3_threshold() sets the threshold at which 64-byte instructions are used
 // for implementing the array copy and clear operations.
 // The Intel platforms that supports the serialize instruction
 // has improved implementation of 64-byte load/stores and so the default
 // threshold is set to 0 for these platforms.
 int VM_Version::avx3_threshold() {
-  return (is_intel_family_core() &&
+  return (is_intel_server_family() &&
           supports_serialize() &&
           FLAG_IS_DEFAULT(AVX3Threshold)) ? 0 : AVX3Threshold;
 }
@@ -2139,6 +2130,8 @@ void VM_Version::initialize() {
                                      g.generate_detect_virt());
   clear_apx_test_state_stub = CAST_TO_FN_PTR(clear_apx_test_state_t,
                                      g.clear_apx_test_state());
+  getCPUIDBrandString_stub = CAST_TO_FN_PTR(getCPUIDBrandString_stub_t,
+                                     g.generate_getCPUIDBrandString());
   get_processor_features();
 
   Assembler::precompute_instructions();
@@ -2194,15 +2187,6 @@ typedef enum {
    HTT_FLAG     = 0x10000000,
    TM_FLAG      = 0x20000000
 } FeatureEdxFlag;
-
-static BufferBlob* cpuid_brand_string_stub_blob;
-static const int   cpuid_brand_string_stub_size = 550;
-
-extern "C" {
-  typedef void (*getCPUIDBrandString_stub_t)(void*);
-}
-
-static getCPUIDBrandString_stub_t getCPUIDBrandString_stub = nullptr;
 
 // VM_Version statics
 enum {
@@ -2496,19 +2480,6 @@ const char* const _feature_extended_ecx_id[] = {
   ""
 };
 
-void VM_Version::initialize_tsc(void) {
-  ResourceMark rm;
-
-  cpuid_brand_string_stub_blob = BufferBlob::create("getCPUIDBrandString_stub", cpuid_brand_string_stub_size);
-  if (cpuid_brand_string_stub_blob == nullptr) {
-    vm_exit_during_initialization("Unable to allocate getCPUIDBrandString_stub");
-  }
-  CodeBuffer c(cpuid_brand_string_stub_blob);
-  VM_Version_StubGenerator g(&c);
-  getCPUIDBrandString_stub = CAST_TO_FN_PTR(getCPUIDBrandString_stub_t,
-                                   g.generate_getCPUIDBrandString());
-}
-
 const char* VM_Version::cpu_model_description(void) {
   uint32_t cpu_family = extended_cpu_family();
   uint32_t cpu_model = extended_cpu_model();
@@ -2597,7 +2568,12 @@ void VM_Version::resolve_cpu_information_details(void) {
   _no_of_threads = os::processor_count();
 
   // find out number of threads per cpu package
-  int threads_per_package = threads_per_core() * cores_per_cpu();
+  int threads_per_package = _cpuid_info.tpl_cpuidB1_ebx.bits.logical_cpus;
+  if (threads_per_package == 0) {
+    // Fallback code to avoid div by zero in subsequent code.
+    // CPUID 0Bh (ECX = 1) might return 0 on older AMD processor (EPYC 7763 at least)
+    threads_per_package = threads_per_core() * cores_per_cpu();
+  }
 
   // use amount of threads visible to the process in order to guess number of sockets
   _no_of_sockets = _no_of_threads / threads_per_package;
@@ -2749,6 +2725,10 @@ size_t VM_Version::cpu_write_support_string(char* const buf, size_t buf_len) {
 
   if (supports_tscinv_bit()) {
       WRITE_TO_BUF("Invariant TSC");
+  }
+
+  if (supports_hybrid()) {
+      WRITE_TO_BUF("Hybrid Architecture");
   }
 
   return written;
@@ -2936,7 +2916,8 @@ VM_Version::VM_Features VM_Version::CpuidInfo::feature_flags() const {
   if (std_cpuid1_ecx.bits.popcnt != 0)
     vm_features.set_feature(CPU_POPCNT);
   if (sefsl1_cpuid7_edx.bits.apx_f != 0 &&
-      xem_xcr0_eax.bits.apx_f != 0) {
+      xem_xcr0_eax.bits.apx_f != 0 &&
+      std_cpuid29_ebx.bits.apx_nci_ndd_nf != 0) {
     vm_features.set_feature(CPU_APX_F);
   }
   if (std_cpuid1_ecx.bits.avx != 0 &&
@@ -3071,6 +3052,8 @@ VM_Version::VM_Features VM_Version::CpuidInfo::feature_flags() const {
   if (is_intel()) {
     if (sef_cpuid7_edx.bits.serialize != 0)
       vm_features.set_feature(CPU_SERIALIZE);
+    if (sef_cpuid7_edx.bits.hybrid != 0)
+      vm_features.set_feature(CPU_HYBRID);
     if (_cpuid_info.sef_cpuid7_edx.bits.avx512_fp16 != 0)
       vm_features.set_feature(CPU_AVX512_FP16);
   }
@@ -3151,17 +3134,11 @@ bool VM_Version::os_supports_apx_egprs() {
   if (!supports_apx_f()) {
     return false;
   }
-  // Enable APX support for product builds after
-  // completion of planned features listed in JDK-8329030.
-#if !defined(PRODUCT)
   if (_cpuid_info.apx_save[0] != egpr_test_value() ||
       _cpuid_info.apx_save[1] != egpr_test_value()) {
     return false;
   }
   return true;
-#else
-  return false;
-#endif
 }
 
 uint VM_Version::cores_per_cpu() {
@@ -3176,7 +3153,10 @@ uint VM_Version::cores_per_cpu() {
       result = (_cpuid_info.dcp_cpuid4_eax.bits.cores_per_cpu + 1);
     }
   } else if (is_amd_family()) {
-    result = (_cpuid_info.ext_cpuid8_ecx.bits.cores_per_cpu + 1);
+    result = _cpuid_info.ext_cpuid8_ecx.bits.threads_per_cpu + 1;
+    if (cpu_family() >= 0x17) { // Zen or later
+      result /= _cpuid_info.ext_cpuid1E_ebx.bits.threads_per_core + 1;
+    }
   } else if (is_zx()) {
     bool supports_topology = supports_processor_topology();
     if (supports_topology) {
@@ -3296,13 +3276,15 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
   return true;
 }
 
-void VM_Version::insert_features_names(VM_Version::VM_Features features, char* buf, size_t buflen) {
-  for (int i = 0; i < MAX_CPU_FEATURES; i++) {
-    if (features.supports_feature((VM_Version::Feature_Flag)i)) {
-      int res = jio_snprintf(buf, buflen, ", %s", _features_names[i]);
-      assert(res > 0, "not enough temporary space allocated");
-      buf += res;
-      buflen -= res;
+void VM_Version::insert_features_names(VM_Version::VM_Features features, stringStream& ss) {
+  int i = 0;
+  ss.join([&]() {
+    while (i < MAX_CPU_FEATURES) {
+      if (_features.supports_feature((VM_Version::Feature_Flag)i)) {
+        return _features_names[i++];
+      }
+      i += 1;
     }
-  }
+    return (const char*)nullptr;
+  }, ", ");
 }

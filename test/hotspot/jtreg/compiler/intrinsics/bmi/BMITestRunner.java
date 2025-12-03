@@ -122,10 +122,11 @@ public class BMITestRunner {
         List<String> vmOpts = new LinkedList<String>();
 
         Collections.addAll(vmOpts, additionalVMOpts);
-        // Hide timestamps from warnings (e.g. due to potential CDS
+        // Hide timestamps from warnings (e.g. due to potential AOT
         // saved/runtime state mismatch), to avoid false positives when
         // comparing output across runs.
         vmOpts.add("-Xlog:all=warning:stdout:level,tags");
+        vmOpts.add("-Xlog:aot=off");
 
         //setup mode-specific options
         switch (testVMMode) {

@@ -125,6 +125,12 @@ public class TestIRMatching {
                 GoodFailOnConstraint.create(AllocInstance.class, "allocInstance()", 10)
         );
 
+        runCheck(
+                BadFailOnConstraint.create(AllocInstance.class, "allocNested()", 1),
+                BadFailOnConstraint.create(AllocInstance.class, "allocNested()", 2),
+                BadFailOnConstraint.create(AllocInstance.class, "allocNested()", 3)
+        );
+
         runCheck(BadFailOnConstraint.create(AllocArray.class, "allocArray()", 1),
                  BadFailOnConstraint.create(AllocArray.class, "allocArray()", 2),
                  GoodFailOnConstraint.create(AllocArray.class, "allocArray()", 3),
@@ -249,9 +255,9 @@ public class TestIRMatching {
         } else {
             cmp = "cmp";
         }
-        runCheck(BadFailOnConstraint.create(CheckCastArray.class, "array(java.lang.Object[])", 1, cmp, "precise"),
-                 BadFailOnConstraint.create(CheckCastArray.class, "array(java.lang.Object[])", 2, 1,cmp, "precise", "MyClass"),
-                 BadFailOnConstraint.create(CheckCastArray.class, "array(java.lang.Object[])", 2, 2,cmp, "precise", "ir_framework/tests/MyClass"),
+        runCheck(BadFailOnConstraint.create(CheckCastArray.class, "array(java.lang.Object[])", 1, cmp, "Constant"),
+                 BadFailOnConstraint.create(CheckCastArray.class, "array(java.lang.Object[])", 2, 1,cmp, "Constant", "MyClass"),
+                 BadFailOnConstraint.create(CheckCastArray.class, "array(java.lang.Object[])", 2, 2,cmp, "Constant", "ir_framework/tests/MyClass"),
                  GoodFailOnConstraint.create(CheckCastArray.class, "array(java.lang.Object[])", 3),
                  Platform.isS390x() ? // There is no checkcast_arraycopy stub for C2 on s390
                      GoodFailOnConstraint.create(CheckCastArray.class, "arrayCopy(java.lang.Object[],java.lang.Class)", 1)
@@ -963,6 +969,13 @@ class AllocInstance {
     public void allocInstance() {
         myClass = new MyClass();
     }
+
+    static class Nested {}
+    @Test
+    @IR(failOn = {IRNode.ALLOC_OF, "Nested"})
+    @IR(failOn = {IRNode.ALLOC_OF, "AllocInstance\\$Nested"})
+    @IR(failOn = {IRNode.ALLOC_OF, "AllocInst\\w+\\$Nested"})
+    public Nested allocNested() { return new Nested(); }
 }
 
 class AllocArray {
@@ -1473,7 +1486,7 @@ class CompilationOutputOfFails {
 
     @Test
     @IR(failOn = IRNode.ALLOC)
-    @IR(counts = {IRNode.COUNTED_LOOP, "1"}) // not fail
+    @IR(counts = {IRNode.COUNTED_LOOP, ">1"}) // not fail
     public void macro3() {
         for (int i = 0; i < 100; i++) {
             obj = new Object();

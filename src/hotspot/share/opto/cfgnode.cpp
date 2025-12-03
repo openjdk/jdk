@@ -35,8 +35,8 @@
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
 #include "opto/movenode.hpp"
-#include "opto/narrowptrnode.hpp"
 #include "opto/mulnode.hpp"
+#include "opto/narrowptrnode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/regmask.hpp"
@@ -326,7 +326,7 @@ bool RegionNode::is_unreachable_region(const PhaseGVN* phase) {
 
   // First, cut the simple case of fallthrough region when NONE of
   // region's phis references itself directly or through a data node.
-  if (is_possible_unsafe_loop(phase)) {
+  if (is_possible_unsafe_loop()) {
     // If we have a possible unsafe loop, check if the region node is actually unreachable from root.
     if (is_unreachable_from_root(phase)) {
       _is_unreachable_region = true;
@@ -336,7 +336,7 @@ bool RegionNode::is_unreachable_region(const PhaseGVN* phase) {
   return false;
 }
 
-bool RegionNode::is_possible_unsafe_loop(const PhaseGVN* phase) const {
+bool RegionNode::is_possible_unsafe_loop() const {
   uint max = outcnt();
   uint i;
   for (i = 0; i < max; i++) {
@@ -634,8 +634,8 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   } else if (can_reshape && cnt == 1) {
     // Is it dead loop?
-    // If it is LoopNopde it had 2 (+1 itself) inputs and
-    // one of them was cut. The loop is dead if it was EntryContol.
+    // If it is LoopNode it had 2 (+1 itself) inputs and
+    // one of them was cut. The loop is dead if it was EntryControl.
     // Loop node may have only one input because entry path
     // is removed in PhaseIdealLoop::Dominators().
     assert(!this->is_Loop() || cnt_orig <= 3, "Loop node should have 3 or less inputs");
@@ -1014,7 +1014,7 @@ bool RegionNode::optimize_trichotomy(PhaseIterGVN* igvn) {
 }
 
 const RegMask &RegionNode::out_RegMask() const {
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 #ifndef PRODUCT
@@ -1392,7 +1392,7 @@ bool PhiNode::try_clean_memory_phi(PhaseIterGVN* igvn) {
   }
   assert(is_diamond_phi() > 0, "sanity");
   assert(req() == 3, "same as region");
-  const Node* region = in(0);
+  RegionNode* region = in(0)->as_Region();
   for (uint i = 1; i < 3; i++) {
     Node* phi_input = in(i);
     if (phi_input != nullptr && phi_input->is_MergeMem() && region->in(i)->outcnt() == 1) {
@@ -1400,8 +1400,9 @@ bool PhiNode::try_clean_memory_phi(PhaseIterGVN* igvn) {
       MergeMemNode* merge_mem = phi_input->as_MergeMem();
       uint j = 3 - i;
       Node* other_phi_input = in(j);
-      if (other_phi_input != nullptr && other_phi_input == merge_mem->base_memory()) {
+      if (other_phi_input != nullptr && other_phi_input == merge_mem->base_memory() && !is_data_loop(region, phi_input, igvn)) {
         // merge_mem is a successor memory to other_phi_input, and is not pinned inside the diamond, so push it out.
+        // Only proceed if the transformation doesn't create a data loop
         // This will allow the diamond to collapse completely if there are no other phis left.
         igvn->replace_node(this, merge_mem);
         return true;
@@ -2859,13 +2860,15 @@ bool PhiNode::is_tripcount(BasicType bt) const {
 
 //------------------------------out_RegMask------------------------------------
 const RegMask &PhiNode::in_RegMask(uint i) const {
-  return i ? out_RegMask() : RegMask::Empty;
+  return i ? out_RegMask() : RegMask::EMPTY;
 }
 
 const RegMask &PhiNode::out_RegMask() const {
   uint ideal_reg = _type->ideal_reg();
   assert( ideal_reg != Node::NotAMachineReg, "invalid type at Phi" );
-  if( ideal_reg == 0 ) return RegMask::Empty;
+  if (ideal_reg == 0) {
+    return RegMask::EMPTY;
+  }
   assert(ideal_reg != Op_RegFlags, "flags register is not spillable");
   return *(Compile::current()->matcher()->idealreg2spillmask[ideal_reg]);
 }
@@ -2892,22 +2895,22 @@ Node* GotoNode::Identity(PhaseGVN* phase) {
 }
 
 const RegMask &GotoNode::out_RegMask() const {
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 //=============================================================================
 const RegMask &JumpNode::out_RegMask() const {
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 //=============================================================================
 const RegMask &JProjNode::out_RegMask() const {
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 //=============================================================================
 const RegMask &CProjNode::out_RegMask() const {
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 

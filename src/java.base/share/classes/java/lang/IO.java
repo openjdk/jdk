@@ -32,6 +32,8 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
+import jdk.internal.util.StaticProperty;
+
 /**
  * A collection of static methods that provide convenient access to {@link System#in}
  * and {@link System#out} for line-oriented input and output.
@@ -187,7 +189,7 @@ public final class IO {
      */
     static synchronized BufferedReader reader() {
         if (br == null) {
-            String enc = System.getProperty("stdin.encoding", "");
+            String enc = StaticProperty.stdinEncoding();
             Charset cs = Charset.forName(enc, StandardCharsets.UTF_8);
             br = new BufferedReader(new InputStreamReader(System.in, cs));
         }

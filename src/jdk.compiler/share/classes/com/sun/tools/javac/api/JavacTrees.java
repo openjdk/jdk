@@ -360,9 +360,14 @@ public class JavacTrees extends DocTrees {
                 Log.DeferredDiagnosticHandler deferredDiagnosticHandler = log.new DeferredDiagnosticHandler();
                 try {
                     Env<AttrContext> env = getAttrContext(path.getTreePath());
-                    Type t = attr.attribType(dcReference.qualifierExpression, env);
-                    if (t != null && !t.isErroneous()) {
-                        return t;
+                    JavaFileObject prevSource = log.useSource(env.toplevel.sourcefile);
+                    try {
+                        Type t = attr.attribType(dcReference.qualifierExpression, env);
+                        if (t != null && !t.isErroneous()) {
+                            return t;
+                        }
+                    } finally {
+                        log.useSource(prevSource);
                     }
                 } catch (Abort e) { // may be thrown by Check.completionError in case of bad class file
                     return null;
@@ -388,6 +393,7 @@ public class JavacTrees extends DocTrees {
             return null;
         }
         Log.DeferredDiagnosticHandler deferredDiagnosticHandler = log.new DeferredDiagnosticHandler();
+        JavaFileObject prevSource = log.useSource(env.toplevel.sourcefile);
         try {
             final TypeSymbol tsym;
             final Name memberName;
@@ -407,7 +413,18 @@ public class JavacTrees extends DocTrees {
             }
 
             if (ref.qualifierExpression == null) {
-                tsym = env.enclClass.sym;
+                // Resolve target for unqualified reference based on declaring element
+                tsym = switch (path.getLeaf().getKind()) {
+                    case PACKAGE -> env.toplevel.packge;
+                    case MODULE -> env.toplevel.modle;
+                    case COMPILATION_UNIT ->
+                        // Treat unqualified reference in legacy package.html as package reference.
+                        // Unqualified references in doc-files only need to work locally, so null is fine.
+                        path.getCompilationUnit().getSourceFile().isNameCompatible("package", JavaFileObject.Kind.HTML)
+                                ? env.toplevel.packge
+                                : null;
+                    default -> env.enclClass.sym;  // Class or class member reference
+                };
                 memberName = (Name) ref.memberName;
             } else {
                 // Check if qualifierExpression is a type or package, using the methods javac provides.
@@ -464,8 +481,15 @@ public class JavacTrees extends DocTrees {
                 }
             }
 
-            if (memberName == null)
+            if (memberName == null) {
                 return tsym;
+            } else if (tsym == null || tsym.getKind() == ElementKind.PACKAGE || tsym.getKind() == ElementKind.MODULE) {
+                return null;  // Non-null member name in non-class context
+            }
+
+            if (tsym.type.isPrimitive()) {
+                return null;
+            }
 
             final List<Type> paramTypes;
             if (ref.paramTypes == null)
@@ -509,6 +533,7 @@ public class JavacTrees extends DocTrees {
         } catch (Abort e) { // may be thrown by Check.completionError in case of bad class file
             return null;
         } finally {
+            log.useSource(prevSource);
             log.popDiagnosticHandler(deferredDiagnosticHandler);
         }
     }
@@ -1324,7 +1349,7 @@ public class JavacTrees extends DocTrees {
             switch (kind) {
                 case ERROR ->             log.error(DiagnosticFlag.API, pos, Errors.ProcMessager(msg.toString()));
                 case WARNING ->           log.warning(pos, Warnings.ProcMessager(msg.toString()));
-                case MANDATORY_WARNING -> log.mandatoryWarning(pos, Warnings.ProcMessager(msg.toString()));
+                case MANDATORY_WARNING -> log.warning(DiagnosticFlag.MANDATORY, pos, Warnings.ProcMessager(msg.toString()));
                 default ->                log.note(pos, Notes.ProcMessager(msg.toString()));
             }
         } finally {

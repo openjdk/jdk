@@ -26,6 +26,7 @@ package jdk.jfr.api.consumer.streaming;
 import java.util.Random;
 
 import jdk.jfr.Event;
+import jdk.jfr.StackTrace;
 import jdk.jfr.consumer.RecordingStream;
 
 /**
@@ -38,6 +39,7 @@ import jdk.jfr.consumer.RecordingStream;
  */
 public class TestFilledChunks {
 
+    @StackTrace(false)
     static class FillEvent extends Event {
         String message;
         int value;
