@@ -174,8 +174,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     public static final int SMALLEST_MAXIMUM_DATAGRAM_SIZE =
             QuicClient.SMALLEST_MAXIMUM_DATAGRAM_SIZE;
 
-    // The default value for the max_idle_timeout transport parameter that a QuicConnectionImpl
-    // will send to its peer, if no value is provided by the higher level protocol.
+    // The default value for the Quic maxInitialTimeout, in seconds. Will be clamped to [1, Integer.MAX_vALUE]
     public static final int DEFAULT_MAX_INITIAL_TIMEOUT = Math.clamp(
             Utils.getIntegerProperty("jdk.httpclient.quic.maxInitialTimeout", 30),
             1, Integer.MAX_VALUE);
