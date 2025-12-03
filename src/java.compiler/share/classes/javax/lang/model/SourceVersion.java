@@ -86,7 +86,8 @@ public enum SourceVersion {
      *      (primitive Types in Patterns, instanceof, and switch in
      *      third preview)
      *  26: no changes (primitive Types in Patterns, instanceof, and
-     *      switch in in fourth preview)
+     *      switch in fourth preview)
+     *  27: tbd
      */
 
     /**
