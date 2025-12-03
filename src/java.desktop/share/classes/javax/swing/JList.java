@@ -2498,7 +2498,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      * Returns the distance to scroll to expose the next or previous
      * row (for vertical scrolling) or column (for horizontal scrolling).
      * The scrolling distance returned will be positive,
-     * unless scrolling location for the specified parameters is already
+     * unless scrolling for the specified parameters is already
      * at its furthest extent, in which case it will return zero.
      * <p>
      * For horizontal scrolling, if the layout orientation is {@code VERTICAL},
