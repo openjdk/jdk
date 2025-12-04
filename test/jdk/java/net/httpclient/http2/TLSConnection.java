@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import jdk.httpclient.test.lib.http2.Http2Handler;
 
 /*
  * @test
- * @bug 8150769 8157107
+ * @bug 8150769 8157107 8371887
  * @library /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer
  * @summary Checks that SSL parameters can be set for HTTP/2 connection
@@ -134,6 +134,12 @@ public class TLSConnection {
             success &= checkProtocol(handler.getSSLSession(), "TLSv1.2");
             success &= checkCipherSuite(handler.getSSLSession(),
                     "TLS_RSA_WITH_AES_128_CBC_SHA");
+
+            success &= expectSuccess(
+                    "---\nTest #5: empty SSL parameters, "
+                            + "expect successful connection",
+                    () -> connect(uriString, new SSLParameters()));
+            success &= checkProtocol(handler.getSSLSession(), expectedTLSVersion(null));
 
             if (success) {
                 System.out.println("Test passed");
