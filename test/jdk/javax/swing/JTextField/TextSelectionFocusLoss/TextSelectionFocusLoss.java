@@ -35,7 +35,6 @@ import jdk.test.lib.Platform;
 /*
  * @test
  * @key headful
- * @requires (os.family == "windows")
  * @bug 8319880
  * @summary verify that JTextField text selection stop if ended during loss of window focus
  * @library /test/lib
@@ -46,6 +45,8 @@ import jdk.test.lib.Platform;
 public class TextSelectionFocusLoss {
     private static JFrame frame;
     private static JTextField textField;
+    private static Point location;
+    private static Dimension size;
     private static Robot robot;
 
     public static void main(String[] args) throws Exception {
@@ -69,8 +70,10 @@ public class TextSelectionFocusLoss {
 
             robot.delay(500);
 
-            Point location = textField.getLocationOnScreen();
-            Dimension size = textField.getSize();
+            SwingUtilities.invokeAndWait(() -> {
+                 location = textField.getLocationOnScreen();
+                 size = textField.getSize();
+            });
 
             int y = location.y + size.height / 2;
             int startX = location.x + size.width - 30;
@@ -82,17 +85,31 @@ public class TextSelectionFocusLoss {
                 robot.mouseMove(dx, y);
             }
 
-            robot.keyPress(KeyEvent.VK_ALT);
-            robot.keyPress(KeyEvent.VK_TAB);
-            robot.keyRelease(KeyEvent.VK_TAB);
-            robot.keyRelease(KeyEvent.VK_ALT);
+            if (Platform.isOSX()) {
+                robot.keyPress(KeyEvent.VK_META);
+                robot.keyPress(KeyEvent.VK_TAB);
+                robot.keyRelease(KeyEvent.VK_TAB);
+                robot.keyRelease(KeyEvent.VK_META);
+            } else {
+                robot.keyPress(KeyEvent.VK_ALT);
+                robot.keyPress(KeyEvent.VK_TAB);
+                robot.keyRelease(KeyEvent.VK_TAB);
+                robot.keyRelease(KeyEvent.VK_ALT);
+            }
 
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
-            robot.keyPress(KeyEvent.VK_ALT);
-            robot.keyPress(KeyEvent.VK_TAB);
-            robot.keyRelease(KeyEvent.VK_TAB);
-            robot.keyRelease(KeyEvent.VK_ALT);
+            if (Platform.isOSX()) {
+                robot.keyPress(KeyEvent.VK_META);
+                robot.keyPress(KeyEvent.VK_TAB);
+                robot.keyRelease(KeyEvent.VK_TAB);
+                robot.keyRelease(KeyEvent.VK_META);
+            } else {
+                robot.keyPress(KeyEvent.VK_ALT);
+                robot.keyPress(KeyEvent.VK_TAB);
+                robot.keyRelease(KeyEvent.VK_TAB);
+                robot.keyRelease(KeyEvent.VK_ALT);
+            }
 
             String expected = "hihititi";
             typeString(expected);
