@@ -206,8 +206,15 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
      */
     static final class Http1ResponseBodySubscriber<U> extends HttpBodySubscriberWrapper<U> {
         final Http1Exchange<U> exchange;
-        Http1ResponseBodySubscriber(BodySubscriber<U> userSubscriber, Http1Exchange<U> exchange) {
+
+        private final boolean cancelTimerOnTermination;
+
+        Http1ResponseBodySubscriber(
+                BodySubscriber<U> userSubscriber,
+                boolean cancelTimerOnTermination,
+                Http1Exchange<U> exchange) {
             super(userSubscriber);
+            this.cancelTimerOnTermination = cancelTimerOnTermination;
             this.exchange = exchange;
         }
 
@@ -220,6 +227,14 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         protected void unregister() {
             exchange.unregisterResponseSubscriber(this);
         }
+
+        @Override
+        protected void onTermination() {
+            if (cancelTimerOnTermination) {
+                exchange.exchange.multi.cancelTimer();
+            }
+        }
+
     }
 
     @Override
@@ -459,9 +474,10 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
     @Override
     Http1ResponseBodySubscriber<T> createResponseSubscriber(BodyHandler<T> handler, ResponseInfo response) {
         BodySubscriber<T> subscriber = handler.apply(response);
-        Http1ResponseBodySubscriber<T> bs =
-                new Http1ResponseBodySubscriber<T>(subscriber, this);
-        return bs;
+        var cancelTimerOnTermination =
+                cancelTimerOnResponseBodySubscriberTermination(
+                        exchange.request().isWebSocket(), response.statusCode());
+        return new Http1ResponseBodySubscriber<>(subscriber, cancelTimerOnTermination, this);
     }
 
     @Override

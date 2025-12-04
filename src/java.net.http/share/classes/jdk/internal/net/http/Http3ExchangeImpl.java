@@ -554,8 +554,12 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
     }
 
     final class Http3StreamResponseSubscriber<U> extends HttpBodySubscriberWrapper<U> {
-        Http3StreamResponseSubscriber(BodySubscriber<U> subscriber) {
+
+        private final boolean cancelTimerOnTermination;
+
+        Http3StreamResponseSubscriber(BodySubscriber<U> subscriber, boolean cancelTimerOnTermination) {
             super(subscriber);
+            this.cancelTimerOnTermination = cancelTimerOnTermination;
         }
 
         @Override
@@ -566,6 +570,13 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
         @Override
         protected void register() {
             registerResponseSubscriber(this);
+        }
+
+        @Override
+        protected void onTermination() {
+            if (cancelTimerOnTermination) {
+                exchange.multi.cancelTimer();
+            }
         }
 
         @Override
@@ -590,9 +601,10 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
     Http3StreamResponseSubscriber<T> createResponseSubscriber(BodyHandler<T> handler,
                                                               ResponseInfo response) {
         if (debug.on()) debug.log("Creating body subscriber");
-        Http3StreamResponseSubscriber<T> subscriber =
-                new Http3StreamResponseSubscriber<>(handler.apply(response));
-        return subscriber;
+        var cancelTimerOnTermination =
+                cancelTimerOnResponseBodySubscriberTermination(
+                        exchange.request().isWebSocket(), response.statusCode());
+        return new Http3StreamResponseSubscriber<>(handler.apply(response), cancelTimerOnTermination);
     }
 
     @Override

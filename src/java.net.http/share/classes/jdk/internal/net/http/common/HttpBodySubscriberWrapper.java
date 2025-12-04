@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Subscription;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -50,7 +49,6 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
 
     public static final Comparator<HttpBodySubscriberWrapper<?>> COMPARE_BY_ID
             = Comparator.comparing(HttpBodySubscriberWrapper::id);
-
 
     public static final Flow.Subscription NOP = new Flow.Subscription() {
         @Override
@@ -75,7 +73,18 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
         this.userSubscriber = userSubscriber;
     }
 
-    private class SubscriptionWrapper implements Subscription {
+    /**
+     * A callback to be invoked <em>before</em> termination, whether due to the
+     * completion or failure of the subscriber, or cancellation of the
+     * subscription. To be precise, this method is called before
+     * {@link #onComplete()}, {@link #onError(Throwable) onError()}, or
+     * {@link #onCancel()}.
+     */
+    protected void onTermination() {
+        // Do nothing
+    }
+
+    private final class SubscriptionWrapper implements Subscription {
         final Subscription subscription;
         SubscriptionWrapper(Subscription s) {
             this.subscription = Objects.requireNonNull(s);
@@ -92,6 +101,7 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
                     subscription.cancel();
                 } finally {
                     if (markCancelled()) {
+                        onTermination();
                         onCancel();
                     }
                 }
@@ -284,6 +294,7 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
      */
     public final void complete(Throwable t) {
         if (markCompleted()) {
+            onTermination();
             logComplete(t);
             tryUnregister();
             t  = withError = Utils.getCompletionCause(t);
