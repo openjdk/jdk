@@ -122,8 +122,25 @@ public final class VarHandleGuardMethodGenerator {
                         if (direct && handle.vform.methodType_table[ad.type] == ad.symbolicMethodTypeErased) {
                             <RESULT_ERASED>MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);<RETURN_ERASED>
                         } else {
-                            MethodHandle mh = ad.adaptedMethodHandle(handle);
-                            <RETURN>mh.invokeBasic(<LINK_TO_INVOKER_ARGS>);
+                            MethodHandle mh = handle.getMethodHandle(ad.mode);
+                            <RETURN>mh.asType(ad.symbolicMethodTypeInvoker).invokeBasic(<LINK_TO_INVOKER_ARGS>);
+                        }
+                    }""";
+
+    static final String GUARD_METHOD_TEMPLATE_V =
+            """
+                    @ForceInline
+                    @LambdaForm.Compiled
+                    @Hidden
+                    static final <METHOD> throws Throwable {
+                        boolean direct = handle.checkAccessModeThenIsDirect(ad);
+                        if (direct && handle.vform.methodType_table[ad.type] == ad.symbolicMethodTypeErased) {
+                            MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);
+                        } else if (direct && handle.vform.getMethodType_V(ad.type) == ad.symbolicMethodTypeErased) {
+                            MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);
+                        } else {
+                            MethodHandle mh = handle.getMethodHandle(ad.mode);
+                            mh.asType(ad.symbolicMethodTypeInvoker).invokeBasic(<LINK_TO_INVOKER_ARGS>);
                         }
                     }""";
 
@@ -263,7 +280,10 @@ public final class VarHandleGuardMethodGenerator {
                 ? ""
                 : "\n        return ad.returnType.cast(r);";
 
-        return GUARD_METHOD_TEMPLATE.
+        String template = returnType == void.class
+                ? GUARD_METHOD_TEMPLATE_V
+                : GUARD_METHOD_TEMPLATE;
+        return template.
                 replace("<METHOD>", METHOD).
                 replace("<NAME>", NAME).
                 replaceAll("<RETURN>", RETURN).
