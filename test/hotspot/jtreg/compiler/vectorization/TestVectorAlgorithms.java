@@ -61,6 +61,10 @@ public class TestVectorAlgorithms {
     Map<String, Map<String, TestFunction>> testGroups = new HashMap<String, Map<String, TestFunction>>();
 
     int[] aI;
+    int[] rI1;
+    int[] rI2;
+    int[] rI3;
+    int[] rI4;
 
     public static void main(String[] args) {
         TestFramework framework = new TestFramework();
@@ -75,18 +79,30 @@ public class TestVectorAlgorithms {
         //   ensures that each test gets a separate copy, and that when we
         //   capture the modified arrays they are different for every method
         //   and run.
+        //   An alternative to cloning is to use different return arrays for
+        //   different implementations of the same group, e.g. rI1, rI2, ...
         testGroups.put("reduceAddI", new HashMap<String,TestFunction>());
         testGroups.get("reduceAddI").put("reduceAddI_loop",                           () -> { return reduceAddI_loop(aI); });
         testGroups.get("reduceAddI").put("reduceAddI_reassociate",                    () -> { return reduceAddI_reassociate(aI); });
         testGroups.get("reduceAddI").put("reduceAddI_VectorAPI_naive",                () -> { return reduceAddI_VectorAPI_naive(aI); });
         testGroups.get("reduceAddI").put("reduceAddI_VectorAPI_reduction_after_loop", () -> { return reduceAddI_VectorAPI_reduction_after_loop(aI); });
+
+        testGroups.put("scanAddI", new HashMap<String,TestFunction>());
+        testGroups.get("scanAddI").put("scanAddI_loop",                      () -> { return scanAddI_loop(aI, rI1); });
+        testGroups.get("scanAddI").put("scanAddI_loop_reassociate",          () -> { return scanAddI_loop_reassociate(aI, rI2); });
+        testGroups.get("scanAddI").put("scanAddI_VectorAPI_shift_blend_add", () -> { return scanAddI_VectorAPI_shift_blend_add(aI, rI3); });
+        testGroups.get("scanAddI").put("scanAddI_VectorAPI_permute_add",     () -> { return scanAddI_VectorAPI_permute_add(aI, rI4); });
     }
 
     @Warmup(100)
     @Run(test = {"reduceAddI_loop",
                  "reduceAddI_reassociate",
                  "reduceAddI_VectorAPI_naive",
-                 "reduceAddI_VectorAPI_reduction_after_loop"})
+                 "reduceAddI_VectorAPI_reduction_after_loop",
+                 "scanAddI_loop",
+                 "scanAddI_loop_reassociate",
+                 "scanAddI_VectorAPI_shift_blend_add",
+                 "scanAddI_VectorAPI_permute_add"})
     public void runTests(RunInfo info) {
         // Repeat many times, so that we also have multiple iterations for post-warmup to potentially recompile
         int iters = info.isWarmUp() ? 1 : 20;
@@ -95,6 +111,10 @@ public class TestVectorAlgorithms {
             int size = 100_000 + RANDOM.nextInt(10_000);
             aI = new int[size];
             G.fill(INT_GEN, aI);
+            rI1 = new int[size];
+            rI2 = new int[size];
+            rI3 = new int[size];
+            rI4 = new int[size];
 
             // Run all tests
             for (Map.Entry<String, Map<String,TestFunction>> group_entry : testGroups.entrySet()) {
@@ -144,5 +164,25 @@ public class TestVectorAlgorithms {
     @Test
     public int reduceAddI_VectorAPI_reduction_after_loop(int[] a) {
         return VectorAlgorithmsImpl.reduceAddI_VectorAPI_reduction_after_loop(aI);
+    }
+
+    @Test
+    public Object scanAddI_loop(int[] a, int[] r) {
+        return VectorAlgorithmsImpl.scanAddI_loop(a, r);
+    }
+
+    @Test
+    public Object scanAddI_loop_reassociate(int[] a, int[] r) {
+        return VectorAlgorithmsImpl.scanAddI_loop_reassociate(a, r);
+    }
+
+    @Test
+    public Object scanAddI_VectorAPI_shift_blend_add(int[] a, int[] r) {
+        return VectorAlgorithmsImpl.scanAddI_VectorAPI_shift_blend_add(a, r);
+    }
+
+    @Test
+    public Object scanAddI_VectorAPI_permute_add(int[] a, int[] r) {
+        return VectorAlgorithmsImpl.scanAddI_VectorAPI_permute_add(a, r);
     }
 }
