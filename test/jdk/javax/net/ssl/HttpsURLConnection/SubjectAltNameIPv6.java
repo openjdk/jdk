@@ -100,7 +100,7 @@ public class SubjectAltNameIPv6 {
         SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
         OutputStream sslOS = sslSocket.getOutputStream();
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(sslOS));
-        bw.write("HTTP/1.1 200 OK\r\n\r\n\r\n");
+        bw.write("HTTP/1.1 200 OK\r\n\r\n");
         bw.flush();
         sslSocket.close();
     }
@@ -116,10 +116,7 @@ public class SubjectAltNameIPv6 {
         /*
          * Wait for server to get started.
          */
-        boolean ready = serverReady.await(10, TimeUnit.SECONDS);
-        if (!ready) {
-            throw new RuntimeException("Server timed out.");
-        }
+        serverReady.await();
         if (serverException != null) {
             throw new RuntimeException("Server failed to start.", serverException);
         }
