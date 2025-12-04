@@ -1678,7 +1678,7 @@ WB_ENTRY(void, WB_RelocateNMethodFromAddr(JNIEnv* env, jobject o, jlong addr, ji
   CodeBlob* blob = CodeCache::find_blob(address);
   if (blob != nullptr && blob->is_nmethod()) {
     nmethod* code = blob->as_nmethod();
-    if (code->is_in_use()) {
+    if (code->is_in_use() && !code->is_unloading()) {
       CompiledICLocker ic_locker(code);
       code->relocate(static_cast<CodeBlobType>(blob_type));
     }
