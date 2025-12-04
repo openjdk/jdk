@@ -47,7 +47,7 @@ extern Mutex*   JfieldIdCreation_lock;           // a lock on creating JNI stati
 extern Monitor* JNICritical_lock;                // a lock used while synchronizing with threads entering/leaving JNI critical regions
 extern Mutex*   JvmtiThreadState_lock;           // a lock on modification of JVMTI thread data
 extern Monitor* EscapeBarrier_lock;              // a lock to sync reallocating and relocking objects because of JVMTI access
-extern Monitor* JvmtiVTMSTransition_lock;        // a lock for Virtual Thread Mount State transition (VTMS transition) management
+extern Monitor* VThreadTransition_lock;          // a lock used when disabling virtual thread transitions
 extern Mutex*   JvmtiVThreadSuspend_lock;        // a lock for virtual threads suspension
 extern Monitor* Heap_lock;                       // a lock on the heap
 #if INCLUDE_PARALLELGC
@@ -81,6 +81,7 @@ extern Monitor* TrainingReplayQueue_lock;        // a lock held when class are a
 extern Monitor* CompileTaskWait_lock;            // a lock held when CompileTasks are waited/notified
 extern Mutex*   CompileStatistics_lock;          // a lock held when updating compilation statistics
 extern Mutex*   DirectivesStack_lock;            // a lock held when mutating the dirstack and ref counting directives
+extern Monitor* AOTHeapLoading_lock;             // a lock used to guard materialization of AOT heap objects
 extern Monitor* Terminator_lock;                 // a lock used to guard termination of the vm
 extern Monitor* InitCompleted_lock;              // a lock used to signal threads waiting on init completed
 extern Monitor* BeforeExit_lock;                 // a lock used to guard cleanups and shutdown hooks

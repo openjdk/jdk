@@ -113,6 +113,7 @@ public:
 class ShenandoahHeapRegionClosure : public StackObj {
 public:
   virtual void heap_region_do(ShenandoahHeapRegion* r) = 0;
+  virtual size_t parallel_region_stride() { return ShenandoahParallelRegionStride; }
   virtual bool is_thread_safe() { return false; }
 };
 
@@ -270,6 +271,7 @@ private:
 public:
 
   inline HeapWord* base() const { return _heap_region.start(); }
+  inline HeapWord* end()  const { return _heap_region.end(); }
 
   inline size_t num_regions() const { return _num_regions; }
   inline bool is_heap_region_special() { return _heap_region_special; }
@@ -692,10 +694,10 @@ public:
                                                Metaspace::MetadataType mdtype) override;
 
   HeapWord* allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) override;
-  size_t tlab_capacity(Thread *thr) const override;
-  size_t unsafe_max_tlab_alloc(Thread *thread) const override;
+  size_t tlab_capacity() const override;
+  size_t unsafe_max_tlab_alloc() const override;
   size_t max_tlab_size() const override;
-  size_t tlab_used(Thread* ignored) const override;
+  size_t tlab_used() const override;
 
   void ensure_parsability(bool retire_labs) override;
 

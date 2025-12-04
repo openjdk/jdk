@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,30 +29,14 @@ package java.sql;
 import java.security.*;
 
 /**
- * A {@code SQLPermission} object contains
- * a name (also referred to as a "target name") but no actions
- * list; there is either a named permission or there is not.
- * The target name is the name of the permission. The
- * naming convention follows the  hierarchical property naming convention.
- * In addition, an asterisk
- * may appear at the end of the name, following a ".", or by itself, to
- * signify a wildcard match. For example: {@code loadLibrary.*}
- * and {@code *} signify a wildcard match,
- * while {@code *loadLibrary} and {@code a*b} do not.
- *
- * @apiNote
- * This permission cannot be used for controlling access to resources
- * as the Security Manager is no longer supported.
+ * This class was only useful in conjunction with the {@link java.lang.SecurityManager},
+ * which is no longer supported. There is no replacement for this class.
  *
  * @since 1.3
- * @see java.security.BasicPermission
- * @see java.security.Permission
- * @see java.security.Permissions
- * @see java.security.PermissionCollection
- * @see java.lang.SecurityManager
  *
+ * @deprecated There is no replacement for this class.
  */
-
+@Deprecated(since="26", forRemoval=true)
 public final class SQLPermission extends BasicPermission {
 
     /**
