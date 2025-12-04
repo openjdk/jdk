@@ -28,6 +28,8 @@
 #include "jfr/leakprofiler/chains/jfrbitset.hpp"
 #include "jfr/leakprofiler/utilities/unifiedOopRef.hpp"
 #include "memory/iterator.hpp"
+#include "nmt/memTag.hpp"
+#include "utilities/stack.hpp"
 
 class Edge;
 class EdgeStore;
@@ -47,10 +49,13 @@ class DFSClosure : public BasicOopIterateClosure {
   size_t _depth;
   bool _ignore_root_set;
 
+  struct ProbeStackItem { UnifiedOopRef r; size_t d; };
+  Stack<ProbeStackItem, mtTracing> _probe_stack;
+
   DFSClosure(EdgeStore* edge_store, JFRBitSet* mark_bits, const Edge* start_edge);
 
   void add_chain();
-  void closure_impl(UnifiedOopRef reference, const oop pointee);
+  void drain_probe_stack();
 
  public:
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS_EXCEPT_REFERENT; }
