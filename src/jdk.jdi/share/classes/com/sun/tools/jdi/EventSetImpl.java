@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import com.sun.jdi.InternalException;
 import com.sun.jdi.Locatable;
 import com.sun.jdi.Location;
 import com.sun.jdi.Method;
+import com.sun.jdi.ObjectCollectedException;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.ThreadReference;
@@ -668,7 +669,10 @@ public class EventSetImpl extends ArrayList<Event> implements EventSet {
                 try {
                     vm.printTrace("Event: " + evt);
                 } catch (VMDisconnectedException ee) {
-                    // ignore - see bug 6502716
+                    // Ignore. See bug 6502716
+                } catch (ObjectCollectedException oce) {
+                    // Ignore. See bug 8373102. Can happen with SUSPEND_NONE events.
+                    vm.printTrace("Event: <got ObjectCollectedException");
                 }
             }
 
