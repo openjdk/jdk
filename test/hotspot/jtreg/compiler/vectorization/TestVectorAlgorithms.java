@@ -31,13 +31,12 @@
  * @run driver ${test.main.class}
  */
 
-package compiler.loopopts.superword;
+package compiler.vectorization;
 
 import java.util.Map;
 import java.util.HashMap;
 import jdk.test.lib.Utils;
 import java.util.Random;
-import jdk.incubator.vector.*;
 
 import compiler.lib.ir_framework.*;
 import compiler.lib.generators.*;
@@ -55,8 +54,6 @@ public class TestVectorAlgorithms {
     private static final Random RANDOM = Utils.getRandomInstance();
     private static final RestrictableGenerator<Integer> INT_GEN = Generators.G.ints();
 
-    private static final VectorSpecies<Integer> SPECIES_I = IntVector.SPECIES_PREFERRED;
-
     interface TestFunction {
         Object run();
     }
@@ -67,7 +64,7 @@ public class TestVectorAlgorithms {
 
     public static void main(String[] args) {
         TestFramework framework = new TestFramework();
-        framework.addFlags("--add-modules=jdk.incubator.vector");
+        framework.addFlags("--add-modules=jdk.incubator.vector", "-XX:CompileCommand=inline,*VectorAlgorithmsImpl::*");
         framework.start();
     }
 
@@ -131,60 +128,21 @@ public class TestVectorAlgorithms {
                   IRNode.ADD_VI,           "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     public int reduceAddI_loop(int[] a) {
-        int sum = 0;
-        for (int i = 0; i < a.length; i++) {
-            // Relying on simple reduction loop should vectorize since JDK26.
-            sum += a[i];
-        }
-        return sum;
+        return VectorAlgorithmsImpl.reduceAddI_loop(a);
     }
 
     @Test
     public int reduceAddI_reassociate(int[] a) {
-        int sum = 0;
-        int i;
-        for (i = 0; i < a.length - 3; i+=4) {
-            // Unroll 4x, reassociate inside.
-            sum += a[i] + a[i + 1] + a[i + 2] + a[i + 3];
-        }
-        for (; i < a.length; i++) {
-            // Tail
-            sum += a[i];
-        }
-        return sum;
+        return VectorAlgorithmsImpl.reduceAddI_reassociate(a);
     }
 
     @Test
     public int reduceAddI_VectorAPI_naive(int[] a) {
-        var sum = 0;
-        int i;
-        for (i = 0; i < SPECIES_I.loopBound(a.length); i += SPECIES_I.length()) {
-            IntVector v = IntVector.fromArray(SPECIES_I, a, i);
-            // reduceLanes in loop is better than scalar performance, but still
-            // relatively slow.
-            sum += v.reduceLanes(VectorOperators.ADD);
-        }
-        for (; i < a.length; i++) {
-            sum += a[i];
-        }
-        return sum;
+        return VectorAlgorithmsImpl.reduceAddI_VectorAPI_naive(aI);
     }
 
     @Test
     public int reduceAddI_VectorAPI_reduction_after_loop(int[] a) {
-        var acc = IntVector.broadcast(SPECIES_I, 0);
-        int i;
-        for (i = 0; i < SPECIES_I.loopBound(a.length); i += SPECIES_I.length()) {
-            IntVector v = IntVector.fromArray(SPECIES_I, a, i);
-            // Element-wide addition into a vector of partial sums is much faster.
-            // Now, we only need to do a reduceLanes after the loop.
-            // This works because int-addition is associative and commutative.
-            acc = acc.add(v);
-        }
-        int sum = acc.reduceLanes(VectorOperators.ADD);
-        for (; i < a.length; i++) {
-            sum += a[i];
-        }
-        return sum;
+        return VectorAlgorithmsImpl.reduceAddI_VectorAPI_reduction_after_loop(aI);
     }
 }
