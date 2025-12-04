@@ -325,8 +325,17 @@ class Http1Response<T> {
         this.return2Cache = return2Cache;
         final BodySubscriber<U> subscriber = p;
 
-
         final CompletableFuture<U> cf = new MinimalFuture<>();
+
+        Consumer<Throwable> errorNotifier = error -> {
+            try {
+                subscriber.onError(error);
+                cf.completeExceptionally(error);
+            } finally {
+                asyncReceiver.setRetryOnError(false);
+                asyncReceiver.onReadError(error);
+            }
+        };
 
         // Read the content length
         long clen;
@@ -334,7 +343,8 @@ class Http1Response<T> {
             long clen0 = readContentLength(headers, "", -1);
             clen = fixupContentLen(clen0);
         } catch (ProtocolException pe) {
-            cf.completeExceptionally(pe);
+            errorNotifier.accept(pe);
+            connection.close(pe);
             return cf;
         }
 
@@ -422,12 +432,7 @@ class Http1Response<T> {
             }
         });
 
-        ResponseSubscribers.getBodyAsync(executor, p, cf, (t) -> {
-            subscriber.onError(t);
-            cf.completeExceptionally(t);
-            asyncReceiver.setRetryOnError(false);
-            asyncReceiver.onReadError(t);
-        });
+        ResponseSubscribers.getBodyAsync(executor, p, cf, errorNotifier);
 
         return cf.whenComplete((s,t) -> {
             if (t != null) {
