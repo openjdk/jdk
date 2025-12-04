@@ -91,10 +91,6 @@ void DFSClosure::drain_probe_stack() {
     const oop pointee = reference.dereference();
     assert(pointee != nullptr, "invariant");
 
-    if (UseNewCode) {
-      tty->print_cr("reference" PTR_FORMAT " pointee " PTR_FORMAT " %zd", psi.r._value, p2i(pointee), psi.d);
-    }
-
     _depth = psi.d;
 
     if (_depth == 0 && _ignore_root_set) {
@@ -124,10 +120,6 @@ void DFSClosure::drain_probe_stack() {
 }
 
 void DFSClosure::add_chain() {
-
-  if (UseNewCode) {
-    tty->print_cr("add_chain %zd", _depth);
-  }
 
   const size_t array_length = _depth + 2;
 
