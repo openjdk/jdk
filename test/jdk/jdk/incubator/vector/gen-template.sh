@@ -90,6 +90,8 @@ unslice_template="Unslice-op"
 unslice1_template="Unslice-bop"
 unslice1_masked_template="Unslice-Masked-bop"
 miscellaneous_template="Miscellaneous"
+mask_binary="Mask-Binary-op"
+mask_unary="Mask-Unary-op"
 
 function replace_variables {
   local filename=$1
@@ -230,7 +232,8 @@ function gen_op_tmpl {
 
   local gen_perf_tests=$generate_perf_tests
   if [[ $template == *"-Broadcast-"* ]] || [[ $template == "Miscellaneous" ]] ||
-     [[ $template == *"Compare-Masked"* ]] || [[ $template == *"Compare-Broadcast"* ]]; then
+     [[ $template == *"Compare-Masked"* ]] || [[ $template == *"Compare-Broadcast"* ]] ||
+     [[ $template == *"Mask-Binary"* ]]; then
     gen_perf_tests=false
   fi
   if [ $gen_perf_tests == true ]; then
@@ -624,6 +627,14 @@ gen_unary_alu_op "REVERSE" "REVERSE_scalar(a)" "BITWISE"
 gen_unary_alu_op "REVERSE_BYTES" "\$Boxtype\$.reverseBytes(a)" "intOrLong"
 gen_unary_alu_op "REVERSE_BYTES" "\$Boxtype\$.reverseBytes(a)" "short"
 gen_unary_alu_op "REVERSE_BYTES" "a" "byte"
+
+# Mask operations
+gen_op_tmpl $mask_binary "and" "a \& b"
+gen_op_tmpl $mask_binary "or" "a | b"
+gen_op_tmpl $mask_binary "xor" "a != b"
+gen_op_tmpl $mask_binary "andNot" "a \& !b"
+gen_op_tmpl $mask_binary "eq" "a == b"
+gen_op_tmpl $mask_unary "not" "!a"
 
 # Miscellaneous Smoke Tests
 gen_op_tmpl $miscellaneous_template "MISC" "" ""

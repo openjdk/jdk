@@ -256,21 +256,6 @@ public class AbstractVectorTest {
         return a;
     }
 
-    interface FBooleanBinOp {
-        boolean apply(boolean a, boolean b);
-    }
-
-    static void assertArraysEquals(boolean[] r, boolean[] a, boolean[] b, FBooleanBinOp f) {
-        int i = 0;
-        try {
-            for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], f.apply(a[i], b[i]));
-            }
-        } catch (AssertionError e) {
-            Assert.assertEquals(r[i], f.apply(a[i], b[i]), "(" + a[i] + ", " + b[i] + ") at index #" + i);
-        }
-    }
-
     // Non-optimized test partial wrap derived from the Spec:
     // Validation function for lane indexes which may be out of the valid range of [0..VLENGTH-1].
     // The index is forced into this range by adding or subtracting a suitable multiple of VLENGTH.

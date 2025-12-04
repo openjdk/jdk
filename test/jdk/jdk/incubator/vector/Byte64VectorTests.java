@@ -393,6 +393,36 @@ public class Byte64VectorTests extends AbstractVectorTest {
         }
     }
 
+    interface FBoolUnOp {
+        boolean apply(boolean a);
+    }
+
+    static void assertArraysEquals(boolean[] r, boolean[] a, FBoolUnOp f) {
+        int i = 0;
+        try {
+            for (; i < a.length; i++) {
+                Assert.assertEquals(r[i], f.apply(a[i]));
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], f.apply(a[i]), "(" + a[i] + ") at index #" + i);
+        }
+    }
+
+    interface FBoolBinOp {
+        boolean apply(boolean a, boolean b);
+    }
+
+    static void assertArraysEquals(boolean[] r, boolean[] a, boolean[] b, FBoolBinOp f) {
+        int i = 0;
+        try {
+            for (; i < a.length; i++) {
+                Assert.assertEquals(r[i], f.apply(a[i], b[i]));
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], f.apply(a[i], b[i]), "(" + a[i] + ", " + b[i] + ") at index #" + i);
+        }
+    }
+
     interface FBinOp {
         byte apply(byte a, byte b);
     }
@@ -1239,7 +1269,7 @@ public class Byte64VectorTests extends AbstractVectorTest {
     }
 
     @DataProvider
-    public Object[][] maskCompareOpProvider() {
+    public Object[][] maskBinaryOpProvider() {
         return BOOLEAN_MASK_COMPARE_GENERATOR_PAIRS.stream().map(List::toArray).
                 toArray(Object[][]::new);
     }
@@ -6397,6 +6427,130 @@ public class Byte64VectorTests extends AbstractVectorTest {
         assertArraysEquals(r, a, mask, Byte64VectorTests::REVERSE_BYTES);
     }
 
+    static boolean band(boolean a, boolean b) {
+        return a & b;
+    }
+
+    @Test(dataProvider = "maskBinaryOpProvider")
+    static void maskandByte64VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                VectorMask av = SPECIES.loadMask(a, i);
+                VectorMask bv = SPECIES.loadMask(b, i);
+                av.and(bv).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, Byte64VectorTests::band);
+    }
+
+    static boolean bor(boolean a, boolean b) {
+        return a | b;
+    }
+
+    @Test(dataProvider = "maskBinaryOpProvider")
+    static void maskorByte64VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                VectorMask av = SPECIES.loadMask(a, i);
+                VectorMask bv = SPECIES.loadMask(b, i);
+                av.or(bv).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, Byte64VectorTests::bor);
+    }
+
+    static boolean bxor(boolean a, boolean b) {
+        return a != b;
+    }
+
+    @Test(dataProvider = "maskBinaryOpProvider")
+    static void maskxorByte64VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                VectorMask av = SPECIES.loadMask(a, i);
+                VectorMask bv = SPECIES.loadMask(b, i);
+                av.xor(bv).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, Byte64VectorTests::bxor);
+    }
+
+    static boolean bandNot(boolean a, boolean b) {
+        return a & !b;
+    }
+
+    @Test(dataProvider = "maskBinaryOpProvider")
+    static void maskandNotByte64VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                VectorMask av = SPECIES.loadMask(a, i);
+                VectorMask bv = SPECIES.loadMask(b, i);
+                av.andNot(bv).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, Byte64VectorTests::bandNot);
+    }
+
+    static boolean beq(boolean a, boolean b) {
+        return a == b;
+    }
+
+    @Test(dataProvider = "maskBinaryOpProvider")
+    static void maskeqByte64VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                VectorMask av = SPECIES.loadMask(a, i);
+                VectorMask bv = SPECIES.loadMask(b, i);
+                av.eq(bv).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, Byte64VectorTests::beq);
+    }
+
+    static boolean unot(boolean a) {
+        return !a;
+    }
+
+    @Test(dataProvider = "maskBinaryOpProvider")
+    static void masknotByte64VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                VectorMask av = SPECIES.loadMask(a, i);
+                av.not().intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, Byte64VectorTests::unot);
+    }
+
     @Test(dataProvider = "byteCompareOpProvider")
     static void ltByte64VectorTestsBroadcastSmokeTest(IntFunction<byte[]> fa, IntFunction<byte[]> fb) {
         byte[] a = fa.apply(SPECIES.length());
@@ -6707,121 +6861,12 @@ public class Byte64VectorTests extends AbstractVectorTest {
         }
     }
 
-    @Test(dataProvider = "maskCompareOpProvider")
-    static void maskEqualsByte64VectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
-        boolean[] a = fa.apply(SPECIES.length());
-        boolean[] b = fb.apply(SPECIES.length());
-
-        for (int i = 0; i < a.length; i += SPECIES.length()) {
-            var av = SPECIES.loadMask(a, i);
-            var bv = SPECIES.loadMask(b, i);
-            boolean equals = av.equals(bv);
-            int to = i + SPECIES.length();
-            Assert.assertEquals(equals, Arrays.equals(a, i, to, b, i, to));
-        }
-    }
-
-    static boolean band(boolean a, boolean b) {
-        return a & b;
-    }
-
-    @Test(dataProvider = "maskCompareOpProvider")
-    static void maskAndByte64VectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
-        boolean[] a = fa.apply(SPECIES.length());
-        boolean[] b = fb.apply(SPECIES.length());
-        boolean[] r = new boolean[a.length];
-
-        for (int i = 0; i < a.length; i += SPECIES.length()) {
-            var av = SPECIES.loadMask(a, i);
-            var bv = SPECIES.loadMask(b, i);
-            var cv = av.and(bv);
-            cv.intoArray(r, i);
-        }
-        assertArraysEquals(r, a, b, Byte64VectorTests::band);
-    }
-
-    static boolean bor(boolean a, boolean b) {
-        return a | b;
-    }
-
-    @Test(dataProvider = "maskCompareOpProvider")
-    static void maskOrByte64VectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
-        boolean[] a = fa.apply(SPECIES.length());
-        boolean[] b = fb.apply(SPECIES.length());
-        boolean[] r = new boolean[a.length];
-
-        for (int i = 0; i < a.length; i += SPECIES.length()) {
-            var av = SPECIES.loadMask(a, i);
-            var bv = SPECIES.loadMask(b, i);
-            var cv = av.or(bv);
-            cv.intoArray(r, i);
-        }
-        assertArraysEquals(r, a, b, Byte64VectorTests::bor);
-    }
-
-    static boolean bxor(boolean a, boolean b) {
-        return a != b;
-    }
-
-    @Test(dataProvider = "maskCompareOpProvider")
-    static void maskXorByte64VectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
-        boolean[] a = fa.apply(SPECIES.length());
-        boolean[] b = fb.apply(SPECIES.length());
-        boolean[] r = new boolean[a.length];
-
-        for (int i = 0; i < a.length; i += SPECIES.length()) {
-            var av = SPECIES.loadMask(a, i);
-            var bv = SPECIES.loadMask(b, i);
-            var cv = av.xor(bv);
-            cv.intoArray(r, i);
-        }
-        assertArraysEquals(r, a, b, Byte64VectorTests::bxor);
-    }
-
-    static boolean bandNot(boolean a, boolean b) {
-        return a & !b;
-    }
-
-    @Test(dataProvider = "maskCompareOpProvider")
-    static void maskAndNotByte64VectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
-        boolean[] a = fa.apply(SPECIES.length());
-        boolean[] b = fb.apply(SPECIES.length());
-        boolean[] r = new boolean[a.length];
-
-        for (int i = 0; i < a.length; i += SPECIES.length()) {
-            var av = SPECIES.loadMask(a, i);
-            var bv = SPECIES.loadMask(b, i);
-            var cv = av.andNot(bv);
-            cv.intoArray(r, i);
-        }
-        assertArraysEquals(r, a, b, Byte64VectorTests::bandNot);
-    }
-
-    static boolean beq(boolean a, boolean b) {
-        return (a == b);
-    }
-
-    @Test(dataProvider = "maskCompareOpProvider")
-    static void maskEqByte64VectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
-        boolean[] a = fa.apply(SPECIES.length());
-        boolean[] b = fb.apply(SPECIES.length());
-        boolean[] r = new boolean[a.length];
-
-        for (int i = 0; i < a.length; i += SPECIES.length()) {
-            var av = SPECIES.loadMask(a, i);
-            var bv = SPECIES.loadMask(b, i);
-            var cv = av.eq(bv);
-            cv.intoArray(r, i);
-        }
-        assertArraysEquals(r, a, b, Byte64VectorTests::beq);
-    }
-
-    @Test(dataProvider = "maskCompareOpProvider")
+    @Test(dataProvider = "maskBinaryOpProvider")
     static void maskEqualsByte64VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
         boolean[] a = fa.apply(SPECIES.length());
         boolean[] b = fb.apply(SPECIES.length());
 
-        for (int ic = 0; ic < INVOC_COUNT * INVOC_COUNT; ic++) {
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 var av = SPECIES.loadMask(a, i);
                 var bv = SPECIES.loadMask(b, i);
@@ -6830,91 +6875,6 @@ public class Byte64VectorTests extends AbstractVectorTest {
                 Assert.assertEquals(equals, Arrays.equals(a, i, to, b, i, to));
             }
         }
-    }
-
-    @Test(dataProvider = "maskCompareOpProvider")
-    static void maskAndByte64VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
-        boolean[] a = fa.apply(SPECIES.length());
-        boolean[] b = fb.apply(SPECIES.length());
-        boolean[] r = new boolean[a.length];
-
-        for (int ic = 0; ic < INVOC_COUNT * INVOC_COUNT; ic++) {
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                var av = SPECIES.loadMask(a, i);
-                var bv = SPECIES.loadMask(b, i);
-                var cv = av.and(bv);
-                cv.intoArray(r, i);
-            }
-        }
-        assertArraysEquals(r, a, b, Byte64VectorTests::band);
-    }
-
-    @Test(dataProvider = "maskCompareOpProvider")
-    static void maskOrByte64VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
-        boolean[] a = fa.apply(SPECIES.length());
-        boolean[] b = fb.apply(SPECIES.length());
-        boolean[] r = new boolean[a.length];
-
-        for (int ic = 0; ic < INVOC_COUNT * INVOC_COUNT; ic++) {
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                var av = SPECIES.loadMask(a, i);
-                var bv = SPECIES.loadMask(b, i);
-                var cv = av.or(bv);
-                cv.intoArray(r, i);
-            }
-        }
-        assertArraysEquals(r, a, b, Byte64VectorTests::bor);
-    }
-
-    @Test(dataProvider = "maskCompareOpProvider")
-    static void maskXorByte64VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
-        boolean[] a = fa.apply(SPECIES.length());
-        boolean[] b = fb.apply(SPECIES.length());
-        boolean[] r = new boolean[a.length];
-
-        for (int ic = 0; ic < INVOC_COUNT * INVOC_COUNT; ic++) {
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                var av = SPECIES.loadMask(a, i);
-                var bv = SPECIES.loadMask(b, i);
-                var cv = av.xor(bv);
-                cv.intoArray(r, i);
-            }
-        }
-        assertArraysEquals(r, a, b, Byte64VectorTests::bxor);
-    }
-
-    @Test(dataProvider = "maskCompareOpProvider")
-    static void maskAndNotByte64VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
-        boolean[] a = fa.apply(SPECIES.length());
-        boolean[] b = fb.apply(SPECIES.length());
-        boolean[] r = new boolean[a.length];
-
-        for (int ic = 0; ic < INVOC_COUNT * INVOC_COUNT; ic++) {
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                var av = SPECIES.loadMask(a, i);
-                var bv = SPECIES.loadMask(b, i);
-                var cv = av.andNot(bv);
-                cv.intoArray(r, i);
-            }
-        }
-        assertArraysEquals(r, a, b, Byte64VectorTests::bandNot);
-    }
-
-    @Test(dataProvider = "maskCompareOpProvider")
-    static void maskEqByte64VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
-        boolean[] a = fa.apply(SPECIES.length());
-        boolean[] b = fb.apply(SPECIES.length());
-        boolean[] r = new boolean[a.length];
-
-        for (int ic = 0; ic < INVOC_COUNT * INVOC_COUNT; ic++) {
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                var av = SPECIES.loadMask(a, i);
-                var bv = SPECIES.loadMask(b, i);
-                var cv = av.eq(bv);
-                cv.intoArray(r, i);
-            }
-        }
-        assertArraysEquals(r, a, b, Byte64VectorTests::beq);
     }
 
     @Test(dataProvider = "maskProvider")
