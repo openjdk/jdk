@@ -41,7 +41,7 @@
   volatile_nonstatic_field(ShenandoahHeapRegion, _state,           ShenandoahHeapRegion::RegionState) \
   nonstatic_field(ShenandoahHeapRegion, _index,                    size_t const)                      \
   nonstatic_field(ShenandoahHeapRegion, _bottom,                   HeapWord* const)                   \
-  nonstatic_field(ShenandoahHeapRegion, _top,                      HeapWord*)                         \
+  volatile_nonstatic_field(ShenandoahHeapRegion, _top,             HeapWord*)                         \
   nonstatic_field(ShenandoahHeapRegion, _end,                      HeapWord* const)                   \
   nonstatic_field(ShenandoahFreeSet, _total_global_used,           size_t)                            \
 

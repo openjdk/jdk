@@ -433,11 +433,11 @@ inline void ShenandoahHeap::set_affiliation(ShenandoahHeapRegion* r, ShenandoahA
 #ifdef ASSERT
   assert_lock_for_affiliation(region_affiliation(r), new_affiliation);
 #endif
-  AtomicAccess::store(_affiliations + r->index(), (uint8_t) new_affiliation);
+  _affiliations[r->index()] = (uint8_t) new_affiliation;
 }
 
 inline ShenandoahAffiliation ShenandoahHeap::region_affiliation(size_t index) const {
-  return (ShenandoahAffiliation) AtomicAccess::load(_affiliations + index);
+  return (ShenandoahAffiliation) _affiliations[index];
 }
 
 inline bool ShenandoahHeap::requires_marking(const void* entry) const {
