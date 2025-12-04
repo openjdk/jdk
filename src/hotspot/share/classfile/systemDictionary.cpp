@@ -1146,17 +1146,6 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
   }
 }
 
-#if INCLUDE_JFR
-void SystemDictionary::post_class_load_event(EventClassLoad* event, const InstanceKlass* k, const ClassLoaderData* init_cld) {
-  assert(event != nullptr, "invariant");
-  assert(k != nullptr, "invariant");
-  event->set_loadedClass(k);
-  event->set_definingClassLoader(k->class_loader_data());
-  event->set_initiatingClassLoader(init_cld);
-  event->commit();
-}
-#endif // INCLUDE_JFR
-
 // This is much more lightweight than SystemDictionary::resolve_or_null
 // - There's only a single Java thread at this point. No need for placeholder.
 // - All supertypes of ik have been loaded
@@ -1216,6 +1205,17 @@ void SystemDictionary::preload_class(Handle class_loader, InstanceKlass* ik, TRA
 }
 
 #endif // INCLUDE_CDS
+
+#if INCLUDE_JFR
+void SystemDictionary::post_class_load_event(EventClassLoad* event, const InstanceKlass* k, const ClassLoaderData* init_cld) {
+  assert(event != nullptr, "invariant");
+  assert(k != nullptr, "invariant");
+  event->set_loadedClass(k);
+  event->set_definingClassLoader(k->class_loader_data());
+  event->set_initiatingClassLoader(init_cld);
+  event->commit();
+}
+#endif // INCLUDE_JFR
 
 InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Handle class_loader, TRAPS) {
 

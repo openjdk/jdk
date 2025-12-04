@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,9 @@ public class ReproducibleJar {
     private static final TimeZone TZ = TimeZone.getDefault();
     private static final boolean DST = TZ.inDaylightTime(new Date());
     private static final String UNIX_2038_ROLLOVER_TIME = "2038-01-19T03:14:07Z";
+    private static final String UNIX_EPOCH_TIME = "1970-01-01T00:00:00Z";
     private static final Instant UNIX_2038_ROLLOVER = Instant.parse(UNIX_2038_ROLLOVER_TIME);
+    private static final Instant UNIX_EPOCH = Instant.parse(UNIX_EPOCH_TIME);
     private static final File DIR_OUTER = new File("outer");
     private static final File DIR_INNER = new File(DIR_OUTER, "inner");
     private static final File FILE_INNER = new File(DIR_INNER, "foo.txt");
@@ -231,12 +233,15 @@ public class ReproducibleJar {
 
         if (Math.abs(now - original) > PRECISION) {
             // If original time is after UNIX 2038 32bit rollover
-            // and the now time is exactly the rollover time, then assume
+            // and the now time is exactly the rollover time or UNIX epoch time, then assume
             // running on a file system that only supports to 2038 (e.g.XFS) and pass test
-            if (FileTime.fromMillis(original).toInstant().isAfter(UNIX_2038_ROLLOVER) &&
-                    FileTime.fromMillis(now).toInstant().equals(UNIX_2038_ROLLOVER)) {
-                System.out.println("Checking file time after Unix 2038 rollover," +
-                        " and extracted file time is " + UNIX_2038_ROLLOVER_TIME + ", " +
+            Instant originalInstant = FileTime.fromMillis(original).toInstant();
+            Instant nowInstant = FileTime.fromMillis(now).toInstant();
+            if (originalInstant.isAfter(UNIX_2038_ROLLOVER) &&
+                (nowInstant.equals(UNIX_2038_ROLLOVER) ||
+                nowInstant.equals(UNIX_EPOCH))) {
+                    System.out.println("Checking file time after Unix 2038 rollover," +
+                        " and extracted file time is " + nowInstant + ", " +
                         " Assuming restricted file system, pass file time check.");
             } else {
                 throw new AssertionError("checkFileTime failed," +

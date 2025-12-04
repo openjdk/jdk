@@ -229,6 +229,11 @@ define SetupLinkerFlags
   # TOOLCHAIN_TYPE plus OPENJDK_TARGET_OS
   ifeq ($$($1_LINK_TIME_OPTIMIZATION), true)
     $1_EXTRA_LDFLAGS += $(LDFLAGS_LTO)
+    # Instruct the ld64 linker not to delete the temporary object file
+    # generated during Link Time Optimization
+    ifeq ($(call isTargetOs, macosx), true)
+      $1_EXTRA_LDFLAGS += -Wl,-object_path_lto,$$($1_OBJECT_DIR)/$$($1_NAME)_lto_helper.o
+    endif
   endif
 
   $1_EXTRA_LDFLAGS += $$($1_LDFLAGS_$(OPENJDK_TARGET_OS_TYPE)) $$($1_LDFLAGS_$(OPENJDK_TARGET_OS)) \
