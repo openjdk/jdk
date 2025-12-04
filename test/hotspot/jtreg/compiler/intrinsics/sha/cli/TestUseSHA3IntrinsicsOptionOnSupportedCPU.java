@@ -28,7 +28,7 @@
  * @summary Verify UseSHA3Intrinsics option processing on supported CPU.
  * @library /test/lib /
  * @requires vm.flagless
- * @requires (os.arch == "aarch64" | os.arch == "x86_64")
+ * @requires (os.arch == "aarch64" | os.arch == "amd64" | os.arch == "x86_64")
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
