@@ -90,10 +90,14 @@ ShenandoahGenerationalHeap::ShenandoahGenerationalHeap(ShenandoahCollectorPolicy
   assert(is_aligned(_max_plab_size, CardTable::card_size_in_words()), "max_plab_size must be aligned");
 }
 
-void ShenandoahGenerationalHeap::post_initialize() {
-  ShenandoahHeap::post_initialize();
+void ShenandoahGenerationalHeap::initialize_generations() {
+  ShenandoahHeap::initialize_generations();
   _young_generation->post_initialize(this);
   _old_generation->post_initialize(this);
+}
+
+void ShenandoahGenerationalHeap::post_initialize() {
+  ShenandoahHeap::post_initialize();
   _age_census = new ShenandoahAgeCensus();
 }
 

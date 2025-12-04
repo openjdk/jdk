@@ -180,6 +180,7 @@ public:
   ShenandoahHeap(ShenandoahCollectorPolicy* policy);
   jint initialize() override;
   void post_initialize() override;
+  virtual void initialize_generations();
   void initialize_mode();
   virtual void initialize_heuristics();
   virtual void post_initialize_heuristics();

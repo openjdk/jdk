@@ -2702,51 +2702,21 @@ void ShenandoahFreeSet::compute_young_and_old_reserves(size_t young_trashed_regi
   shenandoah_assert_heaplocked();
   const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
   ShenandoahOldGeneration* const old_generation = _heap->old_generation();
-#undef KELVIN_VISIBLE
-#ifdef KELVIN_VISIBLE
-  log_info(gc)("old-generation: " PTR_FORMAT, p2i(old_generation));
-#endif
-  size_t old_available = old_generation->available() + old_trashed_regions * region_size_bytes;
+  size_t old_available = old_generation->available();
   size_t old_unaffiliated_regions = old_generation->free_unaffiliated_regions();
-#ifdef KELVIN_VISIBLE
-  log_info(gc)("compute_young_and_old_reserves(young-cset: %zu, old-cset: %zu, has_evac_reserves: %s)",
-               young_cset_regions, old_cset_regions, have_evacuation_reserves? "true": "false");
-  log_info(gc)("old_available: %zu, old_unaffiliated_regions: %zu", old_available, old_unaffiliated_regions);
-#endif
   ShenandoahYoungGeneration* const young_generation = _heap->young_generation();
-#ifdef KELVIN_VISIBLE
-  log_info(gc)("young-generation: " PTR_FORMAT, p2i(young_generation));
-#endif
   size_t young_capacity = young_generation->max_capacity();
   size_t young_unaffiliated_regions = young_generation->free_unaffiliated_regions();
-#ifdef KELVIN_VISIBLE
-  log_info(gc)("young-generation: " PTR_FORMAT, p2i(young_generation));
-  log_info(gc)("young_capacity: %zu, young_unaffiliated: %zu", young_capacity, young_unaffiliated_regions);
-#endif
 
   // Add in the regions we anticipate to be freed by evacuation of the collection set
   old_unaffiliated_regions += old_trashed_regions;
   old_available += old_trashed_regions * region_size_bytes;
   young_unaffiliated_regions += young_trashed_regions;
 
-  assert(young_capacity >= (young_generation->used() + young_generation->get_humongous_waste()),
-         "Young capacity (%zu) must exceed used (%zu) plus humongous waste (%zu)",
-         young_capacity, young_generation->used(), young_generation->get_humongous_waste());
-
-  size_t young_available = young_capacity - (young_generation->used() + young_generation->get_humongous_waste());
-  young_available += young_trashed_regions * region_size_bytes;
-
-  assert(young_available >= young_unaffiliated_regions * region_size_bytes, "sanity");
-  assert(old_available >= old_unaffiliated_regions * region_size_bytes, "sanity");
-
   // Consult old-region balance to make adjustments to current generation capacities and availability.
-
   // The generation region transfers take place after we rebuild.  old_region_balance represents number of regions
   // to transfer from old to young.
   ssize_t old_region_balance = old_generation->get_region_balance();
-#ifdef KELVIN_VISIBLE
-  log_info(gc)("old_region_balance: %zd", old_region_balance);
-#endif
   if (old_region_balance != 0) {
 #ifdef ASSERT
     if (old_region_balance > 0) {
@@ -2762,14 +2732,8 @@ void ShenandoahFreeSet::compute_young_and_old_reserves(size_t young_trashed_regi
     ssize_t xfer_bytes = old_region_balance * checked_cast<ssize_t>(region_size_bytes);
     old_available -= xfer_bytes;
     old_unaffiliated_regions -= old_region_balance;
-    young_available += xfer_bytes;
     young_capacity += xfer_bytes;
     young_unaffiliated_regions += old_region_balance;
-#ifdef KELVIN_VISIBLE
-    log_info(gc)("xfer_bytes: %zd, old_available: %zd, old_unaffiliated_regions: %zu, "
-                 "young_capacity: %zu, young_unaffiliated_regions: %zu",
-                 xfer_bytes, old_available, old_unaffiliated_regions, young_capacity, young_unaffiliated_regions);
-#endif
   }
 
   // All allocations taken from the old collector set are performed by GC, generally using PLABs for both
@@ -2801,10 +2765,6 @@ void ShenandoahFreeSet::compute_young_and_old_reserves(size_t young_trashed_regi
     // Affiliated old-gen regions are already in the OldCollector free set.  Add in the relevant number of
     // unaffiliated regions.
     old_reserve_result = old_available;
-#ifdef KELVIN_VISIBLE
-    log_info(gc)("At end of GC, young_reserve_result: %zu, old_reserve_result: %zu",
-                 young_reserve_result, old_reserve_result);
-#endif
   }
 
   // Old available regions that have less than PLAB::min_size() of available memory are not placed into the OldCollector
@@ -2812,21 +2772,14 @@ void ShenandoahFreeSet::compute_young_and_old_reserves(size_t young_trashed_regi
   // the reserve downward to account for this possibility. This loss is part of the reason why the original budget
   // was adjusted with ShenandoahOldEvacWaste and ShenandoahOldPromoWaste multipliers.
   if (old_reserve_result >
-      _partitions.available_in(ShenandoahFreeSetPartitionId::OldCollector) + old_unaffiliated_regions * region_size_bytes) {
+      _partitions.capacity_of(ShenandoahFreeSetPartitionId::OldCollector) + old_unaffiliated_regions * region_size_bytes) {
     old_reserve_result =
-      _partitions.available_in(ShenandoahFreeSetPartitionId::OldCollector) + old_unaffiliated_regions * region_size_bytes;
-#ifdef KELVIN_VISIBLE
-    log_info(gc)("Downsizing old_reserve_result to: %zu", old_reserve_result);
-#endif
+      _partitions.capacity_of(ShenandoahFreeSetPartitionId::OldCollector) + old_unaffiliated_regions * region_size_bytes;
   }
 
   if (young_reserve_result > young_unaffiliated_regions * region_size_bytes) {
     young_reserve_result = young_unaffiliated_regions * region_size_bytes;
-#ifdef KELVIN_VISIBLE
-    log_info(gc)("Downsizing young_reserve_result to: %zu", young_reserve_result);
-#endif
   }
-#undef KELVIN_VISIBLE
 }
 
 // Having placed all regions that have allocation capacity into the mutator set if they identify as is_young()

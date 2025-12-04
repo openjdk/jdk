@@ -426,7 +426,7 @@ jint ShenandoahHeap::initialize() {
       _affiliations[i] = ShenandoahAffiliation::FREE;
     }
     _free_set = new ShenandoahFreeSet(this, _num_regions);
-    post_initialize();
+    initialize_generations();
     if (mode()->is_generational()) {
       size_t young_reserve = (young_generation()->max_capacity() * ShenandoahEvacReserve) / 100;
       young_generation()->set_evacuation_reserve(young_reserve);
@@ -495,7 +495,6 @@ jint ShenandoahHeap::initialize() {
 
   // Certain initialization of heuristics must be deferred until after controller is initialized.
   post_initialize_heuristics();
-
 
 #ifdef KELVIN_DEPRECATE
   {
@@ -719,10 +718,13 @@ public:
   }
 };
 
+void ShenandoahHeap::initialize_generations() {
+  _global_generation->post_initialize(this);
+}
+
+// We do not call this explicitly  It is called by Hotspot infrastructure.
 void ShenandoahHeap::post_initialize() {
   CollectedHeap::post_initialize();
-
-  _global_generation->post_initialize(this);
 
   check_soft_max_changed();
 
