@@ -3206,7 +3206,9 @@ void ShenandoahFreeSet::log_status() {
 
     log_freeset_stats(ShenandoahFreeSetPartitionId::Mutator, ls);
     log_freeset_stats(ShenandoahFreeSetPartitionId::Collector, ls);
-    if (_heap->mode()->is_generational()) {log_freeset_stats(ShenandoahFreeSetPartitionId::OldCollector, ls);}
+    if (_heap->mode()->is_generational()) {
+      log_freeset_stats(ShenandoahFreeSetPartitionId::OldCollector, ls);
+    }
   }
 }
 
