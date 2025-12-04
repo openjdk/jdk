@@ -1321,7 +1321,7 @@ commonResumeList(JNIEnv *env)
             node = nonTlsSearch(getEnv(), &runningVThreads, thread);
             if (node != NULL) {
                 // This means the vthread has terminated already. This can only happen
-                // with vthreads since VIRTUAL_THREAD_END events might not be enable to
+                // with vthreads since VIRTUAL_THREAD_END events might not be enabled to
                 // trigger removal of the ThreadNode when the thread exits. Just assert
                 // that the thread is in the TERMINATED state. The ThreadNode will
                 // eventually be removed by freeUnusedVThreadNodes().
