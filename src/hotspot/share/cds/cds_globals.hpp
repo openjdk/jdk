@@ -63,10 +63,6 @@
           "Average number of symbols per bucket in shared table")           \
           range(2, 246)                                                     \
                                                                             \
-  product(bool, AllowArchivingWithJavaAgent, false, DIAGNOSTIC,             \
-          "Allow Java agent to be run with CDS dumping (not applicable"     \
-          " to AOT")                                                        \
-                                                                            \
   develop(ccstr, ArchiveHeapTestClass, nullptr,                             \
           "For JVM internal testing only. The static field named "          \
           "\"archivedObjects\" of the specified class is stored in the "    \
@@ -79,6 +75,12 @@
   product(ccstr, DumpLoadedClassList, nullptr,                              \
           "Dump the names all loaded classes, that could be stored into "   \
           "the CDS archive, in the specified file")                         \
+                                                                            \
+  product(bool, AOTStreamableObjects, false, DIAGNOSTIC,                    \
+          "Archive the Java heap in a generic streamable object format")    \
+                                                                            \
+  product(bool, AOTEagerlyLoadObjects, false, DIAGNOSTIC,                   \
+          "Load streamable objects synchronously without concurrency")      \
                                                                             \
   product(ccstr, SharedClassListFile, nullptr,                              \
           "Override the default CDS class list")                            \
@@ -121,6 +123,7 @@
                                                                             \
   product(ccstr, AOTCacheOutput, nullptr,                                   \
           "Specifies the file name for writing the AOT cache")              \
+          constraint(AOTCacheOutputConstraintFunc, AtParse)                 \
                                                                             \
   product(bool, AOTInvokeDynamicLinking, false, DIAGNOSTIC,                 \
           "AOT-link JVM_CONSTANT_InvokeDynamic entries in cached "          \
@@ -147,7 +150,7 @@
   product(bool, AOTVerifyTrainingData, trueInDebug, DIAGNOSTIC,             \
           "Verify archived training data")                                  \
                                                                             \
-  product(bool, AOTCompileEagerly, false, DIAGNOSTIC,                       \
+  product(bool, AOTCompileEagerly, false, EXPERIMENTAL,                     \
           "Compile methods as soon as possible")                            \
                                                                             \
   /* AOT Code flags */                                                      \

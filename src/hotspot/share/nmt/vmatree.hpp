@@ -28,9 +28,11 @@
 
 #include "nmt/memTag.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
-#include "nmt/nmtTreap.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/rbTree.hpp"
+#include "utilities/rbTree.inline.hpp"
+
 #include <cstdint>
 
 // A VMATree stores a sequence of points on the natural number line.
@@ -38,8 +40,9 @@
 // For example, the state may go from released memory to committed memory,
 // or from committed memory of a certain MemTag to committed memory of a different MemTag.
 // The set of points is stored in a balanced binary tree for efficient querying and updating.
-class VMATree {
+class VMATree : public CHeapObjBase {
   friend class NMTVMATreeTest;
+  friend class VMTWithVMATreeTest;
   // A position in memory.
 public:
   using position = size_t;
@@ -48,24 +51,24 @@ public:
 
   class PositionComparator {
   public:
-    static int cmp(position a, position b) {
-      if (a < b) return -1;
-      if (a == b) return 0;
-      if (a > b) return 1;
-      ShouldNotReachHere();
+    static RBTreeOrdering cmp(position a, position b) {
+      if (a < b) return RBTreeOrdering::LT;
+      if (a > b) return RBTreeOrdering::GT;
+      return RBTreeOrdering::EQ;
     }
   };
 
-  enum class StateType : uint8_t { Released, Reserved, Committed, LAST };
+  // Bit fields view: bit 0 for Reserved, bit 1 for Committed.
+  // Setting a region as Committed preserves the Reserved state.
+  enum class StateType : uint8_t { Reserved = 1, Committed = 3, Released = 0, st_number_of_states = 4 };
 
 private:
-  static const char* statetype_strings[static_cast<uint8_t>(StateType::LAST)];
+  static const char* statetype_strings[static_cast<uint8_t>(StateType::st_number_of_states)];
 
 public:
-  NONCOPYABLE(VMATree);
 
   static const char* statetype_to_string(StateType type) {
-    assert(type != StateType::LAST, "must be");
+    assert(type < StateType::st_number_of_states, "must be");
     return statetype_strings[static_cast<uint8_t>(type)];
   }
 
@@ -189,17 +192,21 @@ private:
   };
 
 public:
-  using VMATreap = TreapCHeap<position, IntervalChange, PositionComparator>;
-  using TreapNode = VMATreap::TreapNode;
+  using VMARBTree = RBTreeCHeap<position, IntervalChange, PositionComparator, mtNMT>;
+  using TNode = RBNode<position, IntervalChange>;
 
 private:
-  VMATreap _tree;
+  VMARBTree _tree;
 
-  static IntervalState& in_state(TreapNode* node) {
+  static IntervalState& in_state(TNode* node) {
     return node->val().in;
   }
 
-  static IntervalState& out_state(TreapNode* node) {
+  static IntervalState& out_state(TNode* node) {
+    return node->val().out;
+  }
+
+  static const IntervalState& out_state(const TNode* node) {
     return node->val().out;
   }
 
@@ -219,6 +226,11 @@ private:
 
 public:
   VMATree() : _tree() {}
+  VMATree(const VMATree& other) : _tree() {
+    bool success = other._tree.copy_into(_tree);
+    assert(success, "VMATree dies on OOM");
+  }
+  VMATree& operator=(VMATree const&) = delete;
 
   struct SingleDiff {
     using delta = int64_t;
@@ -229,6 +241,9 @@ public:
   struct SummaryDiff {
     SingleDiff tag[mt_number_of_tags];
     SummaryDiff() {
+      clear();
+    }
+    void clear() {
       for (int i = 0; i < mt_number_of_tags; i++) {
         tag[i] = SingleDiff{0, 0};
       }
@@ -271,13 +286,13 @@ public:
   };
 
  private:
-  SummaryDiff register_mapping(position A, position B, StateType state, const RegionData& metadata, bool use_tag_inplace = false);
+  void register_mapping(position A, position B, StateType state, const RegionData& metadata, SummaryDiff& diff, bool use_tag_inplace = false);
   StateType get_new_state(const StateType existinting_state, const RequestInfo& req) const;
   MemTag get_new_tag(const MemTag existinting_tag, const RequestInfo& req) const;
   SIndex get_new_reserve_callstack(const SIndex existinting_stack, const StateType ex, const RequestInfo& req) const;
   SIndex get_new_commit_callstack(const SIndex existinting_stack, const StateType ex, const RequestInfo& req) const;
   void compute_summary_diff(const SingleDiff::delta region_size, const MemTag t1, const StateType& ex, const RequestInfo& req, const MemTag new_tag, SummaryDiff& diff) const;
-  void update_region(TreapNode* n1, TreapNode* n2, const RequestInfo& req, SummaryDiff& diff);
+  void update_region(TNode* n1, TNode* n2, const RequestInfo& req, SummaryDiff& diff);
   int state_to_index(const StateType st) const {
     return
       st == StateType::Released ? 0 :
@@ -286,12 +301,12 @@ public:
   }
 
  public:
-  SummaryDiff reserve_mapping(position from, size size, const RegionData& metadata) {
-    return register_mapping(from, from + size, StateType::Reserved, metadata, false);
+  void reserve_mapping(position from, size size, const RegionData& metadata, SummaryDiff& diff ) {
+    register_mapping(from, from + size, StateType::Reserved, metadata, diff, false);
   }
 
-  SummaryDiff commit_mapping(position from, size size, const RegionData& metadata, bool use_tag_inplace = false) {
-    return register_mapping(from, from + size, StateType::Committed, metadata, use_tag_inplace);
+  void commit_mapping(position from, size size, const RegionData& metadata, SummaryDiff& diff, bool use_tag_inplace = false) {
+    register_mapping(from, from + size, StateType::Committed, metadata, diff, use_tag_inplace);
   }
 
   // Given an interval and a tag, find all reserved and committed ranges at least
@@ -300,16 +315,12 @@ public:
   // Released regions are ignored.
   SummaryDiff set_tag(position from, size size, MemTag tag);
 
-  SummaryDiff uncommit_mapping(position from, size size, const RegionData& metadata) {
-    return register_mapping(from, from + size, StateType::Reserved, metadata, true);
+  void uncommit_mapping(position from, size size, const RegionData& metadata, SummaryDiff& diff) {
+    register_mapping(from, from + size, StateType::Reserved, metadata, diff, true);
   }
 
-  SummaryDiff release_mapping(position from, size size) {
-    return register_mapping(from, from + size, StateType::Released, VMATree::empty_regiondata);
-  }
-
-  VMATreap& tree() {
-    return _tree;
+  void release_mapping(position from, position sz, SummaryDiff& diff) {
+    register_mapping(from, from + sz, StateType::Released, VMATree::empty_regiondata, diff);
   }
 
 public:
@@ -321,7 +332,13 @@ public:
 #ifdef ASSERT
   void print_on(outputStream* out);
 #endif
+  template<typename F>
+  void visit_range_in_order(const position& from, const position& to, F f) {
+    _tree.visit_range_in_order(from, to, f);
+  }
+  VMARBTree& tree() { return _tree; }
 
+  void clear();
+  bool is_empty();
 };
-
 #endif

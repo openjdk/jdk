@@ -36,6 +36,7 @@ import jtreg.SkippedException;
  * @test
  * @bug 8343191
  * @requires os.family == "linux"
+ * @requires !vm.asan
  * @modules java.base/jdk.internal.platform
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
@@ -45,33 +46,17 @@ import jtreg.SkippedException;
 public class TestMemoryWithSubgroups {
     private static final String imageName = Common.imageName("subgroup");
 
-    static String getEngineInfo(String format) throws Exception {
-        return DockerTestUtils.execute(Container.ENGINE_COMMAND, "info", "-f", format)
-            .getStdout();
-    }
-
-    static boolean isRootless() throws Exception {
-        // Docker and Podman have different INFO structures.
-        // The node path for Podman is .Host.Security.Rootless, that also holds for
-        // Podman emulating Docker CLI. The node path for Docker is .SecurityOptions.
-        return (getEngineInfo("{{.Host.Security.Rootless}}").contains("true") ||
-                getEngineInfo("{{.SecurityOptions}}").contains("name=rootless"));
-    }
-
     public static void main(String[] args) throws Exception {
         Metrics metrics = Metrics.systemMetrics();
         if (metrics == null) {
             System.out.println("Cgroup not configured.");
             return;
         }
-        if (!DockerTestUtils.canTestDocker()) {
-            System.out.println("Unable to run docker tests.");
-            return;
-        }
+        DockerTestUtils.checkCanTestDocker();
 
         ContainerRuntimeVersionTestUtils.checkContainerVersionSupported();
 
-        if (isRootless()) {
+        if (DockerTestUtils.isRootless()) {
             throw new SkippedException("Test skipped in rootless mode");
         }
         Common.prepareWhiteBox();

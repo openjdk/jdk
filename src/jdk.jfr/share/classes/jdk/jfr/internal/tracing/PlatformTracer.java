@@ -35,7 +35,6 @@ import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.MetadataRepository;
 import jdk.jfr.internal.SecuritySupport;
-import jdk.jfr.internal.Type;
 import jdk.jfr.internal.util.Bytecode;
 import jdk.jfr.tracing.MethodTracer;
 
@@ -52,8 +51,6 @@ public final class PlatformTracer {
     private static List<Filter> traceFilters = List.of();
     private static List<Filter> timingFilters = List.of();
     private static TimedMethod OBJECT;
-
-    private static boolean initialized;
 
     public static byte[] onMethodTrace(Module module, ClassLoader classLoader, String className,
                                        byte[] oldBytecode, long[] ids, String[] names, String[] signatures,
@@ -158,12 +155,7 @@ public final class PlatformTracer {
         }
     }
 
-    public static boolean isValidFilter(String text) {
-        return Filter.of(text, null) != null;
-    }
-
     public static void setFilters(Modification modification, List<String> filters) {
-        ensureInitialized();
         publishClasses(applyFilter(modification, filters));
     }
 
@@ -256,14 +248,6 @@ public final class PlatformTracer {
         timedClasses.clear();
     }
 
-    // Expected to be called when holding external lock, so no extra
-    // synchronization is required here.
-    private static void ensureInitialized() {
-        if (!initialized) {
-            initialize();
-            initialized = true;
-        }
-    }
 
     // This method has three purposes:
     //
@@ -278,19 +262,17 @@ public final class PlatformTracer {
     // This method takes 1-10 milliseconds to run and is only executed once,
     // provided a user has specified a non-empty filter for the MethodTrace or
     // MethodTiming event.
-    private static void initialize() {
-        try {
-            Logger.log(LogTag.JFR_METHODTRACE, LogLevel.DEBUG, "Method tracer initialization started.");
-            Thread current = Thread.currentThread();
-            JVM.exclude(current);
-            long methodId = 16384126;
-            long classId = methodId >> 16;
-            ClassLoader cl = null;
-            String className = " java/lang/String";
-            Module m = String.class.getModule();
-            var is = ClassLoader.getSystemClassLoader().getResourceAsStream("java/lang/String.class");
+    public static void initialize() {
+        Logger.log(LogTag.JFR_METHODTRACE, LogLevel.DEBUG, "Method tracer initialization started.");
+        Thread current = Thread.currentThread();
+        JVM.exclude(current);
+        long methodId = 16384126;
+        long classId = methodId >> 16;
+        ClassLoader cl = null;
+        String className = "java/lang/String";
+        Module m = String.class.getModule();
+        try (var is = ClassLoader.getSystemClassLoader().getResourceAsStream("java/lang/String.class")) {
             byte[] oldBytecode = is.readAllBytes();
-            is.close();
             long[] ids = { methodId };
             String[] names = { "<clinit>" };
             String[] signatures = { "()V" };

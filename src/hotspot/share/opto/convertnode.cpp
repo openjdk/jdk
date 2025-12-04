@@ -264,8 +264,68 @@ Node* ConvF2HFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return new ReinterpretHF2SNode(binop);
     }
   }
+
+  // Detects following ideal graph pattern
+  //      ConvF2HF(binopF(conF, ConvHF2F(varS))) =>
+  //              ReinterpretHF2SNode(binopHF(conHF, ReinterpretS2HFNode(varS)))
+  if (Float16NodeFactory::is_float32_binary_oper(in(1)->Opcode())) {
+    Node* binopF = in(1);
+    // Check if the incoming binary operation has one floating point constant
+    // input and the other input is a half precision to single precision upcasting node.
+    // We land here because a prior HalfFloat to Float conversion promotes
+    // an integral constant holding Float16 value to a floating point constant.
+    // i.e. ConvHF2F ConI(short) => ConF
+    Node* conF = nullptr;
+    Node* varS = nullptr;
+    if (binopF->in(1)->is_Con() && binopF->in(2)->Opcode() == Op_ConvHF2F) {
+      conF = binopF->in(1);
+      varS = binopF->in(2)->in(1);
+    } else if (binopF->in(2)->is_Con() &&  binopF->in(1)->Opcode() == Op_ConvHF2F) {
+      conF = binopF->in(2);
+      varS = binopF->in(1)->in(1);
+    }
+
+    if (conF != nullptr &&
+        varS != nullptr &&
+        conF->bottom_type()->isa_float_constant() != nullptr &&
+        Matcher::match_rule_supported(Float16NodeFactory::get_float16_binary_oper(binopF->Opcode())) &&
+        Matcher::match_rule_supported(Op_ReinterpretS2HF) &&
+        Matcher::match_rule_supported(Op_ReinterpretHF2S) &&
+        StubRoutines::hf2f_adr() != nullptr &&
+        StubRoutines::f2hf_adr() != nullptr) {
+      jfloat con = conF->bottom_type()->getf();
+      // Conditions under which floating point constant can be considered for a pattern match.
+      // 1. conF must lie within Float16 value range, otherwise we would have rounding issues:
+      //    Doing the operation in float32 and then rounding is not the same as
+      //    rounding first and doing the operation in float16.
+      // 2. If a constant value is one of the valid IEEE 754 binary32 NaN bit patterns
+      // then it's safe to consider it for pattern match because of the following reasons:
+      //   a. As per section 2.8 of JVMS, Java Virtual Machine does not support
+      //   signaling NaN value.
+      //   b. Any signaling NaN which takes part in a non-comparison expression
+      //   results in a quiet NaN but preserves the significand bits of signaling NaN.
+      //   c. The pattern being matched includes a Float to Float16 conversion after binary
+      //   expression, this downcast will still preserve the significand bits of binary32 NaN.
+      bool isnan = g_isnan((jdouble)con);
+      if (StubRoutines::hf2f(StubRoutines::f2hf(con)) == con || isnan) {
+        Node* newVarHF = phase->transform(new ReinterpretS2HFNode(varS));
+        Node* conHF = phase->makecon(TypeH::make(con));
+        Node* binopHF = nullptr;
+        // Preserving original input order for semantic correctness
+        // of non-commutative operation.
+        if (binopF->in(1) == conF) {
+          binopHF = phase->transform(Float16NodeFactory::make(binopF->Opcode(), binopF->in(0), conHF, newVarHF));
+        } else {
+          binopHF = phase->transform(Float16NodeFactory::make(binopF->Opcode(), binopF->in(0), newVarHF, conHF));
+        }
+        return new ReinterpretHF2SNode(binopHF);
+      }
+    }
+  }
+
   return nullptr;
 }
+
 //=============================================================================
 //------------------------------Value------------------------------------------
 const Type* ConvF2INode::Value(PhaseGVN* phase) const {

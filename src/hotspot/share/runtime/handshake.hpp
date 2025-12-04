@@ -35,7 +35,7 @@
 class HandshakeOperation;
 class AsyncHandshakeOperation;
 class JavaThread;
-class UnsafeAccessErrorHandshake;
+class UnsafeAccessErrorHandshakeClosure;
 class ThreadsListHandle;
 
 // A handshake closure is a callback that is executed for a JavaThread
@@ -69,6 +69,7 @@ class Handshake : public AllStatic {
   // This version of execute() relies on a ThreadListHandle somewhere in
   // the caller's context to protect target (and we sanity check for that).
   static void execute(HandshakeClosure*       hs_cl, JavaThread* target);
+  static void execute(HandshakeClosure*       hs_cl, oop vthread);
   // This version of execute() is used when you have a ThreadListHandle in
   // hand and are using it to protect target. If tlh == nullptr, then we
   // sanity check for a ThreadListHandle somewhere in the caller's context
@@ -86,7 +87,7 @@ class JvmtiRawMonitor;
 // operation is only done by either VMThread/Handshaker on behalf of the
 // JavaThread or by the target JavaThread itself.
 class HandshakeState {
-  friend UnsafeAccessErrorHandshake;
+  friend UnsafeAccessErrorHandshakeClosure;
   friend JavaThread;
   // This a back reference to the JavaThread,
   // the target for all operation in the queue.
@@ -108,7 +109,7 @@ class HandshakeState {
   HandshakeOperation* get_op();
   void remove_op(HandshakeOperation* op);
 
-  void set_active_handshaker(Thread* thread) { Atomic::store(&_active_handshaker, thread); }
+  void set_active_handshaker(Thread* thread) { AtomicAccess::store(&_active_handshaker, thread); }
 
   class MatchOp {
     HandshakeOperation* _op;
@@ -147,7 +148,7 @@ class HandshakeState {
   };
   ProcessResult try_process(HandshakeOperation* match_op);
 
-  Thread* active_handshaker() const { return Atomic::load(&_active_handshaker); }
+  Thread* active_handshaker() const { return AtomicAccess::load(&_active_handshaker); }
 
   // Support for asynchronous exceptions
  private:

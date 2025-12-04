@@ -47,6 +47,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/annotations.hpp"
+#include "oops/bsmAttribute.inline.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/fieldInfo.hpp"
 #include "oops/fieldStreams.inline.hpp"
@@ -77,19 +78,16 @@
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
-#include "utilities/formatBuffer.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/resourceHash.hpp"
 #include "utilities/utf8.hpp"
 #if INCLUDE_CDS
 #include "classfile/systemDictionaryShared.hpp"
-#endif
-#if INCLUDE_JFR
-#include "jfr/support/jfrTraceIdExtension.hpp"
 #endif
 
 // We generally try to create the oops directly when parsing, rather than
@@ -782,7 +780,7 @@ class NameSigHash: public ResourceObj {
   }
 };
 
-using NameSigHashtable = ResourceHashtable<NameSigHash, int,
+using NameSigHashtable = HashTable<NameSigHash, int,
                                            NameSigHash::HASH_ROW_SIZE,
                                            AnyObj::RESOURCE_AREA, mtInternal,
                                            &NameSigHash::hash, &NameSigHash::equals>;
@@ -849,7 +847,7 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
     // Check if there's any duplicates in interfaces
     ResourceMark rm(THREAD);
     // Set containing interface names
-    ResourceHashtable<Symbol*, int>* interface_names = new ResourceHashtable<Symbol*, int>();
+    HashTable<Symbol*, int>* interface_names = new HashTable<Symbol*, int>();
     for (index = 0; index < itfs_len; index++) {
       const InstanceKlass* const k = _local_interfaces->at(index);
       Symbol* interface_name = k->name();
@@ -941,6 +939,8 @@ public:
     _jdk_internal_ValueBased,
     _java_lang_Deprecated,
     _java_lang_Deprecated_for_removal,
+    _jdk_internal_vm_annotation_AOTSafeClassInitializer,
+    _method_AOTRuntimeSetup,
     _annotation_LIMIT
   };
   const Location _location;
@@ -976,6 +976,8 @@ public:
 
   void set_stable(bool stable) { set_annotation(_field_Stable); }
   bool is_stable() const { return has_annotation(_field_Stable); }
+
+  bool has_aot_runtime_setup() const { return has_annotation(_method_AOTRuntimeSetup); }
 };
 
 // This class also doubles as a holder for metadata cleanup.
@@ -1896,6 +1898,16 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
     case VM_SYMBOL_ENUM_NAME(java_lang_Deprecated): {
       return _java_lang_Deprecated;
     }
+    case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_AOTSafeClassInitializer_signature): {
+      if (_location != _in_class)   break;  // only allow for classes
+      if (!privileged)              break;  // only allow in privileged code
+      return _jdk_internal_vm_annotation_AOTSafeClassInitializer;
+    }
+    case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_AOTRuntimeSetup_signature): {
+      if (_location != _in_method)  break;  // only allow for methods
+      if (!privileged)              break;  // only allow in privileged code
+      return _method_AOTRuntimeSetup;
+    }
     default: {
       break;
     }
@@ -1975,6 +1987,9 @@ void ClassFileParser::ClassAnnotationCollector::apply_to(InstanceKlass* ik) {
       m->set_deprecated_for_removal();
     }
   }
+  if (has_annotation(_jdk_internal_vm_annotation_AOTSafeClassInitializer)) {
+    ik->set_has_aot_safe_initializer();
+  }
 }
 
 #define MAX_ARGS_SIZE 255
@@ -2005,7 +2020,7 @@ void ClassFileParser::copy_localvariable_table(const ConstMethod* cm,
 
   ResourceMark rm(THREAD);
 
-  typedef ResourceHashtable<LocalVariableTableElement, LocalVariableTableElement*,
+  typedef HashTable<LocalVariableTableElement, LocalVariableTableElement*,
                             256, AnyObj::RESOURCE_AREA, mtInternal,
                             &LVT_Hash::hash, &LVT_Hash::equals> LVT_HashTable;
 
@@ -2428,7 +2443,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
       cfs->skip_u2_fast(method_parameters_length);
       cfs->skip_u2_fast(method_parameters_length);
       // ignore this attribute if it cannot be reflected
-      if (!vmClasses::Parameter_klass_loaded())
+      if (!vmClasses::reflect_Parameter_klass_is_loaded())
         method_parameters_length = -1;
     } else if (method_attribute_name == vmSymbols::tag_synthetic()) {
       if (method_attribute_length != 0) {
@@ -2660,6 +2675,13 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
 
   if (is_hidden()) { // Mark methods in hidden classes as 'hidden'.
     m->set_is_hidden();
+  }
+  if (parsed_annotations.has_aot_runtime_setup()) {
+    if (name != vmSymbols::runtimeSetup() || signature != vmSymbols::void_method_signature() ||
+        !access_flags.is_private() || !access_flags.is_static()) {
+      classfile_parse_error("@AOTRuntimeSetup method must be declared private static void runtimeSetup() for class %s", CHECK_NULL);
+    }
+    _has_aot_runtime_setup_method = true;
   }
 
   // Copy annotations
@@ -2993,7 +3015,9 @@ u2 ClassFileParser::parse_classfile_inner_classes_attribute(const ClassFileStrea
       // Set abstract bit for old class files for backward compatibility
       flags |= JVM_ACC_ABSTRACT;
     }
-    verify_legal_class_modifiers(flags, CHECK_0);
+
+    Symbol* inner_name_symbol = inner_name_index == 0 ? nullptr : cp->symbol_at(inner_name_index);
+    verify_legal_class_modifiers(flags, inner_name_symbol, inner_name_index == 0, CHECK_0);
     AccessFlags inner_access_flags(flags);
 
     inner_classes->at_put(index++, inner_class_info_index);
@@ -3272,8 +3296,9 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(const ClassFil
                                                                   TRAPS) {
   assert(cfs != nullptr, "invariant");
   assert(cp != nullptr, "invariant");
+  const int cp_size = cp->length();
 
-  const u1* const current_start = cfs->current();
+  const u1* const current_before_parsing = cfs->current();
 
   guarantee_property(attribute_byte_length >= sizeof(u2),
                      "Invalid BootstrapMethods attribute length %u in class file %s",
@@ -3282,57 +3307,40 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(const ClassFil
 
   cfs->guarantee_more(attribute_byte_length, CHECK);
 
-  const int attribute_array_length = cfs->get_u2_fast();
+  const int num_bootstrap_methods = cfs->get_u2_fast();
 
-  guarantee_property(_max_bootstrap_specifier_index < attribute_array_length,
+  guarantee_property(_max_bootstrap_specifier_index < num_bootstrap_methods,
                      "Short length on BootstrapMethods in class file %s",
                      CHECK);
 
+  const u4 bootstrap_methods_u2_len = (attribute_byte_length - sizeof(u2)) / sizeof(u2);
 
-  // The attribute contains a counted array of counted tuples of shorts,
-  // represending bootstrap specifiers:
-  //    length*{bootstrap_method_index, argument_count*{argument_index}}
-  const unsigned int operand_count = (attribute_byte_length - (unsigned)sizeof(u2)) / (unsigned)sizeof(u2);
-  // operand_count = number of shorts in attr, except for leading length
-
-  // The attribute is copied into a short[] array.
-  // The array begins with a series of short[2] pairs, one for each tuple.
-  const int index_size = (attribute_array_length * 2);
-
-  Array<u2>* const operands =
-    MetadataFactory::new_array<u2>(_loader_data, index_size + operand_count, CHECK);
-
-  // Eagerly assign operands so they will be deallocated with the constant
+  // Eagerly assign the arrays so that they will be deallocated with the constant
   // pool if there is an error.
-  cp->set_operands(operands);
+  BSMAttributeEntries::InsertionIterator iter =
+    cp->bsm_entries().start_extension(num_bootstrap_methods,
+                                      bootstrap_methods_u2_len,
+                                      _loader_data,
+                                      CHECK);
 
-  int operand_fill_index = index_size;
-  const int cp_size = cp->length();
-
-  for (int n = 0; n < attribute_array_length; n++) {
-    // Store a 32-bit offset into the header of the operand array.
-    ConstantPool::operand_offset_at_put(operands, n, operand_fill_index);
-
-    // Read a bootstrap specifier.
+  for (int i = 0; i < num_bootstrap_methods; i++) {
     cfs->guarantee_more(sizeof(u2) * 2, CHECK);  // bsm, argc
-    const u2 bootstrap_method_index = cfs->get_u2_fast();
-    const u2 argument_count = cfs->get_u2_fast();
+    u2 bootstrap_method_ref = cfs->get_u2_fast();
+    u2 num_bootstrap_arguments = cfs->get_u2_fast();
     guarantee_property(
-      valid_cp_range(bootstrap_method_index, cp_size) &&
-      cp->tag_at(bootstrap_method_index).is_method_handle(),
-      "bootstrap_method_index %u has bad constant type in class file %s",
-      bootstrap_method_index,
-      CHECK);
+       valid_cp_range(bootstrap_method_ref, cp_size) &&
+       cp->tag_at(bootstrap_method_ref).is_method_handle(),
+       "bootstrap_method_index %u has bad constant type in class file %s",
+       bootstrap_method_ref,
+       CHECK);
+    cfs->guarantee_more(sizeof(u2) * num_bootstrap_arguments, CHECK); // argv[argc]
 
-    guarantee_property((operand_fill_index + 1 + argument_count) < operands->length(),
-      "Invalid BootstrapMethods num_bootstrap_methods or num_bootstrap_arguments value in class file %s",
-      CHECK);
+    BSMAttributeEntry* entry = iter.reserve_new_entry(bootstrap_method_ref, num_bootstrap_arguments);
+    guarantee_property(entry != nullptr,
+                       "Invalid BootstrapMethods num_bootstrap_methods."
+                       " The total amount of space reserved for the BootstrapMethod attribute was not sufficient", CHECK);
 
-    operands->at_put(operand_fill_index++, bootstrap_method_index);
-    operands->at_put(operand_fill_index++, argument_count);
-
-    cfs->guarantee_more(sizeof(u2) * argument_count, CHECK);  // argv[argc]
-    for (int j = 0; j < argument_count; j++) {
+    for (int argi = 0; argi < num_bootstrap_arguments; argi++) {
       const u2 argument_index = cfs->get_u2_fast();
       guarantee_property(
         valid_cp_range(argument_index, cp_size) &&
@@ -3340,10 +3348,11 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(const ClassFil
         "argument_index %u has bad constant type in class file %s",
         argument_index,
         CHECK);
-      operands->at_put(operand_fill_index++, argument_index);
+      entry->set_argument(argi, argument_index);
     }
   }
-  guarantee_property(current_start + attribute_byte_length == cfs->current(),
+  cp->bsm_entries().end_extension(iter, _loader_data, CHECK);
+  guarantee_property(current_before_parsing + attribute_byte_length == cfs->current(),
                      "Bad length on BootstrapMethods in class file %s",
                      CHECK);
 }
@@ -3779,39 +3788,30 @@ AnnotationArray* ClassFileParser::allocate_annotations(const u1* const anno,
   return annotations;
 }
 
-const InstanceKlass* ClassFileParser::parse_super_class(ConstantPool* const cp,
-                                                        const int super_class_index,
-                                                        const bool need_verify,
-                                                        TRAPS) {
+void ClassFileParser::check_super_class(ConstantPool* const cp,
+                                        const int super_class_index,
+                                        const bool need_verify,
+                                        TRAPS) {
   assert(cp != nullptr, "invariant");
-  const InstanceKlass* super_klass = nullptr;
 
   if (super_class_index == 0) {
     guarantee_property(_class_name == vmSymbols::java_lang_Object(),
                        "Invalid superclass index %u in class file %s",
                        super_class_index,
-                       CHECK_NULL);
+                       CHECK);
   } else {
     guarantee_property(valid_klass_reference_at(super_class_index),
                        "Invalid superclass index %u in class file %s",
                        super_class_index,
-                       CHECK_NULL);
+                       CHECK);
+
     // The class name should be legal because it is checked when parsing constant pool.
     // However, make sure it is not an array type.
-    bool is_array = false;
-    if (cp->tag_at(super_class_index).is_klass()) {
-      super_klass = InstanceKlass::cast(cp->resolved_klass_at(super_class_index));
-      if (need_verify)
-        is_array = super_klass->is_array_klass();
-    } else if (need_verify) {
-      is_array = (cp->klass_name_at(super_class_index)->char_at(0) == JVM_SIGNATURE_ARRAY);
-    }
     if (need_verify) {
-      guarantee_property(!is_array,
-                        "Bad superclass name in class file %s", CHECK_NULL);
+      guarantee_property(cp->klass_name_at(super_class_index)->char_at(0) != JVM_SIGNATURE_ARRAY,
+                        "Bad superclass name in class file %s", CHECK);
     }
   }
-  return super_klass;
 }
 
 OopMapBlocksBuilder::OopMapBlocksBuilder(unsigned int max_blocks) {
@@ -3933,7 +3933,7 @@ void OopMapBlocksBuilder::print_value_on(outputStream* st) const {
 void ClassFileParser::set_precomputed_flags(InstanceKlass* ik) {
   assert(ik != nullptr, "invariant");
 
-  const InstanceKlass* const super = ik->java_super();
+  const InstanceKlass* const super = ik->super();
 
   // Check if this klass has an empty finalize method (i.e. one with return bytecode only),
   // in which case we don't have to register objects as finalizable
@@ -3962,7 +3962,7 @@ void ClassFileParser::set_precomputed_flags(InstanceKlass* ik) {
 #endif
 
   // Check if this klass supports the java.lang.Cloneable interface
-  if (vmClasses::Cloneable_klass_loaded()) {
+  if (vmClasses::Cloneable_klass_is_loaded()) {
     if (ik->is_subtype_of(vmClasses::Cloneable_klass())) {
       ik->set_is_cloneable();
     }
@@ -3977,6 +3977,15 @@ void ClassFileParser::set_precomputed_flags(InstanceKlass* ik) {
     // Forbid fast-path allocation.
     const jint lh = Klass::instance_layout_helper(ik->size_helper(), true);
     ik->set_layout_helper(lh);
+  }
+
+  // Propagate the AOT runtimeSetup method discovery
+  if (_has_aot_runtime_setup_method) {
+    ik->set_is_runtime_setup_required();
+    if (log_is_enabled(Info, aot, init)) {
+      ResourceMark rm;
+      log_info(aot, init)("Found @AOTRuntimeSetup class %s", ik->external_name());
+    }
   }
 }
 
@@ -4059,31 +4068,29 @@ static Array<InstanceKlass*>* compute_transitive_interfaces(const InstanceKlass*
 
 void ClassFileParser::check_super_class_access(const InstanceKlass* this_klass, TRAPS) {
   assert(this_klass != nullptr, "invariant");
-  const Klass* const super = this_klass->super();
+  const InstanceKlass* const super = this_klass->super();
 
   if (super != nullptr) {
-    const InstanceKlass* super_ik = InstanceKlass::cast(super);
-
     if (super->is_final()) {
-      classfile_icce_error("class %s cannot inherit from final class %s", super_ik, THREAD);
+      classfile_icce_error("class %s cannot inherit from final class %s", super, THREAD);
       return;
     }
 
-    if (super_ik->is_sealed()) {
+    if (super->is_sealed()) {
       stringStream ss;
       ResourceMark rm(THREAD);
-      if (!super_ik->has_as_permitted_subclass(this_klass, ss)) {
+      if (!super->has_as_permitted_subclass(this_klass, ss)) {
         classfile_icce_error(ss.as_string(), THREAD);
         return;
       }
     }
 
     Reflection::VerifyClassAccessResults vca_result =
-      Reflection::verify_class_access(this_klass, InstanceKlass::cast(super), false);
+      Reflection::verify_class_access(this_klass, super, false);
     if (vca_result != Reflection::ACCESS_OK) {
       ResourceMark rm(THREAD);
       char* msg = Reflection::verify_class_access_msg(this_klass,
-                                                      InstanceKlass::cast(super),
+                                                      super,
                                                       vca_result);
 
       // Names are all known to be < 64k so we know this formatted message is not excessively large.
@@ -4179,13 +4186,13 @@ static void check_final_method_override(const InstanceKlass* this_klass, TRAPS) 
 
       const Symbol* const name = m->name();
       const Symbol* const signature = m->signature();
-      const InstanceKlass* k = this_klass->java_super();
+      const InstanceKlass* k = this_klass->super();
       const Method* super_m = nullptr;
       while (k != nullptr) {
         // skip supers that don't have final methods.
         if (k->has_final_method()) {
           // lookup a matching method in the super class hierarchy
-          super_m = InstanceKlass::cast(k)->lookup_method(name, signature);
+          super_m = k->lookup_method(name, signature);
           if (super_m == nullptr) {
             break; // didn't find any match; get out
           }
@@ -4211,11 +4218,11 @@ static void check_final_method_override(const InstanceKlass* this_klass, TRAPS) 
           }
 
           // continue to look from super_m's holder's super.
-          k = super_m->method_holder()->java_super();
+          k = super_m->method_holder()->super();
           continue;
         }
 
-        k = k->java_super();
+        k = k->super();
       }
     }
   }
@@ -4250,7 +4257,8 @@ static void check_illegal_static_method(const InstanceKlass* this_klass, TRAPS) 
 
 // utility methods for format checking
 
-void ClassFileParser::verify_legal_class_modifiers(jint flags, TRAPS) const {
+// Verify the class modifiers for the current class, or an inner class if inner_name is non-null.
+void ClassFileParser::verify_legal_class_modifiers(jint flags, Symbol* inner_name, bool is_anonymous_inner_class, TRAPS) const {
   const bool is_module = (flags & JVM_ACC_MODULE) != 0;
   assert(_major_version >= JAVA_9_VERSION || !is_module, "JVM_ACC_MODULE should not be set");
   if (is_module) {
@@ -4280,12 +4288,30 @@ void ClassFileParser::verify_legal_class_modifiers(jint flags, TRAPS) const {
       (!is_interface && major_gte_1_5 && is_annotation)) {
     ResourceMark rm(THREAD);
     // Names are all known to be < 64k so we know this formatted message is not excessively large.
-    Exceptions::fthrow(
-      THREAD_AND_LOCATION,
-      vmSymbols::java_lang_ClassFormatError(),
-      "Illegal class modifiers in class %s: 0x%X",
-      _class_name->as_C_string(), flags
-    );
+    if (inner_name == nullptr && !is_anonymous_inner_class) {
+      Exceptions::fthrow(
+        THREAD_AND_LOCATION,
+        vmSymbols::java_lang_ClassFormatError(),
+        "Illegal class modifiers in class %s: 0x%X",
+        _class_name->as_C_string(), flags
+      );
+    } else {
+      if (is_anonymous_inner_class) {
+        Exceptions::fthrow(
+          THREAD_AND_LOCATION,
+          vmSymbols::java_lang_ClassFormatError(),
+          "Illegal class modifiers in anonymous inner class of class %s: 0x%X",
+          _class_name->as_C_string(), flags
+        );
+      } else {
+        Exceptions::fthrow(
+          THREAD_AND_LOCATION,
+          vmSymbols::java_lang_ClassFormatError(),
+          "Illegal class modifiers in inner class %s of class %s: 0x%X",
+          inner_name->as_C_string(), _class_name->as_C_string(), flags
+        );
+      }
+    }
     return;
   }
 }
@@ -4635,11 +4661,15 @@ const char* ClassFileParser::skip_over_field_signature(const char* signature,
       return signature + 1;
     case JVM_SIGNATURE_CLASS: {
       if (_major_version < JAVA_1_5_VERSION) {
+        signature++;
+        length--;
         // Skip over the class name if one is there
-        const char* const p = skip_over_field_name(signature + 1, true, --length);
-
+        const char* const p = skip_over_field_name(signature, true, length);
+        assert(p == nullptr || p > signature, "must parse one character at least");
         // The next character better be a semicolon
-        if (p && (p - signature) > 1 && p[0] == JVM_SIGNATURE_ENDCLASS) {
+        if (p != nullptr                             && // Parse of field name succeeded.
+            p - signature < static_cast<int>(length) && // There is at least one character left to parse.
+            p[0] == JVM_SIGNATURE_ENDCLASS) {
           return p + 1;
         }
       }
@@ -5117,9 +5147,8 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   check_methods_for_intrinsics(ik, methods);
 
   // Fill in field values obtained by parse_classfile_attributes
-  if (_parsed_annotations->has_any_annotations()) {
+  if (_parsed_annotations->has_any_annotations())
     _parsed_annotations->apply_to(ik);
-  }
 
   apply_parsed_class_attributes(ik);
 
@@ -5176,7 +5205,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   assert(module_entry != nullptr, "module_entry should always be set");
 
   // Obtain java.lang.Module
-  Handle module_handle(THREAD, module_entry->module());
+  Handle module_handle(THREAD, module_entry->module_oop());
 
   // Allocate mirror and initialize static fields
   java_lang_Class::create_mirror(ik,
@@ -5222,10 +5251,10 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
       ResourceMark rm;
       // print out the superclass.
       const char * from = ik->external_name();
-      if (ik->java_super() != nullptr) {
+      if (ik->super() != nullptr) {
         log_debug(class, resolve)("%s %s (super)",
                    from,
-                   ik->java_super()->external_name());
+                   ik->super()->external_name());
       }
       // print out each of the interface classes referred to by this class.
       const Array<InstanceKlass*>* const local_interfaces = ik->local_interfaces();
@@ -5239,8 +5268,6 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
       }
     }
   }
-
-  JFR_ONLY(INIT_ID(ik);)
 
   // If we reach here, all is well.
   // Now remove the InstanceKlass* from the _klass_to_deallocate field
@@ -5326,6 +5353,7 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _has_localvariable_table(false),
   _has_final_method(false),
   _has_contended_fields(false),
+  _has_aot_runtime_setup_method(false),
   _has_finalizer(false),
   _has_empty_finalizer(false),
   _max_bootstrap_specifier_index(-1) {
@@ -5476,6 +5504,7 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
 
   _orig_cp_size = cp_size;
   if (is_hidden()) { // Add a slot for hidden class name.
+    guarantee_property((u4)cp_size < 0xffff, "Overflow in constant pool size for hidden class %s", CHECK);
     cp_size++;
   }
 
@@ -5506,7 +5535,7 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
     flags |= JVM_ACC_ABSTRACT;
   }
 
-  verify_legal_class_modifiers(flags, CHECK);
+  verify_legal_class_modifiers(flags, nullptr, false, CHECK);
 
   short bad_constant = class_bad_constant_seen();
   if (bad_constant != 0) {
@@ -5596,10 +5625,10 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
 
   // SUPERKLASS
   _super_class_index = stream->get_u2_fast();
-  _super_klass = parse_super_class(cp,
-                                   _super_class_index,
-                                   _need_verify,
-                                   CHECK);
+  check_super_class(cp,
+                    _super_class_index,
+                    _need_verify,
+                    CHECK);
 
   // Interfaces
   _itfs_len = stream->get_u2_fast();
@@ -5666,8 +5695,8 @@ void ClassFileParser::mangle_hidden_class_name(InstanceKlass* const ik) {
     // occupied by the archive at run time, so we know that no dynamically
     // loaded InstanceKlass will be placed under there.
     static volatile size_t counter = 0;
-    Atomic::cmpxchg(&counter, (size_t)0, Arguments::default_SharedBaseAddress()); // initialize it
-    size_t new_id = Atomic::add(&counter, (size_t)1);
+    AtomicAccess::cmpxchg(&counter, (size_t)0, Arguments::default_SharedBaseAddress()); // initialize it
+    size_t new_id = AtomicAccess::add(&counter, (size_t)1);
     jio_snprintf(addr_buf, 20, "0x%zx", new_id);
   } else {
     jio_snprintf(addr_buf, 20, INTPTR_FORMAT, p2i(ik));
@@ -5702,12 +5731,14 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
   assert(_loader_data != nullptr, "invariant");
 
   if (_class_name == vmSymbols::java_lang_Object()) {
+    precond(_super_class_index == 0);
+    precond(_super_klass == nullptr);
     guarantee_property(_local_interfaces == Universe::the_empty_instance_klass_array(),
                        "java.lang.Object cannot implement an interface in class file %s",
                        CHECK);
-  }
-  // We check super class after class file is parsed and format is checked
-  if (_super_class_index > 0 && nullptr == _super_klass) {
+  } else {
+    // Set _super_klass after class file is parsed and format is checked
+    assert(_super_class_index > 0, "any class other than Object must have a super class");
     Symbol* const super_class_name = cp->klass_name_at(_super_class_index);
     if (_access_flags.is_interface()) {
       // Before attempting to resolve the superclass, check for class format
@@ -5718,6 +5749,7 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
     }
     Handle loader(THREAD, _loader_data->class_loader());
     if (loader.is_null() && super_class_name == vmSymbols::java_lang_Object()) {
+      // fast path to avoid lookup
       _super_klass = vmClasses::Object_klass();
     } else {
       _super_klass = (const InstanceKlass*)
@@ -5841,15 +5873,6 @@ bool ClassFileParser::is_java_lang_ref_Reference_subclass() const {
   }
 
   return _super_klass->reference_type() != REF_NONE;
-}
-
-// Returns true if the future Klass will need to be addressable with a narrow Klass ID.
-bool ClassFileParser::klass_needs_narrow_id() const {
-  // Classes that are never instantiated need no narrow Klass Id, since the
-  // only point of having a narrow id is to put it into an object header. Keeping
-  // never instantiated classes out of class space lessens the class space pressure.
-  // For more details, see JDK-8338526.
-  return !is_interface() && !is_abstract();
 }
 
 // ----------------------------------------------------------------------------
