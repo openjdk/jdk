@@ -1279,7 +1279,6 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   Rtmp1 = op->tmp3()->as_register();
   select_different_registers(obj, dst, k_RInfo, klass_RInfo, Rtmp1);
 
-
   assert_different_registers(obj, k_RInfo, klass_RInfo);
 
   if (should_profile) {
