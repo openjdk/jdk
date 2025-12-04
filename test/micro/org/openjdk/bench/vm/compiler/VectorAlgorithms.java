@@ -51,10 +51,12 @@ public class VectorAlgorithms {
     public int SIZE;
 
     public static int[] aI;
+    public static int[] rI;
 
     @Setup
     public void init() {
         aI = new int[SIZE];
+        rI = new int[SIZE];
     }
 
     // ------------------------------------------------------------------------------------------
@@ -79,5 +81,20 @@ public class VectorAlgorithms {
     @Benchmark
     public int reduceAddI_VectorAPI_reduction_after_loop() {
         return VectorAlgorithmsImpl.reduceAddI_VectorAPI_reduction_after_loop(aI);
+    }
+
+    @Benchmark
+    public Object scanAddI_loop() {
+        return VectorAlgorithmsImpl.scanAddI_loop(aI, rI);
+    }
+
+    @Benchmark
+    public Object scanAddI_loop_reassociate() {
+        return VectorAlgorithmsImpl.scanAddI_loop_reassociate(aI, rI);
+    }
+
+    @Benchmark
+    public Object scanAddI_VectorAPI_permute_add() {
+        return VectorAlgorithmsImpl.scanAddI_VectorAPI_permute_add(aI, rI);
     }
 }

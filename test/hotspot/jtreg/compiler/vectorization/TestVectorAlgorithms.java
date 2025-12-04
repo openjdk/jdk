@@ -90,7 +90,6 @@ public class TestVectorAlgorithms {
         testGroups.put("scanAddI", new HashMap<String,TestFunction>());
         testGroups.get("scanAddI").put("scanAddI_loop",                      () -> { return scanAddI_loop(aI, rI1); });
         testGroups.get("scanAddI").put("scanAddI_loop_reassociate",          () -> { return scanAddI_loop_reassociate(aI, rI2); });
-        testGroups.get("scanAddI").put("scanAddI_VectorAPI_shift_blend_add", () -> { return scanAddI_VectorAPI_shift_blend_add(aI, rI3); });
         testGroups.get("scanAddI").put("scanAddI_VectorAPI_permute_add",     () -> { return scanAddI_VectorAPI_permute_add(aI, rI4); });
     }
 
@@ -101,7 +100,6 @@ public class TestVectorAlgorithms {
                  "reduceAddI_VectorAPI_reduction_after_loop",
                  "scanAddI_loop",
                  "scanAddI_loop_reassociate",
-                 "scanAddI_VectorAPI_shift_blend_add",
                  "scanAddI_VectorAPI_permute_add"})
     public void runTests(RunInfo info) {
         // Repeat many times, so that we also have multiple iterations for post-warmup to potentially recompile
@@ -175,11 +173,6 @@ public class TestVectorAlgorithms {
     @Test
     public Object scanAddI_loop_reassociate(int[] a, int[] r) {
         return VectorAlgorithmsImpl.scanAddI_loop_reassociate(a, r);
-    }
-
-    @Test
-    public Object scanAddI_VectorAPI_shift_blend_add(int[] a, int[] r) {
-        return VectorAlgorithmsImpl.scanAddI_VectorAPI_shift_blend_add(a, r);
     }
 
     @Test

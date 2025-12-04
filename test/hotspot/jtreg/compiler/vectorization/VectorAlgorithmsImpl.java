@@ -124,34 +124,14 @@ public class VectorAlgorithmsImpl {
         return r;
     }
 
-    public static Object scanAddI_VectorAPI_shift_blend_add(int[] a, int[] r) {
-        // Using Naive Parallel Algorithm: Hills and Steele
-        int sum = 0;
-        int i = 0;
-        //for (; i < SPECIES_I512.loopBound(a.length); i += SPECIES_I512.length()) {
-        //    IntVector v = IntVector.fromArray(SPECIES_I512, a, i);
-        //    v = v.add(v.lanewise(VectorOperators.LSHL, 1 ).blend(0, VectorMask.fromLong(SPECIES_I512, 0b1111111111111110)));
-        //    v = v.add(v.lanewise(VectorOperators.LSHL, 2 ).blend(0, VectorMask.fromLong(SPECIES_I512, 0b1111111111111100)));
-        //    v = v.add(v.lanewise(VectorOperators.LSHL, 4 ).blend(0, VectorMask.fromLong(SPECIES_I512, 0b1111111111110000)));
-        //    v = v.add(v.lanewise(VectorOperators.LSHL, 8 ).blend(0, VectorMask.fromLong(SPECIES_I512, 0b1111111100000000)));
-        //    v = v.add(sum);
-        //    v.intoArray(r, i);
-        //    sum = v.lane(SPECIES_I512.length() - 1);
-        //}
-        for (; i < a.length; i++) {
-            sum += a[i];
-            r[i] = sum;
-        }
-        return r;
-    }
-
     public static Object scanAddI_VectorAPI_permute_add(int[] a, int[] r) {
         // Using Naive Parallel Algorithm: Hills and Steele
         int sum = 0;
-        var shf1 = VectorShuffle.fromArray(SPECIES_I512, new int[]{-1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14}, 0);
-        var shf2 = VectorShuffle.fromArray(SPECIES_I512, new int[]{-1, -1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13}, 0);
-        var shf3 = VectorShuffle.fromArray(SPECIES_I512, new int[]{-1, -1, -1, -1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11}, 0);
-        var shf4 = VectorShuffle.fromArray(SPECIES_I512, new int[]{-1, -1, -1, -1, -1, -1, -1, -1,  0,  1,  2,  3,  4,  5,  6,  7}, 0);
+        int xx = 0; // masked later anyway
+        var shf1 = VectorShuffle.fromArray(SPECIES_I512, new int[]{xx,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14}, 0);
+        var shf2 = VectorShuffle.fromArray(SPECIES_I512, new int[]{xx, xx,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13}, 0);
+        var shf3 = VectorShuffle.fromArray(SPECIES_I512, new int[]{xx, xx, xx, xx,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11}, 0);
+        var shf4 = VectorShuffle.fromArray(SPECIES_I512, new int[]{xx, xx, xx, xx, xx, xx, xx, xx,  0,  1,  2,  3,  4,  5,  6,  7}, 0);
         var mask1 = VectorMask.fromLong(SPECIES_I512, 0b1111111111111110);
         var mask2 = VectorMask.fromLong(SPECIES_I512, 0b1111111111111100);
         var mask3 = VectorMask.fromLong(SPECIES_I512, 0b1111111111110000);
