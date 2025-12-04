@@ -1688,14 +1688,14 @@ eventHandler_reset(jbyte sessionID)
     /* We also want to disable VIRTUAL_THREAD_START events if they were enabled due to
      * a deferred event request.
      */
-    if (gdata->virtualThreadStartEventsPermanentlyEnabled) {
+    if (gdata->virtualThreadStartEventsEnabledForDeferredEventMode) {
         jvmtiError error;
         error = threadControl_setEventMode(JVMTI_DISABLE,
                                            EI_VIRTUAL_THREAD_START, NULL);
         if (adjust_jvmti_error(error) != JVMTI_ERROR_NONE) {
             EXIT_ERROR(error,"Can't disable vthread start events");
         }
-        gdata->virtualThreadStartEventsPermanentlyEnabled = JNI_FALSE;
+        gdata->virtualThreadStartEventsEnabledForDeferredEventMode = JNI_FALSE;
     }
 
     /* Reset the event helper thread, purging all queued and

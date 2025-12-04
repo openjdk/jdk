@@ -1322,7 +1322,7 @@ enableEvents(HandlerNode *node)
                 // JVMTI_EVENT_VIRTUAL_THREAD_START/END are already always enabled.
                 return JVMTI_ERROR_NONE;
             }
-            if (ei == EI_THREAD_START && gdata->virtualThreadStartEventsPermanentlyEnabled) {
+            if (ei == EI_THREAD_START && gdata->virtualThreadStartEventsEnabledForDeferredEventMode) {
                 // JVMTI_EVENT_VIRTUAL_THREAD_START is already permanently enabled.
                 return JVMTI_ERROR_NONE;
             }
@@ -1414,7 +1414,7 @@ disableEvents(HandlerNode *node)
                 // JVMTI_EVENT_VIRTUAL_THREAD_START/END are already enabled and stay enabled.
                 return JVMTI_ERROR_NONE;
             }
-            if (ei == EI_THREAD_START && gdata->virtualThreadStartEventsPermanentlyEnabled) {
+            if (ei == EI_THREAD_START && gdata->virtualThreadStartEventsEnabledForDeferredEventMode) {
                 // JVMTI_EVENT_VIRTUAL_THREAD_START is already permanently enabled.
                 return JVMTI_ERROR_NONE;
             }

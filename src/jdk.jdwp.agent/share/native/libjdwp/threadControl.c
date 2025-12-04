@@ -762,13 +762,13 @@ addDeferredEventMode(JNIEnv *env, jvmtiEventMode mode, EventIndex ei, jthread th
      * make sure that there are no event handlers (event requests) for THREAD_START
      * events that do not have the PlatformThreadsFilter enabled.
      */
-    if (!gdata->includeVThreads && !gdata->virtualThreadStartEventsPermanentlyEnabled && isVThread(thread)) {
+    if (!gdata->includeVThreads && !gdata->virtualThreadStartEventsEnabledForDeferredEventMode && isVThread(thread)) {
         jvmtiError error = JVMTI_FUNC_PTR(gdata->jvmti,SetEventNotificationMode)
                 (gdata->jvmti, JVMTI_ENABLE, JVMTI_EVENT_VIRTUAL_THREAD_START, NULL);
         if (error != JVMTI_ERROR_NONE) {
             EXIT_ERROR(error, "cannot enable JVMTI_EVENT_VIRTUAL_THREAD_START");
         }
-        gdata->virtualThreadStartEventsPermanentlyEnabled = JNI_TRUE;
+        gdata->virtualThreadStartEventsEnabledForDeferredEventMode = JNI_TRUE;
     }
 
     return JVMTI_ERROR_NONE;
