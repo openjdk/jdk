@@ -38,6 +38,11 @@ JRT_LEAF(void, ShenandoahRuntime::arraycopy_barrier_narrow_oop(narrowOop* src, n
   ShenandoahBarrierSet::barrier_set()->arraycopy_barrier(src, dst, length);
 JRT_END
 
+JRT_LEAF(void, ShenandoahRuntime::write_barrier_pre_c2(oopDesc* orig))
+//log_info(gc)("WB pre C2: " PTR_FORMAT, p2i(orig));
+  write_barrier_pre(orig);
+JRT_END
+
 JRT_LEAF(void, ShenandoahRuntime::write_barrier_pre(oopDesc* orig))
   assert(orig != nullptr, "should be optimized out");
   shenandoah_assert_correct(nullptr, orig);
@@ -49,10 +54,12 @@ JRT_LEAF(void, ShenandoahRuntime::write_barrier_pre(oopDesc* orig))
 JRT_END
 
 JRT_LEAF(oopDesc*, ShenandoahRuntime::load_reference_barrier_strong(oopDesc* src, oop* load_addr))
+  //tty->print_cr("ShenandoahRuntime::load_reference_barrier_strong: " PTR_FORMAT " [" PTR_FORMAT "]", p2i(src), p2i(load_addr));
   return ShenandoahBarrierSet::barrier_set()->load_reference_barrier_mutator(src, load_addr);
 JRT_END
 
 JRT_LEAF(oopDesc*, ShenandoahRuntime::load_reference_barrier_strong_narrow(oopDesc* src, narrowOop* load_addr))
+  // tty->print_cr("ShenandoahRuntime::load_reference_barrier_strong_narrow: " PTR_FORMAT " [" PTR_FORMAT "]", p2i(src), p2i(load_addr));
   return ShenandoahBarrierSet::barrier_set()->load_reference_barrier_mutator(src, load_addr);
 JRT_END
 
