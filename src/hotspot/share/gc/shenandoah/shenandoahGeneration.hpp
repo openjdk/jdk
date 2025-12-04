@@ -111,7 +111,10 @@ private:
 
   virtual void post_initialize(ShenandoahHeap* heap);
 
+#ifdef KELVIN_DEPRECATE
   virtual size_t bytes_allocated_since_gc_start() const override = 0;
+#endif
+
   virtual size_t used() const override = 0;
   virtual size_t used_regions() const = 0;
   virtual size_t used_regions_size() const = 0;
@@ -128,6 +131,8 @@ private:
   // to believe it has less memory available than is _really_ available. Lowering the soft
   // max heap size will cause the adaptive heuristic to run more frequent cycles.
   size_t soft_available() const override;
+
+  size_t soft_max_capacity() const override;
 
   void log_status(const char* msg) const;
 

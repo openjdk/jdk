@@ -153,17 +153,19 @@ void ShenandoahGeneration::post_initialize_heuristics() {
   _heuristics->post_initialize();
 }
 
+#ifdef KELVIN_DEPRECATE
 size_t ShenandoahGeneration::bytes_allocated_since_gc_start() const {
-  return Atomic::load(&_bytes_allocated_since_gc_start);
+  return AtomicAccess::load(&_mutator_bytes_allocated_since_gc_start);
 }
 
 void ShenandoahGeneration::reset_bytes_allocated_since_gc_start() {
-  Atomic::store(&_bytes_allocated_since_gc_start, (size_t)0);
+  AtomicAccess::store(&_mutator_bytes_allocated_since_gc_start, (size_t)0);
 }
 
 void ShenandoahGeneration::increase_allocated(size_t bytes) {
-  Atomic::add(&_bytes_allocated_since_gc_start, bytes, memory_order_relaxed);
+  AtomicAccess::add(&_mutator_bytes_allocated_since_gc_start, bytes, memory_order_relaxed);
 }
+#endif
 
 void ShenandoahGeneration::set_evacuation_reserve(size_t new_val) {
   shenandoah_assert_heaplocked();
@@ -841,12 +843,8 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
     }
 
     // Free set construction uses reserve quantities, because they are known to be valid here
-<<<<<<< HEAD
-    heap->free_set()->finish_rebuild(young_cset_regions, old_cset_regions, num_old, true);
-    heap->heuristics()->start_evac_span();
-=======
     _free_set->finish_rebuild(young_cset_regions, old_cset_regions, num_old, true);
->>>>>>> jdk/master
+    heap->heuristics()->start_evac_span();
   }
 }
 
@@ -955,6 +953,10 @@ size_t ShenandoahGeneration::available() const {
 size_t ShenandoahGeneration::available_with_reserve() const {
   size_t result = available(max_capacity());
   return result;
+}
+
+size_t ShenandoahGeneration::soft_max_capacity() const {
+  return ShenandoahHeap::heap()->soft_max_capacity();
 }
 
 size_t ShenandoahGeneration::soft_available() const {

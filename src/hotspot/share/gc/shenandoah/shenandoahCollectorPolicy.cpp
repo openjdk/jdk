@@ -96,6 +96,16 @@ void ShenandoahCollectorPolicy::record_interrupted_old() {
   _interrupted_old_gcs++;
 }
 
+void ShenandoahCollectorPolicy::record_success_degenerated(bool is_young, bool is_abbreviated) {
+  update_young(is_young);
+
+  _success_degenerated_gcs++;
+  _consecutive_degenerated_gcs++;
+  if (is_abbreviated) {
+    _abbreviated_degenerated_gcs++;
+  }
+}
+
 void ShenandoahCollectorPolicy::record_degenerated(bool is_young, bool is_abbreviated, bool progress) {
   update_young(is_young);
 

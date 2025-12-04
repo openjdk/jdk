@@ -453,8 +453,6 @@ private:
 
   size_t _total_humongous_waste;
 
-  HeapWord* allocate_aligned_plab(size_t size, ShenandoahAllocRequest& req, ShenandoahHeapRegion* r);
-
   // We re-evaluate the left-to-right allocation bias whenever _alloc_bias_weight is less than zero.  Each time
   // we allocate an object, we decrement the count of this value.  Each time we re-evaluate whether to allocate
   // from right-to-left or left-to-right, we reset the value of this counter to _InitialAllocBiasWeight.
@@ -660,6 +658,9 @@ public:
 
   void increase_bytes_allocated(size_t bytes);
 
+  // Return an approximation of the bytes allocated since GC start.  The value returned is monotonically non-decreasing
+  // in time within each GC cycle.  For certain GC cycles, the value returned may include some bytes allocated before
+  // the start of the current GC cycle.
   inline size_t get_bytes_allocated_since_gc_start() const {
     return _mutator_bytes_allocated_since_gc_start;
   }

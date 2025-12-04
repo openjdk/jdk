@@ -151,7 +151,7 @@ void ShenandoahAdaptiveHeuristics::post_initialize() {
   if (_is_generational) {
     _regulator_thread = ShenandoahGenerationalHeap::heap()->regulator_thread();
     size_t young_available = ShenandoahGenerationalHeap::heap()->young_generation()->max_capacity() -
-      (ShenandoahGenerationalHeap::heap()->young_generation()->used_including_humongous_waste() + _freeset->reserved());
+      (ShenandoahGenerationalHeap::heap()->young_generation()->used() + _freeset->reserved());
 #ifdef KELVIN_VISIBLE
     log_info(gc)("post_initialize() to recalculate young trigger with: %zu", young_available);
 #endif
@@ -159,7 +159,7 @@ void ShenandoahAdaptiveHeuristics::post_initialize() {
   } else {
     _control_thread = ShenandoahHeap::heap()->control_thread();
     size_t global_available = ShenandoahHeap::heap()->global_generation()->max_capacity() -
-      (ShenandoahHeap::heap()->global_generation()->used_including_humongous_waste() + _freeset->reserved());
+      (ShenandoahHeap::heap()->global_generation()->used() + _freeset->reserved());
 #ifdef KELVIN_VISIBLE
     log_info(gc)("post_initialize() to recalculate global trigger with: %zu", global_available);
 #endif
@@ -198,7 +198,7 @@ void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_
   log_info(gc)("@recalculate_trigger_threshold(mutator_available: %zu) for _space_info: %s",
                mutator_available, _space_info->name());
 #endif
-  size_t capacity       = _space_info->soft_max_capacity();
+  size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
   size_t spike_headroom = capacity / 100 * ShenandoahAllocSpikeFactor;
   size_t penalties      = capacity / 100 * _gc_time_penalties;
 
@@ -699,7 +699,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 #endif
   size_t capacity = _space_info->soft_max_capacity();
   size_t available = _space_info->soft_available();
-  size_t allocated = _space_info->bytes_allocated_since_gc_start();
+  size_t allocated = _freeset->get_bytes_allocated_since_gc_start();
 
   log_debug(gc)("should_start_gc? available: %zu, soft_max_capacity: %zu"
                 ", allocated: %zu", available, capacity, allocated);

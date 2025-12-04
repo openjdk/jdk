@@ -742,10 +742,12 @@ size_t ShenandoahOldGeneration::used() const {
   return _free_set->old_used();
 }
 
+#ifdef KELVIN_DEPRECATE
 size_t ShenandoahOldGeneration::bytes_allocated_since_gc_start() const {
   assert(ShenandoahHeap::heap()->mode()->is_generational(), "NON_GEN implies not generational");
   return 0;
 }
+#endif
 
 size_t ShenandoahOldGeneration::get_affiliated_region_count() const {
   return _free_set->old_affiliated_regions();
@@ -764,6 +766,7 @@ size_t ShenandoahOldGeneration::used_regions_size() const {
   return used_regions * ShenandoahHeapRegion::region_size_bytes();
 }
 
+// For the old generation, max_capacity() equals soft_max_capacity()
 size_t ShenandoahOldGeneration::max_capacity() const {
   size_t total_regions = _free_set->total_old_regions();
   return total_regions * ShenandoahHeapRegion::region_size_bytes();

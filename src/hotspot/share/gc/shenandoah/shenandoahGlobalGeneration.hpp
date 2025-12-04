@@ -46,7 +46,9 @@ public:
 public:
   const char* name() const override;
 
+#ifdef KELVIN_DEPRECATE
   size_t bytes_allocated_since_gc_start() const override;
+#endif
   size_t used() const override;
   size_t used_regions() const override;
   size_t used_regions_size() const override;

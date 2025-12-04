@@ -443,7 +443,7 @@ jint ShenandoahHeap::initialize() {
       //  gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_cset_regions)
       // until after the heap is fully initialized.  So we make up a safe value here.
       size_t allocation_runway = InitialHeapSize / 2;
-      gen_heap->compute_old_generation_balance(allocation_runway, old_cset_regions);
+      gen_heap->compute_old_generation_balance(allocation_runway, old_trash_regions);
     }
     _free_set->finish_rebuild(young_trash_regions, old_trash_regions, num_old);
   }

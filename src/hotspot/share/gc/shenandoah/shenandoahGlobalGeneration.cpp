@@ -49,9 +49,11 @@ size_t ShenandoahGlobalGeneration::used() const {
   return _free_set->global_used();
 }
 
+#ifdef KELVIN_DEPRECATE
 size_t ShenandoahGlobalGeneration::bytes_allocated_since_gc_start() const {
   return _free_set->get_bytes_allocated_since_gc_start();
 }
+#endif
 
 size_t ShenandoahGlobalGeneration::get_affiliated_region_count() const {
   return _free_set->global_affiliated_regions();

@@ -334,7 +334,9 @@ public:
 
   static const char* state_name(State state);
 
+#ifdef KELVIN_DEPRECATE
   size_t bytes_allocated_since_gc_start() const override;
+#endif
   size_t used() const override;
   size_t used_regions() const override;
   size_t used_regions_size() const override;
@@ -342,6 +344,10 @@ public:
   size_t free_unaffiliated_regions() const override;
   size_t get_affiliated_region_count() const override;
   size_t max_capacity() const override;
+
+  inline size_t soft_max_capacity() const override {
+    return max_capacity();
+  }
 };
 
 

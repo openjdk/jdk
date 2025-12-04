@@ -168,7 +168,7 @@ size_t ShenandoahYoungHeuristics::bytes_of_allocation_runway_before_gc_trigger(s
   size_t capacity = _space_info->max_capacity();
   size_t usage = _space_info->used();
   size_t available = (capacity > usage)? capacity - usage: 0;
-  size_t allocated = _space_info->bytes_allocated_since_gc_start();
+  size_t allocated = _freeset->get_bytes_allocated_since_gc_start();
 
   size_t available_young_collected = ShenandoahHeap::heap()->collection_set()->get_young_available_bytes_collected();
   size_t anticipated_available =

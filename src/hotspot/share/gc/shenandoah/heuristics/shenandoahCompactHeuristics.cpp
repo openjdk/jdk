@@ -66,7 +66,7 @@ bool ShenandoahCompactHeuristics::should_start_gc() {
     return true;
   }
 
-  size_t bytes_allocated = _space_info->bytes_allocated_since_gc_start();
+  size_t bytes_allocated = ShenandoahHeap::heap()->free_set()->get_bytes_allocated_since_gc_start();
   if (bytes_allocated > threshold_bytes_allocated) {
     log_trigger("Allocated since last cycle (%zu%s) is larger than allocation threshold (%zu%s)",
                 byte_size_in_proper_unit(bytes_allocated),           proper_unit_for_byte_size(bytes_allocated),

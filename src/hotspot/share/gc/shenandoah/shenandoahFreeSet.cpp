@@ -1193,7 +1193,6 @@ ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
   _mutator_words_allocated(0),
   _mutator_words_allocated_at_rebuild(0),
   _mutator_words_at_last_sample(0),
-  _alloc_bias_weight(0)
   _total_humongous_waste(0),
   _alloc_bias_weight(0),
   _total_young_used(0),
@@ -2619,7 +2618,7 @@ void ShenandoahFreeSet::prepare_to_rebuild(size_t &young_trashed_regions, size_t
   // Place regions that have alloc_capacity into the old_collector set if they identify as is_old() or the
   // mutator set otherwise.  All trashed (cset) regions are affiliated young and placed in mutator set.  Save the
   // allocatable words in mutator partition in state variable.
-  _prepare_to_rebuild_mutator_free = find_regions_with_alloc_capacity(young_cset_regions, old_cset_regions,
+  _prepare_to_rebuild_mutator_free = find_regions_with_alloc_capacity(young_trashed_regions, old_trashed_regions,
                                                                       first_old_region, last_old_region, old_region_count);
 }
 
@@ -2707,7 +2706,7 @@ void ShenandoahFreeSet::compute_young_and_old_reserves(size_t young_trashed_regi
 #ifdef KELVIN_VISIBLE
   log_info(gc)("old-generation: " PTR_FORMAT, p2i(old_generation));
 #endif
-  size_t old_available = old_generation->available() + old_cset_regions * region_size_bytes;
+  size_t old_available = old_generation->available() + old_trashed_regions * region_size_bytes;
   size_t old_unaffiliated_regions = old_generation->free_unaffiliated_regions();
 #ifdef KELVIN_VISIBLE
   log_info(gc)("compute_young_and_old_reserves(young-cset: %zu, old-cset: %zu, has_evac_reserves: %s)",
@@ -2735,7 +2734,7 @@ void ShenandoahFreeSet::compute_young_and_old_reserves(size_t young_trashed_regi
          young_capacity, young_generation->used(), young_generation->get_humongous_waste());
 
   size_t young_available = young_capacity - (young_generation->used() + young_generation->get_humongous_waste());
-  young_available += young_cset_regions * region_size_bytes;
+  young_available += young_trashed_regions * region_size_bytes;
 
   assert(young_available >= young_unaffiliated_regions * region_size_bytes, "sanity");
   assert(old_available >= old_unaffiliated_regions * region_size_bytes, "sanity");
@@ -2744,7 +2743,7 @@ void ShenandoahFreeSet::compute_young_and_old_reserves(size_t young_trashed_regi
 
   // The generation region transfers take place after we rebuild.  old_region_balance represents number of regions
   // to transfer from old to young.
-    const ssize_t old_region_balance = old_generation->get_region_balance();
+  ssize_t old_region_balance = old_generation->get_region_balance();
 #ifdef KELVIN_VISIBLE
   log_info(gc)("old_region_balance: %zd", old_region_balance);
 #endif
