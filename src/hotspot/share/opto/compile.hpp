@@ -1099,7 +1099,7 @@ public:
   }
 
   void mark_has_mh_late_inlines() { _has_mh_late_inlines = true; }
-  bool has_mh_late_inlines() const     { return _has_mh_late_inlines; }
+  bool has_mh_late_inlines() const { return _has_mh_late_inlines; }
 
   bool inline_incrementally_one();
   void inline_incrementally_cleanup(PhaseIterGVN& igvn);
