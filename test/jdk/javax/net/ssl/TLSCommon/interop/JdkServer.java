@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
@@ -85,6 +84,17 @@ public class JdkServer extends AbstractServer {
                 System.out.println("appProtocol: " + appProtocol);
             }
         }
+
+        if (builder.getNamedGroups() != null
+                && builder.getNamedGroups().length > 0) {
+            NamedGroup[] namedGroups = builder.getNamedGroups();
+            String[] namedGroupStrs = new String[namedGroups.length];
+            for (int i = 0 ; i < namedGroups.length ; ++i) {
+                namedGroupStrs[i] = namedGroups[i].name;
+            }
+            sslParams.setNamedGroups(namedGroupStrs);
+        }
+
         serverSocket.setSSLParameters(sslParams);
     }
 
