@@ -153,4 +153,49 @@ public class VectorAlgorithmsImpl {
         }
         return r;
     }
+
+    public static int findMinIndex_loop(int[] a) {
+        int min = a[0];
+        int index = 0;
+        for (int i = 1; i < a.length; i++) {
+            int ai = a[i];
+            if (ai < min) {
+                min = ai;
+                index = i;
+            }
+        }
+        return index;
+    }
+
+    public static int findMinIndex_VectorAPI(int[] a) {
+        var mins = IntVector.broadcast(SPECIES_I, a[0]);
+        var idxs = IntVector.broadcast(SPECIES_I, 0);
+        var iota = IntVector.broadcast(SPECIES_I, 1).addIndex(1);
+        int i = 0;
+        for (; i < SPECIES_I.loopBound(a.length); i += SPECIES_I.length()) {
+            IntVector v = IntVector.fromArray(SPECIES_I, a, i);
+            var mask = v.compare(VectorOperators.LT, mins);
+            mins = mins.blend(v, mask);
+            idxs = idxs.blend(iota, mask);
+            iota = iota.add(SPECIES_I.length());
+        }
+        int min = mins.lane(0);
+        int index = idxs.lane(0);
+        for (int j = 1; j < SPECIES_I.length(); j++) {
+            if (mins.lane(j) < min) {
+                min = mins.lane(j);
+                index = idxs.lane(j);
+            }
+        }
+        for (; i < a.length; i++) {
+            int ai = a[i];
+            if (ai < min) {
+                min = ai;
+                index = i;
+            }
+        }
+        return index;
+    }
+
+
 }
