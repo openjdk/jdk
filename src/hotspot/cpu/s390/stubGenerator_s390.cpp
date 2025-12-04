@@ -3378,7 +3378,7 @@ class StubGenerator: public StubCodeGenerator {
 
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_counterMode_AESCrypt)) {
       StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt();
-    } 
+    }
 
     // Generate GHASH intrinsics code
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_ghash_processBlocks)) {
