@@ -26,7 +26,6 @@
 #define SHARE_OPTO_MACRO_HPP
 
 #include "opto/phase.hpp"
-#include "opto/phaseX.hpp"
 
 class  AllocateNode;
 class  AllocateArrayNode;
