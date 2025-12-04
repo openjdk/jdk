@@ -115,7 +115,7 @@ public class TestVectorAlgorithms {
             int size = 100_000 + RANDOM.nextInt(10_000);
             aI = new int[size];
             G.fill(INT_GEN, aI);
-            for (int i = 0; i < aI.length; i++) { aI[i] = i; }
+            //for (int i = 0; i < aI.length; i++) { aI[i] = i; }
             rI1 = new int[size];
             rI2 = new int[size];
             rI3 = new int[size];

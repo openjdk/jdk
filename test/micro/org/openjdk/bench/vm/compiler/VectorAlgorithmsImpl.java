@@ -153,4 +153,45 @@ public class VectorAlgorithmsImpl {
         }
         return r;
     }
+
+    public static int findMinIndex_loop(int[] a) {
+        int min = a[0];
+        int index = 0;
+        for (int i = 1; i < a.length; i++) {
+            int ai = a[i];
+            if (ai < min) {
+                min = ai;
+                index = i;
+            }
+        }
+        return index;
+    }
+
+    public static int findMinIndex_VectorAPI(int[] a) {
+        // Main approach: have partial results in mins and idxs.
+        var mins = IntVector.broadcast(SPECIES_I512, a[0]);
+        var idxs = IntVector.broadcast(SPECIES_I512, 0);
+        var iota = IntVector.broadcast(SPECIES_I512, 0).addIndex(1);
+        int i = 0;
+        for (; i < SPECIES_I512.loopBound(a.length); i += SPECIES_I512.length()) {
+            IntVector v = IntVector.fromArray(SPECIES_I512, a, i);
+            var mask = v.compare(VectorOperators.LT, mins);
+            mins = mins.blend(v, mask);
+            idxs = idxs.blend(iota, mask);
+            iota = iota.add(SPECIES_I512.length());
+        }
+        // Reduce the vectors down
+        int min = mins.reduceLanes(VectorOperators.MIN);
+        var not_min_mask = mins.compare(VectorOperators.NE, min);
+        int index = idxs.blend(a.length, not_min_mask).reduceLanes(VectorOperators.MIN);
+        // Tail loop
+        for (; i < a.length; i++) {
+            int ai = a[i];
+            if (ai < min) {
+                min = ai;
+                index = i;
+            }
+        }
+        return index;
+    }
 }

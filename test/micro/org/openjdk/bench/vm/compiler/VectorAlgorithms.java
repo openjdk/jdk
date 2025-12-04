@@ -97,4 +97,14 @@ public class VectorAlgorithms {
     public Object scanAddI_VectorAPI_permute_add() {
         return VectorAlgorithmsImpl.scanAddI_VectorAPI_permute_add(aI, rI);
     }
+
+    @Benchmark
+    public int findMinIndex_loop() {
+        return VectorAlgorithmsImpl.findMinIndex_loop(aI);
+    }
+
+    @Benchmark
+    public int findMinIndex_VectorAPI() {
+        return VectorAlgorithmsImpl.findMinIndex_VectorAPI(aI);
+    }
 }
