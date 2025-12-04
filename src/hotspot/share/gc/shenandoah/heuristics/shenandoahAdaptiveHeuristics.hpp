@@ -181,8 +181,6 @@ public:
 
   const static size_t GC_TIME_SAMPLE_SIZE;
 
-  const static double MINIMUM_ALLOC_RATE_SAMPLE_INTERVAL;
-
   friend class ShenandoahAllocationRate;
 
   // Used to record the last trigger that signaled to start a GC.
@@ -205,7 +203,7 @@ public:
 
   // Returns number of words that can be allocated before we need to trigger next GC.
   inline size_t allocatable() const {
-    size_t allocated_words = _freeset->get_mutator_allocations_since_rebuild();
+    size_t allocated_words = _free_set->get_mutator_allocations_since_rebuild();
     size_t result = (allocated_words < _trigger_threshold)? _trigger_threshold - allocated_words: 0;
 #undef KELVIN_ALLOCATABLE
 #ifdef KELVIN_ALLOCATABLE
@@ -254,7 +252,7 @@ protected:
   // source of feedback to adjust trigger parameters.
   TruncatedSeq _available;
 
-  ShenandoahFreeSet* _freeset;
+  ShenandoahFreeSet* _free_set;
   bool _is_generational;
   ShenandoahRegulatorThread* _regulator_thread;
   ShenandoahController* _control_thread;

@@ -34,8 +34,19 @@
                             range,                                          \
                             constraint)                                     \
                                                                             \
-  product(uintx, ShenandoahRateAccelerationSampleSize, 20, EXPERIMENTAL,    \
-          "In selected ShenandoahControlIntervals (if 8 ms has passed "     \
+  product(double, ShenandoahAccelerationSamplePeriod, 0.0045, EXPERIMENTAL, \
+          "When at least this much time (measured in seconds) has passed "  \
+          "since the allocation rate was most recently sampled, capture "   \
+          "another allocation rate sample for the purpose of detecting "    \
+          "acceleration or momentary spikes in allocation rate.  A "        \
+          "smaller value allows quicker response to changes in allocation " \
+          "rates but is more vulnerable to noise and requires more "        \
+          "monitoring effort.")                                             \
+          range(0.001, 1.00)                                                \
+                                                                            \
+  product(uintx, ShenandoahRateAccelerationSampleSize, 12, EXPERIMENTAL,    \
+          "In selected ShenandoahControlIntervals "                         \
+          "(if ShenandoahAccelerationSamplePeriod seconds have passed "     \
           "since previous allocation rate sample), "                        \
           "we compute the allocation rate since the previous rate was "     \
           "sampled.  This many samples are analyzed to determine whether "  \
@@ -51,12 +62,13 @@
           "detected.  If the last several of all samples are signficantly " \
           "larger than the other samples, the best fit line through all "   \
           "sampled values will have an upward slope, manifesting as "       \
-          "acceleration")                                                   \
-          range(0,32)                                                       \
+          "acceleration.")                                                  \
+          range(1,64)                                                       \
                                                                             \
   product(uintx, ShenandoahMomentaryAllocationRateSpikeSampleSize,          \
           4, EXPERIMENTAL,                                                  \
-          "In selected ShenandoahControlIntervals (if 8 ms has passed "     \
+          "In selected ShenandoahControlIntervals "                         \
+          "(if ShenandoahAccelerationSamplePeriod seconds have passed "     \
           "since previous allocation rate sample), we compute "             \
           "the allocation rate since the previous rate was sampled. "       \
           "The weighted average of this "                                   \
@@ -73,7 +85,7 @@
           "ShenandoahRateAccelerationSampleSize.  A larger value makes "    \
           "momentary spike detection less sensitive.  A smaller value "     \
           "may result in excessive GC triggers.")                           \
-          range(0,32)                                                       \
+          range(1,64)                                                       \
                                                                             \
   product(uintx, ShenandoahGenerationalMinPIPUsage, 30, EXPERIMENTAL,       \
           "(Generational mode only) What percent of a heap region "         \
