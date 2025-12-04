@@ -1060,7 +1060,6 @@ void Klass::verify_on(outputStream* st) {
 
   // This can be expensive, but it is worth checking that this klass is actually
   // in the CLD graph but not in production.
-
   // Stricter checks for both correct alignment and placement
   DEBUG_ONLY(CompressedKlassPointers::check_encodable(this));
 
