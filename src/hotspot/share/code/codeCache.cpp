@@ -227,11 +227,6 @@ void CodeCache::initialize_heaps() {
 
   if (!non_nmethod.set) {
     non_nmethod.size += compiler_buffer_size;
-    // Further down, just before FLAG_SET_ERGO(), all segment sizes are
-    // aligned down to the next lower multiple of min_size. For large page
-    // sizes, this may result in (non_nmethod.size == 0) which is not acceptable.
-    // Therefore, force non_nmethod.size to at least min_size.
-    non_nmethod.size = MAX2(non_nmethod.size, min_size);
   }
 
   if (!profiled.set && !non_profiled.set) {
@@ -307,11 +302,10 @@ void CodeCache::initialize_heaps() {
 
   // Note: if large page support is enabled, min_size is at least the large
   // page size. This ensures that the code cache is covered by large pages.
-  non_profiled.size += non_nmethod.size & alignment_mask(min_size);
-  non_profiled.size += profiled.size & alignment_mask(min_size);
-  non_nmethod.size = align_down(non_nmethod.size, min_size);
-  profiled.size = align_down(profiled.size, min_size);
-  non_profiled.size = align_down(non_profiled.size, min_size);
+  non_nmethod.size = align_up(non_nmethod.size, min_size);
+  profiled.size = align_up(profiled.size, min_size);
+  non_profiled.size = align_up(non_profiled.size, min_size);
+  cache_size = non_nmethod.size + profiled.size + non_profiled.size;
 
   FLAG_SET_ERGO(NonNMethodCodeHeapSize, non_nmethod.size);
   FLAG_SET_ERGO(ProfiledCodeHeapSize, profiled.size);
