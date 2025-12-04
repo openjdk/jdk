@@ -73,6 +73,8 @@ binary_math_template="Binary-op-math"
 binary_math_broadcast_template="Binary-Broadcast-op-math"
 bool_reduction_scalar="BoolReduction-Scalar-op"
 bool_reduction_template="BoolReduction-op"
+bool_binary_template="BoolBinary-op"
+bool_unary_template="BoolUnary-op"
 with_op_template="With-Op"
 shift_template="Shift-op"
 shift_masked_template="Shift-Masked-op"
@@ -90,8 +92,6 @@ unslice_template="Unslice-op"
 unslice1_template="Unslice-bop"
 unslice1_masked_template="Unslice-Masked-bop"
 miscellaneous_template="Miscellaneous"
-mask_binary="Mask-Binary-op"
-mask_unary="Mask-Unary-op"
 
 function replace_variables {
   local filename=$1
@@ -629,12 +629,12 @@ gen_unary_alu_op "REVERSE_BYTES" "\$Boxtype\$.reverseBytes(a)" "short"
 gen_unary_alu_op "REVERSE_BYTES" "a" "byte"
 
 # Mask operations
-gen_op_tmpl $mask_binary "and" "a \& b"
-gen_op_tmpl $mask_binary "or" "a | b"
-gen_op_tmpl $mask_binary "xor" "a != b"
-gen_op_tmpl $mask_binary "andNot" "a \& !b"
-gen_op_tmpl $mask_binary "eq" "a == b"
-gen_op_tmpl $mask_unary "not" "!a"
+gen_op_tmpl $bool_binary_template "and" "a \& b"
+gen_op_tmpl $bool_binary_template "or" "a | b"
+gen_op_tmpl $bool_binary_template "xor" "a != b"
+gen_op_tmpl $bool_binary_template "andNot" "a \& !b"
+gen_op_tmpl $bool_binary_template "eq" "a == b"
+gen_op_tmpl $bool_unary_template "not" "!a"
 
 # Miscellaneous Smoke Tests
 gen_op_tmpl $miscellaneous_template "MISC" "" ""
