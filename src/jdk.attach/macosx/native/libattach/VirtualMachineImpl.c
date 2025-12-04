@@ -335,3 +335,27 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_createAttachFile
         JNU_ReleaseStringPlatformChars(env, path, _path);
     }
 }
+
+/*
+ * Class:     sun_tools_attach_BSDVirtualMachine
+ * Method:    getTempDir
+ * Signature: (V)Ljava.lang.String;
+ */
+JNIEXPORT jstring JNICALL Java_sun_tools_attach_VirtualMachineImpl_getTempDir(JNIEnv *env, jclass cls)
+{
+    // This must be hard coded because it's the system's temporary
+    // directory not the java application's temp directory, ala java.io.tmpdir.
+
+#ifdef __APPLE__
+    // macosx has a secure per-user temporary directory.
+    // Don't cache the result as this is only called once.
+    char path[PATH_MAX];
+    int pathSize = confstr(_CS_DARWIN_USER_TEMP_DIR, path, PATH_MAX);
+    if (pathSize == 0 || pathSize > PATH_MAX) {
+        strlcpy(path, "/tmp", sizeof(path));
+    }
+    return JNU_NewStringPlatform(env, path);
+#else /* __APPLE__ */
+    return (*env)->NewStringUTF(env, "/tmp");
+#endif /* __APPLE__ */
+}
