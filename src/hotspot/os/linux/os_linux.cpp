@@ -216,21 +216,27 @@ bool os::is_containerized() {
 }
 
 bool os::Container::memory_limit(physical_memory_size_type& value) {
-  if (OSContainer::memory_limit_in_bytes(value) && value != value_unlimited) {
+  physical_memory_size_type result = 0;
+  if (OSContainer::memory_limit_in_bytes(result) && result != value_unlimited) {
+    value = result;
     return true;
   }
   return false;
 }
 
 bool os::Container::memory_soft_limit(physical_memory_size_type& value) {
-  if (OSContainer::memory_soft_limit_in_bytes(value) && value != 0) {
+  physical_memory_size_type result = 0;
+  if (OSContainer::memory_soft_limit_in_bytes(result) && result != 0 && result != value_unlimited) {
+    value = result;
     return true;
   }
   return false;
 }
 
 bool os::Container::memory_throttle_limit(physical_memory_size_type& value) {
-  if (OSContainer::memory_throttle_limit_in_bytes(value) && value != value_unlimited) {
+  physical_memory_size_type result = 0;
+  if (OSContainer::memory_throttle_limit_in_bytes(result) && result != value_unlimited) {
+    value = result;
     return true;
   }
   return false;
