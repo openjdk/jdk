@@ -69,10 +69,6 @@ public class SwingUtilities3 {
     private static final Object DELEGATE_REPAINT_MANAGER_KEY =
         new StringBuilder("DelegateRepaintManagerKey");
 
-    private static Color disabledForeground;
-    private static Color acceleratorSelectionForeground;
-    private static Color acceleratorForeground;
-
     /**
       * Registers delegate RepaintManager for {@code JComponent}.
       */
@@ -150,11 +146,15 @@ public class SwingUtilities3 {
     }
 
     public static void applyInsets(Rectangle rect, Insets insets) {
+        applyInsets(rect, insets, true);
+    }
+
+    public static void applyInsets(Rectangle rect, Insets insets, boolean leftToRight) {
         if (insets != null) {
-            rect.x += insets.left;
+            rect.x += leftToRight ? insets.left : insets.right;
             rect.y += insets.top;
-            rect.width -= (insets.right + rect.x);
-            rect.height -= (insets.bottom + rect.y);
+            rect.width -= (insets.left + insets.right);
+            rect.height -= (insets.top + insets.bottom);
         }
     }
 
@@ -204,7 +204,10 @@ public class SwingUtilities3 {
 
 
     public static void paintAccText(Graphics g, MenuItemLayoutHelper lh,
-                             MenuItemLayoutHelper.LayoutResult lr) {
+                             MenuItemLayoutHelper.LayoutResult lr,
+                             Color disabledForeground,
+                             Color acceleratorSelectionForeground,
+                             Color acceleratorForeground) {
         if (!lh.getAccText().isEmpty()) {
             ButtonModel model = lh.getMenuItem().getModel();
             g.setFont(lh.getAccFontMetrics().getFont());
@@ -241,18 +244,6 @@ public class SwingUtilities3 {
                                 lh.getAccFontMetrics().getAscent());
             }
         }
-    }
-
-    public static void setDisabledForeground(Color disabledFg) {
-        disabledForeground = disabledFg;
-    }
-
-    public static void setAcceleratorSelectionForeground(Color acceleratorSelectionFg) {
-        acceleratorSelectionForeground = acceleratorSelectionFg;
-    }
-
-    public static void setAcceleratorForeground(Color acceleratorFg) {
-        acceleratorForeground = acceleratorFg;
     }
 
     public static void paintArrowIcon(Graphics g, MenuItemLayoutHelper lh,

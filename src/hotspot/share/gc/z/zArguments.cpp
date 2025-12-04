@@ -45,7 +45,7 @@ void ZArguments::initialize_heap_flags_and_sizes() {
       !FLAG_IS_CMDLINE(SoftMaxHeapSize)) {
     // We are really just guessing how much memory the program needs.
     // When that is the case, we don't want the soft and hard limits to be the same
-    // as it can cause flakyness in the number of GC threads used, in order to keep
+    // as it can cause flakiness in the number of GC threads used, in order to keep
     // to a random number we just pulled out of thin air.
     FLAG_SET_ERGO(SoftMaxHeapSize, MaxHeapSize * 90 / 100);
   }
@@ -206,6 +206,13 @@ void ZArguments::initialize() {
   // More events
   if (FLAG_IS_DEFAULT(LogEventsBufferEntries)) {
     FLAG_SET_DEFAULT(LogEventsBufferEntries, 250);
+  }
+
+  if (VerifyArchivedFields > 0) {
+    // ZGC doesn't support verifying at arbitrary points as our normal state is that everything in the
+    // heap looks completely insane. Only at some particular points does the heap look sort of sane.
+    // So instead of verifying we trigger a GC that does its own verification when it's suitable.
+    FLAG_SET_DEFAULT(VerifyArchivedFields, 2);
   }
 
   // Verification before startup and after exit not (yet) supported

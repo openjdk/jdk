@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,27 @@
  * questions.
  */
 
-/**
+/*
  * @test id=default
  * @bug 8284161
  * @summary Test virtual threads doing blocking I/O on NIO channels
  * @library /test/lib
- * @run junit BlockingChannelOps
+ * @run junit/timeout=480 BlockingChannelOps
  */
 
-/**
+/*
  * @test id=poller-modes
  * @requires (os.family == "linux") | (os.family == "mac")
  * @library /test/lib
- * @run junit/othervm -Djdk.pollerMode=1 BlockingChannelOps
- * @run junit/othervm -Djdk.pollerMode=2 BlockingChannelOps
+ * @run junit/othervm/timeout=480 -Djdk.pollerMode=1 BlockingChannelOps
+ * @run junit/othervm/timeout=480 -Djdk.pollerMode=2 BlockingChannelOps
  */
 
-/**
+/*
  * @test id=no-vmcontinuations
  * @requires vm.continuations
  * @library /test/lib
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations BlockingChannelOps
+ * @run junit/othervm/timeout=480 -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations BlockingChannelOps
  */
 
 import java.io.Closeable;
@@ -62,9 +62,12 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
+import java.util.concurrent.locks.LockSupport;
 
 import jdk.test.lib.thread.VThreadRunner;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 class BlockingChannelOps {
@@ -162,6 +165,22 @@ class BlockingChannelOps {
     }
 
     /**
+     * SocketChannel shutdownInput while virtual thread blocked in read.
+     */
+    @Test
+    void testSocketChannelReadAsyncShutdownInput() throws Exception {
+        VThreadRunner.run(() -> {
+            try (var connection = new Connection()) {
+                SocketChannel sc = connection.channel1();
+                runAfterParkedAsync(sc::shutdownInput);
+                int n = sc.read(ByteBuffer.allocate(100));
+                assertEquals(-1, n);
+                assertTrue(sc.isOpen());
+            }
+        });
+    }
+
+    /**
      * Virtual thread interrupted while blocked in SocketChannel read.
      */
     @Test
@@ -190,13 +209,15 @@ class BlockingChannelOps {
     @Test
     void testSocketChannelWriteAsyncClose() throws Exception {
         VThreadRunner.run(() -> {
-            boolean retry = true;
-            while (retry) {
+            boolean done = false;
+            while (!done) {
                 try (var connection = new Connection()) {
                     SocketChannel sc = connection.channel1();
 
                     // close sc when current thread blocks in write
-                    runAfterParkedAsync(sc::close);
+                    runAfterParkedAsync(sc::close, true);
+
+                    // write until channel is closed
                     try {
                         ByteBuffer bb = ByteBuffer.allocate(100*1024);
                         for (;;) {
@@ -206,11 +227,39 @@ class BlockingChannelOps {
                         }
                     } catch (AsynchronousCloseException expected) {
                         // closed when blocked in write
-                        retry = false;
+                        done = true;
                     } catch (ClosedChannelException e) {
-                        // closed when not blocked in write, need to retry test
+                        // closed but not blocked in write, need to retry test
+                        System.err.format("%s, need to retry!%n", e);
                     }
                 }
+            }
+        });
+    }
+
+
+    /**
+     * SocketChannel shutdownOutput while virtual thread blocked in write.
+     */
+    @Test
+    void testSocketChannelWriteAsyncShutdownOutput() throws Exception {
+        VThreadRunner.run(() -> {
+            try (var connection = new Connection()) {
+                SocketChannel sc = connection.channel1();
+
+                // shutdown output when current thread blocks in write
+                runAfterParkedAsync(sc::shutdownOutput);
+                try {
+                    ByteBuffer bb = ByteBuffer.allocate(100*1024);
+                    for (;;) {
+                        int n = sc.write(bb);
+                        assertTrue(n > 0);
+                        bb.clear();
+                    }
+                } catch (ClosedChannelException e) {
+                    // expected
+                }
+                assertTrue(sc.isOpen());
             }
         });
     }
@@ -221,15 +270,16 @@ class BlockingChannelOps {
     @Test
     void testSocketChannelWriteInterrupt() throws Exception {
         VThreadRunner.run(() -> {
-            boolean retry = true;
-            while (retry) {
+            boolean done = false;
+            while (!done) {
                 try (var connection = new Connection()) {
                     SocketChannel sc = connection.channel1();
 
                     // interrupt current thread when it blocks in write
                     Thread thisThread = Thread.currentThread();
-                    runAfterParkedAsync(thisThread::interrupt);
+                    runAfterParkedAsync(thisThread::interrupt, true);
 
+                    // write until channel is closed
                     try {
                         ByteBuffer bb = ByteBuffer.allocate(100*1024);
                         for (;;) {
@@ -240,9 +290,10 @@ class BlockingChannelOps {
                     } catch (ClosedByInterruptException e) {
                         // closed when blocked in write
                         assertTrue(Thread.interrupted());
-                        retry = false;
+                        done = true;
                     } catch (ClosedChannelException e) {
-                        // closed when not blocked in write, need to retry test
+                        // closed but not blocked in write, need to retry test
+                        System.err.format("%s, need to retry!%n", e);
                     }
                 }
             }
@@ -252,20 +303,9 @@ class BlockingChannelOps {
     /**
      * Virtual thread blocks in SocketChannel adaptor read.
      */
-    @Test
-    void testSocketAdaptorRead1() throws Exception {
-        testSocketAdaptorRead(0);
-    }
-
-    /**
-     * Virtual thread blocks in SocketChannel adaptor read with timeout.
-     */
-    @Test
-    void testSocketAdaptorRead2() throws Exception {
-        testSocketAdaptorRead(60_000);
-    }
-
-    private void testSocketAdaptorRead(int timeout) throws Exception {
+    @ParameterizedTest
+    @ValueSource(ints = { 0, 60_000 })
+    void testSocketAdaptorRead(int timeout) throws Exception {
         VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 SocketChannel sc1 = connection.channel1();
@@ -371,20 +411,9 @@ class BlockingChannelOps {
     /**
      * Virtual thread blocks in ServerSocketChannel adaptor accept.
      */
-    @Test
-    void testSocketChannelAdaptorAccept1() throws Exception {
-        testSocketChannelAdaptorAccept(0);
-    }
-
-    /**
-     * Virtual thread blocks in ServerSocketChannel adaptor accept with timeout.
-     */
-    @Test
-    void testSocketChannelAdaptorAccept2() throws Exception {
-        testSocketChannelAdaptorAccept(60_000);
-    }
-
-    private void testSocketChannelAdaptorAccept(int timeout) throws Exception {
+    @ParameterizedTest
+    @ValueSource(ints = { 0, 60_000 })
+    void testSocketChannelAdaptorAccept(int timeout) throws Exception {
         VThreadRunner.run(() -> {
             try (var ssc = ServerSocketChannel.open()) {
                 ssc.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
@@ -497,20 +526,9 @@ class BlockingChannelOps {
     /**
      * Virtual thread blocks in DatagramSocket adaptor receive.
      */
-    @Test
-    void testDatagramSocketAdaptorReceive1() throws Exception {
-        testDatagramSocketAdaptorReceive(0);
-    }
-
-    /**
-     * Virtual thread blocks in DatagramSocket adaptor receive with timeout.
-     */
-    @Test
-    void testDatagramSocketAdaptorReceive2() throws Exception {
-        testDatagramSocketAdaptorReceive(60_000);
-    }
-
-    private void testDatagramSocketAdaptorReceive(int timeout) throws Exception {
+    @ParameterizedTest
+    @ValueSource(ints = { 0, 60_000 })
+    void testDatagramSocketAdaptorReceive(int timeout) throws Exception {
         VThreadRunner.run(() -> {
             try (DatagramChannel dc1 = DatagramChannel.open();
                  DatagramChannel dc2 = DatagramChannel.open()) {
@@ -536,21 +554,9 @@ class BlockingChannelOps {
     /**
      * DatagramChannel close while virtual thread blocked in adaptor receive.
      */
-    @Test
-    void testDatagramSocketAdaptorReceiveAsyncClose1() throws Exception {
-        testDatagramSocketAdaptorReceiveAsyncClose(0);
-    }
-
-    /**
-     * DatagramChannel close while virtual thread blocked in adaptor receive
-     * with timeout.
-     */
-    @Test
-    void testDatagramSocketAdaptorReceiveAsyncClose2() throws Exception {
-        testDatagramSocketAdaptorReceiveAsyncClose(60_1000);
-    }
-
-    private void testDatagramSocketAdaptorReceiveAsyncClose(int timeout) throws Exception {
+    @ParameterizedTest
+    @ValueSource(ints = { 0, 60_000 })
+    void testDatagramSocketAdaptorReceiveAsyncClose(int timeout) throws Exception {
         VThreadRunner.run(() -> {
             try (DatagramChannel dc = DatagramChannel.open()) {
                 InetAddress lh = InetAddress.getLoopbackAddress();
@@ -572,21 +578,9 @@ class BlockingChannelOps {
     /**
      * Virtual thread interrupted while blocked in DatagramSocket adaptor receive.
      */
-    @Test
-    void testDatagramSocketAdaptorReceiveInterrupt1() throws Exception {
-        testDatagramSocketAdaptorReceiveInterrupt(0);
-    }
-
-    /**
-     * Virtual thread interrupted while blocked in DatagramSocket adaptor receive
-     * with timeout.
-     */
-    @Test
-    void testDatagramSocketAdaptorReceiveInterrupt2() throws Exception {
-        testDatagramSocketAdaptorReceiveInterrupt(60_1000);
-    }
-
-    private void testDatagramSocketAdaptorReceiveInterrupt(int timeout) throws Exception {
+    @ParameterizedTest
+    @ValueSource(ints = { 0, 60_000 })
+    void testDatagramSocketAdaptorReceiveInterrupt(int timeout) throws Exception {
         VThreadRunner.run(() -> {
             try (DatagramChannel dc = DatagramChannel.open()) {
                 InetAddress lh = InetAddress.getLoopbackAddress();
@@ -734,14 +728,16 @@ class BlockingChannelOps {
     @Test
     void testPipeWriteAsyncClose() throws Exception {
         VThreadRunner.run(() -> {
-            boolean retry = true;
-            while (retry) {
+            boolean done = false;
+            while (!done) {
                 Pipe p = Pipe.open();
                 try (Pipe.SinkChannel sink = p.sink();
                      Pipe.SourceChannel source = p.source()) {
 
                     // close sink when current thread blocks in write
-                    runAfterParkedAsync(sink::close);
+                    runAfterParkedAsync(sink::close, true);
+
+                    // write until channel is closed
                     try {
                         ByteBuffer bb = ByteBuffer.allocate(100*1024);
                         for (;;) {
@@ -751,9 +747,10 @@ class BlockingChannelOps {
                         }
                     } catch (AsynchronousCloseException e) {
                         // closed when blocked in write
-                        retry = false;
+                        done = true;
                     } catch (ClosedChannelException e) {
-                        // closed when not blocked in write, need to retry test
+                        // closed but not blocked in write, need to retry test
+                        System.err.format("%s, need to retry!%n", e);
                     }
                 }
             }
@@ -766,16 +763,17 @@ class BlockingChannelOps {
     @Test
     void testPipeWriteInterrupt() throws Exception {
         VThreadRunner.run(() -> {
-            boolean retry = true;
-            while (retry) {
+            boolean done = false;
+            while (!done) {
                 Pipe p = Pipe.open();
                 try (Pipe.SinkChannel sink = p.sink();
                      Pipe.SourceChannel source = p.source()) {
 
                     // interrupt current thread when it blocks in write
                     Thread thisThread = Thread.currentThread();
-                    runAfterParkedAsync(thisThread::interrupt);
+                    runAfterParkedAsync(thisThread::interrupt, true);
 
+                    // write until channel is closed
                     try {
                         ByteBuffer bb = ByteBuffer.allocate(100*1024);
                         for (;;) {
@@ -786,9 +784,10 @@ class BlockingChannelOps {
                     } catch (ClosedByInterruptException expected) {
                         // closed when blocked in write
                         assertTrue(Thread.interrupted());
-                        retry = false;
+                        done = true;
                     } catch (ClosedChannelException e) {
-                        // closed when not blocked in write, need to retry test
+                        // closed but not blocked in write, need to retry test
+                        System.err.format("%s, need to retry!%n", e);
                     }
                 }
             }
@@ -848,26 +847,50 @@ class BlockingChannelOps {
     }
 
     /**
-     * Runs the given task asynchronously after the current virtual thread has parked.
+     * Runs the given task asynchronously after the current virtual thread parks.
+     * @param writing if the thread will block in write
      * @return the thread started to run the task
      */
-    static Thread runAfterParkedAsync(ThrowingRunnable task) {
+    private static Thread runAfterParkedAsync(ThrowingRunnable task, boolean writing) {
         Thread target = Thread.currentThread();
         if (!target.isVirtual())
             throw new WrongThreadException();
         return Thread.ofPlatform().daemon().start(() -> {
             try {
-                Thread.State state = target.getState();
-                while (state != Thread.State.WAITING
-                        && state != Thread.State.TIMED_WAITING) {
+                // wait for target thread to park
+                while (!isWaiting(target)) {
                     Thread.sleep(20);
-                    state = target.getState();
                 }
-                Thread.sleep(20);  // give a bit more time to release carrier
+
+                // if the target thread is parked in write then we nudge it a few times
+                // to avoid wakeup with some bytes written
+                if (writing) {
+                    for (int i = 0; i < 3; i++) {
+                        LockSupport.unpark(target);
+                        while (!isWaiting(target)) {
+                            Thread.sleep(20);
+                        }
+                    }
+                }
+
                 task.run();
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
         });
+    }
+
+    private static Thread runAfterParkedAsync(ThrowingRunnable task) {
+        return runAfterParkedAsync(task, false);
+    }
+
+    /**
+     * Return true if the given Thread is parked.
+     */
+    private static boolean isWaiting(Thread target) {
+        Thread.State state = target.getState();
+        assertNotEquals(Thread.State.TERMINATED, state);
+        return (state == Thread.State.WAITING || state == Thread.State.TIMED_WAITING);
     }
 }

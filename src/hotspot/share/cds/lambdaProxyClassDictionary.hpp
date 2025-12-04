@@ -25,8 +25,8 @@
 #ifndef SHARE_CDS_LAMBDAPROXYCLASSINFO_HPP
 #define SHARE_CDS_LAMBDAPROXYCLASSINFO_HPP
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/javaClasses.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "utilities/growableArray.hpp"

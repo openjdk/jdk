@@ -163,7 +163,8 @@ class LibraryCallKit : public GraphKit {
                              Node* array_length,
                              RegionNode* region);
   void  generate_string_range_check(Node* array, Node* offset,
-                                    Node* length, bool char_count);
+                                    Node* length, bool char_count,
+                                    bool halt_on_oob = false);
   Node* current_thread_helper(Node* &tls_output, ByteSize handle_offset,
                               bool is_immutable);
   Node* generate_current_thread(Node* &tls_output);
@@ -337,7 +338,7 @@ class LibraryCallKit : public GraphKit {
   Node* inline_cipherBlockChaining_AESCrypt_predicate(bool decrypting);
   Node* inline_electronicCodeBook_AESCrypt_predicate(bool decrypting);
   Node* inline_counterMode_AESCrypt_predicate();
-  Node* get_key_start_from_aescrypt_object(Node* aescrypt_object);
+  Node* get_key_start_from_aescrypt_object(Node* aescrypt_object, bool is_decrypt);
   bool inline_ghash_processBlocks();
   bool inline_chacha20Block();
   bool inline_kyberNtt();

@@ -108,7 +108,7 @@ final class ChangeCipherSpec {
                     ") and protocol version (" + hc.negotiatedProtocol + ")");
             }
 
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine("Produced ChangeCipherSpec message");
             }
 
@@ -142,7 +142,7 @@ final class ChangeCipherSpec {
                 throw tc.fatal(Alert.UNEXPECTED_MESSAGE,
                         "Malformed or unexpected ChangeCipherSpec message");
             }
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine("Consuming ChangeCipherSpec message");
             }
 
@@ -232,11 +232,12 @@ final class ChangeCipherSpec {
             tc.consumers.remove(ContentType.CHANGE_CIPHER_SPEC.id);
 
             // parse
-            if (message.remaining() != 1 || message.get() != 1) {
+            if (message.remaining() != 1 || message.get() != 1
+                    || tc.isNegotiated) {
                 throw tc.fatal(Alert.UNEXPECTED_MESSAGE,
                         "Malformed or unexpected ChangeCipherSpec message");
             }
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine("Consuming ChangeCipherSpec message");
             }
 

@@ -352,6 +352,11 @@ on some strategies to deal with this.
 It is recommended that you use at least macOS 14 and Xcode 15.4, but
 earlier versions may also work.
 
+Starting with Xcode 26, introduced in macOS 26, the Metal toolchain no longer
+comes bundled with Xcode, so it needs to be installed separately. This can
+either be done via the Xcode's Settings/Components UI, or in the command line
+calling `xcodebuild -downloadComponent metalToolchain`.
+
 The standard macOS environment contains the basic tooling needed to build, but
 for external libraries a package manager is recommended. The JDK uses
 [homebrew](https://brew.sh/) in the examples, but feel free to use whatever
@@ -468,7 +473,7 @@ available for this update.
 The minimum accepted version is Visual Studio 2019 version 16.8. (Note that
 this version is often presented as "MSVC 14.28", and reported by cl.exe as
 19.28.) Older versions will not be accepted by `configure` and will not work.
-The maximum accepted version of Visual Studio is 2022.
+The maximum accepted version of Visual Studio is 2026.
 
 If you have multiple versions of Visual Studio installed, `configure` will by
 default pick the latest. You can request a specific version to be used by
@@ -1258,11 +1263,11 @@ toolchain and a sysroot environment which can easily be used together with the
 following command:
 
 ```
-bash configure --with-devkit=<devkit-path> --openjdk-target=ppc64-linux-gnu && make
+bash configure --with-devkit=<devkit-path> --openjdk-target=ppc64le-linux-gnu && make
 ```
 
-will configure and build the JDK for Linux/ppc64 assuming that `<devkit-path>`
-points to a Linux/x86_64 to Linux/ppc64 devkit.
+will configure and build the JDK for Linux/ppc64le assuming that `<devkit-path>`
+points to a Linux/x86_64 to Linux/ppc64le devkit.
 
 Devkits can be created from the `make/devkit` directory by executing:
 
@@ -1281,8 +1286,8 @@ at least the following targets are known to work:
 | x86_64-linux-gnu         |
 | aarch64-linux-gnu        |
 | arm-linux-gnueabihf      |
-| ppc64-linux-gnu          |
 | ppc64le-linux-gnu        |
+| riscv64-linux-gnu        |
 | s390x-linux-gnu          |
 
 `BASE_OS` must be one of `OL` for Oracle Enterprise Linux or `Fedora`. If the
