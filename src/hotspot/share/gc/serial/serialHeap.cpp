@@ -806,9 +806,11 @@ void SerialHeap::gc_epilogue(bool full) {
   MetaspaceCounters::update_performance_counters();
 };
 
+#ifdef ASSERT
 void SerialHeap::verify_not_in_native_if_java_thread() {
   if (Thread::current()->is_Java_thread()) {
     JavaThread* thread = JavaThread::current();
     assert(thread->thread_state() != _thread_in_native, "precondition");
   }
 }
+#endif
