@@ -40,7 +40,7 @@ public abstract class Authenticator {
     /**
      * Constructor for subclasses to call.
      */
-    protected Authenticator () { }
+    protected Authenticator() { }
 
     /**
      * Base class for return type from {@link #authenticate(HttpExchange)} method.
@@ -50,7 +50,7 @@ public abstract class Authenticator {
         /**
          * Constructor for subclasses to call.
          */
-        protected Result () {}
+        protected Result() {}
     }
 
     /**
@@ -67,7 +67,7 @@ public abstract class Authenticator {
          * @param responseCode the response code to associate with this
          *                     {@code Failure} instance
          */
-        public Failure (int responseCode) {
+        public Failure(int responseCode) {
             this.responseCode = responseCode;
         }
 
@@ -94,7 +94,7 @@ public abstract class Authenticator {
          *
          * @param p the authenticated user you wish to set as {@code Principal}
          */
-        public Success (HttpPrincipal p) {
+        public Success(HttpPrincipal p) {
             principal = p;
         }
 
@@ -126,7 +126,7 @@ public abstract class Authenticator {
          * @param responseCode the response code to associate with this
          *                     {@code Retry} instance
          */
-        public Retry (int responseCode) {
+        public Retry(int responseCode) {
             this.responseCode = responseCode;
         }
 
@@ -158,5 +158,5 @@ public abstract class Authenticator {
      * @param exch the {@code HttpExchange} upon which authenticate is called
      * @return the result
      */
-    public abstract Result authenticate (HttpExchange exch);
+    public abstract Result authenticate(HttpExchange exch);
 }

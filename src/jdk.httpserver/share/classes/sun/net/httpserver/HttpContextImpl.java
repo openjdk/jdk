@@ -55,35 +55,35 @@ class HttpContextImpl extends HttpContext {
     /**
      * constructor is package private.
      */
-    HttpContextImpl (String protocol, String path, HttpHandler cb, ServerImpl server) {
+    HttpContextImpl(String protocol, String path, HttpHandler cb, ServerImpl server) {
         if (path == null || protocol == null || path.length() < 1 || path.charAt(0) != '/') {
-            throw new IllegalArgumentException ("Illegal value for path or protocol");
+            throw new IllegalArgumentException("Illegal value for path or protocol");
         }
         this.protocol = protocol.toLowerCase(Locale.ROOT);
         this.path = path;
-        if (!this.protocol.equals ("http") && !this.protocol.equals ("https")) {
-            throw new IllegalArgumentException ("Illegal value for protocol");
+        if (!this.protocol.equals("http") && !this.protocol.equals("https")) {
+            throw new IllegalArgumentException("Illegal value for protocol");
         }
         this.handler = cb;
         this.server = server;
         authfilter = new AuthFilter(null);
-        sfilters.add (authfilter);
+        sfilters.add(authfilter);
     }
 
     /**
      * returns the handler for this context
      * @return the HttpHandler for this context
      */
-    public HttpHandler getHandler () {
+    public HttpHandler getHandler() {
         return handler;
     }
 
-    public void setHandler (HttpHandler h) {
+    public void setHandler(HttpHandler h) {
         if (h == null) {
-            throw new NullPointerException ("Null handler parameter");
+            throw new NullPointerException("Null handler parameter");
         }
         if (handler != null) {
-            throw new IllegalArgumentException ("handler already set");
+            throw new IllegalArgumentException("handler already set");
         }
         handler = h;
     }
@@ -100,11 +100,11 @@ class HttpContextImpl extends HttpContext {
      * returns the server this context was created with
      * @return this context's server
      */
-    public HttpServer getServer () {
+    public HttpServer getServer() {
         return server.getWrapper();
     }
 
-    ServerImpl getServerImpl () {
+    ServerImpl getServerImpl() {
         return server;
     }
 
@@ -128,25 +128,25 @@ class HttpContextImpl extends HttpContext {
         return attributes;
     }
 
-    public List<Filter> getFilters () {
+    public List<Filter> getFilters() {
         return ufilters;
     }
 
-    List<Filter> getSystemFilters () {
+    List<Filter> getSystemFilters() {
         return sfilters;
     }
 
-    public Authenticator setAuthenticator (Authenticator auth) {
+    public Authenticator setAuthenticator(Authenticator auth) {
         Authenticator old = authenticator;
         authenticator = auth;
-        authfilter.setAuthenticator (auth);
+        authfilter.setAuthenticator(auth);
         return old;
     }
 
-    public Authenticator getAuthenticator () {
+    public Authenticator getAuthenticator() {
         return authenticator;
     }
-    Logger getLogger () {
+    Logger getLogger() {
         return server.getLogger();
     }
 }

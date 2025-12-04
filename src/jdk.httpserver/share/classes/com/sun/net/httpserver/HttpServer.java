@@ -123,7 +123,7 @@ public abstract class HttpServer {
      * @return an instance of {@code HttpServer}
      */
     public static HttpServer create() throws IOException {
-        return create (null, 0);
+        return create(null, 0);
     }
 
     /**
@@ -149,7 +149,7 @@ public abstract class HttpServer {
 
     public static HttpServer create(InetSocketAddress addr, int backlog) throws IOException {
         HttpServerProvider provider = HttpServerProvider.provider();
-        return provider.createHttpServer (addr, backlog);
+        return provider.createHttpServer(addr, backlog);
     }
 
     /**

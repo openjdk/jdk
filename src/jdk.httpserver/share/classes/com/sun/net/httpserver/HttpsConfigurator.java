@@ -74,7 +74,7 @@ public class HttpsConfigurator {
      */
     public HttpsConfigurator(SSLContext context) {
         if (context == null) {
-            throw new NullPointerException ("null SSLContext");
+            throw new NullPointerException("null SSLContext");
         }
         this.context = context;
     }
@@ -107,6 +107,6 @@ public class HttpsConfigurator {
     * @since 1.6
     */
     public void configure(HttpsParameters params) {
-        params.setSSLParameters (getSSLContext().getDefaultSSLParameters());
+        params.setSSLParameters(getSSLContext().getDefaultSSLParameters());
     }
 }

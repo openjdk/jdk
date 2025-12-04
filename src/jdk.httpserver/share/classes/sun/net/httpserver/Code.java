@@ -64,7 +64,7 @@ class Code {
     public static final int HTTP_GATEWAY_TIMEOUT = 504;
     public static final int HTTP_VERSION = 505;
 
-    static String msg (int code) {
+    static String msg(int code) {
 
       switch (code) {
         case HTTP_OK: return " OK";
