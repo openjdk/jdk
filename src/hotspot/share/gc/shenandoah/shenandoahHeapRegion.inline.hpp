@@ -129,6 +129,8 @@ inline void ShenandoahHeapRegion::adjust_alloc_metadata(ShenandoahAllocRequest::
   switch (type) {
     case ShenandoahAllocRequest::_alloc_shared:
     case ShenandoahAllocRequest::_alloc_shared_gc:
+    case ShenandoahAllocRequest::_alloc_shared_gc_old:
+    case ShenandoahAllocRequest::_alloc_shared_gc_promotion:
     case ShenandoahAllocRequest::_alloc_cds:
       // Counted implicitly by tlab/gclab allocs
       break;
@@ -155,7 +157,7 @@ inline void ShenandoahHeapRegion::increase_live_data_gc_words(size_t s) {
 }
 
 inline void ShenandoahHeapRegion::internal_increase_live_data(size_t s) {
-  size_t new_live_data = AtomicAccess::add(&_live_data, s, memory_order_relaxed);
+  AtomicAccess::add(&_live_data, s, memory_order_relaxed);
 }
 
 inline void ShenandoahHeapRegion::clear_live_data() {

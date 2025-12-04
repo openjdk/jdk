@@ -57,6 +57,10 @@
 #include "utilities/rotate_bits.hpp"
 #include "utilities/stack.inline.hpp"
 
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
+
 void Klass::set_java_mirror(Handle m) {
   assert(!m.is_null(), "New mirror should never be null.");
   assert(_java_mirror.is_empty(), "should only be used to initialize mirror");
@@ -862,7 +866,6 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   assert(is_klass(), "ensure C++ vtable is restored");
   assert(in_aot_cache(), "must be set");
   assert(secondary_supers()->length() >= (int)population_count(_secondary_supers_bitmap), "must be");
-  JFR_ONLY(RESTORE_ID(this);)
   if (log_is_enabled(Trace, aot, unshareable)) {
     ResourceMark rm(THREAD);
     oop class_loader = loader_data->class_loader();
@@ -876,9 +879,12 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   if (class_loader_data() == nullptr) {
     set_class_loader_data(loader_data);
   }
+
   // Add to class loader list first before creating the mirror
   // (same order as class file parsing)
   loader_data->add_class(this);
+
+  JFR_ONLY(Jfr::on_restoration(this, THREAD);)
 
   Handle loader(THREAD, loader_data->class_loader());
   ModuleEntry* module_entry = nullptr;

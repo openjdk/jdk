@@ -39,12 +39,16 @@ import java.util.function.Supplier;
  * <p>
  * A lazy constant is created using the factory method
  * {@linkplain LazyConstant#of(Supplier) LazyConstant.of({@code <computing function>})}.
+ * <p>
  * When created, the lazy constant is <em>not initialized</em>, meaning it has no contents.
+ * <p>
  * The lazy constant (of type {@code T}) can then be <em>initialized</em>
  * (and its contents retrieved) by calling {@linkplain #get() get()}. The first time
  * {@linkplain #get() get()} is called, the underlying <em>computing function</em>
  * (provided at construction) will be invoked and the result will be used to initialize
- * the constant. Once a lazy constant is initialized, its contents can <em>never change</em>
+ * the constant.
+ * <p>
+ * Once a lazy constant is initialized, its contents can <em>never change</em>
  * and will be retrieved over and over again upon subsequent {@linkplain #get() get()}
  * invocations.
  * <p>
@@ -64,7 +68,7 @@ import java.util.function.Supplier;
  *        // ...
  *    }
  * }
- *}
+ * }
  * <p>
  * Initially, the lazy constant is <em>not initialized</em>. When {@code logger.get()}
  * is first invoked, it evaluates the computing function and initializes the constant to
@@ -121,7 +125,7 @@ import java.util.function.Supplier;
  *     }
  *
  * }
- *}
+ * }
  * Calling {@code BAR.get()} will create the {@code Bar} singleton if it is not already
  * created. Upon such a creation, a dependent {@code Foo} will first be created if
  * the {@code Foo} does not already exist.
@@ -238,10 +242,11 @@ public sealed interface LazyConstant<T>
     // Object methods
 
     /**
-     * {@return if this lazy constant is the same as the provided {@code obj}}
+     * {@return {@code true} if this lazy constant is the same instance as
+     *          the provided {@code obj}, otherwise {@code false}}
      * <p>
      * In other words, equals compares the identity of this lazy constant and {@code obj}
-     * to determine equality. Hence, two lazy constants with the same contents are
+     * to determine equality. Hence, two distinct lazy constants with the same contents are
      * <em>not</em> equal.
      * <p>
      * This method never triggers initialization of this lazy constant.
