@@ -92,7 +92,15 @@ ShenandoahGenerationalHeap::ShenandoahGenerationalHeap(ShenandoahCollectorPolicy
 
 void ShenandoahGenerationalHeap::post_initialize() {
   ShenandoahHeap::post_initialize();
+  _young_generation->post_initialize(this);
+  _old_generation->post_initialize(this);
   _age_census = new ShenandoahAgeCensus();
+}
+
+void ShenandoahGenerationalHeap::post_initialize_heuristics() {
+  ShenandoahHeap::post_initialize_heuristics();
+  _young_generation->post_initialize_heuristics();
+  _old_generation->post_initialize_heuristics();
 }
 
 void ShenandoahGenerationalHeap::print_init_logger() const {
@@ -119,14 +127,6 @@ void ShenandoahGenerationalHeap::initialize_heuristics() {
   _old_generation = new ShenandoahOldGeneration(max_workers());
   _young_generation->initialize_heuristics(mode());
   _old_generation->initialize_heuristics(mode());
-}
-
-void ShenandoahGenerationalHeap::post_initialize_heuristics() {
-  ShenandoahHeap::post_initialize_heuristics();
-  _young_generation->post_initialize(this);
-  _old_generation->post_initialize(this);
-  _young_generation->post_initialize_heuristics();
-  _old_generation->post_initialize_heuristics();
 }
 
 void ShenandoahGenerationalHeap::initialize_serviceability() {

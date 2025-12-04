@@ -426,7 +426,7 @@ jint ShenandoahHeap::initialize() {
       _affiliations[i] = ShenandoahAffiliation::FREE;
     }
     _free_set = new ShenandoahFreeSet(this, _num_regions);
-    post_initialize_heuristics();
+    post_initialize();
     if (mode()->is_generational()) {
       size_t young_reserve = (young_generation()->max_capacity() * ShenandoahEvacReserve) / 100;
       young_generation()->set_evacuation_reserve(young_reserve);
@@ -578,11 +578,6 @@ void ShenandoahHeap::initialize_heuristics() {
   _global_generation->initialize_heuristics(mode());
 }
 
-void ShenandoahHeap::post_initialize_heuristics() {
-  _global_generation->post_initialize(this);
-  _global_generation->post_initialize_heuristics();
-}
-
 #ifdef _MSC_VER
 #pragma warning( push )
 #pragma warning( disable:4355 ) // 'this' : used in base member initializer list
@@ -727,6 +722,8 @@ public:
 void ShenandoahHeap::post_initialize() {
   CollectedHeap::post_initialize();
 
+  _global_generation->post_initialize(this);
+
   check_soft_max_changed();
 
   // Schedule periodic task to report on gc thread CPU utilization
@@ -749,6 +746,10 @@ void ShenandoahHeap::post_initialize() {
   }
 
   JFR_ONLY(ShenandoahJFRSupport::register_jfr_type_serializers();)
+}
+
+void ShenandoahHeap::post_initialize_heuristics() {
+  _global_generation->post_initialize_heuristics();
 }
 
 ShenandoahHeuristics* ShenandoahHeap::heuristics() {

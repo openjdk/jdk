@@ -97,7 +97,7 @@ ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* 
   _spike_threshold_sd(ShenandoahAdaptiveInitialSpikeThreshold),
   _last_trigger(OTHER),
   _available(Moving_Average_Samples, ShenandoahAdaptiveDecayFactor),
-  _freeset(nullptr),
+  _free_set(nullptr),
   _is_generational(ShenandoahHeap::heap()->mode()->is_generational()),
   _regulator_thread(nullptr),
   _previous_allocation_timestamp(0.0),
@@ -144,14 +144,14 @@ void ShenandoahAdaptiveHeuristics::initialize() {
 void ShenandoahAdaptiveHeuristics::post_initialize() {
   ShenandoahHeuristics::post_initialize();
 #undef KELVIN_VISIBLE
-  _freeset = ShenandoahHeap::heap()->free_set();
+  _free_set = ShenandoahHeap::heap()->free_set();
 #ifdef KELVIN_VISIBLE
-  log_info(gc)("post_initialize() sets _freeset to " PTR_FORMAT, p2i(_freeset));
+  log_info(gc)("post_initialize() sets _free_set to " PTR_FORMAT, p2i(_free_set));
 #endif
   if (_is_generational) {
     _regulator_thread = ShenandoahGenerationalHeap::heap()->regulator_thread();
     size_t young_available = ShenandoahGenerationalHeap::heap()->young_generation()->max_capacity() -
-      (ShenandoahGenerationalHeap::heap()->young_generation()->used() + _freeset->reserved());
+      (ShenandoahGenerationalHeap::heap()->young_generation()->used() + _free_set->reserved());
 #ifdef KELVIN_VISIBLE
     log_info(gc)("post_initialize() to recalculate young trigger with: %zu", young_available);
 #endif
@@ -159,7 +159,7 @@ void ShenandoahAdaptiveHeuristics::post_initialize() {
   } else {
     _control_thread = ShenandoahHeap::heap()->control_thread();
     size_t global_available = ShenandoahHeap::heap()->global_generation()->max_capacity() -
-      (ShenandoahHeap::heap()->global_generation()->used() + _freeset->reserved());
+      (ShenandoahHeap::heap()->global_generation()->used() + _free_set->reserved());
 #ifdef KELVIN_VISIBLE
     log_info(gc)("post_initialize() to recalculate global trigger with: %zu", global_available);
 #endif
@@ -237,7 +237,7 @@ void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_
                ", spike_headroom: %zu, penalties: %zu"
                ", used: %zu, reserved: %zu, final answer: %zu",
                _space_info->name(), capacity, original_mutator_available, spike_headroom, penalties, _space_info->used(),
-               _freeset->reserved(), _trigger_threshold);
+               _free_set->reserved(), _trigger_threshold);
 #endif
 #undef KELVIN_IDLE_SPAN
 }
@@ -245,10 +245,10 @@ void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_
 void ShenandoahAdaptiveHeuristics::start_idle_span() {
 #undef KELVIN_IDLE_SPAN
 #ifdef KELVIN_IDLE_SPAN
-  log_info(gc)("Made it to ShenanoahAdaptiveHeuristics:start_idle_span(), _freeset: " PTR_FORMAT ", _space_info: " PTR_FORMAT,
-               p2i(_freeset), p2i(_space_info));
+  log_info(gc)("Made it to ShenanoahAdaptiveHeuristics:start_idle_span(), _free_set: " PTR_FORMAT ", _space_info: " PTR_FORMAT,
+               p2i(_free_set), p2i(_space_info));
 #endif
-  size_t mutator_available = _freeset->available();
+  size_t mutator_available = _free_set->available();
 
 #ifdef KELVIN_IDLE_SPAN
   log_info(gc)("Made it to ShenanoahAdaptiveHeuristics:%s::start_idle_span() with available %zu",
@@ -264,7 +264,7 @@ void ShenandoahAdaptiveHeuristics::start_idle_span() {
 }
 
 void ShenandoahAdaptiveHeuristics::resume_idle_span() {
-  size_t mutator_available = _freeset->capacity() - _freeset->used();
+  size_t mutator_available = _free_set->capacity() - _free_set->used();
 #ifdef KELVIN_VISIBLE
   log_info(gc)("resume_idle_span() is recalculating trigger threshold with available: %zu", mutator_available);
 #endif
@@ -274,7 +274,7 @@ void ShenandoahAdaptiveHeuristics::resume_idle_span() {
 // There is no headroom during evacuation and update refs.  This information is not used to trigger the next GC.
 // Rather, it is made available to support throttling of allocations during GC.
 void ShenandoahAdaptiveHeuristics::start_evac_span() {
-  size_t mutator_available = _freeset->capacity() - _freeset->used();
+  size_t mutator_available = _free_set->capacity() - _free_set->used();
 #ifdef KELVIN_VISIBLE
   log_info(gc)("start_evac_span() is setting (pacing) trigger threshold with available: %zu", mutator_available);
 #endif
@@ -699,7 +699,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 #endif
   size_t capacity = _space_info->soft_max_capacity();
   size_t available = _space_info->soft_available();
-  size_t allocated = _freeset->get_bytes_allocated_since_gc_start();
+  size_t allocated = _free_set->get_bytes_allocated_since_gc_start();
 
   log_debug(gc)("should_start_gc? available: %zu, soft_max_capacity: %zu"
                 ", allocated: %zu", available, capacity, allocated);
@@ -786,7 +786,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
       future_accelerated_planned_gc_time = avg_cycle_time;
       future_accelerated_planned_gc_time_is_average = true;
     }
-    allocated_words_since_last_sample = _freeset->get_mutator_allocations_since_previous_sample();
+    allocated_words_since_last_sample = _free_set->get_mutator_allocations_since_previous_sample();
     instantaneous_rate_words_per_second = allocated_words_since_last_sample / (now - _previous_allocation_timestamp);
     _previous_allocation_timestamp = now;
 
