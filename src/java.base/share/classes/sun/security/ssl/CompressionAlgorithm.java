@@ -27,12 +27,10 @@
 package sun.security.ssl;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
@@ -83,10 +81,9 @@ enum CompressionAlgorithm {
     static Map<Integer, Function<byte[], byte[]>> findInflaters(
             SSLConfiguration config) {
         if (config.certInflaters == null || config.certInflaters.isEmpty()) {
-            if (SSLLogger.isOn() &&
-                    SSLLogger.isOn("ssl,handshake,verbose")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.finest(
-                    "No supported certificate compression algorithms");
+                        "No supported certificate compression algorithms");
             }
             return Map.of();
         }
@@ -99,11 +96,9 @@ enum CompressionAlgorithm {
             CompressionAlgorithm ca =
                     CompressionAlgorithm.nameOf(entry.getKey());
             if (ca == null) {
-                if (SSLLogger.isOn() &&
-                        SSLLogger.isOn("ssl,handshake,verbose")) {
-                    SSLLogger.finest(
-                        "Ignore unsupported certificate " +
-                        "compression algorithm: " + entry.getKey());
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.finest("Ignore unsupported certificate " +
+                            "compression algorithm: " + entry.getKey());
                 }
                 continue;
             }
@@ -126,7 +121,7 @@ enum CompressionAlgorithm {
             CompressionAlgorithm ca =
                     CompressionAlgorithm.nameOf(entry.getKey());
             if (ca != null) {
-                for (int id :  compressionAlgorithmIds) {
+                for (int id : compressionAlgorithmIds) {
                     if (ca.id == id) {
                         return new AbstractMap.SimpleImmutableEntry<>(
                                 id, entry.getValue());
@@ -158,8 +153,10 @@ enum CompressionAlgorithm {
 
                 return outputStream.toByteArray();
             } catch (Exception e) {
-                SSLLogger.logWarning("ssl",
-                        "Exception during certificate compression: ", e);
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.warning(
+                            "Exception during certificate compression: ", e);
+                }
                 return null;
             }
         });
@@ -181,8 +178,10 @@ enum CompressionAlgorithm {
 
                 return outputStream.toByteArray();
             } catch (Exception e) {
-                SSLLogger.logWarning("ssl",
-                        "Exception during certificate decompression: ", e);
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.warning(
+                            "Exception during certificate decompression: ", e);
+                }
                 return null;
             }
         });

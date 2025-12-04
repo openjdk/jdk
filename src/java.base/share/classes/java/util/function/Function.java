@@ -24,7 +24,6 @@
  */
 package java.util.function;
 
-import java.io.IOException;
 import java.util.Objects;
 
 /**

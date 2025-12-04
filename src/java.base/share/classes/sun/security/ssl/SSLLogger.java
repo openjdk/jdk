@@ -228,10 +228,9 @@ public final class SSLLogger implements System.Logger {
 
     // Logs a warning message and always returns false. This method
     // can be used as an OR Predicate to add a log in a stream filter.
-    public static boolean logWarning(
-            String option, String s, Object... params) {
+    public static boolean logWarning(String option, String s) {
         if (SSLLogger.isOn() && SSLLogger.isOn(option)) {
-            SSLLogger.warning(s, params);
+            SSLLogger.warning(s);
         }
         return false;
     }
