@@ -195,7 +195,6 @@ bool ShenandoahOldGeneration::can_allocate(const ShenandoahAllocRequest &req) co
 
 void
 ShenandoahOldGeneration::configure_plab_for_current_thread(const ShenandoahAllocRequest &req) {
-  // Note: Even when a mutator is performing a promotion outside a LAB, we use a 'shared_gc' request.
   assert(req.is_gc_alloc() && req.is_old() && req.is_lab_alloc(), "Must be a plab alloc request");
   const size_t actual_size = req.actual_size() * HeapWordSize;
   // We've created a new plab. Now we configure it whether it will be used for promotions
