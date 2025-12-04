@@ -622,6 +622,7 @@ sealed abstract class Http3Stream<T> extends ExchangeImpl<T> permits Http3Exchan
              responseState = ResponseState.PERMIT_TRAILER;
              finalResponse = true;
          } else {
+             assert responseCode >= 100 && responseCode <= 200 : "unexpected responseCode: " + responseCode;
              String protocolErrorMsg = checkInterimResponseCountExceeded();
              if (protocolErrorMsg != null) {
                  if (debug.on()) {
