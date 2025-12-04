@@ -508,8 +508,16 @@ WB_ENTRY(jboolean, WB_ConcurrentGCRunTo(JNIEnv* env, jobject o, jobject at))
   return ConcurrentGCBreakpoints::run_to(c_name);
 WB_END
 
-WB_ENTRY(jboolean, WB_HasExternalSymbolsStripped(JNIEnv* env, jobject o))
-#if defined(HAS_STRIPPED_DEBUGINFO)
+WB_ENTRY(jboolean, WB_ShipDebugInfoFull(JNIEnv* env, jobject o))
+#if defined(SHIP_DEBUGINFO_FULL)
+  return true;
+#else
+  return false;
+#endif
+WB_END
+
+WB_ENTRY(jboolean, WB_ShipDebugInfoPublic(JNIEnv* env, jobject o))
+#if defined(SHIP_DEBUGINFO_PUBLIC)
   return true;
 #else
   return false;
@@ -2840,7 +2848,8 @@ static JNINativeMethod methods[] = {
   {CC"getVMLargePageSize",               CC"()J",                   (void*)&WB_GetVMLargePageSize},
   {CC"getHeapSpaceAlignment",            CC"()J",                   (void*)&WB_GetHeapSpaceAlignment},
   {CC"getHeapAlignment",                 CC"()J",                   (void*)&WB_GetHeapAlignment},
-  {CC"hasExternalSymbolsStripped",       CC"()Z",                   (void*)&WB_HasExternalSymbolsStripped},
+  {CC"shipsFullDebugInfo",               CC"()Z",                   (void*)&WB_ShipDebugInfoFull},
+  {CC"shipsPublicDebugInfo",             CC"()Z",                   (void*)&WB_ShipDebugInfoPublic},
   {CC"countAliveClasses0",               CC"(Ljava/lang/String;)I", (void*)&WB_CountAliveClasses },
   {CC"getSymbolRefcount",                CC"(Ljava/lang/String;)I", (void*)&WB_GetSymbolRefcount },
   {CC"parseCommandLine0",

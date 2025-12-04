@@ -125,13 +125,6 @@ define SetupBundleFileBody
 	    && $(TAR) cf - -$(TAR_INCLUDE_PARAM) $$($1_$$d_LIST_FILE) \
 	        $(TAR_IGNORE_EXIT_VALUE) ) \
 	    | ( $(CD) $(SUPPORT_OUTPUTDIR)/bundles/$1/$$($1_SUBDIR) && $(TAR) xf - )$$(NEWLINE) )
-          # Rename stripped pdb files
-          ifeq ($(call isTargetOs, windows)+$(SHIP_DEBUG_SYMBOLS), true+public)
-	    for f in `$(FIND) $(SUPPORT_OUTPUTDIR)/bundles/$1/$$($1_SUBDIR) -name "*.stripped.pdb"`; do \
-	      $(ECHO) Renaming $$$${f} to $$$${f%stripped.pdb}pdb $(LOG_INFO); \
-	      $(MV) $$$${f} $$$${f%stripped.pdb}pdb; \
-	    done
-          endif
           # Unzip any zipped debuginfo files
           ifeq ($$($1_UNZIP_DEBUGINFO), true)
 	    for f in `$(FIND) $(SUPPORT_OUTPUTDIR)/bundles/$1/$$($1_SUBDIR) -name "*.diz"`; do \
@@ -222,14 +215,6 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
   ifeq ($(call isTargetOs, windows), true)
     ifeq ($(SHIP_DEBUG_SYMBOLS), )
       JDK_SYMBOLS_EXCLUDE_PATTERN := %.pdb
-    else
-      ifeq ($(SHIP_DEBUG_SYMBOLS), public)
-        JDK_SYMBOLS_EXCLUDE_PATTERN := \
-            $(filter-out \
-                %.stripped.pdb, \
-                $(filter %.pdb, $(ALL_JDK_FILES)) \
-            )
-      endif
     endif
   endif
 
@@ -244,10 +229,7 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
       )
 
   JDK_SYMBOLS_BUNDLE_FILES := \
-      $(filter-out \
-          %.stripped.pdb, \
-          $(call FindFiles, $(SYMBOLS_IMAGE_DIR)) \
-      )
+      $(call FindFiles, $(SYMBOLS_IMAGE_DIR))
 
   TEST_DEMOS_BUNDLE_FILES := $(filter $(JDK_DEMOS_IMAGE_HOMEDIR)/demo/%, \
       $(ALL_JDK_DEMOS_FILES))
@@ -267,14 +249,6 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
   ifeq ($(call isTargetOs, windows), true)
     ifeq ($(SHIP_DEBUG_SYMBOLS), )
       JRE_SYMBOLS_EXCLUDE_PATTERN := %.pdb
-    else
-      ifeq ($(SHIP_DEBUG_SYMBOLS), public)
-        JRE_SYMBOLS_EXCLUDE_PATTERN := \
-            $(filter-out \
-                %.stripped.pdb, \
-                $(filter %.pdb, $(ALL_JRE_FILES)) \
-            )
-      endif
     endif
   endif
 
