@@ -1850,7 +1850,7 @@ MapArchiveResult AOTMetaspace::map_archives(FileMapInfo* static_mapinfo, FileMap
 //  and CDS)
 //
 // The range encompassing both spaces will be suitable to en/decode narrow Klass
-//  pointers: the base will be valid for encoding, the range [Base, End) and not
+//  pointers: the base will be valid for encoding the range [Base, End) and not
 //  surpass the max. range for that encoding.
 //
 // On 32-bit, a "narrow" Klass is just the pointer itself, and the Klass encoding
