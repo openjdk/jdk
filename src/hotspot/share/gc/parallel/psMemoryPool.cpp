@@ -25,8 +25,8 @@
 #include "gc/parallel/psMemoryPool.hpp"
 
 PSOldGenerationPool::PSOldGenerationPool(PSOldGen* old_gen,
-                                      const char* name,
-                                      bool support_usage_threshold) :
+                                         const char* name,
+                                         bool support_usage_threshold) :
   CollectedMemoryPool(name, old_gen->capacity_in_bytes(),
                       old_gen->reserved().byte_size(), support_usage_threshold), _old_gen(old_gen) {
 }
