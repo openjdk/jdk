@@ -447,6 +447,15 @@ void ShenandoahBarrierSet::arraycopy_marking(T* dst, size_t count) {
   if (ShenandoahSATBBarrier) {
     if (_heap->heap_region_containing(dst)->is_old() ||
         !_heap->marking_context()->allocated_after_mark_start(reinterpret_cast<HeapWord*>(dst))) {
+#ifdef ASSERT
+      if (_heap->heap_region_containing(dst)->is_old()) {
+        ShenandoahScanRemembered* card_scan = ShenandoahGenerationalHeap::heap()->old_generation()->card_scan();
+        T* end = dst + count;
+        for (T* elem_ptr = dst; elem_ptr < end; elem_ptr++) {
+          assert(card_scan->is_card_dirty(reinterpret_cast<HeapWord*>(elem_ptr)), "Card for array element in old generation should be dirty");
+        }
+      }
+#endif // ASSERT
       arraycopy_work<T, false, false, true>(dst, count);
     }
   }
