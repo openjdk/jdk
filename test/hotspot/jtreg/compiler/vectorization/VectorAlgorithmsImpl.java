@@ -150,23 +150,23 @@ public class VectorAlgorithmsImpl {
         int sum = 0;
         var shf1 = VectorShuffle.fromArray(SPECIES_I512, new int[]{-1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14}, 0);
         var shf2 = VectorShuffle.fromArray(SPECIES_I512, new int[]{-1, -1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13}, 0);
-        var shf3 = VectorShuffle.fromArray(SPECIES_I512, new int[]{-1, -1, -1, -1,  0,  1,  2,  3,  4,  6,  7,  8,  9, 10, 11, 12}, 0);
-        var shf4 = VectorShuffle.fromArray(SPECIES_I512, new int[]{-1, -1, -1, -1, -1, -1, -1, -1,  0,  1,  2,  3,  4,  6,  7,  8}, 0);
+        var shf3 = VectorShuffle.fromArray(SPECIES_I512, new int[]{-1, -1, -1, -1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11}, 0);
+        var shf4 = VectorShuffle.fromArray(SPECIES_I512, new int[]{-1, -1, -1, -1, -1, -1, -1, -1,  0,  1,  2,  3,  4,  5,  6,  7}, 0);
         var mask1 = VectorMask.fromLong(SPECIES_I512, 0b1111111111111110);
         var mask2 = VectorMask.fromLong(SPECIES_I512, 0b1111111111111100);
         var mask3 = VectorMask.fromLong(SPECIES_I512, 0b1111111111110000);
         var mask4 = VectorMask.fromLong(SPECIES_I512, 0b1111111100000000);
         int i = 0;
-        //for (; i < SPECIES_I512.loopBound(a.length); i += SPECIES_I512.length()) {
-        //    IntVector v = IntVector.fromArray(SPECIES_I512, a, i);
-        //    v = v.add(v.rearrange(shf1), mask1);
-        //    v = v.add(v.rearrange(shf2), mask2);
-        //    v = v.add(v.rearrange(shf3), mask3);
-        //    v = v.add(v.rearrange(shf4), mask4);
-        //    v = v.add(sum);
-        //    v.intoArray(r, i);
-        //    sum = v.lane(SPECIES_I512.length() - 1);
-        //}
+        for (; i < SPECIES_I512.loopBound(a.length); i += SPECIES_I512.length()) {
+            IntVector v = IntVector.fromArray(SPECIES_I512, a, i);
+            v = v.add(v.rearrange(shf1), mask1);
+            v = v.add(v.rearrange(shf2), mask2);
+            v = v.add(v.rearrange(shf3), mask3);
+            v = v.add(v.rearrange(shf4), mask4);
+            v = v.add(sum);
+            v.intoArray(r, i);
+            sum = v.lane(SPECIES_I512.length() - 1);
+        }
         for (; i < a.length; i++) {
             sum += a[i];
             r[i] = sum;
