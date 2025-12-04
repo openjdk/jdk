@@ -672,7 +672,7 @@ public class EventSetImpl extends ArrayList<Event> implements EventSet {
                     // Ignore. See bug 6502716
                 } catch (ObjectCollectedException oce) {
                     // Ignore. See bug 8373102. Can happen with SUSPEND_NONE events.
-                    vm.printTrace("Event: <got ObjectCollectedException");
+                    vm.printTrace("Event: <got ObjectCollectedException>");
                 }
             }
 
