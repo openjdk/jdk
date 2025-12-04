@@ -236,7 +236,10 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
   // These values are exported as performance counters.
   uintx size = _virtual_space.reserved_size();
   _max_survivor_size = compute_survivor_size(size, SpaceAlignment);
-  _max_eden_size = size - (2*_max_survivor_size);
+
+  // Eden might grow to be almost as large as the entire young generation.
+  // We approximate this as the entire virtual space.
+  _max_eden_size = size;
 
   // allocate the performance counters
 
@@ -844,8 +847,7 @@ void DefNewGeneration::print_on(outputStream* st) const {
 }
 
 HeapWord* DefNewGeneration::expand_and_allocate(size_t word_size) {
-  assert(SafepointSynchronize::is_at_safepoint(), "precondition");
-  assert(Thread::current()->is_VM_thread(), "precondition");
+  assert(Heap_lock->is_locked(), "precondition");
 
   size_t eden_free_bytes = eden()->free();
   size_t requested_bytes = word_size * HeapWordSize;

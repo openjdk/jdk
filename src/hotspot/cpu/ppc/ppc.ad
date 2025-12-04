@@ -1795,10 +1795,13 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
     return size;            // Self copy, no move.
 
   if (bottom_type()->isa_vect() != nullptr && ideal_reg() == Op_VecX) {
+    int src_offset = ra_->reg2offset(src_lo);
+    int dst_offset = ra_->reg2offset(dst_lo);
+    DEBUG_ONLY(int algm = MIN2(RegMask::num_registers(ideal_reg()), (int)Matcher::stack_alignment_in_slots()) * VMRegImpl::stack_slot_size);
+    assert((src_lo_rc != rc_stack) || is_aligned(src_offset, algm), "unaligned vector spill sp offset %d (src)", src_offset);
+    assert((dst_lo_rc != rc_stack) || is_aligned(dst_offset, algm), "unaligned vector spill sp offset %d (dst)", dst_offset);
     // Memory->Memory Spill.
     if (src_lo_rc == rc_stack && dst_lo_rc == rc_stack) {
-      int src_offset = ra_->reg2offset(src_lo);
-      int dst_offset = ra_->reg2offset(dst_lo);
       if (masm) {
         __ ld(R0, src_offset, R1_SP);
         __ std(R0, dst_offset, R1_SP);
@@ -1806,26 +1809,20 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
         __ std(R0, dst_offset+8, R1_SP);
       }
       size += 16;
+#ifndef PRODUCT
+      if (st != nullptr) {
+        st->print("%-7s [R1_SP + #%d] -> [R1_SP + #%d] \t// vector spill copy", "SPILL", src_offset, dst_offset);
+      }
+#endif // !PRODUCT
     }
     // VectorRegister->Memory Spill.
     else if (src_lo_rc == rc_vec && dst_lo_rc == rc_stack) {
       VectorSRegister Rsrc = as_VectorRegister(Matcher::_regEncode[src_lo]).to_vsr();
-      int dst_offset = ra_->reg2offset(dst_lo);
       if (PowerArchitecturePPC64 >= 9) {
-        if (is_aligned(dst_offset, 16)) {
-          if (masm) {
-            __ stxv(Rsrc, dst_offset, R1_SP); // matches storeV16_Power9
-          }
-          size += 4;
-        } else {
-          // Other alignment can be used by Vector API (VectorPayload in rearrangeOp,
-          // observed with VectorRearrangeTest.java on Power9).
-          if (masm) {
-            __ addi(R0, R1_SP, dst_offset);
-            __ stxvx(Rsrc, R0); // matches storeV16_Power9 (regarding element ordering)
-          }
-          size += 8;
+        if (masm) {
+          __ stxv(Rsrc, dst_offset, R1_SP); // matches storeV16_Power9
         }
+        size += 4;
       } else {
         if (masm) {
           __ addi(R0, R1_SP, dst_offset);
@@ -1833,24 +1830,25 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
         }
         size += 8;
       }
+#ifndef PRODUCT
+      if (st != nullptr) {
+        if (PowerArchitecturePPC64 >= 9) {
+          st->print("%-7s %s, [R1_SP + #%d] \t// vector spill copy", "STXV", Matcher::regName[src_lo], dst_offset);
+        } else {
+          st->print("%-7s R0, R1_SP, %d \t// vector spill copy\n\t"
+                    "%-7s %s, [R0] \t// vector spill copy", "ADDI", dst_offset, "STXVD2X", Matcher::regName[src_lo]);
+        }
+      }
+#endif // !PRODUCT
     }
     // Memory->VectorRegister Spill.
     else if (src_lo_rc == rc_stack && dst_lo_rc == rc_vec) {
       VectorSRegister Rdst = as_VectorRegister(Matcher::_regEncode[dst_lo]).to_vsr();
-      int src_offset = ra_->reg2offset(src_lo);
       if (PowerArchitecturePPC64 >= 9) {
-        if (is_aligned(src_offset, 16)) {
-          if (masm) {
-            __ lxv(Rdst, src_offset, R1_SP);
-          }
-          size += 4;
-        } else {
-          if (masm) {
-            __ addi(R0, R1_SP, src_offset);
-            __ lxvx(Rdst, R0);
-          }
-          size += 8;
+        if (masm) {
+          __ lxv(Rdst, src_offset, R1_SP);
         }
+        size += 4;
       } else {
         if (masm) {
           __ addi(R0, R1_SP, src_offset);
@@ -1858,6 +1856,16 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
         }
         size += 8;
       }
+#ifndef PRODUCT
+      if (st != nullptr) {
+        if (PowerArchitecturePPC64 >= 9) {
+          st->print("%-7s %s, [R1_SP + #%d] \t// vector spill copy", "LXV", Matcher::regName[dst_lo], src_offset);
+        } else {
+          st->print("%-7s R0, R1_SP, %d \t// vector spill copy\n\t"
+                    "%-7s %s, [R0] \t// vector spill copy", "ADDI", src_offset, "LXVD2X", Matcher::regName[dst_lo]);
+        }
+      }
+#endif // !PRODUCT
     }
     // VectorRegister->VectorRegister.
     else if (src_lo_rc == rc_vec && dst_lo_rc == rc_vec) {
@@ -1867,6 +1875,12 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
         __ xxlor(Rdst, Rsrc, Rsrc);
       }
       size += 4;
+#ifndef PRODUCT
+      if (st != nullptr) {
+        st->print("%-7s %s, %s, %s\t// vector spill copy",
+                  "XXLOR", Matcher::regName[dst_lo], Matcher::regName[src_lo], Matcher::regName[src_lo]);
+      }
+#endif // !PRODUCT
     }
     else {
       ShouldNotReachHere(); // No VR spill.
@@ -2088,17 +2102,11 @@ class HandlerImpl {
 
  public:
 
-  static int emit_exception_handler(C2_MacroAssembler *masm);
   static int emit_deopt_handler(C2_MacroAssembler* masm);
-
-  static uint size_exception_handler() {
-    // The exception_handler is a b64_patchable.
-    return MacroAssembler::b64_patchable_size;
-  }
 
   static uint size_deopt_handler() {
     // The deopt_handler is a bl64_patchable.
-    return MacroAssembler::bl64_patchable_size;
+    return MacroAssembler::bl64_patchable_size + BytesPerInstWord;
   }
 
 };
@@ -2114,22 +2122,6 @@ public:
 
 source %{
 
-int HandlerImpl::emit_exception_handler(C2_MacroAssembler *masm) {
-  address base = __ start_a_stub(size_exception_handler());
-  if (base == nullptr) {
-    ciEnv::current()->record_failure("CodeCache is full");
-    return 0;  // CodeBuffer::expand failed
-  }
-
-  int offset = __ offset();
-  __ b64_patchable((address)OptoRuntime::exception_blob()->content_begin(),
-                       relocInfo::runtime_call_type);
-  assert(__ offset() - offset == (int)size_exception_handler(), "must be fixed size");
-  __ end_a_stub();
-
-  return offset;
-}
-
 // The deopt_handler is like the exception handler, but it calls to
 // the deoptimization blob instead of jumping to the exception blob.
 int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
@@ -2140,12 +2132,23 @@ int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
   }
 
   int offset = __ offset();
+
+  Label start;
+  __ bind(start);
+
   __ bl64_patchable((address)SharedRuntime::deopt_blob()->unpack(),
                         relocInfo::runtime_call_type);
+
+  int entry_offset = __ offset();
+
+  __ b(start);
+
   assert(__ offset() - offset == (int) size_deopt_handler(), "must be fixed size");
+  assert(__ offset() - entry_offset >= NativePostCallNop::first_check_size,
+         "out of bounds read in post-call NOP check");
   __ end_a_stub();
 
-  return offset;
+  return entry_offset;
 }
 
 //=============================================================================
@@ -2292,6 +2295,10 @@ bool Matcher::vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen
   return false;
 }
 
+bool Matcher::mask_op_prefers_predicate(int opcode, const TypeVect* vt) {
+  return false;
+}
+
 const RegMask* Matcher::predicate_reg_mask(void) {
   return nullptr;
 }
@@ -2387,6 +2394,10 @@ MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* original_opnd,
 
 bool Matcher::is_reg2reg_move(MachNode* m) {
   ShouldNotReachHere();  // generic vector operands not supported
+  return false;
+}
+
+bool Matcher::is_register_biasing_candidate(const MachNode* mdef, int oper_index) {
   return false;
 }
 
@@ -6324,36 +6335,8 @@ instruct loadConD_Ex(regD dst, immD src) %{
 // Prefetch instructions.
 // Must be safe to execute with invalid address (cannot fault).
 
-// Special prefetch versions which use the dcbz instruction.
-instruct prefetch_alloc_zero(indirectMemory mem, iRegLsrc src) %{
-  match(PrefetchAllocation (AddP mem src));
-  predicate(AllocatePrefetchStyle == 3);
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "PREFETCH $mem, 2, $src \t// Prefetch write-many with zero" %}
-  size(4);
-  ins_encode %{
-    __ dcbz($src$$Register, $mem$$base$$Register);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
-instruct prefetch_alloc_zero_no_offset(indirectMemory mem) %{
-  match(PrefetchAllocation mem);
-  predicate(AllocatePrefetchStyle == 3);
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "PREFETCH $mem, 2 \t// Prefetch write-many with zero" %}
-  size(4);
-  ins_encode %{
-    __ dcbz($mem$$base$$Register);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
 instruct prefetch_alloc(indirectMemory mem, iRegLsrc src) %{
   match(PrefetchAllocation (AddP mem src));
-  predicate(AllocatePrefetchStyle != 3);
   ins_cost(MEMORY_REF_COST);
 
   format %{ "PREFETCH $mem, 2, $src \t// Prefetch write-many" %}
@@ -6366,7 +6349,6 @@ instruct prefetch_alloc(indirectMemory mem, iRegLsrc src) %{
 
 instruct prefetch_alloc_no_offset(indirectMemory mem) %{
   match(PrefetchAllocation mem);
-  predicate(AllocatePrefetchStyle != 3);
   ins_cost(MEMORY_REF_COST);
 
   format %{ "PREFETCH $mem, 2 \t// Prefetch write-many" %}
@@ -11564,15 +11546,15 @@ instruct partialSubtypeCheckConstSuper(rarg3RegP sub, rarg2RegP super_reg, immP 
 
 // inlined locking and unlocking
 
-instruct cmpFastLockLightweight(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2) %{
+instruct cmpFastLock(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2) %{
   predicate(!UseObjectMonitorTable);
   match(Set crx (FastLock oop box));
   effect(TEMP tmp1, TEMP tmp2);
 
   format %{ "FASTLOCK  $oop, $box, $tmp1, $tmp2" %}
   ins_encode %{
-    __ fast_lock_lightweight($crx$$CondRegister, $oop$$Register, $box$$Register,
-                             $tmp1$$Register, $tmp2$$Register, noreg /*tmp3*/);
+    __ fast_lock($crx$$CondRegister, $oop$$Register, $box$$Register,
+                 $tmp1$$Register, $tmp2$$Register, noreg /*tmp3*/);
     // If locking was successful, crx should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
     // _complete_monitor_locking_Java for the case where crx is 'NE'.
@@ -11587,8 +11569,8 @@ instruct cmpFastLockMonitorTable(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iR
 
   format %{ "FASTLOCK  $oop, $box, $tmp1, $tmp2, $tmp3" %}
   ins_encode %{
-    __ fast_lock_lightweight($crx$$CondRegister, $oop$$Register, $box$$Register,
-                             $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+    __ fast_lock($crx$$CondRegister, $oop$$Register, $box$$Register,
+                 $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
     // If locking was successful, crx should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
     // _complete_monitor_locking_Java for the case where crx is 'NE'.
@@ -11596,14 +11578,14 @@ instruct cmpFastLockMonitorTable(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iR
   ins_pipe(pipe_class_compare);
 %}
 
-instruct cmpFastUnlockLightweight(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3) %{
+instruct cmpFastUnlock(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3) %{
   match(Set crx (FastUnlock oop box));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
   format %{ "FASTUNLOCK  $oop, $box, $tmp1, $tmp2" %}
   ins_encode %{
-    __ fast_unlock_lightweight($crx$$CondRegister, $oop$$Register, $box$$Register,
-                               $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+    __ fast_unlock($crx$$CondRegister, $oop$$Register, $box$$Register,
+                   $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
     // If unlocking was successful, crx should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
     // _complete_monitor_unlocking_Java for the case where crx is 'NE'.
@@ -12381,27 +12363,27 @@ instruct countTrailingZerosL_cnttzd(iRegIdst dst, iRegLsrc src) %{
 %}
 
 // Expand nodes for byte_reverse_int.
-instruct insrwi_a(iRegIdst dst, iRegIsrc src, immI16 pos, immI16 shift) %{
-  effect(DEF dst, USE src, USE pos, USE shift);
+instruct insrwi_a(iRegIdst dst, iRegIsrc src, immI16 n, immI16 b) %{
+  effect(DEF dst, USE src, USE n, USE b);
   predicate(false);
 
-  format %{ "INSRWI  $dst, $src, $pos, $shift" %}
+  format %{ "INSRWI  $dst, $src, $n, $b" %}
   size(4);
   ins_encode %{
-    __ insrwi($dst$$Register, $src$$Register, $shift$$constant, $pos$$constant);
+    __ insrwi($dst$$Register, $src$$Register, $n$$constant, $b$$constant);
   %}
   ins_pipe(pipe_class_default);
 %}
 
 // As insrwi_a, but with USE_DEF.
-instruct insrwi(iRegIdst dst, iRegIsrc src, immI16 pos, immI16 shift) %{
-  effect(USE_DEF dst, USE src, USE pos, USE shift);
+instruct insrwi(iRegIdst dst, iRegIsrc src, immI16 n, immI16 b) %{
+  effect(USE_DEF dst, USE src, USE n, USE b);
   predicate(false);
 
-  format %{ "INSRWI  $dst, $src, $pos, $shift" %}
+  format %{ "INSRWI  $dst, $src, $n, $b" %}
   size(4);
   ins_encode %{
-    __ insrwi($dst$$Register, $src$$Register, $shift$$constant, $pos$$constant);
+    __ insrwi($dst$$Register, $src$$Register, $n$$constant, $b$$constant);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -12423,12 +12405,12 @@ instruct bytes_reverse_int_Ex(iRegIdst dst, iRegIsrc src) %{
     iRegLdst tmpI3;
 
     urShiftI_reg_imm(tmpI1, src, imm24);
-    insrwi_a(dst, tmpI1, imm24, imm8);
+    insrwi_a(dst, tmpI1, imm8, imm24);
     urShiftI_reg_imm(tmpI2, src, imm16);
-    insrwi(dst, tmpI2, imm8, imm16);
+    insrwi(dst, tmpI2, imm16, imm8);
     urShiftI_reg_imm(tmpI3, src, imm8);
     insrwi(dst, tmpI3, imm8, imm8);
-    insrwi(dst, src, imm0, imm8);
+    insrwi(dst, src, imm8, imm0);
   %}
 %}
 
@@ -12546,7 +12528,7 @@ instruct bytes_reverse_ushort_Ex(iRegIdst dst, iRegIsrc src) %{
     immI16   imm8 %{ (int)  8 %}
 
     urShiftI_reg_imm(dst, src, imm8);
-    insrwi(dst, src, imm16, imm8);
+    insrwi(dst, src, imm8, imm16);
   %}
 %}
 
@@ -12575,7 +12557,7 @@ instruct bytes_reverse_short_Ex(iRegIdst dst, iRegIsrc src) %{
     iRegLdst tmpI1;
 
     urShiftI_reg_imm(tmpI1, src, imm8);
-    insrwi(tmpI1, src, imm16, imm8);
+    insrwi(tmpI1, src, imm8, imm16);
     extsh(dst, tmpI1);
   %}
 %}

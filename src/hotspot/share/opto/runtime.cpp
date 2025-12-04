@@ -66,6 +66,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/mountUnmountDisabler.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stackWatermarkSet.hpp"
@@ -92,12 +93,9 @@
 #define C2_STUB_FIELD_NAME(name) _ ## name ## _Java
 #define C2_STUB_FIELD_DEFINE(name, f, t, r) \
   address OptoRuntime:: C2_STUB_FIELD_NAME(name) = nullptr;
-#define C2_JVMTI_STUB_FIELD_DEFINE(name) \
-  address OptoRuntime:: STUB_FIELD_NAME(name) = nullptr;
-C2_STUBS_DO(C2_BLOB_FIELD_DEFINE, C2_STUB_FIELD_DEFINE, C2_JVMTI_STUB_FIELD_DEFINE)
+C2_STUBS_DO(C2_BLOB_FIELD_DEFINE, C2_STUB_FIELD_DEFINE)
 #undef C2_BLOB_FIELD_DEFINE
 #undef C2_STUB_FIELD_DEFINE
-#undef C2_JVMTI_STUB_FIELD_DEFINE
 
 // This should be called in an assertion at the start of OptoRuntime routines
 // which are entered from compiled code (all of them)
@@ -153,23 +151,9 @@ static bool check_compiled_frame(JavaThread* thread) {
                   pass_retpc);                                        \
   if (C2_STUB_FIELD_NAME(name) == nullptr) { return false; }          \
 
-#define C2_JVMTI_STUB_C_FUNC(name) CAST_FROM_FN_PTR(address, SharedRuntime::name)
-
-#define GEN_C2_JVMTI_STUB(name)                                       \
-  STUB_FIELD_NAME(name) =                                             \
-    generate_stub(env,                                                \
-                  notify_jvmti_vthread_Type,                          \
-                  C2_JVMTI_STUB_C_FUNC(name),                         \
-                  C2_STUB_NAME(name),                                 \
-                  C2_STUB_ID(name),                                   \
-                  0,                                                  \
-                  true,                                               \
-                  false);                                             \
-  if (STUB_FIELD_NAME(name) == nullptr) { return false; }             \
-
 bool OptoRuntime::generate(ciEnv* env) {
 
-  C2_STUBS_DO(GEN_C2_BLOB, GEN_C2_STUB, GEN_C2_JVMTI_STUB)
+  C2_STUBS_DO(GEN_C2_BLOB, GEN_C2_STUB)
 
   return true;
 }
@@ -182,8 +166,6 @@ bool OptoRuntime::generate(ciEnv* env) {
 #undef C2_STUB_NAME
 #undef GEN_C2_STUB
 
-#undef C2_JVMTI_STUB_C_FUNC
-#undef GEN_C2_JVMTI_STUB
 // #undef gen
 
 const TypeFunc* OptoRuntime::_new_instance_Type                   = nullptr;
@@ -257,12 +239,10 @@ const TypeFunc* OptoRuntime::_updateBytesCRC32C_Type              = nullptr;
 const TypeFunc* OptoRuntime::_updateBytesAdler32_Type             = nullptr;
 const TypeFunc* OptoRuntime::_osr_end_Type                        = nullptr;
 const TypeFunc* OptoRuntime::_register_finalizer_Type             = nullptr;
+const TypeFunc* OptoRuntime::_vthread_transition_Type             = nullptr;
 #if INCLUDE_JFR
 const TypeFunc* OptoRuntime::_class_id_load_barrier_Type          = nullptr;
 #endif // INCLUDE_JFR
-#if INCLUDE_JVMTI
-const TypeFunc* OptoRuntime::_notify_jvmti_vthread_Type           = nullptr;
-#endif // INCLUDE_JVMTI
 const TypeFunc* OptoRuntime::_dtrace_method_entry_exit_Type       = nullptr;
 const TypeFunc* OptoRuntime::_dtrace_object_alloc_Type            = nullptr;
 
@@ -572,6 +552,26 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::monitor_notifyAll_C(oopDesc* obj, JavaThread*
   JRT_BLOCK_END;
 JRT_END
 
+JRT_ENTRY(void, OptoRuntime::vthread_end_first_transition_C(oopDesc* vt, jboolean is_mount, JavaThread* current))
+  MountUnmountDisabler::end_transition(current, vt, true /*is_mount*/, true /*is_thread_start*/);
+JRT_END
+
+JRT_ENTRY(void, OptoRuntime::vthread_start_final_transition_C(oopDesc* vt, jboolean is_mount, JavaThread* current))
+  java_lang_Thread::set_is_in_vthread_transition(vt, false);
+  current->set_is_in_vthread_transition(false);
+  MountUnmountDisabler::start_transition(current, vt, false /*is_mount */, true /*is_thread_end*/);
+JRT_END
+
+JRT_ENTRY(void, OptoRuntime::vthread_start_transition_C(oopDesc* vt, jboolean is_mount, JavaThread* current))
+  java_lang_Thread::set_is_in_vthread_transition(vt, false);
+  current->set_is_in_vthread_transition(false);
+  MountUnmountDisabler::start_transition(current, vt, is_mount, false /*is_thread_end*/);
+JRT_END
+
+JRT_ENTRY(void, OptoRuntime::vthread_end_transition_C(oopDesc* vt, jboolean is_mount, JavaThread* current))
+  MountUnmountDisabler::end_transition(current, vt, is_mount, false /*is_thread_start*/);
+JRT_END
+
 static const TypeFunc* make_new_instance_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(1);
@@ -587,8 +587,7 @@ static const TypeFunc* make_new_instance_Type() {
   return TypeFunc::make(domain, range);
 }
 
-#if INCLUDE_JVMTI
-static const TypeFunc* make_notify_jvmti_vthread_Type() {
+static const TypeFunc* make_vthread_transition_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(2);
   fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL; // VirtualThread oop
@@ -602,7 +601,6 @@ static const TypeFunc* make_notify_jvmti_vthread_Type() {
 
   return TypeFunc::make(domain,range);
 }
-#endif
 
 static const TypeFunc* make_athrow_Type() {
   // create input type (domain)
@@ -857,8 +855,9 @@ static const TypeFunc* make_jfr_write_checkpoint_Type() {
   const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms, fields);
 
   // create result type (range)
-  fields = TypeTuple::fields(0);
-  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms, fields);
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms] = TypeInstPtr::BOTTOM;
+  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms + 1, fields);
   return TypeFunc::make(domain, range);
 }
 
@@ -2335,12 +2334,10 @@ void OptoRuntime::initialize_types() {
   _updateBytesAdler32_Type            = make_updateBytesAdler32_Type();
   _osr_end_Type                       = make_osr_end_Type();
   _register_finalizer_Type            = make_register_finalizer_Type();
+  _vthread_transition_Type            = make_vthread_transition_Type();
   JFR_ONLY(
     _class_id_load_barrier_Type       = make_class_id_load_barrier_Type();
   )
-#if INCLUDE_JVMTI
-  _notify_jvmti_vthread_Type          = make_notify_jvmti_vthread_Type();
-#endif // INCLUDE_JVMTI
   _dtrace_method_entry_exit_Type      = make_dtrace_method_entry_exit_Type();
   _dtrace_object_alloc_Type           = make_dtrace_object_alloc_Type();
 }

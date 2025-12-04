@@ -260,6 +260,19 @@ final class Validator {
                 isValid = false;
                 warn(getMsg("warn.validator.order.mismatch"));
             }
+            // Check location of an optional manifest entry
+            if ("META-INF/MANIFEST.MF".equals(entryName)) {
+                int index = entryInfo.cen().order();
+                if (index > 1) { // Expect base manifest at index 0 or 1
+                    String position = Integer.toString(index);
+                    errorAndInvalid(formatMsg("error.validator.manifest.wrong.position", position));
+                } else if (index == 1) { // Ensure "META-INF/" preceeds manifest
+                    String firstName = entries.sequencedKeySet().getFirst();
+                    if (!"META-INF/".equals(firstName)) {
+                        errorAndInvalid(formatMsg("error.validator.metainf.wrong.position", firstName));
+                    }
+                }
+            }
         }
 
         /**

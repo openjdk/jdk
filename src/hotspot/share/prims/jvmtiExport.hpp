@@ -317,8 +317,8 @@ class JvmtiExport : public AllStatic {
 
   // single stepping management methods
   static void at_single_stepping_point(JavaThread *thread, Method* method, address location) NOT_JVMTI_RETURN;
-  static void expose_single_stepping(JavaThread *thread) NOT_JVMTI_RETURN;
-  static bool hide_single_stepping(JavaThread *thread) NOT_JVMTI_RETURN_(false);
+  static void expose_single_stepping(JvmtiThreadState* state) NOT_JVMTI_RETURN;
+  static JvmtiThreadState* hide_single_stepping(JavaThread *thread) NOT_JVMTI_RETURN_(nullptr);
 
   // Methods that notify the debugger that something interesting has happened in the VM.
   static void post_early_vm_start        () NOT_JVMTI_RETURN;
@@ -585,29 +585,12 @@ class JvmtiSampledObjectAllocEventCollector : public JvmtiObjectAllocEventCollec
   static bool object_alloc_is_safe_to_sample() NOT_JVMTI_RETURN_(false);
 };
 
-// Marker class to disable the posting of VMObjectAlloc events
-// within its scope.
-//
-// Usage :-
-//
-// {
-//   NoJvmtiVMObjectAllocMark njm;
-//   :
-//   // VMObjAlloc event will not be posted
-//   JvmtiExport::vm_object_alloc_event_collector(obj);
-//   :
-// }
-
-class NoJvmtiVMObjectAllocMark : public StackObj {
- private:
-  // enclosing collector if enabled, null otherwise
-  JvmtiVMObjectAllocEventCollector *_collector;
-
-  bool was_enabled()    { return _collector != nullptr; }
+// Marker class to temporary disable posting of jvmti events.
+class NoJvmtiEventsMark : public StackObj {
 
  public:
-  NoJvmtiVMObjectAllocMark() NOT_JVMTI_RETURN;
-  ~NoJvmtiVMObjectAllocMark() NOT_JVMTI_RETURN;
+  NoJvmtiEventsMark() NOT_JVMTI_RETURN;
+  ~NoJvmtiEventsMark() NOT_JVMTI_RETURN;
 };
 
 
@@ -622,23 +605,20 @@ class JvmtiGCMarker : public StackObj {
 // internal single step events.
 class JvmtiHideSingleStepping : public StackObj {
  private:
-  bool         _single_step_hidden;
-  JavaThread * _thread;
+  JvmtiThreadState* _state;
 
  public:
-  JvmtiHideSingleStepping(JavaThread * thread) {
+  JvmtiHideSingleStepping(JavaThread * thread) : _state(nullptr) {
     assert(thread != nullptr, "sanity check");
 
-    _single_step_hidden = false;
-    _thread = thread;
     if (JvmtiExport::should_post_single_step()) {
-      _single_step_hidden = JvmtiExport::hide_single_stepping(_thread);
+      _state = JvmtiExport::hide_single_stepping(thread);
     }
   }
 
   ~JvmtiHideSingleStepping() {
-    if (_single_step_hidden) {
-      JvmtiExport::expose_single_stepping(_thread);
+    if (_state != nullptr) {
+      JvmtiExport::expose_single_stepping(_state);
     }
   }
 };
