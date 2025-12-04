@@ -24,12 +24,13 @@
 /*
  * @test
  * @bug 8369950
- * @summary Test that the HttpsURLConnection does not set IPv6 address literals for
+ * @summary Test that the HttpsURLConnection does not set IP address literals for
  *          SNI hostname during TLS handshake
  * @library /test/lib
+ * @modules java.base/sun.net.util
  * @comment Insert -Djavax.net.debug=all into the following lines to enable SSL debugging
- * @run main/othervm SubjectAltNameIPv6 127.0.0.1
- * @run main/othervm SubjectAltNameIPv6 [::1]
+ * @run main/othervm SubjectAltNameIP 127.0.0.1
+ * @run main/othervm SubjectAltNameIP [::1]
  */
 
 import javax.net.ssl.HandshakeCompletedListener;
@@ -50,31 +51,47 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import jdk.test.lib.Asserts;
 import jdk.test.lib.net.IPSupport;
 import jdk.test.lib.net.SimpleSSLContext;
 import jtreg.SkippedException;
+import sun.net.util.IPAddressUtil;
 
-public class SubjectAltNameIPv6 {
+public class SubjectAltNameIP {
 
-    /*
-     * Is the server ready to serve?
-     */
+    // Is the server ready to serve?
     private final CountDownLatch serverReady = new CountDownLatch(1);
 
-    // use any free port by default
+    // Use any free port by default.
     volatile int serverPort = 0;
 
-    // stores an exception thrown by server in a separate thread
+    // Stores an exception thrown by server in a separate thread.
     volatile Exception serverException = null;
 
-    // SSLSocket object created by HttpsClient internally
+    // SSLSocket object created by HttpsClient internally.
     SSLSocket clientSSLSocket = null;
 
-    // the hostname the server socket is bound to
+    // The hostname the server socket is bound to.
     String hostName;
+
+    static final byte[] requestEnd = new byte[] {'\r', '\n', '\r', '\n' };
+
+    // Read until the end of the request.
+    void readOneRequest(InputStream is) throws IOException {
+        int requestEndCount = 0, r;
+        while ((r = is.read()) != -1) {
+            if (r == requestEnd[requestEndCount]) {
+                requestEndCount++;
+                if (requestEndCount == 4) {
+                    break;
+                }
+            } else {
+                requestEndCount = 0;
+            }
+        }
+    }
 
     /*
      * Define the server side of the test.
@@ -102,6 +119,7 @@ public class SubjectAltNameIPv6 {
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(sslOS));
         bw.write("HTTP/1.1 200 OK\r\n\r\n");
         bw.flush();
+        readOneRequest(sslSocket.getInputStream());
         sslSocket.close();
     }
 
@@ -130,11 +148,14 @@ public class SubjectAltNameIPv6 {
          * used internally.
          */
         conn.setSSLSocketFactory(wrapSocketFactory(sf,
-                sslSocket -> clientSSLSocket = sslSocket));
+                sslSocket -> {
+                    Asserts.assertEquals(null, clientSSLSocket, "clientSSLSocket is");
+                    clientSSLSocket = sslSocket;
+                }));
         conn.getInputStream();
 
         var sniSN = clientSSLSocket.getSSLParameters().getServerNames();
-        if( sniSN != null && !sniSN.isEmpty()) {
+        if (sniSN != null && !sniSN.isEmpty()) {
             throw new RuntimeException("SNI server name '" +
                     sniSN.getFirst() + "' must not be set.");
         }
@@ -152,7 +173,7 @@ public class SubjectAltNameIPv6 {
         /*
          * Start the tests.
          */
-        new SubjectAltNameIPv6(args[0]);
+        new SubjectAltNameIP(args[0]);
     }
 
     Thread serverThread = null;
@@ -162,7 +183,7 @@ public class SubjectAltNameIPv6 {
      *
      * Fork off the other side, then do your work.
      */
-    SubjectAltNameIPv6(String host) throws Exception {
+    SubjectAltNameIP(String host) throws Exception {
         hostName = host;
         startServer();
         doClientSide();
