@@ -36,6 +36,7 @@ import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.NetworkChannel;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -1443,13 +1444,11 @@ class Http2Connection implements Closeable {
     private void handleGoAwayWithError(final GoAwayFrame frame,
                                        final long lastProcessedStream,
                                        final int errorCode) {
-        // Extract debug data from the GOAWAY frame
         final byte[] debugData = frame.getDebugData();
         final String debugInfo = debugData.length > 0
                 ? new String(debugData, UTF_8)
                 : "";
 
-        // Create a meaningful error message with the error code and debug data
         final String errorName = ErrorFrame.stringForCode(errorCode);
         final String errorMsg = debugInfo.isEmpty()
                 ? String.format("Received GOAWAY with error code %s (0x%x)",
@@ -1461,24 +1460,17 @@ class Http2Connection implements Closeable {
             debug.log("Handling GOAWAY with error: %s", errorMsg);
         }
 
-        // Create the termination cause with the error information
         final Http2TerminationCause cause = Http2TerminationCause.forH2Error(errorCode, errorMsg);
 
-        // Fail all streams appropriately:
-        // - Streams with ID > lastProcessedStream were not processed and can be retried
-        // - Streams with ID <= lastProcessedStream were being processed and should fail with the error
         final AtomicInteger numUnprocessed = new AtomicInteger();
         final AtomicInteger numFailed = new AtomicInteger();
 
         streams.forEach((id, stream) -> {
             if (id > lastProcessedStream) {
-                // Stream was not processed by the peer - mark as unprocessed for retry
                 stream.closeAsUnprocessed();
                 numUnprocessed.incrementAndGet();
             } else {
-                // Stream was being processed - fail it with the connection error
-                final IOException error = new IOException(errorMsg);
-                stream.connectionClosing(error);
+                stream.connectionClosing(cause.getCloseCause());
                 numFailed.incrementAndGet();
             }
         });
@@ -1488,7 +1480,6 @@ class Http2Connection implements Closeable {
                     numUnprocessed.get(), numFailed.get());
         }
 
-        // Terminate the connection immediately
         close(cause);
     }
 

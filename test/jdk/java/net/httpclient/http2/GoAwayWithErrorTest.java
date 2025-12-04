@@ -26,14 +26,11 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import javax.net.ssl.SSLContext;
 
 import jdk.httpclient.test.lib.http2.Http2Handler;
@@ -74,21 +71,15 @@ public class GoAwayWithErrorTest {
     static int port;
     static AtomicBoolean firstRequestHandled;
     static AtomicBoolean secondRequestHandled;
-    static AtomicReference<String> allowedConnectionKey;
     static CountDownLatch goAwaySentLatch;
 
     @BeforeAll
     static void setup() throws Exception {
         firstRequestHandled = new AtomicBoolean(false);
         secondRequestHandled = new AtomicBoolean(false);
-        allowedConnectionKey = new AtomicReference<>();
         goAwaySentLatch = new CountDownLatch(1);
         sslContext = new SimpleSSLContext().get();
         server = new Http2TestServer(true, 0, null, sslContext);
-        server.setRequestApprover(key -> {
-            String allowed = allowedConnectionKey.get();
-            return allowed == null || allowed.equals(key);
-        });
         server.addHandler(new GoAwayHandler(), "/");
         server.start();
         port = server.getAddress().getPort();
@@ -124,38 +115,39 @@ public class GoAwayWithErrorTest {
         CompletableFuture<HttpResponse<String>> second = client.sendAsync(
                 request, HttpResponse.BodyHandlers.ofString());
 
-        CompletableFuture.allOf(first, second)
+        CompletableFuture<HttpResponse<String>> third = client.sendAsync(
+                request, HttpResponse.BodyHandlers.ofString());
+
+        CompletableFuture.allOf(first, second, third)
                 .orTimeout(20, TimeUnit.SECONDS)
                 .exceptionally(ex -> null)
                 .join();
 
-        List<Throwable> failures = List.of(first, second).stream()
-                .map(f -> f.handle((r, ex) -> ex).join())
-                .map(ex -> {
-                    if (ex instanceof CompletionException ce && ce.getCause() != null) {
-                        return ce.getCause();
-                    }
-                    return ex;
-                })
-                .filter(Objects::nonNull)
-                .toList();
+        Throwable firstError = first.handle((r, ex) -> ex).join();
+        if (firstError instanceof CompletionException ce && ce.getCause() != null) {
+            firstError = ce.getCause();
+        }
 
-        assertFalse(failures.isEmpty(), "At least one request should fail due to GOAWAY");
+        assertTrue(firstError != null && firstError.getMessage() != null,
+                "First request should fail with GOAWAY error");
+        assertTrue(firstError.getMessage().contains("GOAWAY")
+                        && firstError.getMessage().contains("Protocol error")
+                        && firstError.getMessage().contains("0x1")
+                        && firstError.getMessage().contains(DEBUG_MESSAGE),
+                "First request should contain GOAWAY error details: " + firstError.getMessage());
 
-        boolean hasGoAwayInfo = failures.stream()
-                .map(Throwable::getMessage)
-                .filter(Objects::nonNull)
-                .peek(msg -> System.out.println("Failure message: " + msg))
-                .anyMatch(msg ->
-                        msg.contains("GOAWAY")
-                                && msg.contains("Protocol error")
-                                && msg.contains("0x1")
-                                && msg.contains(DEBUG_MESSAGE));
+        HttpResponse<String> secondResponse = second.handle((r, ex) -> r).join();
+        HttpResponse<String> thirdResponse = third.handle((r, ex) -> r).join();
 
-        assertTrue(hasGoAwayInfo,
-                "Exception message should contain GOAWAY error code and debug data: " + failures);
+        assertTrue(secondResponse != null && secondResponse.statusCode() == 200,
+                "Second request (unprocessed stream) should be retried and succeed");
+        assertTrue(thirdResponse != null && thirdResponse.statusCode() == 200,
+                "Third request (unprocessed stream) should be retried and succeed");
 
-        assertFalse(secondRequestHandled.get(), "Second request should not reach server after GOAWAY");
+        assertTrue(secondRequestHandled.get(),
+                "Second and third requests should reach server after being retried");
+
+        System.out.println("Test passed: GOAWAY error details preserved and unprocessed streams retried");
     }
 
     static class GoAwayHandler implements Http2Handler {
@@ -167,17 +159,18 @@ public class GoAwayWithErrorTest {
             Http2TestExchangeImpl impl = (Http2TestExchangeImpl) exchange;
 
             if (!firstRequestHandled.getAndSet(true)) {
-                allowedConnectionKey.compareAndSet(null, impl.getConnectionKey());
-                System.out.println("Handler: sending GOAWAY(PROTOCOL_ERROR) and closing connection");
+                System.out.println("Handler: sending GOAWAY(PROTOCOL_ERROR, lastStreamId=1) and closing connection");
 
-                impl.getServerConnection().sendGoAway(Integer.MAX_VALUE, PROTOCOL_ERROR, DEBUG_DATA);
+                impl.getServerConnection().sendGoAway(1, PROTOCOL_ERROR, DEBUG_DATA);
                 impl.getServerConnection().close(PROTOCOL_ERROR);
                 goAwaySentLatch.countDown();
                 return;
             }
 
             secondRequestHandled.set(true);
-            throw new IOException("Second request should not have reached server after GOAWAY");
+            System.out.println("Handler: successfully handling retried request");
+            exchange.sendResponseHeaders(200, 0);
+            exchange.getResponseBody().close();
         }
     }
 }

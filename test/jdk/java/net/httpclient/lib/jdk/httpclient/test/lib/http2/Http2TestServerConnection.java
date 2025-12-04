@@ -251,24 +251,7 @@ public class Http2TestServerConnection {
         if (maxProcessedStreamId == -1) {
             maxProcessedStreamId = 0;
         }
-        boolean send = false;
-        int currentGoAwayReqStrmId = goAwayRequestStreamId.get();
-        // update the last processed stream id and send a goaway frame if the new last processed
-        // stream id is lesser than the last processed stream id sent in
-        // a previous goaway frame (if any)
-        while (currentGoAwayReqStrmId == -1 || maxProcessedStreamId < currentGoAwayReqStrmId) {
-            if (goAwayRequestStreamId.compareAndSet(currentGoAwayReqStrmId, maxProcessedStreamId)) {
-                send = true;
-                break;
-            }
-            currentGoAwayReqStrmId = goAwayRequestStreamId.get();
-        }
-        if (!send) {
-            return;
-        }
-        final GoAwayFrame frame = new GoAwayFrame(maxProcessedStreamId, error);
-        outputQ.put(frame);
-        System.err.println(server.name + ": Sending GOAWAY frame " + frame + " from server connection " + this);
+        sendGoAway(maxProcessedStreamId, error, new byte[0]);
     }
 
     /**
