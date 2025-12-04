@@ -72,17 +72,6 @@ bool Klass::is_cloneable() const {
          is_subtype_of(vmClasses::Cloneable_klass());
 }
 
-void Klass::set_is_cloneable() {
-  if (name() == vmSymbols::java_lang_invoke_MemberName()) {
-    assert(is_final(), "no subclasses allowed");
-    // MemberName cloning should not be intrinsified and always happen in JVM_Clone.
-  } else if (is_instance_klass() && InstanceKlass::cast(this)->reference_type() != REF_NONE) {
-    // Reference cloning should not be intrinsified and always happen in JVM_Clone.
-  } else {
-    _misc_flags.set_is_cloneable_fast(true);
-  }
-}
-
 uint8_t Klass::compute_hash_slot(Symbol* n) {
   uint hash_code;
   // Special cases for the two superclasses of all Array instances.
