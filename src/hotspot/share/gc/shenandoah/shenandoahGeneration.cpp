@@ -887,8 +887,7 @@ void ShenandoahGeneration::cancel_marking() {
   set_concurrent_mark_in_progress(false);
 }
 
-ShenandoahGeneration::ShenandoahGeneration(ShenandoahGenerationType type,
-                                           uint max_workers) :
+ShenandoahGeneration::ShenandoahGeneration(ShenandoahGenerationType type, uint max_workers) :
   _type(type),
   _task_queues(new ShenandoahObjToScanQueueSet(max_workers)),
   _ref_processor(new ShenandoahReferenceProcessor(this, MAX2(max_workers, 1U))),
