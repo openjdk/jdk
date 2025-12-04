@@ -25,7 +25,7 @@
  */
 
 
-#include "cds/archiveHeapWriter.hpp"
+#include "cds/aotMappedHeapWriter.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/fullGCForwarding.hpp"
@@ -1015,7 +1015,7 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
   // Record the plab configuration for this result and register the object.
   if (result != nullptr && req.is_old()) {
     old_generation()->configure_plab_for_current_thread(req);
-    if (req.type() == ShenandoahAllocRequest::_alloc_shared_gc) {
+    if (!req.is_lab_alloc()) {
       // Register the newly allocated object while we're holding the global lock since there's no synchronization
       // built in to the implementation of register_object().  There are potential races when multiple independent
       // threads are allocating objects, some of which might span the same card region.  For example, consider
@@ -1962,7 +1962,7 @@ void ShenandoahHeap::parallel_heap_region_iterate(ShenandoahHeapRegionClosure* b
   assert(blk->is_thread_safe(), "Only thread-safe closures here");
   const uint active_workers = workers()->active_workers();
   const size_t n_regions = num_regions();
-  size_t stride = ShenandoahParallelRegionStride;
+  size_t stride = blk->parallel_region_stride();
   if (stride == 0 && active_workers > 1) {
     // Automatically derive the stride to balance the work between threads
     // evenly. Do not try to split work if below the reasonable threshold.
@@ -2028,6 +2028,10 @@ void ShenandoahHeap::prepare_update_heap_references() {
 void ShenandoahHeap::propagate_gc_state_to_all_threads() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at Shenandoah safepoint");
   if (_gc_state_changed) {
+    // If we are only marking old, we do not need to process young pointers
+    ShenandoahBarrierSet::satb_mark_queue_set().set_filter_out_young(
+      is_concurrent_old_mark_in_progress() && !is_concurrent_young_mark_in_progress()
+    );
     ShenandoahGCStatePropagatorHandshakeClosure propagator(_gc_state.raw_value());
     Threads::threads_do(&propagator);
     _gc_state_changed = false;
@@ -2766,7 +2770,7 @@ HeapWord* ShenandoahHeap::allocate_loaded_archive_space(size_t size) {
   //
   // CDS would guarantee no objects straddle multiple regions, as long as regions are as large
   // as MIN_GC_REGION_ALIGNMENT.
-  guarantee(ShenandoahHeapRegion::region_size_bytes() >= ArchiveHeapWriter::MIN_GC_REGION_ALIGNMENT, "Must be");
+  guarantee(ShenandoahHeapRegion::region_size_bytes() >= AOTMappedHeapWriter::MIN_GC_REGION_ALIGNMENT, "Must be");
 
   ShenandoahAllocRequest req = ShenandoahAllocRequest::for_cds(size);
   return allocate_memory(req);

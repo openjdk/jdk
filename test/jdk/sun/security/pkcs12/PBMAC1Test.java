@@ -116,6 +116,16 @@ public class PBMAC1Test {
         var reason = Asserts.assertThrows(NoSuchAlgorithmException.class,
                 () -> emptyP12()).getMessage();
         Asserts.assertTrue(reason.contains("Algorithm hmacsha456 not available"), reason);
+
+        // Verify that DEFAULT HmacSHA1 prf does not get encoded.
+        System.setProperty("keystore.pkcs12.macAlgorithm", "PBEWITHHMACSHA1");
+        der = emptyP12();
+        DerUtils.checkAlg(der, "2000", KnownOIDs.PBMAC1);
+        DerUtils.checkAlg(der, "200100", KnownOIDs.PBKDF2);
+        DerUtils.shouldNotExist(der, "20010130");
+        DerUtils.checkAlg(der, "200110", KnownOIDs.HmacSHA1);
+        DerUtils.checkInt(der, "2001011", 10000);
+        DerUtils.checkInt(der, "2001012", 20);
     }
 
     static void migrate() throws Exception {
