@@ -28,6 +28,7 @@ package gc.arguments;
  * @bug 8006088
  * @requires vm.gc.Parallel
  * @requires vm.compMode != "Xcomp"
+ * @requires !vm.opt.final.UseLargePages
  * @summary Test Parallel GC ergonomics decisions related to minimum and initial heap size.
  * @library /test/lib
  * @library /
