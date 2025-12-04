@@ -167,7 +167,7 @@ public class SubjectAltNameIP {
 
     public static void main(String[] args) throws Exception {
 
-        if (!IPSupport.hasIPv6()) {
+        if (IPAddressUtil.isIPv6LiteralAddress(args[0]) && !IPSupport.hasIPv6()) {
             throw new SkippedException("Skipping test - IPv6 is not supported");
         }
         /*
