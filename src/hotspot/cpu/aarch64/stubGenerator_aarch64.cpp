@@ -11873,6 +11873,10 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_montgomerySquare = g.generate_multiply();
     }
 
+    // Load sve_sort library on supported hardware to enable SIMD sort and partition intrinsics
+    if (VM_Version::supports_sve()) {
+      (void)StubRoutines::try_load_simdsort("sve_sort", "sve_partition");
+    }
 #endif // COMPILER2
 
     if (UseChaCha20Intrinsics) {

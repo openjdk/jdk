@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2023 Intel Corporation. All rights reserved.
  * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,18 +22,34 @@
  *
  */
 
-#ifndef SIMDSORT_SUPPORT_HPP
-#define SIMDSORT_SUPPORT_HPP
-#include <stdio.h>
-#include <stdlib.h>
+#ifndef AARCH64_SVE_CONFIG_HPP
+#define AARCH64_SVE_CONFIG_HPP
 
-#undef assert
-#define assert(cond, msg) { if (!(cond)) { fprintf(stderr, "assert fails %s %d: %s\n", __FILE__, __LINE__, msg); abort(); }}
+#include <cstddef>
+#include <cstdint>
+#include <limits>
+#include "simdsort-support.hpp"
 
-// GCC >= 10.1 is required for a full support of ARM SVE ACLE intrinsics (which also includes the header file - arm_sve.h)
-#if defined(__aarch64__) && defined(_LP64) && defined(__GNUC__) && \
-    ((__GNUC__ > 10) || (__GNUC__ == 10 && __GNUC_MINOR__ >= 1))
-#define __SIMDSORT_SUPPORTED_LINUX
+#define SIMD_SORT_INFINITYF std::numeric_limits<float>::infinity()
+#define SIMD_SORT_MAX_INT32 std::numeric_limits<int32_t>::max()
+#define SIMD_SORT_MIN_INT32 std::numeric_limits<int32_t>::min()
+
+#if defined(__GNUC__)
+  #define SVE_SORT_INLINE  static inline
+  #define SVE_SORT_FINLINE static inline __attribute__((always_inline))
+#else
+  #define SVE_SORT_INLINE  static
+  #define SVE_SORT_FINLINE static
 #endif
 
-#endif //SIMDSORT_SUPPORT_HPP
+#ifndef DLL_PUBLIC
+  #define DLL_PUBLIC __attribute__((visibility("default")))
+#endif
+
+using arrsize_t = std::size_t;
+
+#ifndef OET_SORT_THRESHOLD
+  #define OET_SORT_THRESHOLD 8
+#endif
+
+#endif // AARCH64_SVE_CONFIG_HPP

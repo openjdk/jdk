@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2021, 2023, Intel Corporation. All rights reserved.
  * Copyright (c) 2021 Serge Sans Paille. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,66 +24,31 @@
  *
  */
 
-// This implementation is based on x86-simd-sort(https://github.com/intel/x86-simd-sort)
+#ifndef AARCH64_SVE_PIVOT_SELECTION_HPP
+#define AARCH64_SVE_PIVOT_SELECTION_HPP
 
-template <typename vtype, typename mm_t>
-X86_SIMD_SORT_INLINE void COEX(mm_t &a, mm_t &b);
+#include <algorithm>
+#include "sve-config.hpp"
 
-template <typename vtype, typename type_t>
-X86_SIMD_SORT_INLINE type_t get_pivot(type_t *arr, const arrsize_t left,
-                                      const arrsize_t right) {
-    using reg_t = typename vtype::reg_t;
-    type_t samples[vtype::numlanes];
-    arrsize_t delta = (right - left) / vtype::numlanes;
-    for (int i = 0; i < vtype::numlanes; i++) {
-        samples[i] = arr[left + i * delta];
-    }
-    reg_t rand_vec = vtype::loadu(samples);
-    reg_t sort = vtype::sort_vec(rand_vec);
-
-    return ((type_t *)&sort)[vtype::numlanes / 2];
-}
+/* <TODO> The current pivot selection method follows median-of-three method.
+ * Possible improvements could be the usage of sorting network (Compare and exchange sorting)
+ * for larger arrays.
+ */
 
 template <typename vtype, typename type_t>
-X86_SIMD_SORT_INLINE type_t get_pivot_blocks(type_t *arr, const arrsize_t left,
-                                             const arrsize_t right) {
-    if (right - left <= 1024) {
-        return get_pivot<vtype>(arr, left, right);
-    }
+static inline type_t get_pivot_blocks(type_t* arr, const arrsize_t left, const arrsize_t right) {
+  const arrsize_t len = right - left;
+  if (len < 64) return arr[left];
 
-    using reg_t = typename vtype::reg_t;
-    constexpr int numVecs = 5;
+  const arrsize_t mid = left + (len / 2);
+  const type_t a = arr[left];
+  const type_t b = arr[mid];
+  const type_t c = arr[right - 1];
 
-    arrsize_t width = (right - vtype::numlanes) - left;
-    arrsize_t delta = width / numVecs;
+  const type_t min_ab = std::min(a, b);
+  const type_t max_ab = std::max(a, b);
 
-    reg_t vecs[numVecs];
-    // Load data
-    for (int i = 0; i < numVecs; i++) {
-        vecs[i] = vtype::loadu(arr + left + delta * i);
-    }
-
-    // Implement sorting network (from
-    // https://bertdobbelaere.github.io/sorting_networks.html)
-    COEX<vtype>(vecs[0], vecs[3]);
-    COEX<vtype>(vecs[1], vecs[4]);
-
-    COEX<vtype>(vecs[0], vecs[2]);
-    COEX<vtype>(vecs[1], vecs[3]);
-
-    COEX<vtype>(vecs[0], vecs[1]);
-    COEX<vtype>(vecs[2], vecs[4]);
-
-    COEX<vtype>(vecs[1], vecs[2]);
-    COEX<vtype>(vecs[3], vecs[4]);
-
-    COEX<vtype>(vecs[2], vecs[3]);
-
-    // Calculate median of the middle vector
-    reg_t &vec = vecs[numVecs / 2];
-    vec = vtype::sort_vec(vec);
-
-    type_t data[vtype::numlanes];
-    vtype::storeu(data, vec);
-    return data[vtype::numlanes / 2];
+  return std::min(max_ab, std::max(min_ab, c));
 }
+
+#endif // AARCH64_SVE_PIVOT_SELECTION_HPP

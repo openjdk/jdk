@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2023 Intel Corporation. All rights reserved.
  * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,18 +22,31 @@
  *
  */
 
-#ifndef SIMDSORT_SUPPORT_HPP
-#define SIMDSORT_SUPPORT_HPP
-#include <stdio.h>
-#include <stdlib.h>
+#ifndef AARCH64_SVE_OET_SORT_HPP
+#define AARCH64_SVE_OET_SORT_HPP
 
-#undef assert
-#define assert(cond, msg) { if (!(cond)) { fprintf(stderr, "assert fails %s %d: %s\n", __FILE__, __LINE__, msg); abort(); }}
+#include "sve-config.hpp"
+#include "sve-qsort.hpp"
 
-// GCC >= 10.1 is required for a full support of ARM SVE ACLE intrinsics (which also includes the header file - arm_sve.h)
-#if defined(__aarch64__) && defined(_LP64) && defined(__GNUC__) && \
-    ((__GNUC__ > 10) || (__GNUC__ == 10 && __GNUC_MINOR__ >= 1))
-#define __SIMDSORT_SUPPORTED_LINUX
-#endif
+template <typename vtype, typename type_t>
+SVE_SORT_INLINE void sve_oet_sort(type_t* arr, arrsize_t from_index, arrsize_t to_index) {
+    arrsize_t arr_num = to_index - from_index;
+    const uint8_t numLanes = vtype::numlanes();
 
-#endif //SIMDSORT_SUPPORT_HPP
+    for (int32_t i = 0; i < OET_SORT_THRESHOLD; i++) {
+        // Odd-even pass: even i -> j starts at from_index
+        //                odd i  -> j starts at from_index + 1
+        int32_t j = from_index + i % 2;
+        int32_t remaining = arr_num - (i % 2);
+
+        while (remaining >= 2) {
+            const int32_t vals_per_iteration = (remaining < (2 * numLanes)) ? remaining : 2 * numLanes;
+            const int32_t num = vals_per_iteration / 2;
+            vtype::oet_sort(&arr[j], num);
+
+            j += vals_per_iteration;
+            remaining -= vals_per_iteration;
+        }
+    }
+}
+#endif // AARCH64_SVE_OET_SORT_HPP

@@ -187,6 +187,7 @@ ifeq ($(ENABLE_FALLBACK_LINKER), true)
   TARGETS += $(BUILD_LIBFALLBACKLINKER)
 endif
 
+SIMDSORT_BASE_DIR := $(TOPDIR)/src/java.base/linux/native/libsimdsort
 ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, x86_64)+$(INCLUDE_COMPILER2)+$(filter $(TOOLCHAIN_TYPE), gcc), true+true+true+gcc)
   ##############################################################################
   ## Build libsimdsort
@@ -196,6 +197,7 @@ ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, x86_64)+$(INCLUDE_COMPILER2)
       NAME := simdsort, \
       LINK_TYPE := C++, \
       OPTIMIZATION := HIGH, \
+      SRC := $(SIMDSORT_BASE_DIR)/x86, \
       CXXFLAGS := -std=c++17, \
       DISABLED_WARNINGS_gcc := unused-variable, \
       LIBS_linux := $(LIBM), \
@@ -204,4 +206,21 @@ ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, x86_64)+$(INCLUDE_COMPILER2)
   TARGETS += $(BUILD_LIBSIMD_SORT)
 endif
 
+ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, aarch64)+$(INCLUDE_COMPILER2)+$(filter $(TOOLCHAIN_TYPE), gcc), true+true+true+gcc)
+  $(eval $(call SetupJdkLibrary, BUILD_LIBSIMD_SORT, \
+      NAME := simdsort, \
+      TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
+      OPTIMIZATION := HIGH, \
+      SRC := $(SIMDSORT_BASE_DIR)/aarch64, \
+      CFLAGS := $(CFLAGS_JDKLIB) -march=armv8.2-a+sve, \
+      CXXFLAGS := $(CXXFLAGS_JDKLIB) -march=armv8.2-a+sve -std=c++17, \
+      LDFLAGS := $(LDFLAGS_JDKLIB) \
+          $(call SET_SHARED_LIBRARY_ORIGIN), \
+      LIBS := $(LIBCXX), \
+      DISABLED_WARNINGS_gcc := unused-variable, \
+      LIBS_linux := -lc -lm -ldl, \
+  ))
+
+  TARGETS += $(BUILD_LIBSIMD_SORT)
+endif
 ################################################################################

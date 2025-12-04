@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Intel Corporation. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,45 +23,41 @@
  *
  */
 
-#include "simdsort-support.hpp"
-#ifdef __SIMDSORT_SUPPORTED_LINUX
-
-#pragma GCC target("avx2")
-#include "avx2-32bit-qsort.hpp"
+#include "sve-config.hpp"
+#include "sve-common-qsort.hpp"
 #include "classfile_constants.h"
-
-
-#define DLL_PUBLIC __attribute__((visibility("default")))
-#define INSERTION_SORT_THRESHOLD_32BIT 16
+#include "simdsort-support.hpp"
+#include <cstdint>
 
 extern "C" {
 
-    DLL_PUBLIC void avx2_sort(void *array, int elem_type, int32_t from_index, int32_t to_index) {
+    DLL_PUBLIC void sve_sort(void *array, int elem_type, int32_t from_index, int32_t to_index) {
         switch(elem_type) {
             case JVM_T_INT:
-                avx2_fast_sort((int32_t*)array, from_index, to_index, INSERTION_SORT_THRESHOLD_32BIT);
+                sve_fast_sort((int32_t*)array, from_index, to_index, 64);
                 break;
             case JVM_T_FLOAT:
-                avx2_fast_sort((float*)array, from_index, to_index, INSERTION_SORT_THRESHOLD_32BIT);
+                sve_fast_sort((float*)array, from_index, to_index, 64);
                 break;
+            case JVM_T_LONG:
+            case JVM_T_DOUBLE:
             default:
                 assert(false, "Unexpected type");
         }
     }
 
-    DLL_PUBLIC void avx2_partition(void *array, int elem_type, int32_t from_index, int32_t to_index, int32_t *pivot_indices, int32_t index_pivot1, int32_t index_pivot2) {
+    DLL_PUBLIC void sve_partition(void *array, int elem_type, int32_t from_index, int32_t to_index, int32_t *pivot_indices, int32_t index_pivot1, int32_t index_pivot2) {
         switch(elem_type) {
             case JVM_T_INT:
-                avx2_fast_partition((int32_t*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
+                sve_fast_partition((int32_t*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
                 break;
             case JVM_T_FLOAT:
-                avx2_fast_partition((float*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
+                sve_fast_partition((float*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
                 break;
+            case JVM_T_LONG:
+            case JVM_T_DOUBLE:
             default:
                 assert(false, "Unexpected type");
         }
     }
-
 }
-
-#endif

@@ -469,6 +469,38 @@ StubRoutines::select_arraycopy_function(BasicType t, bool aligned, bool disjoint
 #undef RETURN_STUB_PARM
 }
 
+bool StubRoutines::try_load_simdsort(const char* sort_sym, const char* partition_sym) {
+  void* libsimdsort = nullptr;
+  char ebuf_[1024];
+  char dll_name_simd_sort[JVM_MAXPATHLEN];
+
+  if (os::dll_locate_lib(dll_name_simd_sort, sizeof(dll_name_simd_sort),
+                         Arguments::get_dll_dir(), "simdsort")) {
+    libsimdsort = os::dll_load(dll_name_simd_sort, ebuf_, sizeof ebuf_);
+  }
+
+  if (libsimdsort == nullptr) {
+    return false;
+  }
+
+  // Get addresses for SIMD sort and partition routines
+  log_info(library)("Loaded library %s, handle " INTPTR_FORMAT,
+                    JNI_LIB_PREFIX "simdsort" JNI_LIB_SUFFIX, p2i(libsimdsort));
+  address sort_addr      = (address)os::dll_lookup(libsimdsort, sort_sym);
+  address partition_addr = (address)os::dll_lookup(libsimdsort, partition_sym);
+
+  if (sort_addr == nullptr || partition_addr == nullptr) {
+    log_warning(library)("libsimdsort missing symbols: %s=" INTPTR_FORMAT ", %s=" INTPTR_FORMAT,
+                sort_sym, p2i(sort_addr), partition_sym, p2i(partition_addr));
+    // If either of the addresses are null, return false.
+    return false;
+  }
+
+  StubRoutines::_array_sort = sort_addr;
+  StubRoutines::_array_partition = partition_addr;
+  return true;
+}
+
 UnsafeMemoryAccessMark::UnsafeMemoryAccessMark(StubCodeGenerator* cgen, bool add_entry, bool continue_at_scope_end, address error_exit_pc) {
   _cgen = cgen;
   _ucm_entry = nullptr;
