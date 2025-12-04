@@ -630,15 +630,8 @@ bool SerialHeap::requires_barriers(stackChunkOop obj) const {
 
 // Returns "TRUE" iff "p" points into the committed areas of the heap.
 bool SerialHeap::is_in(const void* p) const {
-#ifdef ASSERT
-  {
-    // Java threads shouldn't be in native-state when calling this API.
-    if (Thread::current()->is_Java_thread()) {
-      JavaThread* thread = JavaThread::current();
-      assert(thread->thread_state() != _thread_in_native, "precondition");
-    }
-  }
-#endif
+  // precondition
+  DEBUG_ONLY(verify_not_in_native_if_java_thread();)
 
   if (!is_in_reserved(p)) {
     // If it's not even in reserved.
@@ -812,3 +805,10 @@ void SerialHeap::gc_epilogue(bool full) {
 
   MetaspaceCounters::update_performance_counters();
 };
+
+void SerialHeap::verify_not_in_native_if_java_thread() {
+  if (Thread::current()->is_Java_thread()) {
+    JavaThread* thread = JavaThread::current();
+    assert(thread->thread_state() != _thread_in_native, "precondition");
+  }
+}
