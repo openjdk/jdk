@@ -43,7 +43,7 @@ public class EnumSetSpliteratorTest {
     private enum Empty {}
 
     private enum Small {
-        a, b, c
+        a, b, c, d
     }
 
     private enum Large {
@@ -64,6 +64,14 @@ public class EnumSetSpliteratorTest {
         assertSpliteratorCharacteristics(EnumSet.allOf(Empty.class));
         assertSpliteratorCharacteristics(EnumSet.allOf(Small.class));
         assertSpliteratorCharacteristics(EnumSet.allOf(Large.class));
+        assertSpliteratorCharacteristics(EnumSet.noneOf(Empty.class));
+        assertSpliteratorCharacteristics(EnumSet.noneOf(Small.class));
+        assertSpliteratorCharacteristics(EnumSet.noneOf(Large.class));
+        assertSpliteratorCharacteristics(EnumSet.of(Small.a, Small.d));
+        assertSpliteratorCharacteristics(EnumSet.range(Small.a, Small.c));
+        assertSpliteratorCharacteristics(EnumSet.range(Large.e02, Large.e4D));
+        assertSpliteratorCharacteristics(EnumSet.complementOf(EnumSet.of(Small.c)));
+        assertSpliteratorCharacteristics(EnumSet.complementOf(EnumSet.of(Large.e00, Large.e4F)));
     }
 
     @Test
