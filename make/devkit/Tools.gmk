@@ -135,7 +135,11 @@ MPFR_VER_ONLY := 4.2.1
 MPFR_BASE_URL := https://www.mpfr.org
 MPFR_SHA512 := bc68c0d755d5446403644833ecbb07e37360beca45f474297b5d5c40926df1efc3e2067eecffdf253f946288bcca39ca89b0613f545d46a9e767d1d4cf358475
 
-DEPENDENCIES := BINUTILS CCACHE GCC GDB GMP MPC MPFR
+ISL_VER_ONLY := 0.26
+ISL_BASE_URL := https://libisl.sourceforge.io
+ISL_SHA512 := 9b5ec16d14e48f9ac9bf9cd379d3022959cfc617ade9e0d4caf2862299564fecba09d67dbdf1a4071f2f743a4fd0fabd0b0c3d15f5cddfe7226cdd5d6c2a0c66
+
+DEPENDENCIES := BINUTILS CCACHE GCC GDB GMP MPC MPFR ISL
 
 $(foreach dep,$(DEPENDENCIES),$(eval $(dep)_VER := $(call lowercase,$(dep)-$($(dep)_VER_ONLY))))
 
@@ -146,6 +150,7 @@ GDB_URL := $(GDB_BASE_URL)/$(GDB_VER).tar.xz
 GMP_URL := $(GMP_BASE_URL)/$(GMP_VER).tar.xz
 MPC_URL := $(MPC_BASE_URL)/$(MPC_VER).tar.gz
 MPFR_URL := $(MPFR_BASE_URL)/$(MPFR_VER)/$(MPFR_VER).tar.xz
+ISL_URL := $(ISL_BASE_URL)/$(ISL_VER).tar.xz
 
 REQUIRED_MIN_MAKE_MAJOR_VERSION := 4
 ifneq ($(REQUIRED_MIN_MAKE_MAJOR_VERSION),)
@@ -177,6 +182,8 @@ RPM_LIST := \
     libXau libXau-devel \
     libgcc libxcrypt \
     zlib zlib-devel \
+    libcom_err libcom_err-devel \
+    krb5-libs krb5-devel \
     libffi libffi-devel \
     fontconfig fontconfig-devel \
     systemtap-sdt-devel \
@@ -333,6 +340,12 @@ ifeq ($(ARCH), x86_64)
   SYSROOT_LINKS += $(SYSROOT)/usr/include/ffi.h $(SYSROOT)/usr/include/ffitarget.h
 endif
 
+# Create a link for com_err.h so that it's visible by default
+$(SYSROOT)/usr/include/com_err.h: $(RPMS)
+	cd $(@D) && rm -f $(@F) && ln -s et/$(@F) .
+
+SYSROOT_LINKS += $(SYSROOT)/usr/include/com_err.h
+
 ################################################################################
 
 # Define marker files for each source package to be compiled
@@ -409,6 +422,7 @@ $(GCC) \
     $(GMP) \
     $(MPFR) \
     $(MPC) \
+    $(ISL) \
     $(BFDMAKES) \
     $(CCACHE) : ENVS += $(TOOLS)
 
@@ -496,6 +510,21 @@ $(BUILDDIR)/$(MPC_VER)/Makefile \
 	) > $(@D)/log.config 2>&1
 	@echo 'done'
 
+$(BUILDDIR)/$(ISL_VER)/Makefile \
+    : $(ISL_CFG)
+	$(info Configuring $@. Log in $(@D)/log.config)
+	@mkdir -p $(@D)
+	( \
+	  cd $(@D) ; \
+	  $(PATHPRE) $(ENVS) CFLAGS="$(CFLAGS)" \
+	      $(ISL_CFG) \
+	      $(CONFIG) \
+	      --program-prefix=$(TARGET)- \
+	      --enable-shared=no \
+	      --with-gmp-prefix=$(PREFIX) \
+	) > $(@D)/log.config 2>&1
+	@echo 'done'
+
 # Only valid if glibc target -> linux
 # proper destructor handling for c++
 ifneq (,$(findstring linux,$(TARGET)))
@@ -536,6 +565,7 @@ $(BUILDDIR)/$(GCC_VER)/Makefile \
 	      --with-mpfr=$(PREFIX) \
 	      --with-gmp=$(PREFIX) \
 	      --with-mpc=$(PREFIX) \
+	      --with-isl=$(PREFIX) \
 	) > $(@D)/log.config 2>&1
 	@echo 'done'
 
@@ -543,9 +573,10 @@ $(BUILDDIR)/$(GCC_VER)/Makefile \
 $(GCC) : $(BINUTILS)
 
 # as of 4.3 or so need these for doing config
-$(BUILDDIR)/$(GCC_VER)/Makefile : $(GMP) $(MPFR) $(MPC)
+$(BUILDDIR)/$(GCC_VER)/Makefile : $(GMP) $(MPFR) $(MPC) $(ISL)
 $(MPFR) : $(GMP)
 $(MPC) : $(GMP) $(MPFR)
+$(ISL) : $(GMP)
 
 ################################################################################
 # Build gdb but only where host and target match
@@ -632,7 +663,7 @@ $(TARGETDIR)/%.done : $(BUILDDIR)/%/Makefile
 	$(info Building $(basename $@). Log in $(<D)/log.build)
 	$(PATHPRE) $(ENVS) $(MAKE) $(BUILDPAR) -f $< -C $(<D) $(MAKECMD) $(MAKECMD.$(notdir $@)) > $(<D)/log.build 2>&1
 	@echo -n 'installing...'
-	$(PATHPRE) $(MAKE) $(INSTALLPAR) -f $< -C $(<D) $(INSTALLCMD) $(MAKECMD.$(notdir $@)) > $(<D)/log.install 2>&1
+	$(PATHPRE) $(MAKE) $(INSTALLPAR) -f $< -C $(<D) $(INSTALLCMD) $(MAKECMD.$(notdir $@)) prefix=$(PREFIX) > $(<D)/log.install 2>&1
 	@mkdir -p $(@D)
 	@touch $@
 	@echo 'done'
