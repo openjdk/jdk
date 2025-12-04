@@ -77,7 +77,7 @@ const size_t ShenandoahAdaptiveHeuristics::GC_TIME_SAMPLE_SIZE = 3;
 // of the regulator thread.  To reduce signal noise and synchronization overhead, we do not sample allocation rate with every
 // iteration of the regulator.  We prefer sample time longer than 1 ms so that there can be a statistically significant number
 // of allocations occuring within each sample period.  The regulator thread samples allocation rate only if at least
-// MINIMUM_ALLOC_RATE_SAMPLE_INTERVAL time has passed since the previous time the regulator thread sampled the allocation rate.  
+// ShenandoahAccelerationSamplePeriod seconds have passed since it previously sampled the allocation rate.
 //
 // This trigger responds much more quickly than the traditional trigger, which monitors 100 ms spans.  When acceleration is
 // detected, the impact of acceleration on anticipated consumption of available memory is also much more impactful
@@ -85,11 +85,6 @@ const size_t ShenandoahAdaptiveHeuristics::GC_TIME_SAMPLE_SIZE = 3;
 
 #undef KELVIN_VISIBLE
 #undef KELVIN_DEBUG
-#ifdef KELVIN_DEBUG
-const double ShenandoahAdaptiveHeuristics::MINIMUM_ALLOC_RATE_SAMPLE_INTERVAL = 0.010;
-#else
-const double ShenandoahAdaptiveHeuristics::MINIMUM_ALLOC_RATE_SAMPLE_INTERVAL = 0.0075;
-#endif
 
 ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* space_info) :
   ShenandoahHeuristics(space_info),
@@ -774,9 +769,9 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   double acceleration = 0.0;
   double current_rate_by_acceleration = 0.0;
 
-  if ((now - _previous_allocation_timestamp) >= MINIMUM_ALLOC_RATE_SAMPLE_INTERVAL) {
-    predicted_future_accelerated_gc_time = predict_gc_time(now + MAX2(get_planned_sleep_interval(),
-                                                                      MINIMUM_ALLOC_RATE_SAMPLE_INTERVAL));
+  if ((now - _previous_allocation_timestamp) >= ShenandoahAccelerationSamplePeriod) {
+    predicted_future_accelerated_gc_time =
+      predict_gc_time(now + MAX2(get_planned_sleep_interval(), ShenandoahAccelerationSamplePeriod));
     double future_accelerated_planned_gc_time;
     bool future_accelerated_planned_gc_time_is_average;
     if (predicted_future_accelerated_gc_time > avg_cycle_time) {
@@ -801,10 +796,9 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 #endif
     add_rate_to_acceleration_history(now, instantaneous_rate_words_per_second);
     current_rate_by_acceleration = instantaneous_rate_words_per_second;
-    consumption_accelerated = accelerated_consumption(acceleration, current_rate_by_acceleration,
-                                                      avg_alloc_rate / HeapWordSize,
-                                                      MINIMUM_ALLOC_RATE_SAMPLE_INTERVAL
-                                                      + future_accelerated_planned_gc_time);
+    consumption_accelerated =
+      accelerated_consumption(acceleration, current_rate_by_acceleration, avg_alloc_rate / HeapWordSize,
+                              ShenandoahAccelerationSamplePeriod + future_accelerated_planned_gc_time);
 
 #ifdef KELVIN_SATB
     log_info(gc)("should_start_gc() checking instantaneous allocation: allocations since_last: %zu"

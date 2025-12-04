@@ -181,8 +181,6 @@ public:
 
   const static size_t GC_TIME_SAMPLE_SIZE;
 
-  const static double MINIMUM_ALLOC_RATE_SAMPLE_INTERVAL;
-
   friend class ShenandoahAllocationRate;
 
   // Used to record the last trigger that signaled to start a GC.
