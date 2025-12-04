@@ -36,7 +36,7 @@
 #include "memory/iterator.hpp"
 #include "nmt/memTag.hpp"
 #include "oops/access.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/cpuTimeCounters.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -75,7 +75,7 @@ void StringDedup::Processor::wait_for_requests() const {
   {
     ThreadBlockInVM tbivm(_thread);
     MonitorLocker ml(StringDedup_lock, Mutex::_no_safepoint_check_flag);
-    OopStorage* storage = Atomic::load(&_storage_for_requests)->storage();
+    OopStorage* storage = AtomicAccess::load(&_storage_for_requests)->storage();
     while ((storage->allocation_count() == 0) &&
            !Table::is_dead_entry_removal_needed()) {
       ml.wait();
@@ -83,7 +83,7 @@ void StringDedup::Processor::wait_for_requests() const {
   }
   // Swap the request and processing storage objects.
   log_trace(stringdedup)("swapping request storages");
-  _storage_for_processing = Atomic::xchg(&_storage_for_requests, _storage_for_processing);
+  _storage_for_processing = AtomicAccess::xchg(&_storage_for_requests, _storage_for_processing);
   GlobalCounter::write_synchronize();
   // Wait for the now current processing storage object to no longer be used
   // by an in-progress GC.  Again here, the num-dead notification from the
@@ -198,10 +198,8 @@ void StringDedup::Processor::run(JavaThread* thread) {
 void StringDedup::Processor::log_statistics() {
   _total_stat.add(&_cur_stat);
   Stat::log_summary(&_cur_stat, &_total_stat);
-  if (log_is_enabled(Debug, stringdedup)) {
-    _cur_stat.log_statistics(false);
-    _total_stat.log_statistics(true);
-    Table::log_statistics();
-  }
+  _cur_stat.emit_statistics(false /* total */);
+  _total_stat.emit_statistics(true /* total */);
+  Table::log_statistics();
   _cur_stat = Stat{};
 }

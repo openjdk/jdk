@@ -28,6 +28,7 @@ import static jdk.test.lib.Asserts.assertTrue;
 import java.util.Set;
 
 import jdk.jfr.Event;
+import jdk.jfr.Name;
 import jdk.jfr.Recording;
 import jdk.jfr.SettingControl;
 import jdk.jfr.SettingDefinition;
@@ -42,7 +43,7 @@ import jdk.jfr.SettingDefinition;
 public class TestSettingsControl {
     static class MySettingsControl extends SettingControl {
 
-        public static boolean setWasCalled;
+        public static boolean myvalueSet;
 
         private String value = "default";
 
@@ -57,7 +58,9 @@ public class TestSettingsControl {
 
         @Override
         public void setValue(String value) {
-            setWasCalled = true;
+            if ("myvalue".equals(value)) {
+                myvalueSet = true;
+            }
             this.value = value;
         }
 
@@ -67,9 +70,10 @@ public class TestSettingsControl {
         }
 
     }
-
+    @Name("M")
     static class MyCustomSettingEvent extends Event {
         @SettingDefinition
+        @Name("m")
         boolean mySetting(MySettingsControl msc) {
             return true;
         }
@@ -77,13 +81,13 @@ public class TestSettingsControl {
 
     public static void main(String[] args) throws Throwable {
         Recording r = new Recording();
-        r.enable(MyCustomSettingEvent.class).with("mySetting", "myvalue");
+        r.enable("M").with("m", "myvalue");
         r.start();
         MyCustomSettingEvent e = new MyCustomSettingEvent();
         e.commit();
         r.stop();
         r.close();
-        assertTrue(MySettingsControl.setWasCalled, "SettingControl.setValue was not called");
+        assertTrue(MySettingsControl.myvalueSet, "SettingControl.setValue(\"myvalue\") was not called");
     }
 }
 

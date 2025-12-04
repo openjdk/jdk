@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Objects;
 
 import jdk.jfr.SettingDescriptor;
-import jdk.jfr.events.ActiveSettingEvent;
 import jdk.jfr.internal.periodic.PeriodicEvents;
 import jdk.jfr.internal.util.ImplicitFields;
 import jdk.jfr.internal.util.TimespanRate;
@@ -49,6 +48,7 @@ public final class PlatformEventType extends Type {
     private final boolean isJDK;
     private final boolean isMethodSampling;
     private final boolean isCPUTimeMethodSampling;
+    private final boolean isBackToBackSensitive;
     private final List<SettingDescriptor> settings = new ArrayList<>(5);
     private final boolean dynamicSettings;
     private final int stackTraceOffset;
@@ -82,26 +82,29 @@ public final class PlatformEventType extends Type {
         this.isJVM = Type.isDefinedByJVM(id);
         this.isMethodSampling = determineMethodSampling();
         this.isCPUTimeMethodSampling = isJVM && name.equals(Type.EVENT_NAME_PREFIX + "CPUTimeSample");
+        this.isBackToBackSensitive = determineBackToBackSensitive();
         this.isJDK = isJDK;
         this.stackTraceOffset = determineStackTraceOffset();
+    }
+
+    private boolean determineBackToBackSensitive() {
+        if (getName().equals(Type.EVENT_NAME_PREFIX + "ThreadDump")) {
+            return true;
+        }
+        if (getName().equals(Type.EVENT_NAME_PREFIX + "ClassLoaderStatistics")) {
+            return true;
+        }
+        return false;
+    }
+
+    public boolean isBackToBackSensitive() {
+        return isBackToBackSensitive;
     }
 
     private boolean isExceptionEvent() {
         switch (getName()) {
             case Type.EVENT_NAME_PREFIX + "JavaErrorThrow" :
             case Type.EVENT_NAME_PREFIX + "JavaExceptionThrow" :
-                return true;
-        }
-        return false;
-    }
-
-    private boolean isStaticCommit() {
-        switch (getName()) {
-            case Type.EVENT_NAME_PREFIX + "SocketRead"  :
-            case Type.EVENT_NAME_PREFIX + "SocketWrite" :
-            case Type.EVENT_NAME_PREFIX + "FileRead"    :
-            case Type.EVENT_NAME_PREFIX + "FileWrite"   :
-            case Type.EVENT_NAME_PREFIX + "FileForce"   :
                 return true;
         }
         return false;
@@ -116,9 +119,15 @@ public final class PlatformEventType extends Type {
             if (getModification() == Modification.TRACING) {
                 return 5;
             }
-            if (isStaticCommit()) {
-                return 3;
-            }
+            return switch (getName()) {
+                case Type.EVENT_NAME_PREFIX + "SocketRead",
+                     Type.EVENT_NAME_PREFIX + "SocketWrite",
+                     Type.EVENT_NAME_PREFIX + "FileWrite" -> 6;
+                case Type.EVENT_NAME_PREFIX + "FileRead",
+                     Type.EVENT_NAME_PREFIX + "FileForce" -> 5;
+                case Type.EVENT_NAME_PREFIX + "FinalFieldMutation" -> 4;
+                default -> 3;
+            };
         }
         return 3;
     }
@@ -204,7 +213,11 @@ public final class PlatformEventType extends Type {
         if (isCPUTimeMethodSampling) {
             this.cpuRate = rate;
             if (isEnabled()) {
-                JVM.setCPUThrottle(rate.rate(), rate.autoAdapt());
+                if (rate.isRate()) {
+                    JVM.setCPURate(rate.rate());
+                } else {
+                    JVM.setCPUPeriod(rate.periodNanos());
+                }
             }
         }
     }
@@ -270,8 +283,12 @@ public final class PlatformEventType extends Type {
                 long p = enabled ? period : 0;
                 JVM.setMethodSamplingPeriod(getId(), p);
             } else if (isCPUTimeMethodSampling) {
-                TimespanRate r = enabled ? cpuRate : new TimespanRate(0, false);
-                JVM.setCPUThrottle(r.rate(), r.autoAdapt());
+                TimespanRate r = enabled ? cpuRate : TimespanRate.OFF;
+                if (r.isRate()) {
+                    JVM.setCPURate(r.rate());
+                } else {
+                    JVM.setCPUPeriod(r.periodNanos());
+                }
             } else {
                 JVM.setEnabled(getId(), enabled);
             }

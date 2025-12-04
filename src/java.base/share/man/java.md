@@ -450,7 +450,7 @@ the JVM.
     > **Note:** This option will be removed in a future release.
 
     -   `allow`: This mode allows illegal native access in all modules,
-        without any warings.
+        without any warnings.
 
     -   `warn`: This mode is identical to `allow` except that a warning
         message is issued for the first illegal native access found in a module.
@@ -464,6 +464,39 @@ the JVM.
     To verify that your application is ready for a future version of the JDK,
     run it with `--illegal-native-access=deny` along with any necessary `--enable-native-access`
     options.
+
+`--enable-final-field-mutation` *module*\[,*module*...\]
+:   Mutation of final fields is possible with the reflection API of the Java Platform.
+    However, it compromises safety and performance in all programs.
+    This option allows code in the specified modules to mutate final fields by reflection.
+    Attempts by code in any other module to mutate final fields by reflection are deemed _illegal_.
+
+    *module* can be the name of a module on the module path, or `ALL-UNNAMED` to indicate
+    code on the class path.
+
+-`--illegal-final-field-mutation=`*parameter*
+:   This option specifies a mode for how _illegal_ final field mutation is handled:
+
+    > **Note:** This option will be removed in a future release.
+
+    -   `allow`: This mode allows illegal final field mutation in all modules,
+        without any warnings.
+
+    -   `warn`: This mode is identical to `allow` except that a warning message is
+        issued for the first illegal final field mutation performaed in a module.
+        This mode is the default for the current JDK but will change in a future
+        release.
+
+    -   `debug`: This mode is identical to `allow` except that a warning message
+        and stack trace are printed for every illegal final field mutation.
+
+    -   `deny`: This mode disables final field mutation. That is, any illegal final
+        field mutation access causes an `IllegalAccessException`. This mode will
+        become the default in a future release.
+
+    To verify that your application is ready for a future version of the JDK,
+    run it with `--illegal-final-field-mutation=deny` along with any necessary
+    `--enable-final-field-mutation` options.
 
 `--finalization=`*value*
 :   Controls whether the JVM performs finalization of objects. Valid values
@@ -701,7 +734,8 @@ the Java HotSpot Virtual Machine.
     - A class descriptor is in decorated format (`Lname;`) when it should not be.
     - A `NULL` parameter is allowed, but its use is questionable.
     - Calling other JNI functions in the scope of `Get/ReleasePrimitiveArrayCritical`
-      or `Get/ReleaseStringCritical`
+      or `Get/ReleaseStringCritical`.
+    - A JNI call was made to mutate a final field.
 
     Expect a performance degradation when this option is used.
 
@@ -1235,26 +1269,6 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
 
     This option is only supported on Linux with GNU C Library (glibc).
 
-`-XX:+NeverActAsServerClassMachine`
-:   Enable the "Client VM emulation" mode which only uses the C1 JIT compiler,
-    a 32Mb CodeCache and the Serial GC. The maximum amount of memory that the
-    JVM may use (controlled by the `-XX:MaxRAM=n` flag) is set to 1GB by default.
-    The string "emulated-client" is added to the JVM version string.
-
-    By default the flag is set to `true` only on Windows in 32-bit mode and
-    `false` in all other cases.
-
-    The "Client VM emulation" mode will not be enabled if any of the following
-    flags are used on the command line:
-
-    ```
-    -XX:{+|-}TieredCompilation
-    -XX:CompilationMode=mode
-    -XX:TieredStopAtLevel=n
-    -XX:{+|-}EnableJVMCI
-    -XX:{+|-}UseJVMCICompiler
-    ```
-
 `-XX:ObjectAlignmentInBytes=`*alignment*
 :   Sets the memory alignment of Java objects (in bytes). By default, the value
     is set to 8 bytes. The specified value should be a power of 2, and must be
@@ -1449,9 +1463,10 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
 
     `report-on-exit=`*identifier*
     :   Specifies the name of the view to display when the Java Virtual Machine
-        (JVM) shuts down. This option is not available if the disk option is set
-        to false. For a list of available views, see `jfr help view`. By default,
-        no report is generated.
+        (JVM) shuts down. To specify more than one view, use the report-on-exit
+        parameter repeatedly. This option is not available if the disk option
+        is set to false. For a list of available views, see `jfr help view`.
+        By default, no report is generated.
 
     `settings=`*path*
     :   Specifies the path and name of the event settings file (of type JFC).
@@ -1513,6 +1528,15 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     ```
 
     This option is similar to `-Xss`.
+
+`-XX:+UseCompactObjectHeaders`
+:   Enables compact object headers. By default, this option is disabled.
+    Enabling this option reduces memory footprint in the Java heap by
+    4 bytes per object (on average) and often improves performance.
+
+    The feature remains disabled by default while it continues to be evaluated.
+    In a future release it is expected to be enabled by default, and
+    eventually will be the only mode of operation.
 
 `-XX:-UseCompressedOops`
 :   Disables the use of compressed pointers. By default, this option is
@@ -2299,12 +2323,6 @@ perform extensive debugging.
 These `java` options control how garbage collection (GC) is performed by the
 Java HotSpot VM.
 
-`-XX:+AggressiveHeap`
-:   Enables Java heap optimization. This sets various parameters to be
-    optimal for long-running jobs with intensive memory allocation, based on
-    the configuration of the computer (RAM and CPU). By default, the option
-    is disabled and the heap sizes are configured less aggressively.
-
 `-XX:+AlwaysPreTouch`
 :   Requests the VM to touch every page on the Java heap after requesting it from
     the operating system and before handing memory out to the application.
@@ -2438,7 +2456,7 @@ Java HotSpot VM.
 :   Sets the initial amount of memory that the JVM will use for the Java heap
     before applying ergonomics heuristics as a percentage of the maximum amount
     determined as described in the `-XX:MaxRAM` option. The default value is
-    1.5625 percent.
+    0.2 percent.
 
     The following example shows how to set the percentage of the initial
     amount of memory used for the Java heap:
@@ -2491,10 +2509,9 @@ Java HotSpot VM.
 
 `-XX:MaxGCPauseMillis=`*time*
 :   Sets a target for the maximum GC pause time (in milliseconds). This is a
-    soft goal, and the JVM will make its best effort to achieve it. The
-    specified value doesn't adapt to your heap size. By default, for G1 the
-    maximum pause time target is 200 milliseconds. The other generational
-    collectors do not use a pause time goal by default.
+    soft goal, and the JVM will make its best effort to achieve it. Only G1
+    and Parallel support a maximum GC pause time target. For G1, the default
+    maximum pause time target is 200 milliseconds.
 
     The following example shows how to set the maximum target pause time to 500
     ms:
@@ -2556,25 +2573,6 @@ Java HotSpot VM.
 `-XX:MaxNewSize=`*size*
 :   Sets the maximum size (in bytes) of the heap for the young generation
     (nursery). The default value is set ergonomically.
-
-`-XX:MaxRAM=`*size*
-:   Sets the maximum amount of memory that the JVM may use for the Java heap
-    before applying ergonomics heuristics. The default value is the maximum
-    amount of available memory to the JVM process or 128 GB, whichever is lower.
-
-    The maximum amount of available memory to the JVM process is the minimum
-    of the machine's physical memory and any constraints set by the environment
-    (e.g. container).
-
-    Specifying this option disables automatic use of compressed oops if
-    the combined result of this and other options influencing the maximum amount
-    of memory is larger than the range of memory addressable by compressed oops.
-    See `-XX:UseCompressedOops` for further information about compressed oops.
-
-    The following example shows how to set the maximum amount of available
-    memory for sizing the Java heap to 2 GB:
-
-    >   `-XX:MaxRAM=2G`
 
 `-XX:MaxRAMPercentage=`*percent*
 :   Sets the maximum amount of memory that the JVM may use for the Java heap
@@ -2700,14 +2698,6 @@ Java HotSpot VM.
 
     >   `-XX:ParallelGCThreads=2`
 
-`-XX:+ParallelRefProcEnabled`
-:   Enables parallel reference processing. By default, collectors employing multiple
-    threads perform parallel reference processing if the number of parallel threads
-    to use is larger than one.
-    The option is available only when the throughput or G1 garbage collector is used
-    (`-XX:+UseParallelGC` or `-XX:+UseG1GC`). Other collectors employing multiple
-    threads always perform reference processing in parallel.
-
 `-XX:+PrintAdaptiveSizePolicy`
 :   Enables printing of information about adaptive-generation sizing. By
     default, this option is disabled.
@@ -2807,9 +2797,8 @@ Java HotSpot VM.
 `-XX:+UseNUMA`
 :   Enables performance optimization of an application on a machine with
     nonuniform memory architecture (NUMA) by increasing the application's use
-    of lower latency memory. By default, this option is disabled and no
-    optimization for NUMA is made. The option is available only when the
-    parallel garbage collector is used (`-XX:+UseParallelGC`).
+    of lower latency memory. The default value for this option depends on the
+    garbage collector.
 
 `-XX:+UseParallelGC`
 :   Enables the use of the parallel scavenge garbage collector (also known as
@@ -2882,6 +2871,46 @@ Java HotSpot VM.
     expensive operations. Using a lower value will cause heap memory to be
     uncommitted earlier, at the risk of soon having to commit it again.
 
+`-XX:+UseShenandoahGC`
+:   Enables the use of the Shenandoah garbage collector. This is a low pause
+    time, concurrent garbage collector. Its pause times are not proportional to
+    the size of the heap. Shenandoah garbage collector can work with compressed
+    pointers. See `-XX:UseCompressedOops` for further information about
+    compressed pointers.
+
+`-XX:ShenandoahGCMode=`*mode*
+:   Sets the GC mode for Shenandoah GC to use. By default, this option is set
+    to `satb`. Among other things, this defines which barriers are in use.
+    Possible mode values include the following:
+
+    `satb`
+    :   Snapshot-at-the-beginning concurrent GC (three pass mark-evac-update).
+        It is a single generation GC.
+
+    `generational`
+    :   It is also a snapshot-at-the-beginning and concurrent GC, but it is
+        generational. Please see [JEP 404](https://openjdk.org/jeps/404) and
+        [JEP 521](https://openjdk.org/jeps/521) for its advantages and risks.
+
+`-XX:ShenandoahGCHeuristics=`*heuristics*
+:   Sets the heuristics for Shenandoah GC to use. By default, this option is
+    set to `adaptive`. This fine-tunes the GC mode selected, by choosing when
+    to start the GC, how much to process on each cycle, and what other features
+    to automatically enable. When `-XX:ShenandoahGCMode` is `generational`, the
+    only supported option is the default, `adaptive`.
+
+    Possible heuristics are the following:
+
+    `adaptive`
+    :   To maintain the given amount of free heap at all times, even during
+        the GC cycle.
+
+    `static`
+    :   Trigger GC when free heap falls below a specified threshold.
+
+    `compact`
+    :   Run GC more frequently and with deeper targets to free up more memory.
+
 ## Deprecated Java Options
 
 These `java` options are deprecated and might be removed in a future JDK
@@ -2902,6 +2931,59 @@ they're used.
 `-XX:+FlightRecorder`
 :   Enables the use of Java Flight Recorder (JFR) during the runtime of the
     application. Since JDK 8u40 this option has not been required to use JFR.
+
+`-XX:+ParallelRefProcEnabled`
+:   Enables parallel reference processing. By default, collectors employing multiple
+    threads perform parallel reference processing if the number of parallel threads
+    to use is larger than one.
+    The option is available only when the throughput or G1 garbage collector is used
+    (`-XX:+UseParallelGC` or `-XX:+UseG1GC`). Other collectors employing multiple
+    threads always perform reference processing in parallel.
+
+`-XX:MaxRAM=`*size*
+:   Sets the maximum amount of memory that the JVM may use for the Java heap
+    before applying ergonomics heuristics. The default value is the amount of
+    available memory to the JVM process.
+
+    The maximum amount of available memory to the JVM process is the minimum
+    of the machine's physical memory and any constraints set by the environment
+    (e.g. container).
+
+    Specifying this option disables automatic use of compressed oops if
+    the combined result of this and other options influencing the maximum amount
+    of memory is larger than the range of memory addressable by compressed oops.
+    See `-XX:UseCompressedOops` for further information about compressed oops.
+
+    The following example shows how to set the maximum amount of available
+    memory for sizing the Java heap to 2 GB:
+
+    >   `-XX:MaxRAM=2G`
+
+`-XX:+AggressiveHeap`
+:   Enables Java heap optimization. This sets various parameters to be
+    optimal for long-running jobs with intensive memory allocation, based on
+    the configuration of the computer (RAM and CPU). By default, the option
+    is disabled and the heap sizes are configured less aggressively.
+
+`-XX:+NeverActAsServerClassMachine`
+:   Enable the "Client VM emulation" mode which only uses the C1 JIT compiler,
+    a 32Mb CodeCache and the Serial GC. The maximum amount of memory that the
+    JVM may use (controlled by the `-XX:MaxRAM=n` flag) is set to 1GB by default.
+    The string "emulated-client" is added to the JVM version string.
+
+    By default the flag is set to `true` only on Windows in 32-bit mode and
+    `false` in all other cases.
+
+    The "Client VM emulation" mode will not be enabled if any of the following
+    flags are used on the command line:
+
+    ```
+    -XX:{+|-}TieredCompilation
+    -XX:CompilationMode=mode
+    -XX:TieredStopAtLevel=n
+    -XX:{+|-}EnableJVMCI
+    -XX:{+|-}UseJVMCICompiler
+    ```
 
 ## Obsolete Java Options
 
@@ -3747,9 +3829,10 @@ general form:
     be loaded on top of those in the `<static_archive>`.
 -   On Windows, the above path delimiter `:` should be replaced with `;`
 
-(The names "static" and "dynamic" are used for historical reasons.
-The only significance is that the "static" archive is loaded first and
-the "dynamic" archive is loaded second).
+The names "static" and "dynamic" are used for historical reasons. The dynamic
+archive, while still useful, supports fewer optimizations than
+available for the static CDS archive. If the full set of CDS/AOT
+optimizations are desired, consider using the AOT cache described below.
 
 The JVM can use up to two archives. To use only a single `<static_archive>`,
 you can omit the `<dynamic_archive>` portion:

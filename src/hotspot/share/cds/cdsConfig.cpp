@@ -23,13 +23,14 @@
  */
 
 #include "cds/aotLogging.hpp"
-#include "cds/archiveHeapLoader.hpp"
+#include "cds/aotMapLogger.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.hpp"
+#include "cds/heapShared.inline.hpp"
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/moduleEntry.hpp"
+#include "code/aotCodeCache.hpp"
 #include "include/jvm_io.h"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
@@ -54,6 +55,7 @@ bool CDSConfig::_has_temp_aot_config_file = false;
 bool CDSConfig::_old_cds_flags_used = false;
 bool CDSConfig::_new_aot_flags_used = false;
 bool CDSConfig::_disable_heap_dumping = false;
+bool CDSConfig::_is_at_aot_safepoint = false;
 
 const char* CDSConfig::_default_archive_path = nullptr;
 const char* CDSConfig::_input_static_archive_path = nullptr;
@@ -64,7 +66,8 @@ JavaThread* CDSConfig::_dumper_thread = nullptr;
 
 int CDSConfig::get_status() {
   assert(Universe::is_fully_initialized(), "status is finalized only after Universe is initialized");
-  return (is_dumping_archive()              ? IS_DUMPING_ARCHIVE : 0) |
+  return (is_dumping_aot_linked_classes()   ? IS_DUMPING_AOT_LINKED_CLASSES : 0) |
+         (is_dumping_archive()              ? IS_DUMPING_ARCHIVE : 0) |
          (is_dumping_method_handles()       ? IS_DUMPING_METHOD_HANDLES : 0) |
          (is_dumping_static_archive()       ? IS_DUMPING_STATIC_ARCHIVE : 0) |
          (is_logging_lambda_form_invokers() ? IS_LOGGING_LAMBDA_FORM_INVOKERS : 0) |
@@ -103,6 +106,8 @@ void CDSConfig::ergo_initialize() {
   if (!is_dumping_heap()) {
     _is_dumping_full_module_graph = false;
   }
+
+  AOTMapLogger::ergo_initialize();
 }
 
 const char* CDSConfig::default_archive_path() {
@@ -465,10 +470,6 @@ void CDSConfig::check_aot_flags() {
     assert(strcmp(AOTMode, "create") == 0, "checked by AOTModeConstraintFunc");
     check_aotmode_create();
   }
-
-  // This is an old flag used by CDS regression testing only. It doesn't apply
-  // to the AOT workflow.
-  FLAG_SET_ERGO(AllowArchivingWithJavaAgent, false);
 }
 
 void CDSConfig::check_aotmode_off() {
@@ -525,7 +526,7 @@ void CDSConfig::check_aotmode_record() {
   bool has_output = !FLAG_IS_DEFAULT(AOTCacheOutput);
 
   if (!has_output && !has_config) {
-      vm_exit_during_initialization("At least one of AOTCacheOutput and AOTConfiguration must be specified when using -XX:AOTMode=record");
+    vm_exit_during_initialization("At least one of AOTCacheOutput and AOTConfiguration must be specified when using -XX:AOTMode=record");
   }
 
   if (has_output) {
@@ -597,6 +598,7 @@ void CDSConfig::check_aotmode_create() {
   //
   // Since application is not executed in the assembly phase, there's no need to load
   // the agents anyway -- no one will notice that the agents are not loaded.
+  log_info(aot)("Disabled all JVMTI agents during -XX:AOTMode=create");
   JvmtiAgentList::disable_agent_list();
 }
 
@@ -641,8 +643,17 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
   }
 
   if (is_dumping_static_archive()) {
-    if (is_dumping_preimage_static_archive() || is_dumping_final_static_archive()) {
-      // Don't tweak execution mode
+    if (is_dumping_preimage_static_archive()) {
+      // Don't tweak execution mode during AOT training run
+    } else if (is_dumping_final_static_archive()) {
+      if (Arguments::mode() == Arguments::_comp) {
+        // AOT assembly phase submits the non-blocking compilation requests
+        // for methods collected during training run, then waits for all compilations
+        // to complete. With -Xcomp, we block for each compilation request, which is
+        // counter-productive. Switching back to mixed mode improves testing time
+        // with AOT and -Xcomp.
+        Arguments::set_mode_flags(Arguments::_mixed);
+      }
     } else if (!mode_flag_cmd_line) {
       // By default, -Xshare:dump runs in interpreter-only mode, which is required for deterministic archive.
       //
@@ -705,29 +716,41 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
 }
 
 void CDSConfig::setup_compiler_args() {
-  // AOT profiles are supported only in the JEP 483 workflow.
-  bool can_dump_profiles = AOTClassLinking && new_aot_flags_used();
+  // AOT profiles and AOT-compiled code are supported only in the JEP 483 workflow.
+  bool can_dump_profile_and_compiled_code = AOTClassLinking && new_aot_flags_used();
 
-  if (is_dumping_preimage_static_archive() && can_dump_profiles) {
+  if (is_dumping_preimage_static_archive() && can_dump_profile_and_compiled_code) {
     // JEP 483 workflow -- training
     FLAG_SET_ERGO_IF_DEFAULT(AOTRecordTraining, true);
     FLAG_SET_ERGO(AOTReplayTraining, false);
-  } else if (is_dumping_final_static_archive() && can_dump_profiles) {
+    AOTCodeCache::disable_caching(); // No AOT code generation during training run
+  } else if (is_dumping_final_static_archive() && can_dump_profile_and_compiled_code) {
     // JEP 483 workflow -- assembly
     FLAG_SET_ERGO(AOTRecordTraining, false);
     FLAG_SET_ERGO_IF_DEFAULT(AOTReplayTraining, true);
+    AOTCodeCache::enable_caching(); // Generate AOT code during assembly phase.
+    disable_dumping_aot_code();     // Don't dump AOT code until metadata and heap are dumped.
   } else if (is_using_archive() && new_aot_flags_used()) {
     // JEP 483 workflow -- production
     FLAG_SET_ERGO(AOTRecordTraining, false);
     FLAG_SET_ERGO_IF_DEFAULT(AOTReplayTraining, true);
+    AOTCodeCache::enable_caching();
   } else {
     FLAG_SET_ERGO(AOTReplayTraining, false);
     FLAG_SET_ERGO(AOTRecordTraining, false);
+    AOTCodeCache::disable_caching();
   }
 }
 
 void CDSConfig::prepare_for_dumping() {
   assert(CDSConfig::is_dumping_archive(), "sanity");
+
+  if (is_dumping_dynamic_archive() && AOTClassLinking) {
+    if (FLAG_IS_CMDLINE(AOTClassLinking)) {
+      log_warning(cds)("AOTClassLinking is not supported for dynamic CDS archive");
+    }
+    FLAG_SET_ERGO(AOTClassLinking, false);
+  }
 
   if (is_dumping_dynamic_archive() && !is_using_archive()) {
     assert(!is_dumping_static_archive(), "cannot be dumping both static and dynamic archives");
@@ -741,7 +764,7 @@ void CDSConfig::prepare_for_dumping() {
 #define __THEMSG " is unsupported when base CDS archive is not loaded. Run with -Xlog:cds for more info."
     if (RecordDynamicDumpInfo) {
       aot_log_error(aot)("-XX:+RecordDynamicDumpInfo%s", __THEMSG);
-      MetaspaceShared::unrecoverable_loading_error();
+      AOTMetaspace::unrecoverable_loading_error();
     } else {
       assert(ArchiveClassesAtExit != nullptr, "sanity");
       aot_log_warning(aot)("-XX:ArchiveClassesAtExit" __THEMSG);
@@ -811,9 +834,6 @@ bool CDSConfig::is_dumping_regenerated_lambdaform_invokers() {
     // that point to the lambda form invokers in the base archive. Such pointers will
     // be invalid if lambda form invokers are regenerated in the dynamic archive.
     return false;
-  } else if (CDSConfig::is_dumping_method_handles()) {
-    // Work around JDK-8310831, as some methods in lambda form holder classes may not get generated.
-    return false;
   } else {
     return is_dumping_archive();
   }
@@ -838,7 +858,11 @@ CDSConfig::DumperThreadMark::~DumperThreadMark() {
 
 bool CDSConfig::current_thread_is_vm_or_dumper() {
   Thread* t = Thread::current();
-  return t != nullptr && (t->is_VM_thread() || t == _dumper_thread);
+  return t->is_VM_thread() || t == _dumper_thread;
+}
+
+bool CDSConfig::current_thread_is_dumper() {
+  return Thread::current() == _dumper_thread;
 }
 
 const char* CDSConfig::type_of_archive_being_loaded() {
@@ -868,11 +892,6 @@ static const char* check_options_incompatible_with_dumping_heap() {
     return "UseCompressedClassPointers must be true";
   }
 
-  // Almost all GCs support heap region dump, except ZGC (so far).
-  if (UseZGC) {
-    return "ZGC is not supported";
-  }
-
   return nullptr;
 #else
   return "JVM not configured for writing Java heap objects";
@@ -899,6 +918,36 @@ bool CDSConfig::is_dumping_lambdas_in_legacy_mode() {
   return !is_dumping_method_handles();
 }
 
+bool CDSConfig::is_preserving_verification_constraints() {
+  // Verification dependencies are classes used in assignability checks by the
+  // bytecode verifier. In the following example, the verification dependencies
+  // for X are A and B.
+  //
+  //     class X {
+  //        A getA() { return new B(); }
+  //     }
+  //
+  // With the AOT cache, we can ensure that all the verification dependencies
+  // (A and B in the above example) are unconditionally loaded during the bootstrap
+  // of the production run. This means that if a class was successfully verified
+  // in the assembly phase, all of the verifier's assignability checks will remain
+  // valid in the production run, so we don't need to verify aot-linked classes again.
+
+  if (is_dumping_preimage_static_archive()) { // writing AOT config
+    return AOTClassLinking;
+  } else if (is_dumping_final_static_archive()) { // writing AOT cache
+    return is_dumping_aot_linked_classes();
+  } else if (is_dumping_classic_static_archive()) {
+    return is_dumping_aot_linked_classes();
+  } else {
+    return false;
+  }
+}
+
+bool CDSConfig::is_old_class_for_verifier(const InstanceKlass* ik) {
+  return ik->major_version() < 50 /*JAVA_6_VERSION*/;
+}
+
 #if INCLUDE_CDS_JAVA_HEAP
 bool CDSConfig::are_vm_options_incompatible_with_dumping_heap() {
   return check_options_incompatible_with_dumping_heap() != nullptr;
@@ -914,7 +963,7 @@ bool CDSConfig::is_dumping_heap() {
 }
 
 bool CDSConfig::is_loading_heap() {
-  return ArchiveHeapLoader::is_in_use();
+  return HeapShared::is_archived_heap_in_use();
 }
 
 bool CDSConfig::is_using_full_module_graph() {
@@ -926,7 +975,7 @@ bool CDSConfig::is_using_full_module_graph() {
     return false;
   }
 
-  if (is_using_archive() && ArchiveHeapLoader::can_use()) {
+  if (is_using_archive() && HeapShared::can_use_archived_heap()) {
     // Classes used by the archived full module graph are loaded in JVMTI early phase.
     assert(!(JvmtiExport::should_post_class_file_load_hook() && JvmtiExport::has_early_class_hook_env()),
            "CDS should be disabled if early class hooks are enabled");
@@ -957,11 +1006,10 @@ void CDSConfig::stop_using_full_module_graph(const char* reason) {
 }
 
 bool CDSConfig::is_dumping_aot_linked_classes() {
-  if (is_dumping_preimage_static_archive()) {
-    return false;
-  } else if (is_dumping_dynamic_archive()) {
-    return is_using_full_module_graph() && AOTClassLinking;
-  } else if (is_dumping_static_archive()) {
+  if (is_dumping_classic_static_archive() || is_dumping_final_static_archive()) {
+    // FMG is required to guarantee that all cached boot/platform/app classes
+    // are visible in the production run, so they can be unconditionally
+    // loaded during VM bootstrap.
     return is_dumping_full_module_graph() && AOTClassLinking;
   } else {
     return false;

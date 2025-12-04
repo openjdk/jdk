@@ -30,14 +30,15 @@ import static jdk.jpackage.test.PackageType.LINUX;
 import static jdk.jpackage.test.PackageType.MAC_PKG;
 import static jdk.jpackage.test.PackageType.NATIVE;
 import static jdk.jpackage.test.PackageType.WINDOWS;
+import static jdk.jpackage.test.PackageType.WIN_MSI;
 
 import java.awt.GraphicsEnvironment;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -59,6 +60,7 @@ import java.util.stream.StreamSupport;
 import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
+import jdk.jpackage.test.JPackageCommand.ActionRole;
 
 
 /**
@@ -232,6 +234,15 @@ public final class PackageTest extends RunnablePackageTest {
         return this;
     }
 
+    public PackageTest usePredefinedAppImage(JPackageCommand appImageCmd) {
+        appImageCmd.verifyIsOfType(PackageType.IMAGE);
+        addInitializer(cmd -> {
+            cmd.usePredefinedAppImage(appImageCmd.outputBundle());
+        });
+        appImageCmd.getVerifyActionsWithRole(ActionRole.LAUNCHER_VERIFIER).forEach(this::addInstallVerifier);
+        return this;
+    }
+
     public PackageTest disablePackageInstaller() {
         currentTypes.forEach(disabledInstallers::add);
         return this;
@@ -270,8 +281,7 @@ public final class PackageTest extends RunnablePackageTest {
     PackageTest addHelloAppFileAssociationsVerifier(FileAssociations fa) {
         Objects.requireNonNull(fa);
 
-        // Setup test app to have valid jpackage command line before
-        // running check of type of environment.
+        // Setup test app to have valid jpackage command line before running the check.
         addHelloAppInitializer(null);
 
         forTypes(LINUX, () -> {
@@ -296,13 +306,9 @@ public final class PackageTest extends RunnablePackageTest {
                 Files.deleteIfExists(appOutput);
 
                 List<String> expectedArgs = testRun.openFiles(testFiles);
-                TKit.waitForFileCreated(appOutput, 7);
+                TKit.waitForFileCreated(appOutput, Duration.ofSeconds(7), Duration.ofSeconds(3));
 
-                // Wait a little bit after file has been created to
-                // make sure there are no pending writes into it.
-                Thread.sleep(3000);
-                HelloApp.verifyOutputFile(appOutput, expectedArgs,
-                        Collections.emptyMap());
+                HelloApp.verifyOutputFile(appOutput, expectedArgs, Map.of());
             });
 
             if (isOfType(cmd, WINDOWS)) {
@@ -321,6 +327,11 @@ public final class PackageTest extends RunnablePackageTest {
         return this;
     }
 
+    public PackageTest mutate(Consumer<PackageTest> mutator) {
+        mutator.accept(this);
+        return this;
+    }
+
     public PackageTest forTypes(Collection<PackageType> types, Runnable action) {
         final var oldTypes = Set.of(currentTypes.toArray(PackageType[]::new));
         try {
@@ -336,6 +347,14 @@ public final class PackageTest extends RunnablePackageTest {
         return forTypes(List.of(type), action);
     }
 
+    public PackageTest forTypes(PackageType type, Consumer<PackageTest> action) {
+        return forTypes(List.of(type), action);
+    }
+
+    public PackageTest forTypes(Collection<PackageType> types, Consumer<PackageTest> action) {
+        return forTypes(types, () -> action.accept(this));
+    }
+
     public PackageTest notForTypes(Collection<PackageType> types, Runnable action) {
         Set<PackageType> workset = new HashSet<>(currentTypes);
         workset.removeAll(types);
@@ -346,21 +365,28 @@ public final class PackageTest extends RunnablePackageTest {
         return notForTypes(List.of(type), action);
     }
 
+    public PackageTest notForTypes(PackageType type, Consumer<PackageTest> action) {
+        return notForTypes(List.of(type), action);
+    }
+
+    public PackageTest notForTypes(Collection<PackageType> types, Consumer<PackageTest> action) {
+        return notForTypes(types, () -> action.accept(this));
+    }
+
     public PackageTest configureHelloApp() {
         return configureHelloApp(null);
     }
 
     public PackageTest configureHelloApp(String javaAppDesc) {
         addHelloAppInitializer(javaAppDesc);
-        addInstallVerifier(HelloApp::executeLauncherAndVerifyOutput);
+        addInstallVerifier(LauncherVerifier::executeMainLauncherAndVerifyOutput);
         return this;
     }
 
     public PackageTest addHelloAppInitializer(String javaAppDesc) {
-        addInitializer(
-                cmd -> new HelloApp(JavaAppDesc.parse(javaAppDesc)).addTo(cmd),
-                "HelloApp");
-        return this;
+        return addInitializer(cmd -> {
+            new HelloApp(JavaAppDesc.parse(javaAppDesc)).addTo(cmd);
+        }, "HelloApp");
     }
 
     public static class Group extends RunnablePackageTest {
@@ -603,11 +629,7 @@ public final class PackageTest extends RunnablePackageTest {
                     }
                 }
                 case VERIFY_INSTALL -> {
-                    if (unpackNotSupported()) {
-                        return ActionAction.SKIP;
-                    }
-
-                    if (installFailed()) {
+                    if (unpackNotSupported() || installFailed()) {
                         return ActionAction.SKIP;
                     }
                 }
@@ -745,6 +767,8 @@ public final class PackageTest extends RunnablePackageTest {
             if (expectedJPackageExitCode == 0) {
                 if (isOfType(cmd, LINUX)) {
                     LinuxHelper.verifyPackageBundleEssential(cmd);
+                } else if (isOfType(cmd, WIN_MSI)) {
+                    WinShortcutVerifier.verifyBundleShortcuts(cmd);
                 }
             }
             bundleVerifiers.forEach(v -> v.accept(cmd, result));
@@ -766,12 +790,11 @@ public final class PackageTest extends RunnablePackageTest {
 
             if (!cmd.isRuntime()) {
                 if (isOfType(cmd, WINDOWS) && !cmd.isPackageUnpacked("Not verifying desktop integration")) {
-                    // Check main launcher
-                    WindowsHelper.verifyDesktopIntegration(cmd, null);
-                    // Check additional launchers
-                    cmd.addLauncherNames().forEach(name -> {
-                        WindowsHelper.verifyDesktopIntegration(cmd, name);
-                    });
+                    WindowsHelper.verifyDeployedDesktopIntegration(cmd, true);
+                }
+
+                if (isOfType(cmd, LINUX)) {
+                    LinuxHelper.verifyDesktopIntegrationFiles(cmd, true);
                 }
             }
 
@@ -779,7 +802,7 @@ public final class PackageTest extends RunnablePackageTest {
                 LauncherAsServiceVerifier.verify(cmd);
             }
 
-            cmd.assertAppLayout();
+            cmd.runStandardAsserts();
 
             installVerifiers.forEach(v -> v.accept(cmd));
         }
@@ -848,12 +871,11 @@ public final class PackageTest extends RunnablePackageTest {
                 TKit.assertPathExists(cmd.appLauncherPath(), false);
 
                 if (isOfType(cmd, WINDOWS)) {
-                    // Check main launcher
-                    WindowsHelper.verifyDesktopIntegration(cmd, null);
-                    // Check additional launchers
-                    cmd.addLauncherNames().forEach(name -> {
-                        WindowsHelper.verifyDesktopIntegration(cmd, name);
-                    });
+                    WindowsHelper.verifyDeployedDesktopIntegration(cmd, false);
+                }
+
+                if (isOfType(cmd, LINUX)) {
+                    LinuxHelper.verifyDesktopIntegrationFiles(cmd, false);
                 }
             }
 

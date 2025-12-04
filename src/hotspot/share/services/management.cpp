@@ -54,19 +54,20 @@
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmOperations.hpp"
 #include "services/classLoadingService.hpp"
+#include "services/cpuTimeUsage.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "services/diagnosticFramework.hpp"
 #include "services/finalizerService.hpp"
-#include "services/writeableFlags.hpp"
+#include "services/gcNotifier.hpp"
 #include "services/heapDumper.hpp"
 #include "services/lowMemoryDetector.hpp"
-#include "services/gcNotifier.hpp"
 #include "services/management.hpp"
 #include "services/memoryManager.hpp"
 #include "services/memoryPool.hpp"
 #include "services/memoryService.hpp"
 #include "services/runtimeService.hpp"
 #include "services/threadService.hpp"
+#include "services/writeableFlags.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
@@ -889,6 +890,21 @@ static jint get_num_flags() {
   return count;
 }
 
+static jlong get_gc_cpu_time() {
+  if (!os::is_thread_cpu_time_supported()) {
+    return -1;
+  }
+
+  {
+    MutexLocker hl(Heap_lock);
+    if (Universe::heap()->is_shutting_down()) {
+      return -1;
+    }
+
+    return CPUTimeUsage::GC::total();
+  }
+}
+
 static jlong get_long_attribute(jmmLongAttribute att) {
   switch (att) {
   case JMM_CLASS_LOADED_COUNT:
@@ -914,6 +930,9 @@ static jlong get_long_attribute(jmmLongAttribute att) {
 
   case JMM_JVM_UPTIME_MS:
     return Management::ticks_to_ms(os::elapsed_counter());
+
+  case JMM_TOTAL_GC_CPU_TIME:
+    return get_gc_cpu_time();
 
   case JMM_COMPILE_TOTAL_TIME_MS:
     return Management::ticks_to_ms(CompileBroker::total_compilation_ticks());
@@ -975,7 +994,7 @@ static jlong get_long_attribute(jmmLongAttribute att) {
     return ClassLoadingService::class_method_data_size();
 
   case JMM_OS_MEM_TOTAL_PHYSICAL_BYTES:
-    return os::physical_memory();
+    return static_cast<jlong>(os::physical_memory());
 
   default:
     return -1;

@@ -30,9 +30,10 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 
-ShenandoahYoungGeneration::ShenandoahYoungGeneration(uint max_queues, size_t max_capacity, size_t soft_max_capacity) :
-  ShenandoahGeneration(YOUNG, max_queues, max_capacity, soft_max_capacity),
+ShenandoahYoungGeneration::ShenandoahYoungGeneration(uint max_queues) :
+  ShenandoahGeneration(YOUNG, max_queues),
   _old_gen_task_queues(nullptr) {
+  assert(type() == ShenandoahGenerationType::YOUNG, "OO sanity");
 }
 
 void ShenandoahYoungGeneration::set_concurrent_mark_in_progress(bool in_progress) {
@@ -95,6 +96,43 @@ ShenandoahHeuristics* ShenandoahYoungGeneration::initialize_heuristics(Shenandoa
   return _heuristics;
 }
 
+size_t ShenandoahYoungGeneration::used() const {
+  return _free_set->young_used();
+}
+
+#ifdef KELVIN_DEPRECATE
+size_t ShenandoahYoungGeneration::bytes_allocated_since_gc_start() const {
+  assert(ShenandoahHeap::heap()->mode()->is_generational(), "Young implies generational");
+  return _free_set->get_bytes_allocated_since_gc_start();
+}
+#endif
+
+size_t ShenandoahYoungGeneration::get_affiliated_region_count() const {
+  return _free_set->young_affiliated_regions();
+}
+
+size_t ShenandoahYoungGeneration::get_humongous_waste() const {
+  return _free_set->humongous_waste_in_mutator();
+}
+
+size_t ShenandoahYoungGeneration::used_regions() const {
+  return _free_set->young_affiliated_regions();
+}
+
+size_t ShenandoahYoungGeneration::used_regions_size() const {
+  size_t used_regions = _free_set->young_affiliated_regions();
+  return used_regions * ShenandoahHeapRegion::region_size_bytes();
+}
+
+size_t ShenandoahYoungGeneration::max_capacity() const {
+  size_t total_regions = _free_set->total_young_regions();
+  return total_regions * ShenandoahHeapRegion::region_size_bytes();
+}
+
+size_t ShenandoahYoungGeneration::free_unaffiliated_regions() const {
+  return _free_set->young_unaffiliated_regions();
+}
+
 size_t ShenandoahYoungGeneration::available() const {
   // The collector reserve may eat into what the mutator is allowed to use. Make sure we are looking
   // at what is available to the mutator when reporting how much memory is available.
@@ -106,6 +144,10 @@ size_t ShenandoahYoungGeneration::available() const {
                available, freeset->available(), max_capacity(), freeset->reserved());
 #endif
   return MIN2(available, ShenandoahHeap::heap()->free_set()->available());
+}
+
+size_t ShenandoahYoungGeneration::soft_max_capacity() const {
+  return _free_set->capacity();
 }
 
 size_t ShenandoahYoungGeneration::soft_available() const {

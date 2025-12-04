@@ -151,7 +151,7 @@ void ShenandoahAdaptiveHeuristics::post_initialize() {
   if (_is_generational) {
     _regulator_thread = ShenandoahGenerationalHeap::heap()->regulator_thread();
     size_t young_available = ShenandoahGenerationalHeap::heap()->young_generation()->max_capacity() -
-      (ShenandoahGenerationalHeap::heap()->young_generation()->used_including_humongous_waste() + _freeset->reserved());
+      (ShenandoahGenerationalHeap::heap()->young_generation()->used() + _freeset->reserved());
 #ifdef KELVIN_VISIBLE
     log_info(gc)("post_initialize() to recalculate young trigger with: %zu", young_available);
 #endif
@@ -159,7 +159,7 @@ void ShenandoahAdaptiveHeuristics::post_initialize() {
   } else {
     _control_thread = ShenandoahHeap::heap()->control_thread();
     size_t global_available = ShenandoahHeap::heap()->global_generation()->max_capacity() -
-      (ShenandoahHeap::heap()->global_generation()->used_including_humongous_waste() + _freeset->reserved());
+      (ShenandoahHeap::heap()->global_generation()->used() + _freeset->reserved());
 #ifdef KELVIN_VISIBLE
     log_info(gc)("post_initialize() to recalculate global trigger with: %zu", global_available);
 #endif
@@ -198,7 +198,7 @@ void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_
   log_info(gc)("@recalculate_trigger_threshold(mutator_available: %zu) for _space_info: %s",
                mutator_available, _space_info->name());
 #endif
-  size_t capacity       = _space_info->soft_max_capacity();
+  size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
   size_t spike_headroom = capacity / 100 * ShenandoahAllocSpikeFactor;
   size_t penalties      = capacity / 100 * _gc_time_penalties;
 
@@ -307,7 +307,7 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
   // we hit max_cset. When max_cset is hit, we terminate the cset selection. Note that in this scheme,
   // ShenandoahGarbageThreshold is the soft threshold which would be ignored until min_garbage is hit.
 
-  size_t capacity    = _space_info->soft_max_capacity();
+  size_t capacity    = ShenandoahHeap::heap()->soft_max_capacity();
   size_t max_cset    = (size_t)((1.0 * capacity / 100 * ShenandoahEvacReserve) / ShenandoahEvacWaste);
   size_t free_target = (capacity / 100 * ShenandoahMinFreeThreshold) + max_cset;
   size_t min_garbage = (free_target > actual_free ? (free_target - actual_free) : 0);
@@ -695,16 +695,17 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 #else
 #define DumpTriggerInfo()            ;
 #define AppendTriggerInfo(ts, cap, avail, alloced, mt, ls, \
-                          aar, aw, act, pfagt, awsls, irwps, crba, ca, accel, pfgt, fpgt, attda, is, sr, sttda)
-
-
+                          aar, aw, act, pfagt, awsls, irwps, crba, ca, accel, pfgt, fpgt, attda, is, sr, sttda)     ;
 #endif
   size_t capacity = _space_info->soft_max_capacity();
   size_t available = _space_info->soft_available();
-  size_t allocated = _space_info->bytes_allocated_since_gc_start();
+  size_t allocated = _freeset->get_bytes_allocated_since_gc_start();
 
   log_debug(gc)("should_start_gc? available: %zu, soft_max_capacity: %zu"
                 ", allocated: %zu", available, capacity, allocated);
+
+  // Track allocation rate even if we decide to start a cycle for other reasons.
+  double rate = _allocation_rate.sample(allocated);
 
   if (_start_gc_is_pending) {
     log_trigger("GC start is already pending");
@@ -1041,10 +1042,7 @@ void ShenandoahAdaptiveHeuristics::adjust_spike_threshold(double amount) {
 }
 
 size_t ShenandoahAdaptiveHeuristics::min_free_threshold() {
-  // Note that soft_max_capacity() / 100 * min_free_threshold is smaller than max_capacity() / 100 * min_free_threshold.
-  // We want to behave conservatively here, so use max_capacity().  By returning a larger value, we cause the GC to
-  // trigger when the remaining amount of free shrinks below the larger threshold.
-  return _space_info->max_capacity() / 100 * ShenandoahMinFreeThreshold;
+  return ShenandoahHeap::heap()->soft_max_capacity() / 100 * ShenandoahMinFreeThreshold;
 }
 
 // This is called each time a new rate sample has been gathered, as governed by MINMUM_ALLOC_RATE_SAMPLE_INTERVAL.
@@ -1205,16 +1203,32 @@ ShenandoahAllocationRate::ShenandoahAllocationRate() :
   _rate_avg(int(ShenandoahAdaptiveSampleSizeSeconds * ShenandoahAdaptiveSampleFrequencyHz), ShenandoahAdaptiveDecayFactor) {
 }
 
+double ShenandoahAllocationRate::force_sample(size_t allocated, size_t &unaccounted_bytes_allocated) {
+  const double MinSampleTime = 0.002;    // Do not sample if time since last update is less than 2 ms
+  double now = os::elapsedTime();
+  double time_since_last_update = now -_last_sample_time;
+  if (time_since_last_update < MinSampleTime) {
+    unaccounted_bytes_allocated = allocated - _last_sample_value;
+    _last_sample_value = 0;
+    return 0.0;
+  } else {
+    double rate = instantaneous_rate(now, allocated);
+    _rate.add(rate);
+    _rate_avg.add(_rate.avg());
+    _last_sample_time = now;
+    _last_sample_value = allocated;
+    unaccounted_bytes_allocated = 0;
+    return rate;
+  }
+}
+
 double ShenandoahAllocationRate::sample(size_t allocated) {
   double now = os::elapsedTime();
   double rate = 0.0;
   if (now - _last_sample_time > _interval_sec) {
-    if (allocated >= _last_sample_value) {
-      rate = instantaneous_rate(now, allocated);
-      _rate.add(rate);
-      _rate_avg.add(_rate.avg());
-    }
-
+    rate = instantaneous_rate(now, allocated);
+    _rate.add(rate);
+    _rate_avg.add(_rate.avg());
     _last_sample_time = now;
     _last_sample_value = allocated;
   }

@@ -40,7 +40,7 @@ public:
   virtual void doit();
 };
 
-class VM_ParallelGCCollect: public VM_GC_Operation {
+class VM_ParallelGCCollect: public VM_GC_Collect_Operation {
  public:
   VM_ParallelGCCollect(uint gc_count, uint full_gc_count, GCCause::Cause gc_cause);
   virtual VMOp_Type type() const { return VMOp_ParallelGCCollect; }

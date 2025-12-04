@@ -33,7 +33,7 @@ import javax.swing.plaf.basic.BasicToolTipUI;
 
 import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 
-public class AquaToolTipUI extends BasicToolTipUI {
+public final class AquaToolTipUI extends BasicToolTipUI {
     private static final RecyclableSingletonFromDefaultConstructor<AquaToolTipUI> sharedAquaInstance = new RecyclableSingletonFromDefaultConstructor<AquaToolTipUI>(AquaToolTipUI.class);
 
     public static ComponentUI createUI(final JComponent c) {

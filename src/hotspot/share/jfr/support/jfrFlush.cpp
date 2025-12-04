@@ -23,8 +23,8 @@
  */
 
 #include "jfr/recorder/jfrEventSetting.inline.hpp"
-#include "jfr/recorder/storage/jfrStorage.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
+#include "jfr/recorder/storage/jfrStorage.hpp"
 #include "jfr/support/jfrFlush.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "runtime/javaThread.hpp"
