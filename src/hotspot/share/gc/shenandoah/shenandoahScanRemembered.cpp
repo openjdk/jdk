@@ -369,7 +369,7 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
   //    regions walked by this code. Only GC will ever allocate in old regions,
   //    and then too only during promotion/evacuation phases. Thus there is no danger
   //    of races between reading from and writing to the object start array,
-  //    or of asking partially initialized objects their size (in the loop below).
+  //    or of asking partially initialized objects their size (in the ifdef below).
   //    Furthermore, humongous regions (and their dirty cards) are never processed
   //    by this code.
   // 3. only GC asks this question during phases when it is not concurrently
