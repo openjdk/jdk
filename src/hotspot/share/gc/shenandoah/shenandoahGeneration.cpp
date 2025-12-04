@@ -936,8 +936,8 @@ size_t ShenandoahGeneration::available_with_reserve() const {
   return result;
 }
 
-size_t ShenandoahGeneration::soft_available() const {
-  size_t result = available(ShenandoahHeap::heap()->soft_max_capacity());
+size_t ShenandoahGeneration::soft_available_exclude_evac_reserve() const {
+  size_t result = available(ShenandoahHeap::heap()->soft_max_capacity() * (100.0 - ShenandoahEvacReserve) / 100);
   return result;
 }
 

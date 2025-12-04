@@ -78,7 +78,7 @@ size_t ShenandoahGlobalGeneration::available() const {
   return MIN2(available, ShenandoahHeap::heap()->free_set()->available());
 }
 
-size_t ShenandoahGlobalGeneration::soft_available() const {
+size_t ShenandoahGlobalGeneration::soft_available_exclude_evac_reserve() const {
   size_t soft_max =  ShenandoahHeap::heap()->soft_max_capacity();
   assert(max_capacity() >= soft_max, "Max capacity must be greater than soft max capacity.");
   size_t used = this->used();
