@@ -211,19 +211,12 @@ public class DHasKEM implements KEMSpi {
         private SecretKey sub(SecretKey key, int from, int to) {
             if (from == 0 && to == params.secretLen) {
                 return key;
-            } else if ("RAW".equalsIgnoreCase(key.getFormat())) {
-                byte[] km = key.getEncoded();
-                if (km == null) {
-                    // Should not happen if format is "RAW"
-                    throw new UnsupportedOperationException(
-                            "Key extract failed");
-                } else {
-                    return new SecretKeySpec(km, from, to - from,
-                            key.getAlgorithm());
-                }
-            } else {
-                throw new UnsupportedOperationException("Cannot extract key");
             }
+
+            // Key slicing should never happen. Otherwise, there might be
+            // a programming error.
+            throw new AssertionError(
+                    "Unexpected key slicing: from=" + from + ", to=" + to);
         }
 
         // This KEM is designed to be able to represent every ECDH and XDH

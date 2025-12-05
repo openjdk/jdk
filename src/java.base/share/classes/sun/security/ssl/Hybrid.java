@@ -401,25 +401,37 @@ public class Hybrid {
             return algorithm;
         }
 
-        // getFormat() returns "RAW" if both keys are X509Key; otherwise null.
+        // getFormat() returns "RAW" as hybrid key uses RAW concatenation
+        // of underlying encodings.
         @Override
         public String getFormat() {
-            if (left instanceof X509Key && right instanceof X509Key) {
-                return "RAW";
-            } else {
-                return null;
-            }
+            return "RAW";
         }
 
         // getEncoded() returns the concatenation of the encoded bytes of the
-        // left and right public keys only if both are X509Key types.
+        // left and right public keys.
         @Override
         public byte[] getEncoded() {
-            if (left instanceof X509Key xk1 && right instanceof X509Key xk2) {
-                return concat(xk1.getKeyAsBytes(), xk2.getKeyAsBytes());
-            } else {
-                return null;
+            return concat(onlyKey(left), onlyKey(right));
+        }
+
+        static byte[] onlyKey(PublicKey key) {
+            if (key instanceof X509Key xk) {
+                return xk.getKeyAsBytes();
             }
+
+            // Fallback for 3rd-party providers
+            if (!"X.509".equalsIgnoreCase(key.getFormat())) {
+                throw new ProviderException("Invalid public key encoding " +
+                        "format");
+            }
+            var xk = new X509Key();
+            try {
+                xk.decode(key.getEncoded());
+            } catch (InvalidKeyException e) {
+                throw new ProviderException("Invalid public key encoding", e);
+            }
+            return xk.getKeyAsBytes();
         }
     }
 
