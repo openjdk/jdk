@@ -59,7 +59,7 @@ public class UIMapTest {
 
         if (button.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).
             get(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0)) != null) {
-            throw new RuntimeException("SwingUtilities.replaceUIInputMap " + 
+            throw new RuntimeException("SwingUtilities.replaceUIInputMap " +
                                        "didn't remove previously installed map");
         }
     }
