@@ -57,11 +57,11 @@ public class BaseBehaviorTest extends ThreadMXBeanTestBase {
         resultArr = threadMXBean.getThreadCpuTime(idArr);
         if (resultArr[0] != -1)
             throw new TestFailure("Failure! getThreadCpuTime(long[] ids) should "
-                    + "return -1 for not started threads. Recieved : " + resultArr[0]);
+                    + "return -1 for not started threads. Received : " + resultArr[0]);
         resultArr = threadMXBean.getThreadUserTime(idArr);
         if (resultArr[0] != -1)
             throw new TestFailure("Failure! getThreadUserTime(long[] ids) should "
-                    + "return -1 for not started threads. Recieved : " + resultArr[0]);
+                    + "return -1 for not started threads. Received : " + resultArr[0]);
         BarrierHandler handler = startThreads(thread);
         try {
             handler.proceed();
@@ -71,12 +71,12 @@ public class BaseBehaviorTest extends ThreadMXBeanTestBase {
             if (resultArr[0] != -1)
                 throw new TestFailure("Failure! getThreadCpuTime(long[] ids) should "
                     + "return -1 if threadCpuTimeEnabled is set to false. "
-                    + "Recieved : " + resultArr[0]);
+                    + "Received : " + resultArr[0]);
             resultArr = threadMXBean.getThreadUserTime(idArr);
             if (resultArr[0] != -1)
                 throw new TestFailure("Failure! getThreadUserTime(long[] ids) should "
                     + "return -1 if threadCpuTimeEnabled is set to false. "
-                    + "Recieved : " + resultArr[0]);
+                    + "Received : " + resultArr[0]);
             threadMXBean.setThreadCpuTimeEnabled(true);
             // Expect > 0 value for running platform threads and -1 for virtual threads.
             resultArr = threadMXBean.getThreadCpuTime(idArr);
@@ -84,22 +84,22 @@ public class BaseBehaviorTest extends ThreadMXBeanTestBase {
                 if (resultArr[0] != -1)
                     throw new TestFailure("Failure! getThreadCpuTime(long[] ids) should "
                             + "return -1 for virtual threads."
-                            + "Recieved : " + resultArr[0]);
+                            + "Received : " + resultArr[0]);
             } else {
                 if (resultArr[0] < 0)
                     throw new TestFailure("Failure! getThreadCpuTime(long[] ids) should "
-                            + "return > 0 value for RUNNING thread. Recieved : " + resultArr[0]);
+                            + "return > 0 value for RUNNING thread. Received : " + resultArr[0]);
             }
             resultArr = threadMXBean.getThreadUserTime(idArr);
             if (thread.isVirtual()) {
                 if (resultArr[0] != -1)
                     throw new TestFailure("Failure! getThreadUserTime(long[] ids) should "
                             + "return -1 for virtual threads."
-                            + "Recieved : " + resultArr[0]);
+                            + "Received : " + resultArr[0]);
             } else {
                 if (resultArr[0] < 0)
                     throw new TestFailure("Failure! getThreadUserTime(long[] ids) should "
-                            + "return > 0 value for RUNNING thread. Recieved : " + resultArr[0]);
+                            + "return > 0 value for RUNNING thread. Received : " + resultArr[0]);
             }
         } finally {
             // Let thread finish
@@ -112,11 +112,11 @@ public class BaseBehaviorTest extends ThreadMXBeanTestBase {
         resultArr = threadMXBean.getThreadCpuTime(idArr);
         if (resultArr[0] != -1)
             throw new TestFailure("Failure! getThreadCpuTime(long[] ids) should "
-                    + "return -1 for finished threads. Recieved : " + resultArr[0]);
+                    + "return -1 for finished threads. Received : " + resultArr[0]);
         resultArr = threadMXBean.getThreadUserTime(idArr);
         if (resultArr[0] != -1)
             throw new TestFailure("Failure! getThreadUserTime(long[] ids) should "
-                    + "return -1 for finished threads. Recieved : " + resultArr[0]);
+                    + "return -1 for finished threads. Received : " + resultArr[0]);
         log.info("BaseBehaviorTest passed.");
     }
 
