@@ -631,7 +631,7 @@ bool SerialHeap::requires_barriers(stackChunkOop obj) const {
 // Returns "TRUE" iff "p" points into the committed areas of the heap.
 bool SerialHeap::is_in(const void* p) const {
   // precondition
-  DEBUG_ONLY(verify_not_in_native_if_java_thread();)
+  verify_not_in_native_if_java_thread();
 
   if (!is_in_reserved(p)) {
     // If it's not even in reserved.
