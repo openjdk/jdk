@@ -26,7 +26,6 @@
 #include "code/nmethod.hpp"
 #include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/scavengableNMethodsData.hpp"
-#include "runtime/icache.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"
 
@@ -142,8 +141,6 @@ void ScavengableNMethods::nmethods_do_and_prune(NMethodToOopClosure* cl) {
     assert(data.on_list(), "else shouldn't be on this list");
 
     if (cl != nullptr) {
-      ICacheInvalidationContext icic(cur->has_non_immediate_oops());
-
       cl->do_nmethod(cur);
     }
 

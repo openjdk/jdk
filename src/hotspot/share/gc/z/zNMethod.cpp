@@ -202,12 +202,8 @@ void ZNMethod::register_nmethod(nmethod* nm) {
 
   log_register(nm);
 
-  {
-    ICacheInvalidationContext icic(needs_barrier_patching(nm));
-
-    // Patch nmethod barriers
-    nmethod_patch_barriers(nm);
-  }
+  // Patch nmethod barriers
+  nmethod_patch_barriers(nm);
 
   // Register nmethod
   ZNMethodTable::register_nmethod(nm);
@@ -252,6 +248,10 @@ void ZNMethod::set_guard_value(nmethod* nm, int value) {
 void ZNMethod::nmethod_patch_barriers(nmethod* nm) {
   ZBarrierSetAssembler* const bs_asm = ZBarrierSet::assembler();
   ZArrayIterator<ZNMethodDataBarrier> iter(gc_data(nm)->barriers());
+  ICacheInvalidationContext icic;
+  if (gc_data(nm)->barriers()->is_nonempty()) {
+    icic.set_has_modified_code();
+  }
   for (ZNMethodDataBarrier barrier; iter.next(&barrier);) {
     bs_asm->patch_barrier_relocation(barrier._reloc_addr, barrier._reloc_format);
   }
@@ -371,13 +371,9 @@ public:
         const uintptr_t prev_color = ZNMethod::color(nm);
         assert(prev_color != ZPointerStoreGoodMask, "Potentially non-monotonic transition");
 
-        {
-          ICacheInvalidationContext icic(ZNMethod::needs_non_immediate_oops_patching(nm));
-
-          // Heal oops and potentially mark young objects if there is a concurrent young collection.
-          ZUncoloredRootProcessOopClosure cl(prev_color);
-          ZNMethod::nmethod_oops_do_inner(nm, &cl);
-        }
+        // Heal oops and potentially mark young objects if there is a concurrent young collection.
+        ZUncoloredRootProcessOopClosure cl(prev_color);
+        ZNMethod::nmethod_oops_do_inner(nm, &cl);
 
         // Disarm for marking and relocation, but leave the remset bits so this isn't store good.
         // This makes sure the mutator still takes a slow path to fill in the nmethod epoch for
@@ -427,17 +423,4 @@ void ZNMethod::unlink(ZWorkers* workers, bool unloading_occurred) {
 
 void ZNMethod::purge() {
   ClassUnloadingContext::context()->purge_and_free_nmethods();
-}
-
-bool ZNMethod::needs_icache_invalidation(nmethod* nm) {
-  return needs_barrier_patching(nm) || needs_non_immediate_oops_patching(nm);
-}
-
-bool ZNMethod::needs_barrier_patching(nmethod* nm) {
-  return gc_data(nm)->barriers()->is_nonempty();
-}
-
-bool ZNMethod::needs_non_immediate_oops_patching(nmethod* nm) {
-  assert(gc_data(nm)->has_non_immediate_oops() == nm->has_non_immediate_oops(), "Inconsistent non-immed oops state");
-  return gc_data(nm)->has_non_immediate_oops();
 }

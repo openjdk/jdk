@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,49 +77,6 @@ enum class ICacheInvalidation : uint8_t {
   DEFERRED   = 2
 };
 
-class ICacheInvalidationContext : StackObj {
- private:
-  NONCOPYABLE(ICacheInvalidationContext);
-
-  address _code;
-  int _size;
-  ICacheInvalidation _mode;
-
-  void pd_init();
-  void pd_invalidate_icache();
-
-  NOT_PRODUCT(static ICacheInvalidationContext* pd_current());
-
- public:
-  // Hardware optimized icache invalidation which does not depend on what code is invalidated.
-  ICacheInvalidationContext(ICacheInvalidation mode) : _code(nullptr), _size(0), _mode(mode) {
-    pd_init();
-  }
-
-  ICacheInvalidationContext(bool needs_invalidation)
-      : ICacheInvalidationContext(needs_invalidation
-                                     ? ICacheInvalidation::DEFERRED
-                                     : ICacheInvalidation::NOT_NEEDED) {}
-
-  // Use hardware optimized icache invalidation if possible,
-  // Otherwise invalidate the specified code range.
-  ICacheInvalidationContext(address code, int size) : _code(code), _size(size), _mode(ICacheInvalidation::DEFERRED) {
-    pd_init();
-  }
-
-  ~ICacheInvalidationContext();
-
-#ifdef ASSERT
-  static ICacheInvalidationContext* current() {
-    return pd_current();
-  }
-#endif
-
-  ICacheInvalidation mode() const {
-    return _mode;
-  }
-};
-
 // Must be included before the definition of ICacheStubGenerator
 // because ICacheStubGenerator uses ICache definitions.
 
@@ -177,27 +134,62 @@ class ICacheStubGenerator : public StubCodeGenerator {
   void generate_icache_flush(ICache::flush_icache_stub_t* flush_icache_stub);
 };
 
-#ifndef PD_ICACHE_INVALIDATION_CONTEXT
-  // Default implementation: do nothing
-  inline void ICacheInvalidationContext::pd_init() {}
-  inline void ICacheInvalidationContext::pd_invalidate_icache() {}
-#ifdef ASSERT
-  inline ICacheInvalidationContext* ICacheInvalidationContext::pd_current() {
-    Unimplemented();
-    return nullptr;
-  }
-#endif // ASSERT
-#endif // PD_ICACHE_INVALIDATION_CONTEXT
+class DefaultICacheInvalidationContext final : StackObj {
+ private:
+  NONCOPYABLE(DefaultICacheInvalidationContext);
 
-inline ICacheInvalidationContext::~ICacheInvalidationContext() {
-  pd_invalidate_icache();
-  if (_code != nullptr) {
-    assert(_mode == ICacheInvalidation::DEFERRED, "sanity");
-    assert(_size > 0, "size must be positive");
-    ICache::invalidate_range(_code, _size);
-    _code = nullptr;
-    _size = 0;
+  NOT_PRODUCT(static THREAD_LOCAL DefaultICacheInvalidationContext* _current_context;)
+
+  address            _code;
+  int                _size;
+  ICacheInvalidation _mode;
+
+ public:
+  DefaultICacheInvalidationContext(ICacheInvalidation mode)
+      : _code(nullptr), _size(0), _mode(mode) {
+    NOT_PRODUCT(_current_context = this);
   }
-}
+
+  DefaultICacheInvalidationContext() : DefaultICacheInvalidationContext(ICacheInvalidation::IMMEDIATE) {}
+
+  DefaultICacheInvalidationContext(address code, int size)
+      : _code(code), _size(size), _mode(ICacheInvalidation::DEFERRED) {
+    NOT_PRODUCT(_current_context = this);
+    assert(code != nullptr, "code must not be null for deferred invalidation");
+    assert(size > 0, "size must be positive for deferred invalidation");
+  }
+
+  ~DefaultICacheInvalidationContext() {
+    NOT_PRODUCT(_current_context = nullptr);
+    if (_code != nullptr) {
+      assert(_mode == ICacheInvalidation::DEFERRED, "sanity");
+      assert(_size > 0, "size must be positive for deferred invalidation");
+      ICache::invalidate_range(_code, _size);
+      _code = nullptr;
+      _size = 0;
+      _mode = ICacheInvalidation::NOT_NEEDED;
+    }
+  }
+
+  ICacheInvalidation mode() const {
+    return _mode;
+  }
+
+  void set_has_modified_code() {
+    // No-op for the default implementation.
+  }
+
+#ifdef ASSERT
+  static DefaultICacheInvalidationContext* current() {
+    return _current_context;
+  }
+#endif
+};
+
+#ifdef PD_ICACHE_INVALIDATION_CONTEXT
+using ICacheInvalidationContext = PD_ICACHE_INVALIDATION_CONTEXT;
+#else
+using ICacheInvalidationContext = DefaultICacheInvalidationContext;
+#endif // PD_ICACHE_INVALIDATION_CONTEXT
 
 #endif // SHARE_RUNTIME_ICACHE_HPP

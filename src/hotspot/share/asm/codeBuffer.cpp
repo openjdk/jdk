@@ -365,10 +365,6 @@ void CodeSection::relocate(address at, RelocationHolder const& spec, int format)
 
   // If it has data, insert the prefix, as (data_prefix_tag | data1), data2.
   end->initialize(this, reloc);
-  if (rtype == relocInfo::oop_type &&
-      !((oop_Relocation*)reloc)->oop_is_immediate()) {
-    _has_non_immediate_oops = true;
-  }
 }
 
 void CodeSection::initialize_locs(int locs_capacity) {
@@ -727,6 +723,11 @@ csize_t CodeBuffer::copy_relocations_to(CodeBlob* dest) const {
 }
 
 void CodeBuffer::copy_code_to(CodeBlob* dest_blob) {
+  assert(ICacheInvalidationContext::current() != nullptr,
+         "ICache invalidation context should be set");
+  assert(ICacheInvalidationContext::current()->mode() == ICacheInvalidation::DEFERRED ||
+         ICacheInvalidationContext::current()->mode() == ICacheInvalidation::NOT_NEEDED,
+         "ICache invalidation should be deferred or unneeded");
 #ifndef PRODUCT
   if (PrintNMethods && (WizardMode || Verbose)) {
     tty->print("done with CodeBuffer:");
@@ -933,7 +934,6 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
 
   {
     ICacheInvalidationContext icic(ICacheInvalidation::NOT_NEEDED);
-
     // Move all the code and relocations to the new blob:
     relocate_code_to(&cb);
   }

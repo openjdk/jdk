@@ -22,8 +22,7 @@
  *
  */
 
+#include "runtime/icache.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-class ICacheInvalidationContext;
-
-NOT_PRODUCT(THREAD_LOCAL ICacheInvalidationContext* current_icache_invalidation_context = nullptr;)
+THREAD_LOCAL AArch64ICacheInvalidationContext* AArch64ICacheInvalidationContext::_current_context = nullptr;

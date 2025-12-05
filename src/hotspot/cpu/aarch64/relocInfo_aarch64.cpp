@@ -64,7 +64,7 @@ void Relocation::pd_set_data_value(address x, bool verify_only) {
     assert(ICacheInvalidationContext::current() != nullptr, "ICache invalidation context should be set");
     assert(ICacheInvalidationContext::current()->mode() == ICacheInvalidation::DEFERRED ||
            ICacheInvalidationContext::current()->mode() == ICacheInvalidation::NOT_NEEDED,
-           "ICache invalidation should be deferred or unneeded");
+           "ICache invalidation should be deferred or unneeded.");
 #ifdef ASSERT
     if (_binding != nullptr && _binding->code() != nullptr) {
       nmethod *nm = _binding->code();

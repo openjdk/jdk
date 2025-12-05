@@ -34,7 +34,6 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "runtime/atomicAccess.hpp"
-#include "runtime/icache.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 

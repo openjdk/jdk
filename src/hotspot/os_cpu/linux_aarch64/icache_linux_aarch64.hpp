@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,50 +26,132 @@
 #ifndef OS_CPU_LINUX_AARCH64_ICACHE_AARCH64_HPP
 #define OS_CPU_LINUX_AARCH64_ICACHE_AARCH64_HPP
 
+#include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#define PD_ICACHE_INVALIDATION_CONTEXT
-
-NOT_PRODUCT(extern THREAD_LOCAL ICacheInvalidationContext* current_icache_invalidation_context;)
-
-inline void ICacheInvalidationContext::pd_init() {
-  assert(current_icache_invalidation_context == nullptr, "nested ICacheInvalidationContext not supported");
-  NOT_PRODUCT(current_icache_invalidation_context = this);
-  if (_mode == ICacheInvalidation::DEFERRED && _code == nullptr && !UseDeferredICacheInvalidation) {
-    _mode = ICacheInvalidation::IMMEDIATE;
-  }
-}
-
-#ifdef ASSERT
-inline ICacheInvalidationContext* ICacheInvalidationContext::pd_current() {
-  return current_icache_invalidation_context;
-}
-#endif
-
 inline void assert_hardware_cache_coherency() {
+  // For deferred icache invalidation, we expect hardware dcache
+  // and icache to be coherent: CTR_EL0.IDC == 1 and CTR_EL0.DIC == 1
+  // An exception is Neoverse N1 with erratum 1542419, which requires
+  // a use of 'IC IVAU' instruction. In such a case, we expect
+  // CTR_EL0.DIC == 0.
 #ifdef ASSERT
-    static unsigned int cache_info = 0;
-    if (cache_info == 0) {
-      asm volatile ("mrs\t%0, ctr_el0":"=r" (cache_info));
-    }
-    constexpr unsigned int CTR_IDC_SHIFT = 28;
-    constexpr unsigned int CTR_DIC_SHIFT = 29;
-    assert(((cache_info >> CTR_IDC_SHIFT) & 0x1) != 0x0, "Expect CTR_EL0.IDC to be enabled");
-    if (NeoverseN1Errata1542419) {
-      assert(((cache_info >> CTR_DIC_SHIFT) & 0x1) == 0x0, "Expect CTR_EL0.DIC to be disabled for Neoverse N1 with erratum 1542419");
-    } else {
-      assert(((cache_info >> CTR_DIC_SHIFT) & 0x1) != 0x0, "Expect CTR_EL0.DIC to be enabled");
-    }
+  static unsigned int cache_info = 0;
+  if (cache_info == 0) {
+    asm volatile("mrs\t%0, ctr_el0" : "=r"(cache_info));
+  }
+  constexpr unsigned int CTR_IDC_SHIFT = 28;
+  constexpr unsigned int CTR_DIC_SHIFT = 29;
+  assert(((cache_info >> CTR_IDC_SHIFT) & 0x1) != 0x0,
+         "Expect CTR_EL0.IDC to be enabled");
+  if (NeoverseN1Errata1542419) {
+    assert(((cache_info >> CTR_DIC_SHIFT) & 0x1) == 0x0,
+           "Expect CTR_EL0.DIC to be disabled for Neoverse N1 with erratum "
+           "1542419");
+  } else {
+    assert(((cache_info >> CTR_DIC_SHIFT) & 0x1) != 0x0,
+           "Expect CTR_EL0.DIC to be enabled");
+  }
 #endif
 }
 
-inline void ICacheInvalidationContext::pd_invalidate_icache() {
-  if (_mode == ICacheInvalidation::DEFERRED && UseDeferredICacheInvalidation) {
-    // For deferred icache invalidation, we expect hardware dcache
-    // and icache to be coherent: CTR_EL0.IDC == 1 and CTR_EL0.DIC == 1
-    // An exception is Neoverse N1 with erratum 1542419, which requires
-    // a use of 'IC IVAU' instruction. In such a case, we expect
-    // CTR_EL0.DIC == 0.
+// Interface for updating the instruction cache.  Whenever the VM
+// modifies code, part of the processor instruction cache potentially
+// has to be flushed.
+
+class ICache : public AbstractICache {
+ public:
+  static void initialize(int phase);
+  static void invalidate_word(address addr) {
+    __builtin___clear_cache((char *)addr, (char *)(addr + 4));
+  }
+  static void invalidate_range(address start, int nbytes) {
+    if (NeoverseN1Errata1542419) {
+      assert_hardware_cache_coherency();
+      asm volatile("dsb ish       \n"
+                   "ic  ivau, xzr \n"
+                   "dsb ish       \n"
+                   "isb           \n"
+                   : : : "memory");
+    } else {
+      __builtin___clear_cache((char *)start, (char *)(start + nbytes));
+    }
+  }
+};
+
+class AArch64ICacheInvalidationContext final : StackObj {
+ private:
+  NONCOPYABLE(AArch64ICacheInvalidationContext);
+
+  static THREAD_LOCAL AArch64ICacheInvalidationContext* _current_context;
+
+  AArch64ICacheInvalidationContext* _parent;
+  address                           _code;
+  int                               _size;
+  ICacheInvalidation                _mode;
+  bool                              _has_modified_code;
+
+ public:
+  AArch64ICacheInvalidationContext(ICacheInvalidation mode)
+      : _parent(nullptr), _code(nullptr), _size(0), _mode(mode), _has_modified_code(false) {
+    _parent = _current_context;
+    _current_context = this;
+    if (_parent != nullptr) {
+      // The parent context is in charge of icache invalidation.
+      _mode = (_parent->mode() == ICacheInvalidation::IMMEDIATE) ? ICacheInvalidation::IMMEDIATE : ICacheInvalidation::NOT_NEEDED;
+    }
+  }
+
+  AArch64ICacheInvalidationContext()
+      : AArch64ICacheInvalidationContext(UseDeferredICacheInvalidation
+                                            ? ICacheInvalidation::DEFERRED
+                                            : ICacheInvalidation::IMMEDIATE) {}
+
+  AArch64ICacheInvalidationContext(address code, int size)
+      : _parent(nullptr),
+        _code(code),
+        _size(size),
+        _mode(ICacheInvalidation::DEFERRED),
+        _has_modified_code(true) {
+    assert(_current_context == nullptr,
+           "nested ICacheInvalidationContext(code, size) not supported");
+    assert(code != nullptr, "code must not be null for deferred invalidation");
+    assert(size > 0, "size must be positive for deferred invalidation");
+
+    _current_context = this;
+
+    if (UseDeferredICacheInvalidation) {
+      // With hardware dcache and icache coherency, we don't need _code.
+      _code = nullptr;
+      _size = 0;
+    }
+  }
+
+  ~AArch64ICacheInvalidationContext() {
+    _current_context = _parent;
+
+    if (_code != nullptr) {
+      assert(_size > 0, "size must be positive for deferred invalidation");
+      assert(_mode == ICacheInvalidation::DEFERRED, "sanity");
+      assert(_has_modified_code, "sanity");
+      assert(_parent == nullptr, "sanity");
+
+      ICache::invalidate_range(_code, _size);
+      return;
+    }
+
+    if (!_has_modified_code) {
+      return;
+    }
+
+    if (_parent != nullptr) {
+      _parent->set_has_modified_code();
+    }
+
+    if (_mode != ICacheInvalidation::DEFERRED) {
+      return;
+    }
+
     assert_hardware_cache_coherency();
 
     asm volatile("dsb ish" : : : "memory");
@@ -101,41 +183,27 @@ inline void ICacheInvalidationContext::pd_invalidate_icache() {
       // workaround."
       // As the address for icache invalidation is not relevant and
       // IC IVAU instruction is ignored, we use XZR in it.
-      asm volatile("ic  ivau, xzr \n"
-                   "dsb ish       \n"
-                   : : : "memory");
+      asm volatile(
+          "ic  ivau, xzr \n"
+          "dsb ish       \n"
+          :
+          :
+          : "memory");
     }
-
     asm volatile("isb" : : : "memory");
   }
-  NOT_PRODUCT(current_icache_invalidation_context = nullptr);
-  _code = nullptr;
-  _size = 0;
-  _mode = ICacheInvalidation::NOT_NEEDED;
-}
 
-// Interface for updating the instruction cache.  Whenever the VM
-// modifies code, part of the processor instruction cache potentially
-// has to be flushed.
+  ICacheInvalidation mode() const { return _mode; }
 
-class ICache : public AbstractICache {
- public:
-  static void initialize(int phase);
-  static void invalidate_word(address addr) {
-    __builtin___clear_cache((char *)addr, (char *)(addr + 4));
+  void set_has_modified_code() {
+    _has_modified_code = true;
   }
-  static void invalidate_range(address start, int nbytes) {
-    if (NeoverseN1Errata1542419) {
-      assert_hardware_cache_coherency();
-      asm volatile("dsb ish       \n"
-                   "ic  ivau, xzr \n"
-                   "dsb ish       \n"
-                   "isb           \n"
-                   : : : "memory");
-    } else {
-      __builtin___clear_cache((char *)start, (char *)(start + nbytes));
-    }
+
+  static AArch64ICacheInvalidationContext* current() {
+    return _current_context;
   }
 };
+
+#define PD_ICACHE_INVALIDATION_CONTEXT AArch64ICacheInvalidationContext
 
 #endif // OS_CPU_LINUX_AARCH64_ICACHE_AARCH64_HPP

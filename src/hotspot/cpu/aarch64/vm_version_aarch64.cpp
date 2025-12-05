@@ -68,6 +68,7 @@ static bool has_neoverse_n1_errata_1542419() {
   const int minor_rev_num = VM_Version::cpu_revision();
   // Neoverse N1: 0xd0c
   // Erratum 1542419 affects r3p0, r3p1 and r4p0.
+  // It is fixed in r4p1 and later revisions, which are not affected.
   return (VM_Version::cpu_family() == VM_Version::CPU_ARM &&
           VM_Version::model_is(0xd0c) &&
           ((major_rev_num == 3 && minor_rev_num == 0) ||

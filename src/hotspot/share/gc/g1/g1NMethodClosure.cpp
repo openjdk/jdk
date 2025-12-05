@@ -32,7 +32,6 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/icache.hpp"
 
 template <typename T>
 void G1NMethodClosure::HeapRegionGatheringOopClosure::do_oop_work(T* p) {
@@ -87,8 +86,6 @@ void G1NMethodClosure::do_evacuation_and_fixup(nmethod* nm) {
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
     bs_nm->disarm(nm);
   }
-
-  ICacheInvalidationContext icic(nm->has_non_immediate_oops());
 
   nm->fix_oop_relocations();
 }

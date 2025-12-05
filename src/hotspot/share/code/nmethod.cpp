@@ -1231,7 +1231,6 @@ void nmethod::init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets) {
   _has_flushed_dependencies   = 0;
   _is_unlinked                = 0;
   _load_reported              = 0; // jvmti state
-  _has_non_immediate_oops     = 0;
 
   _deoptimization_status      = not_marked;
 
@@ -1325,13 +1324,11 @@ nmethod::nmethod(
     _speculations_offset     = 0;
 #endif
     _immutable_data_ref_count_offset = 0;
-    _has_non_immediate_oops  = code_buffer->has_non_immediate_oops();
 
     {
       // Optimize ICache invalidation by batching it for the whole blob if
       // possible.
       ICacheInvalidationContext icic(code_begin(), code_size());
-
       code_buffer->copy_code_and_locs_to(this);
       code_buffer->copy_values_to(this);
     }
@@ -1488,7 +1485,6 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
   _has_flushed_dependencies     = nm._has_flushed_dependencies;
   _is_unlinked                  = nm._is_unlinked;
   _load_reported                = nm._load_reported;
-  _has_non_immediate_oops       = nm._has_non_immediate_oops;
 
   _deoptimization_status        = nm._deoptimization_status;
 
@@ -1702,8 +1698,6 @@ nmethod::nmethod(
 
     _num_stack_arg_slots = entry_bci != InvocationEntryBci ? 0 : _method->constMethod()->num_stack_arg_slots();
 
-    _has_non_immediate_oops = code_buffer->has_non_immediate_oops();
-
     set_ctable_begin(header_begin() + content_offset());
 
 #if INCLUDE_JVMCI
@@ -1784,7 +1778,6 @@ nmethod::nmethod(
       // Optimize ICache invalidation by batching it for the whole blob if
       // possible.
       ICacheInvalidationContext icic(code_begin(), code_size());
-
       // Copy code and relocation info
       code_buffer->copy_code_and_locs_to(this);
       // Copy oops and metadata
@@ -2060,19 +2053,25 @@ void nmethod::copy_values(GrowableArray<Metadata*>* array) {
 void nmethod::fix_oop_relocations(address begin, address end, bool initialize_immediates) {
   // re-patch all oop-bearing instructions, just in case some oops moved
   RelocIterator iter(this, begin, end);
+  ICacheInvalidationContext icic;
   while (iter.next()) {
+    bool modified_code = false;
     if (iter.type() == relocInfo::oop_type) {
       oop_Relocation* reloc = iter.oop_reloc();
       if (initialize_immediates && reloc->oop_is_immediate()) {
         oop* dest = reloc->oop_addr();
         jobject obj = *reinterpret_cast<jobject*>(dest);
         initialize_immediate_oop(dest, obj);
+        icic.set_has_modified_code();
       }
       // Refresh the oop-related bits of this instruction.
-      reloc->fix_oop_relocation();
+      modified_code = reloc->fix_oop_relocation();
     } else if (iter.type() == relocInfo::metadata_type) {
       metadata_Relocation* reloc = iter.metadata_reloc();
-      reloc->fix_metadata_relocation();
+      modified_code = reloc->fix_metadata_relocation();
+    }
+    if (modified_code) {
+      icic.set_has_modified_code();
     }
   }
 }
