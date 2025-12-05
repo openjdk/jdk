@@ -480,7 +480,7 @@ address StubGenerator::generate_counterMode_VectorAESCrypt()  {
 // Inputs:
 //   c_rarg0   - source byte array address
 //   c_rarg1   - destination byte array address
-//   c_rarg2   - K (key) in little endian int array
+//   c_rarg2   - sessionKe (key) in little endian int array
 //   c_rarg3   - counter vector byte array address
 //   Linux
 //     c_rarg4   -          input length
@@ -1063,7 +1063,7 @@ address StubGenerator::generate_cipherBlockChaining_decryptVectorAESCrypt() {
 // Inputs:
 //   c_rarg0   - source byte array address
 //   c_rarg1   - destination byte array address
-//   c_rarg2   - K (key) in little endian int array
+//   c_rarg2   - sessionKe (key) in little endian int array
 //
 address StubGenerator::generate_aescrypt_encryptBlock() {
   assert(UseAES, "need AES instructions and misaligned SSE support");
@@ -1158,7 +1158,7 @@ address StubGenerator::generate_aescrypt_encryptBlock() {
 // Inputs:
 //   c_rarg0   - source byte array address
 //   c_rarg1   - destination byte array address
-//   c_rarg2   - K (key) in little endian int array
+//   c_rarg2   - sessionKd (key) in little endian int array
 //
 address StubGenerator::generate_aescrypt_decryptBlock() {
   assert(UseAES, "need AES instructions and misaligned SSE support");
@@ -1255,7 +1255,7 @@ address StubGenerator::generate_aescrypt_decryptBlock() {
 // Inputs:
 //   c_rarg0   - source byte array address
 //   c_rarg1   - destination byte array address
-//   c_rarg2   - K (key) in little endian int array
+//   c_rarg2   - sessionKe (key) in little endian int array
 //   c_rarg3   - r vector byte array address
 //   c_rarg4   - input length
 //
@@ -1407,7 +1407,7 @@ address StubGenerator::generate_cipherBlockChaining_encryptAESCrypt() {
 // Inputs:
 //   c_rarg0   - source byte array address
 //   c_rarg1   - destination byte array address
-//   c_rarg2   - K (key) in little endian int array
+//   c_rarg2   - sessionKd (key) in little endian int array
 //   c_rarg3   - r vector byte array address
 //   c_rarg4   - input length
 //
@@ -3524,10 +3524,10 @@ void StubGenerator::aesgcm_avx512(Register in, Register len, Register ct, Regist
                                     false, true, false, false, false, ghashin_offset, aesout_offset, HashKey_32);
 
   ghash16_avx512(false, true, false, false, true, in, pos, avx512_subkeyHtbl, AAD_HASHx, SHUF_MASK, stack_offset, 16 * 16, 0, HashKey_16);
+  __ addl(pos, 16 * 16);
 
   __ bind(MESG_BELOW_32_BLKS);
   __ subl(len, 16 * 16);
-  __ addl(pos, 16 * 16);
   gcm_enc_dec_last_avx512(len, in, pos, AAD_HASHx, SHUF_MASK, avx512_subkeyHtbl, ghashin_offset, HashKey_16, true, true);
 
   __ bind(GHASH_DONE);
@@ -4016,13 +4016,15 @@ void StubGenerator::aesgcm_avx2(Register in, Register len, Register ct, Register
   const Register rounds = r10;
   const XMMRegister ctr_blockx = xmm9;
   const XMMRegister aad_hashx = xmm8;
-  Label encrypt_done, encrypt_by_8_new, encrypt_by_8;
+  Label encrypt_done, encrypt_by_8_new, encrypt_by_8, exit;
 
   //This routine should be called only for message sizes of 128 bytes or more.
   //Macro flow:
   //process 8 16 byte blocks in initial_num_blocks.
   //process 8 16 byte blocks at a time until all are done 'encrypt_by_8_new  followed by ghash_last_8'
   __ xorl(pos, pos);
+  __ cmpl(len, 128);
+  __ jcc(Assembler::less, exit);
 
   //Generate 8 constants for htbl
   generateHtbl_8_block_avx2(subkeyHtbl);
@@ -4090,6 +4092,7 @@ void StubGenerator::aesgcm_avx2(Register in, Register len, Register ct, Register
   __ vpxor(xmm0, xmm0, xmm0, Assembler::AVX_128bit);
   __ vpxor(xmm13, xmm13, xmm13, Assembler::AVX_128bit);
 
+  __ bind(exit);
  }
 
 #undef __

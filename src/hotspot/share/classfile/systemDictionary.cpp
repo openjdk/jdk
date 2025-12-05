@@ -560,15 +560,6 @@ static InstanceKlass* handle_parallel_loading(JavaThread* current,
   return nullptr;
 }
 
-void SystemDictionary::post_class_load_event(EventClassLoad* event, const InstanceKlass* k, const ClassLoaderData* init_cld) {
-  assert(event != nullptr, "invariant");
-  assert(k != nullptr, "invariant");
-  event->set_loadedClass(k);
-  event->set_definingClassLoader(k->class_loader_data());
-  event->set_initiatingClassLoader(init_cld);
-  event->commit();
-}
-
 // SystemDictionary::resolve_instance_class_or_null is the main function for class name resolution.
 // After checking if the InstanceKlass already exists, it checks for ClassCircularityError and
 // whether the thread must wait for loading in parallel.  It eventually calls load_instance_class,
@@ -582,7 +573,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   assert(name != nullptr && !Signature::is_array(name) &&
          !Signature::has_envelope(name), "invalid class name: %s", name == nullptr ? "nullptr" : name->as_C_string());
 
-  EventClassLoad class_load_start_event;
+  EventClassLoad class_load_event;
 
   HandleMark hm(THREAD);
 
@@ -713,8 +704,8 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
     return nullptr;
   }
 
-  if (class_load_start_event.should_commit()) {
-    post_class_load_event(&class_load_start_event, loaded_class, loader_data);
+  if (class_load_event.should_commit()) {
+    JFR_ONLY(post_class_load_event(&class_load_event, loaded_class, loader_data);)
   }
 
   // Make sure we have the right class in the dictionary
@@ -789,7 +780,7 @@ InstanceKlass* SystemDictionary::resolve_hidden_class_from_stream(
                                                      const ClassLoadInfo& cl_info,
                                                      TRAPS) {
 
-  EventClassLoad class_load_start_event;
+  EventClassLoad class_load_event;
   ClassLoaderData* loader_data;
 
   // - for hidden classes that are not strong: create a new CLD that has a class holder and
@@ -819,14 +810,15 @@ InstanceKlass* SystemDictionary::resolve_hidden_class_from_stream(
   k->add_to_hierarchy(THREAD);
   // But, do not add to dictionary.
 
+  if (class_load_event.should_commit()) {
+    JFR_ONLY(post_class_load_event(&class_load_event, k, loader_data);)
+  }
+
   k->link_class(CHECK_NULL);
 
   // notify jvmti
   if (JvmtiExport::should_post_class_load()) {
     JvmtiExport::post_class_load(THREAD, k);
-  }
-  if (class_load_start_event.should_commit()) {
-    post_class_load_event(&class_load_start_event, k, loader_data);
   }
 
   return k;
@@ -1182,6 +1174,8 @@ void SystemDictionary::preload_class(Handle class_loader, InstanceKlass* ik, TRA
   }
 #endif
 
+  EventClassLoad class_load_event;
+
   ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(class_loader());
   oop java_mirror = ik->archived_java_mirror();
   precond(java_mirror != nullptr);
@@ -1203,10 +1197,25 @@ void SystemDictionary::preload_class(Handle class_loader, InstanceKlass* ik, TRA
     update_dictionary(THREAD, ik, loader_data);
   }
 
+  if (class_load_event.should_commit()) {
+    JFR_ONLY(post_class_load_event(&class_load_event, ik, loader_data);)
+  }
+
   assert(ik->is_loaded(), "Must be in at least loaded state");
 }
 
 #endif // INCLUDE_CDS
+
+#if INCLUDE_JFR
+void SystemDictionary::post_class_load_event(EventClassLoad* event, const InstanceKlass* k, const ClassLoaderData* init_cld) {
+  assert(event != nullptr, "invariant");
+  assert(k != nullptr, "invariant");
+  event->set_loadedClass(k);
+  event->set_definingClassLoader(k->class_loader_data());
+  event->set_initiatingClassLoader(init_cld);
+  event->commit();
+}
+#endif // INCLUDE_JFR
 
 InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Handle class_loader, TRAPS) {
 
@@ -1380,15 +1389,6 @@ InstanceKlass* SystemDictionary::load_instance_class(Symbol* name,
   return loaded_class;
 }
 
-static void post_class_define_event(InstanceKlass* k, const ClassLoaderData* def_cld) {
-  EventClassDefine event;
-  if (event.should_commit()) {
-    event.set_definedClass(k);
-    event.set_definingClassLoader(def_cld);
-    event.commit();
-  }
-}
-
 void SystemDictionary::define_instance_class(InstanceKlass* k, Handle class_loader, TRAPS) {
 
   ClassLoaderData* loader_data = k->class_loader_data();
@@ -1440,7 +1440,6 @@ void SystemDictionary::define_instance_class(InstanceKlass* k, Handle class_load
   if (JvmtiExport::should_post_class_load()) {
     JvmtiExport::post_class_load(THREAD, k);
   }
-  post_class_define_event(k, loader_data);
 }
 
 // Support parallel classloading
@@ -1864,14 +1863,19 @@ void SystemDictionary::add_nest_host_error(const constantPoolHandle& pool,
   {
     MutexLocker ml(Thread::current(), SystemDictionary_lock);
     ResolutionErrorEntry* entry = ResolutionErrorTable::find_entry(pool, which);
-    if (entry != nullptr && entry->nest_host_error() == nullptr) {
+    if (entry == nullptr) {
+      // Only add a new entry to the resolution error table if one hasn't been found for this
+      // constant pool index. In this case resolution succeeded but there's an error in this nest host
+      // that we use the table to record.
+      assert(pool->resolved_klass_at(which) != nullptr, "klass should be resolved if there is no entry");
+      ResolutionErrorTable::add_entry(pool, which, message);
+    } else {
       // An existing entry means we had a true resolution failure (LinkageError) with our nest host, but we
       // still want to add the error message for the higher-level access checks to report. We should
       // only reach here under the same error condition, so we can ignore the potential race with setting
-      // the message. If we see it is already set then we can ignore it.
+      // the message, and set it again.
+      assert(entry->nest_host_error() == nullptr || strcmp(entry->nest_host_error(), message) == 0, "should be the same message");
       entry->set_nest_host_error(message);
-    } else {
-      ResolutionErrorTable::add_entry(pool, which, message);
     }
   }
 }
