@@ -413,17 +413,23 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
     old_generation->set_evacuation_reserve(old_evacuation_reserve);
   }
 
+  old_generation->reset_promoted_expended();
+
   const size_t young_evacuated = collection_set->get_live_bytes_in_untenurable_regions();
   const size_t young_evacuated_commited = (size_t) (ShenandoahEvacWaste * double(young_evacuated));
   assert(young_evacuated_commited <= young_generation->available_with_reserve(), "Cannot evacuate more than is available in young");
   young_generation->set_evacuation_reserve(young_evacuated_commited);
 
-  // Now that we've established the collection set, we know how much memory is really required by old-gen for evacuation
-  // and promotion reserves.  Try shrinking OLD now in case that gives us a bit more runway for mutator allocations during
-  // evac and update phases.
-  const size_t old_available = old_generation->available();
+  size_t old_available = old_generation->available();
   const size_t promoted_reserve = old_generation->get_promoted_reserve();
   const size_t old_consumed = old_evacuated_committed + promoted_reserve;
+
+  if (is_global() && old_available < old_consumed) {
+    // The global heuristic may transfer young regions to the old generation to allow more old evacuations.
+    // It will increase the old evacuation reserve when it does this, but old available will be adjusted
+    // when the free set is rebuilt (after this method exits).
+    old_available = old_consumed;
+  }
 
   assert(old_available >= old_consumed, "Cannot consume (%zu) more than is available (%zu)", old_consumed, old_available);
   size_t excess_old = old_available - old_consumed;
@@ -434,8 +440,6 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
          unaffiliated_old, unaffiliated_old_regions, region_size_bytes, old_available);
   log_debug(gc, cset)("excess_old is: %zu, unaffiliated_old_regions is: %zu", excess_old, unaffiliated_old_regions);
 
-
-  old_generation->reset_promoted_expended();
   log_info(gc, ergo)("Adjusted evacuation reserves: young: " PROPERFMT ", promotion: " PROPERFMT ", old: " PROPERFMT,
                      PROPERFMTARGS(young_generation->get_evacuation_reserve()),
                      PROPERFMTARGS(old_generation->get_promoted_reserve()),
