@@ -624,6 +624,8 @@ size_t ShenandoahGeneration::select_aged_regions(const size_t old_promotion_rese
                                                                mutator_regions_to_pip);
   }
 
+  heap->old_generation()->set_pad_for_promote_in_place(promote_in_place_pad);
+
   // Sort in increasing order according to live data bytes.  Note that candidates represents the number of regions
   // that qualify to be promoted by evacuation.
   size_t old_consumed = 0;
@@ -651,6 +653,8 @@ size_t ShenandoahGeneration::select_aged_regions(const size_t old_promotion_rese
                         selected_regions, PROPERFMTARGS(selected_live), PROPERFMTARGS(old_consumed), PROPERFMTARGS(old_promotion_reserve));
   }
 
+  assert(old_consumed <= old_promotion_reserve, "Consumed more (%zu) than we reserved (%zu)", old_consumed, old_promotion_reserve);
+
   const uint tenuring_threshold = heap->age_census()->tenuring_threshold();
   const size_t tenurable_this_cycle = heap->age_census()->get_tenurable_bytes(tenuring_threshold);
   size_t tenurable_next_cycle = heap->age_census()->get_tenurable_bytes(tenuring_threshold - 1);
@@ -666,8 +670,6 @@ size_t ShenandoahGeneration::select_aged_regions(const size_t old_promotion_rese
                      PROPERFMTARGS(tenurable_next_cycle), PROPERFMTARGS(tenurable_this_cycle), PROPERFMTARGS(old_consumed));
 
   heap->old_generation()->set_promotion_potential(tenurable_next_cycle);
-
-  assert(old_consumed <= old_promotion_reserve, "Consumed more (%zu) than we reserved (%zu)", old_consumed, old_promotion_reserve);
 
   // old_consumed may exceed tenurable_this_cycle because it has been scaled by ShenandoahPromoEvacWaste.
   old_consumed = MAX2(old_consumed, tenurable_this_cycle);
