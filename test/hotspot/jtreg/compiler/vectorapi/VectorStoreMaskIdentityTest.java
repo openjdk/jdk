@@ -87,7 +87,8 @@ public class VectorStoreMaskIdentityTest {
     @IR(counts = { IRNode.VECTOR_LOAD_MASK, "= 0",
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
-        applyIfCPUFeatureOr = { "asimd", "true", "avx", "true" })
+        applyIfCPUFeatureOr = { "asimd", "true", "avx", "true" },
+        applyIf = { "MaxVectorSize", ">= 16" })
     public static void testVectorMaskStoreIdentityByte() {
         testOneCastKernel(ByteVector.SPECIES_64, ShortVector.SPECIES_128);
         verifyResult(ByteVector.SPECIES_64.length());
@@ -104,7 +105,7 @@ public class VectorStoreMaskIdentityTest {
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true" },
-        applyIf = { "MaxVectorSize", ">16" })
+        applyIf = { "MaxVectorSize", "> 16" })
     public static void testVectorMaskStoreIdentityByte256() {
         testOneCastKernel(ByteVector.SPECIES_64, IntVector.SPECIES_256);
         verifyResult(ByteVector.SPECIES_64.length());
@@ -120,7 +121,8 @@ public class VectorStoreMaskIdentityTest {
     @IR(counts = { IRNode.VECTOR_LOAD_MASK, "= 0",
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
-        applyIfCPUFeatureOr = { "asimd", "true", "avx", "true" })
+        applyIfCPUFeatureOr = { "asimd", "true", "avx", "true" },
+        applyIf = { "MaxVectorSize", ">= 16" })
     public static void testVectorMaskStoreIdentityShort() {
         testOneCastKernel(ShortVector.SPECIES_128, ByteVector.SPECIES_64);
         verifyResult(ShortVector.SPECIES_128.length());
@@ -137,7 +139,7 @@ public class VectorStoreMaskIdentityTest {
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true" },
-        applyIf = { "MaxVectorSize", ">16" })
+        applyIf = { "MaxVectorSize", "> 16" })
     public static void testVectorMaskStoreIdentityShort256() {
         testOneCastKernel(ShortVector.SPECIES_128, IntVector.SPECIES_256);
         verifyResult(ShortVector.SPECIES_128.length());
@@ -153,7 +155,8 @@ public class VectorStoreMaskIdentityTest {
     @IR(counts = { IRNode.VECTOR_LOAD_MASK, "= 0",
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
-        applyIfCPUFeatureOr = { "asimd", "true", "avx", "true" })
+        applyIfCPUFeatureOr = { "asimd", "true", "avx", "true" },
+        applyIf = { "MaxVectorSize", ">= 16" })
     public static void testVectorMaskStoreIdentityInt() {
         testOneCastKernel(IntVector.SPECIES_MAX, FloatVector.SPECIES_MAX);
         verifyResult(IntVector.SPECIES_MAX.length());
@@ -170,7 +173,7 @@ public class VectorStoreMaskIdentityTest {
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true" },
-        applyIf = { "MaxVectorSize", ">16" })
+        applyIf = { "MaxVectorSize", "> 16" })
     public static void testVectorMaskStoreIdentityInt256() {
         testOneCastKernel(IntVector.SPECIES_MAX, FloatVector.SPECIES_MAX);
         verifyResult(IntVector.SPECIES_MAX.length());
@@ -186,7 +189,8 @@ public class VectorStoreMaskIdentityTest {
     @IR(counts = { IRNode.VECTOR_LOAD_MASK, "= 0",
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
-        applyIfCPUFeatureOr = { "asimd", "true", "avx", "true" })
+        applyIfCPUFeatureOr = { "asimd", "true", "avx", "true" },
+        applyIf = { "MaxVectorSize", ">= 16" })
     public static void testVectorMaskStoreIdentityLong() {
         testOneCastKernel(LongVector.SPECIES_MAX, DoubleVector.SPECIES_MAX);
         verifyResult(LongVector.SPECIES_MAX.length());
@@ -203,7 +207,7 @@ public class VectorStoreMaskIdentityTest {
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true" },
-        applyIf = { "MaxVectorSize", ">16" })
+        applyIf = { "MaxVectorSize", "> 16" })
     public static void testVectorMaskStoreIdentityLong256() {
         testOneCastKernel(LongVector.SPECIES_MAX, DoubleVector.SPECIES_MAX);
         verifyResult(LongVector.SPECIES_MAX.length());
@@ -219,7 +223,8 @@ public class VectorStoreMaskIdentityTest {
     @IR(counts = { IRNode.VECTOR_LOAD_MASK, "= 0",
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
-        applyIfCPUFeatureOr = { "asimd", "true", "avx", "true" })
+        applyIfCPUFeatureOr = { "asimd", "true", "avx", "true" },
+        applyIf = { "MaxVectorSize", ">= 16" })
     public static void testVectorMaskStoreIdentityFloat() {
         testOneCastKernel(FloatVector.SPECIES_MAX, IntVector.SPECIES_MAX);
         verifyResult(FloatVector.SPECIES_MAX.length());
@@ -236,7 +241,7 @@ public class VectorStoreMaskIdentityTest {
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true" },
-        applyIf = { "MaxVectorSize", ">16" })
+        applyIf = { "MaxVectorSize", "> 16" })
     public static void testVectorMaskStoreIdentityFloat256() {
         testOneCastKernel(FloatVector.SPECIES_MAX, IntVector.SPECIES_MAX);
         verifyResult(FloatVector.SPECIES_MAX.length());
@@ -252,7 +257,8 @@ public class VectorStoreMaskIdentityTest {
     @IR(counts = { IRNode.VECTOR_LOAD_MASK, "= 0",
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
-        applyIfCPUFeatureOr = { "asimd", "true", "avx", "true" })
+        applyIfCPUFeatureOr = { "asimd", "true", "avx", "true" },
+        applyIf = { "MaxVectorSize", ">= 16" })
     public static void testVectorMaskStoreIdentityDouble() {
         testOneCastKernel(DoubleVector.SPECIES_MAX, LongVector.SPECIES_MAX);
         verifyResult(DoubleVector.SPECIES_MAX.length());
@@ -269,7 +275,7 @@ public class VectorStoreMaskIdentityTest {
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true" },
-        applyIf = { "MaxVectorSize", ">16" })
+        applyIf = { "MaxVectorSize", "> 16" })
     public static void testVectorMaskStoreIdentityDouble256() {
         testOneCastKernel(DoubleVector.SPECIES_MAX, LongVector.SPECIES_MAX);
         verifyResult(DoubleVector.SPECIES_MAX.length());
