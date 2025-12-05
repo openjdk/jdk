@@ -115,8 +115,8 @@ public class JarEntry extends ZipEntry {
      * to trust the entry signed by the signers.
      *
      * @return the {@code Certificate} objects for this entry, or
-     * {@code null} if none. If non-null, this method returns a new
-     * array each time it is invoked.
+     * {@code null} if none. If non-null, returns a new array
+     * each time it is invoked.
      *
      */
     public Certificate[] getCertificates() {
@@ -141,8 +141,8 @@ public class JarEntry extends ZipEntry {
      * to trust the entry signed by the signers.
      *
      * @return the {@code CodeSigner} objects for this entry, or
-     * {@code null} if none. If non-null, this method returns a new
-     * array each time it is invoked.
+     * {@code null} if none. If non-null, returns a new array
+     * each time it is invoked.
      *
      * @since 1.5
      */
