@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,11 +89,6 @@ final class SSLConfiguration implements Cloneable {
 
     // To switch off the extended_master_secret extension.
     static final boolean useExtendedMasterSecret;
-
-    // Enable certificate compression.
-    private final boolean enableCertificateCompression =
-            Utilities.getBooleanProperty(
-                    "jdk.tls.enableCertificateCompression", true);
 
     // Allow session resumption without Extended Master Secret extension.
     static final boolean allowLegacyResumption =
@@ -260,10 +255,14 @@ final class SSLConfiguration implements Cloneable {
                         CustomizedServerSignatureSchemes.signatureSchemes :
                         SupportedSigSchemes.DEFAULT;
 
-        this.certDeflaters = this.enableCertificateCompression
-                ? CompressionAlgorithm.getDefaultDeflaters() : Map.of();
-        this.certInflaters = this.enableCertificateCompression
-                ? CompressionAlgorithm.getDefaultInflaters() : Map.of();
+        if (Utilities.getBooleanProperty(
+                "jdk.tls.enableCertificateCompression", true)) {
+            this.certDeflaters = CompressionAlgorithm.getDefaultDeflaters();
+            this.certInflaters = CompressionAlgorithm.getDefaultInflaters();
+        } else {
+            this.certDeflaters = Map.of();
+            this.certInflaters = Map.of();
+        }
 
         this.namedGroups = NamedGroup.SupportedGroups.namedGroups;
         this.maximumProtocolVersion = ProtocolVersion.NONE;
@@ -322,6 +321,8 @@ final class SSLConfiguration implements Cloneable {
         params.setMaximumPacketSize(this.maximumPacketSize);
         params.setSignatureSchemes(this.signatureSchemes);
         params.setNamedGroups(this.namedGroups);
+        params.setEnableCertificateCompression(!this.certInflaters.isEmpty()
+                && !this.certDeflaters.isEmpty());
 
         return params;
     }
@@ -397,10 +398,13 @@ final class SSLConfiguration implements Cloneable {
             this.namedGroups = NamedGroup.SupportedGroups.namedGroups;
         }
 
-        this.certDeflaters = params.getEnableCertificateCompression()
-                ? CompressionAlgorithm.getDefaultDeflaters() : Map.of();
-        this.certInflaters = params.getEnableCertificateCompression()
-                ? CompressionAlgorithm.getDefaultInflaters() : Map.of();
+        if (params.getEnableCertificateCompression()) {
+            this.certDeflaters = CompressionAlgorithm.getDefaultDeflaters();
+            this.certInflaters = CompressionAlgorithm.getDefaultInflaters();
+        } else {
+            this.certDeflaters = Map.of();
+            this.certInflaters = Map.of();
+        }
 
         this.preferLocalCipherSuites = params.getUseCipherSuitesOrder();
         this.enableRetransmissions = params.getEnableRetransmissions();

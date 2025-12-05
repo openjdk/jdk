@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2022 THL A29 Limited, a Tencent company. All rights reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,17 +33,19 @@ import javax.net.ssl.SSLParameters;
 
 /*
  * @test
- * @bug 8273042
+ * @bug 8372526
  * @summary TLS certificate compression
  * @library /test/lib
  *          /javax/net/ssl/templates
- * @run main/othervm HttpsCompressedCert
+ * @run main/othervm HttpsCompressedCert true
+ * @run main/othervm HttpsCompressedCert false
  */
 
 public class HttpsCompressedCert {
     public static void main(String[] args) throws Exception {
         SSLParameters sslParameters = new SSLParameters();
-        sslParameters.setEnableCertificateCompression(true);
+        sslParameters.setEnableCertificateCompression(
+                Boolean.parseBoolean(args[0]));
         HttpClient httpClient = HttpClient.newBuilder()
                 .sslContext(SSLClientContext.createClientSSLContext())
                 .version(HttpClient.Version.HTTP_2)
