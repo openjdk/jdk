@@ -112,8 +112,8 @@ final class StringLatin1 {
      * Lexicographically compares two Latin-1 strings as specified in
      * {@link String#compareTo(String) String::compareTo}.
      *
-     * @param value byte array containing characters encoded in Latin-1
-     * @param other byte array containing characters encoded in Latin-1
+     * @param value a Latin-1 string byte array
+     * @param other a Latin-1 string byte array
      *
      * @throws NullPointerException if {@code value} or {@code other} is null
      */
@@ -123,24 +123,23 @@ final class StringLatin1 {
         return compareTo0(value, other);
     }
 
+    // inline_string_compareTo
     @IntrinsicCandidate
     private static int compareTo0(byte[] value, byte[] other) {
         return compareTo(value, other, value.length, other.length);
     }
 
     /**
-     * Lexicographically compares two Latin-1 strings as specified in
+     * Lexicographically compares two Latin-1 string sub-ranges as specified in
      * {@link String#compareTo(String) String::compareTo}.
      *
-     * @param value byte array containing characters encoded in Latin-1
-     * @param other byte array containing characters encoded in Latin-1
-     * @param len1 the number of {@code value} bytes to compare
-     * @param len2 the number of {@code other} bytes to compare
+     * @param value a Latin-1 string byte array
+     * @param other a Latin-1 string byte array
+     * @param len1 the number of characters in {@code value} to compare
+     * @param len2 the number of characters in {@code other} to compare
      *
      * @throws NullPointerException if {@code value} or {@code other} is null
-     * @throws StringIndexOutOfBoundsException if {@code len1} or {@code len2}
-     * is either negative or greater than the length of {@code value} or
-     * {@code other}, respectively
+     * @throws StringIndexOutOfBoundsException if the sub-ranges are out of bounds
      */
     static int compareTo(byte[] value, byte[] other, int len1, int len2) {
         Objects.requireNonNull(value);
@@ -153,11 +152,11 @@ final class StringLatin1 {
     }
 
     /**
-     * Lexicographically compares a Latin-1 string against a UTF-16 string as
+     * Lexicographically compares a Latin-1 string to a UTF-16 string as
      * specified in {@link String#compareTo(String) String::compareTo}.
      *
-     * @param value byte array containing characters encoded in Latin-1
-     * @param other byte array containing characters encoded in UTF-16
+     * @param value a Latin-1 string byte array
+     * @param other a UTF-16 string byte array
      *
      * @throws NullPointerException if {@code value} or {@code other} is null
      */
@@ -167,6 +166,7 @@ final class StringLatin1 {
         return compareToUTF16_0(value, other);
     }
 
+    // inline_string_compareTo
     @IntrinsicCandidate
     private static int compareToUTF16_0(byte[] value, byte[] other) {
         int len1 = length(value);
@@ -175,18 +175,16 @@ final class StringLatin1 {
     }
 
     /**
-     * Lexicographically compares a Latin-1 string against a UTF-16 string as
-     * specified in {@link String#compareTo(String) String::compareTo}.
+     * Lexicographically compares a Latin-1 string sub-range to a UTF-16
+     * one as specified in {@link String#compareTo(String) String::compareTo}.
      *
-     * @param value byte array containing characters encoded in Latin-1
-     * @param other byte array containing characters encoded in UTF-16
-     * @param len1 the number of {@code value} bytes to compare
-     * @param len2 the number of {@code char}s (not bytes!) from {@code other} to compare
+     * @param value a Latin-1 string byte array
+     * @param other a UTF-16 string byte array
+     * @param len1 the number of characters in {@code value} to compare
+     * @param len2 the number of characters in {@code other} to compare
      *
      * @throws NullPointerException if {@code value} or {@code other} is null
-     * @throws StringIndexOutOfBoundsException if {@code len1} or {@code len2}
-     * is either negative or greater than the length of {@code value} or
-     * the number of {@code char}s in {@code other}, respectively
+     * @throws StringIndexOutOfBoundsException if the sub-ranges are out of bounds
      */
     static int compareToUTF16(byte[] value, byte[] other, int len1, int len2) {
         Objects.requireNonNull(value);
@@ -398,7 +396,7 @@ final class StringLatin1 {
      * given target string sub-range; {@code -1} otherwise
      *
      * @throws NullPointerException if {@code value} is null
-     * @throws StringIndexOutOfBoundsException if the sub-range is out of bounds
+     * @throws StringIndexOutOfBoundsException if the sub-ranges are out of bounds
      */
     static int indexOf(byte[] value, int ch, int fromIndex, int toIndex) {
         String.checkBoundsBeginEnd(fromIndex, toIndex, value.length);   // Implicit null check on `value`
@@ -408,6 +406,7 @@ final class StringLatin1 {
         return indexOfChar0(value, ch, fromIndex, toIndex);
     }
 
+    // inline_string_indexOfChar
     @IntrinsicCandidate
     private static int indexOfChar0(byte[] value, int ch, int fromIndex, int max) {
         byte c = (byte)ch;
@@ -437,6 +436,7 @@ final class StringLatin1 {
         return indexOf0(value, str);
     }
 
+    // inline_string_indexOf
     @IntrinsicCandidate
     private static int indexOf0(byte[] value, byte[] str) {
         if (str.length == 0) {
@@ -990,22 +990,20 @@ final class StringLatin1 {
     }
 
     /**
-     * Exhaustively copies characters from a Latin-1 string byte array to the
-     * given {@code char} array.
+     * Exhaustively copies characters from a Latin-1 string byte array sub-range
+     * to the given {@code char} array sub-range.
      * <p>
      * This effectively <em>inflates</em> the content from a 1 byte per
      * character representation to a 2 byte one.
      *
      * @param src the source Latin-1 string byte array
-     * @param srcOff the start index of the source byte array {@code src}
+     * @param srcOff the index (inclusive) of the first character in {@code src}
      * @param dst the target {@code char} array
-     * @param dstOff the start index of the target {@code char} array {@code dst}
+     * @param dstOff the index (inclusive) of the first character in {@code dst}
      * @param len the maximum number of characters to copy
      *
      * @throws NullPointerException if {@code src} or {@code dst} is null
-     * @throws StringIndexOutOfBoundsException if {@code srcOff} or
-     * {@code dstOff}, in combination with {@code len}, exceeds the bounds of
-     * {@code src} or {@code dst}, respectively
+     * @throws StringIndexOutOfBoundsException if the sub-ranges are out of bounds
      */
     static void inflate(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
         String.checkBoundsOffCount(srcOff, len, src.length);    // Implicit null check on `src`
@@ -1013,7 +1011,7 @@ final class StringLatin1 {
         inflate0(src, srcOff, dst, dstOff, len);
     }
 
-    // inline_string_copy(compress=false) byte[] -> char[]
+    // inline_string_copy(compress=false)
     @IntrinsicCandidate
     private static void inflate0(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
         for (int i = 0; i < len; i++) {
@@ -1022,22 +1020,20 @@ final class StringLatin1 {
     }
 
     /**
-     * Exhaustively copies characters from a Latin-1 string byte array to a
-     * UTF-16 string one.
+     * Exhaustively copies characters from a Latin-1 string byte array sub-range
+     * to a UTF-16 one.
      * <p>
      * This effectively <em>inflates</em> the content from a 1 byte per
      * character representation to a 2 byte one.
      *
      * @param src the source Latin-1 string byte array
-     * @param srcOff the start index of the source byte array {@code src}
+     * @param srcOff the index (inclusive) of the first character in {@code src}
      * @param dst the target UTF-16 string byte array
-     * @param dstOff the start index of the target byte array {@code dst}
+     * @param dstOff the index (inclusive) of the first character in {@code dst}
      * @param len the maximum number of characters to copy
      *
      * @throws NullPointerException if {@code src} or {@code dst} is null
-     * @throws StringIndexOutOfBoundsException if {@code srcOff} or
-     * {@code dstOff}, in combination with {@code len}, exceeds the bounds of
-     * {@code src} or {@code dst}, respectively
+     * @throws StringIndexOutOfBoundsException if the sub-ranges are out of bounds
      */
     static void inflate(byte[] src, int srcOff, byte[] dst, int dstOff, int len) {
         String.checkBoundsOffCount(srcOff, len, src.length);    // Implicit null check on `src`
@@ -1046,7 +1042,7 @@ final class StringLatin1 {
         inflate0(src, srcOff, dst, dstOff, len);
     }
 
-    // inline_string_copy(compress=false) byte[] -> byte[]
+    // inline_string_copy(compress=false)
     @IntrinsicCandidate
     private static void inflate0(byte[] src, int srcOff, byte[] dst, int dstOff, int len) {
         for (int i = 0; i < len; i++) {
