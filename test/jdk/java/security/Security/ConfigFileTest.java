@@ -449,17 +449,24 @@ sealed class PropsFile permits ExtraPropsFile {
         static Include of(PropsFile propsFile, String value) {
             return new Include(propsFile, value);
         }
+
+        void assertProcessed(OutputAnalyzer oa) {
+            oa.shouldContain("processing include: '" + value + "'");
+            oa.shouldContain("finished processing " + propsFile.displayPath);
+        }
     }
 
     protected final List<Include> includes = new ArrayList<>();
     protected final PrintWriter writer;
     protected boolean includedFromExtra = false;
+    protected Path displayPath;
     final String fileName;
     final Path path;
 
     PropsFile(String fileName, Path path) throws IOException {
         this.fileName = fileName;
         this.path = path;
+        this.displayPath = path;
         this.writer = new PrintWriter(Files.newOutputStream(path,
                 StandardOpenOption.CREATE, StandardOpenOption.APPEND), true);
     }
@@ -507,8 +514,9 @@ sealed class PropsFile permits ExtraPropsFile {
     }
 
     void addRelativeInclude(PropsFile propsFile) {
-        addIncludeDefinition(Include.of(propsFile,
-                path.getParent().relativize(propsFile.path).toString()));
+        Path rel = path.getParent().relativize(propsFile.path);
+        addIncludeDefinition(Include.of(propsFile, rel.toString()));
+        propsFile.displayPath = displayPath.getParent().resolve(rel);
     }
 
     void assertApplied(OutputAnalyzer oa) {
@@ -516,8 +524,7 @@ sealed class PropsFile permits ExtraPropsFile {
                 FilesManager.APPLIED_PROP_VALUE);
         for (Include include : includes) {
             include.propsFile.assertApplied(oa);
-            oa.shouldContain("processing include: '" + include.value + "'");
-            oa.shouldContain("finished processing " + include.propsFile.path);
+            include.assertProcessed(oa);
         }
     }
 
@@ -528,8 +535,7 @@ sealed class PropsFile permits ExtraPropsFile {
             if (!include.propsFile.includedFromExtra) {
                 include.propsFile.assertWasOverwritten(oa);
             }
-            oa.shouldContain("processing include: '" + include.value + "'");
-            oa.shouldContain("finished processing " + include.propsFile.path);
+            include.assertProcessed(oa);
         }
     }
 
@@ -565,6 +571,9 @@ final class ExtraPropsFile extends PropsFile {
         super(fileName, path);
         this.url = url;
         this.mode = mode;
+        if (mode == ExtraMode.PATH_REL) {
+            this.displayPath = CWD.relativize(path);
+        }
     }
 
     @Override
@@ -587,8 +596,7 @@ final class ExtraPropsFile extends PropsFile {
             case RAW_FILE_URI1 -> "file:" + path;
             case RAW_FILE_URI2 ->
                     "file://" + (path.startsWith("/") ? "" : "/") + path;
-            case PATH_ABS -> path.toString();
-            case PATH_REL -> CWD.relativize(path).toString();
+            case PATH_ABS, PATH_REL -> displayPath.toString();
         };
     }
 
