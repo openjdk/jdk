@@ -541,6 +541,7 @@ extern void vm_exit(int code);
 // unpack_with_exception entry instead. This makes life for the exception blob easier
 // because making that same check and diverting is painful from assembly language.
 JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* current, oopDesc* ex, address pc, nmethod*& nm))
+  MACOS_AARCH64_ONLY(current->wx_enable_write());
   Handle exception(current, ex);
 
   // This function is called when we are about to throw an exception. Therefore,

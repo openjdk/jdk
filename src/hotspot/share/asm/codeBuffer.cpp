@@ -98,6 +98,8 @@ CodeBuffer::CodeBuffer(const CodeBlob* blob) DEBUG_ONLY(: Scrubber(this, sizeof(
 }
 
 void CodeBuffer::initialize(csize_t code_size, csize_t locs_size) {
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
+
   // Always allow for empty slop around each section.
   int slop = (int) CodeSection::end_slop();
 
