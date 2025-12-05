@@ -148,6 +148,8 @@ public final class XWing extends NamedKEM {
             return sha3.digest(input);
         } catch (NoSuchAlgorithmException e) {
             throw new UnsupportedOperationException("JVM does not support SHA3-256", e);
+        } finally {
+            Arrays.fill(input, (byte) 0x00);
         }
     }
 
