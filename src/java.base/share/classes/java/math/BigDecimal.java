@@ -2344,19 +2344,15 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             final int fracZeros = (int) rootDigits - 1 - (scaledRoot.isPowerOfTen() ? 1 : 0);
             // Ensure result's precision is exactly resPrec
             result = ONE.divide(scaledRoot, checkScaleNonZero(fracZeros - resultScale + resPrec), RoundingMode.DOWN);
-
-            BigDecimal inverse = ONE.divide(x, checkScaleNonZero((long) result.scale * nAbs), RoundingMode.DOWN);
             // (1/(root*10^(-normScale / nAbs)))^nAbs >= 1/x, and since result is rounded down,
-            // either result^nAbs > inverse, or else all result's digits are correct
+            // either result^nAbs > 1/x, or else all result's digits are correct
 
             int cmp;
             BigDecimal ulp = result.ulp();
-            while ((cmp = result.pow(nAbs).compareMagnitude(inverse)) > 0) {
-                // if result's scale will increase, increase also inverse's scale
-                if (result.isPowerOfTen()) {
+            while ((cmp = result.pow(nAbs).multiply(x).compareMagnitude(ONE)) > 0) { // result^nAbs > 1/x
+                if (result.isPowerOfTen()) // Ensure no decrease of precision
                     ulp = ulp.scaleByPowerOfTen(-1);
-                    inverse = ONE.divide(x, checkScaleNonZero((long) ulp.scale * nAbs), RoundingMode.DOWN);
-                }
+
                 result = result.subtract(ulp);
             }
 
@@ -2372,8 +2368,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 } else if (digit == 5) {
                     if (mc.roundingMode == RoundingMode.HALF_UP
                             || mc.roundingMode == RoundingMode.HALF_EVEN && quotRem10[0].testBit(0)
-                            // Check if remainder is non-zero
-                            || cmp != 0 || ONE.compareMagnitude(inverse.multiply(x)) != 0) {
+                            || cmp != 0) { // Check if remainder is non-zero
                         increment = true;
                     }
                 }
@@ -2382,8 +2377,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 case DOWN, FLOOR -> {} // result is already rounded down
 
                 case UP, CEILING -> {
-                    // Check if remainder is non-zero
-                    if (cmp != 0 || ONE.compareMagnitude(inverse.multiply(x)) != 0)
+                    if (cmp != 0) // Check if remainder is non-zero
                         increment = true;
                 }
 
