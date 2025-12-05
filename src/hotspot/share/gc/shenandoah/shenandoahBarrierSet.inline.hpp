@@ -448,22 +448,6 @@ void ShenandoahBarrierSet::arraycopy_marking(T* dst, size_t count) {
     if (_heap->heap_region_containing(dst)->is_old() ||
         !_heap->marking_context()->allocated_after_mark_start(reinterpret_cast<HeapWord*>(dst))) {
       arraycopy_work<T, false, false, true>(dst, count);
-// The assert intended to add should be correct, the remembered set is not right due to bug,
-// this block should be uncommented once the bug is located and fixed.
-// #ifdef ASSERT
-//       if (_heap->heap_region_containing(dst)->is_old()) {
-//         ShenandoahScanRemembered* card_scan = ShenandoahGenerationalHeap::heap()->old_generation()->card_scan();
-//         T* end = dst + count;
-//         for (T* elem_ptr = dst; elem_ptr < end; elem_ptr++) {
-//           T o = RawAccess<>::oop_load(elem_ptr);
-//           if (!CompressedOops::is_null(o)) {
-//             oop obj = CompressedOops::decode_not_null(o);
-//             assert(!_heap->is_in_young(obj) || card_scan->is_card_dirty(reinterpret_cast<HeapWord*>(elem_ptr)),
-//               "Card should be dirty if the array element points to obj in young. Array element: " PTR_FORMAT ", young object: " PTR_FORMAT "", p2i(elem_ptr), p2i(obj));
-//           }
-//         }
-//       }
-// #endif // ASSERT
     }
   }
 }
