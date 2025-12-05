@@ -67,12 +67,17 @@
           range(0.0,100.0)                                                  \
                                                                             \
   product(double, ShenandoahMinOldGenGrowthRemainingHeapPercent,            \
-          25, EXPERIMENTAL,                                                 \
+          50, EXPERIMENTAL,                                                 \
           "(Generational mode only) If the usage within old generation "    \
           "has grown to exceed this percent of the remaining heap that "    \
           "was not marked live within the old generation at the time "      \
           "of the last old-generation marking effort, heuristics may "      \
-          "trigger the start of a new old-gen collection.")                 \
+          "trigger the start of a new old-gen collection.  Setting "        \
+          "this value to a smaller value may cause back-to-back old "       \
+          "generation marking triggers, since the typical memory used "     \
+          "by the old generation is about 30% larger than the live "        \
+          "memory contained within the old generation (because default "    \
+          "value of ShenandoahOldGarbageThreshold is 25.")                  \
           range(0.0,100.0)                                                  \
                                                                             \
   product(uintx, ShenandoahIgnoreOldGrowthBelowPercentage,                  \
