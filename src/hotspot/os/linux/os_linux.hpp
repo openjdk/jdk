@@ -142,7 +142,7 @@ class os::Linux {
   static bool manually_expand_stack(JavaThread * t, address addr);
   static void expand_stack_to(address bottom);
 
-  static jlong total_thread_cpu_time(clockid_t clockid);
+  static jlong thread_cpu_time(clockid_t clockid);
 
   static jlong sendfile(int out_fd, int in_fd, jlong* offset, jlong count);
 
