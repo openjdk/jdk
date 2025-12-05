@@ -6565,7 +6565,7 @@ public class Byte64VectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "maskLongProvider")
-    static void maskfromToLongByte64VectorTests(IntFunction<long[]> fa) {
+    static void maskFromToLongByte64VectorTests(IntFunction<long[]> fa) {
         long[] a = fa.apply(SPECIES.length());
         long[] r = new long[a.length];
 
