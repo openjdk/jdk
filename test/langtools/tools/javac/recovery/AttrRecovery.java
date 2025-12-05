@@ -537,6 +537,9 @@ public class AttrRecovery extends TestRunner {
                              private void test() {
                                  int i = 0;
                                  System.err.println(i);
+                                 while (true) {
+                                     break;
+                                 }
                              }
                          }
                          """,
@@ -549,6 +552,9 @@ public class AttrRecovery extends TestRunner {
                              private void test() {
                                  int i = 0;
                                  System.err.println(i);
+                                 while (true) {
+                                    break;
+                                 }
                              }
                          }
                          """,
