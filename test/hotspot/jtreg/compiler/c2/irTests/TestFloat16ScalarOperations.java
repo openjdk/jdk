@@ -435,6 +435,7 @@ public class TestFloat16ScalarOperations {
     @Warmup(10000)
     public short testRandomFP16ConstantPatternSet1() {
         short res = 0;
+        // TODO: all of the below have issues with constant folding
         res += Float.floatToFloat16(RANDOM1_VAR.floatValue() + RANDOM2.floatValue());
         res += Float.floatToFloat16(RANDOM2_VAR.floatValue() - RANDOM3.floatValue());
         res += Float.floatToFloat16(RANDOM3_VAR.floatValue() * RANDOM4.floatValue());
@@ -456,6 +457,7 @@ public class TestFloat16ScalarOperations {
     @Warmup(10000)
     public short testRandomFP16ConstantPatternSet2() {
         short res = 0;
+        // TODO: and probably all of these have issues too. At least NaN should always constant fold, right?
         res += Float.floatToFloat16(RANDOM2.floatValue() + RANDOM1_VAR.floatValue());
         res += Float.floatToFloat16(RANDOM3.floatValue() - RANDOM2_VAR.floatValue());
         res += Float.floatToFloat16(RANDOM4.floatValue() * RANDOM3_VAR.floatValue());
