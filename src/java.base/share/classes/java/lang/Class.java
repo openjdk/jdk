@@ -734,65 +734,72 @@ public final class Class<T> implements java.io.Serializable,
     private transient volatile Constructor<T> cachedConstructor;
 
     /**
-     * Determines if the specified {@code Object} is assignment-compatible
-     * with the object represented by this {@code Class}.  This method is
-     * the dynamic equivalent of the Java language {@code instanceof}
-     * operator. The method returns {@code true} if the specified
-     * {@code Object} argument is non-null and can be cast to the
-     * reference type represented by this {@code Class} object without
-     * raising a {@code ClassCastException.} It returns {@code false}
-     * otherwise.
+     * Determines if an object reference of the type represented by this {@code
+     * Class} may refer to the object specified by the argument.  This method is
+     * the dynamic equivalent of the type comparison operator of the {@code
+     * instanceof} Java keyword (JLS {@jls 15.20.2}).  This method returns
+     * {@code true} if and only if this {@code Class} represents a reference
+     * type, the specified {@code Object} argument refers to an object instead
+     * of {@code null}, and that referenced object can pass the run time
+     * validity check of a narrowing reference conversion (JLS {@jls 5.1.6.3})
+     * to the reference type represented by this {@code Class} object without
+     * throwing a {@code ClassCastException}.
      *
-     * <p> Specifically, if this {@code Class} object represents a
-     * declared class, this method returns {@code true} if the specified
-     * {@code Object} argument is an instance of the represented class (or
-     * of any of its subclasses); it returns {@code false} otherwise. If
-     * this {@code Class} object represents an array class, this method
-     * returns {@code true} if the specified {@code Object} argument
-     * can be converted to an object of the array class by an identity
-     * conversion or by a widening reference conversion; it returns
-     * {@code false} otherwise. If this {@code Class} object
-     * represents an interface, this method returns {@code true} if the
-     * class or any superclass of the specified {@code Object} argument
-     * implements this interface; it returns {@code false} otherwise. If
-     * this {@code Class} object represents a primitive type, this method
+     * <p>This method behaves as if:
+     * {@snippet lang=java :
+     * // @link substring=isAssignableFrom target="#isAssignableFrom(Class)" :
+     * obj != null && this.isAssignableFrom(obj.getClass()) // @link substring=getClass target="Object#getClass()"
+     * }
+     * If this {@code Class} object represents a primitive type, this method
      * returns {@code false}.
      *
-     * @param   obj the object to check, may be {@code null}
-     * @return  true if {@code obj} is an instance of this class
-     *
+     * @param obj the reference to check, an object or {@code null}
+     * @return true if an object reference of the type represented by this
+     *         {@code Class} may refer to the same object as {@code obj};
+     *         false otherwise
+     * @jls 4.3 Reference Types and Values
+     * @jls 5.1.6.3 Narrowing Reference Conversions at Run Time
+     * @see #cast(Object)
+     * @see #isAssignableFrom(Class)
      * @since 1.1
      */
     @IntrinsicCandidate
     public native boolean isInstance(Object obj);
 
-
     /**
-     * Determines if the class or interface represented by this
-     * {@code Class} object is either the same as, or is a superclass or
-     * superinterface of, the class or interface represented by the specified
-     * {@code Class} parameter. It returns {@code true} if so;
-     * otherwise it returns {@code false}. If this {@code Class}
-     * object represents a primitive type, this method returns
-     * {@code true} if the specified {@code Class} parameter is
-     * exactly this {@code Class} object; otherwise it returns
-     * {@code false}.
+     * Determines if the reference type represented by this {@code Class} object
+     * is the same as or a proper supertype of the reference type represented by
+     * the specified {@code Class} argument.
      *
-     * <p> Specifically, this method tests whether the type represented by the
-     * specified {@code Class} parameter can be converted to the type
-     * represented by this {@code Class} object via an identity conversion
-     * or via a widening reference conversion. See <cite>The Java Language
-     * Specification</cite>, sections {@jls 5.1.1} and {@jls 5.1.4},
-     * for details.
+     * <p>If any of the two {@code Class} objects represents a primitive type,
+     * this method returns {@code true} if and only if the two {@code Class}
+     * objects represent the same primitive type.
      *
-     * @param     cls the {@code Class} object to be checked
-     * @return    the {@code boolean} value indicating whether objects of the
-     *            type {@code cls} can be assigned to objects of this class
-     * @since     1.1
+     * <p>Otherwise, let T be the reference type represented by this object, and
+     * P be the reference type represented by the argument.  This method
+     * determines whether T is a supertype of P, {@code T :> P}.  Specifically:
+     * <ul>
+     * <li>If T is a class, this method returns {@code true} if T is P or a
+     * superclass of P; it returns {@code false} otherwise. (JLS {@jls 4.10.2})
+     * <li>If T is an interface, this method returns {@code true} if P or any
+     * superclass of P implements T; it returns {@code false} otherwise. (JLS
+     * {@jls 4.10.2})
+     * <li>If T is an array type, let TC be its component type. This method
+     * returns {@code true} if P is an array type with component type PC, that
+     * {@code TC :> PC}; it returns {@code false} otherwise. (JLS {@jls 4.10.3})
+     * </ul>
+     *
+     * @param cls the {@code Class} object to be checked
+     * @return true if {@code cls} is the same as this {@code Class} object, or
+     *         the reference type represented by {@code cls} is a subtype of the
+     *         reference type represented by this {@code Class}; false otherwise
+     * @jls 4.10 Subtyping
+     * @see #isInstance(Object)
+     * @see #cast(Object)
+     * @since 1.1
      */
     @IntrinsicCandidate
     public native boolean isAssignableFrom(Class<?> cls);
-
 
     /**
      * Determines if this {@code Class} object represents an
@@ -3475,15 +3482,27 @@ public final class Class<T> implements java.io.Serializable,
     private transient volatile Map<String, T> enumConstantDirectory;
 
     /**
-     * Casts an object to the class or interface represented
-     * by this {@code Class} object.
+     * Casts a reference to the type represented by this {@code Class} object.
+     * This method is the dynamic equivalent of the cast operator with a single
+     * reference type (JLS {@jls 15.16}).  This method performs the run time
+     * validity check of a narrowing reference conversion (JLS {@jls 5.1.6.3})
+     * to the reference type represented by this {@code Class} object, and
+     * returns the incoming reference if the check does not throw a {@code
+     * ClassCastException}.
      *
-     * @param obj the object to be cast, may be {@code null}
-     * @return the object after casting, or null if obj is null
+     * <p>If this {@code Class} object represents a primitive type, this method
+     * completes normally if and only if the specified reference is {@code null}.
      *
-     * @throws ClassCastException if the object is not
-     * null and is not assignable to the type T.
-     *
+     * @param obj the reference to be cast, an object or {@code null}
+     * @return the same reference in the argument
+     * @throws ClassCastException when the reference is not {@code null}, and
+     *         this {@code Class} object represents either a primitive type or
+     *         a reference type that is not a supertype of the class of the
+     *         referenced object
+     * @jls 4.3 Reference Types and Values
+     * @jls 5.1.6.3 Narrowing Reference Conversions at Run Time
+     * @see #isInstance(Object)
+     * @see #isAssignableFrom(Class)
      * @since 1.5
      */
     @SuppressWarnings("unchecked")
