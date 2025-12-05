@@ -34,7 +34,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 
 public final class Codesign {
@@ -94,14 +93,12 @@ public final class Codesign {
 
     public void applyTo(Path path) throws IOException, CodesignException {
 
-        var exec = Executor.of(Stream.concat(
-                cmdline.stream(),
-                Stream.of(path.toString())).toArray(String[]::new)
-        ).saveOutput(true);
+        var exec = Executor.of(cmdline).args(path.toString()).saveOutput(true);
         configureExecutor.ifPresent(configure -> configure.accept(exec));
 
-        if (exec.execute() != 0) {
-            throw new CodesignException(exec.getOutput().toArray(String[]::new));
+        var result = exec.execute();
+        if (result.getExitCode() != 0) {
+            throw new CodesignException(result.getOutput().toArray(String[]::new));
         }
     }
 
