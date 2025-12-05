@@ -93,8 +93,12 @@ public class TestVectorAlgorithms {
         testGroups.get("scanAddI").put("scanAddI_VectorAPI_permute_add",     () -> { return scanAddI_VectorAPI_permute_add(aI, rI4); });
 
         testGroups.put("findMinIndex", new HashMap<String,TestFunction>());
-        testGroups.get("findMinIndex").put("findMinIndex_loop", () -> { return findMinIndex_loop(aI); });
+        testGroups.get("findMinIndex").put("findMinIndex_loop",      () -> { return findMinIndex_loop(aI); });
         testGroups.get("findMinIndex").put("findMinIndex_VectorAPI", () -> { return findMinIndex_VectorAPI(aI); });
+
+        testGroups.put("reverse", new HashMap<String,TestFunction>());
+        testGroups.get("reverse").put("reverse_loop",      () -> { return reverse_loop(aI, rI1); });
+        testGroups.get("reverse").put("reverse_VectorAPI", () -> { return reverse_VectorAPI(aI, rI2); });
     }
 
     @Warmup(100)
@@ -106,7 +110,9 @@ public class TestVectorAlgorithms {
                  "scanAddI_loop_reassociate",
                  "scanAddI_VectorAPI_permute_add",
                  "findMinIndex_loop",
-                 "findMinIndex_VectorAPI"})
+                 "findMinIndex_VectorAPI",
+                 "reverse_loop",
+                 "reverse_VectorAPI"})
     public void runTests(RunInfo info) {
         // Repeat many times, so that we also have multiple iterations for post-warmup to potentially recompile
         int iters = info.isWarmUp() ? 1 : 20;
@@ -194,5 +200,15 @@ public class TestVectorAlgorithms {
     @Test
     public int findMinIndex_VectorAPI(int[] a) {
         return VectorAlgorithmsImpl.findMinIndex_VectorAPI(a);
+    }
+
+    @Test
+    public Object reverse_loop(int[] a, int[] r) {
+        return VectorAlgorithmsImpl.reverse_loop(a, r);
+    }
+
+    @Test
+    public Object reverse_VectorAPI(int[] a, int[] r) {
+        return VectorAlgorithmsImpl.reverse_VectorAPI(a, r);
     }
 }

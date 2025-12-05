@@ -119,4 +119,14 @@ public class VectorAlgorithms {
     public int findMinIndex_VectorAPI() {
         return VectorAlgorithmsImpl.findMinIndex_VectorAPI(aI);
     }
+
+    @Benchmark
+    public Object reverse_loop() {
+        return VectorAlgorithmsImpl.reverse_loop(aI, rI);
+    }
+
+    @Benchmark
+    public Object reverse_VectorAPI() {
+        return VectorAlgorithmsImpl.reverse_VectorAPI(aI, rI);
+    }
 }

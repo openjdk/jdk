@@ -194,4 +194,26 @@ public class VectorAlgorithmsImpl {
         }
         return index;
     }
+
+    public static Object reverse_loop(int[] a, int[] r) {
+        for (int i = 0; i < a.length; i++) {
+            r[a.length - i - 1] = a[i];
+        }
+        return r;
+    }
+
+    private static final VectorShuffle<Integer> REVERSE_SHUFFLE_I = SPECIES_I.iotaShuffle(SPECIES_I.length()-1, -1, true);
+
+    public static Object reverse_VectorAPI(int[] a, int[] r) {
+        int i = 0;
+        for (; i < SPECIES_I.loopBound(a.length); i += SPECIES_I.length()) {
+            IntVector v = IntVector.fromArray(SPECIES_I, a, i);
+            v = v.rearrange(REVERSE_SHUFFLE_I);
+            v.intoArray(r, r.length - SPECIES_I.length() - i);
+        }
+        for (; i < a.length; i++) {
+            r[a.length - i - 1] = a[i];
+        }
+        return r;
+    }
 }
