@@ -170,6 +170,10 @@ setThreadLocalStorage(jthread thread, ThreadNode *node)
             return;
         }
     }
+    if (error == JVMTI_ERROR_WRONG_PHASE && gdata->vmDead && isVThread(thread)) {
+        // Just return. This can happen with vthreads when the vm is exiting.
+        return;
+    }
     if (error != JVMTI_ERROR_NONE) {
         // The jthread object must be valid, so this must be a fatal error.
         EXIT_ERROR(error, "cannot set thread local storage");
