@@ -24,6 +24,8 @@
 
 package org.openjdk.bench.vm.compiler;
 
+import java.util.Arrays;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.*;
 
@@ -43,13 +45,17 @@ import org.openjdk.jmh.annotations.*;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
-@Warmup(iterations = 2, time = 1)
-@Measurement(iterations = 3, time = 1)
+@Warmup(iterations = 20, time = 100, timeUnit = TimeUnit.MILLISECONDS)
+@Measurement(iterations = 50, time = 100, timeUnit = TimeUnit.MILLISECONDS)
 @Fork(value = 1, jvmArgs = {"--add-modules=jdk.incubator.vector", "-XX:CompileCommand=inline,*VectorAlgorithmsImpl::*"})
 public class VectorAlgorithms {
     @Param({"640000"})
     public int SIZE;
 
+    @Param({"0"})
+    public int SEED;
+
+    public static Random RANDOM;
     public static int[] aI;
     public static int[] rI;
 
@@ -57,6 +63,12 @@ public class VectorAlgorithms {
     public void init() {
         aI = new int[SIZE];
         rI = new int[SIZE];
+        RANDOM = new Random(SEED);
+    }
+
+    @Setup(Level.Iteration)
+    public void resetInputs() {
+        Arrays.setAll(aI, i -> RANDOM.nextInt());
     }
 
     // ------------------------------------------------------------------------------------------
