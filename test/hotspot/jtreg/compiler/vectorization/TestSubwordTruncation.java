@@ -479,7 +479,7 @@ public class TestSubwordTruncation {
         return new Object[] { in, res };
     }
 
-    @Test(compLevel = CompLevel.C2)
+    @Test
     @IR(counts = { IRNode.CAST_II, ">0" })
     @Warmup(0)
     public Object[] testCastII() {
