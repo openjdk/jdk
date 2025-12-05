@@ -6273,8 +6273,8 @@ address MacroAssembler::zero_words(Register base, uint64_t cnt)
       BLOCK_COMMENT(buf);
     }
 #endif
-    // Use 16 words (128 bytes) as the block size.
-    const int block_size = 16;
+    // Use 16 words (128 bytes) as the block size to unroll.
+    const int block_size = 2 * MacroAssembler::zero_words_block_size;
     if (cnt >= block_size) {
       uint64_t loops = cnt/block_size;
       if (loops > 1) {
