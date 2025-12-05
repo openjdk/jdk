@@ -25,10 +25,10 @@ package jdk.jpackage.test;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
-import static java.util.stream.Collectors.toCollection;
 import static jdk.jpackage.test.AdditionalLauncher.forEachAdditionalLauncher;
 
 import java.io.FileOutputStream;
@@ -864,6 +864,14 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         };
     }
 
+    public static CannedFormattedString makeError(CannedFormattedString v) {
+        return v.addPrefix("message.error-header");
+    }
+
+    public static CannedFormattedString makeAdvice(CannedFormattedString v) {
+        return v.addPrefix("message.advice-header");
+    }
+
     public String getValue(CannedFormattedString str) {
         return new CannedFormattedString(str.formatter(), str.key(), Stream.of(str.args()).map(arg -> {
             if (arg instanceof CannedArgument cannedArg) {
@@ -1240,6 +1248,9 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         PREDEFINED_APP_IMAGE_COPY(cmd -> {
             Optional.ofNullable(cmd.getArgumentValue("--app-image")).filter(_ -> {
                 return !TKit.isOSX() || !MacHelper.signPredefinedAppImage(cmd);
+            }).filter(_ -> {
+                // Don't examine the contents of the output app image if this is Linux package installing in the "/usr" subtree.
+                return Optional.<Boolean>ofNullable(cmd.onLinuxPackageInstallDir(null, _ -> false)).orElse(true);
             }).map(Path::of).ifPresent(predefinedAppImage -> {
 
                 TKit.trace(String.format(
@@ -1282,7 +1293,12 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
                 TKit.trace("Done");
             });
-        })
+        }),
+        LINUX_APPLAUNCHER_LIB(cmd -> {
+            if (TKit.isLinux() && !cmd.isRuntime()) {
+                TKit.assertFileExists(cmd.appLayout().libapplauncher());
+            }
+        }),
         ;
 
         StandardAssert(Consumer<JPackageCommand> action) {
