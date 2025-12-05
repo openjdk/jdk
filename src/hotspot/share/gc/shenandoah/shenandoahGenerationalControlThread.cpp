@@ -75,15 +75,13 @@ void ShenandoahGenerationalControlThread::run_service() {
       run_gc_cycle(request);
     }
 
-    {
-      // If the cycle was cancelled, continue the next iteration to deal with it. Otherwise,
-      // if there was no other cycle requested, cleanup and wait for the next request.
+    // If the cycle was cancelled, continue the next iteration to deal with it. Otherwise,
+    // if there was no other cycle requested, cleanup and wait for the next request.
+    if (!_heap->cancelled_gc()) {
       MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
-      if (!_heap->cancelled_gc()) {
-        if (_requested_gc_cause == GCCause::_no_gc) {
-          set_gc_mode(ml, none);
-          ml.wait();
-        }
+      if (_requested_gc_cause == GCCause::_no_gc) {
+        set_gc_mode(ml, none);
+        ml.wait();
       }
     }
   }
@@ -98,8 +96,7 @@ void ShenandoahGenerationalControlThread::stop_service() {
   log_debug(gc, thread)("Stopping control thread");
   MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
   _heap->cancel_gc(GCCause::_shenandoah_stop_vm);
-  _requested_gc_cause = GCCause::_shenandoah_stop_vm;
-  notify_cancellation(ml, GCCause::_shenandoah_stop_vm);
+  notify_control_thread(ml, GCCause::_shenandoah_stop_vm);
   // We can't wait here because it may interfere with the active cycle's ability
   // to reach a safepoint (this runs on a java thread).
 }
@@ -142,7 +139,8 @@ void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest&
 }
 
 ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread::prepare_for_allocation_failure_gc(ShenandoahGCRequest &request) {
-
+  // Important: not all paths update the request.generation. This is intentional.
+  // A degenerated cycle must use the same generation carried over from the previous request.
   if (_degen_point == ShenandoahGC::_degenerated_unset) {
     _degen_point = ShenandoahGC::_degenerated_outside_cycle;
     request.generation = _heap->young_generation();
@@ -635,9 +633,7 @@ void ShenandoahGenerationalControlThread::service_stw_degenerated_cycle(const Sh
 
 void ShenandoahGenerationalControlThread::request_gc(GCCause::Cause cause) {
   if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) {
-    // GC should already be cancelled. Here we are just notifying the control thread to
-    // wake up and handle the cancellation request, so we don't need to set _requested_gc_cause.
-    notify_cancellation(cause);
+    notify_control_thread(cause);
   } else if (ShenandoahCollectorPolicy::should_handle_requested_gc(cause)) {
     handle_requested_gc(cause);
   }
@@ -663,7 +659,7 @@ bool ShenandoahGenerationalControlThread::request_concurrent_gc(ShenandoahGenera
     log_info(gc)("Preempting old generation mark to allow %s GC", generation->name());
     while (gc_mode() == servicing_old) {
       ShenandoahHeap::heap()->cancel_gc(GCCause::_shenandoah_concurrent_gc);
-      notify_cancellation(ml, GCCause::_shenandoah_concurrent_gc);
+      notify_control_thread(ml, GCCause::_shenandoah_concurrent_gc);
       ml.wait();
     }
     return true;
@@ -703,14 +699,15 @@ void ShenandoahGenerationalControlThread::notify_control_thread(MonitorLocker& m
   ml.notify();
 }
 
-void ShenandoahGenerationalControlThread::notify_cancellation(GCCause::Cause cause) {
+void ShenandoahGenerationalControlThread::notify_control_thread(GCCause::Cause cause) {
   MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
-  notify_cancellation(ml, cause);
+  notify_control_thread(ml, cause);
 }
 
-void ShenandoahGenerationalControlThread::notify_cancellation(MonitorLocker& ml, GCCause::Cause cause) {
-  assert(_heap->cancelled_gc(), "GC should already be cancelled");
-  log_debug(gc,thread)("Notify control (%s): %s", gc_mode_name(gc_mode()), GCCause::to_string(cause));
+void ShenandoahGenerationalControlThread::notify_control_thread(MonitorLocker& ml, GCCause::Cause cause) {
+  assert(_control_lock.is_locked(), "Request lock must be held here");
+  log_debug(gc, thread)("Notify control (%s): %s", gc_mode_name(gc_mode()), GCCause::to_string(cause));
+  _requested_gc_cause = cause;
   ml.notify();
 }
 

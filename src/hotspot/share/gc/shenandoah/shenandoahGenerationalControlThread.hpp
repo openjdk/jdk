@@ -139,11 +139,8 @@ private:
   // The overloaded variant should be used when the _control_lock is already held.
   void notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation);
   void notify_control_thread(MonitorLocker& ml, GCCause::Cause cause, ShenandoahGeneration* generation);
-
-  // Notifies the control thread, but does not update the requested cause or generation.
-  // The overloaded variant should be used when the _control_lock is already held.
-  void notify_cancellation(GCCause::Cause cause);
-  void notify_cancellation(MonitorLocker& ml, GCCause::Cause cause);
+  void notify_control_thread(GCCause::Cause cause);
+  void notify_control_thread(MonitorLocker& ml, GCCause::Cause cause);
 
   // Configure the heap to age objects and regions if the aging period has elapsed.
   void maybe_set_aging_cycle();
