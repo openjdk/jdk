@@ -207,6 +207,19 @@ public class EventSetImpl extends ArrayList<Event> implements EventSet {
 
     }
 
+    /* Safely fetch the thread name in case there is an ObjectCollectedException.
+     * This can happen when dealing with SUSPEND_NONE events.
+     */
+    private static String getThreadName(ThreadReference thread) {
+        String name;
+        try {
+            name = thread.name();
+        } catch (ObjectCollectedException oce) {
+            name = "<thread collected>";
+        }
+        return name;
+    }
+
     abstract class ThreadedEventImpl extends EventImpl {
         private ThreadReference thread;
 
@@ -221,7 +234,7 @@ public class EventSetImpl extends ArrayList<Event> implements EventSet {
         }
 
         public String toString() {
-            return eventName() + " in thread " + thread.name();
+            return eventName() + " in thread " + getThreadName(thread);
         }
     }
 
@@ -250,7 +263,7 @@ public class EventSetImpl extends ArrayList<Event> implements EventSet {
         public String toString() {
             return eventName() + "@" +
                    ((location() == null) ? " null" : location().toString()) +
-                   " in thread " + thread().name();
+                   " in thread " + getThreadName(thread());
         }
     }
 
@@ -669,10 +682,7 @@ public class EventSetImpl extends ArrayList<Event> implements EventSet {
                 try {
                     vm.printTrace("Event: " + evt);
                 } catch (VMDisconnectedException ee) {
-                    // Ignore. See bug 6502716.
-                } catch (ObjectCollectedException oce) {
-                    // Ignore. See bug 8373102. Can happen with SUSPEND_NONE events.
-                    vm.printTrace("Event: <got ObjectCollectedException>");
+                    // ignore - see bug 6502716
                 }
             }
 
