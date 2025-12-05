@@ -36,6 +36,15 @@ import sun.security.util.AnchorCertificates;
 import sun.security.util.HostnameChecker;
 import sun.security.validator.*;
 
+/**
+ * This class implements the SunJSSE X.509 trust manager using the internal
+ * validator API in J2SE core. The logic in this class is minimal.
+ * <p>
+ * This class supports both the Simple validation algorithm from previous
+ * JSSE versions and PKIX validation.
+ *
+ * @author Andreas Sterbenz
+ */
 final class X509TrustManagerImpl extends X509ExtendedTrustManager {
 
     private final String validatorType;
