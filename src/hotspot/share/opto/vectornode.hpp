@@ -118,11 +118,6 @@ class VectorNode : public TypeNode {
   static Node* degenerate_vector_rotate(Node* n1, Node* n2, bool is_rotate_left, int vlen,
                                         BasicType bt, PhaseGVN* phase);
 
-  // Generate a vector mask for the input vector node. Lanes with indices less than
-  // the vector length are set to true, while the remaining lanes are set to false.
-  // Returns the corresponding masked vector node.
-  static Node* gen_masked_vector(PhaseGVN* gvn, Node* node, const TypeVect* vt);
-
   // [Start, end) half-open range defining which operands are vectors
   static void vector_operands(Node* n, uint* start, uint* end);
 
