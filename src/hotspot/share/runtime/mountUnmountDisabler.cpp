@@ -113,7 +113,7 @@ class JVMTIEndTransition : public StackObj {
       }
       if (_is_mount) {
         // FramePop optimization support
-        JvmtiThreadState* state = thread->jvmti_thread_state();
+        JvmtiThreadState* state = _current->jvmti_thread_state();
         if (state != nullptr && state->is_virtual() && state->is_enabled(JVMTI_EVENT_FRAME_POP)) {
           state->process_vthread_pending_deopts();
         }
