@@ -88,7 +88,7 @@ class fieldDescriptor {
   bool is_volatile()              const    { return access_flags().is_volatile(); }
   bool is_transient()             const    { return access_flags().is_transient(); }
 
-  bool is_synthetic()             const    { return access_flags().is_synthetic(); }
+  bool is_synthetic()             const    { return access_flags().is_synthetic() || field_flags().has_synthetic_attribute();  }
 
   bool is_field_access_watched()  const    { return field_status().is_access_watched(); }
   bool is_field_modification_watched() const
