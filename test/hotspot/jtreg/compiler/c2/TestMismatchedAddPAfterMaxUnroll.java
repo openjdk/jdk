@@ -27,10 +27,11 @@
  * @summary C2 crash: assertion failed: Base pointers must match (addp 344)
  * @run main/othervm -XX:-BackgroundCompilation -XX:CompileOnly=TestMismatchedAddPAfterMaxUnroll::test1
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+IgnoreUnrecognizedVMOptions -XX:-UseLoopPredicate
- *                   -XX:+StressIGVN -XX:StressSeed=383593806 TestMismatchedAddPAfterMaxUnroll
+ *                   -XX:+StressIGVN -XX:StressSeed=383593806 -XX:VerifyIterativeGVN=10000
+ *                   TestMismatchedAddPAfterMaxUnroll
  * @run main/othervm -XX:-BackgroundCompilation -XX:CompileOnly=TestMismatchedAddPAfterMaxUnroll::test1
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+IgnoreUnrecognizedVMOptions -XX:-UseLoopPredicate
- *                   -XX:+StressIGVN TestMismatchedAddPAfterMaxUnroll
+ *                   -XX:+StressIGVN  -XX:VerifyIterativeGVN=10000 TestMismatchedAddPAfterMaxUnroll
  * @run main/othervm TestMismatchedAddPAfterMaxUnroll
  */
 

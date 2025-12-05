@@ -2065,21 +2065,16 @@ bool PhaseIterGVN::verify_Identity_for(Node* n) {
 bool PhaseIterGVN::verify_node_invariants_for(Node* n) {
   if (n->is_AddP()) {
     Node* addp = n->in(AddPNode::Address);
-    if (!addp->is_AddP()) {
-      return false;
+    if (addp->is_AddP() &&
+        !addp->in(AddPNode::Base)->is_top() &&
+        addp->in(AddPNode::Base) != n->in(AddPNode::Base)) {
+      stringStream ss; // Print as a block without tty lock.
+      ss.cr();
+      ss.print_cr("Base pointers must match for AddP chain:");
+      n->dump_bfs(2, nullptr, "", &ss);
+      tty->print_cr("%s", ss.as_string());
+      return true;
     }
-    if (addp->in(AddPNode::Base)->is_top()) {
-      return false;
-    }
-    if (addp->in(AddPNode::Base) == n->in(AddPNode::Base)) {
-      return false;
-    }
-    stringStream ss; // Print as a block without tty lock.
-    ss.cr();
-    ss.print_cr("Base pointers must match for AddP chain:");
-    n->dump_bfs(2, nullptr, "", &ss);
-    tty->print_cr("%s", ss.as_string());
-    return true;
   }
   return false;
 }
