@@ -102,9 +102,18 @@ void CompiledDirectCall::set_to_interpreted(const methodHandle& callee, address 
   MacroAssembler::pd_patch_instruction(method_holder->next_instruction_address(), entry);
   ICache::invalidate_range(stub, to_interp_stub_size());
 
-  // If the executing thread observes the updated direct branch at a call site,
-  // it is guaranteed to also observe the updated instructions in the static call
-  // stub, provided the stub is entered only via the direct jump.
+  // This code is executed while other threads are running. We must
+  // ensure that at all times there is a valid path of execution. A
+  // racing thread either observes a call (possibly via a trampoline)
+  // to SharedRuntime::resolve_static_call_C or a complete call to the
+  // interpreter.
+  //
+  // If a racing thread observes an updated direct branch at a call
+  // site, it must also observe all of the updated instructions in the
+  // static interpreter stub.
+  //
+  // To ensure this, we first update the static interpreter stub, then
+  // the trampoline, then the direct branch at the call site.
   //
   // AArch64 stub_via_BL
   // {
@@ -127,23 +136,27 @@ void CompiledDirectCall::set_to_interpreted(const methodHandle& callee, address 
   //                 |end:            ;
   // forall(1:X0=0 \/ 1:X0=2)
   //
-  // Generally, we keep the trampoline destination and the call destination
-  // the same, which means the static call stub is also reachable via an
-  // indirect branch from the trampoline stub. In that case, the above
-  // guarantee does not apply, so directly removing the 'isb' would not
-  // ensure visibility of the updated instructions when the static call
-  // stub is reached through the trampoline stub.
+  // We maintan an invariant: every call site either points directly
+  // to the call destination or to the call site's trampoline. The
+  // trampoline points to the call destination. Even if the trampoline
+  // is not in use, and therefore not reachable, it still points to
+  // the call destination.
   //
-  // To ensure correctness, we patch 'isb' to 'b .+4'. Before doing so, we already
-  // update the 'MOV' instructions and enforce coherence between data writes and
-  // instruction fetches within the same shareability domain by invoking
-  // ICache::invalidate_range(). As confirmed by the litmus test below, when the
-  // executing thread reaches the static call stub:
-  //   - If it observes the 'b .+4', it will also observe the updated 'MOV's (similarly
-  //     to the case above where the thread reaches patched code via a patched direct
-  //     branch).
-  //   - Otherwise, it will execute the 'isb' - the instruction fetch ensures the
-  //     updated 'MOV's are observed.
+  // If a racing thread reaches the static call stub via a trampoline,
+  // we must ensure that it observes the static call stub in
+  // full. Initially we place an ISB at the start of the static call
+  // stub. After we update the static call stub we rewrite the ISB
+  // with 'B .+4' A racing thread either observes the ISB or the
+  // branch. Once the stub has been rewritten and the instruction and
+  // data caches have been synchronized to the point of unification by
+  // ICache::invalidate_range, either is sufficient to ensure that the
+  // subsequent instructions are observed.
+  //
+  // As confirmed by the litmus test below, when a racing executing
+  // thread reaches the static call stub:
+  //   - If it observes the 'B .+4', it will also observe the updated 'MOV's
+  //   - Or, it will execute the 'ISB' - the instruction fetch ensures
+  //     the updated 'MOV's are observed.
   //
   // AArch64 stub_via_BR
   // {
@@ -170,14 +183,11 @@ void CompiledDirectCall::set_to_interpreted(const methodHandle& callee, address 
   //                             |  B end                    ;
   //                             |end:                       ;
   // forall (1:X0=1 \/ 1:X0=3)
-
   NativeJump::insert(stub, stub + NativeJump::instruction_size);
-
   address trampoline_stub_addr = _call->get_trampoline();
   if (trampoline_stub_addr != nullptr) {
     nativeCallTrampolineStub_at(trampoline_stub_addr)->set_destination(stub);
   }
-
   // Update jump to call.
   _call->set_destination(stub);
 }
