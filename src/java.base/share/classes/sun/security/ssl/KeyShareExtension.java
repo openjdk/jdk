@@ -363,24 +363,16 @@ final class KeyShareExtension {
                 try {
                     SSLCredentials kaCred =
                         ng.decodeCredentials(entry.keyExchange);
-                    if (shc.algorithmConstraints != null &&
-                            kaCred instanceof
-                                NamedGroupCredentials namedGroupCredentials) {
-                        if (!shc.algorithmConstraints.permits(
-                                EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
-                                namedGroupCredentials.getPublicKey())) {
-                            if (SSLLogger.isOn() &&
-                                    SSLLogger.isOn("ssl,handshake")) {
-                                SSLLogger.warning(
+
+                    if (!isCredentialPermitted(shc.algorithmConstraints,
+                            kaCred)) {
+                        if (SSLLogger.isOn() &&
+                                SSLLogger.isOn("ssl,handshake")) {
+                            SSLLogger.warning(
                                     "key share entry of " + ng + " does not " +
-                                    " comply with algorithm constraints");
-                            }
-
-                            kaCred = null;
+                                    "comply with algorithm constraints");
                         }
-                    }
-
-                    if (kaCred != null) {
+                    } else {
                         credentials.add(kaCred);
                     }
                 } catch (GeneralSecurityException ex) {
