@@ -187,9 +187,3 @@ vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEa
 vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Multi/Multi005/TestDescription.java 8076494 windows-x64
 
 vmTestbase/nsk/monitoring/ThreadMXBean/findMonitorDeadlockedThreads/find006/TestDescription.java 8310144 macosx-aarch64
-
-vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded001/TestDescription.java 8373022 generic-all
-vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded002/TestDescription.java 8373022 generic-all
-vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded003/TestDescription.java 8373022 generic-all
-vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded004/TestDescription.java 8373022 generic-all
-vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded005/TestDescription.java 8373022 generic-all

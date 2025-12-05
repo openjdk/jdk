@@ -92,7 +92,8 @@ public class isexceeded001 {
             // but cannot assume this affects the pool we are testing.
             b = new byte[INCREMENT];
 
-            isExceeded = monitor.isUsageThresholdExceeded(pool);
+            // Ensure the observation of isExceeded is sticky to match peakUsage.
+            isExceeded = isExceeded || monitor.isUsageThresholdExceeded(pool);
             log.display("  Allocated heap.  isExceeded = " + isExceeded);
 
             // Fetch usage information: use peak usage in comparisons below, in case usage went up and then down.
