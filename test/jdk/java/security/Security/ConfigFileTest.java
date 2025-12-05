@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,7 @@ public class ConfigFileTest {
     static void testIncludeBasic(Executor ex, FilesManager filesMgr)
             throws Exception {
         PropsFile masterFile = filesMgr.newMasterFile();
-        ExtraPropsFile extraFile = filesMgr.newExtraFile();
+        ExtraPropsFile extraFile = filesMgr.newExtraFile(ExtraMode.FILE_URI);
         PropsFile file0 = filesMgr.newFile("file0.properties");
         PropsFile file1 = filesMgr.newFile("dir1/file1.properties");
         PropsFile file2 = filesMgr.newFile("dir1/dir2/file2.properties");
@@ -130,7 +130,7 @@ public class ConfigFileTest {
         file2.addAbsoluteInclude(file1);
 
         ex.setMasterFile(masterFile);
-        ex.setExtraFile(extraFile, Executor.ExtraMode.FILE_URI, false);
+        ex.setExtraFile(extraFile, false);
         ex.assertSuccess();
     }
 
@@ -152,7 +152,7 @@ public class ConfigFileTest {
     static void testIncludeWithOverrideAll(Executor ex, FilesManager filesMgr)
             throws Exception {
         PropsFile masterFile = filesMgr.newMasterFile();
-        ExtraPropsFile extraFile = filesMgr.newExtraFile();
+        ExtraPropsFile extraFile = filesMgr.newExtraFile(ExtraMode.HTTP_SERVED);
         PropsFile file0 = filesMgr.newFile("file0.properties");
         PropsFile file1 = filesMgr.newFile("dir1/file1.properties");
 
@@ -160,40 +160,40 @@ public class ConfigFileTest {
         extraFile.addAbsoluteInclude(file1);
 
         ex.setMasterFile(masterFile);
-        ex.setExtraFile(extraFile, Executor.ExtraMode.HTTP_SERVED, true);
+        ex.setExtraFile(extraFile, true);
         ex.assertSuccess();
     }
 
     static void extraPropertiesByHelper(Executor ex, FilesManager filesMgr,
-            Executor.ExtraMode mode) throws Exception {
-        ExtraPropsFile extraFile = filesMgr.newExtraFile();
+            ExtraMode mode) throws Exception {
+        ExtraPropsFile extraFile = filesMgr.newExtraFile(mode);
         PropsFile file0 = filesMgr.newFile("file0.properties");
 
         extraFile.addRelativeInclude(file0);
 
         ex.setMasterFile(filesMgr.newMasterFile());
-        ex.setExtraFile(extraFile, mode, true);
+        ex.setExtraFile(extraFile, true);
         ex.assertSuccess();
     }
 
     static void testExtraPropertiesByPathAbsolute(Executor ex,
             FilesManager filesMgr) throws Exception {
-        extraPropertiesByHelper(ex, filesMgr, Executor.ExtraMode.PATH_ABS);
+        extraPropertiesByHelper(ex, filesMgr, ExtraMode.PATH_ABS);
     }
 
     static void testExtraPropertiesByPathRelative(Executor ex,
             FilesManager filesMgr) throws Exception {
-        extraPropertiesByHelper(ex, filesMgr, Executor.ExtraMode.PATH_REL);
+        extraPropertiesByHelper(ex, filesMgr, ExtraMode.PATH_REL);
     }
 
     static void specialCharsIncludes(Executor ex, FilesManager filesMgr,
-            char specialChar, Executor.ExtraMode extraMode,
-            boolean useRelativeIncludes) throws Exception {
+            char specialChar, ExtraMode extraMode, boolean useRelativeIncludes)
+            throws Exception {
         String suffix = specialChar + ".properties";
         ExtraPropsFile extraFile;
         PropsFile file0, file1;
         try {
-            extraFile = filesMgr.newExtraFile("extra" + suffix);
+            extraFile = filesMgr.newExtraFile("extra" + suffix, extraMode);
             file0 = filesMgr.newFile("file0" + suffix);
             file1 = filesMgr.newFile("file1" + suffix);
         } catch (InvalidPathException ipe) {
@@ -210,20 +210,18 @@ public class ConfigFileTest {
         extraFile.addAbsoluteInclude(file1);
 
         ex.setMasterFile(filesMgr.newMasterFile());
-        ex.setExtraFile(extraFile, extraMode, false);
+        ex.setExtraFile(extraFile, false);
         ex.assertSuccess();
     }
 
     static void testUnicodeIncludes1(Executor ex, FilesManager filesMgr)
             throws Exception {
-        specialCharsIncludes(ex, filesMgr, '\u2022',
-                Executor.ExtraMode.PATH_ABS, true);
+        specialCharsIncludes(ex, filesMgr, '\u2022', ExtraMode.PATH_ABS, true);
     }
 
     static void testUnicodeIncludes2(Executor ex, FilesManager filesMgr)
             throws Exception {
-        specialCharsIncludes(ex, filesMgr, '\u2022',
-                Executor.ExtraMode.FILE_URI, true);
+        specialCharsIncludes(ex, filesMgr, '\u2022', ExtraMode.FILE_URI, true);
     }
 
     static void testUnicodeIncludes3(Executor ex, FilesManager filesMgr)
@@ -232,7 +230,7 @@ public class ConfigFileTest {
         // file:/tmp/extra•.properties are supported for the extra file.
         // However, relative includes are not allowed in these cases.
         specialCharsIncludes(ex, filesMgr, '\u2022',
-                Executor.ExtraMode.RAW_FILE_URI1, false);
+                ExtraMode.RAW_FILE_URI1, false);
     }
 
     static void testUnicodeIncludes4(Executor ex, FilesManager filesMgr)
@@ -241,19 +239,17 @@ public class ConfigFileTest {
         // file:///tmp/extra•.properties are supported for the extra file.
         // However, relative includes are not allowed in these cases.
         specialCharsIncludes(ex, filesMgr, '\u2022',
-                Executor.ExtraMode.RAW_FILE_URI2, false);
+                ExtraMode.RAW_FILE_URI2, false);
     }
 
     static void testSpaceIncludes1(Executor ex, FilesManager filesMgr)
             throws Exception {
-        specialCharsIncludes(ex, filesMgr, ' ',
-                Executor.ExtraMode.PATH_ABS, true);
+        specialCharsIncludes(ex, filesMgr, ' ', ExtraMode.PATH_ABS, true);
     }
 
     static void testSpaceIncludes2(Executor ex, FilesManager filesMgr)
             throws Exception {
-        specialCharsIncludes(ex, filesMgr, ' ',
-                Executor.ExtraMode.FILE_URI, true);
+        specialCharsIncludes(ex, filesMgr, ' ', ExtraMode.FILE_URI, true);
     }
 
     static void testSpaceIncludes3(Executor ex, FilesManager filesMgr)
@@ -261,8 +257,7 @@ public class ConfigFileTest {
         // Backward compatibility check. Malformed URLs such as
         // file:/tmp/extra .properties are supported for the extra file.
         // However, relative includes are not allowed in these cases.
-        specialCharsIncludes(ex, filesMgr, ' ',
-                Executor.ExtraMode.RAW_FILE_URI1, false);
+        specialCharsIncludes(ex, filesMgr, ' ', ExtraMode.RAW_FILE_URI1, false);
     }
 
     static void testSpaceIncludes4(Executor ex, FilesManager filesMgr)
@@ -270,8 +265,7 @@ public class ConfigFileTest {
         // Backward compatibility check. Malformed URLs such as
         // file:///tmp/extra .properties are supported for the extra file.
         // However, relative includes are not allowed in these cases.
-        specialCharsIncludes(ex, filesMgr, ' ',
-                Executor.ExtraMode.RAW_FILE_URI2, false);
+        specialCharsIncludes(ex, filesMgr, ' ', ExtraMode.RAW_FILE_URI2, false);
     }
 
     static void notOverrideOnFailureHelper(Executor ex, FilesManager filesMgr,
@@ -370,13 +364,13 @@ public class ConfigFileTest {
 
     static void testCannotResolveRelativeFromHTTPServed(Executor ex,
             FilesManager filesMgr) throws Exception {
-        ExtraPropsFile extraFile = filesMgr.newExtraFile();
+        ExtraPropsFile extraFile = filesMgr.newExtraFile(ExtraMode.HTTP_SERVED);
         PropsFile file0 = filesMgr.newFile("file0.properties");
 
         extraFile.addRelativeInclude(file0);
 
         ex.setMasterFile(filesMgr.newMasterFile());
-        ex.setExtraFile(extraFile, Executor.ExtraMode.HTTP_SERVED, true);
+        ex.setExtraFile(extraFile, true);
         ex.assertError("InternalError: Cannot resolve '" + file0.fileName +
                 "' relative path when included from a non-regular " +
                 "properties file (e.g. HTTP served file)");
@@ -402,7 +396,7 @@ public class ConfigFileTest {
     static void testCannotIncludeURL(Executor ex, FilesManager filesMgr)
             throws Exception {
         PropsFile masterFile = filesMgr.newMasterFile();
-        ExtraPropsFile extraFile = filesMgr.newExtraFile();
+        ExtraPropsFile extraFile = filesMgr.newExtraFile(ExtraMode.HTTP_SERVED);
 
         masterFile.addRawProperty("include", extraFile.url.toString());
 
@@ -433,8 +427,7 @@ public class ConfigFileTest {
         // Launch a JDK without a master java.security file present, but with an
         // extra file passed. Since the "security.overridePropertiesFile=true"
         // security property is missing, it should fail anyway.
-        ex.setExtraFile(
-                filesMgr.newExtraFile(), Executor.ExtraMode.FILE_URI, true);
+        ex.setExtraFile(filesMgr.newExtraFile(ExtraMode.FILE_URI), true);
         ex.assertError("InternalError: Error loading java.security file");
     }
 }
@@ -557,13 +550,21 @@ sealed class PropsFile permits ExtraPropsFile {
     }
 }
 
+enum ExtraMode {
+    HTTP_SERVED, FILE_URI, RAW_FILE_URI1, RAW_FILE_URI2, PATH_ABS, PATH_REL
+}
+
 final class ExtraPropsFile extends PropsFile {
+    private static final Path CWD = Path.of(".").toAbsolutePath();
     private final Map<String, String> systemProps = new LinkedHashMap<>();
+    private final ExtraMode mode;
     final URI url;
 
-    ExtraPropsFile(String fileName, URI url, Path path) throws IOException {
+    ExtraPropsFile(String fileName, URI url, Path path, ExtraMode mode)
+            throws IOException {
         super(fileName, path);
         this.url = url;
+        this.mode = mode;
     }
 
     @Override
@@ -577,6 +578,18 @@ final class ExtraPropsFile extends PropsFile {
         }
         include.propsFile.markAsIncludedFromExtra();
         super.addIncludeDefinition(include);
+    }
+
+    String getSysPropValue() {
+        return switch (mode) {
+            case HTTP_SERVED -> url.toString();
+            case FILE_URI -> path.toUri().toString();
+            case RAW_FILE_URI1 -> "file:" + path;
+            case RAW_FILE_URI2 ->
+                    "file://" + (path.startsWith("/") ? "" : "/") + path;
+            case PATH_ABS -> path.toString();
+            case PATH_REL -> CWD.relativize(path).toString();
+        };
     }
 
     Map<String, String> getSystemProperties() {
@@ -703,16 +716,17 @@ final class FilesManager implements Closeable {
         return newFile(MASTER_FILE, PropsFile::new);
     }
 
-    ExtraPropsFile newExtraFile() throws IOException {
-        return newExtraFile("extra.properties");
+    ExtraPropsFile newExtraFile(ExtraMode mode) throws IOException {
+        return newExtraFile("extra.properties", mode);
     }
 
-    ExtraPropsFile newExtraFile(String extraFileName) throws IOException {
+    ExtraPropsFile newExtraFile(String extraFileName, ExtraMode mode)
+            throws IOException {
         return (ExtraPropsFile) newFile(PROPS_DIR.resolve(extraFileName),
                 (fileName, path) -> {
                     URI uri = serverUri.resolve(ParseUtil.encodePath(
                             ROOT_DIR.relativize(path).toString()));
-                    return new ExtraPropsFile(fileName, uri, path);
+                    return new ExtraPropsFile(fileName, uri, path, mode);
                 });
     }
 
@@ -758,9 +772,6 @@ final class FilesManager implements Closeable {
 }
 
 final class Executor {
-    enum ExtraMode {
-        HTTP_SERVED, FILE_URI, RAW_FILE_URI1, RAW_FILE_URI2, PATH_ABS, PATH_REL
-    }
     static final String RUNNER_ARG = "runner";
     static final String INITIAL_PROP_LOG_MSG = "Initial security property: ";
     private static final String OVERRIDING_LOG_MSG =
@@ -770,7 +781,6 @@ final class Executor {
             INITIAL_PROP_LOG_MSG + "postInitTest=shouldNotRecord",
             INITIAL_PROP_LOG_MSG + "include=",
     };
-    private static final Path CWD = Path.of(".").toAbsolutePath();
     private static final String JAVA_SEC_PROPS = "java.security.properties";
     private static final String CLASS_PATH = Objects.requireNonNull(
             System.getProperty("test.classes"), "unspecified test.classes");
@@ -813,20 +823,10 @@ final class Executor {
         this.masterPropsFile = masterPropsFile;
     }
 
-    void setExtraFile(ExtraPropsFile extraPropsFile, ExtraMode mode,
-            boolean overrideAll) {
+    void setExtraFile(ExtraPropsFile extraPropsFile, boolean overrideAll) {
         this.extraPropsFile = extraPropsFile;
         expectedOverrideAll = overrideAll;
-        setRawExtraFile(switch (mode) {
-            case HTTP_SERVED -> extraPropsFile.url.toString();
-            case FILE_URI -> extraPropsFile.path.toUri().toString();
-            case RAW_FILE_URI1 -> "file:" + extraPropsFile.path;
-            case RAW_FILE_URI2 -> "file://" +
-                    (extraPropsFile.path.startsWith("/") ? "" : "/") +
-                    extraPropsFile.path;
-            case PATH_ABS -> extraPropsFile.path.toString();
-            case PATH_REL -> CWD.relativize(extraPropsFile.path).toString();
-        }, overrideAll);
+        setRawExtraFile(extraPropsFile.getSysPropValue(), overrideAll);
     }
 
     void setIgnoredExtraFile(String extraPropsFile, boolean overrideAll) {
