@@ -76,7 +76,7 @@ CompileTask::CompileTask(int compile_id,
   _next = nullptr;
   _prev = nullptr;
 
-  Atomic::add(&_active_tasks, 1, memory_order_relaxed);
+  AtomicAccess::add(&_active_tasks, 1, memory_order_relaxed);
 }
 
 CompileTask::~CompileTask() {
@@ -91,7 +91,7 @@ CompileTask::~CompileTask() {
     _failure_reason_on_C_heap = false;
   }
 
-  if (Atomic::sub(&_active_tasks, 1, memory_order_relaxed) == 0) {
+  if (AtomicAccess::sub(&_active_tasks, 1, memory_order_relaxed) == 0) {
     MonitorLocker wait_ml(CompileTaskWait_lock);
     wait_ml.notify_all();
   }
@@ -99,7 +99,7 @@ CompileTask::~CompileTask() {
 
 void CompileTask::wait_for_no_active_tasks() {
   MonitorLocker locker(CompileTaskWait_lock);
-  while (Atomic::load(&_active_tasks) > 0) {
+  while (AtomicAccess::load(&_active_tasks) > 0) {
     locker.wait();
   }
 }

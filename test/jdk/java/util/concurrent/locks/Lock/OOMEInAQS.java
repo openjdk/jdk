@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import java.util.stream.Stream;
  * @bug 8066859
  * @summary Check that AQS-based locks, conditions, and CountDownLatches do not fail when encountering OOME
  * @requires vm.gc.G1
+ * @requires test.thread.factory == null
  * @requires !(vm.graal.enabled & vm.compMode == "Xcomp")
  * @run main/othervm -XX:+UseG1GC -XX:-UseGCOverheadLimit -Xmx48M -XX:-UseTLAB OOMEInAQS
  */

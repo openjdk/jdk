@@ -207,6 +207,8 @@ protected:
   Klass(KlassKind kind);
   Klass();
 
+  void* operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw();
+
  public:
   int kind() { return _kind; }
 
@@ -298,7 +300,7 @@ protected:
   // Use InstanceKlass::contains_field_offset to classify field offsets.
 
   // sub/superklass links
-  Klass* subklass(bool log = false) const;
+  Klass* subklass() const;
   Klass* next_sibling(bool log = false) const;
 
   void append_to_sibling_list();           // add newly created receiver to superklass' subklass list
@@ -411,9 +413,9 @@ protected:
   virtual ModuleEntry* module() const = 0;
   virtual PackageEntry* package() const = 0;
 
+  void     set_next_sibling(Klass* s);
  protected:                                // internal accessors
   void     set_subklass(Klass* s);
-  void     set_next_sibling(Klass* s);
 
  private:
   static uint8_t compute_hash_slot(Symbol* s);
@@ -578,6 +580,7 @@ public:
   virtual bool should_be_initialized() const    { return false; }
   // initializes the klass
   virtual void initialize(TRAPS);
+  virtual void initialize_preemptable(TRAPS);
   virtual Klass* find_field(Symbol* name, Symbol* signature, fieldDescriptor* fd) const;
   virtual Method* uncached_lookup_method(const Symbol* name, const Symbol* signature,
                                          OverpassLookupMode overpass_mode,
@@ -741,7 +744,7 @@ public:
   inline bool is_loader_alive() const;
   inline bool is_loader_present_and_alive() const;
 
-  void clean_subklass();
+  Klass* clean_subklass(bool log = false);
 
   // Clean out unnecessary weak klass links from the whole klass hierarchy.
   static void clean_weak_klass_links(bool unloading_occurred, bool clean_alive_klasses = true);
@@ -794,10 +797,6 @@ public:
   static bool is_valid(Klass* k);
 
   static void on_secondary_supers_verification_failure(Klass* super, Klass* sub, bool linear_result, bool table_result, const char* msg);
-
-  // Returns true if this Klass needs to be addressable via narrow Klass ID.
-  inline bool needs_narrow_id() const;
-
 };
 
 #endif // SHARE_OOPS_KLASS_HPP

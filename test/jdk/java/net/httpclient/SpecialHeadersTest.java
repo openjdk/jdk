@@ -92,6 +92,7 @@ import static java.lang.System.out;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import org.testng.Assert;
 import static org.testng.Assert.assertEquals;
@@ -347,7 +348,7 @@ public class SpecialHeadersTest implements HttpServerAdapters {
 
                 boolean isInitialRequest = i == 0;
                 boolean isSecure = uri.getScheme().equalsIgnoreCase("https");
-                boolean isHTTP2 = resp.version() == HTTP_2;
+                boolean isHTTP1 = resp.version() == HTTP_1_1;
                 boolean isNotH2CUpgrade = isSecure || (sameClient == true && !isInitialRequest);
                 boolean isDefaultHostHeader = name.equalsIgnoreCase("host") && useDefault;
 
@@ -356,13 +357,13 @@ public class SpecialHeadersTest implements HttpServerAdapters {
                 // header in the response, except the response to the h2c Upgrade
                 // request which will have been sent through HTTP/1.1.
 
-                if (isDefaultHostHeader && isHTTP2 && isNotH2CUpgrade) {
+                if (isDefaultHostHeader && !isHTTP1 && isNotH2CUpgrade) {
                     assertTrue(resp.headers().firstValue("X-" + key).isEmpty());
                     assertTrue(resp.headers().allValues("X-" + key).isEmpty());
                     out.println("No X-" + key + " header received, as expected");
                 } else {
                     String receivedHeaderString = value == null ? null
-                            : resp.headers().firstValue("X-" + key).orElse(null);
+                            : resp.headers().firstValue("X-" + key).get();
                     out.println("Got X-" + key + ": " + resp.headers().allValues("X-" + key));
                     if (value != null) {
                         assertEquals(receivedHeaderString, value);
@@ -512,7 +513,7 @@ public class SpecialHeadersTest implements HttpServerAdapters {
                             // header in the response, except the response to the h2c Upgrade
                             // request which will have been sent through HTTP/1.1.
 
-                            if (isDefaultHostHeader && resp.version() == HTTP_2 && isNotH2CUpgrade) {
+                            if (isDefaultHostHeader && resp.version() != HTTP_1_1 && isNotH2CUpgrade) {
                                 assertTrue(resp.headers().firstValue("X-" + key).isEmpty());
                                 assertTrue(resp.headers().allValues("X-" + key).isEmpty());
                                 out.println("No X-" + key + " header received, as expected");

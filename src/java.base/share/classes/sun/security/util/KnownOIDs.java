@@ -187,7 +187,7 @@ public enum KnownOIDs {
     // RSASecurity
     // PKCS1 1.2.840.113549.1.1.*
     PKCS1("1.2.840.113549.1.1", "RSA", false), // RSA KeyPairGenerator and KeyFactory
-    RSA("1.2.840.113549.1.1.1"), // RSA encryption
+    RSA("1.2.840.113549.1.1.1", "RSA", "RSA/ECB/PKCS1Padding"), // RSA encryption
 
     MD2withRSA("1.2.840.113549.1.1.2"),
     MD5withRSA("1.2.840.113549.1.1.4"),
@@ -211,8 +211,9 @@ public enum KnownOIDs {
     PBEWithMD5AndRC2("1.2.840.113549.1.5.6"),
     PBEWithSHA1AndDES("1.2.840.113549.1.5.10"),
     PBEWithSHA1AndRC2("1.2.840.113549.1.5.11"),
-    PBKDF2WithHmacSHA1("1.2.840.113549.1.5.12"),
+    PBKDF2("1.2.840.113549.1.5.12", "PBKDF2WithHmacSHA1"),
     PBES2("1.2.840.113549.1.5.13"),
+    PBMAC1("1.2.840.113549.1.5.14"),
 
     // PKCS7 1.2.840.113549.1.7.*
     PKCS7("1.2.840.113549.1.7"),

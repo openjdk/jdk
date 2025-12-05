@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -929,35 +929,35 @@ public final class WPrinterJob extends RasterPrinterJob
      * Return the Window's device context that we are printing
      * into.
      */
-    private long getPrintDC() {
+    private synchronized long getPrintDC() {
         return handleRecord.mPrintDC;
     }
 
-    private void setPrintDC(long mPrintDC) {
+    private synchronized void setPrintDC(long mPrintDC) {
         handleRecord.mPrintDC = mPrintDC;
     }
 
-    private long getDevMode() {
+    private synchronized long getDevMode() {
         return handleRecord.mPrintHDevMode;
     }
 
-    private void setDevMode(long mPrintHDevMode) {
+    private synchronized void setDevMode(long mPrintHDevMode) {
         handleRecord.mPrintHDevMode = mPrintHDevMode;
     }
 
-    private long getDevNames() {
+    private synchronized long getDevNames() {
         return handleRecord.mPrintHDevNames;
     }
 
-    private void setDevNames(long mPrintHDevNames) {
+    private synchronized void setDevNames(long mPrintHDevNames) {
         handleRecord.mPrintHDevNames = mPrintHDevNames;
     }
 
-    protected void beginPath() {
+    protected synchronized void beginPath() {
         beginPath(getPrintDC());
     }
 
-    protected void endPath() {
+    protected synchronized void endPath() {
         endPath(getPrintDC());
     }
 
@@ -972,23 +972,23 @@ public final class WPrinterJob extends RasterPrinterJob
         setGraphicsMode(graphicsMode);
     }
 
-    protected void closeFigure() {
+    protected synchronized void closeFigure() {
         closeFigure(getPrintDC());
     }
 
-    protected void fillPath() {
+    protected synchronized void fillPath() {
         fillPath(getPrintDC());
     }
 
-    protected void moveTo(float x, float y) {
+    protected synchronized void moveTo(float x, float y) {
         moveTo(getPrintDC(), x, y);
     }
 
-    protected void lineTo(float x, float y) {
+    protected synchronized void lineTo(float x, float y) {
         lineTo(getPrintDC(), x, y);
     }
 
-    protected void polyBezierTo(float control1x, float control1y,
+    protected synchronized void polyBezierTo(float control1x, float control1y,
                                 float control2x, float control2y,
                                 float endX, float endY) {
 
@@ -1003,14 +1003,14 @@ public final class WPrinterJob extends RasterPrinterJob
      * be one of the following Windows constants:
      * {@code ALTERNATE} or {@code WINDING}.
      */
-    protected void setPolyFillMode(int fillRule) {
+    protected synchronized void setPolyFillMode(int fillRule) {
         setPolyFillMode(getPrintDC(), fillRule);
     }
 
     /**
      * Set the GDI graphics mode to {@code GM_ADVANCED}.
      */
-    private int setAdvancedGraphicsMode() {
+    private synchronized int setAdvancedGraphicsMode() {
         return setAdvancedGraphicsMode(getPrintDC());
     }
 
@@ -1020,28 +1020,28 @@ public final class WPrinterJob extends RasterPrinterJob
      * be one of the following Windows constants:
      * {@code GM_COMPATIBLE} or {@code GM_ADVANCED}.
      */
-    private void setGraphicsMode(int mode) {
+    private synchronized void setGraphicsMode(int mode) {
         setGraphicsMode(getPrintDC(), mode);
     }
 
     /**
      * Scale the GDI World Transform.
      */
-    private void scale(double scaleX, double scaleY) {
+    private synchronized void scale(double scaleX, double scaleY) {
         scale(getPrintDC(), scaleX, scaleY);
     }
 
     /**
      * Get the GDI World Transform.
      */
-    private void getWorldTransform(double[] transform) {
+    private synchronized void getWorldTransform(double[] transform) {
         getWorldTransform(getPrintDC(), transform);
     }
 
     /**
      * Set the GDI World Transform.
      */
-    private void setWorldTransform(double[] transform) {
+    private synchronized void setWorldTransform(double[] transform) {
         setWorldTransform(getPrintDC(), transform);
     }
 
@@ -1051,7 +1051,7 @@ public final class WPrinterJob extends RasterPrinterJob
      * is created, select it in the current printing device
      * context and free the old brush.
      */
-    protected void selectSolidBrush(Color color) {
+    protected synchronized void selectSolidBrush(Color color) {
 
         /* We only need to select a brush if the color has changed.
         */
@@ -1070,7 +1070,7 @@ public final class WPrinterJob extends RasterPrinterJob
      * Return the x coordinate of the current pen
      * position in the print device context.
      */
-    protected int getPenX() {
+    protected synchronized int getPenX() {
 
         return getPenX(getPrintDC());
     }
@@ -1080,7 +1080,7 @@ public final class WPrinterJob extends RasterPrinterJob
      * Return the y coordinate of the current pen
      * position in the print device context.
      */
-    protected int getPenY() {
+    protected synchronized int getPenY() {
 
         return getPenY(getPrintDC());
     }
@@ -1089,16 +1089,16 @@ public final class WPrinterJob extends RasterPrinterJob
      * Set the current path in the printer device's
      * context to be clipping path.
      */
-    protected void selectClipPath() {
+    protected synchronized void selectClipPath() {
         selectClipPath(getPrintDC());
     }
 
 
-    protected void frameRect(float x, float y, float width, float height) {
+    protected synchronized void frameRect(float x, float y, float width, float height) {
         frameRect(getPrintDC(), x, y, width, height);
     }
 
-    protected void fillRect(float x, float y, float width, float height,
+    protected synchronized void fillRect(float x, float y, float width, float height,
                             Color color) {
         float[] rgb = color.getRGBColorComponents(null);
 
@@ -1109,7 +1109,7 @@ public final class WPrinterJob extends RasterPrinterJob
     }
 
 
-    protected void selectPen(float width, Color color) {
+    protected synchronized void selectPen(float width, Color color) {
 
         float[] rgb = color.getRGBColorComponents(null);
 
@@ -1120,7 +1120,7 @@ public final class WPrinterJob extends RasterPrinterJob
     }
 
 
-    protected boolean selectStylePen(int cap, int join, float width,
+    protected synchronized boolean selectStylePen(int cap, int join, float width,
                                      Color color) {
 
         long endCap;
@@ -1152,7 +1152,7 @@ public final class WPrinterJob extends RasterPrinterJob
      * Set a GDI font capable of drawing the java Font
      * passed in.
      */
-    protected boolean setFont(String family, float size, int style,
+    protected synchronized boolean setFont(String family, float size, int style,
                               int rotation, float awScale) {
 
         if (family.isEmpty()) {
@@ -1187,7 +1187,7 @@ public final class WPrinterJob extends RasterPrinterJob
     /**
      * Set the GDI color for text drawing.
      */
-    protected void setTextColor(Color color) {
+    protected synchronized void setTextColor(Color color) {
 
         /* We only need to select a brush if the color has changed.
         */
@@ -1203,18 +1203,10 @@ public final class WPrinterJob extends RasterPrinterJob
     }
 
     /**
-     * Remove control characters.
-     */
-    @Override
-    protected String removeControlChars(String str) {
-        return super.removeControlChars(str);
-    }
-
-    /**
      * Draw the string {@code text} to the printer's
      * device context at the specified position.
      */
-    protected void textOut(String str, float x, float y,
+    protected synchronized void textOut(String str, float x, float y,
                            float[] positions) {
         /* Don't leave handling of control chars to GDI.
          * If control chars are removed,  'positions' isn't valid.
@@ -1234,7 +1226,7 @@ public final class WPrinterJob extends RasterPrinterJob
      * Draw the glyphs {@code glyphs} to the printer's
      * device context at the specified position.
      */
-    protected void glyphsOut(int []glyphs, float x, float y,
+    protected synchronized void glyphsOut(int []glyphs, float x, float y,
                              float[] positions) {
 
         /* TrueType glyph codes are 16 bit values, so can be packed
@@ -1262,7 +1254,7 @@ public final class WPrinterJob extends RasterPrinterJob
      * rendering so also remove them for measurement so that
      * this measurement can be properly compared with JDK measurement.
      */
-    protected int getGDIAdvance(String text) {
+    protected synchronized int getGDIAdvance(String text) {
         /* Don't leave handling of control chars to GDI. */
         text = removeControlChars(text);
         if (text.length() == 0) {
@@ -1283,7 +1275,7 @@ public final class WPrinterJob extends RasterPrinterJob
      * by {@code srcX}, {@code srcY},
      * {@code srcWidth}, and srcHeight.
      */
-    protected void drawImage3ByteBGR(byte[] image,
+    protected synchronized void drawImage3ByteBGR(byte[] image,
                                      float destX, float destY,
                                      float destWidth, float destHeight,
                                      float srcX, float srcY,
@@ -1314,7 +1306,7 @@ public final class WPrinterJob extends RasterPrinterJob
      * There's no alignment problem as GDI expects this to be packed
      * and each struct will start on a 4 byte boundary anyway.
      */
-    protected void drawDIBImage(byte[] image,
+    protected synchronized void drawDIBImage(byte[] image,
                                 float destX, float destY,
                                 float destWidth, float destHeight,
                                 float srcX, float srcY,
@@ -1346,7 +1338,7 @@ public final class WPrinterJob extends RasterPrinterJob
      * Begin a new page.
      */
     @Override
-    protected void startPage(PageFormat format, Printable painter,
+    protected synchronized void startPage(PageFormat format, Printable painter,
                              int index, boolean paperChanged) {
 
         /* Invalidate any device state caches we are
@@ -1363,7 +1355,7 @@ public final class WPrinterJob extends RasterPrinterJob
      * End a page.
      */
     @Override
-    protected void endPage(PageFormat format, Printable painter,
+    protected synchronized void endPage(PageFormat format, Printable painter,
                            int index) {
 
         deviceEndPage(format, painter, index);
@@ -1410,7 +1402,7 @@ public final class WPrinterJob extends RasterPrinterJob
      * is reflected back up to Java code
      */
     @Override
-    protected native void initPrinter();
+    protected synchronized native void initPrinter();
 
     /**
      * Call Window's StartDoc routine to begin a
@@ -1423,10 +1415,10 @@ public final class WPrinterJob extends RasterPrinterJob
      * user may cancel out of it. Note that the implementation of
      * cancel() throws PrinterAbortException to indicate the user cancelled.
      */
-    private native boolean _startDoc(String dest, String jobName)
+    private synchronized native boolean _startDoc(String dest, String jobName)
                                      throws PrinterException;
     @Override
-    protected void startDoc() throws PrinterException {
+    protected synchronized void startDoc() throws PrinterException {
         if (!_startDoc(mDestination, getJobName())) {
             cancel();
         }
@@ -1437,31 +1429,31 @@ public final class WPrinterJob extends RasterPrinterJob
      * print job.
      */
     @Override
-    protected native void endDoc();
+    protected synchronized native void endDoc();
 
     /**
      * Call Window's AbortDoc routine to abort a
      * print job.
      */
     @Override
-    protected native void abortDoc();
+    protected synchronized native void abortDoc();
 
     /**
      * Call Windows native resource freeing APIs
      */
-    private static native void deleteDC(long dc, long devmode, long devnames);
+    private static synchronized native void deleteDC(long dc, long devmode, long devnames);
 
     /**
      * Begin a new page. This call's Window's
      * StartPage routine.
      */
-    protected native void deviceStartPage(PageFormat format, Printable painter,
+    protected synchronized native void deviceStartPage(PageFormat format, Printable painter,
                                           int index, boolean paperChanged);
     /**
      * End a page. This call's Window's EndPage
      * routine.
      */
-    protected native void deviceEndPage(PageFormat format, Printable painter,
+    protected synchronized native void deviceEndPage(PageFormat format, Printable painter,
                                         int index);
 
     /**
@@ -1472,46 +1464,46 @@ public final class WPrinterJob extends RasterPrinterJob
      * specified by the caller.
      */
     @Override
-    protected native void printBand(byte[] data, int x, int y,
+    protected synchronized native void printBand(byte[] data, int x, int y,
                                     int width, int height);
 
     /**
      * Begin a Window's rendering path in the device
      * context {@code printDC}.
      */
-    protected native void beginPath(long printDC);
+    protected synchronized native void beginPath(long printDC);
 
     /**
      * End a Window's rendering path in the device
      * context {@code printDC}.
      */
-    protected native void endPath(long printDC);
+    protected synchronized native void endPath(long printDC);
 
     /**
      * Close a subpath in a Window's rendering path in the device
      * context {@code printDC}.
      */
-    protected native void closeFigure(long printDC);
+    protected synchronized native void closeFigure(long printDC);
 
     /**
      * Fill a defined Window's rendering path in the device
      * context {@code printDC}.
      */
-    protected native void fillPath(long printDC);
+    protected synchronized native void fillPath(long printDC);
 
     /**
      * Move the Window's pen position to {@code (x,y)}
      * in the device context {@code printDC}.
      */
-    protected native void moveTo(long printDC, float x, float y);
+    protected synchronized native void moveTo(long printDC, float x, float y);
 
     /**
      * Draw a line from the current pen position to
      * {@code (x,y)} in the device context {@code printDC}.
      */
-    protected native void lineTo(long printDC, float x, float y);
+    protected synchronized native void lineTo(long printDC, float x, float y);
 
-    protected native void polyBezierTo(long printDC,
+    protected synchronized native void polyBezierTo(long printDC,
                                        float control1x, float control1y,
                                        float control2x, float control2y,
                                        float endX, float endY);
@@ -1522,13 +1514,13 @@ public final class WPrinterJob extends RasterPrinterJob
      * be one of the following Windows constants:
      * {@code ALTERNATE} or {@code WINDING}.
      */
-    protected native void setPolyFillMode(long printDC, int fillRule);
+    protected synchronized native void setPolyFillMode(long printDC, int fillRule);
 
     /**
      * Set the GDI graphics mode to {@code GM_ADVANCED}
      * into the device context {@code printDC}.
      */
-    protected native int setAdvancedGraphicsMode(long printDC);
+    protected synchronized native int setAdvancedGraphicsMode(long printDC);
 
     /**
      * Set the GDI graphics {@code mode}
@@ -1537,25 +1529,25 @@ public final class WPrinterJob extends RasterPrinterJob
      * be one of the following Windows constants:
      * {@code GM_COMPATIBLE} or {@code GM_ADVANCED}.
      */
-    protected native void setGraphicsMode(long printDC, int mode);
+    protected synchronized native void setGraphicsMode(long printDC, int mode);
 
     /**
      * Scale the GDI World Transform
      * of the device context {@code printDC}.
      */
-    protected native void scale(long printDC, double scaleX, double scaleY);
+    protected synchronized native void scale(long printDC, double scaleX, double scaleY);
 
     /**
      * Get the GDI World Transform
      * from the device context {@code printDC}.
      */
-    protected native void getWorldTransform(long printDC, double[] transform);
+    protected synchronized native void getWorldTransform(long printDC, double[] transform);
 
     /**
      * Set the GDI World Transform
      * into the device context {@code printDC}.
      */
-    protected native void setWorldTransform(long printDC, double[] transform);
+    protected synchronized native void setWorldTransform(long printDC, double[] transform);
 
     /**
      * Create a Window's solid brush for the color specified
@@ -1563,7 +1555,7 @@ public final class WPrinterJob extends RasterPrinterJob
      * is created, select it in the device
      * context {@code printDC} and free the old brush.
      */
-    protected native void selectSolidBrush(long printDC,
+    protected synchronized native void selectSolidBrush(long printDC,
                                            int red, int green, int blue);
 
     /**
@@ -1571,32 +1563,32 @@ public final class WPrinterJob extends RasterPrinterJob
      * position in the device context
      * {@code printDC}.
      */
-    protected native int getPenX(long printDC);
+    protected synchronized native int getPenX(long printDC);
 
     /**
      * Return the y coordinate of the current pen
      * position in the device context
      * {@code printDC}.
      */
-    protected native int getPenY(long printDC);
+    protected synchronized native int getPenY(long printDC);
 
     /**
      * Select the device context's current path
      * to be the clipping path.
      */
-    protected native void selectClipPath(long printDC);
+    protected synchronized native void selectClipPath(long printDC);
 
     /**
      * Draw a rectangle using specified brush.
      */
-    protected native void frameRect(long printDC, float x, float y,
+    protected synchronized native void frameRect(long printDC, float x, float y,
                                     float width, float height);
 
     /**
      * Fill a rectangle specified by the coordinates using
      * specified brush.
      */
-    protected native void fillRect(long printDC, float x, float y,
+    protected synchronized native void fillRect(long printDC, float x, float y,
                                    float width, float height,
                                    int red, int green, int blue);
 
@@ -1604,14 +1596,14 @@ public final class WPrinterJob extends RasterPrinterJob
      * Create a solid brush using the RG & B colors and width.
      * Select this brush and delete the old one.
      */
-    protected native void selectPen(long printDC, float width,
+    protected synchronized native void selectPen(long printDC, float width,
                                     int red, int green, int blue);
 
     /**
      * Create a solid brush using the RG & B colors and specified
      * pen styles.  Select this created brush and delete the old one.
      */
-    protected native boolean selectStylePen(long printDC, long cap,
+    protected synchronized native boolean selectStylePen(long printDC, long cap,
                                             long join, float width,
                                             int red, int green, int blue);
 
@@ -1619,7 +1611,7 @@ public final class WPrinterJob extends RasterPrinterJob
      * Set a GDI font capable of drawing the java Font
      * passed in.
      */
-    protected native boolean setFont(long printDC, String familyName,
+    protected synchronized native boolean setFont(long printDC, String familyName,
                                      float fontSize,
                                      boolean bold,
                                      boolean italic,
@@ -1630,7 +1622,7 @@ public final class WPrinterJob extends RasterPrinterJob
     /**
      * Set the GDI color for text drawing.
      */
-    protected native void setTextColor(long printDC,
+    protected synchronized native void setTextColor(long printDC,
                                        int red, int green, int blue);
 
 
@@ -1639,12 +1631,12 @@ public final class WPrinterJob extends RasterPrinterJob
      * context {@code printDC} at the specified
      * position.
      */
-    protected native void textOut(long printDC, String text,
+    protected synchronized native void textOut(long printDC, String text,
                                   int strlen, boolean glyphs,
                                   float x, float y, float[] positions);
 
 
-    private native int getGDIAdvance(long printDC, String text);
+    private synchronized native int getGDIAdvance(long printDC, String text);
 
      /**
      * Draw the DIB compatible image buffer represented by
@@ -1661,7 +1653,7 @@ public final class WPrinterJob extends RasterPrinterJob
      * At the very least it needs to be padded so each scanline is
      * DWORD aligned. Also we "flip" the image to make it a bottom-up DIB.
      */
-    private native void drawDIBImage(long printDC, byte[] image,
+    private synchronized native void drawDIBImage(long printDC, byte[] image,
                                      float destX, float destY,
                                      float destWidth, float destHeight,
                                      float srcX, float srcY,

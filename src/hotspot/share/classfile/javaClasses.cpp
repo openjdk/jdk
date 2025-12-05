@@ -25,9 +25,8 @@
 #include "cds/aotMetaspace.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
 #include "cds/archiveBuilder.hpp"
-#include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.hpp"
+#include "cds/heapShared.inline.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -79,7 +78,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
-#include "runtime/reflectionUtils.hpp"
+#include "runtime/reflection.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/threadSMR.hpp"
@@ -204,11 +203,11 @@ bool java_lang_String::_initialized;
 
 bool java_lang_String::test_and_set_flag(oop java_string, uint8_t flag_mask) {
   uint8_t* addr = flags_addr(java_string);
-  uint8_t value = Atomic::load(addr);
+  uint8_t value = AtomicAccess::load(addr);
   while ((value & flag_mask) == 0) {
     uint8_t old_value = value;
     value |= flag_mask;
-    value = Atomic::cmpxchg(addr, old_value, value);
+    value = AtomicAccess::cmpxchg(addr, old_value, value);
     if (value == old_value) return false; // Flag bit changed from 0 to 1.
   }
   return true;                  // Flag bit is already 1.
@@ -978,7 +977,7 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
   }
 
   if (k->in_aot_cache() && k->has_archived_mirror_index()) {
-    if (ArchiveHeapLoader::is_in_use()) {
+    if (HeapShared::is_archived_heap_in_use()) {
       bool present = restore_archived_mirror(k, Handle(), Handle(), Handle(), CHECK);
       assert(present, "Missing archived mirror for %s", k->external_name());
       return;
@@ -990,7 +989,7 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
   create_mirror(k, Handle(), Handle(), Handle(), Handle(), CHECK);
 }
 
-void java_lang_Class::initialize_mirror_fields(Klass* k,
+void java_lang_Class::initialize_mirror_fields(InstanceKlass* ik,
                                                Handle mirror,
                                                Handle protection_domain,
                                                Handle classData,
@@ -1005,7 +1004,7 @@ void java_lang_Class::initialize_mirror_fields(Klass* k,
   set_protection_domain(mirror(), protection_domain());
 
   // Initialize static fields
-  InstanceKlass::cast(k)->do_local_static_fields(&initialize_static_field, mirror, CHECK);
+  ik->do_local_static_fields(&initialize_static_field, mirror, CHECK);
 
  // Set classData
   set_class_data(mirror(), classData());
@@ -1013,11 +1012,24 @@ void java_lang_Class::initialize_mirror_fields(Klass* k,
 
 // Set the java.lang.Module module field in the java_lang_Class mirror
 void java_lang_Class::set_mirror_module_field(JavaThread* current, Klass* k, Handle mirror, Handle module) {
+  if (CDSConfig::is_using_aot_linked_classes()) {
+    oop archived_module = java_lang_Class::module(mirror());
+    if (archived_module != nullptr) {
+      precond(module() == nullptr || module() == archived_module);
+      precond(AOTMetaspace::in_aot_cache_static_region((void*)k));
+      return;
+    }
+  }
+
   if (module.is_null()) {
     // During startup, the module may be null only if java.base has not been defined yet.
     // Put the class on the fixup_module_list to patch later when the java.lang.Module
     // for java.base is known. But note that since we captured the null module another
     // thread may have completed that initialization.
+
+    // With AOT-linked classes, java.base should have been defined before the
+    // VM loads any classes.
+    precond(!CDSConfig::is_using_aot_linked_classes());
 
     bool javabase_was_defined = false;
     {
@@ -1052,13 +1064,19 @@ void java_lang_Class::set_mirror_module_field(JavaThread* current, Klass* k, Han
 
 // Statically allocate fixup lists because they always get created.
 void java_lang_Class::allocate_fixup_lists() {
-  GrowableArray<Klass*>* mirror_list =
-    new (mtClass) GrowableArray<Klass*>(40, mtClass);
-  set_fixup_mirror_list(mirror_list);
+  if (!CDSConfig::is_using_aot_linked_classes()) {
+    // fixup_mirror_list() is not used when we have preloaded classes. See
+    // Universe::fixup_mirrors().
+    GrowableArray<Klass*>* mirror_list =
+      new (mtClass) GrowableArray<Klass*>(40, mtClass);
+    set_fixup_mirror_list(mirror_list);
 
-  GrowableArray<Klass*>* module_list =
-    new (mtModule) GrowableArray<Klass*>(500, mtModule);
-  set_fixup_module_field_list(module_list);
+    // With AOT-linked classes, java.base module is defined before any class
+    // is loaded, so there's no need for fixup_module_field_list().
+    GrowableArray<Klass*>* module_list =
+      new (mtModule) GrowableArray<Klass*>(500, mtModule);
+    set_fixup_module_field_list(module_list);
+  }
 }
 
 void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protection_domain, Handle classData,
@@ -1111,8 +1129,7 @@ void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protecti
     // and java_mirror in this klass.
   } else {
     assert(k->is_instance_klass(), "Must be");
-
-    initialize_mirror_fields(k, mirror, protection_domain, classData, THREAD);
+    initialize_mirror_fields(InstanceKlass::cast(k), mirror, protection_domain, classData, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       // If any of the fields throws an exception like OOM remove the klass field
       // from the mirror so GC doesn't follow it after the klass has been deallocated.
@@ -1132,7 +1149,7 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
 
   // Class_klass has to be loaded because it is used to allocate
   // the mirror.
-  if (vmClasses::Class_klass_loaded()) {
+  if (vmClasses::Class_klass_is_loaded()) {
     Handle mirror;
     Handle comp_mirror;
 
@@ -1159,6 +1176,7 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
       create_scratch_mirror(k, CHECK);
     }
   } else {
+    assert(!CDSConfig::is_using_aot_linked_classes(), "should not come here");
     assert(fixup_mirror_list() != nullptr, "fixup_mirror_list not initialized");
     fixup_mirror_list()->push(k);
   }
@@ -1204,7 +1222,7 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
                                               Handle protection_domain, TRAPS) {
   // Postpone restoring archived mirror until java.lang.Class is loaded. Please
   // see more details in vmClasses::resolve_all().
-  if (!vmClasses::Class_klass_loaded()) {
+  if (!vmClasses::Class_klass_is_loaded() && !CDSConfig::is_using_aot_linked_classes()) {
     assert(fixup_mirror_list() != nullptr, "fixup_mirror_list not initialized");
     fixup_mirror_list()->push(k);
     return true;
@@ -1223,10 +1241,7 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
 
   if (!k->is_array_klass()) {
     // - local static final fields with initial values were initialized at dump time
-
-    // create the init_lock
-    typeArrayOop r = oopFactory::new_typeArray(T_INT, 0, CHECK_(false));
-    set_init_lock(mirror(), r);
+    assert(init_lock(mirror()) != nullptr, "allocated during AOT assembly");
 
     if (protection_domain.not_null()) {
       set_protection_domain(mirror(), protection_domain());
@@ -1316,11 +1331,6 @@ oop java_lang_Class::class_data(oop java_class) {
 void java_lang_Class::set_class_data(oop java_class, oop class_data) {
   assert(_classData_offset != 0, "must be set");
   java_class->obj_field_put(_classData_offset, class_data);
-}
-
-void java_lang_Class::set_reflection_data(oop java_class, oop reflection_data) {
-  assert(_reflectionData_offset != 0, "must be set");
-  java_class->obj_field_put(_reflectionData_offset, reflection_data);
 }
 
 void java_lang_Class::set_class_loader(oop java_class, oop loader) {
@@ -1465,7 +1475,6 @@ Klass* java_lang_Class::array_klass_acquire(oop java_class) {
   return k;
 }
 
-
 void java_lang_Class::release_set_array_klass(oop java_class, Klass* klass) {
   assert(klass->is_klass() && klass->is_array_klass(), "should be array klass");
   java_class->release_metadata_field_put(_array_klass_offset, klass);
@@ -1569,11 +1578,6 @@ int java_lang_Class::modifiers(oop the_class_mirror) {
 void java_lang_Class::set_modifiers(oop the_class_mirror, u2 value) {
   assert(_modifiers_offset != 0, "offsets should have been initialized");
   the_class_mirror->char_field_put(_modifiers_offset, value);
-}
-
-int java_lang_Class::raw_access_flags(oop the_class_mirror) {
-  assert(_raw_access_flags_offset != 0, "offsets should have been initialized");
-  return the_class_mirror->char_field(_raw_access_flags_offset);
 }
 
 void java_lang_Class::set_raw_access_flags(oop the_class_mirror, u2 value) {
@@ -2096,6 +2100,7 @@ int java_lang_VirtualThread::_state_offset;
 int java_lang_VirtualThread::_next_offset;
 int java_lang_VirtualThread::_onWaitingList_offset;
 int java_lang_VirtualThread::_notified_offset;
+int java_lang_VirtualThread::_interruptible_wait_offset;
 int java_lang_VirtualThread::_timeout_offset;
 int java_lang_VirtualThread::_objectWaiter_offset;
 
@@ -2107,6 +2112,7 @@ int java_lang_VirtualThread::_objectWaiter_offset;
   macro(_next_offset,                      k, "next",               vthread_signature,           false); \
   macro(_onWaitingList_offset,             k, "onWaitingList",      bool_signature,              false); \
   macro(_notified_offset,                  k, "notified",           bool_signature,              false); \
+  macro(_interruptible_wait_offset,        k, "interruptibleWait",  bool_signature,              false); \
   macro(_timeout_offset,                   k, "timeout",            long_signature,              false);
 
 
@@ -2140,7 +2146,7 @@ void java_lang_VirtualThread::set_state(oop vthread, int state) {
 
 int java_lang_VirtualThread::cmpxchg_state(oop vthread, int old_state, int new_state) {
   jint* addr = vthread->field_addr<jint>(_state_offset);
-  int res = Atomic::cmpxchg(addr, old_state, new_state);
+  int res = AtomicAccess::cmpxchg(addr, old_state, new_state);
   return res;
 }
 
@@ -2158,9 +2164,9 @@ void java_lang_VirtualThread::set_next(oop vthread, oop next_vthread) {
 // Method returns true if we added vthread to the list, false otherwise.
 bool java_lang_VirtualThread::set_onWaitingList(oop vthread, OopHandle& list_head) {
   jboolean* addr = vthread->field_addr<jboolean>(_onWaitingList_offset);
-  jboolean vthread_on_list = Atomic::load(addr);
+  jboolean vthread_on_list = AtomicAccess::load(addr);
   if (!vthread_on_list) {
-    vthread_on_list = Atomic::cmpxchg(addr, (jboolean)JNI_FALSE, (jboolean)JNI_TRUE);
+    vthread_on_list = AtomicAccess::cmpxchg(addr, (jboolean)JNI_FALSE, (jboolean)JNI_TRUE);
     if (!vthread_on_list) {
       for (;;) {
         oop head = list_head.resolve();
@@ -2174,6 +2180,10 @@ bool java_lang_VirtualThread::set_onWaitingList(oop vthread, OopHandle& list_hea
 
 void java_lang_VirtualThread::set_notified(oop vthread, jboolean value) {
   vthread->bool_field_put_volatile(_notified_offset, value);
+}
+
+void java_lang_VirtualThread::set_interruptible_wait(oop vthread, jboolean value) {
+  vthread->bool_field_put_volatile(_interruptible_wait_offset, value);
 }
 
 jlong java_lang_VirtualThread::timeout(oop vthread) {
@@ -2590,7 +2600,7 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
   ResourceMark rm;
   stringStream ss;
 
-  InstanceKlass* holder = InstanceKlass::cast(java_lang_Class::as_Klass(mirror()));
+  InstanceKlass* holder = java_lang_Class::as_InstanceKlass(mirror());
   const char* klass_name  = holder->external_name();
   char* method_name = name->as_C_string();
   ss.print("\tat %s.%s(", klass_name, method_name);
@@ -2969,7 +2979,7 @@ void java_lang_Throwable::get_stack_trace_elements(int depth, Handle backtrace,
       THROW(vmSymbols::java_lang_NullPointerException());
     }
 
-    InstanceKlass* holder = InstanceKlass::cast(java_lang_Class::as_Klass(bte._mirror()));
+    InstanceKlass* holder = java_lang_Class::as_InstanceKlass(bte._mirror());
     methodHandle method (THREAD, holder->method_with_orig_idnum(bte._method_id, bte._version));
 
     java_lang_StackTraceElement::fill_in(stack_trace_element, holder,
@@ -3055,7 +3065,7 @@ bool java_lang_Throwable::get_top_method_and_bci(oop throwable, Method** method,
   // Get first backtrace element.
   BacktraceElement bte = iter.next(current);
 
-  InstanceKlass* holder = InstanceKlass::cast(java_lang_Class::as_Klass(bte._mirror()));
+  InstanceKlass* holder = java_lang_Class::as_InstanceKlass(bte._mirror());
   assert(holder != nullptr, "first element should be non-null");
   Method* m = holder->method_with_orig_idnum(bte._method_id, bte._version);
 
@@ -3441,11 +3451,11 @@ void java_lang_reflect_Method::serialize_offsets(SerializeClosure* f) {
 
 Handle java_lang_reflect_Method::create(TRAPS) {
   assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
-  Klass* klass = vmClasses::reflect_Method_klass();
+  InstanceKlass* klass = vmClasses::reflect_Method_klass();
   // This class is eagerly initialized during VM initialization, since we keep a reference
   // to one of the methods
-  assert(InstanceKlass::cast(klass)->is_initialized(), "must be initialized");
-  return InstanceKlass::cast(klass)->allocate_instance_handle(THREAD);
+  assert(klass->is_initialized(), "must be initialized");
+  return klass->allocate_instance_handle(THREAD);
 }
 
 oop java_lang_reflect_Method::clazz(oop reflect) {
@@ -3742,20 +3752,17 @@ oop java_lang_reflect_RecordComponent::create(InstanceKlass* holder, RecordCompo
   return element();
 }
 
-int reflect_ConstantPool::_oop_offset;
-
-#define CONSTANTPOOL_FIELDS_DO(macro) \
-  macro(_oop_offset, k, "constantPoolOop", object_signature, false)
+int reflect_ConstantPool::_vmholder_offset;
 
 void reflect_ConstantPool::compute_offsets() {
   InstanceKlass* k = vmClasses::reflect_ConstantPool_klass();
-  // The field is called ConstantPool* in the sun.reflect.ConstantPool class.
-  CONSTANTPOOL_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+  // The field is injected and called Object vmholder in the jdk.internal.reflect.ConstantPool class.
+  CONSTANTPOOL_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);
 }
 
 #if INCLUDE_CDS
 void reflect_ConstantPool::serialize_offsets(SerializeClosure* f) {
-  CONSTANTPOOL_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+  CONSTANTPOOL_INJECTED_FIELDS(INJECTED_FIELD_SERIALIZE_OFFSET);
 }
 #endif
 
@@ -3908,23 +3915,23 @@ Handle reflect_ConstantPool::create(TRAPS) {
 
 
 void reflect_ConstantPool::set_cp(oop reflect, ConstantPool* value) {
+  assert(_vmholder_offset != 0, "Uninitialized vmholder");
   oop mirror = value->pool_holder()->java_mirror();
   // Save the mirror to get back the constant pool.
-  reflect->obj_field_put(_oop_offset, mirror);
+  reflect->obj_field_put(_vmholder_offset, mirror);
 }
 
 ConstantPool* reflect_ConstantPool::get_cp(oop reflect) {
-
-  oop mirror = reflect->obj_field(_oop_offset);
-  Klass* k = java_lang_Class::as_Klass(mirror);
-  assert(k->is_instance_klass(), "Must be");
+  assert(_vmholder_offset != 0, "Uninitialized vmholder");
+  oop mirror = reflect->obj_field(_vmholder_offset);
+  InstanceKlass* ik = java_lang_Class::as_InstanceKlass(mirror);
 
   // Get the constant pool back from the klass.  Since class redefinition
   // merges the new constant pool into the old, this is essentially the
   // same constant pool as the original.  If constant pool merging is
   // no longer done in the future, this will have to change to save
   // the original.
-  return InstanceKlass::cast(k)->constants();
+  return ik->constants();
 }
 
 
@@ -4760,7 +4767,7 @@ int  java_lang_ClassLoader::_parent_offset;
 ClassLoaderData* java_lang_ClassLoader::loader_data_acquire(oop loader) {
   assert(loader != nullptr, "loader must not be null");
   assert(oopDesc::is_oop(loader), "loader must be oop");
-  return Atomic::load_acquire(loader->field_addr<ClassLoaderData*>(_loader_data_offset));
+  return AtomicAccess::load_acquire(loader->field_addr<ClassLoaderData*>(_loader_data_offset));
 }
 
 ClassLoaderData* java_lang_ClassLoader::loader_data(oop loader) {
@@ -4772,7 +4779,7 @@ ClassLoaderData* java_lang_ClassLoader::loader_data(oop loader) {
 void java_lang_ClassLoader::release_set_loader_data(oop loader, ClassLoaderData* new_data) {
   assert(loader != nullptr, "loader must not be null");
   assert(oopDesc::is_oop(loader), "loader must be oop");
-  Atomic::release_store(loader->field_addr<ClassLoaderData*>(_loader_data_offset), new_data);
+  AtomicAccess::release_store(loader->field_addr<ClassLoaderData*>(_loader_data_offset), new_data);
 }
 
 #define CLASSLOADER_FIELDS_DO(macro) \
@@ -5531,7 +5538,7 @@ void JavaClasses::check_offsets() {
 #endif // PRODUCT
 
 int InjectedField::compute_offset() {
-  InstanceKlass* ik = InstanceKlass::cast(klass());
+  InstanceKlass* ik = klass();
   for (AllFieldStream fs(ik); !fs.done(); fs.next()) {
     if (!may_be_java && !fs.field_flags().is_injected()) {
       // Only look at injected fields
@@ -5557,5 +5564,4 @@ int InjectedField::compute_offset() {
 void javaClasses_init() {
   JavaClasses::compute_offsets();
   JavaClasses::check_offsets();
-  FilteredFieldsMap::initialize();  // must be done after computing offsets.
 }
