@@ -41,6 +41,18 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 import static java.lang.String.LATIN1;
 import static java.lang.String.UTF16;
 
+/**
+ * Latin-1 string operations.
+ * <p>
+ * Unless stated otherwise, all methods assume that
+ * <ul>
+ * <li>{@code byte[]} arguments denote a Latin-1 string byte array
+ * <li>indices, offsets, and lengths (typically of type {@code int}) are in
+ * number of characters, i.e., the number of {@code byte}s/{@code char}s for
+ * Latin-1 strings, and the number of <a href="Character.html#unicode">Unicode
+ * code units</a> for UTF-16 strings
+ * </ul>
+ */
 final class StringLatin1 {
     static char charAt(byte[] value, int index) {
         String.checkIndex(index, value.length);

@@ -50,8 +50,13 @@ import static java.lang.String.UTF16;
 /// it has the same endianness as a char, which is the platform endianness.
 /// This is ensured in the static initializer of StringUTF16.
 ///
-/// All indices and sizes for byte arrays carrying UTF16 data are in number of
-/// chars instead of  number of bytes.
+/// Unless stated otherwise, all methods assume that
+///
+/// - `byte[]` arguments denote a UTF-16 string byte array
+/// - indices, offsets, and lengths (typically of type `int`) are in number of
+///   characters, i.e., the number of
+///   [Unicode code units](Character.html#unicode) for UTF-16 strings, and the
+///   number of `byte`s/`char`s for Latin-1 strings
 final class StringUTF16 {
 
     // Return a new byte array for a UTF16-coded string for len chars
