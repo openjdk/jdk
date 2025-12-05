@@ -29,7 +29,7 @@
 #include "memory/allocation.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oopHandle.hpp"
-#include "prims/jvmtiEventController.hpp"
+#include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"

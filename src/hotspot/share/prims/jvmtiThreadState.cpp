@@ -213,6 +213,42 @@ JvmtiThreadState::periodic_clean_up() {
   }
 }
 
+void
+JvmtiThreadState::process_vthread_pending_deopts() {
+  if (!has_vthread_pending_deopts()) {
+    return;
+  }
+  JavaThread* thread = get_thread();
+  ResourceMark rm;
+  GrowableArray<int>* deopts = vthread_pending_deopts();
+  javaVFrame* jvf = JvmtiEnvBase::get_vthread_jvf(thread->vthread());
+  int frame_count = (int)JvmtiEnvBase::get_frame_count(jvf);
+
+  for (int idx = deopts->length() - 1; idx >= 0; idx--) {
+    int frame_number = deopts->at(idx);
+    deopts->remove_at(idx);
+    int depth = frame_count - frame_number;
+    jvf = JvmtiEnvBase::jvf_for_thread_and_depth(thread, depth);
+    frame fr = jvf->fr();
+    if (fr.is_heap_frame()) {
+      fr = jvf->stack_chunk()->derelativize(fr);
+    }
+    Deoptimization::deoptimize(thread, fr);
+  }
+}
+
+void
+JvmtiThreadState::process_pending_interp_only(JavaThread* current) {
+  JvmtiThreadState* state = current->jvmti_thread_state();
+
+  if (state != nullptr && (state->is_pending_interp_only_mode())) {
+    MutexLocker mu(JvmtiThreadState_lock);
+    if (state->is_pending_interp_only_mode()) {
+      JvmtiEventController::enter_interp_only_mode(state);
+    }
+  }
+}
+
 //
 // Virtual Threads Suspend/Resume management
 //
