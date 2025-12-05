@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,6 +184,7 @@ void BarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result) {
   bool needs_patching = (decorators & C1_NEEDS_PATCHING) != 0;
   bool mask_boolean = (decorators & C1_MASK_BOOLEAN) != 0;
   bool in_native = (decorators & IN_NATIVE) != 0;
+  bool needs_trailing_dmb = is_volatile;
 
   if (support_IRIW_for_not_multiple_copy_atomic_cpu && is_volatile) {
     __ membar();
@@ -192,12 +194,15 @@ void BarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result) {
   if (in_native) {
     __ move_wide(access.resolved_addr()->as_address_ptr(), result);
   } else if ((is_volatile || needs_atomic) && !needs_patching) {
-    gen->volatile_field_load(access.resolved_addr()->as_address_ptr(), result, access.access_emit_info());
+    // volatile_field_load returns false if it itself provides trailing membar semantics.
+    // Hence trailing DMB is no longer needed.
+    needs_trailing_dmb &= gen->volatile_field_load(access.resolved_addr()->as_address_ptr(),
+                                                   result, access.access_emit_info());
   } else {
     __ load(access.resolved_addr()->as_address_ptr(), result, access.access_emit_info(), patch_code);
   }
 
-  if (is_volatile) {
+  if (needs_trailing_dmb) {
     __ membar_acquire();
   }
 
