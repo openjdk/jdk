@@ -1664,6 +1664,11 @@ private:
   void evmovdqaq(XMMRegister dst, Address src, int vector_len);
   void evmovdqaq(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len);
 
+  void vmovsldup(XMMRegister dst, XMMRegister src, int vector_len);
+  void vmovshdup(XMMRegister dst, XMMRegister src, int vector_len);
+  void evmovsldup(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+  void evmovshdup(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+
   // Move lower 64bit to high 64bit in 128bit register
   void movlhps(XMMRegister dst, XMMRegister src);
 

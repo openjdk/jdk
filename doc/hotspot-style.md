@@ -954,7 +954,7 @@ destructors at exit can lead to problems.
 Some of the approaches used in HotSpot to avoid dynamic initialization
 include:
 
-* Use the `Deferred<T>` class template. Add a call to its initialization
+* Use the `DeferredStatic<T>` class template. Add a call to its initialization
 function at an appropriate place during VM initialization. The underlying
 object is never destroyed.
 

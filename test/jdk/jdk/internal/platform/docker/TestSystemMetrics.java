@@ -42,10 +42,7 @@ public class TestSystemMetrics {
     private static final String imageName = Common.imageName("metrics");
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker()) {
-            return;
-        }
-
+        DockerTestUtils.checkCanTestDocker();
         DockerTestUtils.buildJdkContainerImage(imageName);
 
         try {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,13 +108,10 @@ final class SortedOps {
          * {@code Comparable}.
          */
         OfRef(AbstractPipeline<?, T, ?> upstream) {
-            super(upstream, StreamShape.REFERENCE,
-                  StreamOpFlag.IS_ORDERED | StreamOpFlag.IS_SORTED);
-            this.isNaturalSort = true;
             // Will throw CCE when we try to sort if T is not Comparable
             @SuppressWarnings("unchecked")
             Comparator<? super T> comp = (Comparator<? super T>) Comparator.naturalOrder();
-            this.comparator = comp;
+            this(upstream, comp);
         }
 
         /**
@@ -123,10 +120,13 @@ final class SortedOps {
          * @param comparator The comparator to be used to evaluate ordering.
          */
         OfRef(AbstractPipeline<?, T, ?> upstream, Comparator<? super T> comparator) {
+            Objects.requireNonNull(comparator);
+            boolean isNaturalSort = Comparator.naturalOrder().equals(comparator);
+            this.comparator = comparator;
+            this.isNaturalSort = isNaturalSort;
             super(upstream, StreamShape.REFERENCE,
-                  StreamOpFlag.IS_ORDERED | StreamOpFlag.NOT_SORTED);
-            this.isNaturalSort = false;
-            this.comparator = Objects.requireNonNull(comparator);
+                  StreamOpFlag.IS_ORDERED |
+                          (isNaturalSort ? StreamOpFlag.IS_SORTED : StreamOpFlag.NOT_SORTED));
         }
 
         @Override

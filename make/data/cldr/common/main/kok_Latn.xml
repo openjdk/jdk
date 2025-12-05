@@ -13,34 +13,504 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</identity>
 	<localeDisplayNames>
 		<languages>
+			<language type="af">Afrikaans</language>
+			<language type="ak">Akan</language>
+			<language type="am">Amharic</language>
 			<language type="ar">Arbi</language>
+			<language type="ar_001">Adhunik Promann Orbi</language>
+			<language type="as">Osomiya</language>
+			<language type="ast">Asturian</language>
+			<language type="az">Azerbaijani</language>
+			<language type="az" alt="short">Azeri</language>
+			<language type="bal">Baluchi</language>
+			<language type="be">Belarusian</language>
+			<language type="bg">Bulgarian</language>
+			<language type="bgc">Haryanvi</language>
+			<language type="bho">Bhojpuri</language>
+			<language type="blo">Anii</language>
+			<language type="bn">Bangla</language>
+			<language type="br">Breton</language>
+			<language type="brx">Bodo</language>
+			<language type="bs">Bosnian</language>
+			<language type="ca">Catalao</language>
+			<language type="ceb">Cebuano</language>
+			<language type="chr">Cherokee</language>
+			<language type="cs">Chek</language>
+			<language type="csw">Swampy Cree</language>
+			<language type="cv">Chuvax</language>
+			<language type="cy">Welx</language>
+			<language type="da">Denmarkez</language>
+			<language type="de">Jermon</language>
+			<language type="de_AT">Jermon (Austria)</language>
+			<language type="de_CH">Jermon (Switzerland)</language>
+			<language type="doi">Dogri</language>
+			<language type="dsb">Sokoilem Sorbian</language>
+			<language type="ee">Ewe</language>
 			<language type="el">Grik</language>
 			<language type="en">Inglix</language>
+			<language type="en_AU">Inglix (Australia)</language>
+			<language type="en_CA">Inglix (Canada)</language>
+			<language type="en_GB">Inglix (Sõyukt Razvott)</language>
+			<language type="en_US">Inglix (Amerikechim Sõyukt Rajyam)</language>
+			<language type="eo">Esperanto</language>
 			<language type="es">Ispanhol</language>
+			<language type="es_419">Ispanhol (Latin Amerika)</language>
+			<language type="es_MX">Ispanhol (Meksiko)</language>
+			<language type="et">Estonian</language>
+			<language type="eu">Bask</language>
+			<language type="fa">Farsi</language>
+			<language type="ff">Fula</language>
+			<language type="fi">Finlandez</language>
+			<language type="fil">Filipino</language>
+			<language type="fo">Faroez</language>
 			<language type="fr">Fransez</language>
+			<language type="fr_CA">Fransez (Canada)</language>
+			<language type="fr_CH">Fransez (Switzerland)</language>
+			<language type="fy">Ostonti Frisian</language>
+			<language type="ga">Ayerlandez</language>
+			<language type="gaa">Ga</language>
+			<language type="gd">Scottish Gaelic</language>
+			<language type="gl">Galician</language>
+			<language type="gu">Gujarati</language>
+			<language type="ha">Hausa</language>
+			<language type="he">Hebrev</language>
+			<language type="hi">Hindi</language>
+			<language type="hi_Latn">Romi Hindi</language>
+			<language type="hr">Croatian</language>
+			<language type="hsb">Voilem Sorbian</language>
+			<language type="hu">Hungarian</language>
+			<language type="hy">Armenian</language>
+			<language type="ia">Interlingua</language>
+			<language type="id">Indonesian</language>
+			<language type="ie">Interlingue</language>
+			<language type="ig">Igbo</language>
+			<language type="ii">Sichuan Yi</language>
+			<language type="is">Ayslandez</language>
+			<language type="it">Italian</language>
+			<language type="ja">Japani</language>
+			<language type="jv">Javanez</language>
+			<language type="ka">Georgian</language>
+			<language type="kea">Kabuverdianu</language>
+			<language type="kgp">Kaingang</language>
+			<language type="kk">Kazakh</language>
+			<language type="km">Khmer</language>
 			<language type="kn">Kon’nodd</language>
+			<language type="ko">Korean</language>
 			<language type="kok">Konknni</language>
+			<language type="ks">Kaxmiri</language>
+			<language type="ku">Kurdez</language>
+			<language type="ku" menu="core">Kurdez</language>
+			<language type="ku" menu="extension">Kurmanji</language>
+			<language type="kxv">Kuvi</language>
+			<language type="ky">Kyrgyz</language>
+			<language type="la">Latin</language>
+			<language type="lb">Luxembourgez</language>
+			<language type="lij">Ligurian</language>
+			<language type="lmo">Lombard</language>
+			<language type="lo">Lao</language>
+			<language type="lt">Lithuanian</language>
+			<language type="lv">Latvian</language>
+			<language type="mai">Maithili</language>
+			<language type="mi">Maori</language>
+			<language type="mk">Masedonian</language>
+			<language type="ml">Malayalam</language>
+			<language type="mn">Mongolian</language>
+			<language type="mni">Manipuri</language>
 			<language type="mr">Moratthi</language>
+			<language type="ms">Malay</language>
+			<language type="mt">Maltez</language>
+			<language type="mul">Sabar bhaso</language>
+			<language type="my">Burmez</language>
+			<language type="nds">Sokoilem Jermon</language>
+			<language type="ne">Nepali</language>
+			<language type="nl">Hollandi</language>
+			<language type="nl_BE">Hollandi (Beljiom)</language>
+			<language type="nn">Norwegian Nynorsk</language>
+			<language type="no">Norwegian</language>
+			<language type="nqo">N’Ko</language>
+			<language type="nso">Ut’tori Sotho</language>
+			<language type="oc">Occitan</language>
+			<language type="om">Oromo</language>
+			<language type="or">Odia</language>
+			<language type="pa">Punjabi</language>
+			<language type="pcm">Nigerian Pidgin</language>
+			<language type="pl">Polandez</language>
+			<language type="prg">Prussian</language>
+			<language type="ps">Pashto</language>
+			<language type="pt">Portugez</language>
+			<language type="pt_BR">Portugez (Brazil)</language>
+			<language type="pt_PT">Portugez (Portugal)</language>
+			<language type="qu">Kechua</language>
+			<language type="raj">Rajasthani</language>
+			<language type="rm">Romansh</language>
+			<language type="ro">Romanian</language>
+			<language type="ru">Roxyan</language>
+			<language type="rw">Kinyarwanda</language>
+			<language type="sa">Sanskrit</language>
+			<language type="sah">Yakut</language>
+			<language type="sat">Santali</language>
+			<language type="sc">Sardinian</language>
+			<language type="sd">Sindhi</language>
+			<language type="si">Sinhala</language>
+			<language type="sk">Slovak</language>
+			<language type="sl">Slovenian</language>
+			<language type="so">Somali</language>
+			<language type="sq">Albanian</language>
+			<language type="sr">Serbian</language>
+			<language type="st">Southern Sotho</language>
+			<language type="su">Sundanez</language>
+			<language type="sv">Sweedez</language>
+			<language type="sw">Swahili</language>
+			<language type="syr">Syriac</language>
+			<language type="szl">Silesian</language>
+			<language type="ta">Tamil</language>
+			<language type="te">Telugu</language>
+			<language type="tg">Tajik</language>
+			<language type="th">Thai</language>
+			<language type="ti">Tigrinya</language>
+			<language type="tk">Turkmen</language>
+			<language type="tn">Tswana</language>
+			<language type="to">Tongan</language>
+			<language type="tr">Turki</language>
+			<language type="tt">Tatar</language>
+			<language type="ug">Uyghur</language>
+			<language type="uk">Ukrainian</language>
+			<language type="und">Onollkhi bhas</language>
+			<language type="ur">Urdu</language>
+			<language type="uz">Uzbek</language>
+			<language type="vec">Venixan</language>
+			<language type="vi">Vietnamez</language>
+			<language type="vmw">Makhuwa</language>
+			<language type="wo">Wolof</language>
+			<language type="xh">Khosa</language>
+			<language type="xnr">Kangri</language>
+			<language type="yo">Yoruba</language>
+			<language type="yrl">Nheengatu</language>
+			<language type="yue">Cantonez</language>
+			<language type="yue" alt="menu">Chini, Cantonez</language>
+			<language type="za">Zhuang</language>
 			<language type="zh">Chini</language>
+			<language type="zh" alt="menu">Chini, Mandarin</language>
+			<language type="zh_Hans">Sompi Chini</language>
+			<language type="zh_Hans" alt="long">Sompi Mandarin Chini</language>
+			<language type="zh_Hant">Paromporik Chini</language>
+			<language type="zh_Hant" alt="long">Paromporik Mandarin Chini</language>
+			<language type="zu">Zulu</language>
+			<language type="zxx">Bhaxik mozkur na</language>
 		</languages>
 		<scripts>
+			<script type="Arab">Farsi Orbi</script>
+			<script type="Beng">Bangla</script>
+			<script type="Cyrl">Cyrili</script>
 			<script type="Deva">Devanagari</script>
+			<script type="Grek">Grik</script>
+			<script type="Hebr">Hebrev</script>
 			<script type="Latn">Romi</script>
 		</scripts>
 		<territories>
+			<territory type="001">sonvsar</territory>
+			<territory type="002">Afrika</territory>
+			<territory type="003">Ut’tor Amerika</territory>
+			<territory type="005">Dokxinn Amerika</territory>
+			<territory type="009">Oxiania</territory>
+			<territory type="011">Ostonti Afrika</territory>
+			<territory type="013">Modlo America</territory>
+			<territory type="014">Udenti Afrika</territory>
+			<territory type="015">Ut’tori Amerika</territory>
+			<territory type="017">Modlo Afrika</territory>
+			<territory type="018">Dokxinni Afrika</territory>
+			<territory type="019">Purai Amerika</territory>
+			<territory type="021">Ut’tori Amerika</territory>
+			<territory type="029">Caribean</territory>
+			<territory type="030">Udenti Asia</territory>
+			<territory type="034">Dokxinni Asia</territory>
+			<territory type="035">Dokxinn-udent Asia</territory>
+			<territory type="039">Dokxinni Yerop</territory>
+			<territory type="053">Australasia</territory>
+			<territory type="054">Melanesia</territory>
+			<territory type="057">Micronesia Prant</territory>
+			<territory type="061">Polinesia</territory>
+			<territory type="142">Asia</territory>
+			<territory type="143">Modlo Asia</territory>
+			<territory type="145">Ostonti Asia</territory>
+			<territory type="150">Yerop</territory>
+			<territory type="151">Udenti Yerop</territory>
+			<territory type="154">Ut’tori Yerop</territory>
+			<territory type="155">Ostonti Yerop</territory>
+			<territory type="202">Saharache Dokxinnek Afrika</territory>
+			<territory type="419">Latin Amerika</territory>
+			<territory type="AC">Ascensanv Zunvo</territory>
+			<territory type="AD">Andorra</territory>
+			<territory type="AE">Sõyukt Orbi Emirat</territory>
+			<territory type="AF">Afghanistan</territory>
+			<territory type="AG">Antigua ani Barbuda</territory>
+			<territory type="AI">Anguila</territory>
+			<territory type="AL">Albania</territory>
+			<territory type="AM">Armenia</territory>
+			<territory type="AO">Angola</territory>
+			<territory type="AQ">Antarktika</territory>
+			<territory type="AR">Argentina</territory>
+			<territory type="AS">Amerikecho Samoa</territory>
+			<territory type="AT">Austria</territory>
+			<territory type="AU">Australia</territory>
+			<territory type="AW">Aruba</territory>
+			<territory type="AX">Oland Zunve</territory>
+			<territory type="AZ">Azerbaijan</territory>
+			<territory type="BA">Bosnia ani Herzegovina</territory>
+			<territory type="BB">Barbados</territory>
+			<territory type="BD">Bangladex</territory>
+			<territory type="BE">Beljiom</territory>
+			<territory type="BF">Burkina Faso</territory>
+			<territory type="BG">Bulgaria</territory>
+			<territory type="BH">Bahrain</territory>
+			<territory type="BI">Burundi</territory>
+			<territory type="BJ">Benin</territory>
+			<territory type="BL">São Bartolomev</territory>
+			<territory type="BM">Bermudas</territory>
+			<territory type="BN">Brunei</territory>
+			<territory type="BO">Bolivia</territory>
+			<territory type="BQ">Caribean Netherlands</territory>
+			<territory type="BR">Brazil</territory>
+			<territory type="BS">Bahamas</territory>
+			<territory type="BT">Bhutan</territory>
+			<territory type="BV">Bouve Zunvo</territory>
+			<territory type="BW">Botswana</territory>
+			<territory type="BY">Belarus</territory>
+			<territory type="BZ">Belize</territory>
+			<territory type="CA">Canada</territory>
+			<territory type="CC">Cocos (Keeling) Zunve</territory>
+			<territory type="CD">Congo - Kinshasa</territory>
+			<territory type="CF">Modlem Afriki Porjeraj</territory>
+			<territory type="CG">Congo - Brazzavil</territory>
+			<territory type="CH">Switzerland</territory>
+			<territory type="CI">Costa do Marfim</territory>
+			<territory type="CK">Cook Zunve</territory>
+			<territory type="CL">Chili</territory>
+			<territory type="CM">Camaroon</territory>
 			<territory type="CN">Chin</territory>
+			<territory type="CO">Colombia</territory>
+			<territory type="CP">Clipperton Zunvo</territory>
+			<territory type="CQ">Sark</territory>
+			<territory type="CR">Costa Rica</territory>
+			<territory type="CU">Cuba</territory>
+			<territory type="CV">Cabo Verde</territory>
+			<territory type="CW">Curaçao</territory>
+			<territory type="CX">Christmas Zunvo</territory>
 			<territory type="CY">Siprus</territory>
+			<territory type="CZ">Chekia</territory>
 			<territory type="DE">Jermon</territory>
+			<territory type="DG">Diego Garcia</territory>
+			<territory type="DJ">Djibuti</territory>
+			<territory type="DK">Denmark</territory>
+			<territory type="DM">Dominika</territory>
+			<territory type="DO">Dominican Porjeraj</territory>
+			<territory type="DZ">Algeria</territory>
+			<territory type="EA">Ceuta ani Meliya</territory>
+			<territory type="EC">Equador</territory>
+			<territory type="EE">Estonia</territory>
 			<territory type="EG">Ejipt</territory>
+			<territory type="EH">Ostonti Sahara</territory>
+			<territory type="ER">Eritrea</territory>
 			<territory type="ES">Ispania</territory>
+			<territory type="ET">Ethiopia</territory>
+			<territory type="EU">Yeropi Ekvott</territory>
+			<territory type="EZ">Yuro kxetr</territory>
+			<territory type="FI">Finland</territory>
+			<territory type="FJ">Fiji</territory>
+			<territory type="FK">Fokland Zunve</territory>
+			<territory type="FK" alt="variant">Malvinas Zunve</territory>
+			<territory type="FM">Maicronesia</territory>
+			<territory type="FO">Fero Zunve</territory>
 			<territory type="FR">Frans</territory>
+			<territory type="GA">Gabon</territory>
+			<territory type="GB">Sõyukt Razvott</territory>
+			<territory type="GD">Grenada</territory>
+			<territory type="GE">Georgia</territory>
+			<territory type="GF">Fransez Guiana</territory>
+			<territory type="GG">Guernzy</territory>
+			<territory type="GH">Ghana</territory>
+			<territory type="GI">Gibraltar</territory>
+			<territory type="GL">Greenland</territory>
+			<territory type="GM">Gambia</territory>
+			<territory type="GN">Gini</territory>
+			<territory type="GP">Guadalup</territory>
+			<territory type="GQ">Bhuinmodlogitacho Gini</territory>
 			<territory type="GR">Gres</territory>
+			<territory type="GS">Dokxinn Georgia ani Dokxinn Sandwich Zunve</territory>
+			<territory type="GT">Guatemala</territory>
+			<territory type="GU">Guam</territory>
+			<territory type="GW">Gini-Bissau</territory>
+			<territory type="GY">Guiana</territory>
+			<territory type="HK">Hong Kong</territory>
+			<territory type="HM">Heard ani McDonald Zunve</territory>
+			<territory type="HN">Honduras</territory>
+			<territory type="HR">Croaxia</territory>
+			<territory type="HT">Haiti</territory>
+			<territory type="HU">Hungary</territory>
+			<territory type="IC">Canarias Zunve</territory>
+			<territory type="ID">Indonesia</territory>
+			<territory type="IE">Ayerland</territory>
+			<territory type="IL">Israel</territory>
+			<territory type="IM">Menacho Zunvo</territory>
 			<territory type="IN">Bharot</territory>
+			<territory type="IO">Britanacho Hindi Mahasagor Prant</territory>
+			<territory type="IO" alt="chagos">Xagos Zunve</territory>
+			<territory type="IQ">Irak</territory>
+			<territory type="IR">Iran</territory>
+			<territory type="IS">Aysland</territory>
 			<territory type="IT">Italia</territory>
+			<territory type="JE">Jersy</territory>
+			<territory type="JM">Jamaica</territory>
+			<territory type="JO">Jordan</territory>
+			<territory type="JP">Japan</territory>
+			<territory type="KE">Kenya</territory>
+			<territory type="KG">Kyrgyzstan</territory>
+			<territory type="KH">Cambodia</territory>
+			<territory type="KI">Kiribas</territory>
+			<territory type="KM">Comoros</territory>
+			<territory type="KN">São Cristovão ani Nevis</territory>
+			<territory type="KP">Ut’tor Korea</territory>
+			<territory type="KR">Dokxinn Korea</territory>
+			<territory type="KW">Kuwait</territory>
+			<territory type="KY">Cayman Zunve</territory>
+			<territory type="KZ">Kazakhstan</territory>
+			<territory type="LA">Laos</territory>
+			<territory type="LB">Lebanon</territory>
+			<territory type="LC">Santa Lucia</territory>
+			<territory type="LI">Lixtenstain</territory>
+			<territory type="LK">Sri Lanka</territory>
+			<territory type="LR">Laibiria</territory>
+			<territory type="LS">Lesotho</territory>
+			<territory type="LT">Lithuania</territory>
+			<territory type="LU">Luksemborg</territory>
+			<territory type="LV">Latvia</territory>
 			<territory type="LY">Libia</territory>
+			<territory type="MA">Morokko</territory>
+			<territory type="MC">Monaco</territory>
+			<territory type="MD">Moldova</territory>
+			<territory type="ME">Montenegro</territory>
+			<territory type="MF">São Martinho (Frans)</territory>
+			<territory type="MG">Madagascar</territory>
+			<territory type="MH">Marxal Zunve</territory>
 			<territory type="MK">Ut’tor Masedonia</territory>
+			<territory type="ML">Mali</territory>
+			<territory type="MM">Myanmar</territory>
+			<territory type="MN">Mongolia</territory>
+			<territory type="MO">Macao</territory>
+			<territory type="MP">Ut’tori Mariana Zunvo</territory>
+			<territory type="MQ">Martinik</territory>
+			<territory type="MR">Mauritania</territory>
+			<territory type="MS">Montserrat</territory>
+			<territory type="MT">Malta</territory>
+			<territory type="MU">Maurixos</territory>
+			<territory type="MV">Maldiv</territory>
+			<territory type="MW">Malawi</territory>
+			<territory type="MX">Meksiko</territory>
+			<territory type="MY">Malayxia</territory>
+			<territory type="MZ">Mozambique</territory>
+			<territory type="NA">Namibia</territory>
+			<territory type="NC">Novo Caledonia</territory>
+			<territory type="NE">Naiger</territory>
+			<territory type="NF">Norfok Zunvo</territory>
+			<territory type="NG">Naigeria</territory>
+			<territory type="NI">Nicaragua</territory>
+			<territory type="NL">Netherlands</territory>
+			<territory type="NO">Norway</territory>
+			<territory type="NP">Nepal</territory>
+			<territory type="NR">Nauru</territory>
+			<territory type="NU">Niue</territory>
+			<territory type="NZ">Novo Zeeland</territory>
+			<territory type="NZ" alt="variant">Aoteroa</territory>
+			<territory type="OM">Oman</territory>
+			<territory type="PA">Panama</territory>
+			<territory type="PE">Peru</territory>
+			<territory type="PF">Fransez Polinesia</territory>
+			<territory type="PG">Papua Novo Gini</territory>
+			<territory type="PH">Phillipines</territory>
+			<territory type="PK">Pakistan</territory>
+			<territory type="PL">Poland</territory>
+			<territory type="PM">São Pedro ani Miquelão</territory>
+			<territory type="PN">Pitcairn Zunve</territory>
+			<territory type="PR">Porto Rico</territory>
+			<territory type="PS">Palestin</territory>
+			<territory type="PS" alt="short">Palestini Prant</territory>
+			<territory type="PT">Portugal</territory>
+			<territory type="PW">Palau</territory>
+			<territory type="PY">Paraguay</territory>
+			<territory type="QA">Qatar</territory>
+			<territory type="QO">Poixilo Oxiania</territory>
+			<territory type="RE">Reunião</territory>
+			<territory type="RO">Romenia</territory>
+			<territory type="RS">Serbia</territory>
 			<territory type="RU">Roxya</territory>
+			<territory type="RW">Ruanda</territory>
+			<territory type="SA">Saudi Orob</territory>
+			<territory type="SB">Solomon Zunve</territory>
+			<territory type="SC">Seyxels</territory>
+			<territory type="SD">Sudan</territory>
+			<territory type="SE">Sweeden</territory>
+			<territory type="SG">Singapur</territory>
+			<territory type="SH">Santa Helena</territory>
+			<territory type="SI">Slovenia</territory>
+			<territory type="SJ">Svalbard ani Yan Mayen</territory>
+			<territory type="SK">Slovakia</territory>
+			<territory type="SL">Serra Leõ</territory>
+			<territory type="SM">San Marino</territory>
+			<territory type="SN">Senegal</territory>
+			<territory type="SO">Somalia</territory>
+			<territory type="SR">Surinam</territory>
+			<territory type="SS">Dokxinn Sudan</territory>
+			<territory type="ST">São Tomé ani Príncipe</territory>
+			<territory type="SV">El Salvador</territory>
+			<territory type="SX">São Martinho (Netherlands)</territory>
+			<territory type="SY">Siria</territory>
+			<territory type="SZ">Eswatini</territory>
+			<territory type="TA">Tristão da Cunha</territory>
+			<territory type="TC">Turk ani Caicos Zunve</territory>
+			<territory type="TD">Chad</territory>
+			<territory type="TF">Fransez Dokxinni Prant</territory>
+			<territory type="TG">Togo</territory>
+			<territory type="TH">Thailand</territory>
+			<territory type="TJ">Tajikistan</territory>
+			<territory type="TK">Tokolau</territory>
+			<territory type="TL">Timor-Leste</territory>
+			<territory type="TL" alt="variant">Udent Timor</territory>
+			<territory type="TM">Turkmenistan</territory>
+			<territory type="TN">Tunisia</territory>
+			<territory type="TO">Tonga</territory>
+			<territory type="TR">Turkiya</territory>
+			<territory type="TT">Trindade ani Tobag</territory>
+			<territory type="TV">Tuvalu</territory>
+			<territory type="TW">Taiwan</territory>
+			<territory type="TZ">Tanzania</territory>
+			<territory type="UA">Yukrain</territory>
+			<territory type="UG">Yuganda</territory>
+			<territory type="UM">Sõyukt Rajyanche Poixile Dhaktte Zunve</territory>
+			<territory type="UN">Sõyukt Raxttram</territory>
+			<territory type="US">Amerikechim Sõyukt Rajyam</territory>
+			<territory type="UY">Uruguay</territory>
+			<territory type="UZ">Uzbekistan</territory>
+			<territory type="VA">Vatikan Xar</territory>
+			<territory type="VC">São Vicent ani Granadinas</territory>
+			<territory type="VE">Venezuela</territory>
+			<territory type="VG">Britanache Virgin Zunve</territory>
+			<territory type="VI">Sõyukt Rajyanche Virgin Zunve</territory>
+			<territory type="VN">Vietnam</territory>
+			<territory type="VU">Vanuatu</territory>
+			<territory type="WF">Wollis ani Futuna</territory>
+			<territory type="WS">Samoa</territory>
+			<territory type="XK">Kosovo</territory>
+			<territory type="YE">Yemen</territory>
+			<territory type="YT">Mayott</territory>
+			<territory type="ZA">Dokxinn Afrika</territory>
+			<territory type="ZM">Zambia</territory>
+			<territory type="ZW">Zimbabwe</territory>
+			<territory type="ZZ">Onollkhi Prant</territory>
 		</territories>
+		<measurementSystemNames>
+			<measurementSystemName type="UK">Britix</measurementSystemName>
+			<measurementSystemName type="US">Ameriki</measurementSystemName>
+		</measurementSystemNames>
 		<codePatterns>
 			<codePattern type="language">Bhas: {0}</codePattern>
 			<codePattern type="script">Lipi: {0}</codePattern>
@@ -48,9 +518,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[aã b cç d eêẽ f g h iĩ j k l m nñ oôõ p q r s t u v w x y z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[áàăâåäā æ éèĕëē íìĭîïī óòŏöøō œ úùŭûüū ÿ]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters>[aã b cç d eêẽ f g h iĩ j k l m nñ oôõø p q r s t u v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[áàăâåäā æ éèĕëē íìĭîïī óòŏöō œ úùŭûüū ÿ]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” « » ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
@@ -85,6 +555,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0} 'vaztam'</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1}, {0} 'vaztam'</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
@@ -93,12 +566,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0} 'vaztam'</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1}, {0} 'vaztam'</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -106,20 +579,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">B h 'vaztam'</dateFormatItem>
+						<dateFormatItem id="Bhm">B h:mm</dateFormatItem>
+						<dateFormatItem id="Bhms">B h:mm:ss</dateFormatItem>
+						<dateFormatItem id="EBh">E B h 'vaztam'</dateFormatItem>
+						<dateFormatItem id="EBhm">E B h:mm 'vaztam'</dateFormatItem>
+						<dateFormatItem id="EBhms">E B h:mm:ss</dateFormatItem>
+						<dateFormatItem id="Ed">E, d</dateFormatItem>
+						<dateFormatItem id="Eh">E a h 'vaztam'</dateFormatItem>
+						<dateFormatItem id="Ehm">E a h:mm </dateFormatItem>
 						<dateFormatItem id="Ehms">E a h:mm:ss</dateFormatItem>
-						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyM">M-y G</dateFormatItem>
 						<dateFormatItem id="GyMd">d-M-y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, d-M-y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM, y G</dateFormatItem>
 						<dateFormatItem id="h">a h</dateFormatItem>
+						<dateFormatItem id="H">HH'v'</dateFormatItem>
 						<dateFormatItem id="hm">a h:mm</dateFormatItem>
 						<dateFormatItem id="hms">a h:mm:ss</dateFormatItem>
+						<dateFormatItem id="hv">a h 'vaztam' v</dateFormatItem>
+						<dateFormatItem id="Hv">HH'v' v</dateFormatItem>
 						<dateFormatItem id="Md">d-M</dateFormatItem>
 						<dateFormatItem id="MEd">E, d-M</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
@@ -139,10 +622,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatItem id="Bh">
+							<greatestDifference id="B">B h – B h 'vaztam'</greatestDifference>
 							<greatestDifference id="h">h – h B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
 							<greatestDifference id="h">h:mm – h:mm B</greatestDifference>
 							<greatestDifference id="m">h:mm – h:mm B</greatestDifference>
 						</intervalFormatItem>
@@ -288,26 +771,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="3">Mar</month>
 							<month type="4">Abr</month>
 							<month type="5">Mai</month>
+							<month type="6">Jun</month>
 							<month type="7">Jul</month>
 							<month type="8">Ago</month>
 							<month type="9">Set</month>
 							<month type="10">Otu</month>
 							<month type="11">Nov</month>
 							<month type="12">Dez</month>
-						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">J</month>
-							<month type="2">F</month>
-							<month type="3">M</month>
-							<month type="4">A</month>
-							<month type="5">M</month>
-							<month type="6">J</month>
-							<month type="7">J</month>
-							<month type="8">A</month>
-							<month type="9">S</month>
-							<month type="10">O</month>
-							<month type="11">N</month>
-							<month type="12">D</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">Janer</month>
@@ -352,15 +822,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri">Suk</day>
 							<day type="sat">Son</day>
 						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun">A</day>
-							<day type="mon">S</day>
-							<day type="tue">M</day>
-							<day type="wed">B</day>
-							<day type="thu">B</day>
-							<day type="fri">S</day>
-							<day type="sat">S</day>
-						</dayWidth>
 						<dayWidth type="short">
 							<day type="sun">Ai</day>
 							<day type="mon">Sm</day>
@@ -404,30 +865,76 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="1">1lem timhoinallem</quarter>
 							<quarter type="2">2rem timhoinallem</quarter>
 							<quarter type="3">3rem timhoinallem</quarter>
-							<quarter type="4">4tem timhoinallem</quarter>
+							<quarter type="4">4them timhoinallem</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="wide">
+							<quarter type="1">1lem timhoinallem</quarter>
+							<quarter type="2">2rem timhoinallem</quarter>
+							<quarter type="3">3rem timhoinallem</quarter>
+							<quarter type="4">4them timhoinallem</quarter>
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
 				<dayPeriods>
 					<dayPeriodContext type="format">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="midnight">modhyan</dayPeriod>
+							<dayPeriod type="morning1">sokall</dayPeriod>
+							<dayPeriod type="afternoon1">donpar</dayPeriod>
+							<dayPeriod type="evening1">sanj</dayPeriod>
+							<dayPeriod type="night1">rat</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="midnight">md</dayPeriod>
+							<dayPeriod type="am">a</dayPeriod>
+							<dayPeriod type="pm">p</dayPeriod>
+							<dayPeriod type="morning1">sk</dayPeriod>
+							<dayPeriod type="afternoon1">dp</dayPeriod>
+							<dayPeriod type="evening1">sj</dayPeriod>
+							<dayPeriod type="night1">rt</dayPeriod>
+						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
+							<dayPeriod type="midnight">modhyanrat</dayPeriod>
 							<dayPeriod type="am">sokallim</dayPeriod>
 							<dayPeriod type="pm">sanje</dayPeriod>
+							<dayPeriod type="morning1">sokallim</dayPeriod>
+							<dayPeriod type="afternoon1">donparam</dayPeriod>
+							<dayPeriod type="evening1">sanje</dayPeriod>
+							<dayPeriod type="night1">rati</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="midnight">modhyan</dayPeriod>
+							<dayPeriod type="morning1">sokall</dayPeriod>
+							<dayPeriod type="afternoon1">donpar</dayPeriod>
+							<dayPeriod type="evening1">sanj</dayPeriod>
+							<dayPeriod type="night1">rat</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="midnight">md</dayPeriod>
+							<dayPeriod type="morning1">sk</dayPeriod>
+							<dayPeriod type="afternoon1">dp</dayPeriod>
+							<dayPeriod type="evening1">sj</dayPeriod>
+							<dayPeriod type="night1">rt</dayPeriod>
+						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
+							<dayPeriod type="midnight">modhyanrat</dayPeriod>
 							<dayPeriod type="am">sokallim</dayPeriod>
 							<dayPeriod type="pm">sanje</dayPeriod>
+							<dayPeriod type="morning1">sokallim</dayPeriod>
+							<dayPeriod type="afternoon1">donparam</dayPeriod>
+							<dayPeriod type="evening1">sanje</dayPeriod>
+							<dayPeriod type="night1">rati</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
 				<eras>
 					<eraNames>
 						<era type="0">Krista Adim</era>
-						<era type="0" alt="variant">KA</era>
 						<era type="1">Anno Domini</era>
-						<era type="1" alt="variant">AD</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">KA</era>
@@ -490,6 +997,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0} 'vaztam'</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1}, {0} 'vaztam'</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
@@ -498,12 +1008,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0} 'vaztam'</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1}, {0} 'vaztam'</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -511,35 +1021,39 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="Bh">B h</dateFormatItem>
+						<dateFormatItem id="Bh">B h 'vaztam'</dateFormatItem>
 						<dateFormatItem id="Bhm">B h:mm</dateFormatItem>
 						<dateFormatItem id="Bhms">B h:mm:ss</dateFormatItem>
+						<dateFormatItem id="EBh">E B h 'vaztam'</dateFormatItem>
 						<dateFormatItem id="EBhm">E B h:mm</dateFormatItem>
 						<dateFormatItem id="EBhms">E B h:mm:ss</dateFormatItem>
+						<dateFormatItem id="Eh">E a h 'vaztam'</dateFormatItem>
 						<dateFormatItem id="Ehm">E a h:mm</dateFormatItem>
 						<dateFormatItem id="Ehms">E a h:mm:ss</dateFormatItem>
-						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyM">M/y G</dateFormatItem>
 						<dateFormatItem id="GyMd">d-M-y G</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, d-M-y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM, y G</dateFormatItem>
-						<dateFormatItem id="h">a h</dateFormatItem>
+						<dateFormatItem id="h">a h 'vaztam'</dateFormatItem>
+						<dateFormatItem id="H">HH'v'</dateFormatItem>
 						<dateFormatItem id="hm">a h:mm</dateFormatItem>
 						<dateFormatItem id="hms">a h:mm:ss</dateFormatItem>
 						<dateFormatItem id="hmsv">a h:mm:ss v</dateFormatItem>
 						<dateFormatItem id="hmv">a h:mm v</dateFormatItem>
+						<dateFormatItem id="hv">a h 'vaztam' v</dateFormatItem>
+						<dateFormatItem id="Hv">HH'v' v</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">dd-MM, E</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">MMMM -'acho' 'suman' W</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">MMMM -'acho' 'suman' W</dateFormatItem>
-						<dateFormatItem id="yM">M-y</dateFormatItem>
+						<dateFormatItem id="yM">M/y</dateFormatItem>
 						<dateFormatItem id="yMd">d-M-y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, d-M-y</dateFormatItem>
 						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
@@ -548,12 +1062,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
+						<dateFormatItem id="yw" count="one">Y -'acho' 'suman' w</dateFormatItem>
 						<dateFormatItem id="yw" count="other">Y -'acho' 'suman' w</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatItem id="Bh">
-							<greatestDifference id="B">B h – B h</greatestDifference>
-							<greatestDifference id="h">B h – h</greatestDifference>
+							<greatestDifference id="B">B h 'vaztam' – B h 'vaztam'</greatestDifference>
+							<greatestDifference id="h">B h – h 'vaztam'</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Bhm">
 							<greatestDifference id="B">B h:mm – B h:mm</greatestDifference>
@@ -562,10 +1077,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d – d</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Gy">
-							<greatestDifference id="G">y G – y G</greatestDifference>
-							<greatestDifference id="y">y – y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
 							<greatestDifference id="G">M/y G – M/y G</greatestDifference>
@@ -602,11 +1113,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="y">E, d MMM, y – E, d MMM, y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">a h – a h</greatestDifference>
-							<greatestDifference id="h">a h–h</greatestDifference>
+							<greatestDifference id="a">a h 'vaztam' – a h 'vaztam'</greatestDifference>
+							<greatestDifference id="h">a h–h 'vaztam'</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
-							<greatestDifference id="H">HH – HH</greatestDifference>
+							<greatestDifference id="H">HH–HH'v'</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a">a h:mm – a h:mm</greatestDifference>
@@ -627,11 +1138,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="m">HH:mm – HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a">a h – a h v</greatestDifference>
-							<greatestDifference id="h">a h–h v</greatestDifference>
+							<greatestDifference id="a">a h 'vaztam' – a h 'vaztam' v</greatestDifference>
+							<greatestDifference id="h">a h–h 'vaztam' v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
-							<greatestDifference id="H">HH – HH v</greatestDifference>
+							<greatestDifference id="H">HH–HH'v' v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M – M</greatestDifference>
@@ -698,45 +1209,43 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="era">
 				<displayName>yug</displayName>
 			</field>
-			<field type="era-short">
-				<displayName>yug</displayName>
-			</field>
-			<field type="era-narrow">
-				<displayName>yug</displayName>
-			</field>
 			<field type="year">
 				<displayName>voros</displayName>
-				<relative type="-1">fattlem voros</relative>
-				<relative type="0">hem voros</relative>
+				<relative type="-1">porum</relative>
+				<relative type="0">ondum</relative>
 				<relative type="1">fuddlem voros</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} vorsan</relativeTimePattern>
 					<relativeTimePattern count="other">{0} vorsanim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} voros adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} vorsam adim</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="year-short">
-				<displayName>voros</displayName>
-				<relative type="-1">fattlem voros</relative>
-				<relative type="0">hem voros</relative>
+				<relative type="-1">porum</relative>
+				<relative type="0">ondum</relative>
 				<relative type="1">fuddlem voros</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} vorsan</relativeTimePattern>
 					<relativeTimePattern count="other">{0} vorsanim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} voros adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} vorsam adim</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="year-narrow">
-				<displayName>voros</displayName>
-				<relative type="-1">fattlem voros</relative>
-				<relative type="0">hem voros</relative>
+				<relative type="-1">porum</relative>
+				<relative type="0">ondum</relative>
 				<relative type="1">fuddlem voros</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0}vorsan</relativeTimePattern>
 					<relativeTimePattern count="other">{0}vorsanim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0}voros adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0}vorsam adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -746,9 +1255,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">hem timhoinallem</relative>
 				<relative type="1">fuddlem timhoinallem</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} timhoinallean</relativeTimePattern>
 					<relativeTimePattern count="other">{0} timhoinalleanim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} timhoinallem adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} timhoinalle adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -758,9 +1269,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">hem timho.</relative>
 				<relative type="1">fuddlem timho.</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} timhoinallean</relativeTimePattern>
 					<relativeTimePattern count="other">{0} timhoinalleanim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} timho. adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} timho. adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -770,9 +1283,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">hem timh</relative>
 				<relative type="1">fuddlem timh</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0}timhoinallean</relativeTimePattern>
 					<relativeTimePattern count="other">{0}timhoinalleanim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0}timh adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0}timh adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -782,9 +1297,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">ho mhoino</relative>
 				<relative type="1">fuddlo mhoino</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} mhoinean</relativeTimePattern>
 					<relativeTimePattern count="other">{0} mhoineanim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} mhoino adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} mhoine adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -794,9 +1311,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">ho mho.</relative>
 				<relative type="1">fuddlo mho.</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} mhoinean</relativeTimePattern>
 					<relativeTimePattern count="other">{0} mhoineanim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} mho. adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} mho. adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -806,9 +1325,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">ho mh</relative>
 				<relative type="1">fuddlo mh</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0}mhoinean</relativeTimePattern>
 					<relativeTimePattern count="other">{0}mhoineanim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0}mh adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0}mh adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -818,25 +1339,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">ho suman</relative>
 				<relative type="1">fuddlo suman</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} sumanan</relativeTimePattern>
 					<relativeTimePattern count="other">{0} sumananim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} suman adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} suman adim</relativeTimePattern>
 				</relativeTime>
 				<relativePeriod>{0} cho suman</relativePeriod>
 			</field>
 			<field type="week-short">
-				<displayName>suman</displayName>
-				<relative type="-1">fattlo suman</relative>
-				<relative type="0">ho suman</relative>
-				<relative type="1">fuddlo suman</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} sumanan</relativeTimePattern>
 					<relativeTimePattern count="other">{0} sumananim</relativeTimePattern>
 				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} suman adim</relativeTimePattern>
-				</relativeTime>
-				<relativePeriod>{0} cho suman</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>sum</displayName>
@@ -844,17 +1360,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">ho sum</relative>
 				<relative type="1">fuddlo sum</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0}sumanan</relativeTimePattern>
 					<relativeTimePattern count="other">{0}sumananim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0}sum adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0}sum adim</relativeTimePattern>
 				</relativeTime>
 				<relativePeriod>{0} cho sum</relativePeriod>
 			</field>
 			<field type="weekOfMonth">
-				<displayName>mhoineacho suman</displayName>
-			</field>
-			<field type="weekOfMonth-short">
 				<displayName>mhoineacho suman</displayName>
 			</field>
 			<field type="weekOfMonth-narrow">
@@ -866,22 +1381,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">aiz</relative>
 				<relative type="1">faleam</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} disan</relativeTimePattern>
 					<relativeTimePattern count="other">{0} disanim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} dis adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} dis adim</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="day-short">
-				<displayName>dis</displayName>
-				<relative type="-1">kal</relative>
-				<relative type="0">aiz</relative>
-				<relative type="1">faleam</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} disan</relativeTimePattern>
 					<relativeTimePattern count="other">{0} disanim</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} dis adim</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="day-narrow">
@@ -890,16 +1401,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">aiz</relative>
 				<relative type="1">fal</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0}disan</relativeTimePattern>
 					<relativeTimePattern count="other">{0}disanim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0}d adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0}d adim</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="dayOfYear">
-				<displayName>vorsacho dis</displayName>
-			</field>
-			<field type="dayOfYear-short">
 				<displayName>vorsacho dis</displayName>
 			</field>
 			<field type="dayOfYear-narrow">
@@ -908,20 +1418,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="weekday">
 				<displayName>sumanacho dis</displayName>
 			</field>
-			<field type="weekday-short">
-				<displayName>sumanacho dis</displayName>
-			</field>
 			<field type="weekday-narrow">
 				<displayName>sumanacho d.</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>mhoineant disacho prosong</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>mhoineant disacho prosong</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>mhoineant disacho prosong</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1">fattlo Aitar</relative>
 				<relative type="0">ho Aitar</relative>
 				<relative type="1">fuddlo Aitar</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Aitaran</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Aitaranim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Aitar adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Aitaram adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -930,9 +1448,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">ho Ait.</relative>
 				<relative type="1">fuddlo Ait.</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Aitaran</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Aitaranim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Ait. adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Ait. adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -941,9 +1461,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">ho Ai</relative>
 				<relative type="1">fuddlo Ai</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Aitaran</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Aitaranim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Ai adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Ai adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -952,9 +1474,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">ho Somar</relative>
 				<relative type="1">fuddlo Somar</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Somaran</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Somaranim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Somar adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Somaram adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -963,9 +1487,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">ho Som.</relative>
 				<relative type="1">fuddlo Som.</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Somaran</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Somaranim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Som. adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Som. adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -974,9 +1500,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">ho Sm</relative>
 				<relative type="1">fuddlo Sm</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Somaran</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Somaranim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Sm adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Sm adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -985,9 +1513,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">ho Mongllar</relative>
 				<relative type="1">fuddlo Mongllar</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Mongllaran</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Mongllaranim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Mongllar adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Mongllaram adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -996,9 +1526,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">ho Mon.</relative>
 				<relative type="1">fuddlo Mon.</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Mongllaran</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Mongllaranim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Mon. adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Mon. adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -1007,9 +1539,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">ho Mg</relative>
 				<relative type="1">fuddlo Mg</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Mongllaran</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Mongllaranim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Mg adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Mg adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -1018,9 +1552,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">ho Budhvar</relative>
 				<relative type="1">fuddlo Budhvar</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Budhvaran</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Budhvaranim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Budhvar adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Budhvaram adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -1029,9 +1565,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">ho Bud.</relative>
 				<relative type="1">fuddlo Bud.</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Budhvaran</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Budhvaranim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Bud. adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Bud. adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -1040,9 +1578,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">ho Bu</relative>
 				<relative type="1">fuddlo Bu</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Budhvaran</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Budhvaranim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Bu adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Bu adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -1051,9 +1591,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">ho Birestar</relative>
 				<relative type="1">fuddlo Birestar</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Birestaran</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Birestaranim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Birestar adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Birestaram adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -1062,9 +1604,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">ho Bre.</relative>
 				<relative type="1">fuddlo Bre.</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Birestaran</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Birestaranim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Bre. adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Bre. adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -1073,9 +1617,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">ho Br</relative>
 				<relative type="1">fuddlo Br</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Birestaran</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Birestaranim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Br adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Br adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -1084,9 +1630,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">ho Sukrar</relative>
 				<relative type="1">fuddlo Sukrar</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Sukraran</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Sukraranim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Sukrar adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Sukraram adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -1095,9 +1643,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">ho Suk.</relative>
 				<relative type="1">fuddlo Suk.</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Sukraran</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Sukraranim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Suk. adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Suk. adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -1106,9 +1656,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">ho Su</relative>
 				<relative type="1">fuddlo Su</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Sukraran</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Sukraranim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Su adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Su adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -1117,9 +1669,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">ho Sonvar</relative>
 				<relative type="1">fuddlo Sonvar</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Sonvaran</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Sonvaranim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Sonvar adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Sonvaram adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -1128,9 +1682,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">ho Son.</relative>
 				<relative type="1">fuddlo Son.</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Sonvaran</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Sonvaranim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Son. adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Son. adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -1139,48 +1695,46 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">ho Sn</relative>
 				<relative type="1">fuddlo Sn</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Sonvaran</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Sonvaranim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Sn adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Sn adim</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="dayperiod-short">
-				<displayName>AM/PM</displayName>
-			</field>
 			<field type="dayperiod">
-				<displayName>AM/PM</displayName>
-			</field>
-			<field type="dayperiod-narrow">
 				<displayName>AM/PM</displayName>
 			</field>
 			<field type="hour">
 				<displayName>vor</displayName>
 				<relative type="0">hem vor</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} voran</relativeTimePattern>
 					<relativeTimePattern count="other">{0} voranim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} vor adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} voram adim</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="hour-short">
-				<displayName>vor</displayName>
-				<relative type="0">hem vor</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} voran</relativeTimePattern>
 					<relativeTimePattern count="other">{0} voranim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} vor adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} voram adim</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="hour-narrow">
-				<displayName>vor</displayName>
-				<relative type="0">hem vor</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0}voran</relativeTimePattern>
 					<relativeTimePattern count="other">{0}voranim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0}vor adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0}voram adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -1188,9 +1742,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>minut</displayName>
 				<relative type="0">ho minut</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} mintan</relativeTimePattern>
 					<relativeTimePattern count="other">{0} mintanim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} minut adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} mintam adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -1198,9 +1754,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>min.</displayName>
 				<relative type="0">ho min.</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} mintan</relativeTimePattern>
 					<relativeTimePattern count="other">{0} min.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} min. adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} min. adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -1208,9 +1766,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>min</displayName>
 				<relative type="0">ho min</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0}mintan</relativeTimePattern>
 					<relativeTimePattern count="other">{0}min</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0}min adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0}min adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -1218,29 +1778,33 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>sekond</displayName>
 				<relative type="0">atam</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} sekondan</relativeTimePattern>
 					<relativeTimePattern count="other">{0} sekondanim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} sekond adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} sekond adim</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="second-short">
 				<displayName>sek.</displayName>
-				<relative type="0">atam</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} sekondan</relativeTimePattern>
 					<relativeTimePattern count="other">{0} sekondanim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} sek. adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0} sek. adim</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="second-narrow">
 				<displayName>sek</displayName>
-				<relative type="0">atam</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">{0}sekondan</relativeTimePattern>
 					<relativeTimePattern count="other">{0}sekondanim</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0}sek adim</relativeTimePattern>
 					<relativeTimePattern count="other">{0}sek adim</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -1250,29 +1814,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="zone-short">
 				<displayName>kxetr</displayName>
 			</field>
-			<field type="zone-narrow">
-				<displayName>kxetr</displayName>
-			</field>
 		</fields>
 		<timeZoneNames>
 			<regionFormat>{0} Vell</regionFormat>
-			<regionFormat type="daylight">{0} Dis-uzvadd vachovp Vell</regionFormat>
+			<regionFormat type="daylight">{0} Dis-uzvadd Vachovp Vell</regionFormat>
 			<regionFormat type="standard">{0} Promann Vell</regionFormat>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>Vixvacho Somonvoyit Vell</standard>
+				</long>
+			</zone>
+			<zone type="Etc/Unknown">
+				<exemplarCity>Onollkhi Zago</exemplarCity>
+			</zone>
+			<zone type="Asia/Calcutta">
+				<exemplarCity>Kolkata, Bombaim, Ponnji</exemplarCity>
+			</zone>
 			<metazone type="GMT">
 				<long>
-					<standard>Greenwich Mean Time</standard>
+					<standard>Greenwich Promann Vell</standard>
 				</long>
 			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<decimalFormats numberSystem="deva">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern>#,##,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength>
 				<decimalFormat>
@@ -1315,7 +1880,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<currencyFormats numberSystem="deva">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
-					<pattern>¤#,##,##0.00</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##,##0.00</pattern>
+					<pattern alt="noCurrency">#,##,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##,##0.00</pattern>
+					<pattern alt="noCurrency">#,##,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -1323,219 +1893,817 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##,##0.00</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##,##0.00</pattern>
+					<pattern alt="noCurrency">#,##,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##,##0.00</pattern>
+					<pattern alt="noCurrency">#,##,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
 					<pattern type="1000" count="other">¤0hoz</pattern>
+					<pattern type="1000" count="other" alt="alphaNextToNumber">¤ 0hoz</pattern>
 					<pattern type="10000" count="other">¤00hoz</pattern>
+					<pattern type="10000" count="other" alt="alphaNextToNumber">¤ 00hoz</pattern>
 					<pattern type="100000" count="other">¤0lak</pattern>
+					<pattern type="100000" count="other" alt="alphaNextToNumber">¤ 0lak</pattern>
 					<pattern type="1000000" count="other">¤00lak</pattern>
+					<pattern type="1000000" count="other" alt="alphaNextToNumber">¤ 00lak</pattern>
 					<pattern type="10000000" count="other">¤0ko</pattern>
+					<pattern type="10000000" count="other" alt="alphaNextToNumber">¤ 0ko</pattern>
 					<pattern type="100000000" count="other">¤00ko</pattern>
+					<pattern type="100000000" count="other" alt="alphaNextToNumber">¤ 00ko</pattern>
 					<pattern type="1000000000" count="other">¤0obz</pattern>
+					<pattern type="1000000000" count="other" alt="alphaNextToNumber">¤ 0obz</pattern>
 					<pattern type="10000000000" count="other">¤00obz</pattern>
+					<pattern type="10000000000" count="other" alt="alphaNextToNumber">¤ 00obz</pattern>
 					<pattern type="100000000000" count="other">¤0nikh</pattern>
+					<pattern type="100000000000" count="other" alt="alphaNextToNumber">¤ 0nikh</pattern>
 					<pattern type="1000000000000" count="other">¤00nikh</pattern>
+					<pattern type="1000000000000" count="other" alt="alphaNextToNumber">¤ 00nikh</pattern>
 					<pattern type="10000000000000" count="other">¤000nikh</pattern>
+					<pattern type="10000000000000" count="other" alt="alphaNextToNumber">¤ 000nikh</pattern>
 					<pattern type="100000000000000" count="other">¤0hoz'.'nikh'.'</pattern>
+					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">¤ 0hoz'.'nikh'.'</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
+		<minimalPairs>
+			<pluralMinimalPairs count="one">{0} vantto</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">{0} vantte</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">{0}vya uzvya vatten voch.</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>maikro{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="per">
+				<compoundUnitPattern>{0} dor {1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1 count="one">choukon {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">choukon {0}</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1 count="one">ghon {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">ghon {0}</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}-{1}</compoundUnitPattern>
+			</compoundUnit>
+			<unit type="angle-degree">
+				<displayName>onx</displayName>
+				<unitPattern count="one">{0} onx</unitPattern>
+				<unitPattern count="other">{0} onx</unitPattern>
+			</unit>
+			<unit type="area-square-kilometer">
+				<displayName>choukon kilomiter</displayName>
+				<unitPattern count="one">{0} choukon kilomiter</unitPattern>
+				<unitPattern count="other">{0} choukon kilomiter</unitPattern>
+				<perUnitPattern>{0} dor choukon kilomiter</perUnitPattern>
+			</unit>
+			<unit type="area-square-meter">
+				<displayName>choukon miter</displayName>
+				<unitPattern count="one">{0} choukon miter</unitPattern>
+				<unitPattern count="other">{0} choukon miter</unitPattern>
+				<perUnitPattern>{0} dor choukon miter</perUnitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName>choukon centimiter</displayName>
+				<unitPattern count="one">{0} choukon centimiter</unitPattern>
+				<unitPattern count="other">{0} choukon centimiter</unitPattern>
+				<perUnitPattern>{0} dor choukon centimiter</perUnitPattern>
+			</unit>
+			<unit type="area-square-mile">
+				<displayName>choukon mil</displayName>
+				<unitPattern count="one">{0} choukon mil</unitPattern>
+				<unitPattern count="other">{0} choukon mil</unitPattern>
+				<perUnitPattern>{0} dor choukon mil</perUnitPattern>
+			</unit>
+			<unit type="area-square-yard">
+				<displayName>choukon yard</displayName>
+				<unitPattern count="one">{0} choukon yard</unitPattern>
+				<unitPattern count="other">{0} choukon yard</unitPattern>
+			</unit>
+			<unit type="area-square-foot">
+				<displayName>choukon fut</displayName>
+				<unitPattern count="one">{0} choukon fut</unitPattern>
+				<unitPattern count="other">{0} choukon fut</unitPattern>
+			</unit>
+			<unit type="area-square-inch">
+				<displayName>choukon inch</displayName>
+				<unitPattern count="one">{0} choukon inch</unitPattern>
+				<unitPattern count="other">{0} choukon inch</unitPattern>
+				<perUnitPattern>{0} dor choukon inch</perUnitPattern>
+			</unit>
+			<unit type="digital-petabyte">
+				<displayName>petabayt</displayName>
+				<unitPattern count="one">{0} petabayt</unitPattern>
+				<unitPattern count="other">{0} petabayt</unitPattern>
+			</unit>
+			<unit type="digital-terabyte">
+				<displayName>terabayt</displayName>
+				<unitPattern count="one">{0} terabayt</unitPattern>
+				<unitPattern count="other">{0} terabayt</unitPattern>
+			</unit>
+			<unit type="digital-terabit">
+				<unitPattern count="one">{0} terabit</unitPattern>
+			</unit>
+			<unit type="digital-gigabyte">
+				<displayName>gigabayt</displayName>
+				<unitPattern count="one">{0} gigabayt</unitPattern>
+				<unitPattern count="other">{0} gigabayt</unitPattern>
+			</unit>
+			<unit type="digital-gigabit">
+				<unitPattern count="one">{0} gigabit</unitPattern>
+			</unit>
+			<unit type="digital-megabyte">
+				<displayName>megabayt</displayName>
+				<unitPattern count="one">{0} megabayt</unitPattern>
+				<unitPattern count="other">{0} megabayt</unitPattern>
+			</unit>
+			<unit type="digital-megabit">
+				<unitPattern count="one">{0} megabit</unitPattern>
+			</unit>
+			<unit type="digital-kilobyte">
+				<displayName>kilobayt</displayName>
+				<unitPattern count="one">{0} kilobayt</unitPattern>
+				<unitPattern count="other">{0} kilobayt</unitPattern>
+			</unit>
+			<unit type="digital-kilobit">
+				<unitPattern count="one">{0} kilobit</unitPattern>
+			</unit>
+			<unit type="digital-byte">
+				<displayName>bayt</displayName>
+				<unitPattern count="one">{0} bayt</unitPattern>
+				<unitPattern count="other">{0} bayt</unitPattern>
+			</unit>
 			<unit type="duration-century">
 				<displayName>xekdde</displayName>
+				<unitPattern count="one">{0} xekddo</unitPattern>
 				<unitPattern count="other">{0} xekdde</unitPattern>
 			</unit>
 			<unit type="duration-decade">
 				<displayName>doskam</displayName>
+				<unitPattern count="one">{0} dosok</unitPattern>
 				<unitPattern count="other">{0} doskam</unitPattern>
 			</unit>
 			<unit type="duration-year">
-				<displayName>vorsam</displayName>
+				<unitPattern count="one">{0} voros</unitPattern>
 				<unitPattern count="other">{0} vorsam</unitPattern>
 				<perUnitPattern>dor voros {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-quarter">
 				<displayName>timhoinalle</displayName>
+				<unitPattern count="one">{0} timhoinallem</unitPattern>
 				<unitPattern count="other">{0} timhoinalle</unitPattern>
 				<perUnitPattern>{0}/timhoinallem</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>mhoine</displayName>
+				<unitPattern count="one">{0} mhoino</unitPattern>
 				<unitPattern count="other">{0} mhoine</unitPattern>
 				<perUnitPattern>dor mhoino {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
-				<displayName>suman</displayName>
-				<unitPattern count="other">{0} suman</unitPattern>
 				<perUnitPattern>dor sumanak {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
-				<displayName>dis</displayName>
-				<unitPattern count="other">{0} dis</unitPattern>
 				<perUnitPattern>dor disa {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
-				<displayName>voram</displayName>
+				<unitPattern count="one">{0} vor</unitPattern>
 				<unitPattern count="other">{0} voram</unitPattern>
 				<perUnitPattern>dor vora {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>mintam</displayName>
+				<unitPattern count="one">{0} minut</unitPattern>
 				<unitPattern count="other">{0} mintam</unitPattern>
 				<perUnitPattern>dor minut {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>sekond</displayName>
+				<unitPattern count="one">{0} sekond</unitPattern>
 				<unitPattern count="other">{0} sekond</unitPattern>
 				<perUnitPattern>dor sekond {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>milisekond</displayName>
+				<unitPattern count="one">{0} milisekond</unitPattern>
 				<unitPattern count="other">{0} milisekond</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
 				<displayName>maikrosekond</displayName>
+				<unitPattern count="one">{0} maikrosekond</unitPattern>
 				<unitPattern count="other">{0} maikrosekond</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
 				<displayName>nanosekond</displayName>
+				<unitPattern count="one">{0} nanosekond</unitPattern>
 				<unitPattern count="other">{0} nanosekond</unitPattern>
 			</unit>
+			<unit type="graphics-pixel">
+				<displayName>chitr-totvam</displayName>
+				<unitPattern count="one">{0} chitr-totv</unitPattern>
+				<unitPattern count="other">{0} chitr-totvam</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>mega-chitr-totvam</displayName>
+				<unitPattern count="one">{0} mega-chitr-totv</unitPattern>
+				<unitPattern count="other">{0} mega-chitr-totvam</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>dor centimiterak chitr-totvam</displayName>
+				<unitPattern count="one">{0} dor centimiterak chitr-totv</unitPattern>
+				<unitPattern count="other">{0} dor centimiterak chitr-totvam</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>dor inchak chitr-totvam</displayName>
+				<unitPattern count="one">{0} dor inchak chitr-totv</unitPattern>
+				<unitPattern count="other">{0} dor inchak chitr-totvam</unitPattern>
+			</unit>
+			<unit type="length-kilometer">
+				<displayName>kilomiter</displayName>
+				<unitPattern count="one">{0} kilomiter</unitPattern>
+				<unitPattern count="other">{0} kilomiter</unitPattern>
+				<perUnitPattern>{0} dor kilomiter</perUnitPattern>
+			</unit>
+			<unit type="length-meter">
+				<displayName>miter</displayName>
+				<unitPattern count="one">{0} miter</unitPattern>
+				<unitPattern count="other">{0} miter</unitPattern>
+				<perUnitPattern>{0} per miter</perUnitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<displayName>decimiter</displayName>
+				<unitPattern count="one">{0} decimiter</unitPattern>
+				<unitPattern count="other">{0} decimiter</unitPattern>
+			</unit>
+			<unit type="length-centimeter">
+				<displayName>centimiter</displayName>
+				<unitPattern count="one">{0} centimiter</unitPattern>
+				<unitPattern count="other">{0} centimiter</unitPattern>
+				<perUnitPattern>{0} dor centimiter</perUnitPattern>
+			</unit>
+			<unit type="length-millimeter">
+				<displayName>millimiter</displayName>
+				<unitPattern count="one">{0} millimiter</unitPattern>
+				<unitPattern count="other">{0} millimiter</unitPattern>
+			</unit>
+			<unit type="length-micrometer">
+				<displayName>maikromiter</displayName>
+				<unitPattern count="one">{0} maikromiter</unitPattern>
+				<unitPattern count="other">{0} maikromiter</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName>nanomiter</displayName>
+				<unitPattern count="one">{0} nanomiter</unitPattern>
+				<unitPattern count="other">{0} nanomiter</unitPattern>
+			</unit>
+			<unit type="length-picometer">
+				<displayName>picomiter</displayName>
+				<unitPattern count="one">{0} picomiter</unitPattern>
+				<unitPattern count="other">{0} picomiter</unitPattern>
+			</unit>
+			<unit type="length-mile">
+				<displayName>mil</displayName>
+				<unitPattern count="one">{0} mil</unitPattern>
+				<unitPattern count="other">{0} mil</unitPattern>
+			</unit>
+			<unit type="pressure-pound-force-per-square-inch">
+				<displayName>paund dor choukon inch</displayName>
+				<unitPattern count="one">{0} paund dor choukon inch</unitPattern>
+				<unitPattern count="other">{0} paund dor choukon inch</unitPattern>
+			</unit>
+			<unit type="temperature-generic">
+				<displayName>onx tapman</displayName>
+				<unitPattern count="one">{0} onx tapman</unitPattern>
+				<unitPattern count="other">{0} onx tapman</unitPattern>
+			</unit>
+			<unit type="temperature-celsius">
+				<displayName>onx Celsius</displayName>
+				<unitPattern count="one">{0} onx Celsius</unitPattern>
+				<unitPattern count="other">{0} onx Celsius</unitPattern>
+			</unit>
+			<unit type="temperature-fahrenheit">
+				<displayName>onx Fahrenheit</displayName>
+				<unitPattern count="one">{0} onx Fahrenheit</unitPattern>
+				<unitPattern count="other">{0} onx Fahrenheit</unitPattern>
+			</unit>
+			<unit type="volume-cubic-kilometer">
+				<displayName>ghon kilomiter</displayName>
+				<unitPattern count="one">{0} ghon kilomiter</unitPattern>
+				<unitPattern count="other">{0} ghon kilomiter</unitPattern>
+			</unit>
+			<unit type="volume-cubic-meter">
+				<displayName>ghon miter</displayName>
+				<unitPattern count="one">{0} ghon miter</unitPattern>
+				<unitPattern count="other">{0} ghon miter</unitPattern>
+				<perUnitPattern>{0} dor ghon miter</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<displayName>ghon centimiter</displayName>
+				<unitPattern count="one">{0} ghon centimiter</unitPattern>
+				<unitPattern count="other">{0} ghon centimiter</unitPattern>
+				<perUnitPattern>{0} dor ghon centimiter</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-mile">
+				<displayName>ghon mil</displayName>
+				<unitPattern count="one">{0} ghon mil</unitPattern>
+				<unitPattern count="other">{0} ghon mil</unitPattern>
+			</unit>
+			<unit type="volume-cubic-yard">
+				<displayName>ghon yard</displayName>
+				<unitPattern count="one">{0} ghon yard</unitPattern>
+				<unitPattern count="other">{0} ghon yard</unitPattern>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<displayName>ghon fut</displayName>
+				<unitPattern count="one">{0} ghon fut</unitPattern>
+				<unitPattern count="other">{0} ghon fut</unitPattern>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<displayName>ghon inch</displayName>
+				<unitPattern count="one">{0} ghon inch</unitPattern>
+				<unitPattern count="other">{0} ghon inch</unitPattern>
+			</unit>
+			<unit type="duration-fortnight">
+				<displayName>pondros</displayName>
+				<unitPattern count="one">{0} pondros</unitPattern>
+				<unitPattern count="other">{0} pondros</unitPattern>
+			</unit>
 			<unit type="duration-night">
-				<displayName>rati</displayName>
+				<unitPattern count="one">{0} rat</unitPattern>
 				<unitPattern count="other">{0} rati</unitPattern>
 				<perUnitPattern>dor rat {0}</perUnitPattern>
 			</unit>
+			<coordinateUnit>
+				<displayName>mukhel dixa</displayName>
+				<coordinateUnitPattern type="east">{0} udent</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} ut’tor</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} dokxin</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} Ostont</coordinateUnitPattern>
+			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
+			<unit type="angle-degree">
+				<displayName>onx</displayName>
+				<unitPattern count="one">{0} onx</unitPattern>
+				<unitPattern count="other">{0} onx</unitPattern>
+			</unit>
+			<unit type="digital-petabyte">
+				<displayName>PBayt</displayName>
+			</unit>
+			<unit type="digital-terabyte">
+				<displayName>TBayt</displayName>
+			</unit>
+			<unit type="digital-terabit">
+				<displayName>Tbit</displayName>
+			</unit>
+			<unit type="digital-gigabyte">
+				<displayName>GBayt</displayName>
+			</unit>
+			<unit type="digital-gigabit">
+				<displayName>Gbit</displayName>
+			</unit>
+			<unit type="digital-megabyte">
+				<displayName>MBayt</displayName>
+			</unit>
+			<unit type="digital-megabit">
+				<displayName>Mbit</displayName>
+			</unit>
+			<unit type="digital-kilobyte">
+				<displayName>kBayt</displayName>
+			</unit>
+			<unit type="digital-kilobit">
+				<displayName>kbit</displayName>
+			</unit>
+			<unit type="digital-byte">
+				<displayName>bayt</displayName>
+				<unitPattern count="one">{0} bayt</unitPattern>
+				<unitPattern count="other">{0} bayt</unitPattern>
+			</unit>
 			<unit type="duration-century">
 				<displayName>x</displayName>
+				<unitPattern count="one">{0} x</unitPattern>
 				<unitPattern count="other">{0} x</unitPattern>
 			</unit>
 			<unit type="duration-decade">
 				<displayName>dos</displayName>
+				<unitPattern count="one">{0} dos</unitPattern>
 				<unitPattern count="other">{0} dos</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>vorsam</displayName>
+				<unitPattern count="one">{0} voros</unitPattern>
 				<unitPattern count="other">{0} vorsam</unitPattern>
 				<perUnitPattern>{0}/voros</perUnitPattern>
 			</unit>
 			<unit type="duration-quarter">
 				<displayName>timho</displayName>
+				<unitPattern count="one">{0} timho</unitPattern>
 				<unitPattern count="other">{0} timho</unitPattern>
 				<perUnitPattern>{0}/timho</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>mho</displayName>
+				<unitPattern count="one">{0} mho</unitPattern>
 				<unitPattern count="other">{0} mho</unitPattern>
 				<perUnitPattern>{0}/mho</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>suman</displayName>
+				<unitPattern count="one">{0} suman</unitPattern>
 				<unitPattern count="other">{0} suman</unitPattern>
 				<perUnitPattern>{0}/suman</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>dis</displayName>
+				<unitPattern count="one">{0} dis</unitPattern>
 				<unitPattern count="other">{0} dis</unitPattern>
 				<perUnitPattern>{0}/dis</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>voram</displayName>
+				<unitPattern count="one">{0} vor</unitPattern>
 				<unitPattern count="other">{0} vor</unitPattern>
 				<perUnitPattern>{0}/vor</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>sek</displayName>
+				<unitPattern count="one">{0} sek</unitPattern>
 				<unitPattern count="other">{0} sek</unitPattern>
 				<perUnitPattern>{0}/sek</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>msek</displayName>
+				<unitPattern count="one">{0} msek</unitPattern>
 				<unitPattern count="other">{0} msek</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
 				<displayName>μsek</displayName>
+				<unitPattern count="one">{0} μsek</unitPattern>
 				<unitPattern count="other">{0} μsek</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
 				<displayName>nanosek</displayName>
+				<unitPattern count="one">{0} nsek</unitPattern>
 				<unitPattern count="other">{0} nsek</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>chitr-totvam</displayName>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>mega-chitr-totvam</displayName>
+			</unit>
+			<unit type="length-mile">
+				<displayName>mil</displayName>
+			</unit>
+			<unit type="temperature-generic">
+				<displayName>onx tapman</displayName>
+			</unit>
+			<unit type="temperature-celsius">
+				<displayName>onx C</displayName>
+			</unit>
+			<unit type="temperature-fahrenheit">
+				<displayName>onx F</displayName>
+			</unit>
+			<unit type="duration-fortnight">
+				<displayName>pondr</displayName>
+				<unitPattern count="one">{0} pondr</unitPattern>
+				<unitPattern count="other">{0} pondr</unitPattern>
 			</unit>
 			<unit type="duration-night">
 				<displayName>rati</displayName>
+				<unitPattern count="one">{0} rat</unitPattern>
 				<unitPattern count="other">{0} rati</unitPattern>
 				<perUnitPattern>{0}/rat</perUnitPattern>
 			</unit>
+			<coordinateUnit>
+				<displayName>dixa</displayName>
+				<coordinateUnitPattern type="east">{0} UD</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} UT</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} DO</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} OS</coordinateUnitPattern>
+			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<unit type="angle-degree">
+				<displayName>onx</displayName>
+			</unit>
+			<unit type="digital-petabyte">
+				<displayName>PBayt</displayName>
+			</unit>
+			<unit type="digital-terabyte">
+				<displayName>TBayt</displayName>
+			</unit>
+			<unit type="digital-gigabyte">
+				<displayName>GBayt</displayName>
+			</unit>
+			<unit type="digital-megabyte">
+				<displayName>MBayt</displayName>
+			</unit>
+			<unit type="digital-kilobyte">
+				<displayName>kBayt</displayName>
+			</unit>
+			<unit type="digital-byte">
+				<displayName>B</displayName>
+				<unitPattern count="one">{0}B</unitPattern>
+				<unitPattern count="other">{0}B</unitPattern>
+			</unit>
+			<unit type="digital-bit">
+				<unitPattern count="one">{0}bit</unitPattern>
+				<unitPattern count="other">{0}bit</unitPattern>
+			</unit>
 			<unit type="duration-century">
-				<displayName>x</displayName>
+				<unitPattern count="one">{0}x</unitPattern>
 				<unitPattern count="other">{0}x</unitPattern>
 			</unit>
 			<unit type="duration-decade">
-				<displayName>dos</displayName>
+				<unitPattern count="one">{0}dos</unitPattern>
 				<unitPattern count="other">{0}dos</unitPattern>
 			</unit>
 			<unit type="duration-year">
-				<displayName>vorsam</displayName>
+				<unitPattern count="one">{0}voros</unitPattern>
 				<unitPattern count="other">{0}vorsam</unitPattern>
-				<perUnitPattern>{0}/voros</perUnitPattern>
 			</unit>
 			<unit type="duration-quarter">
-				<displayName>timho</displayName>
+				<unitPattern count="one">{0}timho</unitPattern>
 				<unitPattern count="other">{0}timho</unitPattern>
-				<perUnitPattern>{0}/timho</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
-				<displayName>mho</displayName>
+				<unitPattern count="one">{0}mho</unitPattern>
 				<unitPattern count="other">{0}mho</unitPattern>
-				<perUnitPattern>{0}/mho</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>sum</displayName>
+				<unitPattern count="one">{0}sum</unitPattern>
 				<unitPattern count="other">{0}sum</unitPattern>
 				<perUnitPattern>{0}/sum</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>d</displayName>
+				<unitPattern count="one">{0}d</unitPattern>
 				<unitPattern count="other">{0}d</unitPattern>
+				<perUnitPattern>{0}/d</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>vor</displayName>
+				<unitPattern count="one">{0}vor</unitPattern>
 				<unitPattern count="other">{0}vor</unitPattern>
-				<perUnitPattern>{0}/vor</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
+				<unitPattern count="one">{0}min</unitPattern>
 				<unitPattern count="other">{0}min</unitPattern>
 			</unit>
 			<unit type="duration-second">
-				<displayName>sek</displayName>
+				<unitPattern count="one">{0}sek</unitPattern>
 				<unitPattern count="other">{0}sek</unitPattern>
-				<perUnitPattern>{0}/sek</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
-				<displayName>msek</displayName>
+				<unitPattern count="one">{0}msek</unitPattern>
 				<unitPattern count="other">{0}msek</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
-				<displayName>μsek</displayName>
+				<unitPattern count="one">{0}μsek</unitPattern>
 				<unitPattern count="other">{0}μsek</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
 				<displayName>nsek</displayName>
+				<unitPattern count="one">{0}nsek</unitPattern>
 				<unitPattern count="other">{0}nsek</unitPattern>
 			</unit>
-			<unit type="duration-night">
-				<displayName>rati</displayName>
-				<unitPattern count="other">{0}rati</unitPattern>
-				<perUnitPattern>{0}/rat</perUnitPattern>
+			<unit type="duration-fortnight">
+				<displayName>pondr</displayName>
+				<unitPattern count="one">{0} pondr</unitPattern>
+				<unitPattern count="other">{0} pondr</unitPattern>
 			</unit>
+			<unit type="duration-night">
+				<unitPattern count="one">{0}rat</unitPattern>
+				<unitPattern count="other">{0}rati</unitPattern>
+			</unit>
+			<coordinateUnit>
+				<displayName>dixa</displayName>
+				<coordinateUnitPattern type="east">{0}UD</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0}UT</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0}DO</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0}OS</coordinateUnitPattern>
+			</coordinateUnit>
 		</unitLength>
 	</units>
+	<listPatterns>
+		<listPattern>
+			<listPatternPart type="end">{0}, ani {1}</listPatternPart>
+			<listPatternPart type="2">{0} ani {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="end">{0}, vo {1}</listPatternPart>
+			<listPatternPart type="2">{0} vo {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="end">{0}, vo {1}</listPatternPart>
+			<listPatternPart type="2">{0} vo {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="end">{0}, vo {1}</listPatternPart>
+			<listPatternPart type="2">{0} vo {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="end">{0}, &amp; {1}</listPatternPart>
+			<listPatternPart type="2">{0} &amp; {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit">
+			<listPatternPart type="2">{0} ani {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-narrow">
+			<listPatternPart type="start">{0} {1}</listPatternPart>
+			<listPatternPart type="middle">{0} {1}</listPatternPart>
+			<listPatternPart type="end">{0} {1}</listPatternPart>
+			<listPatternPart type="2">{0} {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
+	<posix>
+		<messages>
+			<yesstr>hoi:h</yesstr>
+			<nostr>na:n</nostr>
+		</messages>
+	</posix>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und kok kok_Latn</nameOrderLocales>
+		<parameterDefault parameter="formality">informal</parameterDefault>
+		<personName order="givenFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {generation}, {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{title} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}{surname2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}{surname-monogram-allCaps}{surname2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{given} {given2-initial} {surname} {generation}, {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{title} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{given-initial} {given2-initial} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname-initial}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{title} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {generation}, {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{title} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname} {given} {given2-initial} {generation}, {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{title} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{surname} {given-initial} {given2-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{surname} {given-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{title} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {given} {given2} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {given} {given2-initial} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {given-initial} {given2-initial} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<sampleName item="nativeG">
+			<nameField type="given">Prema</nameField>
+		</sampleName>
+		<sampleName item="nativeGS">
+			<nameField type="given">Shanti</nameField>
+			<nameField type="surname">Gaonkar</nameField>
+		</sampleName>
+		<sampleName item="nativeGGS">
+			<nameField type="given">Maria</nameField>
+			<nameField type="given2">Helena</nameField>
+			<nameField type="surname">Fernandes</nameField>
+		</sampleName>
+		<sampleName item="nativeFull">
+			<nameField type="title">Mr.</nameField>
+			<nameField type="given">Francisco Xavier</nameField>
+			<nameField type="given-informal">Forsu</nameField>
+			<nameField type="given2">Joao Anton</nameField>
+			<nameField type="surname-prefix">de</nameField>
+			<nameField type="surname-core">Souza</nameField>
+			<nameField type="surname2">e Menezes</nameField>
+			<nameField type="generation">Dk</nameField>
+			<nameField type="credentials">MP</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given">Sinbad</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given">Käthe</nameField>
+			<nameField type="surname">Müller</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given">Zäzilia</nameField>
+			<nameField type="given2">Hamish</nameField>
+			<nameField type="surname">Stöber</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="title">Prof. Dr.</nameField>
+			<nameField type="given">Ada Cornelia</nameField>
+			<nameField type="given-informal">Neele</nameField>
+			<nameField type="given2">César Martín</nameField>
+			<nameField type="surname-prefix">von</nameField>
+			<nameField type="surname-core">Brühl</nameField>
+			<nameField type="surname2">González Domingo</nameField>
+			<nameField type="generation">Jr</nameField>
+			<nameField type="credentials">MD DDS</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

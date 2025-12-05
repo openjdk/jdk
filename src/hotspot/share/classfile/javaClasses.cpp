@@ -25,9 +25,8 @@
 #include "cds/aotMetaspace.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
 #include "cds/archiveBuilder.hpp"
-#include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.hpp"
+#include "cds/heapShared.inline.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -978,7 +977,7 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
   }
 
   if (k->in_aot_cache() && k->has_archived_mirror_index()) {
-    if (ArchiveHeapLoader::is_in_use()) {
+    if (HeapShared::is_archived_heap_in_use()) {
       bool present = restore_archived_mirror(k, Handle(), Handle(), Handle(), CHECK);
       assert(present, "Missing archived mirror for %s", k->external_name());
       return;
@@ -1092,10 +1091,6 @@ void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protecti
   // Set the modifiers flag.
   u2 computed_modifiers = k->compute_modifier_flags();
   set_modifiers(mirror(), computed_modifiers);
-  // Set the raw access_flags, this is used by reflection instead of modifier flags.
-  // The Java code for array classes gets the access flags from the element type.
-  assert(!k->is_array_klass() || k->access_flags().as_unsigned_short() == 0, "access flags are not set for arrays");
-  set_raw_access_flags(mirror(), k->access_flags().as_unsigned_short());
 
   InstanceMirrorKlass* mk = InstanceMirrorKlass::cast(mirror->klass());
   assert(oop_size(mirror()) == mk->instance_size(k), "should have been set");
@@ -1104,6 +1099,8 @@ void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protecti
 
   // It might also have a component mirror.  This mirror must already exist.
   if (k->is_array_klass()) {
+    // The Java code for array classes gets the access flags from the element type.
+    set_raw_access_flags(mirror(), 0);
     if (k->is_typeArray_klass()) {
       BasicType type = TypeArrayKlass::cast(k)->element_type();
       if (is_scratch) {
@@ -1130,6 +1127,8 @@ void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protecti
     // and java_mirror in this klass.
   } else {
     assert(k->is_instance_klass(), "Must be");
+    // Set the raw access_flags, this is used by reflection instead of modifier flags.
+    set_raw_access_flags(mirror(), InstanceKlass::cast(k)->access_flags().as_unsigned_short());
     initialize_mirror_fields(InstanceKlass::cast(k), mirror, protection_domain, classData, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       // If any of the fields throws an exception like OOM remove the klass field
@@ -1242,10 +1241,7 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
 
   if (!k->is_array_klass()) {
     // - local static final fields with initial values were initialized at dump time
-
-    // create the init_lock
-    typeArrayOop r = oopFactory::new_typeArray(T_INT, 0, CHECK_(false));
-    set_init_lock(mirror(), r);
+    assert(init_lock(mirror()) != nullptr, "allocated during AOT assembly");
 
     if (protection_domain.not_null()) {
       set_protection_domain(mirror(), protection_domain());
@@ -1335,11 +1331,6 @@ oop java_lang_Class::class_data(oop java_class) {
 void java_lang_Class::set_class_data(oop java_class, oop class_data) {
   assert(_classData_offset != 0, "must be set");
   java_class->obj_field_put(_classData_offset, class_data);
-}
-
-void java_lang_Class::set_reflection_data(oop java_class, oop reflection_data) {
-  assert(_reflectionData_offset != 0, "must be set");
-  java_class->obj_field_put(_reflectionData_offset, reflection_data);
 }
 
 void java_lang_Class::set_class_loader(oop java_class, oop loader) {
@@ -1484,7 +1475,6 @@ Klass* java_lang_Class::array_klass_acquire(oop java_class) {
   return k;
 }
 
-
 void java_lang_Class::release_set_array_klass(oop java_class, Klass* klass) {
   assert(klass->is_klass() && klass->is_array_klass(), "should be array klass");
   java_class->release_metadata_field_put(_array_klass_offset, klass);
@@ -1588,11 +1578,6 @@ int java_lang_Class::modifiers(oop the_class_mirror) {
 void java_lang_Class::set_modifiers(oop the_class_mirror, u2 value) {
   assert(_modifiers_offset != 0, "offsets should have been initialized");
   the_class_mirror->char_field_put(_modifiers_offset, value);
-}
-
-int java_lang_Class::raw_access_flags(oop the_class_mirror) {
-  assert(_raw_access_flags_offset != 0, "offsets should have been initialized");
-  return the_class_mirror->char_field(_raw_access_flags_offset);
 }
 
 void java_lang_Class::set_raw_access_flags(oop the_class_mirror, u2 value) {
@@ -1699,8 +1684,8 @@ int java_lang_Thread::_name_offset;
 int java_lang_Thread::_contextClassLoader_offset;
 int java_lang_Thread::_eetop_offset;
 int java_lang_Thread::_jvmti_thread_state_offset;
-int java_lang_Thread::_jvmti_VTMS_transition_disable_count_offset;
-int java_lang_Thread::_jvmti_is_in_VTMS_transition_offset;
+int java_lang_Thread::_vthread_transition_disable_count_offset;
+int java_lang_Thread::_is_in_vthread_transition_offset;
 int java_lang_Thread::_interrupted_offset;
 int java_lang_Thread::_interruptLock_offset;
 int java_lang_Thread::_tid_offset;
@@ -1760,34 +1745,34 @@ void java_lang_Thread::set_jvmti_thread_state(oop java_thread, JvmtiThreadState*
   java_thread->address_field_put(_jvmti_thread_state_offset, (address)state);
 }
 
-int java_lang_Thread::VTMS_transition_disable_count(oop java_thread) {
-  return java_thread->int_field(_jvmti_VTMS_transition_disable_count_offset);
+int java_lang_Thread::vthread_transition_disable_count(oop java_thread) {
+  jint* addr = java_thread->field_addr<jint>(_vthread_transition_disable_count_offset);
+  return AtomicAccess::load(addr);
 }
 
-void java_lang_Thread::inc_VTMS_transition_disable_count(oop java_thread) {
-  assert(JvmtiVTMSTransition_lock->owned_by_self(), "Must be locked");
-  int val = VTMS_transition_disable_count(java_thread);
-  java_thread->int_field_put(_jvmti_VTMS_transition_disable_count_offset, val + 1);
+void java_lang_Thread::inc_vthread_transition_disable_count(oop java_thread) {
+  assert(VThreadTransition_lock->owned_by_self(), "Must be locked");
+  jint* addr = java_thread->field_addr<jint>(_vthread_transition_disable_count_offset);
+  int val = AtomicAccess::load(addr);
+  AtomicAccess::store(addr, val + 1);
 }
 
-void java_lang_Thread::dec_VTMS_transition_disable_count(oop java_thread) {
-  assert(JvmtiVTMSTransition_lock->owned_by_self(), "Must be locked");
-  int val = VTMS_transition_disable_count(java_thread);
-  assert(val > 0, "VTMS_transition_disable_count should never be negative");
-  java_thread->int_field_put(_jvmti_VTMS_transition_disable_count_offset, val - 1);
+void java_lang_Thread::dec_vthread_transition_disable_count(oop java_thread) {
+  assert(VThreadTransition_lock->owned_by_self(), "Must be locked");
+  jint* addr = java_thread->field_addr<jint>(_vthread_transition_disable_count_offset);
+  int val = AtomicAccess::load(addr);
+  AtomicAccess::store(addr, val - 1);
 }
 
-bool java_lang_Thread::is_in_VTMS_transition(oop java_thread) {
-  return java_thread->bool_field_volatile(_jvmti_is_in_VTMS_transition_offset);
+bool java_lang_Thread::is_in_vthread_transition(oop java_thread) {
+  jboolean* addr = java_thread->field_addr<jboolean>(_is_in_vthread_transition_offset);
+  return AtomicAccess::load(addr);
 }
 
-void java_lang_Thread::set_is_in_VTMS_transition(oop java_thread, bool val) {
-  assert(is_in_VTMS_transition(java_thread) != val, "already %s transition", val ? "inside" : "outside");
-  java_thread->bool_field_put_volatile(_jvmti_is_in_VTMS_transition_offset, val);
-}
-
-int java_lang_Thread::is_in_VTMS_transition_offset() {
-  return _jvmti_is_in_VTMS_transition_offset;
+void java_lang_Thread::set_is_in_vthread_transition(oop java_thread, bool val) {
+  assert(is_in_vthread_transition(java_thread) != val, "already %s transition", val ? "inside" : "outside");
+  jboolean* addr = java_thread->field_addr<jboolean>(_is_in_vthread_transition_offset);
+  AtomicAccess::store(addr, (jboolean)val);
 }
 
 void java_lang_Thread::clear_scopedValueBindings(oop java_thread) {

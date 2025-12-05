@@ -986,13 +986,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="roc" draft="unconfirmed">ᱢᱤᱱᱜᱩᱣᱚ ᱢᱟᱦᱮᱛᱟ</type>
 			<type key="cf" type="account" draft="unconfirmed">ᱯᱩᱭᱥᱟᱹ ᱠᱷᱟᱛᱟ ᱯᱷᱚᱨᱢᱟᱴ</type>
 			<type key="cf" type="standard" draft="unconfirmed">ᱢᱩᱞ ᱯᱩᱭᱥᱟᱹ ᱯᱷᱚᱨᱢᱟᱴ</type>
-			<type key="collation" type="big5han" draft="unconfirmed">ᱫᱤᱥᱤ ᱪᱟᱭᱱᱤᱡᱽ ᱛᱷᱟᱨ ᱟᱸᱫᱮ</type>
 			<type key="collation" type="compat" draft="unconfirmed">ᱢᱟᱲᱟᱝ ᱛᱷᱟᱨ ᱟᱸᱫᱮ</type>
 			<type key="collation" type="dictionary" draft="unconfirmed">ᱥᱟᱵᱟᱫ ᱜᱟᱫᱮᱞ ᱛᱷᱟᱨ ᱟᱸᱫᱮ</type>
 			<type key="collation" type="ducet" draft="unconfirmed">ᱢᱩᱞ ᱭᱩᱱᱤᱠᱳᱰ ᱛᱷᱟᱨ ᱟᱸᱫᱮ</type>
 			<type key="collation" type="emoji" draft="unconfirmed">ᱤᱢᱚᱡᱤ ᱛᱷᱟᱨ ᱟᱸᱫᱮ</type>
 			<type key="collation" type="eor" draft="unconfirmed">ᱭᱩᱨᱚᱯᱤᱭᱟᱹᱱ ᱛᱷᱟᱨ ᱟᱸᱫᱮ</type>
-			<type key="collation" type="gb2312han" draft="unconfirmed">ᱥᱚᱦᱚᱡᱽ ᱪᱟᱭᱱᱤᱡᱽ ᱛᱷᱟᱨ ᱟᱸᱫᱮ</type>
 			<type key="collation" type="phonebook" draft="unconfirmed">ᱯᱷᱚᱱᱯᱚᱛᱚᱵ ᱛᱷᱟᱨ ᱟᱸᱫᱮ</type>
 			<type key="collation" type="pinyin" draft="unconfirmed">ᱯᱤᱱᱭᱟᱱ ᱛᱷᱟᱨ ᱟᱸᱫᱮ</type>
 			<type key="collation" type="reformed" draft="unconfirmed">ᱫᱩᱦᱲᱟᱹ ᱛᱮᱭᱟᱨ ᱛᱷᱟᱨ ᱟᱸᱫᱮ</type>
@@ -1854,6 +1852,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic draft="unconfirmed">ᱯᱟᱪᱮ ᱜᱽᱨᱤᱱᱞᱮᱱᱰ ᱚᱠᱛᱚ</generic>
 					<standard draft="unconfirmed">ᱯᱟᱪᱮ ᱜᱽᱨᱤᱱᱞᱮᱱᱰ ᱢᱟᱱᱚᱠ ᱚᱠᱛᱚ</standard>
 					<daylight draft="unconfirmed">ᱯᱟᱪᱮ ᱜᱽᱨᱤᱱᱞᱮᱱᱰ ᱥᱤᱛᱩᱝ ᱚᱠᱛᱚ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard draft="unconfirmed">ᱦᱟᱣᱟᱭᱤᱼᱟᱞᱮᱣᱴᱤᱭᱟᱱ ᱢᱟᱱᱚᱠ ᱚᱠᱛᱚ</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
