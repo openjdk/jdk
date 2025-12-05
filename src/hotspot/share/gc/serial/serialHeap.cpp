@@ -147,7 +147,8 @@ GrowableArray<MemoryPool*> SerialHeap::memory_pools() {
 
 HeapWord* SerialHeap::allocate_loaded_archive_space(size_t word_size) {
   MutexLocker ml(Heap_lock);
-  return old_gen()->allocate(word_size);
+  HeapWord* const addr = old_gen()->allocate(word_size);
+  return addr != nullptr ? addr : old_gen()->expand_and_allocate(word_size);
 }
 
 void SerialHeap::complete_loaded_archive_space(MemRegion archive_space) {

@@ -64,6 +64,11 @@ public class TestAccessErrorInCatch {
     }
 
     private static int invoke(MethodHandle mh) throws Throwable {
-        return (int) mh.invokeExact();
+        int expected = 1;
+        int ret = (int) mh.invokeExact();
+        if (ret != expected) {
+            throw new RuntimeException("Returned " + ret + " but expected " + expected);
+        }
+        return ret;
     }
 }

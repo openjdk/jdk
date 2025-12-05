@@ -364,7 +364,7 @@ class Field extends AccessibleObject implements Member {
      * @jls 8.3.1 Field Modifiers
      */
     public String toString() {
-        int mod = getModifiers();
+        int mod = getModifiers() & Modifier.fieldModifiers();
         return (((mod == 0) ? "" : (Modifier.toString(mod) + " "))
             + getType().getTypeName() + " "
             + getDeclaringClass().getTypeName() + "."
@@ -397,7 +397,7 @@ class Field extends AccessibleObject implements Member {
      * @jls 8.3.1 Field Modifiers
      */
     public String toGenericString() {
-        int mod = getModifiers();
+        int mod = getModifiers() & Modifier.fieldModifiers();
         Type fieldType = getGenericType();
         return (((mod == 0) ? "" : (Modifier.toString(mod) + " "))
             + fieldType.getTypeName() + " "
