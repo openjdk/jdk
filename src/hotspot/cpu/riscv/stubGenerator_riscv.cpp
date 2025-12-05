@@ -2619,7 +2619,8 @@ class StubGenerator: public StubCodeGenerator {
   //   x10       - input length
   //
   address generate_cipherBlockChaining_encryptAESCrypt() {
-    assert(UseAESIntrinsics, "need AES instructions (Zvkned extension) support");
+    assert(UseAESIntrinsics, "Must be");
+    assert(UseZvkn, "need AES instructions (Zvkned extension) support");
     __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_cipherBlockChaining_encryptAESCrypt_id;
     StubCodeMark mark(this, stub_id);
@@ -2727,7 +2728,8 @@ class StubGenerator: public StubCodeGenerator {
   //   x10       - input length
   //
   address generate_cipherBlockChaining_decryptAESCrypt() {
-    assert(UseAESIntrinsics, "need AES instructions (Zvkned extension) support");
+    assert(UseAESIntrinsics, "Must be");
+    assert(UseZvkn, "need AES instructions (Zvkned extension) support");
     __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_cipherBlockChaining_decryptAESCrypt_id;
     StubCodeMark mark(this, stub_id);
@@ -2994,8 +2996,8 @@ class StubGenerator: public StubCodeGenerator {
   //   x10       - input length
   //
   address generate_counterMode_AESCrypt() {
+    assert(UseAESCTRIntrinsics, "Must be");
     assert(UseZvkn, "need AES instructions (Zvkned extension) support");
-    assert(UseAESCTRIntrinsics, "need AES instructions (Zvkned extension) support");
     assert(UseZbb, "need basic bit manipulation (Zbb extension) support");
 
     __ align(CodeEntryAlignment);
