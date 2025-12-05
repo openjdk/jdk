@@ -2053,7 +2053,7 @@ bool ObjectMonitor::notify_internal(JavaThread* current) {
       // In the other cases the target would have been already unblocked so
       // there is nothing to do.
       if (old_state == java_lang_VirtualThread::WAIT ||
-        old_state == java_lang_VirtualThread::TIMED_WAIT) {
+          old_state == java_lang_VirtualThread::TIMED_WAIT) {
         java_lang_VirtualThread::cmpxchg_state(vthread, old_state, java_lang_VirtualThread::BLOCKED);
       }
       // Increment counter *before* adding the vthread to the _entry_list.
