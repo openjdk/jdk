@@ -117,6 +117,13 @@ public class AbstractVectorTest {
                 }
                 return a;
             }),
+            withToString("mask[i % 5]", (int l) -> {
+                boolean[] a = new boolean[l];
+                for (int i = 0; i < l; i++) {
+                    a[i] = (i % 2 == 0);
+                }
+                return a;
+            }),
             withToString("mask[true]", (int l) -> {
                 boolean[] a = new boolean[l];
                 Arrays.fill(a, true);
@@ -151,40 +158,12 @@ public class AbstractVectorTest {
         return packed;
     }
 
-    static final List<IntFunction<long[]>> LONG_MASK_GENERATORS = List.of(
-            withToString("mask[random]", (int l) -> {
-                boolean[] a = new boolean[l];
-                for (int i = 0; i < l; i++) {
-                    a[i] = RAND.nextBoolean();
-                }
-                return pack_booleans_to_longs(a);
-            }),
-            withToString("mask[i % 2]", (int l) -> {
-                boolean[] a = new boolean[l];
-                for (int i = 0; i < l; i++) {
-                    a[i] = (i % 2 == 0);
-                }
-                return pack_booleans_to_longs(a);
-            }),
-            withToString("mask[i % 5]", (int l) -> {
-                boolean[] a = new boolean[l];
-                for (int i = 0; i < l; i++) {
-                    a[i] = (i % 2 == 0);
-                }
-                return pack_booleans_to_longs(a);
-            }),
-            withToString("mask[true]", (int l) -> {
-                boolean[] a = new boolean[l];
-                Arrays.fill(a, true);
-                return pack_booleans_to_longs(a);
-            }),
-            withToString("mask[false]", (int l) ->
-                pack_booleans_to_longs(new boolean[l])),
-            withToString("mask[0xFFFFFFFFFFFFFFFFL]", (_l) -> new long[] { 0xFFFFFFFFFFFFFFFFL }),
-            withToString("mask[0x0000000000000000L]", (_l) -> new long[] { 0x0000000000000000L }),
-            withToString("mask[0x5555555555555555L]", (_l) -> new long[] { 0x5555555555555555L }),
-            withToString("mask[0x0123456789abcdefL]", (_l) -> new long[] { 0x0123456789abcdefL })
-    );
+    static final List<IntFunction<long[]>> LONG_MASK_GENERATORS = BOOLEAN_MASK_GENERATORS.stream()
+            .map(f -> withToString(
+                    f.toString().replace("mask", "long_mask"),
+                    (IntFunction<long[]>) (int l) -> pack_booleans_to_longs(f.apply(l))
+            ))
+            .collect(Collectors.toList());
 
     static final List<BiFunction<Integer,Integer,int[]>> INT_SHUFFLE_GENERATORS = List.of(
             withToStringBi("shuffle[random]",
