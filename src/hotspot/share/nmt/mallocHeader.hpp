@@ -133,12 +133,9 @@ public:
   };
 
   inline MallocHeader(size_t size, MemTag mem_tag, uint32_t mst_marker);
-
   inline static size_t malloc_overhead() { return sizeof(MallocHeader) + footer_size; }
-
   inline static MallocHeader* kill_block(void* memblock);
   inline static void revive_block(void* memblock);
-
   inline size_t size()  const { return _size; }
   inline MemTag mem_tag() const { return _mem_tag; }
   inline uint32_t mst_marker() const { return _mst_marker; }
