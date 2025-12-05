@@ -6552,6 +6552,33 @@ public class LongMaxVectorTests extends AbstractVectorTest {
         assertArraysEquals(r, a, LongMaxVectorTests::unot);
     }
 
+    private static final long LONG_MASK_BITS = 0xFFFFFFFFFFFFFFFFL >>> (64 - SPECIES.length());
+
+    static void assertArraysEquals(long[] r, long[] a, long bits) {
+        int i = 0;
+        try {
+            for (; i < a.length; i++) {
+                Assert.assertEquals(r[i], a[i] & bits);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], a[i] & bits, "(" + a[i] + ") at index #" + i);
+        }
+    }
+
+    @Test(dataProvider = "maskLongProvider")
+    static void maskfromToLongLongMaxVectorTests(IntFunction<long[]> fa) {
+        long[] a = fa.apply(SPECIES.length());
+        long[] r = new long[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT * INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i++) {
+                VectorMask vmask = VectorMask.fromLong(SPECIES, a[i]);
+                r[i] = vmask.toLong();
+            }
+        }
+        assertArraysEquals(r, a, LONG_MASK_BITS);
+    }
+
     @Test(dataProvider = "longCompareOpProvider")
     static void ltLongMaxVectorTestsBroadcastSmokeTest(IntFunction<long[]> fa, IntFunction<long[]> fb) {
         long[] a = fa.apply(SPECIES.length());
@@ -6904,21 +6931,6 @@ public class LongMaxVectorTests extends AbstractVectorTest {
             }
         }
     }
-
-    private static final long LONG_MASK_BITS = 0xFFFFFFFFFFFFFFFFL >>> (64 - SPECIES.length());
-
-    @Test(dataProvider = "maskLongProvider")
-    static void maskFromToLongLongMaxVectorTests(IntFunction<Long> fa) {
-        long a = fa.apply(SPECIES.length());
-        long r = -1;
-
-        for (int ic = 0; ic < INVOC_COUNT * INVOC_COUNT; ic++) {
-            var vmask = VectorMask.fromLong(SPECIES, a);
-            r = vmask.toLong();
-        }
-        Assert.assertEquals(r, (a & LONG_MASK_BITS));
-    }
-
 
     @DataProvider
     public static Object[][] offsetProvider() {

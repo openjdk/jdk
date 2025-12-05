@@ -502,39 +502,6 @@
         }
     }
 
-    private static final long LONG_MASK_BITS = 0xFFFFFFFFFFFFFFFFL >>> (64 - SPECIES.length());
-
-    @Test(dataProvider = "maskLongProvider")
-    static void maskFromToLong$vectorteststype$(IntFunction<Long> fa) {
-        long a = fa.apply(SPECIES.length());
-        long r = -1;
-
-        for (int ic = 0; ic < INVOC_COUNT * INVOC_COUNT; ic++) {
-            var vmask = VectorMask.fromLong(SPECIES, a);
-            r = vmask.toLong();
-        }
-        Assert.assertEquals(r, (a & LONG_MASK_BITS));
-    }
-
-#if[!MaxBit]
-    @DataProvider
-    public static Object[][] longMaskProvider() {
-        return new Object[][]{
-                {0xFFFFFFFFFFFFFFFFL},
-                {0x0000000000000000L},
-                {0x5555555555555555L},
-                {0x0123456789abcdefL},
-        };
-    }
-
-    @Test(dataProvider = "longMaskProvider")
-    static void maskFromToLong$vectorteststype$SmokeTest(long inputLong) {
-        var vmask = VectorMask.fromLong(SPECIES, inputLong);
-        long outputLong = vmask.toLong();
-        Assert.assertEquals(outputLong, (inputLong & LONG_MASK_BITS));
-    }
-#end[!MaxBit]
-
     @DataProvider
     public static Object[][] offsetProvider() {
         return new Object[][]{
