@@ -64,16 +64,6 @@ void os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandl
   f(value, method, args, thread);
 }
 
-PRAGMA_DISABLE_MSVC_WARNING(4172)
-// Returns an estimate of the current stack pointer. Result must be guaranteed
-// to point into the calling threads stack, and be no lower than the current
-// stack pointer.
-address os::current_stack_pointer() {
-  int dummy;
-  address sp = (address)&dummy;
-  return sp;
-}
-
 address os::fetch_frame_from_context(const void* ucVoid,
                     intptr_t** ret_sp, intptr_t** ret_fp) {
   address  epc;

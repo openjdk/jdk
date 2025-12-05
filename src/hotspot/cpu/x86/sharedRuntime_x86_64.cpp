@@ -3335,7 +3335,7 @@ do {                                                    \
 // in  A Cryptographic Library for the Motorola DSP56000,
 // Dusse and Kaliski, Proc. EUROCRYPT 90, pp. 230-237.
 
-static void NOINLINE
+NOINLINE static void
 montgomery_multiply(julong a[], julong b[], julong n[],
                     julong m[], julong inv, int len) {
   julong t0 = 0, t1 = 0, t2 = 0; // Triple-precision accumulator
@@ -3377,7 +3377,7 @@ montgomery_multiply(julong a[], julong b[], julong n[],
 // multiplication.  However, its loop control is more complex and it
 // may actually run slower on some machines.
 
-static void NOINLINE
+NOINLINE static void
 montgomery_square(julong a[], julong n[],
                   julong m[], julong inv, int len) {
   julong t0 = 0, t1 = 0, t2 = 0; // Triple-precision accumulator

@@ -213,7 +213,7 @@ public:
     return extend(uval, msb - lsb);
   }
 
-  static ALWAYSINLINE void patch(address a, int msb, int lsb, uint64_t val) {
+  ALWAYSINLINE static void patch(address a, int msb, int lsb, uint64_t val) {
     int nbits = msb - lsb + 1;
     guarantee(val < (1ULL << nbits), "Field too big for insn");
     assert_cond(msb >= lsb);

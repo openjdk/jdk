@@ -76,16 +76,6 @@
 # include <poll.h>
 # include <ucontext.h>
 
-address os::current_stack_pointer() {
-  intptr_t* csp;
-
-  // Inline assembly for `z_lgr regno(csp), Z_SP' (Z_SP = Z_R15):
-  __asm__ __volatile__ ("lgr %0, 15":"=r"(csp):);
-
-  assert(((uint64_t)csp & (frame::alignment_in_bytes-1)) == 0, "SP must be aligned");
-  return (address) csp;
-}
-
 char* os::non_memory_address_word() {
   // Must never look like an address returned by reserve_memory,
   // even in its subfields (as defined by the CPU immediate fields,
