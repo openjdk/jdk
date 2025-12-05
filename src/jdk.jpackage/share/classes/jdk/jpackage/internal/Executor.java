@@ -27,6 +27,7 @@ package jdk.jpackage.internal;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.System.Logger.Level;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -34,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.model.Logger;
 
 public final class Executor {
 
@@ -272,8 +274,8 @@ public final class Executor {
     private boolean saveOutput;
     private boolean writeOutputToFile;
     private boolean quietCommand;
-    private System.Logger logger;
-    private System.Logger.Level loggerLevel;
+    private System.Logger logger = Logger.MAIN.get();
+    private Level loggerLevel = Level.DEBUG;
     private long timeout = INFINITE_TIMEOUT;
     private List<String> output;
     private Consumer<Stream<String>> outputConsumer;
