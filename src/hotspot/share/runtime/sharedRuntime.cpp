@@ -334,18 +334,23 @@ JRT_LEAF(jlong, SharedRuntime::lrem(jlong y, jlong x))
 JRT_END
 
 
-#ifdef _WIN64
+#if defined(_WINDOWS) && defined(AARCH64)
 const juint  float_sign_mask  = 0x7FFFFFFF;
 const juint  float_infinity   = 0x7F800000;
 const julong double_sign_mask = CONST64(0x7FFFFFFFFFFFFFFF);
 const julong double_infinity  = CONST64(0x7FF0000000000000);
-#endif
 
-#if !defined(X86)
 JRT_LEAF(jfloat, SharedRuntime::frem(jfloat x, jfloat y))
-#ifdef _WIN64
-  // 64-bit Windows on amd64 returns the wrong values for
-  // infinity operands.
+  // Initially, this was in place because 64-bit Windows
+  // on amd64 returns the wrong values for infinity
+  // operands. 64-bit Windows on AMD64 now uses custom
+  // handwritten assembly, but when 8342769 tried to
+  // delete this workaround, it was discovered in
+  // review that now Windows/ARM64 suffers from the
+  // same bug, so this workaround is now used for
+  // Windows/ARM64. This, along with the implementation
+  // of the workaround in sharedRuntimeRem.cpp, can be
+  // safely deleted once the bug is fixed.
   juint xbits = PrimitiveConversions::cast<juint>(x);
   juint ybits = PrimitiveConversions::cast<juint>(y);
   // x Mod Infinity == x unless x is infinity
@@ -353,14 +358,10 @@ JRT_LEAF(jfloat, SharedRuntime::frem(jfloat x, jfloat y))
        ((ybits & float_sign_mask) == float_infinity) ) {
     return x;
   }
-  return ((jfloat)fmod_winx64((double)x, (double)y));
-#else
-  return ((jfloat)fmod((double)x,(double)y));
-#endif
+  return ((jfloat)fmod_winarm64((double)x, (double)y));
 JRT_END
 
 JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
-#ifdef _WIN64
   julong xbits = PrimitiveConversions::cast<julong>(x);
   julong ybits = PrimitiveConversions::cast<julong>(y);
   // x Mod Infinity == x unless x is infinity
@@ -368,12 +369,17 @@ JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
        ((ybits & double_sign_mask) == double_infinity) ) {
     return x;
   }
-  return ((jdouble)fmod_winx64((double)x, (double)y));
-#else
-  return ((jdouble)fmod((double)x,(double)y));
-#endif
+  return ((jdouble)fmod_winarm64((double)x, (double)y));
 JRT_END
-#endif // !X86
+#elif !defined(X86)
+JRT_LEAF(jfloat, SharedRuntime::frem(jfloat x, jfloat y))
+  return ((jfloat)fmod((double)x,(double)y));
+JRT_END
+
+JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
+  return ((jdouble)fmod((double)x,(double)y));
+JRT_END
+#endif // _WINDOWS && AARCH64
 
 JRT_LEAF(jfloat, SharedRuntime::i2f(jint x))
   return (jfloat)x;
