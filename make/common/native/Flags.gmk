@@ -236,7 +236,7 @@ define SetupLinkerFlags
     endif
 
     # for lto, we have to use the debug prefix mapping flags to get rid of unwanted paths
-    $1_EXTRA_LDFLAGS += $$(DEBUG_PREFIX_CFLAGS)
+    # $1_EXTRA_LDFLAGS += $$(DEBUG_PREFIX_CFLAGS)
   endif
 
   $1_EXTRA_LDFLAGS += $$($1_LDFLAGS_$(OPENJDK_TARGET_OS_TYPE)) $$($1_LDFLAGS_$(OPENJDK_TARGET_OS)) \
