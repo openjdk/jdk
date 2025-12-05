@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,16 +59,30 @@ public class BaseBehaviorTest extends ThreadMXBeanTestBase {
                     + "return -1 if ThreadAllocatedMemoryEnabled is set to false. "
                     + "Received : " + result);
         threadMXBean.setThreadAllocatedMemoryEnabled(true);
-        // Expect >= 0 value for current thread
+        // Expect >= 0 value for current platform thread.
         result = threadMXBean.getCurrentThreadAllocatedBytes();
-        if (result < 0)
-            throw new TestFailure("Failure! getCurrentThreadAllocatedBytes() should "
-                    + "return >= 0 value for current thread. Received : " + result);
-        // Expect >= 0 value for current thread from getThreadAllocatedBytes(id)
+        if (Thread.currentThread().isVirtual()) {
+            if (result != -1)
+                throw new TestFailure("Failure! getCurrentThreadAllocatedBytes() should "
+                    + "return -1 for virtual thread. "
+                    + "Recieved : " + result);
+        } else {
+            if (result < 0)
+                throw new TestFailure("Failure! getCurrentThreadAllocatedBytes() should "
+                        + "return >= 0 value for current thread. Received : " + result);
+        }
+        // Expect >= 0 value for current iplatform thread from getThreadAllocatedBytes(id).
         result = threadMXBean.getThreadAllocatedBytes(Thread.currentThread().getId());
-        if (result < 0)
-            throw new TestFailure("Failure! getThreadAllocatedBytes(id) should "
-                    + "return >= 0 value for current thread. Received : " + result);
+        if (Thread.currentThread().isVirtual()) {
+            if (result != -1)
+                throw new TestFailure("Failure! ggetThreadAllocatedBytes(id) should "
+                    + "return -1 for virtual thread. "
+                    + "Recieved : " + result);
+        } else {
+            if (result < 0)
+                throw new TestFailure("Failure! getThreadAllocatedBytes(id) should "
+                        + "return >= 0 value for current thread. Received : " + result);
+        }
 
         MXBeanTestThread thread = new MXBeanTestThread();
         long id = thread.getId();
@@ -103,13 +117,27 @@ public class BaseBehaviorTest extends ThreadMXBeanTestBase {
             threadMXBean.setThreadAllocatedMemoryEnabled(true);
             // Expect >= 0 value for running threads
             result = threadMXBean.getThreadAllocatedBytes(id);
-            if (result < 0)
-            throw new TestFailure("Failure! getThreadAllocatedBytes(long id) should "
-                    + "return > 0 value for RUNNING thread. Recieved : " + result);
+            if (thread.isVirtual()) {
+                if (result != -1)
+                    throw new TestFailure("Failure! getThreadAllocatedBytes(long id) should "
+                        + "return -1 for virtual thread. "
+                        + "Recieved : " + result);
+            } else {
+                if (result < 0)
+                throw new TestFailure("Failure! getThreadAllocatedBytes(long id) should "
+                        + "return > 0 value for RUNNING thread. Recieved : " + result);
+            }
             resultArr = threadMXBean.getThreadAllocatedBytes(idArr);
-            if (resultArr[0] < 0)
-                throw new TestFailure("Failure! getThreadAllocatedBytes(long[] ids) should "
-                    + "return > 0 value for RUNNING thread. Recieved : " + resultArr[0]);
+            if (thread.isVirtual()) {
+                if (resultArr[0] != -1)
+                    throw new TestFailure("Failure! getThreadAllocatedBytes(long[] ids) should "
+                        + "return -1 for virtual thread. "
+                        + "Recieved : " + resultArr[0]);
+            } else {
+                if (resultArr[0] < 0)
+                    throw new TestFailure("Failure! getThreadAllocatedBytes(long[] ids) should "
+                        + "return > 0 value for RUNNING thread. Recieved : " + resultArr[0]);
+            }
         } finally {
             // Let thread finish
             handler.finish();
