@@ -120,20 +120,20 @@
    server.setHttpsConfigurator(new HttpsConfigurator(sslContext) {
        public void configure(HttpsParameters params) {
 
-       // get the remote address if needed
-       InetSocketAddress remote = params.getClientAddress();
+           // get the remote address if needed
+           InetSocketAddress remote = params.getClientAddress();
 
-       SSLContext c = getSSLContext();
+           SSLContext c = getSSLContext();
 
-       // get the default parameters
-       SSLParameters sslparams = c.getDefaultSSLParameters();
-       if (remote.equals(...)) {
-           // modify the default set for client x
-       }
+           // get the default parameters
+           SSLParameters sslparams = c.getDefaultSSLParameters();
+           if (remote.equals(...)) {
+               // modify the default set for client x
+           }
 
-       params.setSSLParameters(sslparams);
-       // statement above could throw IAE if any params invalid.
-       // eg. if app has a UI and parameters supplied by a user.
+           params.setSSLParameters(sslparams);
+           // statement above could throw IAE if any params invalid.
+           // eg. if app has a UI and parameters supplied by a user.
 
        }
    });
