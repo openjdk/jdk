@@ -6609,7 +6609,7 @@ public class Int128VectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "maskLongProvider")
-    static void maskfromToLongInt128VectorTests(IntFunction<long[]> fa) {
+    static void maskFromToLongInt128VectorTests(IntFunction<long[]> fa) {
         long[] a = fa.apply(SPECIES.length());
         long[] r = new long[a.length];
 

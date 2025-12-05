@@ -4986,7 +4986,7 @@ relativeError));
     }
 
     @Test(dataProvider = "maskLongProvider")
-    static void maskfromToLongDoubleMaxVectorTests(IntFunction<long[]> fa) {
+    static void maskFromToLongDoubleMaxVectorTests(IntFunction<long[]> fa) {
         long[] a = fa.apply(SPECIES.length());
         long[] r = new long[a.length];
 

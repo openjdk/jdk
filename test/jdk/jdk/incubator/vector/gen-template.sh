@@ -636,7 +636,7 @@ gen_op_tmpl $bool_binary_template "xor" "a != b"
 gen_op_tmpl $bool_binary_template "andNot" "a \& !b"
 gen_op_tmpl $bool_binary_template "eq" "a == b"
 gen_op_tmpl $bool_unary_template "not" "!a"
-gen_op_tmpl $mask_fromtolong_template "fromToLong" ""
+gen_op_tmpl $mask_fromtolong_template "FromToLong" ""
 
 # Miscellaneous Smoke Tests
 gen_op_tmpl $miscellaneous_template "MISC" "" ""
