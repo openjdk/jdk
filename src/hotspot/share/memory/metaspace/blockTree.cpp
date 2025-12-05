@@ -38,7 +38,7 @@ const size_t BlockTree::MinWordSize;
 
 #define NODE_FORMAT \
   "@" PTR_FORMAT \
-  ": canary " INTPTR_FORMAT \
+  ": canary " UINTX_FORMAT_X_0 \
   ", parent " PTR_FORMAT \
   ", left " PTR_FORMAT \
   ", right " PTR_FORMAT \
@@ -47,7 +47,7 @@ const size_t BlockTree::MinWordSize;
 
 #define NODE_FORMAT_ARGS(n) \
   p2i(n), \
-  (n)->_canary, \
+  (uintptr_t)((n)->_canary), \
   p2i((n)->_parent), \
   p2i((n)->_left), \
   p2i((n)->_right), \
@@ -90,7 +90,7 @@ void BlockTree::verify_node_pointer(const Node* n) const {
   // If the canary is broken, this is either an invalid node pointer or
   // the node has been overwritten. Either way, print a hex dump, then
   // assert away.
-  if (n->_canary != Node::_canary_value) {
+  if (!Zapper::is_zapped_location(&(n->_canary))) {
     os::print_hex_dump(tty, (address)n, (address)n + sizeof(Node), 1);
     tree_assert(false, "Invalid node: @" PTR_FORMAT " canary broken or pointer invalid", p2i(n));
   }
@@ -136,6 +136,13 @@ void BlockTree::verify() const {
       tree_assert_invalid_node(n->_word_size > info.lim1, n);
       tree_assert_invalid_node(n->_word_size < info.lim2, n);
 
+      // Check if part of the payload was overwritten (the canary was checked
+      // before in verify_node_pointer)
+      if (!Zapper::is_zapped_location(n->end() - 1)) {
+        os::print_hex_dump(tty, (address)n, (address)n + sizeof(Node), 1);
+        tree_assert(false, "Invalid node: @" PTR_FORMAT " node end overwritten?", p2i(n));
+      }
+
       // Check children
       if (n->_left != nullptr) {
         tree_assert_invalid_node(n->_left != n, n);
@@ -177,10 +184,6 @@ void BlockTree::verify() const {
   // (which also verifies that we visited every node, or at least
   //  as many nodes as are in this tree)
   _counter.check(counter);
-}
-
-void BlockTree::zap_block(MetaBlock bl) {
-  memset(bl.base(), 0xF3, bl.word_size() * sizeof(MetaWord));
 }
 
 void BlockTree::print_tree(outputStream* st) const {
