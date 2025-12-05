@@ -27,12 +27,12 @@
  * Provides classes and interfaces, in addition to {@link Class java.lang.Class},
  * for obtaining reflective information about Java programs.  Reflection allows
  * programmatic inspection of structures in loaded classes and interfaces (JVMS
- * {@jvms 4}), represented by <em>reflected objects</em>.  These structures
- * {@linkplain ##LanguageJvmModel may represent} Java language declarations (JLS
- * {@jls 6.1}).  Thus, a reflected object can represent a Java language
- * declaration in a class or interface not available at compile time, allowing
- * {@linkplain ##accessor programmatic use} of this declaration within
- * encapsulation and security restrictions.
+ * {@jvms 4}) in the current Java runtime, represented by <em>reflected
+ * objects</em>.  These structures {@linkplain ##LanguageJvmModel may represent}
+ * Java language declarations (JLS {@jls 6.1}).  Thus, a reflected object can
+ * represent a Java language declaration in a class or interface not available
+ * at compile time, allowing {@linkplain ##accessor programmatic use} of this
+ * declaration within encapsulation and security restrictions.
  *
  * <p>{@link Array} provides static methods to dynamically create and
  * access arrays.
@@ -47,8 +47,8 @@
  * An accessor of a reflected object perform access control against the caller
  * every time the accessor is used, unless that reflected object {@linkplain
  * AccessibleObject#setAccessible(boolean) suppresses checks}.  For a class or
- * interface A, core reflection represents a member declared in A and the member
- * inherited by another class or interface from A with equivalent reflective
+ * interface A, core reflection represents a member declared in A and the same
+ * member inherited by another reference type from A with equivalent reflective
  * objects, with A as the {@linkplain Member#getDeclaringClass() declaring class
  * or interface}.  Therefore, access checks of such a reflected object assumes
  * the use happened on the member in A, while in the Java Language and JVM,
@@ -57,8 +57,8 @@
  *
  * <p>In contrast, {@link MethodHandles.Lookup} performs a single access check
  * to produce a {@link MethodHandle} that performs no additional access checks.
- * If a member is accessed, the single check is performed against the correct
- * class or interface of the member.
+ * If the accessed declaration is a member, the single check is performed
+ * against the correct class or interface of the member.
  *
  * <h3 id="conversions">Value Conversions</h3>
  * The accessors perform conversions from accessor arguments to values accepted
