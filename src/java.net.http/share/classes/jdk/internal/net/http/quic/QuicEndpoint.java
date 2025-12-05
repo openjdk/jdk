@@ -62,6 +62,7 @@ import jdk.internal.net.http.common.SequentialScheduler;
 import jdk.internal.net.http.common.TimeLine;
 import jdk.internal.net.http.common.TimeSource;
 import jdk.internal.net.http.common.Utils;
+import jdk.internal.net.http.common.Utils.UseVTForSelector;
 import jdk.internal.net.http.quic.QuicSelector.QuicNioSelector;
 import jdk.internal.net.http.quic.QuicSelector.QuicVirtualThreadPoller;
 import jdk.internal.net.http.quic.packets.QuicPacket.HeadersType;
@@ -116,6 +117,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
     static final boolean DGRAM_SEND_ASYNC;
     static final int MAX_BUFFERED_HIGH;
     static final int MAX_BUFFERED_LOW;
+    static final UseVTForSelector USE_VT_FOR_SELECTOR;
     static {
         // This default value is the maximum payload size of
         // an IPv6 datagram, which is 65527 (which is bigger
@@ -142,6 +144,8 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         if (maxBufferLow >= maxBufferHigh) maxBufferLow = maxBufferHigh >> 1;
         MAX_BUFFERED_HIGH = maxBufferHigh;
         MAX_BUFFERED_LOW = maxBufferLow;
+        var property = "jdk.internal.httpclient.quic.selector.useVirtualThreads";
+        USE_VT_FOR_SELECTOR = Utils.useVTForSelector(property, "default");
     }
 
     /**
@@ -821,7 +825,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                             // to the selector to process the event queue
                             assert this instanceof QuicEndpoint.QuicSelectableEndpoint
                                     : "unexpected endpoint type: " + this.getClass() + "@[" + name + "]";
-                            assert Thread.currentThread() instanceof QuicSelector.QuicSelectorThread;
+                            assert QuicSelector.isSelectorThread();
                             if (Log.quicRetransmit() || Log.quicTimer()) {
                                 Log.logQuic(name() + ": reschedule needed: " + Utils.debugDeadline(now, pending)
                                         + ", totalpkt: " + totalpkt

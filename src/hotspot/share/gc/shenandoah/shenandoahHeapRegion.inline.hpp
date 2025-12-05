@@ -71,7 +71,7 @@ HeapWord* ShenandoahHeapRegion::allocate_aligned(size_t size, ShenandoahAllocReq
     }
 
     make_regular_allocation(req.affiliation());
-    adjust_alloc_metadata(req.type(), size);
+    adjust_alloc_metadata(req, size);
 
     HeapWord* new_top = aligned_obj + size;
     assert(new_top <= end(), "PLAB cannot span end of heap region");
@@ -87,6 +87,23 @@ HeapWord* ShenandoahHeapRegion::allocate_aligned(size_t size, ShenandoahAllocReq
   }
 }
 
+HeapWord* ShenandoahHeapRegion::allocate_fill(size_t size) {
+  shenandoah_assert_heaplocked_or_safepoint();
+  assert(is_object_aligned(size), "alloc size breaks alignment: %zu", size);
+  assert(size >= ShenandoahHeap::min_fill_size(), "Cannot fill unless min fill size");
+
+  HeapWord* obj = top();
+  HeapWord* new_top = obj + size;
+  ShenandoahHeap::fill_with_object(obj, size);
+  set_top(new_top);
+
+  assert(is_object_aligned(new_top), "new top breaks alignment: " PTR_FORMAT, p2i(new_top));
+  assert(is_object_aligned(obj),     "obj is not aligned: "       PTR_FORMAT, p2i(obj));
+
+  return obj;
+}
+
+
 HeapWord* ShenandoahHeapRegion::allocate(size_t size, const ShenandoahAllocRequest& req) {
   shenandoah_assert_heaplocked_or_safepoint();
   assert(is_object_aligned(size), "alloc size breaks alignment: %zu", size);
@@ -94,7 +111,7 @@ HeapWord* ShenandoahHeapRegion::allocate(size_t size, const ShenandoahAllocReque
   HeapWord* obj = top();
   if (pointer_delta(end(), obj) >= size) {
     make_regular_allocation(req.affiliation());
-    adjust_alloc_metadata(req.type(), size);
+    adjust_alloc_metadata(req, size);
 
     HeapWord* new_top = obj + size;
     set_top(new_top);
@@ -108,24 +125,16 @@ HeapWord* ShenandoahHeapRegion::allocate(size_t size, const ShenandoahAllocReque
   }
 }
 
-inline void ShenandoahHeapRegion::adjust_alloc_metadata(ShenandoahAllocRequest::Type type, size_t size) {
-  switch (type) {
-    case ShenandoahAllocRequest::_alloc_shared:
-    case ShenandoahAllocRequest::_alloc_shared_gc:
-    case ShenandoahAllocRequest::_alloc_cds:
-      // Counted implicitly by tlab/gclab allocs
-      break;
-    case ShenandoahAllocRequest::_alloc_tlab:
+inline void ShenandoahHeapRegion::adjust_alloc_metadata(const ShenandoahAllocRequest &req, size_t size) {
+  // Only need to update alloc metadata for lab alloc, shared alloc is counted implicitly by tlab/gclab allocs
+  if (req.is_lab_alloc()) {
+    if (req.is_mutator_alloc()) {
       _tlab_allocs += size;
-      break;
-    case ShenandoahAllocRequest::_alloc_gclab:
-      _gclab_allocs += size;
-      break;
-    case ShenandoahAllocRequest::_alloc_plab:
+    } else if (req.is_old()) {
       _plab_allocs += size;
-      break;
-    default:
-      ShouldNotReachHere();
+    } else {
+      _gclab_allocs += size;
+    }
   }
 }
 
@@ -138,7 +147,7 @@ inline void ShenandoahHeapRegion::increase_live_data_gc_words(size_t s) {
 }
 
 inline void ShenandoahHeapRegion::internal_increase_live_data(size_t s) {
-  size_t new_live_data = AtomicAccess::add(&_live_data, s, memory_order_relaxed);
+  AtomicAccess::add(&_live_data, s, memory_order_relaxed);
 }
 
 inline void ShenandoahHeapRegion::clear_live_data() {

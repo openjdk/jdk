@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/cdsConfig.hpp"
 #include "classfile/altHashing.hpp"
 #include "gc/shared/stringdedup/stringDedupConfig.hpp"
 #include "logging/log.hpp"

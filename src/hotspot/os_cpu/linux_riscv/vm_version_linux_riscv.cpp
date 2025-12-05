@@ -103,6 +103,18 @@ uint32_t VM_Version::cpu_vector_length() {
   return (uint32_t)read_csr(CSR_VLENB);
 }
 
+void VM_Version::RVExtFeatureValue::log_enabled() {
+  log_info(os, cpu)("Enabled RV64 feature \"%s\"", pretty());
+}
+
+void VM_Version::RVExtFeatureValue::log_disabled(const char* reason) {
+  log_info(os, cpu)("Disabled RV64 feature \"%s\" (%s)", pretty(), reason);
+}
+
+void VM_Version::RVNonExtFeatureValue::log_enabled() {
+  log_info(os, cpu)("Enabled RV64 feature \"%s\" (%ld)", pretty(), value());
+}
+
 void VM_Version::setup_cpu_available_features() {
 
   assert(ext_i.feature_bit() == HWCAP_ISA_I, "Bit for I must follow Linux HWCAP");
@@ -144,9 +156,8 @@ void VM_Version::setup_cpu_available_features() {
         continue;
       }
 
-      log_debug(os, cpu)("Enabled RV64 feature \"%s\" (%ld)",
-             _feature_list[i]->pretty(),
-             _feature_list[i]->value());
+      _feature_list[i]->log_enabled();
+
       // The feature string
       if (_feature_list[i]->feature_string()) {
         const char* tmp = _feature_list[i]->pretty();
@@ -186,7 +197,7 @@ void VM_Version::setup_cpu_available_features() {
     // via PR_RISCV_SCOPE_PER_THREAD, i.e. on VM attach/deattach.
     int ret = prctl(PR_RISCV_SET_ICACHE_FLUSH_CTX, PR_RISCV_CTX_SW_FENCEI_ON, PR_RISCV_SCOPE_PER_PROCESS);
     if (ret == 0) {
-      log_debug(os, cpu)("UseCtxFencei (PR_RISCV_CTX_SW_FENCEI_ON) enabled.");
+      log_info(os, cpu)("UseCtxFencei (PR_RISCV_CTX_SW_FENCEI_ON) enabled.");
     } else {
       FLAG_SET_ERGO(UseCtxFencei, false);
       log_info(os, cpu)("UseCtxFencei (PR_RISCV_CTX_SW_FENCEI_ON) disabled, unsupported by kernel.");

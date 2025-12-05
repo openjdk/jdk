@@ -450,7 +450,7 @@ itself (<code>-timeoutFactor</code>). Also, some test cases that
 programmatically wait a certain amount of time will apply this factor.
 If we run in forced compilation mode (<code>-Xcomp</code>), the build
 system will automatically adjust this factor to compensate for less
-performance. Defaults to 1.</p>
+performance. Defaults to 4.</p>
 <h4 id="failure_handler_timeout">FAILURE_HANDLER_TIMEOUT</h4>
 <p>Sets the argument <code>-timeoutHandlerTimeout</code> for JTReg. The
 default value is 0. This is only valid if the failure handler is
@@ -535,6 +535,8 @@ failure. This helps to reproduce intermittent test failures. Defaults to
 <h4 id="report">REPORT</h4>
 <p>Use this report style when reporting test results (sent to JTReg as
 <code>-report</code>). Defaults to <code>files</code>.</p>
+<h4 id="manual">MANUAL</h4>
+<p>Set to <code>true</code> to execute manual tests only.</p>
 <h3 id="gtest-keywords">Gtest keywords</h3>
 <h4 id="repeat">REPEAT</h4>
 <p>The number of times to repeat the tests

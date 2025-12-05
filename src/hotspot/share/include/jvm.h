@@ -433,12 +433,10 @@ JVM_FindClassFromBootLoader(JNIEnv *env, const char *name);
  *  init:   whether initialization is done
  *  loader: class loader to look up the class. This may not be the same as the caller's
  *          class loader.
- *  caller: initiating class. The initiating class may be null when a security
- *          manager is not installed.
  */
 JNIEXPORT jclass JNICALL
-JVM_FindClassFromCaller(JNIEnv *env, const char *name, jboolean init,
-                        jobject loader, jclass caller);
+JVM_FindClassFromLoader(JNIEnv *env, const char *name, jboolean init,
+                        jobject loader);
 
 /*
  * Find a class from a given class.
@@ -1102,16 +1100,16 @@ JVM_GetEnclosingMethodInfo(JNIEnv* env, jclass ofClass);
  * Virtual thread support.
  */
 JNIEXPORT void JNICALL
-JVM_VirtualThreadStart(JNIEnv* env, jobject vthread);
+JVM_VirtualThreadEndFirstTransition(JNIEnv* env, jobject vthread);
 
 JNIEXPORT void JNICALL
-JVM_VirtualThreadEnd(JNIEnv* env, jobject vthread);
+JVM_VirtualThreadStartFinalTransition(JNIEnv* env, jobject vthread);
 
 JNIEXPORT void JNICALL
-JVM_VirtualThreadMount(JNIEnv* env, jobject vthread, jboolean hide);
+JVM_VirtualThreadStartTransition(JNIEnv* env, jobject vthread, jboolean is_mount);
 
 JNIEXPORT void JNICALL
-JVM_VirtualThreadUnmount(JNIEnv* env, jobject vthread, jboolean hide);
+JVM_VirtualThreadEndTransition(JNIEnv* env, jobject vthread, jboolean is_mount);
 
 JNIEXPORT void JNICALL
 JVM_VirtualThreadDisableSuspend(JNIEnv* env, jclass clazz, jboolean enter);

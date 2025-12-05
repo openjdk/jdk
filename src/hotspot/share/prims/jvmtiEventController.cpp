@@ -495,6 +495,10 @@ JvmtiEventControllerPrivate::recompute_env_enabled(JvmtiEnvBase* env) {
     break;
   }
 
+  if (JvmtiEventController::is_execution_finished()) {
+    now_enabled &= VM_DEATH_BIT;
+  }
+
   // Set/reset the event enabled under the tagmap lock.
   set_enabled_events_with_lock(env, now_enabled);
 
@@ -535,6 +539,10 @@ JvmtiEventControllerPrivate::recompute_env_thread_enabled(JvmtiEnvThreadState* e
     break;
   default:
     break;
+  }
+
+  if (JvmtiEventController::is_execution_finished()) {
+    now_enabled &= VM_DEATH_BIT;
   }
 
   // if anything changed do update
@@ -783,9 +791,6 @@ void JvmtiEventControllerPrivate::set_event_callbacks(JvmtiEnvBase *env,
                                                       jint size_of_callbacks) {
   assert(Threads::number_of_threads() == 0 || JvmtiThreadState_lock->is_locked(), "sanity check");
   EC_TRACE(("[*] # set event callbacks"));
-
-  // May be changing the event handler for ObjectFree.
-  flush_object_free_events(env);
 
   env->set_event_callbacks(callbacks, size_of_callbacks);
 
@@ -1047,7 +1052,7 @@ JvmtiEventControllerPrivate::vm_init() {
 
 void
 JvmtiEventControllerPrivate::vm_death() {
-  // events are disabled (phase has changed)
+  // events are disabled, see JvmtiEventController::_execution_finished
   JvmtiEventControllerPrivate::recompute_enabled();
 }
 
@@ -1059,6 +1064,9 @@ JvmtiEventControllerPrivate::vm_death() {
 
 JvmtiEventEnabled JvmtiEventController::_universal_global_event_enabled;
 
+volatile bool JvmtiEventController::_execution_finished = false;
+volatile int  JvmtiEventController::_in_callback_count = 0;
+
 bool
 JvmtiEventController::is_global_event(jvmtiEvent event_type) {
   assert(is_valid_event_type(event_type), "invalid event type");
@@ -1069,10 +1077,6 @@ JvmtiEventController::is_global_event(jvmtiEvent event_type) {
 void
 JvmtiEventController::set_user_enabled(JvmtiEnvBase *env, JavaThread *thread, oop thread_oop,
                                        jvmtiEvent event_type, bool enabled) {
-  if (event_type == JVMTI_EVENT_OBJECT_FREE) {
-    JvmtiEventControllerPrivate::flush_object_free_events(env);
-  }
-
   if (Threads::number_of_threads() == 0) {
     // during early VM start-up locks don't exist, but we are safely single threaded,
     // call the functionality without holding the JvmtiThreadState_lock.
@@ -1081,6 +1085,11 @@ JvmtiEventController::set_user_enabled(JvmtiEnvBase *env, JavaThread *thread, oo
     Thread* current = Thread::current();
     HandleMark hmi(current);
     Handle thread_oop_h = Handle(current, thread_oop);
+
+    if (event_type == JVMTI_EVENT_OBJECT_FREE) {
+      JvmtiEventControllerPrivate::flush_object_free_events(env);
+    }
+
     MutexLocker mu(JvmtiThreadState_lock);
     JvmtiEventControllerPrivate::set_user_enabled(env, thread, thread_oop_h, event_type, enabled);
   }
@@ -1096,6 +1105,8 @@ JvmtiEventController::set_event_callbacks(JvmtiEnvBase *env,
     // call the functionality without holding the JvmtiThreadState_lock.
     JvmtiEventControllerPrivate::set_event_callbacks(env, callbacks, size_of_callbacks);
   } else {
+    JvmtiEventControllerPrivate::flush_object_free_events(env);
+
     MutexLocker mu(JvmtiThreadState_lock);
     JvmtiEventControllerPrivate::set_event_callbacks(env, callbacks, size_of_callbacks);
   }
@@ -1183,6 +1194,8 @@ JvmtiEventController::env_dispose(JvmtiEnvBase *env) {
     // call the functionality without holding the JvmtiThreadState_lock.
     JvmtiEventControllerPrivate::env_dispose(env);
   } else {
+    JvmtiEventControllerPrivate::flush_object_free_events(env);
+
     MutexLocker mu(JvmtiThreadState_lock);
     JvmtiEventControllerPrivate::env_dispose(env);
   }
@@ -1207,8 +1220,23 @@ JvmtiEventController::vm_init() {
 
 void
 JvmtiEventController::vm_death() {
+  // No new event callbacks except vm_death can be called after this point.
+  AtomicAccess::store(&_execution_finished, true);
   if (JvmtiEnvBase::environments_might_exist()) {
     MutexLocker mu(JvmtiThreadState_lock);
     JvmtiEventControllerPrivate::vm_death();
+  }
+
+  // Some events might be still in callback for daemons and VM internal threads.
+  const double start = os::elapsedTime();
+  const double max_wait_time = 60;
+  // The first time we see the callback count reach zero we know all actual
+  // callbacks are complete. The count could rise again, but those "callbacks"
+  // will immediately see `execution_finished()` and return (dropping the count).
+  while (in_callback_count() > 0) {
+    os::naked_short_sleep(100);
+    if (os::elapsedTime() - start > max_wait_time) {
+      break;
+    }
   }
 }
