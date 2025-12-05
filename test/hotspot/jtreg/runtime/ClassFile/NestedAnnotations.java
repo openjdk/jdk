@@ -61,7 +61,7 @@ public class NestedAnnotations {
 	    }
 
 	    cw.visitEnd();
-	    // Does not matter whether the class is hidden, used for simplicity’ sake.
+	    // Does not matter whether the class is hidden, used for simplicity’s sake.
 	    MethodHandles.lookup().defineHiddenClass(cw.toByteArray(), true);
     }
 
