@@ -546,6 +546,10 @@ void ModuleEntry::load_from_archive(ClassLoaderData* loader_data) {
   JFR_ONLY(INIT_ID(this);)
 }
 
+void ModuleEntry::preload_archived_oops() {
+  (void)HeapShared::get_root(_archived_module_index, false /* clear */);
+}
+
 void ModuleEntry::restore_archived_oops(ClassLoaderData* loader_data) {
   assert(CDSConfig::is_using_archive(), "runtime only");
   Handle module_handle(Thread::current(), HeapShared::get_root(_archived_module_index, /*clear=*/true));

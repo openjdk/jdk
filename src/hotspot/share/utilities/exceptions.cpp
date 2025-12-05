@@ -581,12 +581,13 @@ inline void ExceptionMark::check_no_pending_exception() {
   }
 }
 
+extern bool is_vm_created();
 
 ExceptionMark::~ExceptionMark() {
   if (_thread->has_pending_exception()) {
     Handle exception(_thread, _thread->pending_exception());
     _thread->clear_pending_exception(); // Needed to avoid infinite recursion
-    if (is_init_completed()) {
+    if (is_vm_created()) {
       ResourceMark rm;
       exception->print();
       fatal("ExceptionMark destructor expects no pending exceptions");

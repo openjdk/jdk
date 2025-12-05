@@ -160,10 +160,10 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   // Because of frequent access, the metadata field is at offset zero (0).
   // Enforced by the assert() in metadata_addr().
-  // * Lightweight locking with UseObjectMonitorTable:
+  // * Locking with UseObjectMonitorTable:
   //   Contains the _object's hashCode.
-  // * * Lightweight locking without UseObjectMonitorTable:
-  // Contains the displaced object header word - mark
+  // * Locking without UseObjectMonitorTable:
+  //   Contains the displaced object header word - mark
   volatile uintptr_t _metadata;     // metadata
   WeakHandle _object;               // backward object pointer
   // Separate _metadata and _owner on different cache lines since both can

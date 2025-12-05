@@ -39,6 +39,7 @@ import com.sun.tools.javac.tree.JCTree.*;
 
 import com.sun.tools.javac.code.Kinds.Kind;
 import com.sun.tools.javac.code.Type.TypeVar;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.function.Predicate;
@@ -60,6 +61,7 @@ public class ExhaustivenessComputer {
     private final Types types;
     private final Check chk;
     private final Infer infer;
+    private final Map<Pair<Type, Type>, Boolean> isSubtypeCache = new HashMap<>();
 
     public static ExhaustivenessComputer instance(Context context) {
         ExhaustivenessComputer instance = context.get(exhaustivenessKey);
@@ -120,6 +122,7 @@ public class ExhaustivenessComputer {
             }
         }
         Set<PatternDescription> patterns = patternSet;
+        Set<Set<PatternDescription>> seenFallback = new HashSet<>();
         boolean useHashes = true;
         try {
             boolean repeat = true;
@@ -141,7 +144,7 @@ public class ExhaustivenessComputer {
                     //but hashing in reduceNestedPatterns will not allow that
                     //disable the use of hashing, and use subtyping in
                     //reduceNestedPatterns to handle situations like this:
-                    repeat = useHashes;
+                    repeat = useHashes && seenFallback.add(updatedPatterns);
                     useHashes = false;
                 } else {
                     //if a reduction happened, make sure hashing in reduceNestedPatterns
@@ -154,6 +157,8 @@ public class ExhaustivenessComputer {
         } catch (CompletionFailure cf) {
             chk.completionError(selector.pos(), cf);
             return true; //error recovery
+        } finally {
+            isSubtypeCache.clear();
         }
     }
 
@@ -211,10 +216,9 @@ public class ExhaustivenessComputer {
                         //if a binding pattern for clazz already exists, no need to analyze it again:
                         !existingBindings.contains(clazz)) {
                         //do not reduce to types unrelated to the selector type:
-                        Type clazzErasure = types.erasure(clazz.type);
+                        Type clazzType = clazz.type;
                         if (components(selectorType).stream()
-                                                    .map(types::erasure)
-                                                    .noneMatch(c -> types.isSubtype(clazzErasure, c))) {
+                                                    .noneMatch(c -> isSubtypeErasure(clazzType, c))) {
                             continue;
                         }
 
@@ -238,18 +242,18 @@ public class ExhaustivenessComputer {
                                 //cover using bpOther:
 
                                 //all types that are permitted subtypes of bpOther's type:
-                                pendingPermitted.removeIf(pending -> types.isSubtype(types.erasure(pending.type),
-                                                                                     types.erasure(bpOther.type)));
+                                pendingPermitted.removeIf(pending -> isSubtypeErasure(pending.type,
+                                                                                      bpOther.type));
 
                                 if (bpOther.type.tsym.isAbstract()) {
                                     //all types that are in a diamond hierarchy with bpOther's type
                                     //i.e. there's a common subtype of the given type and bpOther's type:
                                     Predicate<Symbol> check =
                                             pending -> permitted.stream()
-                                                                .filter(perm -> types.isSubtype(types.erasure(perm.type),
-                                                                                                types.erasure(bpOther.type)))
-                                                                .filter(perm -> types.isSubtype(types.erasure(perm.type),
-                                                                                                types.erasure(pending.type)))
+                                                                .filter(perm -> isSubtypeErasure(perm.type,
+                                                                                                 bpOther.type))
+                                                                .filter(perm -> isSubtypeErasure(perm.type,
+                                                                                                 pending.type))
                                                                 .findAny()
                                                                 .isPresent();
 
@@ -374,30 +378,15 @@ public class ExhaustivenessComputer {
 
                         join.append(rpOne);
 
-                        NEXT_PATTERN: for (int nextCandidate = 0;
-                                           nextCandidate < candidatesArr.length;
-                                           nextCandidate++) {
+                        for (int nextCandidate = 0; nextCandidate < candidatesArr.length; nextCandidate++) {
                             if (firstCandidate == nextCandidate) {
                                 continue;
                             }
 
                             RecordPattern rpOther = candidatesArr[nextCandidate];
-                            if (rpOne.recordType.tsym == rpOther.recordType.tsym) {
-                                for (int i = 0; i < rpOne.nested.length; i++) {
-                                    if (i != mismatchingCandidate) {
-                                        if (!rpOne.nested[i].equals(rpOther.nested[i])) {
-                                            if (useHashes ||
-                                                //when not using hashes,
-                                                //check if rpOne.nested[i] is
-                                                //a subtype of rpOther.nested[i]:
-                                                !(rpOne.nested[i] instanceof BindingPattern bpOne) ||
-                                                !(rpOther.nested[i] instanceof BindingPattern bpOther) ||
-                                                !types.isSubtype(types.erasure(bpOne.type), types.erasure(bpOther.type))) {
-                                                continue NEXT_PATTERN;
-                                            }
-                                        }
-                                    }
-                                }
+
+                            if (rpOne.recordType.tsym == rpOther.recordType.tsym &&
+                                nestedComponentsEquivalent(rpOne, rpOther, mismatchingCandidate, useHashes)) {
                                 join.append(rpOther);
                             }
                         }
@@ -418,9 +407,11 @@ public class ExhaustivenessComputer {
                                 PatternDescription[] newNested =
                                         Arrays.copyOf(rpOne.nested, rpOne.nested.length);
                                 newNested[mismatchingCandidateFin] = nested;
-                                current.add(new RecordPattern(rpOne.recordType(),
+                                RecordPattern nue = new RecordPattern(rpOne.recordType(),
                                                                 rpOne.fullComponentTypes(),
-                                                                newNested));
+                                                                newNested,
+                                                                new HashSet<>(join));
+                                current.add(nue);
                             }
                         }
                     }
@@ -435,6 +426,70 @@ public class ExhaustivenessComputer {
             }
         }
         return patterns;
+    }
+
+    /* Returns true if all nested components of existing and candidate are
+     * equivalent (if useHashes == true), or "substitutable" (if useHashes == false).
+     * A candidate pattern is "substitutable" if it is a binding pattern, and:
+     * - it's type is a supertype of the existing pattern's type
+     * - it was produced by a reduction from a record pattern that is equivalent to
+     *   the existing pattern
+     */
+    private boolean nestedComponentsEquivalent(RecordPattern existing,
+                                               RecordPattern candidate,
+                                               int mismatchingCandidate,
+                                               boolean useHashes) {
+        NEXT_NESTED:
+        for (int i = 0; i < existing.nested.length; i++) {
+            if (i != mismatchingCandidate) {
+                if (!existing.nested[i].equals(candidate.nested[i])) {
+                    if (useHashes) {
+                        return false;
+                    }
+                    //when not using hashes,
+                    //check if rpOne.nested[i] is
+                    //a subtype of rpOther.nested[i]:
+                    if (!(candidate.nested[i] instanceof BindingPattern nestedCandidate)) {
+                        return false;
+                    }
+                    if (existing.nested[i] instanceof BindingPattern nestedExisting) {
+                        if (!isSubtypeErasure(nestedExisting.type, nestedCandidate.type)) {
+                            return false;
+                        }
+                    } else if (existing.nested[i] instanceof RecordPattern nestedExisting) {
+                        java.util.List<PatternDescription> pendingReplacedPatterns =
+                                new ArrayList<>(nestedCandidate.sourcePatterns());
+
+                        while (!pendingReplacedPatterns.isEmpty()) {
+                            PatternDescription currentReplaced = pendingReplacedPatterns.removeLast();
+
+                            if (nestedExisting.equals(currentReplaced)) {
+                                //candidate.nested[i] is substitutable for existing.nested[i]
+                                //continue with the next nested pattern:
+                                continue NEXT_NESTED;
+                            }
+
+                            pendingReplacedPatterns.addAll(currentReplaced.sourcePatterns());
+                        }
+
+                        return false;
+                    } else {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /*The same as types.isSubtype(types.erasure(t), types.erasure(s)), but cached.
+    */
+    private boolean isSubtypeErasure(Type t, Type s) {
+        Pair<Type, Type> key = Pair.of(t, s);
+
+        return isSubtypeCache.computeIfAbsent(key, _ ->
+                types.isSubtype(types.erasure(t), types.erasure(s)));
     }
 
     /* In the set of patterns, find those for which, given:
@@ -480,9 +535,11 @@ public class ExhaustivenessComputer {
                 covered &= checkCovered(componentType[i], List.of(newNested));
             }
             if (covered) {
-                return new BindingPattern(rpOne.recordType);
+                PatternDescription pd = new BindingPattern(rpOne.recordType, Set.of(pattern));
+                return pd;
             } else if (reducedNestedPatterns != null) {
-                return new RecordPattern(rpOne.recordType, rpOne.fullComponentTypes(), reducedNestedPatterns);
+                PatternDescription pd = new RecordPattern(rpOne.recordType, rpOne.fullComponentTypes(), reducedNestedPatterns, Set.of(pattern));
+                return pd;
             }
         }
         return pattern;
@@ -511,13 +568,15 @@ public class ExhaustivenessComputer {
             Type pattype = types.erasure(bp.type);
 
             return seltype.isPrimitive() ?
-                    types.isUnconditionallyExact(seltype, pattype) :
-                    (bp.type.isPrimitive() && types.isUnconditionallyExact(types.unboxedType(seltype), bp.type)) || types.isSubtype(seltype, pattype);
+                    types.isUnconditionallyExactTypeBased(seltype, pattype) :
+                    (bp.type.isPrimitive() && types.isUnconditionallyExactTypeBased(types.unboxedType(seltype), bp.type)) || types.isSubtype(seltype, pattype);
         }
         return false;
     }
 
-    sealed interface PatternDescription { }
+    sealed interface PatternDescription {
+        public Set<PatternDescription> sourcePatterns();
+    }
     public PatternDescription makePatternDescription(Type selectorType, JCPattern pattern) {
         if (pattern instanceof JCBindingPattern binding) {
             Type type = !selectorType.isPrimitive() && types.isSubtype(selectorType, binding.type)
@@ -552,7 +611,12 @@ public class ExhaustivenessComputer {
             throw Assert.error();
         }
     }
-    record BindingPattern(Type type) implements PatternDescription {
+    record BindingPattern(Type type, Set<PatternDescription> sourcePatterns) implements PatternDescription {
+
+        public BindingPattern(Type type) {
+            this(type, Set.of());
+        }
+
         @Override
         public int hashCode() {
             return type.tsym.hashCode();
@@ -567,10 +631,14 @@ public class ExhaustivenessComputer {
             return type.tsym + " _";
         }
     }
-    record RecordPattern(Type recordType, int _hashCode, Type[] fullComponentTypes, PatternDescription... nested) implements PatternDescription {
+    record RecordPattern(Type recordType, int _hashCode, Type[] fullComponentTypes, PatternDescription[] nested, Set<PatternDescription> sourcePatterns) implements PatternDescription {
 
         public RecordPattern(Type recordType, Type[] fullComponentTypes, PatternDescription[] nested) {
-            this(recordType, hashCode(-1, recordType, nested), fullComponentTypes, nested);
+            this(recordType, fullComponentTypes, nested, Set.of());
+        }
+
+        public RecordPattern(Type recordType, Type[] fullComponentTypes, PatternDescription[] nested, Set<PatternDescription> sourcePatterns) {
+            this(recordType, hashCode(-1, recordType, nested), fullComponentTypes, nested, sourcePatterns);
         }
 
         @Override

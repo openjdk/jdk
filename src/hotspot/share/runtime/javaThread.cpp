@@ -121,7 +121,7 @@ size_t      JavaThread::_stack_size_at_create = 0;
   #define HOTSPOT_THREAD_PROBE_stop HOTSPOT_THREAD_STOP
 
   #define DTRACE_THREAD_PROBE(probe, javathread)                           \
-    {                                                                      \
+    if (!javathread->is_aot_thread()) {                                    \
       ResourceMark rm(this);                                               \
       int len = 0;                                                         \
       const char* name = (javathread)->name();                             \
@@ -448,15 +448,11 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _do_not_unlock_if_synchronized(false),
 #if INCLUDE_JVMTI
   _carrier_thread_suspended(false),
-  _is_in_VTMS_transition(false),
   _is_disable_suspend(false),
   _is_in_java_upcall(false),
-  _VTMS_transition_mark(false),
+  _jvmti_events_disabled(0),
   _on_monitor_waited_event(false),
   _contended_entered_monitor(nullptr),
-#ifdef ASSERT
-  _is_VTMS_transition_disabler(false),
-#endif
 #endif
   _jni_attach_state(_not_attaching_via_jni),
   _is_in_internal_oome_mark(false),
@@ -501,6 +497,10 @@ JavaThread::JavaThread(MemTag mem_tag) :
 
   _handshake(this),
   _suspend_resume_manager(this, &_handshake._lock),
+
+  _is_in_vthread_transition(false),
+  DEBUG_ONLY(_is_vthread_transition_disabler(false) COMMA)
+  DEBUG_ONLY(_is_disabler_at_start(false) COMMA)
 
   _popframe_preserved_args(nullptr),
   _popframe_preserved_args_size(0),
@@ -763,7 +763,7 @@ void JavaThread::run() {
 
 void JavaThread::thread_main_inner() {
   assert(JavaThread::current() == this, "sanity check");
-  assert(_threadObj.peek() != nullptr, "just checking");
+  assert(_threadObj.peek() != nullptr || is_aot_thread(), "just checking");
 
   // Execute thread entry point unless this thread has a pending exception.
   // Note: Due to JVMTI StopThread we can have pending exceptions already!
@@ -1149,17 +1149,26 @@ void JavaThread::send_async_exception(JavaThread* target, oop java_throwable) {
   Handshake::execute(&iaeh, target);
 }
 
-#if INCLUDE_JVMTI
-void JavaThread::set_is_in_VTMS_transition(bool val) {
-  assert(is_in_VTMS_transition() != val, "already %s transition", val ? "inside" : "outside");
-  _is_in_VTMS_transition = val;
+bool JavaThread::is_in_vthread_transition() const {
+  DEBUG_ONLY(Thread* current = Thread::current();)
+  assert(is_handshake_safe_for(current) || SafepointSynchronize::is_at_safepoint()
+         || JavaThread::cast(current)->is_disabler_at_start(), "not safe");
+  return AtomicAccess::load(&_is_in_vthread_transition);
+}
+
+void JavaThread::set_is_in_vthread_transition(bool val) {
+  assert(is_in_vthread_transition() != val, "already %s transition", val ? "inside" : "outside");
+  AtomicAccess::store(&_is_in_vthread_transition, val);
 }
 
 #ifdef ASSERT
-void JavaThread::set_is_VTMS_transition_disabler(bool val) {
-  _is_VTMS_transition_disabler = val;
+void JavaThread::set_is_vthread_transition_disabler(bool val) {
+  _is_vthread_transition_disabler = val;
 }
-#endif
+
+void JavaThread::set_is_disabler_at_start(bool val) {
+  _is_disabler_at_start = val;
+}
 #endif
 
 // External suspension mechanism.
@@ -1169,11 +1178,8 @@ void JavaThread::set_is_VTMS_transition_disabler(bool val) {
 //   - Target thread will not enter any new monitors.
 //
 bool JavaThread::java_suspend(bool register_vthread_SR) {
-#if INCLUDE_JVMTI
-  // Suspending a JavaThread in VTMS transition or disabling VTMS transitions can cause deadlocks.
-  assert(!is_in_VTMS_transition(), "no suspend allowed in VTMS transition");
-  assert(!is_VTMS_transition_disabler(), "no suspend allowed for VTMS transition disablers");
-#endif
+  // Suspending a vthread transition disabler can cause deadlocks.
+  assert(!is_vthread_transition_disabler(), "no suspend allowed for vthread transition disablers");
 
   guarantee(Thread::is_JavaThread_protected(/* target */ this),
             "target JavaThread is not protected in calling context.");
@@ -1409,7 +1415,7 @@ void JavaThread::oops_do_no_frames(OopClosure* f, NMethodClosure* cf) {
     entry = entry->parent();
   }
 
-  // Due to lightweight locking
+  // Due to fast locking
   lock_stack().oops_do(f);
 }
 

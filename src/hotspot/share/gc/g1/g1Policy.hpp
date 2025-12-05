@@ -60,10 +60,10 @@ class G1Policy: public CHeapObj<mtGC> {
 
   static G1IHOPControl* create_ihop_control(const G1OldGenAllocationTracker* old_gen_alloc_tracker,
                                             const G1Predictions* predictor);
-  // Update the IHOP control with necessary statistics.
-  void update_ihop_prediction(double mutator_time_s,
+  // Update the IHOP control with the necessary statistics. Returns true if there
+  // has been a significant update to the prediction.
+  bool update_ihop_prediction(double mutator_time_s,
                               bool this_gc_was_young_only);
-  void report_ihop_statistics();
 
   G1Predictions _predictor;
   G1Analytics* _analytics;
@@ -367,6 +367,7 @@ public:
   uint young_list_target_length() const { return AtomicAccess::load(&_young_list_target_length); }
 
   bool should_allocate_mutator_region() const;
+  bool should_expand_on_mutator_allocation() const;
 
   bool use_adaptive_young_list_length() const;
 

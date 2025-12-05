@@ -32,7 +32,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
-import jdk.jpackage.internal.model.PackagerException;
+import jdk.jpackage.internal.model.JPackageException;
 
 /**
  * IOUtils
@@ -90,19 +90,17 @@ final class IOUtils {
         }
     }
 
-    static void writableOutputDir(Path outdir) throws PackagerException {
+    static void writableOutputDir(Path outdir) {
         if (!Files.isDirectory(outdir)) {
             try {
                 Files.createDirectories(outdir);
             } catch (IOException ex) {
-                throw new PackagerException("error.cannot-create-output-dir",
-                    outdir.toAbsolutePath().toString());
+                throw new JPackageException(I18N.format("error.cannot-create-output-dir", outdir.toAbsolutePath()));
             }
         }
 
         if (!Files.isWritable(outdir)) {
-            throw new PackagerException("error.cannot-write-to-output-dir",
-                    outdir.toAbsolutePath().toString());
+            throw new JPackageException(I18N.format("error.cannot-write-to-output-dir", outdir.toAbsolutePath()));
         }
     }
 
