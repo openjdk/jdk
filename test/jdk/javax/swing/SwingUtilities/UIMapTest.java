@@ -54,10 +54,8 @@ public class UIMapTest {
         SwingUtilities.replaceUIInputMap(button, JComponent.WHEN_IN_FOCUSED_WINDOW, null);
 
         // Show the frame
-        JFrame frame = new JFrame();
+        JFrame frame = new JFrame("UIMapTest");
         frame.add(button);
-       // frame.pack();
-        //frame.setVisible(true);
 
         if (button.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).
             get(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0)) != null) {
