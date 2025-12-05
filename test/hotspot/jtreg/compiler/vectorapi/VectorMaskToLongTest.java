@@ -236,6 +236,19 @@ public class VectorMaskToLongTest {
         verifyMaskToLong(L_SPECIES, inputLong, got);
     }
 
+    // Test VectorMask.fromLong().toLong() with Float species.
+    // For floating-point types, VectorMaskCast is inserted between fromLong and toLong to convert
+    // between float and integer types. There are two relevant optimizations:
+    //   1. (VectorStoreMask (VectorMaskCast ... (VectorLoadMask x))) => (x)
+    //   2. (VectorMaskToLong (VectorLongToMask x)) => (x)
+    // The optimization behavior varies by architecture:
+    // - SVE with bitperm: IR chain is (VectorMaskToLong (VectorStoreMask (VectorMaskCast
+    //   (VectorLoadMask (VectorLongToMask x))))), so both optimizations are triggered.
+    // - AVX-512/RVV: IR pattern is (VectorMaskToLong (VectorMaskCast (VectorLongToMask x))),
+    //   so neither optimization is triggered.
+    // - AVX2: Same as SVE with bitperm, both optimizations are triggered.
+    // - ASIMD (without SVE bitperm): VectorLongToMaskNode is not supported,
+    //   so neither optimization is triggered.
     @Test
     @IR(counts = { IRNode.VECTOR_LONG_TO_MASK, "= 0",
                    IRNode.VECTOR_MASK_TO_LONG, "= 0" },
@@ -256,6 +269,8 @@ public class VectorMaskToLongTest {
         verifyMaskToLong(F_SPECIES, inputLong, got);
     }
 
+    // Test VectorMask.fromLong().toLong() with Double species.
+    // Same as testFromLongToLongFloat() - see comments there for detailed explanation.
     @Test
     @IR(counts = { IRNode.VECTOR_LONG_TO_MASK, "= 0",
                    IRNode.VECTOR_MASK_TO_LONG, "= 0" },
