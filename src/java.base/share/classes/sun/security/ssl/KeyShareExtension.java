@@ -586,6 +586,10 @@ final class KeyShareExtension {
                     // shared secret derived from encapsulation is stored in
                     // the KEMSenderPossession for later use in the TLS key
                     // schedule.
+
+                    // SSLKeyExchange.createPossessions() returns at most one
+                    // key-agreement possession or one KEMSenderPossession
+                    // per handshake.
                     if (pos instanceof KEMKeyExchange.KEMSenderPossession xp) {
                         if (cd instanceof KEMKeyExchange.KEMCredentials kcred
                                 && ng.equals(kcred.namedGroup)) {
@@ -595,7 +599,7 @@ final class KeyShareExtension {
                                     name, ng, shc, null, null,
                                     kcred.getKeyShare());
                             var encaped = handshakeKD.encapsulate(
-                                    "TlsHandshakeSecret");
+                                    "TlsHandshakeSecret", xp.getRandom());
                             xp.setKey(encaped.key());
                             keyShare = new KeyShareEntry(ng.id,
                                     encaped.encapsulation());
