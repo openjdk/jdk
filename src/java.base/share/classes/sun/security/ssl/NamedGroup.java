@@ -845,7 +845,7 @@ enum NamedGroup {
                 NamedGroup ng, boolean isClient, SecureRandom random) {
             return isClient
                     ? new KEMKeyExchange.KEMReceiverPossession(ng, random)
-                    : new KEMKeyExchange.KEMSenderPossession(ng);
+                    : new KEMKeyExchange.KEMSenderPossession(ng, random);
         }
 
         @Override

@@ -39,6 +39,7 @@ import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import sun.security.util.KeyUtil;
 
 /**
@@ -163,7 +164,7 @@ public class KAKeyDerivation implements SSLKeyDerivation {
      * Package-private, used from KeyShareExtension.SHKeyShareProducer::
      * produce().
      */
-    KEM.Encapsulated encapsulate(String algorithm)
+    KEM.Encapsulated encapsulate(String algorithm, SecureRandom random)
             throws IOException {
         SecretKey sharedSecret = null;
 
@@ -181,7 +182,7 @@ public class KAKeyDerivation implements SSLKeyDerivation {
             KEM kem = (provider != null) ?
                     KEM.getInstance(algorithmName, provider) :
                     KEM.getInstance(algorithmName);
-            KEM.Encapsulator e = kem.newEncapsulator(pk);
+            KEM.Encapsulator e = kem.newEncapsulator(pk, random);
             KEM.Encapsulated enc = e.encapsulate();
             sharedSecret = enc.key();
 

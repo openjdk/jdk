@@ -76,7 +76,7 @@ public class Hybrid {
             new NamedParameterSpec("SecP384r1MLKEM1024");
 
     private static AlgorithmParameterSpec getSpec(String name) {
-        if (APS.isGenericEC(name)) {
+        if (name.startsWith("secp")) {
             return new ECGenParameterSpec(name);
         } else {
             return new NamedParameterSpec(name);
@@ -85,7 +85,7 @@ public class Hybrid {
 
     private static KeyPairGenerator getKeyPairGenerator(String name) throws
             NoSuchAlgorithmException {
-        if (APS.isGenericEC(name)) {
+        if (name.startsWith("secp")) {
             name = "EC";
         }
         return KeyPairGenerator.getInstance(name);
@@ -93,7 +93,7 @@ public class Hybrid {
 
     private static KeyFactory getKeyFactory(String name) throws
             NoSuchAlgorithmException {
-        if (APS.isGenericEC(name)) {
+        if (name.startsWith("secp")) {
             name = "EC";
         }
         return KeyFactory.getInstance(name);
@@ -107,7 +107,7 @@ public class Hybrid {
      * using the given algorithm name.
      */
     private static KEM getKEM(String name) throws NoSuchAlgorithmException {
-        if (APS.isGenericEC(name) || APS.isXDH(name)) {
+        if (name.startsWith("secp") || name.equals("X25519")) {
             return KEM.getInstance("DH", DHasKEM.PROVIDER);
         } else {
             return KEM.getInstance(name);
@@ -133,6 +133,22 @@ public class Hybrid {
             } catch (InvalidAlgorithmParameterException iape) {
                 throw new ProviderException("Invalid algorithm parameters " +
                         "for hybrid keypair generator", iape);
+            } catch (Exception e) {
+                throw new ProviderException("Failed to initialize hybrid " +
+                        "keypair generator", e);
+            }
+        }
+
+        @Override
+        public void initialize(AlgorithmParameterSpec params,
+                SecureRandom random)
+                throws InvalidAlgorithmParameterException {
+
+            try {
+                left.initialize(leftSpec, random);
+                right.initialize(rightSpec, random);
+            } catch (InvalidAlgorithmParameterException iape) {
+                throw iape;
             } catch (Exception e) {
                 throw new ProviderException("Failed to initialize hybrid " +
                         "keypair generator", e);
@@ -198,7 +214,7 @@ public class Hybrid {
                 PublicKey leftKey, rightKey;
 
                 try {
-                    if (APS.isGenericEC(leftname)) {
+                    if (leftname.startsWith("secp")) {
                         var curve = CurveDB.lookup(leftname);
                         var ecSpec = new ECPublicKeySpec(
                                 ECUtil.decodePoint(leftKeyBytes,
@@ -212,7 +228,7 @@ public class Hybrid {
                                 " algorithm" + leftname);
                     }
 
-                    if (APS.isXDH(rightname)) {
+                    if (rightname.equals("X25519")) {
                         ArrayUtil.reverse(rightKeyBytes);
                         var xecSpec = new XECPublicKeySpec(
                                 new NamedParameterSpec(rightname),
@@ -459,16 +475,6 @@ public class Hybrid {
         @Override
         public byte[] getEncoded() {
             return null;
-        }
-    }
-
-    private static final class APS {
-        static boolean isGenericEC(String name) {
-            return name != null && name.startsWith("secp");
-        }
-
-        static boolean isXDH(String name) {
-            return name != null && name.equals("X25519");
         }
     }
 }

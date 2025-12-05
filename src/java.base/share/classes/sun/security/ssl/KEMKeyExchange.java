@@ -125,6 +125,7 @@ final class KEMKeyExchange {
                         KeyPairGenerator.getInstance(algName, provider) :
                         KeyPairGenerator.getInstance(algName);
 
+                kpg.initialize(namedGroup.keAlgParamSpec, random);
                 KeyPair kp = kpg.generateKeyPair();
                 privateKey = kp.getPrivate();
                 publicKey = kp.getPublic();
@@ -159,9 +160,16 @@ final class KEMKeyExchange {
     static final class KEMSenderPossession extends KEMPossession {
 
         private SecretKey key;
+        private final SecureRandom random;
 
-        KEMSenderPossession(NamedGroup namedGroup) {
+        KEMSenderPossession(NamedGroup namedGroup, SecureRandom random) {
             super(namedGroup);
+            this.random = random;
+        }
+
+        // Package-private
+        SecureRandom getRandom() {
+            return random;
         }
 
         // Package-private
