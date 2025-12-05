@@ -2458,13 +2458,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         }
 
         int nAbs = Math.abs(n);
-        BigDecimal divisor = null;
-        if (n < 0) {
-            divisor = rad;
-            int inverseScale = checkScale((result.scale + (resAbs.isPowerOfTen() ? 1L : 0L)) * nAbs);
-            rad = ONE.divide(divisor, inverseScale, RoundingMode.DOWN);
-        }
-
         BigDecimal ulp = resAbs.ulp();
         BigDecimal neighborUp = resAbs.add(ulp);
         // Make neighbor down accurate even for powers of ten
@@ -2476,25 +2469,21 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         switch (rm) {
         case DOWN:
         case FLOOR:
-            int neighborUpToN_comp_rad = neighborUp.pow(nAbs).compareTo(rad);
             assert
-                resAbs.pow(nAbs).compareTo(rad) <= 0 &&
-               (neighborUpToN_comp_rad           > 0 ||
-                neighborUpToN_comp_rad          == 0 && n < 0 &&
-                // Inverse radicand must not be exact
-                rad.multiply(divisor).compareTo(ONE) != 0)
+            (n > 0 ? resAbs.pow(nAbs).compareTo(rad)    <= 0 &&
+                     neighborUp.pow(nAbs).compareTo(rad) > 0
+                   : resAbs.pow(nAbs).multiply(rad).compareTo(ONE)    <= 0 &&
+                     neighborUp.pow(nAbs).multiply(rad).compareTo(ONE) > 0)
                 : "Power of result out for bounds rounding " + rm;
             return true;
 
         case UP:
         case CEILING:
-            int neighborDownToN_comp_rad = neighborDown.pow(nAbs).compareTo(rad);
             assert
-                 resAbs.pow(nAbs).compareTo(rad) >= 0 &&
-                (neighborDownToN_comp_rad         < 0 ||
-                 neighborDownToN_comp_rad == 0 && n < 0 &&
-                 // Inverse radicand must not be exact
-                 rad.multiply(divisor).compareTo(ONE) != 0)
+            (n > 0 ? resAbs.pow(nAbs).compareTo(rad)      >= 0 &&
+                     neighborDown.pow(nAbs).compareTo(rad) < 0
+                   : resAbs.pow(nAbs).multiply(rad).compareTo(ONE)      >= 0 &&
+                     neighborDown.pow(nAbs).multiply(rad).compareTo(ONE) < 0)
                 : "Power of result out for bounds rounding " + rm;
             return true;
 
@@ -2502,21 +2491,25 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         case HALF_DOWN:
         case HALF_EVEN:
         case HALF_UP:
-            BigDecimal err = resAbs.pow(nAbs).subtract(rad).abs();
-            BigDecimal errUp = neighborUp.pow(nAbs).subtract(rad);
-            BigDecimal errDown = rad.subtract(neighborDown.pow(nAbs));
-            // All error values should be positive or non-negative
-            // so don't need to compare absolute values.
+            BigDecimal err, errUp, errDown;
+            if (n > 0) {
+                err = resAbs.pow(nAbs).subtract(rad).abs();
+                errUp = neighborUp.pow(nAbs).subtract(rad);
+                errDown = rad.subtract(neighborDown.pow(nAbs));
+            } else {
+                err = resAbs.pow(nAbs).multiply(rad).subtract(ONE).abs();
+                errUp = neighborUp.pow(nAbs).multiply(rad).subtract(ONE);
+                errDown = ONE.subtract(neighborDown.pow(nAbs).multiply(rad));
+            }
 
+            // All error values should be positive
+            // so don't need to compare absolute values.
             int err_comp_errUp = err.compareTo(errUp);
             int err_comp_errDown = err.compareTo(errDown);
 
             assert
                  errUp.signum()   == 1 &&
-                (errDown.signum() == 1 ||
-                 errDown.signum() == 0 && n < 0 &&
-                 // Inverse radicand must not be exact
-                 rad.multiply(divisor).compareTo(ONE) != 0)
+                 errDown.signum() == 1
             : "Errors of neighbors powered don't have correct signs";
 
             // For breaking a half-way tie, the return value may
