@@ -29,6 +29,7 @@
 #include <netdb.h>
 #include <poll.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 
 /************************************************************************
  * Macros and constants
@@ -79,5 +80,12 @@ void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
                                                int gai_error);
 void NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
                                   const char *defaultDetail);
+
+/**
+ * Return 1 if the current time is past
+ * start timeval plus timeout milliseconds.
+ * Return 0 otherwise.
+ */
+extern int timerMillisExpired(struct timeval *start, int timeMillis);
 
 #endif /* NET_UTILS_MD_H */

@@ -604,7 +604,17 @@ ping6(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
         memcpy(sendbuf + sizeof(struct icmp6_hdr), &tv, sizeof(tv));
         icmp6->icmp6_cksum = 0;
         // send it
-        n = sendto(fd, sendbuf, plen, 0, &sa->sa, sizeof(struct sockaddr_in6));
+        while (1) {
+            n = sendto(fd, sendbuf, plen, 0, &sa->sa, sizeof(struct sockaddr_in6));
+            if (n < 0 && errno == EINTR) {
+                if (timerMillisExpired(&tv, timeout)) {
+                    NET_ThrowNew(env, errno, "Can't send ICMP packet");
+                    close(fd);
+                    return JNI_FALSE;
+                }
+            }
+            break;
+        }
         if (n < 0 && errno != EINPROGRESS && errno != EINTR) {
 #if defined(__linux__)
             /*

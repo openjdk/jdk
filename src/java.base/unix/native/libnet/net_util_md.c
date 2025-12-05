@@ -646,3 +646,30 @@ NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout)
       } /* while */
     return (nanoTimeout / NET_NSEC_PER_MSEC);
 }
+
+#define ONE_MILLION 1000000
+
+/**
+ * Return 1 if the current time is past
+ * start timeval plus timeout milliseconds.
+ * Return 0 otherwise.
+ */
+int timerMillisExpired(struct timeval *start, int timeMillis) {
+    int timeoutSec = timeMillis / 1000;
+    int timeoutUsec = (timeMillis % 1000) * 1000;
+    struct timeval tv0 = *start;
+    struct timeval tv1 = { 0, 0 };
+    gettimeofday(&tv1, NULL);
+    if (tv0.tv_usec + timeoutUsec >= ONE_MILLION) {
+        tv0.tv_sec ++;
+        tv0.tv_usec -= ONE_MILLION;
+    }
+    /* Now check if tv1 is past tv0 */
+    if (tv0.tv_sec < tv1.tv_sec) {
+        return 0; /* Not expired */
+    }
+    if (tv0.tv_usec < tv1.tv_usec) {
+        return 0; /* Not expired */
+    }
+    return 1; /* Expired */
+}

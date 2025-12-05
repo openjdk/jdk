@@ -398,8 +398,18 @@ ping4(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
         // manually calculate checksum
         icmp->icmp_cksum = in_cksum((u_short *)icmp, plen);
         // send it
-        n = sendto(fd, sendbuf, plen, 0, &sa->sa, sizeof(struct sockaddr_in));
-        if (n < 0 && errno != EINPROGRESS && errno != EINTR) {
+        while (1) {
+            n = sendto(fd, sendbuf, plen, 0, &sa->sa, sizeof(struct sockaddr_in));
+            if (n < 0 && errno == EINTR) {
+                if (timerMillisExpired(&tv, timeout)) {
+                    NET_ThrowNew(env, errno, "Can't send ICMP packet");
+                    close(fd);
+                    return JNI_FALSE;
+                }
+            }
+            break;
+        }
+        if (n < 0 && errno != EINPROGRESS) {
 #if defined(__linux__)
             /*
              * On some Linux versions, when a socket is bound to the loopback
