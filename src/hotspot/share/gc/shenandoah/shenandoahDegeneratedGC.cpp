@@ -46,9 +46,8 @@
 #include "utilities/events.hpp"
 
 ShenandoahDegenGC::ShenandoahDegenGC(ShenandoahDegenPoint degen_point, ShenandoahGeneration* generation) :
-  ShenandoahGC(),
+  ShenandoahGC(generation),
   _degen_point(degen_point),
-  _generation(generation),
   _abbreviated(false) {
 }
 
@@ -96,12 +95,22 @@ void ShenandoahDegenGC::op_degenerated() {
   // some phase, we have to upgrade the Degenerate GC to Full GC.
   heap->clear_cancelled_gc();
 
-#ifdef ASSERT
+  // If it's passive mode with ShenandoahCardBarrier turned on: clean the write table
+  // without swapping the tables since no scan happens in passive mode anyway
+  if (ShenandoahCardBarrier && !heap->mode()->is_generational()) {
+    heap->old_generation()->card_scan()->mark_write_table_as_clean();
+  }
+
   if (heap->mode()->is_generational()) {
-    ShenandoahOldGeneration* old_generation = heap->old_generation();
+    const ShenandoahOldGeneration* old_generation = heap->old_generation();
     if (!heap->is_concurrent_old_mark_in_progress()) {
       // If we are not marking the old generation, there should be nothing in the old mark queues
       assert(old_generation->task_queues()->is_empty(), "Old gen task queues should be empty");
+    } else {
+      // This is still necessary for degenerated cycles because the degeneration point may occur
+      // after final mark of the young generation. See ShenandoahConcurrentGC::op_final_update_refs for
+      // a more detailed explanation.
+      old_generation->transfer_pointers_from_satb();
     }
 
     if (_generation->is_global()) {
@@ -113,7 +122,6 @@ void ShenandoahDegenGC::op_degenerated() {
              "Old generation cannot be in state: %s", old_generation->state_name());
     }
   }
-#endif
 
   ShenandoahMetricsSnapshot metrics(heap->free_set());
 
@@ -161,15 +169,6 @@ void ShenandoahDegenGC::op_degenerated() {
           _generation->cancel_marking();
         }
 
-        if (heap->is_concurrent_mark_in_progress()) {
-          // If either old or young marking is in progress, the SATB barrier will be enabled.
-          // The SATB buffer may hold a mix of old and young pointers. The old pointers need to be
-          // transferred to the old generation mark queues and the young pointers are NOT part
-          // of this snapshot, so they must be dropped here. It is safe to drop them here because
-          // we will rescan the roots on this safepoint.
-          heap->old_generation()->transfer_pointers_from_satb();
-        }
-
         if (_degen_point == ShenandoahDegenPoint::_degenerated_roots) {
           // We only need this if the concurrent cycle has already swapped the card tables.
           // Marking will use the 'read' table, but interesting pointers may have been
@@ -188,8 +187,9 @@ void ShenandoahDegenGC::op_degenerated() {
     case _degenerated_mark:
       // No fallthrough. Continue mark, handed over from concurrent mark if
       // concurrent mark has yet completed
-      if (_degen_point == ShenandoahDegenPoint::_degenerated_mark &&
-          heap->is_concurrent_mark_in_progress()) {
+      if (_degen_point == ShenandoahDegenPoint::_degenerated_mark && heap->is_concurrent_mark_in_progress()) {
+        assert(!ShenandoahBarrierSet::satb_mark_queue_set().get_filter_out_young(),
+               "Should not be filtering out young pointers when concurrent mark degenerates");
         op_finish_mark();
       }
       assert(!heap->cancelled_gc(), "STW mark can not OOM");
@@ -260,7 +260,7 @@ void ShenandoahDegenGC::op_degenerated() {
       } else if (has_in_place_promotions(heap)) {
         // We have nothing to evacuate, but there are still regions to promote in place.
         ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_promote_regions);
-        ShenandoahGenerationalHeap::heap()->promote_regions_in_place(false /* concurrent*/);
+        ShenandoahGenerationalHeap::heap()->promote_regions_in_place(_generation, false /* concurrent*/);
       }
 
       // Update collector state regardless of whether there are forwarded objects
@@ -300,7 +300,7 @@ void ShenandoahDegenGC::op_degenerated() {
   }
 
   if (ShenandoahVerify) {
-    heap->verifier()->verify_after_degenerated();
+    heap->verifier()->verify_after_degenerated(_generation);
   }
 
   if (VerifyAfterGC) {
@@ -337,11 +337,11 @@ void ShenandoahDegenGC::op_finish_mark() {
 void ShenandoahDegenGC::op_prepare_evacuation() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   if (ShenandoahVerify) {
-    heap->verifier()->verify_roots_no_forwarded();
+    heap->verifier()->verify_roots_no_forwarded(_generation);
   }
 
   // STW cleanup weak roots and unload classes
-  heap->parallel_cleaning(false /*full gc*/);
+  heap->parallel_cleaning(_generation, false /*full gc*/);
 
   // Prepare regions and collection set
   _generation->prepare_regions_and_collection_set(false /*concurrent*/);
@@ -358,7 +358,7 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
 
   if (!heap->collection_set()->is_empty()) {
     if (ShenandoahVerify) {
-      heap->verifier()->verify_before_evacuation();
+      heap->verifier()->verify_before_evacuation(_generation);
     }
 
     heap->set_evacuation_in_progress(true);
@@ -366,9 +366,9 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
   } else {
     if (ShenandoahVerify) {
       if (has_in_place_promotions(heap)) {
-        heap->verifier()->verify_after_concmark_with_promotions();
+        heap->verifier()->verify_after_concmark_with_promotions(_generation);
       } else {
-        heap->verifier()->verify_after_concmark();
+        heap->verifier()->verify_after_concmark(_generation);
       }
     }
 
@@ -388,7 +388,7 @@ void ShenandoahDegenGC::op_cleanup_early() {
 
 void ShenandoahDegenGC::op_evacuate() {
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_stw_evac);
-  ShenandoahHeap::heap()->evacuate_collection_set(false /* concurrent*/);
+  ShenandoahHeap::heap()->evacuate_collection_set(_generation, false /* concurrent*/);
 }
 
 void ShenandoahDegenGC::op_init_update_refs() {
@@ -402,7 +402,7 @@ void ShenandoahDegenGC::op_update_refs() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_update_refs);
   // Handed over from concurrent update references phase
-  heap->update_heap_references(false /*concurrent*/);
+  heap->update_heap_references(_generation, false /*concurrent*/);
 
   heap->set_update_refs_in_progress(false);
   heap->set_has_forwarded_objects(false);
@@ -416,7 +416,7 @@ void ShenandoahDegenGC::op_update_roots() {
   heap->update_heap_region_states(false /*concurrent*/);
 
   if (ShenandoahVerify) {
-    heap->verifier()->verify_after_update_refs();
+    heap->verifier()->verify_after_update_refs(_generation);
   }
 
   if (VerifyAfterGC) {

@@ -11,74 +11,160 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<language type="tok"/>
 	</identity>
 	<localeDisplayNames>
-		<localeDisplayPattern>
-			<localePattern>{0} pi {1}</localePattern>
-			<localeSeparator>{0} pi {1}</localeSeparator>
-		</localeDisplayPattern>
 		<languages>
-			<language type="ar" draft="unconfirmed">toki Alapi</language>
-			<language type="bn" draft="unconfirmed">toki Panla</language>
-			<language type="de" draft="unconfirmed">toki Tosi</language>
+			<language type="af">toki Apikan</language>
+			<language type="am">toki Amali</language>
+			<language type="ar">toki Alapi</language>
+			<language type="bn">toki Panla</language>
+			<language type="bs">toki Posuna</language>
+			<language type="ceb">toki Supo</language>
+			<language type="de">toki Tosi</language>
+			<language type="el">toki Elin</language>
 			<language type="en">toki Inli</language>
-			<language type="en_CA" draft="unconfirmed">toki Inli pi ma Kanata</language>
-			<language type="en_GB" draft="unconfirmed">toki Inli pi ma Piten</language>
-			<language type="en_GB" alt="short" draft="unconfirmed">toki Inli pi ma Juke</language>
-			<language type="es" draft="unconfirmed">toki Epanja</language>
-			<language type="es_419" draft="unconfirmed">toki Epanja pi ma Amelika</language>
-			<language type="fr" draft="unconfirmed">toki Kanse</language>
-			<language type="fr_CA" draft="unconfirmed">toki Kanse pi ma Kanata</language>
-			<language type="hi" draft="unconfirmed">toki Insi</language>
-			<language type="id" draft="unconfirmed">toki Intonesija</language>
-			<language type="it" draft="unconfirmed">toki Italija</language>
-			<language type="ja" draft="unconfirmed">toki Nijon</language>
-			<language type="ko" draft="unconfirmed">toki Anku</language>
-			<language type="nl" draft="unconfirmed">toki Netelan</language>
-			<language type="pl" draft="unconfirmed">toki Posuka</language>
-			<language type="pt" draft="unconfirmed">toki Potuke</language>
-			<language type="ru" draft="unconfirmed">toki Lusi</language>
-			<language type="th" draft="unconfirmed">toki Tawi</language>
+			<language type="en_AU">toki Inli pi ma Oseja</language>
+			<language type="en_CA">toki Inli pi ma Kanata</language>
+			<language type="en_GB">toki Inli pi ma Juke</language>
+			<language type="eo">toki Epelanto</language>
+			<language type="es">toki Epanjo</language>
+			<language type="es_419">toki Epanjo pi ma Amelika</language>
+			<language type="es_ES">toki Epanjo pi ma Epanja</language>
+			<language type="es_MX">toki Epanjo pi ma Mesiko</language>
+			<language type="eu">toki Esuka</language>
+			<language type="fa">toki Pasi</language>
+			<language type="fa_AF">toki Pasi pi ma Akan</language>
+			<language type="fi">toki Sumi</language>
+			<language type="fil">toki Takalo</language>
+			<language type="fr">toki Kanse</language>
+			<language type="fr_CA">toki Kanse pi ma Kanata</language>
+			<language type="fy">toki Lise</language>
+			<language type="gu">toki Kusalasi</language>
+			<language type="he">toki Iwi</language>
+			<language type="hi">toki Insi</language>
+			<language type="hr">toki Kowata</language>
+			<language type="hu">toki Maja</language>
+			<language type="ia">toki Intelinwa</language>
+			<language type="id">toki Intonesija</language>
+			<language type="io">toki Ito</language>
+			<language type="it">toki Italija</language>
+			<language type="ja">toki Nijon</language>
+			<language type="jbo">toki Losupan</language>
+			<language type="jv">toki Sowa</language>
+			<language type="km">toki Kame</language>
+			<language type="ko">toki Anku</language>
+			<language type="kw">toki Kenuwe</language>
+			<language type="la">toki Lasina</language>
+			<language type="mas">toki Ma</language>
+			<language type="mi">toki Majoli</language>
+			<language type="mr">toki Malasi</language>
+			<language type="ms">toki Melaju</language>
+			<language type="mul">toki mute</language>
+			<language type="my">toki Mijama</language>
+			<language type="nan">toki Pan pi ma seli</language>
+			<language type="nb">toki Nosiki lipu</language>
+			<language type="nl">toki Netelan</language>
+			<language type="nn">toki Nosiki sin</language>
+			<language type="no">toki Nosiki</language>
+			<language type="pl">toki Posuka</language>
+			<language type="pt">toki Potuke</language>
+			<language type="ru">toki Lusi</language>
+			<language type="so">toki Somali</language>
+			<language type="sr">toki Sepi</language>
+			<language type="ss">toki Suwasi</language>
+			<language type="sv">toki Sensa</language>
+			<language type="sw">toki Suwawili</language>
+			<language type="sw_CD">toki Suwawili pi ma Konko</language>
+			<language type="ta">toki Tami</language>
+			<language type="te">toki Teluku</language>
+			<language type="th">toki Tawi</language>
+			<language type="tn">toki Suwana</language>
 			<language type="tok">toki pona</language>
-			<language type="tr" draft="unconfirmed">toki Tuki</language>
+			<language type="tr">toki Tuki</language>
+			<language type="ts">toki Sonka</language>
+			<language type="uk">toki Ukawina</language>
 			<language type="und" draft="unconfirmed">toki ante</language>
+			<language type="ur">toki Utu</language>
 			<language type="uz">toki Opeki</language>
-			<language type="zh" draft="unconfirmed">toki Sonko</language>
+			<language type="ve">toki Wenta</language>
+			<language type="vi">toki Wije</language>
+			<language type="vo">toki Olapu</language>
+			<language type="xh">toki Kosa</language>
+			<language type="yo">toki Jolupa</language>
+			<language type="yue">toki Ju</language>
+			<language type="yue" alt="menu">toki Konton</language>
+			<language type="zh">toki Sonko</language>
+			<language type="zh" alt="menu">toki Sonko kulupu</language>
+			<language type="zh_Hans">toki Sonko pi linja lili</language>
+			<language type="zh_Hans" alt="long">toki An pi linja lili</language>
+			<language type="zh_Hant">toki Sonko pi linja mute</language>
+			<language type="zh_Hant" alt="long">toki An pi linja mute</language>
+			<language type="zu">toki Sulu</language>
+			<language type="zxx">toki ala</language>
 		</languages>
 		<scripts>
 			<script type="Arab">sitelen Alapi</script>
-			<script type="Cyrl" draft="unconfirmed">sitelen Kililita</script>
-			<script type="Hans" draft="unconfirmed">sitelen Sonko</script>
+			<script type="Beng">sitelen Panla</script>
+			<script type="Cyrl">sitelen Kililisa</script>
+			<script type="Grek">sitelen Elin</script>
+			<script type="Gujr">sitelen Kusalasi</script>
+			<script type="Hang">sitelen Anku</script>
+			<script type="Hani">sitelen An</script>
+			<script type="Hans">linja lili</script>
+			<script type="Hans" alt="stand-alone">sitelen Sonko pi linja lili</script>
+			<script type="Hant">linja mute</script>
+			<script type="Hant" alt="stand-alone">sitelen Sonko pi linja mute</script>
+			<script type="Hebr">sitelen Iwi</script>
+			<script type="Java">sitelen Sowa</script>
 			<script type="Jpan">sitelen Nijon</script>
+			<script type="Khmr">sitelen Kame</script>
 			<script type="Kore" draft="unconfirmed">sitelen Anku</script>
 			<script type="Latn">sitelen Lasina</script>
+			<script type="Mymr">sitelen Mijama</script>
+			<script type="Taml" draft="unconfirmed">sitelen Tami</script>
+			<script type="Telu">sitelen Teluku</script>
+			<script type="Thai">sitelen Tawi</script>
+			<script type="Zinh">sitelen poka</script>
+			<script type="Zmth">sitelen nanpa</script>
+			<script type="Zsye">sitelen Emosi</script>
+			<script type="Zsym">sitelen ijo</script>
 			<script type="Zxxx">sitelen ala</script>
+			<script type="Zyyy">sitelen ale</script>
 			<script type="Zzzz">sitelen ante</script>
 		</scripts>
 		<territories>
 			<territory type="001">ma ale</territory>
-			<territory type="002" draft="unconfirmed">ma Apika</territory>
-			<territory type="009" draft="unconfirmed">ma Osijanija</territory>
-			<territory type="019" draft="unconfirmed">ma Amelika</territory>
-			<territory type="142" draft="unconfirmed">ma Asija</territory>
-			<territory type="150" draft="unconfirmed">ma Elopa</territory>
+			<territory type="002">ma Apika</territory>
+			<territory type="003">ma Amelika lete</territory>
+			<territory type="005">ma Amelika seli</territory>
+			<territory type="009">ma Osejanija</territory>
+			<territory type="013">ma Amelika insa</territory>
+			<territory type="019">ma Amelika</territory>
+			<territory type="039">ma Elopa seli</territory>
+			<territory type="142">ma Asija</territory>
+			<territory type="150">ma Elopa</territory>
+			<territory type="151">ma Elopa pi kama suno</territory>
+			<territory type="154">ma Elopa lete</territory>
+			<territory type="155">ma Elopa pi pini suno</territory>
 			<territory type="AD" draft="unconfirmed">ma Antola</territory>
-			<territory type="AF" draft="unconfirmed">ma Akanisan</territory>
+			<territory type="AE">ma Imala</territory>
+			<territory type="AF">ma Akan</territory>
 			<territory type="AL" draft="unconfirmed">ma Sipe</territory>
 			<territory type="AM" draft="unconfirmed">ma Aja</territory>
 			<territory type="AO" draft="unconfirmed">ma Ankola</territory>
-			<territory type="AQ" draft="unconfirmed">ma Antasika</territory>
+			<territory type="AQ">ma Antasika</territory>
 			<territory type="AR" draft="unconfirmed">ma Alensina</territory>
-			<territory type="AT" draft="unconfirmed">ma Esalasi</territory>
-			<territory type="AU" draft="unconfirmed">ma Oselija</territory>
+			<territory type="AT">ma Esalasi</territory>
+			<territory type="AU">ma Oseja</territory>
 			<territory type="BA" draft="unconfirmed">ma Posan</territory>
-			<territory type="BD" draft="unconfirmed">ma Panla</territory>
-			<territory type="BE" draft="unconfirmed">ma Pesije</territory>
+			<territory type="BD">ma Panla</territory>
+			<territory type="BE">ma Pelije</territory>
 			<territory type="BF" draft="unconfirmed">ma Pukinapaso</territory>
 			<territory type="BG" draft="unconfirmed">toki Pokasi</territory>
 			<territory type="BH" draft="unconfirmed">ma Palani</territory>
 			<territory type="BJ" draft="unconfirmed">ma Penen</territory>
-			<territory type="BR" draft="unconfirmed">ma Pasiju</territory>
-			<territory type="BW" draft="unconfirmed">ma Posuwana</territory>
+			<territory type="BR">ma Pasiju</territory>
+			<territory type="BW">ma Suwana</territory>
 			<territory type="BY" draft="unconfirmed">ma Pelalusi</territory>
+			<territory type="CA">ma Kanata</territory>
 			<territory type="CD" draft="unconfirmed">ma Konko pi ma tomo Kinsasa</territory>
 			<territory type="CF" draft="unconfirmed">ma Santapiken</territory>
 			<territory type="CG" draft="unconfirmed">ma Konko pi ma tomo Pasapi</territory>
@@ -86,57 +172,58 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CI" draft="unconfirmed">ma Kosiwa</territory>
 			<territory type="CL" draft="unconfirmed">ma Sile</territory>
 			<territory type="CM" draft="unconfirmed">ma Kamelun</territory>
-			<territory type="CN" draft="unconfirmed">ma Sonko</territory>
+			<territory type="CN">ma Sonko</territory>
 			<territory type="CO" draft="unconfirmed">ma Kolonpija</territory>
 			<territory type="CY" draft="unconfirmed">ma Kiposi</territory>
 			<territory type="CZ" draft="unconfirmed">ma Seki</territory>
-			<territory type="DE" draft="unconfirmed">ma Tosi</territory>
+			<territory type="DE">ma Tosi</territory>
 			<territory type="DJ" draft="unconfirmed">ma Sipusi</territory>
 			<territory type="DK" draft="unconfirmed">ma Tansi</territory>
 			<territory type="DZ" draft="unconfirmed">ma Sasali</territory>
-			<territory type="EC" draft="unconfirmed">ma Ekato</territory>
+			<territory type="EC">ma Ekuwato</territory>
 			<territory type="EE" draft="unconfirmed">ma Esi</territory>
-			<territory type="EG" draft="unconfirmed">ma Masu</territory>
+			<territory type="EG">ma Masi</territory>
 			<territory type="ER" draft="unconfirmed">ma Eliteja</territory>
-			<territory type="ES" draft="unconfirmed">ma Epanja</territory>
+			<territory type="ES">ma Epanja</territory>
 			<territory type="ET" draft="unconfirmed">ma Isijopija</territory>
 			<territory type="EU" draft="unconfirmed">kulupu ma Elopa</territory>
-			<territory type="FI" draft="unconfirmed">ma Sumi</territory>
+			<territory type="FI">ma Sumi</territory>
 			<territory type="FJ" draft="unconfirmed">ma Pisi</territory>
-			<territory type="FR" draft="unconfirmed">ma Kanse</territory>
+			<territory type="FR">ma Kanse</territory>
 			<territory type="GA" draft="unconfirmed">ma Kapon</territory>
+			<territory type="GB">ma Juke</territory>
 			<territory type="GE" draft="unconfirmed">ma Katelo</territory>
 			<territory type="GH" draft="unconfirmed">ma Kana</territory>
 			<territory type="GM" draft="unconfirmed">ma Kanpija</territory>
 			<territory type="GN" draft="unconfirmed">ma Kine</territory>
 			<territory type="GQ" draft="unconfirmed">ma Kinejekatolija</territory>
-			<territory type="GR" draft="unconfirmed">ma Elena</territory>
+			<territory type="GR">ma Elin</territory>
 			<territory type="GW" draft="unconfirmed">ma Kinepisa</territory>
-			<territory type="HK" draft="unconfirmed">ma Onkon</territory>
-			<territory type="HR" draft="unconfirmed">ma Lowasi</territory>
-			<territory type="HU" draft="unconfirmed">ma Mosijo</territory>
-			<territory type="ID" draft="unconfirmed">ma Intonesija</territory>
+			<territory type="HK">ma Onkon</territory>
+			<territory type="HR">ma Kowata</territory>
+			<territory type="HU">ma Maja</territory>
+			<territory type="ID">ma Intonesija</territory>
 			<territory type="IE" draft="unconfirmed">ma Alan</territory>
-			<territory type="IL" draft="unconfirmed">ma Isale</territory>
-			<territory type="IN" draft="unconfirmed">ma Palata</territory>
-			<territory type="IQ" draft="unconfirmed">ma Ilakija</territory>
-			<territory type="IR" draft="unconfirmed">ma Ilan</territory>
+			<territory type="IL">ma Isale</territory>
+			<territory type="IN">ma Palata</territory>
+			<territory type="IQ">ma Ilaki</territory>
+			<territory type="IR">ma Ilan</territory>
 			<territory type="IS" draft="unconfirmed">ma Isilan</territory>
-			<territory type="IT" draft="unconfirmed">ma Italija</territory>
+			<territory type="IT">ma Italija</territory>
 			<territory type="JO" draft="unconfirmed">ma Utun</territory>
-			<territory type="JP" draft="unconfirmed">ma Nijon</territory>
-			<territory type="KE" draft="unconfirmed">ma Kenja</territory>
-			<territory type="KH" draft="unconfirmed">ma Kanpusi</territory>
+			<territory type="JP">ma Nijon</territory>
+			<territory type="KE">ma Kenja</territory>
+			<territory type="KH">ma Kame</territory>
 			<territory type="KI" draft="unconfirmed">ma Kilipasi</territory>
 			<territory type="KM" draft="unconfirmed">ma Komo</territory>
-			<territory type="KP" draft="unconfirmed">ma Anku</territory>
-			<territory type="KR" draft="unconfirmed">ma Soson</territory>
+			<territory type="KP">ma Soson</territory>
+			<territory type="KR">ma Anku</territory>
 			<territory type="KW" draft="unconfirmed">ma Kuwasi</territory>
 			<territory type="LB" draft="unconfirmed">ma Lunpan</territory>
 			<territory type="LI" draft="unconfirmed">ma Lisensan</territory>
 			<territory type="LK" draft="unconfirmed">ma Lanka</territory>
 			<territory type="LR" draft="unconfirmed">ma Lapewija</territory>
-			<territory type="LS" draft="unconfirmed">ma Lesoto</territory>
+			<territory type="LS">ma Sutu</territory>
 			<territory type="LT" draft="unconfirmed">ma Lijatuwa</territory>
 			<territory type="LU" draft="unconfirmed">ma Lusepu</territory>
 			<territory type="LV" draft="unconfirmed">ma Lawi</territory>
@@ -146,70 +233,119 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MG" draft="unconfirmed">ma Malakasi</territory>
 			<territory type="MK" draft="unconfirmed">ma Maketonija</territory>
 			<territory type="ML" draft="unconfirmed">ma Mali</territory>
-			<territory type="MM" draft="unconfirmed">ma Mijama</territory>
+			<territory type="MM">ma Mijama</territory>
 			<territory type="MR" draft="unconfirmed">ma Mulitanija</territory>
 			<territory type="MU" draft="unconfirmed">ma Mowisi</territory>
 			<territory type="MW" draft="unconfirmed">ma Malawi</territory>
-			<territory type="MX" draft="unconfirmed">ma Mesiko</territory>
-			<territory type="MY" draft="unconfirmed">ma Malasija</territory>
+			<territory type="MX">ma Mesiko</territory>
+			<territory type="MY">ma Malesija</territory>
 			<territory type="MZ" draft="unconfirmed">ma Mosanpi</territory>
 			<territory type="NA" draft="unconfirmed">ma Namipija</territory>
 			<territory type="NE" draft="unconfirmed">ma Nise</territory>
-			<territory type="NG" draft="unconfirmed">ma Naselija</territory>
-			<territory type="NL" draft="unconfirmed">ma Netelan</territory>
-			<territory type="NO" draft="unconfirmed">ma Nosiki</territory>
-			<territory type="NZ" draft="unconfirmed">ma Nusilan</territory>
+			<territory type="NG">ma Nasilija</territory>
+			<territory type="NL">ma Netelan</territory>
+			<territory type="NO">ma Nosiki</territory>
+			<territory type="NZ">ma Awatejalowa</territory>
 			<territory type="OM" draft="unconfirmed">ma Uman</territory>
-			<territory type="PE" draft="unconfirmed">ma Pelu</territory>
+			<territory type="PE">ma Pelu</territory>
 			<territory type="PG" draft="unconfirmed">ma Papuwanijukini</territory>
-			<territory type="PH" draft="unconfirmed">ma Pilipina</territory>
-			<territory type="PK" draft="unconfirmed">ma Pakisan</territory>
-			<territory type="PL" draft="unconfirmed">ma Posuka</territory>
-			<territory type="PS" draft="unconfirmed">ma Pilisin</territory>
-			<territory type="PT" draft="unconfirmed">ma Potuke</territory>
+			<territory type="PH">ma Pilipina</territory>
+			<territory type="PK">ma Pakitan</territory>
+			<territory type="PL">ma Posuka</territory>
+			<territory type="PS">ma Palasin</territory>
+			<territory type="PT">ma Potuke</territory>
+			<territory type="QA">ma Kita</territory>
 			<territory type="RO" draft="unconfirmed">ma Lomani</territory>
-			<territory type="RS" draft="unconfirmed">ma Sopisi</territory>
-			<territory type="RU" draft="unconfirmed">ma Lusi</territory>
+			<territory type="RS">ma Sepi</territory>
+			<territory type="RU">ma Lusi</territory>
 			<territory type="RW" draft="unconfirmed">ma Luwanta</territory>
-			<territory type="SA" draft="unconfirmed">ma Sawusi</territory>
+			<territory type="SA">ma Sajusi</territory>
 			<territory type="SD" draft="unconfirmed">ma Sutan</territory>
-			<territory type="SE" draft="unconfirmed">ma Sensa</territory>
-			<territory type="SG" draft="unconfirmed">ma Sinkapo</territory>
+			<territory type="SE">ma Sensa</territory>
+			<territory type="SG">ma Sinkapo</territory>
 			<territory type="SI" draft="unconfirmed">ma Lowensina</territory>
 			<territory type="SK" draft="unconfirmed">ma Lowenki</territory>
 			<territory type="SL" draft="unconfirmed">ma Sijelalijon</territory>
 			<territory type="SM" draft="unconfirmed">ma Samalino</territory>
 			<territory type="SN" draft="unconfirmed">ma Seneka</territory>
-			<territory type="SO" draft="unconfirmed">ma Somalija</territory>
+			<territory type="SO">ma Somali</territory>
 			<territory type="SS" draft="unconfirmed">ma Sasutan</territory>
-			<territory type="SY" draft="unconfirmed">ma Sulija</territory>
-			<territory type="SZ">ma Sawasi</territory>
+			<territory type="SV">ma Sawato</territory>
+			<territory type="SY">ma Suli</territory>
+			<territory type="SZ">ma Suwasi</territory>
 			<territory type="TD" draft="unconfirmed">ma Sate</territory>
 			<territory type="TG" draft="unconfirmed">ma Toko</territory>
-			<territory type="TH" draft="unconfirmed">ma Tawi</territory>
+			<territory type="TH">ma Tawi</territory>
 			<territory type="TN" draft="unconfirmed">ma Tunisi</territory>
 			<territory type="TO" draft="unconfirmed">ma Tona</territory>
-			<territory type="TR" draft="unconfirmed">ma Tuki</territory>
+			<territory type="TR">ma Tuki</territory>
 			<territory type="TV" draft="unconfirmed">ma Tuwalu</territory>
-			<territory type="TZ" draft="unconfirmed">ma Tansanija</territory>
-			<territory type="UA" draft="unconfirmed">ma Ukawina</territory>
+			<territory type="TW">ma Tawan</territory>
+			<territory type="TZ">ma Tansanija</territory>
+			<territory type="UA">ma Ukawina</territory>
 			<territory type="UG" draft="unconfirmed">ma Ukanta</territory>
 			<territory type="UN" draft="unconfirmed">kulupu pi ma ale</territory>
-			<territory type="US" draft="unconfirmed">ma Mewika</territory>
-			<territory type="UZ">ma Opekisan</territory>
+			<territory type="US">ma Mewika</territory>
+			<territory type="UZ">ma Opeki</territory>
 			<territory type="VA" draft="unconfirmed">ma Wasikano</territory>
 			<territory type="VE" draft="unconfirmed">ma Penesuwela</territory>
-			<territory type="VN" draft="unconfirmed">ma Wije</territory>
+			<territory type="VN">ma Wije</territory>
 			<territory type="VU" draft="unconfirmed">ma Wanuwatu</territory>
 			<territory type="WS" draft="unconfirmed">ma Samowa</territory>
 			<territory type="YE" draft="unconfirmed">ma Jamanija</territory>
-			<territory type="ZA" draft="unconfirmed">ma Setapika</territory>
+			<territory type="ZA">ma Unsansi</territory>
 			<territory type="ZM" draft="unconfirmed">ma Sanpija</territory>
 			<territory type="ZW" draft="unconfirmed">ma Sinpapuwe</territory>
+			<territory type="ZZ">ma ante</territory>
 		</territories>
+		<variants>
+			<variant type="FONIPA">sitelen IPA</variant>
+			<variant type="FONUPA">sitelen UPA</variant>
+		</variants>
+		<keys>
+			<key type="calendar">nasin tenpo</key>
+			<key type="cf">nasin mani</key>
+			<key type="collation">nasin nimi</key>
+			<key type="currency">mani</key>
+			<key type="ms">nasin nanpa pi suli ijo</key>
+			<key type="numbers">sitelen nanpa</key>
+		</keys>
 		<types>
-			<type key="numbers" type="arab">sitelen nanpa Alapi</type>
+			<type key="calendar" type="japanese">nasin tenpo Nijon</type>
+			<type key="calendar" type="japanese" scope="core">nasin Nijon</type>
+			<type key="collation" type="ducet">nasin nimi Juniko</type>
+			<type key="collation" type="ducet" scope="core">nasin Juniko</type>
+			<type key="collation" type="emoji">nasin nimi Emosi</type>
+			<type key="collation" type="pinyin">nasin nimi Pinin</type>
+			<type key="collation" type="pinyin" scope="core">nasin Pinin</type>
+			<type key="em" type="default" scope="core">nasin sitelen</type>
+			<type key="em" type="emoji" scope="core">nasin sitelen Emosi</type>
+			<type key="em" type="text" scope="core">nasin sitelen Emosi ala</type>
+			<type key="ms" type="metric">nasin nanpa pi kulupu SI</type>
+			<type key="ms" type="metric" scope="core">nasin SI</type>
+			<type key="ms" type="uksystem">nasin nanpa pi ma Juke</type>
+			<type key="ms" type="uksystem" scope="core">nasin Juke</type>
+			<type key="ms" type="ussystem">nasin nanpa pi ma Mewika</type>
+			<type key="ms" type="ussystem" scope="core">nasin Mewika</type>
+			<type key="numbers" type="arab">nasin nanpa Alapi</type>
+			<type key="numbers" type="beng">sitelen nanpa Panla</type>
+			<type key="numbers" type="grek">sitelen nanpa Elin</type>
+			<type key="numbers" type="gujr">sitelen nanpa Kusalasi</type>
+			<type key="numbers" type="hanidec">sitelen nanpa Sonko</type>
+			<type key="numbers" type="hans">sitelen nanpa Sonko pi linja lili</type>
+			<type key="numbers" type="hansfin">sitelen nanpa mani Sonko pi linja lili</type>
+			<type key="numbers" type="hant">sitelen nanpa Sonko pi linja mute</type>
+			<type key="numbers" type="hantfin">sitelen nanpa mani Sonko pi linja mute</type>
+			<type key="numbers" type="hebr">sitelen nanpa Iwi</type>
+			<type key="numbers" type="java">sitelen nanpa Sowa</type>
+			<type key="numbers" type="jpan">sitelen nanpa Nijon</type>
+			<type key="numbers" type="jpanfin">sitelen nanpa mani Nijon</type>
+			<type key="numbers" type="knda">sitelen nanpa Kanata</type>
 			<type key="numbers" type="latn">sitelen nanpa Lasina</type>
+			<type key="numbers" type="mymr">sitelen nanpa Mijama</type>
+			<type key="numbers" type="telu">sitelen nanpa Teluku</type>
+			<type key="numbers" type="thai">sitelen nanpa Tawi</type>
+			<type key="numbers" type="tibt">sitelen nanpa Po</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">nasin pi ma ale</measurementSystemName>
@@ -217,16 +353,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<measurementSystemName type="US">nasin pi ma Mewika</measurementSystemName>
 		</measurementSystemNames>
 		<codePatterns>
-			<codePattern type="language">toki li {0}</codePattern>
-			<codePattern type="script">sitelen li {0}</codePattern>
-			<codePattern type="territory">ma li {0}</codePattern>
+			<codePattern type="language">toki: {0}</codePattern>
+			<codePattern type="script">sitelen: {0}</codePattern>
+			<codePattern type="territory">ma: {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[a e i j k l m n o p s t u w]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[b c d f g h q r v x y z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A E I J K L M N O P S T U W]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- ‑ / # % + 0 1 2 3 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ / # % + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‑ , ; \: ! ? . '‘’ &quot;“” ( ) \[ \] @ * / #]</exemplarCharacters>
 	</characters>
 	<dates>
@@ -235,23 +371,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<months>
 					<monthContext type="format">
 						<monthWidth type="wide">
-							<month type="1">mun #1</month>
-							<month type="2">mun #2</month>
-							<month type="3">mun #3</month>
-							<month type="4">mun #4</month>
-							<month type="5">mun #5</month>
-							<month type="6">mun #6</month>
-							<month type="7">mun #7</month>
-							<month type="8">mun #8</month>
-							<month type="9">mun #9</month>
-							<month type="10">mun #10</month>
-							<month type="11">mun #11</month>
-							<month type="12">mun #12</month>
+							<month type="1">tenpo mun #1</month>
+							<month type="2">tenpo mun #2</month>
+							<month type="3">tenpo mun #3</month>
+							<month type="4">tenpo mun #4</month>
+							<month type="5">tenpo mun #5</month>
+							<month type="6">tenpo mun #6</month>
+							<month type="7">tenpo mun #7</month>
+							<month type="8">tenpo mun #8</month>
+							<month type="9">tenpo mun #9</month>
+							<month type="10">tenpo mun #10</month>
+							<month type="11">tenpo mun #11</month>
+							<month type="12">tenpo mun #12</month>
 						</monthWidth>
 					</monthContext>
 				</months>
 				<days>
 					<dayContext type="format">
+						<dayWidth type="narrow">
+							<day type="sun">7</day>
+							<day type="mon">1</day>
+							<day type="tue">2</day>
+							<day type="wed">3</day>
+							<day type="thu">4</day>
+							<day type="fri">5</day>
+							<day type="sat">6</day>
+						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">suno esun #7</day>
 							<day type="mon">suno esun #1</day>
@@ -262,6 +407,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="sat">suno esun #6</day>
 						</dayWidth>
 					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="narrow">
+							<day type="sun">7</day>
+							<day type="mon">1</day>
+							<day type="tue">2</day>
+							<day type="wed">3</day>
+							<day type="thu">4</day>
+							<day type="fri">5</day>
+							<day type="sat">6</day>
+						</dayWidth>
+					</dayContext>
 				</days>
 				<dayPeriods>
 					<dayPeriodContext type="format">
@@ -270,23 +426,228 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="pm">pi pini suno</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">open suno</dayPeriod>
+							<dayPeriod type="pm">pini suno</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
 				</dayPeriods>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>'sike' #y 'la' MMM 'la' 'suno' #d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>'tenpo' 'sike' #y 'la' 'tenpo' MMMM 'la' 'tenpo' 'suno' #d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>'sike' #y 'la' MMM 'la' 'suno' #d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>y-MM-dd</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>zzzz 'la' HH:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>z 'la' HH:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>HH:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>HH:mm</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
 				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">'tenpo' 'ilo' #h B</dateFormatItem>
+						<dateFormatItem id="d">#d</dateFormatItem>
+						<dateFormatItem id="h">'tenpo' 'ilo' #h a</dateFormatItem>
 						<dateFormatItem id="hm">#h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">#HH:mm</dateFormatItem>
 						<dateFormatItem id="hms">#h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">#HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="hmsv">#h:mm:ss a 'lon' v</dateFormatItem>
 						<dateFormatItem id="Hmsv">#HH:mm:ss 'lon' v</dateFormatItem>
+						<dateFormatItem id="hmv">#h:mm a 'lon' v</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">MMMM 'la' 'sike' 'esun' #W</dateFormatItem>
+						<dateFormatItem id="y">#y</dateFormatItem>
 						<dateFormatItem id="yMd">#y)#M)#d</dateFormatItem>
 						<dateFormatItem id="yMMMd">'sike' #y ) #M ) #d</dateFormatItem>
+						<dateFormatItem id="yMMMM">#y 'la' MMMM</dateFormatItem>
+						<dateFormatItem id="yQQQ">#y 'la' QQQ</dateFormatItem>
+						<dateFormatItem id="yQQQQ">#y 'la' QQQQ</dateFormatItem>
+						<dateFormatItem id="yw" count="other">Y 'la' 'sike' 'esun' #w</dateFormatItem>
 					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
+		<fields>
+			<field type="era">
+				<displayName>tenpo</displayName>
+			</field>
+			<field type="year">
+				<displayName>tenpo sike</displayName>
+				<relative type="-1">tenpo sike pini</relative>
+				<relative type="0">tenpo sike ni</relative>
+				<relative type="1">tenpo sike wan</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">tenpo sike kama {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">tenpo sike pini {0}</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="year-short">
+				<displayName>sike</displayName>
+			</field>
+			<field type="year-narrow">
+				<displayName>sike</displayName>
+			</field>
+			<field type="month">
+				<displayName>tenpo mun</displayName>
+				<relative type="-1">tenpo mun pini</relative>
+				<relative type="0">tenpo mun ni</relative>
+				<relative type="1">tenpo mun kama</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">tenpo mun kama {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">tenpo mun pini {0}</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month-short">
+				<displayName>mun</displayName>
+			</field>
+			<field type="month-narrow">
+				<displayName>mun</displayName>
+			</field>
+			<field type="week">
+				<displayName>tenpo esun</displayName>
+				<relative type="-1">tenpo esun pini</relative>
+				<relative type="0">tenpo esun ni</relative>
+				<relative type="1">tenpo esun kama</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">tenpo esun kama {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">tenpo esun pini {0}</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="week-short">
+				<displayName>esun</displayName>
+			</field>
+			<field type="week-narrow">
+				<displayName>esun</displayName>
+			</field>
+			<field type="day">
+				<displayName>tenpo suno</displayName>
+				<relative type="-1">tenpo suno pini</relative>
+				<relative type="0">tenpo suno ni</relative>
+				<relative type="1">tenpo suno kama</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">tenpo suno kama {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">tenpo suno pini {0}</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="day-short">
+				<displayName>suno</displayName>
+			</field>
+			<field type="day-narrow">
+				<displayName>suno</displayName>
+			</field>
+			<field type="sun">
+				<relative type="-1">tenpo esun #7 pini</relative>
+				<relative type="0">tenpo esun #7 ni</relative>
+				<relative type="1">tenpo esun #7 kama</relative>
+			</field>
+			<field type="mon">
+				<relative type="-1">tenpo esun #1 pini</relative>
+				<relative type="0">tenpo esun #1 ni</relative>
+				<relative type="1">tenpo esun #1 kama</relative>
+			</field>
+			<field type="tue">
+				<relative type="-1">tenpo esun #2 pini</relative>
+				<relative type="0">tenpo esun #2 ni</relative>
+				<relative type="1">tenpo esun #2 kama</relative>
+			</field>
+			<field type="wed">
+				<relative type="-1">tenpo esun #3 pini</relative>
+				<relative type="0">tenpo esun #3 ni</relative>
+				<relative type="1">tenpo esun #3 kama</relative>
+			</field>
+			<field type="thu">
+				<relative type="-1">tenpo esun #4 pini</relative>
+				<relative type="0">tenpo esun #4 ni</relative>
+				<relative type="1">tenpo esun #4 kama</relative>
+			</field>
+			<field type="fri">
+				<relative type="-1">tenpo esun #5 pini</relative>
+				<relative type="0">tenpo esun #5 ni</relative>
+				<relative type="1">tenpo esun #5 kama</relative>
+			</field>
+			<field type="sat">
+				<relative type="-1">tenpo esun #6 pini</relative>
+				<relative type="0">tenpo esun #6 ni</relative>
+				<relative type="1">tenpo esun #6 kama</relative>
+			</field>
+			<field type="hour">
+				<displayName>tenpo ilo</displayName>
+				<relative type="0">tenpo ilo ni</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">tenpo ilo kama {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">tenpo ilo pini {0}</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="zone">
+				<displayName>nasin tenpo</displayName>
+			</field>
+		</fields>
 		<timeZoneNames>
-			<gmtFormat>tenpo UTC{0}</gmtFormat>
+			<gmtFormat>tenpo GMT{0}</gmtFormat>
 			<gmtZeroFormat>tenpo UTC</gmtZeroFormat>
 			<regionFormat>tenpo pi {0}</regionFormat>
 			<regionFormat type="daylight">tenpo seli suno pi {0}</regionFormat>
@@ -310,19 +671,91 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
-		<percentFormats numberSystem="latn">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern>%#,#0</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,#0.00</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,#0.00</pattern>
+					<pattern alt="noCurrency">#,#0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,#0.00</pattern>
+					<pattern alt="noCurrency">#,#0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
+		<currencies>
+			<currency type="AFN">
+				<displayName count="other">mani Akan</displayName>
+			</currency>
+			<currency type="AUD">
+				<displayName count="other">mani Oseja</displayName>
+			</currency>
+			<currency type="BDT">
+				<displayName count="other">mani Panla</displayName>
+			</currency>
+			<currency type="IDR">
+				<displayName count="other">mani Intonesija</displayName>
+			</currency>
+			<currency type="INR">
+				<displayName count="other">mani Palata</displayName>
+			</currency>
+			<currency type="IRR">
+				<displayName count="other">mani Ilan</displayName>
+			</currency>
+			<currency type="KHR">
+				<displayName count="other">mani Kame</displayName>
+			</currency>
+			<currency type="LKR">
+				<displayName count="other">mani Lanka</displayName>
+			</currency>
+			<currency type="MMK">
+				<displayName count="other">mani Mijama</displayName>
+			</currency>
+			<currency type="MYR">
+				<displayName count="other">mani Malesija</displayName>
+			</currency>
+			<currency type="NZD">
+				<displayName count="other">mani Awatejalowa</displayName>
+			</currency>
+			<currency type="PHP">
+				<displayName count="other">mani Pilipina</displayName>
+			</currency>
+			<currency type="PKR">
+				<displayName count="other">mani Pakitan</displayName>
+			</currency>
+			<currency type="SGD">
+				<displayName count="other">mani Sinkapo</displayName>
+			</currency>
+			<currency type="THB">
+				<displayName count="other">mani Tawi</displayName>
+			</currency>
+			<currency type="VND">
+				<displayName count="other">mani Wije</displayName>
+			</currency>
+		</currencies>
+		<minimalPairs>
+			<pluralMinimalPairs count="other" draft="contributed">tenpo suno {0}</pluralMinimalPairs>
+		</minimalPairs>
 	</numbers>
+	<units>
+		<durationUnit type="hm">
+			<durationUnitPattern>hh:mm</durationUnitPattern>
+		</durationUnit>
+		<durationUnit type="hms">
+			<durationUnitPattern>hh:mm:ss</durationUnitPattern>
+		</durationUnit>
+		<durationUnit type="ms">
+			<durationUnitPattern>mm:ss</durationUnitPattern>
+		</durationUnit>
+	</units>
+	<posix>
+		<messages>
+			<yesstr>lon:l:y</yesstr>
+			<nostr>ala:a:n</nostr>
+		</messages>
+	</posix>
+	<personNames>
+		<parameterDefault parameter="formality">informal</parameterDefault>
+	</personNames>
 </ldml>

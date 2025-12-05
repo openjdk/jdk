@@ -34,6 +34,7 @@ import static jdk.jfr.internal.LogTag.JFR;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -744,7 +745,14 @@ public final class PlatformRecording implements AutoCloseable {
     }
 
     private void transferChunks(WriteablePath path) throws IOException {
-        try (ChunksChannel cc = new ChunksChannel(chunks); FileChannel fc = FileChannel.open(path.getReal(), StandardOpenOption.WRITE, StandardOpenOption.APPEND)) {
+        // Before writing, wipe the file if it already exists.
+        try (ChunksChannel cc = new ChunksChannel(chunks); FileChannel fc = FileChannel.open(path.getReal(), StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING,  StandardOpenOption.CREATE)) {
+            // Mitigate races against other processes
+            FileLock l = fc.tryLock();
+            if (l == null) {
+                Logger.log(LogTag.JFR, LogLevel.INFO, "Dump operation skipped for recording \"" + name + "\" (" + id + "). File " + path.getRealPathText() + " is locked by other dump operation or activity.");
+                return;
+            }
             long bytes = cc.transferTo(fc);
             Logger.log(LogTag.JFR, LogLevel.INFO, "Transferred " + bytes + " bytes from the disk repository");
             // No need to force if no data was transferred, which avoids IOException when device is /dev/null

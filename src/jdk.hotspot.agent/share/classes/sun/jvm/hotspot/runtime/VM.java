@@ -123,7 +123,6 @@ public class VM {
   private int          invocationEntryBCI;
   private ReversePtrs  revPtrs;
   private VMRegImpl    vmregImpl;
-  private int          reserveForAllocationPrefetch;
   private int          labAlignmentReserve;
 
   // System.getProperties from debuggee VM
@@ -447,8 +446,6 @@ public class VM {
     boolType = (CIntegerType) db.lookupType("bool");
 
     Type threadLocalAllocBuffer = db.lookupType("ThreadLocalAllocBuffer");
-    CIntegerField reserveForAllocationPrefetchField = threadLocalAllocBuffer.getCIntegerField("_reserve_for_allocation_prefetch");
-    reserveForAllocationPrefetch = (int)reserveForAllocationPrefetchField.getCInteger(intType);
 
     Type collectedHeap = db.lookupType("CollectedHeap");
     CIntegerField labAlignmentReserveField = collectedHeap.getCIntegerField("_lab_alignment_reserve");
@@ -879,9 +876,7 @@ public class VM {
   }
 
   /** Indicates whether a given program counter is in Java code. This
-      includes but is not spanned by the interpreter and code cache.
-      Only used in the debugging system, for implementing
-      JavaThread.currentFrameGuess() on x86. */
+      includes but is not spanned by the interpreter and code cache. */
   public boolean isJavaPCDbg(Address addr) {
     // FIXME: this is not a complete enough set: must include areas
     // like vtable stubs
@@ -915,10 +910,6 @@ public class VM {
   // returns null, if not available.
   public String getVMInternalInfo() {
     return vmInternalInfo;
-  }
-
-  public int getReserveForAllocationPrefetch() {
-    return reserveForAllocationPrefetch;
   }
 
   public int getLabAlignmentReserve() {

@@ -27,6 +27,7 @@
 
 #include "utilities/concurrentHashTable.hpp"
 
+#include "cppstdlib/type_traits.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/orderAccess.hpp"
@@ -36,8 +37,6 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/numberSeq.hpp"
 #include "utilities/spinYield.hpp"
-
-#include <type_traits>
 
 // 2^30 = 1G buckets
 #define SIZE_BIG_LOG2 30
@@ -232,14 +231,6 @@ inline ConcurrentHashTable<CONFIG, MT>::
   ScopedCS::~ScopedCS()
 {
   GlobalCounter::critical_section_end(_thread, _cs_context);
-}
-
-template <typename CONFIG, MemTag MT>
-template <typename LOOKUP_FUNC>
-inline typename CONFIG::Value* ConcurrentHashTable<CONFIG, MT>::
-  MultiGetHandle::get(LOOKUP_FUNC& lookup_f, bool* grow_hint)
-{
-  return ScopedCS::_cht->internal_get(ScopedCS::_thread, lookup_f, grow_hint);
 }
 
 // HaveDeletables

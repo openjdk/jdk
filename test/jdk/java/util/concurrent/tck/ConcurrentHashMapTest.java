@@ -40,6 +40,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -876,6 +877,24 @@ public class ConcurrentHashMapTest extends JSR166TestCase {
             }
             fail("recursive computeIfAbsent should throw IllegalStateException");
         } catch (IllegalStateException success) {}
+    }
+
+    public void testMapEqualsIfClassCastExceptionOccurs() {
+        class MonotypeKeyMap extends HashMap<Byte, Object> {
+            @Override public Object get(Object key) {
+                return super.get((Byte)key); // Force cast, allowed by spec
+            }
+        }
+
+        var mkm = new MonotypeKeyMap();
+        mkm.put((byte)1, "value1");
+        var similar = new ConcurrentHashMap<Byte, Object>();
+        similar.put((byte)1, "value1");
+        var different = new ConcurrentHashMap<String, String>();
+        different.put("test1", "value1");
+
+        assertTrue(similar.equals(mkm));
+        assertFalse(different.equals(mkm));
     }
 
     private static Item findValue(ConcurrentHashMap<Item, Item> map,

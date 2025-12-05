@@ -35,8 +35,8 @@ import java.nio.ByteBuffer;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.Key;
-import java.security.PrivateKey;
 import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
 import java.security.Provider;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,7 +51,8 @@ import javax.crypto.spec.SecretKeySpec;
 public class TestGeneral extends PKCS11Test {
 
     private static final byte[] DATA_32 =
-            Arrays.copyOf("1234567890123456789012345678901234".getBytes(), 32);
+            Arrays.copyOf("1234567890123456789012345678901234".getBytes(),
+                    32);
     private static final SecretKey KEY =
             new SecretKeySpec(DATA_32, 0, 16, "AES");
     private static final int KW_IV_LEN = 8;
@@ -60,7 +61,8 @@ public class TestGeneral extends PKCS11Test {
     private static final int MAX_KWP_PAD_LEN = 7; // 0-7
 
     public static void testEnc(Cipher c, byte[] in, int startLen, int inc,
-                               IvParameterSpec[] ivs, int maxPadLen) throws Exception {
+                               IvParameterSpec[] ivs, int maxPadLen)
+            throws Exception {
 
         System.out.println("testEnc, input len=" + startLen + " w/ inc=" +
                 inc);
@@ -129,7 +131,7 @@ public class TestGeneral extends PKCS11Test {
     }
 
     public static void testWrap(Cipher c, Key[] inKeys, IvParameterSpec[] ivs,
-                                int maxPadLen) throws Exception {
+            int maxPadLen) throws Exception {
 
         for (Key inKey : inKeys) {
             System.out.println("testWrap, key: " + inKey);
@@ -256,16 +258,21 @@ public class TestGeneral extends PKCS11Test {
         SecretKey aes256 = new SecretKeySpec(DATA_32, "AES");
         SecretKey any256 = new SecretKeySpec(DATA_32, "ANY");
         PrivateKey priv = KeyPairGenerator.getInstance
-                ("RSA", System.getProperty("test.provider.name","SunRsaSign"))
+                ("RSA",
+                        System.getProperty(
+                                "test.provider.name",
+                                "SunRsaSign"))
                 .generateKeyPair().getPrivate();
 
         String[] algos = {
             "AES/KW/PKCS5Padding", "AES/KW/NoPadding", "AES/KWP/NoPadding"
         };
-        List<String> skippedAlgoList = new ArrayList<>();
+
+        final List<String> skippedList  = new ArrayList<>();
+
         for (String a : algos) {
             if (p.getService("Cipher", a) == null) {
-                skippedAlgoList.add(a);
+                skippedList.add(a);
                 continue;
             }
 
@@ -342,11 +349,11 @@ public class TestGeneral extends PKCS11Test {
             testIv(c, ivLen, allowCustomIv);
         }
 
-        //Check if tests were skipped.
-        if (skippedAlgoList.isEmpty()) {
-            System.out.println("All Tests Passed");
+        if (!skippedList.isEmpty()) {
+            throw new SkippedException("One or more tests skipped " +
+                                       "due to no support " + skippedList);
         } else {
-            throw new SkippedException("Some tests were skipped due to no support : " + skippedAlgoList);
+            System.out.println("All Tests Passed");
         }
     }
 }

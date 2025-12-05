@@ -22,9 +22,8 @@
  *
  */
 
-#include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.hpp"
+#include "cds/heapShared.inline.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
@@ -58,6 +57,10 @@
 #include "utilities/rotate_bits.hpp"
 #include "utilities/stack.inline.hpp"
 
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
+
 void Klass::set_java_mirror(Handle m) {
   assert(!m.is_null(), "New mirror should never be null.");
   assert(_java_mirror.is_empty(), "should only be used to initialize mirror");
@@ -67,17 +70,6 @@ void Klass::set_java_mirror(Handle m) {
 bool Klass::is_cloneable() const {
   return _misc_flags.is_cloneable_fast() ||
          is_subtype_of(vmClasses::Cloneable_klass());
-}
-
-void Klass::set_is_cloneable() {
-  if (name() == vmSymbols::java_lang_invoke_MemberName()) {
-    assert(is_final(), "no subclasses allowed");
-    // MemberName cloning should not be intrinsified and always happen in JVM_Clone.
-  } else if (is_instance_klass() && InstanceKlass::cast(this)->reference_type() != REF_NONE) {
-    // Reference cloning should not be intrinsified and always happen in JVM_Clone.
-  } else {
-    _misc_flags.set_is_cloneable_fast(true);
-  }
 }
 
 uint8_t Klass::compute_hash_slot(Symbol* n) {
@@ -249,6 +241,10 @@ void Klass::copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos, int len
 
 
 void Klass::initialize(TRAPS) {
+  ShouldNotReachHere();
+}
+
+void Klass::initialize_preemptable(TRAPS) {
   ShouldNotReachHere();
 }
 
@@ -859,7 +855,6 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   assert(is_klass(), "ensure C++ vtable is restored");
   assert(in_aot_cache(), "must be set");
   assert(secondary_supers()->length() >= (int)population_count(_secondary_supers_bitmap), "must be");
-  JFR_ONLY(RESTORE_ID(this);)
   if (log_is_enabled(Trace, aot, unshareable)) {
     ResourceMark rm(THREAD);
     oop class_loader = loader_data->class_loader();
@@ -873,9 +868,12 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   if (class_loader_data() == nullptr) {
     set_class_loader_data(loader_data);
   }
+
   // Add to class loader list first before creating the mirror
   // (same order as class file parsing)
   loader_data->add_class(this);
+
+  JFR_ONLY(Jfr::on_restoration(this, THREAD);)
 
   Handle loader(THREAD, loader_data->class_loader());
   ModuleEntry* module_entry = nullptr;
@@ -896,7 +894,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   if (this->has_archived_mirror_index()) {
     ResourceMark rm(THREAD);
     log_debug(aot, mirror)("%s has raw archived mirror", external_name());
-    if (ArchiveHeapLoader::is_in_use()) {
+    if (HeapShared::is_archived_heap_in_use()) {
       bool present = java_lang_Class::restore_archived_mirror(this, loader, module_handle,
                                                               protection_domain,
                                                               CHECK);

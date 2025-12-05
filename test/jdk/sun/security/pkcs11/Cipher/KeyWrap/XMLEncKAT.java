@@ -38,6 +38,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.UnsupportedEncodingException;
+import java.io.IOException;
 
 // adapted from com/sun/crypto/provider/Cipher/KeyWrap/XMLEncKAT.java
 public class XMLEncKAT extends PKCS11Test {
@@ -107,7 +108,9 @@ public class XMLEncKAT extends PKCS11Test {
         // first test UNWRAP with known values
         for (int i = 0; i < base64Wrapped.length; i++) {
             byte[] wrappedKey = base64D.decode(base64Wrapped[i]);
-            key[i] = c.unwrap(wrappedKey, "AES", Cipher.SECRET_KEY);
+            key[i] = c.unwrap(wrappedKey,
+                    "AES",
+                    Cipher.SECRET_KEY);
             if (c.getIV() != null) {
                 params[i] = new IvParameterSpec(c.getIV());
             }
@@ -131,9 +134,11 @@ public class XMLEncKAT extends PKCS11Test {
     @Override
     public void main(Provider p) throws Exception {
         String wrapAlg = "AESWrap";
+
         if (p.getService("Cipher", wrapAlg) == null) {
-            throw new SkippedException("No support :  " + wrapAlg);
+            throw new SkippedException("No support " + wrapAlg);
         }
+
         String keyAlg = "AES";
         testKeyWrap(p, wrapAlg, aes128Key_1, keyAlg, aes128WrappedKey_1);
         testKeyWrap(p, wrapAlg, aes128Key_2, keyAlg, aes128WrappedKey_2);

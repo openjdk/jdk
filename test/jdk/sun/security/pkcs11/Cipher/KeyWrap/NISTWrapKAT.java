@@ -46,8 +46,6 @@ import java.util.List;
 // adapted from com/sun/crypto/provider/Cipher/KeyWrap/NISTWrapKAT.java
 public class NISTWrapKAT extends PKCS11Test {
 
-    private static final List<String> skippedAlgoList = new ArrayList<>();
-
     private static final String KEK =
         "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f";
     private static final String DATA =
@@ -81,8 +79,11 @@ public class NISTWrapKAT extends PKCS11Test {
             "308D49692B5F8CF638D54BB4B985633504237329964C76EBB3F669870A708DBC";
     private static String KWP_AES256_224 =
             "0942747DB07032A3F04CDB2E7DE1CBA038F92BC355393AE9A0E4AE8C901912AC3D3AF0F16D240607";
-     // from RFC 5649 sec6
-     private static String KEK2 = "5840DF6E29B02AF1AB493B705BF16EA1AE8338F4DCC176A8";
+    // from RFC 5649 sec6
+    private static String KEK2 =
+            "5840DF6E29B02AF1AB493B705BF16EA1AE8338F4DCC176A8";
+
+    private static final List<String> skippedAlgoList = new ArrayList <>();
 
     private static byte[] toBytes(String hex, int hexLen) {
         if (hexLen < hex.length()) {
@@ -99,10 +100,18 @@ public class NISTWrapKAT extends PKCS11Test {
             byte[] out = new byte[outLen];
             if (val.length < outLen) {
                 // enlarge
-                System.arraycopy(val, 0, out, outLen - val.length, val.length);
+                System.arraycopy(val,
+                        0,
+                        out,
+                        outLen - val.length,
+                        val.length);
             } else {
                 // truncate
-                System.arraycopy(val, val.length - outLen, out, 0, outLen);
+                System.arraycopy(val,
+                        val.length - outLen,
+                        out,
+                        0,
+                        outLen);
             }
             return out;
         }
@@ -151,7 +160,8 @@ public class NISTWrapKAT extends PKCS11Test {
               "AFBEB0F07DFBF5419200F2CCB50BB24F" },
             { "AES/KWP/NoPadding", KEK2, 24,
               "C37B7E6492584340BED12207808941155068F738", 20,
-              "138BDEAA9B8FA7FC61F97742E72248EE5AE6AE5360D1AE6A5F54F373FA543B6A" },
+              "138BDEAA9B8FA7FC61F97742E72248EE5AE6AE5360D1AE6A5F54F373FA543B6A"
+            },
             // some more test vectors for KW and KWP
             // from csrc.nist.gov/groups/STM/cavp/documents/mac/kwtestvectors.zip
             { "AES/KW/NoPadding", "7575da3a93607cc2bfd8cec7aadfd9a6", 16,
@@ -265,7 +275,9 @@ public class NISTWrapKAT extends PKCS11Test {
         int allowed = Cipher.getMaxAllowedKeyLength("AES");
         if (keyLen > allowed) {
             System.err.println("Skip, exceeds max allowed size " + allowed);
-            skippedAlgoList.add(algo);
+            skippedAlgoList.add(algo + " Cipher with wrapping " +
+                            dataLen + "-byte key with " + 8 * keyLen +
+                            "-bit KEK exceeds max allowed size " + allowed);
             return;
         }
         Cipher c1 = Cipher.getInstance(algo,
@@ -284,7 +296,8 @@ public class NISTWrapKAT extends PKCS11Test {
         c1.init(Cipher.WRAP_MODE, cipherKey);
         IvParameterSpec ivSpec = new IvParameterSpec(c1.getIV());
         c2.init(Cipher.WRAP_MODE, cipherKey, ivSpec);
-        AlgorithmParameters params = AlgorithmParameters.getInstance("AES");
+        AlgorithmParameters params =
+                AlgorithmParameters.getInstance("AES");
         params.init(ivSpec);
         c3.init(Cipher.WRAP_MODE, cipherKey, params);
 
@@ -309,9 +322,12 @@ public class NISTWrapKAT extends PKCS11Test {
         params.init(ivSpec);
         c3.init(Cipher.UNWRAP_MODE, cipherKey, params);
 
-        Key unwrapped = c1.unwrap(wrapped, "AES", Cipher.SECRET_KEY);
-        Key unwrapped2 = c2.unwrap(wrapped, "AES", Cipher.SECRET_KEY);
-        Key unwrapped3 = c3.unwrap(wrapped, "AES", Cipher.SECRET_KEY);
+        Key unwrapped =
+                c1.unwrap(wrapped, "AES", Cipher.SECRET_KEY);
+        Key unwrapped2 =
+                c2.unwrap(wrapped, "AES", Cipher.SECRET_KEY);
+        Key unwrapped3 =
+                c3.unwrap(wrapped, "AES", Cipher.SECRET_KEY);
 
         if (!Arrays.equals(unwrapped.getEncoded(), dataVal) ||
                 !Arrays.equals(unwrapped2.getEncoded(), dataVal) ||
@@ -329,7 +345,9 @@ public class NISTWrapKAT extends PKCS11Test {
         int allowed = Cipher.getMaxAllowedKeyLength("AES");
         if (keyLen > allowed) {
             System.err.println("Skip, exceeds max allowed size " + allowed);
-            skippedAlgoList.add(algo);
+            skippedAlgoList.add(algo + " Cipher with enc " +
+                            dataLen + "-byte data with " + 8 * keyLen +
+                            "-bit KEK exceeds max allowed size " + allowed);
             return;
         }
         Cipher c1 = Cipher.getInstance(algo,
@@ -346,7 +364,8 @@ public class NISTWrapKAT extends PKCS11Test {
         c1.init(Cipher.ENCRYPT_MODE, cipherKey);
         IvParameterSpec ivSpec = new IvParameterSpec(c1.getIV());
         c2.init(Cipher.ENCRYPT_MODE, cipherKey, ivSpec);
-        AlgorithmParameters params = AlgorithmParameters.getInstance("AES");
+        AlgorithmParameters params =
+                AlgorithmParameters.getInstance("AES");
         params.init(ivSpec);
         c3.init(Cipher.ENCRYPT_MODE, cipherKey, params);
 
@@ -394,12 +413,11 @@ public class NISTWrapKAT extends PKCS11Test {
     @Override
     public void main(Provider p) throws Exception {
         Object[][] testDatum = testData();
-        for (int i = 0; i < testDatum.length; i++) {
-            Object[] td = testDatum[i];
+        for (Object[] td : testDatum) {
             String algo = (String) td[0];
             if (p.getService("Cipher", algo) == null) {
                 System.err.println("Skip, due to no support:  " + algo);
-                skippedAlgoList.add(algo);
+                skippedAlgoList.add("No support for " + algo);
                 continue;
             }
             testKeyWrap(algo, (String)td[1], (int)td[2], (String)td[3],
@@ -408,11 +426,11 @@ public class NISTWrapKAT extends PKCS11Test {
                     (int)td[4], (String)td[5], p);
         }
 
-        //Check if tests were skipped.
-        if (skippedAlgoList.isEmpty()) {
-            System.out.println("All Tests Passed");
+        if (!skippedAlgoList.isEmpty()) {
+            throw new SkippedException("One or more tests skipped "
+                                       + skippedAlgoList);
         } else {
-            throw new SkippedException("Some tests were skipped : " + skippedAlgoList);
+            System.out.println("All Tests Passed");
         }
     }
 }

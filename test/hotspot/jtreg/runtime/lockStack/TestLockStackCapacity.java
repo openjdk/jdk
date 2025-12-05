@@ -24,7 +24,7 @@
 
 /*
  * @test TestLockStackCapacity
- * @summary Tests the interaction between recursive lightweight locking and
+ * @summary Tests the interaction between recursive fast locking and
  *          when the lock stack capacity is exceeded.
  * @requires vm.flagless
  * @library /testlibrary /test/lib
@@ -93,8 +93,8 @@ public class TestLockStackCapacity {
     }
 
     public static void main(String... args) throws Exception {
-        if (!WB.supportsRecursiveLightweightLocking()) {
-            throw new SkippedException("Test only valid if lightweight locking supports recursion");
+        if (!WB.supportsRecursiveFastLocking()) {
+            throw new SkippedException("Test only valid if fast locking supports recursion");
         }
 
         SynchronizedObject.runTest();
