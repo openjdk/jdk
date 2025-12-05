@@ -111,6 +111,16 @@ static const ZStatSampler ZSamplerJavaThreads("System", "Java Threads", ZStatUni
 ZGenerationYoung* ZGeneration::_young;
 ZGenerationOld*   ZGeneration::_old;
 
+class ZRendezvousHandshakeClosure : public HandshakeClosure {
+public:
+  ZRendezvousHandshakeClosure()
+    : HandshakeClosure("ZRendezvous") {}
+
+  void do_thread(Thread* thread) {
+    // Does nothing
+  }
+};
+
 ZGeneration::ZGeneration(ZGenerationId id, ZPageTable* page_table, ZPageAllocator* page_allocator)
   : _id(id),
     _page_allocator(page_allocator),
@@ -168,11 +178,20 @@ void ZGeneration::free_empty_pages(ZRelocationSetSelector* selector, int bulk) {
 }
 
 void ZGeneration::flip_age_pages(const ZRelocationSetSelector* selector) {
-  if (is_young()) {
-    _relocate.flip_age_pages(selector->not_selected_small());
-    _relocate.flip_age_pages(selector->not_selected_medium());
-    _relocate.flip_age_pages(selector->not_selected_large());
-  }
+  _relocate.flip_age_pages(selector->not_selected_small());
+  _relocate.flip_age_pages(selector->not_selected_medium());
+  _relocate.flip_age_pages(selector->not_selected_large());
+
+  // Perform a handshake between flip promotion and running the promotion barrier. This ensures
+  // that ZBarrierSet::on_slowpath_allocation_exit() observing a young page that was then racingly
+  // flip promoted, will run any stores without barriers to completion before responding to the
+  // handshake at the subsequent safepoint poll. This ensures that the flip promotion barriers always
+  // run after compiled code missing barriers, but before relocate start.
+  ZRendezvousHandshakeClosure cl;
+  Handshake::execute(&cl);
+
+  _relocate.barrier_promoted_pages(_relocation_set.flip_promoted_pages(),
+                                   _relocation_set.relocate_promoted_pages());
 }
 
 static double fragmentation_limit(ZGenerationId generation) {
@@ -235,7 +254,9 @@ void ZGeneration::select_relocation_set(bool promote_all) {
   _relocation_set.install(&selector);
 
   // Flip age young pages that were not selected
-  flip_age_pages(&selector);
+  if (is_young()) {
+    flip_age_pages(&selector);
+  }
 
   // Setup forwarding table
   ZRelocationSetIterator rs_iter(&_relocation_set);
@@ -1279,16 +1300,6 @@ void ZGenerationOld::set_soft_reference_policy(bool clear) {
 bool ZGenerationOld::uses_clear_all_soft_reference_policy() const {
   return _reference_processor.uses_clear_all_soft_reference_policy();
 }
-
-class ZRendezvousHandshakeClosure : public HandshakeClosure {
-public:
-  ZRendezvousHandshakeClosure()
-    : HandshakeClosure("ZRendezvous") {}
-
-  void do_thread(Thread* thread) {
-    // Does nothing
-  }
-};
 
 class ZRendezvousGCThreads: public VM_Operation {
  public:

@@ -317,6 +317,10 @@ bool needs_module_property_warning = false;
 #define ENABLE_NATIVE_ACCESS_LEN 20
 #define ILLEGAL_NATIVE_ACCESS "illegal.native.access"
 #define ILLEGAL_NATIVE_ACCESS_LEN 21
+#define ENABLE_FINAL_FIELD_MUTATION "enable.final.field.mutation"
+#define ENABLE_FINAL_FIELD_MUTATION_LEN 27
+#define ILLEGAL_FINAL_FIELD_MUTATION "illegal.final.field.mutation"
+#define ILLEGAL_FINAL_FIELD_MUTATION_LEN 28
 
 // Return TRUE if option matches 'property', or 'property=', or 'property.'.
 static bool matches_property_suffix(const char* option, const char* property, size_t len) {
@@ -343,7 +347,9 @@ bool Arguments::internal_module_property_helper(const char* property, bool check
     if (matches_property_suffix(property_suffix, PATCH, PATCH_LEN) ||
         matches_property_suffix(property_suffix, LIMITMODS, LIMITMODS_LEN) ||
         matches_property_suffix(property_suffix, UPGRADE_PATH, UPGRADE_PATH_LEN) ||
-        matches_property_suffix(property_suffix, ILLEGAL_NATIVE_ACCESS, ILLEGAL_NATIVE_ACCESS_LEN)) {
+        matches_property_suffix(property_suffix, ILLEGAL_NATIVE_ACCESS, ILLEGAL_NATIVE_ACCESS_LEN) ||
+        matches_property_suffix(property_suffix, ENABLE_FINAL_FIELD_MUTATION, ENABLE_FINAL_FIELD_MUTATION_LEN) ||
+        matches_property_suffix(property_suffix, ILLEGAL_FINAL_FIELD_MUTATION, ILLEGAL_FINAL_FIELD_MUTATION_LEN)) {
       return true;
     }
 
@@ -1472,10 +1478,10 @@ void Arguments::set_conservative_max_heap_alignment() {
   // the alignments imposed by several sources: any requirements from the heap
   // itself and the maximum page size we may run the VM with.
   size_t heap_alignment = GCConfig::arguments()->conservative_max_heap_alignment();
-  _conservative_max_heap_alignment = MAX4(heap_alignment,
+  _conservative_max_heap_alignment = MAX3(heap_alignment,
                                           os::vm_allocation_granularity(),
-                                          os::max_page_size(),
-                                          GCArguments::compute_heap_alignment());
+                                          os::max_page_size());
+  assert(is_power_of_2(_conservative_max_heap_alignment), "Expected to be a power-of-2");
 }
 
 jint Arguments::set_ergonomics_flags() {
@@ -1583,8 +1589,8 @@ void Arguments::set_heap_size() {
     }
 
     if (UseCompressedOops) {
-      size_t heap_end = HeapBaseMinAddress + MaxHeapSize;
-      size_t max_coop_heap = max_heap_for_compressed_oops();
+      uintptr_t heap_end = HeapBaseMinAddress + MaxHeapSize;
+      uintptr_t max_coop_heap = max_heap_for_compressed_oops();
 
       // Limit the heap size to the maximum possible when using compressed oops
       if (heap_end < max_coop_heap) {
@@ -1601,7 +1607,7 @@ void Arguments::set_heap_size() {
           aot_log_info(aot)("UseCompressedOops disabled due to "
                             "max heap %zu > compressed oop heap %zu. "
                             "Please check the setting of MaxRAMPercentage %5.2f.",
-                            reasonable_max, max_coop_heap, MaxRAMPercentage);
+                            reasonable_max, (size_t)max_coop_heap, MaxRAMPercentage);
           FLAG_SET_ERGO(UseCompressedOops, false);
         } else {
           reasonable_max = max_coop_heap;
@@ -1809,6 +1815,7 @@ static unsigned int addexports_count = 0;
 static unsigned int addopens_count = 0;
 static unsigned int patch_mod_count = 0;
 static unsigned int enable_native_access_count = 0;
+static unsigned int enable_final_field_mutation = 0;
 static bool patch_mod_javabase = false;
 
 // Check the consistency of vm_init_args
@@ -2273,6 +2280,19 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
       if (res != JNI_OK) {
         return res;
       }
+    } else if (match_option(option, "--enable-final-field-mutation=", &tail)) {
+      if (!create_numbered_module_property("jdk.module.enable.final.field.mutation", tail, enable_final_field_mutation++)) {
+        return JNI_ENOMEM;
+      }
+    } else if (match_option(option, "--illegal-final-field-mutation=", &tail)) {
+      if (strcmp(tail, "allow") == 0 || strcmp(tail, "warn") == 0 || strcmp(tail, "debug") == 0 || strcmp(tail, "deny") == 0) {
+        PropertyList_unique_add(&_system_properties, "jdk.module.illegal.final.field.mutation", tail,
+                                AddProperty, WriteableProperty, InternalProperty);
+      } else {
+        jio_fprintf(defaultStream::error_stream(),
+                    "Value specified to --illegal-final-field-mutation not recognized: '%s'\n", tail);
+        return JNI_ERR;
+      }
     } else if (match_option(option, "--sun-misc-unsafe-memory-access=", &tail)) {
       if (strcmp(tail, "allow") == 0 || strcmp(tail, "warn") == 0 || strcmp(tail, "debug") == 0 || strcmp(tail, "deny") == 0) {
         PropertyList_unique_add(&_system_properties, "sun.misc.unsafe.memory.access", tail,
@@ -2463,6 +2483,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
       }
     } else if (match_option(option, "-Xmaxjitcodesize", &tail) ||
                match_option(option, "-XX:ReservedCodeCacheSize=", &tail)) {
+      if (match_option(option, "-Xmaxjitcodesize", &tail)) {
+        warning("Option -Xmaxjitcodesize was deprecated in JDK 26 and will likely be removed in a future release.");
+      }
       julong long_ReservedCodeCacheSize = 0;
 
       ArgsRange errcode = parse_memory_size(tail, &long_ReservedCodeCacheSize, 1);

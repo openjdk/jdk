@@ -32,9 +32,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-
 import jdk.jpackage.internal.model.Application;
-import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.MsiVersion;
 import jdk.jpackage.internal.model.WinMsiPackage;
 import jdk.jpackage.internal.model.WinMsiPackageMixin;
@@ -45,7 +43,7 @@ final class WinMsiPackageBuilder {
         this.pkgBuilder = Objects.requireNonNull(pkgBuilder);
     }
 
-    WinMsiPackage create() throws ConfigException {
+    WinMsiPackage create() {
         var pkg = pkgBuilder.create();
 
         try {

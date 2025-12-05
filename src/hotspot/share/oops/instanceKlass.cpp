@@ -552,6 +552,17 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind, Refe
   assert(size_helper() == parser.layout_size(), "incorrect size_helper?");
 }
 
+void InstanceKlass::set_is_cloneable() {
+  if (name() == vmSymbols::java_lang_invoke_MemberName()) {
+    assert(is_final(), "no subclasses allowed");
+    // MemberName cloning should not be intrinsified and always happen in JVM_Clone.
+  } else if (reference_type() != REF_NONE) {
+    // Reference cloning should not be intrinsified and always happen in JVM_Clone.
+  } else {
+    set_is_cloneable_fast();
+  }
+}
+
 void InstanceKlass::deallocate_methods(ClassLoaderData* loader_data,
                                        Array<Method*>* methods) {
   if (methods != nullptr && methods != Universe::the_empty_method_array() &&
@@ -2870,7 +2881,7 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
 }
 
 bool InstanceKlass::can_be_verified_at_dumptime() const {
-  if (AOTMetaspace::in_aot_cache(this)) {
+  if (CDSConfig::is_dumping_dynamic_archive() && AOTMetaspace::in_aot_cache(this)) {
     // This is a class that was dumped into the base archive, so we know
     // it was verified at dump time.
     return true;

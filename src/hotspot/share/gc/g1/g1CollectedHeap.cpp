@@ -478,11 +478,6 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(uint node_index, size_t word_
     log_trace(gc, alloc)("%s: Unsuccessfully scheduled collection allocating %zu words",
                          Thread::current()->name(), word_size);
 
-    if (is_shutting_down()) {
-      stall_for_vm_shutdown();
-      return nullptr;
-    }
-
     // Has the gc overhead limit been reached in the meantime? If so, this mutator
     // should receive null even when unsuccessfully scheduling a collection as well
     // for global consistency.
@@ -737,11 +732,6 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
 
     log_trace(gc, alloc)("%s: Unsuccessfully scheduled collection allocating %zu",
                          Thread::current()->name(), word_size);
-
-    if (is_shutting_down()) {
-      stall_for_vm_shutdown();
-      return nullptr;
-    }
 
     // Has the gc overhead limit been reached in the meantime? If so, this mutator
     // should receive null even when unsuccessfully scheduling a collection as well
@@ -1645,6 +1635,10 @@ jint G1CollectedHeap::initialize() {
   return JNI_OK;
 }
 
+bool G1CollectedHeap::concurrent_mark_is_terminating() const {
+  return _cm_thread->should_terminate();
+}
+
 void G1CollectedHeap::stop() {
   // Stop all concurrent threads. We do this to make sure these threads
   // do not continue to execute and access resources (e.g. logging)
@@ -1965,8 +1959,8 @@ bool G1CollectedHeap::try_collect_concurrently(size_t allocation_word_size,
     }
 
     // If VMOp skipped initiating concurrent marking cycle because
-    // we're terminating, then we're done.
-    if (is_shutting_down()) {
+    // we're shutting down, then we're done.
+    if (op.is_shutting_down()) {
       LOG_COLLECT_CONCURRENTLY(cause, "skipped: terminating");
       return false;
     }
@@ -2361,7 +2355,8 @@ static void print_region_type(outputStream* st, const char* type, uint count, bo
 }
 
 void G1CollectedHeap::print_heap_on(outputStream* st) const {
-  size_t heap_used = Heap_lock->owned_by_self() ? used() : used_unlocked();
+  size_t heap_used = (Thread::current_or_null_safe() != nullptr &&
+                      Heap_lock->owned_by_self()) ? used() : used_unlocked();
   st->print("%-20s", "garbage-first heap");
   st->print(" total reserved %zuK, committed %zuK, used %zuK",
             _hrm.reserved().byte_size()/K, capacity()/K, heap_used/K);

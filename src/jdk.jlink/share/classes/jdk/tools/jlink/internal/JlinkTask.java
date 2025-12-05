@@ -27,9 +27,11 @@ package jdk.tools.jlink.internal;
 import static jdk.tools.jlink.internal.TaskHelper.JLINK_BUNDLE;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.lang.module.Configuration;
@@ -56,6 +58,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -238,6 +241,27 @@ public class JlinkTask {
     }
 
     public static final String OPTIONS_RESOURCE = "jdk/tools/jlink/internal/options";
+    // Release information stored in the java.base module
+    private static final String JDK_RELEASE_RESOURCE = "jdk/internal/misc/resources/release.txt";
+
+    /**
+     * Read the release.txt from the module.
+     */
+    private static Optional<String> getReleaseInfo(ModuleReference mref) {
+        try {
+            Optional<InputStream> release = mref.open().open(JDK_RELEASE_RESOURCE);
+
+            if (release.isEmpty()) {
+                return Optional.empty();
+            }
+
+            try (var r = new BufferedReader(new InputStreamReader(release.get()))) {
+                return Optional.of(r.readLine());
+            }
+        } catch (IOException ioe) {
+            throw new UncheckedIOException(ioe);
+        }
+    }
 
     int run(String[] args) {
         if (log == null) {
@@ -410,7 +434,8 @@ public class JlinkTask {
 
         // Sanity check version if we use JMODs
         if (!isLinkFromRuntime) {
-            checkJavaBaseVersion(finder);
+            assert(finder.find("java.base").isPresent());
+            checkJavaBaseVersion(finder.find("java.base").get());
         }
 
         // Determine the roots set
@@ -561,32 +586,34 @@ public class JlinkTask {
         return finder;
     }
 
+    private static String getCurrentRuntimeVersion() {
+        ModuleReference current = ModuleLayer.boot()
+                .configuration()
+                .findModule("java.base")
+                .get()
+                .reference();
+        // This jlink runtime should always have the release.txt
+        return getReleaseInfo(current).get();
+    }
+
     /*
-     * Checks the version of the module descriptor of java.base for compatibility
-     * with the current runtime version.
+     * Checks the release information of the java.base used for target image
+     * for compatibility with the java.base used by jlink.
      *
-     * @throws IllegalArgumentException the descriptor of java.base has no
-     * version or the java.base version is not the same as the current runtime's
-     * version.
+     * @throws IllegalArgumentException  If  the `java.base` module reference `target`
+     * is not compatible with this jlink.
      */
-    private static void checkJavaBaseVersion(ModuleFinder finder) {
-        assert finder.find("java.base").isPresent();
+    private static void checkJavaBaseVersion(ModuleReference target) {
+        String currentRelease = getCurrentRuntimeVersion();
 
-        // use the version of java.base module, if present, as
-        // the release version for multi-release JAR files
-        ModuleDescriptor.Version v = finder.find("java.base").get()
-                .descriptor().version().orElseThrow(() ->
-                new IllegalArgumentException("No version in java.base descriptor")
-                        );
+        String targetRelease = getReleaseInfo(target).orElseThrow(() -> new IllegalArgumentException(
+                taskHelper.getMessage("err.jlink.version.missing", currentRelease)));
 
-        Runtime.Version version = Runtime.Version.parse(v.toString());
-        if (Runtime.version().feature() != version.feature() ||
-                Runtime.version().interim() != version.interim()) {
-            // jlink version and java.base version do not match.
-            // We do not (yet) support this mode.
+        if (!currentRelease.equals(targetRelease)) {
+            // Current runtime image and the target runtime image are not compatible build
             throw new IllegalArgumentException(taskHelper.getMessage("err.jlink.version.mismatch",
-                    Runtime.version().feature(), Runtime.version().interim(),
-                    version.feature(), version.interim()));
+                    currentRelease,
+                    targetRelease));
         }
     }
 
