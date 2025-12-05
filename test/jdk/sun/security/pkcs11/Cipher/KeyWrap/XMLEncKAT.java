@@ -38,7 +38,6 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.UnsupportedEncodingException;
-import java.io.IOException;
 
 // adapted from com/sun/crypto/provider/Cipher/KeyWrap/XMLEncKAT.java
 public class XMLEncKAT extends PKCS11Test {

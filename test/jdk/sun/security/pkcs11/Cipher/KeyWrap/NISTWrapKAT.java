@@ -420,15 +420,15 @@ public class NISTWrapKAT extends PKCS11Test {
                 skippedAlgoList.add("No support for " + algo);
                 continue;
             }
-            testKeyWrap(algo, (String)td[1], (int)td[2], (String)td[3],
-                    (int)td[4], (String)td[5], p);
-            testEnc(algo, (String)td[1], (int)td[2], (String)td[3],
-                    (int)td[4], (String)td[5], p);
+            testKeyWrap(algo, (String) td[1], (int) td[2], (String) td[3],
+                    (int) td[4], (String) td[5], p);
+            testEnc(algo, (String) td[1], (int) td[2], (String) td[3],
+                    (int) td[4], (String) td[5], p);
         }
 
         if (!skippedAlgoList.isEmpty()) {
             throw new SkippedException("One or more tests skipped "
-                                       + skippedAlgoList);
+                    + skippedAlgoList);
         } else {
             System.out.println("All Tests Passed");
         }

@@ -109,7 +109,7 @@ public class TestGeneral extends PKCS11Test {
     }
 
     public static void testKAT(Cipher c, String keyStr, String inStr,
-            String expectedStr) throws Exception {
+                               String expectedStr) throws Exception {
 
         System.out.println("testKAT, input len: " + inStr.length()/2);
 
