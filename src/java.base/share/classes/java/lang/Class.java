@@ -750,8 +750,8 @@ public final class Class<T> implements java.io.Serializable,
      * // @link substring=isAssignableFrom target="#isAssignableFrom(Class)" :
      * obj != null && this.isAssignableFrom(obj.getClass()) // @link substring=getClass target="Object#getClass()"
      * }
-     * If this {@code Class} object represents a primitive type, this method
-     * returns {@code false}.
+     * If this {@code Class} object represents a primitive type or void, this
+     * method returns {@code false}.
      *
      * @param obj the reference to check, an object or {@code null}
      * @return true if an object reference of the type represented by this
@@ -771,9 +771,9 @@ public final class Class<T> implements java.io.Serializable,
      * is the same as or a proper supertype of the reference type represented by
      * the specified {@code Class} argument.
      *
-     * <p>If any of the two {@code Class} objects represents a primitive type,
-     * this method returns {@code true} if and only if the two {@code Class}
-     * objects represent the same primitive type.
+     * <p>If any of the two {@code Class} objects represents a primitive type or
+     * void, this method returns {@code true} if and only if the two {@code
+     * Class} objects are the same.
      *
      * <p>Otherwise, let T be the reference type represented by this object, and
      * P be the reference type represented by the argument.  This method
@@ -3490,15 +3490,16 @@ public final class Class<T> implements java.io.Serializable,
      * returns the incoming reference if the check does not throw a {@code
      * ClassCastException}.
      *
-     * <p>If this {@code Class} object represents a primitive type, this method
-     * completes normally if and only if the specified reference is {@code null}.
+     * <p>If this {@code Class} object represents a primitive type or void, this
+     * method completes normally if and only if the specified reference is
+     * {@code null}.
      *
      * @param obj the reference to be cast, an object or {@code null}
      * @return the same reference in the argument
      * @throws ClassCastException when the reference is not {@code null}, and
-     *         this {@code Class} object represents either a primitive type or
-     *         a reference type that is not a supertype of the class of the
-     *         referenced object
+     *         this {@code Class} object represents either a primitive type,
+     *         void, or a reference type that is not a supertype of the class
+     *         of the referenced object
      * @jls 4.3 Reference Types and Values
      * @jls 5.1.6.3 Narrowing Reference Conversions at Run Time
      * @see #isInstance(Object)
