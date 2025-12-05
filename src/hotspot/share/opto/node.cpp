@@ -2885,7 +2885,7 @@ Node* Node::find_similar(int opc) {
   return nullptr;
 }
 
-bool Node::has_same_inputs_as(Node* other) const {
+bool Node::has_same_inputs_as(const Node* other) const {
   assert(req() == other->req(), "should have same number of inputs");
   for (uint j = 0; j < other->req(); j++) {
     if (in(j) != other->in(j)) {
