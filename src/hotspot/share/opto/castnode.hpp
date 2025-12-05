@@ -50,6 +50,7 @@ public:
   // nodes for which _narrows_type is true.
   // if _floating is true, the cast only depends on a single control: its control input. Otherwise, it is pinned at its
   // current location. Optimizations 2- only apply to cast nodes for which _floating is true.
+  // _floating here is similar to Node::depends_only_on_test().
   // The 4 combinations of _narrows_types/_floating true/false have some use. See below, at the end of this class
   // definition, for examples.
   class DependencyType {
@@ -103,8 +104,8 @@ public:
     // All the possible combinations of floating/narrowing with example use cases:
 
     // Use case example: Range Check CastII
-    // Floating: The Cast is only dependent on the single range check. If the range check was ever to be hoisted
-    //           it would be safe to let the the Cast float to where the range check is hoisted up to.
+    // Floating: The Cast is only dependent on the single range check. If the range check was ever to be hoisted it
+    //           would be safe to let the Cast float to where the range check is hoisted up to.
     // Narrowing: The Cast narrows the type to a positive index. If the input to the Cast is narrower, we can safely
     //            remove the cast because the array access will be safe.
     static const DependencyType FloatingNarrowing;
