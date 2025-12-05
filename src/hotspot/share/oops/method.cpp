@@ -410,7 +410,7 @@ void Method::metaspace_pointers_do(MetaspaceClosure* it) {
   }
   it->push(&_adapter);
   it->push(&_method_data);
-  //it->push(&_method_counters);
+  it->push(&_method_counters);
   NOT_PRODUCT(it->push(&_name);)
 }
 
@@ -425,6 +425,9 @@ void Method::remove_unshareable_info() {
   if (method_data() != nullptr) {
     method_data()->remove_unshareable_info();
   }
+  if (method_counters() != nullptr) {
+    method_counters()->remove_unshareable_info();
+  }
   if (CDSConfig::is_dumping_adapters() && _adapter != nullptr) {
     _adapter->remove_unshareable_info();
     _adapter = nullptr;
@@ -436,6 +439,9 @@ void Method::restore_unshareable_info(TRAPS) {
   assert(is_method() && is_valid_method(this), "ensure C++ vtable is restored");
   if (method_data() != nullptr) {
     method_data()->restore_unshareable_info(CHECK);
+  }
+  if (method_counters() != nullptr) {
+    method_counters()->restore_unshareable_info(CHECK);
   }
   if (_adapter != nullptr) {
     assert(_adapter->is_linked(), "must be");

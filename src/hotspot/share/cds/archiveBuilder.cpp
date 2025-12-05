@@ -559,7 +559,16 @@ ArchiveBuilder::FollowMode ArchiveBuilder::get_follow_mode(MetaspaceClosure::Ref
              ref->msotype() == MetaspaceObj::KlassTrainingDataType ||
              ref->msotype() == MetaspaceObj::MethodTrainingDataType ||
              ref->msotype() == MetaspaceObj::CompileTrainingDataType) {
-    return (TrainingData::need_data() || TrainingData::assembling_data()) ? make_a_copy : set_to_null;
+    if (TrainingData::need_data() || TrainingData::assembling_data()) {
+      if (ref->msotype() == MetaspaceObj::MethodCountersType) {
+        MethodCounters* mcs = (MethodCounters*)obj;
+        return mcs->has_valid_method_training_data() ? make_a_copy : set_to_null;
+      } else {
+        return make_a_copy;
+      }
+    } else {
+      return set_to_null;
+    }
   } else if (ref->msotype() == MetaspaceObj::AdapterHandlerEntryType) {
     return CDSConfig::is_dumping_adapters() ? make_a_copy : set_to_null;
   } else {
