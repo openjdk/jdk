@@ -793,19 +793,49 @@ final class StringUTF16 {
         return ArraysSupport.hashCodeOfUTF16(value, 0, value.length >> 1, 0);
     }
 
-    // Caller must ensure that from- and toIndex are within bounds
+    /**
+     * {@return the index of the first character matching the provided one in
+     * the given UTF-16 string byte array sub-range; {@code -1} otherwise}
+     *
+     * @param value a UTF-16 string byte array to search in
+     * @param ch a character to search for
+     * @param fromIndex the index (inclusive) of the first character in the sub-range
+     * @param toIndex the index (exclusive) of the last character in the sub-range
+     *
+     * @throws NullPointerException if {@code value} is null
+     * @throws StringIndexOutOfBoundsException if the sub-range is out of bounds
+     */
     static int indexOf(byte[] value, int ch, int fromIndex, int toIndex) {
+        checkBoundsBeginEnd(fromIndex, toIndex, Objects.requireNonNull(value));
         if (ch < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
             // handle most cases here (ch is a BMP code point or a
             // negative value (invalid code point))
-            return indexOfChar(value, ch, fromIndex, toIndex);
+            return indexOfChar0(value, ch, fromIndex, toIndex);
         } else {
             return indexOfSupplementary(value, ch, fromIndex, toIndex);
         }
     }
 
-    @IntrinsicCandidate
+    /**
+     * Searches for the first occurrence of {@code str} in {@code value}, and,
+     * if found, returns the index of the first character in {@code value};
+     * {@code -1} otherwise.
+     *
+     * @param value a UTF-16 string byte array to search in
+     * @param str a UTF-16 string byte array to search for
+     * @return the index of the first character in {@code value} if a match is
+     * found; {@code -1} otherwise
+     *
+     * @throws NullPointerException if {@code value} or {@code str} is null
+     */
     static int indexOf(byte[] value, byte[] str) {
+        Objects.requireNonNull(value);
+        Objects.requireNonNull(str);
+        return indexOf0(value, str);
+    }
+
+    @IntrinsicCandidate
+    private static int indexOf0(byte[] value, byte[] str) {
         if (str.length == 0) {
             return 0;
         }
@@ -815,22 +845,43 @@ final class StringUTF16 {
         return indexOfUnsafe(value, length(value), str, length(str), 0);
     }
 
-    @IntrinsicCandidate
-    static int indexOf(byte[] value, int valueCount, byte[] str, int strCount, int fromIndex) {
-        checkBoundsBeginEnd(fromIndex, valueCount, value);
-        checkBoundsBeginEnd(0, strCount, str);
-        return indexOfUnsafe(value, valueCount, str, strCount, fromIndex);
+    /**
+     * Searches for the first occurrence of the given {@code str} sub-range in
+     * the given {@code value} sub-range, and, if found, returns the index of
+     * the first character in {@code value}; {@code -1} otherwise.
+     *
+     * @param value a UTF-16 string byte array to search in
+     * @param valueToIndex the index (exclusive) of the last character in {@code value}
+     * @param str a UTF-16 string byte array to search for
+     * @param strToIndex the index (exclusive) of the last character in {@code str}
+     * @param valueFromIndex the index (inclusive) of the first character in {@code value}
+     * @return the index of the first character in {@code value} if a match is
+     * found; {@code -1} otherwise
+     *
+     * @throws NullPointerException if {@code value} or {@code str} is null
+     * @throws StringIndexOutOfBoundsException if the sub-ranges are out of bounds
+     */
+    static int indexOf(byte[] value, int valueToIndex, byte[] str, int strToIndex, int valueFromIndex) {
+        Objects.requireNonNull(value);
+        checkBoundsBeginEnd(valueFromIndex, valueToIndex, value);
+        Objects.requireNonNull(str);
+        checkBoundsBeginEnd(0, strToIndex, str);
+        return indexOf0(value, valueToIndex, str, strToIndex, valueFromIndex);
     }
 
+    @IntrinsicCandidate
+    private static int indexOf0(byte[] value, int valueToIndex, byte[] str, int strToIndex, int valueFromIndex) {
+        return indexOfUnsafe(value, valueToIndex, str, strToIndex, valueFromIndex);
+    }
 
-    private static int indexOfUnsafe(byte[] value, int valueCount, byte[] str, int strCount, int fromIndex) {
-        assert fromIndex >= 0;
-        assert strCount > 0;
-        assert strCount <= length(str);
-        assert valueCount >= strCount;
+    private static int indexOfUnsafe(byte[] value, int valueToIndex, byte[] str, int strToIndex, int valueFromIndex) {
+        assert valueFromIndex >= 0;
+        assert strToIndex > 0;
+        assert strToIndex <= length(str);
+        assert valueToIndex >= strToIndex;
         char first = getChar(str, 0);
-        int max = (valueCount - strCount);
-        for (int i = fromIndex; i <= max; i++) {
+        int max = (valueToIndex - strToIndex);
+        for (int i = valueFromIndex; i <= max; i++) {
             // Look for first character.
             if (getChar(value, i) != first) {
                 while (++i <= max && getChar(value, i) != first);
@@ -838,7 +889,7 @@ final class StringUTF16 {
             // Found first character, now look at the rest of value
             if (i <= max) {
                 int j = i + 1;
-                int end = j + strCount - 1;
+                int end = j + strToIndex - 1;
                 for (int k = 1; j < end && getChar(value, j) == getChar(str, k); j++, k++);
                 if (j == end) {
                     // Found whole string.
@@ -849,12 +900,28 @@ final class StringUTF16 {
         return -1;
     }
 
-
     /**
-     * Handles indexOf Latin1 substring in UTF16 string.
+     * Searches for the first occurrence of the given Latin-1 string byte array
+     * {@code str} in the given UTF-16 string byte array {@code value}, and, if
+     * found, returns the index of the first character in {@code value};
+     * {@code -1} otherwise.
+     *
+     * @param value a UTF-16 string byte array to search in
+     * @param str a Latin-1 string byte array to search for
+     * @return the index of the first character in {@code value} if a match is
+     * found; {@code -1} otherwise
+     *
+     * @throws NullPointerException if {@code value} or {@code str} is null
      */
-    @IntrinsicCandidate
     static int indexOfLatin1(byte[] value, byte[] str) {
+        Objects.requireNonNull(value);
+        Objects.requireNonNull(str);
+        return indexOfLatin1_0(value, str);
+    }
+
+    // inline_string_indexOf
+    @IntrinsicCandidate
+    private static int indexOfLatin1_0(byte[] value, byte[] str) {
         if (str.length == 0) {
             return 0;
         }
@@ -864,14 +931,38 @@ final class StringUTF16 {
         return indexOfLatin1Unsafe(value, length(value), str, str.length, 0);
     }
 
-    @IntrinsicCandidate
-    static int indexOfLatin1(byte[] src, int srcCount, byte[] tgt, int tgtCount, int fromIndex) {
-        checkBoundsBeginEnd(fromIndex, srcCount, src);
-        String.checkBoundsBeginEnd(0, tgtCount, tgt.length);
-        return indexOfLatin1Unsafe(src, srcCount, tgt, tgtCount, fromIndex);
+
+    /**
+     * Searches for the first occurrence of the given Latin-1 string byte array
+     * {@code tgt} sub-range in the given UTF-16 string byte array {@code src}
+     * sub-range, and, if found, returns the index of the first character in
+     * {@code src}; {@code -1} otherwise.
+     *
+     * @param src a UTF-16 string byte array to search in
+     * @param srcToIndex the index (exclusive) of the last character in {@code src}
+     * @param tgt a Latin-1 string byte array to search for
+     * @param tgtToIndex the index (exclusive) of the last character in {@code tgt}
+     * @param tgtFromIndex the index (inclusive) of the first character in {@code src}
+     * @return the index of the first character in {@code src} if a match is
+     * found; {@code -1} otherwise
+     *
+     * @throws NullPointerException if {@code src} or {@code tgt} is null
+     * @throws StringIndexOutOfBoundsException if the sub-ranges are out of bounds
+     */
+    static int indexOfLatin1(byte[] src, int srcToIndex, byte[] tgt, int tgtToIndex, int tgtFromIndex) {
+        Objects.requireNonNull(src);
+        checkBoundsBeginEnd(tgtFromIndex, srcToIndex, src);
+        String.checkBoundsBeginEnd(0, tgtToIndex, tgt.length);
+        return indexOfLatin1_0(src, srcToIndex, tgt, tgtToIndex, tgtFromIndex);
     }
 
-    static int indexOfLatin1Unsafe(byte[] src, int srcCount, byte[] tgt, int tgtCount, int fromIndex) {
+    // inline_string_indexOfI
+    @IntrinsicCandidate
+    private static int indexOfLatin1_0(byte[] src, int srcToIndex, byte[] tgt, int tgtToIndex, int srcFromIndex) {
+        return indexOfLatin1Unsafe(src, srcToIndex, tgt, tgtToIndex, srcFromIndex);
+    }
+
+    private static int indexOfLatin1Unsafe(byte[] src, int srcCount, byte[] tgt, int tgtCount, int fromIndex) {
         assert fromIndex >= 0;
         assert tgtCount > 0;
         assert tgtCount <= tgt.length;
@@ -900,7 +991,7 @@ final class StringUTF16 {
     }
 
     @IntrinsicCandidate
-    private static int indexOfChar(byte[] value, int ch, int fromIndex, int max) {
+    private static int indexOfChar0(byte[] value, int ch, int fromIndex, int max) {
         for (int i = fromIndex; i < max; i++) {
             if (getChar(value, i) == ch) {
                 return i;

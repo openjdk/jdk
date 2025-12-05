@@ -384,16 +384,32 @@ final class StringLatin1 {
         return ArraysSupport.hashCodeOfUnsigned(value, 0, value.length, 0);
     }
 
-    // Caller must ensure that from- and toIndex are within bounds
+    /**
+     * Finds the index of the first character matching the provided one in the
+     * given Latin-1 string byte array sub-range. {@code -1} is returned if the
+     * provided character cannot be encoded in Latin-1, or cannot be found in
+     * the target string sub-range.
+     *
+     * @param value a Latin-1 string byte array to search in
+     * @param ch a character to search for
+     * @param fromIndex the index (inclusive) of the first character in the sub-range
+     * @param toIndex the index (exclusive) of the last character in the sub-range
+     * @return the index of the first character matching the provided one in the
+     * given target string sub-range; {@code -1} otherwise
+     *
+     * @throws NullPointerException if {@code value} is null
+     * @throws StringIndexOutOfBoundsException if the sub-range is out of bounds
+     */
     static int indexOf(byte[] value, int ch, int fromIndex, int toIndex) {
+        String.checkBoundsBeginEnd(fromIndex, toIndex, value.length);   // Implicit null check on `value`
         if (!canEncode(ch)) {
             return -1;
         }
-        return indexOfChar(value, ch, fromIndex, toIndex);
+        return indexOfChar0(value, ch, fromIndex, toIndex);
     }
 
     @IntrinsicCandidate
-    private static int indexOfChar(byte[] value, int ch, int fromIndex, int max) {
+    private static int indexOfChar0(byte[] value, int ch, int fromIndex, int max) {
         byte c = (byte)ch;
         for (int i = fromIndex; i < max; i++) {
             if (value[i] == c) {
@@ -403,22 +419,63 @@ final class StringLatin1 {
         return -1;
     }
 
-    @IntrinsicCandidate
+    /**
+     * Searches for the first occurrence of {@code str} in {@code value}, and,
+     * if found, returns the index of the first character in {@code value};
+     * {@code -1} otherwise.
+     *
+     * @param value a Latin-1 string byte array to search in
+     * @param str a Latin-1 string byte array to search for
+     * @return the index of the first character in {@code value} if a match is
+     * found; {@code -1} otherwise
+     *
+     * @throws NullPointerException if {@code value} or {@code str} is null
+     */
     static int indexOf(byte[] value, byte[] str) {
+        Objects.requireNonNull(value);
+        Objects.requireNonNull(str);
+        return indexOf0(value, str);
+    }
+
+    @IntrinsicCandidate
+    private static int indexOf0(byte[] value, byte[] str) {
         if (str.length == 0) {
             return 0;
         }
         if (value.length == 0) {
             return -1;
         }
-        return indexOf(value, value.length, str, str.length, 0);
+        return indexOf0(value, value.length, str, str.length, 0);
     }
 
+    /**
+     * Searches for the first occurrence of the given {@code str} sub-range in
+     * the given {@code value} sub-range, and, if found, returns the index of
+     * the first character in {@code value}; {@code -1} otherwise.
+     *
+     * @param value a Latin-1 string byte array to search in
+     * @param valueToIndex the index (exclusive) of the last character in {@code value}
+     * @param str a Latin-1 string byte array to search for
+     * @param strToIndex the index (exclusive) of the last character in {@code str}
+     * @param valueFromIndex the index (inclusive) of the first character in {@code value}
+     * @return the index of the first character in {@code value} if a match is
+     * found; {@code -1} otherwise
+     *
+     * @throws NullPointerException if {@code value} or {@code str} is null
+     * @throws StringIndexOutOfBoundsException if the sub-ranges are out of bounds
+     */
+    static int indexOf(byte[] value, int valueToIndex, byte[] str, int strToIndex, int valueFromIndex) {
+        String.checkBoundsBeginEnd(valueFromIndex, valueToIndex, value.length);    // Implicit null check on `value`
+        String.checkBoundsBeginEnd(0, strToIndex, str.length);                     // Implicit null check on `str`
+        return indexOf0(value, valueToIndex, str, strToIndex, valueFromIndex);
+    }
+
+    // inline_string_indexOfI
     @IntrinsicCandidate
-    static int indexOf(byte[] value, int valueCount, byte[] str, int strCount, int fromIndex) {
+    private static int indexOf0(byte[] value, int valueToIndex, byte[] str, int strToIndex, int valueFromIndex) {
         byte first = str[0];
-        int max = (valueCount - strCount);
-        for (int i = fromIndex; i <= max; i++) {
+        int max = (valueToIndex - strToIndex);
+        for (int i = valueFromIndex; i <= max; i++) {
             // Look for first character.
             if (value[i] != first) {
                 while (++i <= max && value[i] != first);
@@ -426,7 +483,7 @@ final class StringLatin1 {
             // Found first character, now look at the rest of value
             if (i <= max) {
                 int j = i + 1;
-                int end = j + strCount - 1;
+                int end = j + strToIndex - 1;
                 for (int k = 1; j < end && value[j] == str[k]; j++, k++);
                 if (j == end) {
                     // Found whole string.

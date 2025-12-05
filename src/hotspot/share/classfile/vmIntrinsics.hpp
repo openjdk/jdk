@@ -393,9 +393,9 @@ class methodHandle;
   do_intrinsic(_indexOfIUL,               java_lang_StringUTF16, indexOfUL_name, indexOfI_signature,             F_S)   \
   do_intrinsic(_indexOfU_char,            java_lang_StringUTF16, indexOfChar_name, indexOfChar_signature,        F_S)   \
   do_intrinsic(_indexOfL_char,            java_lang_StringLatin1,indexOfChar_name, indexOfChar_signature,        F_S)   \
-   do_name(     indexOf_name,                                    "indexOf")                                             \
-   do_name(     indexOfChar_name,                                "indexOfChar")                                         \
-   do_name(     indexOfUL_name,                                  "indexOfLatin1")                                       \
+   do_name(     indexOf_name,                                    "indexOf0")                                            \
+   do_name(     indexOfChar_name,                                "indexOfChar0")                                        \
+   do_name(     indexOfUL_name,                                  "indexOfLatin1_0")                                     \
    do_signature(indexOfI_signature,                              "([BI[BII)I")                                          \
    do_signature(indexOfChar_signature,                           "([BIII)I")                                            \
   do_intrinsic(_equalsL,                  java_lang_StringLatin1,equals_name, equalsB_signature,                 F_S)   \

@@ -1237,8 +1237,13 @@ bool LibraryCallKit::inline_string_indexOf(StrIntrinsicNode::ArgEnc ae) {
   RegionNode* result_rgn = new RegionNode(4);
   Node*       result_phi = new PhiNode(result_rgn, TypeInt::INT);
 
-  src = must_be_not_null(src, true);
-  tgt = must_be_not_null(tgt, true);
+  if (VerifyIntrinsicChecks) {
+    src = must_be_not_null(src, true);
+    tgt = must_be_not_null(tgt, true);
+    if (stopped()) {
+      return true;
+    }
+  }
 
   // Get start addr and length of source string
   Node* src_start = array_element_address(src, intcon(0), T_BYTE);
@@ -1297,8 +1302,13 @@ bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
   Node* tgt_count   = argument(3); // char count
   Node* from_index  = argument(4); // char index
 
-  src = must_be_not_null(src, true);
-  tgt = must_be_not_null(tgt, true);
+  if (VerifyIntrinsicChecks) {
+    src = must_be_not_null(src, true);
+    tgt = must_be_not_null(tgt, true);
+    if (stopped()) {
+      return true;
+    }
+  }
 
   // Multiply byte array index by 2 if String is UTF16 encoded
   Node* src_offset = (ae == StrIntrinsicNode::LL) ? from_index : _gvn.transform(new LShiftINode(from_index, intcon(1)));
@@ -1307,10 +1317,12 @@ bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
   Node* tgt_start = array_element_address(tgt, intcon(0), T_BYTE);
 
   // Range checks
-  generate_string_range_check(src, src_offset, src_count, ae != StrIntrinsicNode::LL);
-  generate_string_range_check(tgt, intcon(0), tgt_count, ae == StrIntrinsicNode::UU);
-  if (stopped()) {
-    return true;
+  if (VerifyIntrinsicChecks) {
+    generate_string_range_check(src, src_offset, src_count, ae != StrIntrinsicNode::LL, true);
+    generate_string_range_check(tgt, intcon(0), tgt_count, ae == StrIntrinsicNode::UU, true);
+    if (stopped()) {
+      return true;
+    }
   }
 
   RegionNode* region = new RegionNode(5);
@@ -1397,14 +1409,24 @@ bool LibraryCallKit::inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae) {
   Node* from_index  = argument(2);
   Node* max         = argument(3);
 
-  src = must_be_not_null(src, true);
+  if (VerifyIntrinsicChecks) {
+    src = must_be_not_null(src, true);
+    if (stopped()) {
+      return true;
+    }
+  }
 
   Node* src_offset = ae == StrIntrinsicNode::L ? from_index : _gvn.transform(new LShiftINode(from_index, intcon(1)));
   Node* src_start = array_element_address(src, src_offset, T_BYTE);
   Node* src_count = _gvn.transform(new SubINode(max, from_index));
 
   // Range checks
-  generate_string_range_check(src, src_offset, src_count, ae == StrIntrinsicNode::U);
+  if (VerifyIntrinsicChecks) {
+    generate_string_range_check(src, src_offset, src_count, ae == StrIntrinsicNode::U, true);
+    if (stopped()) {
+      return true;
+    }
+  }
 
   // Check for int_ch >= 0
   Node* int_ch_cmp = _gvn.transform(new CmpINode(int_ch, intcon(0)));
