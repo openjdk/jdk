@@ -22,18 +22,7 @@
  */
 package jdk.jpackage.test;
 
-import static java.util.stream.Collectors.joining;
-
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.io.StringReader;
-import java.io.UncheckedIOException;
-import java.io.Writer;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -43,13 +32,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
+import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.util.CommandOutputControl;
 import jdk.jpackage.internal.util.function.ThrowingSupplier;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 
@@ -69,8 +58,6 @@ public final class Executor extends CommandArguments<Executor> {
     }
 
     public Executor() {
-        outputStreamsControl = new OutputStreamsControl();
-        winEnglishOutput = false;
     }
 
     public Executor setExecutable(String v) {
@@ -136,62 +123,31 @@ public final class Executor extends CommandArguments<Executor> {
         return this;
     }
 
-    /**
-     * Configures this instance to save all stdout and stderr streams from the to be
-     * executed command.
-     * <p>
-     * This function is mutually exclusive with {@link #saveFirstLineOfOutput()}.
-     *
-     * @return this
-     */
     public Executor saveOutput() {
         return saveOutput(true);
     }
 
-    /**
-     * Configures if all stdout and stderr streams from the to be executed command
-     * should be saved.
-     * <p>
-     * If <code>v</code> is <code>true</code>, the function call is equivalent to
-     * {@link #saveOutput()} call. If <code>v</code> is <code>false</code>, command
-     * output will not be saved.
-     *
-     * @parameter v if both stdout and stderr streams should be saved
-     *
-     * @return this
-     */
     public Executor saveOutput(boolean v) {
-        return setOutputControl(v, OutputControlOption.SAVE_ALL);
+        commandOutputControl.saveOutput(v);
+        return this;
     }
 
-    /**
-     * Configures this instance to save the first line of a stream merged from
-     * stdout and stderr streams from the to be executed command.
-     * <p>
-     * This function is mutually exclusive with {@link #saveOutput()}.
-     *
-     * @return this
-     */
     public Executor saveFirstLineOfOutput() {
-        return setOutputControl(true, OutputControlOption.SAVE_FIRST_LINE);
+        commandOutputControl.saveFirstLineOfOutput();
+        return this;
     }
 
-    /**
-     * Configures this instance to dump both stdout and stderr streams from the to
-     * be executed command into {@link System.out}.
-     *
-     * @return this
-     */
     public Executor dumpOutput() {
         return dumpOutput(true);
     }
 
     public Executor dumpOutput(boolean v) {
-        return setOutputControl(v, OutputControlOption.DUMP);
+        commandOutputControl.dumpOutput(v);
+        return this;
     }
 
     public Executor discardStdout(boolean v) {
-        outputStreamsControl.stdout().discard(v);
+        commandOutputControl.discardStdout(v);
         return this;
     }
 
@@ -200,7 +156,7 @@ public final class Executor extends CommandArguments<Executor> {
     }
 
     public Executor discardStderr(boolean v) {
-        outputStreamsControl.stderr().discard(v);
+        commandOutputControl.discardStderr(v);
         return this;
     }
 
@@ -208,43 +164,43 @@ public final class Executor extends CommandArguments<Executor> {
         return discardStderr(true);
     }
 
-    public interface Output {
-        public List<String> getOutput();
-
-        public default String getFirstLineOfOutput() {
-            return findFirstLineOfOutput().orElseThrow();
-        }
-
-        public default Optional<String> findFirstLineOfOutput() {
-            return getOutput().stream().findFirst();
-        }
-    }
-
-    public record Result(int exitCode, CommandOutput output, Supplier<String> cmdline) implements Output {
+    public record Result(CommandOutputControl.Result base, Supplier<String> cmdline) implements CommandOutputControl.Output {
         public Result {
-            Objects.requireNonNull(output);
+            Objects.requireNonNull(base);
             Objects.requireNonNull(cmdline);
         }
 
         public Result(int exitCode, Supplier<String> cmdline) {
-            this(exitCode, CommandOutput.EMPTY, cmdline);
+            this(new CommandOutputControl.Result(exitCode), cmdline);
         }
 
         @Override
+        public Optional<List<String>> findContent() {
+            return base.findContent();
+        }
+
         public List<String> getOutput() {
-            return output.lines().orElse(null);
+            return getContent();
         }
 
-        public Output stdout() {
-            return createView(output.stdoutLines());
+        public CommandOutputControl.Output stdout() {
+            return base.stdout();
         }
 
-        public Output stderr() {
-            return createView(output.stderrLines());
+        public CommandOutputControl.Output stderr() {
+            return base.stderr();
+        }
+
+        public Optional<CommandOutputControl.Output> findStdout() {
+            return base.findStdout();
+        }
+
+        public Optional<CommandOutputControl.Output> findStderr() {
+            return base.findStderr();
         }
 
         public Result assertExitCodeIs(int expectedExitCode) {
-            TKit.assertEquals(expectedExitCode, exitCode, String.format(
+            TKit.assertEquals(expectedExitCode, getExitCode(), String.format(
                     "Check command %s exited with %d code",
                     cmdline.get(), expectedExitCode));
             return this;
@@ -255,16 +211,11 @@ public final class Executor extends CommandArguments<Executor> {
         }
 
         public int getExitCode() {
-            return exitCode;
+            return exitCode();
         }
 
-        private static Output createView(Optional<List<String>> lines) {
-            return new Output() {
-                @Override
-                public List<String> getOutput() {
-                    return lines.orElse(null);
-                }
-            };
+        public int exitCode() {
+            return base.exitCode();
         }
     }
 
@@ -306,6 +257,12 @@ public final class Executor extends CommandArguments<Executor> {
 
     public List<String> executeAndGetOutput() {
         return saveOutput().execute().getOutput();
+    }
+
+    public Callable<CommandOutputControl.Result> toRetryExecutorCallable() {
+        return () -> {
+            return executeWithoutExitCodeCheck().base().expectExitCode(0);
+        };
     }
 
     private static class BadResultException extends RuntimeException {
@@ -392,12 +349,6 @@ public final class Executor extends CommandArguments<Executor> {
         return saveOutput().executeWithoutExitCodeCheck().getOutput();
     }
 
-    private Executor setOutputControl(boolean set, OutputControlOption v) {
-        outputStreamsControl.stdout().set(set, v);
-        outputStreamsControl.stderr().set(set, v);
-        return this;
-    }
-
     private Path executablePath() {
         if (directory == null
                 || executable.isAbsolute()
@@ -431,10 +382,8 @@ public final class Executor extends CommandArguments<Executor> {
             builder.environment().put("TMP", winTmpDir);
         }
 
-        outputStreamsControl.applyTo(builder);
-
         StringBuilder sb = new StringBuilder(getPrintableCommandLine());
-        outputStreamsControl.describe().ifPresent(desc -> {
+        commandOutputControl.description().ifPresent(desc -> {
             sb.append("; ").append(desc);
         });
 
@@ -466,141 +415,32 @@ public final class Executor extends CommandArguments<Executor> {
             });
         }
 
-        trace("Execute " + sb.toString() + "...");
-        Process process = builder.start();
-
-        var stdoutGobbler = CompletableFuture.<Optional<List<String>>>supplyAsync(() -> {
-            try {
-                return processProcessStream(outputStreamsControl.stdout(), process.getInputStream());
-            } catch (IOException ex) {
-                throw new UncheckedIOException(ex);
-            }
-        });
-
-        var stderrGobbler = CompletableFuture.<Optional<List<String>>>supplyAsync(() -> {
-            try {
-                return processProcessStream(outputStreamsControl.stderr(), process.getErrorStream());
-            } catch (IOException ex) {
-                throw new UncheckedIOException(ex);
-            }
-        });
-
-        final CommandOutput output;
-
-        try {
-            output = combine(stdoutGobbler.join(), stderrGobbler.join());
-        } catch (CompletionException ex) {
-            var cause = ex.getCause();
-            switch (cause) {
-                case UncheckedIOException uioex -> {
-                    throw uioex.getCause();
-                }
-                default -> {
-                    throw ExceptionBox.toUnchecked(ExceptionBox.unbox(cause));
-                }
-            }
-        }
-
-        final int exitCode = process.waitFor();
-        trace("Done. Exit code: " + exitCode);
-
-        return createResult(exitCode, output);
+        return execute(sb, commandOutputControl.createExecutable(builder));
     }
 
-    private int runToolProvider(PrintStream out, PrintStream err) {
+    private Result runToolProvider() throws IOException, InterruptedException {
         final var sb = new StringBuilder(getPrintableCommandLine());
-        outputStreamsControl.describe().ifPresent(desc -> {
+        commandOutputControl.description().ifPresent(desc -> {
             sb.append("; ").append(desc);
         });
-        trace("Execute " + sb + "...");
-        final int exitCode = toolProvider.run(out, err, args.toArray(
-                String[]::new));
-        trace("Done. Exit code: " + exitCode);
-        return exitCode;
+
+        return execute(sb, commandOutputControl.createExecutable(toolProvider, args.toArray(String[]::new)));
     }
 
-    private Result runToolProvider() throws IOException {
-        final var toolProviderStreamConfig = ToolProviderStreamConfig.create(outputStreamsControl);
+    private Result execute(StringBuilder traceMsg, CommandOutputControl.Executable exec) throws IOException, InterruptedException {
+        Objects.requireNonNull(traceMsg);
 
-        final var exitCode = runToolProvider(toolProviderStreamConfig);
+        trace("Execute " + traceMsg + "...");
 
-        final var output = combine(
-                read(outputStreamsControl.stdout(), toolProviderStreamConfig.out()),
-                read(outputStreamsControl.stderr(), toolProviderStreamConfig.err()));
-        return createResult(exitCode, output);
+        var result = exec.execute();
+
+        trace("Done. Exit code: " + result.exitCode());
+
+        return createResult(result);
     }
 
-    private int runToolProvider(ToolProviderStreamConfig cfg) throws IOException {
-        try {
-            return runToolProvider(cfg.out().ps(), cfg.err().ps());
-        } finally {
-            cfg.out().ps().flush();
-            cfg.err().ps().flush();
-        }
-    }
-
-    private static Optional<List<String>> processProcessStream(OutputControl outputControl, InputStream in) throws IOException {
-        List<String> outputLines = null;
-        try (final var bufReader = new BufferedReader(new InputStreamReader(in))) {
-            if (outputControl.dump() || outputControl.saveAll()) {
-                outputLines = bufReader.lines().toList();
-            } else if (outputControl.saveFirstLine()) {
-                outputLines = Optional.ofNullable(bufReader.readLine()).map(List::of).orElseGet(List::of);
-                // Read all input, or the started process may exit with an error (cmd.exe does so).
-                bufReader.transferTo(Writer.nullWriter());
-            } else {
-                // This should be empty input stream, fetch it anyway.
-                bufReader.transferTo(Writer.nullWriter());
-            }
-        } finally {
-            if (outputControl.dump() && outputLines != null) {
-                outputLines.forEach(System.out::println);
-                if (outputControl.saveFirstLine()) {
-                    outputLines = outputLines.stream().findFirst().map(List::of).orElseGet(List::of);
-                }
-            }
-            if (!outputControl.save()) {
-                outputLines = null;
-            }
-        }
-        return Optional.ofNullable(outputLines);
-    }
-
-    private static Optional<List<String>> read(OutputControl outputControl, CachingPrintStream cps) throws IOException {
-        final var bufferAsString = cps.bufferContents();
-        try (final var bufReader = new BufferedReader(new StringReader(bufferAsString.orElse("")))) {
-            if (outputControl.saveFirstLine()) {
-                return Optional.of(bufReader.lines().findFirst().map(List::of).orElseGet(List::of));
-            } else if (outputControl.saveAll()) {
-                return Optional.of(bufReader.lines().toList());
-            } else if (bufferAsString.isPresent()) {
-                return Optional.of(List.of());
-            } else {
-                return Optional.empty();
-            }
-        }
-    }
-
-    private CommandOutput combine(Optional<List<String>> out, Optional<List<String>> err) {
-        if (out.isEmpty() && err.isEmpty()) {
-            return new CommandOutput();
-        } else if (out.isEmpty()) {
-            return new CommandOutput(err, -1);
-        } else if (err.isEmpty()) {
-            return new CommandOutput(out, Integer.MAX_VALUE);
-        } else {
-            final var combined = Stream.of(out, err).map(Optional::orElseThrow).flatMap(List::stream);
-            if (outputStreamsControl.stdout().saveFirstLine() && outputStreamsControl.stderr().saveFirstLine()) {
-                return new CommandOutput(Optional.of(combined.findFirst().map(List::of).orElseGet(List::of)),
-                        Integer.min(1, out.orElseThrow().size()));
-            } else {
-                return new CommandOutput(Optional.of(combined.toList()), out.orElseThrow().size());
-            }
-        }
-    }
-
-    private Result createResult(int exitCode, CommandOutput output) {
-        return new Result(exitCode, output, this::getPrintableCommandLine);
+    private Result createResult(CommandOutputControl.Result baseResult) {
+        return new Result(baseResult, this::getPrintableCommandLine);
     }
 
     public String getPrintableCommandLine() {
@@ -634,343 +474,12 @@ public final class Executor extends CommandArguments<Executor> {
         TKit.trace(String.format("exec: %s", msg));
     }
 
-    private static PrintStream nullPrintStream() {
-        return new PrintStream(OutputStream.nullOutputStream());
-    }
-
-    private record OutputStreamsControl(OutputControl stdout, OutputControl stderr) {
-        OutputStreamsControl {
-            Objects.requireNonNull(stdout);
-            Objects.requireNonNull(stderr);
-        }
-
-        OutputStreamsControl() {
-            this(new OutputControl(), new OutputControl());
-        }
-
-        void applyTo(ProcessBuilder pb) {
-            pb.redirectOutput(stdout.asProcessBuilderRedirect());
-            pb.redirectError(stderr.asProcessBuilderRedirect());
-        }
-
-        Optional<String> describe() {
-            final List<String> tokens = new ArrayList<>();
-            if (stdout.save() || stderr.save()) {
-                streamsLabel("save ", true).ifPresent(tokens::add);
-            }
-            if (stdout.dump() || stderr.dump()) {
-                streamsLabel("inherit ", true).ifPresent(tokens::add);
-            }
-            streamsLabel("discard ", false).ifPresent(tokens::add);
-            if (tokens.isEmpty()) {
-                return Optional.empty();
-            } else {
-                return Optional.of(String.join("; ", tokens));
-            }
-        }
-
-        Optional<String> streamsLabel(String prefix, boolean negate) {
-            Objects.requireNonNull(prefix);
-            final var str = Stream.of(stdoutLabel(negate), stderrLabel(negate))
-                    .filter(Optional::isPresent)
-                    .map(Optional::orElseThrow)
-                    .collect(joining("+"));
-            if (str.isEmpty()) {
-                return Optional.empty();
-            } else {
-                return Optional.of(prefix + str);
-            }
-        }
-
-        private Optional<String> stdoutLabel(boolean negate) {
-            if ((stdout.discard() && !negate) || (!stdout.discard() && negate)) {
-                return Optional.of("out");
-            } else {
-                return Optional.empty();
-            }
-        }
-
-        private Optional<String> stderrLabel(boolean negate) {
-            if ((stderr.discard() && !negate) || (!stderr.discard() && negate)) {
-                return Optional.of("err");
-            } else {
-                return Optional.empty();
-            }
-        }
-    }
-
-    private record CachingPrintStream(PrintStream ps, Optional<ByteArrayOutputStream> buf) {
-        CachingPrintStream {
-            Objects.requireNonNull(ps);
-            Objects.requireNonNull(buf);
-        }
-
-        Optional<String> bufferContents() {
-            return buf.map(ByteArrayOutputStream::toString);
-        }
-
-        static Builder build() {
-            return new Builder();
-        }
-
-        static final class Builder {
-
-            Builder save(boolean v) {
-                save = v;
-                return this;
-            }
-
-            Builder discard(boolean v) {
-                discard = v;
-                return this;
-            }
-
-            Builder dumpStream(PrintStream v) {
-                dumpStream = v;
-                return this;
-            }
-
-            CachingPrintStream create() {
-                final Optional<ByteArrayOutputStream> buf;
-                if (save && !discard) {
-                    buf = Optional.of(new ByteArrayOutputStream());
-                } else {
-                    buf = Optional.empty();
-                }
-
-                final PrintStream ps;
-                if (buf.isPresent() && dumpStream != null) {
-                    ps = new PrintStream(new TeeOutputStream(List.of(buf.orElseThrow(), dumpStream)), true, dumpStream.charset());
-                } else if (!discard) {
-                    ps = buf.map(PrintStream::new).or(() -> Optional.ofNullable(dumpStream)).orElseGet(Executor::nullPrintStream);
-                } else {
-                    ps = nullPrintStream();
-                }
-
-                return new CachingPrintStream(ps, buf);
-            }
-
-            private boolean save;
-            private boolean discard;
-            private PrintStream dumpStream;
-        }
-    }
-
-    private record ToolProviderStreamConfig(CachingPrintStream out, CachingPrintStream err) {
-        ToolProviderStreamConfig {
-            Objects.requireNonNull(out);
-            Objects.requireNonNull(err);
-        }
-
-        static ToolProviderStreamConfig create(OutputStreamsControl cfg) {
-            final var errCfgBuilder = cfg.stderr().buildCachingPrintStream(System.err);
-            if (cfg.stderr().dump() && cfg.stderr().save()) {
-                errCfgBuilder.dumpStream(System.out);
-            }
-            return new ToolProviderStreamConfig(
-                    cfg.stdout().buildCachingPrintStream(System.out).create(), errCfgBuilder.create());
-        }
-    }
-
-    private static final class OutputControl {
-
-        boolean save() {
-            return save.isPresent();
-        }
-
-        boolean saveAll() {
-            return save.orElse(null) == OutputControlOption.SAVE_ALL;
-        }
-
-        boolean saveFirstLine() {
-            return save.orElse(null) == OutputControlOption.SAVE_FIRST_LINE;
-        }
-
-        boolean discard() {
-            return discard || (!dump && save.isEmpty());
-        }
-
-        boolean dump() {
-            return !discard && dump;
-        }
-
-        OutputControl dump(boolean v) {
-            this.dump = v;
-            return this;
-        }
-
-        OutputControl discard(boolean v) {
-            this.discard = v;
-            return this;
-        }
-
-        OutputControl saveAll(boolean v) {
-            if (v) {
-                save = Optional.of(OutputControlOption.SAVE_ALL);
-            } else {
-                save = Optional.empty();
-            }
-            return this;
-        }
-
-        OutputControl saveFirstLine(boolean v) {
-            if (v) {
-                save = Optional.of(OutputControlOption.SAVE_FIRST_LINE);
-            } else {
-                save = Optional.empty();
-            }
-            return this;
-        }
-
-        OutputControl set(boolean set, OutputControlOption v) {
-            switch (v) {
-            case DUMP -> dump(set);
-            case SAVE_ALL -> saveAll(set);
-            case SAVE_FIRST_LINE -> saveFirstLine(set);
-            }
-            return this;
-        }
-
-        ProcessBuilder.Redirect asProcessBuilderRedirect() {
-            if (discard()) {
-                return ProcessBuilder.Redirect.DISCARD;
-            } else if (dump && !save()) {
-                return ProcessBuilder.Redirect.INHERIT;
-            } else {
-                return ProcessBuilder.Redirect.PIPE;
-            }
-        }
-
-        CachingPrintStream.Builder buildCachingPrintStream(PrintStream dumpStream) {
-            Objects.requireNonNull(dumpStream);
-            final var builder = CachingPrintStream.build().save(save()).discard(discard());
-            if (dump()) {
-                builder.dumpStream(dumpStream);
-            }
-            return builder;
-        }
-
-        private boolean dump;
-        private boolean discard;
-        private Optional<OutputControlOption> save = Optional.empty();
-    }
-
-    private static final class TeeOutputStream extends OutputStream {
-
-        public TeeOutputStream(Iterable<OutputStream> streams) {
-            streams.forEach(Objects::requireNonNull);
-            this.streams = streams;
-        }
-
-        @Override
-        public void write(int b) throws IOException {
-            for (final var out : streams) {
-                out.write(b);
-            }
-        }
-
-        @Override
-        public void write(byte[] b) throws IOException {
-            for (final var out : streams) {
-                out.write(b);
-            }
-        }
-
-        @Override
-        public void write(byte[] b, int off, int len) throws IOException {
-            for (final var out : streams) {
-                out.write(b, off, len);
-            }
-        }
-
-        @Override
-        public void flush() throws IOException {
-            forEach(OutputStream::flush);
-        }
-
-        @Override
-        public void close() throws IOException {
-            forEach(OutputStream::close);
-        }
-
-        private void forEach(OutputStreamConsumer c) throws IOException {
-            IOException firstEx = null;
-            for (final var out : streams) {
-                try {
-                    c.accept(out);
-                } catch (IOException e) {
-                    if (firstEx == null) {
-                        firstEx = e;
-                    }
-                }
-            }
-            if (firstEx != null) {
-                throw firstEx;
-            }
-        }
-
-        @FunctionalInterface
-        private static interface OutputStreamConsumer {
-            void accept(OutputStream out) throws IOException;
-        }
-
-        private final Iterable<OutputStream> streams;
-    }
-
-    private static final class CommandOutput {
-        CommandOutput(Optional<List<String>> lines, int stdoutLineCount) {
-            this.lines = Objects.requireNonNull(lines);
-            this.stdoutLineCount = stdoutLineCount;
-        }
-
-        CommandOutput() {
-            this(Optional.empty(), 0);
-        }
-
-        Optional<List<String>> lines() {
-            return lines;
-        }
-
-        Optional<List<String>> stdoutLines() {
-            if (lines.isEmpty() || stdoutLineCount < 0) {
-                return Optional.empty();
-            }
-
-            final var theLines = lines.orElseThrow();
-            if (stdoutLineCount == theLines.size()) {
-                return lines;
-            } else {
-                return Optional.of(theLines.subList(0, Integer.min(stdoutLineCount, theLines.size())));
-            }
-        }
-
-        Optional<List<String>> stderrLines() {
-            if (lines.isEmpty() || stdoutLineCount > lines.orElseThrow().size()) {
-                return Optional.empty();
-            } else if (stdoutLineCount == 0) {
-                return lines;
-            } else {
-                final var theLines = lines.orElseThrow();
-                return Optional.of(theLines.subList(stdoutLineCount, theLines.size()));
-            }
-        }
-
-        private final Optional<List<String>> lines;
-        private final int stdoutLineCount;
-
-        static final CommandOutput EMPTY = new CommandOutput();
-    }
-
     private ToolProvider toolProvider;
     private Path executable;
-    private OutputStreamsControl outputStreamsControl;
+    private final CommandOutputControl commandOutputControl = new CommandOutputControl();
     private Path directory;
     private Set<String> removeEnvVars = new HashSet<>();
     private Map<String, String> setEnvVars = new HashMap<>();
     private boolean winEnglishOutput;
     private String winTmpDir = null;
-
-    private static enum OutputControlOption {
-        SAVE_ALL, SAVE_FIRST_LINE, DUMP
-    }
 }

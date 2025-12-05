@@ -26,12 +26,9 @@
 package jdk.jpackage.internal;
 
 import java.io.IOException;
-import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.List;
 import jdk.jpackage.internal.model.JPackageException;
 
 /**
@@ -48,46 +45,6 @@ final class IOUtils {
         Files.copy(sourceFile, destFile,
                    StandardCopyOption.REPLACE_EXISTING,
                    StandardCopyOption.COPY_ATTRIBUTES);
-    }
-
-    public static void exec(ProcessBuilder pb)
-            throws IOException {
-        exec(pb, false, null, false, Executor.INFINITE_TIMEOUT);
-    }
-
-    // timeout in seconds. -1 will be return if process timeouts.
-    public static void exec(ProcessBuilder pb, long timeout)
-            throws IOException {
-        exec(pb, false, null, false, timeout);
-    }
-
-    static void exec(ProcessBuilder pb, boolean testForPresenceOnly,
-            PrintStream consumer, boolean writeOutputToFile, long timeout)
-            throws IOException {
-        exec(pb, testForPresenceOnly, consumer, writeOutputToFile,
-                timeout, false);
-    }
-
-    static void exec(ProcessBuilder pb, boolean testForPresenceOnly,
-            PrintStream consumer, boolean writeOutputToFile,
-            long timeout, boolean quiet) throws IOException {
-        List<String> output = new ArrayList<>();
-        Executor exec = Executor.of(pb)
-                .setWriteOutputToFile(writeOutputToFile)
-                .setTimeout(timeout)
-                .setQuiet(quiet)
-                .setOutputConsumer(lines -> {
-                    lines.forEach(output::add);
-                    if (consumer != null) {
-                        output.forEach(consumer::println);
-                    }
-                });
-
-        if (testForPresenceOnly) {
-            exec.execute();
-        } else {
-            exec.executeExpectSuccess();
-        }
     }
 
     static void writableOutputDir(Path outdir) {

@@ -27,13 +27,12 @@ package jdk.jpackage.internal;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Collection;
-import java.util.Objects;
 import java.util.Collections;
-import java.util.Set;
-import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -87,23 +86,20 @@ public final class LibProvidersLookup {
     }
 
     private static List<Path> getNeededLibsForFile(Path path) throws IOException {
-        List<Path> result = new ArrayList<>();
-        int ret = Executor.of(TOOL_LDD, path.toString()).setOutputConsumer(lines -> {
-            lines.map(line -> {
-                Matcher matcher = LIB_IN_LDD_OUTPUT_REGEX.matcher(line);
-                if (matcher.find()) {
-                    return matcher.group(1);
-                }
-                return null;
-            }).filter(Objects::nonNull).map(Path::of).forEach(result::add);
-        }).execute();
+        final var result = Executor.of(TOOL_LDD, path.toString()).saveOutput().execute();
 
-        if (ret != 0) {
+        if (result.getExitCode() != 0) {
             // objdump failed. This is OK if the tool was applied to not a binary file
             return Collections.emptyList();
         }
 
-        return result;
+        return result.stdout().getContent().stream().map(line -> {
+            Matcher matcher = LIB_IN_LDD_OUTPUT_REGEX.matcher(line);
+            if (matcher.find()) {
+                return matcher.group(1);
+            }
+            return null;
+        }).filter(Objects::nonNull).map(Path::of).toList();
     }
 
     private static Collection<Path> getNeededLibsForFiles(List<Path> paths) {

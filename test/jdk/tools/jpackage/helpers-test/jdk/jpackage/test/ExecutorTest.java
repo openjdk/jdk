@@ -26,7 +26,7 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -40,11 +40,15 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.util.CommandOutputControl;
+import jdk.jpackage.internal.util.Slot;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -203,12 +207,12 @@ public class ExecutorTest extends JUnitAdapter {
             final var command = commandSpec.command();
             final var commandWithDiscardedStreams = discardStreams(command);
 
-            final Executor.Result[] result = new Executor.Result[1];
+            final Slot<Executor.Result> result = Slot.createEmpty();
             final var outputCapture = OutputCapture.captureOutput(() -> {
-                result[0] = createExecutor(command).executeWithoutExitCodeCheck();
+                result.set(createExecutor(command).executeWithoutExitCodeCheck());
             });
 
-            assertEquals(0, result[0].getExitCode());
+            assertEquals(0, result.get().getExitCode());
 
             // If we dump the subprocesses's output, and the command produced both STDOUT and STDERR,
             // then the captured STDOUT may contain interleaved command's STDOUT and STDERR,
@@ -219,21 +223,21 @@ public class ExecutorTest extends JUnitAdapter {
             }
             assertEquals(expectedCapturedSystemErr(commandWithDiscardedStreams), outputCapture.errLines());
 
-            assertEquals(expectedResultStdout(commandWithDiscardedStreams), result[0].stdout().getOutput());
-            assertEquals(expectedResultStderr(commandWithDiscardedStreams), result[0].stderr().getOutput());
+            assertEquals(expectedResultStdout(commandWithDiscardedStreams), result.get().findStdout().map(CommandOutputControl.Output::getContent));
+            assertEquals(expectedResultStderr(commandWithDiscardedStreams), result.get().findStderr().map(CommandOutputControl.Output::getContent));
 
             if (!saveOutput()) {
-                assertNull(result[0].getOutput());
+                assertThrowsExactly(NoSuchElementException.class, result.get()::getOutput);
             } else {
-                assertNotNull(result[0].getOutput());
+                assertNotNull(result.get().getOutput());
                 final var allExpectedOutput = expectedCommandOutput(command);
-                assertEquals(allExpectedOutput.isEmpty(), result[0].getOutput().isEmpty());
+                assertEquals(allExpectedOutput.isEmpty(), result.get().getOutput().isEmpty());
                 if (!allExpectedOutput.isEmpty()) {
                     if (outputControl.contains(OutputControl.SAVE_ALL)) {
-                        assertEquals(allExpectedOutput, result[0].getOutput());
+                        assertEquals(allExpectedOutput, result.get().getOutput());
                     } else if (outputControl.contains(OutputControl.SAVE_FIRST_LINE)) {
-                        assertEquals(1, result[0].getOutput().size());
-                        assertEquals(allExpectedOutput.getFirst(), result[0].getFirstLineOfOutput());
+                        assertEquals(1, result.get().getOutput().size());
+                        assertEquals(allExpectedOutput.getFirst(), result.get().getFirstLineOfOutput());
                     } else {
                         throw new UnsupportedOperationException();
                     }
@@ -281,25 +285,25 @@ public class ExecutorTest extends JUnitAdapter {
             }
         }
 
-        private List<String> expectedResultStdout(Command command) {
+        private Optional<List<String>> expectedResultStdout(Command command) {
             return expectedResultStream(command.stdout());
         }
 
-        private List<String> expectedResultStderr(Command command) {
+        private Optional<List<String>> expectedResultStderr(Command command) {
             if (outputControl.contains(OutputControl.SAVE_FIRST_LINE) && !command.stdout().isEmpty()) {
-                return List.of();
+                return Optional.of(List.of());
             }
             return expectedResultStream(command.stderr());
         }
 
-        private List<String> expectedResultStream(List<String> commandOutput) {
+        private Optional<List<String>> expectedResultStream(List<String> commandOutput) {
             Objects.requireNonNull(commandOutput);
             if (outputControl.contains(OutputControl.SAVE_ALL)) {
-                return commandOutput;
+                return Optional.of(commandOutput);
             } else if (outputControl.contains(OutputControl.SAVE_FIRST_LINE)) {
-                return commandOutput.stream().findFirst().map(List::of).orElseGet(List::of);
+                return Optional.of(commandOutput.stream().findFirst().map(List::of).orElseGet(List::of));
             } else {
-                return null;
+                return Optional.empty();
             }
         }
 

@@ -233,10 +233,10 @@ public enum WixTool {
                     // Detect FIPS mode
                     var fips = false;
                     try {
-                        final var exec = Executor.of(toolPath.toString(), "-?").setQuiet(true).saveOutput(true);
-                        final var exitCode = exec.execute();
+                        final var result = Executor.of(toolPath.toString(), "-?").setQuiet(true).saveOutput(true).execute();
+                        final var exitCode = result.getExitCode();
                         if (exitCode != 0 /* 308 */) {
-                            final var output = exec.getOutput();
+                            final var output = result.getOutput();
                             if (!output.isEmpty() && output.get(0).contains("error CNDL0308")) {
                                 fips = true;
                             }

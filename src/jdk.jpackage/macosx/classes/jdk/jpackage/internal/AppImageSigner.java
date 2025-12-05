@@ -189,7 +189,8 @@ final class AppImageSigner {
 
     private static boolean isXcodeDevToolsInstalled() {
         try {
-            return Executor.of("/usr/bin/xcrun", "--help").setQuiet(true).execute() == 0;
+            Executor.of("/usr/bin/xcrun", "--help").setQuiet(true).executeExpectSuccess();
+            return true;
         } catch (IOException ex) {
             return false;
         }

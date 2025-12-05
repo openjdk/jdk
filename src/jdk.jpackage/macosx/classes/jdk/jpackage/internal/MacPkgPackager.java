@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.MessageFormat;
@@ -108,7 +107,7 @@ record MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Optional<Services> servic
             cmdline.addAll(allPkgbuildArgs());
             try {
                 Files.createDirectories(path.getParent());
-                IOUtils.exec(new ProcessBuilder(cmdline), false, null, true, Executor.INFINITE_TIMEOUT);
+                Executor.of(cmdline).executeExpectSuccess();
             } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
             }
@@ -487,15 +486,13 @@ record MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Optional<Services> servic
 
         Files.createDirectories(cpl.getParent());
 
-        final var pb = new ProcessBuilder("/usr/bin/pkgbuild",
+        Executor.of("/usr/bin/pkgbuild",
                 "--root",
                 normalizedAbsolutePathString(env.appImageDir()),
                 "--install-location",
                 normalizedAbsolutePathString(installLocation()),
                 "--analyze",
-                normalizedAbsolutePathString(cpl));
-
-        IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
+                normalizedAbsolutePathString(cpl)).executeExpectSuccess();
 
         patchCPLFile(cpl);
     }
@@ -544,8 +541,7 @@ record MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Optional<Services> servic
         }
         commandLine.add(normalizedAbsolutePathString(finalPkg));
 
-        final var pb = new ProcessBuilder(commandLine);
-        IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
+        Executor.of(commandLine).executeExpectSuccess();
     }
 
     private static Optional<Services> createServices(BuildEnv env, MacPkgPackage pkg) {

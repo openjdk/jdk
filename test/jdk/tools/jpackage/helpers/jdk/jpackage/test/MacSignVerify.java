@@ -94,7 +94,7 @@ public final class MacSignVerify {
     public static Optional<PListReader> findEntitlements(Path path) {
         final var exec = Executor.of("/usr/bin/codesign", "-d", "--entitlements", "-", "--xml", path.toString()).saveOutput().dumpOutput();
         final var result = exec.execute();
-        var xml = result.stdout().getOutput();
+        var xml = result.stdout().getContent();
         if (xml.isEmpty()) {
             return Optional.empty();
         } else {
