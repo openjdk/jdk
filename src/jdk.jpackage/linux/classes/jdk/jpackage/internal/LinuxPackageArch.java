@@ -24,9 +24,13 @@
  */
 package jdk.jpackage.internal;
 
-import java.io.IOException;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
+
+import java.io.IOException;
+import java.util.NoSuchElementException;
+import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.StandardPackageType;
+import jdk.jpackage.internal.util.Result;
 
 final class LinuxPackageArch {
 
@@ -69,22 +73,18 @@ final class LinuxPackageArch {
                 this.cmdline = cmdline;
             }
 
-            String getRpmArch() throws IOException {
-                Executor exec = Executor.of(cmdline).saveOutput(true);
-                switch (this) {
-                    case Rpm -> {
-                        exec.executeExpectSuccess();
-                    }
-                    case Rpmbuild -> {
-                        if (exec.execute() != 0) {
-                            return null;
+            Result<String> getRpmArch() {
+                try {
+                    return Result.ofValue(Executor.of(cmdline).saveOutput(true).executeExpectSuccess()).flatMap(result -> {
+                        try {
+                            return Result.ofValue(result.stdout().getFirstLineOfOutput());
+                        } catch (NoSuchElementException ex) {
+                            return Result.ofError(ex);
                         }
-                    }
-                    default -> {
-                        throw new UnsupportedOperationException();
-                    }
+                    });
+                } catch (IOException ex) {
+                    return Result.ofError(ex);
                 }
-                return exec.getOutput().get(0);
             }
 
             private final String[] cmdline;
@@ -94,12 +94,12 @@ final class LinuxPackageArch {
 
         private static String getValue() throws IOException {
             for (var rpmArchReader : RpmArchReader.values()) {
-                var rpmArchStr = rpmArchReader.getRpmArch();
-                if (rpmArchStr != null) {
-                    return rpmArchStr;
+                var result = rpmArchReader.getRpmArch();
+                if (result.hasValue()) {
+                    return result.value().orElseThrow();
                 }
             }
-            throw new RuntimeException("error.rpm-arch-not-detected");
+            throw new JPackageException("error.rpm-arch-not-detected");
         }
     }
 }

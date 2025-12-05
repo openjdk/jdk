@@ -24,16 +24,21 @@
  */
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
+
 import java.io.IOException;
-import java.util.List;
+import java.time.Duration;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
+import jdk.jpackage.internal.util.CommandOutputControl.Result;
 
 public final class RetryExecutor {
     public RetryExecutor() {
         setMaxAttemptsCount(5);
-        setAttemptTimeoutMillis(2 * 1000);
-        setWriteOutputToFile(false);
+        setAttemptTimeout(2, TimeUnit.SECONDS);
     }
 
     public RetryExecutor setMaxAttemptsCount(int v) {
@@ -41,27 +46,17 @@ public final class RetryExecutor {
         return this;
     }
 
-    public RetryExecutor setAttemptTimeoutMillis(int v) {
-        timeoutMillis = v;
+    public RetryExecutor setAttemptTimeout(long v, TimeUnit unit) {
+        timeout = Duration.of(v, unit.toChronoUnit());
         return this;
     }
 
-    public RetryExecutor saveOutput(boolean v) {
-        saveOutput = v;
-        return this;
+    public Result getResult() {
+        return Objects.requireNonNull(result);
     }
 
-    public List<String> getOutput() {
-        return output;
-    }
-
-    public RetryExecutor setWriteOutputToFile(boolean v) {
-        writeOutputToFile = v;
-        return this;
-    }
-
-    public RetryExecutor setExecutorInitializer(Consumer<Executor> v) {
-        executorInitializer = v;
+    public RetryExecutor setIterationCallback(Consumer<RetryExecutor> v) {
+        iterationCallback = v;
         return this;
     }
 
@@ -74,63 +69,50 @@ public final class RetryExecutor {
     }
 
     static RetryExecutor retryOnKnownErrorMessage(String v) {
-        RetryExecutor result = new RetryExecutor();
-        return result.setExecutorInitializer(exec -> {
-            exec.setOutputConsumer(output -> {
-                if (!output.anyMatch(v::equals)) {
-                    result.abort();
-                }
-            });
+        return new RetryExecutor().setIterationCallback(exec -> {
+            var stderr = exec.getResult().stderr().getContent();
+            if (!stderr.stream().anyMatch(v::equals)) {
+                exec.abort();
+            }
         });
     }
 
-    public void execute(String cmdline[]) throws IOException {
-        executeLoop(() ->
-                Executor.of(cmdline).setWriteOutputToFile(writeOutputToFile));
+    public void execute(Executor exec) throws IOException {
+        execute(exec::executeExpectSuccess);
     }
 
-    public void execute(ProcessBuilder pb) throws IOException {
-        executeLoop(() ->
-                Executor.of(pb).setWriteOutputToFile(writeOutputToFile));
-    }
-
-    private void executeLoop(Supplier<Executor> execSupplier) throws IOException {
-        aborted = false;
-        for (;;) {
-            if (aborted) {
-                break;
-            }
-
+    public void execute(Callable<Result> exec) throws IOException {
+        Objects.requireNonNull(exec);
+        for (; attempts > 0 && !aborted; --attempts) {
             try {
-                Executor exec = execSupplier.get().saveOutput(saveOutput);
-                if (executorInitializer != null) {
-                    executorInitializer.accept(exec);
-                }
-                exec.executeExpectSuccess();
-                if (saveOutput) {
-                    output = exec.getOutput();
-                }
-                break;
-            } catch (IOException ex) {
-                if (aborted || (--attempts) <= 0) {
-                    throw ex;
+                result = exec.call();
+            } catch (Exception ex) {
+                if (attempts <= 1) {
+                    // No more attempts left. This is fatal.
+                    if (ex instanceof IOException ioex) {
+                        throw ioex;
+                    } else {
+                        throw new IOException(ex);
+                    }
                 }
             }
 
-            try {
-                Thread.sleep(timeoutMillis);
-            } catch (InterruptedException ex) {
-                Log.verbose(ex);
-                throw new RuntimeException(ex);
+            Objects.requireNonNull(result);
+
+            if (iterationCallback != null) {
+                iterationCallback.accept(this);
+                if (aborted) {
+                    break;
+                }
             }
+
+            Optional.ofNullable(timeout).map(Duration::toMillis).ifPresent(toConsumer(Thread::sleep));
         }
     }
 
-    private Consumer<Executor> executorInitializer;
+    private Consumer<RetryExecutor> iterationCallback;
     private boolean aborted;
     private int attempts;
-    private int timeoutMillis;
-    private boolean saveOutput;
-    private List<String> output;
-    private boolean writeOutputToFile;
+    private Duration timeout;
+    private Result result;
 }

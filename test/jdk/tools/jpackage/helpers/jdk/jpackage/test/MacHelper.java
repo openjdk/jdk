@@ -34,6 +34,7 @@ import static jdk.jpackage.internal.util.PListWriter.writeStringOptional;
 import static jdk.jpackage.internal.util.XmlUtils.initDocumentBuilder;
 import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -49,11 +50,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -90,38 +91,39 @@ public final class MacHelper {
         final var mountRoot = TKit.createTempDirectory("mountRoot");
 
         // Explode DMG assuming this can require interaction, thus use `yes`.
-        String attachCMD[] = {
-            "sh", "-c",
-            String.join(" ", "yes", "|", "/usr/bin/hdiutil", "attach",
-                    JPackageCommand.escapeAndJoin(cmd.outputBundle().toString()),
-                    "-mountroot", PathUtils.normalizedAbsolutePathString(mountRoot),
-                    "-nobrowse", "-plist")};
-        RetryExecutor attachExecutor = new RetryExecutor();
-        try {
-            // 10 times with 6 second delays.
-            attachExecutor.setMaxAttemptsCount(10)
-                    .setAttemptTimeoutMillis(6000)
-                    .setWriteOutputToFile(true)
-                    .saveOutput(true)
-                    .execute(attachCMD);
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
+        final var attachStdout = toSupplier(() -> {
+            return new RetryExecutor()
+                    .setMaxAttemptsCount(10)
+                    .setAttemptTimeout(6, TimeUnit.SECONDS)
+                    .execute(Executor.of("sh", "-c", String.join(" ",
+                            "yes",
+                            "|",
+                            "/usr/bin/hdiutil",
+                            "attach",
+                            JPackageCommand.escapeAndJoin(cmd.outputBundle().toString()),
+                            "-mountroot", PathUtils.normalizedAbsolutePathString(mountRoot),
+                            "-nobrowse",
+                            "-plist"
+                    )).saveOutput().toRetryExecutorCallable());
+        }).get().stdout().getContent();
 
-        Path mountPoint = null;
+        final Path mountPoint;
+
+        boolean mountPointInitialized = false;
         try {
             // One of "dict" items of "system-entities" array property should contain "mount-point" string property.
-            mountPoint = readPList(attachExecutor.getOutput()).queryArrayValue("system-entities", false).map(PListReader.class::cast).map(dict -> {
-                try {
-                    return dict.queryValue("mount-point");
-                } catch (NoSuchElementException ex) {
-                    return (String)null;
-                }
-            }).filter(Objects::nonNull).map(Path::of).findFirst().orElseThrow();
+            mountPoint = readPList(attachStdout).queryArrayValue("system-entities", false)
+                    .map(PListReader.class::cast)
+                    .map(dict -> {
+                        return dict.findValue("mount-point");
+                    })
+                    .filter(Optional::isPresent).map(Optional::get)
+                    .map(Path::of).findFirst().orElseThrow();
+            mountPointInitialized = true;
         } finally {
-            if (mountPoint == null) {
+            if (!mountPointInitialized) {
                 TKit.trace("Unexpected plist file missing `system-entities` array:");
-                attachExecutor.getOutput().forEach(TKit::trace);
+                attachStdout.forEach(TKit::trace);
                 TKit.trace("Done");
             }
         }
@@ -138,38 +140,29 @@ public final class MacHelper {
                 ThrowingConsumer.toConsumer(consumer).accept(childPath);
             }
         } finally {
-            String detachCMD[] = {
-                "/usr/bin/hdiutil",
-                "detach",
-                "-verbose",
-                mountPoint.toAbsolutePath().toString()};
+            Function<Boolean, Executor> detach = force -> {
+                var exec = Executor.of("/usr/bin/hdiutil", "detach");
+                if (force) {
+                    exec.addArgument("-force");
+                }
+                return exec.addArgument(mountPoint);
+            };
+
             // "hdiutil detach" might not work right away due to resource busy error, so
             // repeat detach several times.
-            RetryExecutor detachExecutor = new RetryExecutor();
-            // Image can get detach even if we got resource busy error, so stop
-            // trying to detach it if it is no longer attached.
-            final Path mp = mountPoint;
-            detachExecutor.setExecutorInitializer(exec -> {
-                if (!Files.exists(mp)) {
-                    detachExecutor.abort();
+            var retry = new RetryExecutor().setIterationCallback(r -> {
+                if (!Files.exists(mountPoint)) {
+                    // Image can get detached even if we got resource busy error, so stop
+                    // trying to detach it if it is no longer attached.
+                    r.abort();
                 }
-            });
+            }).setMaxAttemptsCount(10).setAttemptTimeout(6, TimeUnit.SECONDS);
+
             try {
-                // 10 times with 6 second delays.
-                detachExecutor.setMaxAttemptsCount(10)
-                        .setAttemptTimeoutMillis(6000)
-                        .setWriteOutputToFile(true)
-                        .saveOutput(true)
-                        .execute(detachCMD);
+                retry.execute(detach.apply(false).toRetryExecutorCallable());
             } catch (IOException ex) {
-                if (!detachExecutor.isAborted()) {
-                    // Now force to detach if it still attached
-                    if (Files.exists(mountPoint)) {
-                        Executor.of("/usr/bin/hdiutil", "detach",
-                                    "-force", "-verbose")
-                                 .addArgument(mountPoint).execute();
-                    }
-                }
+                // Now force to detach as it still attached.
+                detach.apply(true).execute();
             }
         }
     }
