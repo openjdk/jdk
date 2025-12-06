@@ -27,10 +27,16 @@
 #define SHARE_NMT_MALLOCHEADER_HPP
 
 #include "nmt/memTag.hpp"
+#include "sanitizers/address.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/nativeCallStack.hpp"
 
+#if INCLUDE_ASAN
+#undef NMT_BLOCK_INTEGRITY_CHECKS
+#else
+#define NMT_BLOCK_INTEGRITY_CHECKS
+#endif
 class outputStream;
 
 /*
@@ -118,6 +124,7 @@ class MallocHeader {
   inline static OutTypeParam resolve_checked_impl(InTypeParam memblock);
 
 public:
+  static constexpr size_t footer_size = sizeof(uint16_t);
   // Contains all of the necessary data to to deaccount block with NMT.
   struct FreeInfo {
     const size_t size;
@@ -126,8 +133,9 @@ public:
   };
 
   inline MallocHeader(size_t size, MemTag mem_tag, uint32_t mst_marker);
-
-  inline static size_t malloc_overhead() { return sizeof(MallocHeader) + sizeof(uint16_t); }
+  inline static size_t malloc_overhead() { return sizeof(MallocHeader) + footer_size; }
+  inline static MallocHeader* kill_block(void* memblock);
+  inline static void revive_block(void* memblock);
   inline size_t size()  const { return _size; }
   inline MemTag mem_tag() const { return _mem_tag; }
   inline uint32_t mst_marker() const { return _mst_marker; }
