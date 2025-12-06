@@ -50,6 +50,7 @@ import jdk.jpackage.internal.model.LinuxLauncher;
 import jdk.jpackage.internal.model.LinuxPackage;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.util.CompositeProxy;
+import jdk.jpackage.internal.util.Enquoter;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.XmlUtils;
 

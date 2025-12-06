@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.Package;
+import jdk.jpackage.internal.util.Enquoter;
 
 /**
  * Helper to install launchers as services using "systemd".
