@@ -119,6 +119,15 @@ public class ReflectionFactory {
         return MethodHandleAccessorFactory.newMethodAccessor(method, callerSensitive);
     }
 
+    public MethodAccessor newMethodAccessor(Method method, MethodHandle mh, boolean callerSensitive) {
+        // [TBD: should we use root?] use the root Method that will not cache caller class
+        Method root = langReflectAccess.getRoot(method);
+        if (root != null) {
+            method = root;
+        }
+        return MethodHandleAccessorFactory.newMethodAccessor(method, mh, callerSensitive);
+    }
+
     public ConstructorAccessor newConstructorAccessor(Constructor<?> c) {
         Class<?> declaringClass = c.getDeclaringClass();
         if (Modifier.isAbstract(declaringClass.getModifiers())) {
@@ -136,6 +145,24 @@ public class ReflectionFactory {
         }
 
         return MethodHandleAccessorFactory.newConstructorAccessor(c);
+    }
+
+
+    public ConstructorAccessor newConstructorAccessor(Constructor<?> c, MethodHandle mh) {
+        Class<?> declaringClass = c.getDeclaringClass();
+        if (Modifier.isAbstract(declaringClass.getModifiers())) {
+            return new InstantiationExceptionConstructorAccessorImpl(null);
+        }
+        if (declaringClass == Class.class) {
+            return new InstantiationExceptionConstructorAccessorImpl
+                ("Can not instantiate java.lang.Class");
+        }
+        // [TBD: should we use root?] use the root Constructor that will not cache caller class
+        Constructor<?> root = langReflectAccess.getRoot(c);
+        if (root != null) {
+            c = root;
+        }
+        return MethodHandleAccessorFactory.newConstructorAccessor(c, mh);
     }
 
     //--------------------------------------------------------------------------
