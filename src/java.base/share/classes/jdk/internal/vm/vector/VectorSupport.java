@@ -477,7 +477,7 @@ public class VectorSupport {
                                                 V extends Vector<?>,
                                                 S extends VectorSpecies<?>,
                                                 M extends VectorMask<?>> {
-        V loadWithMap(C container, int index, int[] indexMap, int indexM, S s, M m);
+        V loadWithMap(C container, int index, int[] indexMap, int indexM, S s, M m, int elem_num);
     }
 
     @IntrinsicCandidate
@@ -492,11 +492,11 @@ public class VectorSupport {
                   int length,
                   Class<? extends Vector<Integer>> vectorIndexClass,
                   int indexLength, Object base, long offset,
-                  W indexVector1, W indexVector2, W indexVector3, W indexVector4,
-                  M m, C container, int index, int[] indexMap, int indexM, S s,
+                  W indexVector, M m,
+                  C container, int index, int[] indexMap, int indexM, S s,
                   LoadVectorOperationWithMap<C, V, S, M> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
-        return defaultImpl.loadWithMap(container, index, indexMap, indexM, s, m);
+        return defaultImpl.loadWithMap(container, index, indexMap, indexM, s, m, indexLength);
     }
 
     /* ============================================================================ */
