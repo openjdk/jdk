@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,17 @@
  * questions.
  */
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
+import jtreg.SkippedException;
+
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.security.*;
-import java.security.spec.*;
-import java.security.interfaces.*;
+import java.security.KeyFactory;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.Provider;
+import java.security.PublicKey;
+import java.security.Security;
+import java.security.Signature;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
@@ -37,14 +40,18 @@ import java.util.List;
  * @test
  * @bug 8146293
  * @summary Known Answer Tests based on NIST 186-3 at:
+ * @library /test/lib/
  * @compile SigRecord.java
  * @run main/othervm TestSigGen15
  */
+
 public class TestSigGen15 {
 
     private static final String[] testFiles = {
         "SigGen15_186-3.txt", "SigGen15_186-3_TruncatedSHAs.txt"
     };
+
+    private static final List<String> skippedAlgs = new ArrayList<>();
 
     public static void main(String[] args) throws Exception {
         boolean success = true;
@@ -61,6 +68,11 @@ public class TestSigGen15 {
 
         if (!success) {
             throw new RuntimeException("One or more test failed");
+        }
+
+        if (!skippedAlgs.isEmpty()) {
+            throw new SkippedException("Some algorithms were skipped " +
+                                       skippedAlgs);
         }
         System.out.println("Test passed");
     }
@@ -100,6 +112,7 @@ public class TestSigGen15 {
             } catch (NoSuchAlgorithmException e) {
                 System.out.println("\tSkip " + sigAlgo +
                     " due to no support");
+                skippedAlgs.add(sigAlgo);
                 continue;
             }
             byte[] msgBytes = HexFormat.of().parseHex(v.msg);
