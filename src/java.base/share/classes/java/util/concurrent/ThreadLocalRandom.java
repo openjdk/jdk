@@ -155,6 +155,8 @@ public final class ThreadLocalRandom extends Random {
     static final void localInit() {
         long seed = RandomSupport.mixMurmur64(seeder.getAndAdd(SEEDER_INCREMENT));
         int probe = probeGenerator.addAndGet(PROBE_INCREMENT);
+        if (probe == 0)
+            probe = 1; // skip 0
         JLA.setCarrierLocalRandomSeed(seed);
         JLA.setCarrierLocalRandomProbe(probe);
     }
