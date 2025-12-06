@@ -102,6 +102,9 @@ private:
   size_t _fragmentation_first_old_region;
   size_t _fragmentation_last_old_region;
 
+  // adapted value of ShenandoahOldGarbageThreshold
+  uintx _old_garbage_threshold;
+
   // Compare by live is used to prioritize compaction of old-gen regions.  With old-gen compaction, the goal is
   // to tightly pack long-lived objects into available regions.  In most cases, there has not been an accumulation
   // of garbage within old-gen regions.  The more likely opportunity will be to combine multiple sparsely populated
@@ -200,9 +203,13 @@ public:
 
   bool is_experimental() override;
 
+
+  inline uintx get_old_garbage_threshold() { return _old_garbage_threshold; }
+
 private:
   void slide_pinned_regions_to_front();
   bool all_candidates_are_pinned();
+  void adjust_old_garbage_threshold();
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHOLDHEURISTICS_HPP

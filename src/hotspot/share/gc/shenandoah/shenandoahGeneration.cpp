@@ -506,7 +506,7 @@ inline void assert_no_in_place_promotions() {
 }
 
 // Preselect for inclusion into the collection set regions whose age is at or above tenure age which contain more than
-// ShenandoahOldGarbageThreshold amounts of garbage.  We identify these regions by setting the appropriate entry of
+// the old garbage threshold amount of garbage.  We identify these regions by setting the appropriate entry of
 // the collection set's preselected regions array to true.  All entries are initialized to false before calling this
 // function.
 //
@@ -531,7 +531,8 @@ size_t ShenandoahGeneration::select_aged_regions(const size_t old_promotion_rese
   bool* const candidate_regions_for_promotion_by_copy = heap->collection_set()->preselected_regions();
   ShenandoahMarkingContext* const ctx = heap->marking_context();
 
-  const size_t old_garbage_threshold = (ShenandoahHeapRegion::region_size_bytes() * ShenandoahOldGarbageThreshold) / 100;
+  const size_t old_garbage_threshold =
+    (ShenandoahHeapRegion::region_size_bytes() * heap->old_generation()->heuristics()->get_old_garbage_threshold()) / 100;
 
   const size_t pip_used_threshold = (ShenandoahHeapRegion::region_size_bytes() * ShenandoahGenerationalMinPIPUsage) / 100;
 

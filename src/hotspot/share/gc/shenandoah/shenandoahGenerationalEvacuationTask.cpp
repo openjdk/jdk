@@ -145,7 +145,7 @@ void ShenandoahGenerationalEvacuationTask::maybe_promote_region(ShenandoahHeapRe
       // triggers the load-reference barrier (LRB) to copy on reference fetch.
       //
       // Aged humongous continuation regions are handled with their start region.  If an aged regular region has
-      // more garbage than ShenandoahOldGarbageThreshold, we'll promote by evacuation.  If there is room for evacuation
+      // more garbage than the old garbage threshold, we'll promote by evacuation.  If there is room for evacuation
       // in this cycle, the region will be in the collection set.  If there is not room, the region will be promoted
       // by evacuation in some future GC cycle.
 
@@ -177,7 +177,8 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
   size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
 
   {
-    const size_t old_garbage_threshold = (region_size_bytes * ShenandoahOldGarbageThreshold) / 100;
+    const size_t old_garbage_threshold =
+      (region_size_bytes * _heap->old_generation()->heuristics()->get_old_garbage_threshold()) / 100;
     assert(!_heap->is_concurrent_old_mark_in_progress(), "Cannot promote in place during old marking");
     assert(region->garbage_before_padded_for_promote() < old_garbage_threshold,
            "Region %zu has too much garbage for promotion", region->index());
