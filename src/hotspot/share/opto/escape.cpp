@@ -4485,13 +4485,27 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         auto process_narrow_proj = [&](NarrowMemProjNode* proj) {
           const TypePtr* adr_type = proj->adr_type();
           const TypePtr* new_adr_type = tinst->add_offset(adr_type->offset());
-          if (adr_type != new_adr_type && !init->already_has_narrow_mem_proj_with_adr_type(new_adr_type)) {
-            DEBUG_ONLY( uint alias_idx = _compile->get_alias_index(new_adr_type); )
-            assert(_compile->get_general_index(alias_idx) == _compile->get_alias_index(adr_type), "new adr type should be narrowed down from existing adr type");
-            NarrowMemProjNode* new_proj = new NarrowMemProjNode(init, new_adr_type);
-            igvn->set_type(new_proj, new_proj->bottom_type());
-            record_for_optimizer(new_proj);
-            set_map(proj, new_proj); // record it so ConnectionGraph::find_inst_mem() can find it
+          if (adr_type != new_adr_type) {
+            if (!init->already_has_narrow_mem_proj_with_adr_type(new_adr_type)) {
+              DEBUG_ONLY( uint alias_idx = _compile->get_alias_index(new_adr_type); )
+              assert(_compile->get_general_index(alias_idx) == _compile->get_alias_index(adr_type), "new adr type should be narrowed down from existing adr type");
+              NarrowMemProjNode* new_proj = new NarrowMemProjNode(init, new_adr_type);
+              igvn->set_type(new_proj, new_proj->bottom_type());
+              record_for_optimizer(new_proj);
+              set_map(proj, new_proj); // record it so ConnectionGraph::find_inst_mem() can find it
+            } else {
+              // A projection with the precise adr_type already exists; still record the mapping.
+              NarrowMemProjNode* existing_proj = nullptr;
+              auto find_existing = [&](NarrowMemProjNode* other) {
+                if (existing_proj == nullptr && other->adr_type() == new_adr_type) {
+                  existing_proj = other;
+                }
+              };
+              init->for_each_narrow_mem_proj_with_new_uses(find_existing);
+              if (existing_proj != nullptr) {
+                set_map(proj, existing_proj);
+              }
+            }
           }
         };
         init->for_each_narrow_mem_proj_with_new_uses(process_narrow_proj);

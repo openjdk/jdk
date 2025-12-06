@@ -38,7 +38,7 @@
 Node* CardTableBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) const {
   DecoratorSet decorators = access.decorators();
 
-  Node* adr = access.addr().node();
+  Node* adr = access.addr();
 
   bool is_array = (decorators & IS_ARRAY) != 0;
   bool anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
@@ -67,7 +67,7 @@ Node* CardTableBarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess&
 
   Node* result = BarrierSetC2::atomic_cmpxchg_val_at_resolved(access, expected_val, new_val, value_type);
 
-  post_barrier(access.kit(), access.base(), access.addr().node(), new_val, true);
+  post_barrier(access.kit(), access.base(), access.addr(), new_val, true);
 
   return result;
 }
@@ -95,7 +95,7 @@ Node* CardTableBarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAccess
   IdealKit ideal(kit);
   ideal.if_then(load_store, BoolTest::ne, ideal.ConI(0), PROB_STATIC_FREQUENT); {
     kit->sync_kit(ideal);
-    post_barrier(kit, access.base(), access.addr().node(), new_val, true);
+    post_barrier(kit, access.base(), access.addr(), new_val, true);
     ideal.sync_kit(kit);
   } ideal.end_if();
   kit->final_sync(ideal);
@@ -109,7 +109,7 @@ Node* CardTableBarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& access
     return result;
   }
 
-  post_barrier(access.kit(), access.base(), access.addr().node(), new_val, true);
+  post_barrier(access.kit(), access.base(), access.addr(), new_val, true);
 
   return result;
 }
@@ -170,12 +170,10 @@ void CardTableBarrierSetC2::post_barrier(GraphKit* kit,
   // Combine card table base and card offset
   Node* card_adr = __ AddP(__ top(), byte_map_base_node(kit), card_offset);
 
-  // Get the alias_index for raw card-mark memory
-  int adr_type = Compile::AliasIdxRaw;
-
   // Dirty card value to store
   Node* dirty = __ ConI(CardTable::dirty_card_val());
 
+  assert(kit->C->get_alias_index(kit->gvn().type(card_adr)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
   if (UseCondCardMark) {
     // The classic GC reference write barrier is typically implemented
     // as a store into the global card mark table.  Unfortunately
@@ -184,12 +182,12 @@ void CardTableBarrierSetC2::post_barrier(GraphKit* kit,
     // UseCondCardMark enables MP "polite" conditional card mark
     // stores.  In theory we could relax the load from ctrl() to
     // no_ctrl, but that doesn't buy much latitude.
-    Node* card_val = __ load( __ ctrl(), card_adr, TypeInt::BYTE, T_BYTE, adr_type);
+    Node* card_val = __ load( __ ctrl(), card_adr, TypeInt::BYTE, T_BYTE);
     __ if_then(card_val, BoolTest::ne, dirty);
   }
 
   // Smash dirty value into card
-  __ store(__ ctrl(), card_adr, dirty, T_BYTE, adr_type, MemNode::unordered);
+  __ store(__ ctrl(), card_adr, dirty, T_BYTE, MemNode::unordered);
 
   if (UseCondCardMark) {
     __ end_if();
