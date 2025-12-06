@@ -138,6 +138,7 @@ class VectorNode : public TypeNode {
   static bool is_scalar_op_that_returns_int_but_vector_op_returns_long(int opc);
   static bool is_reinterpret_opcode(int opc);
 
+  static Node* uncast_mask(Node* n);
 
   static void trace_new_vector(Node* n, const char* context) {
 #ifdef ASSERT
