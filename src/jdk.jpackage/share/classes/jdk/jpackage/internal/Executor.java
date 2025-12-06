@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.jpackage.internal;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.System.Logger.Level;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -34,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.model.Logger;
 
 public final class Executor {
 
@@ -79,6 +81,16 @@ public final class Executor {
         return this;
     }
 
+    Executor setLogger(System.Logger v) {
+        logger = v;
+        return this;
+    }
+
+    Executor setLoggerLevel(System.Logger.Level v) {
+        loggerLevel = v;
+        return this;
+    }
+
     List<String> getOutput() {
         return output;
     }
@@ -114,6 +126,9 @@ public final class Executor {
 
         if (!quietCommand) {
             Log.verbose(String.format("Running %s", createLogMessage(pb, true)));
+        }
+        if (logger != null) {
+            logger.log(loggerLevel, "Running {0}", createLogMessage(pb, true));
         }
 
         Process p = pb.start();
@@ -184,7 +199,12 @@ public final class Executor {
                 code = p.waitFor();
             }
             if (!quietCommand) {
-                Log.verbose(pb.command(), getOutput(), code, IOUtils.getPID(p));
+                Log.verbose(createExecutionResultLogMessage(
+                        pb.command(), getOutput(), code, IOUtils.getPID(p)));
+            }
+            if (logger != null) {
+                logger.log(loggerLevel, createExecutionResultLogMessage(
+                        pb.command(), getOutput(), code, IOUtils.getPID(p)));
             }
             return code;
         } catch (InterruptedException ex) {
@@ -225,12 +245,37 @@ public final class Executor {
         return sb.toString();
     }
 
+    static String createExecutionResultLogMessage(List<String> args,
+            List<String> output, int returnCode, long pid) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Command [PID: ");
+        sb.append(pid);
+        sb.append("]:\n   ");
+
+        for (String arg : args) {
+            sb.append(" " + arg);
+        }
+        sb.append("\n");
+        if (output != null && !output.isEmpty()) {
+            sb.append("Output:");
+            for (String s : output) {
+                sb.append("\n    " + s);
+            }
+            sb.append("\n");
+        }
+        sb.append("Returned: " + returnCode + "\n");
+
+        return sb.toString();
+    }
+
     public static final int INFINITE_TIMEOUT = -1;
 
     private ProcessBuilder pb;
     private boolean saveOutput;
     private boolean writeOutputToFile;
     private boolean quietCommand;
+    private System.Logger logger = Logger.MAIN.get();
+    private Level loggerLevel = Level.DEBUG;
     private long timeout = INFINITE_TIMEOUT;
     private List<String> output;
     private Consumer<Stream<String>> outputConsumer;
