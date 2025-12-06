@@ -317,7 +317,7 @@ public class TestPreview extends JavadocTester {
 
                  /**
                   * Non preview feature.
-                  * {@previewNote 2147483647 Preview API Note}
+                  * {@previewNote [jep=2147483647] Preview API Note}
                   */
                  public interface NonPrevieFeature {
                  }

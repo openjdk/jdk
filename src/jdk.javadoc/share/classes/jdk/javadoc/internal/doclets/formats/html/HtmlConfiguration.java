@@ -506,6 +506,7 @@ public class HtmlConfiguration extends BaseConfiguration {
         }
 
         initTagletManager(options.customTagStrs());
+        docEnv.getDocTrees().setCustomTags(tagletManager.getCustomTags());
 
         return super.finishOptionSettings0();
     }
@@ -540,21 +541,21 @@ public class HtmlConfiguration extends BaseConfiguration {
                         String tagName = args.get(1);
                         if (tagletManager.isKnownCustomTag(tagName)) {
                             //reorder a standard tag
-                            tagletManager.addNewSimpleCustomTag(tagName, null, "");
+                            tagletManager.addNewCustomTag(tagName, null, "");
                         } else {
                             //Create a simple tag with the heading that has the same name as the tag.
                             StringBuilder heading = new StringBuilder(tagName + ":");
                             heading.setCharAt(0, Character.toUpperCase(tagName.charAt(0)));
-                            tagletManager.addNewSimpleCustomTag(tagName, heading.toString(), "a");
+                            tagletManager.addNewCustomTag(tagName, heading.toString(), "a");
                         }
                     }
 
                     case 2 ->
                         //Add simple taglet without heading, probably to excluding it in the output.
-                            tagletManager.addNewSimpleCustomTag(tokens.get(0), tokens.get(1), "");
+                            tagletManager.addNewCustomTag(tokens.get(0), tokens.get(1), "");
 
                     case 3 ->
-                            tagletManager.addNewSimpleCustomTag(tokens.get(0), tokens.get(2), tokens.get(1));
+                            tagletManager.addNewCustomTag(tokens.get(0), tokens.get(2), tokens.get(1));
 
                     default ->
                             messages.error("doclet.Error_invalid_custom_tag_argument", args.get(1));
