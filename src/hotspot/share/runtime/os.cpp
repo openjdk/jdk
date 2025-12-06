@@ -81,10 +81,6 @@
 #include "utilities/permitForbiddenFunctions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-#ifdef LINUX
-#include "osContainer_linux.hpp"
-#endif
-
 #ifndef _WINDOWS
 # include <poll.h>
 #endif
@@ -2205,11 +2201,14 @@ static void assert_nonempty_range(const char* addr, size_t bytes) {
 }
 
 bool os::used_memory(physical_memory_size_type& value) {
-#ifdef LINUX
-  if (OSContainer::is_containerized()) {
-    return OSContainer::memory_usage_in_bytes(value);
+  if (is_containerized()) {
+    return Container::used_memory(value);
   }
-#endif
+
+  return Machine::used_memory(value);
+}
+
+bool os::Machine::used_memory(physical_memory_size_type& value) {
   physical_memory_size_type avail_mem = 0;
   // Return value ignored - defaulting to 0 on failure.
   (void)os::available_memory(avail_mem);
@@ -2217,6 +2216,44 @@ bool os::used_memory(physical_memory_size_type& value) {
   value = phys_mem - avail_mem;
   return true;
 }
+
+#ifndef LINUX
+bool os::is_containerized() {
+  return false;
+}
+
+bool os::Container::processor_count(double& value) {
+  return false;
+}
+
+bool os::Container::available_memory(physical_memory_size_type& value) {
+  return false;
+}
+
+bool os::Container::used_memory(physical_memory_size_type& value) {
+  return false;
+}
+
+bool os::Container::total_swap_space(physical_memory_size_type& value) {
+  return false;
+}
+
+bool os::Container::free_swap_space(physical_memory_size_type& value) {
+  return false;
+}
+
+bool os::Container::memory_limit(physical_memory_size_type& value) {
+  return false;
+}
+
+bool os::Container::memory_soft_limit(physical_memory_size_type& value) {
+  return false;
+}
+
+bool os::Container::memory_throttle_limit(physical_memory_size_type& value) {
+  return false;
+}
+#endif
 
 
 bool os::commit_memory(char* addr, size_t bytes, bool executable) {
