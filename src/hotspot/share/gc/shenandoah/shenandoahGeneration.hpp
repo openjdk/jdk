@@ -71,7 +71,7 @@ private:
   // garbage-dense regions, including those that satisfy criteria 1 & 2 below,
   // and whose live bytes will fit within old_available budget:
   // Criterion 1. region age >= tenuring threshold
-  // Criterion 2. region garbage percentage > ShenandoahOldGarbageThreshold
+  // Criterion 2. region garbage percentage > old garbage threshold
   //
   // Identifies regions eligible for promotion in place,
   // being those of at least tenuring_threshold age that have lower garbage

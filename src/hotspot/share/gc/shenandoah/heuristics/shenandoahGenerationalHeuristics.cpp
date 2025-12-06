@@ -104,7 +104,7 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
           // Note that for GLOBAL GC, region may be OLD, and OLD regions do not qualify for pre-selection
 
           // This region is old enough to be promoted but it was not preselected, either because its garbage is below
-          // ShenandoahOldGarbageThreshold so it will be promoted in place, or because there is not sufficient room
+          // old garbage threshold so it will be promoted in place, or because there is not sufficient room
           // in old gen to hold the evacuated copies of this region's live data.  In both cases, we choose not to
           // place this region into the collection set.
           if (region->get_top_before_promote() != nullptr) {
