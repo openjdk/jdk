@@ -42,6 +42,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.spi.ToolProvider;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -127,7 +128,7 @@ public final class CommandOutputControl {
         Result execute() throws IOException, InterruptedException;
 
         default Result execute(long timeout, TimeUnit unit) throws IOException, InterruptedException, TimeoutException {
-            var task = new FutureTask<Result>(this::execute);
+            var task = new FutureTask<>(this::execute);
             Thread.ofVirtual().start(task);
             try {
                 return task.get(timeout, unit);
@@ -304,13 +305,11 @@ public final class CommandOutputControl {
 
         outputStreamsControl.applyTo(pb);
 
-        var process = pb.start();
+        final var process = pb.start();
 
-        var pid = getPID(process);
+        final var pid = getPID(process);
 
-        final var output = combine(
-                processProcessStream(outputStreamsControl.stdout(), process.inputReader()),
-                processProcessStream(outputStreamsControl.stderr(), process.errorReader()));
+        final var output = readProcessOutput(process);
 
         final int exitCode = process.waitFor();
 
@@ -322,19 +321,17 @@ public final class CommandOutputControl {
 
         outputStreamsControl.applyTo(pb);
 
-        var process = pb.start();
+        final var process = pb.start();
 
-        var pid = getPID(process);
+        final var pid = getPID(process);
 
-        var task = new FutureTask<CommandOutput>(() -> {
-            return combine(
-                    processProcessStream(outputStreamsControl.stdout(), process.inputReader()),
-                    processProcessStream(outputStreamsControl.stderr(), process.errorReader()));
+        final var task = new FutureTask<>(() -> {
+            return readProcessOutput(process);
         });
         Thread.ofVirtual().start(task);
 
         if (process.waitFor(timeout, unit)) {
-            var exitCode = process.exitValue();
+            final var exitCode = process.exitValue();
             try {
                 final var output = task.get(timeout, unit);
                 return new Result(exitCode, output, new ProcessSpec(pid, pb.command()));
@@ -351,6 +348,12 @@ public final class CommandOutputControl {
             process.destroy();
             throw new TimeoutException();
         }
+    }
+
+    private CommandOutput readProcessOutput(Process process) throws IOException {
+        return combine(
+                processProcessStream(outputStreamsControl.stdout(), process::inputReader),
+                processProcessStream(outputStreamsControl.stderr(), process::errorReader));
     }
 
     private Result execute(ToolProvider tp, String... args) throws IOException {
@@ -383,9 +386,9 @@ public final class CommandOutputControl {
         }
     }
 
-    private static Optional<List<String>> processProcessStream(OutputControl outputControl, BufferedReader bufReader) throws IOException {
+    private static Optional<List<String>> processProcessStream(OutputControl outputControl, Supplier<BufferedReader> bufReaderSupplier) throws IOException {
         List<String> outputLines = null;
-        try {
+        try (var bufReader = bufReaderSupplier.get()) {
             if (outputControl.dump() || outputControl.saveAll()) {
                 outputLines = bufReader.lines().toList();
             } else if (outputControl.saveFirstLine()) {
