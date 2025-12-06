@@ -3755,6 +3755,20 @@ void CountedLoopEndNode::dump_spec(outputStream *st) const {
 }
 #endif
 
+IdealLoopTree::IdealLoopTree(PhaseIdealLoop* phase, Node* head, Node* tail): _parent(nullptr), _next(nullptr), _child(nullptr),
+                                                                             _head(head), _tail(tail),
+                                                                             _phase(phase),
+                                                                             _local_loop_unroll_limit(0), _local_loop_unroll_factor(0),
+                                                                             _body(phase->arena()),
+                                                                             _nest(0), _irreducible(0), _has_call(0), _has_sfpt(0), _rce_candidate(0),
+                                                                             _has_range_checks(0), _has_range_checks_computed(0),
+                                                                             _safepts(nullptr),
+                                                                             _required_safept(nullptr),
+                                                                             _allow_optimizations(true) {
+  precond(_head != nullptr);
+  precond(_tail != nullptr);
+}
+
 //=============================================================================
 //------------------------------is_member--------------------------------------
 // Is 'l' a member of 'this'?
