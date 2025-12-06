@@ -27,11 +27,35 @@ package sun.nio.fs;
 
 import java.io.IOException;
 import java.nio.channels.SeekableByteChannel;
-import java.nio.file.*;
-import java.nio.file.attribute.*;
-import java.util.*;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.ClosedDirectoryStreamException;
+import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.LinkOption;
+import java.nio.file.NotDirectoryException;
+import java.nio.file.NotLinkException;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
+import java.nio.file.ProviderMismatchException;
+import java.nio.file.SecureDirectoryStream;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.FileAttributeView;
+import java.nio.file.attribute.FileOwnerAttributeView;
+import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.GroupPrincipal;
+import java.nio.file.attribute.PosixFileAttributes;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.UserPrincipal;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static java.nio.file.StandardOpenOption.CREATE_NEW;
+import static java.nio.file.StandardOpenOption.WRITE;
 import static sun.nio.fs.UnixNativeDispatcher.*;
 import static sun.nio.fs.UnixConstants.*;
 
@@ -147,6 +171,131 @@ class UnixSecureDirectoryStream
                 return UnixChannelFactory.newFileChannel(dfd, file, options, mode);
             } catch (UnixException x) {
                 x.rethrowAsIOException(file);
+                return null; // keep compiler happy
+            }
+        } finally {
+            ds.readLock().unlock();
+        }
+    }
+
+    @Override
+    public  Path createFile(Path path, FileAttribute<?>... attrs)
+        throws IOException
+    {
+        newByteChannel(path, Set.of(CREATE_NEW, WRITE), attrs).close();
+
+        return path;
+    }
+
+    @Override
+    public Path createDirectory(Path dir, FileAttribute<?>... attrs)
+        throws IOException
+    {
+        UnixPath file = getName(dir);
+
+        int mode = UnixFileModeAttribute
+            .toUnixMode(UnixFileModeAttribute.ALL_PERMISSIONS, attrs);
+
+        ds.readLock().lock();
+        try {
+            if (!ds.isOpen())
+                throw new ClosedDirectoryStreamException();
+            try {
+                mkdirat(dfd, file, mode);
+            } catch (UnixException x) {
+                if (x.errno() == EISDIR)
+                    throw new FileAlreadyExistsException(file.toString());
+                x.rethrowAsIOException(file);
+                return null; // keep compiler happy
+            }
+        } finally {
+            ds.readLock().unlock();
+        }
+
+        return dir;
+    }
+
+    @Override
+    public Path createLink(Path link,  SecureDirectoryStream<Path> dir,
+                           Path target, LinkOption... options)
+        throws IOException
+    {
+        UnixPath linkpath = UnixPath.toUnixPath(link);
+        UnixPath targetpath = UnixPath.toUnixPath(target);
+
+        ds.readLock().lock();
+        try {
+            if (!ds.isOpen())
+                throw new ClosedDirectoryStreamException();
+            try {
+                UnixSecureDirectoryStream that = (UnixSecureDirectoryStream)dir;
+                int targetfd = that != null ? that.dfd : AT_FDCWD;
+                int flag = Util.followLinks(options) ? AT_SYMLINK_FOLLOW : 0;
+                linkat(targetfd, targetpath, this.dfd, linkpath, flag);
+            } catch (UnixException x) {
+                x.rethrowAsIOException(linkpath, targetpath);
+                return null; // keep compiler happy
+            }
+        } finally {
+            ds.readLock().unlock();
+        }
+
+        return link;
+    }
+
+    @Override
+    public Path createSymbolicLink(Path link, Path target,
+                                   FileAttribute<?>... attrs)
+        throws IOException
+    {
+        UnixPath linkpath = UnixPath.toUnixPath(link);
+        UnixPath targetpath = UnixPath.toUnixPath(target);
+
+        // no attributes supported when creating links
+        if (attrs.length > 0) {
+            UnixFileModeAttribute.toUnixMode(0, attrs);  // may throw NPE or UOE
+            throw new UnsupportedOperationException("Initial file attributes" +
+                " not supported when creating symbolic link");
+        }
+
+        ds.readLock().lock();
+        try {
+            if (!ds.isOpen())
+                throw new ClosedDirectoryStreamException();
+            try {
+                symlinkat(targetpath.asByteArray(), dfd, linkpath);
+            } catch (UnixException x) {
+                x.rethrowAsIOException(linkpath, targetpath);
+                return null; // keep compiler happy
+            }
+        } finally {
+            ds.readLock().unlock();
+        }
+
+        return link;
+    }
+
+    @Override
+    public Path readSymbolicLink(Path link) throws IOException {
+        UnixPath linkpath = getName(link);
+
+        ds.readLock().lock();
+        try {
+            if (!ds.isOpen())
+                throw new ClosedDirectoryStreamException();
+            try {
+                UnixFileAttributes attrs =
+                    UnixFileAttributes.getIfExists(linkpath, false);
+                if (attrs != null && !attrs.isSymbolicLink())
+                    throw new NotLinkException(linkpath.toString());
+            } catch (UnixException x) {
+                x.rethrowAsIOException(linkpath);
+            }
+            try {
+                byte[] target = readlinkat(dfd, linkpath);
+                return new UnixPath(linkpath.getFileSystem(), target);
+            } catch (UnixException x) {
+                x.rethrowAsIOException(linkpath);
                 return null; // keep compiler happy
             }
         } finally {
