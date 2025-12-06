@@ -42,8 +42,7 @@ ObjectStartArray::ObjectStartArray(MemRegion covered_region)
   size_t bytes_to_reserve = num_bytes_required(covered_region);
   assert(bytes_to_reserve > 0, "Sanity");
 
-  bytes_to_reserve =
-    align_up(bytes_to_reserve, os::vm_allocation_granularity());
+  bytes_to_reserve = align_up(bytes_to_reserve, os::vm_page_size());
 
   // Do not use large-pages for the backing store. The one large page region
   // will be used for the heap proper.
