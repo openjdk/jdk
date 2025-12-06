@@ -102,15 +102,16 @@ public class Hybrid {
     /**
      * Returns a KEM instance for each side of the hybrid algorithm.
      * For traditional key exchange algorithms, we use the DH-based KEM
-     * implementation provided by DHasKEM.PROVIDER.
+     * implementation provided by DHasKEM class.
      * For ML-KEM post-quantum algorithms, we obtain a KEM instance
-     * using the given algorithm name.
+     * with "ML-KEM". This is done to work with 3rd-party providers that
+     * only have "ML-KEM" KEM algorithm.
      */
     private static KEM getKEM(String name) throws NoSuchAlgorithmException {
         if (name.startsWith("secp") || name.equals("X25519")) {
-            return KEM.getInstance("DH", DHasKEM.PROVIDER);
+            return KEM.getInstance("DH", HybridProvider.PROVIDER);
         } else {
-            return KEM.getInstance(name);
+            return KEM.getInstance("ML-KEM");
         }
     }
 
@@ -126,17 +127,6 @@ public class Hybrid {
             right = getKeyPairGenerator(rightAlg);
             leftSpec = getSpec(leftAlg);
             rightSpec = getSpec(rightAlg);
-
-            try {
-                left.initialize(leftSpec);
-                right.initialize(rightSpec);
-            } catch (InvalidAlgorithmParameterException iape) {
-                throw new ProviderException("Invalid algorithm parameters " +
-                        "for hybrid keypair generator", iape);
-            } catch (Exception e) {
-                throw new ProviderException("Failed to initialize hybrid " +
-                        "keypair generator", e);
-            }
         }
 
         @Override
