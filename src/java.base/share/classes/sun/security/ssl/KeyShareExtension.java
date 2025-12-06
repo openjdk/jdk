@@ -27,8 +27,11 @@ package sun.security.ssl;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.security.AlgorithmConstraints;
 import java.security.CryptoPrimitive;
 import java.security.GeneralSecurityException;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.NamedParameterSpec;
 import java.text.MessageFormat;
 import java.util.*;
 import javax.net.ssl.SSLProtocolException;
@@ -297,7 +300,9 @@ final class KeyShareExtension {
                     // update the context
                     chc.handshakePossessions.add(pos);
                     // May need more possession types in the future.
-                    if (pos instanceof NamedGroupPossession) {
+                    if (pos instanceof NamedGroupPossession ||
+                            pos instanceof
+                            KEMKeyExchange.KEMReceiverPossession) {
                         return pos.encode();
                     }
                 }
@@ -358,24 +363,16 @@ final class KeyShareExtension {
                 try {
                     SSLCredentials kaCred =
                         ng.decodeCredentials(entry.keyExchange);
-                    if (shc.algorithmConstraints != null &&
-                            kaCred instanceof
-                                NamedGroupCredentials namedGroupCredentials) {
-                        if (!shc.algorithmConstraints.permits(
-                                EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
-                                namedGroupCredentials.getPublicKey())) {
-                            if (SSLLogger.isOn() &&
-                                    SSLLogger.isOn("ssl,handshake")) {
-                                SSLLogger.warning(
+
+                    if (!isCredentialPermitted(shc.algorithmConstraints,
+                            kaCred)) {
+                        if (SSLLogger.isOn() &&
+                                SSLLogger.isOn("ssl,handshake")) {
+                            SSLLogger.warning(
                                     "key share entry of " + ng + " does not " +
-                                    " comply with algorithm constraints");
-                            }
-
-                            kaCred = null;
+                                    "comply with algorithm constraints");
                         }
-                    }
-
-                    if (kaCred != null) {
+                    } else {
                         credentials.add(kaCred);
                     }
                 } catch (GeneralSecurityException ex) {
@@ -513,7 +510,8 @@ final class KeyShareExtension {
         @Override
         public byte[] produce(ConnectionContext context,
                 HandshakeMessage message) throws IOException {
-            // The producing happens in client side only.
+            // The producing happens in server side only.
+
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // In response to key_share request only
@@ -571,7 +569,9 @@ final class KeyShareExtension {
 
                 SSLPossession[] poses = ke.createPossessions(shc);
                 for (SSLPossession pos : poses) {
-                    if (!(pos instanceof NamedGroupPossession)) {
+                    if (!(pos instanceof NamedGroupPossession ||
+                            pos instanceof
+                            KEMKeyExchange.KEMSenderPossession)) {
                         // May need more possession types in the future.
                         continue;
                     }
@@ -579,7 +579,34 @@ final class KeyShareExtension {
                     // update the context
                     shc.handshakeKeyExchange = ke;
                     shc.handshakePossessions.add(pos);
-                    keyShare = new KeyShareEntry(ng.id, pos.encode());
+
+                    // For KEM, perform encapsulation using the client’s public
+                    // key (KEMCredentials). The resulting encapsulated message
+                    // becomes the key_share value sent to the client. The
+                    // shared secret derived from encapsulation is stored in
+                    // the KEMSenderPossession for later use in the TLS key
+                    // schedule.
+
+                    // SSLKeyExchange.createPossessions() returns at most one
+                    // key-agreement possession or one KEMSenderPossession
+                    // per handshake.
+                    if (pos instanceof KEMKeyExchange.KEMSenderPossession xp) {
+                        if (cd instanceof KEMKeyExchange.KEMCredentials kcred
+                                && ng.equals(kcred.namedGroup)) {
+                            String name = ((NamedParameterSpec)
+                                    ng.keAlgParamSpec).getName();
+                            KAKeyDerivation handshakeKD = new KAKeyDerivation(
+                                    name, ng, shc, null, null,
+                                    kcred.getKeyShare());
+                            var encaped = handshakeKD.encapsulate(
+                                    "TlsHandshakeSecret", xp.getRandom());
+                            xp.setKey(encaped.key());
+                            keyShare = new KeyShareEntry(ng.id,
+                                    encaped.encapsulation());
+                        }
+                    } else {
+                        keyShare = new KeyShareEntry(ng.id, pos.encode());
+                    }
                     break;
                 }
 
@@ -663,19 +690,13 @@ final class KeyShareExtension {
             try {
                 SSLCredentials kaCred =
                         ng.decodeCredentials(keyShare.keyExchange);
-                if (chc.algorithmConstraints != null &&
-                        kaCred instanceof
-                                NamedGroupCredentials namedGroupCredentials) {
-                    if (!chc.algorithmConstraints.permits(
-                            EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
-                            namedGroupCredentials.getPublicKey())) {
-                        chc.conContext.fatal(Alert.INSUFFICIENT_SECURITY,
-                            "key share entry of " + ng + " does not " +
-                            " comply with algorithm constraints");
-                    }
-                }
 
-                if (kaCred != null) {
+                if (!isCredentialPermitted(chc.algorithmConstraints,
+                        kaCred)) {
+                    chc.conContext.fatal(Alert.INSUFFICIENT_SECURITY,
+                            "key share entry of " + ng + " does not " +
+                            "comply with algorithm constraints");
+                } else {
                     credentials = kaCred;
                 }
             } catch (GeneralSecurityException ex) {
@@ -694,6 +715,34 @@ final class KeyShareExtension {
             chc.handshakeCredentials.add(credentials);
             chc.handshakeExtensions.put(SSLExtension.SH_KEY_SHARE, spec);
         }
+    }
+
+    private static boolean isCredentialPermitted(
+            AlgorithmConstraints constraints,
+            SSLCredentials cred) {
+
+        if (constraints == null) return true;
+        if (cred == null) return false;
+
+        if (cred instanceof NamedGroupCredentials namedGroupCred) {
+            if (namedGroupCred instanceof KEMKeyExchange.KEMCredentials
+                    kemCred) {
+                AlgorithmParameterSpec paramSpec = kemCred.getNamedGroup().
+                        keAlgParamSpec;
+                String algName = (paramSpec instanceof NamedParameterSpec nps) ?
+                        nps.getName() : null;
+                return algName != null && constraints.permits(
+                        EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
+                        algName,
+                        null);
+            } else {
+                return constraints.permits(
+                        EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
+                        namedGroupCred.getPublicKey());
+            }
+        }
+
+        return true;
     }
 
     /**
