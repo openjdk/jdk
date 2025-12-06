@@ -59,9 +59,7 @@ public class TestPidsLimit {
             testPidsLimit("2000");
             testPidsLimit("Unlimited");
         } finally {
-            if (!DockerTestUtils.RETAIN_IMAGE_AFTER_TEST) {
-                DockerTestUtils.removeDockerImage(imageName);
-            }
+            DockerTestUtils.removeDockerImage(imageName);
         }
     }
 
