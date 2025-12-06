@@ -111,6 +111,8 @@ private:
   void print_tracing_info() const override;
   void stop() override {};
 
+  static void verify_not_in_native_if_java_thread() NOT_DEBUG_RETURN;
+
 public:
   // Returns JNI_OK on success
   jint initialize() override;
