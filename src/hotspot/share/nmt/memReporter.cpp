@@ -395,13 +395,13 @@ int MemDetailReporter::report_virtual_memory_allocation_sites()  {
 void MemDetailReporter::report_virtual_memory_map() {
   // Virtual memory map always in base address order
   output()->print_cr("Virtual memory map:");
-  _baseline.virtual_memory_allocations()->visit_reserved_regions([&](ReservedMemoryRegion& rgn) {
+  _baseline.virtual_memory_allocations()->visit_reserved_regions([&](VirtualMemoryRegion& rgn) {
     report_virtual_memory_region(&rgn);
     return true;
   });
 }
 
-void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion* reserved_rgn) {
+void MemDetailReporter::report_virtual_memory_region(const VirtualMemoryRegion* reserved_rgn) {
   assert(reserved_rgn != nullptr, "null pointer");
 
   // We don't bother about reporting peaks here.
@@ -418,7 +418,7 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
 
   outputStream* out = output();
   const char* scale = current_scale();
-  const NativeCallStack*  stack = reserved_rgn->call_stack();
+  const NativeCallStack*  stack = reserved_rgn->reserved_call_stack();
   bool all_committed = reserved_rgn->size() == _baseline.virtual_memory_allocations()->committed_size(*reserved_rgn);
   const char* region_type = (all_committed ? "reserved and committed" : "reserved");
   out->cr();
@@ -434,7 +434,7 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
   if (all_committed) {
     bool reserved_and_committed = false;
     _baseline.virtual_memory_allocations()->visit_committed_regions(*reserved_rgn,
-                                                                  [&](CommittedMemoryRegion& committed_rgn) {
+                                                                  [&](VirtualMemoryRegion& committed_rgn) {
       if (committed_rgn.equals(*reserved_rgn)) {
         // One region spanning the entire reserved region, with the same stack trace.
         // Don't print this regions because the "reserved and committed" line above
@@ -450,10 +450,10 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
     }
   }
 
-  auto print_committed_rgn = [&](const CommittedMemoryRegion& crgn) {
+  auto print_committed_rgn = [&](const VirtualMemoryRegion& crgn) {
     // Don't report if size is too small
     if (amount_in_current_scale(crgn.size()) == 0) return;
-    stack = crgn.call_stack();
+    stack = crgn.committed_call_stack();
     out->cr();
     INDENT_BY(8,
       print_virtual_memory_region("committed", crgn.base(), crgn.size());
@@ -467,7 +467,7 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
   };
 
   _baseline.virtual_memory_allocations()->visit_committed_regions(*reserved_rgn,
-                                                                  [&](CommittedMemoryRegion& crgn) {
+                                                                  [&](VirtualMemoryRegion& crgn) {
     print_committed_rgn(crgn);
     return true;
   });
