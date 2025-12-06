@@ -4489,9 +4489,9 @@ void GraphBuilder::append_unsafe_get_and_set(ciMethod* callee, bool is_add) {
 }
 
 #ifndef PRODUCT
-void GraphBuilder::print_stats() {
+void GraphBuilder::print_stats(outputStream* out) {
   if (UseLocalValueNumbering) {
-    vmap()->print();
+    vmap()->print(out);
   }
 }
 #endif // PRODUCT
