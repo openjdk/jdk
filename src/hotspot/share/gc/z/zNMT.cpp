@@ -35,12 +35,12 @@ void ZNMT::initialize() {
   _device = MemTracker::register_file("ZGC heap backing file");
 }
 
-void ZNMT::reserve(zaddress_unsafe start, size_t size) {
-  MemTracker::record_virtual_memory_reserve((address)untype(start), size, CALLER_PC, mtJavaHeap);
+void ZNMT::reserve(uintptr_t addr, size_t size) {
+  MemTracker::record_virtual_memory_reserve((address)addr, size, CALLER_PC, mtJavaHeap);
 }
 
-void ZNMT::unreserve(zaddress_unsafe start, size_t size) {
-  precond(is_aligned(untype(start), ZGranuleSize));
+void ZNMT::unreserve(uintptr_t addr, size_t size) {
+  precond(is_aligned(addr, ZGranuleSize));
   precond(is_aligned(size, ZGranuleSize));
 
   if (MemTracker::enabled()) {
@@ -54,7 +54,7 @@ void ZNMT::unreserve(zaddress_unsafe start, size_t size) {
     // this problem by splitting the work up into granule-sized chunks, which
     // is the smallest unit we ever reserve.
     for (size_t i = 0; i < size; i += ZGranuleSize) {
-      MemTracker::record_virtual_memory_release((address)untype(start + i), ZGranuleSize);
+      MemTracker::record_virtual_memory_release((address)(addr + i), ZGranuleSize);
     }
   }
 }

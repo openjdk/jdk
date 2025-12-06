@@ -28,7 +28,4 @@
 
 extern size_t ZPointerLoadShift;
 
-size_t ZPlatformAddressOffsetBits();
-size_t ZPlatformAddressHeapBaseShift();
-
 #endif // CPU_X86_GC_Z_ZADDRESS_X86_HPP

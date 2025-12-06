@@ -34,7 +34,7 @@
 #include "utilities/debug.hpp"
 
 inline ZForwardingTable::ZForwardingTable()
-  : _map(ZAddressOffsetMax) {}
+  : _map(ZAddressOffsetUpperLimit) {}
 
 inline ZForwarding* ZForwardingTable::at(size_t index) const {
   return _map.at(index);

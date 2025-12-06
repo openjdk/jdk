@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,21 @@
  * questions.
  */
 
-#ifndef CPU_PPC_GC_Z_ZADDRESS_PPC_HPP
-#define CPU_PPC_GC_Z_ZADDRESS_PPC_HPP
-
+#include "gc/z/zAddress.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/powerOfTwo.hpp"
+#ifdef __APPLE__
+#include <mach/vm_param.h>
+#endif
 
-const size_t ZPointerLoadShift = 16;
+#if defined (__APPLE__) && defined(MACH_VM_MAX_ADDRESS)
+// Use the system define if available
+#define Z_PLATFORM_MAX_HEAP_ADDRESS ((size_t)(MACH_VM_MAX_ADDRESS))
+#else
+// Try using up to 46 bits for the address
+#define Z_PLATFORM_MAX_HEAP_ADDRESS (size_t(1) << 45)
+#endif
 
-#endif // CPU_PPC_GC_Z_ZADDRESS_PPC_HPP
+size_t ZPlatformHeapBaseMaxShift() {
+  return clamp((size_t)log2i(Z_PLATFORM_MAX_HEAP_ADDRESS), ZAddressHeapBaseMinShift,ZAddressHeapBaseMaxShift);
+}
