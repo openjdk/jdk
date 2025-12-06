@@ -230,7 +230,6 @@ public:
   virtual int Opcode() const;
   virtual const Type* bottom_type() const;
   virtual const Type* Value(PhaseGVN* phase) const;
-  virtual const class TypePtr *adr_type() const { return TypeOopPtr::BOTTOM; }
   virtual uint match_edge(uint idx) const {
     return idx >= ValueIn;
   }

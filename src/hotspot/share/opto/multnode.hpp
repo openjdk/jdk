@@ -179,7 +179,6 @@ public:
   virtual bool      is_CFG() const;
   virtual bool depends_only_on_test() const { return false; }
   virtual const Type *bottom_type() const;
-  virtual const TypePtr *adr_type() const;
   virtual bool pinned() const;
   virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
@@ -203,6 +202,9 @@ public:
 
   // Return other proj node when this is a If proj node
   ProjNode* other_if_proj() const;
+
+private:
+  virtual const TypePtr* out_adr_type_impl() const;
 };
 
 // A ProjNode variant that captures an adr_type(). Used as a projection of InitializeNode to have the right adr_type()
@@ -223,11 +225,10 @@ protected:
 public:
   NarrowMemProjNode(InitializeNode* src, const TypePtr* adr_type);
 
-  virtual const TypePtr* adr_type() const {
-    return _adr_type;
-  }
-
   virtual int Opcode() const;
+
+private:
+  virtual const TypePtr* out_adr_type_impl() const { return _adr_type; }
 };
 
 template <class Callback> ProjNode* MultiNode::apply_to_projs(DUIterator_Fast& imax, DUIterator_Fast& i, Callback callback, uint which_proj) const {

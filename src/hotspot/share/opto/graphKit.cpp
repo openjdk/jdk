@@ -1930,7 +1930,7 @@ void GraphKit::set_predefined_output_for_runtime_call(Node* call,
 
     // Make sure the call advertises its memory effects precisely.
     // This lets us build accurate anti-dependences in gcm.cpp.
-    assert(C->alias_type(call->adr_type()) == C->alias_type(hook_mem),
+    assert(C->alias_type(call->out_adr_type()) == C->alias_type(hook_mem),
            "call node must be constructed correctly");
   } else {
     assert(hook_mem == nullptr, "");
@@ -2492,30 +2492,31 @@ Node* GraphKit::make_runtime_call(int flags,
   // Slow-path call
   bool is_leaf = !(flags & RC_NO_LEAF);
   bool has_io  = (!is_leaf && !(flags & RC_NO_IO));
+  bool wide_in  = !(flags & RC_NARROW_MEM);
+  bool wide_out = (C->get_alias_index(adr_type) == Compile::AliasIdxBot);
+
   if (call_name == nullptr) {
     assert(!is_leaf, "must supply name for leaf");
     call_name = OptoRuntime::stub_name(call_addr);
   }
   CallNode* call;
+  const TypePtr* in_adr_type = wide_in ? TypePtr::BOTTOM : adr_type;
   if (!is_leaf) {
-    call = new CallStaticJavaNode(call_type, call_addr, call_name, adr_type);
+    call = new CallStaticJavaNode(call_type, call_addr, call_name, adr_type, in_adr_type);
   } else if (flags & RC_NO_FP) {
-    call = new CallLeafNoFPNode(call_type, call_addr, call_name, adr_type);
+    call = new CallLeafNoFPNode(call_type, call_addr, call_name, adr_type, in_adr_type);
   } else  if (flags & RC_VECTOR){
     uint num_bits = call_type->range()->field_at(TypeFunc::Parms)->is_vect()->length_in_bytes() * BitsPerByte;
-    call = new CallLeafVectorNode(call_type, call_addr, call_name, adr_type, num_bits);
+    call = new CallLeafVectorNode(call_type, call_addr, call_name, adr_type, in_adr_type, num_bits);
   } else if (flags & RC_PURE) {
-    call = new CallLeafPureNode(call_type, call_addr, call_name, adr_type);
+    assert(adr_type == nullptr, "adr_type for pure call must be null");
+    call = new CallLeafPureNode(call_type, call_addr, call_name);
   } else {
-    call = new CallLeafNode(call_type, call_addr, call_name, adr_type);
+    call = new CallLeafNode(call_type, call_addr, call_name, adr_type, in_adr_type);
   }
 
   // The following is similar to set_edges_for_java_call,
   // except that the memory effects of the call are restricted to AliasIdxRaw.
-
-  // Slow path call has no side-effects, uses few values
-  bool wide_in  = !(flags & RC_NARROW_MEM);
-  bool wide_out = (C->get_alias_index(adr_type) == Compile::AliasIdxBot);
 
   Node* prev_mem = nullptr;
   if (wide_in) {
@@ -4154,18 +4155,16 @@ void GraphKit::store_String_coder(Node* str, Node* value) {
 }
 
 // Capture src and dst memory state with a MergeMemNode
-Node* GraphKit::capture_memory(const TypePtr* src_type, const TypePtr* dst_type) {
+Node* GraphKit::capture_memory(const TypePtr*& combined_type, const TypePtr* src_type, const TypePtr* dst_type) {
   if (src_type == dst_type) {
     // Types are equal, we don't need a MergeMemNode
+    combined_type = src_type;
     return memory(src_type);
   }
-  MergeMemNode* merge = MergeMemNode::make(map()->memory());
-  record_for_igvn(merge); // fold it up later, if possible
-  int src_idx = C->get_alias_index(src_type);
-  int dst_idx = C->get_alias_index(dst_type);
-  merge->set_memory_at(src_idx, memory(src_idx));
-  merge->set_memory_at(dst_idx, memory(dst_idx));
-  return merge;
+  Node* mem = reset_memory();
+  set_all_memory(mem);
+  combined_type = TypePtr::BOTTOM;
+  return mem;
 }
 
 Node* GraphKit::compress_string(Node* src, const TypeAryPtr* src_type, Node* dst, Node* count) {
@@ -4184,10 +4183,16 @@ Node* GraphKit::compress_string(Node* src, const TypeAryPtr* src_type, Node* dst
   // the load to read from memory not containing the result of the StoreB.
   // The correct memory graph should look like this:
   //  LoadB -> compress_string -> MergeMem(CharMem, StoreB(ByteMem))
-  Node* mem = capture_memory(src_type, TypeAryPtr::BYTES);
-  StrCompressedCopyNode* str = new StrCompressedCopyNode(control(), mem, src, dst, count);
+  const TypePtr* adr_type = nullptr;
+  Node* mem = capture_memory(adr_type, src_type, TypeAryPtr::BYTES);
+  StrCompressedCopyNode* str = new StrCompressedCopyNode(control(), mem, adr_type, src, dst, count);
   Node* res_mem = _gvn.transform(new SCMemProjNode(_gvn.transform(str)));
-  set_memory(res_mem, TypeAryPtr::BYTES);
+
+  if (adr_type == TypePtr::BOTTOM) {
+    set_all_memory(res_mem);
+  } else {
+    set_memory(res_mem, adr_type);
+  }
   return str;
 }
 
@@ -4195,9 +4200,15 @@ void GraphKit::inflate_string(Node* src, Node* dst, const TypeAryPtr* dst_type, 
   assert(Matcher::match_rule_supported(Op_StrInflatedCopy), "Intrinsic not supported");
   assert(dst_type == TypeAryPtr::BYTES || dst_type == TypeAryPtr::CHARS, "invalid dest type");
   // Capture src and dst memory (see comment in 'compress_string').
-  Node* mem = capture_memory(TypeAryPtr::BYTES, dst_type);
-  StrInflatedCopyNode* str = new StrInflatedCopyNode(control(), mem, src, dst, count);
-  set_memory(_gvn.transform(str), dst_type);
+  const TypePtr* adr_type = nullptr;
+  Node* mem = capture_memory(adr_type, TypeAryPtr::BYTES, dst_type);
+  StrInflatedCopyNode* str = new StrInflatedCopyNode(control(), mem, adr_type, src, dst, count);
+  Node* res_mem = _gvn.transform(str);
+  if (adr_type == TypePtr::BOTTOM) {
+    set_all_memory(res_mem);
+  } else {
+    set_memory(res_mem, adr_type);
+  }
 }
 
 void GraphKit::inflate_string_slow(Node* src, Node* dst, Node* start, Node* count) {

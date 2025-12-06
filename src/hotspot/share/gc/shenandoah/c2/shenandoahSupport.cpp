@@ -38,6 +38,7 @@
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/movenode.hpp"
+#include "opto/opcodes.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
@@ -802,7 +803,7 @@ Node* ShenandoahBarrierC2Support::find_bottom_mem(Node* ctrl, PhaseIdealLoop* ph
         }
       }
     } else {
-      if (c->is_Call() && c->as_Call()->adr_type() != nullptr) {
+      if (c->is_Call() && c->as_Call()->out_adr_type() != nullptr) {
         CallProjections projs;
         c->as_Call()->extract_projections(&projs, true, false);
         if (projs.fallthrough_memproj != nullptr) {
@@ -836,7 +837,7 @@ Node* ShenandoahBarrierC2Support::find_bottom_mem(Node* ctrl, PhaseIdealLoop* ph
               mem = u;
           }
         }
-        assert(!c->is_Call() || c->as_Call()->adr_type() != nullptr || mem == nullptr, "no mem projection expected");
+        assert(!c->is_Call() || c->as_Call()->out_adr_type() != nullptr || mem == nullptr, "no mem projection expected");
       }
     }
     c = phase->idom(c);
@@ -1003,7 +1004,7 @@ void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node* lo
       name = "load_reference_barrier_phantom";
     }
   }
-  Node* call = new CallLeafNode(ShenandoahBarrierSetC2::load_reference_barrier_Type(), calladdr, name, TypeRawPtr::BOTTOM);
+  Node* call = new CallLeafNode(ShenandoahBarrierSetC2::load_reference_barrier_Type(), calladdr, name, nullptr, nullptr);
 
   call->init_req(TypeFunc::Control, ctrl);
   call->init_req(TypeFunc::I_O, phase->C->top());
@@ -1601,6 +1602,9 @@ void MemoryGraphFixer::collect_memory_nodes() {
           assert(_alias == Compile::AliasIdxRaw, "");
           stack.push(mem, mem->req());
           mem = mem->in(MemNode::Memory);
+        } else if (mem->Opcode() == Op_StrInflatedCopy || mem->Opcode() == Op_StrCompressedCopy || mem->Opcode() == Op_EncodeISOArray) {
+          stack.push(mem, mem->req());
+          mem = mem->in(1);
         } else {
 #ifdef ASSERT
           mem->dump();
@@ -2145,29 +2149,30 @@ void MemoryGraphFixer::fix_mem(Node* ctrl, Node* new_ctrl, Node* mem, Node* mem_
             --i;
           }
         }
-      } else if ((u->adr_type() == TypePtr::BOTTOM && u->Opcode() != Op_StrInflatedCopy) ||
-                 u->adr_type() == nullptr) {
-        assert(u->adr_type() != nullptr ||
+      } else if ((u->in_adr_type() == TypePtr::BOTTOM &&
+                  u->Opcode() != Op_StrInflatedCopy && mem->Opcode() != Op_StrCompressedCopy && mem->Opcode() != Op_EncodeISOArray) ||
+                 u->in_adr_type() == nullptr) {
+        assert(u->in_adr_type() != nullptr ||
                u->Opcode() == Op_Rethrow ||
                u->Opcode() == Op_Return ||
                u->Opcode() == Op_SafePoint ||
                (u->is_CallStaticJava() && u->as_CallStaticJava()->uncommon_trap_request() != 0) ||
                (u->is_CallStaticJava() && u->as_CallStaticJava()->_entry_point == OptoRuntime::rethrow_stub()) ||
-               u->Opcode() == Op_CallLeaf, "");
+               u->Opcode() == Op_CallLeaf || u->Opcode() == Op_CallLeafNoFP, "");
         Node* m = find_mem(_phase->ctrl_or_self(u), u);
         if (m != mem) {
           mm = allocate_merge_mem(mem, m, _phase->get_ctrl(m));
           _phase->igvn().replace_input_of(u, u->find_edge(mem), mm);
           --i;
         }
-      } else if (_phase->C->get_alias_index(u->adr_type()) == alias) {
+      } else if (_phase->C->get_alias_index(u->in_adr_type()) == alias) {
         Node* m = find_mem(_phase->ctrl_or_self(u), u);
         if (m != mem) {
           DEBUG_ONLY(if (trace) { tty->print("ZZZ setting memory of use"); u->dump(); });
           _phase->igvn().replace_input_of(u, u->find_edge(mem), m);
           --i;
         }
-      } else if (u->adr_type() != TypePtr::BOTTOM &&
+      } else if (u->in_adr_type() != TypePtr::BOTTOM &&
                  _memory_nodes[_phase->ctrl_or_self(u)->_idx] == u) {
         Node* m = find_mem(_phase->ctrl_or_self(u), u);
         assert(m != mem, "");
@@ -2331,15 +2336,16 @@ void MemoryGraphFixer::fix_memory_uses(Node* mem, Node* replacement, Node* rep_p
           }
 
         }
-      } else if ((u->adr_type() == TypePtr::BOTTOM && u->Opcode() != Op_StrInflatedCopy) ||
-                 u->adr_type() == nullptr) {
-        assert(u->adr_type() != nullptr ||
+      } else if ((u->in_adr_type() == TypePtr::BOTTOM &&
+                  u->Opcode() != Op_StrInflatedCopy && mem->Opcode() != Op_StrCompressedCopy && mem->Opcode() != Op_EncodeISOArray) ||
+                 u->in_adr_type() == nullptr) {
+        assert(u->in_adr_type() != nullptr ||
                u->Opcode() == Op_Rethrow ||
                u->Opcode() == Op_Return ||
                u->Opcode() == Op_SafePoint ||
                (u->is_CallStaticJava() && u->as_CallStaticJava()->uncommon_trap_request() != 0) ||
                (u->is_CallStaticJava() && u->as_CallStaticJava()->_entry_point == OptoRuntime::rethrow_stub()) ||
-               u->Opcode() == Op_CallLeaf, "%s", u->Name());
+               u->Opcode() == Op_CallLeaf || u->Opcode() == Op_CallLeafNoFP, "%s", u->Name());
         if (ShenandoahBarrierC2Support::is_dominator(rep_ctrl, _phase->ctrl_or_self(u), replacement, u, _phase)) {
           if (mm == nullptr) {
             mm = allocate_merge_mem(mem, rep_proj, rep_ctrl);
@@ -2347,7 +2353,7 @@ void MemoryGraphFixer::fix_memory_uses(Node* mem, Node* replacement, Node* rep_p
           _phase->igvn().replace_input_of(u, u->find_edge(mem), mm);
           --i;
         }
-      } else if (_phase->C->get_alias_index(u->adr_type()) == _alias) {
+      } else if (_phase->C->get_alias_index(u->in_adr_type()) == _alias) {
         if (ShenandoahBarrierC2Support::is_dominator(rep_ctrl, _phase->ctrl_or_self(u), replacement, u, _phase)) {
           _phase->igvn().replace_input_of(u, u->find_edge(mem), rep_proj);
           --i;
