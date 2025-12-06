@@ -56,6 +56,7 @@ import jdk.jpackage.internal.PackagingPipeline.PackageTaskID;
 import jdk.jpackage.internal.PackagingPipeline.TaskID;
 import jdk.jpackage.internal.model.MacPkgPackage;
 import jdk.jpackage.internal.resources.ResourceLocator;
+import jdk.jpackage.internal.util.Enquoter;
 import jdk.jpackage.internal.util.XmlUtils;
 import org.xml.sax.SAXException;
 
