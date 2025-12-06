@@ -126,6 +126,7 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
 
   AC_SUBST(CFLAGS_DEBUG_SYMBOLS)
   AC_SUBST(ASFLAGS_DEBUG_SYMBOLS)
+  AC_SUBST(DEBUG_PREFIX_CFLAGS)
 ])
 
 # gcc will embed the full system include paths in the debug info

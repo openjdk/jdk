@@ -63,7 +63,7 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     fi
 
     BASIC_LDFLAGS_JVM_ONLY=""
-    LDFLAGS_LTO="-flto=auto -fuse-linker-plugin -fno-strict-aliasing"
+    LDFLAGS_LTO="-flto=auto -fuse-linker-plugin -fno-strict-aliasing $DEBUG_PREFIX_CFLAGS"
 
     LDFLAGS_CXX_PARTIAL_LINKING="$MACHINE_FLAG -r"
 
@@ -71,7 +71,7 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     BASIC_LDFLAGS_JVM_ONLY="-mno-omit-leaf-frame-pointer -mstack-alignment=16 \
         -fPIC"
 
-    LDFLAGS_LTO="-flto=auto -fuse-linker-plugin -fno-strict-aliasing"
+    LDFLAGS_LTO="-flto=auto -fuse-linker-plugin -fno-strict-aliasing $DEBUG_PREFIX_CFLAGS"
     LDFLAGS_CXX_PARTIAL_LINKING="$MACHINE_FLAG -r"
 
     if test "x$OPENJDK_TARGET_OS" = xlinux; then
