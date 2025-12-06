@@ -28,8 +28,8 @@
 # The base module should be built with all warnings enabled. When a
 # new warning is added to javac, it can be temporarily added to the
 # disabled warnings list.
-#
-# DISABLED_WARNINGS_java +=
+
+DISABLED_WARNINGS_java += suppression
 
 DOCLINT += -Xdoclint:all/protected \
     '-Xdoclint/package:java.*,javax.*'
