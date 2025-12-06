@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, Red Hat Inc.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -31,10 +31,13 @@ import sun.jvm.hotspot.debugger.aarch64.*;
 import sun.jvm.hotspot.debugger.bsd.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.cdbg.basic.*;
+import sun.jvm.hotspot.runtime.*;
+import sun.jvm.hotspot.runtime.aarch64.*;
 
 public final class BsdAARCH64CFrame extends BasicCFrame {
-   public BsdAARCH64CFrame(BsdDebugger dbg, Address fp, Address pc) {
+   public BsdAARCH64CFrame(BsdDebugger dbg, Address sp, Address fp, Address pc) {
       super(dbg.getCDebugger());
+      this.sp = sp;
       this.fp = fp;
       this.pc = pc;
       this.dbg = dbg;
@@ -55,10 +58,7 @@ public final class BsdAARCH64CFrame extends BasicCFrame {
    }
 
    public CFrame sender(ThreadProxy thread) {
-      AARCH64ThreadContext context = (AARCH64ThreadContext) thread.getContext();
-      Address rsp = context.getRegisterAsAddress(AARCH64ThreadContext.SP);
-
-      if ((fp == null) || fp.lessThan(rsp)) {
+      if (fp == null) {
         return null;
       }
 
@@ -67,6 +67,10 @@ public final class BsdAARCH64CFrame extends BasicCFrame {
         return null;
       }
 
+      Address nextSP = fp.addOffsetTo(2 * ADDRESS_SIZE);
+      if (nextSP == null) {
+        return null;
+      }
       Address nextFP = fp.getAddressAt(0 * ADDRESS_SIZE);
       if (nextFP == null || nextFP.lessThanOrEqual(fp)) {
         return null;
@@ -75,7 +79,12 @@ public final class BsdAARCH64CFrame extends BasicCFrame {
       if (nextPC == null) {
         return null;
       }
-      return new BsdAARCH64CFrame(dbg, nextFP, nextPC);
+      return new BsdAARCH64CFrame(dbg, nextSP, nextFP, nextPC);
+   }
+
+   @Override
+   public Frame toFrame() {
+      return new AARCH64Frame(sp, fp, pc);
    }
 
    // package/class internals only
