@@ -336,8 +336,14 @@ source %{
   }
 
   bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
-    // Only SVE has partial vector operations
-    if (UseSVE == 0) {
+    // 1. Only SVE requires partial vector operations.
+    // 2. The vector size in bytes must be smaller than MaxVectorSize.
+    // 3. Predicated vectors have a mask input, which guarantees that
+    //    out-of-bounds lanes remain inactive.
+    int length_in_bytes = vt->length_in_bytes();
+    if (UseSVE == 0 ||
+        length_in_bytes == MaxVectorSize ||
+        node->is_predicated_vector()) {
       return false;
     }
 
@@ -360,21 +366,22 @@ source %{
         return !node->in(1)->is_Con();
       case Op_LoadVector:
       case Op_StoreVector:
-        // We use NEON load/store instructions if the vector length is <= 128 bits.
-        return vt->length_in_bytes() > 16;
       case Op_AddReductionVI:
       case Op_AddReductionVL:
-        // We may prefer using NEON instructions rather than SVE partial operations.
-        return !VM_Version::use_neon_for_vector(vt->length_in_bytes());
+        // For these ops, we prefer using NEON instructions rather than SVE
+        // predicated instructions for better performance.
+        return !VM_Version::use_neon_for_vector(length_in_bytes);
       case Op_MinReductionV:
       case Op_MaxReductionV:
-        // For BYTE/SHORT/INT/FLOAT/DOUBLE types, we may prefer using NEON
-        // instructions rather than SVE partial operations.
+        // For BYTE/SHORT/INT/FLOAT/DOUBLE types, we prefer using NEON
+        // instructions rather than SVE predicated instructions for
+        // better performance.
         return vt->element_basic_type() == T_LONG ||
-               !VM_Version::use_neon_for_vector(vt->length_in_bytes());
+               !VM_Version::use_neon_for_vector(length_in_bytes);
       default:
-        // For other ops whose vector size is smaller than the max vector size, a
-        // full-sized unpredicated operation does not impact the final vector result.
+        // For other ops whose vector size is smaller than the max vector
+        // size, a full-sized unpredicated operation does not impact the
+        // vector result.
         return false;
     }
   }
