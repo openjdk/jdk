@@ -766,7 +766,7 @@ final class Exchange<T> {
                                 t = failed.get();
                             }
                             // Check whether the HTTP/1.1 was cancelled.
-                            if (t == null) t = e.getCancelCause(); 
+                            if (t == null) t = e.getCancelCause();
                             // if HTTP/1.1 exchange was timed out, or the request
                             // was cancelled don't try to go further.
                             if (t instanceof HttpTimeoutException || multi.requestCancelled()) {
