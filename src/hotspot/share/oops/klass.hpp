@@ -510,18 +510,20 @@ protected:
     return (BasicType) btvalue;
   }
 
-  // Want a pattern to quickly diff against layout header in register
-  // find something less clever!
+  // Return a value containing a single set bit that is in the bitset difference between the
+  // layout helpers for array-of-boolean and array-of-byte.
   static int layout_helper_boolean_diffbit() {
-    jint zlh = array_layout_helper(T_BOOLEAN);
-    jint blh = array_layout_helper(T_BYTE);
-    assert(zlh != blh, "array layout helpers must differ");
-    int diffbit = 1;
-    while ((diffbit & (zlh ^ blh)) == 0 && (diffbit & zlh) == 0) {
-      diffbit <<= 1;
-      assert(diffbit != 0, "make sure T_BOOLEAN has a different bit than T_BYTE");
-    }
-    return diffbit;
+    uint zlh = static_cast<uint>(array_layout_helper(T_BOOLEAN));
+    uint blh = static_cast<uint>(array_layout_helper(T_BYTE));
+    // get all the bits that are set in zlh and clear in blh
+    uint candidates = (zlh & ~blh);
+    assert(candidates != 0, "must be"); // must be some if there is a solution.
+    // Use well known bit hack to isolate the low bit of candidates.
+    uint result = candidates & (-candidates);
+    assert(is_power_of_2(result), "must be power of 2");
+    assert((result & zlh) != 0, "must be set in alh of T_BOOLEAN");
+    assert((result & blh) == 0, "must be clear in alh of T_BYTE");
+    return static_cast<int>(result);
   }
 
   static int layout_helper_log2_element_size(jint lh) {
