@@ -554,7 +554,7 @@ void ciMethodData::update_escape_info() {
     mdo->set_arg_local(_arg_local);
     mdo->set_arg_stack(_arg_stack);
     mdo->set_arg_returned(_arg_returned);
-    int arg_count = mdo->method()->size_of_parameters();
+    int arg_count = mdo->method()->number_of_parameters();
     for (int i = 0; i < arg_count; i++) {
       mdo->set_arg_modified(i, arg_modified(i));
     }
