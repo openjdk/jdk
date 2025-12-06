@@ -3185,23 +3185,17 @@ Register MacroAssembler::encode_klass_not_null(Register dst, Register src) {
 
 void MacroAssembler::store_klass(Register dst_oop, Register klass, Register ck) {
   assert(!UseCompactObjectHeaders, "not with compact headers");
-  if (UseCompressedClassPointers) {
-    Register compressedKlass = encode_klass_not_null(ck, klass);
-    stw(compressedKlass, oopDesc::klass_offset_in_bytes(), dst_oop);
-  } else {
-    std(klass, oopDesc::klass_offset_in_bytes(), dst_oop);
-  }
+  Register compressedKlass = encode_klass_not_null(ck, klass);
+  stw(compressedKlass, oopDesc::klass_offset_in_bytes(), dst_oop);
 }
 
 void MacroAssembler::store_klass_gap(Register dst_oop, Register val) {
   assert(!UseCompactObjectHeaders, "not with compact headers");
-  if (UseCompressedClassPointers) {
-    if (val == noreg) {
-      val = R0;
-      li(val, 0);
-    }
-    stw(val, oopDesc::klass_gap_offset_in_bytes(), dst_oop);
+  if (val == noreg) {
+    val = R0;
+    li(val, 0);
   }
+  stw(val, oopDesc::klass_gap_offset_in_bytes(), dst_oop);
 }
 
 int MacroAssembler::instr_size_for_decode_klass_not_null() {
@@ -3210,17 +3204,13 @@ int MacroAssembler::instr_size_for_decode_klass_not_null() {
   // Not yet computed?
   if (computed_size == -1) {
 
-    if (!UseCompressedClassPointers) {
-      computed_size = 0;
-    } else {
-      // Determine by scratch emit.
-      ResourceMark rm;
-      int code_size = 8 * BytesPerInstWord;
-      CodeBuffer cb("decode_klass_not_null scratch buffer", code_size, 0);
-      MacroAssembler* a = new MacroAssembler(&cb);
-      a->decode_klass_not_null(R11_scratch1);
-      computed_size = a->offset();
-    }
+    // Determine by scratch emit.
+    ResourceMark rm;
+    int code_size = 8 * BytesPerInstWord;
+    CodeBuffer cb("decode_klass_not_null scratch buffer", code_size, 0);
+    MacroAssembler* a = new MacroAssembler(&cb);
+    a->decode_klass_not_null(R11_scratch1);
+    computed_size = a->offset();
   }
 
   return computed_size;
@@ -3243,18 +3233,14 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src) {
 void MacroAssembler::load_klass_no_decode(Register dst, Register src) {
   if (UseCompactObjectHeaders) {
     load_narrow_klass_compact(dst, src);
-  } else if (UseCompressedClassPointers) {
-    lwz(dst, oopDesc::klass_offset_in_bytes(), src);
   } else {
-    ld(dst, oopDesc::klass_offset_in_bytes(), src);
+    lwz(dst, oopDesc::klass_offset_in_bytes(), src);
   }
 }
 
 void MacroAssembler::load_klass(Register dst, Register src) {
   load_klass_no_decode(dst, src);
-  if (UseCompressedClassPointers) { // also true for UseCompactObjectHeaders
-    decode_klass_not_null(dst);
-  }
+  decode_klass_not_null(dst);
 }
 
 // Loads the obj's Klass* into dst.
@@ -3270,18 +3256,13 @@ void MacroAssembler::load_narrow_klass_compact(Register dst, Register src) {
 
 void MacroAssembler::cmp_klass(ConditionRegister dst, Register obj, Register klass, Register tmp, Register tmp2) {
   assert_different_registers(obj, klass, tmp);
-  if (UseCompressedClassPointers) {
-    if (UseCompactObjectHeaders) {
-      load_narrow_klass_compact(tmp, obj);
-    } else {
-      lwz(tmp, oopDesc::klass_offset_in_bytes(), obj);
-    }
-    Register encoded_klass = encode_klass_not_null(tmp2, klass);
-    cmpw(dst, tmp, encoded_klass);
+  if (UseCompactObjectHeaders) {
+    load_narrow_klass_compact(tmp, obj);
   } else {
-    ld(tmp, oopDesc::klass_offset_in_bytes(), obj);
-    cmpd(dst, tmp, klass);
+    lwz(tmp, oopDesc::klass_offset_in_bytes(), obj);
   }
+  Register encoded_klass = encode_klass_not_null(tmp2, klass);
+  cmpw(dst, tmp, encoded_klass);
 }
 
 void MacroAssembler::cmp_klasses_from_objects(ConditionRegister dst, Register obj1, Register obj2, Register tmp1, Register tmp2) {
@@ -3289,14 +3270,10 @@ void MacroAssembler::cmp_klasses_from_objects(ConditionRegister dst, Register ob
     load_narrow_klass_compact(tmp1, obj1);
     load_narrow_klass_compact(tmp2, obj2);
     cmpw(dst, tmp1, tmp2);
-  } else if (UseCompressedClassPointers) {
+  } else {
     lwz(tmp1, oopDesc::klass_offset_in_bytes(), obj1);
     lwz(tmp2, oopDesc::klass_offset_in_bytes(), obj2);
     cmpw(dst, tmp1, tmp2);
-  } else {
-    ld(tmp1, oopDesc::klass_offset_in_bytes(), obj1);
-    ld(tmp2, oopDesc::klass_offset_in_bytes(), obj2);
-    cmpd(dst, tmp1, tmp2);
   }
 }
 

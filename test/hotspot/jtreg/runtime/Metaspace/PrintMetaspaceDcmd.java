@@ -22,62 +22,27 @@
  * questions.
  */
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.dcmd.PidJcmdExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
 
-/*
- * @test id=test-64bit-ccs
- * @summary Test the VM.metaspace command
- * @requires vm.bits == "64"
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @run main/othervm -Dwith-compressed-class-space -XX:MaxMetaspaceSize=201M -Xmx100M -XX:+UseCompressedOops -XX:+UseCompressedClassPointers PrintMetaspaceDcmd
- */
+import java.io.IOException;
 
 /*
- * @test id=test-64bit-noccs
+ * @test
  * @summary Test the VM.metaspace command
- * @requires vm.bits == "64"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main/othervm -Dwithout-compressed-class-space -XX:MaxMetaspaceSize=201M -Xmx100M -XX:-UseCompressedOops -XX:-UseCompressedClassPointers PrintMetaspaceDcmd
- */
-
- /*
- * @test id=test-nospecified
- * @summary Test the VM.metaspace command
- * @requires vm.bits == "64"
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @run main/othervm -Dno-specified-flag -Xmx100M -XX:-UseCompressedOops -XX:-UseCompressedClassPointers PrintMetaspaceDcmd
- */
-
-/*
- * @test test-32bit
- * @summary Test the VM.metaspace command
- * @requires vm.bits == "32"
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @run main/othervm -Dwithout-compressed-class-space -XX:MaxMetaspaceSize=201M -Xmx100M PrintMetaspaceDcmd
+ * @run main/othervm -Dwith-compressed-class-space -XX:MaxMetaspaceSize=201M -Xmx100M PrintMetaspaceDcmd
  */
 
 public class PrintMetaspaceDcmd {
 
-    private static void doTheNoSpecifiedPropTest() throws Exception {
-        ProcessBuilder pb = new ProcessBuilder();
-        OutputAnalyzer output;
+    public static void main(String [] args) throws IOException {
 
-        pb.command(new PidJcmdExecutor().getCommandLine("VM.metaspace", "basic"));
-        output = new OutputAnalyzer(pb.start());
-        output.shouldHaveExitValue(0);
-        output.shouldMatch("MaxMetaspaceSize: unlimited");
-    }
+        final boolean usesCompressedClassSpace = Platform.is64bit();
 
-    private static void doTheCCSPropTest(boolean usesCompressedClassSpace) throws Exception {
         ProcessBuilder pb = new ProcessBuilder();
         OutputAnalyzer output;
 
@@ -172,15 +137,4 @@ public class PrintMetaspaceDcmd {
         output.shouldMatch("MaxMetaspaceSize:.*210763776 bytes");
     }
 
-    public static void main(String args[]) throws Exception {
-        if (System.getProperty("no-specified-flag") != null) {
-            doTheNoSpecifiedPropTest();
-        } else if (System.getProperty("with-compressed-class-space") != null) {
-            doTheCCSPropTest(true);
-        } else if (System.getProperty("without-compressed-class-space") != null) {
-            doTheCCSPropTest(false);
-        } else {
-            throw new IllegalArgumentException("Unrecognized running mode");
-        }
-    }
 }

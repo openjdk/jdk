@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,28 +247,14 @@ public class OpaqueAccesses {
                 "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                 "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:-TieredCompilation", "-Xbatch",
-                "-XX:+UseCompressedOops", "-XX:+UseCompressedClassPointers",
+                "-XX:+UseCompressedOops",
                 "-XX:CompileCommand=dontinline,compiler.unsafe.OpaqueAccesses::test*"
         );
         TestFramework.runWithFlags(
                 "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                 "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:-TieredCompilation", "-Xbatch",
-                "-XX:+UseCompressedOops", "-XX:-UseCompressedClassPointers",
-                "-XX:CompileCommand=dontinline,compiler.unsafe.OpaqueAccesses::test*"
-        );
-        TestFramework.runWithFlags(
-                "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
-                "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:-TieredCompilation", "-Xbatch",
-                "-XX:-UseCompressedOops", "-XX:+UseCompressedClassPointers",
-                "-XX:CompileCommand=dontinline,compiler.unsafe.OpaqueAccesses::test*"
-        );
-        TestFramework.runWithFlags(
-                "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
-                "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:-TieredCompilation", "-Xbatch",
-                "-XX:-UseCompressedOops", "-XX:-UseCompressedClassPointers",
+                "-XX:-UseCompressedOops",
                 "-XX:CompileCommand=dontinline,compiler.unsafe.OpaqueAccesses::test*"
         );
     }

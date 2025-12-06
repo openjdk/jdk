@@ -88,7 +88,6 @@
 
   static bool narrow_klass_use_complex_address() {
     NOT_LP64(ShouldNotCallThis());
-    assert(UseCompressedClassPointers, "only for compressed klass code");
     // TODO: PPC port if (MatchDecodeNodes) return true;
     return false;
   }

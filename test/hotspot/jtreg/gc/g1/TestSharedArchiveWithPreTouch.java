@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public class TestSharedArchiveWithPreTouch {
         List<String> dump_args = new ArrayList<String>(BaseOptions);
 
         if (Platform.is64bit()) {
-          dump_args.addAll(0, Arrays.asList(new String[] { "-XX:+UseCompressedClassPointers", "-XX:+UseCompressedOops" }));
+          dump_args.addFirst("-XX:+UseCompressedOops" );
         }
         dump_args.addAll(Arrays.asList(new String[] { "-Xshare:dump", "-Xlog:cds" }));
 
@@ -66,7 +66,7 @@ public class TestSharedArchiveWithPreTouch {
             List<String> load_args = new ArrayList<String>(BaseOptions);
 
             if (Platform.is64bit()) {
-                load_args.addAll(0, Arrays.asList(new String[] { "-XX:+UseCompressedClassPointers", "-XX:+UseCompressedOops" }));
+                dump_args.addFirst("-XX:+UseCompressedOops" );
             }
             load_args.addAll(Arrays.asList(new String[] { "-Xshare:on", "-version" }));
 

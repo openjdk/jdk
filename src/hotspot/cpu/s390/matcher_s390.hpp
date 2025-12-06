@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -82,7 +82,6 @@
 
   static bool narrow_klass_use_complex_address() {
     NOT_LP64(ShouldNotCallThis());
-    assert(UseCompressedClassPointers, "only for compressed klass code");
     // TODO HS25: z port if (MatchDecodeNodes) return true;
     return false;
   }

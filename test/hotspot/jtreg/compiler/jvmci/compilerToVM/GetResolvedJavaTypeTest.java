@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,7 +159,6 @@ public class GetResolvedJavaTypeTest {
     /* a compressed parameter for tested method is set to false because
        unsafe.getKlassPointer always returns uncompressed pointer */
     private static final boolean COMPRESSED = false;
-            // = WB.getBooleanVMFlag("UseCompressedClassPointers");
 
     private static long getPtrToKlass() {
         Field field;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,26 +46,13 @@ public class AllocationMergesTests {
                                              "-XX:+TraceReduceAllocationMerges",
                                              "-XX:+DeoptimizeALot",
                                              "-XX:+UseCompressedOops",
-                                             "-XX:+UseCompressedClassPointers",
                                              "-XX:CompileCommand=inline,*::charAt*",
                                              "-XX:CompileCommand=inline,*PicturePositions::*",
                                              "-XX:CompileCommand=inline,*Point::*",
                                              "-XX:CompileCommand=inline,*Nested::*",
                                              "-XX:CompileCommand=exclude,*::dummy*");
 
-        Scenario scenario1 = new Scenario(1, "-XX:+UnlockDiagnosticVMOptions",
-                                             "-XX:+ReduceAllocationMerges",
-                                             "-XX:+TraceReduceAllocationMerges",
-                                             "-XX:+DeoptimizeALot",
-                                             "-XX:+UseCompressedOops",
-                                             "-XX:-UseCompressedClassPointers",
-                                             "-XX:CompileCommand=inline,*::charAt*",
-                                             "-XX:CompileCommand=inline,*PicturePositions::*",
-                                             "-XX:CompileCommand=inline,*Point::*",
-                                             "-XX:CompileCommand=inline,*Nested::*",
-                                             "-XX:CompileCommand=exclude,*::dummy*");
-
-        Scenario scenario2 = new Scenario(2, "-XX:+UnlockDiagnosticVMOptions",
+        Scenario scenario1 = new Scenario(2, "-XX:+UnlockDiagnosticVMOptions",
                                              "-XX:+ReduceAllocationMerges",
                                              "-XX:+TraceReduceAllocationMerges",
                                              "-XX:+DeoptimizeALot",
@@ -76,12 +63,11 @@ public class AllocationMergesTests {
                                              "-XX:CompileCommand=inline,*Nested::*",
                                              "-XX:CompileCommand=exclude,*::dummy*");
 
-        Scenario scenario3 = new Scenario(3, "-XX:+UnlockDiagnosticVMOptions",
+        Scenario scenario2 = new Scenario(3, "-XX:+UnlockDiagnosticVMOptions",
                                              "-XX:+ReduceAllocationMerges",
                                              "-XX:+TraceReduceAllocationMerges",
                                              "-XX:+DeoptimizeALot",
                                              "-XX:+UseCompressedOops",
-                                             "-XX:+UseCompressedClassPointers",
                                              "-XX:-OptimizePtrCompare",
                                              "-XX:+VerifyReduceAllocationMerges",
                                              "-XX:CompileCommand=inline,*::charAt*",
@@ -90,7 +76,7 @@ public class AllocationMergesTests {
                                              "-XX:CompileCommand=inline,*Nested::*",
                                              "-XX:CompileCommand=exclude,*::dummy*");
 
-        framework.addScenarios(scenario0, scenario1, scenario2, scenario3).start();
+        framework.addScenarios(scenario0, scenario1, scenario2).start();
     }
 
     // ------------------ No Scalar Replacement Should Happen in The Tests Below ------------------- //

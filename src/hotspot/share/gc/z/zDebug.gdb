@@ -50,11 +50,7 @@ define zpo
     end
     printf "\t Page: %llu\n", ((uintptr_t)$obj & ZAddressOffsetMask) >> ZGranuleSizeShift
     x/16gx $obj
-    if (UseCompressedClassPointers)
-        set $klass = (Klass*)(void*)((uintptr_t)CompressedKlassPointers::_base +((uintptr_t)$obj->_metadata->_compressed_klass << CompressedKlassPointers::_shift))
-    else
-        set $klass = $obj->_metadata->_klass
-    end
+    set $klass = (Klass*)(void*)((uintptr_t)CompressedKlassPointers::_base +((uintptr_t)$obj->_metadata->_compressed_klass << CompressedKlassPointers::_shift))
     printf "Mark:  0x%016llx\tKlass: %s\n", (uintptr_t)$obj->_mark, (char*)$klass->_name->_body
 end
 

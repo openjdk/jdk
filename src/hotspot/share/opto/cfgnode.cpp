@@ -2591,7 +2591,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 #ifdef _LP64
   // Push DecodeN/DecodeNKlass down through phi.
   // The rest of phi graph will transform by split EncodeP node though phis up.
-  if ((UseCompressedOops || UseCompressedClassPointers) && can_reshape && progress == nullptr) {
+  if (can_reshape && progress == nullptr) {
     bool may_push = true;
     bool has_decodeN = false;
     bool is_decodeN = false;

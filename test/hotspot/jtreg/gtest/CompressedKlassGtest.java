@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2024, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,14 +37,6 @@
  * @modules java.base/jdk.internal.misc
  *          java.xml
  * @run main/native GTestWrapper --gtest_filter=CompressedKlass* -XX:-UseCompactObjectHeaders -Xlog:metaspace* -Xmx6g -Xms128m -Xshare:off -XX:CompressedClassSpaceSize=128m
- */
-
-/* @test id=ccp_off
- * @library /test/lib
- * @requires vm.bits == "64"
- * @modules java.base/jdk.internal.misc
- *          java.xml
- * @run main/native GTestWrapper --gtest_filter=CompressedKlass* -XX:-UseCompressedClassPointers -Xlog:metaspace* -Xmx6g -Xms128m
  */
 
 /* @test id=use-zero-based-encoding-coh

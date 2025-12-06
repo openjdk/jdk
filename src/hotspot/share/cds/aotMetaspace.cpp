@@ -249,7 +249,7 @@ static bool shared_base_too_high(char* specified_base, char* aligned_base, size_
 static char* compute_shared_base(size_t cds_max) {
   char* specified_base = (char*)SharedBaseAddress;
   size_t alignment = AOTMetaspace::core_region_alignment();
-  if (UseCompressedClassPointers && CompressedKlassPointers::needs_class_space()) {
+  if (CompressedKlassPointers::needs_class_space()) {
     alignment = MAX2(alignment, Metaspace::reserve_alignment());
   }
 
@@ -1849,8 +1849,13 @@ MapArchiveResult AOTMetaspace::map_archives(FileMapInfo* static_mapinfo, FileMap
 // (The gap may result from different alignment requirements between metaspace
 //  and CDS)
 //
-// If UseCompressedClassPointers is disabled, only one address space will be
-//  reserved:
+// The range encompassing both spaces will be suitable to en/decode narrow Klass
+//  pointers: the base will be valid for encoding the range [Base, End) and not
+//  surpass the max. range for that encoding.
+//
+// On 32-bit, a "narrow" Klass is just the pointer itself, and the Klass encoding
+//  range encompasses the whole address range. Consequently, we can "decode" and
+//  "encode" any pointer anywhere, and so are free to place the CDS archive anywhere:
 //
 // +-- Base address             End
 // |                            |
@@ -1864,27 +1869,21 @@ MapArchiveResult AOTMetaspace::map_archives(FileMapInfo* static_mapinfo, FileMap
 //  use_archive_base_addr address is false, this base address is determined
 //  by the platform.
 //
-// If UseCompressedClassPointers=1, the range encompassing both spaces will be
-//  suitable to en/decode narrow Klass pointers: the base will be valid for
-//  encoding, the range [Base, End) and not surpass the max. range for that encoding.
-//
 // Return:
 //
 // - On success:
 //    - total_space_rs will be reserved as whole for archive_space_rs and
-//      class_space_rs if UseCompressedClassPointers is true.
+//      class_space_rs on 64-bit.
 //      On Windows, try reserve archive_space_rs and class_space_rs
 //      separately first if use_archive_base_addr is true.
 //    - archive_space_rs will be reserved and large enough to host static and
 //      if needed dynamic archive: [Base, A).
 //      archive_space_rs.base and size will be aligned to CDS reserve
 //      granularity.
-//    - class_space_rs: If UseCompressedClassPointers=1, class_space_rs will
-//      be reserved. Its start address will be aligned to metaspace reserve
-//      alignment, which may differ from CDS alignment. It will follow the cds
-//      archive space, close enough such that narrow class pointer encoding
-//      covers both spaces.
-//      If UseCompressedClassPointers=0, class_space_rs remains unreserved.
+//    - class_space_rs: On 64-bit, class_space_rs will be reserved. Its start
+//      address will be aligned to metaspace reserve alignment, which may differ
+//      from CDS alignment. It will follow the cds archive space, close enough
+//      such that narrow class pointer encoding covers both spaces.
 // - On error: null is returned and the spaces remain unreserved.
 char* AOTMetaspace::reserve_address_space_for_archives(FileMapInfo* static_mapinfo,
                                                        FileMapInfo* dynamic_mapinfo,

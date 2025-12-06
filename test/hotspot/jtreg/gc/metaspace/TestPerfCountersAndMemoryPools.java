@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,7 @@ import gc.testlibrary.PerfCounters;
  * @modules java.base/jdk.internal.misc
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm -Xlog:class+load,class+unload=trace -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+UseSerialGC -XX:+UsePerfData -Xint gc.metaspace.TestPerfCountersAndMemoryPools
- * @run main/othervm -Xlog:class+load,class+unload=trace -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+UseSerialGC -XX:+UsePerfData -Xint gc.metaspace.TestPerfCountersAndMemoryPools
+ * @run main/othervm -Xlog:class+load,class+unload=trace -XX:+UseCompressedOops -XX:+UseSerialGC -XX:+UsePerfData -Xint gc.metaspace.TestPerfCountersAndMemoryPools
  */
 
 /* @test TestPerfCountersAndMemoryPools
@@ -60,7 +59,7 @@ public class TestPerfCountersAndMemoryPools {
     public static void main(String[] args) throws Exception {
         checkMemoryUsage("Metaspace", "sun.gc.metaspace");
 
-        if (InputArguments.contains("-XX:+UseCompressedClassPointers") && Platform.is64bit()) {
+        if (Platform.is64bit()) {
             checkMemoryUsage("Compressed Class Space", "sun.gc.compressedclassspace");
         }
     }
