@@ -52,7 +52,11 @@ NMTDCmd::NMTDCmd(outputStream* output,
   _statistics("statistics", "print tracker statistics for tuning purpose.", \
             "BOOLEAN", false, "false"),
   _scale("scale", "Memory usage in which scale, KB, MB or GB",
-       "STRING", false, "KB") {
+       "STRING", false, "KB"),
+  _output_format("format", "print report in text/xml format.", \
+            "STRING", false, "text"),
+  _xml_file_name("file", "The path and file name of the xml output.",
+       "STRING", false, "nmt.xml") {
   _dcmdparser.add_dcmd_option(&_summary);
   _dcmdparser.add_dcmd_option(&_detail);
   _dcmdparser.add_dcmd_option(&_baseline);
@@ -60,6 +64,8 @@ NMTDCmd::NMTDCmd(outputStream* output,
   _dcmdparser.add_dcmd_option(&_detail_diff);
   _dcmdparser.add_dcmd_option(&_statistics);
   _dcmdparser.add_dcmd_option(&_scale);
+  _dcmdparser.add_dcmd_option(&_output_format);
+  _dcmdparser.add_dcmd_option(&_xml_file_name);
 }
 
 
@@ -137,7 +143,11 @@ void NMTDCmd::execute(DCmdSource source, TRAPS) {
     }
   } else if (_statistics.value()) {
     if (MemTracker::enabled()) {
-      MemTracker::tuning_statistics(output());
+      if (_output_format.has_value() && strcmp(_output_format.value(), "xml") == 0) {
+        MemTracker::tuning_statistics_xml(output());
+      } else {
+        MemTracker::tuning_statistics(output());
+      }
     } else {
       output()->print_cr("Native memory tracking is not enabled");
     }
@@ -150,7 +160,16 @@ void NMTDCmd::execute(DCmdSource source, TRAPS) {
 void NMTDCmd::report(bool summaryOnly, size_t scale_unit) {
   MemBaseline baseline;
   baseline.baseline(summaryOnly);
-  if (summaryOnly) {
+  if (_output_format.has_value() && strcmp(_output_format.value(), "xml") == 0) {
+    if (summaryOnly) {
+      XmlMemSummaryReporter rpt(baseline, output(), scale_unit);
+      rpt.report();
+    } else {
+      XmlMemDetailReporter rpt(baseline, output(), scale_unit);
+      rpt.report();
+    }
+    return;
+  } else if (summaryOnly) {
     MemSummaryReporter rpt(baseline, output(), scale_unit);
     rpt.report();
   } else {
@@ -168,7 +187,16 @@ void NMTDCmd::report_diff(bool summaryOnly, size_t scale_unit) {
 
   MemBaseline baseline;
   baseline.baseline(summaryOnly);
-  if (summaryOnly) {
+  if (_output_format.has_value() && strcmp(_output_format.value(), "xml") == 0) {
+    if (summaryOnly) {
+      XmlMemSummaryDiffReporter rpt(early_baseline, baseline, output(), scale_unit);
+      rpt.report_diff();
+    } else {
+      XmlMemDetailDiffReporter rpt(early_baseline, baseline, output(), scale_unit);
+      rpt.report_diff();
+    }
+    return;
+  } else if (summaryOnly) {
     MemSummaryDiffReporter rpt(early_baseline, baseline, output(), scale_unit);
     rpt.report_diff();
   } else {
