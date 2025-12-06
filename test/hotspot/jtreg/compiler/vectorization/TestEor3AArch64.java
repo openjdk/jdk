@@ -33,6 +33,7 @@ import jdk.test.lib.Utils;
 /*
  * @test
  * @bug 8293488
+ * @key randomness
  * @summary Test EOR3 Neon/SVE2 instruction for aarch64 SHA3 extension
  * @library /test/lib /
  * @requires os.arch == "aarch64"
