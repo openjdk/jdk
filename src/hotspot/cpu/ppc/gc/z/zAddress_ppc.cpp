@@ -21,8 +21,8 @@
  * questions.
  */
 
-#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "runtime/globals.hpp"
@@ -34,9 +34,11 @@
 #include <sys/mman.h>
 #endif // LINUX
 
-// Default value if probing is not implemented for a certain platform: 128TB
-static const size_t DEFAULT_MAX_ADDRESS_BIT = 47;
-// Minimum value returned, if probing fails: 64GB
+// Default value if probing is not implemented for a certain platform
+// Max address bit is restricted by implicit assumptions in the code, for instance
+// the bit layout of ZForwardingEntry or Partial array entry (see ZMarkStackEntry) in mark stack
+static const size_t DEFAULT_MAX_ADDRESS_BIT = 46;
+// Minimum value returned, if probing fail
 static const size_t MINIMUM_MAX_ADDRESS_BIT = 36;
 
 static size_t probe_valid_max_address_bit() {
@@ -91,10 +93,15 @@ static size_t probe_valid_max_address_bit() {
 size_t ZPlatformAddressOffsetBits() {
   static const size_t valid_max_address_offset_bits = probe_valid_max_address_bit() + 1;
   const size_t max_address_offset_bits = valid_max_address_offset_bits - 3;
+#ifdef ADDRESS_SANITIZER
+  // The max supported value is 44 because of other internal data structures.
+  return MIN2(valid_max_address_offset_bits, (size_t)44);
+#else
   const size_t min_address_offset_bits = max_address_offset_bits - 2;
-  const size_t address_offset = round_up_power_of_2(MaxHeapSize * ZVirtualToPhysicalRatio);
+  const size_t address_offset = ZGlobalsPointers::min_address_offset_request();
   const size_t address_offset_bits = log2i_exact(address_offset);
   return clamp(address_offset_bits, min_address_offset_bits, max_address_offset_bits);
+#endif
 }
 
 size_t ZPlatformAddressHeapBaseShift() {

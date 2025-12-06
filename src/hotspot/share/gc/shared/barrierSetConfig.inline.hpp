@@ -27,7 +27,6 @@
 
 #include "gc/shared/barrierSetConfig.hpp"
 
-#include "gc/shared/modRefBarrierSet.inline.hpp"
 #include "gc/shared/cardTableBarrierSet.inline.hpp"
 
 #if INCLUDE_EPSILONGC

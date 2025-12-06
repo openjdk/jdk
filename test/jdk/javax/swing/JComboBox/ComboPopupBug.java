@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,66 +21,81 @@
  * questions.
  */
 
+import java.awt.Dimension;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.event.InputEvent;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
 
 /*
  * @test
  * @bug 8322754
+ * @key headful
  * @summary Verifies clicking JComboBox during frame closure causes Exception
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
- * @run main/manual ComboPopupBug
+ * @run main ComboPopupBug
  */
 
 public class ComboPopupBug {
-    private static final String instructionsText = """
-            This test is used to verify that clicking on JComboBox
-            when frame containing it is about to close should not
-            cause IllegalStateException.
-
-            A JComboBox is shown with Close button at the bottom.
-            Click on Close and then click on JComboBox arrow button
-            to try to show combobox popup.
-            If IllegalStateException is thrown, test will automatically Fail
-            otherwise click Pass.""";
+    private static JFrame frame;
+    private static JButton closeButton;
+    private static JComboBox<String> comboBox;
+    private static Robot robot;
+    private static final int PADDING = 10;
 
     public static void main(String[] args) throws Exception {
-        PassFailJFrame.builder()
-                .title("ComboPopup Instructions")
-                .instructions(instructionsText)
-                .testTimeOut(5)
-                .rows(10)
-                .columns(35)
-                .testUI(ComboPopupBug::createUI)
-                .build()
-                .awaitAndCheck();
+        try {
+            robot = new Robot();
+            robot.setAutoDelay(50);
+
+            SwingUtilities.invokeAndWait(ComboPopupBug::createUI);
+
+            robot.waitForIdle();
+            robot.delay(1000);
+
+            SwingUtilities.invokeAndWait(() -> closeButton.doClick());
+
+            robot.waitForIdle();
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
+        }
     }
 
-    private static JFrame createUI() {
-        JFrame frame = new JFrame("ComboPopup");
+    private static void clickComboBox() {
+        Point comboBoxLocation = comboBox.getLocationOnScreen();
+        Dimension comboBoxSize = comboBox.getSize();
 
-        JComboBox<String> cb = new JComboBox<>();
-        cb.setEditable(true);
-        cb.addItem("test");
-        cb.addItem("test2");
-        cb.addItem("test3");
+        robot.mouseMove(comboBoxLocation.x + comboBoxSize.width - PADDING,
+                comboBoxLocation.y + comboBoxSize.height / 2);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+    }
 
-        JButton b = new JButton("Close");
-        b.addActionListener(
-                (e)->{
-                    try {
-                        Thread.sleep(3000);
-                    } catch (Exception ignored) {
-                    }
-                    frame.setVisible(false);
-                });
+    private static void createUI() {
+        frame = new JFrame("ComboPopup");
 
-        frame.getContentPane().add(cb, "North");
-        frame.getContentPane().add(b, "South");
+        comboBox = new JComboBox<>();
+        comboBox.setEditable(true);
+        comboBox.addItem("test");
+        comboBox.addItem("test2");
+        comboBox.addItem("test3");
+
+        closeButton = new JButton("Close");
+        closeButton.addActionListener((e) -> {
+            clickComboBox();
+            frame.setVisible(false);
+        });
+
+        frame.getContentPane().add(comboBox, "North");
+        frame.getContentPane().add(closeButton, "South");
         frame.setSize(200, 200);
-
-        return frame;
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
     }
 }

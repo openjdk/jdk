@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,14 +32,19 @@ import jdk.test.lib.net.URIBuilder;
 import jdk.test.lib.security.KeyEntry;
 import jdk.test.lib.security.KeyStoreUtils;
 import jdk.test.lib.security.SSLContextBuilder;
+
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpResponse.BodyHandlers.ofString;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 
 /*
  * @test
  * @bug 8239594 8239595
- * @library /test/lib
- * @build Server TlsVersionTest
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build Server TlsVersionTest jdk.httpclient.test.lib.common.TestServerConfigurator
+ * @modules java.net.http/jdk.internal.net.http.common
  * @run main/othervm
  *      -Djdk.internal.httpclient.disableHostnameVerification
  *       TlsVersionTest false
@@ -121,11 +126,12 @@ public class TlsVersionTest {
         System.out.println("Making request to " + serverURI.getPath());
         SSLContext ctx = getClientSSLContext(cert);
         HttpClient client = HttpClient.newBuilder()
+                                      .version(HTTP_2)
                                       .proxy(NO_PROXY)
                                       .sslContext(ctx)
                                       .build();
 
-        for (var version : List.of(HttpClient.Version.HTTP_2, HttpClient.Version.HTTP_1_1)) {
+        for (var version : List.of(HTTP_3, HTTP_2, HTTP_1_1)) {
             HttpRequest request = HttpRequest.newBuilder(serverURI)
                                              .version(version)
                                              .GET()

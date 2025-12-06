@@ -25,11 +25,11 @@
 #include "cds/aotClassLocation.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
+#include "cds/dynamicArchive.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.inline.hpp"
 #include "classfile/classLoaderData.inline.hpp"
-#include "classfile/classLoaderExt.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/klassFactory.hpp"
@@ -69,7 +69,6 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.hpp"
 #include "runtime/perfData.hpp"
-#include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/management.hpp"
@@ -81,8 +80,8 @@
 #include "utilities/ostream.hpp"
 #include "utilities/utf8.hpp"
 
-#include <stdlib.h>
 #include <ctype.h>
+#include <stdlib.h>
 
 // Entry point in java.dll for path canonicalization
 
@@ -305,6 +304,20 @@ ClassPathZipEntry::~ClassPathZipEntry() {
   FREE_C_HEAP_ARRAY(char, _zip_name);
 }
 
+bool ClassPathZipEntry::has_entry(JavaThread* current, const char* name) {
+  ThreadToNativeFromVM ttn(current);
+  // check whether zip archive contains name
+  jint name_len;
+  jint filesize;
+  jzentry* entry = ZipLibrary::find_entry(_zip, name, &filesize, &name_len);
+  if (entry == nullptr) {
+    return false;
+  } else {
+     ZipLibrary::free_entry(_zip, entry);
+    return true;
+  }
+}
+
 u1* ClassPathZipEntry::open_entry(JavaThread* current, const char* name, jint* filesize, bool nul_terminate) {
   // enable call to C land
   ThreadToNativeFromVM ttn(current);
@@ -399,31 +412,30 @@ ClassFileStream* ClassPathImageEntry::open_stream(JavaThread* current, const cha
 //
 ClassFileStream* ClassPathImageEntry::open_stream_for_loader(JavaThread* current, const char* name, ClassLoaderData* loader_data) {
   jlong size;
-  JImageLocationRef location = (*JImageFindResource)(jimage_non_null(), "", get_jimage_version_string(), name, &size);
+  JImageLocationRef location = 0;
 
-  if (location == 0) {
-    TempNewSymbol class_name = SymbolTable::new_symbol(name);
-    TempNewSymbol pkg_name = ClassLoader::package_from_class_name(class_name);
+  TempNewSymbol class_name = SymbolTable::new_symbol(name);
+  TempNewSymbol pkg_name = ClassLoader::package_from_class_name(class_name);
 
-    if (pkg_name != nullptr) {
-      if (!Universe::is_module_initialized()) {
-        location = (*JImageFindResource)(jimage_non_null(), JAVA_BASE_NAME, get_jimage_version_string(), name, &size);
-      } else {
-        PackageEntry* package_entry = ClassLoader::get_package_entry(pkg_name, loader_data);
-        if (package_entry != nullptr) {
-          ResourceMark rm(current);
-          // Get the module name
-          ModuleEntry* module = package_entry->module();
-          assert(module != nullptr, "Boot classLoader package missing module");
-          assert(module->is_named(), "Boot classLoader package is in unnamed module");
-          const char* module_name = module->name()->as_C_string();
-          if (module_name != nullptr) {
-            location = (*JImageFindResource)(jimage_non_null(), module_name, get_jimage_version_string(), name, &size);
-          }
+  if (pkg_name != nullptr) {
+    if (!Universe::is_module_initialized()) {
+      location = (*JImageFindResource)(jimage_non_null(), JAVA_BASE_NAME, get_jimage_version_string(), name, &size);
+    } else {
+      PackageEntry* package_entry = ClassLoader::get_package_entry(pkg_name, loader_data);
+      if (package_entry != nullptr) {
+        ResourceMark rm(current);
+        // Get the module name
+        ModuleEntry* module = package_entry->module();
+        assert(module != nullptr, "Boot classLoader package missing module");
+        assert(module->is_named(), "Boot classLoader package is in unnamed module");
+        const char* module_name = module->name()->as_C_string();
+        if (module_name != nullptr) {
+          location = (*JImageFindResource)(jimage_non_null(), module_name, get_jimage_version_string(), name, &size);
         }
       }
     }
   }
+
   if (location != 0) {
     if (UsePerfData) {
       ClassLoader::perf_sys_classfile_bytes_read()->inc(size);
@@ -737,7 +749,7 @@ void ClassLoader::add_to_boot_append_entries(ClassPathEntry *new_entry) {
     if (_last_append_entry == nullptr) {
       _last_append_entry = new_entry;
       assert(first_append_entry() == nullptr, "boot loader's append class path entry list not empty");
-      Atomic::release_store(&_first_append_entry_list, new_entry);
+      AtomicAccess::release_store(&_first_append_entry_list, new_entry);
     } else {
       _last_append_entry->set_next(new_entry);
       _last_append_entry = new_entry;
@@ -1179,11 +1191,15 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
   oop loader = ik->class_loader();
   char* src = (char*)stream->source();
   if (src == nullptr) {
-    if (loader == nullptr) {
-      // JFR classes
-      ik->set_shared_classpath_index(0);
-      ik->set_shared_class_loader_type(ClassLoader::BOOT_LOADER);
-    }
+    ik->set_shared_classpath_index(-1); // unsupported location
+    return;
+  }
+
+  if (!SystemDictionaryShared::is_builtin_loader(ik->class_loader_data())) {
+    // A class loaded by a user-defined classloader.
+    assert(ik->shared_classpath_index() < 0, "not assigned yet");
+    ik->set_shared_classpath_index(UNREGISTERED_INDEX);
+    SystemDictionaryShared::set_shared_class_misc_info(ik, (ClassFileStream*)stream);
     return;
   }
 
@@ -1191,6 +1207,8 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
 
   ResourceMark rm(current);
   int classpath_index = -1;
+  bool found_invalid = false;
+
   PackageEntry* pkg_entry = ik->package();
 
   if (!AOTClassLocationConfig::dumptime_is_ready()) {
@@ -1228,10 +1246,13 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
             classpath_index = i;
           } else {
             if (cl->from_boot_classpath()) {
-              // The class must be from boot loader append path which consists of
-              // -Xbootclasspath/a and jvmti appended entries.
-              assert(loader == nullptr, "sanity");
-              classpath_index = i;
+              if (loader != nullptr) {
+                // Probably loaded by jdk/internal/loader/ClassLoaders$BootClassLoader. Don't archive
+                // such classes.
+                found_invalid = true;
+              } else {
+                classpath_index = i;
+              }
             }
           }
         } else {
@@ -1242,52 +1263,54 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
           }
         }
       }
-      if (classpath_index >= 0) {
-        return false; // quit iterating
+      if (classpath_index >= 0 || found_invalid) {
+        return false; // Break the AOTClassLocationConfig::dumptime_iterate() loop.
       } else {
         return true; // Keep iterating
       }
     });
+  }
 
-    // No path entry found for this class: most likely a shared class loaded by the
-    // user defined classloader.
-    if (classpath_index < 0 && !SystemDictionaryShared::is_builtin_loader(ik->class_loader_data())) {
-      assert(ik->shared_classpath_index() < 0, "not assigned yet");
-      ik->set_shared_classpath_index(UNREGISTERED_INDEX);
-      SystemDictionaryShared::set_shared_class_misc_info(ik, (ClassFileStream*)stream);
-      return;
-    }
+  if (found_invalid) {
+    assert(classpath_index == -1, "sanity");
   }
 
   const char* const class_name = ik->name()->as_C_string();
   const char* const file_name = file_name_for_class_name(class_name,
                                                          ik->name()->utf8_length());
   assert(file_name != nullptr, "invariant");
-  ClassLoaderExt::record_result(checked_cast<s2>(classpath_index), ik, redefined);
+  record_result_for_builtin_loader(checked_cast<s2>(classpath_index), ik, redefined);
+}
+
+void ClassLoader::record_result_for_builtin_loader(s2 classpath_index, InstanceKlass* result, bool redefined) {
+  assert(CDSConfig::is_dumping_archive(), "sanity");
+
+  oop loader = result->class_loader();
+  if (SystemDictionary::is_system_class_loader(loader)) {
+    AOTClassLocationConfig::dumptime_set_has_app_classes();
+  } else if (SystemDictionary::is_platform_class_loader(loader)) {
+    AOTClassLocationConfig::dumptime_set_has_platform_classes();
+  } else {
+    precond(loader == nullptr);
+  }
+
+  if (CDSConfig::is_dumping_preimage_static_archive() || CDSConfig::is_dumping_dynamic_archive()) {
+    if (!AOTClassLocationConfig::dumptime()->is_valid_classpath_index(classpath_index, result)) {
+      classpath_index = -1;
+    }
+  }
+
+  AOTClassLocationConfig::dumptime_update_max_used_index(classpath_index);
+  result->set_shared_classpath_index(classpath_index);
 }
 
 void ClassLoader::record_hidden_class(InstanceKlass* ik) {
   assert(ik->is_hidden(), "must be");
 
-  s2 classloader_type;
-  if (HeapShared::is_lambda_form_klass(ik)) {
-    classloader_type = ClassLoader::BOOT_LOADER;
-  } else {
-    oop loader = ik->class_loader();
-
-    if (loader == nullptr) {
-      classloader_type = ClassLoader::BOOT_LOADER;
-    } else if (SystemDictionary::is_platform_class_loader(loader)) {
-      classloader_type = ClassLoader::PLATFORM_LOADER;
-    } else if (SystemDictionary::is_system_class_loader(loader)) {
-      classloader_type = ClassLoader::APP_LOADER;
-    } else {
-      // This class won't be archived, so no need to update its
-      // classloader_type/classpath_index.
-      return;
-    }
+  if (ik->defined_by_other_loaders()) {
+    // We don't archive hidden classes for non-builtin loaders.
+    return;
   }
-  ik->set_shared_class_loader_type(classloader_type);
 
   if (HeapShared::is_lambda_proxy_klass(ik)) {
     InstanceKlass* nest_host = ik->nest_host_not_null();
@@ -1296,12 +1319,23 @@ void ClassLoader::record_hidden_class(InstanceKlass* ik) {
     ik->set_shared_classpath_index(0);
   } else {
     // Generated invoker classes.
-    if (classloader_type == ClassLoader::APP_LOADER) {
+    if (ik->defined_by_app_loader()) {
       ik->set_shared_classpath_index(AOTClassLocationConfig::dumptime()->app_cp_start_index());
     } else {
       ik->set_shared_classpath_index(0);
     }
   }
+}
+
+void ClassLoader::append_boot_classpath(ClassPathEntry* new_entry) {
+  if (CDSConfig::is_using_archive()) {
+    warning("Sharing is only supported for boot loader classes because bootstrap classpath has been appended");
+    FileMapInfo::current_info()->set_has_platform_or_app_classes(false);
+    if (DynamicArchive::is_mapped()) {
+      FileMapInfo::dynamic_info()->set_has_platform_or_app_classes(false);
+    }
+  }
+  add_to_boot_append_entries(new_entry);
 }
 #endif // INCLUDE_CDS
 
@@ -1486,8 +1520,7 @@ char* ClassLoader::get_canonical_path(const char* orig, Thread* thread) {
   char* canonical_path = NEW_RESOURCE_ARRAY_IN_THREAD(thread, char, JVM_MAXPATHLEN);
   ResourceMark rm(thread);
   // os::native_path writes into orig_copy
-  char* orig_copy = NEW_RESOURCE_ARRAY_IN_THREAD(thread, char, strlen(orig)+1);
-  strcpy(orig_copy, orig);
+  char* orig_copy = ResourceArea::strdup(thread, orig);
   if ((CanonicalizeEntry)(os::native_path(orig_copy), canonical_path, JVM_MAXPATHLEN) < 0) {
     return nullptr;
   }

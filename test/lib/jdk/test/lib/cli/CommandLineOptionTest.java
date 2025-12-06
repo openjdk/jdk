@@ -122,8 +122,8 @@ public abstract class CommandLineOptionTest {
                 outputAnalyzer.shouldHaveExitValue(exitCode.value);
         } catch (RuntimeException e) {
             String errorMessage = String.format(
-                    "JVM process should have exit value '%d'.%n%s",
-                    exitCode.value, exitErrorMessage);
+                    "JVM process should have exit value '%d', but has '%d'.%n%s",
+                    exitCode.value, outputAnalyzer.getExitValue(), exitErrorMessage);
             throw new AssertionError(errorMessage, e);
         }
 
@@ -302,9 +302,12 @@ public abstract class CommandLineOptionTest {
                     CommandLineOptionTest.PRINT_FLAGS_FINAL_FORMAT,
                     optionName, expectedValue));
         } catch (RuntimeException e) {
+            String observedValue = outputAnalyzer.firstMatch(String.format(
+                CommandLineOptionTest.PRINT_FLAGS_FINAL_FORMAT,
+                optionName, "\\S"));
             String errorMessage = String.format(
-                    "Option '%s' is expected to have '%s' value%n%s",
-                    optionName, expectedValue,
+                    "Option '%s' is expected to have '%s' value, but is '%s'.%n%s",
+                    optionName, expectedValue, observedValue,
                     optionErrorString);
             throw new AssertionError(errorMessage, e);
         }

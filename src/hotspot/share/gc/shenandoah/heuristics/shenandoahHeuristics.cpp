@@ -25,10 +25,10 @@
  */
 
 #include "gc/shared/gcCause.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 #include "runtime/globals_extension.hpp"
@@ -73,9 +73,10 @@ ShenandoahHeuristics::~ShenandoahHeuristics() {
 }
 
 void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collection_set) {
-  assert(collection_set->is_empty(), "Must be empty");
-
   ShenandoahHeap* heap = ShenandoahHeap::heap();
+
+  assert(collection_set->is_empty(), "Must be empty");
+  assert(!heap->mode()->is_generational(), "Wrong heuristic for heap mode");
 
   // Check all pinned regions have updated status before choosing the collection set.
   heap->assert_pinned_region_status();
@@ -95,8 +96,6 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
 
   size_t free = 0;
   size_t free_regions = 0;
-
-  ShenandoahMarkingContext* const ctx = heap->complete_marking_context();
 
   for (size_t i = 0; i < num_regions; i++) {
     ShenandoahHeapRegion* region = heap->get_region(i);
@@ -122,7 +121,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
       // Reclaim humongous regions here, and count them as the immediate garbage
 #ifdef ASSERT
       bool reg_live = region->has_live();
-      bool bm_live = ctx->is_marked(cast_to_oop(region->bottom()));
+      bool bm_live = heap->global_generation()->complete_marking_context()->is_marked(cast_to_oop(region->bottom()));
       assert(reg_live == bm_live,
              "Humongous liveness and marks should agree. Region live: %s; Bitmap live: %s; Region Live Words: %zu",
              BOOL_TO_STR(reg_live), BOOL_TO_STR(bm_live), region->get_live_data_words());
@@ -155,27 +154,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
     choose_collection_set_from_regiondata(collection_set, candidates, cand_idx, immediate_garbage + free);
   }
 
-  size_t cset_percent = (total_garbage == 0) ? 0 : (collection_set->garbage() * 100 / total_garbage);
-  size_t collectable_garbage = collection_set->garbage() + immediate_garbage;
-  size_t collectable_garbage_percent = (total_garbage == 0) ? 0 : (collectable_garbage * 100 / total_garbage);
-
-  log_info(gc, ergo)("Collectable Garbage: %zu%s (%zu%%), "
-                     "Immediate: %zu%s (%zu%%), %zu regions, "
-                     "CSet: %zu%s (%zu%%), %zu regions",
-
-                     byte_size_in_proper_unit(collectable_garbage),
-                     proper_unit_for_byte_size(collectable_garbage),
-                     collectable_garbage_percent,
-
-                     byte_size_in_proper_unit(immediate_garbage),
-                     proper_unit_for_byte_size(immediate_garbage),
-                     immediate_percent,
-                     immediate_regions,
-
-                     byte_size_in_proper_unit(collection_set->garbage()),
-                     proper_unit_for_byte_size(collection_set->garbage()),
-                     cset_percent,
-                     collection_set->count());
+  collection_set->summarize(total_garbage, immediate_garbage, immediate_regions);
 }
 
 void ShenandoahHeuristics::record_cycle_start() {

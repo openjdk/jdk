@@ -23,9 +23,9 @@
  */
 
 #include "gc/shared/taskqueue.hpp"
-#include "oops/oop.inline.hpp"
 #include "logging/log.hpp"
-#include "runtime/atomic.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"

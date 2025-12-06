@@ -169,7 +169,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void restore_bcp();
 
-  void save_esp();
+  void save_esp(Register fp = noreg);
 
   void restore_esp();
 

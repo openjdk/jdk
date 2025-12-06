@@ -26,6 +26,7 @@
  * @key cgroups
  * @summary Test JDK Metrics class when running inside docker container
  * @requires container.support
+ * @requires !vm.asan
  * @library /test/lib
  * @modules java.base/jdk.internal.platform
  * @run main TestSystemMetrics
@@ -41,10 +42,7 @@ public class TestSystemMetrics {
     private static final String imageName = Common.imageName("metrics");
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker()) {
-            return;
-        }
-
+        DockerTestUtils.checkCanTestDocker();
         DockerTestUtils.buildJdkContainerImage(imageName);
 
         try {

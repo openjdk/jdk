@@ -22,10 +22,10 @@
  *
  */
 
+#include "asm/register.hpp"
+#include "ci/ciObjArray.hpp"
 #include "ci/ciUtilities.hpp"
 #include "classfile/javaClasses.hpp"
-#include "ci/ciObjArray.hpp"
-#include "asm/register.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
@@ -47,8 +47,8 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/bitMap.inline.hpp"
-#include "utilities/powerOfTwo.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 //----------------------------GraphKit-----------------------------------------
 // Main utility constructor.
@@ -72,8 +72,8 @@ GraphKit::GraphKit()
 {
   _exceptions = nullptr;
   set_map(nullptr);
-  debug_only(_sp = -99);
-  debug_only(set_bci(-99));
+  DEBUG_ONLY(_sp = -99);
+  DEBUG_ONLY(set_bci(-99));
 }
 
 
@@ -196,7 +196,7 @@ bool GraphKit::has_exception_handler() {
 void GraphKit::set_saved_ex_oop(SafePointNode* ex_map, Node* ex_oop) {
   assert(!has_saved_ex_oop(ex_map), "clear ex-oop before setting again");
   ex_map->add_req(ex_oop);
-  debug_only(verify_exception_state(ex_map));
+  DEBUG_ONLY(verify_exception_state(ex_map));
 }
 
 inline static Node* common_saved_ex_oop(SafePointNode* ex_map, bool clear_it) {
@@ -296,7 +296,7 @@ JVMState* GraphKit::transfer_exceptions_into_jvms() {
       _map = clone_map();
       _map->set_next_exception(nullptr);
       clear_saved_ex_oop(_map);
-      debug_only(verify_map());
+      DEBUG_ONLY(verify_map());
     } else {
       // ...or created from scratch
       JVMState* jvms = new (C) JVMState(_method, nullptr);
@@ -527,71 +527,29 @@ void GraphKit::uncommon_trap_if_should_post_on_exceptions(Deoptimization::DeoptR
 
 //------------------------------builtin_throw----------------------------------
 void GraphKit::builtin_throw(Deoptimization::DeoptReason reason) {
-  bool must_throw = true;
+  builtin_throw(reason, builtin_throw_exception(reason), /*allow_too_many_traps*/ true);
+}
 
-  // If this particular condition has not yet happened at this
-  // bytecode, then use the uncommon trap mechanism, and allow for
-  // a future recompilation if several traps occur here.
-  // If the throw is hot, try to use a more complicated inline mechanism
-  // which keeps execution inside the compiled code.
-  bool treat_throw_as_hot = false;
-  ciMethodData* md = method()->method_data();
-
-  if (ProfileTraps) {
-    if (too_many_traps(reason)) {
-      treat_throw_as_hot = true;
-    }
-    // (If there is no MDO at all, assume it is early in
-    // execution, and that any deopts are part of the
-    // startup transient, and don't need to be remembered.)
-
-    // Also, if there is a local exception handler, treat all throws
-    // as hot if there has been at least one in this method.
-    if (C->trap_count(reason) != 0
-        && method()->method_data()->trap_count(reason) != 0
-        && has_exception_handler()) {
-        treat_throw_as_hot = true;
-    }
-  }
-
+void GraphKit::builtin_throw(Deoptimization::DeoptReason reason,
+                             ciInstance* ex_obj,
+                             bool allow_too_many_traps) {
   // If this throw happens frequently, an uncommon trap might cause
   // a performance pothole.  If there is a local exception handler,
   // and if this particular bytecode appears to be deoptimizing often,
   // let us handle the throw inline, with a preconstructed instance.
   // Note:   If the deopt count has blown up, the uncommon trap
   // runtime is going to flush this nmethod, not matter what.
-  if (treat_throw_as_hot && method()->can_omit_stack_trace()) {
-    // If the throw is local, we use a pre-existing instance and
-    // punt on the backtrace.  This would lead to a missing backtrace
-    // (a repeat of 4292742) if the backtrace object is ever asked
-    // for its backtrace.
-    // Fixing this remaining case of 4292742 requires some flavor of
-    // escape analysis.  Leave that for the future.
-    ciInstance* ex_obj = nullptr;
-    switch (reason) {
-    case Deoptimization::Reason_null_check:
-      ex_obj = env()->NullPointerException_instance();
-      break;
-    case Deoptimization::Reason_div0_check:
-      ex_obj = env()->ArithmeticException_instance();
-      break;
-    case Deoptimization::Reason_range_check:
-      ex_obj = env()->ArrayIndexOutOfBoundsException_instance();
-      break;
-    case Deoptimization::Reason_class_check:
-      ex_obj = env()->ClassCastException_instance();
-      break;
-    case Deoptimization::Reason_array_check:
-      ex_obj = env()->ArrayStoreException_instance();
-      break;
-    default:
-      break;
-    }
-    // If we have a preconstructed exception object, use it.
-    if (ex_obj != nullptr) {
+  if (is_builtin_throw_hot(reason)) {
+    if (method()->can_omit_stack_trace() && ex_obj != nullptr) {
+      // If the throw is local, we use a pre-existing instance and
+      // punt on the backtrace.  This would lead to a missing backtrace
+      // (a repeat of 4292742) if the backtrace object is ever asked
+      // for its backtrace.
+      // Fixing this remaining case of 4292742 requires some flavor of
+      // escape analysis.  Leave that for the future.
       if (env()->jvmti_can_post_on_exceptions()) {
         // check if we must post exception events, take uncommon trap if so
-        uncommon_trap_if_should_post_on_exceptions(reason, must_throw);
+        uncommon_trap_if_should_post_on_exceptions(reason, true /*must_throw*/);
         // here if should_post_on_exceptions is false
         // continue on with the normal codegen
       }
@@ -622,6 +580,18 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason) {
 
       add_exception_state(make_exception_state(ex_node));
       return;
+    } else if (builtin_throw_too_many_traps(reason, ex_obj)) {
+      // We cannot afford to take too many traps here. Suffer in the interpreter instead.
+      assert(allow_too_many_traps, "not allowed");
+      if (C->log() != nullptr) {
+        C->log()->elem("hot_throw preallocated='0' reason='%s' mcount='%d'",
+                       Deoptimization::trap_reason_name(reason),
+                       C->trap_count(reason));
+      }
+      uncommon_trap(reason, Deoptimization::Action_none,
+                    (ciKlass*) nullptr, (char*) nullptr,
+                    true /*must_throw*/);
+      return;
     }
   }
 
@@ -633,31 +603,76 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason) {
   // Usual case:  Bail to interpreter.
   // Reserve the right to recompile if we haven't seen anything yet.
 
-  ciMethod* m = Deoptimization::reason_is_speculate(reason) ? C->method() : nullptr;
-  Deoptimization::DeoptAction action = Deoptimization::Action_maybe_recompile;
-  if (treat_throw_as_hot
-      && (method()->method_data()->trap_recompiled_at(bci(), m)
-          || C->too_many_traps(reason))) {
-    // We cannot afford to take more traps here.  Suffer in the interpreter.
-    if (C->log() != nullptr)
-      C->log()->elem("hot_throw preallocated='0' reason='%s' mcount='%d'",
-                     Deoptimization::trap_reason_name(reason),
-                     C->trap_count(reason));
-    action = Deoptimization::Action_none;
-  }
-
   // "must_throw" prunes the JVM state to include only the stack, if there
   // are no local exception handlers.  This should cut down on register
   // allocation time and code size, by drastically reducing the number
   // of in-edges on the call to the uncommon trap.
-
-  uncommon_trap(reason, action, (ciKlass*)nullptr, (char*)nullptr, must_throw);
+  uncommon_trap(reason, Deoptimization::Action_maybe_recompile,
+                (ciKlass*) nullptr, (char*) nullptr,
+                true /*must_throw*/);
 }
 
+bool GraphKit::is_builtin_throw_hot(Deoptimization::DeoptReason reason) {
+  // If this particular condition has not yet happened at this
+  // bytecode, then use the uncommon trap mechanism, and allow for
+  // a future recompilation if several traps occur here.
+  // If the throw is hot, try to use a more complicated inline mechanism
+  // which keeps execution inside the compiled code.
+  if (ProfileTraps) {
+    if (too_many_traps(reason)) {
+      return true;
+    }
+    // (If there is no MDO at all, assume it is early in
+    // execution, and that any deopts are part of the
+    // startup transient, and don't need to be remembered.)
+
+    // Also, if there is a local exception handler, treat all throws
+    // as hot if there has been at least one in this method.
+    if (C->trap_count(reason) != 0 &&
+        method()->method_data()->trap_count(reason) != 0 &&
+        has_exception_handler()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool GraphKit::builtin_throw_too_many_traps(Deoptimization::DeoptReason reason,
+                                            ciInstance* ex_obj) {
+  if (is_builtin_throw_hot(reason)) {
+    if (method()->can_omit_stack_trace() && ex_obj != nullptr) {
+      return false; // no traps; throws preallocated exception instead
+    }
+    ciMethod* m = Deoptimization::reason_is_speculate(reason) ? C->method() : nullptr;
+    if (method()->method_data()->trap_recompiled_at(bci(), m) ||
+        C->too_many_traps(reason)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+ciInstance* GraphKit::builtin_throw_exception(Deoptimization::DeoptReason reason) const {
+  // Preallocated exception objects to use when we don't need the backtrace.
+  switch (reason) {
+  case Deoptimization::Reason_null_check:
+    return env()->NullPointerException_instance();
+  case Deoptimization::Reason_div0_check:
+    return env()->ArithmeticException_instance();
+  case Deoptimization::Reason_range_check:
+    return env()->ArrayIndexOutOfBoundsException_instance();
+  case Deoptimization::Reason_class_check:
+    return env()->ClassCastException_instance();
+  case Deoptimization::Reason_array_check:
+    return env()->ArrayStoreException_instance();
+  default:
+    return nullptr;
+  }
+}
 
 //----------------------------PreserveJVMState---------------------------------
 PreserveJVMState::PreserveJVMState(GraphKit* kit, bool clone_map) {
-  debug_only(kit->verify_map());
+  DEBUG_ONLY(kit->verify_map());
   _kit    = kit;
   _map    = kit->map();   // preserve the map
   _sp     = kit->sp();
@@ -765,7 +780,7 @@ void GraphKit::set_map_clone(SafePointNode* m) {
   _map = m;
   _map = clone_map();
   _map->set_next_exception(nullptr);
-  debug_only(verify_map());
+  DEBUG_ONLY(verify_map());
 }
 
 
@@ -1522,7 +1537,7 @@ Node* GraphKit::memory(uint alias_idx) {
 Node* GraphKit::reset_memory() {
   Node* mem = map()->memory();
   // do not use this node for any more parsing!
-  debug_only( map()->set_memory((Node*)nullptr) );
+  DEBUG_ONLY( map()->set_memory((Node*)nullptr) );
   return _gvn.transform( mem );
 }
 
@@ -1559,7 +1574,7 @@ Node* GraphKit::make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
   int adr_idx = C->get_alias_index(_gvn.type(adr)->isa_ptr());
   assert(adr_idx != Compile::AliasIdxTop, "use other make_load factory" );
   const TypePtr* adr_type = nullptr; // debug-mode-only argument
-  debug_only(adr_type = C->get_adr_type(adr_idx));
+  DEBUG_ONLY(adr_type = C->get_adr_type(adr_idx));
   Node* mem = memory(adr_idx);
   Node* ld = LoadNode::make(_gvn, ctl, mem, adr, adr_type, t, bt, mo, control_dependency, require_atomic_access, unaligned, mismatched, unsafe, barrier_data);
   ld = _gvn.transform(ld);
@@ -1587,7 +1602,7 @@ Node* GraphKit::store_to_memory(Node* ctl, Node* adr, Node *val, BasicType bt,
   int adr_idx = C->get_alias_index(_gvn.type(adr)->isa_ptr());
   assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory" );
   const TypePtr* adr_type = nullptr;
-  debug_only(adr_type = C->get_adr_type(adr_idx));
+  DEBUG_ONLY(adr_type = C->get_adr_type(adr_idx));
   Node *mem = memory(adr_idx);
   Node* st = StoreNode::make(_gvn, ctl, mem, adr, adr_type, val, bt, mo, require_atomic_access);
   if (unaligned) {
@@ -1865,14 +1880,20 @@ Node* GraphKit::set_results_for_java_call(CallJavaNode* call, bool separate_io_p
 // after the call, if this call has restricted memory effects.
 Node* GraphKit::set_predefined_input_for_runtime_call(SafePointNode* call, Node* narrow_mem) {
   // Set fixed predefined input arguments
-  Node* memory = reset_memory();
-  Node* m = narrow_mem == nullptr ? memory : narrow_mem;
-  call->init_req( TypeFunc::Control,   control()  );
-  call->init_req( TypeFunc::I_O,       top()      ); // does no i/o
-  call->init_req( TypeFunc::Memory,    m          ); // may gc ptrs
-  call->init_req( TypeFunc::FramePtr,  frameptr() );
-  call->init_req( TypeFunc::ReturnAdr, top()      );
-  return memory;
+  call->init_req(TypeFunc::Control, control());
+  call->init_req(TypeFunc::I_O, top()); // does no i/o
+  call->init_req(TypeFunc::ReturnAdr, top());
+  if (call->is_CallLeafPure()) {
+    call->init_req(TypeFunc::Memory, top());
+    call->init_req(TypeFunc::FramePtr, top());
+    return nullptr;
+  } else {
+    Node* memory = reset_memory();
+    Node* m = narrow_mem == nullptr ? memory : narrow_mem;
+    call->init_req(TypeFunc::Memory, m); // may gc ptrs
+    call->init_req(TypeFunc::FramePtr, frameptr());
+    return memory;
+  }
 }
 
 //-------------------set_predefined_output_for_runtime_call--------------------
@@ -1890,6 +1911,11 @@ void GraphKit::set_predefined_output_for_runtime_call(Node* call,
                                                       const TypePtr* hook_mem) {
   // no i/o
   set_control(_gvn.transform( new ProjNode(call,TypeFunc::Control) ));
+  if (call->is_CallLeafPure()) {
+    // Pure function have only control (for now) and data output, in particular
+    // they don't touch the memory, so we don't want a memory proj that is set after.
+    return;
+  }
   if (keep_mem) {
     // First clone the existing memory state
     set_all_memory(keep_mem);
@@ -2283,16 +2309,18 @@ Node* GraphKit::record_profiled_receiver_for_speculation(Node* n) {
       if (!data->as_BitData()->null_seen()) {
         ptr_kind = ProfileNeverNull;
       } else {
-        assert(data->is_ReceiverTypeData(), "bad profile data type");
-        ciReceiverTypeData* call = (ciReceiverTypeData*)data->as_ReceiverTypeData();
-        uint i = 0;
-        for (; i < call->row_limit(); i++) {
-          ciKlass* receiver = call->receiver(i);
-          if (receiver != nullptr) {
-            break;
+        if (TypeProfileCasts) {
+          assert(data->is_ReceiverTypeData(), "bad profile data type");
+          ciReceiverTypeData* call = (ciReceiverTypeData*)data->as_ReceiverTypeData();
+          uint i = 0;
+          for (; i < call->row_limit(); i++) {
+            ciKlass* receiver = call->receiver(i);
+            if (receiver != nullptr) {
+              break;
+            }
           }
+          ptr_kind = (i == call->row_limit()) ? ProfileAlwaysNull : ProfileMaybeNull;
         }
-        ptr_kind = (i == call->row_limit()) ? ProfileAlwaysNull : ProfileMaybeNull;
       }
     }
   }
@@ -2476,6 +2504,8 @@ Node* GraphKit::make_runtime_call(int flags,
   } else  if (flags & RC_VECTOR){
     uint num_bits = call_type->range()->field_at(TypeFunc::Parms)->is_vect()->length_in_bytes() * BitsPerByte;
     call = new CallLeafVectorNode(call_type, call_addr, call_name, adr_type, num_bits);
+  } else if (flags & RC_PURE) {
+    call = new CallLeafPureNode(call_type, call_addr, call_name, adr_type);
   } else {
     call = new CallLeafNode(call_type, call_addr, call_name, adr_type);
   }
@@ -3432,8 +3462,6 @@ FastLockNode* GraphKit::shared_lock(Node* obj) {
   // %%% SynchronizationEntryBCI is redundant; use InvocationEntryBci in interfaces
   assert(SynchronizationEntryBCI == InvocationEntryBci, "");
 
-  if( !GenerateSynchronizationCode )
-    return nullptr;                // Not locking things?
   if (stopped())                // Dead monitor?
     return nullptr;
 
@@ -3496,8 +3524,6 @@ void GraphKit::shared_unlock(Node* box, Node* obj) {
   // %%% SynchronizationEntryBCI is redundant; use InvocationEntryBci in interfaces
   assert(SynchronizationEntryBCI == InvocationEntryBci, "");
 
-  if( !GenerateSynchronizationCode )
-    return;
   if (stopped()) {               // Dead monitor?
     map()->pop_monitor();        // Kill monitor from debug info
     return;
@@ -3615,14 +3641,17 @@ Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
     record_for_igvn(minit_in); // fold it up later, if possible
     Node* minit_out = memory(rawidx);
     assert(minit_out->is_Proj() && minit_out->in(0) == init, "");
-    // Add an edge in the MergeMem for the header fields so an access
-    // to one of those has correct memory state
-    set_memory(minit_out, C->get_alias_index(oop_type->add_offset(oopDesc::mark_offset_in_bytes())));
-    set_memory(minit_out, C->get_alias_index(oop_type->add_offset(oopDesc::klass_offset_in_bytes())));
+    int mark_idx = C->get_alias_index(oop_type->add_offset(oopDesc::mark_offset_in_bytes()));
+    // Add an edge in the MergeMem for the header fields so an access to one of those has correct memory state.
+    // Use one NarrowMemProjNode per slice to properly record the adr type of each slice. The Initialize node will have
+    // multiple projections as a result.
+    set_memory(_gvn.transform(new NarrowMemProjNode(init, C->get_adr_type(mark_idx))), mark_idx);
+    int klass_idx = C->get_alias_index(oop_type->add_offset(oopDesc::klass_offset_in_bytes()));
+    set_memory(_gvn.transform(new NarrowMemProjNode(init, C->get_adr_type(klass_idx))), klass_idx);
     if (oop_type->isa_aryptr()) {
       const TypePtr* telemref = oop_type->add_offset(Type::OffsetBot);
       int            elemidx  = C->get_alias_index(telemref);
-      hook_memory_on_init(*this, elemidx, minit_in, minit_out);
+      hook_memory_on_init(*this, elemidx, minit_in, _gvn.transform(new NarrowMemProjNode(init, C->get_adr_type(elemidx))));
     } else if (oop_type->isa_instptr()) {
       ciInstanceKlass* ik = oop_type->is_instptr()->instance_klass();
       for (int i = 0, len = ik->nof_nonstatic_fields(); i < len; i++) {
@@ -3631,7 +3660,7 @@ Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
           continue;  // do not bother to track really large numbers of fields
         // Find (or create) the alias category for this field:
         int fieldidx = C->alias_type(field)->index();
-        hook_memory_on_init(*this, fieldidx, minit_in, minit_out);
+        hook_memory_on_init(*this, fieldidx, minit_in, _gvn.transform(new NarrowMemProjNode(init, C->get_adr_type(fieldidx))));
       }
     }
   }
@@ -3788,6 +3817,8 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
     assert(!StressReflectiveCode, "stress mode does not use these paths");
     // Increase the size limit if we have exact knowledge of array type.
     int log2_esize = Klass::layout_helper_log2_element_size(layout_con);
+    assert(fast_size_limit == 0 || count_leading_zeros(fast_size_limit) > static_cast<unsigned>(LogBytesPerLong - log2_esize),
+           "fast_size_limit (%d) overflow when shifted left by %d", fast_size_limit, LogBytesPerLong - log2_esize);
     fast_size_limit <<= (LogBytesPerLong - log2_esize);
   }
 
@@ -3838,7 +3869,9 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
     if (tilen != nullptr && tilen->_lo < 0) {
       // Add a manual constraint to a positive range.  Cf. array_element_address.
       jint size_max = fast_size_limit;
-      if (size_max > tilen->_hi)  size_max = tilen->_hi;
+      if (size_max > tilen->_hi && tilen->_hi >= 0) {
+        size_max = tilen->_hi;
+      }
       const TypeInt* tlcon = TypeInt::make(0, size_max, Type::WidenMin);
 
       // Only do a narrow I2L conversion if the range check passed.
@@ -4035,13 +4068,20 @@ void GraphKit::add_parse_predicate(Deoptimization::DeoptReason reason, const int
 // Add Parse Predicates which serve as placeholders to create new Runtime Predicates above them. All
 // Runtime Predicates inside a Runtime Predicate block share the same uncommon trap as the Parse Predicate.
 void GraphKit::add_parse_predicates(int nargs) {
+  if (ShortRunningLongLoop) {
+    // Will narrow the limit down with a cast node. Predicates added later may depend on the cast so should be last when
+    // walking up from the loop.
+    add_parse_predicate(Deoptimization::Reason_short_running_long_loop, nargs);
+  }
   if (UseLoopPredicate) {
     add_parse_predicate(Deoptimization::Reason_predicate, nargs);
+    if (UseProfiledLoopPredicate) {
+      add_parse_predicate(Deoptimization::Reason_profile_predicate, nargs);
+    }
   }
-  if (UseProfiledLoopPredicate) {
-    add_parse_predicate(Deoptimization::Reason_profile_predicate, nargs);
+  if (UseAutoVectorizationPredicate) {
+    add_parse_predicate(Deoptimization::Reason_auto_vectorization_check, nargs);
   }
-  add_parse_predicate(Deoptimization::Reason_auto_vectorization_check, nargs);
   // Loop Limit Check Predicate should be near the loop.
   add_parse_predicate(Deoptimization::Reason_loop_limit_check, nargs);
 }

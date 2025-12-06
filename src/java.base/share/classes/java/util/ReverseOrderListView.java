@@ -33,19 +33,19 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * Provides a reverse-ordered view of a List. Not serializable.
  */
 class ReverseOrderListView<E> implements List<E> {
 
+    @Stable
     final List<E> base;
     final boolean modifiable;
 
     public static <T> List<T> of(List<T> list, boolean modifiable) {
-        if (list instanceof ReverseOrderListView<T> rolv) {
-            return rolv.base;
-        } else if (list instanceof RandomAccess) {
+        if (list instanceof RandomAccess) {
             return new ReverseOrderListView.Rand<>(list, modifiable);
         } else {
             return new ReverseOrderListView<>(list, modifiable);
@@ -393,6 +393,10 @@ class ReverseOrderListView<E> implements List<E> {
         int size = base.size();
         Objects.checkFromToIndex(fromIndex, toIndex, size);
         return new ReverseOrderListView<>(base.subList(size - toIndex, size - fromIndex), modifiable);
+    }
+
+    public List<E> reversed() {
+        return base;
     }
 
     static void checkClosedRange(int index, int size) {

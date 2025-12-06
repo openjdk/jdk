@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,7 +162,7 @@ public class redefineclasses014 {
         display("\nTEST BEGINS");
         display("===========");
 
-        ThreadReference thrd = debugee.threadByName("main");
+        ThreadReference thrd = debugee.mainThread();
         if (thrd.isSuspended()) {
             statDebugee = "Debugee is suspended";
             display("\n\n<<<" + statDebugee + ">>>");
@@ -172,7 +172,6 @@ public class redefineclasses014 {
 
         debugee.resume();
 
-        thrd = debugee.threadByName("main");
         if (!thrd.isSuspended()) {
             statDebugee = "Debugee is not suspended";
             display("\n\n<<<" + statDebugee + ">>>");

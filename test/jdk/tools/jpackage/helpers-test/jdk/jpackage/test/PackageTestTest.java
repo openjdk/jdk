@@ -341,7 +341,7 @@ public class PackageTestTest extends JUnitAdapter {
                     }
 
                     @Override
-                    JPackageCommand assertAppLayout() {
+                    JPackageCommand runStandardAsserts() {
                         return this;
                     }
 
@@ -351,7 +351,8 @@ public class PackageTestTest extends JUnitAdapter {
                     }
 
                     @Override
-                    public void verifyIsOfType(PackageType ... types) {
+                    public JPackageCommand verifyIsOfType(Set<PackageType> types) {
+                        return this;
                     }
 
                     @Override
@@ -370,7 +371,7 @@ public class PackageTestTest extends JUnitAdapter {
                         } catch (IOException ex) {
                             throw new UncheckedIOException(ex);
                         }
-                        return new Executor.Result(actualJPackageExitCode, null,
+                        return new Executor.Result(actualJPackageExitCode,
                                 this::getPrintableCommandLine).assertExitCodeIs(expectedExitCode);
                     }
                 };

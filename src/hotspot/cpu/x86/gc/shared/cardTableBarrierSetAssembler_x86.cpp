@@ -41,6 +41,58 @@
 
 #define TIMES_OOP (UseCompressedOops ? Address::times_4 : Address::times_8)
 
+void CardTableBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                                      Register src, Register dst, Register count) {
+  bool checkcast = (decorators & ARRAYCOPY_CHECKCAST) != 0;
+  bool disjoint = (decorators & ARRAYCOPY_DISJOINT) != 0;
+  bool obj_int = (type == T_OBJECT) && UseCompressedOops;
+
+  if (is_reference_type(type)) {
+    if (!checkcast) {
+      if (!obj_int) {
+        // Save count for barrier
+        __ movptr(r11, count);
+      } else if (disjoint) {
+        // Save dst in r11 in the disjoint case
+        __ movq(r11, dst);
+      }
+    }
+    gen_write_ref_array_pre_barrier(masm, decorators, dst, count);
+  }
+}
+
+void CardTableBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                                      Register src, Register dst, Register count) {
+  bool checkcast = (decorators & ARRAYCOPY_CHECKCAST) != 0;
+  bool disjoint = (decorators & ARRAYCOPY_DISJOINT) != 0;
+  bool obj_int = (type == T_OBJECT) && UseCompressedOops;
+  Register tmp = rax;
+
+  if (is_reference_type(type)) {
+    if (!checkcast) {
+      if (!obj_int) {
+        // Save count for barrier
+        count = r11;
+      } else if (disjoint) {
+        // Use the saved dst in the disjoint case
+        dst = r11;
+      }
+    } else {
+      tmp = rscratch1;
+    }
+    gen_write_ref_array_post_barrier(masm, decorators, dst, count, tmp);
+  }
+}
+
+void CardTableBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                            Address dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
+  if (is_reference_type(type)) {
+    oop_store_at(masm, decorators, type, dst, val, tmp1, tmp2, tmp3);
+  } else {
+    BarrierSetAssembler::store_at(masm, decorators, type, dst, val, tmp1, tmp2, tmp3);
+  }
+}
+
 void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                                     Register addr, Register count, Register tmp) {
   BarrierSet *bs = BarrierSet::barrier_set();
@@ -57,7 +109,6 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
   __ jcc(Assembler::zero, L_done); // zero count - nothing to do
 
 
-#ifdef _LP64
   __ leaq(end, Address(addr, count, TIMES_OOP, 0));  // end == addr+count*oop_size
   __ subptr(end, BytesPerHeapOop); // end - 1 to make inclusive
   __ shrptr(addr, CardTable::card_shift());
@@ -70,17 +121,6 @@ __ BIND(L_loop);
   __ movb(Address(addr, count, Address::times_1), 0);
   __ decrement(count);
   __ jcc(Assembler::greaterEqual, L_loop);
-#else
-  __ lea(end,  Address(addr, count, Address::times_ptr, -wordSize));
-  __ shrptr(addr, CardTable::card_shift());
-  __ shrptr(end,   CardTable::card_shift());
-  __ subptr(end, addr); // end --> count
-__ BIND(L_loop);
-  Address cardtable(addr, count, Address::times_1, disp);
-  __ movb(cardtable, 0);
-  __ decrement(count);
-  __ jcc(Assembler::greaterEqual, L_loop);
-#endif
 
 __ BIND(L_done);
 }

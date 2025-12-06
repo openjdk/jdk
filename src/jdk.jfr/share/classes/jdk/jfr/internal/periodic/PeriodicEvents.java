@@ -69,12 +69,14 @@ public final class PeriodicEvents {
         return taskRepository.removeTask(runnable);
     }
 
-    public static void doChunkBegin() {
+    public static void doChunkBegin(boolean startRecording) {
         long timestamp = JVM.counterTime();
         for (EventTask task : taskRepository.getTasks()) {
             var eventType = task.getEventType();
             if (eventType.isEnabled() && eventType.isBeginChunk()) {
-                task.run(timestamp, PeriodicType.BEGIN_CHUNK);
+                if (!eventType.isBackToBackSensitive() || startRecording) {
+                    task.run(timestamp, PeriodicType.BEGIN_CHUNK);
+                }
             }
         }
     }

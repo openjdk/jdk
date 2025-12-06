@@ -81,6 +81,7 @@ public class PropertyTest {
                 {"java.runtime.version"},
                 {"java.runtime.name"},
                 {"native.encoding"},
+                {"stdin.encoding"},
                 {"stdout.encoding"},
                 {"stderr.encoding"},
         };

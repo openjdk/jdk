@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -309,12 +309,16 @@ class JvmtiExport : public AllStatic {
   // If the jvmti_thread_state is absent and any thread filtered event
   // is enabled globally then it is created.
   // Otherwise, the thread->jvmti_thread_state() is returned.
-  static JvmtiThreadState* get_jvmti_thread_state(JavaThread *thread);
+  // The 'allow_suspend' parameter is passed as 'true' by default which work for almost all call sites.
+  // It means that a suspend point need to be organized by this function for virtual threads if the call
+  // to jvmtiEventController::thread_started hits a safepoint and gets a new suspend request.
+  // The 'allow_suspend' parameter must be passed as 'false' if thread is holding a VM lock.
+  static JvmtiThreadState* get_jvmti_thread_state(JavaThread *thread, bool allow_suspend = true);
 
   // single stepping management methods
   static void at_single_stepping_point(JavaThread *thread, Method* method, address location) NOT_JVMTI_RETURN;
-  static void expose_single_stepping(JavaThread *thread) NOT_JVMTI_RETURN;
-  static bool hide_single_stepping(JavaThread *thread) NOT_JVMTI_RETURN_(false);
+  static void expose_single_stepping(JvmtiThreadState* state) NOT_JVMTI_RETURN;
+  static JvmtiThreadState* hide_single_stepping(JavaThread *thread) NOT_JVMTI_RETURN_(nullptr);
 
   // Methods that notify the debugger that something interesting has happened in the VM.
   static void post_early_vm_start        () NOT_JVMTI_RETURN;
@@ -369,14 +373,14 @@ class JvmtiExport : public AllStatic {
     JVMTI_ONLY(return _should_post_class_file_load_hook);
     NOT_JVMTI(return false;)
   }
+  static bool has_frame_pops(JavaThread* thread) NOT_JVMTI_RETURN_(false);
   static bool is_early_phase() NOT_JVMTI_RETURN_(false);
   static bool has_early_class_hook_env() NOT_JVMTI_RETURN_(false);
   static bool has_early_vmstart_env() NOT_JVMTI_RETURN_(false);
-  // Return true if the class was modified by the hook.
-  static bool post_class_file_load_hook(Symbol* h_name, Handle class_loader,
+  static void post_class_file_load_hook(Symbol* h_name, Handle class_loader,
                                         Handle h_protection_domain,
                                         unsigned char **data_ptr, unsigned char **end_ptr,
-                                        JvmtiCachedClassFileData **cache_ptr) NOT_JVMTI_RETURN_(false);
+                                        JvmtiCachedClassFileData **cache_ptr) NOT_JVMTI_RETURN;
   static void post_native_method_bind(Method* method, address* function_ptr) NOT_JVMTI_RETURN;
   static void post_compiled_method_load(JvmtiEnv* env, nmethod *nm) NOT_JVMTI_RETURN;
   static void post_compiled_method_load(nmethod *nm) NOT_JVMTI_RETURN;
@@ -450,8 +454,6 @@ class JvmtiExport : public AllStatic {
                                                      jthread thread,
                                                      JavaThread ** jt_pp,
                                                      oop * thread_oop_p);
-  static jvmtiError cv_oop_to_JavaThread(ThreadsList * t_list, oop thread_oop,
-                                         JavaThread ** jt_pp);
 };
 
 // Support class used by JvmtiDynamicCodeEventCollector and others. It
@@ -583,29 +585,12 @@ class JvmtiSampledObjectAllocEventCollector : public JvmtiObjectAllocEventCollec
   static bool object_alloc_is_safe_to_sample() NOT_JVMTI_RETURN_(false);
 };
 
-// Marker class to disable the posting of VMObjectAlloc events
-// within its scope.
-//
-// Usage :-
-//
-// {
-//   NoJvmtiVMObjectAllocMark njm;
-//   :
-//   // VMObjAlloc event will not be posted
-//   JvmtiExport::vm_object_alloc_event_collector(obj);
-//   :
-// }
-
-class NoJvmtiVMObjectAllocMark : public StackObj {
- private:
-  // enclosing collector if enabled, null otherwise
-  JvmtiVMObjectAllocEventCollector *_collector;
-
-  bool was_enabled()    { return _collector != nullptr; }
+// Marker class to temporary disable posting of jvmti events.
+class NoJvmtiEventsMark : public StackObj {
 
  public:
-  NoJvmtiVMObjectAllocMark() NOT_JVMTI_RETURN;
-  ~NoJvmtiVMObjectAllocMark() NOT_JVMTI_RETURN;
+  NoJvmtiEventsMark() NOT_JVMTI_RETURN;
+  ~NoJvmtiEventsMark() NOT_JVMTI_RETURN;
 };
 
 
@@ -620,23 +605,20 @@ class JvmtiGCMarker : public StackObj {
 // internal single step events.
 class JvmtiHideSingleStepping : public StackObj {
  private:
-  bool         _single_step_hidden;
-  JavaThread * _thread;
+  JvmtiThreadState* _state;
 
  public:
-  JvmtiHideSingleStepping(JavaThread * thread) {
+  JvmtiHideSingleStepping(JavaThread * thread) : _state(nullptr) {
     assert(thread != nullptr, "sanity check");
 
-    _single_step_hidden = false;
-    _thread = thread;
     if (JvmtiExport::should_post_single_step()) {
-      _single_step_hidden = JvmtiExport::hide_single_stepping(_thread);
+      _state = JvmtiExport::hide_single_stepping(thread);
     }
   }
 
   ~JvmtiHideSingleStepping() {
-    if (_single_step_hidden) {
-      JvmtiExport::expose_single_stepping(_thread);
+    if (_state != nullptr) {
+      JvmtiExport::expose_single_stepping(_state);
     }
   }
 };

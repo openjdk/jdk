@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,7 @@
  */
 package com.sun.hotspot.igv.data.services;
 
-import com.sun.hotspot.igv.data.InputBlock;
 import com.sun.hotspot.igv.data.InputGraph;
-import java.util.Collection;
 
 /**
  *
@@ -34,5 +32,9 @@ import java.util.Collection;
  */
 public interface Scheduler {
 
-    public Collection<InputBlock> schedule(InputGraph graph);
+    // Compute a set of scheduled blocks for the given graph, creating new
+    // blocks if these are not found in the graph.
+    public void schedule(InputGraph graph);
+    // Schedule locally the set of blocks in the given graph.
+    public void scheduleLocally(InputGraph graph);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package com.sun.hotspot.igv.view;
 
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.*;
+import com.sun.hotspot.igv.data.services.PreProcessor;
 import com.sun.hotspot.igv.data.services.Scheduler;
 import com.sun.hotspot.igv.difference.Difference;
 import com.sun.hotspot.igv.filter.ColorFilter;
@@ -33,6 +34,7 @@ import com.sun.hotspot.igv.filter.FilterChain;
 import com.sun.hotspot.igv.filter.FilterChainProvider;
 import com.sun.hotspot.igv.graph.Diagram;
 import com.sun.hotspot.igv.graph.Figure;
+import com.sun.hotspot.igv.graph.LiveRangeSegment;
 import com.sun.hotspot.igv.graph.MatcherSelector;
 import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.util.RangeSliderModel;
@@ -53,6 +55,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private ArrayList<InputGraph> graphs;
     private Set<Integer> hiddenNodes;
     private Set<Integer> selectedNodes;
+    private Set<Integer> selectedLiveRanges;
     private FilterChain filterChain;
     private final FilterChain customFilterChain;
     private final FilterChain filtersOrder;
@@ -60,7 +63,8 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private InputGraph cachedInputGraph;
     private final ChangedEvent<DiagramViewModel> diagramChangedEvent = new ChangedEvent<>(this);
     private final ChangedEvent<DiagramViewModel> graphChangedEvent = new ChangedEvent<>(this);
-    private final ChangedEvent<DiagramViewModel> selectedNodesChangedEvent = new ChangedEvent<>(this);
+    // This event signals a change in the selection of nodes and/or live ranges.
+    private final ChangedEvent<DiagramViewModel> selectedElementsChangedEvent = new ChangedEvent<>(this);
     private final ChangedEvent<DiagramViewModel> hiddenNodesChangedEvent = new ChangedEvent<>(this);
     private ChangedListener<InputGraph> titleChangedListener = g -> {};
     private boolean showFreeInteractive;
@@ -70,6 +74,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private boolean showCFG;
     private boolean showNodeHull;
     private boolean showEmptyBlocks;
+    private boolean showLiveRanges;
     private static boolean globalSelection = false;
     private static boolean cutEdges = false;
 
@@ -112,6 +117,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     public void setShowFreeInteractive(boolean enable) {
         showFreeInteractive = enable;
         if (enable) {
+            selectedLiveRanges.clear();
             diagramChangedEvent.fire();
         }
     }
@@ -123,6 +129,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     public void setShowStableSea(boolean enable) {
         showStableSea = enable;
         if (enable) {
+            selectedLiveRanges.clear();
             diagramChangedEvent.fire();
         }
     }
@@ -134,6 +141,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     public void setShowSea(boolean enable) {
         showSea = enable;
         if (enable) {
+            selectedLiveRanges.clear();
             diagramChangedEvent.fire();
         }
     }
@@ -145,6 +153,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     public void setShowBlocks(boolean enable) {
         showBlocks = enable;
         if (enable) {
+            selectedLiveRanges.clear();
             diagramChangedEvent.fire();
         }
     }
@@ -176,6 +185,18 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
 
     public void setShowEmptyBlocks(boolean b) {
         showEmptyBlocks = b;
+        diagramChangedEvent.fire();
+    }
+
+    public boolean getShowLiveRanges() {
+        return showLiveRanges;
+    }
+
+    public void setShowLiveRanges(boolean b) {
+        showLiveRanges = b;
+        if (!showLiveRanges) {
+            selectedLiveRanges.clear();
+        }
         diagramChangedEvent.fire();
     }
 
@@ -218,9 +239,11 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         showBlocks = model.getShowBlocks();
         showNodeHull = model.getShowNodeHull();
         showEmptyBlocks = model.getShowEmptyBlocks();
+        showLiveRanges = model.getShowLiveRanges();
 
         hiddenNodes = new HashSet<>(model.getHiddenNodes());
         selectedNodes = new HashSet<>();
+        selectedLiveRanges = new HashSet<>();
         changed(this);
     }
 
@@ -243,9 +266,11 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         showCFG = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CONTROL_FLOW_GRAPH;
         showNodeHull = true;
         showEmptyBlocks = true;
+        showLiveRanges = true;
 
         hiddenNodes = new HashSet<>();
         selectedNodes = new HashSet<>();
+        selectedLiveRanges = new HashSet<>();
         selectGraph(graph);
     }
 
@@ -257,8 +282,8 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         return graphChangedEvent;
     }
 
-    public ChangedEvent<DiagramViewModel> getSelectedNodesChangedEvent() {
-        return selectedNodesChangedEvent;
+    public ChangedEvent<DiagramViewModel> getSelectedElementsChangedEvent() {
+        return selectedElementsChangedEvent;
     }
 
     public ChangedEvent<DiagramViewModel> getHiddenNodesChangedEvent() {
@@ -311,7 +336,16 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
             }
         }
         setColors(colors);
-        selectedNodesChangedEvent.fire();
+        selectedElementsChangedEvent.fire();
+    }
+
+    public Set<Integer> getSelectedLiveRanges() {
+        return selectedLiveRanges;
+    }
+
+    public void setSelectedLiveRanges(Set<Integer> liveRanges) {
+        selectedLiveRanges = liveRanges;
+        selectedElementsChangedEvent.fire();
     }
 
     public void showFigures(Collection<Figure> figures) {
@@ -331,6 +365,16 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         for (Figure f : diagram.getFigures()) {
             if (getSelectedNodes().contains(f.getInputNode().getId())) {
                 result.add(f);
+            }
+        }
+        return result;
+    }
+
+    public Set<LiveRangeSegment> getSelectedLiveRangeSegments() {
+        Set<LiveRangeSegment> result = new HashSet<>();
+        for (LiveRangeSegment segment : diagram.getLiveRangeSegments()) {
+            if (getSelectedLiveRanges().contains(segment.getLiveRange().getId())) {
+                result.add(segment);
             }
         }
         return result;
@@ -398,6 +442,8 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
             s.schedule(graph);
             graph.ensureNodesInBlocks();
         }
+        PreProcessor p = Lookup.getDefault().lookup(PreProcessor.class);
+        p.preProcess(graph);
         diagram = new Diagram(graph,
                 Settings.get().get(Settings.NODE_TEXT, Settings.NODE_TEXT_DEFAULT),
                 Settings.get().get(Settings.NODE_SHORT_TEXT, Settings.NODE_SHORT_TEXT_DEFAULT),

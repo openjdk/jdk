@@ -25,11 +25,11 @@
 #ifndef SHARE_PRIMS_JVMTIENVBASE_HPP
 #define SHARE_PRIMS_JVMTIENVBASE_HPP
 
+#include "oops/oopHandle.hpp"
 #include "prims/jvmtiEnvThreadState.hpp"
 #include "prims/jvmtiEventController.hpp"
 #include "prims/jvmtiThreadState.hpp"
-#include "oops/oopHandle.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/fieldDescriptor.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/javaThread.hpp"
@@ -328,11 +328,11 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   }
 
   JvmtiTagMap* tag_map_acquire() {
-    return Atomic::load_acquire(&_tag_map);
+    return AtomicAccess::load_acquire(&_tag_map);
   }
 
   void release_set_tag_map(JvmtiTagMap* tag_map) {
-    Atomic::release_store(&_tag_map, tag_map);
+    AtomicAccess::release_store(&_tag_map, tag_map);
   }
 
   // return true if event is enabled globally or for any thread
@@ -453,6 +453,27 @@ class JvmtiEnvIterator : public StackObj {
   JvmtiEnv* first()                 { return JvmtiEnvBase::head_environment(); }
   JvmtiEnv* next(JvmtiEnvBase* env) { return env->next_environment(); }
 };
+
+#if INCLUDE_JVMTI
+
+// This helper class marks current thread as making a Java upcall.
+// It is needed to hide JVMTI events during JVMTI operation.
+class JvmtiJavaUpcallMark : public StackObj {
+ private:
+  JavaThread* _current;
+ public:
+  JvmtiJavaUpcallMark(JavaThread* current) {
+    _current = current;
+    assert(!_current->is_in_java_upcall(), "sanity check");
+    _current->toggle_is_in_java_upcall();
+  }
+
+  ~JvmtiJavaUpcallMark() {
+    assert(_current->is_in_java_upcall(), "sanity check");
+    _current->toggle_is_in_java_upcall();
+  }
+};
+#endif // INCLUDE_JVMTI
 
 // Used in combination with the JvmtiHandshake class.
 // It is intended to support both platform and virtual threads.

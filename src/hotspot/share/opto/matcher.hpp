@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,6 @@ class MachOper;
 
 //---------------------------Matcher-------------------------------------------
 class Matcher : public PhaseTransform {
-  friend class VMStructs;
-
 public:
 
   // Machine-dependent definitions
@@ -65,13 +63,8 @@ public:
       Node_Stack::push(n, (uint)ns);
     }
     void push(Node *n, Node_State ns, Node *parent, int indx) {
-      ++_inode_top;
-      if ((_inode_top + 1) >= _inode_max) grow();
-      _inode_top->node = parent;
-      _inode_top->indx = (uint)indx;
-      ++_inode_top;
-      _inode_top->node = n;
-      _inode_top->indx = (uint)ns;
+      Node_Stack::push(parent, (uint)indx);
+      Node_Stack::push(n, (uint)ns);
     }
     Node *parent() {
       pop();
@@ -184,7 +177,6 @@ public:
   static const RegMask *idealreg2regmask[];
   RegMask *idealreg2spillmask  [_last_machine_leaf];
   RegMask *idealreg2debugmask  [_last_machine_leaf];
-  RegMask *idealreg2mhdebugmask[_last_machine_leaf];
   void init_spill_mask( Node *ret );
   // Convert machine register number to register mask
   static uint mreg2regmask_max;
@@ -192,8 +184,6 @@ public:
   static RegMask STACK_ONLY_mask;
   static RegMask caller_save_regmask;
   static RegMask caller_save_regmask_exclude_soe;
-  static RegMask mh_caller_save_regmask;
-  static RegMask mh_caller_save_regmask_exclude_soe;
 
   MachNode* mach_null() const { return _mach_null; }
 
@@ -343,6 +333,12 @@ public:
 
   static bool vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen);
 
+  // Identify if a vector mask operation prefers the input/output mask to be
+  // saved with a predicate type or not.
+  // - Return true if it prefers a predicate type (i.e. TypeVectMask).
+  // - Return false if it prefers a general vector type (i.e. TypeVectA to TypeVectZ).
+  static bool mask_op_prefers_predicate(int opcode, const TypeVect* vt);
+
   static const RegMask* predicate_reg_mask(void);
 
   // Vector width in bytes
@@ -418,20 +414,18 @@ public:
   static int            inline_cache_reg_encode();
 
   // Register for DIVI projection of divmodI
-  static RegMask divI_proj_mask();
+  static const RegMask& divI_proj_mask();
   // Register for MODI projection of divmodI
-  static RegMask modI_proj_mask();
+  static const RegMask& modI_proj_mask();
 
   // Register for DIVL projection of divmodL
-  static RegMask divL_proj_mask();
+  static const RegMask& divL_proj_mask();
   // Register for MODL projection of divmodL
-  static RegMask modL_proj_mask();
+  static const RegMask& modL_proj_mask();
 
   // Use hardware DIV instruction when it is faster than
   // a code which use multiply for division by constant.
   static bool use_asm_for_ldiv_by_con( jlong divisor );
-
-  static const RegMask method_handle_invoke_SP_save_mask();
 
   // Java-Interpreter calling convention
   // (what you use when calling between compiled-Java and Interpreted-Java
@@ -518,6 +512,8 @@ public:
   DEBUG_ONLY( bool verify_after_postselect_cleanup(); )
 
  public:
+  static bool is_register_biasing_candidate(const MachNode* mdef, int oper_index);
+
   // This routine is run whenever a graph fails to match.
   // If it returns, the compiler should bailout to interpreter without error.
   // In non-product mode, SoftMatchFailure is false to detect non-canonical

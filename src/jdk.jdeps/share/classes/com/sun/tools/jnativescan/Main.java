@@ -165,7 +165,7 @@ public class Main {
             action = JNativeScanTask.Action.PRINT;
         }
 
-        new JNativeScanTask(out, classPathJars, modulePaths, rootModules, version, action).run();
+        new JNativeScanTask(out, err, classPathJars, modulePaths, rootModules, version, action).run();
     }
 
     private static String[] expandArgFiles(String[] args) throws JNativeScanFatalError {

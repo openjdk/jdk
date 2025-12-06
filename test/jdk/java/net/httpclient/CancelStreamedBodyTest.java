@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,6 @@
  * @run testng/othervm -Djdk.internal.httpclient.debug=true
  *                     CancelStreamedBodyTest
  */
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsServer;
-import jdk.internal.net.http.common.OperationTrackers.Tracker;
-import jdk.test.lib.RandomFactory;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.ITestContext;
 import org.testng.ITestResult;
@@ -53,25 +48,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.Reference;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpConnectTimeoutException;
+import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
@@ -79,12 +64,13 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
 
-import static java.lang.System.arraycopy;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -97,10 +83,12 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
     HttpTestServer httpsTestServer;   // HTTPS/1.1
     HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
     HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
+    HttpTestServer http3TestServer;   // HTTP/3 ( h3  )
     String httpURI;
     String httpsURI;
     String http2URI;
     String https2URI;
+    String https3URI;
 
     static final long SERVER_LATENCY = 75;
     static final int ITERATION_COUNT = 3;
@@ -198,6 +186,7 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
 
     private String[] uris() {
         return new String[] {
+                https3URI,
                 httpURI,
                 httpsURI,
                 http2URI,
@@ -221,9 +210,9 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
         return result;
     }
 
-    private HttpClient makeNewClient() {
+    private HttpClient makeNewClient(HttpClient.Builder builder) {
         clientCount.incrementAndGet();
-        var client = HttpClient.newBuilder()
+        var client = builder
                 .proxy(HttpClient.Builder.NO_PROXY)
                 .executor(executor)
                 .sslContext(sslContext)
@@ -236,21 +225,45 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
         return TRACKER.track(client);
     }
 
-    HttpClient newHttpClient(boolean share) {
-        if (!share) return makeNewClient();
+    private Version version(String uri) {
+        if (uri == null) return null;
+        if (uri.contains("/http3/")) return HTTP_3;
+        if (uri.contains("/http2/")) return HTTP_2;
+        if (uri.contains("/https2/")) return HTTP_2;
+        if (uri.contains("/http1/")) return HTTP_1_1;
+        if (uri.contains("/https1/")) return HTTP_1_1;
+        return null;
+    }
+
+    HttpClient makeNewClient(Version version) {
+        var builder = (version == HTTP_3)
+                ? newClientBuilderForH3()
+                : HttpClient.newBuilder();
+        return makeNewClient(builder);
+    }
+
+    HttpClient newHttpClient(boolean share, String uri) {
+        if (!share) return makeNewClient(version(uri));
         HttpClient shared = sharedClient;
         if (shared != null) return shared;
         synchronized (this) {
             shared = sharedClient;
             if (shared == null) {
-                shared = sharedClient = makeNewClient();
+                shared = sharedClient = makeNewClient(HTTP_3);
             }
             return shared;
         }
     }
 
-    final static String BODY = "Some string |\n that ?\n can |\n be split ?\n several |\n ways.";
+    HttpRequest.Builder requestBuilder(String uri) {
+        var builder = HttpRequest.newBuilder(URI.create(uri));
+        var version = version(uri);
+        return version == HTTP_3
+                ? builder.version(HTTP_3).setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
+                : builder;
+    }
 
+    final static String BODY = "Some string |\n that ?\n can |\n be split ?\n several |\n ways.";
 
     @Test(dataProvider = "urls")
     public void testAsLines(String uri, boolean sameClient)
@@ -261,10 +274,10 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
         out.printf("%n%s testAsLines(%s, %b)%n", now(), uri, sameClient);
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null)
-                client = newHttpClient(sameClient);
+                client = newHttpClient(sameClient, uri);
             var tracker = TRACKER.getTracker(client);
 
-            HttpRequest req = HttpRequest.newBuilder(URI.create(uri))
+            HttpRequest req = requestBuilder(uri)
                     .GET()
                     .build();
             List<String> lines;
@@ -302,10 +315,10 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
         out.printf("%n%s testInputStream(%s, %b)%n", now(), uri, sameClient);
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null)
-                client = newHttpClient(sameClient);
+                client = newHttpClient(sameClient, uri);
             var tracker = TRACKER.getTracker(client);
 
-            HttpRequest req = HttpRequest.newBuilder(URI.create(uri))
+            HttpRequest req = requestBuilder(uri)
                     .GET()
                     .build();
             int read = -1;
@@ -318,7 +331,7 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
                 }
                 // Only check our still alive client for outstanding operations
                 // and outstanding subscribers here: it should have none.
-                var error = TRACKER.check(tracker, 1,
+                var error = TRACKER.check(tracker, 500,
                         (t) -> t.getOutstandingOperations() > 0 || t.getOutstandingSubscribers() > 0,
                         "subscribers for testInputStream(%s)\n\t step [%s,%s]".formatted(req.uri(), i,j),
                         false);
@@ -364,11 +377,16 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
         https2TestServer.addHandler(h2_chunkedHandler, "/https2/x/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/x/";
 
-        serverCount.addAndGet(4);
+        http3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
+        http3TestServer.addHandler(h2_chunkedHandler, "/http3/x/");
+        https3URI = "https://" + http3TestServer.serverAuthority() + "/http3/x/";
+
+        serverCount.addAndGet(5);
         httpTestServer.start();
         httpsTestServer.start();
         http2TestServer.start();
         https2TestServer.start();
+        http3TestServer.start();
     }
 
     @AfterTest
@@ -386,6 +404,7 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
             httpsTestServer.stop();
             http2TestServer.stop();
             https2TestServer.stop();
+            http3TestServer.stop();
         } finally {
             if (fail != null) {
                 if (sharedClientName != null) {

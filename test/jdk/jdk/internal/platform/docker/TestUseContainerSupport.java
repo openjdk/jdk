@@ -26,6 +26,7 @@
  * @test
  * @summary UseContainerSupport flag should reflect Metrics being available
  * @requires container.support
+ * @requires !vm.asan
  * @library /test/lib
  * @modules java.base/jdk.internal.platform
  * @build CheckUseContainerSupport
@@ -41,10 +42,7 @@ public class TestUseContainerSupport {
     private static final String imageName = Common.imageName("useContainerSupport");
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker()) {
-            return;
-        }
-
+        DockerTestUtils.checkCanTestDocker();
         DockerTestUtils.buildJdkContainerImage(imageName);
 
         try {

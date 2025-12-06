@@ -29,11 +29,11 @@
 
 #include "classfile/classLoaderDataGraph.hpp"
 #include "gc/shared/oopStorageSetParState.inline.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
@@ -152,7 +152,7 @@ public:
 //      we risk executing that code cache blob, and crashing.
 template <typename T>
 void ShenandoahSTWRootScanner::roots_do(T* oops, uint worker_id) {
-  MarkingNMethodClosure nmethods_cl(oops, !NMethodToOopClosure::FixRelocations, true /*FIXME*/);
+  MarkingNMethodClosure nmethods_cl(oops);
   CLDToOopClosure clds(oops, ClassLoaderData::_claim_strong);
   ResourceMark rm;
 

@@ -37,56 +37,25 @@ AC_DEFUN([FLAGS_SETUP_SHARED_LIBS],
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
     # Default works for linux, might work on other platforms as well.
     SHARED_LIBRARY_FLAGS='-shared'
-    # --disable-new-dtags forces use of RPATH instead of RUNPATH for rpaths.
-    # This protects internal library dependencies within the JDK from being
-    # overridden using LD_LIBRARY_PATH. See JDK-8326891 for more information.
-    SET_EXECUTABLE_ORIGIN='-Wl,-rpath,\$$ORIGIN[$]1 -Wl,--disable-new-dtags'
-    SET_SHARED_LIBRARY_ORIGIN="-Wl,-z,origin $SET_EXECUTABLE_ORIGIN"
-    SET_SHARED_LIBRARY_NAME='-Wl,-soname=[$]1'
 
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     if test "x$OPENJDK_TARGET_OS" = xmacosx; then
       # Linking is different on MacOSX
       SHARED_LIBRARY_FLAGS="-dynamiclib -compatibility_version 1.0.0 -current_version 1.0.0"
-      SET_EXECUTABLE_ORIGIN='-Wl,-rpath,@loader_path$(or [$]1,/.)'
-      SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
-      SET_SHARED_LIBRARY_NAME='-Wl,-install_name,@rpath/[$]1'
 
     elif test "x$OPENJDK_TARGET_OS" = xaix; then
       # Linking is different on aix
       SHARED_LIBRARY_FLAGS="-shared -Wl,-bM:SRE -Wl,-bnoentry"
-      SET_EXECUTABLE_ORIGIN=""
-      SET_SHARED_LIBRARY_ORIGIN=''
-      SET_SHARED_LIBRARY_NAME=''
 
     else
       # Default works for linux, might work on other platforms as well.
       SHARED_LIBRARY_FLAGS='-shared'
-      SET_EXECUTABLE_ORIGIN='-Wl,-rpath,\$$ORIGIN[$]1'
-      if test "x$OPENJDK_TARGET_OS" = xlinux; then
-        SET_EXECUTABLE_ORIGIN="$SET_EXECUTABLE_ORIGIN -Wl,--disable-new-dtags"
-      fi
-      SET_SHARED_LIBRARY_NAME='-Wl,-soname=[$]1'
-
-      # arm specific settings
-      if test "x$OPENJDK_TARGET_CPU" = "xarm"; then
-        # '-Wl,-z,origin' isn't used on arm.
-        SET_SHARED_LIBRARY_ORIGIN='-Wl,-rpath,\$$$$ORIGIN[$]1'
-      else
-        SET_SHARED_LIBRARY_ORIGIN="-Wl,-z,origin $SET_EXECUTABLE_ORIGIN"
-      fi
     fi
 
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     SHARED_LIBRARY_FLAGS="-dll"
-    SET_EXECUTABLE_ORIGIN=''
-    SET_SHARED_LIBRARY_ORIGIN=''
-    SET_SHARED_LIBRARY_NAME=''
   fi
 
-  AC_SUBST(SET_EXECUTABLE_ORIGIN)
-  AC_SUBST(SET_SHARED_LIBRARY_ORIGIN)
-  AC_SUBST(SET_SHARED_LIBRARY_NAME)
   AC_SUBST(SHARED_LIBRARY_FLAGS)
 ])
 
@@ -313,10 +282,17 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
     C_O_FLAG_DEBUG_JVM="-O0"
     C_O_FLAG_NONE="-O0"
 
+    if test "x$TOOLCHAIN_TYPE" = xgcc; then
+      C_O_FLAG_LTO="-flto=auto -fuse-linker-plugin -fno-strict-aliasing -fno-fat-lto-objects"
+    else
+      C_O_FLAG_LTO="-flto -fno-strict-aliasing"
+    fi
+
     if test "x$TOOLCHAIN_TYPE" = xclang && test "x$OPENJDK_TARGET_OS" = xaix; then
       C_O_FLAG_HIGHEST_JVM="${C_O_FLAG_HIGHEST_JVM} -finline-functions"
       C_O_FLAG_HIGHEST="${C_O_FLAG_HIGHEST} -finline-functions"
       C_O_FLAG_HI="${C_O_FLAG_HI} -finline-functions"
+      C_O_FLAG_LTO="${C_O_FLAG_LTO} -ffat-lto-objects"
     fi
 
     # -D_FORTIFY_SOURCE=2 hardening option needs optimization (at least -O1) enabled
@@ -348,6 +324,7 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
     C_O_FLAG_DEBUG_JVM=""
     C_O_FLAG_NONE="-Od"
     C_O_FLAG_SIZE="-O1"
+    C_O_FLAG_LTO="-GL"
   fi
 
   # Now copy to C++ flags
@@ -359,6 +336,7 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
   CXX_O_FLAG_DEBUG_JVM="$C_O_FLAG_DEBUG_JVM"
   CXX_O_FLAG_NONE="$C_O_FLAG_NONE"
   CXX_O_FLAG_SIZE="$C_O_FLAG_SIZE"
+  CXX_O_FLAG_LTO="$C_O_FLAG_LTO"
 
   # Adjust optimization flags according to debug level.
   case $DEBUG_LEVEL in
@@ -391,12 +369,15 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
   AC_SUBST(C_O_FLAG_NORM)
   AC_SUBST(C_O_FLAG_NONE)
   AC_SUBST(C_O_FLAG_SIZE)
+  AC_SUBST(C_O_FLAG_LTO)
+
   AC_SUBST(CXX_O_FLAG_HIGHEST_JVM)
   AC_SUBST(CXX_O_FLAG_HIGHEST)
   AC_SUBST(CXX_O_FLAG_HI)
   AC_SUBST(CXX_O_FLAG_NORM)
   AC_SUBST(CXX_O_FLAG_NONE)
   AC_SUBST(CXX_O_FLAG_SIZE)
+  AC_SUBST(CXX_O_FLAG_LTO)
 ])
 
 AC_DEFUN([FLAGS_SETUP_CFLAGS],
@@ -573,11 +554,19 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     TOOLCHAIN_CFLAGS_JDK="$TOOLCHAIN_CFLAGS_JDK -fvisibility=hidden -fstack-protector"
 
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    # The -utf-8 option sets source and execution character sets to UTF-8 to enable correct
-    # compilation of all source files regardless of the active code page on Windows.
-    TOOLCHAIN_CFLAGS_JVM="-nologo -MD -Zc:preprocessor -Zc:inline -Zc:throwingNew -permissive- -utf-8 -MP"
-    TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:preprocessor -Zc:inline -Zc:throwingNew -permissive- -utf-8 -Zc:wchar_t-"
+    TOOLCHAIN_CFLAGS_JVM="-nologo -MD -Zc:preprocessor -Zc:inline -Zc:throwingNew -permissive- -MP"
+    TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:preprocessor -Zc:inline -Zc:throwingNew -permissive- -Zc:wchar_t-"
   fi
+
+  # Set character encoding in source
+  if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
+    CHARSET_CFLAGS="-finput-charset=utf-8"
+  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+    # The -utf-8 option sets both source and execution character sets
+    CHARSET_CFLAGS="-utf-8 -validate-charset"
+  fi
+  TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM $CHARSET_CFLAGS"
+  TOOLCHAIN_CFLAGS_JDK="$TOOLCHAIN_CFLAGS_JDK $CHARSET_CFLAGS"
 
   # CFLAGS C language level for JDK sources (hotspot only uses C++)
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
@@ -589,11 +578,11 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
 
   # CXXFLAGS C++ language level for all of JDK, including Hotspot.
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
-    LANGSTD_CXXFLAGS="-std=c++14"
+    LANGSTD_CXXFLAGS="-std=c++17"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    LANGSTD_CXXFLAGS="-std:c++14"
+    LANGSTD_CXXFLAGS="-std:c++17"
   else
-    AC_MSG_ERROR([Cannot enable C++14 for this toolchain])
+    AC_MSG_ERROR([Cannot enable C++17 for this toolchain])
   fi
   TOOLCHAIN_CFLAGS_JDK_CXXONLY="$TOOLCHAIN_CFLAGS_JDK_CXXONLY $LANGSTD_CXXFLAGS"
   TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM $LANGSTD_CXXFLAGS"
@@ -721,16 +710,22 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
       $1_CFLAGS_CPU="-fsigned-char -Wno-psabi $ARM_ARCH_TYPE_FLAGS $ARM_FLOAT_TYPE_FLAGS -DJDK_ARCH_ABI_PROP_NAME='\"\$(JDK_ARCH_ABI_PROP_NAME)\"'"
       $1_CFLAGS_CPU_JVM="-DARM"
     elif test "x$FLAGS_CPU_ARCH" = xppc; then
-      $1_CFLAGS_CPU_JVM="-minsert-sched-nops=regroup_exact -mno-multiple -mno-string"
+      $1_CFLAGS_CPU_JVM="-mno-multiple -mno-string"
       if test "x$FLAGS_CPU" = xppc64; then
         # -mminimal-toc fixes `relocation truncated to fit' error for gcc 4.1.
-        # Use ppc64 instructions, but schedule for power5
-        $1_CFLAGS_CPU="-mcpu=powerpc64 -mtune=power5"
+        $1_CFLAGS_CPU="-mcpu=power8 -mtune=power8"
         $1_CFLAGS_CPU_JVM="${$1_CFLAGS_CPU_JVM} -mminimal-toc"
       elif test "x$FLAGS_CPU" = xppc64le; then
         # Little endian machine uses ELFv2 ABI.
-        # Use Power8, this is the first CPU to support PPC64 LE with ELFv2 ABI.
-        $1_CFLAGS_CPU="-mcpu=power8 -mtune=power10"
+        # Use Power8 for target cpu, this is the first CPU to support PPC64 LE with ELFv2 ABI.
+        # Use Power10 for tuning target, this is supported by gcc >= 10
+        POWER_TUNE_VERSION="-mtune=power10"
+        FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${POWER_TUNE_VERSION}],
+          IF_FALSE: [
+              POWER_TUNE_VERSION="-mtune=power8"
+          ]
+        )
+        $1_CFLAGS_CPU="-mcpu=power8 ${POWER_TUNE_VERSION}"
         $1_CFLAGS_CPU_JVM="${$1_CFLAGS_CPU_JVM} -DABI_ELFv2"
       fi
     elif test "x$FLAGS_CPU" = xs390x; then
@@ -920,36 +915,6 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
         IF_FALSE: [$2FDLIBM_CFLAGS=""])
   fi
   AC_SUBST($2FDLIBM_CFLAGS)
-
-  # Check whether the compiler supports the Arm C Language Extensions (ACLE)
-  # for SVE. Set SVE_CFLAGS to -march=armv8-a+sve if it does.
-  # ACLE and this flag are required to build the aarch64 SVE related functions in
-  # libvectormath.
-  if test "x$OPENJDK_TARGET_CPU" = "xaarch64"; then
-    if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
-      AC_LANG_PUSH(C)
-      OLD_CFLAGS="$CFLAGS"
-      CFLAGS="$CFLAGS -march=armv8-a+sve"
-      AC_MSG_CHECKING([if Arm SVE ACLE is supported])
-      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include <arm_sve.h>],
-          [
-            svint32_t r = svdup_n_s32(1);
-            return 0;
-          ])],
-          [
-            AC_MSG_RESULT([yes])
-            $2SVE_CFLAGS="-march=armv8-a+sve"
-          ],
-          [
-            AC_MSG_RESULT([no])
-            $2SVE_CFLAGS=""
-          ]
-      )
-      CFLAGS="$OLD_CFLAGS"
-      AC_LANG_POP(C)
-    fi
-  fi
-  AC_SUBST($2SVE_CFLAGS)
 ])
 
 AC_DEFUN_ONCE([FLAGS_SETUP_BRANCH_PROTECTION],

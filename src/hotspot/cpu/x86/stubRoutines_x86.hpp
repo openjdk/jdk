@@ -44,6 +44,7 @@ enum platform_dependent_constants {
 
 class x86 {
  friend class StubGenerator;
+ friend class StubRoutines;
  friend class VMStructs;
 
   // declare fields for arch-specific entries
@@ -75,39 +76,16 @@ public:
 #undef DEFINE_ARCH_ENTRY_GETTER_INIT
 #undef DEFINE_ARCH_GETTER_ENTRY
 
-
-#ifndef _LP64
-
-  static jint    _fpu_cntrl_wrd_std;
-  static jint    _fpu_cntrl_wrd_24;
-  static jint    _fpu_cntrl_wrd_trunc;
-
-  static jint    _fpu_subnormal_bias1[3];
-  static jint    _fpu_subnormal_bias2[3];
-
-  static address addr_fpu_cntrl_wrd_std()     { return (address)&_fpu_cntrl_wrd_std;   }
-  static address addr_fpu_cntrl_wrd_24()      { return (address)&_fpu_cntrl_wrd_24;    }
-  static address addr_fpu_cntrl_wrd_trunc()   { return (address)&_fpu_cntrl_wrd_trunc; }
-  static address addr_fpu_subnormal_bias1()   { return (address)&_fpu_subnormal_bias1; }
-  static address addr_fpu_subnormal_bias2()   { return (address)&_fpu_subnormal_bias2; }
-
-  static jint    fpu_cntrl_wrd_std()          { return _fpu_cntrl_wrd_std; }
-#endif // !LP64
-
  private:
   static jint    _mxcsr_std;
-#ifdef _LP64
   static jint    _mxcsr_rz;
-#endif // _LP64
   // masks and table for CRC32
   static const uint64_t _crc_by128_masks[];
   static const juint    _crc_table[];
-#ifdef _LP64
   static const juint    _crc_by128_masks_avx512[];
   static const juint    _crc_table_avx512[];
   static const juint    _crc32c_table_avx512[];
   static const juint    _shuf_table_crc32_avx512[];
-#endif // _LP64
   // table for CRC32C
   static juint* _crc32c_table;
   // table for arrays_hashcode
@@ -115,30 +93,22 @@ public:
   //k256 table for sha256
   static const juint _k256[];
   static address _k256_adr;
-#ifdef _LP64
   static juint _k256_W[];
   static address _k256_W_adr;
   static const julong _k512_W[];
   static address _k512_W_addr;
-#endif
 
  public:
   static address addr_mxcsr_std()        { return (address)&_mxcsr_std; }
-#ifdef _LP64
   static address addr_mxcsr_rz()        { return (address)&_mxcsr_rz; }
-#endif // _LP64
   static address crc_by128_masks_addr()  { return (address)_crc_by128_masks; }
-#ifdef _LP64
   static address crc_by128_masks_avx512_addr()  { return (address)_crc_by128_masks_avx512; }
   static address shuf_table_crc32_avx512_addr()  { return (address)_shuf_table_crc32_avx512; }
   static address crc_table_avx512_addr()  { return (address)_crc_table_avx512; }
   static address crc32c_table_avx512_addr()  { return (address)_crc32c_table_avx512; }
-#endif // _LP64
   static address k256_addr()      { return _k256_adr; }
-#ifdef _LP64
   static address k256_W_addr()    { return _k256_W_adr; }
   static address k512_W_addr()    { return _k512_W_addr; }
-#endif
 
   static address arrays_hashcode_powers_of_31() { return (address)_arrays_hashcode_powers_of_31; }
   static void generate_CRC32C_table(bool is_pclmulqdq_supported);

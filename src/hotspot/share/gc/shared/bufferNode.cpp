@@ -22,11 +22,10 @@
  *
  */
 
+#include "cppstdlib/new.hpp"
 #include "gc/shared/bufferNode.hpp"
-#include "utilities/debug.hpp"
 #include "memory/allocation.inline.hpp"
-
-#include <new>
+#include "utilities/debug.hpp"
 
 BufferNode::AllocatorConfig::AllocatorConfig(size_t size)
   : _buffer_capacity(size)

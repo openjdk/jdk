@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @library /test/lib
  * @compile SuspendResume2.java
  * @run driver jdk.test.lib.FileInstaller . .
- * @run main/othervm/native
+ * @run main/othervm/native/timeout=700
  *      -Djdk.virtualThreadScheduler.maxPoolSize=1
  *      -agentlib:SuspendResume2
  *      SuspendResume2
@@ -40,7 +40,7 @@
  * @library /test/lib
  * @compile SuspendResume2.java
  * @run driver jdk.test.lib.FileInstaller . .
- * @run main/othervm/native
+ * @run main/othervm/native/timeout=700
  *      -Djdk.virtualThreadScheduler.maxPoolSize=1
  *      -agentlib:SuspendResume2
  *      -XX:-VerifyContinuations
@@ -53,7 +53,7 @@
  * @library /test/lib
  * @compile SuspendResume2.java
  * @run driver jdk.test.lib.FileInstaller . .
- * @run main/othervm/native
+ * @run main/othervm/native/timeout=700
  *      -agentlib:SuspendResume2
  *      -XX:+UnlockExperimentalVMOptions
  *      -XX:-VMContinuations
@@ -158,11 +158,11 @@ class TestedThread extends Thread {
         // run in a loop
         threadReady = true;
         int i = 0;
-        int n = 1000;
+        int n = 100;
         while (!shouldFinish) {
             if (n <= 0) {
-                n = 1000;
-                SuspendResume2.sleep(10);
+                n = 100;
+                SuspendResume2.sleep(50);
             }
             if (i > n) {
                 i = 0;

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 ################################################################################
 # The order of these defines the priority by which we try to find them.
-VALID_VS_VERSIONS="2022 2019"
+VALID_VS_VERSIONS="2022 2019 2026"
 
 VS_DESCRIPTION_2019="Microsoft Visual Studio 2019"
 VS_VERSION_INTERNAL_2019=142
@@ -57,6 +57,21 @@ VS_SDK_PLATFORM_NAME_2022=
 VS_SUPPORTED_2022=true
 VS_TOOLSET_SUPPORTED_2022=true
 
+VS_DESCRIPTION_2026="Microsoft Visual Studio 2026"
+VS_VERSION_INTERNAL_2026=145
+VS_MSVCR_2026=vcruntime140.dll
+VS_VCRUNTIME_1_2026=vcruntime140_1.dll
+VS_MSVCP_2026=msvcp140.dll
+VS_ENVVAR_2026="VS180COMNTOOLS"
+VS_USE_UCRT_2026="true"
+VS_VS_INSTALLDIR_2026="Microsoft Visual Studio/18"
+VS_EDITIONS_2026="BuildTools Community Professional Enterprise"
+VS_SDK_INSTALLDIR_2026=
+VS_VS_PLATFORM_NAME_2026="v145"
+VS_SDK_PLATFORM_NAME_2026=
+VS_SUPPORTED_2026=true
+VS_TOOLSET_SUPPORTED_2026=true
+
 ################################################################################
 
 AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT],
@@ -87,7 +102,7 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT],
       elif test "x$TARGET_CPU" = xaarch64; then
         # for host x86-64, target aarch64
         # aarch64 requires Visual Studio 16.8 or higher
-        VCVARSFILES="vcvarsamd64_arm64.bat vcvarsx86_arm64.bat"
+        VCVARSFILES="vcvarsarm64.bat vcvarsamd64_arm64.bat vcvarsx86_arm64.bat"
       fi
 
       for VCVARSFILE in $VCVARSFILES; do

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.interfaces.RSAPublicKey;
-import java.security.spec.AlgorithmParameterSpec;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
@@ -150,7 +149,7 @@ final class RSAKeyExchange {
                 needFailover = !KeyUtil.isOracleJCEProvider(
                         cipher.getProvider().getName());
             } catch (InvalidKeyException | UnsupportedOperationException iue) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.warning("The Cipher provider "
                             + safeProviderName(cipher)
                             + " caused exception: " + iue.getMessage());
@@ -197,7 +196,7 @@ final class RSAKeyExchange {
             try {
                 return cipher.getProvider().toString();
             } catch (Exception e) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Retrieving The Cipher provider name" +
                             " caused exception ", e);
                 }
@@ -205,7 +204,7 @@ final class RSAKeyExchange {
             try {
                 return cipher.toString() + " (provider name not available)";
             } catch (Exception e) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Retrieving The Cipher name" +
                             " caused exception ", e);
                 }
@@ -220,7 +219,7 @@ final class RSAKeyExchange {
                 int clientVersion, int serverVersion, byte[] encodedSecret,
                 SecureRandom generator) throws GeneralSecurityException {
 
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine("Generating a premaster secret");
             }
 
@@ -235,7 +234,7 @@ final class RSAKeyExchange {
             } catch (InvalidAlgorithmParameterException |
                     NoSuchAlgorithmException iae) {
                 // unlikely to happen, otherwise, must be a provider exception
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("RSA premaster secret generation error", iae);
                 }
 
@@ -292,8 +291,7 @@ final class RSAKeyExchange {
             }
 
             @Override
-            public SecretKey deriveKey(String algorithm,
-                    AlgorithmParameterSpec params) throws IOException {
+            public SecretKey deriveKey(String typeNotUsed) throws IOException {
                 SSLMasterKeyDerivation mskd =
                         SSLMasterKeyDerivation.valueOf(
                                 context.negotiatedProtocol);
@@ -305,7 +303,7 @@ final class RSAKeyExchange {
                 }
                 SSLKeyDerivation kd = mskd.createKeyDerivation(
                         context, preMasterSecret);
-                return kd.deriveKey("MasterSecret", params);
+                return kd.deriveKey("MasterSecret");
             }
         }
     }

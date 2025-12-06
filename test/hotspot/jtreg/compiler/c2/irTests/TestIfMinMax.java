@@ -30,10 +30,9 @@ import jdk.test.lib.Utils;
 
 /*
  * @test
- * @bug 8324655 8329797 8331090
+ * @bug 8324655 8331090
  * @key randomness
  * @summary Test that if expressions are properly folded into min/max nodes
- * @requires os.arch != "riscv64"
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestIfMinMax
  */
@@ -140,42 +139,6 @@ public class TestIfMinMax {
         return a <= b ? b : a;
     }
 
-    public class Dummy {
-        long l;
-        public Dummy(long l) { this.l = l; }
-    }
-
-    @Setup
-    Object[] setupDummyArray() {
-        Dummy[] arr = new Dummy[512];
-        for (int i = 0; i < 512; i++) {
-            arr[i] = new Dummy(RANDOM.nextLong());
-        }
-        return new Object[] { arr };
-    }
-
-    @Test
-    @Arguments(setup = "setupDummyArray")
-    @IR(failOn = { IRNode.MAX_L })
-    public long testMaxLAndBarrierInLoop(Dummy[] arr) {
-        long result = 0;
-        for (int i = 0; i < arr.length; ++i) {
-            result += Math.max(arr[i].l, 1);
-        }
-        return result;
-    }
-
-    @Test
-    @Arguments(setup = "setupDummyArray")
-    @IR(failOn = { IRNode.MIN_L })
-    public long testMinLAndBarrierInLoop(Dummy[] arr) {
-        long result = 0;
-        for (int i = 0; i < arr.length; ++i) {
-            result += Math.min(arr[i].l, 1);
-        }
-        return result;
-    }
-
     @Setup
     static Object[] setupIntArrays() {
         int[] a = new int[512];
@@ -228,7 +191,7 @@ public class TestIfMinMax {
 
     @Test
     @IR(applyIf = { "SuperWordReductions", "true" },
-        applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true"},
+        applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true", "rvv", "true"},
         counts = { IRNode.MAX_REDUCTION_V, "> 0" })
     @Arguments(setup = "setupIntArrays")
     public Object[] testMaxIntReduction(int[] a, int[] b) {
@@ -262,7 +225,7 @@ public class TestIfMinMax {
 
     @Test
     @IR(applyIf = { "SuperWordReductions", "true" },
-        applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true"},
+        applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true", "rvv", "true"},
         counts = { IRNode.MIN_REDUCTION_V, "> 0" })
     @Arguments(setup = "setupIntArrays")
     public Object[] testMinIntReduction(int[] a, int[] b) {
@@ -297,7 +260,11 @@ public class TestIfMinMax {
 
     @Test
     @IR(applyIf = { "SuperWordReductions", "true" },
-        applyIfCPUFeatureOr = { "avx512", "true" },
+        applyIfCPUFeature = { "avx512", "true" },
+        counts = { IRNode.MAX_REDUCTION_V, "> 0" })
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfAnd = { "SuperWordReductions", "true", "MaxVectorSize", ">=32" },
+        applyIfCPUFeature = { "rvv", "true" },
         counts = { IRNode.MAX_REDUCTION_V, "> 0" })
     @Arguments(setup = "setupLongArrays")
     public Object[] testMaxLongReduction(long[] a, long[] b) {
@@ -332,7 +299,11 @@ public class TestIfMinMax {
 
     @Test
     @IR(applyIf = { "SuperWordReductions", "true" },
-        applyIfCPUFeatureOr = { "avx512", "true" },
+        applyIfCPUFeature = { "avx512", "true" },
+        counts = { IRNode.MIN_REDUCTION_V, "> 0" })
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfAnd = { "SuperWordReductions", "true", "MaxVectorSize", ">=32" },
+        applyIfCPUFeature = { "rvv", "true" },
         counts = { IRNode.MIN_REDUCTION_V, "> 0" })
     @Arguments(setup = "setupLongArrays")
     public Object[] testMinLongReduction(long[] a, long[] b) {
@@ -366,7 +337,7 @@ public class TestIfMinMax {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true"},
+    @IR(applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true", "rvv", "true"},
         counts = { IRNode.MAX_VI, "> 0" })
     @Arguments(setup = "setupIntArrays")
     public Object[] testMaxIntVector(int[] a, int[] b) {
@@ -401,7 +372,7 @@ public class TestIfMinMax {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true"},
+    @IR(applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true", "rvv", "true"},
         counts = { IRNode.MIN_VI, "> 0" })
     @Arguments(setup = "setupIntArrays")
     public Object[] testMinIntVector(int[] a, int[] b) {
@@ -436,7 +407,7 @@ public class TestIfMinMax {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true"},
+    @IR(applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true", "rvv", "true"},
         counts = { IRNode.MAX_VL, "> 0" })
     @Arguments(setup = "setupLongArrays")
     public Object[] testMaxLongVector(long[] a, long[] b) {
@@ -471,7 +442,7 @@ public class TestIfMinMax {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true"},
+    @IR(applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true", "rvv", "true"},
         counts = { IRNode.MIN_VL, "> 0" })
     @Arguments(setup = "setupLongArrays")
     public Object[] testMinLongVector(long[] a, long[] b) {

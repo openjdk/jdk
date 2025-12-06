@@ -42,6 +42,12 @@ import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+/**
+ * Class to replace tokens in strings.
+ * <p>
+ * Single instance holds a list of tokens. Tokens can be substrings of each other.
+ * The implementation performs greedy replacement: longer tokens are replaced first.
+ */
 public final class TokenReplace {
 
     private record TokenCut(String[] main, String[] sub) {
@@ -103,7 +109,7 @@ public final class TokenReplace {
         this.tokens = tokens;
         regexps = new ArrayList<>();
 
-        for(;;) {
+        for (;;) {
             final var tokenCut = TokenCut.createFromOrderedTokens(tokens);
             regexps.add(Pattern.compile(Stream.of(tokenCut.main()).map(Pattern::quote).collect(joining("|", "(", ")"))));
 
@@ -153,12 +159,12 @@ public final class TokenReplace {
     @Override
     public boolean equals(Object obj) {
         // Auto generated code
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if ((obj == null) || (getClass() != obj.getClass())) {
             return false;
-        if (getClass() != obj.getClass())
-            return false;
+        }
         TokenReplace other = (TokenReplace) obj;
         return Arrays.equals(tokens, other.tokens);
     }
@@ -193,5 +199,5 @@ public final class TokenReplace {
 
     private final String[] tokens;
     private final transient List<Pattern> regexps;
-    private final static Object NULL_SUPPLIED = new Object();
+    private static final Object NULL_SUPPLIED = new Object();
 }

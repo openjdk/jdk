@@ -30,7 +30,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/threadSMR.hpp"
@@ -49,7 +49,6 @@ ThreadLocalAllocBuffer::ThreadLocalAllocBuffer() :
   _desired_size(0),
   _refill_waste_limit(0),
   _allocated_before_last_gc(0),
-  _bytes_since_last_sample_point(0),
   _number_of_refills(0),
   _refill_waste(0),
   _gc_waste(0),
@@ -73,12 +72,11 @@ size_t ThreadLocalAllocBuffer::remaining() {
 }
 
 void ThreadLocalAllocBuffer::accumulate_and_reset_statistics(ThreadLocalAllocStats* stats) {
-  Thread* thr     = thread();
-  size_t capacity = Universe::heap()->tlab_capacity(thr);
-  size_t used     = Universe::heap()->tlab_used(thr);
+  size_t capacity = Universe::heap()->tlab_capacity();
+  size_t used = Universe::heap()->tlab_used();
 
   _gc_waste += (unsigned)remaining();
-  size_t total_allocated = thr->allocated_bytes();
+  size_t total_allocated = (size_t)thread()->allocated_bytes();
   size_t allocated_since_last_gc = total_allocated - _allocated_before_last_gc;
   _allocated_before_last_gc = total_allocated;
 
@@ -125,11 +123,7 @@ void ThreadLocalAllocBuffer::insert_filler() {
 void ThreadLocalAllocBuffer::make_parsable() {
   if (end() != nullptr) {
     invariants();
-    if (ZeroTLAB) {
-      retire();
-    } else {
-      insert_filler();
-    }
+    insert_filler();
   }
 }
 
@@ -140,22 +134,20 @@ void ThreadLocalAllocBuffer::retire(ThreadLocalAllocStats* stats) {
 
   if (end() != nullptr) {
     invariants();
-    thread()->incr_allocated_bytes(used_bytes());
     insert_filler();
     initialize(nullptr, nullptr, nullptr);
   }
 }
 
-void ThreadLocalAllocBuffer::retire_before_allocation() {
+void ThreadLocalAllocBuffer::record_refill_waste() {
   _refill_waste += (unsigned int)remaining();
-  retire();
 }
 
 void ThreadLocalAllocBuffer::resize() {
   // Compute the next tlab size using expected allocation amount
   assert(ResizeTLAB, "Should not call this otherwise");
   size_t alloc = (size_t)(_allocation_fraction.average() *
-                          (Universe::heap()->tlab_capacity(thread()) / HeapWordSize));
+                          (Universe::heap()->tlab_capacity() / HeapWordSize));
   size_t new_size = alloc / _target_refills;
 
   new_size = clamp(new_size, min_size(), max_size());
@@ -211,7 +203,7 @@ void ThreadLocalAllocBuffer::initialize() {
 
   set_desired_size(initial_desired_size());
 
-  size_t capacity = Universe::heap()->tlab_capacity(thread()) / HeapWordSize;
+  size_t capacity = Universe::heap()->tlab_capacity() / HeapWordSize;
   if (capacity > 0) {
     // Keep alloc_frac as float and not double to avoid the double to float conversion
     float alloc_frac = desired_size() * target_refills() / (float)capacity;
@@ -275,7 +267,7 @@ size_t ThreadLocalAllocBuffer::initial_desired_size() {
     // Initial size is a function of the average number of allocating threads.
     unsigned int nof_threads = ThreadLocalAllocStats::allocating_threads_avg();
 
-    init_sz  = (Universe::heap()->tlab_capacity(thread()) / HeapWordSize) /
+    init_sz  = (Universe::heap()->tlab_capacity() / HeapWordSize) /
                       (nof_threads * target_refills());
     init_sz = align_object_size(init_sz);
   }
@@ -296,7 +288,7 @@ void ThreadLocalAllocBuffer::print_stats(const char* tag) {
   Thread* thrd = thread();
   size_t waste = _gc_waste + _refill_waste;
   double waste_percent = percent_of(waste, _allocated_size);
-  size_t tlab_used  = Universe::heap()->tlab_used(thrd);
+  size_t tlab_used  = Universe::heap()->tlab_used();
   log.trace("TLAB: %s thread: " PTR_FORMAT " [id: %2d]"
             " desired_size: %zuKB"
             " slow allocs: %d  refill waste: %zuB"
@@ -312,30 +304,20 @@ void ThreadLocalAllocBuffer::print_stats(const char* tag) {
             _refill_waste * HeapWordSize);
 }
 
-void ThreadLocalAllocBuffer::set_sample_end(bool reset_byte_accumulation) {
-  size_t heap_words_remaining = pointer_delta(_end, _top);
-  size_t bytes_until_sample = thread()->heap_sampler().bytes_until_sample();
-  size_t words_until_sample = bytes_until_sample / HeapWordSize;
-
-  if (reset_byte_accumulation) {
-    _bytes_since_last_sample_point = 0;
-  }
-
-  if (heap_words_remaining > words_until_sample) {
-    HeapWord* new_end = _top + words_until_sample;
-    set_end(new_end);
-    _bytes_since_last_sample_point += bytes_until_sample;
-  } else {
-    _bytes_since_last_sample_point += heap_words_remaining * HeapWordSize;
-  }
-}
-
 Thread* ThreadLocalAllocBuffer::thread() {
   return (Thread*)(((char*)this) + in_bytes(start_offset()) - in_bytes(Thread::tlab_start_offset()));
 }
 
 void ThreadLocalAllocBuffer::set_back_allocation_end() {
   _end = _allocation_end;
+}
+
+void ThreadLocalAllocBuffer::set_sampling_point(HeapWord* sampling_point) {
+  precond(sampling_point >= _top);
+  precond(sampling_point <= _allocation_end);
+
+  // This will trigger a slow-path, which in turn might take a sample.
+  _end = sampling_point;
 }
 
 HeapWord* ThreadLocalAllocBuffer::hard_end() {
@@ -477,9 +459,9 @@ size_t ThreadLocalAllocBuffer::end_reserve() {
 }
 
 const HeapWord* ThreadLocalAllocBuffer::start_relaxed() const {
-  return Atomic::load(&_start);
+  return AtomicAccess::load(&_start);
 }
 
 const HeapWord* ThreadLocalAllocBuffer::top_relaxed() const {
-  return Atomic::load(&_top);
+  return AtomicAccess::load(&_top);
 }

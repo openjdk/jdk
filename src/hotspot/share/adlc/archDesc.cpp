@@ -24,7 +24,7 @@
 
 
 // archDesc.cpp - Internal format for architecture definition
-#include <unordered_set>
+#include <unordered_set>  // do not reorder
 #include "adlc.hpp"
 
 static FILE *errfile = stderr;
@@ -751,12 +751,11 @@ bool ArchDesc::check_usage() {
   callback.do_form_by_name("sRegL");
 
   // special generic vector operands only used in Matcher::pd_specialize_generic_vector_operand
-  // x86_32 combine x86.ad and x86_32.ad, the vec*/legVec* can not be cleaned from IA32
 #if defined(AARCH64)
   callback.do_form_by_name("vecA");
   callback.do_form_by_name("vecD");
   callback.do_form_by_name("vecX");
-#elif defined(IA32) || defined(AMD64)
+#elif defined(AMD64)
   callback.do_form_by_name("vecS");
   callback.do_form_by_name("vecD");
   callback.do_form_by_name("vecX");
@@ -900,10 +899,12 @@ int ArchDesc::emit_msg(int quiet, int flag, int line, const char *fmt,
 
 // Construct the name of the register mask.
 static const char *getRegMask(const char *reg_class_name) {
-  if( reg_class_name == nullptr ) return "RegMask::Empty";
+  if (reg_class_name == nullptr) {
+    return "RegMask::EMPTY";
+  }
 
   if (strcmp(reg_class_name,"Universe")==0) {
-    return "RegMask::Empty";
+    return "RegMask::EMPTY";
   } else if (strcmp(reg_class_name,"stack_slots")==0) {
     return "(Compile::current()->FIRST_STACK_mask())";
   } else if (strcmp(reg_class_name, "dynamic")==0) {
@@ -921,7 +922,7 @@ static const char *getRegMask(const char *reg_class_name) {
 
 // Convert a register class name to its register mask.
 const char *ArchDesc::reg_class_to_reg_mask(const char *rc_name) {
-  const char *reg_mask = "RegMask::Empty";
+  const char* reg_mask = "RegMask::EMPTY";
 
   if( _register ) {
     RegClass *reg_class  = _register->getRegClass(rc_name);
@@ -940,7 +941,7 @@ const char *ArchDesc::reg_class_to_reg_mask(const char *rc_name) {
 
 // Obtain the name of the RegMask for an OperandForm
 const char *ArchDesc::reg_mask(OperandForm  &opForm) {
-  const char *regMask      = "RegMask::Empty";
+  const char* regMask = "RegMask::EMPTY";
 
   // Check constraints on result's register class
   const char *result_class = opForm.constrained_reg_class();
@@ -969,9 +970,9 @@ const char *ArchDesc::reg_mask(InstructForm &inForm) {
     abort();
   }
 
-  // Instructions producing 'Universe' use RegMask::Empty
+  // Instructions producing 'Universe' use RegMask::EMPTY
   if (strcmp(result,"Universe") == 0) {
-    return "RegMask::Empty";
+    return "RegMask::EMPTY";
   }
 
   // Lookup this result operand and get its register class

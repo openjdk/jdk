@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -502,7 +502,7 @@ public class VisibleMemberTable {
 
     private boolean mustDocument(Element e) {
         // these checks are ordered in a particular way to avoid parsing unless absolutely necessary
-        return utils.shouldDocument(e) && !utils.hasHiddenTag(e);
+        return utils.shouldDocument(e) && !utils.isHidden(e);
     }
 
     private boolean allowInheritedMembers(Element e, Kind kind, LocalMemberTable lmt) {
@@ -678,22 +678,16 @@ public class VisibleMemberTable {
             return false;
         }
 
-        // Multiple-Inheritance: remove the interface method that may have
-        // been overridden by another interface method in the hierarchy
-        //
-        // Note: The following approach is very simplistic and is compatible
-        // with old VMM. A future enhancement, may include a contention breaker,
-        // to correctly eliminate those methods that are merely definitions
-        // in favor of concrete overriding methods, for instance those that have
-        // API documentation and are not abstract OR default methods.
+        // Multiple-Inheritance: No Contention. In Java's method resolution,
+        // any override of a signature (whether by a subclass or by a subinterface,
+        // including when it is final from superclasses) always takes precedence
+        // over the original interface definition. All interface methods have low resolution priority.
+        // Therefore, when considering an interface inherited method, as soon as
+        // at least one overrider exists in the inheritance chain,
+        // we do not inherit the older interface definition.
         if (inInterface) {
             List<ExecutableElement> list = overriddenByTable.get(inheritedMethod);
-            if (list != null) {
-                boolean found = list.stream()
-                        .anyMatch(this::isDeclaredInInterface);
-                if (found)
-                    return false;
-            }
+            if (list != null && !list.isEmpty()) return false;
         }
 
         Elements elementUtils = config.docEnv.getElementUtils();

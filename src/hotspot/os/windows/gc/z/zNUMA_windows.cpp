@@ -21,18 +21,32 @@
  * questions.
  */
 
-#include "gc/z/zNUMA.hpp"
+#include "gc/shared/gc_globals.hpp"
+#include "gc/z/zCPU.inline.hpp"
+#include "gc/z/zNUMA.inline.hpp"
+#include "runtime/globals_extension.hpp"
 
 void ZNUMA::pd_initialize() {
   _enabled = false;
-  _count = 1;
+  _count = !FLAG_IS_DEFAULT(ZFakeNUMA)
+      ? ZFakeNUMA
+      : 1;
 }
 
 uint32_t ZNUMA::id() {
+  if (is_faked()) {
+    // ZFakeNUMA testing
+    return ZCPU::id() % ZFakeNUMA;
+  }
+
   return 0;
 }
 
 uint32_t ZNUMA::memory_id(uintptr_t addr) {
   // NUMA support not enabled, assume everything belongs to node zero
   return 0;
+}
+
+int ZNUMA::numa_id_to_node(uint32_t numa_id) {
+  ShouldNotCallThis();
 }

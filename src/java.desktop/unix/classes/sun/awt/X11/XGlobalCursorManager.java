@@ -61,6 +61,7 @@ public final class XGlobalCursorManager extends GlobalCursorManager {
     }
 
 
+    @Override
     protected void setCursor(Component comp, Cursor cursor, boolean useCache) {
         if (comp == null) {
             return;
@@ -108,6 +109,7 @@ public final class XGlobalCursorManager extends GlobalCursorManager {
         }
     }
 
+    @Override
     protected void updateCursorOutOfJava() {
         // in case we have grabbed input for Swing we need to reset cursor
         // when mouse pointer is out of any java toplevel.
@@ -115,6 +117,7 @@ public final class XGlobalCursorManager extends GlobalCursorManager {
         updateGrabbedCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
     }
 
+    @Override
     protected void getCursorPos(Point p) {
 
         if (!((XToolkit)Toolkit.getDefaultToolkit()).getLastCursorPos(p)) {
@@ -147,10 +150,12 @@ public final class XGlobalCursorManager extends GlobalCursorManager {
     /*
      * native method to call corresponding methods in Component
      */
+    @Override
     protected  Point getLocationOnScreen(Component c) {
         return c.getLocationOnScreen();
     }
 
+    @Override
     protected Component findHeavyweightUnderCursor(boolean useCache) {
         return findHeavyweightUnderCursor();
     }

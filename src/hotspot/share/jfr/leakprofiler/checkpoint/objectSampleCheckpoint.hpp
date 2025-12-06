@@ -25,8 +25,8 @@
 #ifndef SHARE_JFR_LEAKPROFILER_CHECKPOINT_OBJECTSAMPLECHECKPOINT_HPP
 #define SHARE_JFR_LEAKPROFILER_CHECKPOINT_OBJECTSAMPLECHECKPOINT_HPP
 
-#include "memory/allStatic.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
+#include "memory/allStatic.hpp"
 
 class EdgeStore;
 class InstanceKlass;
@@ -47,6 +47,7 @@ class ObjectSampleCheckpoint : AllStatic {
   static void add_to_leakp_set(const InstanceKlass* ik, traceid method_id);
   static int save_mark_words(const ObjectSampler* sampler, ObjectSampleMarker& marker, bool emit_all);
   static void write_stacktrace(const JfrStackTrace* trace, JfrCheckpointWriter& writer);
+  static void write_stacktraces(Thread* thread);
   static void write(const ObjectSampler* sampler, EdgeStore* edge_store, bool emit_all, Thread* thread);
   static void clear();
  public:

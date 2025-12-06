@@ -33,12 +33,12 @@
 #include "compiler/compilationFailureInfo.hpp"
 #include "compiler/compileTask.hpp"
 #ifdef COMPILER2
-#include "opto/node.hpp"
 #include "opto/compile.hpp"
+#include "opto/node.hpp"
 #endif
 #include "runtime/os.hpp"
-#include "utilities/ostream.hpp"
 #include "utilities/nativeCallStack.hpp"
+#include "utilities/ostream.hpp"
 
 int CompilationFailureInfo::current_compile_id_or_0() {
   ciEnv* env = ciEnv::current();

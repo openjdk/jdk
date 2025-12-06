@@ -174,7 +174,7 @@ public class Timer implements Serializable
 
     // This field is maintained by TimerQueue.
     // eventQueued can also be reset by the TimerQueue, but will only ever
-    // happen in applet case when TimerQueues thread is destroyed.
+    // happen in an AppContext case when TimerQueues thread is destroyed.
     // access to this field is synchronized on getLock() lock.
     transient TimerQueue.DelayedTimer delayedTimer = null;
 

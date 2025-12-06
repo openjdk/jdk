@@ -36,7 +36,7 @@ import sun.awt.image.ByteInterleavedRaster;
 import java.awt.peer.FramePeer;
 
 @SuppressWarnings("serial") // JDK-implementation class
-public class WEmbeddedFrame extends EmbeddedFrame {
+public final class WEmbeddedFrame extends EmbeddedFrame {
 
     static {
         initIDs();
@@ -79,6 +79,7 @@ public class WEmbeddedFrame extends EmbeddedFrame {
         }
     }
 
+    @Override
     public void addNotify() {
         if (!isDisplayable()) {
             WToolkit toolkit = (WToolkit)Toolkit.getDefaultToolkit();
@@ -224,6 +225,7 @@ public class WEmbeddedFrame extends EmbeddedFrame {
     public void activateEmbeddingTopLevel() {
     }
 
+    @Override
     public void synthesizeWindowActivation(final boolean activate) {
         final FramePeer peer = AWTAccessor.getComponentAccessor().getPeer(this);
         if (!activate || EventQueue.isDispatchThread()) {
@@ -241,7 +243,9 @@ public class WEmbeddedFrame extends EmbeddedFrame {
         }
     }
 
+    @Override
     public void registerAccelerator(AWTKeyStroke stroke) {}
+    @Override
     public void unregisterAccelerator(AWTKeyStroke stroke) {}
 
     /**
@@ -249,13 +253,14 @@ public class WEmbeddedFrame extends EmbeddedFrame {
      *     super.notifyModalBlocked(blocker, blocked) must be present
      *     when overriding.
      * It may occur that embedded frame is not put into its
-     *     container at the moment when it is blocked, for example,
-     *     when running an applet in IE. Then the call to this method
+     *     container at the moment when it is blocked.
+     *     Then the call to this method
      *     should be delayed until embedded frame is reparented.
      *
      * NOTE: This method may be called by privileged threads.
      *     DO NOT INVOKE CLIENT CODE ON THIS THREAD!
      */
+    @Override
     public void notifyModalBlocked(Dialog blocker, boolean blocked) {
         try {
             ComponentPeer thisPeer = (ComponentPeer)WToolkit.targetToPeer(this);

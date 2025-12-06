@@ -25,7 +25,7 @@
  * @test
  * @bug     6207386
  * @summary Undecidable type system leads to crash
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @compile Test.java
  */
 

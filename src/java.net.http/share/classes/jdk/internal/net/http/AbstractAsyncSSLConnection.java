@@ -41,7 +41,7 @@ import jdk.internal.net.http.common.Alpns;
 import jdk.internal.net.http.common.SSLTube;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Utils;
-import static jdk.internal.net.http.common.Utils.ServerName;
+import sun.net.util.IPAddressUtil;
 
 /**
  * Asynchronous version of SSLConnection.
@@ -63,6 +63,10 @@ import static jdk.internal.net.http.common.Utils.ServerName;
  */
 abstract class AbstractAsyncSSLConnection extends HttpConnection
 {
+
+    private record ServerName(String name, boolean isLiteral) {
+    }
+
     protected final SSLEngine engine;
     protected final SSLParameters sslParameters;
     private final List<SNIServerName> sniServerNames;
@@ -71,16 +75,19 @@ abstract class AbstractAsyncSSLConnection extends HttpConnection
     private static final boolean disableHostnameVerification
             = Utils.isHostnameVerificationDisabled();
 
-    AbstractAsyncSSLConnection(InetSocketAddress addr,
+    AbstractAsyncSSLConnection(Origin originServer,
+                               InetSocketAddress addr,
                                HttpClientImpl client,
-                               ServerName serverName, int port,
-                               String[] alpn) {
-        super(addr, client);
+                               String[] alpn,
+                               String label) {
+        super(originServer, addr, client, label);
+        assert originServer != null : "origin server is null";
+        final ServerName serverName = getServerName(originServer);
         this.sniServerNames = formSNIServerNames(serverName, client);
         SSLContext context = client.theSSLContext();
         sslParameters = createSSLParameters(client, this.sniServerNames, alpn);
         Log.logParams(sslParameters);
-        engine = createEngine(context, serverName.name(), port, sslParameters);
+        engine = createEngine(context, serverName.name(), originServer.port(), sslParameters);
     }
 
     abstract SSLTube getConnectionFlow();
@@ -184,6 +191,23 @@ abstract class AbstractAsyncSSLConnection extends HttpConnection
 
         engine.setSSLParameters(sslParameters);
         return engine;
+    }
+
+    /**
+     * Analyse the given {@linkplain Origin origin server} and determine
+     * if the origin server's host is a literal or not, returning the server's
+     * address in String form.
+     */
+    private static ServerName getServerName(final Origin originServer) {
+        final String host = originServer.host();
+        byte[] literal = IPAddressUtil.textToNumericFormatV4(host);
+        if (literal == null) {
+            // not IPv4 literal. Check IPv6
+            literal = IPAddressUtil.textToNumericFormatV6(host);
+            return new ServerName(host, literal != null);
+        } else {
+            return new ServerName(host, true);
+        }
     }
 
     @Override

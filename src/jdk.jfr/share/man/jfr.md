@@ -106,7 +106,7 @@ Use `jfr print` to print the contents of a flight recording file to standard out
 
 The syntax is:
 
-`jfr print` \[`--xml`|`--json`\]
+`jfr print` \[`--xml`|`--json`|`--exact`\]
            \[`--categories` <*filters*>\]
            \[`--events` <*filters*>\]
            \[`--stack-depth` <*depth*>\]
@@ -119,6 +119,9 @@ where:
 
 <a id="print-option-json">`--json`</a>
 : Print the recording in JSON format.
+
+<a id="print-option-exact">`--exact`</a>
+: Pretty-print numbers and timestamps with full precision.
 
 <a id="print-option-categories">`--categories` <*filters*></a>
 : Select events matching a category name.

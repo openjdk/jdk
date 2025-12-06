@@ -92,7 +92,7 @@ public class XMenuItemPeer implements MenuItemPeer {
      */
     private TextMetrics textMetrics;
 
-    static class TextMetrics implements Cloneable {
+    static final class TextMetrics implements Cloneable {
         /*
          * Calculated text size members
          */
@@ -106,6 +106,7 @@ public class XMenuItemPeer implements MenuItemPeer {
             this.textBaseline = textBaseline;
         }
 
+        @Override
         public Object clone() {
             try {
                 return super.clone();
@@ -145,10 +146,12 @@ public class XMenuItemPeer implements MenuItemPeer {
     /*
      * From MenuComponentPeer
      */
+    @Override
     public void dispose() {
         //Empty function
     }
 
+    @Override
     public void setFont(Font font) {
         resetTextMetrics();
         repaintIfShowing();
@@ -156,11 +159,13 @@ public class XMenuItemPeer implements MenuItemPeer {
     /*
      * From MenuItemPeer
      */
+    @Override
     public void setLabel(String label) {
         resetTextMetrics();
         repaintIfShowing();
     }
 
+    @Override
     public void setEnabled(boolean enabled) {
         repaintIfShowing();
     }

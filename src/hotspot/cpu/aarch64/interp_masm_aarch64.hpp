@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -45,6 +45,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   virtual void call_VM_base(Register oop_result,
                             Register java_thread,
                             Register last_java_sp,
+                            Label*   return_pc,
                             address  entry_point,
                             int number_of_arguments,
                             bool check_exceptions);
@@ -58,11 +59,24 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void load_earlyret_value(TosState state);
 
+  // Use for vthread preemption
   void call_VM_preemptable(Register oop_result,
                            address entry_point,
-                           Register arg_1);
+                           Register arg_1,
+                           bool check_exceptions = true);
+  void call_VM_preemptable(Register oop_result,
+                           address entry_point,
+                           Register arg_1,
+                           Register arg_2,
+                           bool check_exceptions = true);
   void restore_after_resume(bool is_native);
+ private:
+  void call_VM_preemptable_helper(Register oop_result,
+                                  address entry_point,
+                                  int number_of_arguments,
+                                  bool check_exceptions);
 
+ public:
   void jump_to_entry(address entry);
 
   virtual void check_and_handle_popframe(Register java_thread);
@@ -247,11 +261,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void verify_method_data_pointer();
 
   void set_mdp_data_at(Register mdp_in, int constant, Register value);
-  void increment_mdp_data_at(Address data, bool decrement = false);
-  void increment_mdp_data_at(Register mdp_in, int constant,
-                             bool decrement = false);
-  void increment_mdp_data_at(Register mdp_in, Register reg, int constant,
-                             bool decrement = false);
+  void increment_mdp_data_at(Register mdp_in, int constant);
+  void increment_mdp_data_at(Register mdp_in, Register index, int constant);
   void increment_mask_and_jump(Address counter_addr,
                                int increment, Address mask,
                                Register scratch, Register scratch2,
@@ -279,7 +290,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // narrow int return value
   void narrow(Register result);
 
-  void profile_taken_branch(Register mdp, Register bumped_count);
+  void profile_taken_branch(Register mdp);
   void profile_not_taken_branch(Register mdp);
   void profile_call(Register mdp);
   void profile_final_call(Register mdp);
@@ -310,6 +321,9 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void notify_method_entry();
   void notify_method_exit(TosState state, NotifyMethodExitMode mode);
 
+  JFR_ONLY(void enter_jfr_critical_section();)
+  JFR_ONLY(void leave_jfr_critical_section();)
+
   virtual void _call_Unimplemented(address call_site) {
     save_bcp();
     set_last_Java_frame(esp, rfp, (address) pc(), rscratch1);
@@ -319,6 +333,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void load_resolved_indy_entry(Register cache, Register index);
   void load_field_entry(Register cache, Register index, int bcp_offset = 1);
   void load_method_entry(Register cache, Register index, int bcp_offset = 1);
+
+  void verify_field_offset(Register reg) NOT_DEBUG_RETURN;
 };
 
 #endif // CPU_AARCH64_INTERP_MASM_AARCH64_HPP

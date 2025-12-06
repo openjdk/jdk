@@ -42,7 +42,7 @@
 #include "prims/methodHandles.hpp"
 #include "prims/upcallLinker.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/frame.inline.hpp"
@@ -202,7 +202,7 @@ class StubGenerator: public StubCodeGenerator {
            (int)frame::entry_frame_call_wrapper_offset == (int)call_wrapper_off,
            "adjust this code");
 
-    StubGenStubId stub_id = StubGenStubId::call_stub_id;
+    StubId stub_id = StubId::stubgen_call_stub_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
@@ -422,7 +422,7 @@ class StubGenerator: public StubCodeGenerator {
   // r0: exception oop
 
   address generate_catch_exception() {
-    StubGenStubId stub_id = StubGenStubId::catch_exception_id;
+    StubId stub_id = StubId::stubgen_catch_exception_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
@@ -478,7 +478,7 @@ class StubGenerator: public StubCodeGenerator {
   // so it just needs to be generated code with no x86 prolog
 
   address generate_forward_exception() {
-    StubGenStubId stub_id = StubGenStubId::forward_exception_id;
+    StubId stub_id = StubId::stubgen_forward_exception_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
@@ -568,7 +568,7 @@ class StubGenerator: public StubCodeGenerator {
   //    [tos + 4]: saved r0
   //    [tos + 5]: saved rscratch1
   address generate_verify_oop() {
-    StubGenStubId stub_id = StubGenStubId::verify_oop_id;
+    StubId stub_id = StubId::stubgen_verify_oop_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
@@ -617,7 +617,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // Generate indices for iota vector.
-  address generate_iota_indices(StubGenStubId stub_id) {
+  address generate_iota_indices(StubId stub_id) {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
@@ -662,7 +662,7 @@ class StubGenerator: public StubCodeGenerator {
     Register base = r10, cnt = r11;
 
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::zero_blocks_id;
+    StubId stub_id = StubId::stubgen_zero_blocks_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
@@ -802,32 +802,32 @@ class StubGenerator: public StubCodeGenerator {
   //
   // s and d are adjusted to point to the remaining words to copy
   //
-  void generate_copy_longs(StubGenStubId stub_id, DecoratorSet decorators, Label &start, Register s, Register d, Register count) {
+  address generate_copy_longs(StubId stub_id, DecoratorSet decorators, Register s, Register d, Register count) {
     BasicType type;
     copy_direction direction;
 
     switch (stub_id) {
-    case copy_byte_f_id:
+    case StubId::stubgen_copy_byte_f_id:
       direction = copy_forwards;
       type = T_BYTE;
       break;
-    case copy_byte_b_id:
+    case StubId::stubgen_copy_byte_b_id:
       direction = copy_backwards;
       type = T_BYTE;
       break;
-    case copy_oop_f_id:
+    case StubId::stubgen_copy_oop_f_id:
       direction = copy_forwards;
       type = T_OBJECT;
       break;
-    case copy_oop_b_id:
+    case StubId::stubgen_copy_oop_b_id:
       direction = copy_backwards;
       type = T_OBJECT;
       break;
-    case copy_oop_uninit_f_id:
+    case StubId::stubgen_copy_oop_uninit_f_id:
       direction = copy_forwards;
       type = T_OBJECT;
       break;
-    case copy_oop_uninit_b_id:
+    case StubId::stubgen_copy_oop_uninit_b_id:
       direction = copy_backwards;
       type = T_OBJECT;
       break;
@@ -854,7 +854,7 @@ class StubGenerator: public StubCodeGenerator {
 
     StubCodeMark mark(this, stub_id);
 
-    __ bind(start);
+    address start = __ pc();
 
     Label unaligned_copy_long;
     if (AvoidUnalignedAccesses) {
@@ -894,9 +894,9 @@ class StubGenerator: public StubCodeGenerator {
     int prefetch = PrefetchCopyIntervalInBytes;
     bool use_stride = false;
     if (direction == copy_backwards) {
-       use_stride = prefetch > 256;
-       prefetch = -prefetch;
-       if (use_stride) __ mov(stride, prefetch);
+      use_stride = prefetch > 256;
+      prefetch = -prefetch;
+      if (use_stride) __ mov(stride, prefetch);
     }
 
     __ bind(again);
@@ -1026,9 +1026,9 @@ class StubGenerator: public StubCodeGenerator {
       int prefetch = PrefetchCopyIntervalInBytes;
       bool use_stride = false;
       if (direction == copy_backwards) {
-         use_stride = prefetch > 256;
-         prefetch = -prefetch;
-         if (use_stride) __ mov(stride, prefetch);
+        use_stride = prefetch > 256;
+        prefetch = -prefetch;
+        if (use_stride) __ mov(stride, prefetch);
       }
 
       __ bind(again);
@@ -1037,15 +1037,15 @@ class StubGenerator: public StubCodeGenerator {
         __ prfm(use_stride ? Address(s, stride) : Address(s, prefetch), PLDL1KEEP);
 
       if (direction == copy_forwards) {
-       // allowing for the offset of -8 the store instructions place
-       // registers into the target 64 bit block at the following
-       // offsets
-       //
-       // t0 at offset 0
-       // t1 at offset 8,  t2 at offset 16
-       // t3 at offset 24, t4 at offset 32
-       // t5 at offset 40, t6 at offset 48
-       // t7 at offset 56
+        // allowing for the offset of -8 the store instructions place
+        // registers into the target 64 bit block at the following
+        // offsets
+        //
+        // t0 at offset 0
+        // t1 at offset 8,  t2 at offset 16
+        // t3 at offset 24, t4 at offset 32
+        // t5 at offset 40, t6 at offset 48
+        // t7 at offset 56
 
         bs.copy_store_at_8(Address(d, 1 * unit), t0);
         bs.copy_store_at_16(Address(d, 2 * unit), t1, t2);
@@ -1057,18 +1057,18 @@ class StubGenerator: public StubCodeGenerator {
         bs.copy_store_at_8(Address(__ pre(d, 8 * unit)), t7);
         bs.copy_load_at_16(t6, t7, Address(__ pre(s, 8 * unit)));
       } else {
-       // d was not offset when we started so the registers are
-       // written into the 64 bit block preceding d with the following
-       // offsets
-       //
-       // t1 at offset -8
-       // t3 at offset -24, t0 at offset -16
-       // t5 at offset -48, t2 at offset -32
-       // t7 at offset -56, t4 at offset -48
-       //                   t6 at offset -64
-       //
-       // note that this matches the offsets previously noted for the
-       // loads
+        // d was not offset when we started so the registers are
+        // written into the 64 bit block preceding d with the following
+        // offsets
+        //
+        // t1 at offset -8
+        // t3 at offset -24, t0 at offset -16
+        // t5 at offset -48, t2 at offset -32
+        // t7 at offset -56, t4 at offset -48
+        //                   t6 at offset -64
+        //
+        // note that this matches the offsets previously noted for the
+        // loads
 
         bs.copy_store_at_8(Address(d, 1 * unit), t1);
         bs.copy_store_at_16(Address(d, 3 * unit), t3, t0);
@@ -1109,10 +1109,10 @@ class StubGenerator: public StubCodeGenerator {
       {
         Label L1, L2;
         __ tbz(count, exact_log2(4), L1);
-       // this is the same as above but copying only 4 longs hence
-       // with only one intervening stp between the str instructions
-       // but note that the offsets and registers still follow the
-       // same pattern
+        // this is the same as above but copying only 4 longs hence
+        // with only one intervening stp between the str instructions
+        // but note that the offsets and registers still follow the
+        // same pattern
         bs.copy_load_at_16(t0, t1, Address(s, 2 * unit));
         bs.copy_load_at_16(t2, t3, Address(__ pre(s, 4 * unit)));
         if (direction == copy_forwards) {
@@ -1127,10 +1127,10 @@ class StubGenerator: public StubCodeGenerator {
         __ bind(L1);
 
         __ tbz(count, 1, L2);
-       // this is the same as above but copying only 2 longs hence
-       // there is no intervening stp between the str instructions
-       // but note that the offset and register patterns are still
-       // the same
+        // this is the same as above but copying only 2 longs hence
+        // there is no intervening stp between the str instructions
+        // but note that the offset and register patterns are still
+        // the same
         bs.copy_load_at_16(t0, t1, Address(__ pre(s, 2 * unit)));
         if (direction == copy_forwards) {
           bs.copy_store_at_8(Address(d, 1 * unit), t0);
@@ -1141,18 +1141,20 @@ class StubGenerator: public StubCodeGenerator {
         }
         __ bind(L2);
 
-       // for forwards copy we need to re-adjust the offsets we
-       // applied so that s and d are follow the last words written
+        // for forwards copy we need to re-adjust the offsets we
+        // applied so that s and d are follow the last words written
 
-       if (direction == copy_forwards) {
-         __ add(s, s, 16);
-         __ add(d, d, 8);
-       }
+        if (direction == copy_forwards) {
+          __ add(s, s, 16);
+          __ add(d, d, 8);
+        }
 
       }
 
       __ ret(lr);
-      }
+    }
+
+    return start;
   }
 
   // Small copy: less than 16 bytes.
@@ -1162,7 +1164,7 @@ class StubGenerator: public StubCodeGenerator {
 
   void copy_memory_small(DecoratorSet decorators, BasicType type, Register s, Register d, Register count, int step) {
     bool is_backwards = step < 0;
-    size_t granularity = uabs(step);
+    size_t granularity = g_uabs(step);
     int direction = is_backwards ? -1 : 1;
 
     Label Lword, Lint, Lshort, Lbyte;
@@ -1206,10 +1208,6 @@ class StubGenerator: public StubCodeGenerator {
     }
   }
 
-  Label copy_f, copy_b;
-  Label copy_obj_f, copy_obj_b;
-  Label copy_obj_uninit_f, copy_obj_uninit_b;
-
   // All-singing all-dancing memory copy.
   //
   // Copy count units of memory from s to d.  The size of a unit is
@@ -1221,7 +1219,7 @@ class StubGenerator: public StubCodeGenerator {
                    Register s, Register d, Register count, int step) {
     copy_direction direction = step < 0 ? copy_backwards : copy_forwards;
     bool is_backwards = step < 0;
-    unsigned int granularity = uabs(step);
+    unsigned int granularity = g_uabs(step);
     const Register t0 = r3, t1 = r4;
 
     // <= 80 (or 96 for SIMD) bytes do inline. Direction doesn't matter because we always
@@ -1447,19 +1445,19 @@ class StubGenerator: public StubCodeGenerator {
     }
     if (direction == copy_forwards) {
       if (type != T_OBJECT) {
-        __ bl(copy_f);
+        __ bl(StubRoutines::aarch64::copy_byte_f());
       } else if ((decorators & IS_DEST_UNINITIALIZED) != 0) {
-        __ bl(copy_obj_uninit_f);
+        __ bl(StubRoutines::aarch64::copy_oop_uninit_f());
       } else {
-        __ bl(copy_obj_f);
+        __ bl(StubRoutines::aarch64::copy_oop_f());
       }
     } else {
       if (type != T_OBJECT) {
-        __ bl(copy_b);
+        __ bl(StubRoutines::aarch64::copy_byte_b());
       } else if ((decorators & IS_DEST_UNINITIALIZED) != 0) {
-        __ bl(copy_obj_uninit_b);
+        __ bl(StubRoutines::aarch64::copy_oop_uninit_b());
       } else {
-        __ bl(copy_obj_b);
+        __ bl(StubRoutines::aarch64::copy_oop_b());
       }
     }
 
@@ -1522,11 +1520,11 @@ class StubGenerator: public StubCodeGenerator {
   // the hardware handle it.  The two dwords within qwords that span
   // cache line boundaries will still be loaded and stored atomically.
   //
-  // Side Effects: entry is set to the (post push) entry point so it
-  //               can be used by the corresponding conjoint copy
-  //               method
+  // Side Effects: nopush_entry is set to the (post push) entry point
+  //               so it can be used by the corresponding conjoint
+  //               copy method
   //
-  address generate_disjoint_copy(StubGenStubId stub_id, address *entry) {
+  address generate_disjoint_copy(StubId stub_id, address *nopush_entry) {
     Register s = c_rarg0, d = c_rarg1, count = c_rarg2;
     RegSet saved_reg = RegSet::of(s, d, count);
     int size;
@@ -1534,72 +1532,72 @@ class StubGenerator: public StubCodeGenerator {
     bool is_oop;
     bool dest_uninitialized;
     switch (stub_id) {
-    case jbyte_disjoint_arraycopy_id:
+    case StubId::stubgen_jbyte_disjoint_arraycopy_id:
       size = sizeof(jbyte);
       aligned = false;
       is_oop = false;
       dest_uninitialized = false;
       break;
-    case arrayof_jbyte_disjoint_arraycopy_id:
+    case StubId::stubgen_arrayof_jbyte_disjoint_arraycopy_id:
       size = sizeof(jbyte);
       aligned = true;
       is_oop = false;
       dest_uninitialized = false;
       break;
-    case jshort_disjoint_arraycopy_id:
+    case StubId::stubgen_jshort_disjoint_arraycopy_id:
       size = sizeof(jshort);
       aligned = false;
       is_oop = false;
       dest_uninitialized = false;
       break;
-    case arrayof_jshort_disjoint_arraycopy_id:
+    case StubId::stubgen_arrayof_jshort_disjoint_arraycopy_id:
       size = sizeof(jshort);
       aligned = true;
       is_oop = false;
       dest_uninitialized = false;
       break;
-    case jint_disjoint_arraycopy_id:
+    case StubId::stubgen_jint_disjoint_arraycopy_id:
       size = sizeof(jint);
       aligned = false;
       is_oop = false;
       dest_uninitialized = false;
       break;
-    case arrayof_jint_disjoint_arraycopy_id:
+    case StubId::stubgen_arrayof_jint_disjoint_arraycopy_id:
       size = sizeof(jint);
       aligned = true;
       is_oop = false;
       dest_uninitialized = false;
       break;
-    case jlong_disjoint_arraycopy_id:
+    case StubId::stubgen_jlong_disjoint_arraycopy_id:
       // since this is always aligned we can (should!) use the same
-      // stub as for case arrayof_jlong_disjoint_arraycopy
+      // stub as for case StubId::stubgen_arrayof_jlong_disjoint_arraycopy
       ShouldNotReachHere();
       break;
-    case arrayof_jlong_disjoint_arraycopy_id:
+    case StubId::stubgen_arrayof_jlong_disjoint_arraycopy_id:
       size = sizeof(jlong);
       aligned = true;
       is_oop = false;
       dest_uninitialized = false;
       break;
-    case oop_disjoint_arraycopy_id:
+    case StubId::stubgen_oop_disjoint_arraycopy_id:
       size = UseCompressedOops ? sizeof (jint) : sizeof (jlong);
       aligned = !UseCompressedOops;
       is_oop = true;
       dest_uninitialized = false;
       break;
-    case arrayof_oop_disjoint_arraycopy_id:
+    case StubId::stubgen_arrayof_oop_disjoint_arraycopy_id:
       size = UseCompressedOops ? sizeof (jint) : sizeof (jlong);
       aligned = !UseCompressedOops;
       is_oop = true;
       dest_uninitialized = false;
       break;
-    case oop_disjoint_arraycopy_uninit_id:
+    case StubId::stubgen_oop_disjoint_arraycopy_uninit_id:
       size = UseCompressedOops ? sizeof (jint) : sizeof (jlong);
       aligned = !UseCompressedOops;
       is_oop = true;
       dest_uninitialized = true;
       break;
-    case arrayof_oop_disjoint_arraycopy_uninit_id:
+    case StubId::stubgen_arrayof_oop_disjoint_arraycopy_uninit_id:
       size = UseCompressedOops ? sizeof (jint) : sizeof (jlong);
       aligned = !UseCompressedOops;
       is_oop = true;
@@ -1615,8 +1613,8 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ pc();
     __ enter();
 
-    if (entry != nullptr) {
-      *entry = __ pc();
+    if (nopush_entry != nullptr) {
+      *nopush_entry = __ pc();
       // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
       BLOCK_COMMENT("Entry:");
     }
@@ -1649,7 +1647,7 @@ class StubGenerator: public StubCodeGenerator {
         verify_oop_array(size, d, count, r16);
     }
 
-    bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, rscratch1, RegSet());
+    bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, rscratch1);
 
     __ leave();
     __ mov(r0, zr); // return 0
@@ -1679,10 +1677,10 @@ class StubGenerator: public StubCodeGenerator {
   // cache line boundaries will still be loaded and stored atomically.
   //
   // Side Effects:
-  //   entry is set to the no-overlap entry point so it can be used by
-  //   some other conjoint copy method
+  //   nopush_entry is set to the no-overlap entry point so it can be
+  //   used by some other conjoint copy method
   //
-  address generate_conjoint_copy(StubGenStubId stub_id, address nooverlap_target, address *entry) {
+  address generate_conjoint_copy(StubId stub_id, address nooverlap_target, address *nopush_entry) {
     Register s = c_rarg0, d = c_rarg1, count = c_rarg2;
     RegSet saved_regs = RegSet::of(s, d, count);
     int size;
@@ -1690,72 +1688,72 @@ class StubGenerator: public StubCodeGenerator {
     bool is_oop;
     bool dest_uninitialized;
     switch (stub_id) {
-    case jbyte_arraycopy_id:
+    case StubId::stubgen_jbyte_arraycopy_id:
       size = sizeof(jbyte);
       aligned = false;
       is_oop = false;
       dest_uninitialized = false;
       break;
-    case arrayof_jbyte_arraycopy_id:
+    case StubId::stubgen_arrayof_jbyte_arraycopy_id:
       size = sizeof(jbyte);
       aligned = true;
       is_oop = false;
       dest_uninitialized = false;
       break;
-    case jshort_arraycopy_id:
+    case StubId::stubgen_jshort_arraycopy_id:
       size = sizeof(jshort);
       aligned = false;
       is_oop = false;
       dest_uninitialized = false;
       break;
-    case arrayof_jshort_arraycopy_id:
+    case StubId::stubgen_arrayof_jshort_arraycopy_id:
       size = sizeof(jshort);
       aligned = true;
       is_oop = false;
       dest_uninitialized = false;
       break;
-    case jint_arraycopy_id:
+    case StubId::stubgen_jint_arraycopy_id:
       size = sizeof(jint);
       aligned = false;
       is_oop = false;
       dest_uninitialized = false;
       break;
-    case arrayof_jint_arraycopy_id:
+    case StubId::stubgen_arrayof_jint_arraycopy_id:
       size = sizeof(jint);
       aligned = true;
       is_oop = false;
       dest_uninitialized = false;
       break;
-    case jlong_arraycopy_id:
+    case StubId::stubgen_jlong_arraycopy_id:
       // since this is always aligned we can (should!) use the same
-      // stub as for case arrayof_jlong_disjoint_arraycopy
+      // stub as for case StubId::stubgen_arrayof_jlong_disjoint_arraycopy
       ShouldNotReachHere();
       break;
-    case arrayof_jlong_arraycopy_id:
+    case StubId::stubgen_arrayof_jlong_arraycopy_id:
       size = sizeof(jlong);
       aligned = true;
       is_oop = false;
       dest_uninitialized = false;
       break;
-    case oop_arraycopy_id:
+    case StubId::stubgen_oop_arraycopy_id:
       size = UseCompressedOops ? sizeof (jint) : sizeof (jlong);
       aligned = !UseCompressedOops;
       is_oop = true;
       dest_uninitialized = false;
       break;
-    case arrayof_oop_arraycopy_id:
+    case StubId::stubgen_arrayof_oop_arraycopy_id:
       size = UseCompressedOops ? sizeof (jint) : sizeof (jlong);
       aligned = !UseCompressedOops;
       is_oop = true;
       dest_uninitialized = false;
       break;
-    case oop_arraycopy_uninit_id:
+    case StubId::stubgen_oop_arraycopy_uninit_id:
       size = UseCompressedOops ? sizeof (jint) : sizeof (jlong);
       aligned = !UseCompressedOops;
       is_oop = true;
       dest_uninitialized = true;
       break;
-    case arrayof_oop_arraycopy_uninit_id:
+    case StubId::stubgen_arrayof_oop_arraycopy_uninit_id:
       size = UseCompressedOops ? sizeof (jint) : sizeof (jlong);
       aligned = !UseCompressedOops;
       is_oop = true;
@@ -1769,16 +1767,19 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ pc();
     __ enter();
 
-    if (entry != nullptr) {
-      *entry = __ pc();
+    if (nopush_entry != nullptr) {
+      *nopush_entry = __ pc();
       // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
       BLOCK_COMMENT("Entry:");
     }
 
     // use fwd copy when (d-s) above_equal (count*size)
+    Label L_overlapping;
     __ sub(rscratch1, d, s);
     __ cmp(rscratch1, count, Assembler::LSL, exact_log2(size));
-    __ br(Assembler::HS, nooverlap_target);
+    __ br(Assembler::LO, L_overlapping);
+    __ b(RuntimeAddress(nooverlap_target));
+    __ bind(L_overlapping);
 
     DecoratorSet decorators = IN_HEAP | IS_ARRAY;
     if (dest_uninitialized) {
@@ -1806,7 +1807,7 @@ class StubGenerator: public StubCodeGenerator {
       if (VerifyOops)
         verify_oop_array(size, d, count, r16);
     }
-    bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, rscratch1, RegSet());
+    bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, rscratch1);
     __ leave();
     __ mov(r0, zr); // return 0
     __ ret(lr);
@@ -1850,13 +1851,13 @@ class StubGenerator: public StubCodeGenerator {
   //    r0 ==  0  -  success
   //    r0 == -1^K - failure, where K is partial transfer count
   //
-  address generate_checkcast_copy(StubGenStubId stub_id, address *entry) {
+  address generate_checkcast_copy(StubId stub_id, address *nopush_entry) {
     bool dest_uninitialized;
     switch (stub_id) {
-    case checkcast_arraycopy_id:
+    case StubId::stubgen_checkcast_arraycopy_id:
       dest_uninitialized = false;
       break;
-    case checkcast_arraycopy_uninit_id:
+    case StubId::stubgen_checkcast_arraycopy_uninit_id:
       dest_uninitialized = true;
       break;
     default:
@@ -1873,7 +1874,6 @@ class StubGenerator: public StubCodeGenerator {
     const Register ckval       = c_rarg4;   // super_klass
 
     RegSet wb_pre_saved_regs = RegSet::range(c_rarg0, c_rarg4);
-    RegSet wb_post_saved_regs = RegSet::of(count);
 
     // Registers used as temps (r19, r20, r21, r22 are save-on-entry)
     const Register copied_oop  = r22;       // actual oop copied
@@ -1911,8 +1911,8 @@ class StubGenerator: public StubCodeGenerator {
 #endif //ASSERT
 
     // Caller of this entry point must set up the argument registers.
-    if (entry != nullptr) {
-      *entry = __ pc();
+    if (nopush_entry != nullptr) {
+      *nopush_entry = __ pc();
       BLOCK_COMMENT("Entry:");
     }
 
@@ -1999,7 +1999,7 @@ class StubGenerator: public StubCodeGenerator {
     __ br(Assembler::EQ, L_done_pop);
 
     __ BIND(L_do_card_marks);
-    bs->arraycopy_epilogue(_masm, decorators, is_oop, start_to, count_save, rscratch1, wb_post_saved_regs);
+    bs->arraycopy_epilogue(_masm, decorators, is_oop, start_to, count_save, rscratch1);
 
     __ bind(L_done_pop);
     __ pop(RegSet::of(r19, r20, r21, r22), sp);
@@ -2071,7 +2071,7 @@ class StubGenerator: public StubCodeGenerator {
                                address short_copy_entry,
                                address int_copy_entry,
                                address long_copy_entry) {
-    StubGenStubId stub_id = StubGenStubId::unsafe_arraycopy_id;
+    StubId stub_id = StubId::stubgen_unsafe_arraycopy_id;
 
     Label L_long_aligned, L_int_aligned, L_short_aligned;
     Register s = c_rarg0, d = c_rarg1, count = c_rarg2;
@@ -2124,7 +2124,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_generic_copy(address byte_copy_entry, address short_copy_entry,
                                 address int_copy_entry, address oop_copy_entry,
                                 address long_copy_entry, address checkcast_copy_entry) {
-    StubGenStubId stub_id = StubGenStubId::generic_arraycopy_id;
+    StubId stub_id = StubId::stubgen_generic_arraycopy_id;
 
     Label L_failed, L_objArray;
     Label L_copy_bytes, L_copy_shorts, L_copy_ints, L_copy_longs;
@@ -2395,32 +2395,32 @@ class StubGenerator: public StubCodeGenerator {
   //   value: c_rarg1
   //   count: c_rarg2 treated as signed
   //
-  address generate_fill(StubGenStubId stub_id) {
+  address generate_fill(StubId stub_id) {
     BasicType t;
     bool aligned;
 
     switch (stub_id) {
-    case jbyte_fill_id:
+    case StubId::stubgen_jbyte_fill_id:
       t = T_BYTE;
       aligned = false;
       break;
-    case jshort_fill_id:
+    case StubId::stubgen_jshort_fill_id:
       t = T_SHORT;
       aligned = false;
       break;
-    case jint_fill_id:
+    case StubId::stubgen_jint_fill_id:
       t = T_INT;
       aligned = false;
       break;
-    case arrayof_jbyte_fill_id:
+    case StubId::stubgen_arrayof_jbyte_fill_id:
       t = T_BYTE;
       aligned = true;
       break;
-    case arrayof_jshort_fill_id:
+    case StubId::stubgen_arrayof_jshort_fill_id:
       t = T_SHORT;
       aligned = true;
       break;
-    case arrayof_jint_fill_id:
+    case StubId::stubgen_arrayof_jint_fill_id:
       t = T_INT;
       aligned = true;
       break;
@@ -2566,12 +2566,129 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  address generate_unsafecopy_common_error_exit() {
+    address start_pc = __ pc();
+      __ leave();
+      __ mov(r0, 0);
+      __ ret(lr);
+    return start_pc;
+  }
+
+  //
+  //  Generate 'unsafe' set memory stub
+  //  Though just as safe as the other stubs, it takes an unscaled
+  //  size_t (# bytes) argument instead of an element count.
+  //
+  //  This fill operation is atomicity preserving: as long as the
+  //  address supplied is sufficiently aligned, all writes of up to 64
+  //  bits in size are single-copy atomic.
+  //
+  //  Input:
+  //    c_rarg0   - destination array address
+  //    c_rarg1   - byte count (size_t)
+  //    c_rarg2   - byte value
+  //
+  address generate_unsafe_setmemory() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, StubId::stubgen_unsafe_setmemory_id);
+    address start = __ pc();
+
+    Register dest = c_rarg0, count = c_rarg1, value = c_rarg2;
+    Label tail;
+
+    UnsafeMemoryAccessMark umam(this, true, false);
+
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+    __ dup(v0, __ T16B, value);
+
+    if (AvoidUnalignedAccesses) {
+      __ cmp(count, (u1)16);
+      __ br(__ LO, tail);
+
+      __ mov(rscratch1, 16);
+      __ andr(rscratch2, dest, 15);
+      __ sub(rscratch1, rscratch1, rscratch2);  // Bytes needed to 16-align dest
+      __ strq(v0, Address(dest));
+      __ sub(count, count, rscratch1);
+      __ add(dest, dest, rscratch1);
+    }
+
+    __ subs(count, count, (u1)64);
+    __ br(__ LO, tail);
+    {
+      Label again;
+      __ bind(again);
+      __ stpq(v0, v0, Address(dest));
+      __ stpq(v0, v0, Address(dest, 32));
+
+      __ subs(count, count, 64);
+      __ add(dest, dest, 64);
+      __ br(__ HS, again);
+    }
+
+    __ bind(tail);
+    // The count of bytes is off by 64, but we don't need to correct
+    // it because we're only going to use the least-significant few
+    // count bits from here on.
+    // __ add(count, count, 64);
+
+    {
+      Label dont;
+      __ tbz(count, exact_log2(32), dont);
+      __ stpq(v0, v0, __ post(dest, 32));
+      __ bind(dont);
+    }
+    {
+      Label dont;
+      __ tbz(count, exact_log2(16), dont);
+      __ strq(v0, __ post(dest, 16));
+      __ bind(dont);
+    }
+    {
+      Label dont;
+      __ tbz(count, exact_log2(8), dont);
+      __ strd(v0, __ post(dest, 8));
+      __ bind(dont);
+    }
+
+    Label finished;
+    __ tst(count, 7);
+    __ br(__ EQ, finished);
+
+    {
+      Label dont;
+      __ tbz(count, exact_log2(4), dont);
+      __ strs(v0, __ post(dest, 4));
+      __ bind(dont);
+    }
+    {
+      Label dont;
+      __ tbz(count, exact_log2(2), dont);
+      __ bfi(value, value, 8, 8);
+      __ strh(value, __ post(dest, 2));
+      __ bind(dont);
+    }
+    {
+      Label dont;
+      __ tbz(count, exact_log2(1), dont);
+      __ strb(value, Address(dest));
+      __ bind(dont);
+    }
+
+    __ bind(finished);
+    __ leave();
+    __ ret(lr);
+
+    return start;
+  }
+
   address generate_data_cache_writeback() {
     const Register line        = c_rarg0;  // address of line to write back
 
     __ align(CodeEntryAlignment);
 
-    StubGenStubId stub_id = StubGenStubId::data_cache_writeback_id;
+    StubId stub_id = StubId::stubgen_data_cache_writeback_id;
     StubCodeMark mark(this, stub_id);
 
     address start = __ pc();
@@ -2588,7 +2705,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
 
-    StubGenStubId stub_id = StubGenStubId::data_cache_writeback_sync_id;
+    StubId stub_id = StubId::stubgen_data_cache_writeback_sync_id;
     StubCodeMark mark(this, stub_id);
 
     // pre wbsync is a no-op
@@ -2607,98 +2724,152 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   void generate_arraycopy_stubs() {
-    address entry;
-    address entry_jbyte_arraycopy;
-    address entry_jshort_arraycopy;
-    address entry_jint_arraycopy;
-    address entry_oop_arraycopy;
-    address entry_jlong_arraycopy;
-    address entry_checkcast_arraycopy;
+    // Some copy stubs publish a normal entry and then a 2nd 'fallback'
+    // entry immediately following their stack push. This can be used
+    // as a post-push branch target for compatible stubs when they
+    // identify a special case that can be handled by the fallback
+    // stub e.g a disjoint copy stub may be use as a special case
+    // fallback for its compatible conjoint copy stub.
+    //
+    // A no push entry is always returned in the following local and
+    // then published by assigning to the appropriate entry field in
+    // class StubRoutines. The entry value is then passed to the
+    // generator for the compatible stub. That means the entry must be
+    // listed when saving to/restoring from the AOT cache, ensuring
+    // that the inter-stub jumps are noted at AOT-cache save and
+    // relocated at AOT cache load.
+    address nopush_entry;
 
-    generate_copy_longs(StubGenStubId::copy_byte_f_id, IN_HEAP | IS_ARRAY, copy_f, r0, r1, r15);
-    generate_copy_longs(StubGenStubId::copy_byte_b_id, IN_HEAP | IS_ARRAY, copy_b, r0, r1, r15);
+    // generate the common exit first so later stubs can rely on it if
+    // they want an UnsafeMemoryAccess exit non-local to the stub
+    StubRoutines::_unsafecopy_common_exit = generate_unsafecopy_common_error_exit();
+    // register the stub as the default exit with class UnsafeMemoryAccess
+    UnsafeMemoryAccess::set_common_exit_stub_pc(StubRoutines::_unsafecopy_common_exit);
 
-    generate_copy_longs(StubGenStubId::copy_oop_f_id, IN_HEAP | IS_ARRAY, copy_obj_f, r0, r1, r15);
-    generate_copy_longs(StubGenStubId::copy_oop_b_id, IN_HEAP | IS_ARRAY, copy_obj_b, r0, r1, r15);
+    // generate and publish arch64-specific bulk copy routines first
+    // so we can call them from other copy stubs
+    StubRoutines::aarch64::_copy_byte_f = generate_copy_longs(StubId::stubgen_copy_byte_f_id, IN_HEAP | IS_ARRAY, r0, r1, r15);
+    StubRoutines::aarch64::_copy_byte_b = generate_copy_longs(StubId::stubgen_copy_byte_b_id, IN_HEAP | IS_ARRAY, r0, r1, r15);
 
-    generate_copy_longs(StubGenStubId::copy_oop_uninit_f_id, IN_HEAP | IS_ARRAY | IS_DEST_UNINITIALIZED, copy_obj_uninit_f, r0, r1, r15);
-    generate_copy_longs(StubGenStubId::copy_oop_uninit_b_id, IN_HEAP | IS_ARRAY | IS_DEST_UNINITIALIZED, copy_obj_uninit_b, r0, r1, r15);
+    StubRoutines::aarch64::_copy_oop_f = generate_copy_longs(StubId::stubgen_copy_oop_f_id, IN_HEAP | IS_ARRAY, r0, r1, r15);
+    StubRoutines::aarch64::_copy_oop_b = generate_copy_longs(StubId::stubgen_copy_oop_b_id, IN_HEAP | IS_ARRAY, r0, r1, r15);
+
+    StubRoutines::aarch64::_copy_oop_uninit_f = generate_copy_longs(StubId::stubgen_copy_oop_uninit_f_id, IN_HEAP | IS_ARRAY | IS_DEST_UNINITIALIZED, r0, r1, r15);
+    StubRoutines::aarch64::_copy_oop_uninit_b = generate_copy_longs(StubId::stubgen_copy_oop_uninit_b_id, IN_HEAP | IS_ARRAY | IS_DEST_UNINITIALIZED, r0, r1, r15);
 
     StubRoutines::aarch64::_zero_blocks = generate_zero_blocks();
 
     //*** jbyte
     // Always need aligned and unaligned versions
-    StubRoutines::_jbyte_disjoint_arraycopy         = generate_disjoint_copy(StubGenStubId::jbyte_disjoint_arraycopy_id, &entry);
-    StubRoutines::_jbyte_arraycopy                  = generate_conjoint_copy(StubGenStubId::jbyte_arraycopy_id, entry, &entry_jbyte_arraycopy);
-    StubRoutines::_arrayof_jbyte_disjoint_arraycopy = generate_disjoint_copy(StubGenStubId::arrayof_jbyte_disjoint_arraycopy_id, &entry);
-    StubRoutines::_arrayof_jbyte_arraycopy          = generate_conjoint_copy(StubGenStubId::arrayof_jbyte_arraycopy_id, entry, nullptr);
+    StubRoutines::_jbyte_disjoint_arraycopy         = generate_disjoint_copy(StubId::stubgen_jbyte_disjoint_arraycopy_id, &nopush_entry);
+    // disjoint nopush entry is needed by conjoint copy
+    StubRoutines::_jbyte_disjoint_arraycopy_nopush  = nopush_entry;
+    StubRoutines::_jbyte_arraycopy                  = generate_conjoint_copy(StubId::stubgen_jbyte_arraycopy_id, StubRoutines::_jbyte_disjoint_arraycopy_nopush, &nopush_entry);
+    // conjoint nopush entry is needed by generic/unsafe copy
+    StubRoutines::_jbyte_arraycopy_nopush = nopush_entry;
+    StubRoutines::_arrayof_jbyte_disjoint_arraycopy = generate_disjoint_copy(StubId::stubgen_arrayof_jbyte_disjoint_arraycopy_id, &nopush_entry);
+    // disjoint arrayof nopush entry is needed by conjoint copy
+    StubRoutines::_arrayof_jbyte_disjoint_arraycopy_nopush  = nopush_entry;
+    StubRoutines::_arrayof_jbyte_arraycopy          = generate_conjoint_copy(StubId::stubgen_arrayof_jbyte_arraycopy_id, StubRoutines::_arrayof_jbyte_disjoint_arraycopy_nopush, nullptr);
 
     //*** jshort
     // Always need aligned and unaligned versions
-    StubRoutines::_jshort_disjoint_arraycopy         = generate_disjoint_copy(StubGenStubId::jshort_disjoint_arraycopy_id, &entry);
-    StubRoutines::_jshort_arraycopy                  = generate_conjoint_copy(StubGenStubId::jshort_arraycopy_id, entry, &entry_jshort_arraycopy);
-    StubRoutines::_arrayof_jshort_disjoint_arraycopy = generate_disjoint_copy(StubGenStubId::arrayof_jshort_disjoint_arraycopy_id, &entry);
-    StubRoutines::_arrayof_jshort_arraycopy          = generate_conjoint_copy(StubGenStubId::arrayof_jshort_arraycopy_id, entry, nullptr);
+    StubRoutines::_jshort_disjoint_arraycopy         = generate_disjoint_copy(StubId::stubgen_jshort_disjoint_arraycopy_id, &nopush_entry);
+    // disjoint nopush entry is needed by conjoint copy
+    StubRoutines::_jshort_disjoint_arraycopy_nopush  = nopush_entry;
+    StubRoutines::_jshort_arraycopy                  = generate_conjoint_copy(StubId::stubgen_jshort_arraycopy_id, StubRoutines::_jshort_disjoint_arraycopy_nopush, &nopush_entry);
+    // conjoint nopush entry is used by generic/unsafe copy
+    StubRoutines::_jshort_arraycopy_nopush = nopush_entry;
+    StubRoutines::_arrayof_jshort_disjoint_arraycopy = generate_disjoint_copy(StubId::stubgen_arrayof_jshort_disjoint_arraycopy_id, &nopush_entry);
+    // disjoint arrayof nopush entry is needed by conjoint copy
+    StubRoutines::_arrayof_jshort_disjoint_arraycopy_nopush = nopush_entry;
+    StubRoutines::_arrayof_jshort_arraycopy          = generate_conjoint_copy(StubId::stubgen_arrayof_jshort_arraycopy_id, StubRoutines::_arrayof_jshort_disjoint_arraycopy_nopush, nullptr);
 
     //*** jint
     // Aligned versions
-    StubRoutines::_arrayof_jint_disjoint_arraycopy = generate_disjoint_copy(StubGenStubId::arrayof_jint_disjoint_arraycopy_id, &entry);
-    StubRoutines::_arrayof_jint_arraycopy          = generate_conjoint_copy(StubGenStubId::arrayof_jint_arraycopy_id, entry, &entry_jint_arraycopy);
+    StubRoutines::_arrayof_jint_disjoint_arraycopy = generate_disjoint_copy(StubId::stubgen_arrayof_jint_disjoint_arraycopy_id, &nopush_entry);
+    // disjoint arrayof nopush entry is needed by conjoint copy
+    StubRoutines::_arrayof_jint_disjoint_arraycopy_nopush = nopush_entry;
+    StubRoutines::_arrayof_jint_arraycopy          = generate_conjoint_copy(StubId::stubgen_arrayof_jint_arraycopy_id, StubRoutines::_arrayof_jint_disjoint_arraycopy_nopush, nullptr);
     // In 64 bit we need both aligned and unaligned versions of jint arraycopy.
-    // entry_jint_arraycopy always points to the unaligned version
-    StubRoutines::_jint_disjoint_arraycopy         = generate_disjoint_copy(StubGenStubId::jint_disjoint_arraycopy_id, &entry);
-    StubRoutines::_jint_arraycopy                  = generate_conjoint_copy(StubGenStubId::jint_arraycopy_id, entry, &entry_jint_arraycopy);
+    // jint_arraycopy_nopush always points to the unaligned version
+    StubRoutines::_jint_disjoint_arraycopy         = generate_disjoint_copy(StubId::stubgen_jint_disjoint_arraycopy_id, &nopush_entry);
+    // disjoint nopush entry is needed by conjoint copy
+    StubRoutines::_jint_disjoint_arraycopy_nopush  = nopush_entry;
+    StubRoutines::_jint_arraycopy                  = generate_conjoint_copy(StubId::stubgen_jint_arraycopy_id, StubRoutines::_jint_disjoint_arraycopy_nopush, &nopush_entry);
+    // conjoint nopush entry is needed by generic/unsafe copy
+    StubRoutines::_jint_arraycopy_nopush = nopush_entry;
 
     //*** jlong
     // It is always aligned
-    StubRoutines::_arrayof_jlong_disjoint_arraycopy = generate_disjoint_copy(StubGenStubId::arrayof_jlong_disjoint_arraycopy_id, &entry);
-    StubRoutines::_arrayof_jlong_arraycopy          = generate_conjoint_copy(StubGenStubId::arrayof_jlong_arraycopy_id, entry, &entry_jlong_arraycopy);
+    StubRoutines::_arrayof_jlong_disjoint_arraycopy = generate_disjoint_copy(StubId::stubgen_arrayof_jlong_disjoint_arraycopy_id, &nopush_entry);
+    // disjoint arrayof nopush entry is needed by conjoint copy
+    StubRoutines::_arrayof_jlong_disjoint_arraycopy_nopush = nopush_entry;
+    StubRoutines::_arrayof_jlong_arraycopy          = generate_conjoint_copy(StubId::stubgen_arrayof_jlong_arraycopy_id, StubRoutines::_arrayof_jlong_disjoint_arraycopy_nopush, &nopush_entry);
+    // conjoint nopush entry is needed by generic/unsafe copy
+    StubRoutines::_jlong_arraycopy_nopush = nopush_entry;
+    // disjoint normal/nopush and conjoint normal entries are not
+    // generated since the arrayof versions are the same
     StubRoutines::_jlong_disjoint_arraycopy         = StubRoutines::_arrayof_jlong_disjoint_arraycopy;
+    StubRoutines::_jlong_disjoint_arraycopy_nopush = StubRoutines::_arrayof_jlong_disjoint_arraycopy_nopush;
     StubRoutines::_jlong_arraycopy                  = StubRoutines::_arrayof_jlong_arraycopy;
 
     //*** oops
     {
-      // With compressed oops we need unaligned versions; notice that
-      // we overwrite entry_oop_arraycopy.
-      bool aligned = !UseCompressedOops;
-
       StubRoutines::_arrayof_oop_disjoint_arraycopy
-        = generate_disjoint_copy(StubGenStubId::arrayof_oop_disjoint_arraycopy_id, &entry);
+        = generate_disjoint_copy(StubId::stubgen_arrayof_oop_disjoint_arraycopy_id, &nopush_entry);
+      // disjoint arrayof nopush entry is needed by conjoint copy
+      StubRoutines::_arrayof_oop_disjoint_arraycopy_nopush = nopush_entry;
       StubRoutines::_arrayof_oop_arraycopy
-        = generate_conjoint_copy(StubGenStubId::arrayof_oop_arraycopy_id, entry, &entry_oop_arraycopy);
+        = generate_conjoint_copy(StubId::stubgen_arrayof_oop_arraycopy_id, StubRoutines::_arrayof_oop_disjoint_arraycopy_nopush, &nopush_entry);
+      // conjoint arrayof nopush entry is needed by generic/unsafe copy
+      StubRoutines::_oop_arraycopy_nopush = nopush_entry;
       // Aligned versions without pre-barriers
       StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit
-        = generate_disjoint_copy(StubGenStubId::arrayof_oop_disjoint_arraycopy_uninit_id, &entry);
+        = generate_disjoint_copy(StubId::stubgen_arrayof_oop_disjoint_arraycopy_uninit_id, &nopush_entry);
+      // disjoint arrayof+uninit nopush entry is needed by conjoint copy
+      StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit_nopush = nopush_entry;
+      // note that we don't need a returned nopush entry because the
+      // generic/unsafe copy does not cater for uninit arrays.
       StubRoutines::_arrayof_oop_arraycopy_uninit
-        = generate_conjoint_copy(StubGenStubId::arrayof_oop_arraycopy_uninit_id, entry, nullptr);
+        = generate_conjoint_copy(StubId::stubgen_arrayof_oop_arraycopy_uninit_id, StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit_nopush, nullptr);
     }
 
+    // for oop copies reuse arrayof entries for non-arrayof cases
     StubRoutines::_oop_disjoint_arraycopy            = StubRoutines::_arrayof_oop_disjoint_arraycopy;
+    StubRoutines::_oop_disjoint_arraycopy_nopush = StubRoutines::_arrayof_oop_disjoint_arraycopy_nopush;
     StubRoutines::_oop_arraycopy                     = StubRoutines::_arrayof_oop_arraycopy;
     StubRoutines::_oop_disjoint_arraycopy_uninit     = StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit;
+    StubRoutines::_oop_disjoint_arraycopy_uninit_nopush = StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit_nopush;
     StubRoutines::_oop_arraycopy_uninit              = StubRoutines::_arrayof_oop_arraycopy_uninit;
 
-    StubRoutines::_checkcast_arraycopy        = generate_checkcast_copy(StubGenStubId::checkcast_arraycopy_id, &entry_checkcast_arraycopy);
-    StubRoutines::_checkcast_arraycopy_uninit = generate_checkcast_copy(StubGenStubId::checkcast_arraycopy_uninit_id, nullptr);
+    StubRoutines::_checkcast_arraycopy        = generate_checkcast_copy(StubId::stubgen_checkcast_arraycopy_id, &nopush_entry);
+    // checkcast nopush entry is needed by generic copy
+    StubRoutines::_checkcast_arraycopy_nopush = nopush_entry;
+    // note that we don't need a returned nopush entry because the
+    // generic copy does not cater for uninit arrays.
+    StubRoutines::_checkcast_arraycopy_uninit = generate_checkcast_copy(StubId::stubgen_checkcast_arraycopy_uninit_id, nullptr);
 
-    StubRoutines::_unsafe_arraycopy    = generate_unsafe_copy(entry_jbyte_arraycopy,
-                                                              entry_jshort_arraycopy,
-                                                              entry_jint_arraycopy,
-                                                              entry_jlong_arraycopy);
+    // unsafe arraycopy may fallback on conjoint stubs
+    StubRoutines::_unsafe_arraycopy    = generate_unsafe_copy(StubRoutines::_jbyte_arraycopy_nopush,
+                                                              StubRoutines::_jshort_arraycopy_nopush,
+                                                              StubRoutines::_jint_arraycopy_nopush,
+                                                              StubRoutines::_jlong_arraycopy_nopush);
 
-    StubRoutines::_generic_arraycopy   = generate_generic_copy(entry_jbyte_arraycopy,
-                                                               entry_jshort_arraycopy,
-                                                               entry_jint_arraycopy,
-                                                               entry_oop_arraycopy,
-                                                               entry_jlong_arraycopy,
-                                                               entry_checkcast_arraycopy);
+    // generic arraycopy may fallback on conjoint stubs
+    StubRoutines::_generic_arraycopy   = generate_generic_copy(StubRoutines::_jbyte_arraycopy_nopush,
+                                                               StubRoutines::_jshort_arraycopy_nopush,
+                                                               StubRoutines::_jint_arraycopy_nopush,
+                                                               StubRoutines::_oop_arraycopy_nopush,
+                                                               StubRoutines::_jlong_arraycopy_nopush,
+                                                               StubRoutines::_checkcast_arraycopy_nopush);
 
-    StubRoutines::_jbyte_fill = generate_fill(StubGenStubId::jbyte_fill_id);
-    StubRoutines::_jshort_fill = generate_fill(StubGenStubId::jshort_fill_id);
-    StubRoutines::_jint_fill = generate_fill(StubGenStubId::jint_fill_id);
-    StubRoutines::_arrayof_jbyte_fill = generate_fill(StubGenStubId::arrayof_jbyte_fill_id);
-    StubRoutines::_arrayof_jshort_fill = generate_fill(StubGenStubId::arrayof_jshort_fill_id);
-    StubRoutines::_arrayof_jint_fill = generate_fill(StubGenStubId::arrayof_jint_fill_id);
+    StubRoutines::_jbyte_fill = generate_fill(StubId::stubgen_jbyte_fill_id);
+    StubRoutines::_jshort_fill = generate_fill(StubId::stubgen_jshort_fill_id);
+    StubRoutines::_jint_fill = generate_fill(StubId::stubgen_jint_fill_id);
+    StubRoutines::_arrayof_jbyte_fill = generate_fill(StubId::stubgen_arrayof_jbyte_fill_id);
+    StubRoutines::_arrayof_jshort_fill = generate_fill(StubId::stubgen_arrayof_jshort_fill_id);
+    StubRoutines::_arrayof_jint_fill = generate_fill(StubId::stubgen_arrayof_jint_fill_id);
   }
 
   void generate_math_stubs() { Unimplemented(); }
@@ -2708,11 +2879,11 @@ class StubGenerator: public StubCodeGenerator {
   // Inputs:
   //   c_rarg0   - source byte array address
   //   c_rarg1   - destination byte array address
-  //   c_rarg2   - K (key) in little endian int array
+  //   c_rarg2   - sessionKe (key) in little endian int array
   //
   address generate_aescrypt_encryptBlock() {
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::aescrypt_encryptBlock_id;
+    StubId stub_id = StubId::stubgen_aescrypt_encryptBlock_id;
     StubCodeMark mark(this, stub_id);
 
     const Register from        = c_rarg0;  // source array address
@@ -2741,12 +2912,12 @@ class StubGenerator: public StubCodeGenerator {
   // Inputs:
   //   c_rarg0   - source byte array address
   //   c_rarg1   - destination byte array address
-  //   c_rarg2   - K (key) in little endian int array
+  //   c_rarg2   - sessionKd (key) in little endian int array
   //
   address generate_aescrypt_decryptBlock() {
     assert(UseAES, "need AES cryptographic extension support");
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::aescrypt_decryptBlock_id;
+    StubId stub_id = StubId::stubgen_aescrypt_decryptBlock_id;
     StubCodeMark mark(this, stub_id);
     Label L_doLast;
 
@@ -2775,7 +2946,7 @@ class StubGenerator: public StubCodeGenerator {
   // Inputs:
   //   c_rarg0   - source byte array address
   //   c_rarg1   - destination byte array address
-  //   c_rarg2   - K (key) in little endian int array
+  //   c_rarg2   - sessionKe (key) in little endian int array
   //   c_rarg3   - r vector byte array address
   //   c_rarg4   - input length
   //
@@ -2785,7 +2956,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_cipherBlockChaining_encryptAESCrypt() {
     assert(UseAES, "need AES cryptographic extension support");
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::cipherBlockChaining_encryptAESCrypt_id;
+    StubId stub_id = StubId::stubgen_cipherBlockChaining_encryptAESCrypt_id;
     StubCodeMark mark(this, stub_id);
 
     Label L_loadkeys_44, L_loadkeys_52, L_aes_loop, L_rounds_44, L_rounds_52;
@@ -2880,7 +3051,7 @@ class StubGenerator: public StubCodeGenerator {
   // Inputs:
   //   c_rarg0   - source byte array address
   //   c_rarg1   - destination byte array address
-  //   c_rarg2   - K (key) in little endian int array
+  //   c_rarg2   - sessionKd (key) in little endian int array
   //   c_rarg3   - r vector byte array address
   //   c_rarg4   - input length
   //
@@ -2890,7 +3061,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_cipherBlockChaining_decryptAESCrypt() {
     assert(UseAES, "need AES cryptographic extension support");
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::cipherBlockChaining_decryptAESCrypt_id;
+    StubId stub_id = StubId::stubgen_cipherBlockChaining_decryptAESCrypt_id;
     StubCodeMark mark(this, stub_id);
 
     Label L_loadkeys_44, L_loadkeys_52, L_aes_loop, L_rounds_44, L_rounds_52;
@@ -3007,7 +3178,7 @@ class StubGenerator: public StubCodeGenerator {
   // Inputs:
   //   c_rarg0   - source byte array address
   //   c_rarg1   - destination byte array address
-  //   c_rarg2   - K (key) in little endian int array
+  //   c_rarg2   - sessionKe (key) in little endian int array
   //   c_rarg3   - counter vector byte array address
   //   c_rarg4   - input length
   //   c_rarg5   - saved encryptedCounter start
@@ -3077,7 +3248,7 @@ class StubGenerator: public StubCodeGenerator {
     //    Wide bulk encryption of whole blocks.
 
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::counterMode_AESCrypt_id;
+    StubId stub_id = StubId::stubgen_counterMode_AESCrypt_id;
     StubCodeMark mark(this, stub_id);
     const address start = __ pc();
     __ enter();
@@ -3279,15 +3450,10 @@ class StubGenerator: public StubCodeGenerator {
   // counter = c_rarg7 - 16 bytes of CTR
   // return - number of processed bytes
   address generate_galoisCounterMode_AESCrypt() {
-    address ghash_polynomial = __ pc();
-    __ emit_int64(0x87);  // The low-order bits of the field
-                          // polynomial (i.e. p = z^7+z^2+z+1)
-                          // repeated in the low and high parts of a
-                          // 128-bit vector
-    __ emit_int64(0x87);
+    Label ghash_polynomial; // local data generated after code
 
-    __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::galoisCounterMode_AESCrypt_id;
+   __ align(CodeEntryAlignment);
+    StubId stub_id = StubId::stubgen_galoisCounterMode_AESCrypt_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
     __ enter();
@@ -3391,7 +3557,17 @@ class StubGenerator: public StubCodeGenerator {
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(lr);
-     return start;
+
+    // bind label and generate polynomial data
+    __ align(wordSize * 2);
+    __ bind(ghash_polynomial);
+    __ emit_int64(0x87);  // The low-order bits of the field
+                          // polynomial (i.e. p = z^7+z^2+z+1)
+                          // repeated in the low and high parts of a
+                          // 128-bit vector
+    __ emit_int64(0x87);
+
+    return start;
   }
 
   class Cached64Bytes {
@@ -3497,13 +3673,13 @@ class StubGenerator: public StubCodeGenerator {
   //   c_rarg2   - int     offset
   //   c_rarg3   - int     limit
   //
-  address generate_md5_implCompress(StubGenStubId stub_id) {
+  address generate_md5_implCompress(StubId stub_id) {
     bool multi_block;
     switch (stub_id) {
-    case md5_implCompress_id:
+    case StubId::stubgen_md5_implCompress_id:
       multi_block = false;
       break;
-    case md5_implCompressMB_id:
+    case StubId::stubgen_md5_implCompressMB_id:
       multi_block = true;
       break;
     default:
@@ -3650,13 +3826,13 @@ class StubGenerator: public StubCodeGenerator {
   //   c_rarg2   - int     offset
   //   c_rarg3   - int     limit
   //
-  address generate_sha1_implCompress(StubGenStubId stub_id) {
+  address generate_sha1_implCompress(StubId stub_id) {
     bool multi_block;
     switch (stub_id) {
-    case sha1_implCompress_id:
+    case StubId::stubgen_sha1_implCompress_id:
       multi_block = false;
       break;
-    case sha1_implCompressMB_id:
+    case StubId::stubgen_sha1_implCompressMB_id:
       multi_block = true;
       break;
     default:
@@ -3755,13 +3931,13 @@ class StubGenerator: public StubCodeGenerator {
   //   c_rarg2   - int     offset
   //   c_rarg3   - int     limit
   //
-  address generate_sha256_implCompress(StubGenStubId stub_id) {
+  address generate_sha256_implCompress(StubId stub_id) {
     bool multi_block;
     switch (stub_id) {
-    case sha256_implCompress_id:
+    case StubId::stubgen_sha256_implCompress_id:
       multi_block = false;
       break;
-    case sha256_implCompressMB_id:
+    case StubId::stubgen_sha256_implCompressMB_id:
       multi_block = true;
       break;
     default:
@@ -3911,13 +4087,13 @@ class StubGenerator: public StubCodeGenerator {
   //   c_rarg2   - int     offset
   //   c_rarg3   - int     limit
   //
-  address generate_sha512_implCompress(StubGenStubId stub_id) {
+  address generate_sha512_implCompress(StubId stub_id) {
     bool multi_block;
     switch (stub_id) {
-    case sha512_implCompress_id:
+    case StubId::stubgen_sha512_implCompress_id:
       multi_block = false;
       break;
-    case sha512_implCompressMB_id:
+    case StubId::stubgen_sha512_implCompressMB_id:
       multi_block = true;
       break;
     default:
@@ -4161,13 +4337,13 @@ class StubGenerator: public StubCodeGenerator {
   //   c_rarg3   - int     offset
   //   c_rarg4   - int     limit
   //
-  address generate_sha3_implCompress(StubGenStubId stub_id) {
+  address generate_sha3_implCompress(StubId stub_id) {
     bool multi_block;
     switch (stub_id) {
-    case sha3_implCompress_id:
+    case StubId::stubgen_sha3_implCompress_id:
       multi_block = false;
       break;
-    case sha3_implCompressMB_id:
+    case StubId::stubgen_sha3_implCompressMB_id:
       multi_block = true;
       break;
     default:
@@ -4405,240 +4581,194 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  /**
-   *  Arguments:
-   *
-   * Inputs:
-   *   c_rarg0   - int crc
-   *   c_rarg1   - byte* buf
-   *   c_rarg2   - int length
-   *
-   * Output:
-   *       rax   - int crc result
-   */
-  address generate_updateBytesCRC32() {
-    assert(UseCRC32Intrinsics, "what are we doing here?");
-
-    __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::updateBytesCRC32_id;
-    StubCodeMark mark(this, stub_id);
-
-    address start = __ pc();
-
-    const Register crc   = c_rarg0;  // crc
-    const Register buf   = c_rarg1;  // source java byte array address
-    const Register len   = c_rarg2;  // length
-    const Register table0 = c_rarg3; // crc_table address
-    const Register table1 = c_rarg4;
-    const Register table2 = c_rarg5;
-    const Register table3 = c_rarg6;
-    const Register tmp3 = c_rarg7;
-
-    BLOCK_COMMENT("Entry:");
-    __ enter(); // required for proper stackwalking of RuntimeStub frame
-
-    __ kernel_crc32(crc, buf, len,
-              table0, table1, table2, table3, rscratch1, rscratch2, tmp3);
-
-    __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ ret(lr);
-
-    return start;
-  }
-
-  // ChaCha20 block function.  This version parallelizes 4 quarter
-  // round operations at a time.  It uses 16 SIMD registers to
-  // produce 4 blocks of key stream.
+  // ChaCha20 block function.  This version parallelizes the 32-bit
+  // state elements on each of 16 vectors, producing 4 blocks of
+  // keystream at a time.
   //
   // state (int[16]) = c_rarg0
   // keystream (byte[256]) = c_rarg1
-  // return - number of bytes of keystream (always 256)
+  // return - number of bytes of produced keystream (always 256)
   //
-  // In this approach, we load the 512-bit start state sequentially into
-  // 4 128-bit vectors.  We then make 4 4-vector copies of that starting
-  // state, with each successive set of 4 vectors having a +1 added into
-  // the first 32-bit lane of the 4th vector in that group (the counter).
-  // By doing this, we can perform the block function on 4 512-bit blocks
-  // within one run of this intrinsic.
-  // The alignment of the data across the 4-vector group is such that at
-  // the start it is already aligned for the first round of each two-round
-  // loop iteration.  In other words, the corresponding lanes of each vector
-  // will contain the values needed for that quarter round operation (e.g.
-  // elements 0/4/8/12, 1/5/9/13, 2/6/10/14, etc.).
-  // In between each full round, a lane shift must occur.  Within a loop
-  // iteration, between the first and second rounds, the 2nd, 3rd, and 4th
-  // vectors are rotated left 32, 64 and 96 bits, respectively.  The result
-  // is effectively a diagonal orientation in columnar form.  After the
-  // second full round, those registers are left-rotated again, this time
-  // 96, 64, and 32 bits - returning the vectors to their columnar organization.
-  // After all 10 iterations, the original state is added to each 4-vector
-  // working state along with the add mask, and the 4 vector groups are
-  // sequentially written to the memory dedicated for the output key stream.
-  //
-  // For a more detailed explanation, see Goll and Gueron, "Vectorization of
-  // ChaCha Stream Cipher", 2014 11th Int. Conf. on Information Technology:
-  // New Generations, Las Vegas, NV, USA, April 2014, DOI: 10.1109/ITNG.2014.33
-  address generate_chacha20Block_qrpar() {
-    Label L_Q_twoRounds, L_Q_cc20_const;
-    // The constant data is broken into two 128-bit segments to be loaded
-    // onto SIMD registers.  The first 128 bits are a counter add overlay
-    // that adds +1/+0/+0/+0 to the vectors holding replicated state[12].
-    // The second 128-bits is a table constant used for 8-bit left rotations.
-    // on 32-bit lanes within a SIMD register.
-    __ BIND(L_Q_cc20_const);
-    __ emit_int64(0x0000000000000001UL);
-    __ emit_int64(0x0000000000000000UL);
-    __ emit_int64(0x0605040702010003UL);
-    __ emit_int64(0x0E0D0C0F0A09080BUL);
-
+  // This implementation takes each 32-bit integer from the state
+  // array and broadcasts it across all 4 32-bit lanes of a vector register
+  // (e.g. state[0] is replicated on all 4 lanes of v4, state[1] to all 4 lanes
+  // of v5, etc.).  Once all 16 elements have been broadcast onto 16 vectors,
+  // the quarter round schedule is implemented as outlined in RFC 7539 section
+  // 2.3.  However, instead of sequentially processing the 3 quarter round
+  // operations represented by one QUARTERROUND function, we instead stack all
+  // the adds, xors and left-rotations from the first 4 quarter rounds together
+  // and then do the same for the second set of 4 quarter rounds.  This removes
+  // some latency that would otherwise be incurred by waiting for an add to
+  // complete before performing an xor (which depends on the result of the
+  // add), etc. An adjustment happens between the first and second groups of 4
+  // quarter rounds, but this is done only in the inputs to the macro functions
+  // that generate the assembly instructions - these adjustments themselves are
+  // not part of the resulting assembly.
+  // The 4 registers v0-v3 are used during the quarter round operations as
+  // scratch registers.  Once the 20 rounds are complete, these 4 scratch
+  // registers become the vectors involved in adding the start state back onto
+  // the post-QR working state.  After the adds are complete, each of the 16
+  // vectors write their first lane back to the keystream buffer, followed
+  // by the second lane from all vectors and so on.
+  address generate_chacha20Block_blockpar() {
+    Label L_twoRounds, L_cc20_const;
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::chacha20Block_id;
+    StubId stub_id = StubId::stubgen_chacha20Block_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
     __ enter();
 
+    int i, j;
     const Register state = c_rarg0;
     const Register keystream = c_rarg1;
     const Register loopCtr = r10;
     const Register tmpAddr = r11;
+    const FloatRegister ctrAddOverlay = v28;
+    const FloatRegister lrot8Tbl = v29;
 
-    const FloatRegister aState = v0;
-    const FloatRegister bState = v1;
-    const FloatRegister cState = v2;
-    const FloatRegister dState = v3;
-    const FloatRegister a1Vec = v4;
-    const FloatRegister b1Vec = v5;
-    const FloatRegister c1Vec = v6;
-    const FloatRegister d1Vec = v7;
-    // Skip the callee-saved registers v8 - v15
-    const FloatRegister a2Vec = v16;
-    const FloatRegister b2Vec = v17;
-    const FloatRegister c2Vec = v18;
-    const FloatRegister d2Vec = v19;
-    const FloatRegister a3Vec = v20;
-    const FloatRegister b3Vec = v21;
-    const FloatRegister c3Vec = v22;
-    const FloatRegister d3Vec = v23;
-    const FloatRegister a4Vec = v24;
-    const FloatRegister b4Vec = v25;
-    const FloatRegister c4Vec = v26;
-    const FloatRegister d4Vec = v27;
-    const FloatRegister scratch = v28;
-    const FloatRegister addMask = v29;
-    const FloatRegister lrot8Tbl = v30;
+    // Organize SIMD registers in an array that facilitates
+    // putting repetitive opcodes into loop structures.  It is
+    // important that each grouping of 4 registers is monotonically
+    // increasing to support the requirements of multi-register
+    // instructions (e.g. ld4r, st4, etc.)
+    const FloatRegister workSt[16] = {
+         v4,  v5,  v6,  v7, v16, v17, v18, v19,
+        v20, v21, v22, v23, v24, v25, v26, v27
+    };
 
-    // Load the initial state in the first 4 quadword registers,
-    // then copy the initial state into the next 4 quadword registers
-    // that will be used for the working state.
-    __ ld1(aState, bState, cState, dState, __ T16B, Address(state));
+    // Pull in constant data.  The first 16 bytes are the add overlay
+    // which is applied to the vector holding the counter (state[12]).
+    // The second 16 bytes is the index register for the 8-bit left
+    // rotation tbl instruction.
+    __ adr(tmpAddr, L_cc20_const);
+    __ ldpq(ctrAddOverlay, lrot8Tbl, Address(tmpAddr));
 
-    // Load the index register for 2 constant 128-bit data fields.
-    // The first represents the +1/+0/+0/+0 add mask.  The second is
-    // the 8-bit left rotation.
-    __ adr(tmpAddr, L_Q_cc20_const);
-    __ ldpq(addMask, lrot8Tbl, Address(tmpAddr));
+    // Load from memory and interlace across 16 SIMD registers,
+    // With each word from memory being broadcast to all lanes of
+    // each successive SIMD register.
+    //      Addr(0) -> All lanes in workSt[i]
+    //      Addr(4) -> All lanes workSt[i + 1], etc.
+    __ mov(tmpAddr, state);
+    for (i = 0; i < 16; i += 4) {
+      __ ld4r(workSt[i], workSt[i + 1], workSt[i + 2], workSt[i + 3], __ T4S,
+          __ post(tmpAddr, 16));
+    }
+    __ addv(workSt[12], __ T4S, workSt[12], ctrAddOverlay); // Add ctr overlay
 
-    __ mov(a1Vec, __ T16B, aState);
-    __ mov(b1Vec, __ T16B, bState);
-    __ mov(c1Vec, __ T16B, cState);
-    __ mov(d1Vec, __ T16B, dState);
+    // Before entering the loop, create 5 4-register arrays.  These
+    // will hold the 4 registers that represent the a/b/c/d fields
+    // in the quarter round operation.  For instance the "b" field
+    // for the first 4 quarter round operations is the set of v16/v17/v18/v19,
+    // but in the second 4 quarter rounds it gets adjusted to v17/v18/v19/v16
+    // since it is part of a diagonal organization.  The aSet and scratch
+    // register sets are defined at declaration time because they do not change
+    // organization at any point during the 20-round processing.
+    FloatRegister aSet[4] = { v4, v5, v6, v7 };
+    FloatRegister bSet[4];
+    FloatRegister cSet[4];
+    FloatRegister dSet[4];
+    FloatRegister scratch[4] = { v0, v1, v2, v3 };
 
-    __ mov(a2Vec, __ T16B, aState);
-    __ mov(b2Vec, __ T16B, bState);
-    __ mov(c2Vec, __ T16B, cState);
-    __ addv(d2Vec, __ T4S, d1Vec, addMask);
-
-    __ mov(a3Vec, __ T16B, aState);
-    __ mov(b3Vec, __ T16B, bState);
-    __ mov(c3Vec, __ T16B, cState);
-    __ addv(d3Vec, __ T4S, d2Vec, addMask);
-
-    __ mov(a4Vec, __ T16B, aState);
-    __ mov(b4Vec, __ T16B, bState);
-    __ mov(c4Vec, __ T16B, cState);
-    __ addv(d4Vec, __ T4S, d3Vec, addMask);
-
-    // Set up the 10 iteration loop
+    // Set up the 10 iteration loop and perform all 8 quarter round ops
     __ mov(loopCtr, 10);
-    __ BIND(L_Q_twoRounds);
+    __ BIND(L_twoRounds);
 
-    // The first set of operations on the vectors covers the first 4 quarter
-    // round operations:
-    //  Qround(state, 0, 4, 8,12)
-    //  Qround(state, 1, 5, 9,13)
-    //  Qround(state, 2, 6,10,14)
-    //  Qround(state, 3, 7,11,15)
-    __ cc20_quarter_round(a1Vec, b1Vec, c1Vec, d1Vec, scratch, lrot8Tbl);
-    __ cc20_quarter_round(a2Vec, b2Vec, c2Vec, d2Vec, scratch, lrot8Tbl);
-    __ cc20_quarter_round(a3Vec, b3Vec, c3Vec, d3Vec, scratch, lrot8Tbl);
-    __ cc20_quarter_round(a4Vec, b4Vec, c4Vec, d4Vec, scratch, lrot8Tbl);
+    // Set to columnar organization and do the following 4 quarter-rounds:
+    // QUARTERROUND(0, 4, 8, 12)
+    // QUARTERROUND(1, 5, 9, 13)
+    // QUARTERROUND(2, 6, 10, 14)
+    // QUARTERROUND(3, 7, 11, 15)
+    __ cc20_set_qr_registers(bSet, workSt, 4, 5, 6, 7);
+    __ cc20_set_qr_registers(cSet, workSt, 8, 9, 10, 11);
+    __ cc20_set_qr_registers(dSet, workSt, 12, 13, 14, 15);
 
-    // Shuffle the b1Vec/c1Vec/d1Vec to reorganize the state vectors to
-    // diagonals. The a1Vec does not need to change orientation.
-    __ cc20_shift_lane_org(b1Vec, c1Vec, d1Vec, true);
-    __ cc20_shift_lane_org(b2Vec, c2Vec, d2Vec, true);
-    __ cc20_shift_lane_org(b3Vec, c3Vec, d3Vec, true);
-    __ cc20_shift_lane_org(b4Vec, c4Vec, d4Vec, true);
+    __ cc20_qr_add4(aSet, bSet);                    // a += b
+    __ cc20_qr_xor4(dSet, aSet, dSet);              // d ^= a
+    __ cc20_qr_lrot4(dSet, dSet, 16, lrot8Tbl);     // d <<<= 16
 
-    // The second set of operations on the vectors covers the second 4 quarter
-    // round operations, now acting on the diagonals:
-    //  Qround(state, 0, 5,10,15)
-    //  Qround(state, 1, 6,11,12)
-    //  Qround(state, 2, 7, 8,13)
-    //  Qround(state, 3, 4, 9,14)
-    __ cc20_quarter_round(a1Vec, b1Vec, c1Vec, d1Vec, scratch, lrot8Tbl);
-    __ cc20_quarter_round(a2Vec, b2Vec, c2Vec, d2Vec, scratch, lrot8Tbl);
-    __ cc20_quarter_round(a3Vec, b3Vec, c3Vec, d3Vec, scratch, lrot8Tbl);
-    __ cc20_quarter_round(a4Vec, b4Vec, c4Vec, d4Vec, scratch, lrot8Tbl);
+    __ cc20_qr_add4(cSet, dSet);                    // c += d
+    __ cc20_qr_xor4(bSet, cSet, scratch);           // b ^= c (scratch)
+    __ cc20_qr_lrot4(scratch, bSet, 12, lrot8Tbl);  // b <<<= 12
 
-    // Before we start the next iteration, we need to perform shuffles
-    // on the b/c/d vectors to move them back to columnar organizations
-    // from their current diagonal orientation.
-    __ cc20_shift_lane_org(b1Vec, c1Vec, d1Vec, false);
-    __ cc20_shift_lane_org(b2Vec, c2Vec, d2Vec, false);
-    __ cc20_shift_lane_org(b3Vec, c3Vec, d3Vec, false);
-    __ cc20_shift_lane_org(b4Vec, c4Vec, d4Vec, false);
+    __ cc20_qr_add4(aSet, bSet);                    // a += b
+    __ cc20_qr_xor4(dSet, aSet, dSet);              // d ^= a
+    __ cc20_qr_lrot4(dSet, dSet, 8, lrot8Tbl);      // d <<<= 8
+
+    __ cc20_qr_add4(cSet, dSet);                    // c += d
+    __ cc20_qr_xor4(bSet, cSet, scratch);           // b ^= c (scratch)
+    __ cc20_qr_lrot4(scratch, bSet, 7, lrot8Tbl);   // b <<<= 12
+
+    // Set to diagonal organization and do the next 4 quarter-rounds:
+    // QUARTERROUND(0, 5, 10, 15)
+    // QUARTERROUND(1, 6, 11, 12)
+    // QUARTERROUND(2, 7, 8, 13)
+    // QUARTERROUND(3, 4, 9, 14)
+    __ cc20_set_qr_registers(bSet, workSt, 5, 6, 7, 4);
+    __ cc20_set_qr_registers(cSet, workSt, 10, 11, 8, 9);
+    __ cc20_set_qr_registers(dSet, workSt, 15, 12, 13, 14);
+
+    __ cc20_qr_add4(aSet, bSet);                    // a += b
+    __ cc20_qr_xor4(dSet, aSet, dSet);              // d ^= a
+    __ cc20_qr_lrot4(dSet, dSet, 16, lrot8Tbl);     // d <<<= 16
+
+    __ cc20_qr_add4(cSet, dSet);                    // c += d
+    __ cc20_qr_xor4(bSet, cSet, scratch);           // b ^= c (scratch)
+    __ cc20_qr_lrot4(scratch, bSet, 12, lrot8Tbl);  // b <<<= 12
+
+    __ cc20_qr_add4(aSet, bSet);                    // a += b
+    __ cc20_qr_xor4(dSet, aSet, dSet);              // d ^= a
+    __ cc20_qr_lrot4(dSet, dSet, 8, lrot8Tbl);      // d <<<= 8
+
+    __ cc20_qr_add4(cSet, dSet);                    // c += d
+    __ cc20_qr_xor4(bSet, cSet, scratch);           // b ^= c (scratch)
+    __ cc20_qr_lrot4(scratch, bSet, 7, lrot8Tbl);   // b <<<= 12
 
     // Decrement and iterate
     __ sub(loopCtr, loopCtr, 1);
-    __ cbnz(loopCtr, L_Q_twoRounds);
+    __ cbnz(loopCtr, L_twoRounds);
 
-    // Once the counter reaches zero, we fall out of the loop
-    // and need to add the initial state back into the working state
-    // represented by the a/b/c/d1Vec registers.  This is destructive
-    // on the dState register but we no longer will need it.
-    __ addv(a1Vec, __ T4S, a1Vec, aState);
-    __ addv(b1Vec, __ T4S, b1Vec, bState);
-    __ addv(c1Vec, __ T4S, c1Vec, cState);
-    __ addv(d1Vec, __ T4S, d1Vec, dState);
+    __ mov(tmpAddr, state);
 
-    __ addv(a2Vec, __ T4S, a2Vec, aState);
-    __ addv(b2Vec, __ T4S, b2Vec, bState);
-    __ addv(c2Vec, __ T4S, c2Vec, cState);
-    __ addv(dState, __ T4S, dState, addMask);
-    __ addv(d2Vec, __ T4S, d2Vec, dState);
+    // Add the starting state back to the post-loop keystream
+    // state.  We read/interlace the state array from memory into
+    // 4 registers similar to what we did in the beginning.  Then
+    // add the counter overlay onto workSt[12] at the end.
+    for (i = 0; i < 16; i += 4) {
+      __ ld4r(v0, v1, v2, v3, __ T4S, __ post(tmpAddr, 16));
+      __ addv(workSt[i], __ T4S, workSt[i], v0);
+      __ addv(workSt[i + 1], __ T4S, workSt[i + 1], v1);
+      __ addv(workSt[i + 2], __ T4S, workSt[i + 2], v2);
+      __ addv(workSt[i + 3], __ T4S, workSt[i + 3], v3);
+    }
+    __ addv(workSt[12], __ T4S, workSt[12], ctrAddOverlay); // Add ctr overlay
 
-    __ addv(a3Vec, __ T4S, a3Vec, aState);
-    __ addv(b3Vec, __ T4S, b3Vec, bState);
-    __ addv(c3Vec, __ T4S, c3Vec, cState);
-    __ addv(dState, __ T4S, dState, addMask);
-    __ addv(d3Vec, __ T4S, d3Vec, dState);
-
-    __ addv(a4Vec, __ T4S, a4Vec, aState);
-    __ addv(b4Vec, __ T4S, b4Vec, bState);
-    __ addv(c4Vec, __ T4S, c4Vec, cState);
-    __ addv(dState, __ T4S, dState, addMask);
-    __ addv(d4Vec, __ T4S, d4Vec, dState);
-
-    // Write the final state back to the result buffer
-    __ st1(a1Vec, b1Vec, c1Vec, d1Vec, __ T16B, __ post(keystream, 64));
-    __ st1(a2Vec, b2Vec, c2Vec, d2Vec, __ T16B, __ post(keystream, 64));
-    __ st1(a3Vec, b3Vec, c3Vec, d3Vec, __ T16B, __ post(keystream, 64));
-    __ st1(a4Vec, b4Vec, c4Vec, d4Vec, __ T16B, __ post(keystream, 64));
+    // Write working state into the keystream buffer.  This is accomplished
+    // by taking the lane "i" from each of the four vectors and writing
+    // it to consecutive 4-byte offsets, then post-incrementing by 16 and
+    // repeating with the next 4 vectors until all 16 vectors have been used.
+    // Then move to the next lane and repeat the process until all lanes have
+    // been written.
+    for (i = 0; i < 4; i++) {
+      for (j = 0; j < 16; j += 4) {
+        __ st4(workSt[j], workSt[j + 1], workSt[j + 2], workSt[j + 3], __ S, i,
+            __ post(keystream, 16));
+      }
+    }
 
     __ mov(r0, 256);             // Return length of output keystream
     __ leave();
     __ ret(lr);
+
+    // bind label and generate local constant data used by this stub
+    // The constant data is broken into two 128-bit segments to be loaded
+    // onto FloatRegisters.  The first 128 bits are a counter add overlay
+    // that adds +0/+1/+2/+3 to the vector holding replicated state[12].
+    // The second 128-bits is a table constant used for 8-bit left rotations.
+    __ BIND(L_cc20_const);
+    __ emit_int64(0x0000000100000000UL);
+    __ emit_int64(0x0000000300000002UL);
+    __ emit_int64(0x0605040702010003UL);
+    __ emit_int64(0x0E0D0C0F0A09080BUL);
 
     return start;
   }
@@ -4651,6 +4781,11 @@ class StubGenerator: public StubCodeGenerator {
   template<int N>
   void vs_addv(const VSeq<N>& v, Assembler::SIMD_Arrangement T,
                const VSeq<N>& v1, const VSeq<N>& v2) {
+    // output must not be constant
+    assert(N == 1  || !v.is_constant(), "cannot output multiple values to a constant vector");
+    // output cannot overwrite pending inputs
+    assert(!vs_write_before_read(v, v1), "output overwrites input");
+    assert(!vs_write_before_read(v, v2), "output overwrites input");
     for (int i = 0; i < N; i++) {
       __ addv(v[i], T, v1[i], v2[i]);
     }
@@ -4659,6 +4794,11 @@ class StubGenerator: public StubCodeGenerator {
   template<int N>
   void vs_subv(const VSeq<N>& v, Assembler::SIMD_Arrangement T,
                const VSeq<N>& v1, const VSeq<N>& v2) {
+    // output must not be constant
+    assert(N == 1  || !v.is_constant(), "cannot output multiple values to a constant vector");
+    // output cannot overwrite pending inputs
+    assert(!vs_write_before_read(v, v1), "output overwrites input");
+    assert(!vs_write_before_read(v, v2), "output overwrites input");
     for (int i = 0; i < N; i++) {
       __ subv(v[i], T, v1[i], v2[i]);
     }
@@ -4667,6 +4807,11 @@ class StubGenerator: public StubCodeGenerator {
   template<int N>
   void vs_mulv(const VSeq<N>& v, Assembler::SIMD_Arrangement T,
                const VSeq<N>& v1, const VSeq<N>& v2) {
+    // output must not be constant
+    assert(N == 1  || !v.is_constant(), "cannot output multiple values to a constant vector");
+    // output cannot overwrite pending inputs
+    assert(!vs_write_before_read(v, v1), "output overwrites input");
+    assert(!vs_write_before_read(v, v2), "output overwrites input");
     for (int i = 0; i < N; i++) {
       __ mulv(v[i], T, v1[i], v2[i]);
     }
@@ -4674,6 +4819,10 @@ class StubGenerator: public StubCodeGenerator {
 
   template<int N>
   void vs_negr(const VSeq<N>& v, Assembler::SIMD_Arrangement T, const VSeq<N>& v1) {
+    // output must not be constant
+    assert(N == 1  || !v.is_constant(), "cannot output multiple values to a constant vector");
+    // output cannot overwrite pending inputs
+    assert(!vs_write_before_read(v, v1), "output overwrites input");
     for (int i = 0; i < N; i++) {
       __ negr(v[i], T, v1[i]);
     }
@@ -4682,6 +4831,10 @@ class StubGenerator: public StubCodeGenerator {
   template<int N>
   void vs_sshr(const VSeq<N>& v, Assembler::SIMD_Arrangement T,
                const VSeq<N>& v1, int shift) {
+    // output must not be constant
+    assert(N == 1  || !v.is_constant(), "cannot output multiple values to a constant vector");
+    // output cannot overwrite pending inputs
+    assert(!vs_write_before_read(v, v1), "output overwrites input");
     for (int i = 0; i < N; i++) {
       __ sshr(v[i], T, v1[i], shift);
     }
@@ -4689,6 +4842,11 @@ class StubGenerator: public StubCodeGenerator {
 
   template<int N>
   void vs_andr(const VSeq<N>& v, const VSeq<N>& v1, const VSeq<N>& v2) {
+    // output must not be constant
+    assert(N == 1  || !v.is_constant(), "cannot output multiple values to a constant vector");
+    // output cannot overwrite pending inputs
+    assert(!vs_write_before_read(v, v1), "output overwrites input");
+    assert(!vs_write_before_read(v, v2), "output overwrites input");
     for (int i = 0; i < N; i++) {
       __ andr(v[i], __ T16B, v1[i], v2[i]);
     }
@@ -4696,15 +4854,48 @@ class StubGenerator: public StubCodeGenerator {
 
   template<int N>
   void vs_orr(const VSeq<N>& v, const VSeq<N>& v1, const VSeq<N>& v2) {
+    // output must not be constant
+    assert(N == 1  || !v.is_constant(), "cannot output multiple values to a constant vector");
+    // output cannot overwrite pending inputs
+    assert(!vs_write_before_read(v, v1), "output overwrites input");
+    assert(!vs_write_before_read(v, v2), "output overwrites input");
     for (int i = 0; i < N; i++) {
       __ orr(v[i], __ T16B, v1[i], v2[i]);
     }
   }
 
   template<int N>
-    void vs_notr(const VSeq<N>& v, const VSeq<N>& v1) {
+  void vs_notr(const VSeq<N>& v, const VSeq<N>& v1) {
+    // output must not be constant
+    assert(N == 1  || !v.is_constant(), "cannot output multiple values to a constant vector");
+    // output cannot overwrite pending inputs
+    assert(!vs_write_before_read(v, v1), "output overwrites input");
     for (int i = 0; i < N; i++) {
       __ notr(v[i], __ T16B, v1[i]);
+    }
+  }
+
+  template<int N>
+  void vs_sqdmulh(const VSeq<N>& v, Assembler::SIMD_Arrangement T, const VSeq<N>& v1, const VSeq<N>& v2) {
+    // output must not be constant
+    assert(N == 1  || !v.is_constant(), "cannot output multiple values to a constant vector");
+    // output cannot overwrite pending inputs
+    assert(!vs_write_before_read(v, v1), "output overwrites input");
+    assert(!vs_write_before_read(v, v2), "output overwrites input");
+    for (int i = 0; i < N; i++) {
+      __ sqdmulh(v[i], T, v1[i], v2[i]);
+    }
+  }
+
+  template<int N>
+  void vs_mlsv(const VSeq<N>& v, Assembler::SIMD_Arrangement T, const VSeq<N>& v1, VSeq<N>& v2) {
+    // output must not be constant
+    assert(N == 1  || !v.is_constant(), "cannot output multiple values to a constant vector");
+    // output cannot overwrite pending inputs
+    assert(!vs_write_before_read(v, v1), "output overwrites input");
+    assert(!vs_write_before_read(v, v2), "output overwrites input");
+    for (int i = 0; i < N; i++) {
+      __ mlsv(v[i], T, v1[i], v2[i]);
     }
   }
 
@@ -4723,6 +4914,7 @@ class StubGenerator: public StubCodeGenerator {
   // in base using post-increment addressing
   template<int N>
   void vs_ldpq_post(const VSeq<N>& v, Register base) {
+    static_assert((N & (N - 1)) == 0, "sequence length must be even");
     for (int i = 0; i < N; i += 2) {
       __ ldpq(v[i], v[i+1], __ post(base, 32));
     }
@@ -4733,8 +4925,52 @@ class StubGenerator: public StubCodeGenerator {
   // supplied in base using post-increment addressing
   template<int N>
   void vs_stpq_post(const VSeq<N>& v, Register base) {
+    static_assert((N & (N - 1)) == 0, "sequence length must be even");
     for (int i = 0; i < N; i += 2) {
       __ stpq(v[i], v[i+1], __ post(base, 32));
+    }
+  }
+
+  // load N/2 pairs of quadword values from memory de-interleaved into
+  // N vector registers 2 at a time via the address supplied in base
+  // using post-increment addressing.
+  template<int N>
+  void vs_ld2_post(const VSeq<N>& v, Assembler::SIMD_Arrangement T, Register base) {
+    static_assert((N & (N - 1)) == 0, "sequence length must be even");
+    for (int i = 0; i < N; i += 2) {
+      __ ld2(v[i], v[i+1], T, __ post(base, 32));
+    }
+  }
+
+  // store N vector registers interleaved into N/2 pairs of quadword
+  // memory locations via the address supplied in base using
+  // post-increment addressing.
+  template<int N>
+  void vs_st2_post(const VSeq<N>& v, Assembler::SIMD_Arrangement T, Register base) {
+    static_assert((N & (N - 1)) == 0, "sequence length must be even");
+    for (int i = 0; i < N; i += 2) {
+      __ st2(v[i], v[i+1], T, __ post(base, 32));
+    }
+  }
+
+  // load N quadword values from memory de-interleaved into N vector
+  // registers 3 elements at a time via the address supplied in base.
+  template<int N>
+  void vs_ld3(const VSeq<N>& v, Assembler::SIMD_Arrangement T, Register base) {
+    static_assert(N == ((N / 3) * 3), "sequence length must be multiple of 3");
+    for (int i = 0; i < N; i += 3) {
+      __ ld3(v[i], v[i+1], v[i+2], T, base);
+    }
+  }
+
+  // load N quadword values from memory de-interleaved into N vector
+  // registers 3 elements at a time via the address supplied in base
+  // using post-increment addressing.
+  template<int N>
+  void vs_ld3_post(const VSeq<N>& v, Assembler::SIMD_Arrangement T, Register base) {
+    static_assert(N == ((N / 3) * 3), "sequence length must be multiple of 3");
+    for (int i = 0; i < N; i += 3) {
+      __ ld3(v[i], v[i+1], v[i+2], T, __ post(base, 48));
     }
   }
 
@@ -4810,23 +5046,29 @@ class StubGenerator: public StubCodeGenerator {
     }
   }
 
-  // Helper routines for various flavours of dilithium montgomery
-  // multiply
+  // Helper routines for various flavours of Montgomery multiply
 
-  // Perform 16 32-bit Montgomery multiplications in parallel
-  // See the montMul() method of the sun.security.provider.ML_DSA class.
+  // Perform 16 32-bit (4x4S) or 32 16-bit (4 x 8H) Montgomery
+  // multiplications in parallel
   //
-  // Computes 4x4S results
-  //    a = b * c * 2^-32 mod MONT_Q
-  // Inputs:  vb, vc - 4x4S vector register sequences
-  //          vq - 2x4S constants <MONT_Q, MONT_Q_INV_MOD_R>
-  // Temps:   vtmp - 4x4S vector sequence trashed after call
-  // Outputs: va - 4x4S vector register sequences
+
+  // See the montMul() method of the sun.security.provider.ML_DSA
+  // class.
+  //
+  // Computes 4x4S results or 8x8H results
+  //    a = b * c * 2^MONT_R_BITS mod MONT_Q
+  // Inputs:  vb, vc - 4x4S or 4x8H vector register sequences
+  //          vq - 2x4S or 2x8H constants <MONT_Q, MONT_Q_INV_MOD_R>
+  // Temps:   vtmp - 4x4S or 4x8H vector sequence trashed after call
+  // Outputs: va - 4x4S or 4x8H vector register sequences
   // vb, vc, vtmp and vq must all be disjoint
   // va must be disjoint from all other inputs/temps or must equal vc
-  // n.b. MONT_R_BITS is 32, so the right shift by it is implicit.
-  void dilithium_montmul16(const VSeq<4>& va, const VSeq<4>& vb, const VSeq<4>& vc,
-                    const VSeq<4>& vtmp, const VSeq<2>& vq) {
+  // va must have a non-zero delta i.e. it must not be a constant vseq.
+  // n.b. MONT_R_BITS is 16 or 32, so the right shift by it is implicit.
+  void vs_montmul4(const VSeq<4>& va, const VSeq<4>& vb, const VSeq<4>& vc,
+                   Assembler::SIMD_Arrangement T,
+                   const VSeq<4>& vtmp, const VSeq<2>& vq) {
+    assert (T == __ T4S || T == __ T8H, "invalid arrangement for montmul");
     assert(vs_disjoint(vb, vc), "vb and vc overlap");
     assert(vs_disjoint(vb, vq), "vb and vq overlap");
     assert(vs_disjoint(vb, vtmp), "vb and vtmp overlap");
@@ -4840,40 +5082,107 @@ class StubGenerator: public StubCodeGenerator {
     assert(vs_disjoint(va, vb), "va and vb overlap");
     assert(vs_disjoint(va, vq), "va and vq overlap");
     assert(vs_disjoint(va, vtmp), "va and vtmp overlap");
+    assert(!va.is_constant(), "output vector must identify 4 different registers");
 
     // schedule 4 streams of instructions across the vector sequences
     for (int i = 0; i < 4; i++) {
-      __ sqdmulh(vtmp[i], __ T4S, vb[i], vc[i]); // aHigh = hi32(2 * b * c)
-      __ mulv(va[i], __ T4S, vb[i], vc[i]);    // aLow = lo32(b * c)
+      __ sqdmulh(vtmp[i], T, vb[i], vc[i]); // aHigh = hi32(2 * b * c)
+      __ mulv(va[i], T, vb[i], vc[i]);    // aLow = lo32(b * c)
     }
 
     for (int i = 0; i < 4; i++) {
-      __ mulv(va[i], __ T4S, va[i], vq[0]);     // m = aLow * qinv
+      __ mulv(va[i], T, va[i], vq[0]);     // m = aLow * qinv
     }
 
     for (int i = 0; i < 4; i++) {
-      __ sqdmulh(va[i], __ T4S, va[i], vq[1]);  // n = hi32(2 * m * q)
+      __ sqdmulh(va[i], T, va[i], vq[1]);  // n = hi32(2 * m * q)
     }
 
     for (int i = 0; i < 4; i++) {
-      __ shsubv(va[i], __ T4S, vtmp[i], va[i]);   // a = (aHigh - n) / 2
+      __ shsubv(va[i], T, vtmp[i], va[i]);   // a = (aHigh - n) / 2
     }
   }
 
-  // Perform 2x16 32-bit Montgomery multiplications in parallel
-  // See the montMul() method of the sun.security.provider.ML_DSA class.
+  // Perform 8 32-bit (4x4S) or 16 16-bit (2 x 8H) Montgomery
+  // multiplications in parallel
   //
-  // Computes 8x4S results
-  //    a = b * c * 2^-32 mod MONT_Q
-  // Inputs:  vb, vc - 8x4S vector register sequences
-  //          vq - 2x4S constants <MONT_Q, MONT_Q_INV_MOD_R>
-  // Temps:   vtmp - 4x4S vector sequence trashed after call
-  // Outputs: va - 8x4S vector register sequences
+
+  // See the montMul() method of the sun.security.provider.ML_DSA
+  // class.
+  //
+  // Computes 4x4S results or 8x8H results
+  //    a = b * c * 2^MONT_R_BITS mod MONT_Q
+  // Inputs:  vb, vc - 4x4S or 4x8H vector register sequences
+  //          vq - 2x4S or 2x8H constants <MONT_Q, MONT_Q_INV_MOD_R>
+  // Temps:   vtmp - 4x4S or 4x8H vector sequence trashed after call
+  // Outputs: va - 4x4S or 4x8H vector register sequences
   // vb, vc, vtmp and vq must all be disjoint
   // va must be disjoint from all other inputs/temps or must equal vc
-  // n.b. MONT_R_BITS is 32, so the right shift by it is implicit.
-  void vs_montmul32(const VSeq<8>& va, const VSeq<8>& vb, const VSeq<8>& vc,
-                    const VSeq<4>& vtmp, const VSeq<2>& vq) {
+  // va must have a non-zero delta i.e. it must not be a constant vseq.
+  // n.b. MONT_R_BITS is 16 or 32, so the right shift by it is implicit.
+  void vs_montmul2(const VSeq<2>& va, const VSeq<2>& vb, const VSeq<2>& vc,
+                   Assembler::SIMD_Arrangement T,
+                   const VSeq<2>& vtmp, const VSeq<2>& vq) {
+    assert (T == __ T4S || T == __ T8H, "invalid arrangement for montmul");
+    assert(vs_disjoint(vb, vc), "vb and vc overlap");
+    assert(vs_disjoint(vb, vq), "vb and vq overlap");
+    assert(vs_disjoint(vb, vtmp), "vb and vtmp overlap");
+
+    assert(vs_disjoint(vc, vq), "vc and vq overlap");
+    assert(vs_disjoint(vc, vtmp), "vc and vtmp overlap");
+
+    assert(vs_disjoint(vq, vtmp), "vq and vtmp overlap");
+
+    assert(vs_disjoint(va, vc) || vs_same(va, vc), "va and vc neither disjoint nor equal");
+    assert(vs_disjoint(va, vb), "va and vb overlap");
+    assert(vs_disjoint(va, vq), "va and vq overlap");
+    assert(vs_disjoint(va, vtmp), "va and vtmp overlap");
+    assert(!va.is_constant(), "output vector must identify 2 different registers");
+
+    // schedule 2 streams of instructions across the vector sequences
+    for (int i = 0; i < 2; i++) {
+      __ sqdmulh(vtmp[i], T, vb[i], vc[i]); // aHigh = hi32(2 * b * c)
+      __ mulv(va[i], T, vb[i], vc[i]);    // aLow = lo32(b * c)
+    }
+
+    for (int i = 0; i < 2; i++) {
+      __ mulv(va[i], T, va[i], vq[0]);     // m = aLow * qinv
+    }
+
+    for (int i = 0; i < 2; i++) {
+      __ sqdmulh(va[i], T, va[i], vq[1]);  // n = hi32(2 * m * q)
+    }
+
+    for (int i = 0; i < 2; i++) {
+      __ shsubv(va[i], T, vtmp[i], va[i]);   // a = (aHigh - n) / 2
+    }
+  }
+
+  // Perform 16 16-bit Montgomery multiplications in parallel.
+  void kyber_montmul16(const VSeq<2>& va, const VSeq<2>& vb, const VSeq<2>& vc,
+                       const VSeq<2>& vtmp, const VSeq<2>& vq) {
+    // Use the helper routine to schedule a 2x8H Montgomery multiply.
+    // It will assert that the register use is valid
+    vs_montmul2(va, vb, vc, __ T8H, vtmp, vq);
+  }
+
+  // Perform 32 16-bit Montgomery multiplications in parallel.
+  void kyber_montmul32(const VSeq<4>& va, const VSeq<4>& vb, const VSeq<4>& vc,
+                       const VSeq<4>& vtmp, const VSeq<2>& vq) {
+    // Use the helper routine to schedule a 4x8H Montgomery multiply.
+    // It will assert that the register use is valid
+    vs_montmul4(va, vb, vc, __ T8H, vtmp, vq);
+  }
+
+  // Perform 64 16-bit Montgomery multiplications in parallel.
+  void kyber_montmul64(const VSeq<8>& va, const VSeq<8>& vb, const VSeq<8>& vc,
+                       const VSeq<4>& vtmp, const VSeq<2>& vq) {
+    // Schedule two successive 4x8H multiplies via the montmul helper
+    // on the front and back halves of va, vb and vc. The helper will
+    // assert that the register use has no overlap conflicts on each
+    // individual call but we also need to ensure that the necessary
+    // disjoint/equality constraints are met across both calls.
+
     // vb, vc, vtmp and vq must be disjoint. va must either be
     // disjoint from all other registers or equal vc
 
@@ -4891,8 +5200,8 @@ class StubGenerator: public StubCodeGenerator {
     assert(vs_disjoint(va, vq), "va and vq overlap");
     assert(vs_disjoint(va, vtmp), "va and vtmp overlap");
 
-    // we need to multiply the front and back halves of each sequence
-    // 4x4S at a time because
+    // we multiply the front and back halves of each sequence 4 at a
+    // time because
     //
     // 1) we are currently only able to get 4-way instruction
     // parallelism at best
@@ -4901,14 +5210,1237 @@ class StubGenerator: public StubCodeGenerator {
     // scratch registers to hold intermediate results so vtmp can only
     // be a VSeq<4> which means we only have 4 scratch slots
 
-    dilithium_montmul16(vs_front(va), vs_front(vb), vs_front(vc), vtmp, vq);
-    dilithium_montmul16(vs_back(va), vs_back(vb), vs_back(vc), vtmp, vq);
+    vs_montmul4(vs_front(va), vs_front(vb), vs_front(vc), __ T8H, vtmp, vq);
+    vs_montmul4(vs_back(va), vs_back(vb), vs_back(vc), __ T8H, vtmp, vq);
   }
 
-  // perform combined montmul then add/sub on 4x4S vectors
+  void kyber_montmul32_sub_add(const VSeq<4>& va0, const VSeq<4>& va1,
+                               const VSeq<4>& vc,
+                               const VSeq<4>& vtmp,
+                               const VSeq<2>& vq) {
+    // compute a = montmul(a1, c)
+    kyber_montmul32(vc, va1, vc, vtmp, vq);
+    // ouptut a1 = a0 - a
+    vs_subv(va1, __ T8H, va0, vc);
+    //    and a0 = a0 + a
+    vs_addv(va0, __ T8H, va0, vc);
+  }
 
-  void dilithium_montmul16_sub_add(const VSeq<4>& va0, const VSeq<4>& va1, const VSeq<4>& vc,
-                                   const VSeq<4>& vtmp, const VSeq<2>& vq) {
+  void kyber_sub_add_montmul32(const VSeq<4>& va0, const VSeq<4>& va1,
+                               const VSeq<4>& vb,
+                               const VSeq<4>& vtmp1,
+                               const VSeq<4>& vtmp2,
+                               const VSeq<2>& vq) {
+    // compute c = a0 - a1
+    vs_subv(vtmp1, __ T8H, va0, va1);
+    // output a0 = a0 + a1
+    vs_addv(va0, __ T8H, va0, va1);
+    // output a1 = b montmul c
+    kyber_montmul32(va1, vtmp1, vb, vtmp2, vq);
+  }
+
+  void load64shorts(const VSeq<8>& v, Register shorts) {
+    vs_ldpq_post(v, shorts);
+  }
+
+  void load32shorts(const VSeq<4>& v, Register shorts) {
+    vs_ldpq_post(v, shorts);
+  }
+
+  void store64shorts(VSeq<8> v, Register tmpAddr) {
+    vs_stpq_post(v, tmpAddr);
+  }
+
+  // Kyber NTT function.
+  // Implements
+  // static int implKyberNtt(short[] poly, short[] ntt_zetas) {}
+  //
+  // coeffs (short[256]) = c_rarg0
+  // ntt_zetas (short[256]) = c_rarg1
+  address generate_kyberNtt() {
+
+    __ align(CodeEntryAlignment);
+    StubId stub_id = StubId::stubgen_kyberNtt_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    __ enter();
+
+    const Register coeffs = c_rarg0;
+    const Register zetas = c_rarg1;
+
+    const Register kyberConsts = r10;
+    const Register tmpAddr = r11;
+
+    VSeq<8> vs1(0), vs2(16), vs3(24);  // 3 sets of 8x8H inputs/outputs
+    VSeq<4> vtmp = vs_front(vs3);      // n.b. tmp registers overlap vs3
+    VSeq<2> vq(30);                    // n.b. constants overlap vs3
+
+    __ lea(kyberConsts, ExternalAddress((address) StubRoutines::aarch64::_kyberConsts));
+    // load the montmul constants
+    vs_ldpq(vq, kyberConsts);
+
+    // Each level corresponds to an iteration of the outermost loop of the
+    // Java method seilerNTT(int[] coeffs). There are some differences
+    // from what is done in the seilerNTT() method, though:
+    // 1. The computation is using 16-bit signed values, we do not convert them
+    // to ints here.
+    // 2. The zetas are delivered in a bigger array, 128 zetas are stored in
+    // this array for each level, it is easier that way to fill up the vector
+    // registers.
+    // 3. In the seilerNTT() method we use R = 2^20 for the Montgomery
+    // multiplications (this is because that way there should not be any
+    // overflow during the inverse NTT computation), here we usr R = 2^16 so
+    // that we can use the 16-bit arithmetic in the vector unit.
+    //
+    // On each level, we fill up the vector registers in such a way that the
+    // array elements that need to be multiplied by the zetas go into one
+    // set of vector registers while the corresponding ones that don't need to
+    // be multiplied, go into another set.
+    // We can do 32 Montgomery multiplications in parallel, using 12 vector
+    // registers interleaving the steps of 4 identical computations,
+    // each done on 8 16-bit values per register.
+
+    // At levels 0-3 the coefficients multiplied by or added/subtracted
+    // to the zetas occur in discrete blocks whose size is some multiple
+    // of 32.
+
+    // level 0
+    __ add(tmpAddr, coeffs, 256);
+    load64shorts(vs1, tmpAddr);
+    load64shorts(vs2, zetas);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    __ add(tmpAddr, coeffs, 0);
+    load64shorts(vs1, tmpAddr);
+    vs_subv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_addv(vs1, __ T8H, vs1, vs2);
+    __ add(tmpAddr, coeffs, 0);
+    vs_stpq_post(vs1, tmpAddr);
+    __ add(tmpAddr, coeffs, 256);
+    vs_stpq_post(vs3, tmpAddr);
+    // restore montmul constants
+    vs_ldpq(vq, kyberConsts);
+    load64shorts(vs1, tmpAddr);
+    load64shorts(vs2, zetas);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    __ add(tmpAddr, coeffs, 128);
+    load64shorts(vs1, tmpAddr);
+    vs_subv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_addv(vs1, __ T8H, vs1, vs2);
+    __ add(tmpAddr, coeffs, 128);
+    store64shorts(vs1, tmpAddr);
+    __ add(tmpAddr, coeffs, 384);
+    store64shorts(vs3, tmpAddr);
+
+    // level 1
+    // restore montmul constants
+    vs_ldpq(vq, kyberConsts);
+    __ add(tmpAddr, coeffs, 128);
+    load64shorts(vs1, tmpAddr);
+    load64shorts(vs2, zetas);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    __ add(tmpAddr, coeffs, 0);
+    load64shorts(vs1, tmpAddr);
+    vs_subv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_addv(vs1, __ T8H, vs1, vs2);
+    __ add(tmpAddr, coeffs, 0);
+    store64shorts(vs1, tmpAddr);
+    store64shorts(vs3, tmpAddr);
+    vs_ldpq(vq, kyberConsts);
+    __ add(tmpAddr, coeffs, 384);
+    load64shorts(vs1, tmpAddr);
+    load64shorts(vs2, zetas);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    __ add(tmpAddr, coeffs, 256);
+    load64shorts(vs1, tmpAddr);
+    vs_subv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_addv(vs1, __ T8H, vs1, vs2);
+    __ add(tmpAddr, coeffs, 256);
+    store64shorts(vs1, tmpAddr);
+    store64shorts(vs3, tmpAddr);
+
+    // level 2
+    vs_ldpq(vq, kyberConsts);
+    int offsets1[4] = { 0, 32, 128, 160 };
+    vs_ldpq_indexed(vs1, coeffs, 64, offsets1);
+    load64shorts(vs2, zetas);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    vs_ldpq_indexed(vs1, coeffs, 0, offsets1);
+    // kyber_subv_addv64();
+    vs_subv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_addv(vs1, __ T8H, vs1, vs2);
+    __ add(tmpAddr, coeffs, 0);
+    vs_stpq_post(vs_front(vs1), tmpAddr);
+    vs_stpq_post(vs_front(vs3), tmpAddr);
+    vs_stpq_post(vs_back(vs1), tmpAddr);
+    vs_stpq_post(vs_back(vs3), tmpAddr);
+    vs_ldpq(vq, kyberConsts);
+    vs_ldpq_indexed(vs1, tmpAddr, 64, offsets1);
+    load64shorts(vs2, zetas);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    vs_ldpq_indexed(vs1,  coeffs, 256, offsets1);
+    // kyber_subv_addv64();
+    vs_subv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_addv(vs1, __ T8H, vs1, vs2);
+    __ add(tmpAddr, coeffs, 256);
+    vs_stpq_post(vs_front(vs1), tmpAddr);
+    vs_stpq_post(vs_front(vs3), tmpAddr);
+    vs_stpq_post(vs_back(vs1), tmpAddr);
+    vs_stpq_post(vs_back(vs3), tmpAddr);
+
+    // level 3
+    vs_ldpq(vq, kyberConsts);
+    int offsets2[4] = { 0, 64, 128, 192 };
+    vs_ldpq_indexed(vs1, coeffs, 32, offsets2);
+    load64shorts(vs2, zetas);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    vs_ldpq_indexed(vs1, coeffs, 0, offsets2);
+    vs_subv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_addv(vs1, __ T8H, vs1, vs2);
+    vs_stpq_indexed(vs1, coeffs, 0, offsets2);
+    vs_stpq_indexed(vs3, coeffs, 32, offsets2);
+
+    vs_ldpq(vq, kyberConsts);
+    vs_ldpq_indexed(vs1, coeffs, 256 + 32, offsets2);
+    load64shorts(vs2, zetas);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    vs_ldpq_indexed(vs1, coeffs, 256, offsets2);
+    vs_subv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_addv(vs1, __ T8H, vs1, vs2);
+    vs_stpq_indexed(vs1, coeffs, 256, offsets2);
+    vs_stpq_indexed(vs3, coeffs, 256 + 32, offsets2);
+
+    // level 4
+    // At level 4 coefficients occur in 8 discrete blocks of size 16
+    // so they are loaded using employing an ldr at 8 distinct offsets.
+
+    vs_ldpq(vq, kyberConsts);
+    int offsets3[8] = { 0, 32, 64, 96, 128, 160, 192, 224 };
+    vs_ldr_indexed(vs1, __ Q, coeffs, 16, offsets3);
+    load64shorts(vs2, zetas);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    vs_ldr_indexed(vs1, __ Q, coeffs, 0, offsets3);
+    vs_subv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_addv(vs1, __ T8H, vs1, vs2);
+    vs_str_indexed(vs1, __ Q, coeffs, 0, offsets3);
+    vs_str_indexed(vs3, __ Q, coeffs, 16, offsets3);
+
+    vs_ldpq(vq, kyberConsts);
+    vs_ldr_indexed(vs1, __ Q, coeffs, 256 + 16, offsets3);
+    load64shorts(vs2, zetas);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    vs_ldr_indexed(vs1, __ Q, coeffs, 256, offsets3);
+    vs_subv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_addv(vs1, __ T8H, vs1, vs2);
+    vs_str_indexed(vs1, __ Q, coeffs, 256, offsets3);
+    vs_str_indexed(vs3, __ Q, coeffs, 256 + 16, offsets3);
+
+    // level 5
+    // At level 5 related coefficients occur in discrete blocks of size 8 so
+    // need to be loaded interleaved using an ld2 operation with arrangement 2D.
+
+    vs_ldpq(vq, kyberConsts);
+    int offsets4[4] = { 0, 32, 64, 96 };
+    vs_ld2_indexed(vs1, __ T2D, coeffs, tmpAddr, 0, offsets4);
+    load32shorts(vs_front(vs2), zetas);
+    kyber_montmul32_sub_add(vs_even(vs1), vs_odd(vs1), vs_front(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T2D, coeffs, tmpAddr, 0, offsets4);
+    vs_ld2_indexed(vs1, __ T2D, coeffs, tmpAddr, 128, offsets4);
+    load32shorts(vs_front(vs2), zetas);
+    kyber_montmul32_sub_add(vs_even(vs1), vs_odd(vs1), vs_front(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T2D, coeffs, tmpAddr, 128, offsets4);
+    vs_ld2_indexed(vs1, __ T2D, coeffs, tmpAddr, 256, offsets4);
+    load32shorts(vs_front(vs2), zetas);
+    kyber_montmul32_sub_add(vs_even(vs1), vs_odd(vs1), vs_front(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T2D, coeffs, tmpAddr, 256, offsets4);
+
+    vs_ld2_indexed(vs1, __ T2D, coeffs, tmpAddr, 384, offsets4);
+    load32shorts(vs_front(vs2), zetas);
+    kyber_montmul32_sub_add(vs_even(vs1), vs_odd(vs1), vs_front(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T2D, coeffs, tmpAddr, 384, offsets4);
+
+    // level 6
+    // At level 6 related coefficients occur in discrete blocks of size 4 so
+    // need to be loaded interleaved using an ld2 operation with arrangement 4S.
+
+    vs_ld2_indexed(vs1, __ T4S, coeffs, tmpAddr, 0, offsets4);
+    load32shorts(vs_front(vs2), zetas);
+    kyber_montmul32_sub_add(vs_even(vs1), vs_odd(vs1), vs_front(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T4S, coeffs, tmpAddr, 0, offsets4);
+    vs_ld2_indexed(vs1, __ T4S, coeffs, tmpAddr, 128, offsets4);
+    // __ ldpq(v18, v19, __ post(zetas, 32));
+    load32shorts(vs_front(vs2), zetas);
+    kyber_montmul32_sub_add(vs_even(vs1), vs_odd(vs1), vs_front(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T4S, coeffs, tmpAddr, 128, offsets4);
+
+    vs_ld2_indexed(vs1, __ T4S, coeffs, tmpAddr, 256, offsets4);
+    load32shorts(vs_front(vs2), zetas);
+    kyber_montmul32_sub_add(vs_even(vs1), vs_odd(vs1), vs_front(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T4S, coeffs, tmpAddr, 256, offsets4);
+
+    vs_ld2_indexed(vs1, __ T4S, coeffs, tmpAddr, 384, offsets4);
+    load32shorts(vs_front(vs2), zetas);
+    kyber_montmul32_sub_add(vs_even(vs1), vs_odd(vs1), vs_front(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T4S, coeffs, tmpAddr, 384, offsets4);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    return start;
+  }
+
+  // Kyber Inverse NTT function
+  // Implements
+  // static int implKyberInverseNtt(short[] poly, short[] zetas) {}
+  //
+  // coeffs (short[256]) = c_rarg0
+  // ntt_zetas (short[256]) = c_rarg1
+  address generate_kyberInverseNtt() {
+
+    __ align(CodeEntryAlignment);
+    StubId stub_id = StubId::stubgen_kyberInverseNtt_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    __ enter();
+
+    const Register coeffs = c_rarg0;
+    const Register zetas = c_rarg1;
+
+    const Register kyberConsts = r10;
+    const Register tmpAddr = r11;
+    const Register tmpAddr2 = c_rarg2;
+
+    VSeq<8> vs1(0), vs2(16), vs3(24);  // 3 sets of 8x8H inputs/outputs
+    VSeq<4> vtmp = vs_front(vs3);      // n.b. tmp registers overlap vs3
+    VSeq<2> vq(30);                    // n.b. constants overlap vs3
+
+    __ lea(kyberConsts,
+             ExternalAddress((address) StubRoutines::aarch64::_kyberConsts));
+
+    // level 0
+    // At level 0 related coefficients occur in discrete blocks of size 4 so
+    // need to be loaded interleaved using an ld2 operation with arrangement 4S.
+
+    vs_ldpq(vq, kyberConsts);
+    int offsets4[4] = { 0, 32, 64, 96 };
+    vs_ld2_indexed(vs1, __ T4S, coeffs, tmpAddr, 0, offsets4);
+    load32shorts(vs_front(vs2), zetas);
+    kyber_sub_add_montmul32(vs_even(vs1), vs_odd(vs1),
+                            vs_front(vs2), vs_back(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T4S, coeffs, tmpAddr, 0, offsets4);
+    vs_ld2_indexed(vs1, __ T4S, coeffs, tmpAddr, 128, offsets4);
+    load32shorts(vs_front(vs2), zetas);
+    kyber_sub_add_montmul32(vs_even(vs1), vs_odd(vs1),
+                            vs_front(vs2), vs_back(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T4S, coeffs, tmpAddr, 128, offsets4);
+    vs_ld2_indexed(vs1, __ T4S, coeffs, tmpAddr, 256, offsets4);
+    load32shorts(vs_front(vs2), zetas);
+    kyber_sub_add_montmul32(vs_even(vs1), vs_odd(vs1),
+                            vs_front(vs2), vs_back(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T4S, coeffs, tmpAddr, 256, offsets4);
+    vs_ld2_indexed(vs1, __ T4S, coeffs, tmpAddr, 384, offsets4);
+    load32shorts(vs_front(vs2), zetas);
+    kyber_sub_add_montmul32(vs_even(vs1), vs_odd(vs1),
+                            vs_front(vs2), vs_back(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T4S, coeffs, tmpAddr, 384, offsets4);
+
+    // level 1
+    // At level 1 related coefficients occur in discrete blocks of size 8 so
+    // need to be loaded interleaved using an ld2 operation with arrangement 2D.
+
+    vs_ld2_indexed(vs1, __ T2D, coeffs, tmpAddr, 0, offsets4);
+    load32shorts(vs_front(vs2), zetas);
+    kyber_sub_add_montmul32(vs_even(vs1), vs_odd(vs1),
+                            vs_front(vs2), vs_back(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T2D, coeffs, tmpAddr, 0, offsets4);
+    vs_ld2_indexed(vs1, __ T2D, coeffs, tmpAddr, 128, offsets4);
+    load32shorts(vs_front(vs2), zetas);
+    kyber_sub_add_montmul32(vs_even(vs1), vs_odd(vs1),
+                            vs_front(vs2), vs_back(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T2D, coeffs, tmpAddr, 128, offsets4);
+
+    vs_ld2_indexed(vs1, __ T2D, coeffs, tmpAddr, 256, offsets4);
+    load32shorts(vs_front(vs2), zetas);
+    kyber_sub_add_montmul32(vs_even(vs1), vs_odd(vs1),
+                            vs_front(vs2), vs_back(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T2D, coeffs, tmpAddr, 256, offsets4);
+    vs_ld2_indexed(vs1, __ T2D, coeffs, tmpAddr, 384, offsets4);
+    load32shorts(vs_front(vs2), zetas);
+    kyber_sub_add_montmul32(vs_even(vs1), vs_odd(vs1),
+                            vs_front(vs2), vs_back(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T2D, coeffs, tmpAddr, 384, offsets4);
+
+    // level 2
+    // At level 2 coefficients occur in 8 discrete blocks of size 16
+    // so they are loaded using employing an ldr at 8 distinct offsets.
+
+    int offsets3[8] = { 0, 32, 64, 96, 128, 160, 192, 224 };
+    vs_ldr_indexed(vs1, __ Q, coeffs, 0, offsets3);
+    vs_ldr_indexed(vs2, __ Q, coeffs, 16, offsets3);
+    vs_addv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_subv(vs1, __ T8H, vs1, vs2);
+    vs_str_indexed(vs3, __ Q, coeffs, 0, offsets3);
+    load64shorts(vs2, zetas);
+    vs_ldpq(vq, kyberConsts);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    vs_str_indexed(vs2, __ Q, coeffs, 16, offsets3);
+
+    vs_ldr_indexed(vs1, __ Q, coeffs, 256, offsets3);
+    vs_ldr_indexed(vs2, __ Q, coeffs, 256 + 16, offsets3);
+    vs_addv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_subv(vs1, __ T8H, vs1, vs2);
+    vs_str_indexed(vs3, __ Q, coeffs, 256, offsets3);
+    load64shorts(vs2, zetas);
+    vs_ldpq(vq, kyberConsts);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    vs_str_indexed(vs2, __ Q, coeffs, 256 + 16, offsets3);
+
+    // Barrett reduction at indexes where overflow may happen
+
+    // load q and the multiplier for the Barrett reduction
+    __ add(tmpAddr, kyberConsts, 16);
+    vs_ldpq(vq, tmpAddr);
+
+    VSeq<8> vq1 = VSeq<8>(vq[0], 0); // 2 constant 8 sequences
+    VSeq<8> vq2 = VSeq<8>(vq[1], 0); // for above two kyber constants
+    VSeq<8> vq3 = VSeq<8>(v29, 0);   // 3rd sequence for const montmul
+    vs_ldr_indexed(vs1, __ Q, coeffs, 0, offsets3);
+    vs_sqdmulh(vs2, __ T8H, vs1, vq2);
+    vs_sshr(vs2, __ T8H, vs2, 11);
+    vs_mlsv(vs1, __ T8H, vs2, vq1);
+    vs_str_indexed(vs1, __ Q, coeffs, 0, offsets3);
+    vs_ldr_indexed(vs1, __ Q, coeffs, 256, offsets3);
+    vs_sqdmulh(vs2, __ T8H, vs1, vq2);
+    vs_sshr(vs2, __ T8H, vs2, 11);
+    vs_mlsv(vs1, __ T8H, vs2, vq1);
+    vs_str_indexed(vs1, __ Q, coeffs, 256, offsets3);
+
+    // level 3
+    // From level 3 upwards coefficients occur in discrete blocks whose size is
+    // some multiple of 32 so can be loaded using ldpq and suitable indexes.
+
+    int offsets2[4] = { 0, 64, 128, 192 };
+    vs_ldpq_indexed(vs1, coeffs, 0, offsets2);
+    vs_ldpq_indexed(vs2, coeffs, 32, offsets2);
+    vs_addv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_subv(vs1, __ T8H, vs1, vs2);
+    vs_stpq_indexed(vs3, coeffs, 0, offsets2);
+    load64shorts(vs2, zetas);
+    vs_ldpq(vq, kyberConsts);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    vs_stpq_indexed(vs2, coeffs, 32, offsets2);
+
+    vs_ldpq_indexed(vs1, coeffs, 256, offsets2);
+    vs_ldpq_indexed(vs2, coeffs, 256 + 32, offsets2);
+    vs_addv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_subv(vs1, __ T8H, vs1, vs2);
+    vs_stpq_indexed(vs3, coeffs, 256, offsets2);
+    load64shorts(vs2, zetas);
+    vs_ldpq(vq, kyberConsts);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    vs_stpq_indexed(vs2, coeffs, 256 + 32, offsets2);
+
+    // level 4
+
+    int offsets1[4] = { 0, 32, 128, 160 };
+    vs_ldpq_indexed(vs1, coeffs, 0, offsets1);
+    vs_ldpq_indexed(vs2, coeffs, 64, offsets1);
+    vs_addv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_subv(vs1, __ T8H, vs1, vs2);
+    vs_stpq_indexed(vs3, coeffs, 0, offsets1);
+    load64shorts(vs2, zetas);
+    vs_ldpq(vq, kyberConsts);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    vs_stpq_indexed(vs2, coeffs, 64, offsets1);
+
+    vs_ldpq_indexed(vs1, coeffs, 256, offsets1);
+    vs_ldpq_indexed(vs2, coeffs, 256 + 64, offsets1);
+    vs_addv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_subv(vs1, __ T8H, vs1, vs2);
+    vs_stpq_indexed(vs3, coeffs, 256, offsets1);
+    load64shorts(vs2, zetas);
+    vs_ldpq(vq, kyberConsts);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    vs_stpq_indexed(vs2, coeffs, 256 + 64, offsets1);
+
+    // level 5
+
+    __ add(tmpAddr, coeffs, 0);
+    load64shorts(vs1, tmpAddr);
+    __ add(tmpAddr, coeffs, 128);
+    load64shorts(vs2, tmpAddr);
+    vs_addv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_subv(vs1, __ T8H, vs1, vs2);
+    __ add(tmpAddr, coeffs, 0);
+    store64shorts(vs3, tmpAddr);
+    load64shorts(vs2, zetas);
+    vs_ldpq(vq, kyberConsts);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    __ add(tmpAddr, coeffs, 128);
+    store64shorts(vs2, tmpAddr);
+
+    load64shorts(vs1, tmpAddr);
+    __ add(tmpAddr, coeffs, 384);
+    load64shorts(vs2, tmpAddr);
+    vs_addv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_subv(vs1, __ T8H, vs1, vs2);
+    __ add(tmpAddr, coeffs, 256);
+    store64shorts(vs3, tmpAddr);
+    load64shorts(vs2, zetas);
+    vs_ldpq(vq, kyberConsts);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    __ add(tmpAddr, coeffs, 384);
+    store64shorts(vs2, tmpAddr);
+
+    // Barrett reduction at indexes where overflow may happen
+
+    // load q and the multiplier for the Barrett reduction
+    __ add(tmpAddr, kyberConsts, 16);
+    vs_ldpq(vq, tmpAddr);
+
+    int offsets0[2] = { 0, 256 };
+    vs_ldpq_indexed(vs_front(vs1), coeffs, 0, offsets0);
+    vs_sqdmulh(vs2, __ T8H, vs1, vq2);
+    vs_sshr(vs2, __ T8H, vs2, 11);
+    vs_mlsv(vs1, __ T8H, vs2, vq1);
+    vs_stpq_indexed(vs_front(vs1), coeffs, 0, offsets0);
+
+    // level 6
+
+    __ add(tmpAddr, coeffs, 0);
+    load64shorts(vs1, tmpAddr);
+    __ add(tmpAddr, coeffs, 256);
+    load64shorts(vs2, tmpAddr);
+    vs_addv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_subv(vs1, __ T8H, vs1, vs2);
+    __ add(tmpAddr, coeffs, 0);
+    store64shorts(vs3, tmpAddr);
+    load64shorts(vs2, zetas);
+    vs_ldpq(vq, kyberConsts);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    __ add(tmpAddr, coeffs, 256);
+    store64shorts(vs2, tmpAddr);
+
+    __ add(tmpAddr, coeffs, 128);
+    load64shorts(vs1, tmpAddr);
+    __ add(tmpAddr, coeffs, 384);
+    load64shorts(vs2, tmpAddr);
+    vs_addv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_subv(vs1, __ T8H, vs1, vs2);
+    __ add(tmpAddr, coeffs, 128);
+    store64shorts(vs3, tmpAddr);
+    load64shorts(vs2, zetas);
+    vs_ldpq(vq, kyberConsts);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    __ add(tmpAddr, coeffs, 384);
+    store64shorts(vs2, tmpAddr);
+
+    // multiply by 2^-n
+
+    // load toMont(2^-n mod q)
+    __ add(tmpAddr, kyberConsts, 48);
+    __ ldr(v29, __ Q, tmpAddr);
+
+    vs_ldpq(vq, kyberConsts);
+    __ add(tmpAddr, coeffs, 0);
+    load64shorts(vs1, tmpAddr);
+    kyber_montmul64(vs2, vs1, vq3, vtmp, vq);
+    __ add(tmpAddr, coeffs, 0);
+    store64shorts(vs2, tmpAddr);
+
+    // now tmpAddr contains coeffs + 128 because store64shorts adjusted it so
+    load64shorts(vs1, tmpAddr);
+    kyber_montmul64(vs2, vs1, vq3, vtmp, vq);
+    __ add(tmpAddr, coeffs, 128);
+    store64shorts(vs2, tmpAddr);
+
+    // now tmpAddr contains coeffs + 256
+    load64shorts(vs1, tmpAddr);
+    kyber_montmul64(vs2, vs1, vq3, vtmp, vq);
+    __ add(tmpAddr, coeffs, 256);
+    store64shorts(vs2, tmpAddr);
+
+    // now tmpAddr contains coeffs + 384
+    load64shorts(vs1, tmpAddr);
+    kyber_montmul64(vs2, vs1, vq3, vtmp, vq);
+    __ add(tmpAddr, coeffs, 384);
+    store64shorts(vs2, tmpAddr);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    return start;
+  }
+
+  // Kyber multiply polynomials in the NTT domain.
+  // Implements
+  // static int implKyberNttMult(
+  //              short[] result, short[] ntta, short[] nttb, short[] zetas) {}
+  //
+  // result (short[256]) = c_rarg0
+  // ntta (short[256]) = c_rarg1
+  // nttb (short[256]) = c_rarg2
+  // zetas (short[128]) = c_rarg3
+  address generate_kyberNttMult() {
+
+    __ align(CodeEntryAlignment);
+    StubId stub_id = StubId::stubgen_kyberNttMult_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    __ enter();
+
+    const Register result = c_rarg0;
+    const Register ntta = c_rarg1;
+    const Register nttb = c_rarg2;
+    const Register zetas = c_rarg3;
+
+    const Register kyberConsts = r10;
+    const Register limit = r11;
+
+    VSeq<4> vs1(0), vs2(4);  // 4 sets of 8x8H inputs/outputs/tmps
+    VSeq<4> vs3(16), vs4(20);
+    VSeq<2> vq(30);          // pair of constants for montmul: q, qinv
+    VSeq<2> vz(28);          // pair of zetas
+    VSeq<4> vc(27, 0);       // constant sequence for montmul: montRSquareModQ
+
+    __ lea(kyberConsts,
+             ExternalAddress((address) StubRoutines::aarch64::_kyberConsts));
+
+    Label kyberNttMult_loop;
+
+    __ add(limit, result, 512);
+
+    // load q and qinv
+    vs_ldpq(vq, kyberConsts);
+
+    // load R^2 mod q (to convert back from Montgomery representation)
+    __ add(kyberConsts, kyberConsts, 64);
+    __ ldr(v27, __ Q, kyberConsts);
+
+    __ BIND(kyberNttMult_loop);
+
+    // load 16 zetas
+    vs_ldpq_post(vz, zetas);
+
+    // load 2 sets of 32 coefficients from the two input arrays
+    // interleaved as shorts. i.e. pairs of shorts adjacent in memory
+    // are striped across pairs of vector registers
+    vs_ld2_post(vs_front(vs1), __ T8H, ntta); // <a0, a1> x 8H
+    vs_ld2_post(vs_back(vs1), __ T8H, nttb);  // <b0, b1> x 8H
+    vs_ld2_post(vs_front(vs4), __ T8H, ntta); // <a2, a3> x 8H
+    vs_ld2_post(vs_back(vs4), __ T8H, nttb);  // <b2, b3> x 8H
+
+    // compute 4 montmul cross-products for pairs (a0,a1) and (b0,b1)
+    // i.e. montmul the first and second halves of vs1 in order and
+    // then with one sequence reversed storing the two results in vs3
+    //
+    // vs3[0] <- montmul(a0, b0)
+    // vs3[1] <- montmul(a1, b1)
+    // vs3[2] <- montmul(a0, b1)
+    // vs3[3] <- montmul(a1, b0)
+    kyber_montmul16(vs_front(vs3), vs_front(vs1), vs_back(vs1), vs_front(vs2), vq);
+    kyber_montmul16(vs_back(vs3),
+                    vs_front(vs1), vs_reverse(vs_back(vs1)), vs_back(vs2), vq);
+
+    // compute 4 montmul cross-products for pairs (a2,a3) and (b2,b3)
+    // i.e. montmul the first and second halves of vs4 in order and
+    // then with one sequence reversed storing the two results in vs1
+    //
+    // vs1[0] <- montmul(a2, b2)
+    // vs1[1] <- montmul(a3, b3)
+    // vs1[2] <- montmul(a2, b3)
+    // vs1[3] <- montmul(a3, b2)
+    kyber_montmul16(vs_front(vs1), vs_front(vs4), vs_back(vs4), vs_front(vs2), vq);
+    kyber_montmul16(vs_back(vs1),
+                    vs_front(vs4), vs_reverse(vs_back(vs4)), vs_back(vs2), vq);
+
+    // montmul result 2 of each cross-product i.e. (a1*b1, a3*b3) by a zeta.
+    // We can schedule two montmuls at a time if we use a suitable vector
+    // sequence <vs3[1], vs1[1]>.
+    int delta = vs1[1]->encoding() - vs3[1]->encoding();
+    VSeq<2> vs5(vs3[1], delta);
+
+    // vs3[1] <- montmul(montmul(a1, b1), z0)
+    // vs1[1] <- montmul(montmul(a3, b3), z1)
+    kyber_montmul16(vs5, vz, vs5, vs_front(vs2), vq);
+
+    // add results in pairs storing in vs3
+    // vs3[0] <- montmul(a0, b0) + montmul(montmul(a1, b1), z0);
+    // vs3[1] <- montmul(a0, b1) + montmul(a1, b0);
+    vs_addv(vs_front(vs3), __ T8H, vs_even(vs3), vs_odd(vs3));
+
+    // vs3[2] <- montmul(a2, b2) + montmul(montmul(a3, b3), z1);
+    // vs3[3] <- montmul(a2, b3) + montmul(a3, b2);
+    vs_addv(vs_back(vs3), __ T8H, vs_even(vs1), vs_odd(vs1));
+
+    // vs1 <- montmul(vs3, montRSquareModQ)
+    kyber_montmul32(vs1, vs3, vc, vs2, vq);
+
+    // store back the two pairs of result vectors de-interleaved as 8H elements
+    // i.e. storing each pairs of shorts striped across a register pair adjacent
+    // in memory
+    vs_st2_post(vs1, __ T8H, result);
+
+    __ cmp(result, limit);
+    __ br(Assembler::NE, kyberNttMult_loop);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    return start;
+  }
+
+  // Kyber add 2 polynomials.
+  // Implements
+  // static int implKyberAddPoly(short[] result, short[] a, short[] b) {}
+  //
+  // result (short[256]) = c_rarg0
+  // a (short[256]) = c_rarg1
+  // b (short[256]) = c_rarg2
+  address generate_kyberAddPoly_2() {
+
+    __ align(CodeEntryAlignment);
+    StubId stub_id = StubId::stubgen_kyberAddPoly_2_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    __ enter();
+
+    const Register result = c_rarg0;
+    const Register a = c_rarg1;
+    const Register b = c_rarg2;
+
+    const Register kyberConsts = r11;
+
+    // We sum 256 sets of values in total i.e. 32 x 8H quadwords.
+    // So, we can load, add and store the data in 3 groups of 11,
+    // 11 and 10 at a time i.e. we need to map sets of 10 or 11
+    // registers. A further constraint is that the mapping needs
+    // to skip callee saves. So, we allocate the register
+    // sequences using two 8 sequences, two 2 sequences and two
+    // single registers.
+    VSeq<8> vs1_1(0);
+    VSeq<2> vs1_2(16);
+    FloatRegister vs1_3 = v28;
+    VSeq<8> vs2_1(18);
+    VSeq<2> vs2_2(26);
+    FloatRegister vs2_3 = v29;
+
+    // two constant vector sequences
+    VSeq<8> vc_1(31, 0);
+    VSeq<2> vc_2(31, 0);
+
+    FloatRegister vc_3 = v31;
+    __ lea(kyberConsts,
+             ExternalAddress((address) StubRoutines::aarch64::_kyberConsts));
+
+    __ ldr(vc_3, __ Q, Address(kyberConsts, 16)); // q
+    for (int i = 0; i < 3; i++) {
+      // load 80 or 88 values from a into vs1_1/2/3
+      vs_ldpq_post(vs1_1, a);
+      vs_ldpq_post(vs1_2, a);
+      if (i < 2) {
+        __ ldr(vs1_3, __ Q, __ post(a, 16));
+      }
+      // load 80 or 88 values from b into vs2_1/2/3
+      vs_ldpq_post(vs2_1, b);
+      vs_ldpq_post(vs2_2, b);
+      if (i < 2) {
+        __ ldr(vs2_3, __ Q, __ post(b, 16));
+      }
+      // sum 80 or 88 values across vs1 and vs2 into vs1
+      vs_addv(vs1_1, __ T8H, vs1_1, vs2_1);
+      vs_addv(vs1_2, __ T8H, vs1_2, vs2_2);
+      if (i < 2) {
+        __ addv(vs1_3, __ T8H, vs1_3, vs2_3);
+      }
+      // add constant to all 80 or 88 results
+      vs_addv(vs1_1, __ T8H, vs1_1, vc_1);
+      vs_addv(vs1_2, __ T8H, vs1_2, vc_2);
+      if (i < 2) {
+        __ addv(vs1_3, __ T8H, vs1_3, vc_3);
+      }
+      // store 80 or 88 values
+      vs_stpq_post(vs1_1, result);
+      vs_stpq_post(vs1_2, result);
+      if (i < 2) {
+        __ str(vs1_3, __ Q, __ post(result, 16));
+      }
+    }
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    return start;
+  }
+
+  // Kyber add 3 polynomials.
+  // Implements
+  // static int implKyberAddPoly(short[] result, short[] a, short[] b, short[] c) {}
+  //
+  // result (short[256]) = c_rarg0
+  // a (short[256]) = c_rarg1
+  // b (short[256]) = c_rarg2
+  // c (short[256]) = c_rarg3
+  address generate_kyberAddPoly_3() {
+
+    __ align(CodeEntryAlignment);
+    StubId stub_id = StubId::stubgen_kyberAddPoly_3_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    __ enter();
+
+    const Register result = c_rarg0;
+    const Register a = c_rarg1;
+    const Register b = c_rarg2;
+    const Register c = c_rarg3;
+
+    const Register kyberConsts = r11;
+
+    // As above we sum 256 sets of values in total i.e. 32 x 8H
+    // quadwords.  So, we can load, add and store the data in 3
+    // groups of 11, 11 and 10 at a time i.e. we need to map sets
+    // of 10 or 11 registers. A further constraint is that the
+    // mapping needs to skip callee saves. So, we allocate the
+    // register sequences using two 8 sequences, two 2 sequences
+    // and two single registers.
+    VSeq<8> vs1_1(0);
+    VSeq<2> vs1_2(16);
+    FloatRegister vs1_3 = v28;
+    VSeq<8> vs2_1(18);
+    VSeq<2> vs2_2(26);
+    FloatRegister vs2_3 = v29;
+
+    // two constant vector sequences
+    VSeq<8> vc_1(31, 0);
+    VSeq<2> vc_2(31, 0);
+
+    FloatRegister vc_3 = v31;
+
+    __ lea(kyberConsts,
+             ExternalAddress((address) StubRoutines::aarch64::_kyberConsts));
+
+    __ ldr(vc_3, __ Q, Address(kyberConsts, 16)); // q
+    for (int i = 0; i < 3; i++) {
+      // load 80 or 88 values from a into vs1_1/2/3
+      vs_ldpq_post(vs1_1, a);
+      vs_ldpq_post(vs1_2, a);
+      if (i < 2) {
+        __ ldr(vs1_3, __ Q, __ post(a, 16));
+      }
+      // load 80 or 88 values from b into vs2_1/2/3
+      vs_ldpq_post(vs2_1, b);
+      vs_ldpq_post(vs2_2, b);
+      if (i < 2) {
+        __ ldr(vs2_3, __ Q, __ post(b, 16));
+      }
+      // sum 80 or 88 values across vs1 and vs2 into vs1
+      vs_addv(vs1_1, __ T8H, vs1_1, vs2_1);
+      vs_addv(vs1_2, __ T8H, vs1_2, vs2_2);
+      if (i < 2) {
+        __ addv(vs1_3, __ T8H, vs1_3, vs2_3);
+      }
+      // load 80 or 88 values from c into vs2_1/2/3
+      vs_ldpq_post(vs2_1, c);
+      vs_ldpq_post(vs2_2, c);
+      if (i < 2) {
+        __ ldr(vs2_3, __ Q, __ post(c, 16));
+      }
+      // sum 80 or 88 values across vs1 and vs2 into vs1
+      vs_addv(vs1_1, __ T8H, vs1_1, vs2_1);
+      vs_addv(vs1_2, __ T8H, vs1_2, vs2_2);
+      if (i < 2) {
+        __ addv(vs1_3, __ T8H, vs1_3, vs2_3);
+      }
+      // add constant to all 80 or 88 results
+      vs_addv(vs1_1, __ T8H, vs1_1, vc_1);
+      vs_addv(vs1_2, __ T8H, vs1_2, vc_2);
+      if (i < 2) {
+        __ addv(vs1_3, __ T8H, vs1_3, vc_3);
+      }
+      // store 80 or 88 values
+      vs_stpq_post(vs1_1, result);
+      vs_stpq_post(vs1_2, result);
+      if (i < 2) {
+        __ str(vs1_3, __ Q, __ post(result, 16));
+      }
+    }
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    return start;
+  }
+
+  // Kyber parse XOF output to polynomial coefficient candidates
+  // or decodePoly(12, ...).
+  // Implements
+  // static int implKyber12To16(
+  //         byte[] condensed, int index, short[] parsed, int parsedLength) {}
+  //
+  // (parsedLength or (parsedLength - 48) must be divisible by 64.)
+  //
+  // condensed (byte[]) = c_rarg0
+  // condensedIndex = c_rarg1
+  // parsed (short[112 or 256]) = c_rarg2
+  // parsedLength (112 or 256) = c_rarg3
+  address generate_kyber12To16() {
+    Label L_F00, L_loop, L_end;
+
+    __ align(CodeEntryAlignment);
+    StubId stub_id = StubId::stubgen_kyber12To16_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    __ enter();
+
+    const Register condensed = c_rarg0;
+    const Register condensedOffs = c_rarg1;
+    const Register parsed = c_rarg2;
+    const Register parsedLength = c_rarg3;
+
+    const Register tmpAddr = r11;
+
+    // Data is input 96 bytes at a time i.e. in groups of 6 x 16B
+    // quadwords so we need a 6 vector sequence for the inputs.
+    // Parsing produces 64 shorts, employing two 8 vector
+    // sequences to store and combine the intermediate data.
+    VSeq<6> vin(24);
+    VSeq<8> va(0), vb(16);
+
+    __ adr(tmpAddr, L_F00);
+    __ ldr(v31, __ Q, tmpAddr); // 8H times 0x0f00
+    __ add(condensed, condensed, condensedOffs);
+
+    __ BIND(L_loop);
+    // load 96 (6 x 16B) byte values
+    vs_ld3_post(vin, __ T16B, condensed);
+
+    // The front half of sequence vin (vin[0], vin[1] and vin[2])
+    // holds 48 (16x3) contiguous bytes from memory striped
+    // horizontally across each of the 16 byte lanes. Equivalently,
+    // that is 16 pairs of 12-bit integers. Likewise the back half
+    // holds the next 48 bytes in the same arrangement.
+
+    // Each vector in the front half can also be viewed as a vertical
+    // strip across the 16 pairs of 12 bit integers. Each byte in
+    // vin[0] stores the low 8 bits of the first int in a pair. Each
+    // byte in vin[1] stores the high 4 bits of the first int and the
+    // low 4 bits of the second int. Each byte in vin[2] stores the
+    // high 8 bits of the second int. Likewise the vectors in second
+    // half.
+
+    // Converting the data to 16-bit shorts requires first of all
+    // expanding each of the 6 x 16B vectors into 6 corresponding
+    // pairs of 8H vectors. Mask, shift and add operations on the
+    // resulting vector pairs can be used to combine 4 and 8 bit
+    // parts of related 8H vector elements.
+    //
+    // The middle vectors (vin[2] and vin[5]) are actually expanded
+    // twice, one copy manipulated to provide the lower 4 bits
+    // belonging to the first short in a pair and another copy
+    // manipulated to provide the higher 4 bits belonging to the
+    // second short in a pair. This is why the the vector sequences va
+    // and vb used to hold the expanded 8H elements are of length 8.
+
+    // Expand vin[0] into va[0:1], and vin[1] into va[2:3] and va[4:5]
+    // n.b. target elements 2 and 3 duplicate elements 4 and 5
+    __ ushll(va[0], __ T8H, vin[0], __ T8B, 0);
+    __ ushll2(va[1], __ T8H, vin[0], __ T16B, 0);
+    __ ushll(va[2], __ T8H, vin[1], __ T8B, 0);
+    __ ushll2(va[3], __ T8H, vin[1], __ T16B, 0);
+    __ ushll(va[4], __ T8H, vin[1], __ T8B, 0);
+    __ ushll2(va[5], __ T8H, vin[1], __ T16B, 0);
+
+    // likewise expand vin[3] into vb[0:1], and vin[4] into vb[2:3]
+    // and vb[4:5]
+    __ ushll(vb[0], __ T8H, vin[3], __ T8B, 0);
+    __ ushll2(vb[1], __ T8H, vin[3], __ T16B, 0);
+    __ ushll(vb[2], __ T8H, vin[4], __ T8B, 0);
+    __ ushll2(vb[3], __ T8H, vin[4], __ T16B, 0);
+    __ ushll(vb[4], __ T8H, vin[4], __ T8B, 0);
+    __ ushll2(vb[5], __ T8H, vin[4], __ T16B, 0);
+
+    // shift lo byte of copy 1 of the middle stripe into the high byte
+    __ shl(va[2], __ T8H, va[2], 8);
+    __ shl(va[3], __ T8H, va[3], 8);
+    __ shl(vb[2], __ T8H, vb[2], 8);
+    __ shl(vb[3], __ T8H, vb[3], 8);
+
+    // expand vin[2] into va[6:7] and vin[5] into vb[6:7] but this
+    // time pre-shifted by 4 to ensure top bits of input 12-bit int
+    // are in bit positions [4..11].
+    __ ushll(va[6], __ T8H, vin[2], __ T8B, 4);
+    __ ushll2(va[7], __ T8H, vin[2], __ T16B, 4);
+    __ ushll(vb[6], __ T8H, vin[5], __ T8B, 4);
+    __ ushll2(vb[7], __ T8H, vin[5], __ T16B, 4);
+
+    // mask hi 4 bits of the 1st 12-bit int in a pair from copy1 and
+    // shift lo 4 bits of the 2nd 12-bit int in a pair to the bottom of
+    // copy2
+    __ andr(va[2], __ T16B, va[2], v31);
+    __ andr(va[3], __ T16B, va[3], v31);
+    __ ushr(va[4], __ T8H, va[4], 4);
+    __ ushr(va[5], __ T8H, va[5], 4);
+    __ andr(vb[2], __ T16B, vb[2], v31);
+    __ andr(vb[3], __ T16B, vb[3], v31);
+    __ ushr(vb[4], __ T8H, vb[4], 4);
+    __ ushr(vb[5], __ T8H, vb[5], 4);
+
+    // sum hi 4 bits and lo 8 bits of the 1st 12-bit int in each pair and
+    // hi 8 bits plus lo 4 bits of the 2nd 12-bit int in each pair
+    // n.b. the ordering ensures: i) inputs are consumed before they
+    // are overwritten ii) the order of 16-bit results across successive
+    // pairs of vectors in va and then vb reflects the order of the
+    // corresponding 12-bit inputs
+    __ addv(va[0], __ T8H, va[0], va[2]);
+    __ addv(va[2], __ T8H, va[1], va[3]);
+    __ addv(va[1], __ T8H, va[4], va[6]);
+    __ addv(va[3], __ T8H, va[5], va[7]);
+    __ addv(vb[0], __ T8H, vb[0], vb[2]);
+    __ addv(vb[2], __ T8H, vb[1], vb[3]);
+    __ addv(vb[1], __ T8H, vb[4], vb[6]);
+    __ addv(vb[3], __ T8H, vb[5], vb[7]);
+
+    // store 64 results interleaved as shorts
+    vs_st2_post(vs_front(va), __ T8H, parsed);
+    vs_st2_post(vs_front(vb), __ T8H, parsed);
+
+    __ sub(parsedLength, parsedLength, 64);
+    __ cmp(parsedLength, (u1)64);
+    __ br(Assembler::GE, L_loop);
+    __ cbz(parsedLength, L_end);
+
+    // if anything is left it should be a final 72 bytes of input
+    // i.e. a final 48 12-bit values. so we handle this by loading
+    // 48 bytes into all 16B lanes of front(vin) and only 24
+    // bytes into the lower 8B lane of back(vin)
+    vs_ld3_post(vs_front(vin), __ T16B, condensed);
+    vs_ld3(vs_back(vin), __ T8B, condensed);
+
+    // Expand vin[0] into va[0:1], and vin[1] into va[2:3] and va[4:5]
+    // n.b. target elements 2 and 3 of va duplicate elements 4 and
+    // 5 and target element 2 of vb duplicates element 4.
+    __ ushll(va[0], __ T8H, vin[0], __ T8B, 0);
+    __ ushll2(va[1], __ T8H, vin[0], __ T16B, 0);
+    __ ushll(va[2], __ T8H, vin[1], __ T8B, 0);
+    __ ushll2(va[3], __ T8H, vin[1], __ T16B, 0);
+    __ ushll(va[4], __ T8H, vin[1], __ T8B, 0);
+    __ ushll2(va[5], __ T8H, vin[1], __ T16B, 0);
+
+    // This time expand just the lower 8 lanes
+    __ ushll(vb[0], __ T8H, vin[3], __ T8B, 0);
+    __ ushll(vb[2], __ T8H, vin[4], __ T8B, 0);
+    __ ushll(vb[4], __ T8H, vin[4], __ T8B, 0);
+
+    // shift lo byte of copy 1 of the middle stripe into the high byte
+    __ shl(va[2], __ T8H, va[2], 8);
+    __ shl(va[3], __ T8H, va[3], 8);
+    __ shl(vb[2], __ T8H, vb[2], 8);
+
+    // expand vin[2] into va[6:7] and lower 8 lanes of vin[5] into
+    // vb[6] pre-shifted by 4 to ensure top bits of the input 12-bit
+    // int are in bit positions [4..11].
+    __ ushll(va[6], __ T8H, vin[2], __ T8B, 4);
+    __ ushll2(va[7], __ T8H, vin[2], __ T16B, 4);
+    __ ushll(vb[6], __ T8H, vin[5], __ T8B, 4);
+
+    // mask hi 4 bits of each 1st 12-bit int in pair from copy1 and
+    // shift lo 4 bits of each 2nd 12-bit int in pair to bottom of
+    // copy2
+    __ andr(va[2], __ T16B, va[2], v31);
+    __ andr(va[3], __ T16B, va[3], v31);
+    __ ushr(va[4], __ T8H, va[4], 4);
+    __ ushr(va[5], __ T8H, va[5], 4);
+    __ andr(vb[2], __ T16B, vb[2], v31);
+    __ ushr(vb[4], __ T8H, vb[4], 4);
+
+
+
+    // sum hi 4 bits and lo 8 bits of each 1st 12-bit int in pair and
+    // hi 8 bits plus lo 4 bits of each 2nd 12-bit int in pair
+
+    // n.b. ordering ensures: i) inputs are consumed before they are
+    // overwritten ii) order of 16-bit results across succsessive
+    // pairs of vectors in va and then lower half of vb reflects order
+    // of corresponding 12-bit inputs
+    __ addv(va[0], __ T8H, va[0], va[2]);
+    __ addv(va[2], __ T8H, va[1], va[3]);
+    __ addv(va[1], __ T8H, va[4], va[6]);
+    __ addv(va[3], __ T8H, va[5], va[7]);
+    __ addv(vb[0], __ T8H, vb[0], vb[2]);
+    __ addv(vb[1], __ T8H, vb[4], vb[6]);
+
+    // store 48 results interleaved as shorts
+    vs_st2_post(vs_front(va), __ T8H, parsed);
+    vs_st2_post(vs_front(vs_front(vb)), __ T8H, parsed);
+
+    __ BIND(L_end);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    // bind label and generate constant data used by this stub
+    __ BIND(L_F00);
+    __ emit_int64(0x0f000f000f000f00);
+    __ emit_int64(0x0f000f000f000f00);
+
+    return start;
+  }
+
+  // Kyber Barrett reduce function.
+  // Implements
+  // static int implKyberBarrettReduce(short[] coeffs) {}
+  //
+  // coeffs (short[256]) = c_rarg0
+  address generate_kyberBarrettReduce() {
+
+    __ align(CodeEntryAlignment);
+    StubId stub_id = StubId::stubgen_kyberBarrettReduce_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    __ enter();
+
+    const Register coeffs = c_rarg0;
+
+    const Register kyberConsts = r10;
+    const Register result = r11;
+
+    // As above we process 256 sets of values in total i.e. 32 x
+    // 8H quadwords. So, we can load, add and store the data in 3
+    // groups of 11, 11 and 10 at a time i.e. we need to map sets
+    // of 10 or 11 registers. A further constraint is that the
+    // mapping needs to skip callee saves. So, we allocate the
+    // register sequences using two 8 sequences, two 2 sequences
+    // and two single registers.
+    VSeq<8> vs1_1(0);
+    VSeq<2> vs1_2(16);
+    FloatRegister vs1_3 = v28;
+    VSeq<8> vs2_1(18);
+    VSeq<2> vs2_2(26);
+    FloatRegister vs2_3 = v29;
+
+    // we also need a pair of corresponding constant sequences
+
+    VSeq<8> vc1_1(30, 0);
+    VSeq<2> vc1_2(30, 0);
+    FloatRegister vc1_3 = v30; // for kyber_q
+
+    VSeq<8> vc2_1(31, 0);
+    VSeq<2> vc2_2(31, 0);
+    FloatRegister vc2_3 = v31; // for kyberBarrettMultiplier
+
+    __ add(result, coeffs, 0);
+    __ lea(kyberConsts,
+             ExternalAddress((address) StubRoutines::aarch64::_kyberConsts));
+
+    // load q and the multiplier for the Barrett reduction
+    __ add(kyberConsts, kyberConsts, 16);
+    __ ldpq(vc1_3, vc2_3, kyberConsts);
+
+    for (int i = 0; i < 3; i++) {
+      // load 80 or 88 coefficients
+      vs_ldpq_post(vs1_1, coeffs);
+      vs_ldpq_post(vs1_2, coeffs);
+      if (i < 2) {
+        __ ldr(vs1_3, __ Q, __ post(coeffs, 16));
+      }
+
+      // vs2 <- (2 * vs1 * kyberBarrettMultiplier) >> 16
+      vs_sqdmulh(vs2_1, __ T8H, vs1_1, vc2_1);
+      vs_sqdmulh(vs2_2, __ T8H, vs1_2, vc2_2);
+      if (i < 2) {
+        __ sqdmulh(vs2_3, __ T8H, vs1_3, vc2_3);
+      }
+
+      // vs2 <- (vs1 * kyberBarrettMultiplier) >> 26
+      vs_sshr(vs2_1, __ T8H, vs2_1, 11);
+      vs_sshr(vs2_2, __ T8H, vs2_2, 11);
+      if (i < 2) {
+        __ sshr(vs2_3, __ T8H, vs2_3, 11);
+      }
+
+      // vs1 <- vs1 - vs2 * kyber_q
+      vs_mlsv(vs1_1, __ T8H, vs2_1, vc1_1);
+      vs_mlsv(vs1_2, __ T8H, vs2_2, vc1_2);
+      if (i < 2) {
+        __ mlsv(vs1_3, __ T8H, vs2_3, vc1_3);
+      }
+
+      vs_stpq_post(vs1_1, result);
+      vs_stpq_post(vs1_2, result);
+      if (i < 2) {
+        __ str(vs1_3, __ Q, __ post(result, 16));
+      }
+    }
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    return start;
+  }
+
+
+  // Dilithium-specific montmul helper routines that generate parallel
+  // code for, respectively, a single 4x4s vector sequence montmul or
+  // two such multiplies in a row.
+
+  // Perform 16 32-bit Montgomery multiplications in parallel
+  void dilithium_montmul16(const VSeq<4>& va, const VSeq<4>& vb, const VSeq<4>& vc,
+                           const VSeq<4>& vtmp, const VSeq<2>& vq) {
+    // Use the helper routine to schedule a 4x4S Montgomery multiply.
+    // It will assert that the register use is valid
+    vs_montmul4(va, vb, vc, __ T4S, vtmp, vq);
+  }
+
+  // Perform 2x16 32-bit Montgomery multiplications in parallel
+  void dilithium_montmul32(const VSeq<8>& va, const VSeq<8>& vb, const VSeq<8>& vc,
+                           const VSeq<4>& vtmp, const VSeq<2>& vq) {
+    // Schedule two successive 4x4S multiplies via the montmul helper
+    // on the front and back halves of va, vb and vc. The helper will
+    // assert that the register use has no overlap conflicts on each
+    // individual call but we also need to ensure that the necessary
+    // disjoint/equality constraints are met across both calls.
+
+    // vb, vc, vtmp and vq must be disjoint. va must either be
+    // disjoint from all other registers or equal vc
+
+    assert(vs_disjoint(vb, vc), "vb and vc overlap");
+    assert(vs_disjoint(vb, vq), "vb and vq overlap");
+    assert(vs_disjoint(vb, vtmp), "vb and vtmp overlap");
+
+    assert(vs_disjoint(vc, vq), "vc and vq overlap");
+    assert(vs_disjoint(vc, vtmp), "vc and vtmp overlap");
+
+    assert(vs_disjoint(vq, vtmp), "vq and vtmp overlap");
+
+    assert(vs_disjoint(va, vc) || vs_same(va, vc), "va and vc neither disjoint nor equal");
+    assert(vs_disjoint(va, vb), "va and vb overlap");
+    assert(vs_disjoint(va, vq), "va and vq overlap");
+    assert(vs_disjoint(va, vtmp), "va and vtmp overlap");
+
+    // We multiply the front and back halves of each sequence 4 at a
+    // time because
+    //
+    // 1) we are currently only able to get 4-way instruction
+    // parallelism at best
+    //
+    // 2) we need registers for the constants in vq and temporary
+    // scratch registers to hold intermediate results so vtmp can only
+    // be a VSeq<4> which means we only have 4 scratch slots.
+
+    vs_montmul4(vs_front(va), vs_front(vb), vs_front(vc), __ T4S, vtmp, vq);
+    vs_montmul4(vs_back(va), vs_back(vb), vs_back(vc), __ T4S, vtmp, vq);
+  }
+
+  // Perform combined montmul then add/sub on 4x4S vectors.
+  void dilithium_montmul16_sub_add(
+          const VSeq<4>& va0, const VSeq<4>& va1, const VSeq<4>& vc,
+          const VSeq<4>& vtmp, const VSeq<2>& vq) {
     // compute a = montmul(a1, c)
     dilithium_montmul16(vc, va1, vc, vtmp, vq);
     // ouptut a1 = a0 - a
@@ -4917,10 +6449,10 @@ class StubGenerator: public StubCodeGenerator {
     vs_addv(va0, __ T4S, va0, vc);
   }
 
-  // perform combined add/sub then montul on 4x4S vectors
-
-  void dilithium_sub_add_montmul16(const VSeq<4>& va0, const VSeq<4>& va1, const VSeq<4>& vb,
-                                   const VSeq<4>& vtmp1, const VSeq<4>& vtmp2, const VSeq<2>& vq) {
+  // Perform combined add/sub then montul on 4x4S vectors.
+  void dilithium_sub_add_montmul16(
+          const VSeq<4>& va0, const VSeq<4>& va1, const VSeq<4>& vb,
+          const VSeq<4>& vtmp1, const VSeq<4>& vtmp2, const VSeq<2>& vq) {
     // compute c = a0 - a1
     vs_subv(vtmp1, __ T4S, va0, va1);
     // output a0 = a0 + a1
@@ -4963,10 +6495,10 @@ class StubGenerator: public StubCodeGenerator {
         offsets[3] = 192;
       }
 
-      // for levels 1 - 4 we simply load 2 x 4 adjacent values at a
+      // For levels 1 - 4 we simply load 2 x 4 adjacent values at a
       // time at 4 different offsets and multiply them in order by the
       // next set of input values. So we employ indexed load and store
-      // pair instructions with arrangement 4S
+      // pair instructions with arrangement 4S.
       for (int i = 0; i < 4; i++) {
         // reload q and qinv
         vs_ldpq(vq, dilithiumConsts); // qInv, q
@@ -4975,7 +6507,7 @@ class StubGenerator: public StubCodeGenerator {
         // load next 8x4S inputs == b
         vs_ldpq_post(vs2, zetas);
         // compute a == c2 * b mod MONT_Q
-        vs_montmul32(vs2, vs1, vs2, vtmp, vq);
+        dilithium_montmul32(vs2, vs1, vs2, vtmp, vq);
         // load 8x4s coefficients via first start pos == c1
         vs_ldpq_indexed(vs1, coeffs, c1Start, offsets);
         // compute a1 =  c1 + a
@@ -5014,7 +6546,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_dilithiumAlmostNtt() {
 
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::dilithiumAlmostNtt_id;
+    StubId stub_id = StubId::stubgen_dilithiumAlmostNtt_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
     __ enter();
@@ -5029,20 +6561,21 @@ class StubGenerator: public StubCodeGenerator {
     VSeq<8> vs1(0), vs2(16), vs3(24);  // 3 sets of 8x4s inputs/outputs
     VSeq<4> vtmp = vs_front(vs3);         // n.b. tmp registers overlap vs3
     VSeq<2> vq(30);                    // n.b. constants overlap vs3
-    int offsets[4] = {0, 32, 64, 96};
-    int offsets1[8] = {16, 48, 80, 112, 144, 176, 208, 240 };
+    int offsets[4] = { 0, 32, 64, 96};
+    int offsets1[8] = { 16, 48, 80, 112, 144, 176, 208, 240 };
     int offsets2[8] = { 0, 32, 64, 96, 128, 160, 192, 224 };
     __ add(result, coeffs, 0);
-    __ lea(dilithiumConsts, ExternalAddress((address) StubRoutines::aarch64::_dilithiumConsts));
+    __ lea(dilithiumConsts,
+             ExternalAddress((address) StubRoutines::aarch64::_dilithiumConsts));
 
-    // Each level represents one iteration of the outer for loop of the Java version
+    // Each level represents one iteration of the outer for loop of the Java version.
 
     // level 0-4
     dilithiumNttLevel0_4(dilithiumConsts, coeffs, zetas);
 
     // level 5
 
-    // at level 5 the coefficients we need to combine with the zetas
+    // At level 5 the coefficients we need to combine with the zetas
     // are grouped in memory in blocks of size 4. So, for both sets of
     // coefficients we load 4 adjacent values at 8 different offsets
     // using an indexed ldr with register variant Q and multiply them
@@ -5056,7 +6589,7 @@ class StubGenerator: public StubCodeGenerator {
       // load next 32 (8x4S) inputs = b
       vs_ldpq_post(vs2, zetas);
       // a = b montul c1
-      vs_montmul32(vs2, vs1, vs2, vtmp, vq);
+      dilithium_montmul32(vs2, vs1, vs2, vtmp, vq);
       // load 32 (8x4S) coefficients via second offsets = c2
       vs_ldr_indexed(vs1, __ Q, coeffs, i, offsets2);
       // add/sub with result of multiply
@@ -5068,7 +6601,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     // level 6
-    // at level 6 the coefficients we need to combine with the zetas
+    // At level 6 the coefficients we need to combine with the zetas
     // are grouped in memory in pairs, the first two being montmul
     // inputs and the second add/sub inputs. We can still implement
     // the montmul+sub+add using 4-way parallelism but only if we
@@ -5096,7 +6629,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     // level 7
-    // at level 7 the coefficients we need to combine with the zetas
+    // At level 7 the coefficients we need to combine with the zetas
     // occur singly with montmul inputs alterating with add/sub
     // inputs. Once again we can use 4-way parallelism to combine 16
     // zetas at a time. However, we have to load 8 adjacent values at
@@ -5168,10 +6701,10 @@ class StubGenerator: public StubCodeGenerator {
         offsets[3] = 96;
       }
 
-      // for levels 3 - 7 we simply load 2 x 4 adjacent values at a
+      // For levels 3 - 7 we simply load 2 x 4 adjacent values at a
       // time at 4 different offsets and multiply them in order by the
       // next set of input values. So we employ indexed load and store
-      // pair instructions with arrangement 4S
+      // pair instructions with arrangement 4S.
       for (int i = 0; i < 4; i++) {
         // load v1 32 (8x4S) coefficients relative to first start index
         vs_ldpq_indexed(vs1, coeffs, c1Start, offsets);
@@ -5188,7 +6721,7 @@ class StubGenerator: public StubCodeGenerator {
         // load b next 32 (8x4S) inputs
         vs_ldpq_post(vs2, zetas);
         // a = a1 montmul b
-        vs_montmul32(vs2, vs1, vs2, vtmp, vq);
+        dilithium_montmul32(vs2, vs1, vs2, vtmp, vq);
         // save a relative to second start index
         vs_stpq_indexed(vs2, coeffs, c2Start, offsets);
 
@@ -5220,7 +6753,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_dilithiumAlmostInverseNtt() {
 
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::dilithiumAlmostInverseNtt_id;
+    StubId stub_id = StubId::stubgen_dilithiumAlmostInverseNtt_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
     __ enter();
@@ -5239,16 +6772,16 @@ class StubGenerator: public StubCodeGenerator {
     int offsets2[8] = { 16, 48, 80, 112, 144, 176, 208, 240 };
 
     __ add(result, coeffs, 0);
-    __ lea(dilithiumConsts, ExternalAddress((address) StubRoutines::aarch64::_dilithiumConsts));
+    __ lea(dilithiumConsts,
+             ExternalAddress((address) StubRoutines::aarch64::_dilithiumConsts));
 
     // Each level represents one iteration of the outer for loop of the Java version
-    // level0
 
     // level 0
     // At level 0 we need to interleave adjacent quartets of
     // coefficients before we multiply and add/sub by the next 16
     // zetas just as we did for level 7 in the multiply code. So we
-    // load and store the values using an ld2/st2 with arrangement 4S
+    // load and store the values using an ld2/st2 with arrangement 4S.
     for (int i = 0; i < 1024; i += 128) {
       // load constants q, qinv
       // n.b. this can be moved out of the loop as they do not get
@@ -5270,7 +6803,7 @@ class StubGenerator: public StubCodeGenerator {
     // At level 1 we need to interleave pairs of adjacent pairs of
     // coefficients before we multiply by the next 16 zetas just as we
     // did for level 6 in the multiply code. So we load and store the
-    // values an ld2/st2 with arrangement 2D
+    // values an ld2/st2 with arrangement 2D.
     for (int i = 0; i < 1024; i += 128) {
       // a0/a1 load interleaved 32 (8x2D) coefficients
       vs_ld2_indexed(vs1, __ T2D, coeffs, tmpAddr, i, offsets);
@@ -5306,7 +6839,7 @@ class StubGenerator: public StubCodeGenerator {
       // reload constants q, qinv -- they were clobbered earlier
       vs_ldpq(vq, dilithiumConsts); // qInv, q
       // compute a1 = b montmul c
-      vs_montmul32(vs2, vs1, vs2, vtmp, vq);
+      dilithium_montmul32(vs2, vs1, vs2, vtmp, vq);
       // store a1 32 (8x4S) coefficients via second offsets
       vs_str_indexed(vs2, __ Q, coeffs, i, offsets2);
     }
@@ -5319,7 +6852,6 @@ class StubGenerator: public StubCodeGenerator {
     __ ret(lr);
 
     return start;
-
   }
 
   // Dilithium multiply polynomials in the NTT domain.
@@ -5334,7 +6866,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_dilithiumNttMult() {
 
         __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::dilithiumNttMult_id;
+    StubId stub_id = StubId::stubgen_dilithiumNttMult_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
     __ enter();
@@ -5353,7 +6885,8 @@ class StubGenerator: public StubCodeGenerator {
     VSeq<2> vq(30);                    // n.b. constants overlap vs3
     VSeq<8> vrsquare(29, 0);           // for montmul by constant RSQUARE
 
-    __ lea(dilithiumConsts, ExternalAddress((address) StubRoutines::aarch64::_dilithiumConsts));
+    __ lea(dilithiumConsts,
+             ExternalAddress((address) StubRoutines::aarch64::_dilithiumConsts));
 
     // load constants q, qinv
     vs_ldpq(vq, dilithiumConsts); // qInv, q
@@ -5370,9 +6903,9 @@ class StubGenerator: public StubCodeGenerator {
     // c load 32 (8x4S) next inputs from poly2
     vs_ldpq_post(vs2, poly2);
     // compute a = b montmul c
-    vs_montmul32(vs2, vs1, vs2, vtmp, vq);
+    dilithium_montmul32(vs2, vs1, vs2, vtmp, vq);
     // compute a = rsquare montmul a
-    vs_montmul32(vs2, vrsquare, vs2, vtmp, vq);
+    dilithium_montmul32(vs2, vrsquare, vs2, vtmp, vq);
     // save a 32 (8x4S) results
     vs_stpq_post(vs2, result);
 
@@ -5385,7 +6918,6 @@ class StubGenerator: public StubCodeGenerator {
     __ ret(lr);
 
     return start;
-
   }
 
   // Dilithium Motgomery multiply an array by a constant.
@@ -5398,7 +6930,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_dilithiumMontMulByConstant() {
 
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::dilithiumMontMulByConstant_id;
+    StubId stub_id = StubId::stubgen_dilithiumMontMulByConstant_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
     __ enter();
@@ -5413,13 +6945,14 @@ class StubGenerator: public StubCodeGenerator {
     const Register len = r12;
 
     VSeq<8> vs1(0), vs2(16), vs3(24);  // 3 sets of 8x4s inputs/outputs
-    VSeq<4> vtmp = vs_front(vs3);         // n.b. tmp registers overlap vs3
+    VSeq<4> vtmp = vs_front(vs3);      // n.b. tmp registers overlap vs3
     VSeq<2> vq(30);                    // n.b. constants overlap vs3
     VSeq<8> vconst(29, 0);             // for montmul by constant
 
     // results track inputs
     __ add(result, coeffs, 0);
-    __ lea(dilithiumConsts, ExternalAddress((address) StubRoutines::aarch64::_dilithiumConsts));
+    __ lea(dilithiumConsts,
+             ExternalAddress((address) StubRoutines::aarch64::_dilithiumConsts));
 
     // load constants q, qinv -- they do not get clobbered by first two loops
     vs_ldpq(vq, dilithiumConsts); // qInv, q
@@ -5433,7 +6966,7 @@ class StubGenerator: public StubCodeGenerator {
     // load next 32 inputs
     vs_ldpq_post(vs2, coeffs);
     // mont mul by constant
-    vs_montmul32(vs2, vconst, vs2, vtmp, vq);
+    dilithium_montmul32(vs2, vconst, vs2, vtmp, vq);
     // write next 32 results
     vs_stpq_post(vs2, result);
 
@@ -5446,7 +6979,6 @@ class StubGenerator: public StubCodeGenerator {
     __ ret(lr);
 
     return start;
-
   }
 
   // Dilithium decompose poly.
@@ -5462,7 +6994,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_dilithiumDecomposePoly() {
 
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::dilithiumDecomposePoly_id;
+    StubId stub_id = StubId::stubgen_dilithiumDecomposePoly_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
     Label L_loop;
@@ -5477,9 +7009,12 @@ class StubGenerator: public StubCodeGenerator {
     const Register dilithiumConsts = r10;
     const Register tmp = r11;
 
-    VSeq<4> vs1(0), vs2(4), vs3(8); // 6 independent sets of 4x4s values
+    // 6 independent sets of 4x4s values
+    VSeq<4> vs1(0), vs2(4), vs3(8);
     VSeq<4> vs4(12), vs5(16), vtmp(20);
-    VSeq<4> one(25, 0);            // 7 constants for cross-multiplying
+
+    // 7 constants for cross-multiplying
+    VSeq<4> one(25, 0);
     VSeq<4> qminus1(26, 0);
     VSeq<4> g2(27, 0);
     VSeq<4> twog2(28, 0);
@@ -5489,7 +7024,8 @@ class StubGenerator: public StubCodeGenerator {
 
     __ enter();
 
-    __ lea(dilithiumConsts, ExternalAddress((address) StubRoutines::aarch64::_dilithiumConsts));
+    __ lea(dilithiumConsts,
+             ExternalAddress((address) StubRoutines::aarch64::_dilithiumConsts));
 
     // save callee-saved registers
     __ stpd(v8, v9, __ pre(sp, -64));
@@ -5586,7 +7122,6 @@ class StubGenerator: public StubCodeGenerator {
     __ st4(vs3[0], vs3[1], vs3[2], vs3[3], __ T4S, __ post(lowPart, 64));
     __ st4(vs1[0], vs1[1], vs1[2], vs1[3], __ T4S, __ post(highPart, 64));
 
-
     __ sub(len, len, 64);
     __ cmp(len, (u1)64);
     __ br(Assembler::GE, L_loop);
@@ -5602,7 +7137,407 @@ class StubGenerator: public StubCodeGenerator {
     __ ret(lr);
 
     return start;
+  }
 
+  void bcax5(Register a0, Register a1, Register a2, Register a3, Register a4,
+             Register tmp0, Register tmp1, Register tmp2) {
+    __ bic(tmp0, a2, a1); // for a0
+    __ bic(tmp1, a3, a2); // for a1
+    __ bic(tmp2, a4, a3); // for a2
+    __ eor(a2, a2, tmp2);
+    __ bic(tmp2, a0, a4); // for a3
+    __ eor(a3, a3, tmp2);
+    __ bic(tmp2, a1, a0); // for a4
+    __ eor(a0, a0, tmp0);
+    __ eor(a1, a1, tmp1);
+    __ eor(a4, a4, tmp2);
+  }
+
+  void keccak_round_gpr(bool can_use_fp, bool can_use_r18, Register rc,
+                        Register a0, Register a1, Register a2, Register a3, Register a4,
+                        Register a5, Register a6, Register a7, Register a8, Register a9,
+                        Register a10, Register a11, Register a12, Register a13, Register a14,
+                        Register a15, Register a16, Register a17, Register a18, Register a19,
+                        Register a20, Register a21, Register a22, Register a23, Register a24,
+                        Register tmp0, Register tmp1, Register tmp2) {
+    __ eor3(tmp1, a4, a9, a14);
+    __ eor3(tmp0, tmp1, a19, a24); // tmp0 = a4^a9^a14^a19^a24 = c4
+    __ eor3(tmp2, a1, a6, a11);
+    __ eor3(tmp1, tmp2, a16, a21); // tmp1 = a1^a6^a11^a16^a21 = c1
+    __ rax1(tmp2, tmp0, tmp1); // d0
+    {
+
+      Register tmp3, tmp4;
+      if (can_use_fp && can_use_r18) {
+        tmp3 = rfp;
+        tmp4 = r18_tls;
+      } else {
+        tmp3 = a4;
+        tmp4 = a9;
+        __ stp(tmp3, tmp4, __ pre(sp, -16));
+      }
+
+      __ eor3(tmp3, a0, a5, a10);
+      __ eor3(tmp4, tmp3, a15, a20); // tmp4 = a0^a5^a10^a15^a20 = c0
+      __ eor(a0, a0, tmp2);
+      __ eor(a5, a5, tmp2);
+      __ eor(a10, a10, tmp2);
+      __ eor(a15, a15, tmp2);
+      __ eor(a20, a20, tmp2); // d0(tmp2)
+      __ eor3(tmp3, a2, a7, a12);
+      __ eor3(tmp2, tmp3, a17, a22); // tmp2 = a2^a7^a12^a17^a22 = c2
+      __ rax1(tmp3, tmp4, tmp2); // d1
+      __ eor(a1, a1, tmp3);
+      __ eor(a6, a6, tmp3);
+      __ eor(a11, a11, tmp3);
+      __ eor(a16, a16, tmp3);
+      __ eor(a21, a21, tmp3); // d1(tmp3)
+      __ rax1(tmp3, tmp2, tmp0); // d3
+      __ eor3(tmp2, a3, a8, a13);
+      __ eor3(tmp0, tmp2, a18, a23);  // tmp0 = a3^a8^a13^a18^a23 = c3
+      __ eor(a3, a3, tmp3);
+      __ eor(a8, a8, tmp3);
+      __ eor(a13, a13, tmp3);
+      __ eor(a18, a18, tmp3);
+      __ eor(a23, a23, tmp3);
+      __ rax1(tmp2, tmp1, tmp0); // d2
+      __ eor(a2, a2, tmp2);
+      __ eor(a7, a7, tmp2);
+      __ eor(a12, a12, tmp2);
+      __ rax1(tmp0, tmp0, tmp4); // d4
+      if (!can_use_fp || !can_use_r18) {
+        __ ldp(tmp3, tmp4, __ post(sp, 16));
+      }
+      __ eor(a17, a17, tmp2);
+      __ eor(a22, a22, tmp2);
+      __ eor(a4, a4, tmp0);
+      __ eor(a9, a9, tmp0);
+      __ eor(a14, a14, tmp0);
+      __ eor(a19, a19, tmp0);
+      __ eor(a24, a24, tmp0);
+    }
+
+    __ rol(tmp0, a10, 3);
+    __ rol(a10, a1, 1);
+    __ rol(a1, a6, 44);
+    __ rol(a6, a9, 20);
+    __ rol(a9, a22, 61);
+    __ rol(a22, a14, 39);
+    __ rol(a14, a20, 18);
+    __ rol(a20, a2, 62);
+    __ rol(a2, a12, 43);
+    __ rol(a12, a13, 25);
+    __ rol(a13, a19, 8) ;
+    __ rol(a19, a23, 56);
+    __ rol(a23, a15, 41);
+    __ rol(a15, a4, 27);
+    __ rol(a4, a24, 14);
+    __ rol(a24, a21, 2);
+    __ rol(a21, a8, 55);
+    __ rol(a8, a16, 45);
+    __ rol(a16, a5, 36);
+    __ rol(a5, a3, 28);
+    __ rol(a3, a18, 21);
+    __ rol(a18, a17, 15);
+    __ rol(a17, a11, 10);
+    __ rol(a11, a7, 6);
+    __ mov(a7, tmp0);
+
+    bcax5(a0, a1, a2, a3, a4, tmp0, tmp1, tmp2);
+    bcax5(a5, a6, a7, a8, a9, tmp0, tmp1, tmp2);
+    bcax5(a10, a11, a12, a13, a14, tmp0, tmp1, tmp2);
+    bcax5(a15, a16, a17, a18, a19, tmp0, tmp1, tmp2);
+    bcax5(a20, a21, a22, a23, a24, tmp0, tmp1, tmp2);
+
+    __ ldr(tmp1, __ post(rc, 8));
+    __ eor(a0, a0, tmp1);
+
+  }
+
+  // Arguments:
+  //
+  // Inputs:
+  //   c_rarg0   - byte[]  source+offset
+  //   c_rarg1   - byte[]  SHA.state
+  //   c_rarg2   - int     block_size
+  //   c_rarg3   - int     offset
+  //   c_rarg4   - int     limit
+  //
+  address generate_sha3_implCompress_gpr(StubId stub_id) {
+    bool multi_block;
+    switch (stub_id) {
+    case StubId::stubgen_sha3_implCompress_id:
+      multi_block = false;
+      break;
+    case StubId::stubgen_sha3_implCompressMB_id:
+      multi_block = true;
+      break;
+    default:
+      ShouldNotReachHere();
+    }
+
+    static const uint64_t round_consts[24] = {
+      0x0000000000000001L, 0x0000000000008082L, 0x800000000000808AL,
+      0x8000000080008000L, 0x000000000000808BL, 0x0000000080000001L,
+      0x8000000080008081L, 0x8000000000008009L, 0x000000000000008AL,
+      0x0000000000000088L, 0x0000000080008009L, 0x000000008000000AL,
+      0x000000008000808BL, 0x800000000000008BL, 0x8000000000008089L,
+      0x8000000000008003L, 0x8000000000008002L, 0x8000000000000080L,
+      0x000000000000800AL, 0x800000008000000AL, 0x8000000080008081L,
+      0x8000000000008080L, 0x0000000080000001L, 0x8000000080008008L
+    };
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+
+    Register buf           = c_rarg0;
+    Register state         = c_rarg1;
+    Register block_size    = c_rarg2;
+    Register ofs           = c_rarg3;
+    Register limit         = c_rarg4;
+
+    // use r3.r17,r19..r28 to keep a0..a24.
+    // a0..a24 are respective locals from SHA3.java
+    Register a0 = r25,
+             a1 = r26,
+             a2 = r27,
+             a3 = r3,
+             a4 = r4,
+             a5 = r5,
+             a6 = r6,
+             a7 = r7,
+             a8 = rscratch1, // r8
+             a9 = rscratch2, // r9
+             a10 = r10,
+             a11 = r11,
+             a12 = r12,
+             a13 = r13,
+             a14 = r14,
+             a15 = r15,
+             a16 = r16,
+             a17 = r17,
+             a18 = r28,
+             a19 = r19,
+             a20 = r20,
+             a21 = r21,
+             a22 = r22,
+             a23 = r23,
+             a24 = r24;
+
+    Register tmp0 = block_size, tmp1 = buf, tmp2 = state, tmp3 = r30;
+
+    Label sha3_loop, rounds24_preloop, loop_body;
+    Label sha3_512_or_sha3_384, shake128;
+
+    bool can_use_r18 = false;
+#ifndef R18_RESERVED
+    can_use_r18 = true;
+#endif
+    bool can_use_fp = !PreserveFramePointer;
+
+    __ enter();
+
+    // save almost all yet unsaved gpr registers on stack
+    __ str(block_size, __ pre(sp, -128));
+    if (multi_block) {
+      __ stpw(ofs, limit, Address(sp, 8));
+    }
+    // 8 bytes at sp+16 will be used to keep buf
+    __ stp(r19, r20, Address(sp, 32));
+    __ stp(r21, r22, Address(sp, 48));
+    __ stp(r23, r24, Address(sp, 64));
+    __ stp(r25, r26, Address(sp, 80));
+    __ stp(r27, r28, Address(sp, 96));
+    if (can_use_r18 && can_use_fp) {
+      __ stp(r18_tls, state, Address(sp, 112));
+    } else {
+      __ str(state, Address(sp, 112));
+    }
+
+    // begin sha3 calculations: loading a0..a24 from state arrary
+    __ ldp(a0, a1, state);
+    __ ldp(a2, a3, Address(state, 16));
+    __ ldp(a4, a5, Address(state, 32));
+    __ ldp(a6, a7, Address(state, 48));
+    __ ldp(a8, a9, Address(state, 64));
+    __ ldp(a10, a11, Address(state, 80));
+    __ ldp(a12, a13, Address(state, 96));
+    __ ldp(a14, a15, Address(state, 112));
+    __ ldp(a16, a17, Address(state, 128));
+    __ ldp(a18, a19, Address(state, 144));
+    __ ldp(a20, a21, Address(state, 160));
+    __ ldp(a22, a23, Address(state, 176));
+    __ ldr(a24, Address(state, 192));
+
+    __ BIND(sha3_loop);
+
+    // load input
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a0, a0, tmp3);
+    __ eor(a1, a1, tmp2);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a2, a2, tmp3);
+    __ eor(a3, a3, tmp2);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a4, a4, tmp3);
+    __ eor(a5, a5, tmp2);
+    __ ldr(tmp3, __ post(buf, 8));
+    __ eor(a6, a6, tmp3);
+
+    // block_size == 72, SHA3-512; block_size == 104, SHA3-384
+    __ tbz(block_size, 7, sha3_512_or_sha3_384);
+
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a7, a7, tmp3);
+    __ eor(a8, a8, tmp2);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a9, a9, tmp3);
+    __ eor(a10, a10, tmp2);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a11, a11, tmp3);
+    __ eor(a12, a12, tmp2);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a13, a13, tmp3);
+    __ eor(a14, a14, tmp2);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a15, a15, tmp3);
+    __ eor(a16, a16, tmp2);
+
+    // block_size == 136, bit4 == 0 and bit5 == 0, SHA3-256 or SHAKE256
+    __ andw(tmp2, block_size, 48);
+    __ cbzw(tmp2, rounds24_preloop);
+    __ tbnz(block_size, 5, shake128);
+    // block_size == 144, bit5 == 0, SHA3-244
+    __ ldr(tmp3, __ post(buf, 8));
+    __ eor(a17, a17, tmp3);
+    __ b(rounds24_preloop);
+
+    __ BIND(shake128);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a17, a17, tmp3);
+    __ eor(a18, a18, tmp2);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a19, a19, tmp3);
+    __ eor(a20, a20, tmp2);
+    __ b(rounds24_preloop); // block_size == 168, SHAKE128
+
+    __ BIND(sha3_512_or_sha3_384);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a7, a7, tmp3);
+    __ eor(a8, a8, tmp2);
+    __ tbz(block_size, 5, rounds24_preloop); // SHA3-512
+
+    // SHA3-384
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a9, a9, tmp3);
+    __ eor(a10, a10, tmp2);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a11, a11, tmp3);
+    __ eor(a12, a12, tmp2);
+
+    __ BIND(rounds24_preloop);
+    __ fmovs(v0, 24.0); // float loop counter,
+    __ fmovs(v1, 1.0);  // exact representation
+
+    __ str(buf, Address(sp, 16));
+    __ lea(tmp3, ExternalAddress((address) round_consts));
+
+    __ BIND(loop_body);
+    keccak_round_gpr(can_use_fp, can_use_r18, tmp3,
+                     a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12,
+                     a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24,
+                     tmp0, tmp1, tmp2);
+    __ fsubs(v0, v0, v1);
+    __ fcmps(v0, 0.0);
+    __ br(__ NE, loop_body);
+
+    if (multi_block) {
+      __ ldrw(block_size, sp); // block_size
+      __ ldpw(tmp2, tmp1, Address(sp, 8)); // offset, limit
+      __ addw(tmp2, tmp2, block_size);
+      __ cmpw(tmp2, tmp1);
+      __ strw(tmp2, Address(sp, 8)); // store offset in case we're jumping
+      __ ldr(buf, Address(sp, 16)); // restore buf in case we're jumping
+      __ br(Assembler::LE, sha3_loop);
+      __ movw(c_rarg0, tmp2); // return offset
+    }
+    if (can_use_fp && can_use_r18) {
+      __ ldp(r18_tls, state, Address(sp, 112));
+    } else {
+      __ ldr(state, Address(sp, 112));
+    }
+    // save calculated sha3 state
+    __ stp(a0, a1, Address(state));
+    __ stp(a2, a3, Address(state, 16));
+    __ stp(a4, a5, Address(state, 32));
+    __ stp(a6, a7, Address(state, 48));
+    __ stp(a8, a9, Address(state, 64));
+    __ stp(a10, a11, Address(state, 80));
+    __ stp(a12, a13, Address(state, 96));
+    __ stp(a14, a15, Address(state, 112));
+    __ stp(a16, a17, Address(state, 128));
+    __ stp(a18, a19, Address(state, 144));
+    __ stp(a20, a21, Address(state, 160));
+    __ stp(a22, a23, Address(state, 176));
+    __ str(a24, Address(state, 192));
+
+    // restore required registers from stack
+    __ ldp(r19, r20, Address(sp, 32));
+    __ ldp(r21, r22, Address(sp, 48));
+    __ ldp(r23, r24, Address(sp, 64));
+    __ ldp(r25, r26, Address(sp, 80));
+    __ ldp(r27, r28, Address(sp, 96));
+    if (can_use_fp && can_use_r18) {
+      __ add(rfp, sp, 128); // leave() will copy rfp to sp below
+    } // else no need to recalculate rfp, since it wasn't changed
+
+    __ leave();
+
+    __ ret(lr);
+
+    return start;
+  }
+
+  /**
+   *  Arguments:
+   *
+   * Inputs:
+   *   c_rarg0   - int crc
+   *   c_rarg1   - byte* buf
+   *   c_rarg2   - int length
+   *
+   * Output:
+   *       rax   - int crc result
+   */
+  address generate_updateBytesCRC32() {
+    assert(UseCRC32Intrinsics, "what are we doing here?");
+
+    __ align(CodeEntryAlignment);
+    StubId stub_id = StubId::stubgen_updateBytesCRC32_id;
+    StubCodeMark mark(this, stub_id);
+
+    address start = __ pc();
+
+    const Register crc   = c_rarg0;  // crc
+    const Register buf   = c_rarg1;  // source java byte array address
+    const Register len   = c_rarg2;  // length
+    const Register table0 = c_rarg3; // crc_table address
+    const Register table1 = c_rarg4;
+    const Register table2 = c_rarg5;
+    const Register table3 = c_rarg6;
+    const Register tmp3 = c_rarg7;
+
+    BLOCK_COMMENT("Entry:");
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+    __ kernel_crc32(crc, buf, len,
+              table0, table1, table2, table3, rscratch1, rscratch2, tmp3);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ ret(lr);
+
+    return start;
   }
 
   /**
@@ -5621,7 +7556,7 @@ class StubGenerator: public StubCodeGenerator {
     assert(UseCRC32CIntrinsics, "what are we doing here?");
 
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::updateBytesCRC32C_id;
+    StubId stub_id = StubId::stubgen_updateBytesCRC32C_id;
     StubCodeMark mark(this, stub_id);
 
     address start = __ pc();
@@ -5660,7 +7595,7 @@ class StubGenerator: public StubCodeGenerator {
    */
   address generate_updateBytesAdler32() {
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::updateBytesAdler32_id;
+    StubId stub_id = StubId::stubgen_updateBytesAdler32_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
@@ -5882,7 +7817,7 @@ class StubGenerator: public StubCodeGenerator {
    */
   address generate_multiplyToLen() {
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::multiplyToLen_id;
+    StubId stub_id = StubId::stubgen_multiplyToLen_id;
     StubCodeMark mark(this, stub_id);
 
     address start = __ pc();
@@ -5915,7 +7850,7 @@ class StubGenerator: public StubCodeGenerator {
     // faster than multiply_to_len on some CPUs and slower on others, but
     // multiply_to_len shows a bit better overall results
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::squareToLen_id;
+    StubId stub_id = StubId::stubgen_squareToLen_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
@@ -5949,7 +7884,7 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_mulAdd() {
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::mulAdd_id;
+    StubId stub_id = StubId::stubgen_mulAdd_id;
     StubCodeMark mark(this, stub_id);
 
     address start = __ pc();
@@ -5980,7 +7915,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_bigIntegerRightShift() {
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::bigIntegerRightShiftWorker_id;
+    StubId stub_id = StubId::stubgen_bigIntegerRightShiftWorker_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
@@ -6103,7 +8038,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_bigIntegerLeftShift() {
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::bigIntegerLeftShiftWorker_id;
+    StubId stub_id = StubId::stubgen_bigIntegerLeftShiftWorker_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
@@ -6212,7 +8147,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
 
-    StubGenStubId stub_id = StubGenStubId::count_positives_id;
+    StubId stub_id = StubId::stubgen_count_positives_id;
     StubCodeMark mark(this, stub_id);
 
     address entry = __ pc();
@@ -6474,7 +8409,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
 
-    StubGenStubId stub_id = StubGenStubId::large_array_equals_id;
+    StubId stub_id = StubId::stubgen_large_array_equals_id;
     StubCodeMark mark(this, stub_id);
 
     address entry = __ pc();
@@ -6600,25 +8535,25 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
 
-    StubGenStubId stub_id;
+    StubId stub_id;
     switch (eltype) {
     case T_BOOLEAN:
-      stub_id = StubGenStubId::large_arrays_hashcode_boolean_id;
+      stub_id = StubId::stubgen_large_arrays_hashcode_boolean_id;
       break;
     case T_BYTE:
-      stub_id = StubGenStubId::large_arrays_hashcode_byte_id;
+      stub_id = StubId::stubgen_large_arrays_hashcode_byte_id;
       break;
     case T_CHAR:
-      stub_id = StubGenStubId::large_arrays_hashcode_char_id;
+      stub_id = StubId::stubgen_large_arrays_hashcode_char_id;
       break;
     case T_SHORT:
-      stub_id = StubGenStubId::large_arrays_hashcode_short_id;
+      stub_id = StubId::stubgen_large_arrays_hashcode_short_id;
       break;
     case T_INT:
-      stub_id = StubGenStubId::large_arrays_hashcode_int_id;
+      stub_id = StubId::stubgen_large_arrays_hashcode_int_id;
       break;
     default:
-      stub_id = StubGenStubId::NO_STUBID;
+      stub_id = StubId::NO_STUBID;
       ShouldNotReachHere();
     };
 
@@ -6712,7 +8647,8 @@ class StubGenerator: public StubCodeGenerator {
     __ andr(rscratch2, cnt, vf - 1);
     __ bind(TAIL_SHORTCUT);
     __ adr(rscratch1, BR_BASE);
-    __ sub(rscratch1, rscratch1, rscratch2, ext::uxtw, 3);
+    // For Cortex-A53 offset is 4 because 2 nops are generated.
+    __ sub(rscratch1, rscratch1, rscratch2, ext::uxtw, VM_Version::supports_a53mac() ? 4 : 3);
     __ movw(rscratch2, 0x1f);
     __ br(rscratch1);
 
@@ -6720,6 +8656,11 @@ class StubGenerator: public StubCodeGenerator {
       __ load(rscratch1, Address(__ post(ary, type2aelembytes(eltype))),
                                    eltype);
       __ maddw(result, result, rscratch2, rscratch1);
+      // maddw generates an extra nop for Cortex-A53 (see maddw definition in macroAssembler).
+      // Generate 2nd nop to have 4 instructions per iteration.
+      if (VM_Version::supports_a53mac()) {
+        __ nop();
+      }
     }
     __ bind(BR_BASE);
 
@@ -6855,7 +8796,7 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_dsin_dcos(bool isCos) {
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = (isCos ? StubGenStubId::dcos_id : StubGenStubId::dsin_id);
+    StubId stub_id = (isCos ? StubId::stubgen_dcos_id : StubId::stubgen_dsin_id);
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
     __ generate_dsin_dcos(isCos, (address)StubRoutines::aarch64::_npio2_hw,
@@ -6907,7 +8848,7 @@ class StubGenerator: public StubCodeGenerator {
   // r11 = tmp2
   address generate_compare_long_string_different_encoding(bool isLU) {
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = (isLU ? StubGenStubId::compare_long_string_LU_id : StubGenStubId::compare_long_string_UL_id);
+    StubId stub_id = (isLU ? StubId::stubgen_compare_long_string_LU_id : StubId::stubgen_compare_long_string_UL_id);
     StubCodeMark mark(this, stub_id);
     address entry = __ pc();
     Label SMALL_LOOP, TAIL, TAIL_LOAD_16, LOAD_LAST, DIFF1, DIFF2,
@@ -7017,7 +8958,7 @@ class StubGenerator: public StubCodeGenerator {
   // v1 = temporary float register
   address generate_float16ToFloat() {
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::hf2f_id;
+    StubId stub_id = StubId::stubgen_hf2f_id;
     StubCodeMark mark(this, stub_id);
     address entry = __ pc();
     BLOCK_COMMENT("Entry:");
@@ -7031,7 +8972,7 @@ class StubGenerator: public StubCodeGenerator {
   // v1 = temporary float register
   address generate_floatToFloat16() {
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::f2hf_id;
+    StubId stub_id = StubId::stubgen_f2hf_id;
     StubCodeMark mark(this, stub_id);
     address entry = __ pc();
     BLOCK_COMMENT("Entry:");
@@ -7042,7 +8983,7 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_method_entry_barrier() {
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::method_entry_barrier_id;
+    StubId stub_id = StubId::stubgen_method_entry_barrier_id;
     StubCodeMark mark(this, stub_id);
 
     Label deoptimize_label;
@@ -7108,7 +9049,7 @@ class StubGenerator: public StubCodeGenerator {
   // r11 = tmp2
   address generate_compare_long_string_same_encoding(bool isLL) {
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = (isLL ? StubGenStubId::compare_long_string_LL_id : StubGenStubId::compare_long_string_UU_id);
+    StubId stub_id = (isLL ? StubId::stubgen_compare_long_string_LL_id : StubId::stubgen_compare_long_string_UU_id);
     StubCodeMark mark(this, stub_id);
     address entry = __ pc();
     Register result = r0, str1 = r1, cnt1 = r2, str2 = r3, cnt2 = r4,
@@ -7239,12 +9180,12 @@ class StubGenerator: public StubCodeGenerator {
   // p0  = pgtmp1
   // p1  = pgtmp2
   address generate_compare_long_string_sve(string_compare_mode mode) {
-    StubGenStubId stub_id;
+    StubId stub_id;
     switch (mode) {
-      case LL: stub_id = StubGenStubId::compare_long_string_LL_id;  break;
-      case LU: stub_id = StubGenStubId::compare_long_string_LU_id; break;
-      case UL: stub_id = StubGenStubId::compare_long_string_UL_id; break;
-      case UU: stub_id = StubGenStubId::compare_long_string_UU_id; break;
+      case LL: stub_id = StubId::stubgen_compare_long_string_LL_id;  break;
+      case LU: stub_id = StubId::stubgen_compare_long_string_LU_id; break;
+      case UL: stub_id = StubId::stubgen_compare_long_string_UL_id; break;
+      case UU: stub_id = StubId::stubgen_compare_long_string_UU_id; break;
       default: ShouldNotReachHere();
     }
 
@@ -7375,18 +9316,18 @@ class StubGenerator: public StubCodeGenerator {
   // larger and a bit less readable, however, most of extra operations are
   // issued during loads or branches, so, penalty is minimal
   address generate_string_indexof_linear(bool str1_isL, bool str2_isL) {
-    StubGenStubId stub_id;
+    StubId stub_id;
     if (str1_isL) {
       if (str2_isL) {
-        stub_id = StubGenStubId::string_indexof_linear_ll_id;
+        stub_id = StubId::stubgen_string_indexof_linear_ll_id;
       } else {
-        stub_id = StubGenStubId::string_indexof_linear_ul_id;
+        stub_id = StubId::stubgen_string_indexof_linear_ul_id;
       }
     } else {
       if (str2_isL) {
         ShouldNotReachHere();
       } else {
-        stub_id = StubGenStubId::string_indexof_linear_uu_id;
+        stub_id = StubId::stubgen_string_indexof_linear_uu_id;
       }
     }
     __ align(CodeEntryAlignment);
@@ -7688,7 +9629,7 @@ class StubGenerator: public StubCodeGenerator {
   // Clobbers: r0, r1, r3, rscratch1, rflags, v0-v6
   address generate_large_byte_array_inflate() {
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::large_byte_array_inflate_id;
+    StubId stub_id = StubId::stubgen_large_byte_array_inflate_id;
     StubCodeMark mark(this, stub_id);
     address entry = __ pc();
     Label LOOP, LOOP_START, LOOP_PRFM, LOOP_PRFM_START, DONE;
@@ -7754,16 +9695,9 @@ class StubGenerator: public StubCodeGenerator {
     // that) and keep the data in little-endian bit order through the
     // calculation, bit-reversing the inputs and outputs.
 
-    StubGenStubId stub_id = StubGenStubId::ghash_processBlocks_id;
+    StubId stub_id = StubId::stubgen_ghash_processBlocks_id;
     StubCodeMark mark(this, stub_id);
-    __ align(wordSize * 2);
-    address p = __ pc();
-    __ emit_int64(0x87);  // The low-order bits of the field
-                          // polynomial (i.e. p = z^7+z^2+z+1)
-                          // repeated in the low and high parts of a
-                          // 128-bit vector
-    __ emit_int64(0x87);
-
+    Label polynomial; // local data generated at end of stub
     __ align(CodeEntryAlignment);
     address start = __ pc();
 
@@ -7775,7 +9709,8 @@ class StubGenerator: public StubCodeGenerator {
     FloatRegister vzr = v30;
     __ eor(vzr, __ T16B, vzr, vzr); // zero register
 
-    __ ldrq(v24, p);    // The field polynomial
+    __ adr(rscratch1, polynomial);
+    __ ldrq(v24, rscratch1);    // The field polynomial
 
     __ ldrq(v0, Address(state));
     __ ldrq(v1, Address(subkeyH));
@@ -7815,22 +9750,24 @@ class StubGenerator: public StubCodeGenerator {
     __ st1(v0, __ T16B, state);
     __ ret(lr);
 
-    return start;
-  }
-
-  address generate_ghash_processBlocks_wide() {
-    address small = generate_ghash_processBlocks();
-
-    StubGenStubId stub_id = StubGenStubId::ghash_processBlocks_wide_id;
-    StubCodeMark mark(this, stub_id);
+    // bind label and generate local polynomial data
     __ align(wordSize * 2);
-    address p = __ pc();
+    __ bind(polynomial);
     __ emit_int64(0x87);  // The low-order bits of the field
                           // polynomial (i.e. p = z^7+z^2+z+1)
                           // repeated in the low and high parts of a
                           // 128-bit vector
     __ emit_int64(0x87);
 
+    return start;
+  }
+
+  address generate_ghash_processBlocks_wide() {
+    address small = generate_ghash_processBlocks();
+
+    StubId stub_id = StubId::stubgen_ghash_processBlocks_wide_id;
+    StubCodeMark mark(this, stub_id);
+    Label polynomial;           // local data generated after stub
     __ align(CodeEntryAlignment);
     address start = __ pc();
 
@@ -7852,7 +9789,7 @@ class StubGenerator: public StubCodeGenerator {
       __ st1(v8, v9, v10, v11, __ T16B, Address(sp));
     }
 
-    __ ghash_processBlocks_wide(p, state, subkeyH, data, blocks, unroll);
+    __ ghash_processBlocks_wide(polynomial, state, subkeyH, data, blocks, unroll);
 
     if (unroll > 1) {
       // And restore state
@@ -7865,7 +9802,17 @@ class StubGenerator: public StubCodeGenerator {
 
     __ ret(lr);
 
+    // bind label and generate polynomial data
+    __ align(wordSize * 2);
+    __ bind(polynomial);
+    __ emit_int64(0x87);  // The low-order bits of the field
+                          // polynomial (i.e. p = z^7+z^2+z+1)
+                          // repeated in the low and high parts of a
+                          // 128-bit vector
+    __ emit_int64(0x87);
+
     return start;
+
   }
 
   void generate_base64_encode_simdround(Register src, Register dst,
@@ -7933,7 +9880,7 @@ class StubGenerator: public StubCodeGenerator {
     };
 
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::base64_encodeBlock_id;
+    StubId stub_id = StubId::stubgen_base64_encodeBlock_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
@@ -8202,7 +10149,7 @@ class StubGenerator: public StubCodeGenerator {
     };
 
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::base64_decodeBlock_id;
+    StubId stub_id = StubId::stubgen_base64_decodeBlock_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
@@ -8319,7 +10266,7 @@ class StubGenerator: public StubCodeGenerator {
   // Support for spin waits.
   address generate_spin_wait() {
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::spin_wait_id;
+    StubId stub_id = StubId::stubgen_spin_wait_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
@@ -8330,7 +10277,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   void generate_lookup_secondary_supers_table_stub() {
-    StubGenStubId stub_id = StubGenStubId::lookup_secondary_supers_table_id;
+    StubId stub_id = StubId::stubgen_lookup_secondary_supers_table_id;
     StubCodeMark mark(this, stub_id);
 
     const Register
@@ -8359,7 +10306,7 @@ class StubGenerator: public StubCodeGenerator {
 
   // Slow path implementation for UseSecondarySupersTable.
   address generate_lookup_secondary_supers_table_slow_path_stub() {
-    StubGenStubId stub_id = StubGenStubId::lookup_secondary_supers_table_slow_path_id;
+    StubId stub_id = StubId::stubgen_lookup_secondary_supers_table_slow_path_id;
     StubCodeMark mark(this, stub_id);
 
     address start = __ pc();
@@ -8379,7 +10326,7 @@ class StubGenerator: public StubCodeGenerator {
 
 #if defined (LINUX) && !defined (__ARM_FEATURE_ATOMICS)
 
-  // ARMv8.1 LSE versions of the atomic stubs used by Atomic::PlatformXX.
+  // ARMv8.1 LSE versions of the atomic stubs used by AtomicAccess::PlatformXX.
   //
   // If LSE is in use, generate LSE versions of all the stubs. The
   // non-LSE versions are in atomic_aarch64.S.
@@ -8514,7 +10461,7 @@ class StubGenerator: public StubCodeGenerator {
       return;
     }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::atomic_entry_points_id;
+    StubId stub_id = StubId::stubgen_atomic_entry_points_id;
     StubCodeMark mark(this, stub_id);
     address first_entry = __ pc();
 
@@ -8674,7 +10621,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_cont_thaw() {
     if (!Continuations::enabled()) return nullptr;
 
-    StubGenStubId stub_id = StubGenStubId::cont_thaw_id;
+    StubId stub_id = StubId::stubgen_cont_thaw_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
     generate_cont_thaw(Continuation::thaw_top);
@@ -8685,7 +10632,7 @@ class StubGenerator: public StubCodeGenerator {
     if (!Continuations::enabled()) return nullptr;
 
     // TODO: will probably need multiple return barriers depending on return type
-    StubGenStubId stub_id = StubGenStubId::cont_returnBarrier_id;
+    StubId stub_id = StubId::stubgen_cont_returnBarrier_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
@@ -8697,7 +10644,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_cont_returnBarrier_exception() {
     if (!Continuations::enabled()) return nullptr;
 
-    StubGenStubId stub_id = StubGenStubId::cont_returnBarrierExc_id;
+    StubId stub_id = StubId::stubgen_cont_returnBarrierExc_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
@@ -8708,7 +10655,7 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_cont_preempt_stub() {
     if (!Continuations::enabled()) return nullptr;
-    StubGenStubId stub_id = StubGenStubId::cont_preempt_id;
+    StubId stub_id = StubId::stubgen_cont_preempt_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
@@ -8791,7 +10738,7 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_poly1305_processBlocks() {
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::poly1305_processBlocks_id;
+    StubId stub_id = StubId::stubgen_poly1305_processBlocks_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
     Label here;
@@ -8906,7 +10853,7 @@ class StubGenerator: public StubCodeGenerator {
 
   // exception handler for upcall stubs
   address generate_upcall_stub_exception_handler() {
-    StubGenStubId stub_id = StubGenStubId::upcall_stub_exception_handler_id;
+    StubId stub_id = StubId::stubgen_upcall_stub_exception_handler_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
@@ -8924,7 +10871,7 @@ class StubGenerator: public StubCodeGenerator {
   // j_rarg0 = jobject receiver
   // rmethod = result
   address generate_upcall_stub_load_target() {
-    StubGenStubId stub_id = StubGenStubId::upcall_stub_load_target_id;
+    StubId stub_id = StubId::stubgen_upcall_stub_load_target_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
@@ -9769,80 +11716,11 @@ class StubGenerator: public StubCodeGenerator {
     // }
   };
 
-  void generate_vector_math_stubs() {
-    // Get native vector math stub routine addresses
-    void* libsleef = nullptr;
-    char ebuf[1024];
-    char dll_name[JVM_MAXPATHLEN];
-    if (os::dll_locate_lib(dll_name, sizeof(dll_name), Arguments::get_dll_dir(), "sleef")) {
-      libsleef = os::dll_load(dll_name, ebuf, sizeof ebuf);
-    }
-    if (libsleef == nullptr) {
-      log_info(library)("Failed to load native vector math library, %s!", ebuf);
-      return;
-    }
-    // Method naming convention
-    //   All the methods are named as <OP><T><N>_<U><suffix>
-    //   Where:
-    //     <OP>     is the operation name, e.g. sin
-    //     <T>      is optional to indicate float/double
-    //              "f/d" for vector float/double operation
-    //     <N>      is the number of elements in the vector
-    //              "2/4" for neon, and "x" for sve
-    //     <U>      is the precision level
-    //              "u10/u05" represents 1.0/0.5 ULP error bounds
-    //               We use "u10" for all operations by default
-    //               But for those functions do not have u10 support, we use "u05" instead
-    //     <suffix> indicates neon/sve
-    //              "sve/advsimd" for sve/neon implementations
-    //     e.g. sinfx_u10sve is the method for computing vector float sin using SVE instructions
-    //          cosd2_u10advsimd is the method for computing 2 elements vector double cos using NEON instructions
-    //
-    log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "sleef" JNI_LIB_SUFFIX, p2i(libsleef));
-
-    // Math vector stubs implemented with SVE for scalable vector size.
-    if (UseSVE > 0) {
-      for (int op = 0; op < VectorSupport::NUM_VECTOR_OP_MATH; op++) {
-        int vop = VectorSupport::VECTOR_OP_MATH_START + op;
-        // Skip "tanh" because there is performance regression
-        if (vop == VectorSupport::VECTOR_OP_TANH) {
-          continue;
-        }
-
-        // The native library does not support u10 level of "hypot".
-        const char* ulf = (vop == VectorSupport::VECTOR_OP_HYPOT) ? "u05" : "u10";
-
-        snprintf(ebuf, sizeof(ebuf), "%sfx_%ssve", VectorSupport::mathname[op], ulf);
-        StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_SCALABLE][op] = (address)os::dll_lookup(libsleef, ebuf);
-
-        snprintf(ebuf, sizeof(ebuf), "%sdx_%ssve", VectorSupport::mathname[op], ulf);
-        StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_SCALABLE][op] = (address)os::dll_lookup(libsleef, ebuf);
-      }
-    }
-
-    // Math vector stubs implemented with NEON for 64/128 bits vector size.
-    for (int op = 0; op < VectorSupport::NUM_VECTOR_OP_MATH; op++) {
-      int vop = VectorSupport::VECTOR_OP_MATH_START + op;
-      // Skip "tanh" because there is performance regression
-      if (vop == VectorSupport::VECTOR_OP_TANH) {
-        continue;
-      }
-
-      // The native library does not support u10 level of "hypot".
-      const char* ulf = (vop == VectorSupport::VECTOR_OP_HYPOT) ? "u05" : "u10";
-
-      snprintf(ebuf, sizeof(ebuf), "%sf4_%sadvsimd", VectorSupport::mathname[op], ulf);
-      StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_64][op] = (address)os::dll_lookup(libsleef, ebuf);
-
-      snprintf(ebuf, sizeof(ebuf), "%sf4_%sadvsimd", VectorSupport::mathname[op], ulf);
-      StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_128][op] = (address)os::dll_lookup(libsleef, ebuf);
-
-      snprintf(ebuf, sizeof(ebuf), "%sd2_%sadvsimd", VectorSupport::mathname[op], ulf);
-      StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_128][op] = (address)os::dll_lookup(libsleef, ebuf);
-    }
+  // Initialization
+  void generate_preuniverse_stubs() {
+    // preuniverse stubs are not needed for aarch64
   }
 
-  // Initialization
   void generate_initial_stubs() {
     // Generate initial stubs and initializes the entry points
 
@@ -9866,8 +11744,6 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     if (UseCRC32Intrinsics) {
-      // set table address before stub generation which use it
-      StubRoutines::_crc_table_adr = (address)StubRoutines::aarch64::_crc_table;
       StubRoutines::_updateBytesCRC32 = generate_updateBytesCRC32();
     }
 
@@ -9929,6 +11805,8 @@ class StubGenerator: public StubCodeGenerator {
     }
 #endif
 
+    StubRoutines::_unsafe_setmemory = generate_unsafe_setmemory();
+
     StubRoutines::aarch64::set_completed(); // Inidicate that arraycopy and zero_blocks stubs are generated
   }
 
@@ -9936,7 +11814,7 @@ class StubGenerator: public StubCodeGenerator {
 #if COMPILER2_OR_JVMCI
 
     if (UseSVE == 0) {
-      StubRoutines::aarch64::_vector_iota_indices = generate_iota_indices(StubGenStubId::vector_iota_indices_id);
+      StubRoutines::aarch64::_vector_iota_indices = generate_iota_indices(StubId::stubgen_vector_iota_indices_id);
     }
 
     // array equals stub for large arrays.
@@ -9980,14 +11858,14 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     if (UseMontgomeryMultiplyIntrinsic) {
-      StubGenStubId stub_id = StubGenStubId::montgomeryMultiply_id;
+      StubId stub_id = StubId::stubgen_montgomeryMultiply_id;
       StubCodeMark mark(this, stub_id);
       MontgomeryMultiplyGenerator g(_masm, /*squaring*/false);
       StubRoutines::_montgomeryMultiply = g.generate_multiply();
     }
 
     if (UseMontgomerySquareIntrinsic) {
-      StubGenStubId stub_id = StubGenStubId::montgomerySquare_id;
+      StubId stub_id = StubId::stubgen_montgomerySquare_id;
       StubCodeMark mark(this, stub_id);
       MontgomeryMultiplyGenerator g(_masm, /*squaring*/true);
       // We use generate_multiply() rather than generate_square()
@@ -9995,12 +11873,20 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_montgomerySquare = g.generate_multiply();
     }
 
-    generate_vector_math_stubs();
-
 #endif // COMPILER2
 
     if (UseChaCha20Intrinsics) {
-      StubRoutines::_chacha20Block = generate_chacha20Block_qrpar();
+      StubRoutines::_chacha20Block = generate_chacha20Block_blockpar();
+    }
+
+    if (UseKyberIntrinsics) {
+      StubRoutines::_kyberNtt = generate_kyberNtt();
+      StubRoutines::_kyberInverseNtt = generate_kyberInverseNtt();
+      StubRoutines::_kyberNttMult = generate_kyberNttMult();
+      StubRoutines::_kyberAddPoly_2 = generate_kyberAddPoly_2();
+      StubRoutines::_kyberAddPoly_3 = generate_kyberAddPoly_3();
+      StubRoutines::_kyber12To16 = generate_kyber12To16();
+      StubRoutines::_kyberBarrettReduce = generate_kyberBarrettReduce();
     }
 
     if (UseDilithiumIntrinsics) {
@@ -10036,25 +11922,31 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     if (UseMD5Intrinsics) {
-      StubRoutines::_md5_implCompress      = generate_md5_implCompress(StubGenStubId::md5_implCompress_id);
-      StubRoutines::_md5_implCompressMB    = generate_md5_implCompress(StubGenStubId::md5_implCompressMB_id);
+      StubRoutines::_md5_implCompress      = generate_md5_implCompress(StubId::stubgen_md5_implCompress_id);
+      StubRoutines::_md5_implCompressMB    = generate_md5_implCompress(StubId::stubgen_md5_implCompressMB_id);
     }
     if (UseSHA1Intrinsics) {
-      StubRoutines::_sha1_implCompress     = generate_sha1_implCompress(StubGenStubId::sha1_implCompress_id);
-      StubRoutines::_sha1_implCompressMB   = generate_sha1_implCompress(StubGenStubId::sha1_implCompressMB_id);
+      StubRoutines::_sha1_implCompress     = generate_sha1_implCompress(StubId::stubgen_sha1_implCompress_id);
+      StubRoutines::_sha1_implCompressMB   = generate_sha1_implCompress(StubId::stubgen_sha1_implCompressMB_id);
     }
     if (UseSHA256Intrinsics) {
-      StubRoutines::_sha256_implCompress   = generate_sha256_implCompress(StubGenStubId::sha256_implCompress_id);
-      StubRoutines::_sha256_implCompressMB = generate_sha256_implCompress(StubGenStubId::sha256_implCompressMB_id);
+      StubRoutines::_sha256_implCompress   = generate_sha256_implCompress(StubId::stubgen_sha256_implCompress_id);
+      StubRoutines::_sha256_implCompressMB = generate_sha256_implCompress(StubId::stubgen_sha256_implCompressMB_id);
     }
     if (UseSHA512Intrinsics) {
-      StubRoutines::_sha512_implCompress   = generate_sha512_implCompress(StubGenStubId::sha512_implCompress_id);
-      StubRoutines::_sha512_implCompressMB = generate_sha512_implCompress(StubGenStubId::sha512_implCompressMB_id);
+      StubRoutines::_sha512_implCompress   = generate_sha512_implCompress(StubId::stubgen_sha512_implCompress_id);
+      StubRoutines::_sha512_implCompressMB = generate_sha512_implCompress(StubId::stubgen_sha512_implCompressMB_id);
     }
     if (UseSHA3Intrinsics) {
-      StubRoutines::_sha3_implCompress     = generate_sha3_implCompress(StubGenStubId::sha3_implCompress_id);
+
       StubRoutines::_double_keccak         = generate_double_keccak();
-      StubRoutines::_sha3_implCompressMB   = generate_sha3_implCompress(StubGenStubId::sha3_implCompressMB_id);
+      if (UseSIMDForSHA3Intrinsic) {
+         StubRoutines::_sha3_implCompress     = generate_sha3_implCompress(StubId::stubgen_sha3_implCompress_id);
+         StubRoutines::_sha3_implCompressMB   = generate_sha3_implCompress(StubId::stubgen_sha3_implCompressMB_id);
+      } else {
+         StubRoutines::_sha3_implCompress     = generate_sha3_implCompress_gpr(StubId::stubgen_sha3_implCompress_id);
+         StubRoutines::_sha3_implCompressMB   = generate_sha3_implCompress_gpr(StubId::stubgen_sha3_implCompressMB_id);
+      }
     }
 
     if (UsePoly1305Intrinsics) {
@@ -10070,28 +11962,31 @@ class StubGenerator: public StubCodeGenerator {
   }
 
  public:
-  StubGenerator(CodeBuffer* code, StubGenBlobId blob_id) : StubCodeGenerator(code, blob_id) {
+  StubGenerator(CodeBuffer* code, BlobId blob_id) : StubCodeGenerator(code, blob_id) {
     switch(blob_id) {
-    case initial_id:
+    case BlobId::stubgen_preuniverse_id:
+      generate_preuniverse_stubs();
+      break;
+    case BlobId::stubgen_initial_id:
       generate_initial_stubs();
       break;
-     case continuation_id:
+     case BlobId::stubgen_continuation_id:
       generate_continuation_stubs();
       break;
-    case compiler_id:
+    case BlobId::stubgen_compiler_id:
       generate_compiler_stubs();
       break;
-    case final_id:
+    case BlobId::stubgen_final_id:
       generate_final_stubs();
       break;
     default:
-      fatal("unexpected blob id: %d", blob_id);
+      fatal("unexpected blob id: %s", StubInfo::name(blob_id));
       break;
     };
   }
 }; // end class declaration
 
-void StubGenerator_generate(CodeBuffer* code, StubGenBlobId blob_id) {
+void StubGenerator_generate(CodeBuffer* code, BlobId blob_id) {
   StubGenerator g(code, blob_id);
 }
 

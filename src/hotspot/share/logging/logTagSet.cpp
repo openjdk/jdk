@@ -34,6 +34,7 @@
 #include "memory/allocation.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 
 LogTagSet*  LogTagSet::_list      = nullptr;
 size_t      LogTagSet::_ntagsets  = 0;
@@ -75,7 +76,7 @@ void LogTagSet::log(LogLevelType level, const char* msg) {
   // happen before the creation of LogDecorations instance so
   // wait_until_no_readers() in LogConfiguration::configure_output()
   // synchronizes _decorations as well. The order is guaranteed by
-  // the implied memory order of Atomic::add().
+  // the implied memory order of AtomicAccess::add().
   LogOutputList::Iterator it = _output_list.iterator(level);
   LogDecorations decorations(level, *this, _decorators);
 
@@ -149,7 +150,7 @@ void LogTagSet::vwrite(LogLevelType level, const char* fmt, va_list args) {
   } else {
     // Buffer too small, allocate a large enough buffer using malloc/free to avoid circularity.
     // Since logging is a very basic function, conceivably used within NMT itself, avoid os::malloc/free
-    ALLOW_C_FUNCTION(::malloc, char* newbuf = (char*)::malloc(newbuf_len * sizeof(char));)
+    char* newbuf = (char*)permit_forbidden_function::malloc(newbuf_len * sizeof(char));
     if (newbuf != nullptr) {
       prefix_len = _write_prefix(newbuf, newbuf_len);
       ret = os::vsnprintf(newbuf + prefix_len, newbuf_len - prefix_len, fmt, saved_args);
@@ -159,7 +160,7 @@ void LogTagSet::vwrite(LogLevelType level, const char* fmt, va_list args) {
       if (ret < 0) {
         log(level, "Log message newbuf issue");
       }
-      ALLOW_C_FUNCTION(::free, ::free(newbuf);)
+      permit_forbidden_function::free(newbuf);
     } else {
       // Native OOM, use buf to output the least message. At this moment buf is full of either
       // truncated prefix or truncated prefix + string. Put trunc_msg at the end of buf.

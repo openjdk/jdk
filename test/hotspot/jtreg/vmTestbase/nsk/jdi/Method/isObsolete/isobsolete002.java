@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,16 +259,7 @@ public class isobsolete002 extends JDIBase {
             return;
         }
 
-
-        String bPointMethod = "methodForCommunication";
-        String lineForComm  = "lineForComm";
-        BreakpointRequest bpRequest;
-        ThreadReference mainThread = debuggee.threadByName("main");
-
-        bpRequest = settingBreakpoint(mainThread,
-                                      debuggeeClass,
-                                      bPointMethod, lineForComm, "zero");
-        bpRequest.enable();
+        setupBreakpointForCommunication(debuggeeClass);
 
     //------------------------------------------------------  testing section
 
@@ -284,6 +275,7 @@ public class isobsolete002 extends JDIBase {
 
             vm.resume();
             breakpointForCommunication();
+            ThreadReference mainThread = bpEvent.thread(); // bpEvent saved by breakpointForCommunication()
 
             int instruction = ((IntegerValue)
                                (debuggeeClass.getValue(debuggeeClass.fieldByName("instruction")))).value();
@@ -315,7 +307,8 @@ public class isobsolete002 extends JDIBase {
                       log2("     : isObsolete() == false for m2 method before redefineClasses() invocation");
 
                   // Create breakpoint request to have isobsolete002b.m2 on the top of the stack.
-                  bpRequest = debuggee.makeBreakpoint(redefClass, methodName, brkpLineNumber);
+                  BreakpointRequest bpRequest =
+                      debuggee.makeBreakpoint(redefClass, methodName, brkpLineNumber);
                   bpRequest.addThreadFilter(mainThread);
                   bpRequest.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
                   bpRequest.putProperty("number", "one");

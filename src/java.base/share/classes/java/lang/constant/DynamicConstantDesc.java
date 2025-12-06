@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
+
 import static java.lang.constant.ConstantDescs.CD_Class;
 import static java.lang.constant.ConstantDescs.CD_VarHandle;
 import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
@@ -56,6 +58,7 @@ import static jdk.internal.constant.ConstantUtils.validateMemberName;
  *
  * @since 12
  */
+@AOTSafeClassInitializer // for PrimitiveClassDescImpl
 public abstract non-sealed class DynamicConstantDesc<T>
         implements ConstantDesc {
 

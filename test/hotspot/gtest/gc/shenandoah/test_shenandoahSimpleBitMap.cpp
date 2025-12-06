@@ -23,10 +23,12 @@
 
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.inline.hpp"
-
-#include <iostream>
 #include "utilities/ostream.hpp"
+
 #include "utilities/vmassert_uninstall.hpp"
+BEGIN_ALLOW_FORBIDDEN_FUNCTIONS
+#include <iostream>
+END_ALLOW_FORBIDDEN_FUNCTIONS
 #include "utilities/vmassert_reinstall.hpp"
 #include "unittest.hpp"
 
@@ -441,7 +443,7 @@ public:
 
 };
 
-TEST(BasicShenandoahSimpleBitMapTest, minimum_test) {
+TEST_F(ShenandoahSimpleBitMapTest, minimum_test) {
 
   bool result = ShenandoahSimpleBitMapTest::run_test();
   ASSERT_EQ(result, true);

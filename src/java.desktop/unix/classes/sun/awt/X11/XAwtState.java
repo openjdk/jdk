@@ -35,7 +35,7 @@ package sun.awt.X11;
 import java.awt.Component;
 import java.lang.ref.WeakReference;
 
-class XAwtState {
+final class XAwtState {
     /**
      * The mouse is over this component.
      * If the component is not disabled, it received MOUSE_ENTERED but no MOUSE_EXITED.

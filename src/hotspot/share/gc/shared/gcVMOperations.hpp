@@ -37,19 +37,22 @@
 // a set of operations (VM_Operation) related to GC.
 //
 //  VM_Operation
-//    VM_GC_Sync_Operation
+//    VM_Heap_Sync_Operation
 //      VM_GC_Operation
-//        VM_GC_HeapInspection
-//        VM_PopulateDynamicDumpSharedSpace
-//        VM_SerialGCCollect
-//        VM_ParallelGCCollect
-//        VM_CollectForAllocation
-//          VM_SerialCollectForAllocation
-//          VM_ParallelCollectForAllocation
+//        VM_GC_Collect_Operation
+//          VM_SerialGCCollect
+//          VM_ParallelGCCollect
+//          VM_CollectForAllocation
+//            VM_SerialCollectForAllocation
+//            VM_ParallelCollectForAllocation
+//          VM_CollectForMetadataAllocation
+//        VM_GC_Service_Operation
+//          VM_GC_HeapInspection
 //      VM_Verify
+//      VM_PopulateDynamicDumpSharedSpace
 //      VM_PopulateDumpSharedSpace
 //
-//  VM_GC_Sync_Operation
+//  VM_Heap_Sync_Operation
 //   - implements only synchronization with other VM operations of the
 //     same kind using the Heap_lock, not actually doing a GC.
 //
@@ -84,10 +87,10 @@
 //   - creates the CDS archive
 //
 
-class VM_GC_Sync_Operation : public VM_Operation {
+class VM_Heap_Sync_Operation : public VM_Operation {
 public:
 
-  VM_GC_Sync_Operation() : VM_Operation() { }
+  VM_Heap_Sync_Operation() : VM_Operation() { }
 
   // Acquires the Heap_lock.
   virtual bool doit_prologue();
@@ -95,44 +98,35 @@ public:
   virtual void doit_epilogue();
 };
 
-class VM_Verify : public VM_GC_Sync_Operation {
+class VM_Verify : public VM_Heap_Sync_Operation {
  public:
   VMOp_Type type() const { return VMOp_Verify; }
   void doit();
 };
 
-class VM_GC_Operation: public VM_GC_Sync_Operation {
+class VM_GC_Operation: public VM_Heap_Sync_Operation {
  protected:
   uint           _gc_count_before;         // gc count before acquiring the Heap_lock
   uint           _full_gc_count_before;    // full gc count before acquiring the Heap_lock
   bool           _full;                    // whether a "full" collection
   bool           _prologue_succeeded;      // whether doit_prologue succeeded
+  bool           _is_shutting_down;        // whether the operation found that the GC is shutting down
   GCCause::Cause _gc_cause;                // the putative cause for this gc op
 
   virtual bool skip_operation() const;
 
  public:
   VM_GC_Operation(uint gc_count_before,
-                  GCCause::Cause _cause,
-                  uint full_gc_count_before = 0,
-                  bool full = false) : VM_GC_Sync_Operation() {
-    _full = full;
-    _prologue_succeeded = false;
-    _gc_count_before    = gc_count_before;
-
-    _gc_cause           = _cause;
-
-    _full_gc_count_before = full_gc_count_before;
-    // In ParallelScavengeHeap::mem_allocate() collections can be
-    // executed within a loop and _all_soft_refs_clear can be set
-    // true after they have been cleared by a collection and another
-    // collection started so that _all_soft_refs_clear can be true
-    // when this collection is started.  Don't assert that
-    // _all_soft_refs_clear have to be false here even though
-    // mutators have run.  Soft refs will be cleared again in this
-    // collection.
-  }
-  ~VM_GC_Operation();
+                  GCCause::Cause cause,
+                  uint full_gc_count_before,
+                  bool full)
+    : VM_Heap_Sync_Operation(),
+      _gc_count_before(gc_count_before),
+      _full_gc_count_before(full_gc_count_before),
+      _full(full),
+      _prologue_succeeded(false),
+      _is_shutting_down(false),
+      _gc_cause(cause) {}
 
   virtual const char* cause() const;
 
@@ -143,37 +137,67 @@ class VM_GC_Operation: public VM_GC_Sync_Operation {
   virtual void doit_epilogue();
 
   virtual bool allow_nested_vm_operations() const  { return true; }
-  bool prologue_succeeded() const { return _prologue_succeeded; }
+  virtual bool gc_succeeded() const { return _prologue_succeeded; }
+
+  // This function returns the value of CollectedHeap::is_shutting_down() that
+  // was recorded in the prologue. Unlike CollectedHeap::is_shutting_down(),
+  // this function can be called without acquiring the Heap_lock.
+  //
+  // This function exists so that code that tries to schedule a GC operation
+  // can check if it was refused because the JVM is about to shut down.
+  bool is_shutting_down() const { return _is_shutting_down; }
 
   static void notify_gc_begin(bool full = false);
   static void notify_gc_end();
 };
 
+class VM_GC_Service_Operation : public VM_GC_Operation {
+public:
+  VM_GC_Service_Operation(uint gc_count_before,
+                          GCCause::Cause _cause,
+                          uint full_gc_count_before,
+                          bool full) :
+    VM_GC_Operation(gc_count_before, _cause, full_gc_count_before, full) {}
+};
 
-class VM_GC_HeapInspection: public VM_GC_Operation {
+class VM_GC_Collect_Operation : public VM_GC_Operation {
+public:
+  VM_GC_Collect_Operation(uint gc_count_before,
+                          GCCause::Cause _cause,
+                          uint full_gc_count_before = 0,
+                          bool full = false) :
+    VM_GC_Operation(gc_count_before, _cause, full_gc_count_before, full) {}
+
+  bool is_gc_operation() const { return true; }
+};
+
+
+class VM_GC_HeapInspection : public VM_GC_Service_Operation {
  private:
   outputStream* _out;
   bool _full_gc;
   uint _parallel_thread_num;
+
  public:
   VM_GC_HeapInspection(outputStream* out, bool request_full_gc,
                        uint parallel_thread_num = 1) :
-    VM_GC_Operation(0 /* total collections,      dummy, ignored */,
-                    GCCause::_heap_inspection /* GC Cause */,
-                    0 /* total full collections, dummy, ignored */,
-                    request_full_gc), _out(out), _full_gc(request_full_gc),
-                    _parallel_thread_num(parallel_thread_num) {}
+    VM_GC_Service_Operation(0 /* total collections,      dummy, ignored */,
+                            GCCause::_heap_inspection /* GC Cause */,
+                            0 /* total full collections, dummy, ignored */,
+                            request_full_gc), _out(out), _full_gc(request_full_gc),
+                            _parallel_thread_num(parallel_thread_num) {}
 
   ~VM_GC_HeapInspection() {}
   virtual VMOp_Type type() const { return VMOp_GC_HeapInspection; }
   virtual bool skip_operation() const;
   virtual bool doit_prologue();
   virtual void doit();
+
  protected:
   bool collect();
 };
 
-class VM_CollectForAllocation : public VM_GC_Operation {
+class VM_CollectForAllocation : public VM_GC_Collect_Operation {
  protected:
   size_t    _word_size; // Size of object to be allocated (in number of words)
   HeapWord* _result;    // Allocation result (null if allocation failed)
@@ -186,7 +210,7 @@ class VM_CollectForAllocation : public VM_GC_Operation {
   }
 };
 
-class VM_CollectForMetadataAllocation: public VM_GC_Operation {
+class VM_CollectForMetadataAllocation: public VM_GC_Collect_Operation {
  private:
   MetaWord*                _result;
   size_t                   _size;     // size of object to be allocated
@@ -198,8 +222,7 @@ class VM_CollectForMetadataAllocation: public VM_GC_Operation {
                                   size_t size,
                                   Metaspace::MetadataType mdtype,
                                   uint gc_count_before,
-                                  uint full_gc_count_before,
-                                  GCCause::Cause gc_cause);
+                                  uint full_gc_count_before);
 
   virtual VMOp_Type type() const { return VMOp_CollectForMetadataAllocation; }
   virtual void doit();

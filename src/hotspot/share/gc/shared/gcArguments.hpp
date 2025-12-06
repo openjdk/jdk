@@ -35,7 +35,7 @@ extern size_t SpaceAlignment;
 
 class GCArguments {
 protected:
-  // Initialize HeapAlignment, SpaceAlignment, and extra alignments (E.g. GenAlignment)
+  // Initialize HeapAlignment, SpaceAlignment
   virtual void initialize_alignments() = 0;
   virtual void initialize_heap_flags_and_sizes();
   virtual void initialize_size_info();
@@ -45,6 +45,8 @@ protected:
 
 public:
   virtual void initialize();
+
+  // Return the (conservative) maximum heap alignment
   virtual size_t conservative_max_heap_alignment() = 0;
 
   // Used by heap size heuristics to determine max
@@ -59,8 +61,6 @@ public:
   }
 
   void initialize_heap_sizes();
-
-  static size_t compute_heap_alignment();
 };
 
 #endif // SHARE_GC_SHARED_GCARGUMENTS_HPP

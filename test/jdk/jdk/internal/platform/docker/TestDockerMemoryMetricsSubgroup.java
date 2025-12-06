@@ -22,11 +22,13 @@
  */
 
 import jdk.internal.platform.Metrics;
+import jdk.test.lib.Container;
 import jdk.test.lib.Utils;
 import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerfileConfig;
 import jdk.test.lib.containers.docker.DockerRunOptions;
 import jdk.test.lib.containers.docker.DockerTestUtils;
+import jdk.test.lib.containers.docker.ContainerRuntimeVersionTestUtils;
 
 import java.util.ArrayList;
 
@@ -38,10 +40,11 @@ import jtreg.SkippedException;
  * @key cgroups
  * @summary Cgroup v1 subsystem fails to set subsystem path
  * @requires container.support
+ * @requires !vm.asan
  * @library /test/lib
  * @modules java.base/jdk.internal.platform
  * @build MetricsMemoryTester
- * @run main TestDockerMemoryMetricsSubgroup
+ * @run main/timeout=480 TestDockerMemoryMetricsSubgroup
  */
 
 public class TestDockerMemoryMetricsSubgroup {
@@ -55,10 +58,14 @@ public class TestDockerMemoryMetricsSubgroup {
             System.out.println("Cgroup not configured.");
             return;
         }
-        if (!DockerTestUtils.canTestDocker()) {
-            System.out.println("Unable to run docker tests.");
-            return;
+        DockerTestUtils.checkCanTestDocker();
+
+        ContainerRuntimeVersionTestUtils.checkContainerVersionSupported();
+
+        if (DockerTestUtils.isRootless()) {
+            throw new SkippedException("Test skipped in rootless mode");
         }
+
         if ("cgroupv1".equals(metrics.getProvider())) {
             testMemoryLimitSubgroupV1("200m", "400m", false);
             testMemoryLimitSubgroupV1("500m", "1G", false);

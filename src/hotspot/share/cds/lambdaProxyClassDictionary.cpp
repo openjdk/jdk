@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotClassFilter.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cdsProtectionDomain.hpp"
@@ -98,7 +99,7 @@ void LambdaProxyClassDictionary::dumptime_init() {
 }
 
 bool LambdaProxyClassDictionary::is_supported_invokedynamic(BootstrapInfo* bsi) {
-  LogTarget(Debug, cds, lambda) log;
+  LogTarget(Debug, aot, lambda) log;
   if (bsi->arg_values() == nullptr || !bsi->arg_values()->is_objArray()) {
     if (log.is_enabled()) {
       LogStream log_stream(log);
@@ -169,7 +170,6 @@ void LambdaProxyClassDictionary::add_lambda_proxy_class(InstanceKlass* caller_ik
 
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
 
-  lambda_ik->assign_class_loader_type();
   lambda_ik->set_shared_classpath_index(caller_ik->shared_classpath_index());
   InstanceKlass* nest_host = caller_ik->nest_host(CHECK);
   assert(nest_host != nullptr, "unexpected nullptr nest_host");
@@ -247,12 +247,12 @@ InstanceKlass* LambdaProxyClassDictionary::find_lambda_proxy_class(InstanceKlass
   assert(method_type != nullptr, "sanity");
   assert(instantiated_method_type != nullptr, "sanity");
 
-  if (!caller_ik->is_shared()     ||
-      !invoked_name->is_shared()  ||
-      !invoked_type->is_shared()  ||
-      !method_type->is_shared()   ||
-      (member_method != nullptr && !member_method->is_shared()) ||
-      !instantiated_method_type->is_shared()) {
+  if (!caller_ik->in_aot_cache()     ||
+      !invoked_name->in_aot_cache()  ||
+      !invoked_type->in_aot_cache()  ||
+      !method_type->in_aot_cache()   ||
+      (member_method != nullptr && !member_method->in_aot_cache()) ||
+      !instantiated_method_type->in_aot_cache()) {
     // These can't be represented as u4 offset, but we wouldn't have archived a lambda proxy in this case anyway.
     return nullptr;
   }
@@ -267,9 +267,9 @@ InstanceKlass* LambdaProxyClassDictionary::find_lambda_proxy_class(InstanceKlass
   const RunTimeLambdaProxyClassInfo* info = _runtime_static_table.lookup(&key, hash, 0);
   InstanceKlass* proxy_klass = find_lambda_proxy_class(info);
   if (proxy_klass == nullptr) {
-    if (info != nullptr && log_is_enabled(Debug, cds)) {
+    if (info != nullptr && log_is_enabled(Debug, aot)) {
       ResourceMark rm;
-      log_debug(cds)("Used all static archived lambda proxy classes for: %s %s%s",
+      log_debug(aot)("Used all static archived lambda proxy classes for: %s %s%s",
                      caller_ik->external_name(), invoked_name->as_C_string(), invoked_type->as_C_string());
     }
   } else {
@@ -280,9 +280,9 @@ InstanceKlass* LambdaProxyClassDictionary::find_lambda_proxy_class(InstanceKlass
   info = _runtime_dynamic_table.lookup(&key, hash, 0);
   proxy_klass = find_lambda_proxy_class(info);
   if (proxy_klass == nullptr) {
-    if (info != nullptr && log_is_enabled(Debug, cds)) {
+    if (info != nullptr && log_is_enabled(Debug, aot)) {
       ResourceMark rm;
-      log_debug(cds)("Used all dynamic archived lambda proxy classes for: %s %s%s",
+      log_debug(aot)("Used all dynamic archived lambda proxy classes for: %s %s%s",
                      caller_ik->external_name(), invoked_name->as_C_string(), invoked_type->as_C_string());
     }
   }
@@ -305,9 +305,9 @@ InstanceKlass* LambdaProxyClassDictionary::find_lambda_proxy_class(const RunTime
       prev_klass->set_next_link(nullptr);
       proxy_klass = curr_klass;
       proxy_klass->clear_lambda_proxy_is_available();
-      if (log_is_enabled(Debug, cds)) {
+      if (log_is_enabled(Debug, aot)) {
         ResourceMark rm;
-        log_debug(cds)("Loaded lambda proxy: %s ", proxy_klass->external_name());
+        log_debug(aot)("Loaded lambda proxy: %s ", proxy_klass->external_name());
       }
     }
   }
@@ -325,7 +325,7 @@ InstanceKlass* LambdaProxyClassDictionary::load_and_init_lambda_proxy_class(Inst
 
   InstanceKlass* shared_nest_host = get_shared_nest_host(lambda_ik);
   assert(shared_nest_host != nullptr, "unexpected nullptr _nest_host");
-  assert(shared_nest_host->is_shared(), "nest host must be in CDS archive");
+  assert(shared_nest_host->in_aot_cache(), "nest host must be in aot metaspace");
 
   Klass* resolved_nest_host = SystemDictionary::resolve_or_fail(shared_nest_host->name(), class_loader, true, CHECK_NULL);
   if (resolved_nest_host != shared_nest_host) {
@@ -357,7 +357,7 @@ InstanceKlass* LambdaProxyClassDictionary::load_and_init_lambda_proxy_class(Inst
   InstanceKlass* nest_host = caller_ik->nest_host(THREAD);
   assert(nest_host == shared_nest_host, "mismatched nest host");
 
-  EventClassLoad class_load_start_event;
+  EventClassLoad class_load_event;
 
   // Add to class hierarchy, and do possible deoptimizations.
   lambda_ik->add_to_hierarchy(THREAD);
@@ -368,8 +368,8 @@ InstanceKlass* LambdaProxyClassDictionary::load_and_init_lambda_proxy_class(Inst
   if (JvmtiExport::should_post_class_load()) {
     JvmtiExport::post_class_load(THREAD, lambda_ik);
   }
-  if (class_load_start_event.should_commit()) {
-    SystemDictionary::post_class_load_event(&class_load_start_event, lambda_ik, ClassLoaderData::class_loader_data(class_loader()));
+  if (class_load_event.should_commit()) {
+    JFR_ONLY(SystemDictionary::post_class_load_event(&class_load_event, lambda_ik, ClassLoaderData::class_loader_data(class_loader()));)
   }
 
   lambda_ik->initialize(CHECK_NULL);
@@ -390,6 +390,10 @@ void LambdaProxyClassDictionary::add_to_dumptime_table(LambdaProxyClassKey& key,
                                                        InstanceKlass* proxy_klass) {
   assert_lock_strong(DumpTimeTable_lock);
 
+  if (AOTClassFilter::is_aot_tooling_class(proxy_klass)) {
+    return;
+  }
+
   bool created;
   DumpTimeLambdaProxyClassInfo* info = _dumptime_table->put_if_absent(key, &created);
   info->add_proxy_klass(proxy_klass);
@@ -408,7 +412,7 @@ public:
     // In static dump, info._proxy_klasses->at(0) is already relocated to point to the archived class
     // (not the original class).
     ResourceMark rm;
-    log_info(cds,dynamic)("Archiving hidden %s", info._proxy_klasses->at(0)->external_name());
+    log_info(cds, dynamic)("Archiving hidden %s", info._proxy_klasses->at(0)->external_name());
     size_t byte_size = sizeof(RunTimeLambdaProxyClassInfo);
     RunTimeLambdaProxyClassInfo* runtime_info =
         (RunTimeLambdaProxyClassInfo*)ArchiveBuilder::ro_region_alloc(byte_size);
@@ -467,12 +471,12 @@ class LambdaProxyClassDictionary::CleanupDumpTimeLambdaProxyClassTable: StackObj
 
     // If the caller class and/or nest_host are excluded, the associated lambda proxy
     // must also be excluded.
-    bool always_exclude = SystemDictionaryShared::check_for_exclusion(caller_ik, nullptr) ||
-                          SystemDictionaryShared::check_for_exclusion(nest_host, nullptr);
+    bool always_exclude = SystemDictionaryShared::should_be_excluded(caller_ik) ||
+                          SystemDictionaryShared::should_be_excluded(nest_host);
 
     for (int i = info._proxy_klasses->length() - 1; i >= 0; i--) {
       InstanceKlass* ik = info._proxy_klasses->at(i);
-      if (always_exclude || SystemDictionaryShared::check_for_exclusion(ik, nullptr)) {
+      if (always_exclude || SystemDictionaryShared::should_be_excluded(ik)) {
         LambdaProxyClassDictionary::reset_registered_lambda_proxy_class(ik);
         info._proxy_klasses->remove_at(i);
       }
@@ -514,7 +518,7 @@ void LambdaProxyClassDictionary::print_on(const char* prefix,
   if (!dictionary->empty()) {
     st->print_cr("%sShared Lambda Dictionary", prefix);
     SharedLambdaDictionaryPrinter ldp(st, start_index);
-    dictionary->iterate(&ldp);
+    dictionary->iterate_all(&ldp);
   }
 }
 

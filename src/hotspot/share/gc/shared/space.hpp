@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,14 +94,14 @@ public:
   size_t free()     const { return byte_size(top(),    end()); }
 
   void print() const;
-  void print_on(outputStream* st) const;
+  void print_on(outputStream* st, const char* prefix) const;
 
   // Initialization.
   // "initialize" should be called once on a space, before it is used for
   // any purpose.  The "mr" arguments gives the bounds of the space, and
   // the "clear_space" argument should be true unless the memory in "mr" is
   // known to be zeroed.
-  void initialize(MemRegion mr, bool clear_space, bool mangle_space);
+  void initialize(MemRegion mr, bool clear_space);
 
   // The "clear" method must be called on a region that may have
   // had allocation performed in it, but is now to be considered empty.

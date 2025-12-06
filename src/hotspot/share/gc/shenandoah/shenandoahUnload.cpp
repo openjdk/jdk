@@ -29,11 +29,11 @@
 #include "code/codeBehaviours.hpp"
 #include "code/codeCache.hpp"
 #include "code/dependencyContext.hpp"
-#include "gc/shared/gcBehaviours.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
+#include "gc/shared/gcBehaviours.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
-#include "gc/shenandoah/shenandoahNMethod.inline.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
+#include "gc/shenandoah/shenandoahNMethod.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.hpp"
 #include "gc/shenandoah/shenandoahUnload.hpp"
@@ -50,7 +50,7 @@ private:
 
 public:
   ShenandoahIsUnloadingOopClosure() :
-    _marking_context(ShenandoahHeap::heap()->complete_marking_context()),
+    _marking_context(ShenandoahHeap::heap()->global_generation()->complete_marking_context()),
     _is_unloading(false) {
   }
 
@@ -103,7 +103,7 @@ public:
   }
 
   virtual bool is_safe(nmethod* nm) {
-    if (SafepointSynchronize::is_at_safepoint() || nm->is_unloading()) {
+    if (SafepointSynchronize::is_at_safepoint() || nm->is_unloading() || (NMethodState_lock->owned_by_self() && nm->is_not_installed())) {
       return true;
     }
 

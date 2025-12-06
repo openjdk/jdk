@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8266666 8281969 8319339
+ * @bug 8266666 8281969 8319339 8338833 8371896
  * @summary Implementation for snippets
  * @library /tools/lib ../../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -180,7 +180,7 @@ public class TestSnippetMarkup extends SnippetTester {
                         replace("""
                                 link(First) link(line)
                                   Second line
-                                """, "link\\((.+?)\\)", r -> link(true, "java.lang.Object#Object", r.group(1)))
+                                """, "link\\((.+?)\\)", r -> link("java.lang.Object#Object", r.group(1)))
                 ),
                 new TestCase(
                         """
@@ -190,7 +190,7 @@ public class TestSnippetMarkup extends SnippetTester {
                         replace("""
                                 First line
                                 link(  )Secondlink( )line
-                                """, "link\\((.+?)\\)", r -> link(true, "java.lang.System#out", r.group(1)))
+                                """, "link\\((.+?)\\)", r -> link("java.lang.System#out", r.group(1)))
                 ),
                 new TestCase(
                         """
@@ -200,10 +200,115 @@ public class TestSnippetMarkup extends SnippetTester {
                         replace("""
                                 First line
                                 link(  )Secondlink( )line
-                                """, "link\\((.+?)\\)", r -> link(true, "java.lang.System#in", r.group(1)))
+                                """, "link\\((.+?)\\)", r -> link("java.lang.System#in", r.group(1)))
                 )
         );
         testPositive(base, testCases);
+    }
+
+    // Test combinations of @link, @highlight and @replace on the same or overlapping substrings.
+    @Test
+    public void testLinkHighlightReplace(Path base) throws Exception {
+        var testCases = List.of(
+                new TestCase(
+                        """
+                                void method(Object o);  // @link substring=Object target=Object @highlight substring=Object
+                                """,
+                        replace("""
+                                void method(<span class="bold">link(Object)</span> o);
+                                """, "link\\((.+?)\\)", r -> link("Object", r.group(1)))
+                ),
+                new TestCase(
+                        """
+                                void method(Object o); // @replace substring=Object replacement=String \
+                                @highlight substring=String @link substring=String target=String
+                                """,
+                        replace("""
+                                void method(<span class="bold">link(String)</span> o);
+                                """, "link\\((.+?)\\)", r -> link("String", r.group(1)))
+                ),
+                new TestCase(
+                        """
+                                void method(Object o);  // @highlight substring="(Object o)" @link substring=Object target=Object
+                                """,
+                        replace("""
+                                void method<span class="bold">(</span><span class="bold">link(Object)</span><span class="bold"> o)</span>;
+                                """, "link\\((.+?)\\)", r -> link("Object", r.group(1)))
+                ),
+                new TestCase(
+                        """
+                                void method(Object o); // @replace substring=Object replacement=String \
+                                @link substring=String target=String @highlight substring="(String o)"
+                                """,
+                        replace("""
+                                void method<span class="bold">(</span><span class="bold">link(String)</span><span class="bold"> o)</span>;
+                                """, "link\\((.+?)\\)", r -> link("String", r.group(1)))
+                ),
+                new TestCase(
+                        """
+                                void method(Object o); // @replace substring=Object replacement=String \
+                                @link substring="String o" target=String @highlight substring=String
+                                """,
+                        replace("""
+                                void method(<span class="bold">link(String)</span>link( o));
+                                """, "link\\((.+?)\\)", r -> link("String", r.group(1)))
+                ),
+                // replacement subtext does not retain links and highlights of the replaced subtext
+                new TestCase(
+                        """
+                                void method(Object o); // @link substring=Object target=Object \
+                                @highlight substring=Object @replace substring=Object replacement=String
+                                """,
+                        """
+                                void method(String o);
+                                """
+                )
+        );
+        testPositive(base, testCases);
+    }
+
+    /*
+     * Make sure an error is generated for links with invalid reference.
+     */
+    @Test
+    public void testLinkReferenceNotFound(Path base) throws Exception {
+        Path srcDir = base.resolve("src");
+        Path outDir = base.resolve("out");
+
+        new ClassBuilder(tb, "pkg.A")
+                .setModifiers("public", "class")
+                .addMembers(
+                        ClassBuilder.MethodBuilder
+                                .parse("public void inline() { }")
+                                .setComments("""
+                                    First sentence.
+                                    {@snippet :
+                                        First line  // @link substring="First" target="String"
+                                        Second line // @link substring="Second" target="StringReader"
+                                    }
+                                """))
+                .write(srcDir);
+
+        javadoc("-d", outDir.toString(),
+                "-sourcepath", srcDir.toString(),
+                "pkg");
+
+        checkExit(Exit.ERROR);
+        checkOutput(Output.OUT, false,
+                """
+                        error: reference not found: String
+                        """);
+        checkOutput(Output.OUT, true,
+                """
+                        A.java:5: error: reference not found: StringReader
+                        """);
+        checkOutput("pkg/A.html", true,
+                """
+                        <details class="invalid-tag">
+                        <summary>invalid reference</summary>
+                        <pre>Second</pre>
+                        </details>""");
+        checkNoCrashes();
     }
 
     @Test
@@ -602,7 +707,7 @@ First line // @highlight :
                         replace("""
                                 First line
                                 link( Third line)
-                                """, "link\\((.+?)\\)", r -> link(true, "java.lang.Object#equals(Object)", r.group(1)))
+                                """, "link\\((.+?)\\)", r -> link("java.lang.Object#equals(Object)", r.group(1)))
                 ),
                 new TestCase("""
                         First line
@@ -866,8 +971,7 @@ First line // @highlight :
         checkNoCrashes();
     }
 
-    private static String link(boolean linkPlain,
-                               String targetReference,
+    private static String link(String targetReference,
                                String content)
             throws UncheckedIOException {
 
@@ -891,7 +995,7 @@ First line // @highlight :
 
         var LABEL_PLACEHOLDER = "label";
         var source = """
-                /** {@link %s %s} */
+                /** {@linkplain %s %s} */
                 public interface A { }
                 """.formatted(targetReference, LABEL_PLACEHOLDER);
 
@@ -1019,8 +1123,8 @@ First line // @highlight :
             }
             String output = fileManager.getFileString(DOCUMENTATION_OUTPUT, "A.html");
             // use the [^<>] regex to select HTML elements that immediately enclose "content"
-            Matcher m = Pattern.compile("(?is)(<a href=\"[^<>]*\" title=\"[^<>]*\" class=\"[^<>]*\"><code>)"
-                    +  LABEL_PLACEHOLDER + "(</code></a>)").matcher(output);
+            Matcher m = Pattern.compile("(?is)(<a href=\"[^<>]*\" class=\"[^<>]*\">)"
+                    +  LABEL_PLACEHOLDER + "(</a>)").matcher(output);
             if (!m.find()) {
                 throw new IOException(output);
             }

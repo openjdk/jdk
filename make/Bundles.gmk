@@ -125,13 +125,6 @@ define SetupBundleFileBody
 	    && $(TAR) cf - -$(TAR_INCLUDE_PARAM) $$($1_$$d_LIST_FILE) \
 	        $(TAR_IGNORE_EXIT_VALUE) ) \
 	    | ( $(CD) $(SUPPORT_OUTPUTDIR)/bundles/$1/$$($1_SUBDIR) && $(TAR) xf - )$$(NEWLINE) )
-          # Rename stripped pdb files
-          ifeq ($(call isTargetOs, windows)+$(SHIP_DEBUG_SYMBOLS), true+public)
-	    for f in `$(FIND) $(SUPPORT_OUTPUTDIR)/bundles/$1/$$($1_SUBDIR) -name "*.stripped.pdb"`; do \
-	      $(ECHO) Renaming $$$${f} to $$$${f%stripped.pdb}pdb $(LOG_INFO); \
-	      $(MV) $$$${f} $$$${f%stripped.pdb}pdb; \
-	    done
-          endif
           # Unzip any zipped debuginfo files
           ifeq ($$($1_UNZIP_DEBUGINFO), true)
 	    for f in `$(FIND) $(SUPPORT_OUTPUTDIR)/bundles/$1/$$($1_SUBDIR) -name "*.diz"`; do \
@@ -174,9 +167,11 @@ else
   JRE_IMAGE_HOMEDIR := $(JRE_IMAGE_DIR)
   JDK_BUNDLE_SUBDIR := jdk-$(VERSION_NUMBER)
   JRE_BUNDLE_SUBDIR := jre-$(VERSION_NUMBER)
+  STATIC_JDK_BUNDLE_SUBDIR := static-jdk-$(VERSION_NUMBER)
   ifneq ($(DEBUG_LEVEL), release)
     JDK_BUNDLE_SUBDIR := $(JDK_BUNDLE_SUBDIR)/$(DEBUG_LEVEL)
     JRE_BUNDLE_SUBDIR := $(JRE_BUNDLE_SUBDIR)/$(DEBUG_LEVEL)
+    STATIC_JDK_BUNDLE_SUBDIR := $(STATIC_JDK_BUNDLE_SUBDIR)/$(DEBUG_LEVEL)
   endif
   # In certain situations, the JDK_IMAGE_DIR points to an image without the
   # the symbols and demos. If so, the symobls and demos can be found in a
@@ -220,14 +215,6 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
   ifeq ($(call isTargetOs, windows), true)
     ifeq ($(SHIP_DEBUG_SYMBOLS), )
       JDK_SYMBOLS_EXCLUDE_PATTERN := %.pdb
-    else
-      ifeq ($(SHIP_DEBUG_SYMBOLS), public)
-        JDK_SYMBOLS_EXCLUDE_PATTERN := \
-            $(filter-out \
-                %.stripped.pdb, \
-                $(filter %.pdb, $(ALL_JDK_FILES)) \
-            )
-      endif
     endif
   endif
 
@@ -262,14 +249,6 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
   ifeq ($(call isTargetOs, windows), true)
     ifeq ($(SHIP_DEBUG_SYMBOLS), )
       JRE_SYMBOLS_EXCLUDE_PATTERN := %.pdb
-    else
-      ifeq ($(SHIP_DEBUG_SYMBOLS), public)
-        JRE_SYMBOLS_EXCLUDE_PATTERN := \
-            $(filter-out \
-                %.stripped.pdb, \
-                $(filter %.pdb, $(ALL_JRE_FILES)) \
-            )
-      endif
     endif
   endif
 
@@ -296,7 +275,7 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
 	$(call LogWarn, Signing $(JDK_BUNDLE_NAME))
 	$(CODESIGN) -s "$(MACOSX_CODESIGN_IDENTITY)" \
 	    --timestamp --options runtime --deep --force \
-	    $(JDK_MACOSX_BUNDLE_DIR_SIGNED)/$(JDK_MACOSX_BUNDLE_TOP_DIR) $(LOG_DEBUG)
+	    $(JDK_MACOSX_BUNDLE_DIR_SIGNED)/$(JDK_MACOSX_BUNDLE_TOP_SUBDIR) $(LOG_DEBUG)
 	$(TOUCH) $@
 
     $(eval $(call SetupBundleFile, BUILD_JDK_BUNDLE, \
@@ -325,7 +304,7 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
 	$(call LogWarn, Signing $(JRE_BUNDLE_NAME))
 	$(CODESIGN) -s "$(MACOSX_CODESIGN_IDENTITY)" \
 	    --timestamp --options runtime --deep --force \
-	    $(JRE_MACOSX_BUNDLE_DIR_SIGNED)/$(JRE_MACOSX_BUNDLE_TOP_DIR) $(LOG_DEBUG)
+	    $(JRE_MACOSX_BUNDLE_DIR_SIGNED)/$(JRE_MACOSX_BUNDLE_TOP_SUBDIR) $(LOG_DEBUG)
 	$(TOUCH) $@
 
     $(eval $(call SetupBundleFile, BUILD_JRE_BUNDLE, \
@@ -497,6 +476,21 @@ ifneq ($(filter static-libs-graal-bundles, $(MAKECMDGOALS)), )
   STATIC_LIBS_GRAAL_TARGETS += $(BUILD_STATIC_LIBS_GRAAL_BUNDLE)
 endif
 
+#################################################################################
+
+ifneq ($(filter static-jdk-bundles, $(MAKECMDGOALS)), )
+  STATIC_JDK_BUNDLE_FILES := $(call FindFiles, $(STATIC_JDK_IMAGE_DIR))
+
+  $(eval $(call SetupBundleFile, BUILD_STATIC_JDK_BUNDLE, \
+      BUNDLE_NAME := $(STATIC_JDK_BUNDLE_NAME), \
+      FILES := $(STATIC_JDK_BUNDLE_FILES), \
+      BASE_DIRS := $(STATIC_JDK_IMAGE_DIR), \
+      SUBDIR := $(STATIC_JDK_BUNDLE_SUBDIR), \
+  ))
+
+  STATIC_JDK_TARGETS += $(BUILD_STATIC_JDK_BUNDLE)
+endif
+
 ################################################################################
 
 product-bundles: $(PRODUCT_TARGETS)
@@ -507,11 +501,12 @@ docs-javase-bundles: $(DOCS_JAVASE_TARGETS)
 docs-reference-bundles: $(DOCS_REFERENCE_TARGETS)
 static-libs-bundles: $(STATIC_LIBS_TARGETS)
 static-libs-graal-bundles: $(STATIC_LIBS_GRAAL_TARGETS)
+static-jdk-bundles: $(STATIC_JDK_TARGETS)
 jcov-bundles: $(JCOV_TARGETS)
 
 .PHONY: product-bundles test-bundles \
     docs-jdk-bundles docs-javase-bundles docs-reference-bundles \
-    static-libs-bundles static-libs-graal-bundles jcov-bundles
+    static-libs-bundles static-libs-graal-bundles static-jdk-bundles jcov-bundles
 
 ################################################################################
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,6 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
      */
     final int javaMirrorOffset = getFieldOffset("Klass::_java_mirror", Integer.class, "OopHandle");
 
-    final int klassAccessFlagsOffset = getFieldOffset("Klass::_access_flags", Integer.class, "AccessFlags");
     final int klassLayoutHelperOffset = getFieldOffset("Klass::_layout_helper", Integer.class, "jint");
 
     final int klassLayoutHelperNeutralValue = getConstant("Klass::_lh_neutral_value", Integer.class);
@@ -93,6 +92,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int vtableEntrySize = getFieldValue("CompilerToVM::Data::sizeof_vtableEntry", Integer.class, "int");
     final int vtableEntryMethodOffset = getFieldOffset("vtableEntry::_method", Integer.class, "Method*");
 
+    final int instanceKlassAccessFlagsOffset = getFieldOffset("InstanceKlass::_access_flags", Integer.class, "AccessFlags");
     final int instanceKlassInitStateOffset = getFieldOffset("InstanceKlass::_init_state", Integer.class, "InstanceKlass::ClassState");
     final int instanceKlassConstantsOffset = getFieldOffset("InstanceKlass::_constants", Integer.class, "ConstantPool*");
     final int instanceKlassFieldInfoStreamOffset = getFieldOffset("InstanceKlass::_fieldinfo_stream", Integer.class, "Array<u1>*");
@@ -196,6 +196,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int constMethodFlagsCallerSensitive = getConstant("ConstMethodFlags::_misc_caller_sensitive", Integer.class);
     final int constMethodFlagsIntrinsicCandidate = getConstant("ConstMethodFlags::_misc_intrinsic_candidate", Integer.class);
     final int constMethodFlagsIsScoped = getConstant("ConstMethodFlags::_misc_is_scoped", Integer.class);
+    final int constMethodFlagsIsOverpass = getConstant("ConstMethodFlags::_misc_is_overpass", Integer.class);
     final int constMethodHasLineNumberTable = getConstant("ConstMethodFlags::_misc_has_linenumber_table", Integer.class);
     final int constMethodHasLocalVariableTable = getConstant("ConstMethodFlags::_misc_has_localvariable_table", Integer.class);
     final int constMethodHasMethodAnnotations = getConstant("ConstMethodFlags::_misc_has_method_annotations", Integer.class);

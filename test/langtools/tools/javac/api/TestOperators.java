@@ -25,7 +25,7 @@
  * @test
  * @bug     6338064 6346249 6340951 6392177
  * @summary Tree API: can't determine kind of operator
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @library ../lib
  * @modules jdk.compiler
  * @build JavacTestingAbstractProcessor TestOperators

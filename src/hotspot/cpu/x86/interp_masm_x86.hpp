@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
  protected:
 
   virtual void call_VM_base(Register oop_result,
-                            Register java_thread,
                             Register last_java_sp,
                             address  entry_point,
                             int number_of_arguments,
@@ -58,16 +57,29 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void jump_to_entry(address entry);
 
- virtual void check_and_handle_popframe(Register java_thread);
- virtual void check_and_handle_earlyret(Register java_thread);
+ virtual void check_and_handle_popframe();
+ virtual void check_and_handle_earlyret();
 
   void load_earlyret_value(TosState state);
 
+  // Use for vthread preemption
   void call_VM_preemptable(Register oop_result,
                            address entry_point,
-                           Register arg_1);
+                           Register arg_1,
+                           bool check_exceptions = true);
+  void call_VM_preemptable(Register oop_result,
+                           address entry_point,
+                           Register arg_1,
+                           Register arg_2,
+                           bool check_exceptions = true);
   void restore_after_resume(bool is_native);
+ private:
+  void call_VM_preemptable_helper(Register oop_result,
+                                  address entry_point,
+                                  int number_of_arguments,
+                                  bool check_exceptions);
 
+ public:
   // Interpreter-specific registers
   void save_bcp() {
     movptr(Address(rbp, frame::interpreter_frame_bcp_offset * wordSize), _bcp_register);
@@ -213,11 +225,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void verify_method_data_pointer();
 
   void set_mdp_data_at(Register mdp_in, int constant, Register value);
-  void increment_mdp_data_at(Address data, bool decrement = false);
-  void increment_mdp_data_at(Register mdp_in, int constant,
-                             bool decrement = false);
-  void increment_mdp_data_at(Register mdp_in, Register reg, int constant,
-                             bool decrement = false);
+  void increment_mdp_data_at(Register mdp_in, int constant);
+  void increment_mdp_data_at(Register mdp_in, Register index, int constant);
   void increment_mask_and_jump(Address counter_addr, Address mask,
                                Register scratch, Label* where);
   void set_mdp_flag_at(Register mdp_in, int flag_constant);
@@ -240,7 +249,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void update_mdp_by_constant(Register mdp_in, int constant);
   void update_mdp_for_ret(Register return_bci);
 
-  void profile_taken_branch(Register mdp, Register bumped_count);
+  void profile_taken_branch(Register mdp);
   void profile_not_taken_branch(Register mdp);
   void profile_call(Register mdp);
   void profile_final_call(Register mdp);
@@ -265,6 +274,9 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // support for jvmti/dtrace
   void notify_method_entry();
   void notify_method_exit(TosState state, NotifyMethodExitMode mode);
+
+  JFR_ONLY(void enter_jfr_critical_section();)
+  JFR_ONLY(void leave_jfr_critical_section();)
 
  private:
 

@@ -93,8 +93,7 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
                 switch (namesSuper[i]) {
                 case "":
                     // Fill in empty elements
-                    deriveFallbackName(namesSuper, i, locale,
-                                       ZoneInfo.getTimeZone(id).toZoneId().getRules().isFixedOffset());
+                    deriveFallbackName(namesSuper, i, locale, isFixedOffset(id));
                     break;
                 case NO_INHERITANCE_MARKER:
                     // CLDR's "no inheritance marker"
@@ -132,7 +131,7 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
 
     // Derive fallback time zone name according to LDML's logic
     private void deriveFallbackNames(String[] names, Locale locale) {
-        boolean noDST = ZoneInfo.getTimeZone(names[0]).toZoneId().getRules().isFixedOffset();
+        boolean noDST = isFixedOffset(names[0]);
 
         for (int i = INDEX_STD_LONG; i <= INDEX_GEN_SHORT; i++) {
             deriveFallbackName(names, i, locale, noDST);
@@ -311,5 +310,12 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
             return MessageFormat.format(gmtFormat,
                     String.format(l, hourFormat, offset / 60, offset % 60));
         }
+    }
+
+    // ZoneInfo.getTimeZone() may return null if the tzdata has been
+    // forcibly downgraded to an older release using TZUpdater
+    private boolean isFixedOffset(String id) {
+        var zi = ZoneInfo.getTimeZone(id);
+        return zi == null || zi.toZoneId().getRules().isFixedOffset();
     }
 }

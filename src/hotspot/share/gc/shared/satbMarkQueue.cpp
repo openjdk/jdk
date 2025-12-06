@@ -22,12 +22,11 @@
  *
  */
 
-#include "gc/shared/satbMarkQueue.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/satbMarkQueue.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
@@ -85,28 +84,28 @@ SATBMarkQueueSet::~SATBMarkQueueSet() {
 // remains set until the count is reduced to zero.
 
 // Increment count.  If count > threshold, set flag, else maintain flag.
-static void increment_count(volatile size_t* cfptr, size_t threshold) {
+static void increment_count(Atomic<size_t>* cfptr, size_t threshold) {
   size_t old;
-  size_t value = Atomic::load(cfptr);
+  size_t value = cfptr->load_relaxed();
   do {
     old = value;
     value += 2;
     assert(value > old, "overflow");
     if (value > threshold) value |= 1;
-    value = Atomic::cmpxchg(cfptr, old, value);
+    value = cfptr->compare_exchange(old, value);
   } while (value != old);
 }
 
 // Decrement count.  If count == 0, clear flag, else maintain flag.
-static void decrement_count(volatile size_t* cfptr) {
+static void decrement_count(Atomic<size_t>* cfptr) {
   size_t old;
-  size_t value = Atomic::load(cfptr);
+  size_t value = cfptr->load_relaxed();
   do {
     assert((value >> 1) != 0, "underflow");
     old = value;
     value -= 2;
     if (value <= 1) value = 0;
-    value = Atomic::cmpxchg(cfptr, old, value);
+    value = cfptr->compare_exchange(old, value);
   } while (value != old);
 }
 
@@ -306,7 +305,7 @@ void SATBMarkQueueSet::print_all(const char* msg) {
   int i = 0;
   while (nd != nullptr) {
     void** buf = BufferNode::make_buffer_from_node(nd);
-    os::snprintf(buffer, SATB_PRINTER_BUFFER_SIZE, "Enqueued: %d", i);
+    os::snprintf_checked(buffer, SATB_PRINTER_BUFFER_SIZE, "Enqueued: %d", i);
     print_satb_buffer(buffer, buf, nd->index(), nd->capacity());
     nd = nd->next();
     i += 1;
@@ -321,7 +320,7 @@ void SATBMarkQueueSet::print_all(const char* msg) {
       _qset(qset), _buffer(buffer) {}
 
     virtual void do_thread(Thread* t) {
-      os::snprintf(_buffer, SATB_PRINTER_BUFFER_SIZE, "Thread: %s", t->name());
+      (void) os::snprintf(_buffer, SATB_PRINTER_BUFFER_SIZE, "Thread: %s", t->name());
       _qset->satb_queue_for_thread(t).print(_buffer);
     }
   } closure(this, buffer);
@@ -332,7 +331,7 @@ void SATBMarkQueueSet::print_all(const char* msg) {
 #endif // PRODUCT
 
 void SATBMarkQueueSet::abandon_completed_buffers() {
-  Atomic::store(&_count_and_process_flag, size_t(0));
+  _count_and_process_flag.store_relaxed(0u);
   BufferNode* buffers_to_delete = _list.pop_all();
   while (buffers_to_delete != nullptr) {
     BufferNode* bn = buffers_to_delete;

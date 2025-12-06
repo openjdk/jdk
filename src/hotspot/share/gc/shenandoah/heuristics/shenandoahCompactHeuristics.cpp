@@ -24,8 +24,8 @@
  */
 
 
-#include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/heuristics/shenandoahCompactHeuristics.hpp"
+#include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
@@ -38,6 +38,7 @@ ShenandoahCompactHeuristics::ShenandoahCompactHeuristics(ShenandoahSpaceInfo* sp
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahImplicitGCInvokesConcurrent);
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahUncommit);
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahAlwaysClearSoftRefs);
+  SHENANDOAH_ERGO_ENABLE_FLAG(UseStringDeduplication);
   SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahAllocationThreshold,  10);
   SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahImmediateThreshold,   100);
   SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahUncommitDelay,        1000);
@@ -47,7 +48,7 @@ ShenandoahCompactHeuristics::ShenandoahCompactHeuristics(ShenandoahSpaceInfo* sp
 
 bool ShenandoahCompactHeuristics::should_start_gc() {
   size_t max_capacity = _space_info->max_capacity();
-  size_t capacity = _space_info->soft_max_capacity();
+  size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
   size_t available = _space_info->available();
 
   // Make sure the code below treats available without the soft tail.
