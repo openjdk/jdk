@@ -457,6 +457,13 @@ void VM_Version::c2_initialize() {
       FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
     }
   }
+
+  if (UseZvbb) {
+    FLAG_SET_DEFAULT(UseGHASHIntrinsics, true);
+  } else {
+    warning("GHASH intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
+  }
 }
 
 #endif // COMPILER2

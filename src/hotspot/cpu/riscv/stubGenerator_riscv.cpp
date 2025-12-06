@@ -2823,6 +2823,64 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  /**
+   *  Arguments:
+   *
+   *  Input:
+   *  c_rarg0   - current state address
+   *  c_rarg1   - H key address
+   *  c_rarg2   - data address
+   *  c_rarg3   - number of blocks
+   *
+   *  Output:
+   *  Updated state at c_rarg0
+   */
+  address generate_ghash_processBlocks() {
+    assert(UseGHASHIntrinsics, "Must be");
+    assert(UseZvbb, "need Zvbb extension support");
+
+    __ align(CodeEntryAlignment);
+    StubId stub_id = StubId::stubgen_ghash_processBlocks_id;
+    StubCodeMark mark(this, stub_id);
+
+    address start = __ pc();
+    __ enter();
+
+    Register state   = c_rarg0;
+    Register subkeyH = c_rarg1;
+    Register data    = c_rarg2;
+    Register blocks  = c_rarg3;
+
+    VectorRegister partial_hash = v29;
+    VectorRegister hash_subkey = v30;
+    VectorRegister cipher_text = v31;
+
+    const unsigned int BLOCK_SIZE = 16;
+
+    __ vsetivli(x0, 2, Assembler::e64, Assembler::m1);
+    __ vle64_v(hash_subkey, subkeyH);
+    __ vrev8_v(hash_subkey, hash_subkey);
+    __ vle64_v(partial_hash, state);
+    __ vrev8_v(partial_hash, partial_hash);
+
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    Label L_ghash_loop;
+    __ bind(L_ghash_loop);
+      __ vle32_v(cipher_text, data);
+      __ addi(data, data, BLOCK_SIZE);
+      __ vghsh_vv(partial_hash, hash_subkey, cipher_text);
+      __ subi(blocks, blocks, 1);
+      __ bnez(blocks, L_ghash_loop);
+
+    __ vsetivli(x0, 2, Assembler::e64, Assembler::m1);
+    __ vrev8_v(partial_hash, partial_hash);
+    __ vse64_v(partial_hash, state);
+    __ leave();
+    __ ret();
+
+    return start;
+  }
+
   // code for comparing 8 characters of strings with Latin1 and Utf16 encoding
   void compare_string_8_x_LU(Register tmpL, Register tmpU,
                              Register strL, Register strU, Label& DIFF) {
@@ -7045,6 +7103,10 @@ static const int64_t right_3_bits = right_n_bits(3);
 
     if (UseAESCTRIntrinsics) {
       StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt();
+    }
+
+    if (UseGHASHIntrinsics && UseZvbb) {
+      StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
     }
 
     if (UsePoly1305Intrinsics) {
