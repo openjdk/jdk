@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,6 +143,7 @@ public:
   void append_inline(InlineMatcher* m);
   bool should_inline(ciMethod* inlinee);
   bool should_not_inline(ciMethod* inlinee);
+  bool is_estimated_size_bigger_than(ciMethod* inlinee, const int threshold);
   void print_inline(outputStream* st);
   DirectiveSet* compilecommand_compatibility_init(const methodHandle& method);
   bool is_exclusive_copy() { return _directive == nullptr; }
