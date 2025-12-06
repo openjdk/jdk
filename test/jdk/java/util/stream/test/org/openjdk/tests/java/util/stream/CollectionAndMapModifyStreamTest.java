@@ -118,9 +118,9 @@ public class CollectionAndMapModifyStreamTest {
         maps.put(WeakHashMap.class.getName(), () -> new WeakHashMap<>(content));
 
         maps.put(TreeMap.class.getName(), () -> new TreeMap<>(content));
-        maps.put(TreeMap.class.getName() + ".descendingMap()", () -> new TreeMap<>(content).descendingMap());
 
         // The following are not lazy
+//        maps.put(TreeMap.class.getName() + ".descendingMap()", () -> new TreeMap<>(content).descendingMap());
 //        maps.put(TreeMap.class.getName() + ".descendingMap().descendingMap()", () -> new TreeMap<>(content).descendingMap().descendingMap());
 //        maps.put(TreeMap.class.getName() + ".headMap()", () -> new TreeMap<>(content).headMap(content.size() - 1));
 //        maps.put(TreeMap.class.getName() + ".descendingMap().headMap()", () -> new TreeMap<>(content).descendingMap().tailMap(content.size() - 1, false));

@@ -2024,6 +2024,8 @@ public class TreeMap<K,V>
                 }
                 return false;
             }
+
+            public abstract Spliterator<Map.Entry<K,V>> spliterator();
         }
 
         /**
@@ -2094,7 +2096,8 @@ public class TreeMap<K,V>
 
         }
 
-        final class SubMapEntryIterator extends SubMapIterator<Map.Entry<K,V>> {
+        final class SubMapEntryIterator extends SubMapIterator<Map.Entry<K,V>>
+            implements Spliterator<Map.Entry<K,V>> {
             SubMapEntryIterator(TreeMap.Entry<K,V> first,
                                 TreeMap.Entry<K,V> fence) {
                 super(first, fence);
@@ -2105,9 +2108,45 @@ public class TreeMap<K,V>
             public void remove() {
                 removeAscending();
             }
+            public Spliterator<Map.Entry<K,V>> trySplit() {
+                return null;
+            }
+            public void forEachRemaining(Consumer<? super Map.Entry<K,V>> action) {
+                while (hasNext())
+                    action.accept(next());
+            }
+            public boolean tryAdvance(Consumer<? super Map.Entry<K,V>> action) {
+                if (hasNext()) {
+                    action.accept(next());
+                    return true;
+                }
+                return false;
+            }
+            public long estimateSize() {
+                return Long.MAX_VALUE;
+            }
+            public int characteristics() {
+                return Spliterator.DISTINCT | Spliterator.ORDERED |
+                    Spliterator.SORTED;
+            }
+            public final Comparator<Map.Entry<K,V>> getComparator() {
+                // Adapt or create a key-based comparator
+                Comparator<? super K> cmp = NavigableSubMap.this.comparator();
+                if (cmp != null) {
+                    return Map.Entry.comparingByKey(cmp);
+                }
+                else {
+                    return (Comparator<Map.Entry<K, V>> & Serializable) (e1, e2) -> {
+                        @SuppressWarnings("unchecked")
+                        Comparable<? super K> k1 = (Comparable<? super K>) e1.getKey();
+                        return k1.compareTo(e2.getKey());
+                    };
+                }
+            }
         }
 
-        final class DescendingSubMapEntryIterator extends SubMapIterator<Map.Entry<K,V>> {
+        final class DescendingSubMapEntryIterator extends SubMapIterator<Map.Entry<K,V>>
+            implements Spliterator<Map.Entry<K,V>> {
             DescendingSubMapEntryIterator(TreeMap.Entry<K,V> last,
                                           TreeMap.Entry<K,V> fence) {
                 super(last, fence);
@@ -2118,6 +2157,26 @@ public class TreeMap<K,V>
             }
             public void remove() {
                 removeDescending();
+            }
+            public Spliterator<Map.Entry<K,V>> trySplit() {
+                return null;
+            }
+            public void forEachRemaining(Consumer<? super Map.Entry<K,V>> action) {
+                while (hasNext())
+                    action.accept(next());
+            }
+            public boolean tryAdvance(Consumer<? super Map.Entry<K,V>> action) {
+                if (hasNext()) {
+                    action.accept(next());
+                    return true;
+                }
+                return false;
+            }
+            public long estimateSize() {
+                return Long.MAX_VALUE;
+            }
+            public int characteristics() {
+                return Spliterator.DISTINCT | Spliterator.ORDERED;
             }
         }
 
@@ -2264,6 +2323,10 @@ public class TreeMap<K,V>
             public Iterator<Map.Entry<K,V>> iterator() {
                 return new SubMapEntryIterator(absLowest(), absHighFence());
             }
+
+            public Spliterator<Map.Entry<K,V>> spliterator() {
+                return new SubMapEntryIterator(absLowest(), absHighFence());
+            }
         }
 
         public Set<Map.Entry<K,V>> entrySet() {
@@ -2350,6 +2413,10 @@ public class TreeMap<K,V>
 
         final class DescendingEntrySetView extends EntrySetView {
             public Iterator<Map.Entry<K,V>> iterator() {
+                return new DescendingSubMapEntryIterator(absHighest(), absLowFence());
+            }
+
+            public Spliterator<Map.Entry<K,V>> spliterator() {
                 return new DescendingSubMapEntryIterator(absHighest(), absLowFence());
             }
         }
@@ -3378,3 +3445,4 @@ public class TreeMap<K,V>
         }
     }
 }
+
