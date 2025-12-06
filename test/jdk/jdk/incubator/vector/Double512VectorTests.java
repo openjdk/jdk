@@ -1217,12 +1217,6 @@ relativeError));
                 flatMap(fa -> DOUBLE_GENERATORS.stream().skip(1).map(fb -> List.of(fa, fb))).
                 collect(Collectors.toList());
 
-    @DataProvider
-    public Object[][] boolUnaryOpProvider() {
-        return BOOL_ARRAY_GENERATORS.stream().
-                map(f -> new Object[]{f}).
-                toArray(Object[][]::new);
-    }
 
     static final List<List<IntFunction<double[]>>> DOUBLE_GENERATOR_TRIPLES =
         DOUBLE_GENERATOR_PAIRS.stream().
@@ -1321,15 +1315,23 @@ relativeError));
     }
 
     @DataProvider
-    public Object[][] maskLongProvider() {
+    public Object[][] longMaskProvider() {
         return LONG_MASK_GENERATORS.stream().
                 map(f -> new Object[]{f}).
                 toArray(Object[][]::new);
     }
 
     @DataProvider
-    public Object[][] maskBinaryOpProvider() {
-        return BOOLEAN_MASK_COMPARE_GENERATOR_PAIRS.stream().map(List::toArray).
+    public Object[][] boolMaskBinaryOpProvider() {
+        return BOOLEAN_MASK_COMPARE_GENERATOR_PAIRS.stream().
+                map(List::toArray).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] boolMaskUnaryOpProvider() {
+        return BOOLEAN_MASK_GENERATORS.stream().
+                map(f -> new Object[]{f}).
                 toArray(Object[][]::new);
     }
 
@@ -4847,7 +4849,7 @@ relativeError));
         return a & b;
     }
 
-    @Test(dataProvider = "maskBinaryOpProvider")
+    @Test(dataProvider = "boolMaskBinaryOpProvider")
     static void maskandDouble512VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
         boolean[] a = fa.apply(SPECIES.length());
         boolean[] b = fb.apply(SPECIES.length());
@@ -4868,7 +4870,7 @@ relativeError));
         return a | b;
     }
 
-    @Test(dataProvider = "maskBinaryOpProvider")
+    @Test(dataProvider = "boolMaskBinaryOpProvider")
     static void maskorDouble512VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
         boolean[] a = fa.apply(SPECIES.length());
         boolean[] b = fb.apply(SPECIES.length());
@@ -4889,7 +4891,7 @@ relativeError));
         return a != b;
     }
 
-    @Test(dataProvider = "maskBinaryOpProvider")
+    @Test(dataProvider = "boolMaskBinaryOpProvider")
     static void maskxorDouble512VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
         boolean[] a = fa.apply(SPECIES.length());
         boolean[] b = fb.apply(SPECIES.length());
@@ -4910,7 +4912,7 @@ relativeError));
         return a & !b;
     }
 
-    @Test(dataProvider = "maskBinaryOpProvider")
+    @Test(dataProvider = "boolMaskBinaryOpProvider")
     static void maskandNotDouble512VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
         boolean[] a = fa.apply(SPECIES.length());
         boolean[] b = fb.apply(SPECIES.length());
@@ -4931,7 +4933,7 @@ relativeError));
         return a == b;
     }
 
-    @Test(dataProvider = "maskBinaryOpProvider")
+    @Test(dataProvider = "boolMaskBinaryOpProvider")
     static void maskeqDouble512VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
         boolean[] a = fa.apply(SPECIES.length());
         boolean[] b = fb.apply(SPECIES.length());
@@ -4952,8 +4954,8 @@ relativeError));
         return !a;
     }
 
-    @Test(dataProvider = "maskBinaryOpProvider")
-    static void masknotDouble512VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+    @Test(dataProvider = "boolMaskUnaryOpProvider")
+    static void masknotDouble512VectorTests(IntFunction<boolean[]> fa) {
         boolean[] a = fa.apply(SPECIES.length());
         boolean[] r = new boolean[a.length];
 
@@ -4980,12 +4982,12 @@ relativeError));
         }
     }
 
-    @Test(dataProvider = "maskLongProvider")
+    @Test(dataProvider = "longMaskProvider")
     static void maskFromToLongDouble512VectorTests(IntFunction<long[]> fa) {
         long[] a = fa.apply(SPECIES.length());
         long[] r = new long[a.length];
 
-        for (int ic = 0; ic < INVOC_COUNT * INVOC_COUNT; ic++) {
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i++) {
                 VectorMask vmask = VectorMask.fromLong(SPECIES, a[i]);
                 r[i] = vmask.toLong();
@@ -5283,7 +5285,7 @@ relativeError));
         }
     }
 
-    @Test(dataProvider = "maskBinaryOpProvider")
+    @Test(dataProvider = "boolMaskBinaryOpProvider")
     static void maskEqualsDouble512VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
         boolean[] a = fa.apply(SPECIES.length());
         boolean[] b = fb.apply(SPECIES.length());

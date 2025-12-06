@@ -3,8 +3,8 @@
         return [[TEST_OP]];
     }
 
-    @Test(dataProvider = "maskBinaryOpProvider")
-    static void mask[[TEST]]$vectorteststype$(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+    @Test(dataProvider = "boolMaskUnaryOpProvider")
+    static void mask[[TEST]]$vectorteststype$(IntFunction<boolean[]> fa) {
 [[KERNEL]]
         assertArraysEquals(r, a, $vectorteststype$::u[[TEST]]);
     }

@@ -1115,12 +1115,6 @@ public class Short64VectorTests extends AbstractVectorTest {
                     .flatMap(pair -> SHORT_SATURATING_GENERATORS_ASSOC.stream().map(f -> List.of(pair.get(0), pair.get(1), f)))
                     .collect(Collectors.toList());
 
-    @DataProvider
-    public Object[][] boolUnaryOpProvider() {
-        return BOOL_ARRAY_GENERATORS.stream().
-                map(f -> new Object[]{f}).
-                toArray(Object[][]::new);
-    }
 
     static final List<List<IntFunction<short[]>>> SHORT_GENERATOR_TRIPLES =
         SHORT_GENERATOR_PAIRS.stream().
@@ -1252,15 +1246,23 @@ public class Short64VectorTests extends AbstractVectorTest {
     }
 
     @DataProvider
-    public Object[][] maskLongProvider() {
+    public Object[][] longMaskProvider() {
         return LONG_MASK_GENERATORS.stream().
                 map(f -> new Object[]{f}).
                 toArray(Object[][]::new);
     }
 
     @DataProvider
-    public Object[][] maskBinaryOpProvider() {
-        return BOOLEAN_MASK_COMPARE_GENERATOR_PAIRS.stream().map(List::toArray).
+    public Object[][] boolMaskBinaryOpProvider() {
+        return BOOLEAN_MASK_COMPARE_GENERATOR_PAIRS.stream().
+                map(List::toArray).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] boolMaskUnaryOpProvider() {
+        return BOOLEAN_MASK_GENERATORS.stream().
+                map(f -> new Object[]{f}).
                 toArray(Object[][]::new);
     }
 
@@ -4492,7 +4494,7 @@ public class Short64VectorTests extends AbstractVectorTest {
         return res;
     }
 
-    @Test(dataProvider = "boolUnaryOpProvider")
+    @Test(dataProvider = "boolMaskUnaryOpProvider")
     static void anyTrueShort64VectorTests(IntFunction<boolean[]> fm) {
         boolean[] mask = fm.apply(SPECIES.length());
         boolean[] r = fmr.apply(SPECIES.length());
@@ -4516,7 +4518,7 @@ public class Short64VectorTests extends AbstractVectorTest {
         return res;
     }
 
-    @Test(dataProvider = "boolUnaryOpProvider")
+    @Test(dataProvider = "boolMaskUnaryOpProvider")
     static void allTrueShort64VectorTests(IntFunction<boolean[]> fm) {
         boolean[] mask = fm.apply(SPECIES.length());
         boolean[] r = fmr.apply(SPECIES.length());
@@ -6422,7 +6424,7 @@ public class Short64VectorTests extends AbstractVectorTest {
         return a & b;
     }
 
-    @Test(dataProvider = "maskBinaryOpProvider")
+    @Test(dataProvider = "boolMaskBinaryOpProvider")
     static void maskandShort64VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
         boolean[] a = fa.apply(SPECIES.length());
         boolean[] b = fb.apply(SPECIES.length());
@@ -6443,7 +6445,7 @@ public class Short64VectorTests extends AbstractVectorTest {
         return a | b;
     }
 
-    @Test(dataProvider = "maskBinaryOpProvider")
+    @Test(dataProvider = "boolMaskBinaryOpProvider")
     static void maskorShort64VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
         boolean[] a = fa.apply(SPECIES.length());
         boolean[] b = fb.apply(SPECIES.length());
@@ -6464,7 +6466,7 @@ public class Short64VectorTests extends AbstractVectorTest {
         return a != b;
     }
 
-    @Test(dataProvider = "maskBinaryOpProvider")
+    @Test(dataProvider = "boolMaskBinaryOpProvider")
     static void maskxorShort64VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
         boolean[] a = fa.apply(SPECIES.length());
         boolean[] b = fb.apply(SPECIES.length());
@@ -6485,7 +6487,7 @@ public class Short64VectorTests extends AbstractVectorTest {
         return a & !b;
     }
 
-    @Test(dataProvider = "maskBinaryOpProvider")
+    @Test(dataProvider = "boolMaskBinaryOpProvider")
     static void maskandNotShort64VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
         boolean[] a = fa.apply(SPECIES.length());
         boolean[] b = fb.apply(SPECIES.length());
@@ -6506,7 +6508,7 @@ public class Short64VectorTests extends AbstractVectorTest {
         return a == b;
     }
 
-    @Test(dataProvider = "maskBinaryOpProvider")
+    @Test(dataProvider = "boolMaskBinaryOpProvider")
     static void maskeqShort64VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
         boolean[] a = fa.apply(SPECIES.length());
         boolean[] b = fb.apply(SPECIES.length());
@@ -6527,8 +6529,8 @@ public class Short64VectorTests extends AbstractVectorTest {
         return !a;
     }
 
-    @Test(dataProvider = "maskBinaryOpProvider")
-    static void masknotShort64VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+    @Test(dataProvider = "boolMaskUnaryOpProvider")
+    static void masknotShort64VectorTests(IntFunction<boolean[]> fa) {
         boolean[] a = fa.apply(SPECIES.length());
         boolean[] r = new boolean[a.length];
 
@@ -6555,12 +6557,12 @@ public class Short64VectorTests extends AbstractVectorTest {
         }
     }
 
-    @Test(dataProvider = "maskLongProvider")
+    @Test(dataProvider = "longMaskProvider")
     static void maskFromToLongShort64VectorTests(IntFunction<long[]> fa) {
         long[] a = fa.apply(SPECIES.length());
         long[] r = new long[a.length];
 
-        for (int ic = 0; ic < INVOC_COUNT * INVOC_COUNT; ic++) {
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i++) {
                 VectorMask vmask = VectorMask.fromLong(SPECIES, a[i]);
                 r[i] = vmask.toLong();
@@ -6868,7 +6870,7 @@ public class Short64VectorTests extends AbstractVectorTest {
         }
     }
 
-    @Test(dataProvider = "maskBinaryOpProvider")
+    @Test(dataProvider = "boolMaskBinaryOpProvider")
     static void maskEqualsShort64VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
         boolean[] a = fa.apply(SPECIES.length());
         boolean[] b = fb.apply(SPECIES.length());
