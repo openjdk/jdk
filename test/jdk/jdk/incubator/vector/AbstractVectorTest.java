@@ -110,20 +110,15 @@ public class AbstractVectorTest {
     }
 
     static final List<IntFunction<boolean[]>> BOOLEAN_MASK_GENERATORS = List.of(
-            withToString("mask[i % 2]", (int l) -> {
-                boolean[] a = new boolean[l];
-                for (int i = 0; i < l; i++) {
-                    a[i] = (i % 2 == 0);
-                }
-                return a;
+            withToString("mask[i % 2]", (int s) -> {
+                return fill_boolean(s,
+                        i -> ((i % 2) == 0));
             }),
-            withToString("mask[i % 5]", (int l) -> {
-                boolean[] a = new boolean[l];
-                for (int i = 0; i < l; i++) {
-                    a[i] = (i % 2 == 0);
-                }
-                return a;
+            withToString("mask[i % 5]", (int s) -> {
+                return fill_boolean(s,
+                        i -> ((i % 5) == 0));
             }),
+
             withToString("mask[true]", (int l) -> {
                 boolean[] a = new boolean[l];
                 Arrays.fill(a, true);

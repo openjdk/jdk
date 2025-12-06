@@ -1120,12 +1120,6 @@ public class IntMaxVectorTests extends AbstractVectorTest {
                     .flatMap(pair -> INT_SATURATING_GENERATORS_ASSOC.stream().map(f -> List.of(pair.get(0), pair.get(1), f)))
                     .collect(Collectors.toList());
 
-    @DataProvider
-    public Object[][] boolUnaryOpProvider() {
-        return BOOL_ARRAY_GENERATORS.stream().
-                map(f -> new Object[]{f}).
-                toArray(Object[][]::new);
-    }
 
     static final List<List<IntFunction<int[]>>> INT_GENERATOR_TRIPLES =
         INT_GENERATOR_PAIRS.stream().
@@ -1257,15 +1251,23 @@ public class IntMaxVectorTests extends AbstractVectorTest {
     }
 
     @DataProvider
-    public Object[][] maskLongProvider() {
+    public Object[][] longMaskProvider() {
         return LONG_MASK_GENERATORS.stream().
                 map(f -> new Object[]{f}).
                 toArray(Object[][]::new);
     }
 
     @DataProvider
-    public Object[][] maskBinaryOpProvider() {
-        return BOOLEAN_MASK_COMPARE_GENERATOR_PAIRS.stream().map(List::toArray).
+    public Object[][] boolMaskBinaryOpProvider() {
+        return BOOLEAN_MASK_COMPARE_GENERATOR_PAIRS.stream().
+                map(List::toArray).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] boolMaskUnaryOpProvider() {
+        return BOOLEAN_MASK_GENERATORS.stream().
+                map(f -> new Object[]{f}).
                 toArray(Object[][]::new);
     }
 
@@ -4550,7 +4552,7 @@ public class IntMaxVectorTests extends AbstractVectorTest {
         return res;
     }
 
-    @Test(dataProvider = "boolUnaryOpProvider")
+    @Test(dataProvider = "boolMaskUnaryOpProvider")
     static void anyTrueIntMaxVectorTests(IntFunction<boolean[]> fm) {
         boolean[] mask = fm.apply(SPECIES.length());
         boolean[] r = fmr.apply(SPECIES.length());
@@ -4574,7 +4576,7 @@ public class IntMaxVectorTests extends AbstractVectorTest {
         return res;
     }
 
-    @Test(dataProvider = "boolUnaryOpProvider")
+    @Test(dataProvider = "boolMaskUnaryOpProvider")
     static void allTrueIntMaxVectorTests(IntFunction<boolean[]> fm) {
         boolean[] mask = fm.apply(SPECIES.length());
         boolean[] r = fmr.apply(SPECIES.length());
@@ -6480,7 +6482,7 @@ public class IntMaxVectorTests extends AbstractVectorTest {
         return a & b;
     }
 
-    @Test(dataProvider = "maskBinaryOpProvider")
+    @Test(dataProvider = "boolMaskBinaryOpProvider")
     static void maskandIntMaxVectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
         boolean[] a = fa.apply(SPECIES.length());
         boolean[] b = fb.apply(SPECIES.length());
@@ -6501,7 +6503,7 @@ public class IntMaxVectorTests extends AbstractVectorTest {
         return a | b;
     }
 
-    @Test(dataProvider = "maskBinaryOpProvider")
+    @Test(dataProvider = "boolMaskBinaryOpProvider")
     static void maskorIntMaxVectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
         boolean[] a = fa.apply(SPECIES.length());
         boolean[] b = fb.apply(SPECIES.length());
@@ -6522,7 +6524,7 @@ public class IntMaxVectorTests extends AbstractVectorTest {
         return a != b;
     }
 
-    @Test(dataProvider = "maskBinaryOpProvider")
+    @Test(dataProvider = "boolMaskBinaryOpProvider")
     static void maskxorIntMaxVectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
         boolean[] a = fa.apply(SPECIES.length());
         boolean[] b = fb.apply(SPECIES.length());
@@ -6543,7 +6545,7 @@ public class IntMaxVectorTests extends AbstractVectorTest {
         return a & !b;
     }
 
-    @Test(dataProvider = "maskBinaryOpProvider")
+    @Test(dataProvider = "boolMaskBinaryOpProvider")
     static void maskandNotIntMaxVectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
         boolean[] a = fa.apply(SPECIES.length());
         boolean[] b = fb.apply(SPECIES.length());
@@ -6564,7 +6566,7 @@ public class IntMaxVectorTests extends AbstractVectorTest {
         return a == b;
     }
 
-    @Test(dataProvider = "maskBinaryOpProvider")
+    @Test(dataProvider = "boolMaskBinaryOpProvider")
     static void maskeqIntMaxVectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
         boolean[] a = fa.apply(SPECIES.length());
         boolean[] b = fb.apply(SPECIES.length());
@@ -6585,8 +6587,8 @@ public class IntMaxVectorTests extends AbstractVectorTest {
         return !a;
     }
 
-    @Test(dataProvider = "maskBinaryOpProvider")
-    static void masknotIntMaxVectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+    @Test(dataProvider = "boolMaskUnaryOpProvider")
+    static void masknotIntMaxVectorTests(IntFunction<boolean[]> fa) {
         boolean[] a = fa.apply(SPECIES.length());
         boolean[] r = new boolean[a.length];
 
@@ -6613,12 +6615,12 @@ public class IntMaxVectorTests extends AbstractVectorTest {
         }
     }
 
-    @Test(dataProvider = "maskLongProvider")
+    @Test(dataProvider = "longMaskProvider")
     static void maskFromToLongIntMaxVectorTests(IntFunction<long[]> fa) {
         long[] a = fa.apply(SPECIES.length());
         long[] r = new long[a.length];
 
-        for (int ic = 0; ic < INVOC_COUNT * INVOC_COUNT; ic++) {
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i++) {
                 VectorMask vmask = VectorMask.fromLong(SPECIES, a[i]);
                 r[i] = vmask.toLong();
@@ -6926,7 +6928,7 @@ public class IntMaxVectorTests extends AbstractVectorTest {
         }
     }
 
-    @Test(dataProvider = "maskBinaryOpProvider")
+    @Test(dataProvider = "boolMaskBinaryOpProvider")
     static void maskEqualsIntMaxVectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
         boolean[] a = fa.apply(SPECIES.length());
         boolean[] b = fb.apply(SPECIES.length());

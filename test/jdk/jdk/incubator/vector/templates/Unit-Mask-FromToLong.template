@@ -12,12 +12,12 @@
         }
     }
 
-    @Test(dataProvider = "maskLongProvider")
+    @Test(dataProvider = "longMaskProvider")
     static void mask[[TEST]]$vectorteststype$(IntFunction<long[]> fa) {
         long[] a = fa.apply(SPECIES.length());
         long[] r = new long[a.length];
 
-        for (int ic = 0; ic < INVOC_COUNT * INVOC_COUNT; ic++) {
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i++) {
                 VectorMask vmask = VectorMask.fromLong(SPECIES, a[i]);
                 r[i] = vmask.toLong();

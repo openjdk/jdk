@@ -1390,12 +1390,6 @@ relativeError));
                     .collect(Collectors.toList());
 
 #end[!FP]
-    @DataProvider
-    public Object[][] boolUnaryOpProvider() {
-        return BOOL_ARRAY_GENERATORS.stream().
-                map(f -> new Object[]{f}).
-                toArray(Object[][]::new);
-    }
 
     static final List<List<IntFunction<$type$[]>>> $TYPE$_GENERATOR_TRIPLES =
         $TYPE$_GENERATOR_PAIRS.stream().
@@ -1551,15 +1545,23 @@ relativeError));
     }
 
     @DataProvider
-    public Object[][] maskLongProvider() {
+    public Object[][] longMaskProvider() {
         return LONG_MASK_GENERATORS.stream().
                 map(f -> new Object[]{f}).
                 toArray(Object[][]::new);
     }
 
     @DataProvider
-    public Object[][] maskBinaryOpProvider() {
-        return BOOLEAN_MASK_COMPARE_GENERATOR_PAIRS.stream().map(List::toArray).
+    public Object[][] boolMaskBinaryOpProvider() {
+        return BOOLEAN_MASK_COMPARE_GENERATOR_PAIRS.stream().
+                map(List::toArray).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] boolMaskUnaryOpProvider() {
+        return BOOLEAN_MASK_GENERATORS.stream().
+                map(f -> new Object[]{f}).
                 toArray(Object[][]::new);
     }
 
