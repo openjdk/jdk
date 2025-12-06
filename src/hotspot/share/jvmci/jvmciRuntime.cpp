@@ -1382,6 +1382,13 @@ class JavaVMRefsInitialization: public StackObj {
   }
 };
 
+#ifdef ASSERT
+static void assert_equals(const char* desc, int expect, int actual) {
+  assert(expect == actual, "%s: %d != %d", desc, expect, actual);
+
+}
+#endif
+
 void JVMCIRuntime::initialize(JVMCI_TRAPS) {
   // Check first without _lock
   if (_init_state == fully_initialized) {
@@ -1452,6 +1459,11 @@ void JVMCIRuntime::initialize(JVMCI_TRAPS) {
     create_jvmci_primitive_type(T_VOID, JVMCI_CHECK_EXIT_((void)0));
 
     DEBUG_ONLY(CodeInstaller::verify_bci_constants(JVMCIENV);)
+
+    DEBUG_ONLY(assert_equals("DECLARED_ANNOTATIONS", CompilerToVM::DECLARED_ANNOTATIONS, JVMCIENV->get_CompilerToVM_DECLARED_ANNOTATIONS()));
+    DEBUG_ONLY(assert_equals("PARAMETER_ANNOTATIONS", CompilerToVM::PARAMETER_ANNOTATIONS, JVMCIENV->get_CompilerToVM_PARAMETER_ANNOTATIONS()));
+    DEBUG_ONLY(assert_equals("TYPE_ANNOTATIONS", CompilerToVM::TYPE_ANNOTATIONS, JVMCIENV->get_CompilerToVM_TYPE_ANNOTATIONS()));
+    DEBUG_ONLY(assert_equals("ANNOTATION_MEMBER_VALUE", CompilerToVM::ANNOTATION_MEMBER_VALUE, JVMCIENV->get_CompilerToVM_ANNOTATION_MEMBER_VALUE()));
   }
 
   _init_state = fully_initialized;

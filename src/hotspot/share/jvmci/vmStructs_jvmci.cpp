@@ -118,7 +118,7 @@
   static_field(CompilerToVM::Data,             _heap_top_addr,                         HeapWord* volatile*)                          \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             _max_oop_map_stack_offset,              int)                                          \
-  static_field(CompilerToVM::Data,             _fields_annotations_base_offset,        int)                                          \
+  static_field(CompilerToVM::Data,             _annotation_array_array_base_offset,    int)                                          \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             cardtable_start_address,                CardTable::CardValue*)                        \
   static_field(CompilerToVM::Data,             cardtable_shift,                        int)                                          \
@@ -161,7 +161,9 @@
   static_field(Abstract_VM_Version,            _features,                              uint64_t)                                     \
                                                                                                                                      \
   nonstatic_field(Annotations,                 _class_annotations,                     AnnotationArray*)                             \
+  nonstatic_field(Annotations,                 _class_type_annotations,                AnnotationArray*)                             \
   nonstatic_field(Annotations,                 _fields_annotations,                    Array<AnnotationArray*>*)                     \
+  nonstatic_field(Annotations,                 _fields_type_annotations,               Array<AnnotationArray*>*)                     \
                                                                                                                                      \
   nonstatic_field(Array<int>,                  _length,                                int)                                          \
   unchecked_nonstatic_field(Array<u1>,         _data,                                  sizeof(u1))                                   \
@@ -225,6 +227,7 @@
   nonstatic_field(InstanceKlass,               _misc_flags._flags,                            u2)                                    \
   nonstatic_field(InstanceKlass,               _access_flags,                                 AccessFlags)                           \
   nonstatic_field(InstanceKlass,               _annotations,                                  Annotations*)                          \
+  nonstatic_field(InstanceKlass,               _record_components,                            Array<RecordComponent*>*)              \
                                                                                                                                      \
   volatile_nonstatic_field(JavaFrameAnchor,    _last_Java_sp,                                 intptr_t*)                             \
   volatile_nonstatic_field(JavaFrameAnchor,    _last_Java_pc,                                 address)                               \
@@ -709,7 +712,9 @@
   declare_constant(ConstMethodFlags::_misc_has_localvariable_table)       \
   declare_constant(ConstMethodFlags::_misc_has_exception_table)           \
   declare_constant(ConstMethodFlags::_misc_has_method_annotations)        \
+  declare_constant(ConstMethodFlags::_misc_has_type_annotations)        \
   declare_constant(ConstMethodFlags::_misc_has_parameter_annotations)     \
+  declare_constant(ConstMethodFlags::_misc_has_default_annotations)       \
   declare_constant(ConstMethodFlags::_misc_caller_sensitive)              \
   declare_constant(ConstMethodFlags::_misc_is_hidden)                     \
   declare_constant(ConstMethodFlags::_misc_intrinsic_candidate)           \
