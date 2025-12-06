@@ -97,11 +97,11 @@ public class Adler32 implements Checksum {
         if (rem <= 0)
             return;
         if (buffer.isDirect()) {
-            NIO_ACCESS.acquireSession(buffer);
+            int ticket = NIO_ACCESS.acquireSession(buffer);
             try {
                 adler = updateByteBuffer(adler, NIO_ACCESS.getBufferAddress(buffer), pos, rem);
             } finally {
-                NIO_ACCESS.releaseSession(buffer);
+                NIO_ACCESS.releaseSession(buffer, ticket);
             }
         } else if (buffer.hasArray()) {
             adler = updateBytes(adler, buffer.array(), pos + buffer.arrayOffset(), rem);

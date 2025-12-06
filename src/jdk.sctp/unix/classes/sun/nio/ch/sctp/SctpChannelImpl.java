@@ -828,7 +828,7 @@ public class SctpChannelImpl extends SctpChannel
                                         boolean peek)
         throws IOException
     {
-        NIO_ACCESS.acquireSession(bb);
+        int ticket = NIO_ACCESS.acquireSession(bb);
         try {
             int n = receive0(fd, resultContainer, NIO_ACCESS.getBufferAddress(bb) + pos, rem, peek);
 
@@ -836,7 +836,7 @@ public class SctpChannelImpl extends SctpChannel
                 bb.position(pos + n);
             return n;
         } finally {
-            NIO_ACCESS.releaseSession(bb);
+            NIO_ACCESS.releaseSession(bb, ticket);
         }
     }
 
@@ -1011,7 +1011,7 @@ public class SctpChannelImpl extends SctpChannel
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
 
-        NIO_ACCESS.acquireSession(bb);
+        int ticket = NIO_ACCESS.acquireSession(bb);
         try {
             int written = send0(fd, NIO_ACCESS.getBufferAddress(bb) + pos, rem, addr,
                     port, -1 /*121*/, streamNumber, unordered, ppid);
@@ -1019,7 +1019,7 @@ public class SctpChannelImpl extends SctpChannel
                 bb.position(pos + written);
             return written;
         } finally {
-            NIO_ACCESS.releaseSession(bb);
+            NIO_ACCESS.releaseSession(bb, ticket);
         }
     }
 

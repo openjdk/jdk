@@ -240,12 +240,12 @@ public class Inflater implements AutoCloseable {
             int remaining = Math.max(dictionary.limit() - position, 0);
             ensureOpen();
             if (dictionary.isDirect()) {
-                NIO_ACCESS.acquireSession(dictionary);
+                int ticket = NIO_ACCESS.acquireSession(dictionary);
                 try {
                     long address = NIO_ACCESS.getBufferAddress(dictionary);
                     setDictionaryBuffer(zsRef.address(), address + position, remaining);
                 } finally {
-                    NIO_ACCESS.releaseSession(dictionary);
+                    NIO_ACCESS.releaseSession(dictionary, ticket);
                 }
             } else {
                 byte[] array = ZipUtils.getBufferArray(dictionary);
@@ -363,14 +363,14 @@ public class Inflater implements AutoCloseable {
                     try {
                         int inputRem = Math.max(input.limit() - inputPos, 0);
                         if (input.isDirect()) {
-                            NIO_ACCESS.acquireSession(input);
+                            int ticket = NIO_ACCESS.acquireSession(input);
                             try {
                                 long inputAddress = NIO_ACCESS.getBufferAddress(input);
                                 result = inflateBufferBytes(zsRef.address(),
                                     inputAddress + inputPos, inputRem,
                                     output, off, len);
                             } finally {
-                                NIO_ACCESS.releaseSession(input);
+                                NIO_ACCESS.releaseSession(input, ticket);
                             }
                         } else {
                             byte[] inputArray = ZipUtils.getBufferArray(input);
@@ -500,14 +500,14 @@ public class Inflater implements AutoCloseable {
                     inputPos = this.inputPos;
                     try {
                         if (output.isDirect()) {
-                            NIO_ACCESS.acquireSession(output);
+                            int ticket = NIO_ACCESS.acquireSession(output);
                             try {
                                 long outputAddress = NIO_ACCESS.getBufferAddress(output);
                                 result = inflateBytesBuffer(zsRef.address(),
                                     inputArray, inputPos, inputLim - inputPos,
                                     outputAddress + outputPos, outputRem);
                             } finally {
-                                NIO_ACCESS.releaseSession(output);
+                                NIO_ACCESS.releaseSession(output, ticket);
                             }
                         } else {
                             byte[] outputArray = ZipUtils.getBufferArray(output);
@@ -525,18 +525,18 @@ public class Inflater implements AutoCloseable {
                     int inputRem = Math.max(input.limit() - inputPos, 0);
                     try {
                         if (input.isDirect()) {
-                            NIO_ACCESS.acquireSession(input);
+                            int ticket = NIO_ACCESS.acquireSession(input);
                             try {
                                 long inputAddress = NIO_ACCESS.getBufferAddress(input);
                                 if (output.isDirect()) {
-                                    NIO_ACCESS.acquireSession(output);
+                                    int ticket2 = NIO_ACCESS.acquireSession(output);
                                     try {
                                         long outputAddress = NIO_ACCESS.getBufferAddress(output);
                                         result = inflateBufferBuffer(zsRef.address(),
                                             inputAddress + inputPos, inputRem,
                                             outputAddress + outputPos, outputRem);
                                     } finally {
-                                        NIO_ACCESS.releaseSession(output);
+                                        NIO_ACCESS.releaseSession(output, ticket2);
                                     }
                                 } else {
                                     byte[] outputArray = ZipUtils.getBufferArray(output);
@@ -546,20 +546,20 @@ public class Inflater implements AutoCloseable {
                                         outputArray, outputOffset + outputPos, outputRem);
                                 }
                             } finally {
-                                NIO_ACCESS.releaseSession(input);
+                                NIO_ACCESS.releaseSession(input, ticket);
                             }
                         } else {
                             byte[] inputArray = ZipUtils.getBufferArray(input);
                             int inputOffset = ZipUtils.getBufferOffset(input);
                             if (output.isDirect()) {
-                                NIO_ACCESS.acquireSession(output);
+                                int ticket = NIO_ACCESS.acquireSession(output);
                                 try {
                                     long outputAddress = NIO_ACCESS.getBufferAddress(output);
                                     result = inflateBytesBuffer(zsRef.address(),
                                         inputArray, inputOffset + inputPos, inputRem,
                                         outputAddress + outputPos, outputRem);
                                 } finally {
-                                    NIO_ACCESS.releaseSession(output);
+                                    NIO_ACCESS.releaseSession(output, ticket);
                                 }
                             } else {
                                 byte[] outputArray = ZipUtils.getBufferArray(output);

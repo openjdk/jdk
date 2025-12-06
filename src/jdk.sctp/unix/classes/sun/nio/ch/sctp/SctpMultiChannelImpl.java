@@ -560,14 +560,14 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
                                         int rem,
                                         int pos)
             throws IOException {
-        NIO_ACCESS.acquireSession(bb);
+        int ticket = NIO_ACCESS.acquireSession(bb);
         try {
             int n = receive0(fd, resultContainer, NIO_ACCESS.getBufferAddress(bb) + pos, rem);
             if (n > 0)
                 bb.position(pos + n);
             return n;
         } finally {
-            NIO_ACCESS.releaseSession(bb);
+            NIO_ACCESS.releaseSession(bb, ticket);
         }
     }
 
@@ -869,7 +869,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
 
-        NIO_ACCESS.acquireSession(bb);
+        int ticket = NIO_ACCESS.acquireSession(bb);
         try {
             int written = send0(fd, NIO_ACCESS.getBufferAddress(bb) + pos, rem, addr,
                     port, assocId, streamNumber, unordered, ppid);
@@ -877,7 +877,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
                 bb.position(pos + written);
             return written;
         } finally {
-            NIO_ACCESS.releaseSession(bb);
+            NIO_ACCESS.releaseSession(bb, ticket);
         }
     }
 
