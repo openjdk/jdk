@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,18 +33,11 @@ import static gc.testlibrary.Allocation.blackHole;
  * @summary completely in JNI CS, while other is trying to allocate memory
  * @summary provoking GC. OOM means FAIL, deadlock means PASS.
  *
- * @comment This test assumes that no allocation happens during the sleep loop,
- *          which is something that we can't guarantee. With ZGC we see test
- *          timeouts because the main thread allocates and waits for the GC,
- *          which waits for the CSLocker, which waits for the main thread.
- * @requires vm.gc != "Z"
- *
  * @run main/native/othervm -Xmx256m gc.cslocker.TestCSLocker
  */
 
 public class TestCSLocker extends Thread
 {
-    static int timeoutMillis = 5000;
     public static void main(String args[]) throws Exception {
         // start garbage producer thread
         GarbageProducer garbageProducer = new GarbageProducer(1000000, 10);
@@ -53,15 +46,9 @@ public class TestCSLocker extends Thread
         // start CS locker thread
         CSLocker csLocker = new CSLocker();
         csLocker.start();
-        // After the CSLocker thread has started, any operation such as an allocation,
-        // which could rely on the GC to make progress, will cause a deadlock that will
-        // make the test time out. That includes printing. Please don't use any such
-        // code until unlock() is called below.
 
-        // check timeout to success deadlocking
-        sleep(timeoutMillis);
-
-        csLocker.unlock();
+        // Wait for the csLocker thread to finish its critical section
+        csLocker.join();
         garbageProducer.interrupt();
     }
 }
@@ -97,11 +84,10 @@ class CSLocker extends Thread
     public void run() {
         int[] a = new int[10];
         a[0] = 1;
-        if (!lock(a)) {
+        if (!criticalSection(a)) {
             throw new RuntimeException("failed to acquire CSLock");
         }
     }
 
-    native boolean lock(int[] array);
-    native void unlock();
+    native boolean criticalSection(int[] array);
 }
