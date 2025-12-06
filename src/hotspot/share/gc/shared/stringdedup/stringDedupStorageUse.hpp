@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
@@ -35,7 +36,7 @@ class OopStorage;
 // Manage access to one of the OopStorage objects used for requests.
 class StringDedup::StorageUse : public CHeapObj<mtStringDedup> {
   OopStorage* const _storage;
-  volatile size_t _use_count;
+  Atomic<size_t> _use_count;
 
   NONCOPYABLE(StorageUse);
 
@@ -48,7 +49,7 @@ public:
   bool is_used_acquire() const;
 
   // Get the current requests object, and increment its in-use count.
-  static StorageUse* obtain(StorageUse* volatile* ptr);
+  static StorageUse* obtain(Atomic<StorageUse*>* ptr);
 
   // Discard a prior "obtain" request, decrementing the in-use count, and
   // permitting the deduplication thread to start processing if needed.
