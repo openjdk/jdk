@@ -233,19 +233,19 @@ enum NamedGroup {
             NamedGroupSpec.NAMED_GROUP_KEM,
             ProtocolVersion.PROTOCOLS_OF_13,
             Hybrid.X25519_MLKEM768,
-            DHasKEM.PROVIDER),
+            HybridProvider.PROVIDER),
 
     SECP256R1MLKEM768(0x11eb, "SecP256r1MLKEM768",
             NamedGroupSpec.NAMED_GROUP_KEM,
             ProtocolVersion.PROTOCOLS_OF_13,
             Hybrid.SECP256R1_MLKEM768,
-            DHasKEM.PROVIDER),
+            HybridProvider.PROVIDER),
 
     SECP384R1MLKEM1024(0x11ed, "SecP384r1MLKEM1024",
             NamedGroupSpec.NAMED_GROUP_KEM,
             ProtocolVersion.PROTOCOLS_OF_13,
             Hybrid.SECP384R1_MLKEM1024,
-            DHasKEM.PROVIDER),
+            HybridProvider.PROVIDER),
 
     // Elliptic Curves (RFC 4492)
     //

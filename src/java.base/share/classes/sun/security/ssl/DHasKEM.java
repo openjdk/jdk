@@ -25,7 +25,6 @@
 
 package sun.security.ssl;
 
-import sun.security.ssl.Hybrid;
 import sun.security.util.ArrayUtil;
 import sun.security.util.CurveDB;
 import sun.security.util.ECUtil;
@@ -55,8 +54,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static sun.security.util.SecurityConstants.PROVIDER_VER;
-
 /**
  * The DHasKEM class presents a KEM abstraction layer over traditional
  * DH-based key exchange, which can be used for either straight
@@ -66,75 +63,6 @@ import static sun.security.util.SecurityConstants.PROVIDER_VER;
  * when hybrid implementations are required.
  */
 public class DHasKEM implements KEMSpi {
-
-    // DHasKEM in its own private provider so we always getInstance from here.
-    public static final Provider PROVIDER = new ProviderImpl();
-
-    // This is an internal provider used in the JSSE code for DH-as-KEM
-    // and Hybrid KEM support. It doesn't actually get installed in the
-    // system's list of security providers that is searched at runtime.
-    // JSSE loads this provider internally.
-    // It registers Hybrid KeyPairGenerator, KeyFactory, and KEM
-    // implementations for hybrid named groups as Provider services.
-    private static class ProviderImpl extends Provider {
-        @java.io.Serial
-        private static final long serialVersionUID = 0L;
-        private ProviderImpl() {
-            super("InternalJCEDHasKEM", PROVIDER_VER,
-                    "Internal DHasKEM provider");
-            put("KEM.DH", DHasKEM.class.getName());
-
-            // Hybrid KeyPairGenerator/KeyFactory/KEM
-
-            // The order of shares in the concatenation for group name
-            // X25519MLKEM768 has been reversed. This is due to IETF
-            // historical reasons.
-            var attrs = Map.of("name", "X25519MLKEM768", "left", "ML-KEM-768",
-                    "right", "X25519");
-            putService(new HybridService(this, "KeyPairGenerator",
-                    "X25519MLKEM768",
-                    "sun.security.ssl.Hybrid$KeyPairGeneratorImpl",
-                    null, attrs));
-            putService(new HybridService(this, "KEM",
-                    "X25519MLKEM768",
-                    "sun.security.ssl.Hybrid$KEMImpl",
-                    null, attrs));
-            putService(new HybridService(this, "KeyFactory",
-                    "X25519MLKEM768",
-                    "sun.security.ssl.Hybrid$KeyFactoryImpl",
-                    null, attrs));
-
-            attrs = Map.of("name", "SecP256r1MLKEM768", "left", "secp256r1",
-                    "right", "ML-KEM-768");
-            putService(new HybridService(this, "KeyPairGenerator",
-                    "SecP256r1MLKEM768",
-                    "sun.security.ssl.Hybrid$KeyPairGeneratorImpl",
-                    null, attrs));
-            putService(new HybridService(this, "KEM",
-                    "SecP256r1MLKEM768",
-                    "sun.security.ssl.Hybrid$KEMImpl",
-                    null, attrs));
-            putService(new HybridService(this, "KeyFactory",
-                    "SecP256r1MLKEM768",
-                    "sun.security.ssl.Hybrid$KeyFactoryImpl",
-                    null, attrs));
-
-            attrs = Map.of("name", "SecP384r1MLKEM1024", "left", "secp384r1",
-                    "right", "ML-KEM-1024");
-            putService(new HybridService(this, "KeyPairGenerator",
-                    "SecP384r1MLKEM1024",
-                    "sun.security.ssl.Hybrid$KeyPairGeneratorImpl",
-                    null, attrs));
-            putService(new HybridService(this, "KEM",
-                    "SecP384r1MLKEM1024",
-                    "sun.security.ssl.Hybrid$KEMImpl",
-                    null, attrs));
-            putService(new HybridService(this, "KeyFactory",
-                    "SecP384r1MLKEM1024",
-                    "sun.security.ssl.Hybrid$KeyFactoryImpl",
-                    null, attrs));
-        }
-    }
 
     @Override
     public EncapsulatorSpi engineNewEncapsulator(
@@ -328,7 +256,7 @@ public class DHasKEM implements KEMSpi {
         }
     }
 
-    private static class HybridService extends Provider.Service {
+    public static class HybridService extends Provider.Service {
 
         HybridService(Provider p, String type, String algo, String cn,
                 List<String> aliases, Map<String, String> attrs) {
