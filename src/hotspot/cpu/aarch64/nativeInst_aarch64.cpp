@@ -192,7 +192,6 @@ int NativeMovRegMem::offset() const  {
 
 void NativeMovRegMem::set_offset(int x) {
   address pc = instruction_address();
-  unsigned insn = *(unsigned*)pc;
   if (maybe_cpool_ref(pc)) {
     address addr = MacroAssembler::target_addr_for_insn(pc);
     *(int64_t*)addr = x;
@@ -204,7 +203,7 @@ void NativeMovRegMem::set_offset(int x) {
 
 void NativeMovRegMem::verify() {
 #ifdef ASSERT
-  address dest = MacroAssembler::target_addr_for_insn_or_null(instruction_address());
+  MacroAssembler::target_addr_for_insn(instruction_address());
 #endif
 }
 
@@ -213,7 +212,7 @@ void NativeMovRegMem::verify() {
 void NativeJump::verify() { ; }
 
 address NativeJump::jump_destination() const          {
-  address dest = MacroAssembler::target_addr_for_insn_or_null(instruction_address());
+  address dest = MacroAssembler::target_addr_for_insn(instruction_address());
 
   // We use jump to self as the unresolved address which the inline
   // cache code (and relocs) know about
