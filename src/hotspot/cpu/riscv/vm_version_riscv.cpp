@@ -147,24 +147,19 @@ void VM_Version::common_initialize() {
     }
   }
 
-  if (FLAG_IS_DEFAULT(AvoidUnalignedAccesses)) {
-    FLAG_SET_DEFAULT(AvoidUnalignedAccesses,
-      unaligned_scalar.value() != MISALIGNED_SCALAR_FAST);
-  }
-
-  if (!AvoidUnalignedAccesses) {
-    if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
-      FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
-    }
-  } else if (UsePoly1305Intrinsics) {
-    warning("Intrinsics for Poly1305 crypto hash functions not available on this CPU.");
-  }
-
   // See JDK-8026049
   // This machine has fast unaligned memory accesses
   if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
     FLAG_SET_DEFAULT(UseUnalignedAccesses,
       (unaligned_scalar.value() == MISALIGNED_SCALAR_FAST));
+  }
+
+  if (UseUnalignedAccesses) {
+    if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
+      FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
+    }
+  } else if (UsePoly1305Intrinsics) {
+    warning("Intrinsics for Poly1305 crypto hash functions not available on this CPU.");
   }
 
   if (FLAG_IS_DEFAULT(AlignVector)) {
@@ -208,7 +203,7 @@ void VM_Version::common_initialize() {
 
   // Misc Intrinsics that could depend on RVV.
 
-  if (!AvoidUnalignedAccesses && (UseZba || UseRVV)) {
+  if (UseUnalignedAccesses && (UseZba || UseRVV)) {
     if (FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
       FLAG_SET_DEFAULT(UseCRC32Intrinsics, true);
     }
@@ -298,7 +293,7 @@ void VM_Version::c2_initialize() {
     FLAG_SET_DEFAULT(UseMulAddIntrinsic, true);
   }
 
-  if (!AvoidUnalignedAccesses) {
+  if (UseUnalignedAccesses) {
     if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
       FLAG_SET_DEFAULT(UseMultiplyToLenIntrinsic, true);
     }
@@ -307,7 +302,7 @@ void VM_Version::c2_initialize() {
     FLAG_SET_DEFAULT(UseMultiplyToLenIntrinsic, false);
   }
 
-  if (!AvoidUnalignedAccesses) {
+  if (UseUnalignedAccesses) {
     if (FLAG_IS_DEFAULT(UseSquareToLenIntrinsic)) {
       FLAG_SET_DEFAULT(UseSquareToLenIntrinsic, true);
     }
@@ -316,7 +311,7 @@ void VM_Version::c2_initialize() {
     FLAG_SET_DEFAULT(UseSquareToLenIntrinsic, false);
   }
 
-  if (!AvoidUnalignedAccesses) {
+  if (UseUnalignedAccesses) {
     if (FLAG_IS_DEFAULT(UseMontgomeryMultiplyIntrinsic)) {
       FLAG_SET_DEFAULT(UseMontgomeryMultiplyIntrinsic, true);
     }
@@ -325,7 +320,7 @@ void VM_Version::c2_initialize() {
     FLAG_SET_DEFAULT(UseMontgomeryMultiplyIntrinsic, false);
   }
 
-  if (!AvoidUnalignedAccesses) {
+  if (UseUnalignedAccesses) {
     if (FLAG_IS_DEFAULT(UseMontgomerySquareIntrinsic)) {
       FLAG_SET_DEFAULT(UseMontgomerySquareIntrinsic, true);
     }
@@ -360,7 +355,7 @@ void VM_Version::c2_initialize() {
     FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
   }
 
-  if (!AvoidUnalignedAccesses) {
+  if (UseUnalignedAccesses) {
     if (FLAG_IS_DEFAULT(UseMD5Intrinsics)) {
       FLAG_SET_DEFAULT(UseMD5Intrinsics, true);
     }
@@ -375,7 +370,7 @@ void VM_Version::c2_initialize() {
   }
 
   // SHA-1, no RVV required though.
-  if (UseSHA && !AvoidUnalignedAccesses) {
+  if (UseSHA && UseUnalignedAccesses) {
     if (FLAG_IS_DEFAULT(UseSHA1Intrinsics)) {
       FLAG_SET_DEFAULT(UseSHA1Intrinsics, true);
     }
