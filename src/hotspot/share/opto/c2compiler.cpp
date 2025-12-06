@@ -26,6 +26,7 @@
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "jfr/support/jfrIntrinsics.hpp"
+#include "oops/trainingData.hpp"
 #include "opto/c2compiler.hpp"
 #include "opto/compile.hpp"
 #include "opto/optoreg.hpp"
@@ -145,6 +146,10 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
                     do_superword,
                     install_code);
     Compile C(env, target, entry_bci, options, directive);
+    // Try to record size for more methods.
+    if (TrainingData::need_data() && C.method()) {
+      C.method()->inline_instructions_size();
+    }
 
     // Check result and retry if appropriate.
     if (C.failure_reason() != nullptr) {
