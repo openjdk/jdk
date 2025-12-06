@@ -28,7 +28,6 @@
 #include "opto/adlcVMDeps.hpp"
 #include "opto/compile.hpp"
 #include "opto/rangeinference.hpp"
-#include "runtime/handles.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -878,6 +877,7 @@ public:
   static const TypeLong* make(jlong con);
   // must always specify w
   static const TypeLong* make(jlong lo, jlong hi, int widen);
+  static const TypeLong* make_unsigned(julong lo, julong hi, int widen);
   static const Type* make_or_top(const TypeIntPrototype<jlong, julong>& t, int widen);
 
   // Check for single integer
