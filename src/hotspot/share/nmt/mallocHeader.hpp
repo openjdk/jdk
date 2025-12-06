@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
 #define SHARE_NMT_MALLOCHEADER_HPP
 
 #include "nmt/memTag.hpp"
+#include "sanitizers/address.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/nativeCallStack.hpp"
@@ -86,7 +87,6 @@ class outputStream;
  * - The footer canary consists of two bytes. Since the footer location may be unaligned to 16 bits,
  *   the bytes are stored individually.
  */
-
 class MallocHeader {
   NONCOPYABLE(MallocHeader);
   NOT_LP64(uint32_t _alt_canary);
@@ -110,14 +110,39 @@ class MallocHeader {
 
   static uint16_t build_footer(uint8_t b1, uint8_t b2) { return (uint16_t)(((uint16_t)b1 << 8) | (uint16_t)b2); }
 
-  uint8_t* footer_address() const   { return ((address)this) + sizeof(MallocHeader) + _size; }
-  uint16_t get_footer() const       { return build_footer(footer_address()[0], footer_address()[1]); }
-  void set_footer(uint16_t v)       { footer_address()[0] = (uint8_t)(v >> 8); footer_address()[1] = (uint8_t)v; }
+  uint16_t get_footer() const {
+    return build_footer(footer_address()[0], footer_address()[1]);
+  }
+
+  void set_footer(uint16_t v) {
+    footer_address()[0] = (uint8_t)(v >> 8);
+    footer_address()[1] = (uint8_t)v;
+  }
 
   template<typename InTypeParam, typename OutTypeParam>
   inline static OutTypeParam resolve_checked_impl(InTypeParam memblock);
 
+  #ifndef _LP64
+  inline uint32_t alt_canary() const { return _alt_canary; }
+  inline void set_alt_canary(uint32_t value) { _alt_canary = value; }
+  #endif
+
+  inline void set_header_canary(uint16_t value) { _canary = value; }
+  inline uint16_t canary() const { return _canary; }
+
 public:
+  void asan_poison_self() const {
+    AsanPoisoningHelper::poison_memory(footer_address(), sizeof(uint16_t)); // don't change the order
+    AsanPoisoningHelper::poison_memory(this, sizeof(MallocHeader));
+  }
+
+  void asan_unpoison_self() const {
+    AsanPoisoningHelper::unpoison_memory(this, sizeof(MallocHeader));
+    AsanPoisoningHelper::unpoison_memory(footer_address(), sizeof(uint16_t));
+  }
+
+  uint8_t* footer_address() const { return ((address)this) + sizeof(MallocHeader) + size(); }
+
   // Contains all of the necessary data to to deaccount block with NMT.
   struct FreeInfo {
     const size_t size;
@@ -128,7 +153,8 @@ public:
   inline MallocHeader(size_t size, MemTag mem_tag, uint32_t mst_marker);
 
   inline static size_t malloc_overhead() { return sizeof(MallocHeader) + sizeof(uint16_t); }
-  inline size_t size()  const { return _size; }
+  inline size_t size() const { return _size; }
+
   inline MemTag mem_tag() const { return _mem_tag; }
   inline uint32_t mst_marker() const { return _mst_marker; }
 
@@ -139,9 +165,8 @@ public:
   inline void mark_block_as_dead();
   inline void revive();
 
-
-  bool is_dead() const { return _canary == _header_canary_dead_mark; }
-  bool is_live() const { return _canary == _header_canary_live_mark; }
+  bool is_dead() const { return canary() == _header_canary_dead_mark; }
+  bool is_live() const { return canary() == _header_canary_live_mark; }
 
   // Used for debugging purposes only. Check header if it could constitute a valid (live or dead) header.
   inline bool looks_valid() const;

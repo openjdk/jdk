@@ -29,10 +29,8 @@
 #include "sanitizers/address.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
-#include "unittest.hpp"
 #include "testutils.hpp"
-
-#if !INCLUDE_ASAN
+#include "unittest.hpp"
 
 // This prefix shows up on any c heap corruption NMT detects. If unsure which assert will
 // come, just use this one.
@@ -51,6 +49,8 @@
   }
 
 ///////
+
+#if !INCLUDE_ASAN
 
 static void test_overwrite_front() {
   address p = (address) os::malloc(1, mtTest);
@@ -180,14 +180,115 @@ TEST_VM(NMT, test_realloc) {
   }
 }
 
-TEST_VM_FATAL_ERROR_MSG(NMT, memory_corruption_call_stack, ".*header canary.*") {
-  if (MemTracker::tracking_level() != NMT_detail) {
-    guarantee(false, "fake message ignore this - header canary");
-  }
-  const size_t SIZE = 1024;
+#else // ASAN is enabled
+
+#define DEFINE_ASAN_TEST(test_function)  \
+  DEFINE_TEST(test_function, ".*AddressSanitizer.*")
+
+static void test_write_header() {
+  const size_t SIZE = 10;
   char* p = (char*)os::malloc(SIZE, mtTest);
-  *(p - 1) = 0;
-  os::free(p);
+  uint16_t* canary_ptr = (uint16_t*)((char*)p - sizeof(uint16_t));
+  *canary_ptr = 1;
 }
+
+static void test_read_header() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  uint16_t* canary_ptr = (uint16_t*)((char*)p - sizeof(uint16_t));
+  uint16_t read_canary = 0;
+  read_canary = *canary_ptr;
+}
+
+static void test_write_footer() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
+  uint16_t* footer_ptr = (uint16_t*)(mh->footer_address());
+  *footer_ptr = 1;
+}
+
+static void test_read_footer() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
+  uint16_t* footer_ptr = (uint16_t*)(mh->footer_address());
+  uint16_t read_footer = *footer_ptr;
+}
+
+static void test_write_header_after_realloc() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  p = (char*)os::realloc(p, 2 * SIZE, mtTest);
+  uint16_t* canary_ptr = (uint16_t*)((char*)p - sizeof(uint16_t));
+  *canary_ptr = 1;
+}
+
+static void test_read_header_after_realloc() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  p = (char*)os::realloc(p, 2 * SIZE, mtTest);
+  uint16_t* canary_ptr = (uint16_t*)((char*)p - sizeof(uint16_t));
+  uint16_t read_canary = 0;
+  read_canary = *canary_ptr;
+}
+
+static void test_write_footer_after_realloc() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  p = (char*)os::realloc(p, 2 * SIZE, mtTest);
+  MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
+  uint16_t* footer_ptr = (uint16_t*)(mh->footer_address());
+  *footer_ptr = 1;
+}
+
+static void test_read_footer_after_realloc() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  p = (char*)os::realloc(p, 2 * SIZE, mtTest);
+  MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
+  uint16_t* footer_ptr = (uint16_t*)(mh->footer_address());
+  uint16_t read_footer = *footer_ptr;
+}
+
+DEFINE_ASAN_TEST(test_write_header);
+DEFINE_ASAN_TEST(test_read_header);
+DEFINE_ASAN_TEST(test_write_footer);
+DEFINE_ASAN_TEST(test_read_footer);
+DEFINE_ASAN_TEST(test_write_header_after_realloc);
+DEFINE_ASAN_TEST(test_read_header_after_realloc);
+DEFINE_ASAN_TEST(test_write_footer_after_realloc);
+DEFINE_ASAN_TEST(test_read_footer_after_realloc);
+
+static void test_poison_local() {
+  uint16_t a;
+  ASAN_POISON_MEMORY_REGION(&a, sizeof(a));
+  a = 2;
+}
+
+DEFINE_ASAN_TEST(test_poison_local);
+
+TEST_VM(NMT_ASAN, test_unpoison_temporarily_no_death) {
+  uint16_t a;
+  ASAN_POISON_MEMORY_REGION(&a, sizeof(a));
+  {
+    AsanPoisoningHelper aph(&a, sizeof(a));
+    a = 2;
+    EXPECT_EQ(a, 2);
+  }
+}
+
+static void test_unpoison_temporarily() {
+  uint16_t a;
+  ASAN_POISON_MEMORY_REGION(&a, sizeof(a));
+  {
+    AsanPoisoningHelper aph(&a, sizeof(a));
+    a = 2;
+    EXPECT_EQ(a, 2);
+  }
+  a = 3;
+}
+
+DEFINE_ASAN_TEST(test_unpoison_temporarily);
 
 #endif // !INCLUDE_ASAN
