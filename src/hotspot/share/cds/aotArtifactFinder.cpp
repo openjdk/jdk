@@ -96,7 +96,7 @@ void AOTArtifactFinder::find_artifacts() {
   if (CDSConfig::is_dumping_heap()) {
     for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
       BasicType bt = (BasicType)i;
-      if (!is_reference_type(bt)) {
+      if (!is_reference_type(bt) && !is_custom_basic_type(bt)) {
         oop orig_mirror = Universe::java_mirror(bt);
         oop scratch_mirror = HeapShared::scratch_java_mirror(bt);
         HeapShared::scan_java_mirror(orig_mirror);

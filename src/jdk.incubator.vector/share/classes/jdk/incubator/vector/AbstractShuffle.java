@@ -53,7 +53,7 @@ abstract class AbstractShuffle<E> extends VectorShuffle<E> {
     @ForceInline
     final AbstractVector<?> toBitsVectorTemplate() {
         AbstractSpecies<?> dsp = vspecies().asIntegral();
-        Class<?> etype = dsp.elementType();
+        int etype = dsp.laneBasicType();
         Class<?> rvtype = dsp.dummyVector().getClass();
         return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
                                      getClass(), etype, length(),

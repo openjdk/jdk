@@ -39,6 +39,7 @@ public class BasicType {
   public static final BasicType T_SHORT = new BasicType();
   public static final BasicType T_INT = new BasicType();
   public static final BasicType T_LONG = new BasicType();
+  public static final BasicType T_FLOAT16 = new BasicType();
   public static final BasicType T_OBJECT = new BasicType();
   public static final BasicType T_ARRAY = new BasicType();
   public static final BasicType T_VOID = new BasicType();
@@ -63,6 +64,7 @@ public class BasicType {
     T_SHORT.setType(db.lookupIntConstant("T_SHORT").intValue());
     T_INT.setType(db.lookupIntConstant("T_INT").intValue());
     T_LONG.setType(db.lookupIntConstant("T_LONG").intValue());
+    T_FLOAT16.setType(db.lookupIntConstant("T_FLOAT16").intValue());
     T_OBJECT.setType(db.lookupIntConstant("T_OBJECT").intValue());
     T_ARRAY.setType(db.lookupIntConstant("T_ARRAY").intValue());
     T_VOID.setType(db.lookupIntConstant("T_VOID").intValue());
@@ -104,6 +106,10 @@ public class BasicType {
 
   public static int getTLong() {
     return T_LONG.getType();
+  }
+
+  public static int getTFloat16() {
+    return T_FLOAT16.getType();
   }
 
   public static int getTObject() {
@@ -160,6 +166,8 @@ public class BasicType {
       return T_INT;
     } else if (i == T_LONG.getType()) {
       return T_LONG;
+    } else if (i == T_FLOAT16.getType()) {
+      return T_FLOAT16;
     } else if (i == T_OBJECT.getType()) {
       return T_OBJECT;
     } else if (i == T_ARRAY.getType()) {
@@ -221,6 +229,8 @@ public class BasicType {
       return "int";
     } else if (type == T_LONG.getType()) {
       return "long";
+    } else if (type == T_FLOAT16.getType()) {
+      return "float16";
     } else if (type == T_OBJECT.getType()) {
       return "object";
     } else if (type == T_ARRAY.getType()) {

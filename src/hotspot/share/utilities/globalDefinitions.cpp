@@ -133,6 +133,7 @@ void basic_types_init() {
       case T_DOUBLE:
       case T_LONG:
       case T_OBJECT:
+      case T_FLOAT16:     // IEEE 754 binary16 type
       case T_ADDRESS:     // random raw pointer
       case T_METADATA:    // metadata pointer
       case T_NARROWOOP:   // compressed pointer
@@ -207,6 +208,7 @@ char type2char_tab[T_CONFLICT+1] = {
   JVM_SIGNATURE_FLOAT,   JVM_SIGNATURE_DOUBLE,
   JVM_SIGNATURE_BYTE,    JVM_SIGNATURE_SHORT,
   JVM_SIGNATURE_INT,     JVM_SIGNATURE_LONG,
+  0,
   JVM_SIGNATURE_CLASS,   JVM_SIGNATURE_ARRAY,
   JVM_SIGNATURE_VOID,    0,
   0, 0, 0, 0
@@ -223,6 +225,7 @@ const char* type2name_tab[T_CONFLICT+1] = {
   "short",
   "int",
   "long",
+  "float16",
   "object",
   "array",
   "void",
@@ -255,7 +258,7 @@ BasicType name2type(const char* name) {
 }
 
 // Map BasicType to size in words
-int type2size[T_CONFLICT+1]={ -1, 0, 0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 0, 1, 1, 1, 1, -1};
+int type2size[T_CONFLICT+1]={ -1, 0, 0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 0, 1, 1, 1, 1, -1};
 
 BasicType type2field[T_CONFLICT+1] = {
   (BasicType)0,            // 0,
@@ -270,14 +273,15 @@ BasicType type2field[T_CONFLICT+1] = {
   T_SHORT,                 // T_SHORT    =  9,
   T_INT,                   // T_INT      = 10,
   T_LONG,                  // T_LONG     = 11,
-  T_OBJECT,                // T_OBJECT   = 12,
-  T_OBJECT,                // T_ARRAY    = 13,
-  T_VOID,                  // T_VOID     = 14,
-  T_ADDRESS,               // T_ADDRESS  = 15,
-  T_NARROWOOP,             // T_NARROWOOP= 16,
-  T_METADATA,              // T_METADATA = 17,
-  T_NARROWKLASS,           // T_NARROWKLASS = 18,
-  T_CONFLICT               // T_CONFLICT = 19,
+  T_FLOAT16,               // T_FLOAT16  = 12,
+  T_OBJECT,                // T_OBJECT   = 13,
+  T_OBJECT,                // T_ARRAY    = 14,
+  T_VOID,                  // T_VOID     = 15,
+  T_ADDRESS,               // T_ADDRESS  = 16,
+  T_NARROWOOP,             // T_NARROWOOP= 17,
+  T_METADATA,              // T_METADATA = 18,
+  T_NARROWKLASS,           // T_NARROWKLASS = 19,
+  T_CONFLICT               // T_CONFLICT = 20,
 };
 
 
@@ -294,14 +298,15 @@ BasicType type2wfield[T_CONFLICT+1] = {
   T_INT,     // T_SHORT    =  9,
   T_INT,     // T_INT      = 10,
   T_LONG,    // T_LONG     = 11,
-  T_OBJECT,  // T_OBJECT   = 12,
-  T_OBJECT,  // T_ARRAY    = 13,
-  T_VOID,    // T_VOID     = 14,
-  T_ADDRESS, // T_ADDRESS  = 15,
-  T_NARROWOOP, // T_NARROWOOP  = 16,
-  T_METADATA,  // T_METADATA   = 17,
-  T_NARROWKLASS, // T_NARROWKLASS  = 18,
-  T_CONFLICT // T_CONFLICT = 19,
+  T_FLOAT16, // T_LONG     = 12,
+  T_OBJECT,  // T_OBJECT   = 13,
+  T_OBJECT,  // T_ARRAY    = 14,
+  T_VOID,    // T_VOID     = 15,
+  T_ADDRESS, // T_ADDRESS  = 16,
+  T_NARROWOOP, // T_NARROWOOP  = 17,
+  T_METADATA,  // T_METADATA   = 18,
+  T_NARROWKLASS, // T_NARROWKLASS  = 19,
+  T_CONFLICT // T_CONFLICT = 20,
 };
 
 
@@ -318,14 +323,15 @@ int _type2aelembytes[T_CONFLICT+1] = {
   T_SHORT_aelem_bytes,       // T_SHORT    =  9,
   T_INT_aelem_bytes,         // T_INT      = 10,
   T_LONG_aelem_bytes,        // T_LONG     = 11,
-  T_OBJECT_aelem_bytes,      // T_OBJECT   = 12,
-  T_ARRAY_aelem_bytes,       // T_ARRAY    = 13,
-  0,                         // T_VOID     = 14,
-  T_OBJECT_aelem_bytes,      // T_ADDRESS  = 15,
-  T_NARROWOOP_aelem_bytes,   // T_NARROWOOP= 16,
-  T_OBJECT_aelem_bytes,      // T_METADATA = 17,
-  T_NARROWKLASS_aelem_bytes, // T_NARROWKLASS= 18,
-  0                          // T_CONFLICT = 19,
+  T_FLOAT16_aelem_bytes,     // T_LONG     = 12,
+  T_OBJECT_aelem_bytes,      // T_OBJECT   = 13,
+  T_ARRAY_aelem_bytes,       // T_ARRAY    = 14,
+  0,                         // T_VOID     = 15,
+  T_OBJECT_aelem_bytes,      // T_ADDRESS  = 16,
+  T_NARROWOOP_aelem_bytes,   // T_NARROWOOP= 17,
+  T_OBJECT_aelem_bytes,      // T_METADATA = 18,
+  T_NARROWKLASS_aelem_bytes, // T_NARROWKLASS= 19,
+  0                          // T_CONFLICT = 20,
 };
 
 #ifdef ASSERT

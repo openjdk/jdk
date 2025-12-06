@@ -685,14 +685,15 @@ enum BasicType : u1 {
   // T_ADDRESS, T_METADATA, T_NARROWOOP, T_NARROWKLASS describe
   // internal references within the JVM as if they were Java
   // types in their own right.
-  T_OBJECT      = 12,
-  T_ARRAY       = 13,
-  T_VOID        = 14,
-  T_ADDRESS     = 15,
-  T_NARROWOOP   = 16,
-  T_METADATA    = 17,
-  T_NARROWKLASS = 18,
-  T_CONFLICT    = 19, // for stack value type with conflicting contents
+  T_FLOAT16     = 12,
+  T_OBJECT      = 13,
+  T_ARRAY       = 14,
+  T_VOID        = 15,
+  T_ADDRESS     = 16,
+  T_NARROWOOP   = 17,
+  T_METADATA    = 18,
+  T_NARROWKLASS = 19,
+  T_CONFLICT    = 20, // for stack value type with conflicting contents
   T_ILLEGAL     = 99
 };
 
@@ -715,7 +716,7 @@ inline bool is_java_type(BasicType t) {
 }
 
 inline bool is_java_primitive(BasicType t) {
-  return T_BOOLEAN <= t && t <= T_LONG;
+  return (t != T_FLOAT16 && T_BOOLEAN <= t && t <= T_LONG);
 }
 
 inline bool is_subword_type(BasicType t) {
@@ -735,20 +736,24 @@ inline bool is_double_word_type(BasicType t) {
   return (t == T_DOUBLE || t == T_LONG);
 }
 
+inline bool is_custom_basic_type(BasicType t) {
+  return (t == T_FLOAT16);
+}
+
 inline bool is_reference_type(BasicType t, bool include_narrow_oop = false) {
   return (t == T_OBJECT || t == T_ARRAY || (include_narrow_oop && t == T_NARROWOOP));
 }
 
 inline bool is_integral_type(BasicType t) {
-  return is_subword_type(t) || t == T_INT || t == T_LONG;
+  return (is_subword_type(t) || t == T_INT || t == T_LONG);
 }
 
 inline bool is_non_subword_integral_type(BasicType t) {
-  return t == T_INT || t == T_LONG;
+  return (t == T_INT || t == T_LONG);
 }
 
 inline bool is_floating_point_type(BasicType t) {
-  return (t == T_FLOAT || t == T_DOUBLE);
+  return (t == T_FLOAT || t == T_DOUBLE || t == T_FLOAT16);
 }
 
 extern char type2char_tab[T_CONFLICT+1];     // Map a BasicType to a jchar
@@ -806,6 +811,7 @@ enum BasicTypeSize {
   T_SHORT_size       = 1,
   T_INT_size         = 1,
   T_LONG_size        = 2,
+  T_FLOAT16_size     = 1,
   T_OBJECT_size      = 1,
   T_ARRAY_size       = 1,
   T_NARROWOOP_size   = 1,
@@ -837,6 +843,7 @@ enum ArrayElementSize {
   T_SHORT_aelem_bytes       = 2,
   T_INT_aelem_bytes         = 4,
   T_LONG_aelem_bytes        = 8,
+  T_FLOAT16_aelem_bytes     = 2,
 #ifdef _LP64
   T_OBJECT_aelem_bytes      = 8,
   T_ARRAY_aelem_bytes       = 8,
