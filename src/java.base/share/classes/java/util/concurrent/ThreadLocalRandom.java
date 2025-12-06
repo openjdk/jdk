@@ -50,7 +50,6 @@ import jdk.internal.access.JavaUtilConcurrentTLRAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.random.RandomSupport;
 import jdk.internal.util.random.RandomSupport.*;
-import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
 
 /**
@@ -155,19 +154,9 @@ public final class ThreadLocalRandom extends Random {
      */
     static final void localInit() {
         long seed = RandomSupport.mixMurmur64(seeder.getAndAdd(SEEDER_INCREMENT));
-        Thread t = Thread.currentThread(), carrier;
-        U.putLong(t, SEED, seed);
-        int probe = 0; // if virtual, share probe with carrier
-        if ((carrier = JLA.currentCarrierThread()) != t &&
-            (probe = U.getInt(carrier, PROBE)) == 0) {
-            seed = RandomSupport.mixMurmur64(seeder.getAndAdd(SEEDER_INCREMENT));
-            U.putLong(carrier, SEED, seed);
-        }
-        if (probe == 0 && (probe = probeGenerator.addAndGet(PROBE_INCREMENT)) == 0)
-            probe = 1; // skip 0
-        if (carrier != t)
-            U.putInt(carrier, PROBE, probe);
-        U.putInt(t, PROBE, probe);
+        int probe = probeGenerator.addAndGet(PROBE_INCREMENT);
+        JLA.setCarrierLocalRandomSeed(seed);
+        JLA.setCarrierLocalRandomProbe(probe);
     }
 
     /**
@@ -178,7 +167,7 @@ public final class ThreadLocalRandom extends Random {
      * @return the current thread's {@code ThreadLocalRandom}
      */
     public static ThreadLocalRandom current() {
-        if (U.getInt(Thread.currentThread(), PROBE) == 0)
+        if (JLA.carrierLocalRandomProbe() == 0)
             localInit();
         return instance;
     }
@@ -211,9 +200,10 @@ public final class ThreadLocalRandom extends Random {
      * applications likely to use {@code ThreadLocalRandom}.
      */
     final long nextSeed() {
-        Thread t; long r; // read and update per-thread seed
-        U.putLong(t = Thread.currentThread(), SEED,
-                  r = U.getLong(t, SEED) + (t.threadId() << 1) + GOLDEN_GAMMA);
+        // read and update per-carrier thread seed
+        long r = JLA.carrierLocalRandomSeed() +
+                (JLA.currentCarrierThread().threadId() << 1) + GOLDEN_GAMMA;
+        JLA.setCarrierLocalRandomSeed(r);
         return r;
     }
 
@@ -257,7 +247,7 @@ public final class ThreadLocalRandom extends Random {
      * can be used to force initialization on zero return.
      */
     static final int getProbe() {
-        return U.getInt(JLA.currentCarrierThread(), PROBE);
+        return JLA.carrierLocalRandomProbe();
     }
 
     /**
@@ -268,7 +258,7 @@ public final class ThreadLocalRandom extends Random {
         probe ^= probe << 13;   // xorshift
         probe ^= probe >>> 17;
         probe ^= probe << 5;
-        U.putInt(JLA.currentCarrierThread(), PROBE, probe);
+        JLA.setCarrierLocalRandomProbe(probe);
         return probe;
     }
 
@@ -278,26 +268,18 @@ public final class ThreadLocalRandom extends Random {
     static final int nextSecondarySeed() {
         int r;
         Thread t = Thread.currentThread();
-        if ((r = U.getInt(t, SECONDARY)) != 0) {
+        if ((r = JLA.carrierLocalRandomSecondarySeed()) != 0) {
             r ^= r << 13;   // xorshift
             r ^= r >>> 17;
             r ^= r << 5;
         }
         else if ((r = mix32(seeder.getAndAdd(SEEDER_INCREMENT))) == 0)
             r = 1; // avoid zero
-        U.putInt(t, SECONDARY, r);
+        JLA.setCarrierLocalRandomSecondarySeed(r);
         return r;
     }
 
     // Support for other package-private ThreadLocal access
-
-    /**
-     * Erases ThreadLocals by nulling out Thread maps.
-     */
-    static final void eraseThreadLocals(Thread thread) {
-        U.putReference(thread, THREADLOCALS, null);
-        U.putReference(thread, INHERITABLETHREADLOCALS, null);
-    }
 
     // Serialization support
 
@@ -323,7 +305,7 @@ public final class ThreadLocalRandom extends Random {
         throws java.io.IOException {
 
         java.io.ObjectOutputStream.PutField fields = s.putFields();
-        fields.put("rnd", U.getLong(Thread.currentThread(), SEED));
+        fields.put("rnd", JLA.carrierLocalRandomSeed());
         fields.put("initialized", true);
         s.writeFields();
     }
@@ -357,19 +339,6 @@ public final class ThreadLocalRandom extends Random {
      * The increment of seeder per new instance.
      */
     private static final long SEEDER_INCREMENT = 0xbb67ae8584caa73bL;
-
-    // Unsafe mechanics
-    private static final Unsafe U = Unsafe.getUnsafe();
-    private static final long SEED
-        = U.objectFieldOffset(Thread.class, "threadLocalRandomSeed");
-    private static final long PROBE
-        = U.objectFieldOffset(Thread.class, "threadLocalRandomProbe");
-    private static final long SECONDARY
-        = U.objectFieldOffset(Thread.class, "threadLocalRandomSecondarySeed");
-    private static final long THREADLOCALS
-        = U.objectFieldOffset(Thread.class, "threadLocals");
-    private static final long INHERITABLETHREADLOCALS
-        = U.objectFieldOffset(Thread.class, "inheritableThreadLocals");
 
     /** Generates per-thread initialization/probe field */
     private static final AtomicInteger probeGenerator = new AtomicInteger();

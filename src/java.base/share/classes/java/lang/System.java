@@ -2265,6 +2265,30 @@ public final class System {
                 ((ThreadLocal<?>)local).removeCarrierThreadLocal();
             }
 
+            public long carrierLocalRandomSeed() {
+                return Thread.carrierLocalRandomSeed();
+            }
+
+            public int carrierLocalRandomProbe() {
+                return Thread.carrierLocalRandomProbe();
+            }
+
+            public int carrierLocalRandomSecondarySeed() {
+                return Thread.carrierLocalRandomSecondarySeed();
+            }
+
+            public void setCarrierLocalRandomSeed(long seed) {
+                Thread.setCarrierLocalRandomSeed(seed);
+            }
+
+            public void setCarrierLocalRandomProbe(int probe) {
+                Thread.setCarrierLocalRandomProbe(probe);
+            }
+
+            public void setCarrierLocalRandomSecondarySeed(int seed) {
+                Thread.setCarrierLocalRandomSecondarySeed(seed);
+            }
+
             public Object[] scopedValueCache() {
                 return Thread.scopedValueCache();
             }

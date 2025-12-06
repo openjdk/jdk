@@ -567,6 +567,36 @@ public interface JavaLangAccess {
     void removeCarrierThreadLocal(CarrierThreadLocal<?> local);
 
     /**
+     * Returns the current carrier thread's seed value, used by ThreadLocalRandom.
+     */
+    long carrierLocalRandomSeed();
+
+    /**
+     * Returns the current carrier thread's probe value, used by ThreadLocalRandom.
+     */
+    int carrierLocalRandomProbe();
+
+    /**
+     * Returns the current carrier thread's secondary seed value, used by ThreadLocalRandom.
+     */
+    int carrierLocalRandomSecondarySeed();
+
+    /**
+     * Sets the current carrier thread's seed value, used by ThreadLocalRandom.
+     */
+    void setCarrierLocalRandomSeed(long seed);
+
+    /**
+     * Sets the current carrier thread's probe value, used by ThreadLocalRandom.
+     */
+    void setCarrierLocalRandomProbe(int probe);
+
+    /**
+     * Sets the current carrier thread's secondary seed value, used by ThreadLocalRandom.
+     */
+    void setCarrierLocalRandomSecondarySeed(int seed);
+
+    /**
      * Returns the current thread's scoped values cache
      */
     Object[] scopedValueCache();
