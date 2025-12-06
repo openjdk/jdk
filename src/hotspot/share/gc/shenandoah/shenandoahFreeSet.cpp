@@ -175,7 +175,6 @@ ShenandoahRegionPartitions::ShenandoahRegionPartitions(size_t max_regions, Shena
 void ShenandoahFreeSet::account_for_pip_regions(size_t mutator_regions, size_t mutator_bytes,
                                                 size_t collector_regions, size_t collector_bytes) {
   shenandoah_assert_heaplocked();
-  size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
 
   // We have removed all of these regions from their respective partition. Each pip region is "in" the NotFree partition.
   // We want to account for all pip pad memory as if it had been consumed from within the Mutator partition.
@@ -1441,7 +1440,7 @@ template<typename Iter>
 HeapWord* ShenandoahFreeSet::allocate_from_regions(Iter& iterator, ShenandoahAllocRequest &req, bool &in_new_region) {
   for (idx_t idx = iterator.current(); iterator.has_next(); idx = iterator.next()) {
     ShenandoahHeapRegion* r = _heap->get_region(idx);
-    size_t min_size = (req.type() == ShenandoahAllocRequest::_alloc_tlab) ? req.min_size() : req.size();
+    size_t min_size = req.is_lab_alloc() ? req.min_size() : req.size();
     if (alloc_capacity(r) >= min_size * HeapWordSize) {
       HeapWord* result = try_allocate_in(r, req, in_new_region);
       if (result != nullptr) {
@@ -1585,7 +1584,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
   in_new_region = r->is_empty();
   if (in_new_region) {
     log_debug(gc, free)("Using new region (%zu) for %s (" PTR_FORMAT ").",
-                        r->index(), ShenandoahAllocRequest::alloc_type_to_string(req.type()), p2i(&req));
+                        r->index(), req.type_string(), p2i(&req));
     assert(!r->is_affiliated(), "New region %zu should be unaffiliated", r->index());
     r->set_affiliation(req.affiliation());
     if (r->is_old()) {
@@ -1604,7 +1603,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     assert(ctx->is_bitmap_range_within_region_clear(ctx->top_bitmap(r), r->end()), "Bitmap above top_bitmap() must be clear");
 #endif
     log_debug(gc, free)("Using new region (%zu) for %s (" PTR_FORMAT ").",
-                        r->index(), ShenandoahAllocRequest::alloc_type_to_string(req.type()), p2i(&req));
+                        r->index(), req.type_string(), p2i(&req));
   } else {
     assert(r->is_affiliated(), "Region %zu that is not new should be affiliated", r->index());
     if (r->affiliation() != req.affiliation()) {
@@ -1618,8 +1617,8 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
   if (req.is_lab_alloc()) {
     size_t adjusted_size = req.size();
     size_t free = r->free();    // free represents bytes available within region r
-    if (req.type() == ShenandoahAllocRequest::_alloc_plab) {
-      // This is a PLAB allocation
+    if (req.is_old()) {
+      // This is a PLAB allocation(lab alloc in old gen)
       assert(_heap->mode()->is_generational(), "PLABs are only for generational mode");
       assert(_partitions.in_free_set(ShenandoahFreeSetPartitionId::OldCollector, r->index()),
              "PLABS must be allocated in old_collector_free regions");
@@ -1680,26 +1679,19 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
       r->set_update_watermark(r->top());
       if (r->is_old()) {
         _partitions.increase_used(ShenandoahFreeSetPartitionId::OldCollector, (req.actual_size() + req.waste()) * HeapWordSize);
-        assert(req.type() != ShenandoahAllocRequest::_alloc_gclab, "old-gen allocations use PLAB or shared allocation");
-        // for plabs, we'll sort the difference between evac and promotion usage when we retire the plab
       } else {
         _partitions.increase_used(ShenandoahFreeSetPartitionId::Collector, (req.actual_size() + req.waste()) * HeapWordSize);
       }
     }
   }
 
-  size_t ac = alloc_capacity(r);
   ShenandoahFreeSetPartitionId orig_partition;
-  ShenandoahGeneration* request_generation = nullptr;
   if (req.is_mutator_alloc()) {
-    request_generation = _heap->mode()->is_generational()? _heap->young_generation(): _heap->global_generation();
     orig_partition = ShenandoahFreeSetPartitionId::Mutator;
   } else if (req.is_old()) {
-    request_generation = _heap->old_generation();
     orig_partition = ShenandoahFreeSetPartitionId::OldCollector;
   } else {
     // Not old collector alloc, so this is a young collector gclab or shared allocation
-    request_generation = _heap->mode()->is_generational()? _heap->young_generation(): _heap->global_generation();
     orig_partition = ShenandoahFreeSetPartitionId::Collector;
   }
   if (alloc_capacity(r) < PLAB::min_size() * HeapWordSize) {
@@ -1771,7 +1763,6 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req, bo
   idx_t num = ShenandoahHeapRegion::required_regions(words_size * HeapWordSize);
 
   assert(req.is_young(), "Humongous regions always allocated in YOUNG");
-  ShenandoahGeneration* generation = _heap->generation_for(req.affiliation());
 
   // Check if there are enough regions left to satisfy allocation.
   if (num > (idx_t) _partitions.count(ShenandoahFreeSetPartitionId::Mutator)) {
@@ -1917,132 +1908,22 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req, bo
 }
 
 class ShenandoahRecycleTrashedRegionClosure final : public ShenandoahHeapRegionClosure {
-private:
-  static const ssize_t SentinelUsed = -1;
-  static const ssize_t SentinelIndex = -1;
-  static const size_t MaxSavedRegions = 128;
-
-#ifdef ASSERT
-  bool _old_trash_not_in_bounds;
-#endif
-  ShenandoahRegionPartitions* _partitions;
-  volatile size_t _recycled_region_count;
-  ssize_t _region_indices[MaxSavedRegions];
-  ssize_t _region_used[MaxSavedRegions];
-
-  void get_lock_and_flush_buffer(size_t region_count, size_t overflow_region_used, size_t overflow_region_index) {
-    ShenandoahHeap* heap = ShenandoahHeap::heap();
-    ShenandoahHeapLocker locker(heap->lock());
-    size_t recycled_regions = AtomicAccess::load(&_recycled_region_count);
-    size_t region_tallies[int(ShenandoahRegionPartitions::NumPartitions)];
-    size_t used_byte_tallies[int(ShenandoahRegionPartitions::NumPartitions)];
-    for (int p = 0; p < int(ShenandoahRegionPartitions::NumPartitions); p++) {
-      region_tallies[p] = 0;
-      used_byte_tallies[p] = 0;
-    }
-    ShenandoahFreeSetPartitionId p = _partitions->membership(overflow_region_index);
-    used_byte_tallies[int(p)] += overflow_region_used;
-    if (region_count <= recycled_regions) {
-      // _recycled_region_count has not been decremented after I incremented it to obtain region_count, so I will
-      // try to flush the buffer.
-
-      // Multiple worker threads may attempt to flush this buffer.  The first thread to acquire the lock does the work.
-      // _recycled_region_count is only decreased while holding the heap lock.
-      if (region_count > recycled_regions) {
-        region_count = recycled_regions;
-      }
-      for (size_t i = 0; i < region_count; i++) {
-        ssize_t used;
-        // wait for other threads to finish updating their entries within the region buffer before processing entry
-        do {
-          used = _region_used[i];
-        } while (used == SentinelUsed);
-        ssize_t index;
-        do {
-          index = _region_indices[i];
-        } while (index == SentinelIndex);
-
-        ShenandoahFreeSetPartitionId p = _partitions->membership(index);
-        assert(p != ShenandoahFreeSetPartitionId::NotFree, "Trashed regions should be in a free partition");
-        used_byte_tallies[int(p)] += used;
-        region_tallies[int(p)]++;
-      }
-      if (region_count > 0) {
-        for (size_t i = 0; i < MaxSavedRegions; i++) {
-          _region_indices[i] = SentinelIndex;
-          _region_used[i] = SentinelUsed;
-        }
-      }
-
-      // The almost last thing we do before releasing the lock is to set the _recycled_region_count to 0.  What happens next?
-      //
-      //  1. Any worker thread that attempted to buffer a new region while we were flushing the buffer will have seen
-      //     that _recycled_region_count > MaxSavedRegions. All such worker threads will first wait for the lock, then
-      //     discover that the _recycled_region_count is zero, then, while holding the lock, they will process the
-      //     region so it doesn't have to be placed into the buffer.  This handles the large majority of cases.
-      //
-      //  2. However, there's a race that can happen, which will result in someewhat different behavior.  Suppose
-      //     this thread resets _recycled_region_count to 0.  Then some other worker thread increments _recycled_region_count
-      //     in order to stores its region into the buffer and suppose this happens before all of the other worker threads
-      //     which are waiting to acquire the heap lock have finished their efforts to flush the buffer.  If this happens,
-      //     then the workers who are waiting to acquire the heap lock and flush the buffer will find that _recycled_region_count
-      //     has decreased from the value it held when they last tried to increment its value.  In this case, these worker
-      //     threads will process their overflow region while holding the lock, but they will not attempt to process regions
-      //     newly placed into the buffer.  Otherwise, confusion could result.
-      //
-      // Assumption: all worker threads who are attempting to acquire lock and flush buffer will finish their efforts before
-      //             the buffer once again overflows.
-      // How could we avoid depending on this assumption?
-      //   1. Let MaxSavedRegions be as large as number of regions, or at least as large as the collection set.
-      //   2. Keep a count of how many times the buffer has been flushed per instantation of the
-      //      ShenandoahRecycleTrashedRegionClosure object, and only consult/update this value while holding the heap lock.
-      //      Need to think about how this helps resolve the race.
-      _recycled_region_count = 0;
-    } else {
-      // Some other thread has already processed the buffer, resetting _recycled_region_count to zero. Its current value
-      // may be greater than zero because other workers may have accumulated entries into the buffer. But it is "extremely"
-      // unlikely that it will overflow again before all waiting workers have had a chance to clear their state. While I've
-      // got the heap lock, I'll go ahead and update the global state for my overflow region. I'll let other heap regions
-      // accumulate in the buffer to be processed when the buffer is once again full.
-      region_count = 0;
-    }
-    for (size_t p = 0; p < int(ShenandoahRegionPartitions::NumPartitions); p++) {
-      _partitions->decrease_used(ShenandoahFreeSetPartitionId(p), used_byte_tallies[p]);
-    }
-  }
-
 public:
-#ifdef ASSERT
-  ShenandoahRecycleTrashedRegionClosure(ShenandoahRegionPartitions* partitions, bool old_trash_not_in_bounds):
-    ShenandoahHeapRegionClosure(),
-    _old_trash_not_in_bounds(old_trash_not_in_bounds),
-    _partitions(partitions),
-    _recycled_region_count(0)
-#else
-  ShenandoahRecycleTrashedRegionClosure(ShenandoahRegionPartitions* partitions):
-    ShenandoahHeapRegionClosure(),
-    _partitions(partitions),
-    _recycled_region_count(0)
-#endif
-  {
-    for (size_t i = 0; i < MaxSavedRegions; i++) {
-      _region_indices[i] = SentinelIndex;
-      _region_used[i] = SentinelUsed;
-    }
-  }
-
   void heap_region_do(ShenandoahHeapRegion* r) {
     if (r->is_trash()) {
 #ifdef ASSERT
       ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock());
       r->try_recycle_under_lock();
       assert(!r->is_trash(), "try_recycle_under_lock() should assure that region is recycled");
+#ifdef KELVIN_DEPRECATE
+      // kelvin does not yet understand why I no longer need _old_trash_not_in_bounds
       if (_old_trash_not_in_bounds &&
           r->is_empty() && _partitions->in_free_set(ShenandoahFreeSetPartitionId::OldCollector, r->index())) {
         // Note: if assertions are not enforced, there's no rush to adjust this interval.  We'll adjust the
         // interval when we eventually rebuild the free set.
         _partitions->adjust_interval_for_recycled_old_region_under_lock(r);
       }
+#endif
 #else
       r->try_recycle();
 #endif
@@ -2060,11 +1941,8 @@ void ShenandoahFreeSet::recycle_trash() {
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   heap->assert_gc_workers(heap->workers()->active_workers());
-#ifdef ASSERT
-  ShenandoahRecycleTrashedRegionClosure closure(&_partitions, _old_trash_not_in_bounds);
-#else
-  ShenandoahRecycleTrashedRegionClosure closure(&_partitions);
-#endif
+
+  ShenandoahRecycleTrashedRegionClosure closure;
   heap->parallel_heap_region_iterate(&closure);
 #ifdef ASSERT
   ShenandoahHeapLocker locker(_heap->lock());
@@ -2074,8 +1952,6 @@ void ShenandoahFreeSet::recycle_trash() {
 
 bool ShenandoahFreeSet::transfer_one_region_from_mutator_to_old_collector(size_t idx, size_t alloc_capacity) {
   ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
-  ShenandoahYoungGeneration* young_gen = gen_heap->young_generation();
-  ShenandoahOldGeneration* old_gen = gen_heap->old_generation();
   size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
   assert(alloc_capacity == region_size_bytes, "Region must be empty");
   if (young_unaffiliated_regions() > 0) {
@@ -2103,7 +1979,6 @@ bool ShenandoahFreeSet::flip_to_old_gc(ShenandoahHeapRegion* r) {
   assert(_partitions.partition_id_matches(idx, ShenandoahFreeSetPartitionId::Mutator), "Should be in mutator view");
   assert(can_allocate_from(r), "Should not be allocated");
 
-  ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
   const size_t region_alloc_capacity = alloc_capacity(r);
 
   if (transfer_one_region_from_mutator_to_old_collector(idx, region_alloc_capacity)) {
@@ -2251,7 +2126,6 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_trashed_r
   size_t total_mutator_regions = 0;
   size_t total_old_collector_regions = 0;
 
-  bool is_generational = _heap->mode()->is_generational();
   size_t num_regions = _heap->num_regions();
   for (size_t idx = 0; idx < num_regions; idx++) {
     ShenandoahHeapRegion* region = _heap->get_region(idx);
@@ -2346,7 +2220,6 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_trashed_r
         }
       } else {
         assert(_partitions.membership(idx) == ShenandoahFreeSetPartitionId::NotFree, "Region should have been retired");
-        size_t ac = alloc_capacity(region);
         size_t humongous_waste_bytes = 0;
         if (region->is_humongous_start()) {
           // Since rebuild does not necessarily happen at a safepoint, a newly allocated humongous object may not have been
@@ -3302,7 +3175,6 @@ void ShenandoahFreeSet::log_status() {
       size_t total_used = 0;
       size_t total_free = 0;
       size_t total_free_ext = 0;
-      size_t total_trashed_free = 0;
 
       for (idx_t idx = _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator);
            idx <= _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator); idx++) {

@@ -87,7 +87,9 @@ public:
   void update_region_ages(ShenandoahMarkingContext* ctx);
 
   oop evacuate_object(oop p, Thread* thread) override;
-  oop try_evacuate_object(oop p, Thread* thread, ShenandoahHeapRegion* from_region, ShenandoahAffiliation target_gen);
+
+  template<ShenandoahAffiliation FROM_REGION, ShenandoahAffiliation TO_REGION>
+  oop try_evacuate_object(oop p, Thread* thread, uint from_region_age);
 
   // In the generational mode, we will use these two functions for young, mixed, and global collections.
   // For young and mixed, the generation argument will be the young generation, otherwise it will be the global generation.
@@ -129,6 +131,9 @@ public:
   void gc_threads_do(ThreadClosure* tcl) const override;
 
   bool requires_barriers(stackChunkOop obj) const override;
+
+  // Zeros out the evacuation and promotion reserves
+  void reset_generation_reserves();
 
   // Computes the optimal size for the old generation, represented as a surplus or deficit of old regions
   void compute_old_generation_balance(size_t old_xfer_limit, size_t old_trashed_regions, size_t young_trashed_regions);

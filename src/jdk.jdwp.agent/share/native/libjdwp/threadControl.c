@@ -70,6 +70,7 @@ typedef struct ThreadNode {
     unsigned int popFrameEvent : 1;
     unsigned int popFrameProceed : 1;
     unsigned int popFrameThread : 1;
+    unsigned int frameGeneration_accessed:1; /* true if frameGeneration accessed to produce a FrameID */
     EventIndex current_ei; /* Used to determine if we are currently handling an event on this thread. */
     jobject pendingStop;   /* Object we are throwing to stop the thread (ThreadReferenceImpl.stop). */
     jint suspendCount;     /* Number of outstanding suspends from the debugger. */
@@ -157,11 +158,24 @@ setThreadLocalStorage(jthread thread, ThreadNode *node)
 
     error = JVMTI_FUNC_PTR(gdata->jvmti,SetThreadLocalStorage)
             (gdata->jvmti, thread, (void*)node);
-    if ( error == JVMTI_ERROR_THREAD_NOT_ALIVE && node == NULL) {
-        /* Just return. This can happen when clearing the TLS. */
+    if (error == JVMTI_ERROR_THREAD_NOT_ALIVE) {
+        if (node == NULL) {
+            // Just return. This can happen when clearing the TLS.
+            return;
+        }
+        if (isVThread(thread)) {
+            // Just return. This can happen with a vthread that is running and we
+            // had to create a ThreadNode for it. By the time we get here, it may
+            // have already terminated.
+            return;
+        }
+    }
+    if (error == JVMTI_ERROR_WRONG_PHASE && gdata->vmDead && isVThread(thread)) {
+        // Just return. This can happen with vthreads when the vm is exiting.
         return;
-    } else if ( error != JVMTI_ERROR_NONE ) {
-        /* The jthread object must be valid, so this must be a fatal error */
+    }
+    if (error != JVMTI_ERROR_NONE) {
+        // The jthread object must be valid, so this must be a fatal error.
         EXIT_ERROR(error, "cannot set thread local storage");
     }
 }
@@ -251,9 +265,10 @@ findThread(ThreadList *list, jthread thread)
          * Otherwise the thread should not be on the runningThreads.
          */
         if ( !gdata->jvmtiCallBacksCleared ) {
-            /* The thread better not be on either list if the TLS lookup failed. */
+            // The thread better not be on the runningThreads list if the TLS lookup failed.
+            // It might be on the runningVThreads list because of how ThreadNodes for vthreads
+            // can be recreated just before terminating, so we don't check runningVThreads.
             JDI_ASSERT(!nonTlsSearch(getEnv(), &runningThreads, thread));
-            JDI_ASSERT(!nonTlsSearch(getEnv(), &runningVThreads, thread));
         } else {
             /*
              * Search the runningThreads and runningVThreads lists. The TLS lookup may have
@@ -606,6 +621,7 @@ freeUnusedVThreadNode(JNIEnv *env, ThreadNode* node)
         !node->popFrameEvent &&
         !node->popFrameProceed &&
         !node->popFrameThread &&
+        !node->frameGeneration_accessed &&
         node->pendingStop == NULL)
     {
         removeNode(node);
@@ -2673,6 +2689,7 @@ threadControl_getFrameGeneration(jthread thread)
 
         if (node != NULL) {
             frameGeneration = node->frameGeneration;
+            node->frameGeneration_accessed = JNI_TRUE;
         }
     }
     debugMonitorExit(threadLock);

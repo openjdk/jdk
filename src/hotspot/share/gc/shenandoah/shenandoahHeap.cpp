@@ -992,7 +992,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
 
     assert (req.is_lab_alloc() || (requested == actual),
             "Only LAB allocations are elastic: %s, requested = %zu, actual = %zu",
-            ShenandoahAllocRequest::alloc_type_to_string(req.type()), requested, actual);
+            req.type_string(), requested, actual);
   }
 
   return result;
@@ -1021,8 +1021,9 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
 
   // Record the plab configuration for this result and register the object.
   if (result != nullptr && req.is_old()) {
-    old_generation()->configure_plab_for_current_thread(req);
-    if (req.type() == ShenandoahAllocRequest::_alloc_shared_gc) {
+    if (req.is_lab_alloc()) {
+      old_generation()->configure_plab_for_current_thread(req);
+    } else {
       // Register the newly allocated object while we're holding the global lock since there's no synchronization
       // built in to the implementation of register_object().  There are potential races when multiple independent
       // threads are allocating objects, some of which might span the same card region.  For example, consider
@@ -1042,6 +1043,13 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
       // last-start representing object b while first-start represents object c.  This is why we need to require all
       // register_object() invocations to be "mutually exclusive" with respect to each card's memory range.
       old_generation()->card_scan()->register_object(result);
+
+      if (req.is_promotion()) {
+        // Shared promotion.
+        const size_t actual_size = req.actual_size() * HeapWordSize;
+        log_debug(gc, plab)("Expend shared promotion of %zu bytes", actual_size);
+        old_generation()->expend_promoted(actual_size);
+      }
     }
   }
 
@@ -1969,7 +1977,7 @@ void ShenandoahHeap::parallel_heap_region_iterate(ShenandoahHeapRegionClosure* b
   assert(blk->is_thread_safe(), "Only thread-safe closures here");
   const uint active_workers = workers()->active_workers();
   const size_t n_regions = num_regions();
-  size_t stride = ShenandoahParallelRegionStride;
+  size_t stride = blk->parallel_region_stride();
   if (stride == 0 && active_workers > 1) {
     // Automatically derive the stride to balance the work between threads
     // evenly. Do not try to split work if below the reasonable threshold.
