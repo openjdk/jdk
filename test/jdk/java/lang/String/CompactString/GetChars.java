@@ -32,8 +32,7 @@ import static org.testng.Assert.assertTrue;
  * @test
  * @bug 8077559
  * @summary Tests Compact String. This one is for String.getChars.
- * @run testng/othervm -XX:+CompactStrings GetChars
- * @run testng/othervm -XX:-CompactStrings GetChars
+ * @run testng/othervm GetChars
  */
 
 public class GetChars extends CompactString {

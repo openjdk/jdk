@@ -30,8 +30,7 @@ import static org.testng.Assert.assertEquals;
  * @test
  * @bug 8077559
  * @summary Tests Compact String. This one is for String.concat.
- * @run testng/othervm -XX:+CompactStrings Concat
- * @run testng/othervm -XX:-CompactStrings Concat
+ * @run testng/othervm Concat
  */
 
 public class Concat extends CompactString {

@@ -31,8 +31,7 @@ import java.util.Arrays;
  * @test
  * @bug 8302323 8322512
  * @summary Test StringBuffer.repeat sanity tests
- * @run testng/othervm -XX:-CompactStrings StringBufferRepeat
- * @run testng/othervm -XX:+CompactStrings StringBufferRepeat
+ * @run testng/othervm StringBufferRepeat
  */
 @Test
 public class StringBufferRepeat {

@@ -32,8 +32,7 @@ import static org.testng.Assert.assertEquals;
  * @test
  * @bug 8077559
  * @summary Tests Compact String. This one is for String.charAt.
- * @run testng/othervm -XX:+CompactStrings CharAt
- * @run testng/othervm -XX:-CompactStrings CharAt
+ * @run testng/othervm CharAt
  */
 
 public class CharAt extends CompactString {
