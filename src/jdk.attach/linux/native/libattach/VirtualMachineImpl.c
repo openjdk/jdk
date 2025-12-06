@@ -30,6 +30,11 @@
 #include "sun_tools_attach_VirtualMachineImpl.h"
 
 /*
+ * Declare library specific JNI_Onload entry if static build
+ */
+DEF_STATIC_JNI_OnLoad
+
+/*
  * Class:     sun_tools_attach_VirtualMachineImpl
  * Method:    sendQuitTo
  * Signature: (I)V
