@@ -28,6 +28,9 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileLog.hpp"
+#if INCLUDE_SHENANDOAHGC
+#include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
+#endif // INCLUDE_SHENANDOAHGC
 #include "libadt/dict.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -731,6 +734,12 @@ void Type::Initialize_shared(Compile* current) {
   mreg2type[Op_VecX] = TypeVect::VECTX;
   mreg2type[Op_VecY] = TypeVect::VECTY;
   mreg2type[Op_VecZ] = TypeVect::VECTZ;
+
+#if INCLUDE_SHENANDOAHGC
+  ShenandoahBarrierSetC2::make_write_barrier_pre_Type();
+  ShenandoahBarrierSetC2::make_clone_barrier_Type();
+  ShenandoahBarrierSetC2::make_load_reference_barrier_Type();
+#endif //INCLUDE_SHENANDOAHGC
 
   LockNode::initialize_lock_Type();
   ArrayCopyNode::initialize_arraycopy_Type();

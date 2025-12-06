@@ -103,9 +103,18 @@ public:
 
   ShenandoahBarrierSetC2State* state() const;
 
+  static const TypeFunc* _write_barrier_pre_Type;
   static const TypeFunc* write_barrier_pre_Type();
+  static void make_write_barrier_pre_Type();
+
+  static const TypeFunc* _clone_barrier_Type;
   static const TypeFunc* clone_barrier_Type();
+  static void make_clone_barrier_Type();
+
+  static const TypeFunc* _load_reference_barrier_Type;
   static const TypeFunc* load_reference_barrier_Type();
+  static void make_load_reference_barrier_Type();
+
   virtual bool has_load_barrier_nodes() const { return true; }
 
   // This is the entry-point for the backend to perform accesses through the Access API.
