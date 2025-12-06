@@ -207,7 +207,6 @@ public class JavacTaskImpl extends BasicJavacTask {
             // init JavaCompiler and queues
             compiler = JavaCompiler.instance(context);
             compiler.keepComments = true;
-            compiler.genEndPos = true;
             notYetEntered = new HashMap<>();
             if (forParse) {
                 compiler.initProcessAnnotations(processors, args.getFileObjects(), args.getClassNames());

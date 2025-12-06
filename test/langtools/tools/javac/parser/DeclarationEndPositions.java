@@ -78,7 +78,7 @@ public class DeclarationEndPositions {
                         throw new AssertionError(String.format(
                           "wrong %s pos %d for \"%s\" in \"%s\"", "start", start, tree, input));
                     }
-                    int end = TreeInfo.getEndPos(tree, unit.endPositions);
+                    int end = TreeInfo.getEndPos(tree);
                     if (markers.charAt(end - 1) != '>') {
                         throw new AssertionError(String.format(
                           "wrong %s pos %d for \"%s\" in \"%s\"", "end", end, tree, input));

@@ -33,7 +33,6 @@ import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
-import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.*;
 
@@ -1215,7 +1214,7 @@ public class JavaTokenizer extends UnicodeReader {
             this.cs = cs;
             this.pos = new SimpleDiagnosticPosition(pos) {
                 @Override
-                public int getEndPosition(EndPosTable endPosTable) {
+                public int getEndPosition() {
                     return endPos;
                 }
             };
