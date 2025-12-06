@@ -72,7 +72,7 @@ ShenandoahHeuristics::~ShenandoahHeuristics() {
   FREE_C_HEAP_ARRAY(RegionGarbage, _region_data);
 }
 
-void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collection_set) {
+ssize_t ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collection_set) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   assert(collection_set->is_empty(), "Must be empty");
@@ -96,6 +96,10 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
 
   size_t free = 0;
   size_t free_regions = 0;
+#undef KELVIN_DEBUG
+#ifdef KELVIN_DEBUG
+  log_info(gc)("ShenandoahHeuristics::choose_collection_set()");
+#endif
 
   for (size_t i = 0; i < num_regions; i++) {
     ShenandoahHeapRegion* region = heap->get_region(i);
@@ -150,11 +154,14 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
 
   size_t immediate_percent = (total_garbage == 0) ? 0 : (immediate_garbage * 100 / total_garbage);
 
+#ifdef KELVIN_DEBUG
+  log_info(gc)(" choose_collection_set() finds immediate_percent: %zu", immediate_percent);
+#endif
   if (immediate_percent <= ShenandoahImmediateThreshold) {
     choose_collection_set_from_regiondata(collection_set, candidates, cand_idx, immediate_garbage + free);
   }
-
   collection_set->summarize(total_garbage, immediate_garbage, immediate_regions);
+  return 0;
 }
 
 void ShenandoahHeuristics::record_cycle_start() {
