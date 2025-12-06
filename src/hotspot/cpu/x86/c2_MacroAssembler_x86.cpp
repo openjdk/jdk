@@ -866,7 +866,8 @@ void C2_MacroAssembler::vpminmax(int opcode, BasicType elem_bt,
       if (UseAVX > 2 && (vlen_enc == Assembler::AVX_512bit || VM_Version::supports_avx512vl())) {
         vpminsq(dst, src1, src2, vlen_enc);
       } else {
-        assert_different_registers(dst, src1, src2);
+        assert_different_registers(dst, src1);
+        assert_different_registers(dst, src2);
         vpcmpgtq(dst, src1, src2, vlen_enc);
         vblendvpd(dst, src1, src2, dst, vlen_enc);
       }
@@ -883,7 +884,8 @@ void C2_MacroAssembler::vpminmax(int opcode, BasicType elem_bt,
       if (UseAVX > 2 && (vlen_enc == Assembler::AVX_512bit || VM_Version::supports_avx512vl())) {
         vpmaxsq(dst, src1, src2, vlen_enc);
       } else {
-        assert_different_registers(dst, src1, src2);
+        assert_different_registers(dst, src1);
+        assert_different_registers(dst, src2);
         vpcmpgtq(dst, src1, src2, vlen_enc);
         vblendvpd(dst, src2, src1, dst, vlen_enc);
       }
