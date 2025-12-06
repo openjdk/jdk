@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2017,13 +2017,48 @@ public abstract sealed class VarHandle implements Constable
         final int type;
         final int mode;
 
-        public AccessDescriptor(MethodType symbolicMethodType, int type, int mode) {
+        // Adaption mechanism to reduce overhead for non-exact access.
+        // This heuristic assumes that each sigpoly VH call site usually sees
+        // exactly one VarHandle instance.  Each sigpoly VH call site already
+        // has a dedicated AccessDescriptor.
+        // (See MethodHandleNatives::varHandleOperationLinkerMethod)
+        // However, for correctness, we must verify the incoming VarHandle;
+        // adaptedMethodHandle may be inlined by different callers.
+        // In the long run, we wish to put a specific-type invoker that converts
+        // from one fixed type (symbolicMethodTypeInvoker) to another (the
+        // invocation type of the underlying MemberName, or MH for indirect VH),
+        // perform a foldable lookup with a hash table, and hope C2 inline it
+        // all.
+
+        // Object indirection is the only way to ensure the vh and mh are not
+        // from two writes (they must not be tearable)
+        private record Adaption(VarHandle vh, MethodHandle mh) {}
+        private @Stable Adaption adaption;
+
+        AccessDescriptor(MethodType symbolicMethodType, int type, int mode) {
             this.symbolicMethodTypeExact = symbolicMethodType;
             this.symbolicMethodTypeErased = symbolicMethodType.erase();
             this.symbolicMethodTypeInvoker = symbolicMethodType.insertParameterTypes(0, VarHandle.class);
             this.returnType = symbolicMethodType.returnType();
             this.type = type;
             this.mode = mode;
+        }
+
+        @ForceInline
+        MethodHandle adaptedMethodHandle(VarHandle vh) {
+            var cache = adaption;
+            if (cache != null && cache.vh == vh) {
+                return cache.mh;
+            }
+
+            var mh = vh.getMethodHandle(mode).asType(symbolicMethodTypeInvoker);
+            if (cache == null) {
+                // Reduce costly object allocation - if our assumption stands,
+                // the first adaption works, and we don't want allocations for
+                // every VH invocation.
+                adaption = new Adaption(vh, mh);
+            }
+            return mh;
         }
     }
 

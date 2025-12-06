@@ -622,6 +622,8 @@ abstract class MethodHandleImpl {
     }
 
     // Intrinsified by C2. Returns true if obj is a compile-time constant.
+    // Note that a non-constant value may be subsequently promoted to a constant,
+    // so a false return value does not indicate obj is definitely not a constant.
     @Hidden
     @jdk.internal.vm.annotation.IntrinsicCandidate
     static boolean isCompileConstant(Object obj) {
