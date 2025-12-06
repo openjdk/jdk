@@ -25,13 +25,13 @@
 
 #include "jfr/support/jfrAdaptiveSampler.hpp"
 #include "jfr/utilities/jfrRandom.inline.hpp"
-#include "jfr/utilities/jfrSpinlockHelper.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTimeConverter.hpp"
 #include "jfr/utilities/jfrTryLock.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/spinCriticalSection.hpp"
 
 #include <cmath>
 
@@ -342,7 +342,7 @@ JfrGTestFixedRateSampler::JfrGTestFixedRateSampler(size_t sample_points_per_wind
 
 bool JfrGTestFixedRateSampler::initialize() {
   const bool result = JfrAdaptiveSampler::initialize();
-  JfrSpinlockHelper mutex(&_lock);
+  SpinCriticalSection scs(&_lock);
   reconfigure();
   return result;
 }
