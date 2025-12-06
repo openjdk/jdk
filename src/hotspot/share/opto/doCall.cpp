@@ -37,6 +37,7 @@
 #include "opto/callGenerator.hpp"
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
+#include "opto/graphKit.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/parse.hpp"
 #include "opto/rootnode.hpp"
@@ -953,6 +954,8 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
   // Start executing from the given throw state.  (Keep its stack, for now.)
   // Get the exception oop as known at compile time.
   ex_node = use_exception_state(ex_map);
+  // The stack from before the throwing bytecode is gone, cannot reexecute here
+  jvms()->set_should_reexecute(false);
 
   // Get the exception oop klass from its header
   Node* ex_klass_node = nullptr;
