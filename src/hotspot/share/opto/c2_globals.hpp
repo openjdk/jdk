@@ -76,6 +76,17 @@
   develop(bool, StressBailout, false,                                       \
           "Perform bailouts randomly at C2 failing() checks")               \
                                                                             \
+  product(bool, OptimizeReachabilityFences, true, DIAGNOSTIC,               \
+          "Optimize reachability fences "                                   \
+          "(leave reachability fence nodes intact when turned off)")        \
+                                                                            \
+  product(bool, PreserveReachabilityFencesOnConstants, false, DIAGNOSTIC,   \
+          "Keep reachability fences on compile-time constants")             \
+                                                                            \
+  product(bool, StressReachabilityFences, false, DIAGNOSTIC,                \
+          "Aggressively insert reachability fences "                        \
+          "for all oop method arguments")                                   \
+                                                                            \
   develop(uint, StressBailoutMean, 100000,                                  \
           "The expected number of failing() checks made until "             \
           "a random bailout.")                                              \
