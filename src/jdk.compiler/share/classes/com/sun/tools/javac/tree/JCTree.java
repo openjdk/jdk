@@ -505,7 +505,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
     // for default DiagnosticPosition
     public int getStartPosition() {
-        return TreeInfo.getStartPos(this);
+        return noNoPos(TreeInfo.getStartPos(this));
     }
 
     // for default DiagnosticPosition
@@ -515,7 +515,14 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
     // for default DiagnosticPosition
     public int getEndPosition(EndPosTable endPosTable) {
-        return TreeInfo.getEndPos(this, endPosTable);
+        return noNoPos(TreeInfo.getEndPos(this, endPosTable));
+    }
+
+    private int noNoPos(int position) {
+        if (position == JCDiagnostic.NOPOS) {
+            return pos;
+        }
+        return position;
     }
 
     /**

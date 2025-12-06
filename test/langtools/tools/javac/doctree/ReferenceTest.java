@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614 8278373 8164094
+ * @bug 7021614 8278373 8164094 8371248
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @summary check references in at-see and {at-link} tags
  * @modules jdk.compiler
@@ -43,6 +43,7 @@ import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.processing.AbstractProcessor;
@@ -83,6 +84,31 @@ import javax.tools.Diagnostic.Kind;
  * {@link #trees Field}
  * {@link #getSupportedSourceVersion Method}
  * {@link #init(ProcessingEnvironment Method}
+ * {@link double Class}
+ * {@link double.NAN Bad}
+ * {@link double#NAN Bad}
+ * {@link double#double Bad}
+ * {@link java.base/double Bad}
+ *
+ * {@link List<String> Interface}
+ * {@link List<String>.add Bad}
+ * {@link List<String>#add Method}
+ * {@link List<String>#add(Object) Method}
+ * {@link Map<String, String>.Entry Interface}
+ * {@link Map<String, String>.Entry<String, String> Interface}
+ * {@link Map<String, String>.Entry<String, String>.getKey Bad}
+ * {@link Map<String, String>.Entry<String, String>#getKey Method}
+ * {@link Map<String, String>.Entry<String, String>#setValue(Object) Method}
+ *
+ * {@link java.base/java.util.List<String> Bad}
+ * {@link java.base/java.util.List<String>.add Bad}
+ * {@link java.base/java.util.List<String>#add Bad}
+ * {@link java.base/java.util.List<String>#add(Object) Bad}
+ * {@link java.base/java.util.Map<String, String>.Entry Bad}
+ * {@link java.base/java.util.Map<String, String>.Entry<String, String> Bad}
+ * {@link java.base/java.util.Map<String, String>.Entry<String, String>.getKey Bad}
+ * {@link java.base/java.util.Map<String, String>.Entry<String, String>#getKey Bad}
+ * {@link java.base/java.util.Map<String, String>.Entry<String, String>#setValue(Object) Bad}
  *
  * @see java.lang        Package
  * @see java.lang.ERROR  Bad
