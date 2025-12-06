@@ -1662,11 +1662,19 @@ void TemplateTable::float_cmp(bool is_float, int unordered_result) {
   if (is_float) {
     // XXX get rid of pop here, use ... reg, mem32
     __ pop_f(xmm1);
-    __ ucomiss(xmm1, xmm0);
+    if (VM_Version::supports_avx10_2()) {
+      __ ucomxss(xmm1, xmm0);
+    } else {
+      __ ucomiss(xmm1, xmm0);
+    }
   } else {
     // XXX get rid of pop here, use ... reg, mem64
     __ pop_d(xmm1);
-    __ ucomisd(xmm1, xmm0);
+    if (VM_Version::supports_avx10_2()) {
+      __ ucomxsd(xmm1, xmm0);
+    } else {
+      __ ucomisd(xmm1, xmm0);
+    }
   }
   if (unordered_result < 0) {
     __ movl(rax, -1);
