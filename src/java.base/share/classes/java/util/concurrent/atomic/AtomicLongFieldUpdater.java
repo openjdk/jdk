@@ -42,6 +42,8 @@ import java.util.function.LongUnaryOperator;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
+import jdk.internal.vm.annotation.TrustFinalFields;
+
 import java.lang.invoke.VarHandle;
 
 /**
@@ -368,6 +370,7 @@ public abstract class AtomicLongFieldUpdater<T> {
         return next;
     }
 
+    @TrustFinalFields
     private static final class CASUpdater<T> extends AtomicLongFieldUpdater<T> {
         private static final Unsafe U = Unsafe.getUnsafe();
         private final long offset;
