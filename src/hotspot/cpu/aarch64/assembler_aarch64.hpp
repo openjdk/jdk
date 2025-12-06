@@ -3661,6 +3661,10 @@ public:
     f(op1, 31, 25), f(type, 24, 23), f(op2, 22, 21), rf(Zm, 16);                \
     f(op3, 15, 13), pgrf(Pg, 10), srf(Xn, 5), rf(Zt, 0);                        \
   }
+  // SVE 8-bit gather load bytes (scalar plus 32-bit unscaled offsets)
+  INSN(sve_ld1b_gather,  0b1000010, 0b00, 0b00, 0b010);
+  // SVE 16-bit gather load halfwords (scalar plus 32-bit scaled offsets)
+  INSN(sve_ld1h_gather,  0b1000010, 0b01, 0b01, 0b010);
   // SVE 32-bit gather load words (scalar plus 32-bit scaled offsets)
   INSN(sve_ld1w_gather,  0b1000010, 0b10, 0b01, 0b010);
   // SVE 64-bit gather load (scalar plus 32-bit unpacked scaled offsets)
