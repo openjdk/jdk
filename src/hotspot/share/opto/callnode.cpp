@@ -1147,7 +1147,6 @@ Node* CallStaticJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         assert(callee->has_member_arg(), "wrong type of call?");
         if (in(TypeFunc::Parms + callee->arg_size() - 1)->Opcode() == Op_ConP) {
           register_for_late_inline();
-          phase->C->inc_number_of_mh_late_inlines();
         }
       }
     } else {

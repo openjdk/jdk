@@ -168,11 +168,17 @@ address Method::get_c2i_entry() {
 }
 
 address Method::get_c2i_unverified_entry() {
+  if (is_abstract()) {
+    return SharedRuntime::get_handle_wrong_method_abstract_stub();
+  }
   assert(adapter() != nullptr, "must have");
   return adapter()->get_c2i_unverified_entry();
 }
 
 address Method::get_c2i_no_clinit_check_entry() {
+  if (is_abstract()) {
+    return nullptr;
+  }
   assert(VM_Version::supports_fast_class_init_checks(), "");
   assert(adapter() != nullptr, "must have");
   return adapter()->get_c2i_no_clinit_check_entry();

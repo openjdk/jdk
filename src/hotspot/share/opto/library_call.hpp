@@ -275,9 +275,11 @@ class LibraryCallKit : public GraphKit {
   bool inline_native_Continuation_pinning(bool unpin);
 
   bool inline_native_time_funcs(address method, const char* funcName);
+
+  bool inline_native_vthread_start_transition(address funcAddr, const char* funcName, bool is_final_transition);
+  bool inline_native_vthread_end_transition(address funcAddr, const char* funcName, bool is_first_transition);
+
 #if INCLUDE_JVMTI
-  bool inline_native_notify_jvmti_funcs(address funcAddr, const char* funcName, bool is_start, bool is_end);
-  bool inline_native_notify_jvmti_hide();
   bool inline_native_notify_jvmti_sync();
 #endif
 
@@ -338,7 +340,7 @@ class LibraryCallKit : public GraphKit {
   Node* inline_cipherBlockChaining_AESCrypt_predicate(bool decrypting);
   Node* inline_electronicCodeBook_AESCrypt_predicate(bool decrypting);
   Node* inline_counterMode_AESCrypt_predicate();
-  Node* get_key_start_from_aescrypt_object(Node* aescrypt_object);
+  Node* get_key_start_from_aescrypt_object(Node* aescrypt_object, bool is_decrypt);
   bool inline_ghash_processBlocks();
   bool inline_chacha20Block();
   bool inline_kyberNtt();
