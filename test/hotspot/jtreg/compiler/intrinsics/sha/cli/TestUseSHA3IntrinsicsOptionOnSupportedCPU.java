@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2025, Huawei Technologies Co., Ltd. All rights reserved.
  * Copyright (C) 2021, Tencent. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,7 +28,7 @@
  * @summary Verify UseSHA3Intrinsics option processing on supported CPU.
  * @library /test/lib /
  * @requires vm.flagless
- * @requires os.arch == "aarch64" & os.family == "mac"
+ * @requires os.arch == "aarch64"
  * @comment sha3 is only implemented on AArch64 for now.
  *          UseSHA3Intrinsics is only auto-enabled on Apple silicon, because it
  *          may introduce performance regression on others. See JDK-8297092.
