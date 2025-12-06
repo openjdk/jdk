@@ -277,8 +277,8 @@ public class Thread implements Runnable {
     private volatile ClassLoader contextClassLoader;
 
     // Additional fields for platform threads.
-    // All fields, except task and terminatingThreadLocals, are accessed directly by the VM.
     private static class FieldHolder {
+        // These fields are accessed by the VM
         final ThreadGroup group;
         final Runnable task;
         final long stackSize;
@@ -288,6 +288,12 @@ public class Thread implements Runnable {
 
         // This map is maintained by the ThreadLocal class
         ThreadLocal.ThreadLocalMap terminatingThreadLocals;
+
+        // The following fields are managed by java.util.concurrent.ThreadLocalRandom (TLR).
+        // They are used to build the high-performance PRNGs in the concurrent code.
+        long randomSeed;          // the current seed for a TLR
+        int randomProbe;          // the probe hash value, nonzero if randomSeed initialized
+        int randomSecondarySeed;  // secondary seed isolated from public TLR sequence
 
         FieldHolder(ThreadGroup group,
                     Runnable task,
@@ -310,6 +316,30 @@ public class Thread implements Runnable {
 
     void setTerminatingThreadLocals(ThreadLocal.ThreadLocalMap map) {
         holder.terminatingThreadLocals = map;
+    }
+
+    static long carrierLocalRandomSeed() {
+        return currentCarrierThread().holder.randomSeed;
+    }
+
+    static int carrierLocalRandomProbe() {
+        return currentCarrierThread().holder.randomProbe;
+    }
+
+    static int carrierLocalRandomSecondarySeed() {
+        return currentCarrierThread().holder.randomSecondarySeed;
+    }
+
+    static void setCarrierLocalRandomSeed(long seed) {
+        currentCarrierThread().holder.randomSeed = seed;
+    }
+
+    static void setCarrierLocalRandomProbe(int probe) {
+        currentCarrierThread().holder.randomProbe = probe;
+    }
+
+    static void setCarrierLocalRandomSecondarySeed(int seed) {
+        currentCarrierThread().holder.randomSecondarySeed = seed;
     }
 
     /*
@@ -2605,20 +2635,6 @@ public class Thread implements Runnable {
     static ThreadGroup virtualThreadGroup() {
         return Constants.VTHREAD_GROUP;
     }
-
-    // The following three initially uninitialized fields are exclusively
-    // managed by class java.util.concurrent.ThreadLocalRandom. These
-    // fields are used to build the high-performance PRNGs in the
-    // concurrent code.
-
-    /** The current seed for a ThreadLocalRandom */
-    long threadLocalRandomSeed;
-
-    /** Probe hash value; nonzero if threadLocalRandomSeed initialized */
-    int threadLocalRandomProbe;
-
-    /** Secondary seed isolated from public ThreadLocalRandom sequence */
-    int threadLocalRandomSecondarySeed;
 
     /** The thread container that this thread is in */
     private @Stable ThreadContainer container;
