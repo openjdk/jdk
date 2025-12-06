@@ -895,6 +895,13 @@
                                                                             \
   develop(bool, StressLoopPeeling, false,                                   \
           "Randomize loop peeling decision")                                \
+                                                                            \
+  product(bool, HotCodeHeap, false, EXPERIMENTAL,                           \
+          "Enable the code heap for hot C2 nmethods")                      \
+                                                                            \
+  product(double, HotCodeMinMethodFrequency, 0.001, DIAGNOSTIC,             \
+          "Minimum frequency of a method to be considered actively used")   \
+          range(0.0, 1.0)                                                   \
 
 // end of C2_FLAGS
 
