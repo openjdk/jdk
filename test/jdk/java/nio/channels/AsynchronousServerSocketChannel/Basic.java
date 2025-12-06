@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,12 @@
  * @bug 4607272 6842687
  * @summary Unit test for AsynchronousServerSocketChannel
  * @modules jdk.net
+ * @library /test/lib
+ * @build jdk.test.lib.net.IPSupport
  * @run main/timeout=180 Basic
  */
+
+import jdk.test.lib.net.IPSupport;
 
 import java.nio.channels.*;
 import java.net.*;
@@ -44,6 +48,7 @@ import static jdk.net.ExtendedSocketOptions.TCP_KEEPINTERVAL;
 public class Basic {
 
     public static void main(String[] args) throws Exception {
+        IPSupport.printPlatformSupport(System.out);
         testBind();
         testAccept();
         testSocketOptions();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,8 @@ import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import jdk.test.lib.RandomFactory;
+import jdk.test.lib.net.IPSupport;
+
 import java.util.List;
 import static jdk.net.ExtendedSocketOptions.TCP_KEEPCOUNT;
 import static jdk.net.ExtendedSocketOptions.TCP_KEEPIDLE;
@@ -53,6 +55,7 @@ public class Basic {
     static boolean skipSlowConnectTest = false;
 
     public static void main(String[] args) throws Exception {
+        IPSupport.printPlatformSupport(System.out);
         for (String arg: args) {
             switch (arg) {
             case "-skipSlowConnectTest" :

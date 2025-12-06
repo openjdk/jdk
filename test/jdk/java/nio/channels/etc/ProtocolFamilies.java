@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 import jdk.test.lib.NetworkConfiguration;
 import jdk.test.lib.net.IPSupport;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -44,6 +45,7 @@ import static org.testng.Assert.assertThrows;
  *          with various ProtocolFamily combinations
  * @library /test/lib
  * @build jdk.test.lib.NetworkConfiguration
+ *        jdk.test.lib.net.IPSupport
  * @run testng ProtocolFamilies
  * @run testng/othervm -Djava.net.preferIPv4Stack=true ProtocolFamilies
  */
@@ -54,6 +56,11 @@ public class ProtocolFamilies {
     static final boolean preferIPv4 = preferIPv4Stack();
     static Inet4Address ia4;
     static Inet6Address ia6;
+
+    @BeforeClass
+    void printSupportedPlatform(){
+        IPSupport.printPlatformSupport(System.out);
+    }
 
     @BeforeTest()
     public void setup() throws Exception {
