@@ -22,13 +22,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.jpackage.internal;
+
 import static jdk.jpackage.internal.model.RuntimeBuilder.getDefaultModulePath;
+import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
@@ -50,7 +51,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.internal.module.ModulePath;
 import jdk.jpackage.internal.model.AppImageLayout;
-import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.LauncherModularStartupInfo;
 import jdk.jpackage.internal.model.LauncherStartupInfo;
 import jdk.jpackage.internal.model.RuntimeBuilder;
@@ -63,22 +63,10 @@ final class JLinkRuntimeBuilder implements RuntimeBuilder {
 
     @Override
     public void create(AppImageLayout appImageLayout) {
-        var args = new ArrayList<String>();
-        args.add("--output");
-        args.add(appImageLayout.runtimeDirectory().toString());
-        args.addAll(jlinkCmdLine);
-
-        StringWriter writer = new StringWriter();
-        PrintWriter pw = new PrintWriter(writer);
-
-        int retVal = LazyLoad.JLINK_TOOL.run(pw, pw, args.toArray(String[]::new));
-        String jlinkOut = writer.toString();
-
-        args.add(0, "jlink");
-        Log.verbose(args, List.of(jlinkOut), retVal, -1);
-        if (retVal != 0) {
-            throw new JPackageException(I18N.format("error.jlink.failed", jlinkOut));
-        }
+        toRunnable(Executor.of()
+                .toolProvider(LazyLoad.JLINK_TOOL)
+                .args("--output", appImageLayout.runtimeDirectory().toString())
+                .args(jlinkCmdLine)::executeExpectSuccess).run();
     }
 
     @Override

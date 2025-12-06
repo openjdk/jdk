@@ -143,10 +143,15 @@ public final class CommandOutputControl {
         }
     }
 
-    public record ProcessSpec(Optional<Long> pid, List<String> args) implements Executable.ExecutableSpec {
+    public record ProcessSpec(Optional<Long> pid, List<String> cmdline) implements Executable.ExecutableSpec {
         public ProcessSpec {
             Objects.requireNonNull(pid);
-            args.forEach(Objects::requireNonNull);
+            cmdline.forEach(Objects::requireNonNull);
+        }
+
+        @Override
+        public String toString() {
+            return CommandLineFormat.DEFAULT.apply(cmdline);
         }
     }
 
@@ -154,6 +159,11 @@ public final class CommandOutputControl {
         public ToolProviderSpec {
             Objects.requireNonNull(name);
             args.forEach(Objects::requireNonNull);
+        }
+
+        @Override
+        public String toString() {
+            return CommandLineFormat.DEFAULT.apply(Stream.concat(Stream.of(name), args.stream()).toList());
         }
     }
 

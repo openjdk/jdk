@@ -34,10 +34,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
-import java.util.regex.Pattern;
 import java.util.spi.ToolProvider;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.util.CommandLineFormat;
 import jdk.jpackage.internal.util.CommandOutputControl;
 import jdk.jpackage.internal.util.function.ThrowingSupplier;
 import jdk.jpackage.internal.util.function.ExceptionBox;
@@ -458,16 +457,7 @@ public final class Executor extends CommandArguments<Executor> {
         var cmdline = Stream.of(prefixCommandLineArgs(), List.of(exec), args).flatMap(
                 List::stream).toList();
 
-        return String.format(format, printCommandLine(cmdline), cmdline.size());
-    }
-
-    private static String printCommandLine(List<String> cmdline) {
-        // Want command line printed in a way it can be easily copy/pasted
-        // to be executed manually
-        Pattern regex = Pattern.compile("\\s");
-        return cmdline.stream().map(
-                v -> (v.isEmpty() || regex.matcher(v).find()) ? "\"" + v + "\"" : v).collect(
-                        Collectors.joining(" "));
+        return String.format(format, CommandLineFormat.DEFAULT.apply(cmdline), cmdline.size());
     }
 
     private static void trace(String msg) {
