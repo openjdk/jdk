@@ -197,6 +197,13 @@
 
   // Is SIMD sort supported for this CPU?
   static bool supports_simd_sort(BasicType bt) {
+    // SIMD sort is supported only on SVE machines
+    if (VM_Version::supports_sve()) {
+      // Currently, only T_INT and T_FLOAT types are supported.
+      // However, T_FLOAT is supported only if the experimental
+      // flag - UseSVELibSimdSortForFP is enabled.
+      return (bt == T_INT || (bt == T_FLOAT && UseSVELibSimdSortForFP));
+    }
     return false;
   }
 

@@ -28,6 +28,7 @@
 #include "code/codeBlob.hpp"
 #include "memory/allocation.hpp"
 #include "prims/vectorSupport.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/stubCodeGenerator.hpp"
@@ -362,6 +363,9 @@ public:
   static void arrayof_oop_copy       (HeapWord* src, HeapWord* dest, size_t count);
   static void arrayof_oop_copy_uninit(HeapWord* src, HeapWord* dest, size_t count);
 
+  // SIMD sort support. This method resolves the symbols - sort_sym, partition_sym
+  // and on success sets the StubRoutines::_array_sort/_array_partition and returns true.
+  static bool try_load_simdsort(const char* sort_sym, const char* partition_sym);
 };
 
 #endif // SHARE_RUNTIME_STUBROUTINES_HPP
