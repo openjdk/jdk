@@ -26,6 +26,7 @@
 
 package sun.jvm.hotspot.debugger.bsd.aarch64;
 
+import sun.jvm.hotspot.code.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.aarch64.*;
 import sun.jvm.hotspot.debugger.bsd.*;
@@ -57,28 +58,58 @@ public final class BsdAARCH64CFrame extends BasicCFrame {
       return fp;
    }
 
+   @Override
    public CFrame sender(ThreadProxy thread) {
-      if (fp == null) {
+      return sender(thread, null, null, null);
+   }
+
+   @Override
+   public CFrame sender(ThreadProxy thread, Address nextSP, Address nextFP, Address nextPC) {
+      // Check fp
+      // Skip if both nextFP and nextPC are given - do not need to load from fp.
+      if (nextFP == null && nextPC == null) {
+        if (fp == null) {
+          return null;
+        }
+
+        // Check alignment of fp
+        if (dbg.getAddressValue(fp) % (2 * ADDRESS_SIZE) != 0) {
+          return null;
+        }
+      }
+
+      if (nextFP == null) {
+        nextFP = fp.getAddressAt(0);
+      }
+      if (nextFP == null) {
         return null;
       }
 
-      // Check alignment of fp
-      if (dbg.getAddressValue(fp) % (2 * ADDRESS_SIZE) != 0) {
-        return null;
+      if (nextPC == null) {
+        nextPC = fp.getAddressAt(ADDRESS_SIZE);
       }
-
-      Address nextSP = fp.addOffsetTo(2 * ADDRESS_SIZE);
-      if (nextSP == null) {
-        return null;
-      }
-      Address nextFP = fp.getAddressAt(0 * ADDRESS_SIZE);
-      if (nextFP == null || nextFP.lessThanOrEqual(fp)) {
-        return null;
-      }
-      Address nextPC  = fp.getAddressAt(1 * ADDRESS_SIZE);
       if (nextPC == null) {
         return null;
       }
+
+      if (nextSP == null) {
+        CodeCache cc = VM.getVM().getCodeCache();
+        CodeBlob currentBlob = cc.findBlobUnsafe(pc());
+
+        // This case is different from HotSpot. See JDK-8371194 for details.
+        if (currentBlob != null && (currentBlob.isContinuationStub() || currentBlob.isNativeMethod())) {
+          // Use FP since it should always be valid for these cases.
+          // TODO: These should be walked as Frames not CFrames.
+          nextSP = fp.addOffsetTo(2 * ADDRESS_SIZE);
+        } else {
+          CodeBlob codeBlob = cc.findBlobUnsafe(nextPC);
+          boolean useCodeBlob = codeBlob != null && codeBlob.getFrameSize() > 0;
+          nextSP = useCodeBlob ? nextFP.addOffsetTo((2 * ADDRESS_SIZE) - codeBlob.getFrameSize()) : nextFP;
+        }                                                                         }
+      if (nextSP == null) {
+        return null;
+      }
+
       return new BsdAARCH64CFrame(dbg, nextSP, nextFP, nextPC);
    }
 

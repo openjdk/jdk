@@ -55,25 +55,35 @@ public final class BsdAMD64CFrame extends BasicCFrame {
       return rbp;
    }
 
+   @Override
    public CFrame sender(ThreadProxy thread) {
-      if (rbp == null) {
-        return null;
+      return sender(thread, null, null, null);
+   }
+
+   @Override
+   public CFrame sender(ThreadProxy thread, Address sp, Address fp, Address pc) {
+      // Check fp
+      // Skip if both fp and pc are given - do not need to load from fp.
+      if (fp == null && pc == null) {
+        if (fp == null) {
+          return null;
+        }
+
+        // Check alignment of rbp
+        if (dbg.getAddressValue(rbp) % ADDRESS_SIZE != 0) {
+          return null;
+        }
       }
 
-      // Check alignment of rbp
-      if (dbg.getAddressValue(rbp) % ADDRESS_SIZE != 0) {
-        return null;
-      }
-
-      Address nextRSP = rbp.addOffsetTo( 2 * ADDRESS_SIZE);
+      Address nextRSP = sp != null ? sp : rbp.addOffsetTo(2 * ADDRESS_SIZE);
       if (nextRSP == null) {
         return null;
       }
-      Address nextRBP = rbp.getAddressAt( 0 * ADDRESS_SIZE);
-      if (nextRBP == null || nextRBP.lessThanOrEqual(rbp)) {
+      Address nextRBP = fp != null ? fp : rbp.getAddressAt(0);
+      if (nextRBP == null) {
         return null;
       }
-      Address nextPC  = rbp.getAddressAt( 1 * ADDRESS_SIZE);
+      Address nextPC  = pc != null ? pc : rbp.getAddressAt(ADDRESS_SIZE);
       if (nextPC == null) {
         return null;
       }
