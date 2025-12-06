@@ -4783,7 +4783,9 @@ int os::stat(const char *path, struct stat *sbuf) {
     if (path_to_target == nullptr) {
       // it is a symbolic link, but we failed to resolve it
       errno = ENOENT;
+      ErrnoPreserver ep;
       os::free(wide_path);
+      errno = ep.saved_errno();
       return -1;
     }
   }
@@ -4799,9 +4801,11 @@ int os::stat(const char *path, struct stat *sbuf) {
     } else {
       errno = 0;
     }
+    ErrnoPreserver ep;
     log_debug(os)("os::stat() failed to GetFileAttributesExW: GetLastError->%lu.", errcode);
     os::free(wide_path);
     os::free(path_to_target);
+    errno = ep.saved_errno();
     return -1;
   }
 
@@ -5001,7 +5005,9 @@ int os::open(const char *path, int oflag, int mode) {
     if (path_to_target == nullptr) {
       // it is a symbolic link, but we failed to resolve it
       errno = ENOENT;
+      ErrnoPreserver ep;
       os::free(wide_path);
+      errno = ep.saved_errno();
       return -1;
     }
   }
@@ -5275,7 +5281,9 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
     } else {
       errno = ENAMETOOLONG;
     }
+    ErrnoPreserver ep;
     permit_forbidden_function::free(p); // *not* os::free
+    errno = ep.saved_errno();
   }
   return result;
 }
