@@ -314,6 +314,9 @@ class oopDesc {
   intptr_t slow_identity_hash();
   inline bool fast_no_hash_check();
 
+  // identity hash; returns the identity hash key if it is present (doesn't compute it)
+  inline intptr_t fast_identity_hash_or_no_hash();
+
   // marks are forwarded to stack when object is locked
   inline bool     has_displaced_mark() const;
   inline markWord displaced_mark() const;

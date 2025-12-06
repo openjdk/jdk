@@ -4816,6 +4816,20 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
     generate_virtual_guard(obj_klass, slow_region);
   }
 
+  // Fold identity hash after virtual dispatches are excluded.
+  // Constant folding in fast path checks doesn't trivially happen because
+  // object header is not a constant.  We must check and fetch explicitly.
+  const TypeInstPtr* t = _gvn.type(obj)->isa_instptr();
+  if (t != nullptr && t->const_oop() != nullptr) {
+    jint hash = t->const_oop()->identity_hash_or_no_hash();
+    if (hash != 0) {
+      result_reg->init_req(_fast_path, control());
+      result_val->init_req(_fast_path, _gvn.intcon(hash));
+      set_result(result_reg, result_val);
+      return true;
+    }
+  }
+
   // Get the header out of the object, use LoadMarkNode when available
   Node* header_addr = basic_plus_adr(obj, oopDesc::mark_offset_in_bytes());
   // The control of the load must be null. Otherwise, the load can move before
