@@ -48,6 +48,13 @@ void G1InitLogger::print_gc_specific() {
   } else {
     log_info_p(gc, init)("Periodic GC: Disabled");
   }
+
+  // Print a message about time-based heap sizing configuration.
+  if (G1UseTimeBasedHeapSizing) {
+    log_info_p(gc, init)("G1 Time-Based Heap Sizing enabled (uncommit-only)");
+    log_info_p(gc, init)("  Evaluation Interval: %zus, Uncommit Delay: %zus, Min Regions To Uncommit: %zu",
+                         G1TimeBasedEvaluationIntervalMillis / 1000, G1UncommitDelayMillis / 1000, G1MinRegionsToUncommit);
+  }
 }
 
 void G1InitLogger::print() {
