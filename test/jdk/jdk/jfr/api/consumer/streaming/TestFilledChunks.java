@@ -32,6 +32,7 @@ import jdk.jfr.consumer.RecordingStream;
 /**
  * @test
  * @summary Test that it is possible to iterate over chunk with normal events
+ * @requires os.arch != "s390x"
  * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib

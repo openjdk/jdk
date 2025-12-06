@@ -34,6 +34,7 @@ import jdk.management.jfr.RemoteRecordingStream;
 
 /**
  * @test
+ * @requires os.arch != "s390x"
  * @requires vm.flagless
  * @summary Tests that a RemoteRecordingStream can be closed
  * @requires vm.hasJFR

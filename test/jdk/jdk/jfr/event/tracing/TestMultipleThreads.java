@@ -31,6 +31,7 @@ import jdk.jfr.consumer.RecordingStream;
 /**
  * @test
  * @summary Tests that tracing and timing work when using multiple threads.
+ * @requires os.arch != "s390x"
  * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
