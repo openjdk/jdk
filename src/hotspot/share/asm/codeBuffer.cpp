@@ -723,6 +723,11 @@ csize_t CodeBuffer::copy_relocations_to(CodeBlob* dest) const {
 }
 
 void CodeBuffer::copy_code_to(CodeBlob* dest_blob) {
+  assert(ICacheInvalidationContext::current() != nullptr,
+         "ICache invalidation context should be set");
+  assert(ICacheInvalidationContext::current()->mode() == ICacheInvalidation::DEFERRED ||
+         ICacheInvalidationContext::current()->mode() == ICacheInvalidation::NOT_NEEDED,
+         "ICache invalidation should be deferred or unneeded");
 #ifndef PRODUCT
   if (PrintNMethods && (WizardMode || Verbose)) {
     tty->print("done with CodeBuffer:");
@@ -745,9 +750,6 @@ void CodeBuffer::copy_code_to(CodeBlob* dest_blob) {
 
   // Done moving code bytes; were they the right size?
   assert((int)align_up(dest.total_content_size(), oopSize) == dest_blob->content_size(), "sanity");
-
-  // Flush generated code
-  ICache::invalidate_range(dest_blob->code_begin(), dest_blob->code_size());
 }
 
 // Move all my code into another code buffer.  Consult applicable
@@ -930,8 +932,11 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
   // Needs to be initialized when calling fix_relocation_after_move.
   cb.blob()->set_ctable_begin(cb.consts()->start());
 
-  // Move all the code and relocations to the new blob:
-  relocate_code_to(&cb);
+  {
+    ICacheInvalidationContext icic(ICacheInvalidation::NOT_NEEDED);
+    // Move all the code and relocations to the new blob:
+    relocate_code_to(&cb);
+  }
 
   // some internal addresses, _last_insn _last_label, are used during code emission,
   // adjust them in expansion

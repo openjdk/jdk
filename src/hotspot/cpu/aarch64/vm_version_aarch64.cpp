@@ -63,6 +63,19 @@ static SpinWait get_spin_wait_desc() {
   return spin_wait;
 }
 
+static bool has_neoverse_n1_errata_1542419() {
+  const int major_rev_num = VM_Version::cpu_variant();
+  const int minor_rev_num = VM_Version::cpu_revision();
+  // Neoverse N1: 0xd0c
+  // Erratum 1542419 affects r3p0, r3p1 and r4p0.
+  // It is fixed in r4p1 and later revisions, which are not affected.
+  return (VM_Version::cpu_family() == VM_Version::CPU_ARM &&
+          VM_Version::model_is(0xd0c) &&
+          ((major_rev_num == 3 && minor_rev_num == 0) ||
+           (major_rev_num == 3 && minor_rev_num == 1) ||
+           (major_rev_num == 4 && minor_rev_num == 0)));
+}
+
 void VM_Version::initialize() {
 #define SET_CPU_FEATURE_NAME(id, name, bit) \
   _features_names[bit] = XSTR(name);
@@ -639,6 +652,19 @@ void VM_Version::initialize() {
   }
   if (UseSVE < 1) {
     clear_feature(CPU_SVE);
+  }
+
+  if (FLAG_IS_DEFAULT(NeoverseN1Errata1542419) && has_neoverse_n1_errata_1542419()) {
+    FLAG_SET_DEFAULT(NeoverseN1Errata1542419, true);
+  }
+
+  if (NeoverseN1Errata1542419) {
+    if (!has_neoverse_n1_errata_1542419()) {
+      warning("NeoverseN1Errata1542419 is set for the CPU not having Neoverse N1 errata 1542419");
+    }
+    if (FLAG_IS_DEFAULT(UseDeferredICacheInvalidation)) {
+      FLAG_SET_DEFAULT(UseDeferredICacheInvalidation, true);
+    }
   }
 
   // Construct the "features" string
