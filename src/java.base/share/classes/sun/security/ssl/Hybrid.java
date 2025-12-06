@@ -54,16 +54,15 @@ import java.security.spec.*;
 import java.util.Arrays;
 import java.util.Locale;
 
-/**
- * The Hybrid class wraps two underlying algorithms (left and right sides)
- * in a single TLS hybrid named group.
- * It implements:
- *  - Hybrid KeyPair generation
- *  - Hybrid KeyFactory for decoding concatenated hybrid public keys
- *  - Hybrid KEM implementation for performing encapsulation and
- *    decapsulation over two underlying algorithms (traditional
- *    algorithm and post-quantum KEM algorithm)
- */
+// The Hybrid class wraps two underlying algorithms (left and right sides)
+// in a single TLS hybrid named group.
+// It implements:
+// - Hybrid KeyPair generation
+// - Hybrid KeyFactory for decoding concatenated hybrid public keys
+// - Hybrid KEM implementation for performing encapsulation and
+//   decapsulation over two underlying algorithms (traditional
+//   algorithm and post-quantum KEM algorithm)
+
 public class Hybrid {
 
     public static final NamedParameterSpec X25519_MLKEM768 =

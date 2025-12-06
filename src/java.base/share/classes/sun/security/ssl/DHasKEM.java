@@ -51,8 +51,6 @@ import java.security.spec.KeySpec;
 import java.security.spec.NamedParameterSpec;
 import java.security.spec.XECPublicKeySpec;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 
 /**
  * The DHasKEM class presents a KEM abstraction layer over traditional
@@ -77,7 +75,7 @@ public class DHasKEM implements KEMSpi {
         return new Handler(null, privateKey, null);
     }
 
-    static final class Handler
+    private static final class Handler
             implements KEMSpi.EncapsulatorSpi, KEMSpi.DecapsulatorSpi {
         private final PublicKey pkR;
         private final PrivateKey skR;
@@ -186,14 +184,13 @@ public class DHasKEM implements KEMSpi {
                 "XDH", "XDH", NamedParameterSpec.X25519),
 
         X448(56, 56,
-                "XDH", "XDH", NamedParameterSpec.X448),
-        ;
+                "XDH", "XDH", NamedParameterSpec.X448);
+
         private final int secretLen;
         private final int publicKeyLen;
         private final String kaAlgorithm;
         private final String keyAlgorithm;
         private final AlgorithmParameterSpec spec;
-
 
         Params(int secretLen, int publicKeyLen, String kaAlgorithm,
                 String keyAlgorithm, AlgorithmParameterSpec spec) {
@@ -253,30 +250,6 @@ public class DHasKEM implements KEMSpi {
             ka.init(skE);
             ka.doPhase(pkR, true);
             return ka.generateSecret(alg);
-        }
-    }
-
-    public static class HybridService extends Provider.Service {
-
-        HybridService(Provider p, String type, String algo, String cn,
-                List<String> aliases, Map<String, String> attrs) {
-            super(p, type, algo, cn, aliases, attrs);
-        }
-
-        @Override
-        public Object newInstance(Object ctrParamObj)
-                throws NoSuchAlgorithmException {
-            String type = getType();
-            return switch (type) {
-                case "KeyPairGenerator" -> new Hybrid.KeyPairGeneratorImpl(
-                        getAttribute("left"), getAttribute("right"));
-                case "KeyFactory" -> new Hybrid.KeyFactoryImpl(
-                        getAttribute("left"), getAttribute("right"));
-                case "KEM" -> new Hybrid.KEMImpl(
-                        getAttribute("left"), getAttribute("right"));
-                default -> throw new NoSuchAlgorithmException(
-                        "Unexpected value: " + type);
-            };
         }
     }
 }

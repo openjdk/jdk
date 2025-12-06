@@ -569,27 +569,29 @@ final class ServerHello {
             // Agreement (KA) model or the Key Encapsulation Mechanism (KEM)
             // model, depending on what key exchange group is used.
             //
-            // In JSSE for KA flow, the server usually generates its key
-            // share and then derives the shared secret after receiving the
-            // client's share. However, this is changed for KEM: the server
+            // For KA flows, the server first receives the client's share,
+            // then generates its key share, and finally comes here.
+            // However, this is changed for KEM: the server
             // must perform both actions — derive the secret and generate
             // the key encapsulation message at the same time during
             // encapsulation in SHKeyShareProducer.
             //
             // Traditional Key Agreement (KA):
             //   - Both peers generate a key share and exchange it.
-            //   - Each peer computes a shared secret upon receiving the
-            //     other's key share.
+            //   - Each peer computes a shared secret sometime after
+            //     receiving the other's key share.
             //
             // Key Encapsulation Mechanism (KEM):
-            //  The decapsulator (the client) publishes a public key, and
-            //  the encapsulator (the server) uses it to generate:
-            //  - the shared secret
-            //  - the key encapsulation message, which is sent back to the
-            //    client.
-            //  - The derived shared secret must be stored in a
-            //    KEMSenderPossession so it can be retrieved for handshake
-            //    traffic secret derivation later.
+            //  The client publishes a public key via a KeyShareExtension,
+            //  which the server uses to:
+            //
+            //  - generate the shared secret
+            //  - encapsulate the message which is sent to the client in
+            //    another KeyShareExtension
+            //
+            //  The derived shared secret must be stored in a
+            //  KEMSenderPossession so it can be retrieved for handshake
+            //  traffic secret derivation later.
 
             // Produce extensions for ServerHello handshake message.
             SSLExtension[] serverHelloExtensions =

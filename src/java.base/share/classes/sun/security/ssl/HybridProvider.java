@@ -26,6 +26,8 @@
 package sun.security.ssl;
 
 import java.security.Provider;
+import java.security.NoSuchAlgorithmException;
+import java.util.List;
 import java.util.Map;
 
 import static sun.security.util.SecurityConstants.PROVIDER_VER;
@@ -53,52 +55,76 @@ public class HybridProvider {
             // Hybrid KeyPairGenerator/KeyFactory/KEM
 
             // The order of shares in the concatenation for group name
-            // X25519MLKEM768 has been reversed. This is due to IETF
-            // historical reasons.
+            // X25519MLKEM768 has been reversed as per the current
+            // draft RFC.
             var attrs = Map.of("name", "X25519MLKEM768", "left", "ML-KEM-768",
                     "right", "X25519");
-            putService(new DHasKEM.HybridService(this, "KeyPairGenerator",
+            putService(new HybridService(this, "KeyPairGenerator",
                     "X25519MLKEM768",
                     "sun.security.ssl.Hybrid$KeyPairGeneratorImpl",
                     null, attrs));
-            putService(new DHasKEM.HybridService(this, "KEM",
+            putService(new HybridService(this, "KEM",
                     "X25519MLKEM768",
                     "sun.security.ssl.Hybrid$KEMImpl",
                     null, attrs));
-            putService(new DHasKEM.HybridService(this, "KeyFactory",
+            putService(new HybridService(this, "KeyFactory",
                     "X25519MLKEM768",
                     "sun.security.ssl.Hybrid$KeyFactoryImpl",
                     null, attrs));
 
             attrs = Map.of("name", "SecP256r1MLKEM768", "left", "secp256r1",
                     "right", "ML-KEM-768");
-            putService(new DHasKEM.HybridService(this, "KeyPairGenerator",
+            putService(new HybridService(this, "KeyPairGenerator",
                     "SecP256r1MLKEM768",
                     "sun.security.ssl.Hybrid$KeyPairGeneratorImpl",
                     null, attrs));
-            putService(new DHasKEM.HybridService(this, "KEM",
+            putService(new HybridService(this, "KEM",
                     "SecP256r1MLKEM768",
                     "sun.security.ssl.Hybrid$KEMImpl",
                     null, attrs));
-            putService(new DHasKEM.HybridService(this, "KeyFactory",
+            putService(new HybridService(this, "KeyFactory",
                     "SecP256r1MLKEM768",
                     "sun.security.ssl.Hybrid$KeyFactoryImpl",
                     null, attrs));
 
             attrs = Map.of("name", "SecP384r1MLKEM1024", "left", "secp384r1",
                     "right", "ML-KEM-1024");
-            putService(new DHasKEM.HybridService(this, "KeyPairGenerator",
+            putService(new HybridService(this, "KeyPairGenerator",
                     "SecP384r1MLKEM1024",
                     "sun.security.ssl.Hybrid$KeyPairGeneratorImpl",
                     null, attrs));
-            putService(new DHasKEM.HybridService(this, "KEM",
+            putService(new HybridService(this, "KEM",
                     "SecP384r1MLKEM1024",
                     "sun.security.ssl.Hybrid$KEMImpl",
                     null, attrs));
-            putService(new DHasKEM.HybridService(this, "KeyFactory",
+            putService(new HybridService(this, "KeyFactory",
                     "SecP384r1MLKEM1024",
                     "sun.security.ssl.Hybrid$KeyFactoryImpl",
                     null, attrs));
+        }
+    }
+
+    private static class HybridService extends Provider.Service {
+
+        HybridService(Provider p, String type, String algo, String cn,
+                      List<String> aliases, Map<String, String> attrs) {
+            super(p, type, algo, cn, aliases, attrs);
+        }
+
+        @Override
+        public Object newInstance(Object ctrParamObj)
+                throws NoSuchAlgorithmException {
+            String type = getType();
+            return switch (type) {
+                case "KeyPairGenerator" -> new Hybrid.KeyPairGeneratorImpl(
+                        getAttribute("left"), getAttribute("right"));
+                case "KeyFactory" -> new Hybrid.KeyFactoryImpl(
+                        getAttribute("left"), getAttribute("right"));
+                case "KEM" -> new Hybrid.KEMImpl(
+                        getAttribute("left"), getAttribute("right"));
+                default -> throw new NoSuchAlgorithmException(
+                        "Unexpected value: " + type);
+            };
         }
     }
 }

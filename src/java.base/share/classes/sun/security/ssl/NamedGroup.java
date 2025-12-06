@@ -311,6 +311,7 @@ enum NamedGroup {
         if (mediator) {
             try {
                 // Skip AlgorithmParameters for KEMs (not supported)
+                // Check KEM's availability via KeyFactory
                 if (namedGroupSpec == NamedGroupSpec.NAMED_GROUP_KEM) {
                     if (defaultProvider == null) {
                         KeyFactory.getInstance(name);
@@ -329,7 +330,8 @@ enum NamedGroup {
                     mediator = false;
                     if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.warning(
-                            "No AlgorithmParameters for " + name, exp);
+                            "No AlgorithmParameters or KeyFactory for " + name,
+                                exp);
                     }
                 } else {
                     // Please remove the following code if the XDH/X25519/X448
