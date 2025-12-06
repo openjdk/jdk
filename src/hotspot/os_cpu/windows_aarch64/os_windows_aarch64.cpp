@@ -28,6 +28,7 @@
 #include "code/codeCache.hpp"
 #include "code/vtableStubs.hpp"
 #include "code/nativeInst.hpp"
+#include "cppstdlib/cstdlib.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
@@ -54,7 +55,6 @@
 # include <sys/types.h>
 # include <signal.h>
 # include <errno.h>
-# include <stdlib.h>
 # include <stdio.h>
 # include <intrin.h>
 

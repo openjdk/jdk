@@ -26,6 +26,7 @@
 #ifndef SHARE_UTILITIES_PARSE_INTEGER_HPP
 #define SHARE_UTILITIES_PARSE_INTEGER_HPP
 
+#include "cppstdlib/cstdlib.hpp"
 #include "cppstdlib/limits.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/debug.hpp"
@@ -33,7 +34,6 @@
 #include "utilities/macros.hpp"
 
 #include <errno.h>
-#include <stdlib.h>
 
 // *************************************************************************
 // ** Attention compatibility!                                            **
