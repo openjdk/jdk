@@ -38,11 +38,11 @@ import javax.net.ssl.SSLParameters;
  * <p> The following <a id="example">example</a> shows how this may be done:
  *
  * <blockquote><pre>
- * SSLContext sslContext = SSLContext.getInstance (....);
+ * SSLContext sslContext = SSLContext.getInstance(....);
  * HttpsServer server = HttpsServer.create();
  *
- * server.setHttpsConfigurator (new HttpsConfigurator(sslContext) {
- *     public void configure (HttpsParameters params) {
+ * server.setHttpsConfigurator(new HttpsConfigurator(sslContext) {
+ *     public void configure(HttpsParameters params) {
  *
  *         // get the remote address if needed
  *         InetSocketAddress remote = params.getClientAddress();
@@ -51,7 +51,7 @@ import javax.net.ssl.SSLParameters;
  *
  *         // get the default parameters
  *         SSLParameters sslparams = c.getDefaultSSLParameters();
- *         if (remote.equals (...) ) {
+ *         if (remote.equals(...)) {
  *             // modify the default set for client x
  *         }
  *
@@ -74,7 +74,7 @@ public class HttpsConfigurator {
      */
     public HttpsConfigurator(SSLContext context) {
         if (context == null) {
-            throw new NullPointerException ("null SSLContext");
+            throw new NullPointerException("null SSLContext");
         }
         this.context = context;
     }
@@ -107,6 +107,6 @@ public class HttpsConfigurator {
     * @since 1.6
     */
     public void configure(HttpsParameters params) {
-        params.setSSLParameters (getSSLContext().getDefaultSSLParameters());
+        params.setSSLParameters(getSSLContext().getDefaultSSLParameters());
     }
 }

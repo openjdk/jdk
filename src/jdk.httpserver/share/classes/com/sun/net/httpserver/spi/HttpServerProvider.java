@@ -152,7 +152,7 @@ public abstract class HttpServerProvider {
      *
      * @return  The system-wide default HttpServerProvider
      */
-    public static HttpServerProvider provider () {
+    public static HttpServerProvider provider() {
         synchronized (lock) {
             if (provider != null)
                 return provider;
