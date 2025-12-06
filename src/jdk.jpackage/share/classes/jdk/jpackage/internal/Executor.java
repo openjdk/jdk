@@ -33,12 +33,13 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Predicate;
 import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.util.CommandLineFormat;
 import jdk.jpackage.internal.util.CommandOutputControl;
 import jdk.jpackage.internal.util.CommandOutputControl.ProcessSpec;
 import jdk.jpackage.internal.util.CommandOutputControl.Result;
-import jdk.jpackage.internal.util.CommandOutputControl.UnexpectedExitCode;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 
 final class Executor {
@@ -55,7 +56,7 @@ final class Executor {
         return new Executor().processBuilder(pb);
     }
 
-    Executor() {
+    private Executor() {
     }
 
     Executor saveOutput(boolean v) {
@@ -145,7 +146,7 @@ final class Executor {
         }
 
         if (!quietCommand) {
-            Log.verbose(String.format("Running %s", createLogMessage(true)));
+            Log.verbose(String.format("Running %s", CommandLineFormat.DEFAULT.apply(List.of(commandLine().getFirst()))));
         }
 
         Result result;
@@ -156,8 +157,8 @@ final class Executor {
                 try {
                     result = exec.execute(timeout.toMillis(), TimeUnit.MILLISECONDS);
                 } catch (TimeoutException tex) {
-                    Log.verbose(String.format("Command %s timeout after %d seconds", createLogMessage(false), timeout));
-                    throw new IOException(tex);
+                    var msg = String.format("Command %s timed out", CommandLineFormat.DEFAULT.apply(commandLine()));
+                    throw new IOException(msg, tex);
                 }
             }
         } catch (InterruptedException ex) {
@@ -165,24 +166,14 @@ final class Executor {
         }
 
         if (!quietCommand) {
-            Optional<Long> pid;
-            if (result.execSpec() instanceof ProcessSpec pspec) {
-                pid = pspec.pid();
-            } else {
-                pid = Optional.empty();
-            }
-            Log.verbose(commandLine(), result.findContent().orElseGet(List::of), result.exitCode(), pid.orElse(-1L));
+            log(result);
         }
 
         return result;
     }
 
     Result executeExpectSuccess() throws IOException {
-        var result = execute();
-        if (0 != result.exitCode()) {
-            throw new UnexpectedExitCode(result, String.format("Command %s exited with %d code", createLogMessage(false), result.exitCode()));
-        }
-        return result;
+        return execute().expectExitCode(0);
     }
 
     private List<String> commandLine() {
@@ -209,11 +200,35 @@ final class Executor {
         return copy;
     }
 
-    private String createLogMessage(boolean quiet) {
-        var cmdline = commandLine();
-        var sb = new StringBuilder();
-        sb.append(quiet ? cmdline.getFirst() : cmdline);
-        return sb.toString();
+    private static void log(Result result) {
+        Objects.requireNonNull(result);
+        if (Log.isVerbose()) {
+            Optional<Long> pid;
+            if (result.execSpec() instanceof ProcessSpec spec) {
+                pid = spec.pid();
+            } else {
+                pid = Optional.empty();
+            }
+
+            var sb = new StringBuilder();
+            sb.append("Command");
+            pid.ifPresent(p -> {
+                sb.append(" [PID: ").append(p).append("]");
+            });
+            sb.append(":\n    ").append(result.execSpec());
+            Log.verbose(sb.toString());
+
+            result.findContent().filter(Predicate.not(Collection::isEmpty)).ifPresent(output -> {
+                sb.delete(0, sb.length());
+                sb.append("Output:");
+                for (String s : output) {
+                    sb.append("\n    " + s);
+                }
+                Log.verbose(sb.toString());
+            });
+
+            Log.verbose("Returned: " + result.exitCode() + "\n");
+        }
     }
 
     private final CommandOutputControl commandOutputControl = new CommandOutputControl();
