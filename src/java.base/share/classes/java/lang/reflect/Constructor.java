@@ -41,16 +41,12 @@ import sun.reflect.generics.factory.GenericsFactory;
 import sun.reflect.generics.scope.ConstructorScope;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.AnnotationFormatError;
+import java.lang.invoke.MethodHandles;
 import java.util.StringJoiner;
 
 /**
  * {@code Constructor} provides information about, and access to, a single
  * constructor for a class.
- *
- * <p>{@code Constructor} permits widening conversions to occur when matching the
- * actual parameters to newInstance() with the underlying
- * constructor's formal parameters, but throws an
- * {@code IllegalArgumentException} if a narrowing conversion would occur.
  *
  * @param <T> the class in which the constructor is declared
  *
@@ -429,9 +425,9 @@ public final class Constructor<T> extends Executable {
      * Uses the constructor represented by this {@code Constructor} object to
      * create and initialize a new instance of the constructor's
      * declaring class, with the specified initialization parameters.
-     * Individual parameters are automatically unwrapped to match
-     * primitive formal parameters, and both primitive and reference
-     * parameters are subject to method invocation conversions as necessary.
+     * Each {@code Object} in the {@code initargs} array is {@linkplain
+     * java.lang.reflect##input-conversions converted} to the type of
+     * the corresponding formal parameter.
      *
      * <p>If the number of formal parameters required by the underlying constructor
      * is 0, the supplied {@code initargs} array may be of length 0 or null.
@@ -472,6 +468,8 @@ public final class Constructor<T> extends Executable {
      *              throws an exception.
      * @throws    ExceptionInInitializerError if the initialization provoked
      *              by this method fails.
+     * @see MethodHandles.Lookup#findConstructor
+     * @see MethodHandles.Lookup#unreflectConstructor
      */
     @CallerSensitive
     @ForceInline // to ensure Reflection.getCallerClass optimization

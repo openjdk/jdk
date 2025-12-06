@@ -91,7 +91,7 @@ public class Reflection {
      * IllegalAccessException if not.
      *
      * @param currentClass the class performing the access
-     * @param memberClass the declaring class of the member being accessed
+     * @param memberClass the referenced class of the member being accessed
      * @param targetClass the class of target object if accessing instance
      *                    field or method;
      *                    or the declaring class if accessing constructor;
@@ -129,7 +129,7 @@ public class Reflection {
      * Verify access to a member and return {@code true} if it is granted.
      *
      * @param currentClass the class performing the access
-     * @param memberClass the declaring class of the member being accessed
+     * @param memberClass the referenced class of the member being accessed
      * @param targetClass the class of target object if accessing instance
      *                    field or method;
      *                    or the declaring class if accessing constructor;
