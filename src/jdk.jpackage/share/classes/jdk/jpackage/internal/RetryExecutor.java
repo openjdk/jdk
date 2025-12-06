@@ -77,15 +77,17 @@ public final class RetryExecutor {
         });
     }
 
-    public void execute(Executor exec) throws IOException {
-        execute(exec::executeExpectSuccess);
+    public Result execute(Executor exec) throws IOException {
+        return execute(exec::executeExpectSuccess);
     }
 
-    public void execute(Callable<Result> exec) throws IOException {
+    public Result execute(Callable<Result> exec) throws IOException {
         Objects.requireNonNull(exec);
         for (; attempts > 0 && !aborted; --attempts) {
+            boolean resultUpdated = false;
             try {
                 result = exec.call();
+                resultUpdated = true;
             } catch (Exception ex) {
                 if (attempts <= 1) {
                     // No more attempts left. This is fatal.
@@ -97,17 +99,23 @@ public final class RetryExecutor {
                 }
             }
 
-            Objects.requireNonNull(result);
+            if (resultUpdated) {
+                Objects.requireNonNull(result);
 
-            if (iterationCallback != null) {
-                iterationCallback.accept(this);
-                if (aborted) {
+                if (iterationCallback == null) {
                     break;
+                } else {
+                    iterationCallback.accept(this);
+                    if (aborted) {
+                        break;
+                    }
                 }
             }
 
             Optional.ofNullable(timeout).map(Duration::toMillis).ifPresent(toConsumer(Thread::sleep));
         }
+
+        return getResult();
     }
 
     private Consumer<RetryExecutor> iterationCallback;
