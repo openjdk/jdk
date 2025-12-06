@@ -406,7 +406,7 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
     size_t first_old, last_old, num_old;
     heap->free_set()->prepare_to_rebuild(young_trash_regions, old_trash_regions, first_old, last_old, num_old);
     // At the end of old-gen, we may find that we have reclaimed immediate garbage, allowing a longer allocation runway.
-    // We may also find that we have accumulated canddiate regions for mixed evacuation.  If so, we will want to expand
+    // We may also find that we have accumulated candidate regions for mixed evacuation.  If so, we will want to expand
     // the OldCollector reserve in order to make room for these mixed evacuations.
     assert(ShenandoahHeap::heap()->mode()->is_generational(), "sanity");
     assert(young_trash_regions == 0, "sanity");
@@ -597,10 +597,11 @@ void ShenandoahOldGeneration::log_failed_promotion(LogStream& ls, Thread* thread
     const size_t promotion_reserve = get_promoted_reserve();
     const size_t promotion_expended = get_promoted_expended();
 
-    ls.print_cr("Promotion failed, size %zu, has plab? %s, PLAB remaining: %zu"
+    ResourceMark resources; // for thread name
+    ls.print_cr("Promotion failed for %s, size %zu, has plab? %s, PLAB remaining: %zu"
                 ", plab promotions %s, promotion reserve: %zu, promotion expended: %zu"
                 ", old capacity: %zu, old_used: %zu, old unaffiliated regions: %zu",
-                size * HeapWordSize, plab == nullptr? "no": "yes",
+                thread->name(), size * HeapWordSize, plab == nullptr? "no": "yes",
                 words_remaining * HeapWordSize, promote_enabled, promotion_reserve, promotion_expended,
                 max_capacity(), used(), free_unaffiliated_regions());
 

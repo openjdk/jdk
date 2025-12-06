@@ -173,7 +173,6 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
   ~ShenandoahAgeCensus();
 
   // Return the local age table (population vector) for worker_id.
-  // Only used in the case of ShenandoahGenerationalAdaptiveTenuring
   AgeTable* get_local_age_table(uint worker_id) const {
     return _local_age_tables[worker_id];
   }
@@ -210,6 +209,12 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
   // the regular census during the marking cycle, corresponding to objects
   // allocated when the concurrent marking was in progress.
   void update_census(size_t age0_pop);
+
+  // Return the total size of the population above the given threshold for the current epoch
+  size_t get_tenurable_bytes(uint tenuring_threshold) const;
+
+  // As above, but use the current tenuring threshold by default
+  size_t get_tenurable_bytes() const { return get_tenurable_bytes(tenuring_threshold()); }
 
   // Reset the epoch, clearing accumulated census history
   // Note: this isn't currently used, but reserved for planned
