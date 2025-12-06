@@ -2482,6 +2482,11 @@ static bool can_subword_truncate(Node* in, const Type* type) {
     return false;
   }
 
+  // Since casts specifically change the type of a node, stay on the safe side and do not truncate them.
+  if (in->is_ConstraintCast()) {
+    return false;
+  }
+
   // Cannot be truncated:
   switch (opc) {
   case Op_AbsI:
