@@ -172,7 +172,6 @@ public class SquareRootTests {
                     failures += compareSqrtImplementations(bd, mc);
                     BigDecimal minus_bd = bd.negate();
                     for (int n = 1; n < 11; n += 2) {
-                        System.err.println(minus_bd + ", " + n + ", " + mc);
                         failures += compare(minus_bd.rootn( n, mc), bd.rootn( n, positiveMC).negate(), true, "one digit");
                         failures += compare(minus_bd.rootn(-n, mc), bd.rootn(-n, positiveMC).negate(), true, "one digit");
                     }
@@ -181,7 +180,6 @@ public class SquareRootTests {
                     failures += compareSqrtImplementations(bd, mc);
                     minus_bd = bd.negate();
                     for (int n = 1; n < 11; n += 2) {
-                        System.err.println(minus_bd + ", " + n + ", " + mc);
                         failures += compare(minus_bd.rootn( n, mc), bd.rootn( n, positiveMC).negate(), true, "one digit");
                         failures += compare(minus_bd.rootn(-n, mc), bd.rootn(-n, positiveMC).negate(), true, "one digit");
                     }
