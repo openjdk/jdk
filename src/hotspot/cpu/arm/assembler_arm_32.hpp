@@ -114,7 +114,7 @@ class RegisterSet {
   }
 
   RegisterSet(Register first, Register last) {
-    assert(first < last, "encoding constraint");
+    assert(first->encoding() < last->encoding(), "encoding constraint");
     _encoding = (1 << (last->encoding() + 1)) - (1 << first->encoding());
   }
 

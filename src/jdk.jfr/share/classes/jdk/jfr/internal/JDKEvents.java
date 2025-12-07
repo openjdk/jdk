@@ -45,6 +45,7 @@ import jdk.jfr.events.InitialSecurityPropertyEvent;
 import jdk.jfr.events.MethodTimingEvent;
 import jdk.jfr.events.MethodTraceEvent;
 import jdk.jfr.internal.periodic.PeriodicEvents;
+import jdk.jfr.internal.settings.MethodSetting;
 import jdk.jfr.internal.tracing.PlatformTracer;
 import jdk.jfr.tracing.MethodTracer;
 
@@ -75,6 +76,7 @@ public final class JDKEvents {
         jdk.internal.event.VirtualThreadSubmitFailedEvent.class,
         jdk.internal.event.X509CertificateEvent.class,
         jdk.internal.event.X509ValidationEvent.class,
+        jdk.internal.event.FinalFieldMutationEvent.class,
         DirectBufferStatisticsEvent.class,
         InitialSecurityPropertyEvent.class,
         MethodTraceEvent.class,
@@ -235,7 +237,7 @@ public final class JDKEvents {
     }
 
     private static void emitMethodTiming() {
-        if (MethodTimingEvent.enabled()) {
+        if (MethodSetting.isInitialized() && MethodTimingEvent.enabled()) {
             PlatformTracer.emitTiming();
         }
     }

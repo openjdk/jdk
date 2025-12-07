@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,7 +248,7 @@ final class CertificateVerify {
 
             if (x509Possession == null ||
                     x509Possession.popPrivateKey == null) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "No X.509 credentials negotiated for CertificateVerify");
                 }
@@ -258,7 +258,7 @@ final class CertificateVerify {
 
             S30CertificateVerifyMessage cvm =
                     new S30CertificateVerifyMessage(chc, x509Possession);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "Produced CertificateVerify handshake message", cvm);
             }
@@ -300,7 +300,7 @@ final class CertificateVerify {
 
             S30CertificateVerifyMessage cvm =
                     new S30CertificateVerifyMessage(shc, message);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "Consuming CertificateVerify handshake message", cvm);
             }
@@ -503,7 +503,7 @@ final class CertificateVerify {
 
             if (x509Possession == null ||
                     x509Possession.popPrivateKey == null) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "No X.509 credentials negotiated for CertificateVerify");
                 }
@@ -513,7 +513,7 @@ final class CertificateVerify {
 
             T10CertificateVerifyMessage cvm =
                     new T10CertificateVerifyMessage(chc, x509Possession);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "Produced CertificateVerify handshake message", cvm);
             }
@@ -555,7 +555,7 @@ final class CertificateVerify {
 
             T10CertificateVerifyMessage cvm =
                     new T10CertificateVerifyMessage(shc, message);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "Consuming CertificateVerify handshake message", cvm);
             }
@@ -754,7 +754,7 @@ final class CertificateVerify {
 
             if (x509Possession == null ||
                     x509Possession.popPrivateKey == null) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "No X.509 credentials negotiated for CertificateVerify");
                 }
@@ -764,7 +764,7 @@ final class CertificateVerify {
 
             T12CertificateVerifyMessage cvm =
                     new T12CertificateVerifyMessage(chc, x509Possession);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "Produced CertificateVerify handshake message", cvm);
             }
@@ -806,7 +806,7 @@ final class CertificateVerify {
 
             T12CertificateVerifyMessage cvm =
                     new T12CertificateVerifyMessage(shc, message);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "Consuming CertificateVerify handshake message", cvm);
             }
@@ -1092,7 +1092,7 @@ final class CertificateVerify {
 
             if (x509Possession == null ||
                     x509Possession.popPrivateKey == null) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "No X.509 credentials negotiated for CertificateVerify");
                 }
@@ -1113,7 +1113,7 @@ final class CertificateVerify {
                 X509Possession x509Possession) throws IOException {
             T13CertificateVerifyMessage cvm =
                     new T13CertificateVerifyMessage(shc, x509Possession);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "Produced server CertificateVerify handshake message", cvm);
             }
@@ -1130,7 +1130,7 @@ final class CertificateVerify {
                 X509Possession x509Possession) throws IOException {
             T13CertificateVerifyMessage cvm =
                     new T13CertificateVerifyMessage(chc, x509Possession);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "Produced client CertificateVerify handshake message", cvm);
             }
@@ -1163,9 +1163,17 @@ final class CertificateVerify {
             // Clean up this consumer
             hc.handshakeConsumers.remove(SSLHandshake.CERTIFICATE_VERIFY.id);
 
+            // Ensure that the Certificate Verify message has not been sent w/o
+            // a Certificate message preceding
+            if (hc.handshakeConsumers.containsKey(
+                    SSLHandshake.CERTIFICATE.id)) {
+                throw hc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                                  "Unexpected Certificate Verify handshake message");
+            }
+
             T13CertificateVerifyMessage cvm =
                     new T13CertificateVerifyMessage(hc, message);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "Consuming CertificateVerify handshake message", cvm);
             }

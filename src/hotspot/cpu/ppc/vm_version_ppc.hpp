@@ -32,12 +32,14 @@
 class VM_Version: public Abstract_VM_Version {
 protected:
   enum Feature_Flag {
+    mfdscr,
     darn,
     brw,
     num_features // last entry to count features
   };
   enum Feature_Flag_Set {
     unknown_m             = 0,
+    mfdscr_m              = (1 << mfdscr ),
     darn_m                = (1 << darn   ),
     brw_m                 = (1 << brw    ),
     all_features_m        = (unsigned long)-1
@@ -60,15 +62,16 @@ public:
   // PPC64 supports fast class initialization checks
   static bool supports_fast_class_init_checks() { return true; }
   constexpr static bool supports_stack_watermark_barrier() { return true; }
-  constexpr static bool supports_recursive_lightweight_locking() { return true; }
+  constexpr static bool supports_recursive_fast_locking() { return true; }
   constexpr static bool supports_secondary_supers_table() { return true; }
 
   static bool supports_float16() { return PowerArchitecturePPC64 >= 9; }
 
   static bool is_determine_features_test_running() { return _is_determine_features_test_running; }
   // CPU instruction support
-  static bool has_darn()    { return (_features & darn_m) != 0; }
-  static bool has_brw()     { return (_features & brw_m) != 0; }
+  static bool has_mfdscr() { return (_features & mfdscr_m) != 0; } // Power8, but may be unavailable (QEMU)
+  static bool has_darn()   { return (_features & darn_m) != 0; }
+  static bool has_brw()    { return (_features & brw_m) != 0; }
 
   // Assembler testing
   static void allow_all();

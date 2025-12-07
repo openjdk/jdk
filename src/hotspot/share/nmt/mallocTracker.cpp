@@ -35,22 +35,22 @@
 #include "nmt/mallocTracker.hpp"
 #include "nmt/memTracker.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safefetch.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
-#include "utilities/globalDefinitions.hpp"
 
-MallocMemorySnapshot MallocMemorySummary::_snapshot;
+DeferredStatic<MallocMemorySnapshot> MallocMemorySummary::_snapshot;
 
 void MemoryCounter::update_peak(size_t size, size_t cnt) {
   size_t peak_sz = peak_size();
   while (peak_sz < size) {
-    size_t old_sz = Atomic::cmpxchg(&_peak_size, peak_sz, size, memory_order_relaxed);
+    size_t old_sz = AtomicAccess::cmpxchg(&_peak_size, peak_sz, size, memory_order_relaxed);
     if (old_sz == peak_sz) {
       // I won
       _peak_count = cnt;
@@ -65,7 +65,11 @@ void MallocMemorySnapshot::copy_to(MallocMemorySnapshot* s) {
   // Use lock to make sure that mtChunks don't get deallocated while the
   // copy is going on, because their size is adjusted using this
   // buffer in make_adjustment().
-  ChunkPoolLocker lock;
+  ChunkPoolLocker::LockStrategy ls = ChunkPoolLocker::LockStrategy::Lock;
+  if (VMError::is_error_reported() && VMError::is_error_reported_in_current_thread()) {
+    ls = ChunkPoolLocker::LockStrategy::Try;
+  }
+  ChunkPoolLocker cpl(ls);
   s->_all_mallocs = _all_mallocs;
   size_t total_size = 0;
   size_t total_count = 0;
@@ -97,7 +101,7 @@ void MallocMemorySnapshot::make_adjustment() {
 }
 
 void MallocMemorySummary::initialize() {
-  // Uses placement new operator to initialize static area.
+  _snapshot.initialize();
   MallocLimitHandler::initialize(MallocLimit);
 }
 
@@ -206,6 +210,12 @@ void* MallocTracker::record_free_block(void* memblock) {
   MallocHeader* header = MallocHeader::resolve_checked(memblock);
 
   deaccount(header->free_info());
+
+  if (ZapCHeap) {
+    // To do this zapping, we need to know the block size.
+    // This is why we have to do it here, and not in os::free.
+    memset(memblock, freeBlockPad, header->size());
+  }
 
   header->mark_block_as_dead();
 

@@ -48,7 +48,7 @@ class PhaseChaitin;
 // Live-RanGe structure.
 class LRG : public ResourceObj {
 public:
-  static const uint AllStack_size = 0xFFFFF; // This mask size is used to tell that the mask of this LRG supports stack positions
+  static const uint INFINITE_STACK_SIZE = 0xFFFFF; // This mask size is used to tell that the mask of this LRG supports stack positions
   enum { SPILL_REG=29999 };     // Register number of a spilled LRG
 
   double _cost;                 // 2 for loads/1 for stores times block freq
@@ -63,6 +63,7 @@ public:
 
   uint _risk_bias;              // Index of LRG which we want to avoid color
   uint _copy_bias;              // Index of LRG which we want to share color
+  uint _copy_bias2;             // Index of second LRG which we want to share color
 
   uint _next;                   // Index of next LRG in linked list
   uint _prev;                   // Index of prev LRG in linked list
@@ -83,14 +84,14 @@ public:
   void set_degree( uint degree ) {
     _eff_degree = degree;
     DEBUG_ONLY(_degree_valid = 1;)
-    assert(!_mask.is_AllStack() || (_mask.is_AllStack() && lo_degree()), "_eff_degree can't be bigger than AllStack_size - _num_regs if the mask supports stack registers");
+    assert(!_mask.is_infinite_stack() || (_mask.is_infinite_stack() && lo_degree()), "_eff_degree can't be bigger than INFINITE_STACK_SIZE - _num_regs if the mask supports stack registers");
   }
   // Made a change that hammered degree
   void invalid_degree() { DEBUG_ONLY(_degree_valid=0;) }
   // Incrementally modify degree.  If it was correct, it should remain correct
   void inc_degree( uint mod ) {
     _eff_degree += mod;
-    assert(!_mask.is_AllStack() || (_mask.is_AllStack() && lo_degree()), "_eff_degree can't be bigger than AllStack_size - _num_regs if the mask supports stack registers");
+    assert(!_mask.is_infinite_stack() || (_mask.is_infinite_stack() && lo_degree()), "_eff_degree can't be bigger than INFINITE_STACK_SIZE - _num_regs if the mask supports stack registers");
   }
   // Compute the degree between 2 live ranges
   int compute_degree( LRG &l ) const;
@@ -103,11 +104,11 @@ public:
 
 private:
   RegMask _mask;                // Allowed registers for this LRG
-  uint _mask_size;              // cache of _mask.Size();
+  uint _mask_size;              // cache of _mask.size();
 public:
-  int compute_mask_size() const { return _mask.is_AllStack() ? AllStack_size : _mask.Size(); }
+  int compute_mask_size() const { return _mask.is_infinite_stack() ? INFINITE_STACK_SIZE : _mask.size(); }
   void set_mask_size( int size ) {
-    assert((size == (int)AllStack_size) || (size == (int)_mask.Size()), "");
+    assert((size == (int)INFINITE_STACK_SIZE) || (size == (int)_mask.size()), "");
     _mask_size = size;
 #ifdef ASSERT
     _msize_valid=1;
@@ -128,19 +129,22 @@ public:
   // count of bits in the current mask.
   int get_invalid_mask_size() const { return _mask_size; }
   const RegMask &mask() const { return _mask; }
-  void set_mask( const RegMask &rm ) { _mask = rm; DEBUG_ONLY(_msize_valid=0;)}
-  void AND( const RegMask &rm ) { _mask.AND(rm); DEBUG_ONLY(_msize_valid=0;)}
-  void SUBTRACT( const RegMask &rm ) { _mask.SUBTRACT(rm); DEBUG_ONLY(_msize_valid=0;)}
-  void Clear()   { _mask.Clear()  ; DEBUG_ONLY(_msize_valid=1); _mask_size = 0; }
-  void Set_All() { _mask.Set_All(); DEBUG_ONLY(_msize_valid=1); _mask_size = RegMask::CHUNK_SIZE; }
+  void set_mask(const RegMask& rm) { _mask.assignFrom(rm); DEBUG_ONLY(_msize_valid = 0;) }
+  void init_mask(Arena* arena) { new (&_mask) RegMask(arena); }
+  void and_with( const RegMask &rm ) { _mask.and_with(rm); DEBUG_ONLY(_msize_valid=0;)}
+  void subtract( const RegMask &rm ) { _mask.subtract(rm); DEBUG_ONLY(_msize_valid=0;)}
+  void subtract_inner(const RegMask& rm) { _mask.subtract_inner(rm); DEBUG_ONLY(_msize_valid = 0;) }
+  void clear()   { _mask.clear()  ; DEBUG_ONLY(_msize_valid=1); _mask_size = 0; }
+  void set_all() { _mask.set_all(); DEBUG_ONLY(_msize_valid = 1); _mask_size = _mask.rm_size_in_bits(); }
+  bool rollover() { DEBUG_ONLY(_msize_valid = 1); _mask_size = _mask.rm_size_in_bits(); return _mask.rollover(); }
 
-  void Insert( OptoReg::Name reg ) { _mask.Insert(reg);  DEBUG_ONLY(_msize_valid=0;) }
-  void Remove( OptoReg::Name reg ) { _mask.Remove(reg);  DEBUG_ONLY(_msize_valid=0;) }
+  void insert( OptoReg::Name reg ) { _mask.insert(reg);  DEBUG_ONLY(_msize_valid=0;) }
+  void remove( OptoReg::Name reg ) { _mask.remove(reg);  DEBUG_ONLY(_msize_valid=0;) }
   void clear_to_sets()  { _mask.clear_to_sets(_num_regs); DEBUG_ONLY(_msize_valid=0;) }
 
 private:
   // Number of registers this live range uses when it colors
-  uint16_t _num_regs;           // 2 for Longs and Doubles, 1 for all else
+  uint16_t _num_regs;           // byte size of the value divided by slot size which is 4
                                 // except _num_regs is kill count for fat_proj
 
   // For scalable register, num_regs may not be the actual physical register size.
@@ -245,6 +249,9 @@ class PhaseIFG : public Phase {
 
   // Live range structure goes here
   LRG *_lrgs;                   // Array of LRG structures
+
+  // Keep track of number of edges to allow bailing out on very large IFGs
+  uint _edges;
 
 public:
   // Largest live-range number
@@ -618,7 +625,7 @@ private:
       void check_pressure_at_fatproj(uint fatproj_location, RegMask& fatproj_mask) {
         // this pressure is only valid at this instruction, i.e. we don't need to lower
         // the register pressure since the fat proj was never live before (going backwards)
-        uint new_pressure = current_pressure() + fatproj_mask.Size();
+        uint new_pressure = current_pressure() + fatproj_mask.size();
         if (new_pressure > final_pressure()) {
           _final_pressure = new_pressure;
         }
@@ -694,9 +701,11 @@ private:
   // Return TRUE if any spills occurred.
   uint Select( );
   // Helper function for select which allows biased coloring
-  OptoReg::Name choose_color( LRG &lrg, int chunk );
+  OptoReg::Name choose_color(LRG& lrg);
   // Helper function which implements biasing heuristic
-  OptoReg::Name bias_color( LRG &lrg, int chunk );
+  OptoReg::Name bias_color(LRG& lrg);
+  // Helper function which implements color biasing
+  OptoReg::Name select_bias_lrg_color(LRG& lrg);
 
   // Split uncolorable live ranges
   // Return new number of live ranges

@@ -22,12 +22,15 @@
  *
  */
 
+#ifndef SHARE_OPTO_LIBRARY_CALL_HPP
+#define SHARE_OPTO_LIBRARY_CALL_HPP
+
 #include "ci/ciMethod.hpp"
 #include "classfile/javaClasses.hpp"
 #include "opto/callGenerator.hpp"
-#include "opto/graphKit.hpp"
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
+#include "opto/graphKit.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/movenode.hpp"
 
@@ -126,6 +129,29 @@ class LibraryCallKit : public GraphKit {
 
   virtual int reexecute_sp() { return _reexecute_sp; }
 
+  /* When an intrinsic makes changes before bailing out, it's necessary to restore the graph
+   * as it was. See JDK-8359344 for what can happen wrong. It's also not always possible to
+   * bailout before making changes because the bailing out decision might depend on new nodes
+   * (their types, for instance).
+   *
+   * So, if an intrinsic might cause this situation, one must start by saving the state in a
+   * SavedState by constructing it, and the state will be restored on destruction. If the
+   * intrinsic is not bailing out, one need to call discard to prevent restoring the old state.
+   */
+  class SavedState {
+    LibraryCallKit* _kit;
+    uint _sp;
+    JVMState* _jvms;
+    SafePointNode* _map;
+    Unique_Node_List _ctrl_succ;
+    bool _discarded;
+
+  public:
+    SavedState(LibraryCallKit*);
+    ~SavedState();
+    void discard();
+  };
+
   // Helper functions to inline natives
   Node* generate_guard(Node* test, RegionNode* region, float true_prob);
   Node* generate_slow_guard(Node* test, RegionNode* region);
@@ -137,7 +163,8 @@ class LibraryCallKit : public GraphKit {
                              Node* array_length,
                              RegionNode* region);
   void  generate_string_range_check(Node* array, Node* offset,
-                                    Node* length, bool char_count);
+                                    Node* length, bool char_count,
+                                    bool halt_on_oob = false);
   Node* current_thread_helper(Node* &tls_output, ByteSize handle_offset,
                               bool is_immutable);
   Node* generate_current_thread(Node* &tls_output);
@@ -248,9 +275,11 @@ class LibraryCallKit : public GraphKit {
   bool inline_native_Continuation_pinning(bool unpin);
 
   bool inline_native_time_funcs(address method, const char* funcName);
+
+  bool inline_native_vthread_start_transition(address funcAddr, const char* funcName, bool is_final_transition);
+  bool inline_native_vthread_end_transition(address funcAddr, const char* funcName, bool is_first_transition);
+
 #if INCLUDE_JVMTI
-  bool inline_native_notify_jvmti_funcs(address funcAddr, const char* funcName, bool is_start, bool is_end);
-  bool inline_native_notify_jvmti_hide();
   bool inline_native_notify_jvmti_sync();
 #endif
 
@@ -300,7 +329,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_bitshuffle_methods(vmIntrinsics::ID id);
   bool inline_compare_unsigned(vmIntrinsics::ID id);
   bool inline_divmod_methods(vmIntrinsics::ID id);
-  bool inline_reference_get();
+  bool inline_reference_get0();
   bool inline_reference_refersTo0(bool is_phantom);
   bool inline_reference_clear0(bool is_phantom);
   bool inline_Class_cast();
@@ -311,7 +340,7 @@ class LibraryCallKit : public GraphKit {
   Node* inline_cipherBlockChaining_AESCrypt_predicate(bool decrypting);
   Node* inline_electronicCodeBook_AESCrypt_predicate(bool decrypting);
   Node* inline_counterMode_AESCrypt_predicate();
-  Node* get_key_start_from_aescrypt_object(Node* aescrypt_object);
+  Node* get_key_start_from_aescrypt_object(Node* aescrypt_object, bool is_decrypt);
   bool inline_ghash_processBlocks();
   bool inline_chacha20Block();
   bool inline_kyberNtt();
@@ -416,3 +445,4 @@ class LibraryCallKit : public GraphKit {
   bool inline_blackhole();
 };
 
+#endif // SHARE_OPTO_LIBRARY_CALL_HPP

@@ -154,14 +154,7 @@ module java.base {
     // module declaration be annotated with jdk.internal.javac.ParticipatesInPreview
     exports jdk.internal.javac to
         java.compiler,
-        java.desktop, // for ScopedValue
-        jdk.compiler,
-        jdk.incubator.vector, // participates in preview features
-        jdk.jartool, // participates in preview features
-        jdk.jdeps, // participates in preview features
-        jdk.jfr, // participates in preview features
-        jdk.jlink,   // participates in preview features
-        jdk.jshell; // participates in preview features
+        jdk.compiler;
     exports jdk.internal.access to
         java.desktop,
         java.logging,
@@ -197,6 +190,8 @@ module java.base {
         jdk.jlink;
     exports jdk.internal.logger to
         java.logging;
+    exports jdk.internal.net.quic to
+        java.net.http;
     exports jdk.internal.org.xml.sax to
         jdk.jfr;
     exports jdk.internal.org.xml.sax.helpers to
@@ -318,6 +313,7 @@ module java.base {
     exports sun.security.internal.spec to
         jdk.crypto.cryptoki;
     exports sun.security.jca to
+        java.security.sasl,
         java.smartcardio,
         jdk.crypto.cryptoki,
         jdk.naming.dns;

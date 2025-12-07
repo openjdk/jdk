@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
 // Copyright (c) 2020, 2024, Huawei Technologies Co., Ltd. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -1049,15 +1049,10 @@ class HandlerImpl {
 
  public:
 
-  static int emit_exception_handler(C2_MacroAssembler *masm);
   static int emit_deopt_handler(C2_MacroAssembler* masm);
 
-  static uint size_exception_handler() {
-    return MacroAssembler::far_branch_size();
-  }
-
   static uint size_deopt_handler() {
-    // count auipc + far branch
+    // count far call + j
     return NativeInstruction::instruction_size + MacroAssembler::far_branch_size();
   }
 };
@@ -1092,40 +1087,40 @@ RegMask _NO_SPECIAL_NO_FP_PTR_REG_mask;
 
 void reg_mask_init() {
 
-  _ANY_REG32_mask = _ALL_REG32_mask;
-  _ANY_REG32_mask.Remove(OptoReg::as_OptoReg(x0->as_VMReg()));
+  _ANY_REG32_mask.assignFrom(_ALL_REG32_mask);
+  _ANY_REG32_mask.remove(OptoReg::as_OptoReg(x0->as_VMReg()));
 
-  _ANY_REG_mask = _ALL_REG_mask;
-  _ANY_REG_mask.SUBTRACT(_ZR_REG_mask);
+  _ANY_REG_mask.assignFrom(_ALL_REG_mask);
+  _ANY_REG_mask.subtract(_ZR_REG_mask);
 
-  _PTR_REG_mask = _ALL_REG_mask;
-  _PTR_REG_mask.SUBTRACT(_ZR_REG_mask);
+  _PTR_REG_mask.assignFrom(_ALL_REG_mask);
+  _PTR_REG_mask.subtract(_ZR_REG_mask);
 
-  _NO_SPECIAL_REG32_mask = _ALL_REG32_mask;
-  _NO_SPECIAL_REG32_mask.SUBTRACT(_NON_ALLOCATABLE_REG32_mask);
+  _NO_SPECIAL_REG32_mask.assignFrom(_ALL_REG32_mask);
+  _NO_SPECIAL_REG32_mask.subtract(_NON_ALLOCATABLE_REG32_mask);
 
-  _NO_SPECIAL_REG_mask = _ALL_REG_mask;
-  _NO_SPECIAL_REG_mask.SUBTRACT(_NON_ALLOCATABLE_REG_mask);
+  _NO_SPECIAL_REG_mask.assignFrom(_ALL_REG_mask);
+  _NO_SPECIAL_REG_mask.subtract(_NON_ALLOCATABLE_REG_mask);
 
-  _NO_SPECIAL_PTR_REG_mask = _ALL_REG_mask;
-  _NO_SPECIAL_PTR_REG_mask.SUBTRACT(_NON_ALLOCATABLE_REG_mask);
+  _NO_SPECIAL_PTR_REG_mask.assignFrom(_ALL_REG_mask);
+  _NO_SPECIAL_PTR_REG_mask.subtract(_NON_ALLOCATABLE_REG_mask);
 
   // x27 is not allocatable when compressed oops is on
   if (UseCompressedOops) {
-    _NO_SPECIAL_REG32_mask.Remove(OptoReg::as_OptoReg(x27->as_VMReg()));
-    _NO_SPECIAL_REG_mask.Remove(OptoReg::as_OptoReg(x27->as_VMReg()));
-    _NO_SPECIAL_PTR_REG_mask.Remove(OptoReg::as_OptoReg(x27->as_VMReg()));
+    _NO_SPECIAL_REG32_mask.remove(OptoReg::as_OptoReg(x27->as_VMReg()));
+    _NO_SPECIAL_REG_mask.remove(OptoReg::as_OptoReg(x27->as_VMReg()));
+    _NO_SPECIAL_PTR_REG_mask.remove(OptoReg::as_OptoReg(x27->as_VMReg()));
   }
 
   // x8 is not allocatable when PreserveFramePointer is on
   if (PreserveFramePointer) {
-    _NO_SPECIAL_REG32_mask.Remove(OptoReg::as_OptoReg(x8->as_VMReg()));
-    _NO_SPECIAL_REG_mask.Remove(OptoReg::as_OptoReg(x8->as_VMReg()));
-    _NO_SPECIAL_PTR_REG_mask.Remove(OptoReg::as_OptoReg(x8->as_VMReg()));
+    _NO_SPECIAL_REG32_mask.remove(OptoReg::as_OptoReg(x8->as_VMReg()));
+    _NO_SPECIAL_REG_mask.remove(OptoReg::as_OptoReg(x8->as_VMReg()));
+    _NO_SPECIAL_PTR_REG_mask.remove(OptoReg::as_OptoReg(x8->as_VMReg()));
   }
 
-  _NO_SPECIAL_NO_FP_PTR_REG_mask = _NO_SPECIAL_PTR_REG_mask;
-  _NO_SPECIAL_NO_FP_PTR_REG_mask.Remove(OptoReg::as_OptoReg(x8->as_VMReg()));
+  _NO_SPECIAL_NO_FP_PTR_REG_mask.assignFrom(_NO_SPECIAL_PTR_REG_mask);
+  _NO_SPECIAL_NO_FP_PTR_REG_mask.remove(OptoReg::as_OptoReg(x8->as_VMReg()));
 }
 
 void PhaseOutput::pd_perform_mach_node_analysis() {
@@ -1183,6 +1178,8 @@ bool is_CAS(int opcode, bool maybe_volatile)
       return false;
   }
 }
+
+constexpr uint64_t MAJIK_DWORD = 0xabbaabbaabbaabbaull;
 
 // predicate controlling translation of CAS
 //
@@ -1269,6 +1266,26 @@ int CallDynamicJavaDirectNode::compute_padding(int current_offset) const
   return align_up(current_offset, alignment_required()) - current_offset;
 }
 
+int CallRuntimeDirectNode::compute_padding(int current_offset) const
+{
+  return align_up(current_offset, alignment_required()) - current_offset;
+}
+
+int CallLeafDirectNode::compute_padding(int current_offset) const
+{
+  return align_up(current_offset, alignment_required()) - current_offset;
+}
+
+int CallLeafDirectVectorNode::compute_padding(int current_offset) const
+{
+  return align_up(current_offset, alignment_required()) - current_offset;
+}
+
+int CallLeafNoFPDirectNode::compute_padding(int current_offset) const
+{
+  return align_up(current_offset, alignment_required()) - current_offset;
+}
+
 //=============================================================================
 
 #ifndef PRODUCT
@@ -1306,7 +1323,7 @@ uint MachBreakpointNode::size(PhaseRegAlloc *ra_) const {
   }
 
 //=============================================================================
-const RegMask& MachConstantBaseNode::_out_RegMask = RegMask::Empty;
+const RegMask& MachConstantBaseNode::_out_RegMask = RegMask::EMPTY;
 
 int ConstantTable::calculate_table_base_offset() const {
   return 0;  // absolute addressing, no offset
@@ -1343,10 +1360,15 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
     st->print("# stack bang size=%d\n\t", framesize);
   }
 
-  st->print("sd  fp, [sp, #%d]\n\t", - 2 * wordSize);
-  st->print("sd  ra, [sp, #%d]\n\t", - wordSize);
-  if (PreserveFramePointer) { st->print("sub  fp, sp, #%d\n\t", 2 * wordSize); }
   st->print("sub sp, sp, #%d\n\t", framesize);
+  st->print("sd  fp, [sp, #%d]\n\t", framesize - 2 * wordSize);
+  st->print("sd  ra, [sp, #%d]\n\t", framesize - wordSize);
+  if (PreserveFramePointer) { st->print("add fp, sp, #%d\n\t", framesize); }
+
+  if (VerifyStackAtCalls) {
+    st->print("mv  t2, %ld\n\t", MAJIK_DWORD);
+    st->print("sd  t2, [sp, #%d]\n\t", framesize - 3 * wordSize);
+  }
 
   if (C->stub_function() == nullptr) {
     st->print("ld  t0, [guard]\n\t");
@@ -1368,14 +1390,6 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   // n.b. frame size includes space for return pc and fp
   const int framesize = C->output()->frame_size_in_bytes();
 
-  // insert a nop at the start of the prolog so we can patch in a
-  // branch if we need to invalidate the method later
-  {
-    Assembler::IncompressibleScope scope(masm); // keep the nop as 4 bytes for patching.
-    MacroAssembler::assert_alignment(__ pc());
-    __ nop();  // 4 bytes
-  }
-
   assert_cond(C != nullptr);
 
   if (C->clinit_barrier_on_entry()) {
@@ -1396,6 +1410,11 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
 
   __ build_frame(framesize);
 
+  if (VerifyStackAtCalls) {
+    __ mv(t2, MAJIK_DWORD);
+    __ sd(t2, Address(sp, framesize - 3 * wordSize));
+  }
+
   if (C->stub_function() == nullptr) {
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
     // Dummy labels for just measuring the code size
@@ -1415,10 +1434,6 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
     }
     // In the C2 code, we move the non-hot part of nmethod entry barriers out-of-line to a stub.
     bs->nmethod_entry_barrier(masm, slow_path, continuation, guard);
-  }
-
-  if (VerifyStackAtCalls) {
-    Unimplemented();
   }
 
   C->output()->set_frame_complete(__ offset());
@@ -1493,7 +1508,7 @@ void MachEpilogNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
       code_stub = &stub->entry();
     }
     __ relocate(relocInfo::poll_return_type);
-    __ safepoint_poll(*code_stub, true /* at_return */, false /* acquire */, true /* in_nmethod */);
+    __ safepoint_poll(*code_stub, true /* at_return */, true /* in_nmethod */);
   }
 }
 
@@ -1804,7 +1819,6 @@ void MachUEPNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const
   // This is the unverified entry point.
   __ ic_check(CodeEntryAlignment);
 
-  // Verified entry point must be properly 4 bytes aligned for patching by NativeJump::patch_verified_entry().
   // ic_check() aligns to CodeEntryAlignment >= InteriorEntryAlignment(min 16) > NativeInstruction::instruction_size(4).
   assert(((__ offset()) % CodeEntryAlignment) == 0, "Misaligned verified entry point");
 }
@@ -1819,25 +1833,6 @@ uint MachUEPNode::size(PhaseRegAlloc* ra_) const
 
 //=============================================================================
 
-// Emit exception handler code.
-int HandlerImpl::emit_exception_handler(C2_MacroAssembler* masm)
-{
-  // auipc t1, #exception_blob_entry_point
-  // jr (offset)t1
-  // Note that the code buffer's insts_mark is always relative to insts.
-  // That's why we must use the macroassembler to generate a handler.
-  address base = __ start_a_stub(size_exception_handler());
-  if (base == nullptr) {
-    ciEnv::current()->record_failure("CodeCache is full");
-    return 0;  // CodeBuffer::expand failed
-  }
-  int offset = __ offset();
-  __ far_jump(RuntimeAddress(OptoRuntime::exception_blob()->entry_point()));
-  assert(__ offset() - offset <= (int) size_exception_handler(), "overflow");
-  __ end_a_stub();
-  return offset;
-}
-
 // Emit deopt handler code.
 int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm)
 {
@@ -1848,12 +1843,19 @@ int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm)
   }
   int offset = __ offset();
 
-  __ auipc(ra, 0);
-  __ far_jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
+  Label start;
+  __ bind(start);
+
+  __ far_call(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
+
+  int entry_offset = __ offset();
+  __ j(start);
 
   assert(__ offset() - offset <= (int) size_deopt_handler(), "overflow");
+  assert(__ offset() - entry_offset >= NativePostCallNop::first_check_size,
+         "out of bounds read in post-call NOP check");
   __ end_a_stub();
-  return offset;
+  return entry_offset;
 
 }
 // REQUIRED MATCHER CODE
@@ -1994,17 +1996,31 @@ int Matcher::max_vector_size(const BasicType bt) {
 }
 
 int Matcher::min_vector_size(const BasicType bt) {
-  int max_size = max_vector_size(bt);
-  // Limit the min vector size to 8 bytes.
-  int size = 8 / type2aelembytes(bt);
-  if (bt == T_BYTE) {
-    // To support vector api shuffle/rearrange.
-    size = 4;
-  } else if (bt == T_BOOLEAN) {
-    // To support vector api load/store mask.
-    size = 2;
+  int size;
+  switch(bt) {
+    case T_BOOLEAN:
+      // Load/store a vector mask with only 2 elements for vector types
+      // such as "2I/2F/2L/2D".
+      size = 2;
+      break;
+    case T_BYTE:
+      // Generate a "4B" vector, to support vector cast between "8B/16B"
+      // and "4S/4I/4L/4F/4D".
+      size = 4;
+      break;
+    case T_SHORT:
+      // Generate a "2S" vector, to support vector cast between "4S/8S"
+      // and "2I/2L/2F/2D".
+      size = 2;
+      break;
+    default:
+      // Limit the min vector length to 64-bit.
+      size = 8 / type2aelembytes(bt);
+      // The number of elements in a vector should be at least 2.
+      size = MAX2(size, 2);
   }
-  if (size < 2) size = 2;
+
+  int max_size = max_vector_size(bt);
   return MIN2(size, max_size);
 }
 
@@ -2034,6 +2050,10 @@ MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* original_opnd,
 
 bool Matcher::is_reg2reg_move(MachNode* m) {
   ShouldNotReachHere(); // generic vector operands not supported
+  return false;
+}
+
+bool Matcher::is_register_biasing_candidate(const MachNode* mdef, int oper_index) {
   return false;
 }
 
@@ -2079,10 +2099,10 @@ uint Matcher::int_pressure_limit()
   // as a spilled LRG. Spilling heuristics(Spill-USE) explicitly skip
   // derived pointers and lastly fail to spill after reaching maximum
   // number of iterations. Lowering the default pressure threshold to
-  // (_NO_SPECIAL_REG32_mask.Size() minus 1) forces CallNode to become
+  // (_NO_SPECIAL_REG32_mask.size() minus 1) forces CallNode to become
   // a high register pressure area of the code so that split_DEF can
   // generate DefinitionSpillCopy for the derived pointer.
-  uint default_int_pressure_threshold = _NO_SPECIAL_REG32_mask.Size() - 1;
+  uint default_int_pressure_threshold = _NO_SPECIAL_REG32_mask.size() - 1;
   if (!PreserveFramePointer) {
     // When PreserveFramePointer is off, frame pointer is allocatable,
     // but different from other SOC registers, it is excluded from
@@ -2097,38 +2117,34 @@ uint Matcher::int_pressure_limit()
 uint Matcher::float_pressure_limit()
 {
   // _FLOAT_REG_mask is generated by adlc from the float_reg register class.
-  return (FLOATPRESSURE == -1) ? _FLOAT_REG_mask.Size() : FLOATPRESSURE;
+  return (FLOATPRESSURE == -1) ? _FLOAT_REG_mask.size() : FLOATPRESSURE;
 }
 
 bool Matcher::use_asm_for_ldiv_by_con(jlong divisor) {
   return false;
 }
 
-RegMask Matcher::divI_proj_mask() {
+const RegMask& Matcher::divI_proj_mask() {
   ShouldNotReachHere();
-  return RegMask();
+  return RegMask::EMPTY;
 }
 
 // Register for MODI projection of divmodI.
-RegMask Matcher::modI_proj_mask() {
+const RegMask& Matcher::modI_proj_mask() {
   ShouldNotReachHere();
-  return RegMask();
+  return RegMask::EMPTY;
 }
 
 // Register for DIVL projection of divmodL.
-RegMask Matcher::divL_proj_mask() {
+const RegMask& Matcher::divL_proj_mask() {
   ShouldNotReachHere();
-  return RegMask();
+  return RegMask::EMPTY;
 }
 
 // Register for MODL projection of divmodL.
-RegMask Matcher::modL_proj_mask() {
+const RegMask& Matcher::modL_proj_mask() {
   ShouldNotReachHere();
-  return RegMask();
-}
-
-const RegMask Matcher::method_handle_invoke_SP_save_mask() {
-  return FP_REG_mask();
+  return RegMask::EMPTY;
 }
 
 bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
@@ -2271,10 +2287,6 @@ encode %{
     __ mv(dst_reg, 1);
   %}
 
-  enc_class riscv_enc_mov_byte_map_base(iRegP dst) %{
-    __ load_byte_map_base($dst$$Register);
-  %}
-
   enc_class riscv_enc_mov_n(iRegN dst, immN src) %{
     Register dst_reg = as_Register($dst$$reg);
     address con = (address)$src$$constant;
@@ -2414,7 +2426,13 @@ encode %{
   enc_class riscv_enc_call_epilog() %{
     if (VerifyStackAtCalls) {
       // Check that stack depth is unchanged: find majik cookie on stack
-      __ call_Unimplemented();
+      int framesize = ra_->reg2offset_unchecked(OptoReg::add(ra_->_matcher._old_SP, -3 * VMRegImpl::slots_per_word));
+      Label stack_ok;
+      __ ld(t1, Address(sp, framesize));
+      __ mv(t2, MAJIK_DWORD);
+      __ beq(t2, t1, stack_ok);
+      __ stop("MAJIK_DWORD not found");
+      __ bind(stack_ok);
     }
   %}
 
@@ -2822,21 +2840,6 @@ operand immP0()
 operand immP_1()
 %{
   predicate(n->get_ptr() == 1);
-  match(ConP);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Card Table Byte Map Base
-operand immByteMapBase()
-%{
-  // Get base of card map
-  predicate(BarrierSet::barrier_set()->is_a(BarrierSet::CardTableBarrierSet) &&
-            SHENANDOAHGC_ONLY(!BarrierSet::barrier_set()->is_a(BarrierSet::ShenandoahBarrierSet) &&)
-            (CardTable::CardValue*)n->get_ptr() ==
-             ((CardTableBarrierSet*)(BarrierSet::barrier_set()))->card_table()->byte_map_base());
   match(ConP);
 
   op_cost(0);
@@ -3847,16 +3850,18 @@ opclass immIorL(immI, immL);
 pipeline %{
 
 attributes %{
-  // RISC-V instructions are of fixed length
-  fixed_size_instructions;           // Fixed size instructions TODO does
-  max_instructions_per_bundle = 2;   // Generic RISC-V 1, Sifive Series 7 2
-  // RISC-V instructions come in 32-bit word units
-  instruction_unit_size = 4;         // An instruction is 4 bytes long
-  instruction_fetch_unit_size = 64;  // The processor fetches one line
-  instruction_fetch_units = 1;       // of 64 bytes
+  // RISC-V instructions are of length 2 or 4 bytes.
+  variable_size_instructions;
+  instruction_unit_size = 2;
 
-  // List of nop instructions
-  nops( MachNop );
+  // Up to 4 instructions per bundle
+  max_instructions_per_bundle = 4;
+
+  // The RISC-V processor fetches 64 bytes...
+  instruction_fetch_unit_size = 64;
+
+  // ...in one line.
+  instruction_fetch_units = 1;
 %}
 
 // We don't use an actual pipeline model so don't care about resources
@@ -4799,18 +4804,6 @@ instruct loadConP1(iRegPNoSp dst, immP_1 con)
   format %{ "mv  $dst, $con\t# load ptr constant one, #@loadConP1" %}
 
   ins_encode(riscv_enc_mov_p1(dst));
-
-  ins_pipe(ialu_imm);
-%}
-
-// Load Byte Map Base Constant
-instruct loadByteMapBase(iRegPNoSp dst, immByteMapBase con)
-%{
-  match(Set dst con);
-  ins_cost(ALU_COST);
-  format %{ "mv  $dst, $con\t# Byte Map Base, #@loadByteMapBase" %}
-
-  ins_encode(riscv_enc_mov_byte_map_base(dst));
 
   ins_pipe(ialu_imm);
 %}
@@ -8199,7 +8192,7 @@ instruct unnecessary_membar_volatile_rvtso() %{
   ins_cost(0);
 
   size(0);
-  
+
   format %{ "#@unnecessary_membar_volatile_rvtso (unnecessary so empty encoding)" %}
   ins_encode %{
     __ block_comment("unnecessary_membar_volatile_rvtso");
@@ -8435,6 +8428,17 @@ instruct castVV(vReg dst)
   ins_pipe(pipe_class_empty);
 %}
 
+instruct castVVMask(vRegMask dst)
+%{
+  match(Set dst (CastVV dst));
+
+  size(0);
+  format %{ "# castVV of $dst" %}
+  ins_encode(/* empty encoding */);
+  ins_cost(0);
+  ins_pipe(pipe_class_empty);
+%}
+
 // ============================================================================
 // Convert Instructions
 
@@ -8569,7 +8573,7 @@ instruct convF2HF_reg_reg(iRegINoSp dst, fRegF src, fRegF ftmp, iRegINoSp xtmp) 
 instruct reinterpretS2HF(fRegF dst, iRegI src)
 %{
   match(Set dst (ReinterpretS2HF src));
-  format %{ "fmv.h.x $dst, $src" %}
+  format %{ "fmv.h.x $dst, $src\t# reinterpretS2HF" %}
   ins_encode %{
     __ fmv_h_x($dst$$FloatRegister, $src$$Register);
   %}
@@ -8589,7 +8593,7 @@ instruct convF2HFAndS2HF(fRegF dst, fRegF src)
 instruct reinterpretHF2S(iRegINoSp dst, fRegF src)
 %{
   match(Set dst (ReinterpretHF2S src));
-  format %{ "fmv.x.h $dst, $src" %}
+  format %{ "fmv.x.h $dst, $src\t# reinterpretHF2S" %}
   ins_encode %{
     __ fmv_x_h($dst$$Register, $src$$FloatRegister);
   %}
@@ -8951,7 +8955,7 @@ instruct encodeKlass_not_null(iRegNNoSp dst, iRegP src) %{
 instruct decodeKlass_not_null(iRegPNoSp dst, iRegN src, iRegPNoSp tmp) %{
   match(Set dst (DecodeNKlass src));
 
-  effect(TEMP tmp);
+  effect(TEMP_DEF dst, TEMP tmp);
 
   ins_cost(ALU_COST);
   format %{ "decode_klass_not_null  $dst, $src\t#@decodeKlass_not_null" %}
@@ -10522,6 +10526,7 @@ instruct CallRuntimeDirect(method meth)
   ins_encode(riscv_enc_java_to_runtime(meth));
 
   ins_pipe(pipe_class_call);
+  ins_alignment(4);
 %}
 
 // Call Runtime Instruction
@@ -10539,6 +10544,7 @@ instruct CallLeafDirect(method meth)
   ins_encode(riscv_enc_java_to_runtime(meth));
 
   ins_pipe(pipe_class_call);
+  ins_alignment(4);
 %}
 
 // Call Runtime Instruction without safepoint and with vector arguments
@@ -10556,6 +10562,7 @@ instruct CallLeafDirectVector(method meth)
   ins_encode(riscv_enc_java_to_runtime(meth));
 
   ins_pipe(pipe_class_call);
+  ins_alignment(4);
 %}
 
 // Call Runtime Instruction
@@ -10573,6 +10580,7 @@ instruct CallLeafNoFPDirect(method meth)
   ins_encode(riscv_enc_java_to_runtime(meth));
 
   ins_pipe(pipe_class_call);
+  ins_alignment(4);
 %}
 
 // ============================================================================
@@ -10984,6 +10992,7 @@ instruct arrays_hashcode(iRegP_R11 ary, iRegI_R12 cnt, iRegI_R10 result, immI ba
                          iRegLNoSp tmp3, iRegLNoSp tmp4,
                          iRegLNoSp tmp5, iRegLNoSp tmp6, rFlagsReg cr)
 %{
+  predicate(!UseRVV);
   match(Set result (VectorizedHashCode (Binary ary cnt) (Binary result basic_type)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, TEMP tmp6,
          USE_KILL ary, USE_KILL cnt, USE basic_type, KILL cr);
@@ -11039,7 +11048,6 @@ instruct tlsLoadP(javaThread_RegP dst)
 instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box,
                      iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegPNoSp tmp4)
 %{
-  predicate(LockingMode != LM_LIGHTWEIGHT);
   match(Set cr (FastLock object box));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4);
 
@@ -11055,53 +11063,18 @@ instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box,
 %}
 
 // using t1 as the 'flag' register to bridge the BoolNode producers and consumers
-instruct cmpFastUnlock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2)
+instruct cmpFastUnlock(rFlagsReg cr, iRegP object, iRegP box,
+                       iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3)
 %{
-  predicate(LockingMode != LM_LIGHTWEIGHT);
-  match(Set cr (FastUnlock object box));
-  effect(TEMP tmp1, TEMP tmp2);
-
-  ins_cost(10 * DEFAULT_COST);
-  format %{ "fastunlock $object,$box\t! kills $tmp1, $tmp2, #@cmpFastUnlock" %}
-
-  ins_encode %{
-    __ fast_unlock($object$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
-  %}
-
-  ins_pipe(pipe_serial);
-%}
-
-instruct cmpFastLockLightweight(rFlagsReg cr, iRegP object, iRegP box,
-                                iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegPNoSp tmp4)
-%{
-  predicate(LockingMode == LM_LIGHTWEIGHT);
-  match(Set cr (FastLock object box));
-  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4);
-
-  ins_cost(10 * DEFAULT_COST);
-  format %{ "fastlock $object,$box\t! kills $tmp1,$tmp2,$tmp3,$tmp4 #@cmpFastLockLightweight" %}
-
-  ins_encode %{
-    __ fast_lock_lightweight($object$$Register, $box$$Register,
-                             $tmp1$$Register, $tmp2$$Register, $tmp3$$Register, $tmp4$$Register);
-  %}
-
-  ins_pipe(pipe_serial);
-%}
-
-instruct cmpFastUnlockLightweight(rFlagsReg cr, iRegP object, iRegP box,
-                                  iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3)
-%{
-  predicate(LockingMode == LM_LIGHTWEIGHT);
   match(Set cr (FastUnlock object box));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
   ins_cost(10 * DEFAULT_COST);
-  format %{ "fastunlock $object,$box\t! kills $tmp1,$tmp2,$tmp3 #@cmpFastUnlockLightweight" %}
+  format %{ "fastunlock $object,$box\t! kills $tmp1,$tmp2,$tmp3 #@cmpFastUnlock" %}
 
   ins_encode %{
-    __ fast_unlock_lightweight($object$$Register, $box$$Register,
-                               $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+    __ fast_unlock($object$$Register, $box$$Register,
+                   $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
   ins_pipe(pipe_serial);

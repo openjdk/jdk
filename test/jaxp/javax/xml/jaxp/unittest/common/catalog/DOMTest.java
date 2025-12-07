@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,12 @@
  */
 package common.catalog;
 
-/**
- * @test @bug 8306055
+import java.net.ProxySelector;
+
+/*
+ * @test
+ * @bug 8306055 8359337
+ * @summary verifies DOM's support of the JDK Catalog.
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @modules java.xml/jdk.xml.internal
  * @run driver common.catalog.DOMTest 0 // verifies default setting catalog.resolve=allow
@@ -36,11 +40,18 @@ package common.catalog;
  * @run driver common.catalog.DOMTest 7 // verifies external DTD resolution with a custom Catalog while resolve=strict in API setting
  * @run driver common.catalog.DOMTest 8 // verifies external parameter are resolved with a custom Catalog though resolve=strict in API setting
  * @run driver common.catalog.DOMTest 9 // verifies XInclude are resolved with a custom Catalog though resolve=strict in API setting
- * @summary verifies DOM's support of the JDK Catalog.
  */
 public class DOMTest extends CatalogTestBase {
-    public static void main(String args[]) throws Exception {
-        new DOMTest().run(args[0]);
+    public static void main(String[] args) throws Exception {
+        final ProxySelector previous = ProxySelector.getDefault();
+        // disable proxy
+        ProxySelector.setDefault(ProxySelector.of(null));
+        try {
+            new DOMTest().run(args[0]);
+        } finally {
+            // reset to the previous proxy selector
+            ProxySelector.setDefault(previous);
+        }
     }
 
     public void run(String index) throws Exception {

@@ -28,6 +28,9 @@ import static jdk.vm.ci.hotspot.HotSpotModifiers.BRIDGE;
 import static jdk.vm.ci.hotspot.HotSpotModifiers.SYNTHETIC;
 import static jdk.vm.ci.hotspot.HotSpotModifiers.VARARGS;
 import static jdk.vm.ci.hotspot.HotSpotModifiers.jvmMethodModifiers;
+import static jdk.vm.ci.hotspot.HotSpotResolvedJavaType.checkAreAnnotations;
+import static jdk.vm.ci.hotspot.HotSpotResolvedJavaType.checkIsAnnotation;
+import static jdk.vm.ci.hotspot.HotSpotResolvedJavaType.getFirstAnnotationOrNull;
 import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
@@ -775,15 +778,19 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     @Override
     public AnnotationData getAnnotationData(ResolvedJavaType type) {
         if (!hasAnnotations()) {
+            checkIsAnnotation(type);
             return null;
         }
-        return getAnnotationData0(type).get(0);
+        return getFirstAnnotationOrNull(getAnnotationData0(type));
     }
 
     @Override
     public List<AnnotationData> getAnnotationData(ResolvedJavaType type1, ResolvedJavaType type2, ResolvedJavaType... types) {
+        checkIsAnnotation(type1);
+        checkIsAnnotation(type2);
+        checkAreAnnotations(types);
         if (!hasAnnotations()) {
-            return Collections.emptyList();
+            return List.of();
         }
         return getAnnotationData0(AnnotationDataDecoder.asArray(type1, type2, types));
     }

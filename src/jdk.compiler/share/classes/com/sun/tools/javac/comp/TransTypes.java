@@ -1142,9 +1142,7 @@ public class TransTypes extends TreeTranslator {
     }
 
     public void visitTypeIntersection(JCTypeIntersection tree) {
-        tree.bounds = translate(tree.bounds, null);
-        tree.type = erasure(tree.type);
-        result = tree;
+        result = translate(tree.bounds.head, null);
     }
 
 /* ************************************************************************

@@ -190,6 +190,7 @@ public class SSLSocketTemplate extends SSLContextTemplate {
         try {
             sslServerSocket.setSoTimeout(30000);
             sslSocket = (SSLSocket)sslServerSocket.accept();
+            System.out.println("Connection established on port : " +serverPort);
         } catch (SocketTimeoutException ste) {
             // Ignore the test case if no connection within 30 seconds.
             System.out.println(
@@ -228,6 +229,7 @@ public class SSLSocketTemplate extends SSLContextTemplate {
             }
         } finally {
             sslSocket.close();
+            System.out.println("Connection closed on port : " +serverPort);
         }
     }
 

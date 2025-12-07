@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8304031 8338406 8338546
+ * @bug 8304031 8338406 8338546 8361909
  * @summary Testing handling of various constant descriptors in ClassFile API.
  * @modules java.base/jdk.internal.constant
  *          java.base/jdk.internal.classfile.impl
@@ -57,6 +57,13 @@ import static java.lang.constant.ConstantDescs.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 final class ConstantDescSymbolsTest {
+
+    @Test
+    void testNulls() {
+        var cpb = ConstantPoolBuilder.of();
+        assertThrows(NullPointerException.class, () -> cpb.loadableConstantEntry(null));
+        assertThrows(NullPointerException.class, () -> cpb.constantValueEntry(null));
+    }
 
     // Testing that primitive class descs are encoded properly as loadable constants.
     @Test

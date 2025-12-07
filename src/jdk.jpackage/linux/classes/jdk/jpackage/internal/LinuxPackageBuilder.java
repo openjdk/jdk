@@ -32,10 +32,11 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.ApplicationLayout;
-import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.LinuxApplication;
 import jdk.jpackage.internal.model.LinuxPackage;
 import jdk.jpackage.internal.model.LinuxPackageMixin;
 import jdk.jpackage.internal.model.Package;
+import jdk.jpackage.internal.model.RuntimeLayout;
 import jdk.jpackage.internal.model.StandardPackageType;
 
 final class LinuxPackageBuilder {
@@ -44,36 +45,44 @@ final class LinuxPackageBuilder {
         this.pkgBuilder = Objects.requireNonNull(pkgBuilder);
     }
 
-    LinuxPackage create() throws ConfigException {
-        if (literalName != null) {
-            pkgBuilder.name(literalName);
-        } else {
+    LinuxPackage create() {
+        pkgBuilder.name(Optional.ofNullable(literalName).orElseGet(() -> {
             // Lower case and turn spaces/underscores into dashes
-            pkgBuilder.name(pkgBuilder.create().packageName().toLowerCase().replaceAll("[ _]", "-"));
+            return pkgBuilder.create().packageName().toLowerCase().replaceAll("[ _]", "-");
+        }));
+
+        final var tmpPkg = pkgBuilder.create();
+
+        tmpPkg.asStandardPackageType().ifPresent(stdPkgType -> {
+            validatePackageName(tmpPkg.packageName(), stdPkgType);
+        });
+
+        final AppImageLayout relativeInstalledLayout;
+        if (create(tmpPkg).isInstallDirInUsrTree()) {
+            final var usrTreeLayout = usrTreePackageLayout(tmpPkg.relativeInstallDir(), tmpPkg.packageName());
+            if (tmpPkg.isRuntimeInstaller()) {
+                relativeInstalledLayout = RuntimeLayout.create(usrTreeLayout.runtimeDirectory());
+            } else {
+                relativeInstalledLayout = usrTreeLayout;
+            }
+        } else {
+            relativeInstalledLayout = tmpPkg.appImageLayout().resolveAt(tmpPkg.relativeInstallDir()).resetRootDirectory();
         }
 
-        final var pkg = pkgBuilder.create();
+        final var app = ApplicationBuilder.overrideAppImageLayout(pkgBuilder.app(), relativeInstalledLayout);
 
-        final var stdPkgType = pkg.asStandardPackageType();
-        if (stdPkgType.isPresent()) {
-            validatePackageName(pkg.packageName(), stdPkgType.orElseThrow());
-        }
-
-        var reply = create(pkg, pkg.packageLayout());
-        if (reply.isInstallDirInUsrTree()) {
-            reply = create(pkg, usrTreePackageLayout(pkg.relativeInstallDir(), pkg.packageName()));
-        }
-
-        return reply;
+        return create(pkgBuilder
+                .app(LinuxApplication.create(app))
+                .installedPackageLayout(relativeInstalledLayout.resolveAt(Path.of("/")).resetRootDirectory())
+                .create());
     }
 
-    private LinuxPackage create(Package pkg, AppImageLayout pkgLayout) throws ConfigException {
+    private LinuxPackage create(Package pkg) {
         return LinuxPackage.create(pkg, new LinuxPackageMixin.Stub(
-                pkgLayout,
                 Optional.ofNullable(menuGroupName).orElseGet(DEFAULTS::menuGroupName),
-                Optional.ofNullable(category),
+                category(),
                 Optional.ofNullable(additionalDependencies),
-                Optional.ofNullable(release),
+                release(),
                 pkg.asStandardPackageType().map(LinuxPackageArch::getValue).orElseThrow()));
     }
 
@@ -124,8 +133,7 @@ final class LinuxPackageBuilder {
                 lib.resolve("lib/libapplauncher.so"));
     }
 
-    private static void validatePackageName(String packageName,
-            StandardPackageType pkgType) throws ConfigException {
+    private static void validatePackageName(String packageName, StandardPackageType pkgType) {
         switch (pkgType) {
             case LINUX_DEB -> {
                 //
@@ -179,7 +187,7 @@ final class LinuxPackageBuilder {
 
     private final PackageBuilder pkgBuilder;
 
-    private static final Defaults DEFAULTS = new Defaults(I18N.getString(
-            "param.menu-group.default"));
-
+    // Should be one of https://specifications.freedesktop.org/menu/latest/category-registry.html#main-category-registry
+    // The category is an ID, not a localizable string
+    private static final Defaults DEFAULTS = new Defaults("Utility");
 }

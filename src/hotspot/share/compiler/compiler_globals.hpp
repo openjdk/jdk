@@ -234,12 +234,14 @@
                                                                             \
   product(intx, Tier3LoadFeedback, 5,                                       \
           "Tier 3 thresholds will increase twofold when C1 queue size "     \
-          "reaches this amount per compiler thread")                        \
+          "reaches this amount per compiler thread"                         \
+          "Passing 0 disables the threshold scaling")                       \
           range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier4LoadFeedback, 3,                                       \
           "Tier 4 thresholds will increase twofold when C2 queue size "     \
-          "reaches this amount per compiler thread")                        \
+          "reaches this amount per compiler thread"                         \
+          "Passing 0 disables the threshold scaling")                       \
           range(0, max_jint)                                                \
                                                                             \
   product(intx, TieredCompileTaskTimeout, 50,                               \
@@ -263,18 +265,11 @@
                                                                             \
   product(intx, TieredRateUpdateMinTime, 1,                                 \
           "Minimum rate sampling interval (in milliseconds)")               \
-          range(0, max_intx)                                                \
+          range(1, max_intx)                                                \
                                                                             \
   product(intx, TieredRateUpdateMaxTime, 25,                                \
           "Maximum rate sampling interval (in milliseconds)")               \
-          range(0, max_intx)                                                \
-                                                                            \
-  product(double, Tier0ProfileDelayFactor, 100.0, DIAGNOSTIC,               \
-          "Delay profiling/compiling of methods that were "                 \
-          "observed to be lukewarm")                                        \
-                                                                            \
-  product(double, Tier2ProfileDelayFactor, 250.0, DIAGNOSTIC,               \
-          "Delay profiling of methods that were observed to be lukewarm")   \
+          range(1, max_intx)                                                \
                                                                             \
   product(bool, SkipTier2IfPossible, false, DIAGNOSTIC,                     \
           "Compile at tier 4 instead of tier 2 in training replay "         \

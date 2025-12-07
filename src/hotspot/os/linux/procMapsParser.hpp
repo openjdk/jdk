@@ -49,6 +49,7 @@ struct ProcSmapsInfo {
   size_t shared_hugetlb;
   size_t anonhugepages;
   size_t swap;
+  bool thpeligible;
   bool rd, wr, ex;
   bool sh; // shared
   bool nr; // no reserve
@@ -64,7 +65,7 @@ struct ProcSmapsInfo {
     from = to = nullptr;
     prot[0] = filename[0] = '\0';
     kernelpagesize = rss = private_hugetlb = shared_hugetlb = anonhugepages = swap = 0;
-    rd = wr = ex = sh = nr = hg = ht = nh = false;
+    thpeligible = rd = wr = ex = sh = nr = hg = ht = nh = false;
   }
 };
 
@@ -83,8 +84,7 @@ public:
   ProcSmapsParser(FILE* f);
   ~ProcSmapsParser();
 
-  // Starts or continues parsing. Returns true on success,
-  // false on EOF or on error.
+  // Starts or continues parsing. Returns true iff a mapping was parsed.
   bool parse_next(ProcSmapsInfo& out);
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,7 +199,8 @@ OGLSD_MakeOGLContextCurrent(JNIEnv *env, OGLSDOps *srcOps, OGLSDOps *dstOps)
 
     CGLSDOps *dstCGLOps = (CGLSDOps *)dstOps->privOps;
 
-    J2dTraceLn4(J2D_TRACE_VERBOSE, "  src: %d %p dst: %d %p", srcOps->drawableType, srcOps, dstOps->drawableType, dstOps);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  src: %d %p dst: %d %p",
+               srcOps->drawableType, srcOps, dstOps->drawableType, dstOps);
 
     OGLContext *oglc = dstCGLOps->configInfo->context;
     if (oglc == NULL) {
@@ -292,7 +293,7 @@ JNI_COCOA_ENTER(env);
     oglsdo->height = surfaceBounds.size.height;
 JNI_COCOA_EXIT(env);
 
-    J2dTraceLn2(J2D_TRACE_VERBOSE, "  created window: w=%d h=%d", oglsdo->width, oglsdo->height);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  created window: w=%d h=%d", oglsdo->width, oglsdo->height);
 
     return JNI_TRUE;
 }
@@ -338,8 +339,8 @@ Java_sun_java2d_opengl_CGLSurfaceData_initOps
      jint xoff, jint yoff, jboolean isOpaque)
 {
     J2dTraceLn(J2D_TRACE_INFO, "CGLSurfaceData_initOps");
-    J2dTraceLn1(J2D_TRACE_INFO, "  pPeerData=%p", jlong_to_ptr(pPeerData));
-    J2dTraceLn2(J2D_TRACE_INFO, "  xoff=%d, yoff=%d", (int)xoff, (int)yoff);
+    J2dTraceLn(J2D_TRACE_INFO, "  pPeerData=%p", jlong_to_ptr(pPeerData));
+    J2dTraceLn(J2D_TRACE_INFO, "  xoff=%d, yoff=%d", (int)xoff, (int)yoff);
 
     gc = (*env)->NewGlobalRef(env, gc);
     if (gc == NULL) {

@@ -31,7 +31,7 @@
 #include "nmt/memTracker.hpp"
 #include "os_posix.inline.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -70,13 +70,13 @@
 #include <grp.h>
 #include <locale.h>
 #include <netdb.h>
-#include <pwd.h>
 #include <pthread.h>
+#include <pwd.h>
 #include <signal.h>
+#include <spawn.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
-#include <spawn.h>
 #include <sys/time.h>
 #include <sys/times.h>
 #include <sys/types.h>
@@ -108,41 +108,60 @@ size_t os::_os_min_stack_allowed = PTHREAD_STACK_MIN;
 
 // Check core dump limit and report possible place where core can be found
 void os::check_core_dump_prerequisites(char* buffer, size_t bufferSize, bool check_only) {
+  stringStream buf(buffer, bufferSize);
   if (!FLAG_IS_DEFAULT(CreateCoredumpOnCrash) && !CreateCoredumpOnCrash) {
-    jio_snprintf(buffer, bufferSize, "CreateCoredumpOnCrash is disabled from command line");
-    VMError::record_coredump_status(buffer, false);
+    buf.print("CreateCoredumpOnCrash is disabled from command line");
+    VMError::record_coredump_status(buf.freeze(), false);
   } else {
     struct rlimit rlim;
     bool success = true;
     bool warn = true;
     char core_path[PATH_MAX];
     if (get_core_path(core_path, PATH_MAX) <= 0) {
-      jio_snprintf(buffer, bufferSize, "core.%d (may not exist)", current_process_id());
+      // In the warning message, let the user know.
+      if (check_only) {
+        buf.print("the core path couldn't be determined. It commonly defaults to ");
+      }
+      buf.print("core.%d%s", current_process_id(), check_only ? "" : " (may not exist)");
 #ifdef LINUX
     } else if (core_path[0] == '"') { // redirect to user process
-      jio_snprintf(buffer, bufferSize, "Core dumps may be processed with %s", core_path);
+      if (check_only) {
+        buf.print("core dumps may be further processed by the following: ");
+      } else {
+        buf.print("Determined by the following: ");
+      }
+      buf.print("%s", core_path);
 #endif
     } else if (getrlimit(RLIMIT_CORE, &rlim) != 0) {
-      jio_snprintf(buffer, bufferSize, "%s (may not exist)", core_path);
+      if (check_only) {
+        buf.print("the rlimit couldn't be determined. If resource limits permit, the core dump will be located at ");
+      }
+      buf.print("%s%s", core_path, check_only ? "" : " (may not exist)");
     } else {
       switch(rlim.rlim_cur) {
         case RLIM_INFINITY:
-          jio_snprintf(buffer, bufferSize, "%s", core_path);
+          buf.print("%s", core_path);
           warn = false;
           break;
         case 0:
-          jio_snprintf(buffer, bufferSize, "Core dumps have been disabled. To enable core dumping, try \"ulimit -c unlimited\" before starting Java again");
+          buf.print("%s dumps have been disabled. To enable core dumping, try \"ulimit -c unlimited\" before starting Java again", check_only ? "core" : "Core");
           success = false;
           break;
         default:
-          jio_snprintf(buffer, bufferSize, "%s (max size " UINT64_FORMAT " k). To ensure a full core dump, try \"ulimit -c unlimited\" before starting Java again", core_path, uint64_t(rlim.rlim_cur) / K);
+          if (check_only) {
+            buf.print("core dumps are constrained ");
+          } else {
+             buf.print( "%s ", core_path);
+          }
+          buf.print( "(max size " UINT64_FORMAT " k). To ensure a full core dump, try \"ulimit -c unlimited\" before starting Java again", uint64_t(rlim.rlim_cur) / K);
           break;
       }
     }
+    const char* result = buf.freeze();
     if (!check_only) {
-      VMError::record_coredump_status(buffer, success);
+      VMError::record_coredump_status(result, success);
     } else if (warn) {
-      warning("CreateCoredumpOnCrash specified, but %s", buffer);
+      warning("CreateCoredumpOnCrash specified, but %s", result);
     }
   }
 }
@@ -322,7 +341,7 @@ int os::create_file_for_heap(const char* dir) {
       vm_exit_during_initialization(err_msg("Malloc failed during creation of backing file for heap (%s)", os::strerror(errno)));
       return -1;
     }
-    int n = snprintf(fullname, fullname_len + 1, "%s%s", dir, name_template);
+    int n = os::snprintf(fullname, fullname_len + 1, "%s%s", dir, name_template);
     assert((size_t)n == fullname_len, "Unexpected number of characters in string");
 
     os::native_path(fullname);
@@ -712,7 +731,7 @@ bool os::get_host_name(char* buf, size_t buflen) {
 }
 
 #ifndef _LP64
-// Helper, on 32bit, for os::has_allocatable_memory_limit
+// Helper, on 32bit, for os::commit_memory_limit
 static bool is_allocatable(size_t s) {
   if (s < 2 * G) {
     return true;
@@ -730,31 +749,19 @@ static bool is_allocatable(size_t s) {
 }
 #endif // !_LP64
 
+size_t os::commit_memory_limit() {
+  // On POSIX systems, the amount of memory that can be commmitted is limited
+  // by the size of the reservable memory.
+  size_t reserve_limit = reserve_memory_limit();
 
-bool os::has_allocatable_memory_limit(size_t* limit) {
-  struct rlimit rlim;
-  int getrlimit_res = getrlimit(RLIMIT_AS, &rlim);
-  // if there was an error when calling getrlimit, assume that there is no limitation
-  // on virtual memory.
-  bool result;
-  if ((getrlimit_res != 0) || (rlim.rlim_cur == RLIM_INFINITY)) {
-    result = false;
-  } else {
-    *limit = (size_t)rlim.rlim_cur;
-    result = true;
-  }
 #ifdef _LP64
-  return result;
+  return reserve_limit;
 #else
-  // arbitrary virtual space limit for 32 bit Unices found by testing. If
-  // getrlimit above returned a limit, bound it with this limit. Otherwise
-  // directly use it.
-  const size_t max_virtual_limit = 3800*M;
-  if (result) {
-    *limit = MIN2(*limit, max_virtual_limit);
-  } else {
-    *limit = max_virtual_limit;
-  }
+  // Arbitrary max reserve limit for 32 bit Unices found by testing.
+  const size_t max_reserve_limit = 3800 * M;
+
+  // Bound the reserve limit with the arbitrary max.
+  size_t actual_limit = MIN2(reserve_limit, max_reserve_limit);
 
   // bound by actually allocatable memory. The algorithm uses two bounds, an
   // upper and a lower limit. The upper limit is the current highest amount of
@@ -768,15 +775,15 @@ bool os::has_allocatable_memory_limit(size_t* limit) {
   // the minimum amount of memory we care about allocating.
   const size_t min_allocation_size = M;
 
-  size_t upper_limit = *limit;
+  size_t upper_limit = actual_limit;
 
   // first check a few trivial cases
   if (is_allocatable(upper_limit) || (upper_limit <= min_allocation_size)) {
-    *limit = upper_limit;
+    // The actual limit is allocatable, no need to do anything.
   } else if (!is_allocatable(min_allocation_size)) {
     // we found that not even min_allocation_size is allocatable. Return it
     // anyway. There is no point to search for a better value any more.
-    *limit = min_allocation_size;
+    actual_limit = min_allocation_size;
   } else {
     // perform the binary search.
     size_t lower_limit = min_allocation_size;
@@ -789,10 +796,29 @@ bool os::has_allocatable_memory_limit(size_t* limit) {
         upper_limit = temp_limit;
       }
     }
-    *limit = lower_limit;
+    actual_limit = lower_limit;
   }
-  return true;
+
+  return actual_limit;
 #endif
+}
+
+size_t os::reserve_memory_limit() {
+  struct rlimit rlim;
+  int getrlimit_res = getrlimit(RLIMIT_AS, &rlim);
+
+  // If there was an error calling getrlimit, conservatively assume no limit.
+  if (getrlimit_res != 0) {
+    return SIZE_MAX;
+  }
+
+  // If the current limit is not infinity, there is a limit.
+  if (rlim.rlim_cur != RLIM_INFINITY) {
+    return (size_t)rlim.rlim_cur;
+  }
+
+  // No limit
+  return SIZE_MAX;
 }
 
 void* os::get_default_process_handle() {
@@ -1599,7 +1625,16 @@ jlong os::elapsed_frequency() {
   return NANOSECS_PER_SEC; // nanosecond resolution
 }
 
-bool os::supports_vtime() { return true; }
+double os::elapsed_process_cpu_time() {
+  struct rusage usage;
+  int retval = getrusage(RUSAGE_SELF, &usage);
+  if (retval == 0) {
+    return usage.ru_utime.tv_sec + usage.ru_stime.tv_sec +
+         (usage.ru_utime.tv_usec + usage.ru_stime.tv_usec) / (1000.0 * 1000.0);
+  } else {
+    return -1;
+  }
+}
 
 // Return the real, user, and system times in seconds from an
 // arbitrary fixed point in the past.
@@ -1675,7 +1710,7 @@ void PlatformEvent::park() {       // AKA "down()"
   // atomically decrement _event
   for (;;) {
     v = _event;
-    if (Atomic::cmpxchg(&_event, v, v - 1) == v) break;
+    if (AtomicAccess::cmpxchg(&_event, v, v - 1) == v) break;
   }
   guarantee(v >= 0, "invariant");
 
@@ -1722,7 +1757,7 @@ int PlatformEvent::park_nanos(jlong nanos) {
   // atomically decrement _event
   for (;;) {
     v = _event;
-    if (Atomic::cmpxchg(&_event, v, v - 1) == v) break;
+    if (AtomicAccess::cmpxchg(&_event, v, v - 1) == v) break;
   }
   guarantee(v >= 0, "invariant");
 
@@ -1778,7 +1813,7 @@ void PlatformEvent::unpark() {
   // but only in the correctly written condition checking loops of ObjectMonitor,
   // Mutex/Monitor, and JavaThread::sleep
 
-  if (Atomic::xchg(&_event, 1) >= 0) return;
+  if (AtomicAccess::xchg(&_event, 1) >= 0) return;
 
   int status = pthread_mutex_lock(_mutex);
   assert_status(status == 0, status, "mutex_lock");
@@ -1831,9 +1866,9 @@ void Parker::park(bool isAbsolute, jlong time) {
 
   // Optional fast-path check:
   // Return immediately if a permit is available.
-  // We depend on Atomic::xchg() having full barrier semantics
+  // We depend on AtomicAccess::xchg() having full barrier semantics
   // since we are doing a lock-free update to _counter.
-  if (Atomic::xchg(&_counter, 0) > 0) return;
+  if (AtomicAccess::xchg(&_counter, 0) > 0) return;
 
   JavaThread *jt = JavaThread::current();
 

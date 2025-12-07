@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,9 +28,11 @@
  * @summary Test JDK Metrics class when running inside a docker container with limited pids
  * @bug 8266490
  * @requires container.support
+ * @requires !vm.asan
  * @library /test/lib
+ * @modules java.base/jdk.internal.platform
  * @build TestPidsLimit
- * @run driver TestPidsLimit
+ * @run driver/timeout=480 TestPidsLimit
  */
 import java.util.ArrayList;
 import java.util.List;
@@ -48,10 +50,8 @@ public class TestPidsLimit {
     private static final int UNLIMITED_PIDS_DOCKER = -1;
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker()) {
-            return;
-        }
-
+        DockerTestUtils.checkCanTestDocker();
+        DockerTestUtils.checkCanUseResourceLimits();
         DockerTestUtils.buildJdkContainerImage(imageName);
 
         try {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.awt.event.*;
 import java.awt.image.VolatileImage;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.applet.*;
 
 import sun.awt.AWTAccessor;
 import sun.awt.AppContext;
@@ -52,8 +51,8 @@ import sun.swing.SwingUtilities2.RepaintListener;
  * requests into a single repaint for members of a component tree.
  * <p>
  * As of 1.6 <code>RepaintManager</code> handles repaint requests
- * for Swing's top level components (<code>JApplet</code>,
- * <code>JWindow</code>, <code>JFrame</code> and <code>JDialog</code>).
+ * for Swing's top level components
+ * (<code>JWindow</code>, <code>JFrame</code> and <code>JDialog</code>).
  * Any calls to <code>repaint</code> on one of these will call into the
  * appropriate <code>addDirtyRegion</code> method.
  *
@@ -390,11 +389,8 @@ public class RepaintManager
             delegate.removeInvalidComponent(component);
             return;
         }
-        if(invalidComponents != null) {
-            int index = invalidComponents.indexOf(component);
-            if(index != -1) {
-                invalidComponents.remove(index);
-            }
+        if (invalidComponents != null) {
+            invalidComponents.remove(component);
         }
     }
 
@@ -406,7 +402,6 @@ public class RepaintManager
      *
      * @see JComponent#repaint
      */
-    @SuppressWarnings("removal")
     private void addDirtyRegion0(Container c, int x, int y, int w, int h) {
         /* Special cases we don't have to bother with.
          */
@@ -424,7 +419,7 @@ public class RepaintManager
             return;
         }
 
-        /* Make sure that c and all it ancestors (up to an Applet or
+        /* Make sure that c and all it ancestors (up to a
          * Window) are visible.  This loop has the same effect as
          * checking c.isShowing() (and note that it's still possible
          * that c is completely obscured by an opaque ancestor in
@@ -440,7 +435,7 @@ public class RepaintManager
             if (!p.isVisible() || !p.isDisplayable()) {
                 return;
             }
-            if ((p instanceof Window) || (p instanceof Applet)) {
+            if (p instanceof Window) {
                 // Iconified frames are still visible!
                 if (p instanceof Frame &&
                         (((Frame)p).getExtendedState() & Frame.ICONIFIED) ==
@@ -508,29 +503,6 @@ public class RepaintManager
         addDirtyRegion0(window, x, y, w, h);
     }
 
-    /**
-     * Adds <code>applet</code> to the list of <code>Component</code>s that
-     * need to be repainted.
-     *
-     * @param applet Applet to repaint, null results in nothing happening.
-     * @param x X coordinate of the region to repaint
-     * @param y Y coordinate of the region to repaint
-     * @param w Width of the region to repaint
-     * @param h Height of the region to repaint
-     * @see JApplet#repaint
-     * @since 1.6
-     *
-     * @deprecated The Applet API is deprecated. See the
-     * <a href="../../java/applet/package-summary.html"> java.applet package
-     * documentation</a> for further information.
-     */
-    @Deprecated(since = "9", forRemoval = true)
-    @SuppressWarnings("removal")
-    public void addDirtyRegion(Applet applet, int x, int y, int w, int h) {
-        addDirtyRegion0(applet, x, y, w, h);
-    }
-
-    @SuppressWarnings("removal")
     void scheduleHeavyWeightPaints() {
         Map<Container,Rectangle> hws;
 
@@ -545,10 +517,6 @@ public class RepaintManager
             Rectangle dirty = hws.get(hw);
             if (hw instanceof Window) {
                 addDirtyRegion((Window)hw, dirty.x, dirty.y,
-                               dirty.width, dirty.height);
-            }
-            else if (hw instanceof Applet) {
-                addDirtyRegion((Applet)hw, dirty.x, dirty.y,
                                dirty.width, dirty.height);
             }
             else { // SwingHeavyWeight

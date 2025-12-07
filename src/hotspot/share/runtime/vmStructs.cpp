@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -44,8 +43,8 @@
 #include "gc/shared/vmStructs_gc.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jfr/recorder/service/jfrRecorderThread.hpp"
 #include "logging/logAsyncWriter.hpp"
-#include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/heap.hpp"
 #include "memory/padded.hpp"
@@ -55,15 +54,13 @@
 #include "oops/array.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/constMethod.hpp"
+#include "oops/bsmAttribute.hpp"
 #include "oops/constantPool.hpp"
+#include "oops/constMethod.hpp"
 #include "oops/cpCache.hpp"
 #include "oops/fieldInfo.hpp"
-#include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceKlass.hpp"
-#include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceOop.hpp"
-#include "oops/instanceStackChunkKlass.hpp"
 #include "oops/klass.hpp"
 #include "oops/klassVtable.hpp"
 #include "oops/markWord.hpp"
@@ -85,7 +82,6 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/globals.hpp"
-#include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
@@ -98,8 +94,8 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/vframeArray.hpp"
-#include "runtime/vmStructs.hpp"
 #include "runtime/vm_version.hpp"
+#include "runtime/vmStructs.hpp"
 #include "services/attachListener.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -171,10 +167,12 @@
   nonstatic_field(ArrayKlass,                  _dimension,                                    int)                                   \
   volatile_nonstatic_field(ArrayKlass,         _higher_dimension,                             ObjArrayKlass*)                        \
   volatile_nonstatic_field(ArrayKlass,         _lower_dimension,                              ArrayKlass*)                           \
+  nonstatic_field(BSMAttributeEntries,         _offsets,                                      Array<u4>*)                            \
+  nonstatic_field(BSMAttributeEntries,         _bootstrap_methods,                            Array<u2>*)                            \
+  nonstatic_field(ConstantPool,                _bsm_entries,                                  BSMAttributeEntries)                   \
   nonstatic_field(ConstantPool,                _tags,                                         Array<u1>*)                            \
   nonstatic_field(ConstantPool,                _cache,                                        ConstantPoolCache*)                    \
   nonstatic_field(ConstantPool,                _pool_holder,                                  InstanceKlass*)                        \
-  nonstatic_field(ConstantPool,                _operands,                                     Array<u2>*)                            \
   nonstatic_field(ConstantPool,                _resolved_klasses,                             Array<Klass*>*)                        \
   nonstatic_field(ConstantPool,                _length,                                       int)                                   \
   nonstatic_field(ConstantPool,                _minor_version,                                u2)                                    \
@@ -218,6 +216,7 @@
   nonstatic_field(InstanceKlass,               _annotations,                                  Annotations*)                          \
   nonstatic_field(InstanceKlass,               _method_ordering,                              Array<int>*)                           \
   nonstatic_field(InstanceKlass,               _default_vtable_indices,                       Array<int>*)                           \
+  nonstatic_field(InstanceKlass,               _access_flags,                                 AccessFlags)                           \
   nonstatic_field(Klass,                       _super_check_offset,                           juint)                                 \
   nonstatic_field(Klass,                       _secondary_super_cache,                        Klass*)                                \
   nonstatic_field(Klass,                       _secondary_supers,                             Array<Klass*>*)                        \
@@ -227,7 +226,6 @@
   volatile_nonstatic_field(Klass,              _subklass,                                     Klass*)                                \
   nonstatic_field(Klass,                       _layout_helper,                                jint)                                  \
   nonstatic_field(Klass,                       _name,                                         Symbol*)                               \
-  nonstatic_field(Klass,                       _access_flags,                                 AccessFlags)                           \
   volatile_nonstatic_field(Klass,              _next_sibling,                                 Klass*)                                \
   nonstatic_field(Klass,                       _next_link,                                    Klass*)                                \
   nonstatic_field(Klass,                       _vtable_len,                                   int)                                   \
@@ -320,7 +318,7 @@
   /* JNI IDs */                                                                                                                      \
   /***********/                                                                                                                      \
                                                                                                                                      \
-  nonstatic_field(JNIid,                       _holder,                                       Klass*)                                \
+  nonstatic_field(JNIid,                       _holder,                                       InstanceKlass*)                        \
   nonstatic_field(JNIid,                       _next,                                         JNIid*)                                \
   nonstatic_field(JNIid,                       _offset,                                       int)                                   \
                                                                                                                                      \
@@ -347,8 +345,8 @@
   /* Memory */                                                                                                                       \
   /**********/                                                                                                                       \
                                                                                                                                      \
-     static_field(MetaspaceObj,                _shared_metaspace_base,                        void*)                                 \
-     static_field(MetaspaceObj,                _shared_metaspace_top,                         void*)                                 \
+     static_field(MetaspaceObj,                _aot_metaspace_base,                           void*)                                 \
+     static_field(MetaspaceObj,                _aot_metaspace_top,                            void*)                                 \
   nonstatic_field(ThreadLocalAllocBuffer,      _start,                                        HeapWord*)                             \
   nonstatic_field(ThreadLocalAllocBuffer,      _top,                                          HeapWord*)                             \
   nonstatic_field(ThreadLocalAllocBuffer,      _end,                                          HeapWord*)                             \
@@ -540,10 +538,10 @@
   nonstatic_field(nmethod,                     _osr_link,                                     nmethod*)                              \
   nonstatic_field(nmethod,                     _state,                                        volatile signed char)                  \
   nonstatic_field(nmethod,                     _exception_offset,                             int)                                   \
-  nonstatic_field(nmethod,                     _deopt_handler_offset,                         int)                                   \
-  nonstatic_field(nmethod,                     _deopt_mh_handler_offset,                      int)                                   \
+  nonstatic_field(nmethod,                     _deopt_handler_entry_offset,                   int)                                   \
   nonstatic_field(nmethod,                     _orig_pc_offset,                               int)                                   \
   nonstatic_field(nmethod,                     _stub_offset,                                  int)                                   \
+  nonstatic_field(nmethod,                     _immutable_data_ref_count_offset,              int)                                   \
   nonstatic_field(nmethod,                     _scopes_pcs_offset,                            int)                                   \
   nonstatic_field(nmethod,                     _scopes_data_offset,                           int)                                   \
   nonstatic_field(nmethod,                     _handler_table_offset,                         u2)                                    \
@@ -613,7 +611,6 @@
   volatile_nonstatic_field(JavaThread,         _suspend_flags,                                uint32_t)                              \
   volatile_nonstatic_field(JavaThread,         _exception_oop,                                oop)                                   \
   volatile_nonstatic_field(JavaThread,         _exception_pc,                                 address)                               \
-  volatile_nonstatic_field(JavaThread,         _is_method_handle_return,                      int)                                   \
   nonstatic_field(JavaThread,                  _saved_exception_pc,                           address)                               \
   volatile_nonstatic_field(JavaThread,         _thread_state,                                 JavaThreadState)                       \
   nonstatic_field(JavaThread,                  _stack_base,                                   address)                               \
@@ -623,6 +620,7 @@
   nonstatic_field(JavaThread,                  _active_handles,                               JNIHandleBlock*)                       \
   nonstatic_field(JavaThread,                  _monitor_owner_id,                             int64_t)                               \
   volatile_nonstatic_field(JavaThread,         _terminated,                                   JavaThread::TerminatedTypes)           \
+  nonstatic_field(JavaThread,                  _cont_entry,                                   ContinuationEntry*)                    \
   nonstatic_field(Thread,                      _osthread,                                     OSThread*)                             \
                                                                                                                                      \
   /************/                                                                                                                     \
@@ -666,6 +664,14 @@
      static_field(VMRegImpl,                   regName[0],                                    const char*)                           \
      static_field(VMRegImpl,                   stack0,                                        VMReg)                                 \
                                                                                                                                      \
+  /******************************************************************************************/                                       \
+  /* CI (NOTE: these CI fields are retained in VMStructs for the benefit of external tools, */                                       \
+  /* to ease their migration to a future alternative.)                                      */                                       \
+  /******************************************************************************************/                                       \
+                                                                                                                                     \
+  nonstatic_field(CompilerThread,              _env,                                          ciEnv*)                                \
+  nonstatic_field(ciEnv,                       _task,                                         CompileTask*)                          \
+                                                                                                                                     \
   /************/                                                                                                                     \
   /* Monitors */                                                                                                                     \
   /************/                                                                                                                     \
@@ -673,9 +679,7 @@
   volatile_nonstatic_field(ObjectMonitor,      _metadata,                                     uintptr_t)                             \
   unchecked_nonstatic_field(ObjectMonitor,     _object,                                       sizeof(void *)) /* NOTE: no type */    \
   volatile_nonstatic_field(ObjectMonitor,      _owner,                                        int64_t)                               \
-  volatile_nonstatic_field(ObjectMonitor,      _stack_locker,                                 BasicLock*)                            \
   volatile_nonstatic_field(ObjectMonitor,      _next_om,                                      ObjectMonitor*)                        \
-  volatile_nonstatic_field(BasicLock,          _metadata,                                     uintptr_t)                             \
   nonstatic_field(ObjectMonitor,               _contentions,                                  int)                                   \
   volatile_nonstatic_field(ObjectMonitor,      _waiters,                                      int)                                   \
   volatile_nonstatic_field(ObjectMonitor,      _recursions,                                   intx)                                  \
@@ -733,6 +737,7 @@
   unchecked_nonstatic_field(Array<int>,                _data,                                 sizeof(int))                           \
   unchecked_nonstatic_field(Array<u1>,                 _data,                                 sizeof(u1))                            \
   unchecked_nonstatic_field(Array<u2>,                 _data,                                 sizeof(u2))                            \
+  unchecked_nonstatic_field(Array<u4>,                 _data,                                 sizeof(u4))                            \
   unchecked_nonstatic_field(Array<Method*>,            _data,                                 sizeof(Method*))                       \
   unchecked_nonstatic_field(Array<Klass*>,             _data,                                 sizeof(Klass*))                        \
   unchecked_nonstatic_field(Array<ResolvedFieldEntry>, _data,                                 sizeof(ResolvedFieldEntry))            \
@@ -797,7 +802,8 @@
   nonstatic_field(Mutex,                       _name,                                         const char*)                           \
   static_field(Mutex,                          _mutex_array,                                  Mutex**)                               \
   static_field(Mutex,                          _num_mutex,                                    int)                                   \
-  volatile_nonstatic_field(Mutex,              _owner,                                        Thread*)
+  volatile_nonstatic_field(Mutex,              _owner,                                        Thread*)                               \
+  static_field(ContinuationEntry,              _return_pc,                                    address)
 
 //--------------------------------------------------------------------------------
 // VM_TYPES
@@ -963,6 +969,7 @@
   declare_toplevel_type(volatile Metadata*)                               \
                                                                           \
   declare_toplevel_type(DataLayout)                                       \
+  declare_toplevel_type(BSMAttributeEntries)                              \
                                                                           \
   /********/                                                              \
   /* Oops */                                                              \
@@ -1027,6 +1034,7 @@
         declare_type(TrainingReplayThread, JavaThread)                    \
         declare_type(StringDedupThread, JavaThread)                       \
         declare_type(AttachListenerThread, JavaThread)                    \
+        declare_type(JfrRecorderThread, JavaThread)                       \
         DEBUG_ONLY(COMPILER2_OR_JVMCI_PRESENT(                            \
           declare_type(DeoptimizeObjectsALotThread, JavaThread)))         \
   declare_toplevel_type(OSThread)                                         \
@@ -1148,6 +1156,12 @@
   declare_toplevel_type(BasicLock)                                        \
   declare_toplevel_type(BasicObjectLock)                                  \
                                                                           \
+  /*********************/                                                 \
+  /* CI */                                                                \
+  /*********************/                                                 \
+                                                                          \
+  declare_toplevel_type(ciEnv)                                            \
+                                                                          \
   /********************/                                                  \
   /* -XX flags        */                                                  \
   /********************/                                                  \
@@ -1264,6 +1278,7 @@
   declare_toplevel_type(FileMapHeader)                                    \
   declare_toplevel_type(CDSFileMapRegion)                                 \
   declare_toplevel_type(UpcallStub::FrameData)                            \
+  declare_toplevel_type(ContinuationEntry)                                \
                                                                           \
   /************/                                                          \
   /* GC types */                                                          \
@@ -1483,13 +1498,13 @@
                                                                           \
   declare_constant(Symbol::max_symbol_length)                             \
                                                                           \
-  /***********************************************/                       \
-  /* ConstantPool* layout enum for InvokeDynamic */                       \
-  /***********************************************/                       \
+  /******************************************************/                \
+  /* BSMAttributeEntry* - layout enum for InvokeDynamic */                \
+  /******************************************************/                \
                                                                           \
-  declare_constant(ConstantPool::_indy_bsm_offset)                        \
-  declare_constant(ConstantPool::_indy_argc_offset)                       \
-  declare_constant(ConstantPool::_indy_argv_offset)                       \
+  declare_constant(BSMAttributeEntry::_bsmi_offset)                       \
+  declare_constant(BSMAttributeEntry::_argc_offset)                       \
+  declare_constant(BSMAttributeEntry::_argv_offset)                       \
                                                                           \
   /***************************************/                               \
   /* JavaThreadStatus enum               */                               \
@@ -1564,6 +1579,7 @@
   declare_constant(Deoptimization::Reason_age)                            \
   declare_constant(Deoptimization::Reason_predicate)                      \
   declare_constant(Deoptimization::Reason_loop_limit_check)               \
+  declare_constant(Deoptimization::Reason_short_running_long_loop)        \
   declare_constant(Deoptimization::Reason_auto_vectorization_check)       \
   declare_constant(Deoptimization::Reason_speculate_class_check)          \
   declare_constant(Deoptimization::Reason_speculate_null_check)           \
@@ -1571,9 +1587,8 @@
   declare_constant(Deoptimization::Reason_unstable_if)                    \
   declare_constant(Deoptimization::Reason_unstable_fused_if)              \
   declare_constant(Deoptimization::Reason_receiver_constraint)            \
-  NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_aliasing)))                       \
+  declare_constant(Deoptimization::Reason_not_compiled_exception_handler) \
   NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_transfer_to_interpreter)))        \
-  NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_not_compiled_exception_handler))) \
   NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_unresolved)))                     \
   NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_jsr_mismatch)))                   \
   declare_constant(Deoptimization::Reason_tenured)                        \
@@ -1639,14 +1654,6 @@
   declare_constant(T_NARROWKLASS_size)                                    \
   declare_constant(T_VOID_size)                                           \
                                                                           \
-  /**********************************************/                        \
-  /* LockingMode enum (globalDefinitions.hpp) */                          \
-  /**********************************************/                        \
-                                                                          \
-  declare_constant(LM_MONITOR)                                            \
-  declare_constant(LM_LEGACY)                                             \
-  declare_constant(LM_LIGHTWEIGHT)                                        \
-                                                                          \
   /*********************************************/                         \
   /* MethodCompilation (globalDefinitions.hpp) */                         \
   /*********************************************/                         \
@@ -1711,7 +1718,6 @@
   /**********************/                                                \
                                                                           \
   declare_constant(PcDesc::PCDESC_reexecute)                              \
-  declare_constant(PcDesc::PCDESC_is_method_handle_invoke)                \
   declare_constant(PcDesc::PCDESC_return_oop)                             \
                                                                           \
   /**********************/                                                \

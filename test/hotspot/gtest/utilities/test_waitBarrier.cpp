@@ -21,7 +21,7 @@
  * questions.
  */
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "utilities/spinYield.hpp"
@@ -48,9 +48,9 @@ public:
     // Similar to how a JavaThread would stop in a safepoint.
     while (!_exit) {
       // Load the published tag.
-      tag = Atomic::load_acquire(&wait_tag);
+      tag = AtomicAccess::load_acquire(&wait_tag);
       // Publish the tag this thread is going to wait for.
-      Atomic::release_store(&_on_barrier, tag);
+      AtomicAccess::release_store(&_on_barrier, tag);
       if (_on_barrier == 0) {
         SpinPause();
         continue;
@@ -59,9 +59,9 @@ public:
       // Wait until we are woken.
       _wait_barrier->wait(tag);
       // Verify that we do not see an invalid value.
-      vv = Atomic::load_acquire(&valid_value);
+      vv = AtomicAccess::load_acquire(&valid_value);
       ASSERT_EQ((vv & 0x1), 0);
-      Atomic::release_store(&_on_barrier, 0);
+      AtomicAccess::release_store(&_on_barrier, 0);
     }
   }
 };
@@ -103,7 +103,7 @@ public:
       // Arm next tag.
       wb.arm(next_tag);
       // Publish tag.
-      Atomic::release_store_fence(&wait_tag, next_tag);
+      AtomicAccess::release_store_fence(&wait_tag, next_tag);
 
       // Wait until threads picked up new tag.
       while (reader1->_on_barrier != wait_tag ||
@@ -114,12 +114,12 @@ public:
       }
 
       // Set an invalid value.
-      Atomic::release_store(&valid_value, valid_value + 1); // odd
+      AtomicAccess::release_store(&valid_value, valid_value + 1); // odd
       os::naked_yield();
       // Set a valid value.
-      Atomic::release_store(&valid_value, valid_value + 1); // even
+      AtomicAccess::release_store(&valid_value, valid_value + 1); // even
       // Publish inactive tag.
-      Atomic::release_store_fence(&wait_tag, 0); // Stores in WB must not float up.
+      AtomicAccess::release_store_fence(&wait_tag, 0); // Stores in WB must not float up.
       wb.disarm();
 
       // Wait until threads done valid_value verification.

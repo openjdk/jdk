@@ -26,6 +26,7 @@
 #include "gc/z/zCPU.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeuristics.hpp"
+#include "gc/z/zNUMA.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
@@ -58,9 +59,11 @@ void ZHeuristics::set_medium_page_size() {
 }
 
 size_t ZHeuristics::relocation_headroom() {
-  // Calculate headroom needed to avoid in-place relocation. Each worker will try
-  // to allocate a small page, and all workers will share a single medium page.
-  return (ConcGCThreads * ZPageSizeSmall) + ZPageSizeMediumMax;
+  // Calculate headroom needed to avoid in-place relocation. For each NUMA node,
+  // each worker will try to allocate a small page, and all workers will share a
+  // single medium page.
+  const size_t per_numa_headroom = (ConcGCThreads * ZPageSizeSmall) + ZPageSizeMediumMax;
+  return per_numa_headroom * ZNUMA::count();
 }
 
 bool ZHeuristics::use_per_cpu_shared_small_pages() {
