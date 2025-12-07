@@ -67,7 +67,7 @@
           range(0.0,100.0)                                                  \
                                                                             \
   product(double, ShenandoahMinOldGenGrowthRemainingHeapPercent,            \
-          50, EXPERIMENTAL,                                                 \
+          35, EXPERIMENTAL,                                                 \
           "(Generational mode only) If the usage within old generation "    \
           "has grown to exceed this percent of the remaining heap that "    \
           "was not marked live within the old generation at the time "      \
