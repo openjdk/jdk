@@ -41,11 +41,11 @@ import java.security.Provider;
 import java.security.Security;
 import java.security.spec.ECGenParameterSpec;
 
-public class KEMBench extends CryptoBase {
+public abstract class KEMBench extends CryptoBase {
 
     public static final int SET_SIZE = 128;
 
-    @Param({"ML-KEM-512", "ML-KEM-768", "ML-KEM-1024" })
+    @Param({})
     private String algorithm;
 
     @Param({""})        // Used when the KeyPairGenerator Alg != KEM Alg
@@ -61,15 +61,22 @@ public class KEMBench extends CryptoBase {
             InvalidAlgorithmParameterException {
         String kpgAlg;
         String kpgParams;
-        kem = (prov == null) ? KEM.getInstance(algorithm) : KEM.getInstance(algorithm, prov);
+        kem = (prov == null) ? KEM.getInstance(algorithm) :
+                KEM.getInstance(algorithm, prov);
 
-        Provider kpgProv = prov;    // By default use the same provider for KEM and KPG
+        // By default use the same provider for KEM and KPG
+        Provider kpgProv = prov;
         if (kpgSpec.isEmpty()) {
             kpgAlg = algorithm;
             kpgParams = "";
         } else {
+            // The key pair generation spec is broken down from a colon-
+            // delimited string spec into 3 fields:
+            // [0] - the provider name
+            // [1] - the algorithm name
+            // [2] - the parameters (i.e. the name of the curve)
             String[] kpgTok = kpgSpec.split(":");
-            kpgProv = Security.getProvider(kpgTok[0]); // kpgTok[0] = provider name
+            kpgProv = Security.getProvider(kpgTok[0]);
             kpgAlg = kpgTok[1];
             kpgParams = kpgTok[2];
         }
@@ -91,10 +98,10 @@ public class KEMBench extends CryptoBase {
         }
     }
 
-    protected static Provider getInternalJce() {
+    private static Provider getInternalJce() {
         try {
-            Class<?> dhClazz = Class.forName("com.sun.crypto.provider.DH");
-            return (Provider) (dhClazz.getField("PROVIDER").get(null));
+            Class<?> dhClazz = Class.forName("sun.security.ssl.HybridProvider");
+            return (Provider) dhClazz.getField("PROVIDER").get(null);
         } catch (ReflectiveOperationException exc) {
             throw new RuntimeException(exc);
         }
@@ -104,15 +111,18 @@ public class KEMBench extends CryptoBase {
     @OperationsPerInvocation(SET_SIZE)
     public void encapsulate(Blackhole bh) throws InvalidKeyException {
         for (KeyPair kp : keys) {
-            bh.consume(kem.newEncapsulator(kp.getPublic()).encapsulate().encapsulation());
+            bh.consume(kem.newEncapsulator(kp.getPublic()).encapsulate().
+                    encapsulation());
         }
     }
 
     @Benchmark
     @OperationsPerInvocation(SET_SIZE)
-    public void decapsulate(Blackhole bh) throws InvalidKeyException, DecapsulateException {
+    public void decapsulate(Blackhole bh) throws InvalidKeyException,
+            DecapsulateException {
         for (int i = 0; i < messages.length; i++) {
-            bh.consume(kem.newDecapsulator(keys[i].getPrivate()).decapsulate(messages[i]));
+            bh.consume(kem.newDecapsulator(keys[i].getPrivate()).
+                    decapsulate(messages[i]));
         }
     }
 
@@ -124,8 +134,9 @@ public class KEMBench extends CryptoBase {
         private String kpgSpec;
     }
 
-    @Fork(value = 5, jvmArgs = {"-XX:+AlwaysPreTouch", "--add-opens", "java.base/com.sun.crypto.provider=ALL-UNNAMED"})
-    public static class InternalDH extends KEMBench {
+    @Fork(value = 5, jvmArgs = {"-XX:+AlwaysPreTouch", "--add-opens",
+            "java.base/sun.security.ssl=ALL-UNNAMED"})
+    public static class JSSE_DHasKEM extends KEMBench {
         @Setup
         public void init() {
             try {
@@ -143,8 +154,9 @@ public class KEMBench extends CryptoBase {
         private String kpgSpec;
     }
 
-    @Fork(value = 5, jvmArgs = {"-XX:+AlwaysPreTouch", "--add-opens", "java.base/com.sun.crypto.provider=ALL-UNNAMED"})
-    public static class Hybrid extends KEMBench {
+    @Fork(value = 5, jvmArgs = {"-XX:+AlwaysPreTouch", "--add-opens",
+            "java.base/sun.security.ssl=ALL-UNNAMED"})
+    public static class JSSE_Hybrid extends KEMBench {
         @Setup
         public void init() {
             try {

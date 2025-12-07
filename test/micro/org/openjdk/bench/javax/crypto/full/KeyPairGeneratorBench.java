@@ -48,14 +48,15 @@ public class KeyPairGeneratorBench extends CryptoBase {
         setupProvider();
         generator = (prov == null) ? KeyPairGenerator.getInstance(algorithm)
                                 : KeyPairGenerator.getInstance(algorithm, prov);
-        if (keyLength > 0) { // not all key pair generators allow the use of key length
+        // not all key pair generators allow the use of key length
+        if (keyLength > 0) {
             generator.initialize(keyLength);
         }
     }
 
-    protected static Provider getInternalJce() {
+    private static Provider getInternalJce() {
         try {
-            Class<?> dhClazz = Class.forName("com.sun.crypto.provider.DH");
+            Class<?> dhClazz = Class.forName("sun.security.ssl.HybridProvider");
             return (Provider) dhClazz.getField("PROVIDER").get(null);
         } catch (ReflectiveOperationException exc) {
             throw new RuntimeException(exc);
@@ -130,8 +131,9 @@ public class KeyPairGeneratorBench extends CryptoBase {
         private int keyLength;
     }
 
-    @Fork(value = 5, jvmArgs = {"-XX:+AlwaysPreTouch", "--add-opens", "java.base/com.sun.crypto.provider=ALL-UNNAMED"})
-    public static class Hybrid extends KeyPairGeneratorBench {
+    @Fork(value = 5, jvmArgs = {"-XX:+AlwaysPreTouch", "--add-opens",
+            "java.base/sun.security.ssl=ALL-UNNAMED"})
+    public static class JSSE_Hybrid extends KeyPairGeneratorBench {
         @Setup
         public void init() {
             try {
