@@ -35,7 +35,6 @@ import javax.crypto.KEM;
 import javax.crypto.KEMSpi;
 import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.*;

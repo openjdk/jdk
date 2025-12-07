@@ -38,7 +38,6 @@ import javax.crypto.SecretKey;
 import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
-import java.security.InvalidParameterException;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyFactorySpi;
@@ -132,16 +131,8 @@ public class Hybrid {
         public void initialize(AlgorithmParameterSpec params,
                 SecureRandom random)
                 throws InvalidAlgorithmParameterException {
-
-            try {
-                left.initialize(leftSpec, random);
-                right.initialize(rightSpec, random);
-            } catch (InvalidAlgorithmParameterException iape) {
-                throw iape;
-            } catch (Exception e) {
-                throw new ProviderException("Failed to initialize hybrid " +
-                        "keypair generator", e);
-            }
+            left.initialize(leftSpec, random);
+            right.initialize(rightSpec, random);
         }
 
         @Override
@@ -325,19 +316,34 @@ public class Hybrid {
         @Override
         public KEM.Encapsulated engineEncapsulate(int from, int to,
                 String algorithm) {
-            var left = le.encapsulate();
-            var right = re.encapsulate();
-            if (from == 0 && to == le.secretSize() + re.secretSize()) {
-                return new KEM.Encapsulated(
-                        new SecretKeyImpl(left.key(), right.key()),
-                        concat(left.encapsulation(), right.encapsulation()),
-                        null);
-            } else {
+            int expectedSecretSize = le.secretSize() + re.secretSize();
+            if (!(from == 0 && to == expectedSecretSize)) {
                 throw new IllegalArgumentException(
                         "Invalid range for encapsulation: from = " + from +
                         " to = " + to + ", expected total secret size = " +
-                        (le.secretSize() + re.secretSize()));
+                        expectedSecretSize);
             }
+
+            var left  = le.encapsulate();
+            var right = re.encapsulate();
+            byte[] leftEnc  = left.encapsulation();
+            byte[] rightEnc = right.encapsulation();
+
+            int expectedEncSize = le.encapsulationSize() +
+                    re.encapsulationSize();
+            int actualEncSize = leftEnc.length + rightEnc.length;
+
+            if (actualEncSize != expectedEncSize) {
+                throw new IllegalStateException(
+                        "Invalid key encapsulation message length: " +
+                        actualEncSize +
+                        ", expected = " + expectedEncSize);
+            }
+
+            return new KEM.Encapsulated(
+                    new SecretKeyImpl(left.key(), right.key()),
+                    concat(leftEnc, rightEnc),
+                    null);
         }
 
         @Override
@@ -361,18 +367,32 @@ public class Hybrid {
         @Override
         public SecretKey engineDecapsulate(byte[] encapsulation, int from,
                 int to, String algorithm) throws DecapsulateException {
-            var left = Arrays.copyOf(encapsulation, ld.encapsulationSize());
-            var right = Arrays.copyOfRange(encapsulation,
-                    ld.encapsulationSize(), encapsulation.length);
-            if (from == 0 && ld.secretSize() + rd.secretSize() == to) {
-                return new SecretKeyImpl(ld.decapsulate(left),
-                        rd.decapsulate(right));
-            } else {
+            int leftEncSize = ld.encapsulationSize();
+            int rightEncSize = rd.encapsulationSize();
+            int expectedEncSize = leftEncSize + rightEncSize;
+
+            if (encapsulation.length != expectedEncSize) {
+                throw new IllegalArgumentException(
+                        "Invalid key encapsulation message length: " +
+                        encapsulation.length +
+                        ", expected = " + expectedEncSize);
+            }
+
+            int expectedSecretSize = ld.secretSize() + rd.secretSize();
+            if (!(from == 0 && to == expectedSecretSize)) {
                 throw new IllegalArgumentException(
                         "Invalid range for decapsulation: from = " + from +
                         " to = " + to + ", expected total secret size = " +
-                        (ld.secretSize() + rd.secretSize()));
+                        expectedSecretSize);
             }
+
+            var left = Arrays.copyOf(encapsulation, leftEncSize);
+            var right = Arrays.copyOfRange(encapsulation,
+                    leftEncSize, encapsulation.length);
+            return new SecretKeyImpl(
+                    ld.decapsulate(left),
+                    rd.decapsulate(right)
+            );
         }
     }
 
