@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
  * @run main/othervm Crypto
  */
 
-import java.io.File;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.Provider;
@@ -40,9 +39,7 @@ import java.security.Signature;
 public class Crypto extends SecmodTest {
 
     public static void main(String[] args) throws Exception {
-        if (initSecmod() == false) {
-            return;
-        }
+        initSecmod();
 
         String configName = BASE + SEP + "nsscrypto.cfg";
         Provider p = getSunPKCS11(configName);
