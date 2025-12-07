@@ -326,23 +326,9 @@ public class Hybrid {
 
             var left  = le.encapsulate();
             var right = re.encapsulate();
-            byte[] leftEnc  = left.encapsulation();
-            byte[] rightEnc = right.encapsulation();
-
-            int expectedEncSize = le.encapsulationSize() +
-                    re.encapsulationSize();
-            int actualEncSize = leftEnc.length + rightEnc.length;
-
-            if (actualEncSize != expectedEncSize) {
-                throw new IllegalStateException(
-                        "Invalid key encapsulation message length: " +
-                        actualEncSize +
-                        ", expected = " + expectedEncSize);
-            }
-
             return new KEM.Encapsulated(
                     new SecretKeyImpl(left.key(), right.key()),
-                    concat(leftEnc, rightEnc),
+                    concat(left.encapsulation(), right.encapsulation()),
                     null);
         }
 
