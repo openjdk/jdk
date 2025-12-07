@@ -43,6 +43,7 @@
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 #include "jfr/recorder/storage/jfrStorage.hpp"
 #include "jfr/recorder/stringpool/jfrStringPool.hpp"
+#include "jfr/support/jfrSymbolTable.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/writers/jfrJavaEventWriter.hpp"
@@ -315,6 +316,9 @@ bool JfrRecorder::create_components() {
   if (!create_thread_group_manager()) {
     return false;
   }
+  if (!create_symbol_table()) {
+    return false;
+  }
   return true;
 }
 
@@ -413,6 +417,10 @@ bool JfrRecorder::create_thread_group_manager() {
   return JfrThreadGroupManager::create();
 }
 
+bool JfrRecorder::create_symbol_table() {
+  return JfrSymbolTable::create();
+}
+
 void JfrRecorder::destroy_components() {
   JfrJvmtiAgent::destroy();
   if (_post_box != nullptr) {
@@ -453,6 +461,7 @@ void JfrRecorder::destroy_components() {
   }
   JfrEventThrottler::destroy();
   JfrThreadGroupManager::destroy();
+  JfrSymbolTable::destroy();
 }
 
 bool JfrRecorder::create_recorder_thread() {

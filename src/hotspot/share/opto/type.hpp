@@ -1178,15 +1178,15 @@ protected:
   int hash_speculative() const;
   const TypePtr* add_offset_speculative(intptr_t offset) const;
   const TypePtr* with_offset_speculative(intptr_t offset) const;
-#ifndef PRODUCT
-  void dump_speculative(outputStream *st) const;
-#endif
 
   // utility methods to work on the inline depth of the type
   int dual_inline_depth() const;
   int meet_inline_depth(int depth) const;
+
 #ifndef PRODUCT
-  void dump_inline_depth(outputStream *st) const;
+  void dump_speculative(outputStream* st) const;
+  void dump_inline_depth(outputStream* st) const;
+  void dump_offset(outputStream* st) const;
 #endif
 
   // TypeInstPtr (TypeAryPtr resp.) and TypeInstKlassPtr (TypeAryKlassPtr resp.) implement very similar meet logic.
@@ -1365,6 +1365,10 @@ protected:
 
   virtual ciKlass* exact_klass_helper() const { return nullptr; }
   virtual ciKlass* klass() const { return _klass;     }
+
+#ifndef PRODUCT
+  void dump_instance_id(outputStream* st) const;
+#endif // PRODUCT
 
 public:
 
@@ -1834,9 +1838,6 @@ public:
 
   virtual const TypeKlassPtr* try_improve() const { return this; }
 
-#ifndef PRODUCT
-  virtual void dump2( Dict &d, uint depth, outputStream *st ) const; // Specialized per-Type dumping
-#endif
 private:
   virtual bool is_meet_subtype_of(const TypePtr* other) const {
     return is_meet_subtype_of_helper(other->is_klassptr(), klass_is_exact(), other->is_klassptr()->klass_is_exact());
@@ -1916,6 +1917,11 @@ public:
   // Convenience common pre-built types.
   static const TypeInstKlassPtr* OBJECT; // Not-null object klass or below
   static const TypeInstKlassPtr* OBJECT_OR_NULL; // Maybe-null version of same
+
+#ifndef PRODUCT
+  virtual void dump2(Dict& d, uint depth, outputStream* st) const;
+#endif // PRODUCT
+
 private:
   virtual bool is_meet_subtype_of_helper(const TypeKlassPtr* other, bool this_xk, bool other_xk) const;
 };
