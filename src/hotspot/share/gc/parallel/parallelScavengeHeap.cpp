@@ -307,9 +307,13 @@ HeapWord* ParallelScavengeHeap::mem_allocate_cas_noexpand(size_t size, bool is_t
 
 HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size, bool is_tlab) {
   for (uint loop_count = 0; /* empty */; ++loop_count) {
-    HeapWord* result = mem_allocate_cas_noexpand(size, is_tlab);
-    if (result != nullptr) {
-      return result;
+    HeapWord* result;
+    {
+      ConditionalMutexLocker locker(Heap_lock, !is_init_completed());
+      result = mem_allocate_cas_noexpand(size, is_tlab);
+      if (result != nullptr) {
+        return result;
+      }
     }
 
     // Read total_collections() under the lock so that multiple
@@ -326,10 +330,15 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size, bool is_tlab) {
       }
 
       if (!is_init_completed()) {
-        // Can't do GC; try heap expansion to satisfy the request.
-        result = expand_heap_and_allocate(size, is_tlab);
-        if (result != nullptr) {
-          return result;
+        // Double checked locking, this ensure that is_init_completed() does not
+        // transition while expanding the heap.
+        MonitorLocker ml(InitCompleted_lock, Monitor::_no_safepoint_check_flag);
+        if (!is_init_completed()) {
+          // Can't do GC; try heap expansion to satisfy the request.
+          result = expand_heap_and_allocate(size, is_tlab);
+          if (result != nullptr) {
+            return result;
+          }
         }
       }
 
@@ -343,11 +352,6 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size, bool is_tlab) {
       if (op.gc_succeeded()) {
         assert(is_in_or_null(op.result()), "result not in heap");
         return op.result();
-      }
-
-      if (is_shutting_down()) {
-        stall_for_vm_shutdown();
-        return nullptr;
       }
     }
 
@@ -887,9 +891,23 @@ void ParallelScavengeHeap::resize_after_young_gc(bool is_survivor_overflowing) {
 
   // Consider if should shrink old-gen
   if (!is_survivor_overflowing) {
-    // Upper bound for a single step shrink
-    size_t max_shrink_bytes = SpaceAlignment;
+    assert(old_gen()->capacity_in_bytes() >= old_gen()->min_gen_size(), "inv");
+
+    // Old gen min_gen_size constraint.
+    const size_t max_shrink_bytes_gen_size_constraint = old_gen()->capacity_in_bytes() - old_gen()->min_gen_size();
+
+    // Per-step delta to avoid too aggressive shrinking.
+    const size_t max_shrink_bytes_per_step_constraint = SpaceAlignment;
+
+    // Combining the above two constraints.
+    const size_t max_shrink_bytes = MIN2(max_shrink_bytes_gen_size_constraint,
+                                         max_shrink_bytes_per_step_constraint);
+
     size_t shrink_bytes = _size_policy->compute_old_gen_shrink_bytes(old_gen()->free_in_bytes(), max_shrink_bytes);
+
+    assert(old_gen()->capacity_in_bytes() >= shrink_bytes, "inv");
+    assert(old_gen()->capacity_in_bytes() - shrink_bytes >= old_gen()->min_gen_size(), "inv");
+
     if (shrink_bytes != 0) {
       if (MinHeapFreeRatio != 0) {
         size_t new_capacity = old_gen()->capacity_in_bytes() - shrink_bytes;

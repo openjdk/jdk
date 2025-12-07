@@ -53,6 +53,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -98,6 +99,7 @@ import jdk.internal.net.http.common.OperationTrackers.Trackable;
 import jdk.internal.net.http.common.OperationTrackers.Tracker;
 import jdk.internal.net.http.common.Utils.SafeExecutor;
 import jdk.internal.net.http.common.Utils.SafeExecutorService;
+import jdk.internal.net.http.common.Utils.UseVTForSelector;
 import jdk.internal.net.http.websocket.BuilderImpl;
 
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
@@ -125,6 +127,18 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     // Defaults to value used for HTTP/1 Keep-Alive Timeout. Can be overridden by jdk.httpclient.keepalive.timeout.h2 property.
     static final long IDLE_CONNECTION_TIMEOUT_H2 = getTimeoutProp("jdk.httpclient.keepalive.timeout.h2", KEEP_ALIVE_TIMEOUT);
     static final long IDLE_CONNECTION_TIMEOUT_H3 = getTimeoutProp("jdk.httpclient.keepalive.timeout.h3", IDLE_CONNECTION_TIMEOUT_H2);
+    private final boolean hasRequiredH3TLS;
+    private final boolean hasRequiredH2TLS;
+
+    static final UseVTForSelector USE_VT_FOR_SELECTOR =
+        Utils.useVTForSelector("jdk.internal.httpclient.tcp.selector.useVirtualThreads", "default");
+    private static boolean useVtForSelector() {
+        return switch (USE_VT_FOR_SELECTOR) {
+            case ALWAYS -> true;
+            case NEVER -> false;
+            default -> true;
+        };
+    }
 
     // Define the default factory as a static inner class
     // that embeds all the necessary logic to avoid
@@ -293,7 +307,6 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         if (pending.cf.isDone()) return res;
 
         var client = pending.client;
-        var cf = pending.cf;
         var id = pending.id;
         boolean added = client.pendingRequests.add(pending);
         // this may immediately remove `pending` from the set is the cf is already completed
@@ -342,6 +355,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     private final boolean isDefaultExecutor;
     private final SSLContext sslContext;
     private final SSLParameters sslParams;
+    private final Thread selmgrThread;
     private final SelectorManager selmgr;
     private final FilterFactory filters;
     private final Http2ClientImpl client2;
@@ -466,10 +480,17 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                     "HTTP3 is not supported"));
         }
         sslParams = requireNonNullElseGet(builder.sslParams, sslContext::getDefaultSSLParameters);
-        boolean sslParamsSupportedForH3 = sslParams.getProtocols() == null
-                || sslParams.getProtocols().length == 0
-                || isQuicCompatible(sslParams);
-        if (version == Version.HTTP_3 && !sslParamsSupportedForH3) {
+        String[] sslProtocols = sslParams.getProtocols();
+        if (sslProtocols == null) {
+            sslProtocols = requireNonNullElseGet(sslContext.getDefaultSSLParameters().getProtocols(),
+                    () -> new String[0]);
+        }
+        // HTTP/3 MUST use TLS version 1.3 or higher
+        hasRequiredH3TLS = Arrays.asList(sslProtocols).contains("TLSv1.3");
+        // HTTP/2 MUST use TLS version 1.2 or higher for HTTP/2 over TLS
+        hasRequiredH2TLS = hasRequiredH3TLS || Arrays.asList(sslProtocols).contains("TLSv1.2");
+
+        if (version == Version.HTTP_3 && !hasRequiredH3TLS) {
             throw new UncheckedIOException(new UnsupportedProtocolVersionException(
                     "HTTP3 is not supported - TLSv1.3 isn't configured on SSLParameters"));
         }
@@ -496,7 +517,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             debug.log("proxySelector is %s (user-supplied=%s)",
                       this.proxySelector, userProxySelector != null);
         authenticator = builder.authenticator;
-        boolean h3Supported = sslCtxSupportedForH3 && sslParamsSupportedForH3;
+        boolean h3Supported = sslCtxSupportedForH3 && hasRequiredH3TLS;
         registry = new AltServicesRegistry(id);
         connections = new ConnectionPool(id);
         client2 = new Http2ClientImpl(this);
@@ -509,10 +530,30 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             // unlikely
             throw new UncheckedIOException(e);
         }
-        selmgr.setDaemon(true);
+        selmgrThread = useVtForSelector()
+                ? Thread.ofVirtual().name("HttpClient-" + id + "-SelectorManager")
+                .inheritInheritableThreadLocals(false).unstarted(selmgr)
+                : Thread.ofPlatform().name("HttpClient-" + id + "-SelectorManager")
+                .inheritInheritableThreadLocals(false).daemon().unstarted(selmgr);
         filters = new FilterFactory();
         initFilters();
         assert facadeRef.get() != null;
+    }
+
+    /**
+     * Returns true if the SSL parameter protocols contains at
+     * least one TLS version that HTTP/3 requires.
+     */
+    boolean hasRequiredHTTP3TLSVersion() {
+        return hasRequiredH3TLS;
+    }
+
+    /**
+     * Returns true if the SSL parameter protocols contains at
+     * least one TLS version that HTTP/2 requires.
+     */
+    boolean hasRequiredHTTP2TLSVersion() {
+        return hasRequiredH2TLS;
     }
 
     // called when the facade is GC'ed.
@@ -528,7 +569,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
 
     private void start() {
         try {
-            selmgr.start();
+            selmgrThread.start();
         } catch (Throwable t) {
             isStarted.set(true);
             throw t;
@@ -635,7 +676,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     @Override
     public boolean awaitTermination(Duration duration) throws InterruptedException {
         // Implicit NPE will be thrown if duration is null
-        return selmgr.join(duration);
+        return selmgrThread.join(duration);
     }
 
     @Override
@@ -927,7 +968,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     }
 
     boolean isSelectorThread() {
-        return Thread.currentThread() == selmgr;
+        return Thread.currentThread() == selmgrThread;
     }
 
     AltServicesRegistry registry() { return registry; }
@@ -1157,7 +1198,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     }
 
     // Main loop for this client's selector
-    private static final class SelectorManager extends Thread {
+    private static final class SelectorManager implements Runnable {
 
         // For testing purposes we have an internal System property that
         // can control the frequency at which the selector manager will wake
@@ -1196,9 +1237,6 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         private final ReentrantLock lock = new ReentrantLock();
 
         SelectorManager(HttpClientImpl ref) throws IOException {
-            super(null, null,
-                  "HttpClient-" + ref.id + "-SelectorManager",
-                  0, false);
             owner = ref;
             debug = ref.debug;
             debugtimeout = ref.debugtimeout;
@@ -1221,7 +1259,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         }
 
         void eventUpdated(AsyncEvent e) throws ClosedChannelException {
-            if (Thread.currentThread() == this) {
+            if (owner.isSelectorThread()) {
                 SelectionKey key = e.channel().keyFor(selector);
                 if (key != null && key.isValid()) {
                     SelectorAttachment sa = (SelectorAttachment) key.attachment();
@@ -1315,8 +1353,19 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             if (!inSelectorThread) selector.wakeup();
         }
 
+        String getName() {
+            return owner.selmgrThread.getName();
+        }
+
         // Only called by the selector manager thread
         private void shutdown() {
+            // first stop the client to avoid seeing exceptions
+            // about "selector manager closed"
+            Log.logTrace("{0}: stopping", owner.dbgTag);
+            try {
+                owner.stop();
+            } catch (Throwable ignored) {
+            }
             try {
                 lock.lock();
                 try {
@@ -1329,6 +1378,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                 }
             } catch (IOException ignored) {
             } finally {
+                // cleanup anything that might have been left behind
                 owner.stop();
             }
         }
@@ -1827,6 +1877,13 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         Log.logTrace("Canceling timer {0}", event);
         synchronized (this) {
             timeouts.remove(event);
+        }
+    }
+
+    // Visible for tests
+    List<TimeoutEvent> timers() {
+        synchronized (this) {
+            return new ArrayList<>(timeouts);
         }
     }
 

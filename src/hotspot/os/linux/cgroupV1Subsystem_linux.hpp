@@ -209,14 +209,14 @@ class CgroupV1Subsystem: public CgroupSubsystem {
 
     bool pids_max(uint64_t& result) override;
     bool pids_current(uint64_t& result) override;
-    bool is_containerized();
+    bool is_containerized() override;
 
-    const char * container_type() {
+    const char * container_type() override {
       return "cgroupv1";
     }
-    CachingCgroupController<CgroupMemoryController>* memory_controller() { return _memory; }
-    CachingCgroupController<CgroupCpuController>* cpu_controller() { return _cpu; }
-    CgroupCpuacctController* cpuacct_controller() { return _cpuacct; }
+    CachingCgroupController<CgroupMemoryController>* memory_controller() override { return _memory; }
+    CachingCgroupController<CgroupCpuController>* cpu_controller() override { return _cpu; }
+    CgroupCpuacctController* cpuacct_controller() override { return _cpuacct; }
 
   private:
     /* controllers */
