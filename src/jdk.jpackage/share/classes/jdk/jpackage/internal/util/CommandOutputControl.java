@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.StringReader;
+import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -37,6 +38,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -300,23 +302,7 @@ public final class CommandOutputControl {
         return outputStreamsControl.describe();
     }
 
-    private Result execute(ProcessBuilder pb)
-            throws IOException, InterruptedException {
-
-        outputStreamsControl.applyTo(pb);
-
-        final var process = pb.start();
-
-        final var pid = getPID(process);
-
-        final var output = readProcessOutput(process);
-
-        final int exitCode = process.waitFor();
-
-        return new Result(exitCode, output, new ProcessSpec(pid, pb.command()));
-    }
-
-    private Result execute(ProcessBuilder pb, long timeout, TimeUnit unit)
+    private Result execute(ProcessBuilder pb, long timeoutMillis)
             throws IOException, InterruptedException, TimeoutException {
 
         outputStreamsControl.applyTo(pb);
@@ -325,35 +311,50 @@ public final class CommandOutputControl {
 
         final var pid = getPID(process);
 
-        final var task = new FutureTask<>(() -> {
-            return readProcessOutput(process);
+        final var readStdoutTask = new FutureTask<>(() -> {
+            return processProcessStream(outputStreamsControl.stdout(), process::inputReader);
         });
-        Thread.ofVirtual().start(task);
 
-        if (process.waitFor(timeout, unit)) {
-            final var exitCode = process.exitValue();
-            try {
-                final var output = task.get(timeout, unit);
-                return new Result(exitCode, output, new ProcessSpec(pid, pb.command()));
-            } catch (ExecutionException ex) {
-                try {
-                    throw ex.getCause();
-                } catch (IOException|InterruptedException|TimeoutException|RuntimeException cause) {
-                    throw cause;
-                } catch (Throwable t) {
-                    throw ExceptionBox.rethrowUnchecked(t);
-                }
-            }
-        } else {
+        final var readStderrTask = new FutureTask<>(() -> {
+            return processProcessStream(outputStreamsControl.stderr(), process::errorReader);
+        });
+
+        // Start fetching process output streams.
+        // Do it before waiting for the process termination to avoid deadlocks.
+        Thread.ofVirtual().start(readStdoutTask);
+        Thread.ofVirtual().start(readStderrTask);
+
+        final int exitCode;
+        if (timeoutMillis < 0) {
+            exitCode = process.waitFor();
+        } else if (!process.waitFor(timeoutMillis, TimeUnit.MILLISECONDS)) {
             process.destroy();
             throw new TimeoutException();
+        } else {
+            exitCode = process.exitValue();
         }
-    }
 
-    private CommandOutput readProcessOutput(Process process) throws IOException {
-        return combine(
-                processProcessStream(outputStreamsControl.stdout(), process::inputReader),
-                processProcessStream(outputStreamsControl.stderr(), process::errorReader));
+        // The process has terminated. Close output streams to unblock any pending 
+        // reads in `readStdoutTask` and `readStderrTask` tasks.
+        // On macOS, if not done, some processes may hang ("hdiutil attach" does).
+        // Swallow I/O exceptions is OK here (UNIX ProcessImpl#destroy() does the same).
+        try { 
+            process.getOutputStream().close();
+        } catch (IOException ignored) {
+            ignored.printStackTrace();
+        }
+        try { 
+            process.getErrorStream().close();
+        } catch (IOException ignored) {
+            ignored.printStackTrace();
+        }
+
+        final var stdout = getFutureResult(readStdoutTask);
+        final var stderr = getFutureResult(readStderrTask);
+
+        final var output = combine(stdout, stderr);
+
+        return new Result(exitCode, output, new ProcessSpec(pid, pb.command()));
     }
 
     private Result execute(ToolProvider tp, String... args) throws IOException {
@@ -386,6 +387,27 @@ public final class CommandOutputControl {
         }
     }
 
+    private static <T> T getFutureResult(Future<T> f) throws IOException, InterruptedException {
+        try {
+            return f.get();
+        } catch (ExecutionException ex) {
+            switch (ex.getCause()) {
+                case IOException cause -> {
+                    throw cause;
+                }
+                case InterruptedException cause -> {
+                    throw cause;
+                }
+                case RuntimeException cause -> {
+                    throw cause;
+                }
+                default -> {
+                    throw ExceptionBox.rethrowUnchecked(ex.getCause());
+                }
+            }
+        }
+    }
+
     private static Optional<List<String>> processProcessStream(OutputControl outputControl, Supplier<BufferedReader> bufReaderSupplier) throws IOException {
         List<String> outputLines = null;
         try (var bufReader = bufReaderSupplier.get()) {
@@ -399,6 +421,8 @@ public final class CommandOutputControl {
                 // This should be empty input stream, fetch it anyway.
                 bufReader.transferTo(Writer.nullWriter());
             }
+        } catch (UncheckedIOException ex) {
+            throw ex.getCause();
         } finally {
             if (outputControl.dump() && outputLines != null) {
                 outputLines.forEach(System.out::println);
@@ -425,6 +449,8 @@ public final class CommandOutputControl {
             } else {
                 return Optional.empty();
             }
+        } catch (UncheckedIOException ex) {
+            throw ex.getCause();
         }
     }
 
@@ -811,12 +837,17 @@ public final class CommandOutputControl {
 
         @Override
         public Result execute() throws IOException, InterruptedException {
-            return coc.execute(pb);
+            try {
+                return coc.execute(pb, -1L);
+            } catch (TimeoutException ex) {
+                // Should never happen.
+                throw new UnsupportedOperationException(ex);
+            }
         }
 
         @Override
         public Result execute(long timeout, TimeUnit unit) throws IOException, InterruptedException, TimeoutException {
-            return coc.execute(pb, timeout, unit);
+            return coc.execute(pb, unit.toMillis(timeout));
         }
 
         @Override
