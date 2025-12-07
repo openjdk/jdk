@@ -476,7 +476,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
   public short[] getBootstrapMethodAt(int bsmIndex) {
     U4Array offs = getOffsets();
     U2Array bsms = getBootstrapMethods();
-    if (offs == null || bsms == null) return null; // safety first
+    if (offs == null || bsms == null) return new short[0];  // safety first
     int basePos = offs.at(bsmIndex);
     int argv = basePos + INDY_ARGV_OFFSET;
     int argc = getBootstrapMethodArgsCount(bsmIndex);
