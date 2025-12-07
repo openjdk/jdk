@@ -42,6 +42,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -311,12 +312,14 @@ public final class CommandOutputControl {
 
         final var pid = getPID(process);
 
+        final var ignoreIOError = new AtomicBoolean();
+
         final var readStdoutTask = new FutureTask<>(() -> {
-            return processProcessStream(outputStreamsControl.stdout(), process::inputReader);
+            return processProcessStream(outputStreamsControl.stdout(), process::inputReader, ignoreIOError::get);
         });
 
         final var readStderrTask = new FutureTask<>(() -> {
-            return processProcessStream(outputStreamsControl.stderr(), process::errorReader);
+            return processProcessStream(outputStreamsControl.stderr(), process::errorReader, ignoreIOError::get);
         });
 
         // Start fetching process output streams.
@@ -333,6 +336,10 @@ public final class CommandOutputControl {
         } else {
             exitCode = process.exitValue();
         }
+
+        // Notify process output stream gobblers that they should ignore 
+        // I/O errors as we are about to close underlying streams.
+        ignoreIOError.set(true);
 
         // The process has terminated. Close output streams to unblock any pending 
         // reads in `readStdoutTask` and `readStderrTask` tasks.
@@ -408,11 +415,22 @@ public final class CommandOutputControl {
         }
     }
 
-    private static Optional<List<String>> processProcessStream(OutputControl outputControl, Supplier<BufferedReader> bufReaderSupplier) throws IOException {
+    private static Optional<List<String>> processProcessStream(
+            OutputControl outputControl,
+            Supplier<BufferedReader> bufReaderSupplier,
+            Supplier<Boolean> ignoreIOError) throws IOException {
+
         List<String> outputLines = null;
         try (var bufReader = bufReaderSupplier.get()) {
             if (outputControl.dump() || outputControl.saveAll()) {
-                outputLines = bufReader.lines().toList();
+                outputLines = new ArrayList<>();
+                for (;;) {
+                    var line = bufReader.readLine();
+                    if (line == null) {
+                        break;
+                    }
+                    outputLines.add(line);
+                }
             } else if (outputControl.saveFirstLine()) {
                 outputLines = Optional.ofNullable(bufReader.readLine()).map(List::of).orElseGet(List::of);
                 // Read all input, or the started process may exit with an error (cmd.exe does so).
@@ -421,8 +439,10 @@ public final class CommandOutputControl {
                 // This should be empty input stream, fetch it anyway.
                 bufReader.transferTo(Writer.nullWriter());
             }
-        } catch (UncheckedIOException ex) {
-            throw ex.getCause();
+        } catch (IOException ex) {
+            if (!ignoreIOError.get()) {
+                throw ex;
+            }
         } finally {
             if (outputControl.dump() && outputLines != null) {
                 outputLines.forEach(System.out::println);
