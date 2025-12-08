@@ -31,9 +31,8 @@ import jdk.test.lib.Utils;
 /*
  * @test
  * @summary Test conditional move + compare object.
- * @requires vm.simpleArch == "riscv64"
  * @library /test/lib /
- * @run driver compiler.c2.irTests.TestScalarConditionalMoveCmpObj
+ * @run driver ${test.main.class}
  */
 
 public class TestScalarConditionalMoveCmpObj {

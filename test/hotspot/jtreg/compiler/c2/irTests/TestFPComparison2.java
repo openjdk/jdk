@@ -30,10 +30,9 @@ import java.util.List;
  * @test
  * @bug 8358892 8357551
  * @summary The test is to trigger code path of BoolTest::ge/gt in C2_MacroAssembler::enc_cmove_cmp_fp
- * @requires os.arch == "riscv64"
  * @requires vm.debug
  * @library /test/lib /
- * @run driver compiler.c2.irTests.TestFPComparison2
+ * @run driver ${test.main.class}
  */
 public class TestFPComparison2 {
     static final double[] DOUBLES = new double[] {
