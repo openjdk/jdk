@@ -1661,6 +1661,16 @@ public class IRNode {
         vectorNode(POPCOUNT_VL, "PopCountVL", TYPE_LONG);
     }
 
+    public static final String COUNT_TRAILING_ZEROS_I = PREFIX + "COUNT_TRAILING_ZEROS_I" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(COUNT_TRAILING_ZEROS_I, "CountTrailingZerosI");
+    }
+
+    public static final String COUNT_TRAILING_ZEROS_L = PREFIX + "COUNT_TRAILING_ZEROS_L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(COUNT_TRAILING_ZEROS_L, "CountTrailingZerosL");
+    }
+
     public static final String COUNT_TRAILING_ZEROS_VL = VECTOR_PREFIX + "COUNT_TRAILING_ZEROS_VL" + POSTFIX;
     static {
         vectorNode(COUNT_TRAILING_ZEROS_VL, "CountTrailingZerosV", TYPE_LONG);
@@ -1669,6 +1679,16 @@ public class IRNode {
     public static final String COUNT_TRAILING_ZEROS_VI = VECTOR_PREFIX + "COUNT_TRAILING_ZEROS_VI" + POSTFIX;
     static {
         vectorNode(COUNT_TRAILING_ZEROS_VI, "CountTrailingZerosV", TYPE_INT);
+    }
+
+    public static final String COUNT_LEADING_ZEROS_I = PREFIX + "COUNT_LEADING_ZEROS_I" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(COUNT_LEADING_ZEROS_I, "CountLeadingZerosI");
+    }
+
+    public static final String COUNT_LEADING_ZEROS_L = PREFIX + "COUNT_LEADING_ZEROS_L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(COUNT_LEADING_ZEROS_L, "CountLeadingZerosL");
     }
 
     public static final String COUNT_LEADING_ZEROS_VL = VECTOR_PREFIX + "COUNT_LEADING_ZEROS_VL" + POSTFIX;
