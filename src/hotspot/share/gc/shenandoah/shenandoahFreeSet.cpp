@@ -966,7 +966,7 @@ void ShenandoahRegionPartitions::assert_bounds(bool validate_totals) {
     humongous_waste[i] = 0;
   }
 
-#define KELVIN_DEBUG
+#undef KELVIN_DEBUG
 #ifdef KELVIN_DEBUG
   log_info(gc)("assert_bounds(validate_totals: %s), _capacity[OldCollector]: %zu",
                validate_totals? "true": "false",
@@ -2861,7 +2861,6 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_old
                               _partitions.leftmost(ShenandoahFreeSetPartitionId::OldCollector),
                               _partitions.rightmost(ShenandoahFreeSetPartitionId::OldCollector));
           old_region_count++;
-#define KELVIN_DEBUG
 #ifdef KELVIN_DEBUG
           log_info(gc)("Moving region %zu (%s, %s) from Mutator to OldCollector", idx,
                        r->is_old()? "old": "young", r->is_affiliated()? "affiliated": "unaffiliated");
@@ -2937,7 +2936,6 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_old
       size_t ac = alloc_capacity(r);
       assert(ac != region_size_bytes, "Empty regions should be in Mutator partion at entry to reserve_regions");
       assert(p != ShenandoahFreeSetPartitionId::Collector, "Collector regions must be converted from Mutator regions");
-#define KELVIN_DEBUG
 #ifdef KELVIN_DEBUG
       static const char* partition_names[] = { "Mutator", "Collector", "OldCollector", "NotFree" };
       log_info(gc)("Doing the accounting for non-Mutator region %zu, p is: %s, %s, %s, ac: %zu",
