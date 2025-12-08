@@ -76,6 +76,46 @@ public class VectorAlgorithms {
     // ------------------------------------------------------------------------------------------
 
     @Benchmark
+    public Object fillI_loop() {
+        return VectorAlgorithmsImpl.fillI_loop(rI);
+    }
+
+    @Benchmark
+    public Object fillI_VectorAPI() {
+        return VectorAlgorithmsImpl.fillI_VectorAPI(rI);
+    }
+
+    @Benchmark
+    public Object iotaI_loop() {
+        return VectorAlgorithmsImpl.iotaI_loop(rI);
+    }
+
+    @Benchmark
+    public Object iotaI_VectorAPI() {
+        return VectorAlgorithmsImpl.iotaI_VectorAPI(rI);
+    }
+
+    @Benchmark
+    public Object copyI_loop() {
+        return VectorAlgorithmsImpl.copyI_loop(aI, rI);
+    }
+
+    @Benchmark
+    public Object copyI_VectorAPI() {
+        return VectorAlgorithmsImpl.copyI_VectorAPI(aI, rI);
+    }
+
+    @Benchmark
+    public Object mapI_loop() {
+        return VectorAlgorithmsImpl.mapI_loop(aI, rI);
+    }
+
+    @Benchmark
+    public Object mapI_VectorAPI() {
+        return VectorAlgorithmsImpl.mapI_VectorAPI(aI, rI);
+    }
+
+    @Benchmark
     public int reduceAddI_loop() {
         return VectorAlgorithmsImpl.reduceAddI_loop(aI);
     }
