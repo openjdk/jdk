@@ -127,6 +127,8 @@ public:
 
 class ShenandoahReferenceProcessor : public ReferenceDiscoverer {
 private:
+  static AlwaysClearPolicy _always_clear_policy;
+
   ReferencePolicy* _soft_reference_policy;
 
   ShenandoahRefProcThreadLocal* _ref_proc_thread_locals;
@@ -137,6 +139,8 @@ private:
   volatile uint _iterate_discovered_list_id;
 
   ReferenceProcessorStats _stats;
+
+  ShenandoahGeneration* _generation;
 
   template <typename T>
   bool is_inactive(oop reference, oop referent, ReferenceType type) const;
@@ -170,7 +174,7 @@ private:
   void clean_discovered_list(T* list);
 
 public:
-  ShenandoahReferenceProcessor(uint max_workers);
+  ShenandoahReferenceProcessor(ShenandoahGeneration* generation, uint max_workers);
 
   void reset_thread_locals();
   void set_mark_closure(uint worker_id, ShenandoahMarkRefsSuperClosure* mark_closure);

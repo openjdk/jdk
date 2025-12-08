@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,25 +20,29 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  * @test
  * @bug 8177552
  * @summary Checks the formatting and parsing of special values
  * @modules jdk.localedata
- * @run testng/othervm TestSpecialValues
+ * @run junit/othervm TestSpecialValues
  */
+
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.Locale;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestSpecialValues {
 
     private static final NumberFormat FORMAT = NumberFormat
             .getCompactNumberInstance(Locale.US, NumberFormat.Style.SHORT);
 
-    @DataProvider(name = "formatSpecialValues")
     Object[][] formatSpecialValues() {
         return new Object[][]{
             // number , formatted ouput
@@ -53,7 +57,6 @@ public class TestSpecialValues {
             {Long.MAX_VALUE, "9223372T"},};
     }
 
-    @DataProvider(name = "parseSpecialValues")
     Object[][] parseSpecialValues() {
         return new Object[][]{
             // parse string, parsed number
@@ -65,13 +68,15 @@ public class TestSpecialValues {
             {"-\u221E", Double.NEGATIVE_INFINITY},};
     }
 
-    @Test(dataProvider = "formatSpecialValues")
-    public void testFormatSpecialValues(Object number, String expected) {
+    @ParameterizedTest
+    @MethodSource("formatSpecialValues")
+    void testFormatSpecialValues(Object number, String expected) {
         CompactFormatAndParseHelper.testFormat(FORMAT, number, expected);
     }
 
-    @Test(dataProvider = "parseSpecialValues")
-    public void testParseSpecialValues(String parseString, Number expected)
+    @ParameterizedTest
+    @MethodSource("parseSpecialValues")
+    void testParseSpecialValues(String parseString, Number expected)
             throws ParseException {
         CompactFormatAndParseHelper.testParse(FORMAT, parseString, expected, null, null);
     }

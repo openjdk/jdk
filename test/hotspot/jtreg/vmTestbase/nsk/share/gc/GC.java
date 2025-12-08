@@ -48,6 +48,9 @@ public class GC extends nsk.share.test.Tests {
 
                 public GCTestRunner(Test test, String[] args) {
                         super(test, args);
+                        // GC tests often run at the brink of OOME, make sure
+                        // LocalRandom is loaded, initialized, and has enough memory.
+                        LocalRandom.init();
                 }
 
                 private GCParams getGCParams(String[] args) {

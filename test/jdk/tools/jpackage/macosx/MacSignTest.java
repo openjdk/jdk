@@ -39,6 +39,7 @@ import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.MacHelper;
 import jdk.jpackage.test.MacSign;
 import jdk.jpackage.test.MacSign.CertificateRequest;
+import jdk.jpackage.test.MacSign.CertificateType;
 import jdk.jpackage.test.MacSignVerify;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
@@ -70,14 +71,14 @@ public class MacSignTest {
         final List<CannedFormattedString> expectedStrings = new ArrayList<>();
         expectedStrings.add(JPackageStringBundle.MAIN.cannedFormattedString("message.codesign.failed.reason.app.content"));
 
+        expectedStrings.add(JPackageStringBundle.MAIN.cannedFormattedString("error.tool.failed.with.output", "codesign"));
+
         final var xcodeWarning = JPackageStringBundle.MAIN.cannedFormattedString("message.codesign.failed.reason.xcode.tools");
         if (!MacHelper.isXcodeDevToolsInstalled()) {
             expectedStrings.add(xcodeWarning);
         }
 
-        final var keychain = SigningBase.StandardKeychain.EXPIRED.spec().keychain();
-
-        MacSign.Keychain.withAddedKeychains(List.of(keychain), () -> {
+        MacSign.withKeychain(keychain -> {
             // --app-content and --type app-image
             // Expect `message.codesign.failed.reason.app.content` message in the log.
             // This is not a fatal error, just a warning.
@@ -86,8 +87,6 @@ public class MacSignTest {
                     .ignoreDefaultVerbose(true)
                     .validateOutput(expectedStrings.toArray(CannedFormattedString[]::new))
                     .addArguments("--app-content", appContent)
-                    .addArguments("--mac-sign")
-                    .addArguments("--mac-signing-keychain", keychain.name())
                     .addArguments("--mac-app-image-sign-identity", SigningBase.StandardCertificateRequest.CODESIGN.spec().name());
 
             if (MacHelper.isXcodeDevToolsInstalled()) {
@@ -95,8 +94,36 @@ public class MacSignTest {
                 cmd.validateOutput(TKit.assertTextStream(xcodeWarning.getValue()).negate());
             }
 
-            cmd.execute(1);
-        });
+            MacHelper.useKeychain(cmd, keychain).execute(1);
+        }, MacSign.Keychain.UsageBuilder::addToSearchList, SigningBase.StandardKeychain.MAIN.keychain());
+    }
+
+    @Test
+    public static void testCodesignUnspecifiedFailure() throws IOException {
+
+        var appImageCmd = JPackageCommand.helloAppImage().setFakeRuntime();
+
+        appImageCmd.executeIgnoreExitCode().assertExitCodeIsZero();
+
+        // This test expects jpackage to respond in a specific way on a codesign failure.
+        // The simplest option to trigger codesign failure is to request the signing of an invalid bundle.
+        // Create app content directory with the name known to fail signing.
+        final var appContent = appImageCmd.appLayout().contentDirectory().resolve("foo.1");
+        Files.createDirectory(appContent);
+        Files.createFile(appContent.resolve("file"));
+
+        final List<CannedFormattedString> expectedStrings = new ArrayList<>();
+        expectedStrings.add(JPackageStringBundle.MAIN.cannedFormattedString("error.tool.failed.with.output", "codesign"));
+
+        MacSign.withKeychain(keychain -> {
+            final var cmd = new JPackageCommand().setPackageType(PackageType.IMAGE)
+                    .ignoreDefaultVerbose(true)
+                    .validateOutput(expectedStrings.toArray(CannedFormattedString[]::new))
+                    .addArguments("--app-image", appImageCmd.outputBundle())
+                    .addArguments("--mac-app-image-sign-identity", SigningBase.StandardCertificateRequest.CODESIGN.spec().name());
+
+            MacHelper.useKeychain(cmd, keychain).execute(1);
+        }, MacSign.Keychain.UsageBuilder::addToSearchList, SigningBase.StandardKeychain.MAIN.keychain());
     }
 
     @Test
@@ -116,71 +143,63 @@ public class MacSignTest {
     @Parameter({"MAC_PKG", "EXPIRED_CODESIGN_SIGN_IDENTITY", "GOOD_PKG_SIGN_IDENTITY"})
     public static void testExpiredCertificate(PackageType type, SignOption... options) {
 
-        final var keychain = SigningBase.StandardKeychain.EXPIRED.spec().keychain();
-
-        MacSign.Keychain.withAddedKeychains(List.of(keychain), () -> {
-            final var cmd = JPackageCommand.helloAppImage()
+        MacSign.withKeychain(keychain -> {
+            final var cmd = MacHelper.useKeychain(JPackageCommand.helloAppImage(), keychain)
                     .ignoreDefaultVerbose(true)
-                    .addArguments("--mac-sign")
-                    .addArguments("--mac-signing-keychain", keychain.name())
                     .addArguments(Stream.of(options).map(SignOption::args).flatMap(List::stream).toList())
                     .setPackageType(type);
 
             SignOption.configureOutputValidation(cmd, Stream.of(options).filter(SignOption::expired).toList(), opt -> {
                 return JPackageStringBundle.MAIN.cannedFormattedString("error.certificate.expired", opt.identityName());
             }).execute(1);
-        });
+        }, MacSign.Keychain.UsageBuilder::addToSearchList, SigningBase.StandardKeychain.EXPIRED.keychain());
     }
 
     @Test
-    // Case "--mac-signing-key-user-name": jpackage selects first certificate
-    // found with warning message. Certificate hash is pass to "codesign" in this
-    // case.
-    @Parameter({"IMAGE", "0", "GOOD_SIGNING_KEY_USER_NAME"})
-    @Parameter({"MAC_DMG", "0", "GOOD_SIGNING_KEY_USER_NAME"})
-    @Parameter({"MAC_PKG", "0", "GOOD_SIGNING_KEY_USER_NAME_PKG", "GOOD_SIGNING_KEY_USER_NAME"})
+    @Parameter({"IMAGE", "GOOD_SIGNING_KEY_USER_NAME"})
+    @Parameter({"MAC_DMG", "GOOD_SIGNING_KEY_USER_NAME"})
+    @Parameter({"MAC_PKG", "GOOD_SIGNING_KEY_USER_NAME_PKG", "GOOD_SIGNING_KEY_USER_NAME"})
+    @Parameter({"IMAGE", "GOOD_CODESIGN_SIGN_IDENTITY"})
+    @Parameter({"MAC_PKG", "GOOD_CODESIGN_SIGN_IDENTITY", "GOOD_PKG_SIGN_IDENTITY"})
+    @Parameter({"MAC_PKG", "GOOD_PKG_SIGN_IDENTITY"})
+    public static void testMultipleCertificates(PackageType type, SignOption... options) {
 
-    // Case "--mac-app-image-sign-identity": sign identity will be pass to
-    // "codesign" and "codesign" should fail due to multiple certificates with
-    // same common name found.
-    @Parameter({"IMAGE", "1", "GOOD_CODESIGN_SIGN_IDENTITY"})
-    @Parameter({"MAC_PKG", "1", "GOOD_CODESIGN_SIGN_IDENTITY", "GOOD_PKG_SIGN_IDENTITY"})
-    @Parameter({"MAC_PKG", "1", "GOOD_PKG_SIGN_IDENTITY"})
-    public static void testMultipleCertificates(PackageType type, int jpackageExitCode, SignOption... options) {
-
-        final var keychain = SigningBase.StandardKeychain.DUPLICATE.spec().keychain();
-
-        MacSign.Keychain.withAddedKeychains(List.of(keychain), () -> {
-            final var cmd = JPackageCommand.helloAppImage()
+        MacSign.withKeychain(keychain -> {
+            final var cmd = MacHelper.useKeychain(JPackageCommand.helloAppImage(), keychain)
                     .ignoreDefaultVerbose(true)
-                    .addArguments("--mac-sign")
-                    .addArguments("--mac-signing-keychain", keychain.name())
                     .addArguments(Stream.of(options).map(SignOption::args).flatMap(List::stream).toList())
                     .setPackageType(type);
 
-            SignOption.configureOutputValidation(cmd, List.of(options), opt -> {
+            Predicate<SignOption> filter = opt -> {
+                if (type == PackageType.MAC_PKG && options.length > 1) {
+                    // Only the first error will be reported and it should always be
+                    // for the app image signing, not for the PKG signing.
+                    return opt.identityType() == CertificateType.CODE_SIGN;
+                } else {
+                    return true;
+                }
+            };
+
+            SignOption.configureOutputValidation(cmd, Stream.of(options).filter(filter).toList(), opt -> {
                 return JPackageStringBundle.MAIN.cannedFormattedString("error.multiple.certs.found", opt.identityName(), keychain.name());
-            }).execute(jpackageExitCode);
-        });
+            }).execute(1);
+        }, MacSign.Keychain.UsageBuilder::addToSearchList, SigningBase.StandardKeychain.DUPLICATE.keychain());
     }
 
     @Test
     @ParameterSupplier
+    @ParameterSupplier("testSelectSigningIdentity_JDK_8371094")
     public static void testSelectSigningIdentity(String signingKeyUserName, CertificateRequest certRequest) {
 
-        final var keychain = SigningBase.StandardKeychain.MAIN.spec().keychain();
-
-        MacSign.Keychain.withAddedKeychains(List.of(keychain), () -> {
-            final var cmd = JPackageCommand.helloAppImage()
+        MacSign.withKeychain(keychain -> {
+            final var cmd = MacHelper.useKeychain(JPackageCommand.helloAppImage(), keychain)
                     .setFakeRuntime()
-                    .addArguments("--mac-sign")
-                    .addArguments("--mac-signing-keychain", keychain.name())
                     .addArguments("--mac-signing-key-user-name", signingKeyUserName);
 
             cmd.executeAndAssertHelloAppImageCreated();
 
             MacSignVerify.assertSigned(cmd.outputBundle(), certRequest);
-        });
+        }, MacSign.Keychain.UsageBuilder::addToSearchList, SigningBase.StandardKeychain.MAIN.keychain());
     }
 
     public static Collection<Object[]> testSelectSigningIdentity() {
@@ -191,6 +210,12 @@ public class MacSignTest {
             acc.accept(new Object[] {certRequest.shortName(), certRequest});
             acc.accept(new Object[] {certRequest.name(), certRequest});
         }).toList();
+    }
+
+    public static Collection<Object[]> testSelectSigningIdentity_JDK_8371094() {
+        return List.<Object[]>of(new Object[] {
+                "ACME Technologies Limited", SigningBase.StandardCertificateRequest.CODESIGN_ACME_TECH_LTD.spec()
+        });
     }
 
     enum SignOption {
@@ -221,6 +246,10 @@ public class MacSignTest {
 
         String identityName() {
             return cert.name();
+        }
+
+        CertificateType identityType() {
+            return cert.type();
         }
 
         List<String> args() {

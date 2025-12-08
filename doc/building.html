@@ -541,6 +541,11 @@ href="#apple-xcode">Apple Xcode</a> on some strategies to deal with
 this.</p>
 <p>It is recommended that you use at least macOS 14 and Xcode 15.4, but
 earlier versions may also work.</p>
+<p>Starting with Xcode 26, introduced in macOS 26, the Metal toolchain
+no longer comes bundled with Xcode, so it needs to be installed
+separately. This can either be done via the Xcode's Settings/Components
+UI, or in the command line calling
+<code>xcodebuild -downloadComponent metalToolchain</code>.</p>
 <p>The standard macOS environment contains the basic tooling needed to
 build, but for external libraries a package manager is recommended. The
 JDK uses <a href="https://brew.sh/">homebrew</a> in the examples, but
@@ -668,7 +673,7 @@ update.</p>
 (Note that this version is often presented as "MSVC 14.28", and reported
 by cl.exe as 19.28.) Older versions will not be accepted by
 <code>configure</code> and will not work. The maximum accepted version
-of Visual Studio is 2022.</p>
+of Visual Studio is 2026.</p>
 <p>If you have multiple versions of Visual Studio installed,
 <code>configure</code> will by default pick the latest. You can request
 a specific version to be used by setting
@@ -1451,10 +1456,10 @@ of a cross-compiling toolchain and a sysroot environment which can
 easily be used together with the <code>--with-devkit</code> configure
 option to cross compile the JDK. On Linux/x86_64, the following
 command:</p>
-<pre><code>bash configure --with-devkit=&lt;devkit-path&gt; --openjdk-target=ppc64-linux-gnu &amp;&amp; make</code></pre>
-<p>will configure and build the JDK for Linux/ppc64 assuming that
-<code>&lt;devkit-path&gt;</code> points to a Linux/x86_64 to Linux/ppc64
-devkit.</p>
+<pre><code>bash configure --with-devkit=&lt;devkit-path&gt; --openjdk-target=ppc64le-linux-gnu &amp;&amp; make</code></pre>
+<p>will configure and build the JDK for Linux/ppc64le assuming that
+<code>&lt;devkit-path&gt;</code> points to a Linux/x86_64 to
+Linux/ppc64le devkit.</p>
 <p>Devkits can be created from the <code>make/devkit</code> directory by
 executing:</p>
 <pre><code>make [ TARGETS=&quot;&lt;TARGET_TRIPLET&gt;+&quot; ] [ BASE_OS=&lt;OS&gt; ] [ BASE_OS_VERSION=&lt;VER&gt; ]</code></pre>
@@ -1481,10 +1486,10 @@ following targets are known to work:</p>
 <td>arm-linux-gnueabihf</td>
 </tr>
 <tr class="even">
-<td>ppc64-linux-gnu</td>
+<td>ppc64le-linux-gnu</td>
 </tr>
 <tr class="odd">
-<td>ppc64le-linux-gnu</td>
+<td>riscv64-linux-gnu</td>
 </tr>
 <tr class="even">
 <td>s390x-linux-gnu</td>

@@ -45,7 +45,6 @@ class WorkerThreads;
 // The implementation gives an error when trying to commit or uncommit pages that
 // have already been committed or uncommitted.
 class G1PageBasedVirtualSpace {
-  friend class VMStructs;
  private:
   // Reserved area addresses.
   char* _low_boundary;

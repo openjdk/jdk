@@ -31,6 +31,9 @@
 class InstanceKlass;
 
 class AOTClassInitializer : AllStatic {
+
+  static void check_aot_annotations(InstanceKlass* ik);
+
 public:
   // Called by heapShared.cpp to see if src_ik->java_mirror() can be archived in
   // the initialized state.

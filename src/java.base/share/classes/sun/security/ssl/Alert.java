@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,9 @@ import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLProtocolException;
 
 /**
- * SSL/(D)TLS Alter description
+ * SSL/(D)TLS Alert description
  */
-enum Alert {
+public enum Alert {
     // Please refer to TLS Alert Registry for the latest (D)TLS Alert values:
     //     https://www.iana.org/assignments/tls-parameters/
     CLOSE_NOTIFY            ((byte)0,   "close_notify", false),
@@ -103,7 +103,7 @@ enum Alert {
         return null;
     }
 
-    static String nameOf(byte id) {
+    public static String nameOf(byte id) {
         for (Alert al : Alert.values()) {
             if (al.id == id) {
                 return al.description;
@@ -181,6 +181,16 @@ enum Alert {
 
         AlertMessage(TransportContext context,
                 ByteBuffer m) throws IOException {
+            // From RFC 8446 "Implementations
+            // MUST NOT send Handshake and Alert records that have a zero-length
+            // TLSInnerPlaintext.content; if such a message is received, the
+            // receiving implementation MUST terminate the connection with an
+            // "unexpected_message" alert."
+            if (m.remaining() == 0) {
+                throw context.fatal(Alert.UNEXPECTED_MESSAGE,
+                        "Alert fragments must not be zero length.");
+            }
+
             //  struct {
             //      AlertLevel level;
             //      AlertDescription description;
@@ -228,7 +238,7 @@ enum Alert {
             TransportContext tc = (TransportContext)context;
 
             AlertMessage am = new AlertMessage(tc, m);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
                 SSLLogger.fine("Received alert message", am);
             }
 

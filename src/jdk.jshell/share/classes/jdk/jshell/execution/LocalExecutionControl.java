@@ -24,6 +24,7 @@
  */
 package jdk.jshell.execution;
 
+import java.io.ByteArrayInputStream;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.reflect.Field;
@@ -34,6 +35,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassHierarchyResolver;
 import java.lang.classfile.ClassTransform;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
@@ -85,9 +87,7 @@ public class LocalExecutionControl extends DirectExecutionControl {
     @Override
     public void load(ClassBytecodes[] cbcs)
             throws ClassInstallException, NotImplementedException, EngineTerminationException {
-        super.load(Stream.of(cbcs)
-                .map(cbc -> new ClassBytecodes(cbc.name(), instrument(cbc.bytecodes())))
-                .toArray(ClassBytecodes[]::new));
+        super.load(instrument(cbcs));
     }
 
     private static final String CANCEL_CLASS = "REPL.$Cancel$";
@@ -95,8 +95,26 @@ public class LocalExecutionControl extends DirectExecutionControl {
     private static final String STOP_CHECK = "stopCheck";
     private static final ClassDesc CD_ThreadDeath = ClassDesc.of("java.lang.ThreadDeath");
 
-    private static byte[] instrument(byte[] classFile) {
-        var cc = ClassFile.of();
+    private static ClassBytecodes[] instrument(ClassBytecodes[] cbcs) {
+        var cc = ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(
+                ClassHierarchyResolver.defaultResolver().orElse(
+                        ClassHierarchyResolver.ofResourceParsing(cd -> {
+                            String cName = cd.descriptorString();
+                            cName = cName.substring(1, cName.length() - 1).replace('/', '.');
+                            for (ClassBytecodes cbc : cbcs) {
+                                if (cName.equals(cbc.name())) {
+                                    return new ByteArrayInputStream(cbc.bytecodes());
+                                }
+                            }
+                            return null;
+                        }))));
+
+        return Stream.of(cbcs)
+                .map(cbc -> new ClassBytecodes(cbc.name(), instrument(cc, cbc.bytecodes())))
+                .toArray(ClassBytecodes[]::new);
+    }
+
+    private static byte[] instrument(ClassFile cc, byte[] classFile) {
         return cc.transformClass(cc.parse(classFile),
                         ClassTransform.transformingMethodBodies(
                             CodeTransform.ofStateful(StopCheckWeaver::new)));

@@ -162,7 +162,7 @@ void JVMFlag::print_on(outputStream* st, bool withComments, bool printRanges) co
     //      uintx ThresholdTolerance                       = 10                                        {product} {default}
     //     size_t TLABSize                                 = 0                                         {product} {default}
     //      uintx SurvivorRatio                            = 8                                         {product} {default}
-    //     double InitialRAMPercentage                     = 1.562500                                  {product} {default}
+    //     double InitialRAMPercentage                     = 0.000000                                  {product} {default}
     //      ccstr CompileCommandFile                       = MyFile.cmd                                {product} {command line}
     //  ccstrlist CompileOnly                              = Method1
     //            CompileOnly                             += Method2                                   {product} {command line}
@@ -711,7 +711,7 @@ void JVMFlag::printFlags(outputStream* out, bool withComments, bool printRanges,
     for (size_t i = 0; i < length; i++) {
       const bool skip = (skipDefaults && flagTable[i].is_default());
       const bool visited = iteratorMarkers.at(i);
-      if (!visited && flagTable[i].is_unlocked() && !skip) {
+      if (!visited && !skip) {
         if ((bestFlag == nullptr) || (strcmp(bestFlag->name(), flagTable[i].name()) > 0)) {
           bestFlag = &flagTable[i];
           bestFlagIndex = i;

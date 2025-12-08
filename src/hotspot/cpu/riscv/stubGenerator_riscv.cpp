@@ -683,10 +683,11 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ pc();
 
     if (UseBlockZeroing) {
-      // Ensure count >= 2*CacheLineSize so that it still deserves a cbo.zero
-      // after alignment.
+      int zicboz_block_size = VM_Version::zicboz_block_size.value();
+      // Ensure count >= 2 * zicboz_block_size so that it still deserves
+      // a cbo.zero after alignment.
       Label small;
-      int low_limit = MAX2(2 * CacheLineSize, BlockZeroingLowLimit) / wordSize;
+      int low_limit = MAX2(2 * zicboz_block_size, (int)BlockZeroingLowLimit) / wordSize;
       __ mv(tmp1, low_limit);
       __ blt(cnt, tmp1, small);
       __ zero_dcache_blocks(base, cnt, tmp1, tmp2);
@@ -731,8 +732,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   // s and d are adjusted to point to the remaining words to copy
   //
-  void generate_copy_longs(StubId stub_id, Label &start,
-                           Register s, Register d, Register count) {
+  address generate_copy_longs(StubId stub_id, Register s, Register d, Register count) {
     BasicType type;
     copy_direction direction;
     switch (stub_id) {
@@ -762,7 +762,7 @@ class StubGenerator: public StubCodeGenerator {
     Label again, drain;
     StubCodeMark mark(this, stub_id);
     __ align(CodeEntryAlignment);
-    __ bind(start);
+    address start = __ pc();
 
     if (direction == copy_forwards) {
       __ sub(s, s, bias);
@@ -878,9 +878,9 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     __ ret();
-  }
 
-  Label copy_f, copy_b;
+    return start;
+  }
 
   typedef void (MacroAssembler::*copy_insn)(Register Rd, const Address &adr, Register temp);
 
@@ -1098,8 +1098,8 @@ class StubGenerator: public StubCodeGenerator {
   //   stub_id - is used to name the stub and identify all details of
   //             how to perform the copy.
   //
-  //   entry - is assigned to the stub's post push entry point unless
-  //           it is null
+  //   nopush_entry - is assigned to the stub's post push entry point
+  //                  unless it is null
   //
   // Inputs:
   //   c_rarg0   - source array address
@@ -1110,11 +1110,11 @@ class StubGenerator: public StubCodeGenerator {
   // the hardware handle it.  The two dwords within qwords that span
   // cache line boundaries will still be loaded and stored atomically.
   //
-  // Side Effects: entry is set to the (post push) entry point so it
-  //               can be used by the corresponding conjoint copy
-  //               method
+  // Side Effects: nopush_entry is set to the (post push) entry point
+  //               so it can be used by the corresponding conjoint
+  //               copy method
   //
-  address generate_disjoint_copy(StubId stub_id, address* entry) {
+  address generate_disjoint_copy(StubId stub_id, address* nopush_entry) {
     size_t size;
     bool aligned;
     bool is_oop;
@@ -1203,8 +1203,8 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ pc();
     __ enter();
 
-    if (entry != nullptr) {
-      *entry = __ pc();
+    if (nopush_entry != nullptr) {
+     *nopush_entry = __ pc();
       // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
       BLOCK_COMMENT("Entry:");
     }
@@ -1239,7 +1239,7 @@ class StubGenerator: public StubCodeGenerator {
       }
     }
 
-    bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, t0, RegSet());
+    bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, t0);
 
     __ leave();
     __ mv(x10, zr); // return 0
@@ -1255,8 +1255,8 @@ class StubGenerator: public StubCodeGenerator {
   //             corresponding disjoint copy routine which can be
   //             jumped to if the ranges do not actually overlap
   //
-  //   entry - is assigned to the stub's post push entry point unless
-  //           it is null
+  //   nopush_entry - is assigned to the stub's post push entry point
+  //                 unless it is null
   //
   // Inputs:
   //   c_rarg0   - source array address
@@ -1268,10 +1268,10 @@ class StubGenerator: public StubCodeGenerator {
   // cache line boundaries will still be loaded and stored atomically.
   //
   // Side Effects:
-  //   entry is set to the no-overlap entry point so it can be used by
-  //   some other conjoint copy method
+  //   nopush_entry is set to the no-overlap entry point so it can be
+  //   used by some other conjoint copy method
   //
-  address generate_conjoint_copy(StubId stub_id, address nooverlap_target, address *entry) {
+  address generate_conjoint_copy(StubId stub_id, address nooverlap_target, address *nopush_entry) {
     const Register s = c_rarg0, d = c_rarg1, count = c_rarg2;
     RegSet saved_regs = RegSet::of(s, d, count);
     int size;
@@ -1358,8 +1358,8 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ pc();
     __ enter();
 
-    if (entry != nullptr) {
-      *entry = __ pc();
+    if (nopush_entry != nullptr) {
+      *nopush_entry = __ pc();
       // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
       BLOCK_COMMENT("Entry:");
     }
@@ -1369,7 +1369,7 @@ class StubGenerator: public StubCodeGenerator {
     __ slli(t1, count, exact_log2(size));
     Label L_continue;
     __ bltu(t0, t1, L_continue);
-    __ j(nooverlap_target);
+    __ j(RuntimeAddress(nooverlap_target));
     __ bind(L_continue);
 
     DecoratorSet decorators = IN_HEAP | IS_ARRAY;
@@ -1401,7 +1401,7 @@ class StubGenerator: public StubCodeGenerator {
         verify_oop_array(size, d, count, t2);
       }
     }
-    bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, t0, RegSet());
+    bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, t0);
     __ leave();
     __ mv(x10, zr); // return 0
     __ ret();
@@ -1444,7 +1444,7 @@ class StubGenerator: public StubCodeGenerator {
   //    x10 ==  0  -  success
   //    x10 == -1^K - failure, where K is partial transfer count
   //
-  address generate_checkcast_copy(StubId stub_id, address* entry) {
+  address generate_checkcast_copy(StubId stub_id, address* nopush_entry) {
     bool dest_uninitialized;
     switch (stub_id) {
     case StubId::stubgen_checkcast_arraycopy_id:
@@ -1467,7 +1467,6 @@ class StubGenerator: public StubCodeGenerator {
     const Register ckval       = c_rarg4;   // super_klass
 
     RegSet wb_pre_saved_regs   = RegSet::range(c_rarg0, c_rarg4);
-    RegSet wb_post_saved_regs  = RegSet::of(count);
 
     // Registers used as temps (x7, x9, x18 are save-on-entry)
     const Register count_save  = x19;       // orig elementscount
@@ -1495,8 +1494,8 @@ class StubGenerator: public StubCodeGenerator {
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
     // Caller of this entry point must set up the argument registers.
-    if (entry != nullptr) {
-      *entry = __ pc();
+    if (nopush_entry != nullptr) {
+      *nopush_entry = __ pc();
       BLOCK_COMMENT("Entry:");
     }
 
@@ -1588,7 +1587,7 @@ class StubGenerator: public StubCodeGenerator {
     __ beqz(count, L_done_pop);
 
     __ BIND(L_do_card_marks);
-    bs->arraycopy_epilogue(_masm, decorators, is_oop, start_to, count_save, t0, wb_post_saved_regs);
+    bs->arraycopy_epilogue(_masm, decorators, is_oop, start_to, count_save, t0);
 
     __ bind(L_done_pop);
     __ pop_reg(RegSet::of(x7, x9, x18, x19), sp);
@@ -2293,13 +2292,21 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   void generate_arraycopy_stubs() {
-    address entry                     = nullptr;
-    address entry_jbyte_arraycopy     = nullptr;
-    address entry_jshort_arraycopy    = nullptr;
-    address entry_jint_arraycopy      = nullptr;
-    address entry_oop_arraycopy       = nullptr;
-    address entry_jlong_arraycopy     = nullptr;
-    address entry_checkcast_arraycopy = nullptr;
+    // Some copy stubs publish a normal entry and then a 2nd 'fallback'
+    // entry immediately following their stack push. This can be used
+    // as a post-push branch target for compatible stubs when they
+    // identify a special case that can be handled by the fallback
+    // stub e.g a disjoint copy stub may be use as a special case
+    // fallback for its compatible conjoint copy stub.
+    //
+    // A no push entry is always returned in the following local and
+    // then published by assigning to the appropriate entry field in
+    // class StubRoutines. The entry value is then passed to the
+    // generator for the compatible stub. That means the entry must be
+    // listed when saving to/restoring from the AOT cache, ensuring
+    // that the inter-stub jumps are noted at AOT-cache save and
+    // relocated at AOT cache load.
+    address nopush_entry = nullptr;
 
     // generate the common exit first so later stubs can rely on it if
     // they want an UnsafeMemoryAccess exit non-local to the stub
@@ -2307,72 +2314,117 @@ class StubGenerator: public StubCodeGenerator {
     // register the stub as the default exit with class UnsafeMemoryAccess
     UnsafeMemoryAccess::set_common_exit_stub_pc(StubRoutines::_unsafecopy_common_exit);
 
-    generate_copy_longs(StubId::stubgen_copy_byte_f_id, copy_f, c_rarg0, c_rarg1, t1);
-    generate_copy_longs(StubId::stubgen_copy_byte_b_id, copy_b, c_rarg0, c_rarg1, t1);
+    // generate and publish riscv-specific bulk copy routines first
+    // so we can call them from other copy stubs
+    StubRoutines::riscv::_copy_byte_f = generate_copy_longs(StubId::stubgen_copy_byte_f_id, c_rarg0, c_rarg1, t1);
+    StubRoutines::riscv::_copy_byte_b = generate_copy_longs(StubId::stubgen_copy_byte_b_id, c_rarg0, c_rarg1, t1);
 
     StubRoutines::riscv::_zero_blocks = generate_zero_blocks();
 
     //*** jbyte
     // Always need aligned and unaligned versions
-    StubRoutines::_jbyte_disjoint_arraycopy          = generate_disjoint_copy(StubId::stubgen_jbyte_disjoint_arraycopy_id, &entry);
-    StubRoutines::_jbyte_arraycopy                   = generate_conjoint_copy(StubId::stubgen_jbyte_arraycopy_id, entry, &entry_jbyte_arraycopy);
-    StubRoutines::_arrayof_jbyte_disjoint_arraycopy  = generate_disjoint_copy(StubId::stubgen_arrayof_jbyte_disjoint_arraycopy_id, &entry);
-    StubRoutines::_arrayof_jbyte_arraycopy           = generate_conjoint_copy(StubId::stubgen_arrayof_jbyte_arraycopy_id, entry, nullptr);
+    StubRoutines::_jbyte_disjoint_arraycopy          = generate_disjoint_copy(StubId::stubgen_jbyte_disjoint_arraycopy_id, &nopush_entry);
+    // disjoint nopush entry is needed by conjoint copy
+    StubRoutines::_jbyte_disjoint_arraycopy_nopush  = nopush_entry;
+    StubRoutines::_jbyte_arraycopy                   = generate_conjoint_copy(StubId::stubgen_jbyte_arraycopy_id, StubRoutines::_jbyte_disjoint_arraycopy_nopush, &nopush_entry);
+    // conjoint nopush entry is needed by generic/unsafe copy
+    StubRoutines::_jbyte_arraycopy_nopush = nopush_entry;
+    StubRoutines::_arrayof_jbyte_disjoint_arraycopy  = generate_disjoint_copy(StubId::stubgen_arrayof_jbyte_disjoint_arraycopy_id, &nopush_entry);
+    // disjoint arrayof nopush entry is needed by conjoint copy
+    StubRoutines::_arrayof_jbyte_disjoint_arraycopy_nopush  = nopush_entry;
+    StubRoutines::_arrayof_jbyte_arraycopy           = generate_conjoint_copy(StubId::stubgen_arrayof_jbyte_arraycopy_id, StubRoutines::_arrayof_jbyte_disjoint_arraycopy_nopush, nullptr);
 
     //*** jshort
     // Always need aligned and unaligned versions
-    StubRoutines::_jshort_disjoint_arraycopy         = generate_disjoint_copy(StubId::stubgen_jshort_disjoint_arraycopy_id, &entry);
-    StubRoutines::_jshort_arraycopy                  = generate_conjoint_copy(StubId::stubgen_jshort_arraycopy_id, entry, &entry_jshort_arraycopy);
-    StubRoutines::_arrayof_jshort_disjoint_arraycopy = generate_disjoint_copy(StubId::stubgen_arrayof_jshort_disjoint_arraycopy_id, &entry);
-    StubRoutines::_arrayof_jshort_arraycopy          = generate_conjoint_copy(StubId::stubgen_arrayof_jshort_arraycopy_id, entry, nullptr);
+    StubRoutines::_jshort_disjoint_arraycopy         = generate_disjoint_copy(StubId::stubgen_jshort_disjoint_arraycopy_id, &nopush_entry);
+    // disjoint nopush entry is needed by conjoint copy
+    StubRoutines::_jshort_disjoint_arraycopy_nopush  = nopush_entry;
+    StubRoutines::_jshort_arraycopy                  = generate_conjoint_copy(StubId::stubgen_jshort_arraycopy_id, StubRoutines::_jshort_disjoint_arraycopy_nopush, &nopush_entry);
+    // conjoint nopush entry is used by generic/unsafe copy
+    StubRoutines::_jshort_arraycopy_nopush = nopush_entry;
+    StubRoutines::_arrayof_jshort_disjoint_arraycopy = generate_disjoint_copy(StubId::stubgen_arrayof_jshort_disjoint_arraycopy_id, &nopush_entry);
+    // disjoint arrayof nopush entry is needed by conjoint copy
+    StubRoutines::_arrayof_jshort_disjoint_arraycopy_nopush = nopush_entry;
+    StubRoutines::_arrayof_jshort_arraycopy          = generate_conjoint_copy(StubId::stubgen_arrayof_jshort_arraycopy_id, StubRoutines::_arrayof_jshort_disjoint_arraycopy_nopush, nullptr);
 
     //*** jint
     // Aligned versions
-    StubRoutines::_arrayof_jint_disjoint_arraycopy   = generate_disjoint_copy(StubId::stubgen_arrayof_jint_disjoint_arraycopy_id, &entry);
-    StubRoutines::_arrayof_jint_arraycopy            = generate_conjoint_copy(StubId::stubgen_arrayof_jint_arraycopy_id, entry, &entry_jint_arraycopy);
+    StubRoutines::_arrayof_jint_disjoint_arraycopy   = generate_disjoint_copy(StubId::stubgen_arrayof_jint_disjoint_arraycopy_id, &nopush_entry);
+    // disjoint arrayof nopush entry is needed by conjoint copy
+    StubRoutines::_arrayof_jint_disjoint_arraycopy_nopush = nopush_entry;
+    StubRoutines::_arrayof_jint_arraycopy            = generate_conjoint_copy(StubId::stubgen_arrayof_jint_arraycopy_id, StubRoutines::_arrayof_jint_disjoint_arraycopy_nopush, nullptr);
     // In 64 bit we need both aligned and unaligned versions of jint arraycopy.
     // entry_jint_arraycopy always points to the unaligned version
-    StubRoutines::_jint_disjoint_arraycopy           = generate_disjoint_copy(StubId::stubgen_jint_disjoint_arraycopy_id, &entry);
-    StubRoutines::_jint_arraycopy                  = generate_conjoint_copy(StubId::stubgen_jint_arraycopy_id, entry, &entry_jint_arraycopy);
+    StubRoutines::_jint_disjoint_arraycopy           = generate_disjoint_copy(StubId::stubgen_jint_disjoint_arraycopy_id, &nopush_entry);
+    // disjoint nopush entry is needed by conjoint copy
+    StubRoutines::_jint_disjoint_arraycopy_nopush  = nopush_entry;
+    StubRoutines::_jint_arraycopy                  = generate_conjoint_copy(StubId::stubgen_jint_arraycopy_id, StubRoutines::_jint_disjoint_arraycopy_nopush, &nopush_entry);
+    // conjoint nopush entry is needed by generic/unsafe copy
+    StubRoutines::_jint_arraycopy_nopush = nopush_entry;
 
     //*** jlong
     // It is always aligned
-    StubRoutines::_arrayof_jlong_disjoint_arraycopy = generate_disjoint_copy(StubId::stubgen_arrayof_jlong_disjoint_arraycopy_id, &entry);
-    StubRoutines::_arrayof_jlong_arraycopy          = generate_conjoint_copy(StubId::stubgen_arrayof_jlong_arraycopy_id, entry, &entry_jlong_arraycopy);
+    StubRoutines::_arrayof_jlong_disjoint_arraycopy = generate_disjoint_copy(StubId::stubgen_arrayof_jlong_disjoint_arraycopy_id, &nopush_entry);
+    // disjoint arrayof nopush entry is needed by conjoint copy
+    StubRoutines::_arrayof_jlong_disjoint_arraycopy_nopush = nopush_entry;
+    StubRoutines::_arrayof_jlong_arraycopy          = generate_conjoint_copy(StubId::stubgen_arrayof_jlong_arraycopy_id, StubRoutines::_arrayof_jlong_disjoint_arraycopy_nopush, &nopush_entry);
+    // conjoint nopush entry is needed by generic/unsafe copy
+    StubRoutines::_jlong_arraycopy_nopush = nopush_entry;
+    // disjoint normal/nopush and conjoint normal entries are not
+    // generated since the arrayof versions are the same
     StubRoutines::_jlong_disjoint_arraycopy         = StubRoutines::_arrayof_jlong_disjoint_arraycopy;
+    StubRoutines::_jlong_disjoint_arraycopy_nopush = StubRoutines::_arrayof_jlong_disjoint_arraycopy_nopush;
     StubRoutines::_jlong_arraycopy                  = StubRoutines::_arrayof_jlong_arraycopy;
 
     //*** oops
     StubRoutines::_arrayof_oop_disjoint_arraycopy
-      = generate_disjoint_copy(StubId::stubgen_arrayof_oop_disjoint_arraycopy_id, &entry);
+      = generate_disjoint_copy(StubId::stubgen_arrayof_oop_disjoint_arraycopy_id, &nopush_entry);
+      // disjoint arrayof nopush entry is needed by conjoint copy
+    StubRoutines::_arrayof_oop_disjoint_arraycopy_nopush = nopush_entry;
     StubRoutines::_arrayof_oop_arraycopy
-      = generate_conjoint_copy(StubId::stubgen_arrayof_oop_arraycopy_id, entry, &entry_oop_arraycopy);
+      = generate_conjoint_copy(StubId::stubgen_arrayof_oop_arraycopy_id, StubRoutines::_arrayof_oop_disjoint_arraycopy_nopush, &nopush_entry);
+    // conjoint arrayof nopush entry is needed by generic/unsafe copy
+    StubRoutines::_oop_arraycopy_nopush = nopush_entry;
     // Aligned versions without pre-barriers
     StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit
-      = generate_disjoint_copy(StubId::stubgen_arrayof_oop_disjoint_arraycopy_uninit_id, &entry);
-    StubRoutines::_arrayof_oop_arraycopy_uninit
-      = generate_conjoint_copy(StubId::stubgen_arrayof_oop_arraycopy_uninit_id, entry, nullptr);
+      = generate_disjoint_copy(StubId::stubgen_arrayof_oop_disjoint_arraycopy_uninit_id, &nopush_entry);
+    // disjoint arrayof+uninit nopush entry is needed by conjoint copy
+    StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit_nopush = nopush_entry;
 
+    // note that we don't need a returned nopush entry because the
+    // generic/unsafe copy does not cater for uninit arrays.
+    StubRoutines::_arrayof_oop_arraycopy_uninit
+      = generate_conjoint_copy(StubId::stubgen_arrayof_oop_arraycopy_uninit_id, StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit_nopush, nullptr);
+
+    // for oop copies reuse arrayof entries for non-arrayof cases
     StubRoutines::_oop_disjoint_arraycopy            = StubRoutines::_arrayof_oop_disjoint_arraycopy;
+    StubRoutines::_oop_disjoint_arraycopy_nopush = StubRoutines::_arrayof_oop_disjoint_arraycopy_nopush;
     StubRoutines::_oop_arraycopy                     = StubRoutines::_arrayof_oop_arraycopy;
     StubRoutines::_oop_disjoint_arraycopy_uninit     = StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit;
+    StubRoutines::_oop_disjoint_arraycopy_uninit_nopush = StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit_nopush;
     StubRoutines::_oop_arraycopy_uninit              = StubRoutines::_arrayof_oop_arraycopy_uninit;
 
-    StubRoutines::_checkcast_arraycopy        = generate_checkcast_copy(StubId::stubgen_checkcast_arraycopy_id, &entry_checkcast_arraycopy);
+    StubRoutines::_checkcast_arraycopy        = generate_checkcast_copy(StubId::stubgen_checkcast_arraycopy_id, &nopush_entry);
+    // checkcast nopush entry is needed by generic copy
+    StubRoutines::_checkcast_arraycopy_nopush = nopush_entry;
+    // note that we don't need a returned nopush entry because the
+    // generic copy does not cater for uninit arrays.
     StubRoutines::_checkcast_arraycopy_uninit = generate_checkcast_copy(StubId::stubgen_checkcast_arraycopy_uninit_id, nullptr);
 
 
-    StubRoutines::_unsafe_arraycopy    = generate_unsafe_copy(entry_jbyte_arraycopy,
-                                                              entry_jshort_arraycopy,
-                                                              entry_jint_arraycopy,
-                                                              entry_jlong_arraycopy);
+    // unsafe arraycopy may fallback on conjoint stubs
+    StubRoutines::_unsafe_arraycopy    = generate_unsafe_copy(StubRoutines::_jbyte_arraycopy_nopush,
+                                                              StubRoutines::_jshort_arraycopy_nopush,
+                                                              StubRoutines::_jint_arraycopy_nopush,
+                                                              StubRoutines::_jlong_arraycopy_nopush);
 
-    StubRoutines::_generic_arraycopy   = generate_generic_copy(entry_jbyte_arraycopy,
-                                                               entry_jshort_arraycopy,
-                                                               entry_jint_arraycopy,
-                                                               entry_oop_arraycopy,
-                                                               entry_jlong_arraycopy,
-                                                               entry_checkcast_arraycopy);
+    // generic arraycopy may fallback on conjoint stubs
+    StubRoutines::_generic_arraycopy   = generate_generic_copy(StubRoutines::_jbyte_arraycopy_nopush,
+                                                               StubRoutines::_jshort_arraycopy_nopush,
+                                                               StubRoutines::_jint_arraycopy_nopush,
+                                                               StubRoutines::_oop_arraycopy_nopush,
+                                                               StubRoutines::_jlong_arraycopy_nopush,
+                                                               StubRoutines::_checkcast_arraycopy_nopush);
 
     StubRoutines::_jbyte_fill = generate_fill(StubId::stubgen_jbyte_fill_id);
     StubRoutines::_jshort_fill = generate_fill(StubId::stubgen_jshort_fill_id);
@@ -2411,7 +2463,7 @@ class StubGenerator: public StubCodeGenerator {
   // Inputs:
   //   c_rarg0   - source byte array address
   //   c_rarg1   - destination byte array address
-  //   c_rarg2   - K (key) in little endian int array
+  //   c_rarg2   - sessionKe (key) in little endian int array
   //
   address generate_aescrypt_encryptBlock() {
     assert(UseAESIntrinsics, "need AES instructions (Zvkned extension) support");
@@ -2441,8 +2493,8 @@ class StubGenerator: public StubCodeGenerator {
     __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
     __ vle32_v(res, from);
 
-    __ mv(t2, 52);
-    __ blt(keylen, t2, L_aes128);
+    __ mv(t2, 52); // key length could be only {11, 13, 15} * 4 = {44, 52, 60}
+    __ bltu(keylen, t2, L_aes128);
     __ beq(keylen, t2, L_aes192);
     // Else we fallthrough to the biggest case (256-bit key size)
 
@@ -2490,7 +2542,7 @@ class StubGenerator: public StubCodeGenerator {
   // Inputs:
   //   c_rarg0   - source byte array address
   //   c_rarg1   - destination byte array address
-  //   c_rarg2   - K (key) in little endian int array
+  //   c_rarg2   - sessionKe (key) in little endian int array
   //
   address generate_aescrypt_decryptBlock() {
     assert(UseAESIntrinsics, "need AES instructions (Zvkned extension) support");
@@ -2520,8 +2572,8 @@ class StubGenerator: public StubCodeGenerator {
     __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
     __ vle32_v(res, from);
 
-    __ mv(t2, 52);
-    __ blt(keylen, t2, L_aes128);
+    __ mv(t2, 52); // key length could be only {11, 13, 15} * 4 = {44, 52, 60}
+    __ bltu(keylen, t2, L_aes128);
     __ beq(keylen, t2, L_aes192);
     // Else we fallthrough to the biggest case (256-bit key size)
 
@@ -2548,6 +2600,223 @@ class StubGenerator: public StubCodeGenerator {
     generate_aes_decrypt(res, working_vregs, 11);
     __ vse32_v(res, to);
     __ mv(c_rarg0, 0);
+    __ leave();
+    __ ret();
+
+    return start;
+  }
+
+  // Load big-endian 128-bit from memory.
+  void be_load_counter_128(Register counter_hi, Register counter_lo, Register counter) {
+    __ ld(counter_lo, Address(counter, 8)); // Load 128-bits from counter
+    __ ld(counter_hi, Address(counter));
+    __ rev8(counter_lo, counter_lo);        // Convert big-endian to little-endian
+    __ rev8(counter_hi, counter_hi);
+  }
+
+  // Little-endian 128-bit + 64-bit -> 128-bit addition.
+  void add_counter_128(Register counter_hi, Register counter_lo) {
+    assert_different_registers(counter_hi, counter_lo, t0);
+    __ addi(counter_lo, counter_lo, 1);
+    __ seqz(t0, counter_lo);                // Check for result overflow
+    __ add(counter_hi, counter_hi, t0);     // Add 1 if overflow otherwise 0
+  }
+
+  // Store big-endian 128-bit to memory.
+  void be_store_counter_128(Register counter_hi, Register counter_lo, Register counter) {
+    assert_different_registers(counter_hi, counter_lo, t0, t1);
+    __ rev8(t0, counter_lo);                // Convert little-endian to big-endian
+    __ rev8(t1, counter_hi);
+    __ sd(t0, Address(counter, 8));         // Store 128-bits to counter
+    __ sd(t1, Address(counter));
+  }
+
+  void counterMode_AESCrypt(int round, Register in, Register out, Register key, Register counter,
+                            Register input_len,  Register saved_encrypted_ctr, Register used_ptr) {
+    // Algorithm:
+    //
+    //   generate_aes_loadkeys();
+    //   load_counter_128(counter_hi, counter_lo, counter);
+    //
+    //   L_next:
+    //     if (used >= BLOCK_SIZE) goto L_main_loop;
+    //
+    //   L_encrypt_next:
+    //       *out = *in ^ saved_encrypted_ctr[used]);
+    //       out++; in++; used++; len--;
+    //       if (len == 0) goto L_exit;
+    //       goto L_next;
+    //
+    //   L_main_loop:
+    //     if (len == 0) goto L_exit;
+    //     saved_encrypted_ctr = generate_aes_encrypt(counter);
+    //
+    //     add_counter_128(counter_hi, counter_lo);
+    //     be_store_counter_128(counter_hi, counter_lo, counter);
+    //     used = 0;
+    //
+    //     if(len < BLOCK_SIZE) goto L_encrypt_next;
+    //
+    //     v_in = load_16Byte(in);
+    //     v_out = load_16Byte(out);
+    //     v_saved_encrypted_ctr = load_16Byte(saved_encrypted_ctr);
+    //     v_out = v_in ^ v_saved_encrypted_ctr;
+    //     out += BLOCK_SIZE;
+    //     in += BLOCK_SIZE;
+    //     len -= BLOCK_SIZE;
+    //     used = BLOCK_SIZE;
+    //     goto L_main_loop;
+    //
+    //
+    //   L_exit:
+    //     store(used);
+    //     result = input_len
+    //     return result;
+
+    const Register used          = x28;
+    const Register len           = x29;
+    const Register counter_hi    = x30;
+    const Register counter_lo    = x31;
+    const Register block_size    = t2;
+
+    const unsigned int BLOCK_SIZE = 16;
+
+    VectorRegister working_vregs[] = {
+      v1, v2, v3, v4, v5, v6, v7, v8,
+      v9, v10, v11, v12, v13, v14, v15
+    };
+
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+
+    __ lwu(used, Address(used_ptr));
+    __ mv(len, input_len);
+    __ mv(block_size, BLOCK_SIZE);
+
+    // load keys to working_vregs according to round
+    generate_aes_loadkeys(key, working_vregs, round);
+
+    // 128-bit big-endian load
+    be_load_counter_128(counter_hi, counter_lo, counter);
+
+    Label L_next, L_encrypt_next, L_main_loop, L_exit;
+    // Check the last saved_encrypted_ctr used value, we fall through
+    // to L_encrypt_next when the used value lower than block_size
+    __ bind(L_next);
+    __ bgeu(used, block_size, L_main_loop);
+
+    // There is still data left fewer than block_size after L_main_loop
+    // or last used, we encrypt them one by one.
+    __ bind(L_encrypt_next);
+    __ add(t0, saved_encrypted_ctr, used);
+    __ lbu(t1, Address(t0));
+    __ lbu(t0, Address(in));
+    __ xorr(t1, t1, t0);
+    __ sb(t1, Address(out));
+    __ addi(in, in, 1);
+    __ addi(out, out, 1);
+    __ addi(used, used, 1);
+    __ subi(len, len, 1);
+    __ beqz(len, L_exit);
+    __ j(L_next);
+
+    // We will calculate the next saved_encrypted_ctr and encrypt the blocks of data
+    // one by one until there is less than a full block remaining if len not zero
+    __ bind(L_main_loop);
+    __ beqz(len, L_exit);
+    __ vle32_v(v16, counter);
+
+    // encrypt counter according to round
+    generate_aes_encrypt(v16, working_vregs, round);
+
+    __ vse32_v(v16, saved_encrypted_ctr);
+
+    // 128-bit little-endian increment
+    add_counter_128(counter_hi, counter_lo);
+    // 128-bit big-endian store
+    be_store_counter_128(counter_hi, counter_lo, counter);
+
+    __ mv(used, 0);
+    // Check if we have a full block_size
+    __ bltu(len, block_size, L_encrypt_next);
+
+    // We have one full block to encrypt at least
+    __ vle32_v(v17, in);
+    __ vxor_vv(v16, v16, v17);
+    __ vse32_v(v16, out);
+    __ add(out, out, block_size);
+    __ add(in, in, block_size);
+    __ sub(len, len, block_size);
+    __ mv(used, block_size);
+    __ j(L_main_loop);
+
+    __ bind(L_exit);
+    __ sw(used, Address(used_ptr));
+    __ mv(x10, input_len);
+    __ leave();
+    __ ret();
+  };
+
+  // CTR AES crypt.
+  // Arguments:
+  //
+  // Inputs:
+  //   c_rarg0   - source byte array address
+  //   c_rarg1   - destination byte array address
+  //   c_rarg2   - K (key) in little endian int array
+  //   c_rarg3   - counter vector byte array address
+  //   c_rarg4   - input length
+  //   c_rarg5   - saved encryptedCounter start
+  //   c_rarg6   - saved used length
+  //
+  // Output:
+  //   x10       - input length
+  //
+  address generate_counterMode_AESCrypt() {
+    assert(UseZvkn, "need AES instructions (Zvkned extension) support");
+    assert(UseAESCTRIntrinsics, "need AES instructions (Zvkned extension) support");
+    assert(UseZbb, "need basic bit manipulation (Zbb extension) support");
+
+    __ align(CodeEntryAlignment);
+    StubId stub_id = StubId::stubgen_counterMode_AESCrypt_id;
+    StubCodeMark mark(this, stub_id);
+
+    const Register in                  = c_rarg0;
+    const Register out                 = c_rarg1;
+    const Register key                 = c_rarg2;
+    const Register counter             = c_rarg3;
+    const Register input_len           = c_rarg4;
+    const Register saved_encrypted_ctr = c_rarg5;
+    const Register used_len_ptr        = c_rarg6;
+
+    const Register keylen              = c_rarg7; // temporary register
+
+    const address start = __ pc();
+    __ enter();
+
+    Label L_exit;
+    __ beqz(input_len, L_exit);
+
+    Label L_aes128, L_aes192;
+    // Compute #rounds for AES based on the length of the key array
+    __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
+    __ mv(t0, 52); // key length could be only {11, 13, 15} * 4 = {44, 52, 60}
+    __ bltu(keylen, t0, L_aes128);
+    __ beq(keylen, t0, L_aes192);
+    // Else we fallthrough to the biggest case (256-bit key size)
+
+    // Note: the following function performs crypt with key += 15*16
+    counterMode_AESCrypt(15, in, out, key, counter, input_len, saved_encrypted_ctr, used_len_ptr);
+
+    // Note: the following function performs crypt with key += 13*16
+    __ bind(L_aes192);
+    counterMode_AESCrypt(13, in, out, key, counter, input_len, saved_encrypted_ctr, used_len_ptr);
+
+    // Note: the following function performs crypt with key += 11*16
+    __ bind(L_aes128);
+    counterMode_AESCrypt(11, in, out, key, counter, input_len, saved_encrypted_ctr, used_len_ptr);
+
+    __ bind(L_exit);
+    __ mv(x10, input_len);
     __ leave();
     __ ret();
 
@@ -6357,18 +6626,8 @@ class StubGenerator: public StubCodeGenerator {
     __ ret();
 
     __ bind(NaN_SLOW);
-    __ fmv_x_w(dst, src);
 
-    // preserve the payloads of non-canonical NaNs.
-    __ srai(dst, dst, 13);
-    // preserve the sign bit.
-    __ srai(t1, dst, 13);
-    __ slli(t1, t1, 10);
-    __ mv(t0, 0x3ff);
-    __ orr(t1, t1, t0);
-
-    // get the result by merging sign bit and payloads of preserved non-canonical NaNs.
-    __ andr(dst, dst, t1);
+    __ float_to_float16_NaN(dst, src, t0, t1);
 
     __ ret();
     return entry;
@@ -6581,6 +6840,24 @@ static const int64_t right_3_bits = right_n_bits(3);
     return start;
   }
 
+  address generate_arrays_hashcode_powers_of_31() {
+    assert(UseRVV, "sanity");
+    const int lmul = 2;
+    const int stride = MaxVectorSize / sizeof(jint) * lmul;
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "arrays_hashcode_powers_of_31");
+    address start = __ pc();
+    for (int i = stride; i >= 0; i--) {
+        jint power_of_31 = 1;
+        for (int j = i; j > 0; j--) {
+          power_of_31 = java_multiply(power_of_31, 31);
+        }
+        __ emit_int32(power_of_31);
+    }
+
+    return start;
+  }
+
 #endif // COMPILER2
 
   /**
@@ -6766,6 +7043,10 @@ static const int64_t right_3_bits = right_n_bits(3);
       StubRoutines::_aescrypt_decryptBlock = generate_aescrypt_decryptBlock();
     }
 
+    if (UseAESCTRIntrinsics) {
+      StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt();
+    }
+
     if (UsePoly1305Intrinsics) {
       StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks();
     }
@@ -6773,6 +7054,10 @@ static const int64_t right_3_bits = right_n_bits(3);
     if (UseRVV) {
       StubRoutines::_bigIntegerLeftShiftWorker = generate_bigIntegerLeftShift();
       StubRoutines::_bigIntegerRightShiftWorker = generate_bigIntegerRightShift();
+    }
+
+    if (UseVectorizedHashCodeIntrinsic && UseRVV) {
+      StubRoutines::riscv::_arrays_hashcode_powers_of_31 = generate_arrays_hashcode_powers_of_31();
     }
 
     if (UseSHA256Intrinsics) {
