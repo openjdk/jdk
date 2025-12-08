@@ -136,6 +136,10 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
         }
     }
 
+    private Executor hdiutil(String... args) {
+        return Executor.of(sysEnv.hdiutil().toString()).args(args).storeStreamsInFiles();
+    }
+
     private void prepareDMGSetupScript() throws IOException {
         Path dmgSetup = volumeScript();
         Log.verbose(MessageFormat.format(
@@ -249,9 +253,7 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
 
         // create temp image
         try {
-            Executor.of(
-                    sysEnv.hdiutil().toString(),
-                    "create",
+            hdiutil("create",
                     hdiUtilVerbosityFlag,
                     "-srcfolder", normalizedAbsolutePathString(srcFolder),
                     "-volname", volumeName(),
@@ -270,8 +272,7 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
             // not be bigger, but it will able to hold additional 50 megabytes of data.
             // We need extra room for icons and background image. When we providing
             // actual files to hdiutil, it will create DMG with ~50 megabytes extra room.
-            var exec = Executor.of(
-                    sysEnv.hdiutil().toString(),
+            var exec = hdiutil(
                     "create",
                     hdiUtilVerbosityFlag,
                     "-size", String.valueOf(size),
@@ -287,9 +288,7 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
         final Path mountedVolume = volumePath();
 
         // mount temp image
-        Executor.of(
-                sysEnv.hdiutil().toString(),
-                "attach",
+        hdiutil("attach",
                 normalizedAbsolutePathString(protoDMG),
                 hdiUtilVerbosityFlag,
                 "-mountroot", mountedVolume.getParent().toString()).executeExpectSuccess();
@@ -340,13 +339,15 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
                     Executor.of(
                             sysEnv.setFileUtility().orElseThrow().toString(),
                             "-c", "icnC",
-                            normalizedAbsolutePathString(volumeIconFile)).executeExpectSuccess();
+                            normalizedAbsolutePathString(volumeIconFile)
+                    ).executeExpectSuccess();
                     volumeIconFile.toFile().setReadOnly();
 
                     Executor.of(
                             sysEnv.setFileUtility().orElseThrow().toString(),
                             "-a", "C",
-                            normalizedAbsolutePathString(mountedVolume)).executeExpectSuccess();
+                            normalizedAbsolutePathString(mountedVolume)
+                    ).executeExpectSuccess();
                 } catch (IOException ex) {
                     Log.error(ex.getMessage());
                     Log.verbose("Cannot enable custom icon using SetFile utility");
@@ -365,8 +366,7 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
 
         //add license if needed
         if (pkg.licenseFile().isPresent()) {
-            var exec = Executor.of(
-                    sysEnv.hdiutil().toString(),
+            var exec = hdiutil(
                     "udifrez",
                     normalizedAbsolutePathString(finalDMG),
                     "-xml",
@@ -395,10 +395,8 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
         var mountedVolume = volumePath();
 
         Function<Boolean, Executor> detach = force -> {
-            List<String> cmdline = new ArrayList<>(List.of(
-                    sysEnv.hdiutil().toString(),
-                    "detach"
-            ));
+            List<String> cmdline = new ArrayList<>();
+            cmdline.add("detach");
 
             if (force) {
                 cmdline.add("-force");
@@ -409,7 +407,7 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
                     normalizedAbsolutePathString(mountedVolume)
             ));
 
-            return Executor.of(cmdline);
+            return hdiutil(cmdline.toArray(String[]::new));
         };
 
         // "hdiutil detach" might not work right away due to resource busy error, so
@@ -434,13 +432,12 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
     private void convertProtoDmg() throws IOException {
 
         Function<Path, Executor> convert = srcDmg -> {
-            return Executor.of(
-                sysEnv.hdiutil().toString(),
-                "convert",
-                normalizedAbsolutePathString(srcDmg),
-                hdiUtilVerbosityFlag(),
-                "-format", "UDZO",
-                "-o", normalizedAbsolutePathString(finalDmg()));
+            return hdiutil(
+                    "convert",
+                    normalizedAbsolutePathString(srcDmg),
+                    hdiUtilVerbosityFlag(),
+                    "-format", "UDZO",
+                    "-o", normalizedAbsolutePathString(finalDmg()));
         };
 
         // Convert it to a new image.
