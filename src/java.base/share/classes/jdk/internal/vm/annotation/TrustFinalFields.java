@@ -45,11 +45,7 @@ import java.lang.annotation.Target;
 ///
 /// This annotation is suitable when constant treatment of final fields is
 /// performance sensitive, yet package-wide final field constant treatment may
-/// be at risk from user final field modifications.
-///
-/// See `constant-folding.md` design document in the same directory as this file
-/// for an overview and the best practices around constant folding, including
-/// for this annotation.
+/// be at risk from final field modifications such as serialization.
 ///
 /// This annotation is only recognized on classes from the boot and platform
 /// class loaders and is ignored elsewhere.
