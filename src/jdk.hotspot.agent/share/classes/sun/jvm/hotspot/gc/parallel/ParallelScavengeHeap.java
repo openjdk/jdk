@@ -60,11 +60,11 @@ public class ParallelScavengeHeap extends CollectedHeap {
 
    // Accessors
    public PSYoungGen youngGen() {
-      return VMObjectFactory.newObject(PSYoungGen.class, youngGenField.getValue());
+      return VMObjectFactory.newObject(PSYoungGen.class, youngGenField.getValue(addr));
    }
 
    public PSOldGen oldGen() {
-      return VMObjectFactory.newObject(PSOldGen.class, oldGenField.getValue());
+      return VMObjectFactory.newObject(PSOldGen.class, oldGenField.getValue(addr));
    }
 
    public long capacity() {
