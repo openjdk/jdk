@@ -32,6 +32,8 @@ import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+import sun.java2d.Disposer;
+import sun.java2d.DisposerRecord;
 
 // Right now this class is final to avoid a problem with native code.
 // For some reason the JNI IsInstanceOf was not working correctly
@@ -98,6 +100,7 @@ public final class CFont extends PhysicalFont implements FontSubstitution {
     private boolean isFakeItalic;
     private String nativeFontName;
     private long nativeFontPtr;
+    private final Object disposerReferent = new Object();
 
     private native float getWidthNative(final long nativeFontPtr);
     private native float getWeightNative(final long nativeFontPtr);
@@ -194,6 +197,7 @@ public final class CFont extends PhysicalFont implements FontSubstitution {
     protected synchronized long getNativeFontPtr() {
         if (nativeFontPtr == 0L) {
             nativeFontPtr = createNativeFont(nativeFontName, style);
+            Disposer.addRecord(disposerReferent, new CFontDisposerRecord(nativeFontPtr));
         }
         return nativeFontPtr;
     }
@@ -256,13 +260,17 @@ public final class CFont extends PhysicalFont implements FontSubstitution {
         return compFont;
     }
 
-    @Override
-    @SuppressWarnings("removal")
-    protected synchronized void finalize() {
-        if (nativeFontPtr != 0) {
+    private static class CFontDisposerRecord implements DisposerRecord {
+
+        private final long nativeFontPtr;
+
+        CFontDisposerRecord(long ptr) {
+            nativeFontPtr = ptr;
+        }
+
+        public void dispose() {
             disposeNativeFont(nativeFontPtr);
         }
-        nativeFontPtr = 0;
     }
 
     @Override

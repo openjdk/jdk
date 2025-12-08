@@ -57,7 +57,7 @@ jobs:
 
   prepare:
     name: 'Prepare the run'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     env:
       # List of platforms to exclude by default
       EXCLUDED_PLATFORMS: 'alpine-linux-x64'
@@ -327,8 +327,8 @@ jobs:
     uses: ./.github/workflows/build-macos.yml
     with:
       platform: macos-x64
-      runs-on: 'macos-13'
-      xcode-toolset-version: '14.3.1'
+      runs-on: 'macos-15-intel'
+      xcode-toolset-version: '16.4'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
@@ -340,8 +340,8 @@ jobs:
     uses: ./.github/workflows/build-macos.yml
     with:
       platform: macos-aarch64
-      runs-on: 'macos-14'
-      xcode-toolset-version: '15.4'
+      runs-on: 'macos-15'
+      xcode-toolset-version: '16.4'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
@@ -405,7 +405,7 @@ jobs:
     with:
       platform: linux-x64
       bootjdk-platform: linux-x64
-      runs-on: ubuntu-22.04
+      runs-on: ubuntu-24.04
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
       debug-suffix: -debug
 
@@ -419,7 +419,7 @@ jobs:
     with:
       platform: linux-x64
       bootjdk-platform: linux-x64
-      runs-on: ubuntu-22.04
+      runs-on: ubuntu-24.04
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
       static-suffix: "-static"
 
@@ -432,9 +432,9 @@ jobs:
     with:
       platform: macos-aarch64
       bootjdk-platform: macos-aarch64
-      runs-on: macos-14
+      runs-on: macos-15
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
-      xcode-toolset-version: '15.4'
+      xcode-toolset-version: '16.4'
       debug-suffix: -debug
 
   test-windows-x64:

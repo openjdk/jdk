@@ -31,25 +31,27 @@
 #include "jfr/periodic/jfrOSInterface.hpp"
 #include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
 #include "jfr/periodic/sampling/jfrThreadSampler.hpp"
-#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
+#include "jfr/recorder/checkpoint/types/jfrThreadGroupManager.hpp"
+#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/repository/jfrRepository.hpp"
 #include "jfr/recorder/service/jfrEventThrottler.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/service/jfrPostBox.hpp"
 #include "jfr/recorder/service/jfrRecorderService.hpp"
 #include "jfr/recorder/service/jfrRecorderThread.hpp"
-#include "jfr/recorder/storage/jfrStorage.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
+#include "jfr/recorder/storage/jfrStorage.hpp"
 #include "jfr/recorder/stringpool/jfrStringPool.hpp"
+#include "jfr/support/jfrSymbolTable.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.inline.hpp"
-#include "runtime/handles.inline.hpp"
 #include "runtime/globals_extension.hpp"
+#include "runtime/handles.inline.hpp"
 #include "utilities/growableArray.hpp"
 #ifdef ASSERT
 #include "prims/jvmtiEnvBase.hpp"
@@ -311,6 +313,12 @@ bool JfrRecorder::create_components() {
   if (!create_event_throttler()) {
     return false;
   }
+  if (!create_thread_group_manager()) {
+    return false;
+  }
+  if (!create_symbol_table()) {
+    return false;
+  }
   return true;
 }
 
@@ -405,6 +413,14 @@ bool JfrRecorder::create_event_throttler() {
   return JfrEventThrottler::create();
 }
 
+bool JfrRecorder::create_thread_group_manager() {
+  return JfrThreadGroupManager::create();
+}
+
+bool JfrRecorder::create_symbol_table() {
+  return JfrSymbolTable::create();
+}
+
 void JfrRecorder::destroy_components() {
   JfrJvmtiAgent::destroy();
   if (_post_box != nullptr) {
@@ -444,6 +460,8 @@ void JfrRecorder::destroy_components() {
     _cpu_time_thread_sampling = nullptr;
   }
   JfrEventThrottler::destroy();
+  JfrThreadGroupManager::destroy();
+  JfrSymbolTable::destroy();
 }
 
 bool JfrRecorder::create_recorder_thread() {

@@ -27,12 +27,12 @@
 #define CPU_AARCH64_ASSEMBLER_AARCH64_HPP
 
 #include "asm/register.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-#include <type_traits>
 
 #ifdef __GNUC__
 
@@ -3486,6 +3486,7 @@ public:
   INSN(sve_smaxv, 0b00000100, 0b001000001); // signed maximum reduction to scalar
   INSN(sve_smin,  0b00000100, 0b001010000); // signed minimum vectors
   INSN(sve_sminv, 0b00000100, 0b001010001); // signed minimum reduction to scalar
+  INSN(sve_splice,0b00000101, 0b101100100); // splice two vectors under predicate control, destructive
   INSN(sve_sub,   0b00000100, 0b000001000); // vector sub
   INSN(sve_uaddv, 0b00000100, 0b000001001); // unsigned add reduction to scalar
   INSN(sve_umax,  0b00000100, 0b001001000); // unsigned maximum vectors
@@ -3814,7 +3815,11 @@ private:
     starti;
     assert(T != Q, "invalid size");
     int sh = 0;
-    if (imm8 <= 127 && imm8 >= -128) {
+    if (isFloat) {
+      assert(T != B, "invalid size");
+      assert((imm8 >> 8) == 0, "invalid immediate");
+      sh = 0;
+    } else if (imm8 <= 127 && imm8 >= -128) {
       sh = 0;
     } else if (T != B && imm8 <= 32512 && imm8 >= -32768 && (imm8 & 0xff) == 0) {
       sh = 1;
@@ -3824,7 +3829,7 @@ private:
     }
     int m = isMerge ? 1 : 0;
     f(0b00000101, 31, 24), f(T, 23, 22), f(0b01, 21, 20);
-    prf(Pg, 16), f(isFloat ? 1 : 0, 15), f(m, 14), f(sh, 13), sf(imm8, 12, 5), rf(Zd, 0);
+    prf(Pg, 16), f(isFloat ? 1 : 0, 15), f(m, 14), f(sh, 13), f(imm8 & 0xff, 12, 5), rf(Zd, 0);
   }
 
 public:
@@ -3834,7 +3839,7 @@ public:
   }
   // SVE copy floating-point immediate to vector elements (predicated)
   void sve_cpy(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg, double d) {
-    sve_cpy(Zd, T, Pg, checked_cast<int8_t>(pack(d)), /*isMerge*/true, /*isFloat*/true);
+    sve_cpy(Zd, T, Pg, checked_cast<uint8_t>(pack(d)), /*isMerge*/true, /*isFloat*/true);
   }
 
   // SVE conditionally select elements from two vectors
@@ -4064,6 +4069,13 @@ public:
   INSN(sve_brkb, 0b10); // Break before first true condition
 #undef INSN
 
+  // SVE move prefix (unpredicated)
+  void sve_movprfx(FloatRegister Zd, FloatRegister Zn) {
+    starti;
+    f(0b00000100, 31, 24), f(0b00, 23, 22), f(0b1, 21), f(0b00000, 20, 16);
+    f(0b101111, 15, 10), rf(Zn, 5), rf(Zd, 0);
+  }
+
 // Element count and increment scalar (SVE)
 #define INSN(NAME, TYPE)                                                             \
   void NAME(Register Xdn, unsigned imm4 = 1, int pattern = 0b11111) {                \
@@ -4231,12 +4243,29 @@ public:
     sf(imm1, 9, 5), rf(Zd, 0);
   }
 
-  // SVE programmable table lookup/permute using vector of element indices
-  void sve_tbl(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn, FloatRegister Zm) {
+private:
+  void _sve_tbl(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn, unsigned reg_count, FloatRegister Zm) {
     starti;
     assert(T != Q, "invalid size");
+    // Only supports one or two vector lookup. One vector lookup was introduced in SVE1
+    // and two vector lookup in SVE2
+    assert(0 < reg_count && reg_count <= 2, "invalid number of registers");
+
+    int op11 = (reg_count == 1) ? 0b10 : 0b01;
+
     f(0b00000101, 31, 24), f(T, 23, 22), f(0b1, 21), rf(Zm, 16);
-    f(0b001100, 15, 10), rf(Zn, 5), rf(Zd, 0);
+    f(0b001, 15, 13), f(op11, 12, 11), f(0b0, 10), rf(Zn, 5), rf(Zd, 0);
+  }
+
+public:
+  // SVE/SVE2 Programmable table lookup in one or two vector table (zeroing)
+  void sve_tbl(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn, FloatRegister Zm) {
+    _sve_tbl(Zd, T, Zn, 1, Zm);
+  }
+
+  void sve_tbl(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn1, FloatRegister Zn2, FloatRegister Zm) {
+    assert(Zn1->successor() == Zn2, "invalid order of registers");
+    _sve_tbl(Zd, T, Zn1, 2, Zm);
   }
 
   // Shuffle active elements of vector to the right and fill with zero
@@ -4307,6 +4336,7 @@ public:
   static bool operand_valid_for_sve_add_sub_immediate(int64_t imm);
   static bool operand_valid_for_float_immediate(double imm);
   static int  operand_valid_for_movi_immediate(uint64_t imm64, SIMD_Arrangement T);
+  static bool operand_valid_for_sve_dup_immediate(int64_t imm);
 
   void emit_data64(jlong data, relocInfo::relocType rtype, int format = 0);
   void emit_data64(jlong data, RelocationHolder const& rspec, int format = 0);
