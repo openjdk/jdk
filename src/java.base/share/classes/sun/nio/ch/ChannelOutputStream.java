@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.Objects;
+import static sun.nio.ch.NioSocketImpl.MAX_ADAPTOR_BUFFER_SIZE;
 
 /**
  * An OutputStream that writes bytes to a channel.
@@ -65,7 +66,9 @@ class ChannelOutputStream extends OutputStream {
      */
     private void writeFully(ByteBuffer bb) throws IOException {
         while (bb.remaining() > 0) {
-            int n = ch.write(bb);
+            ByteBuffer writeBuf = bb.remaining() <= MAX_ADAPTOR_BUFFER_SIZE
+                ? bb : bb.slice(bb.position(), MAX_ADAPTOR_BUFFER_SIZE);
+            int n = ch.write(writeBuf);
             if (n <= 0)
                 throw new RuntimeException("no bytes written");
         }

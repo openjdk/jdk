@@ -58,6 +58,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import static java.net.StandardProtocolFamily.INET;
 import static java.net.StandardProtocolFamily.INET6;
 import static java.net.StandardProtocolFamily.UNIX;
+import static sun.nio.ch.NioSocketImpl.MAX_ADAPTOR_BUFFER_SIZE;
 
 import jdk.internal.event.SocketReadEvent;
 import jdk.internal.event.SocketWriteEvent;
@@ -1373,6 +1374,7 @@ class SocketChannelImpl
             // nothing to do
             return 0;
         }
+        len = Math.min(len, MAX_ADAPTOR_BUFFER_SIZE);
 
         readLock.lock();
         try {
@@ -1469,7 +1471,7 @@ class SocketChannelImpl
                 beginWrite(true);
                 configureSocketNonBlockingIfVirtualThread();
                 while (pos < end && isOpen()) {
-                    int size = end - pos;
+                    int size = Math.min(end - pos, MAX_ADAPTOR_BUFFER_SIZE);
                     int n = tryWrite(b, pos, size);
                     while (IOStatus.okayToRetry(n) && isOpen()) {
                         park(Net.POLLOUT);

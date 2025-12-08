@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.Stable;
+import static sun.nio.ch.NioSocketImpl.MAX_ADAPTOR_BUFFER_SIZE;
 
 /**
  * An InputStream that reads bytes from a channel.
@@ -80,6 +81,9 @@ class ChannelInputStream extends InputStream {
      * Reads a sequence of bytes from the channel into the given buffer.
      */
     private int read(ByteBuffer bb) throws IOException {
+        if (bb.remaining() > MAX_ADAPTOR_BUFFER_SIZE) {
+            bb = bb.slice(bb.position(), MAX_ADAPTOR_BUFFER_SIZE);
+        }
         if (ch instanceof SelectableChannel sc) {
             synchronized (sc.blockingLock()) {
                 if (!sc.isBlocking())
