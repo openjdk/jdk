@@ -141,9 +141,9 @@ void ParallelScavengeHeap::initialize_serviceability() {
                                                 "PS Survivor Space",
                                                 false /* support_usage_threshold */);
 
-  _old_pool = new PSGenerationPool(_old_gen,
-                                   "PS Old Gen",
-                                   true /* support_usage_threshold */);
+  _old_pool = new PSOldGenerationPool(_old_gen,
+                                      "PS Old Gen",
+                                      true /* support_usage_threshold */);
 
   _young_manager = new GCMemoryManager("PS Scavenge");
   _old_manager = new GCMemoryManager("PS MarkSweep");
