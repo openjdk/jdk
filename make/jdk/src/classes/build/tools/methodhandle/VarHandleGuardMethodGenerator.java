@@ -142,7 +142,7 @@ public final class VarHandleGuardMethodGenerator {
                         } else if (direct && handle.vform.getMethodType_V(ad.type) == ad.symbolicMethodTypeErased) {
                             MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);
                         } else {
-                            <RETURN>ad.adaptedMethodHandle(handle).invokeBasic(<LINK_TO_INVOKER_ARGS>);
+                            ad.adaptedMethodHandle(handle).invokeBasic(<LINK_TO_INVOKER_ARGS>);
                         }
                     }""";
 

@@ -980,7 +980,7 @@ public abstract sealed class MethodHandle implements Constable
         return false; // no direct relation between loaders is found
     }
 
-    static boolean isBuiltinLoader(ClassLoader loader) {
+    private static boolean isBuiltinLoader(ClassLoader loader) {
         return loader == null ||
                loader == ClassLoaders.platformClassLoader() ||
                loader == ClassLoaders.appClassLoader();

@@ -65,6 +65,11 @@ final class SegmentVarHandle extends VarHandle {
     }
 
     @Override
+    boolean isReachableFrom(ClassLoader cl) {
+        return true;
+    }
+
+    @Override
     public SegmentVarHandle withInvokeExactBehavior() {
         return hasInvokeExactBehavior() ?
                 this :

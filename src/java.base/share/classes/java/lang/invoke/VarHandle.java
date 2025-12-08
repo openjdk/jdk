@@ -2012,10 +2012,7 @@ public abstract sealed class VarHandle implements Constable
     // Exists for the adaption mechanism of AccessDescriptor
     // Each VH should report its explicitly (receiver, coordinates) and
     // implicitly (static declaring class) used class to MethodHandle.isReachableFrom
-    boolean isReachableFrom(ClassLoader cl) {
-        // Call MethodHandle.isReachableFrom for the used classes
-        return true;
-    }
+    abstract boolean isReachableFrom(ClassLoader cl);
 
     static final class AccessDescriptor {
         final MethodType symbolicMethodTypeExact;

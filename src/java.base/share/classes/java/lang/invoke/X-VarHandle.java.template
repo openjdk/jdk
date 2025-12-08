@@ -789,6 +789,11 @@ final class VarHandle$Type$s {
             return at.accessModeType({#if[Object]?arrayType:$type$[].class}, {#if[Object]?arrayType.getComponentType():$type$.class}, int.class);
         }
 
+        @Override
+        boolean isReachableFrom(ClassLoader cl) {
+            return {#if[Object]?MethodHandle.isReachableFrom(arrayType, cl):true};
+        }
+
 #if[Object]
         @ForceInline
         static Object runtimeTypeCheck(Array handle, Object[] oarray, Object value) {
