@@ -602,11 +602,6 @@ protected:
   jint _hashStateY;
   jint _hashStateZ;
 
-  // Low-level leaf-lock primitives used to implement synchronization.
-  // Not for general synchronization use.
-  static void SpinAcquire(volatile int * Lock);
-  static void SpinRelease(volatile int * Lock);
-
 #if defined(__APPLE__) && defined(AARCH64)
  private:
   DEBUG_ONLY(bool _wx_init);
