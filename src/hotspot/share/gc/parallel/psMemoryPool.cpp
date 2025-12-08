@@ -24,14 +24,14 @@
 
 #include "gc/parallel/psMemoryPool.hpp"
 
-PSGenerationPool::PSGenerationPool(PSOldGen* old_gen,
-                                   const char* name,
-                                   bool support_usage_threshold) :
+PSOldGenerationPool::PSOldGenerationPool(PSOldGen* old_gen,
+                                         const char* name,
+                                         bool support_usage_threshold) :
   CollectedMemoryPool(name, old_gen->capacity_in_bytes(),
                       old_gen->reserved().byte_size(), support_usage_threshold), _old_gen(old_gen) {
 }
 
-MemoryUsage PSGenerationPool::get_memory_usage() {
+MemoryUsage PSOldGenerationPool::get_memory_usage() {
   size_t maxSize   = (available_for_allocation() ? max_size() : 0);
   size_t used      = used_in_bytes();
   size_t committed = _old_gen->capacity_in_bytes();

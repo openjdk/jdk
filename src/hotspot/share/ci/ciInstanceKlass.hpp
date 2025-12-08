@@ -150,6 +150,10 @@ public:
     assert(is_loaded(), "must be loaded");
     return _flags;
   }
+
+  // Fetch Klass::access_flags.
+  jint                   access_flags() { return flags().as_int(); }
+
   bool                   has_finalizer()  {
     assert(is_loaded(), "must be loaded");
     return _has_finalizer; }

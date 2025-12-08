@@ -456,9 +456,8 @@ public final class FipsModeTLS extends SecmodTest {
         //  2. SUN (to handle X.509 certificates)
         //  3. SunJSSE (for a TLS engine)
 
-        if (initSecmod() == false) {
-            return;
-        }
+        initSecmod();
+
         String configName = BASE + SEP + "nss.cfg";
         sunPKCS11NSSProvider = getSunPKCS11(configName);
         System.out.println("SunPKCS11 provider: " + sunPKCS11NSSProvider);

@@ -89,9 +89,6 @@
 #if INCLUDE_CDS
 #include "classfile/systemDictionaryShared.hpp"
 #endif
-#if INCLUDE_JFR
-#include "jfr/support/jfrTraceIdExtension.hpp"
-#endif
 
 // We generally try to create the oops directly when parsing, rather than
 // allocating temporary data structures and copying the bytes twice. A
@@ -156,6 +153,8 @@
 #define JAVA_25_VERSION                   69
 
 #define JAVA_26_VERSION                   70
+
+#define JAVA_27_VERSION                   71
 
 void ClassFileParser::set_class_bad_constant_seen(short bad_constant) {
   assert((bad_constant == JVM_CONSTANT_Module ||
@@ -5280,8 +5279,6 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
       }
     }
   }
-
-  JFR_ONLY(INIT_ID(ik);)
 
   // If we reach here, all is well.
   // Now remove the InstanceKlass* from the _klass_to_deallocate field
