@@ -26,8 +26,6 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
 import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.BufferedReader;
@@ -42,38 +40,90 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
+import org.junit.jupiter.api.condition.DisabledIf;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 public class CommandOutputControlTest {
 
+    @DisabledIf("cherryPickSavedOutputTestCases")
     @ParameterizedTest
     @MethodSource
     public void testSavedOutput(OutputTestSpec spec) {
         spec.test();
     }
 
+    @EnabledIf("cherryPickSavedOutputTestCases")
+    @ParameterizedTest
+    @MethodSource
+    public void testSomeSavedOutput(OutputTestSpec spec) {
+        System.out.println(spec);
+        spec.test();
+    }
+
+    private static boolean cherryPickSavedOutputTestCases() {
+        return !testSomeSavedOutput().isEmpty();
+    }
+
+    private static List<OutputTestSpec> testSomeSavedOutput() {
+        var testIds = List.<Integer>of();
+        if (testIds.isEmpty()) {
+            return List.of();
+        } else {
+            var allTestCases = testSavedOutput();
+            return testIds.stream().map(testId -> {
+                return allTestCases.get(testId - 1);
+            }).toList();
+        }
+    }
+
     private static List<OutputTestSpec> testSavedOutput() {
         List<OutputTestSpec> testCases = new ArrayList<>();
-        for (final var toolProvider : BOOLEAN_VALUES) {
-            for (final var outputControl : OutputControl.variants()) {
+        for (final var executableType : List.of(ExecutableType.values())) {
+            for (var outputControl : OutputControl.variants()) {
                 for (final var stdoutContent : List.of(OutputData.values())) {
                     for (final var stderrContent : List.of(OutputData.values())) {
                         final var commandSpec = new CommandSpec(stdoutContent, stderrContent);
+                        boolean toolProvider;
+                        switch (executableType) {
+                            case PROCESS_BUILDER -> {
+                                toolProvider = false;
+                            }
+                            case PROCESS_BUILDER_WITH_STREAMS_IN_FILES -> {
+                                outputControl = new SetBuilder<OutputControl>()
+                                        .add(outputControl)
+                                        .add(OutputControl.STORE_STREAMS_IN_FILES)
+                                        .create();
+                                toolProvider = false;
+                            }
+                            case TOOL_PROVIDER -> {
+                                toolProvider = true;
+                            }
+                            default -> {
+                                // Unreachable
+                                throw new IllegalStateException();
+                            }
+                        }
                         testCases.add(new OutputTestSpec(toolProvider, outputControl, commandSpec));
                     }
                 }
             }
         }
         return testCases;
+    }
+
+    private enum ExecutableType {
+        TOOL_PROVIDER,
+        PROCESS_BUILDER,
+        PROCESS_BUILDER_WITH_STREAMS_IN_FILES,
+        ;
     }
 
     private record Command(List<String> stdout, List<String> stderr) {
@@ -183,7 +233,7 @@ public class CommandOutputControlTest {
 
         static List<Set<OutputControl>> variants() {
             final List<Set<OutputControl>> variants = new ArrayList<>();
-            for (final var redirectStderr : List.of(false)) {
+            for (final var redirectStderr : BOOLEAN_VALUES) {
                 for (final var withDump : BOOLEAN_VALUES) {
                     variants.addAll(Stream.of(
                             Set.<OutputControl>of(),
@@ -258,25 +308,7 @@ public class CommandOutputControlTest {
             assertEquals(0, result.get().getExitCode());
 
             verifyDump(dumpCapture, command);
-            verifyResult(result.get(), command);
-
-            if (!saveOutput()) {
-                assertThrowsExactly(NoSuchElementException.class, result.get()::getOutput);
-            } else {
-                assertNotNull(result.get().getOutput());
-                final var allExpectedOutput = expectedCommandOutput(command);
-                assertEquals(allExpectedOutput.isEmpty(), result.get().getOutput().isEmpty());
-                if (!allExpectedOutput.isEmpty()) {
-                    if (outputControl.contains(OutputControl.SAVE_ALL)) {
-                        assertEquals(allExpectedOutput, result.get().getOutput());
-                    } else if (outputControl.contains(OutputControl.SAVE_FIRST_LINE)) {
-                        assertEquals(1, result.get().getOutput().size());
-                        assertEquals(allExpectedOutput.getFirst(), result.get().getFirstLineOfOutput());
-                    } else {
-                        throw new UnsupportedOperationException();
-                    }
-                }
-            }
+            verifyResultContent(result.get(), command);
         }
 
         private boolean dumpOutput() {
@@ -299,22 +331,36 @@ public class CommandOutputControlTest {
             return outputControl.contains(OutputControl.REDIRECT_STDERR);
         }
 
+        private boolean replaceStdoutWithStderr() {
+            return redirectStderr() && discardStdout() && !discardStderr();
+        }
+
         private static String format(Set<OutputControl> outputControl) {
             return outputControl.stream().map(OutputControl::name).sorted().collect(joining("+"));
         }
 
         private void verifyDump(DumpCapture dumpCapture, Command command) {
+            if (replaceStdoutWithStderr()) {
+                if (dumpOutput()) {
+                    assertEquals(command.stderr(), dumpCapture.outLines());
+                } else {
+                    assertEquals(List.of(), dumpCapture.outLines());
+                }
+                assertEquals(List.of(), dumpCapture.errLines());
+                return;
+            }
+
             if (!dumpOutput() || (!toolProvider && !saveOutput())) {
-                // Dump of output streams is disabled, or it is enabled 
+                // Dump of output streams is disabled, or it is enabled
                 // for a subprocess without saving the content of the output streams.
-                // In the later case the test can't capture dumped content as 
+                // In the later case the test can't capture dumped content as
                 // it goes into the STDOUT/STERR streams associated with the Java process.
                 assertEquals(List.of(), dumpCapture.outLines());
                 assertEquals(List.of(), dumpCapture.errLines());
                 return;
             }
 
-            if (redirectStderr()) {
+            if (redirectStderr() && !discardStderr()) {
                 assertEquals(List.of(), dumpCapture.errLines());
                 if (discardStdout() && !discardStderr()) {
                     // STDERR replaces STDOUT
@@ -326,7 +372,7 @@ public class CommandOutputControlTest {
                     if (!Collections.disjoint(command.stdout(), command.stderr())) {
                         throw new UnsupportedOperationException("Testee stdout and stderr must be disjoint");
                     }
-                    var capturedDump = new ArrayList<String>(dumpCapture.outLines());
+                    var capturedDump = new ArrayList<>(dumpCapture.outLines());
                     capturedDump.removeAll(command.stdout());
                     capturedDump.removeAll(command.stderr());
                     assertEquals(List.of(), capturedDump);
@@ -346,39 +392,64 @@ public class CommandOutputControlTest {
             }
         }
 
-        private void verifyResult(CommandOutputControl.Result result, Command command) {
+        private void verifyResultContent(CommandOutputControl.Result result, Command command) {
             if (!saveOutput()) {
                 assertTrue(result.findContent().isEmpty());
                 assertTrue(result.findStdout().isEmpty());
                 assertTrue(result.findStderr().isEmpty());
                 return;
             }
-        }
 
-        private Optional<List<String>> expectedResultStdout(Command command) {
-            return expectedResultStream(command.stdout());
-        }
+            assertTrue(result.findContent().isPresent());
 
-        private Optional<List<String>> expectedResultStderr(Command command) {
-            if (outputControl.contains(OutputControl.SAVE_FIRST_LINE) && !command.stdout().isEmpty()) {
-                return Optional.of(List.of());
+            if (redirectStderr() && !Collections.disjoint(command.stdout(), command.stderr())) {
+                // Intertwined STDOUT and STDERR
+                throw new UnsupportedOperationException("Testee stdout and stderr must be disjoint");
             }
-            return expectedResultStream(command.stderr());
+
+            command = filterSavedStreams(command);
+
+            if (!redirectStderr()) {
+                assertEquals(command.stdout(), result.stdout().getContent());
+                assertEquals(command.stderr(), result.stderr().getContent());
+                assertEquals(Stream.of(
+                        command.stdout(),
+                        command.stderr()
+                ).flatMap(List::stream).toList(), result.getContent());
+            } else {
+                assertEquals(discardStderr(), result.findStdout().isPresent());
+                assertTrue(result.findStderr().isEmpty());
+                if (outputControl.contains(OutputControl.SAVE_FIRST_LINE)) {
+                    assertTrue(List.of(command.stdout(), command.stderr()).contains(result.getContent()),
+                            String.format("Saved content %s is either %s or %s",
+                                    result.getContent(), command.stdout(), command.stderr()));
+                } else if (outputControl.contains(OutputControl.SAVE_ALL)) {
+                    var savedContent = new ArrayList<>(result.getContent());
+                    savedContent.removeAll(command.stdout());
+                    savedContent.removeAll(command.stderr());
+                    assertEquals(List.of(), savedContent);
+                } else {
+                    // Unreachable
+                    throw new AssertionError();
+                }
+            }
         }
 
-        private Optional<List<String>> expectedResultStream(List<String> commandOutput) {
+        private List<String> expectedSavedStream(List<String> commandOutput) {
             Objects.requireNonNull(commandOutput);
             if (outputControl.contains(OutputControl.SAVE_ALL)) {
-                return Optional.of(commandOutput);
+                return commandOutput;
             } else if (outputControl.contains(OutputControl.SAVE_FIRST_LINE)) {
-                return Optional.of(commandOutput.stream().findFirst().map(List::of).orElseGet(List::of));
+                return commandOutput.stream().findFirst().map(List::of).orElseGet(List::of);
             } else {
-                return Optional.empty();
+                throw new IllegalStateException();
             }
         }
 
-        private Command discardStreams(Command command) {
-            return new Command(discardStdout() ? List.of() : command.stdout(), discardStderr() ? List.of() : command.stderr());
+        private Command filterSavedStreams(Command command) {
+            return new Command(
+                    (discardStdout() ? List.of() : expectedSavedStream(command.stdout())),
+                    (discardStderr() ? List.of() : expectedSavedStream(command.stderr())));
         }
 
         private record DumpCapture(byte[] out, byte[] err, Charset outCharset, Charset errCharset) {
@@ -428,11 +499,6 @@ public class CommandOutputControlTest {
                     }
                 }
             }
-        }
-
-        private List<String> expectedCommandOutput(Command command) {
-            command = discardStreams(command);
-            return Stream.of(command.stdout(), command.stderr()).flatMap(List::stream).toList();
         }
 
         private CommandOutputControl.Executable createExecutable(Command command) {
