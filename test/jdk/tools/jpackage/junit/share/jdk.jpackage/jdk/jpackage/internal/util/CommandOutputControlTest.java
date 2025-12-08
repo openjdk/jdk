@@ -20,13 +20,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.test;
+package jdk.jpackage.internal.util;
 
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
+import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -47,12 +49,32 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.util.CommandOutputControl;
-import jdk.jpackage.internal.util.Slot;
+import jdk.internal.util.OperatingSystem;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-public class ExecutorTest extends JUnitAdapter {
+public class CommandOutputControlTest {
+
+    @ParameterizedTest
+    @MethodSource
+    public void testSavedOutput(OutputTestSpec spec) {
+        spec.test();
+    }
+
+    private static List<OutputTestSpec> testSavedOutput() {
+        List<OutputTestSpec> testCases = new ArrayList<>();
+        for (final var toolProvider : BOOLEAN_VALUES) {
+            for (final var outputControl : OutputControl.variants()) {
+                for (final var stdoutContent : List.of(OutputData.values())) {
+                    for (final var stderrContent : List.of(OutputData.values())) {
+                        final var commandSpec = new CommandSpec(stdoutContent, stderrContent);
+                        testCases.add(new OutputTestSpec(toolProvider, outputControl, commandSpec));
+                    }
+                }
+            }
+        }
+        return testCases;
+    }
 
     private record Command(List<String> stdout, List<String> stderr) {
         Command {
@@ -62,7 +84,7 @@ public class ExecutorTest extends JUnitAdapter {
 
         List<String> asExecutable() {
             final List<String> commandline = new ArrayList<>();
-            if (TKit.isWindows()) {
+            if (OperatingSystem.isWindows()) {
                 commandline.addAll(List.of("cmd", "/C"));
             } else {
                 commandline.addAll(List.of("sh", "-c"));
@@ -74,7 +96,7 @@ public class ExecutorTest extends JUnitAdapter {
 
         private static Stream<String> createEchoCommands(List<String> lines) {
             return lines.stream().map(line -> {
-                if (TKit.isWindows()) {
+                if (OperatingSystem.isWindows()) {
                     return "(echo " + line + ")";
                 } else {
                     return "echo " + line;
@@ -129,53 +151,75 @@ public class ExecutorTest extends JUnitAdapter {
     }
 
     public enum OutputControl {
-        DUMP(Executor::dumpOutput),
-        SAVE_ALL(Executor::saveOutput),
-        SAVE_FIRST_LINE(Executor::saveFirstLineOfOutput),
-        DISCARD_STDOUT(Executor::discardStdout),
-        DISCARD_STDERR(Executor::discardStderr),
+        DUMP(coc -> {
+            coc.dumpOutput(true);
+        }),
+        SAVE_ALL(coc -> {
+            coc.saveOutput(true);
+        }),
+        SAVE_FIRST_LINE(CommandOutputControl::saveFirstLineOfOutput),
+        DISCARD_STDOUT(coc -> {
+            coc.discardStdout(true);
+        }),
+        DISCARD_STDERR(coc -> {
+            coc.discardStderr(true);
+        }),
+        REDIRECT_STDERR(coc -> {
+            coc.redirectErrorStream(true);
+        }),
+        STORE_STREAMS_IN_FILES(coc -> {
+            coc.storeStreamsInFiles(true);
+        }),
         ;
 
-        OutputControl(Consumer<Executor> configureExector) {
-            this.configureExector = Objects.requireNonNull(configureExector);
+        OutputControl(Consumer<CommandOutputControl> mutator) {
+            this.mutator = Objects.requireNonNull(mutator);
         }
 
-        Executor applyTo(Executor exec) {
-            configureExector.accept(exec);
-            return exec;
+        CommandOutputControl applyTo(CommandOutputControl coc) {
+            mutator.accept(coc);
+            return coc;
         }
 
         static List<Set<OutputControl>> variants() {
             final List<Set<OutputControl>> variants = new ArrayList<>();
-            for (final var withDump : BOOLEAN_VALUES) {
-                variants.addAll(Stream.of(
-                        Set.<OutputControl>of(),
-                        Set.of(SAVE_ALL),
-                        Set.of(SAVE_FIRST_LINE),
-                        Set.of(DISCARD_STDOUT),
-                        Set.of(DISCARD_STDERR),
-                        Set.of(SAVE_ALL, DISCARD_STDOUT),
-                        Set.of(SAVE_FIRST_LINE, DISCARD_STDOUT),
-                        Set.of(SAVE_ALL, DISCARD_STDERR),
-                        Set.of(SAVE_FIRST_LINE, DISCARD_STDERR),
-                        Set.of(SAVE_ALL, DISCARD_STDOUT, DISCARD_STDERR),
-                        Set.of(SAVE_FIRST_LINE, DISCARD_STDOUT, DISCARD_STDERR)
-                ).map(v -> {
-                    if (withDump) {
-                        return Stream.concat(Stream.of(DUMP), v.stream()).collect(toSet());
-                    } else {
-                        return v;
-                    }
-                }).toList());
+            for (final var redirectStderr : List.of(false)) {
+                for (final var withDump : BOOLEAN_VALUES) {
+                    variants.addAll(Stream.of(
+                            Set.<OutputControl>of(),
+                            Set.of(SAVE_ALL),
+                            Set.of(SAVE_FIRST_LINE),
+                            Set.of(DISCARD_STDOUT),
+                            Set.of(DISCARD_STDERR),
+                            Set.of(SAVE_ALL, DISCARD_STDOUT),
+                            Set.of(SAVE_FIRST_LINE, DISCARD_STDOUT),
+                            Set.of(SAVE_ALL, DISCARD_STDERR),
+                            Set.of(SAVE_FIRST_LINE, DISCARD_STDERR),
+                            Set.of(SAVE_ALL, DISCARD_STDOUT, DISCARD_STDERR),
+                            Set.of(SAVE_FIRST_LINE, DISCARD_STDOUT, DISCARD_STDERR)
+                    ).map(v -> {
+                        if (withDump) {
+                            return new SetBuilder<OutputControl>().add(v).add(DUMP).create();
+                        } else {
+                            return v;
+                        }
+                    }).map(v -> {
+                        if (redirectStderr && !v.containsAll(List.of(DISCARD_STDOUT, DISCARD_STDERR))) {
+                            return new SetBuilder<OutputControl>().add(v).add(REDIRECT_STDERR).create();
+                        } else {
+                            return v;
+                        }
+                    }).toList());
+                }
             }
             return variants.stream().map(options -> {
                 return options.stream().filter(o -> {
-                    return o.configureExector != NOP;
+                    return o.mutator != NOP;
                 }).collect(toSet());
             }).distinct().toList();
         }
 
-        private final Consumer<Executor> configureExector;
+        private final Consumer<CommandOutputControl> mutator;
 
         static final Set<OutputControl> SAVE = Set.of(SAVE_ALL, SAVE_FIRST_LINE);
     }
@@ -205,26 +249,16 @@ public class ExecutorTest extends JUnitAdapter {
 
         void test() {
             final var command = commandSpec.command();
-            final var commandWithDiscardedStreams = discardStreams(command);
 
-            final Slot<Executor.Result> result = Slot.createEmpty();
-            final var outputCapture = OutputCapture.captureOutput(() -> {
-                result.set(createExecutor(command).executeWithoutExitCodeCheck());
-            });
+            final Slot<CommandOutputControl.Result> result = Slot.createEmpty();
+            final var dumpCapture = DumpCapture.captureDump(toRunnable(() -> {
+                result.set(createExecutable(command).execute());
+            }));
 
             assertEquals(0, result.get().getExitCode());
 
-            // If we dump the subprocesses's output, and the command produced both STDOUT and STDERR,
-            // then the captured STDOUT may contain interleaved command's STDOUT and STDERR,
-            // not in sequential order (STDOUT followed by STDERR).
-            // In this case don't check the contents of the captured command's STDOUT.
-            if (toolProvider || outputCapture.outLines().isEmpty() || (command.stdout().isEmpty() || command.stderr().isEmpty())) {
-                assertEquals(expectedCapturedSystemOut(commandWithDiscardedStreams), outputCapture.outLines());
-            }
-            assertEquals(expectedCapturedSystemErr(commandWithDiscardedStreams), outputCapture.errLines());
-
-            assertEquals(expectedResultStdout(commandWithDiscardedStreams), result.get().findStdout().map(CommandOutputControl.Output::getContent));
-            assertEquals(expectedResultStderr(commandWithDiscardedStreams), result.get().findStderr().map(CommandOutputControl.Output::getContent));
+            verifyDump(dumpCapture, command);
+            verifyResult(result.get(), command);
 
             if (!saveOutput()) {
                 assertThrowsExactly(NoSuchElementException.class, result.get()::getOutput);
@@ -261,27 +295,63 @@ public class ExecutorTest extends JUnitAdapter {
             return outputControl.contains(OutputControl.DISCARD_STDERR);
         }
 
+        private boolean redirectStderr() {
+            return outputControl.contains(OutputControl.REDIRECT_STDERR);
+        }
+
         private static String format(Set<OutputControl> outputControl) {
             return outputControl.stream().map(OutputControl::name).sorted().collect(joining("+"));
         }
 
-        private List<String> expectedCapturedSystemOut(Command command) {
+        private void verifyDump(DumpCapture dumpCapture, Command command) {
             if (!dumpOutput() || (!toolProvider && !saveOutput())) {
-                return List.of();
-            } else if(saveOutput()) {
-                return Stream.concat(command.stdout().stream(), command.stderr().stream()).toList();
+                // Dump of output streams is disabled, or it is enabled 
+                // for a subprocess without saving the content of the output streams.
+                // In the later case the test can't capture dumped content as 
+                // it goes into the STDOUT/STERR streams associated with the Java process.
+                assertEquals(List.of(), dumpCapture.outLines());
+                assertEquals(List.of(), dumpCapture.errLines());
+                return;
+            }
+
+            if (redirectStderr()) {
+                assertEquals(List.of(), dumpCapture.errLines());
+                if (discardStdout() && !discardStderr()) {
+                    // STDERR replaces STDOUT
+                    assertEquals(command.stderr(), dumpCapture.outLines());
+                } else if (!discardStdout() && discardStderr()) {
+                    assertEquals(command.stdout(), dumpCapture.outLines());
+                } else {
+                    // Intertwined STDOUT and STDERR
+                    if (!Collections.disjoint(command.stdout(), command.stderr())) {
+                        throw new UnsupportedOperationException("Testee stdout and stderr must be disjoint");
+                    }
+                    var capturedDump = new ArrayList<String>(dumpCapture.outLines());
+                    capturedDump.removeAll(command.stdout());
+                    capturedDump.removeAll(command.stderr());
+                    assertEquals(List.of(), capturedDump);
+                }
             } else {
-                return command.stdout();
+                if (discardStdout()) {
+                    assertEquals(List.of(), dumpCapture.outLines());
+                } else {
+                    assertEquals(command.stdout(), dumpCapture.outLines());
+                }
+
+                if (discardStderr()) {
+                    assertEquals(List.of(), dumpCapture.errLines());
+                } else {
+                    assertEquals(command.stderr(), dumpCapture.errLines());
+                }
             }
         }
 
-        private List<String> expectedCapturedSystemErr(Command command) {
-            if (!dumpOutput() || (!toolProvider && !saveOutput())) {
-                return List.of();
-            } else if(saveOutput()) {
-                return List.of();
-            } else {
-                return command.stderr();
+        private void verifyResult(CommandOutputControl.Result result, Command command) {
+            if (!saveOutput()) {
+                assertTrue(result.findContent().isEmpty());
+                assertTrue(result.findStdout().isEmpty());
+                assertTrue(result.findStderr().isEmpty());
+                return;
             }
         }
 
@@ -311,8 +381,8 @@ public class ExecutorTest extends JUnitAdapter {
             return new Command(discardStdout() ? List.of() : command.stdout(), discardStderr() ? List.of() : command.stderr());
         }
 
-        private record OutputCapture(byte[] out, byte[] err, Charset outCharset, Charset errCharset) {
-            OutputCapture {
+        private record DumpCapture(byte[] out, byte[] err, Charset outCharset, Charset errCharset) {
+            DumpCapture {
                 Objects.requireNonNull(out);
                 Objects.requireNonNull(err);
                 Objects.requireNonNull(outCharset);
@@ -337,7 +407,7 @@ public class ExecutorTest extends JUnitAdapter {
                 }
             }
 
-            static OutputCapture captureOutput(Runnable runnable) {
+            static DumpCapture captureDump(Runnable runnable) {
                 final var captureOut = new ByteArrayOutputStream();
                 final var captureErr = new ByteArrayOutputStream();
 
@@ -349,7 +419,7 @@ public class ExecutorTest extends JUnitAdapter {
                     System.setOut(new PrintStream(captureOut, true, outCharset));
                     System.setErr(new PrintStream(captureErr, true, errCharset));
                     runnable.run();
-                    return new OutputCapture(captureOut.toByteArray(), captureErr.toByteArray(), outCharset, errCharset);
+                    return new DumpCapture(captureOut.toByteArray(), captureErr.toByteArray(), outCharset, errCharset);
                 } finally {
                     try {
                         System.setOut(out);
@@ -365,41 +435,18 @@ public class ExecutorTest extends JUnitAdapter {
             return Stream.of(command.stdout(), command.stderr()).flatMap(List::stream).toList();
         }
 
-        private Executor createExecutor(Command command) {
-            final Executor exec;
+        private CommandOutputControl.Executable createExecutable(Command command) {
+            final CommandOutputControl coc = new CommandOutputControl();
+            outputControl.forEach(control -> control.applyTo(coc));
+
             if (toolProvider) {
-                exec = Executor.of(command.asToolProvider());
+                return coc.createExecutable(command.asToolProvider());
             } else {
-                exec = Executor.of(command.asExecutable());
-            }
-
-            outputControl.forEach(control -> control.applyTo(exec));
-
-            return exec;
-        }
-    }
-
-    @ParameterizedTest
-    @MethodSource
-    public void testSavedOutput(OutputTestSpec spec) {
-        spec.test();
-    }
-
-    public static List<OutputTestSpec> testSavedOutput() {
-        List<OutputTestSpec> testCases = new ArrayList<>();
-        for (final var toolProvider : BOOLEAN_VALUES) {
-            for (final var outputControl : OutputControl.variants()) {
-                for (final var stdoutContent : List.of(OutputData.values())) {
-                    for (final var stderrContent : List.of(OutputData.values())) {
-                        final var commandSpec = new CommandSpec(stdoutContent, stderrContent);
-                        testCases.add(new OutputTestSpec(toolProvider, outputControl, commandSpec));
-                    }
-                }
+                return coc.createExecutable(new ProcessBuilder(command.asExecutable()));
             }
         }
-        return testCases;
     }
 
     private static final List<Boolean> BOOLEAN_VALUES = List.of(Boolean.TRUE, Boolean.FALSE);
-    private static final Consumer<Executor> NOP = exec -> {};
+    private static final Consumer<CommandOutputControl> NOP = exec -> {};
 }
