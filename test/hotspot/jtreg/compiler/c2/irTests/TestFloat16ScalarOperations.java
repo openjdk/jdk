@@ -84,7 +84,6 @@ public class TestFloat16ScalarOperations {
     private static Float16 RANDOM5_VAR = RANDOM5;
     private static Float16 POSITIVE_ZERO_VAR = POSITIVE_ZERO;
 
-
     private static final float INEXACT_FP16 = 2051.0f;
     private static final float EXACT_FP16 = 2052.0f;
     private static final float SNAN_FP16 = Float.intBitsToFloat(0x7F8000F0);
