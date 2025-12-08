@@ -38,6 +38,7 @@
 // we're concerned about native mutex_t or HotSpot Mutex:: latency.
 // This class uses low-level leaf-lock primitives to implement
 // synchronization and is not for general synchronization use.
+// Should not be used in signal-handling contexts.
 class SpinCriticalSection {
 private:
   // We use int type as 32-bit atomic operation is the most performant
@@ -51,7 +52,7 @@ public:
   NONCOPYABLE(SpinCriticalSection);
   SpinCriticalSection(volatile int* lock)
     : _lock(lock)
-      DEBUG_ONLY(COMMA _nsv(Thread::current_or_null_safe() != nullptr)) {
+      DEBUG_ONLY(COMMA _nsv(Thread::current_or_null() != nullptr)) {
     spin_acquire(_lock);
   }
   ~SpinCriticalSection() {
