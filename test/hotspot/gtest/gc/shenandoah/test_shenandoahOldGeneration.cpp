@@ -165,7 +165,7 @@ TEST_VM_F(ShenandoahOldGenerationTest, test_actual_size_exceeds_promotion_reserv
   EXPECT_FALSE(promotions_enabled()) << "New plab can only be used for evacuations";
 }
 
-TEST_VM_F(ShenandoahOldGenerationTest, test_shared_expends_promoted_but_does_not_change_plab) {
+TEST_VM_F(ShenandoahOldGenerationTest, test_configure_plab_for_current_thread_should_have_no_side_effects_for_promotion) {
   SKIP_IF_NOT_SHENANDOAH();
   ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(128, ShenandoahAffiliation::OLD_GENERATION, true);
   req.set_actual_size(128);
@@ -175,13 +175,13 @@ TEST_VM_F(ShenandoahOldGenerationTest, test_shared_expends_promoted_but_does_not
   old->configure_plab_for_current_thread(req);
   size_t expended_after = old->get_promoted_expended();
 
-  EXPECT_EQ(expended_before + actual_size, expended_after) << "Shared promotion still expends promotion";
-  EXPECT_EQ(plab_promoted(), INITIAL_PLAB_PROMOTED) << "Shared promotion should not count in plab";
-  EXPECT_EQ(plab_size(), INITIAL_PLAB_SIZE) << "Shared promotion should not change size of plab";
+  EXPECT_EQ(expended_before, expended_after) << "configure_plab won't update expended";
+  EXPECT_EQ(plab_promoted(), INITIAL_PLAB_PROMOTED) << "Not a plab, should not have touched plab";
+  EXPECT_EQ(plab_size(), INITIAL_PLAB_SIZE) << "Not a plab, should not have touched plab";
   EXPECT_FALSE(promotions_enabled());
 }
 
-TEST_VM_F(ShenandoahOldGenerationTest, test_shared_evacuation_has_no_side_effects) {
+TEST_VM_F(ShenandoahOldGenerationTest, test_configure_plab_for_current_thread_should_have_no_side_effects_for_shared_alloc_in_old) {
   SKIP_IF_NOT_SHENANDOAH();
   ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(128, ShenandoahAffiliation::OLD_GENERATION, false);
   req.set_actual_size(128);
@@ -194,6 +194,15 @@ TEST_VM_F(ShenandoahOldGenerationTest, test_shared_evacuation_has_no_side_effect
   EXPECT_EQ(plab_promoted(), INITIAL_PLAB_PROMOTED) << "Not a plab, should not have touched plab";
   EXPECT_EQ(plab_size(), INITIAL_PLAB_SIZE) << "Not a plab, should not have touched plab";
   EXPECT_FALSE(promotions_enabled());
+}
+
+
+TEST_VM_F(ShenandoahOldGenerationTest, test_expend_promoted_should_increase_expended) {
+  SKIP_IF_NOT_SHENANDOAH();
+  size_t expended_before = old->get_promoted_expended();
+  old->expend_promoted(128);
+  size_t expended_after = old->get_promoted_expended();
+  EXPECT_EQ(expended_before + 128, expended_after) << "Should expend promotion";
 }
 
 #undef SKIP_IF_NOT_SHENANDOAH
