@@ -105,7 +105,8 @@ public final class BsdAARCH64CFrame extends BasicCFrame {
           CodeBlob codeBlob = cc.findBlobUnsafe(nextPC);
           boolean useCodeBlob = codeBlob != null && codeBlob.getFrameSize() > 0;
           nextSP = useCodeBlob ? nextFP.addOffsetTo((2 * ADDRESS_SIZE) - codeBlob.getFrameSize()) : nextFP;
-        }                                                                         }
+        }
+      }
       if (nextSP == null) {
         return null;
       }
