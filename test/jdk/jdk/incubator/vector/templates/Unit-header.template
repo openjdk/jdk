@@ -1390,6 +1390,12 @@ relativeError));
                     .collect(Collectors.toList());
 
 #end[!FP]
+    @DataProvider
+    public Object[][] boolUnaryOpProvider() {
+        return BOOL_ARRAY_GENERATORS.stream().
+                map(f -> new Object[]{f}).
+                toArray(Object[][]::new);
+    }
 
     static final List<List<IntFunction<$type$[]>>> $TYPE$_GENERATOR_TRIPLES =
         $TYPE$_GENERATOR_PAIRS.stream().

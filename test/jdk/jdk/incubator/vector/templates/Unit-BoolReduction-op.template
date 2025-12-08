@@ -1,5 +1,5 @@
 
-    @Test(dataProvider = "boolMaskUnaryOpProvider")
+    @Test(dataProvider = "boolUnaryOpProvider")
     static void [[TEST]]$vectorteststype$(IntFunction<boolean[]> fm) {
 [[KERNEL]]
         assertReductionBoolArraysEquals(r, mask, $vectorteststype$::[[TEST]]);
