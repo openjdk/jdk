@@ -24,6 +24,7 @@
 
 package org.openjdk.bench.vm.compiler;
 
+import java.util.Arrays;
 import jdk.incubator.vector.*;
 
 /**
@@ -38,6 +39,11 @@ public class VectorAlgorithmsImpl {
         for (int i = 0; i < r.length; i++) {
             r[i] = 42;
         }
+        return r;
+    }
+
+    public static Object fillI_Arrays(int[] r) {
+        Arrays.fill(r, 42);
         return r;
     }
 
@@ -77,6 +83,11 @@ public class VectorAlgorithmsImpl {
         for (int i = 0; i < a.length; i++) {
             r[i] = a[i];
         }
+        return r;
+    }
+
+    public static Object copyI_System_arraycopy(int[] a, int[] r) {
+        System.arraycopy(a, 0, r, 0, a.length);
         return r;
     }
 

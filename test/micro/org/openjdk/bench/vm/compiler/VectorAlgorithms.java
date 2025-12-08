@@ -86,6 +86,11 @@ public class VectorAlgorithms {
     }
 
     @Benchmark
+    public Object fillI_Arrays() {
+        return VectorAlgorithmsImpl.fillI_Arrays(rI);
+    }
+
+    @Benchmark
     public Object iotaI_loop() {
         return VectorAlgorithmsImpl.iotaI_loop(rI);
     }
@@ -103,6 +108,11 @@ public class VectorAlgorithms {
     @Benchmark
     public Object copyI_VectorAPI() {
         return VectorAlgorithmsImpl.copyI_VectorAPI(aI, rI);
+    }
+
+    @Benchmark
+    public Object copyI_System_arraycopy() {
+        return VectorAlgorithmsImpl.copyI_System_arraycopy(aI, rI);
     }
 
     @Benchmark
