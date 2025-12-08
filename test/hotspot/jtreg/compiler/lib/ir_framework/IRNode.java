@@ -545,9 +545,34 @@ public class IRNode {
         trapNodes(CLASS_CHECK_TRAP, "class_check");
     }
 
+    public static final String CMOVE_F = PREFIX + "CMOVE_F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CMOVE_F, "CMoveF");
+    }
+
+    public static final String CMOVE_D = PREFIX + "CMOVE_D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CMOVE_D, "CMoveD");
+    }
+
     public static final String CMOVE_I = PREFIX + "CMOVE_I" + POSTFIX;
     static {
         beforeMatchingNameRegex(CMOVE_I, "CMoveI");
+    }
+
+    public static final String CMOVE_L = PREFIX + "CMOVE_L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CMOVE_L, "CMoveL");
+    }
+
+    public static final String CMP_F = PREFIX + "CMP_F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CMP_F, "CmpF");
+    }
+
+    public static final String CMP_D = PREFIX + "CMP_D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CMP_D, "CmpD");
     }
 
     public static final String CMP_I = PREFIX + "CMP_I" + POSTFIX;
@@ -583,6 +608,11 @@ public class IRNode {
     public static final String CMP_P = PREFIX + "CMP_P" + POSTFIX;
     static {
         beforeMatchingNameRegex(CMP_P, "CmpP");
+    }
+
+    public static final String CMP_N = PREFIX + "CMP_N" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CMP_N, "CmpN");
     }
 
     public static final String CMP_LT_MASK = PREFIX + "CMP_LT_MASK" + POSTFIX;
