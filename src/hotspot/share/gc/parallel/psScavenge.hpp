@@ -115,7 +115,7 @@ class PSScavenge: AllStatic {
   }
 
   static bool is_obj_in_to_space(oop o) {
-    return ParallelScavengeHeap::young_gen()->to_space()->contains(o);
+    return ParallelScavengeHeap::heap()->young_gen()->to_space()->contains(o);
   }
 };
 

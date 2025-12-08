@@ -58,8 +58,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 
-PSYoungGen*  ParallelScavengeHeap::_young_gen = nullptr;
-PSOldGen*    ParallelScavengeHeap::_old_gen = nullptr;
 PSAdaptiveSizePolicy* ParallelScavengeHeap::_size_policy = nullptr;
 GCPolicyCounters* ParallelScavengeHeap::_gc_policy_counters = nullptr;
 size_t ParallelScavengeHeap::_desired_page_size = 0;
