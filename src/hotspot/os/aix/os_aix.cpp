@@ -2330,7 +2330,7 @@ int os::open(const char *path, int oflag, int mode) {
     int st_mode = buf64.st_mode;
 
     if (ret != -1) {
-      if ((st_mode & S_IFMT) == S_IFDIR) {     
+      if ((st_mode & S_IFMT) == S_IFDIR) {
         ::close(fd);
         errno = EISDIR;
         return -1;
