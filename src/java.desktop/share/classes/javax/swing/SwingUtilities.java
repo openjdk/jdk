@@ -1849,9 +1849,6 @@ public class SwingUtilities implements SwingConstants
             }
             map = parent;
         }
-        if (map != null && uiActionMap == null) {
-            map.clear();
-        }
     }
 
 
