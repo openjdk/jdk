@@ -5275,7 +5275,6 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
     }
     ErrnoPreserver ep;
     permit_forbidden_function::free(p); // *not* os::free
-    errno = ep.saved_errno();
   }
   return result;
 }

@@ -1727,7 +1727,6 @@ static void SR_handler(int sig, siginfo_t* siginfo, void* context) {
     // ignore
   }
 
-  errno = ep.saved_errno();
 }
 
 static int SR_initialize() {
