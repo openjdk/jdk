@@ -65,8 +65,8 @@ class ChannelOutputStream extends OutputStream {
      * If the channel is selectable then it must be configured blocking.
      */
     private void writeFully(ByteBuffer bb) throws IOException {
+        int limit = bb.limit();
         while (bb.remaining() > 0) {
-            int limit = bb.limit();
             if (bb.remaining() > MAX_BUFFER_SIZE) {
                 bb.limit(bb.position() + MAX_BUFFER_SIZE);
             }
