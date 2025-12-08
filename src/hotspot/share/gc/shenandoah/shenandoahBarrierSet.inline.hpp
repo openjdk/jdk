@@ -430,7 +430,7 @@ void ShenandoahBarrierSet::arraycopy_barrier(T* src, T* dst, size_t count) {
     // action if we are not marking old. If we are marking old, we must still evaluate the
     // load reference barrier for a young collection.
     if (_heap->mode()->is_generational()) {
-     arraycopy_marking<true>(dst, count);
+      arraycopy_marking<true>(dst, count);
     } else {
       arraycopy_marking<false>(dst, count);
     }
