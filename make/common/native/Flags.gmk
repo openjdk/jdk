@@ -234,7 +234,7 @@ define SetupLinkerFlags
     ifeq ($(call isTargetOs, macosx), true)
       $1_EXTRA_LDFLAGS += -Wl,-object_path_lto,$$($1_OBJECT_DIR)/$$($1_NAME)_lto_helper.o
     endif
-    ifeq ($(call isTargetOs, windows), true)
+    ifeq ($(TOOLCHAIN_TYPE), microsoft)
       $1_EXTRA_LDFLAGS += -LTCGOUT:$$($1_OBJECT_DIR)/$$($1_NAME).iobj
     endif
   endif
