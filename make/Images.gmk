@@ -309,6 +309,8 @@ SetupCopyDebuginfo = \
     )
 
 # No space before argument to avoid having to put $(strip ) everywhere in implementation above.
+$(call SetupCopyDebuginfo,JDK)
+$(call SetupCopyDebuginfo,JRE)
 $(call SetupCopyDebuginfo,SYMBOLS)
 
 ################################################################################
