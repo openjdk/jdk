@@ -256,6 +256,9 @@ void RiscvHwprobe::add_features_from_query_result() {
       is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVKT)) {
     VM_Version::ext_Zvkn.enable_feature();
   }
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVKG)) {
+    VM_Version::ext_Zvkg.enable_feature();
+  }
 #endif
 
   // ====== non-extensions ======

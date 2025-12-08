@@ -2838,6 +2838,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_ghash_processBlocks() {
     assert(UseGHASHIntrinsics, "Must be");
     assert(UseZvbb, "need Zvbb extension support");
+    assert(UseZvkg, "need GHASH instructions (Zvkg extension) support");
 
     __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_ghash_processBlocks_id;
