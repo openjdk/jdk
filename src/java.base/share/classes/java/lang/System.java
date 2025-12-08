@@ -2269,20 +2269,24 @@ public final class System {
                 return Thread.carrierLocalRandomSeed();
             }
 
-            public int carrierLocalRandomProbe() {
-                return Thread.carrierLocalRandomProbe();
-            }
-
-            public int carrierLocalRandomSecondarySeed() {
-                return Thread.carrierLocalRandomSecondarySeed();
-            }
-
             public void setCarrierLocalRandomSeed(long seed) {
                 Thread.setCarrierLocalRandomSeed(seed);
             }
 
+            public long addAndGetCarrierLocalRandomSeed(long x) {
+                return Thread.addAndGetCarrierLocalRandomSeed(x);
+            }
+
+            public int carrierLocalRandomProbe() {
+                return Thread.carrierLocalRandomProbe();
+            }
+
             public void setCarrierLocalRandomProbe(int probe) {
                 Thread.setCarrierLocalRandomProbe(probe);
+            }
+
+            public int carrierLocalRandomSecondarySeed() {
+                return Thread.carrierLocalRandomSecondarySeed();
             }
 
             public void setCarrierLocalRandomSecondarySeed(int seed) {

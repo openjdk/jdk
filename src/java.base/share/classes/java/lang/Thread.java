@@ -265,7 +265,7 @@ public class Thread implements Runnable {
     private volatile long eetop;
 
     // thread id
-    private final long tid;
+    @Stable private final long tid;
 
     // thread name
     private volatile String name;
@@ -308,7 +308,7 @@ public class Thread implements Runnable {
                 this.daemon = true;
         }
     }
-    private final FieldHolder holder;
+    @Stable private final FieldHolder holder;
 
     ThreadLocal.ThreadLocalMap terminatingThreadLocals() {
         return holder.terminatingThreadLocals;
@@ -322,20 +322,27 @@ public class Thread implements Runnable {
         return currentCarrierThread().holder.randomSeed;
     }
 
-    static int carrierLocalRandomProbe() {
-        return currentCarrierThread().holder.randomProbe;
-    }
-
-    static int carrierLocalRandomSecondarySeed() {
-        return currentCarrierThread().holder.randomSecondarySeed;
-    }
-
     static void setCarrierLocalRandomSeed(long seed) {
         currentCarrierThread().holder.randomSeed = seed;
     }
 
+    static long addAndGetCarrierLocalRandomSeed(long x) {
+        FieldHolder holder = currentCarrierThread().holder;
+        long r = holder.randomSeed + x;
+        holder.randomSeed = r;
+        return r;
+    }
+
+    static int carrierLocalRandomProbe() {
+        return currentCarrierThread().holder.randomProbe;
+    }
+
     static void setCarrierLocalRandomProbe(int probe) {
         currentCarrierThread().holder.randomProbe = probe;
+    }
+
+    static int carrierLocalRandomSecondarySeed() {
+        return currentCarrierThread().holder.randomSecondarySeed;
     }
 
     static void setCarrierLocalRandomSecondarySeed(int seed) {

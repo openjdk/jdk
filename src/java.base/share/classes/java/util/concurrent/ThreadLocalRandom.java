@@ -202,11 +202,8 @@ public final class ThreadLocalRandom extends Random {
      * applications likely to use {@code ThreadLocalRandom}.
      */
     final long nextSeed() {
-        // read and update per-carrier thread seed
-        long r = JLA.carrierLocalRandomSeed() +
-                (JLA.currentCarrierThread().threadId() << 1) + GOLDEN_GAMMA;
-        JLA.setCarrierLocalRandomSeed(r);
-        return r;
+        long x = (JLA.currentCarrierThread().threadId() << 1) + GOLDEN_GAMMA;
+        return JLA.addAndGetCarrierLocalRandomSeed(x);
     }
 
     /**
@@ -269,7 +266,6 @@ public final class ThreadLocalRandom extends Random {
      */
     static final int nextSecondarySeed() {
         int r;
-        Thread t = Thread.currentThread();
         if ((r = JLA.carrierLocalRandomSecondarySeed()) != 0) {
             r ^= r << 13;   // xorshift
             r ^= r >>> 17;
