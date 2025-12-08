@@ -307,9 +307,11 @@ private:
                                uint old_marking_started_after,
                                uint old_marking_completed_after);
 
-  // Attempt to start a concurrent cycle with the indicated cause.
+  // Attempt to start a concurrent cycle with the indicated cause, for potentially
+  // allocating allocation_word_size words.
   // precondition: should_do_concurrent_full_gc(cause)
-  bool try_collect_concurrently(GCCause::Cause cause,
+  bool try_collect_concurrently(size_t allocation_word_size,
+                                GCCause::Cause cause,
                                 uint gc_counter,
                                 uint old_marking_started_before);
 
@@ -512,9 +514,9 @@ private:
   //    be accounted for in case shrinking of the heap happens.
   // - it returns false if it is unable to do the collection due to the
   //   GC locker being active, true otherwise.
-  void do_full_collection(bool clear_all_soft_refs,
-                          bool do_maximal_compaction,
-                          size_t allocation_word_size);
+  void do_full_collection(size_t allocation_word_size,
+                          bool clear_all_soft_refs,
+                          bool do_maximal_compaction);
 
   // Callback from VM_G1CollectFull operation, or collect_as_vm_thread.
   void do_full_collection(bool clear_all_soft_refs) override;
@@ -767,16 +769,17 @@ private:
   // it has to be read while holding the Heap_lock. Currently, both
   // methods that call do_collection_pause() release the Heap_lock
   // before the call, so it's easy to read gc_count_before just before.
-  HeapWord* do_collection_pause(size_t         word_size,
-                                uint           gc_count_before,
-                                bool*          succeeded,
+  HeapWord* do_collection_pause(size_t word_size,
+                                uint gc_count_before,
+                                bool* succeeded,
                                 GCCause::Cause gc_cause);
 
-  // Perform an incremental collection at a safepoint, possibly
-  // followed by a by-policy upgrade to a full collection.
+  // Perform an incremental collection at a safepoint, possibly followed by a
+  // by-policy upgrade to a full collection.
+  // The collection should expect to be followed by an allocation of allocation_word_size.
   // precondition: at safepoint on VM thread
   // precondition: !is_stw_gc_active()
-  void do_collection_pause_at_safepoint(size_t allocation_word_size = 0);
+  void do_collection_pause_at_safepoint(size_t allocation_word_size);
 
   void verify_before_young_collection(G1HeapVerifier::G1VerifyType type);
   void verify_after_young_collection(G1HeapVerifier::G1VerifyType type);
@@ -914,6 +917,9 @@ public:
   // specified by the policy object.
   jint initialize() override;
 
+  // Returns whether concurrent mark threads (and the VM) are about to terminate.
+  bool concurrent_mark_is_terminating() const;
+
   void safepoint_synchronize_begin() override;
   void safepoint_synchronize_end() override;
 
@@ -1029,22 +1035,21 @@ public:
   inline void old_set_add(G1HeapRegion* hr);
   inline void old_set_remove(G1HeapRegion* hr);
 
-  size_t non_young_capacity_bytes() {
-    return (old_regions_count() + humongous_regions_count()) * G1HeapRegion::GrainBytes;
-  }
+  // Returns how much memory there is assigned to non-young heap that can not be
+  // allocated into any more without garbage collection after a hypothetical
+  // allocation of allocation_word_size.
+  size_t non_young_occupancy_after_allocation(size_t allocation_word_size);
 
   // Determine whether the given region is one that we are using as an
   // old GC alloc region.
   bool is_old_gc_alloc_region(G1HeapRegion* hr);
 
-  // Perform a collection of the heap; intended for use in implementing
-  // "System.gc".  This probably implies as full a collection as the
-  // "CollectedHeap" supports.
   void collect(GCCause::Cause cause) override;
 
-  // Perform a collection of the heap with the given cause.
+  // Try to perform a collection of the heap with the given cause to allocate allocation_word_size
+  // words.
   // Returns whether this collection actually executed.
-  bool try_collect(GCCause::Cause cause, const G1GCCounters& counters_before);
+  bool try_collect(size_t allocation_word_size, GCCause::Cause cause, const G1GCCounters& counters_before);
 
   void start_concurrent_gc_for_metadata_allocation(GCCause::Cause gc_cause);
 
@@ -1198,10 +1203,10 @@ public:
   // Section on thread-local allocation buffers (TLABs)
   // See CollectedHeap for semantics.
 
-  size_t tlab_capacity(Thread* ignored) const override;
-  size_t tlab_used(Thread* ignored) const override;
+  size_t tlab_capacity() const override;
+  size_t tlab_used() const override;
   size_t max_tlab_size() const override;
-  size_t unsafe_max_tlab_alloc(Thread* ignored) const override;
+  size_t unsafe_max_tlab_alloc() const override;
 
   inline bool is_in_young(const oop obj) const;
   inline bool requires_barriers(stackChunkOop obj) const override;
@@ -1224,6 +1229,10 @@ public:
   // Returns the number of regions the humongous object of the given word size
   // requires.
   static size_t humongous_obj_size_in_regions(size_t word_size);
+
+  // Returns how much space in bytes an allocation of word_size will use up in the
+  // heap.
+  static size_t allocation_used_bytes(size_t word_size);
 
   // Print the maximum heap capacity.
   size_t max_capacity() const override;

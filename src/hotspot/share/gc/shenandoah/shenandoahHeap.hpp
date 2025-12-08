@@ -35,7 +35,6 @@
 #include "gc/shenandoah/shenandoahController.hpp"
 #include "gc/shenandoah/shenandoahEvacOOMHandler.hpp"
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
-#include "gc/shenandoah/shenandoahGenerationSizer.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahMmuTracker.hpp"
@@ -183,6 +182,7 @@ public:
   void post_initialize() override;
   void initialize_mode();
   virtual void initialize_heuristics();
+  virtual void post_initialize_heuristics();
   virtual void print_init_logger() const;
   void initialize_serviceability() override;
 
@@ -212,14 +212,7 @@ private:
   volatile size_t _committed;
   shenandoah_padding(1);
 
-  void increase_used(const ShenandoahAllocRequest& req);
-
 public:
-  void increase_used(ShenandoahGeneration* generation, size_t bytes);
-  void decrease_used(ShenandoahGeneration* generation, size_t bytes);
-  void increase_humongous_waste(ShenandoahGeneration* generation, size_t bytes);
-  void decrease_humongous_waste(ShenandoahGeneration* generation, size_t bytes);
-
   void increase_committed(size_t bytes);
   void decrease_committed(size_t bytes);
 
@@ -277,6 +270,7 @@ private:
 public:
 
   inline HeapWord* base() const { return _heap_region.start(); }
+  inline HeapWord* end()  const { return _heap_region.end(); }
 
   inline size_t num_regions() const { return _num_regions; }
   inline bool is_heap_region_special() { return _heap_region_special; }
@@ -698,13 +692,11 @@ public:
                                                size_t size,
                                                Metaspace::MetadataType mdtype) override;
 
-  void notify_mutator_alloc_words(size_t words, size_t waste);
-
   HeapWord* allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) override;
-  size_t tlab_capacity(Thread *thr) const override;
-  size_t unsafe_max_tlab_alloc(Thread *thread) const override;
+  size_t tlab_capacity() const override;
+  size_t unsafe_max_tlab_alloc() const override;
   size_t max_tlab_size() const override;
-  size_t tlab_used(Thread* ignored) const override;
+  size_t tlab_used() const override;
 
   void ensure_parsability(bool retire_labs) override;
 

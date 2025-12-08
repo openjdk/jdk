@@ -130,7 +130,10 @@ static void z_verify_root_oop_object(zaddress addr, void* p) {
 
 static void z_verify_old_oop(zpointer* p) {
   const zpointer o = *p;
-  assert(o != zpointer::null, "Old should not contain raw null");
+  if (o == zpointer::null) {
+    guarantee(ZGeneration::young()->is_phase_mark_complete(), "Only possible when flip promoting");
+    guarantee(ZHeap::heap()->page(p)->is_allocating(), "Raw nulls only possible in allocating pages");
+  }
   if (!z_is_null_relaxed(o)) {
     if (ZPointer::is_mark_good(o)) {
       // Even though the pointer is mark good, we can't verify that it should
