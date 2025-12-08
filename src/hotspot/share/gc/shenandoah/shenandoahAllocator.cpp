@@ -96,6 +96,7 @@ public:
 
 template <ShenandoahFreeSetPartitionId ALLOC_PARTITION>
 HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::attempt_allocation(ShenandoahAllocRequest& req, bool& in_new_region) {
+  // Always allocate under heap lock held when shared alloc region count is set to 0
   if (_alloc_region_count == 0u) {
     ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), _yield_to_safepoint);
     ShenandoahHeapAccountingUpdater accounting_updater(_free_set, ALLOC_PARTITION);
@@ -119,12 +120,15 @@ HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::attempt_allocation(ShenandoahAll
 template <ShenandoahFreeSetPartitionId ALLOC_PARTITION>
 HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::attempt_allocation_slow(ShenandoahAllocRequest& req, bool& in_new_region) {
   ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), _yield_to_safepoint);
-  ShenandoahHeapAccountingUpdater accounting_updater(_free_set, ALLOC_PARTITION);
   uint regions_ready_for_refresh = 0u;
+  // Attempt to allocate in shared alloc regions after taking heap lock,
+  // because other mutator may have refreshed shared alloc regions
   HeapWord* obj = attempt_allocation_in_alloc_regions(req, in_new_region, alloc_start_index(), regions_ready_for_refresh);
   if (obj != nullptr) {
     return obj;
   }
+
+  ShenandoahHeapAccountingUpdater accounting_updater(_free_set, ALLOC_PARTITION);
 
   if (regions_ready_for_refresh > 0u) {
     int refreshed = refresh_alloc_regions(&req, &in_new_region, &obj);
@@ -207,7 +211,7 @@ HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::attempt_allocation_in_alloc_regi
 }
 
 template <ShenandoahFreeSetPartitionId ALLOC_PARTITION>
-inline HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::atomic_allocate_in(ShenandoahHeapRegion* region, bool const is_alloc_region, ShenandoahAllocRequest &req, bool &in_new_region, bool &ready_for_retire) {
+HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::atomic_allocate_in(ShenandoahHeapRegion* region, bool const is_alloc_region, ShenandoahAllocRequest &req, bool &in_new_region, bool &ready_for_retire) {
   assert(ready_for_retire == false, "Sanity check");
   HeapWord* obj = nullptr;
   size_t actual_size = req.size();

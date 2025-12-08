@@ -70,7 +70,7 @@ protected:
   HeapWord* attempt_allocation_in_alloc_regions(ShenandoahAllocRequest& req, bool& in_new_region, uint const alloc_start_index, uint &regions_ready_for_refresh);
 
   // Allocate in a region with atomic.
-  inline HeapWord* atomic_allocate_in(ShenandoahHeapRegion* region, bool is_alloc_region, ShenandoahAllocRequest &req, bool &in_new_region, bool &ready_for_retire);
+  HeapWord* atomic_allocate_in(ShenandoahHeapRegion* region, bool is_alloc_region, ShenandoahAllocRequest &req, bool &in_new_region, bool &ready_for_retire);
 
   // Refresh new alloc regions, allocate the object in the new alloc region.
   int refresh_alloc_regions(ShenandoahAllocRequest* req = nullptr, bool* in_new_region = nullptr, HeapWord** obj = nullptr);
