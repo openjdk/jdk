@@ -3365,10 +3365,10 @@ public class JShellTool implements MessageHandler {
         // Create missing parent directories before writing to target file
         Path target;
         try {
-            target = toPathResolvingUserHome(filename).normalize();
+            target = toPathResolvingUserHome(filename);
             Path parent = target.getParent();
             if (parent != null) {
-                Files.createDirectories(parent); // calls Path::toAbsolutePath
+                Files.createDirectories(parent);
             }
         } catch (Exception e) {
             errormsg("jshell.err.file.exception", "/save", filename, e);
