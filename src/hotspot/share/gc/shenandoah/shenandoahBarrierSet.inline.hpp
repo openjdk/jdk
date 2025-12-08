@@ -431,7 +431,11 @@ void ShenandoahBarrierSet::arraycopy_barrier(T* src, T* dst, size_t count) {
     // If marking old or young, we must evaluate the SATB barrier. This will be the only
     // action if we are not marking old. If we are marking old, we must still evaluate the
     // load reference barrier for a young collection.
-    arraycopy_marking(dst, count);
+    if (_heap->mode()->is_generational()) {
+     arraycopy_marking<true>(dst, count);
+    } else {
+      arraycopy_marking<false>(dst, count);
+    }
   }
 
   if ((gc_state & ShenandoahHeap::EVACUATION) != 0) {
@@ -443,30 +447,13 @@ void ShenandoahBarrierSet::arraycopy_barrier(T* src, T* dst, size_t count) {
   }
 }
 
-template <class T>
+template <bool IS_GENERATIONAL, class T>
 void ShenandoahBarrierSet::arraycopy_marking(T* dst, size_t count) {
   assert(_heap->is_concurrent_mark_in_progress(), "only during marking");
   if (ShenandoahSATBBarrier) {
     if (!_heap->marking_context()->allocated_after_mark_start(reinterpret_cast<HeapWord*>(dst)) ||
-        (_heap->mode()->is_generational() && _heap->heap_region_containing(dst)->is_old() && _heap->is_concurrent_young_mark_in_progress())) {
+        (IS_GENERATIONAL && _heap->heap_region_containing(dst)->is_old() && _heap->is_concurrent_young_mark_in_progress())) {
       arraycopy_work<T, false, false, true>(dst, count);
-#ifdef ASSERT
-      if (_heap->heap_region_containing(dst)->is_old()) {
-        ShenandoahScanRemembered* card_scan = ShenandoahGenerationalHeap::heap()->old_generation()->card_scan();
-        T* end = dst + count;
-        for (T* elem_ptr = dst; elem_ptr < end; elem_ptr++) {
-          T o = RawAccess<>::oop_load(elem_ptr);
-          if (!CompressedOops::is_null(o)) {
-            HeapWord *elem_heap_word_ptr = reinterpret_cast<HeapWord*>(elem_ptr);
-            oop obj = CompressedOops::decode_not_null(o);
-            assert(!_heap->is_in_young(obj) ||
-                   card_scan->is_card_dirty(elem_heap_word_ptr) ||
-                   card_scan->is_write_card_dirty(elem_heap_word_ptr),
-              "Card should be dirty if the array element points to obj in young. Array element: " PTR_FORMAT ", young object: " PTR_FORMAT "", p2i(elem_ptr), p2i(obj));
-          }
-        }
-      }
-#endif // ASSERT
     }
   }
 }
