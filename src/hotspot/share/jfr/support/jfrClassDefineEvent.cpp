@@ -125,6 +125,7 @@ static traceid get_source(const InstanceKlass* ik, JavaThread* jt) {
   return source_id;
 }
 
+#if INCLUDE_CDS
 static traceid get_source(const AOTClassLocation* cl, JavaThread* jt) {
   assert(cl != nullptr, "invariant");
   assert(!cl->is_modules_image(), "invariant");
@@ -138,6 +139,7 @@ static traceid get_source(const AOTClassLocation* cl, JavaThread* jt) {
   jio_snprintf(url, len, "%s%s%s", file_type, ":/", path);
   return JfrSymbolTable::add(url);
 }
+#endif
 
 static inline void send_event(const InstanceKlass* ik, traceid source_id) {
   EventClassDefine event;
