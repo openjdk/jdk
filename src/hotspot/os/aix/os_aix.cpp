@@ -2330,11 +2330,9 @@ int os::open(const char *path, int oflag, int mode) {
     int st_mode = buf64.st_mode;
 
     if (ret != -1) {
-      if ((st_mode & S_IFMT) == S_IFDIR) {
-        errno = EISDIR;
-        ErrnoPreserver ep;
+      if ((st_mode & S_IFMT) == S_IFDIR) {     
         ::close(fd);
-        errno = ep.saved_errno();
+        errno = EISDIR;
         return -1;
       }
     } else {
