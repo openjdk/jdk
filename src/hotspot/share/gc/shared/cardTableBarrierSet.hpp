@@ -27,6 +27,7 @@
 
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "memory/memRegion.hpp"
 #include "utilities/align.hpp"
 
@@ -86,6 +87,10 @@ public:
   inline void write_ref_array(HeapWord* start, size_t count);
 
   CardTable* card_table() const { return _card_table; }
+  CardValue* card_table_base_const() const {
+    assert(UseSerialGC || UseParallelGC, "Only these GCs have constant card table base");
+    return _card_table->byte_map_base();
+  }
 
   virtual void on_slowpath_allocation_exit(JavaThread* thread, oop new_obj);
 
