@@ -2009,6 +2009,14 @@ public abstract sealed class VarHandle implements Constable
         }
     }
 
+    // Exists for the adaption mechanism of AccessDescriptor
+    // Each VH should report its explicitly (receiver, coordinates) and
+    // implicitly (static declaring class) used class to MethodHandle.isReachableFrom
+    boolean isReachableFrom(ClassLoader cl) {
+        // Call MethodHandle.isReachableFrom for the used classes
+        return true;
+    }
+
     static final class AccessDescriptor {
         final MethodType symbolicMethodTypeExact;
         final MethodType symbolicMethodTypeErased;
@@ -2016,6 +2024,8 @@ public abstract sealed class VarHandle implements Constable
         final Class<?> returnType;
         final int type;
         final int mode;
+        // Used by adaption - if there's a caller we can better detect leaks
+        final Class<?> caller;
 
         // Adaption mechanism to reduce overhead for non-exact access.
         // This heuristic assumes that each sigpoly VH call site usually sees
@@ -2033,15 +2043,21 @@ public abstract sealed class VarHandle implements Constable
         // Object indirection is the only way to ensure the vh and mh are not
         // from two writes (they must not be tearable)
         private record Adaption(VarHandle vh, MethodHandle mh) {}
+        // The adaption must not cause classloader leaks
         private @Stable Adaption adaption;
 
         AccessDescriptor(MethodType symbolicMethodType, int type, int mode) {
+            this(symbolicMethodType, type, mode, null);
+        }
+
+        AccessDescriptor(MethodType symbolicMethodType, int type, int mode, Class<?> caller) {
             this.symbolicMethodTypeExact = symbolicMethodType;
             this.symbolicMethodTypeErased = symbolicMethodType.erase();
             this.symbolicMethodTypeInvoker = symbolicMethodType.insertParameterTypes(0, VarHandle.class);
             this.returnType = symbolicMethodType.returnType();
             this.type = type;
             this.mode = mode;
+            this.caller = caller;
         }
 
         @ForceInline
@@ -2053,10 +2069,13 @@ public abstract sealed class VarHandle implements Constable
 
             var mh = vh.getMethodHandle(mode).asType(symbolicMethodTypeInvoker);
             if (cache == null) {
-                // Reduce costly object allocation - if our assumption stands,
-                // the first adaption works, and we don't want allocations for
-                // every VH invocation.
-                adaption = new Adaption(vh, mh);
+                var loader = caller == null ? ClassLoader.getSystemClassLoader() : caller.getClassLoader();
+                if (vh.isReachableFrom(loader)) {
+                    // Reduce costly object allocation - if our assumption stands,
+                    // the first adaption works, and we don't want allocations for
+                    // every VH invocation.
+                    adaption = new Adaption(vh, mh);
+                }
             }
             return mh;
         }

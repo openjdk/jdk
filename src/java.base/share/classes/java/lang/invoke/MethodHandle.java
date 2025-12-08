@@ -925,7 +925,7 @@ public abstract sealed class MethodHandle implements Constable
      */
     private boolean isSafeToCache(MethodType newType) {
         ClassLoader loader = getApproximateCommonClassLoader(type);
-        return keepsAlive(newType, loader);
+        return isReachableFrom(newType, loader);
     }
 
     /**
@@ -948,17 +948,17 @@ public abstract sealed class MethodHandle implements Constable
     }
 
     /* Returns true when {@code loader} keeps components of {@code mt} reachable either directly or indirectly through the loader delegation chain. */
-    private static boolean keepsAlive(MethodType mt, ClassLoader loader) {
+    static boolean isReachableFrom(MethodType mt, ClassLoader loader) {
         for (Class<?> ptype : mt.ptypes()) {
-            if (!keepsAlive(ptype, loader)) {
+            if (!isReachableFrom(ptype, loader)) {
                 return false;
             }
         }
-        return keepsAlive(mt.rtype(), loader);
+        return isReachableFrom(mt.rtype(), loader);
     }
 
     /* Returns true when {@code loader} keeps {@code cls} either directly or indirectly through the loader delegation chain. */
-    private static boolean keepsAlive(Class<?> cls, ClassLoader loader) {
+    static boolean isReachableFrom(Class<?> cls, ClassLoader loader) {
         ClassLoader defLoader = cls.getClassLoader();
         if (isBuiltinLoader(defLoader)) {
             return true; // built-in loaders are always reachable
@@ -980,7 +980,7 @@ public abstract sealed class MethodHandle implements Constable
         return false; // no direct relation between loaders is found
     }
 
-    private static boolean isBuiltinLoader(ClassLoader loader) {
+    static boolean isBuiltinLoader(ClassLoader loader) {
         return loader == null ||
                loader == ClassLoaders.platformClassLoader() ||
                loader == ClassLoaders.appClassLoader();

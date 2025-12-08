@@ -78,6 +78,11 @@ final class VarHandle$Type$s {
         }
 
         @Override
+        final boolean isReachableFrom(ClassLoader cl) {
+            return MethodHandle.isReachableFrom(receiverType, cl);
+        }
+
+        @Override
         public Optional<VarHandleDesc> describeConstable() {
             var receiverTypeRef = receiverType.describeConstable();
             var fieldTypeRef = {#if[Object]?fieldType:$type$.class}.describeConstable();
@@ -436,6 +441,11 @@ final class VarHandle$Type$s {
         @Override
         final MethodType accessModeTypeUncached(AccessType at) {
             return at.accessModeType(null, {#if[Object]?fieldType:$type$.class});
+        }
+
+        @Override
+        final boolean isReachableFrom(ClassLoader cl) {
+            return MethodHandle.isReachableFrom(declaringClass, cl);
         }
 
         @ForceInline

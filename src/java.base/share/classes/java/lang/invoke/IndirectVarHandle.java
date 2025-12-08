@@ -105,4 +105,12 @@ import java.util.function.BiFunction;
         MethodHandle targetHandle = target.getMethodHandle(mode); // might throw UOE of access mode is not supported, which is ok
         return handleFactory.apply(AccessMode.valueFromOrdinal(mode), targetHandle);
     }
+
+    @Override
+    boolean isReachableFrom(ClassLoader cl) {
+        // Ideally we should check the MH produced by handleFactory too,
+        // but checking the signature type of MH mostly works
+        return MethodHandle.isReachableFrom(vform.getMethodType(0), cl)
+                && target.isReachableFrom(cl);
+    }
 }
