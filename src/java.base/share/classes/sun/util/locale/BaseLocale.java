@@ -113,7 +113,7 @@ public final class BaseLocale {
      * specified.
      */
     static {
-        if (!System.getProperty("java.locale.useOldISOCodes", "").isEmpty()) {
+        if (System.getProperty("java.locale.useOldISOCodes") != null) {
             System.err.println("WARNING: The system property" +
                 " \"java.locale.useOldISOCodes\" is no longer supported." +
                 " Any specified value will be ignored.");
