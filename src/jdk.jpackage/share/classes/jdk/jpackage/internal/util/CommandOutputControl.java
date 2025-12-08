@@ -67,7 +67,8 @@ import jdk.jpackage.internal.util.function.ExceptionBox;
  * <p>
  * The table below describes how combinations of parameters affect content added
  * to {@code System.out} and {@code System.err} streams for subsequently
- * executed {@code ToolProvider}-s and {@code ProcessBuilder}-s:
+ * executed {@link #execute(ProcessBuilder, long)} and
+ * {@link #execute(ToolProvider, String...)} functions:
  * <table border="1">
  * <thead>
  * <tr>
@@ -91,7 +92,11 @@ import jdk.jpackage.internal.util.function.ExceptionBox;
  * System.err: unchanged</td>
  * <td>
  * <p>
- * System.out: STDERR
+ * System.out: STDERR;
+ * <p>
+ * The command's STDERR will be written into the stream object referenced by the
+ * {@link System#out} field and not into the underlying file descriptor
+ * associated with the STDOUT of the Java process
  * <p>
  * System.err: unchanged</td>
  * </tr>
@@ -141,11 +146,9 @@ import jdk.jpackage.internal.util.function.ExceptionBox;
  * Result.findStderr(): {@code Optional.empty()}</td>
  * <td>
  * <p>
- * Result.findContent():
- * <ul>
- *  <li>For a subprocess: the first line of either STDOUT or STDERR if the subprocess wrote any of them; otherwise {@code Optional.empty()}
- *  <li>For a tool provider: the first line of STDOUT if the tool provider wrote it; otherwise {@code Optional.empty()}
- * </ul>
+ * Result.findContent(): an {@code Optional} object wrapping a single item list
+ * with the first line of intertwined STDOUT & STDERR if a command wrote any of
+ * them; otherwise {@code Optional.of(List.of())}
  * <p>
  * Result.findStdout(): {@code Optional.empty()}
  * <p>
@@ -163,15 +166,15 @@ import jdk.jpackage.internal.util.function.ExceptionBox;
  * Result.findStderr(): STDERR</td>
  * <td>
  * <p>
- * Result.findContent(): The first line of STDOUT if the command wrote it;
- * otherwise, the first line of STDERR if the command wrote it; otherwise
- * {@code Optional.empty()}
+ * Result.findContent(): The first line of STDOUT if a command wrote it,
+ * followed by the first line of STDERR if the command wrote it; an
+ * {@code Optional} object wraps a list with at most two items
  * <p>
- * Result.findStdout(): The first line of STDOUT if the command wrote it;
- * otherwise {@code Optional.empty()}
+ * Result.findStdout(): The first line of STDOUT if a command wrote it;
+ * otherwise {@code Optional.of(List.of())}
  * <p>
- * Result.findStderr(): The first line of STDERR if the command wrote it and
- * didn't write STDOUT; otherwise {@code Optional.empty()}</td>
+ * Result.findStderr(): The first line of STDERR if a command wrote it;
+ * otherwise {@code Optional.of(List.of())}</td>
  * </tr>
  * <tr>
  * <th scope="row">redirectErrorStream(true) and discardStdout(false) and
@@ -180,16 +183,15 @@ import jdk.jpackage.internal.util.function.ExceptionBox;
  * <p>
  * Result.findContent(): STDOUT
  * <p>
- * Result.findStdout(): STDOUT
+ * Result.findStdout(): The same as Result.findContent()
  * <p>
  * Result.findStderr(): {@code Optional.empty()}</td>
  * <td>
  * <p>
  * Result.findContent(): The first line of STDOUT if the command wrote it;
- * otherwise {@code Optional.empty()}
+ * otherwise {@code Optional.of(List.of())}
  * <p>
- * Result.findStdout(): The first line of STDOUT if the command wrote it;
- * otherwise {@code Optional.empty()}
+ * Result.findStdout(): The same as Result.findContent()
  * <p>
  * Result.findStderr(): {@code Optional.empty()}</td>
  * </tr>
@@ -200,16 +202,15 @@ import jdk.jpackage.internal.util.function.ExceptionBox;
  * <p>
  * Result.findContent(): STDOUT
  * <p>
- * Result.findStdout(): STDOUT
+ * Result.findStdout(): The same as Result.findContent()
  * <p>
  * Result.findStderr(): {@code Optional.empty()}</td>
  * <td>
  * <p>
  * Result.findContent(): The first line of STDOUT if the command wrote it;
- * otherwise {@code Optional.empty()}
+ * otherwise {@code Optional.of(List.of())}
  * <p>
- * Result.findStdout(): The first line of STDOUT if the command wrote it;
- * otherwise {@code Optional.empty()}
+ * Result.findStdout(): The same as Result.findContent()
  * <p>
  * Result.findStderr(): {@code Optional.empty()}</td>
  * </tr>
@@ -220,16 +221,15 @@ import jdk.jpackage.internal.util.function.ExceptionBox;
  * <p>
  * Result.findContent(): STDERR
  * <p>
- * Result.findStdout(): STDERR
+ * Result.findStdout(): The same as Result.findContent()
  * <p>
  * Result.findStderr(): {@code Optional.empty()}</td>
  * <td>
  * <p>
  * Result.findContent(): The first line of STDERR if the command wrote it;
- * otherwise {@code Optional.empty()}
+ * otherwise {@code Optional.of(List.of())}
  * <p>
- * Result.findStdout(): The first line of STDERR if the command wrote it;
- * otherwise {@code Optional.empty()}
+ * Result.findStdout(): The same as Result.findContent()
  * <p>
  * Result.findStderr(): {@code Optional.empty()}</td>
  * </tr>
@@ -242,16 +242,15 @@ import jdk.jpackage.internal.util.function.ExceptionBox;
  * <p>
  * Result.findStdout(): {@code Optional.empty()}
  * <p>
- * Result.findStderr(): STDERR</td>
+ * Result.findStderr(): The same as Result.findContent()</td>
  * <td>
  * <p>
  * Result.findContent(): The first line of STDERR if the command wrote it;
- * otherwise {@code Optional.empty()}
+ * otherwise {@code Optional.of(List.of())}
  * <p>
  * Result.findStdout(): {@code Optional.empty()}
  * <p>
- * Result.findStderr(): The first line of STDERR if the command wrote it;
- * otherwise {@code Optional.empty()}</td>
+ * Result.findStderr(): The same as Result.findContent()</td>
  * </tr>
  * </tbody>
  * </table>
@@ -475,7 +474,7 @@ public final class CommandOutputControl {
         }
 
         public default Optional<String> findFirstLineOfOutput() {
-            return getContent().stream().findFirst();
+            return findContent().map(List::stream).flatMap(Stream::findFirst);
         }
     }
 
@@ -586,80 +585,69 @@ public final class CommandOutputControl {
     }
 
     private Result execute(ProcessBuilder pb, long timeoutMillis)
-            throws IOException, InterruptedException, TimeoutException {
+            throws IOException, InterruptedException {
 
         var charset = Optional.ofNullable(processOutputCharset).orElse(StandardCharsets.UTF_8);
 
-        try {
-            configureProcessBuilder(pb);
+        configureProcessBuilder(pb);
 
-            var process = pb.start();
+        var process = pb.start();
 
-            final var readStdoutTask = new FutureTask<>(() -> {
-                final var sink = streamFileSink(pb.redirectOutput());
-                try (final var reader = sink.isPresent() ?
-                        Files.newBufferedReader(sink.get(), charset)
-                        : process.inputReader(charset)) {
-                    return processProcessStream(outputStreamsControl.stdout(), reader, sink.isEmpty(), System.out);
+        final Optional<FutureTask<Optional<List<String>>>> readStdoutTask;
+        if (mustReadOutputStream(pb.redirectOutput())) {
+            readStdoutTask = Optional.of(new FutureTask<>(() -> {
+                try (final var reader = process.inputReader(charset)) {
+                    return processProcessStream(outputStreamsControl.stdout(), reader, true, System.out);
                 }
-            });
-
-            final Optional<FutureTask<Optional<List<String>>>> readStderrTask;
-            if (!redirectErrorStream) {
-                readStderrTask = Optional.of(new FutureTask<>(() -> {
-                    final var sink = streamFileSink(pb.redirectError());
-                    try (final var reader = sink.isPresent() ?
-                            Files.newBufferedReader(sink.get(), charset)
-                            : process.errorReader(charset)) {
-                        return processProcessStream(outputStreamsControl.stderr(), reader, sink.isEmpty(), System.err);
-                    }
-                }));
-            } else {
-                readStderrTask = Optional.empty();
-            }
-
-            if (!storeStreamsInFiles) {
-                // Start fetching process output streams.
-                // Do it before waiting for the process termination to avoid deadlocks.
-                Thread.ofVirtual().start(readStdoutTask);
-                readStderrTask.ifPresent(Thread.ofVirtual()::start);
-            }
-
-            final int exitCode;
-            try {
-                if (timeoutMillis < 0) {
-                    exitCode = process.waitFor();
-                } else if (!process.waitFor(timeoutMillis, TimeUnit.MILLISECONDS)) {
-                    process.destroy();
-                    throw new TimeoutException();
-                } else {
-                    exitCode = process.exitValue();
-                }
-            } finally {
-                if (storeStreamsInFiles) {
-                    readStdoutTask.run();
-                    readStderrTask.ifPresent(Runnable::run);
-                }
-            }
-
-            var stdout = getFutureResult(readStdoutTask);
-            var stderr = readStderrTask.isPresent() ?
-                    getFutureResult(readStderrTask.get()) : Optional.<List<String>>empty();
-
-            var output = combine(stdout, stderr);
-
-            return new Result(Optional.of(exitCode), output, new ProcessSpec(getPID(process), pb.command()));
-        } finally {
-            Consumer<Path> silentDeleter = path -> {
-                try {
-                    Files.delete(path);
-                } catch (IOException ignored) {
-                }
-            };
-
-            streamFileSink(pb.redirectOutput()).ifPresent(silentDeleter);
-            streamFileSink(pb.redirectError()).ifPresent(silentDeleter);
+            }));
+        } else {
+            readStdoutTask = Optional.empty();
         }
+
+        final Optional<FutureTask<Optional<List<String>>>> readStderrTask;
+        if (!pb.redirectErrorStream() && mustReadOutputStream(pb.redirectError())) {
+            readStderrTask = Optional.of(new FutureTask<>(() -> {
+                var outputControl = outputStreamsControl.stderr();
+                PrintStream dumpStream;
+                if (replaceStdoutWithStderr() && outputControl.dump()) {
+                    dumpStream = System.out;
+                } else {
+                    dumpStream = System.err;
+                }
+                try (final var reader = process.errorReader(charset)) {
+                    return processProcessStream(outputControl, reader, true, dumpStream);
+                }
+            }));
+        } else {
+            readStderrTask = Optional.empty();
+        }
+
+        // Start fetching process output streams.
+        // Do it before waiting for the process termination to avoid deadlocks.
+        readStdoutTask.ifPresent(Thread.ofVirtual()::start);
+        readStderrTask.ifPresent(Thread.ofVirtual()::start);
+
+        final Optional<Integer> exitCode;
+        if (timeoutMillis < 0) {
+            exitCode = Optional.of(process.waitFor());
+        } else if (!process.waitFor(timeoutMillis, TimeUnit.MILLISECONDS)) {
+            process.destroy();
+            exitCode = Optional.empty();
+        } else {
+            exitCode = Optional.of(process.exitValue());
+        }
+
+        CommandOutput output;
+        if (storeStreamsInFiles) {
+            output = processProcessOutputStoredInFiles(pb);
+        } else {
+            var stdout = getStreamContent(readStdoutTask, outputStreamsControl.stdout());
+            var stderr = getStreamContent(readStderrTask, outputStreamsControl.stderr());
+
+            output = combine(stdout, redirectErrorStream ? Optional.empty() : stderr);
+        }
+
+        return new Result(exitCode, output, new ProcessSpec(getPID(process), pb.command()));
     }
 
     private Result execute(ToolProvider tp, String... args) throws IOException {
@@ -676,9 +664,10 @@ public final class CommandOutputControl {
             }
         }
 
-        final var output = combine(
-                read(outputStreamsControl.stdout(), tpStreamConfig.out()),
-                read(outputStreamsControl.stderr(), tpStreamConfig.err()));
+        var stdout = read(outputStreamsControl.stdout(), tpStreamConfig.out());
+        var stderr = read(outputStreamsControl.stderr(), tpStreamConfig.err());
+
+        final var output = combine(stdout, redirectErrorStream ? Optional.empty() : stderr);
 
         return new Result(Optional.of(exitCode), output, new ToolProviderSpec(tp.name(), List.of(args)));
     }
@@ -691,7 +680,7 @@ public final class CommandOutputControl {
 
     private Optional<Path> streamFileSink(ProcessBuilder.Redirect redirect) {
         return Optional.of(redirect)
-                .filter(Predicate.isEqual(ProcessBuilder.Redirect.DISCARD))
+                .filter(Predicate.isEqual(ProcessBuilder.Redirect.DISCARD).negate())
                 .map(ProcessBuilder.Redirect::file)
                 .map(File::toPath);
     }
@@ -704,22 +693,28 @@ public final class CommandOutputControl {
         if (!stdoutRedirect.equals(stderrRedirect) && Stream.of(
                 stdoutRedirect,
                 stderrRedirect
-        ).noneMatch(Predicate.isEqual(ProcessBuilder.Redirect.DISCARD)) && redirectErrorStream) {
+        ).noneMatch(Predicate.isEqual(ProcessBuilder.Redirect.DISCARD)) && redirectErrorStream()) {
             throw new UnsupportedOperationException(String.format(
                     "Can't redirect stderr into stdout because they have different redirects: stdout=%s; stderr=%s",
                     stdoutRedirect, stderrRedirect));
         }
 
-        pb.redirectErrorStream(redirectErrorStream);
+        pb.redirectErrorStream(redirectErrorStream());
+        if (replaceStdoutWithStderr()) {
+            if (stderrRedirect.equals(ProcessBuilder.Redirect.INHERIT)) {
+                stderrRedirect = ProcessBuilder.Redirect.PIPE;
+            }
+            pb.redirectErrorStream(false);
+        }
 
-        stdoutRedirect = filterRedirect(stdoutRedirect);
-        stderrRedirect = filterRedirect(stderrRedirect);
+        stdoutRedirect = mapRedirect(stdoutRedirect);
+        stderrRedirect = mapRedirect(stderrRedirect);
 
         pb.redirectOutput(stdoutRedirect);
         pb.redirectError(stderrRedirect);
     }
 
-    private ProcessBuilder.Redirect filterRedirect(ProcessBuilder.Redirect redirect) throws IOException {
+    private ProcessBuilder.Redirect mapRedirect(ProcessBuilder.Redirect redirect) throws IOException {
         if (storeStreamsInFiles && redirect.equals(ProcessBuilder.Redirect.PIPE)) {
             var sink = Files.createTempFile("jpackageOutputTempFile", ".tmp");
             return ProcessBuilder.Redirect.to(sink.toFile());
@@ -728,6 +723,85 @@ public final class CommandOutputControl {
         }
     }
 
+    private CommandOutput processProcessOutputStoredInFiles(ProcessBuilder pb) throws IOException {
+        Objects.requireNonNull(pb);
+        if (!storeStreamsInFiles) {
+            throw new IllegalStateException();
+        }
+
+        final var charset = Optional.ofNullable(processOutputCharset).orElse(StandardCharsets.UTF_8);
+
+        final var stdoutStorage = streamFileSink(pb.redirectOutput());
+        final var stderrStorage = streamFileSink(pb.redirectError());
+
+        try {
+            final Optional<List<String>> stdout;
+            if (stdoutStorage.isPresent()) {
+                try (final var reader = Files.newBufferedReader(stdoutStorage.get(), charset)) {
+                    stdout = processProcessStream(outputStreamsControl.stdout(), reader, false, System.out);
+                }
+            } else if (outputStreamsControl.stdout().save()) {
+                stdout = Optional.of(List.of());
+            } else {
+                stdout = Optional.empty();
+            }
+
+            final Optional<List<String>> stderr;
+            if (stderrStorage.isPresent()) {
+                var outputControl = outputStreamsControl.stderr();
+                PrintStream dumpStream;
+                if (replaceStdoutWithStderr() && outputControl.dump()) {
+                    dumpStream = System.out;
+                } else {
+                    dumpStream = System.err;
+                }
+                try (final var reader = Files.newBufferedReader(stderrStorage.get(), charset)) {
+                    stderr = processProcessStream(outputControl, reader, false, dumpStream);
+                }
+            } else if (outputStreamsControl.stderr().save()) {
+                stderr = Optional.of(List.of());
+            } else {
+                stderr = Optional.empty();
+            }
+
+            final var output = combine(stdout, redirectErrorStream ? Optional.empty() : stderr);
+            return output;
+        } finally {
+            Consumer<Path> silentDeleter = path -> {
+                try {
+                    Files.delete(path);
+                } catch (IOException ignored) {
+                }
+            };
+
+            stdoutStorage.ifPresent(silentDeleter);
+            stderrStorage.ifPresent(silentDeleter);
+        }
+    }
+
+    private boolean redirectErrorStream() {
+        return redirectErrorStream && !outputStreamsControl.stderr().discard();
+    }
+
+    private boolean replaceStdoutWithStderr() {
+        return redirectErrorStream() && outputStreamsControl.stdout().discard();
+    }
+
+    private static Optional<List<String>> getStreamContent(
+            Optional<? extends Future<? extends Optional<List<String>>>> f, OutputControl c)
+            throws IOException, InterruptedException {
+
+        Objects.requireNonNull(f);
+        Objects.requireNonNull(c);
+
+        if (f.isPresent()) {
+            return getFutureResult(f.get());
+        } else if (c.save()) {
+            return Optional.of(List.of());
+        } else {
+            return Optional.empty();
+        }
+    }
 
     private static <T> T getFutureResult(Future<T> f) throws IOException, InterruptedException {
         try {
@@ -750,10 +824,14 @@ public final class CommandOutputControl {
         }
     }
 
+    private static boolean mustReadOutputStream(ProcessBuilder.Redirect redirect) {
+        return redirect.equals(ProcessBuilder.Redirect.PIPE);
+    }
+
     private static Optional<List<String>> processProcessStream(
-            OutputControl outputControl, 
-            BufferedReader bufReader, 
-            boolean readAll, 
+            OutputControl outputControl,
+            BufferedReader bufReader,
+            boolean readAll,
             PrintStream dumpStream) throws IOException {
 
         List<String> outputLines = null;
@@ -812,19 +890,23 @@ public final class CommandOutputControl {
         if (out.isEmpty() && err.isEmpty()) {
             return CommandOutput.EMPTY;
         } else if (out.isEmpty()) {
-            return new CommandOutput(err, -1, redirectErrorStream);
+            if (redirectErrorStream()) {
+                return new CommandOutput(err, Integer.MAX_VALUE, true);
+            } else {
+                return new CommandOutput(err, -1, false);
+            }
         } else if (err.isEmpty()) {
-            return new CommandOutput(out, out.map(List::size).orElse(-1), redirectErrorStream);
+            return new CommandOutput(out, Integer.MAX_VALUE, redirectErrorStream());
         } else {
             final var combined = Stream.of(out, err).map(Optional::orElseThrow).flatMap(List::stream);
-            if (outputStreamsControl.stdout().saveFirstLine() && outputStreamsControl.stderr().saveFirstLine()) {
+            if (outputStreamsControl.stdout().saveFirstLine() && outputStreamsControl.stderr().saveFirstLine() && redirectErrorStream()) {
                 return new CommandOutput(
                         Optional.of(combined.findFirst().map(List::of).orElseGet(List::of)),
                         Integer.min(1, out.orElseThrow().size()),
-                        redirectErrorStream);
+                        true);
             } else {
                 return new CommandOutput(
-                        Optional.of(combined.toList()), out.orElseThrow().size(), redirectErrorStream);
+                        Optional.of(combined.toList()), out.orElseThrow().size(), redirectErrorStream());
             }
         }
     }
@@ -936,7 +1018,9 @@ public final class CommandOutputControl {
                 if (buf.isPresent() && dumpStream != null) {
                     ps = new PrintStream(new TeeOutputStream(List.of(buf.orElseThrow(), dumpStream)), true, dumpStream.charset());
                 } else if (!discard) {
-                    ps = buf.map(PrintStream::new).or(() -> Optional.ofNullable(dumpStream)).orElseGet(CommandOutputControl::nullPrintStream);
+                    ps = buf.map(PrintStream::new).or(() -> {
+                        return Optional.ofNullable(dumpStream);
+                    }).orElseGet(CommandOutputControl::nullPrintStream);
                 } else {
                     ps = nullPrintStream();
                 }
@@ -1131,9 +1215,7 @@ public final class CommandOutputControl {
         CommandOutput {
             Objects.requireNonNull(lines);
             if (intertwined) {
-                if (lines.map(Collection::size).orElse(-1) != stdoutLineCount) {
-                    throw new IllegalArgumentException("Invalid line count");
-                }
+                stdoutLineCount = lines.map(Collection::size).orElse(-1);
             }
         }
 
@@ -1146,7 +1228,7 @@ public final class CommandOutputControl {
          * @return stdout if it can be extracted from the combined output
          */
         Optional<List<String>> stdoutLines() {
-            if (lines.isEmpty() || stdoutLineCount < 0 || intertwined) {
+            if (!withUnintertwinedStdout()) {
                 return Optional.empty();
             }
 
@@ -1163,14 +1245,22 @@ public final class CommandOutputControl {
          * @return stderr if it can be extracted from the combined output
          */
         Optional<List<String>> stderrLines() {
-            if (lines.isEmpty() || stdoutLineCount > lines.orElseThrow().size() || intertwined) {
+            if (!withUnintertwinedStderr()) {
                 return Optional.empty();
-            } else if (stdoutLineCount == 0) {
+            } else if (stdoutLineCount <= 0) {
                 return lines;
             } else {
                 final var theLines = lines.orElseThrow();
                 return Optional.of(theLines.subList(stdoutLineCount, theLines.size()));
             }
+        }
+
+        private boolean withUnintertwinedStdout() {
+            return !intertwined && lines.isPresent() && stdoutLineCount >= 0;
+        }
+
+        private boolean withUnintertwinedStderr() {
+            return !intertwined && lines.isPresent() && stdoutLineCount <= lines.get().size();
         }
 
         static final CommandOutput EMPTY = new CommandOutput();
@@ -1204,16 +1294,11 @@ public final class CommandOutputControl {
 
         @Override
         public Result execute() throws IOException, InterruptedException {
-            try {
-                return coc.execute(pb, -1L);
-            } catch (TimeoutException ex) {
-                // Should never happen.
-                throw new UnsupportedOperationException(ex);
-            }
+            return coc.execute(pb, -1L);
         }
 
         @Override
-        public Result execute(long timeout, TimeUnit unit) throws IOException, InterruptedException, TimeoutException {
+        public Result execute(long timeout, TimeUnit unit) throws IOException, InterruptedException {
             return coc.execute(pb, unit.toMillis(timeout));
         }
 
