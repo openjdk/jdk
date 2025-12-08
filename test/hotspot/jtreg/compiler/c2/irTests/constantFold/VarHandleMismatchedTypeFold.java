@@ -44,9 +44,7 @@ import compiler.lib.ir_framework.TestFramework;
 public class VarHandleMismatchedTypeFold {
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags(
-            "-XX:+UnlockExperimentalVMOptions"
-        );
+        TestFramework.run();
     }
 
     static final int a = 5;
