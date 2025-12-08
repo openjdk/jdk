@@ -448,7 +448,7 @@ void ShenandoahBarrierSet::arraycopy_marking(T* dst, size_t count) {
   assert(_heap->is_concurrent_mark_in_progress(), "only during marking");
   if (ShenandoahSATBBarrier) {
     if (!_heap->marking_context()->allocated_after_mark_start(reinterpret_cast<HeapWord*>(dst)) ||
-        (_heap->is_concurrent_young_mark_in_progress() && _heap->heap_region_containing(dst)->is_old())) {
+        (_heap->mode()->is_generational() && _heap->heap_region_containing(dst)->is_old() && _heap->is_concurrent_young_mark_in_progress())) {
       arraycopy_work<T, false, false, true>(dst, count);
 #ifdef ASSERT
       if (_heap->heap_region_containing(dst)->is_old()) {
