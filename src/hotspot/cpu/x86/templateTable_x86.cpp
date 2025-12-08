@@ -1595,29 +1595,21 @@ void TemplateTable::convert() {
   case Bytecodes::_f2i:
   {
     Label L;
-    if (VM_Version::supports_avx10_2()) {
-      __ evcvttss2sisl(rax, xmm0);
-    } else {
-      __ cvttss2sil(rax, xmm0);
-      __ cmpl(rax, 0x80000000); // NaN or overflow/underflow?
-      __ jcc(Assembler::notEqual, L);
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::f2i), 1);
-    }
+    __ cvttss2sil(rax, xmm0);
+    __ cmpl(rax, 0x80000000); // NaN or overflow/underflow?
+    __ jcc(Assembler::notEqual, L);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::f2i), 1);
     __ bind(L);
   }
     break;
   case Bytecodes::_f2l:
   {
     Label L;
-    if (VM_Version::supports_avx10_2()) {
-      __ evcvttss2sisq(rax, xmm0);
-    } else {
-      __ cvttss2siq(rax, xmm0);
-      // NaN or overflow/underflow?
-      __ cmp64(rax, ExternalAddress((address) &is_nan), rscratch1);
-      __ jcc(Assembler::notEqual, L);
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::f2l), 1);
-    }
+    __ cvttss2siq(rax, xmm0);
+    // NaN or overflow/underflow?
+    __ cmp64(rax, ExternalAddress((address) &is_nan), rscratch1);
+    __ jcc(Assembler::notEqual, L);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::f2l), 1);
     __ bind(L);
   }
     break;
@@ -1627,30 +1619,22 @@ void TemplateTable::convert() {
   case Bytecodes::_d2i:
   {
     Label L;
-    if (VM_Version::supports_avx10_2()) {
-      __ evcvttsd2sisl(rax, xmm0);
-    } else {
-      __ cvttsd2sil(rax, xmm0);
-      __ cmpl(rax, 0x80000000); // NaN or overflow/underflow?
-      __ jcc(Assembler::notEqual, L);
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::d2i), 1);
-    }
+    __ cvttsd2sil(rax, xmm0);
+    __ cmpl(rax, 0x80000000); // NaN or overflow/underflow?
+    __ jcc(Assembler::notEqual, L);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::d2i), 1);
     __ bind(L);
   }
     break;
   case Bytecodes::_d2l:
   {
     Label L;
-    if (VM_Version::supports_avx10_2()) {
-      __ evcvttsd2sisq(rax, xmm0);
-    } else {
-      __ cvttsd2siq(rax, xmm0);
-      // NaN or overflow/underflow?
-      __ cmp64(rax, ExternalAddress((address) &is_nan), rscratch1);
-      __ jcc(Assembler::notEqual, L);
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::d2l), 1);
-      __ bind(L);
-    }
+    __ cvttsd2siq(rax, xmm0);
+    // NaN or overflow/underflow?
+    __ cmp64(rax, ExternalAddress((address) &is_nan), rscratch1);
+    __ jcc(Assembler::notEqual, L);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::d2l), 1);
+    __ bind(L);
   }
     break;
   case Bytecodes::_d2f:
