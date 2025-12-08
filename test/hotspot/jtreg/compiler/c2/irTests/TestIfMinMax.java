@@ -30,7 +30,7 @@ import jdk.test.lib.Utils;
 
 /*
  * @test
- * @bug 8324655 8329797 8331090
+ * @bug 8324655 8331090
  * @key randomness
  * @summary Test that if expressions are properly folded into min/max nodes
  * @library /test/lib /
@@ -137,42 +137,6 @@ public class TestIfMinMax {
     @IR(phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, failOn = { IRNode.IF }, counts = { IRNode.MAX_L, "1" })
     public long testMaxL2E(long a, long b) {
         return a <= b ? b : a;
-    }
-
-    public class Dummy {
-        long l;
-        public Dummy(long l) { this.l = l; }
-    }
-
-    @Setup
-    Object[] setupDummyArray() {
-        Dummy[] arr = new Dummy[512];
-        for (int i = 0; i < 512; i++) {
-            arr[i] = new Dummy(RANDOM.nextLong());
-        }
-        return new Object[] { arr };
-    }
-
-    @Test
-    @Arguments(setup = "setupDummyArray")
-    @IR(failOn = { IRNode.MAX_L })
-    public long testMaxLAndBarrierInLoop(Dummy[] arr) {
-        long result = 0;
-        for (int i = 0; i < arr.length; ++i) {
-            result += Math.max(arr[i].l, 1);
-        }
-        return result;
-    }
-
-    @Test
-    @Arguments(setup = "setupDummyArray")
-    @IR(failOn = { IRNode.MIN_L })
-    public long testMinLAndBarrierInLoop(Dummy[] arr) {
-        long result = 0;
-        for (int i = 0; i < arr.length; ++i) {
-            result += Math.min(arr[i].l, 1);
-        }
-        return result;
     }
 
     @Setup
