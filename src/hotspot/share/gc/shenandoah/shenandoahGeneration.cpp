@@ -77,6 +77,9 @@ public:
     }
   }
 
+  // Bitmap reset task is heavy-weight and benefits from much smaller tasks than the default.
+  size_t parallel_region_stride() override { return 8; }
+
   bool is_thread_safe() override { return true; }
 };
 

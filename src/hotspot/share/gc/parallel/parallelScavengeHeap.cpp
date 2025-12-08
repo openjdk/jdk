@@ -58,8 +58,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 
-PSYoungGen*  ParallelScavengeHeap::_young_gen = nullptr;
-PSOldGen*    ParallelScavengeHeap::_old_gen = nullptr;
 PSAdaptiveSizePolicy* ParallelScavengeHeap::_size_policy = nullptr;
 GCPolicyCounters* ParallelScavengeHeap::_gc_policy_counters = nullptr;
 size_t ParallelScavengeHeap::_desired_page_size = 0;
@@ -143,9 +141,9 @@ void ParallelScavengeHeap::initialize_serviceability() {
                                                 "PS Survivor Space",
                                                 false /* support_usage_threshold */);
 
-  _old_pool = new PSGenerationPool(_old_gen,
-                                   "PS Old Gen",
-                                   true /* support_usage_threshold */);
+  _old_pool = new PSOldGenerationPool(_old_gen,
+                                      "PS Old Gen",
+                                      true /* support_usage_threshold */);
 
   _young_manager = new GCMemoryManager("PS Scavenge");
   _old_manager = new GCMemoryManager("PS MarkSweep");
@@ -891,9 +889,23 @@ void ParallelScavengeHeap::resize_after_young_gc(bool is_survivor_overflowing) {
 
   // Consider if should shrink old-gen
   if (!is_survivor_overflowing) {
-    // Upper bound for a single step shrink
-    size_t max_shrink_bytes = SpaceAlignment;
+    assert(old_gen()->capacity_in_bytes() >= old_gen()->min_gen_size(), "inv");
+
+    // Old gen min_gen_size constraint.
+    const size_t max_shrink_bytes_gen_size_constraint = old_gen()->capacity_in_bytes() - old_gen()->min_gen_size();
+
+    // Per-step delta to avoid too aggressive shrinking.
+    const size_t max_shrink_bytes_per_step_constraint = SpaceAlignment;
+
+    // Combining the above two constraints.
+    const size_t max_shrink_bytes = MIN2(max_shrink_bytes_gen_size_constraint,
+                                         max_shrink_bytes_per_step_constraint);
+
     size_t shrink_bytes = _size_policy->compute_old_gen_shrink_bytes(old_gen()->free_in_bytes(), max_shrink_bytes);
+
+    assert(old_gen()->capacity_in_bytes() >= shrink_bytes, "inv");
+    assert(old_gen()->capacity_in_bytes() - shrink_bytes >= old_gen()->min_gen_size(), "inv");
+
     if (shrink_bytes != 0) {
       if (MinHeapFreeRatio != 0) {
         size_t new_capacity = old_gen()->capacity_in_bytes() - shrink_bytes;

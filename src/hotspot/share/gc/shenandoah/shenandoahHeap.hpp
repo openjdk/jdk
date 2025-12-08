@@ -113,6 +113,7 @@ public:
 class ShenandoahHeapRegionClosure : public StackObj {
 public:
   virtual void heap_region_do(ShenandoahHeapRegion* r) = 0;
+  virtual size_t parallel_region_stride() { return ShenandoahParallelRegionStride; }
   virtual bool is_thread_safe() { return false; }
 };
 
