@@ -210,11 +210,7 @@ public final class Executor extends CommandArguments<Executor> {
         }
 
         public int getExitCode() {
-            return exitCode();
-        }
-
-        public int exitCode() {
-            return base.exitCode();
+            return base.getExitCode();
         }
     }
 

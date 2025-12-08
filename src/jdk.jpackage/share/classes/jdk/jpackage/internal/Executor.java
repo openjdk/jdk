@@ -25,6 +25,7 @@
 package jdk.jpackage.internal;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -71,6 +72,29 @@ final class Executor {
     public Executor saveFirstLineOfOutput() {
         commandOutputControl.saveFirstLineOfOutput();
         return this;
+    }
+
+    Executor processOutputCharset(Charset v) {
+        commandOutputControl.processOutputCharset(v);
+        return this;
+    }
+
+    Executor redirectErrorStream(boolean v) {
+        commandOutputControl.redirectErrorStream(v);
+        return this;
+    }
+
+    Executor redirectErrorStream() {
+        return redirectErrorStream(true);
+    }
+
+    Executor storeStreamsInFiles(boolean v) {
+        commandOutputControl.storeStreamsInFiles(v);
+        return this;
+    }
+
+    Executor storeStreamsInFiles() {
+        return storeStreamsInFiles(true);
     }
 
     Executor discardStdout(boolean v) {
