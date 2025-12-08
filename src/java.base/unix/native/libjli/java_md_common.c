@@ -274,11 +274,16 @@ static int
 CheckSanity(char *path, char *dir)
 {
     char    buffer[PATH_MAX];
+    int snprintf_result;
 
     if (JLI_StrLen(path) + JLI_StrLen(dir) + 11 > PATH_MAX)
         return (0);     /* Silently reject "impossibly" long paths */
 
-    JLI_Snprintf(buffer, sizeof(buffer), "%s/%s/bin/java", path, dir);
+    snprintf_result = JLI_Snprintf(buffer, sizeof(buffer), "%s/%s/bin/java", path, dir);
+    if ((snprintf_result < 0) || (snprintf_result >= (int)sizeof(buffer))) {
+      return NULL;
+    }
+
     return ((access(buffer, X_OK) == 0) ? 1 : 0);
 }
 
