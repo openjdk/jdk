@@ -68,12 +68,22 @@ public class TestFloat16ScalarOperations {
     private static final Float16 RANDOM4 = Float16.valueOf(genF.next());
     private static final Float16 RANDOM5 = Float16.valueOf(genF.next());
 
+    // We have to ensure that the constants are not special values that lead the operations to
+    // constant fold. For example "x + 0" could constant fold to "x", so we need to avoid that
+    // the add constant is zero.
+    private static Generator<Float> genSmallRangeF = G.uniformFloats(0.1f, 0.9f);
+    private static final Float16 RANDOM_CON_ADD = Float16.valueOf(genSmallRangeF.next());
+    private static final Float16 RANDOM_CON_SUB = Float16.valueOf(genSmallRangeF.next());
+    private static final Float16 RANDOM_CON_MUL = Float16.valueOf(genSmallRangeF.next());
+    private static final Float16 RANDOM_CON_DIV = Float16.valueOf(genSmallRangeF.next());
+
     private static Float16 RANDOM1_VAR = RANDOM1;
     private static Float16 RANDOM2_VAR = RANDOM2;
     private static Float16 RANDOM3_VAR = RANDOM3;
     private static Float16 RANDOM4_VAR = RANDOM4;
     private static Float16 RANDOM5_VAR = RANDOM5;
     private static Float16 POSITIVE_ZERO_VAR = POSITIVE_ZERO;
+
 
     private static final float INEXACT_FP16 = 2051.0f;
     private static final float EXACT_FP16 = 2052.0f;
@@ -435,11 +445,10 @@ public class TestFloat16ScalarOperations {
     @Warmup(10000)
     public short testRandomFP16ConstantPatternSet1() {
         short res = 0;
-        // TODO: all of the below have issues with constant folding
-        res += Float.floatToFloat16(RANDOM1_VAR.floatValue() + RANDOM2.floatValue());
-        res += Float.floatToFloat16(RANDOM2_VAR.floatValue() - RANDOM3.floatValue());
-        res += Float.floatToFloat16(RANDOM3_VAR.floatValue() * RANDOM4.floatValue());
-        res += Float.floatToFloat16(RANDOM4_VAR.floatValue() / RANDOM5.floatValue());
+        res += Float.floatToFloat16(RANDOM1_VAR.floatValue() + RANDOM_CON_ADD.floatValue());
+        res += Float.floatToFloat16(RANDOM2_VAR.floatValue() - RANDOM_CON_SUB.floatValue());
+        res += Float.floatToFloat16(RANDOM3_VAR.floatValue() * RANDOM_CON_MUL.floatValue());
+        res += Float.floatToFloat16(RANDOM4_VAR.floatValue() / RANDOM_CON_DIV.floatValue());
         return res;
     }
 
@@ -457,11 +466,10 @@ public class TestFloat16ScalarOperations {
     @Warmup(10000)
     public short testRandomFP16ConstantPatternSet2() {
         short res = 0;
-        // TODO: and probably all of these have issues too. At least NaN should always constant fold, right?
-        res += Float.floatToFloat16(RANDOM2.floatValue() + RANDOM1_VAR.floatValue());
-        res += Float.floatToFloat16(RANDOM3.floatValue() - RANDOM2_VAR.floatValue());
-        res += Float.floatToFloat16(RANDOM4.floatValue() * RANDOM3_VAR.floatValue());
-        res += Float.floatToFloat16(RANDOM5.floatValue() / RANDOM4_VAR.floatValue());
+        res += Float.floatToFloat16(RANDOM_CON_ADD.floatValue() + RANDOM1_VAR.floatValue());
+        res += Float.floatToFloat16(RANDOM_CON_SUB.floatValue() - RANDOM2_VAR.floatValue());
+        res += Float.floatToFloat16(RANDOM_CON_MUL.floatValue() * RANDOM3_VAR.floatValue());
+        res += Float.floatToFloat16(RANDOM_CON_DIV.floatValue() / RANDOM4_VAR.floatValue());
         return res;
     }
 
