@@ -2182,7 +2182,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * the exact result cannot fit in {@code mc.getPrecision()} digits.
      * @see #sqrt(MathContext)
      * @see BigInteger#rootn(int)
-     * @since 26
+     * @since 27
      * @apiNote Note that calling {@code rootn(2, mc)} is equivalent to calling {@code sqrt(mc)}.
      */
     public BigDecimal rootn(int n, MathContext mc) {
