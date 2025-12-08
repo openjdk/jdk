@@ -2996,7 +2996,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   ProfileStub *stub
     = profile_capture_ratio > 1 ? new ProfileStub() : nullptr;
 
-  auto lambda = [op, stub] (LIR_Assembler* ce, LIR_Op* base_op) {
+  auto lambda = [stub] (LIR_Assembler* ce, LIR_Op* base_op) {
 #undef __
 #define __ masm->
 

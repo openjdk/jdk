@@ -388,7 +388,7 @@
           "If compilation is stopped with an error, capture diagnostic "    \
           "information at the bailout point")                               \
                                                                             \
-  product(int, ProfileCaptureRatio, 64, EXPERIMENTAL,                        \
+  product(int, ProfileCaptureRatio, 1, EXPERIMENTAL,                        \
           "Reduce and randomize tiered-compilation profile captures "       \
           "in order to reduce cache contention on shared method data. "     \
           "Must be a power of 2.")                                          \
