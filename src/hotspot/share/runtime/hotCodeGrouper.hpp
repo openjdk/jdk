@@ -27,9 +27,6 @@
 #define SHARE_RUNTIME_HOTCODEGROUPER_HPP
 
 #include "runtime/nonJavaThread.hpp"
-#include "utilities/linkedlist.hpp"
-#include "utilities/pair.hpp"
-#include "runtime/hotCodeSampler.hpp"
 
 class ThreadSampler;
 
@@ -37,8 +34,8 @@ class HotCodeGrouper : public NonJavaThread {
  private:
   static bool _is_initialized;
 
-  static size_t _new_c2_nmethods_count;
-  static size_t _total_c2_nmethods_count;
+  static int _new_c2_nmethods_count;
+  static int _total_c2_nmethods_count;
 
   void do_grouping(ThreadSampler& sampler);
 

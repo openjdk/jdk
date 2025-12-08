@@ -26,22 +26,10 @@
 #ifndef SHARE_RUNTIME_HOTCODESAMPLER_HPP
 #define SHARE_RUNTIME_HOTCODESAMPLER_HPP
 
-#include "code/codeCache.inline.hpp"
-#include "code/compiledIC.hpp"
-#include "compiler/compilerDefinitions.inline.hpp"
-#include "logging/log.hpp"
-#include "runtime/atomicAccess.hpp"
-#include "runtime/hotCodeGrouper.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/os.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/suspendedThreadTask.hpp"
-#include "runtime/threads.hpp"
-#include "utilities/debug.hpp"
-#include "utilities/globalDefinitions.hpp"
-#include "utilities/hashTable.hpp"
-#include "runtime/nonJavaThread.hpp"
-#include "utilities/linkedlist.hpp"
-#include "utilities/pair.hpp"
+#include "runtime/threadSMR.hpp"
+#include "utilities/resizableHashTable.hpp"
 
 // Minumum amount of time between samples
 static inline int64_t min_sampling_period_ms() {

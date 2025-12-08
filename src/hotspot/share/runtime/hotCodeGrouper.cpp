@@ -23,25 +23,21 @@
  */
 
 #ifdef COMPILER2
-#include "code/codeCache.inline.hpp"
+
+#include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "logging/log.hpp"
-#include "runtime/atomicAccess.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/hotCodeGrouper.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/os.hpp"
-#include "runtime/suspendedThreadTask.hpp"
-#include "runtime/threads.hpp"
-#include "utilities/debug.hpp"
-#include "utilities/globalDefinitions.hpp"
-#include "utilities/hashTable.hpp"
-
+#include "runtime/hotCodeSampler.hpp"
+#include "runtime/java.hpp"
+#include "runtime/javaThread.inline.hpp"
 
 // Initalize static variables
 bool   HotCodeGrouper::_is_initialized = false;
-size_t HotCodeGrouper::_new_c2_nmethods_count = 0;
-size_t HotCodeGrouper::_total_c2_nmethods_count = 0;
+int    HotCodeGrouper::_new_c2_nmethods_count = 0;
+int    HotCodeGrouper::_total_c2_nmethods_count = 0;
 
 void HotCodeGrouper::initialize() {
   if (!HotCodeHeap) {
@@ -61,9 +57,9 @@ void HotCodeGrouper::initialize() {
   _is_initialized = true;
 }
 
-static inline bool steady_nmethod_count(size_t new_nmethods_count, size_t total_nmethods_count) {
+static inline bool steady_nmethod_count(int new_nmethods_count, int total_nmethods_count) {
   if (total_nmethods_count <= 0) {
-    log_trace(hotcodegrouper)("C2 nmethod count not steady. Total C2 nmethods %ld <= 0", total_nmethods_count);
+    log_trace(hotcodegrouper)("C2 nmethod count not steady. Total C2 nmethods %d <= 0", total_nmethods_count);
     return false;
   }
 
@@ -71,7 +67,7 @@ static inline bool steady_nmethod_count(size_t new_nmethods_count, size_t total_
   bool is_steady_nmethod_count = ratio_new < HotCodeSteadyThreshold;
 
   log_info(hotcodegrouper)("C2 nmethod count %s", is_steady_nmethod_count ? "steady" : "not steady");
-  log_trace(hotcodegrouper)("\t- New: %ld. Total: %ld. Ratio: %f. Threshold: %f", new_nmethods_count, total_nmethods_count, ratio_new, HotCodeSteadyThreshold);
+  log_trace(hotcodegrouper)("\t- New: %d. Total: %d. Ratio: %f. Threshold: %f", new_nmethods_count, total_nmethods_count, ratio_new, HotCodeSteadyThreshold);
 
   return is_steady_nmethod_count;
 }

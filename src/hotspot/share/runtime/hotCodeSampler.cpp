@@ -24,7 +24,10 @@
 
 #ifdef COMPILER2
 
+#include "code/codeCache.hpp"
+#include "logging/log.hpp"
 #include "runtime/hotCodeSampler.hpp"
+#include "runtime/javaThread.inline.hpp"
 
 ThreadSampler* ThreadSampler::_current_sampler = nullptr;
 
@@ -55,7 +58,7 @@ void ThreadSampler::do_sampling() {
 
         total_samples++;
 
-        if (!Interpreter::contains(pc) && CodeCache::contains(pc)) {
+        if (CodeCache::contains(pc)) {
           nmethod* nm = CodeCache::find_blob(pc)->as_nmethod_or_null();
           if (nm != nullptr) {
             bool created = false;
