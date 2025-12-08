@@ -212,10 +212,6 @@ public:
     return _alloc_type == _alloc_cds;
   }
 
-  inline bool is_plab() const {
-    return _alloc_type == _alloc_plab;
-  }
-
   inline ShenandoahAffiliation affiliation() const {
     return (_alloc_type & bit_old_alloc) == 0 ? YOUNG_GENERATION : OLD_GENERATION ;
   }
