@@ -497,9 +497,6 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
   size_t immediate_garbage = 0;
   size_t immediate_regions = 0;
   size_t live_data = 0;
-#ifdef ASSERT
-  bool reclaimed_immediate = false;
-#endif
   RegionData* candidates = _region_data;
   for (size_t i = 0; i < num_regions; i++) {
     ShenandoahHeapRegion* region = heap->get_region(i);
@@ -518,14 +515,6 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
       // by which time, the pinned region may no longer be pinned.
       if (!region->has_live()) {
         assert(!region->is_pinned(), "Pinned region should have live (pinned) objects.");
-#ifdef ASSERT
-        if (!reclaimed_immediate) {
-          reclaimed_immediate = true;
-          // Inform the free-set that old trash regions may temporarily violate OldCollector bounds
-          shenandoah_assert_heaplocked();
-          heap->free_set()->advise_of_old_trash();
-        }
-#endif
         region->make_trash_immediate();
         immediate_regions++;
         immediate_garbage += garbage;
@@ -544,14 +533,6 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
         // immediately to the freeset - no evacuations are necessary here. The continuations
         // will be made into trash by this method, so they'll be skipped by the 'is_regular'
         // check above, but we still need to count the start region.
-#ifdef ASSERT
-        if (!reclaimed_immediate) {
-          reclaimed_immediate = true;
-          // Inform the free-set that old trash regions may temporarily violate OldCollector bounds
-          shenandoah_assert_heaplocked();
-          heap->free_set()->advise_of_old_trash();
-        }
-#endif
         immediate_regions++;
         immediate_garbage += garbage;
         size_t region_count = heap->trash_humongous_region_at(region);

@@ -408,9 +408,7 @@ public:
   // Iff validate_totals is true, assert_bounds() confirms not only that bounds are correct, but also that total
   // capacities and used within each partition are correct.
   //
-  // The old_trash_not_in_bounds argument denotes that some old trash has not yet been recycled.  In this scenario,
-  // assert_bounds() allows that certain old regions do not reside within the bounds for that partition.
-  void assert_bounds(bool validate_totals, bool old_trash_not_in_bounds) NOT_DEBUG_RETURN;
+  void assert_bounds(bool validate_totals) NOT_DEBUG_RETURN;
 };
 
 // Publicly, ShenandoahFreeSet represents memory that is available to mutator threads.  The public capacity(), used(),
@@ -446,9 +444,6 @@ private:
   size_t _total_humongous_waste;
 
   HeapWord* allocate_aligned_plab(size_t size, ShenandoahAllocRequest& req, ShenandoahHeapRegion* r);
-
-  // Value is a don't care in release builds
-  bool _old_trash_not_in_bounds;
 
   // We re-evaluate the left-to-right allocation bias whenever _alloc_bias_weight is less than zero.  Each time
   // we allocate an object, we decrement the count of this value.  Each time we re-evaluate whether to allocate
@@ -766,14 +761,6 @@ public:
   // Typical usage: At the end of evacuation, when the collector no longer needs the regions that had been reserved
   // for evacuation, invoke this to make regions available for mutator allocations.
   void move_regions_from_collector_to_mutator(size_t cset_regions);
-
-#ifdef ASSERT
-  // Advise FreeSet that old trash regions have not yet been accounted for in OldCollector partition bounds
-  void advise_of_old_trash() {
-    shenandoah_assert_heaplocked();
-    _old_trash_not_in_bounds = true;
-  }
-#endif
 
   void transfer_humongous_regions_from_mutator_to_old_collector(size_t xfer_regions, size_t humongous_waste_words);
 
