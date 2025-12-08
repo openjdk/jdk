@@ -63,10 +63,9 @@ public class CheckForProperDetailStackTrace {
     private static final Path SRC_DIR = Paths.get(TEST_SRC, "src");
     private static final Path MODS_DIR = Paths.get(TEST_CLASSES, "mods");
 
-    // Windows has source information only in full pdbs, not in stripped pdbs
-    private static boolean expectSourceInformation = Platform.isLinux() || Platform.isWindows();
-
-    static WhiteBox wb = WhiteBox.getWhiteBox();
+    // In some configurations on Windows, we could have stripped pdbs which do not have source information.
+    private static boolean expectSourceInformation = (Platform.isLinux() || Platform.isWindows()) &&
+        WhiteBox.getWhiteBox().shipsFullDebugInfo();
 
     /* The stack trace we look for by default. Note that :: has been replaced by .*
        to make sure it matches even if the symbol is not unmangled.
@@ -145,12 +144,8 @@ public class CheckForProperDetailStackTrace {
             throw new RuntimeException("Expected stack trace missing from output");
         }
 
-        if (wb.hasExternalSymbolsStripped()) {
-            expectSourceInformation = false;
-        }
-
-        System.out.println("Looking for source information:");
         if (expectSourceInformation) {
+            System.out.println("Looking for source information:");
             if (!stackTraceMatches(".*moduleEntry.cpp.*", output)) {
                 output.reportDiagnosticSummary();
                 throw new RuntimeException("Expected source information missing from output");
