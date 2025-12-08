@@ -39,7 +39,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.Stable;
-import static sun.nio.ch.NioSocketImpl.MAX_ADAPTOR_BUFFER_SIZE;
+import static sun.nio.ch.Streams.MAX_BUFFER_SIZE;
 
 /**
  * An InputStream that reads bytes from a channel.
@@ -81,9 +81,6 @@ class ChannelInputStream extends InputStream {
      * Reads a sequence of bytes from the channel into the given buffer.
      */
     private int read(ByteBuffer bb) throws IOException {
-        if (bb.remaining() > MAX_ADAPTOR_BUFFER_SIZE) {
-            bb = bb.slice(bb.position(), MAX_ADAPTOR_BUFFER_SIZE);
-        }
         if (ch instanceof SelectableChannel sc) {
             synchronized (sc.blockingLock()) {
                 if (!sc.isBlocking())
@@ -113,6 +110,7 @@ class ChannelInputStream extends InputStream {
         if (len == 0)
             return 0;
 
+        len = Math.min(len, MAX_BUFFER_SIZE);
         ByteBuffer bb = ((this.bs == bs)
                          ? this.bb
                          : ByteBuffer.wrap(bs));

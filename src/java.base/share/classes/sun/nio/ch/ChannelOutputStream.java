@@ -32,7 +32,7 @@ import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.Objects;
-import static sun.nio.ch.NioSocketImpl.MAX_ADAPTOR_BUFFER_SIZE;
+import static sun.nio.ch.Streams.MAX_BUFFER_SIZE;
 
 /**
  * An OutputStream that writes bytes to a channel.
@@ -66,11 +66,14 @@ class ChannelOutputStream extends OutputStream {
      */
     private void writeFully(ByteBuffer bb) throws IOException {
         while (bb.remaining() > 0) {
-            ByteBuffer writeBuf = bb.remaining() <= MAX_ADAPTOR_BUFFER_SIZE
-                ? bb : bb.slice(bb.position(), MAX_ADAPTOR_BUFFER_SIZE);
-            int n = ch.write(writeBuf);
+            int limit = bb.limit();
+            if (bb.remaining() > MAX_BUFFER_SIZE) {
+                bb.limit(bb.position() + MAX_BUFFER_SIZE);
+            }
+            int n = ch.write(bb);
             if (n <= 0)
                 throw new RuntimeException("no bytes written");
+            bb.limit(limit);
         }
     }
 

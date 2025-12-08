@@ -80,7 +80,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
 
     // The maximum number of bytes to read/write per syscall to avoid needing
     // a huge buffer from the temporary buffer cache
-    static final int MAX_ADAPTOR_BUFFER_SIZE = 128 * 1024;
+    private static final int MAX_BUFFER_SIZE = 128 * 1024;
 
     // true if this is a SocketImpl for a ServerSocket
     private final boolean server;
@@ -355,8 +355,8 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
                 // emulate legacy behavior to return -1, even if socket is closed
                 if (readEOF)
                     return -1;
-                // read up to MAX_ADAPTOR_BUFFER_SIZE bytes
-                int size = Math.min(len, MAX_ADAPTOR_BUFFER_SIZE);
+                // read up to MAX_BUFFER_SIZE bytes
+                int size = Math.min(len, MAX_BUFFER_SIZE);
                 int n = implRead(b, off, size, remainingNanos);
                 if (n == -1)
                     readEOF = true;
@@ -453,8 +453,8 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
                 int pos = off;
                 int end = off + len;
                 while (pos < end) {
-                    // write up to MAX_ADAPTOR_BUFFER_SIZE bytes
-                    int size = Math.min((end - pos), MAX_ADAPTOR_BUFFER_SIZE);
+                    // write up to MAX_BUFFER_SIZE bytes
+                    int size = Math.min((end - pos), MAX_BUFFER_SIZE);
                     int n = implWrite(b, pos, size);
                     pos += n;
                 }
