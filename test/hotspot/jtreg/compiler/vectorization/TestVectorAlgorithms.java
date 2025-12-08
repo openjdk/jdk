@@ -68,6 +68,8 @@ public class TestVectorAlgorithms {
 
     public static void main(String[] args) {
         TestFramework framework = new TestFramework();
+        // TODO: run with and without SuperWord, and also some intrinsics should be disabled in a run.
+        //       make sure that all those flags are also mentioned in the JMH.
         framework.addFlags("--add-modules=jdk.incubator.vector", "-XX:CompileCommand=inline,*VectorAlgorithmsImpl::*");
         framework.start();
     }
@@ -81,6 +83,23 @@ public class TestVectorAlgorithms {
         //   and run.
         //   An alternative to cloning is to use different return arrays for
         //   different implementations of the same group, e.g. rI1, rI2, ...
+
+        testGroups.put("fillI", new HashMap<String,TestFunction>());
+        testGroups.get("fillI").put("fillI_loop",      () -> { return fillI_loop(rI1); });
+        testGroups.get("fillI").put("fillI_VectorAPI", () -> { return fillI_VectorAPI(rI1); });
+
+        testGroups.put("iotaI", new HashMap<String,TestFunction>());
+        testGroups.get("iotaI").put("iotaI_loop",      () -> { return iotaI_loop(rI1); });
+        testGroups.get("iotaI").put("iotaI_VectorAPI", () -> { return iotaI_VectorAPI(rI1); });
+
+        testGroups.put("copyI", new HashMap<String,TestFunction>());
+        testGroups.get("copyI").put("copyI_loop",      () -> { return copyI_loop(aI, rI1); });
+        testGroups.get("copyI").put("copyI_VectorAPI", () -> { return copyI_VectorAPI(aI, rI1); });
+
+        testGroups.put("mapI", new HashMap<String,TestFunction>());
+        testGroups.get("mapI").put("mapI_loop",      () -> { return mapI_loop(aI, rI1); });
+        testGroups.get("mapI").put("mapI_VectorAPI", () -> { return mapI_VectorAPI(aI, rI1); });
+
         testGroups.put("reduceAddI", new HashMap<String,TestFunction>());
         testGroups.get("reduceAddI").put("reduceAddI_loop",                           () -> { return reduceAddI_loop(aI); });
         testGroups.get("reduceAddI").put("reduceAddI_reassociate",                    () -> { return reduceAddI_reassociate(aI); });
@@ -102,7 +121,15 @@ public class TestVectorAlgorithms {
     }
 
     @Warmup(100)
-    @Run(test = {"reduceAddI_loop",
+    @Run(test = {"fillI_loop",
+                 "fillI_VectorAPI",
+                 "iotaI_loop",
+                 "iotaI_VectorAPI",
+                 "copyI_loop",
+                 "copyI_VectorAPI",
+                 "mapI_loop",
+                 "mapI_VectorAPI",
+                 "reduceAddI_loop",
                  "reduceAddI_reassociate",
                  "reduceAddI_VectorAPI_naive",
                  "reduceAddI_VectorAPI_reduction_after_loop",
@@ -210,5 +237,59 @@ public class TestVectorAlgorithms {
     @Test
     public Object reverse_VectorAPI(int[] a, int[] r) {
         return VectorAlgorithmsImpl.reverse_VectorAPI(a, r);
+    }
+
+    @Test
+    //@IR(counts = {IRNode.STORE_VECTOR, "> 0"},
+    //    applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // TODO:
+    //   250  CallLeafNoFP  === 208 1 7 8 9 (248 131 251 1 ) [[ 253 254 ]] # arrayof_jint_fill void ...
+    public Object fillI_loop(int[] r) {
+        return VectorAlgorithmsImpl.fillI_loop(r);
+    }
+
+    @Test
+    public Object fillI_VectorAPI(int[] r) {
+        return VectorAlgorithmsImpl.fillI_VectorAPI(r);
+    }
+
+    @Test
+    @IR(counts = {IRNode.POPULATE_INDEX, "> 0",
+                  IRNode.STORE_VECTOR,   "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    public Object iotaI_loop(int[] r) {
+        return VectorAlgorithmsImpl.iotaI_loop(r);
+    }
+
+    @Test
+    public Object iotaI_VectorAPI(int[] r) {
+        return VectorAlgorithmsImpl.iotaI_VectorAPI(r);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    public Object copyI_loop(int[] a, int[] r) {
+        return VectorAlgorithmsImpl.copyI_loop(a, r);
+    }
+
+    @Test
+    public Object copyI_VectorAPI(int[] a, int[] r) {
+        return VectorAlgorithmsImpl.copyI_VectorAPI(a, r);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.MUL_VI,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    public Object mapI_loop(int[] a, int[] r) {
+        return VectorAlgorithmsImpl.mapI_loop(a, r);
+    }
+
+    @Test
+    public Object mapI_VectorAPI(int[] a, int[] r) {
+        return VectorAlgorithmsImpl.mapI_VectorAPI(a, r);
     }
 }

@@ -34,6 +34,84 @@ public class VectorAlgorithmsImpl {
     private static final VectorSpecies<Integer> SPECIES_I    = IntVector.SPECIES_PREFERRED;
     private static final VectorSpecies<Integer> SPECIES_I512 = IntVector.SPECIES_512;
 
+    public static Object fillI_loop(int[] r) {
+        for (int i = 0; i < r.length; i++) {
+            r[i] = 42;
+        }
+        return r;
+    }
+
+    public static Object fillI_VectorAPI(int[] r) {
+        var v = IntVector.broadcast(SPECIES_I512, 42);
+        int i = 0;
+        for (; i < SPECIES_I.loopBound(r.length); i += SPECIES_I.length()) {
+            v.intoArray(r, i);
+        }
+        for (; i < r.length; i++) {
+            r[i] = 42;
+        }
+        return r;
+    }
+
+    public static Object iotaI_loop(int[] r) {
+        for (int i = 0; i < r.length; i++) {
+            r[i] = i;
+        }
+        return r;
+    }
+
+    public static Object iotaI_VectorAPI(int[] r) {
+        var iota = IntVector.broadcast(SPECIES_I, 0).addIndex(1);
+        int i = 0;
+        for (; i < SPECIES_I.loopBound(r.length); i += SPECIES_I.length()) {
+            iota.intoArray(r, i);
+            iota = iota.add(SPECIES_I.length());
+        }
+        for (; i < r.length; i++) {
+            r[i] = i;
+        }
+        return r;
+    }
+
+    public static Object copyI_loop(int[] a, int[] r) {
+        for (int i = 0; i < a.length; i++) {
+            r[i] = a[i];
+        }
+        return r;
+    }
+
+    public static Object copyI_VectorAPI(int[] a, int[] r) {
+        int i = 0;
+        for (; i < SPECIES_I.loopBound(r.length); i += SPECIES_I.length()) {
+            IntVector v = IntVector.fromArray(SPECIES_I512, a, i);
+            v.intoArray(r, i);
+        }
+        for (; i < r.length; i++) {
+            r[i] = a[i];
+        }
+        return r;
+    }
+
+    public static Object mapI_loop(int[] a, int[] r) {
+        for (int i = 0; i < a.length; i++) {
+            r[i] = a[i] * 42;
+        }
+        return r;
+    }
+
+    public static Object mapI_VectorAPI(int[] a, int[] r) {
+        int i = 0;
+        for (; i < SPECIES_I.loopBound(r.length); i += SPECIES_I.length()) {
+            IntVector v = IntVector.fromArray(SPECIES_I512, a, i);
+            v = v.mul(42);
+            v.intoArray(r, i);
+        }
+        for (; i < r.length; i++) {
+            r[i] = a[i];
+        }
+        return r;
+    }
+
     public static int reduceAddI_loop(int[] a) {
         int sum = 0;
         for (int i = 0; i < a.length; i++) {
@@ -216,4 +294,5 @@ public class VectorAlgorithmsImpl {
         }
         return r;
     }
+
 }
