@@ -236,7 +236,6 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
       if( mach->in(2) != val ) continue;
       break;                    // Found a memory op?
     case Op_StrComp:
-    case Op_StrEquals:
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_AryEq:

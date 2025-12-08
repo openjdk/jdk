@@ -15614,39 +15614,6 @@ instruct stringL_indexof_char(rdi_RegP str1, rdx_RegI cnt1, rax_RegI ch,
   ins_pipe( pipe_slow );
 %}
 
-// fast string equals
-instruct string_equals(rdi_RegP str1, rsi_RegP str2, rcx_RegI cnt, rax_RegI result,
-                       legRegD tmp1, legRegD tmp2, rbx_RegI tmp3, rFlagsReg cr)
-%{
-  predicate(!VM_Version::supports_avx512vlbw());
-  match(Set result (StrEquals (Binary str1 str2) cnt));
-  effect(TEMP tmp1, TEMP tmp2, USE_KILL str1, USE_KILL str2, USE_KILL cnt, KILL tmp3, KILL cr);
-
-  format %{ "String Equals $str1,$str2,$cnt -> $result    // KILL $tmp1, $tmp2, $tmp3" %}
-  ins_encode %{
-    __ arrays_equals(false, $str1$$Register, $str2$$Register,
-                     $cnt$$Register, $result$$Register, $tmp3$$Register,
-                     $tmp1$$XMMRegister, $tmp2$$XMMRegister, false /* char */, knoreg);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct string_equals_evex(rdi_RegP str1, rsi_RegP str2, rcx_RegI cnt, rax_RegI result,
-                           legRegD tmp1, legRegD tmp2, kReg ktmp, rbx_RegI tmp3, rFlagsReg cr)
-%{
-  predicate(VM_Version::supports_avx512vlbw());
-  match(Set result (StrEquals (Binary str1 str2) cnt));
-  effect(TEMP tmp1, TEMP tmp2, TEMP ktmp, USE_KILL str1, USE_KILL str2, USE_KILL cnt, KILL tmp3, KILL cr);
-
-  format %{ "String Equals $str1,$str2,$cnt -> $result    // KILL $tmp1, $tmp2, $tmp3" %}
-  ins_encode %{
-    __ arrays_equals(false, $str1$$Register, $str2$$Register,
-                     $cnt$$Register, $result$$Register, $tmp3$$Register,
-                     $tmp1$$XMMRegister, $tmp2$$XMMRegister, false /* char */, $ktmp$$KRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 // fast array equals
 instruct array_equalsB(rdi_RegP ary1, rsi_RegP ary2, rax_RegI result,
                        legRegD tmp1, legRegD tmp2, rcx_RegI tmp3, rbx_RegI tmp4, rFlagsReg cr)

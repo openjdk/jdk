@@ -11216,22 +11216,6 @@ instruct clearArray_imm_reg(immL cnt, iRegP_R28 base, Universe dummy, rFlagsReg 
   ins_pipe(pipe_class_memory);
 %}
 
-instruct string_equalsL(iRegP_R11 str1, iRegP_R13 str2, iRegI_R14 cnt,
-                        iRegI_R10 result, rFlagsReg cr)
-%{
-  predicate(!UseRVV && ((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::LL);
-  match(Set result (StrEquals (Binary str1 str2) cnt));
-  effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt, KILL cr);
-
-  format %{ "String Equals $str1, $str2, $cnt -> $result\t#@string_equalsL" %}
-  ins_encode %{
-    // Count is in 8-bit bytes; non-Compact chars are 16 bits.
-    __ string_equals($str1$$Register, $str2$$Register,
-                     $result$$Register, $cnt$$Register);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
 instruct array_equalsB(iRegP_R11 ary1, iRegP_R12 ary2, iRegI_R10 result,
                        iRegP_R13 tmp1, iRegP_R14 tmp2, iRegP_R15 tmp3)
 %{

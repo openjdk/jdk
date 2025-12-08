@@ -937,7 +937,6 @@ bool IdealLoopTree::policy_maximally_unroll(PhaseIdealLoop* phase) const {
     Node* n = _body.at(k);
     switch (n->Opcode()) {
       case Op_StrComp:
-      case Op_StrEquals:
       case Op_VectorizedHashCode:
       case Op_StrIndexOf:
       case Op_StrIndexOfChar:
@@ -1099,7 +1098,6 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
         body_size += Matcher::vector_op_pre_select_sz_estimate(n->Opcode(), vt->element_basic_type(), vt->length());
       } break;
       case Op_StrComp:
-      case Op_StrEquals:
       case Op_StrIndexOf:
       case Op_StrIndexOfChar:
       case Op_EncodeISOArray:

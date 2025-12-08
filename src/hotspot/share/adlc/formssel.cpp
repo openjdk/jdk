@@ -614,7 +614,6 @@ bool InstructForm::needs_anti_dependence_check(FormDict &globals) const {
   // use many memorys edges, but writes none
   if( _matrule && _matrule->_rChild &&
       ( strcmp(_matrule->_rChild->_opType,"StrComp"    )==0 ||
-        strcmp(_matrule->_rChild->_opType,"StrEquals"  )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrIndexOf" )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrIndexOfChar" )==0 ||
         strcmp(_matrule->_rChild->_opType,"CountPositives" )==0 ||
@@ -906,7 +905,6 @@ uint InstructForm::oper_input_base(FormDict &globals) {
       ( strcmp(_matrule->_rChild->_opType,"AryEq"     )==0 ||
         strcmp(_matrule->_rChild->_opType,"VectorizedHashCode")==0 ||
         strcmp(_matrule->_rChild->_opType,"StrComp"   )==0 ||
-        strcmp(_matrule->_rChild->_opType,"StrEquals" )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrInflatedCopy"   )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrCompressedCopy" )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrIndexOf")==0 ||
