@@ -703,23 +703,20 @@ test commented out pending API-change approval
     @Test
     public void TestChangedISO639Codes() {
         Locale hebrewOld = Locale.of("iw", "IL");
-        Locale hebrewNew = Locale.of("he", "IL");
         Locale yiddishOld = Locale.of("ji", "IL");
-        Locale yiddishNew = Locale.of("yi", "IL");
         Locale indonesianOld = Locale.of("in");
-        Locale indonesianNew = Locale.of("id");
 
         if (!hebrewOld.getLanguage().equals("he")) {
             fail("Got back wrong language code for old Hebrew: expected \"he\", got \""
-                    + hebrewNew.getLanguage() + "\"");
+                    + hebrewOld.getLanguage() + "\"");
         }
         if (!yiddishOld.getLanguage().equals("yi")) {
             fail("Got back wrong language code for old Yiddish: expected \"yi\", got \""
-                    + yiddishNew.getLanguage() + "\"");
+                    + yiddishOld.getLanguage() + "\"");
         }
         if (!indonesianOld.getLanguage().equals("id")) {
             fail("Got back wrong language code for old Indonesian: expected \"id\", got \""
-                    + indonesianNew.getLanguage() + "\"");
+                    + indonesianOld.getLanguage() + "\"");
         }
     }
 
