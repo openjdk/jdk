@@ -224,7 +224,7 @@ class ServerImpl {
         return httpsConfig;
     }
 
-    private final boolean finished(){
+    private final boolean finished() {
         // if the latch is 0, the server is finished
         return finishedLatch.getCount() == 0;
     }
@@ -751,7 +751,7 @@ class ServerImpl {
                 String method = requestLine.substring(0, space);
                 int start = space+1;
                 space = requestLine.indexOf(' ', start);
-                if (space == -1){
+                if (space == -1) {
                     reject(Code.HTTP_BAD_REQUEST,
                             requestLine, "Bad request line");
                     return;

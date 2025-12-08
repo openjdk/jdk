@@ -44,7 +44,7 @@ import java.util.concurrent.Executor;
  * a root URI path which represents the location of the application or service
  * on this server. The mapping of a handler to a {@code HttpServer} is
  * encapsulated by a {@link HttpContext} object. HttpContexts are created by
- * calling {@link #createContext(String,HttpHandler)}.
+ * calling {@link #createContext(String, HttpHandler)}.
  * Any request for which no handler can be found is rejected with a 404 response.
  * Management of threads can be done external to this object by providing a
  * {@link java.util.concurrent.Executor} object. If none is provided a default
@@ -117,7 +117,7 @@ public abstract class HttpServer {
      * Creates a {@code HttpServer} instance which is initially not bound to any
      * local address/port. The {@code HttpServer} is acquired from the currently
      * installed {@link HttpServerProvider}. The server must be bound using
-     * {@link #bind(InetSocketAddress,int)} before it can be used.
+     * {@link #bind(InetSocketAddress, int)} before it can be used.
      *
      * @throws IOException if an I/O error occurs
      * @return an instance of {@code HttpServer}

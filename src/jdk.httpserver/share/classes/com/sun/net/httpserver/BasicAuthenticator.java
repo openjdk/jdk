@@ -35,7 +35,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  * BasicAuthenticator provides an implementation of HTTP Basic
  * authentication. It is an abstract class and must be extended
- * to provide an implementation of {@link #checkCredentials(String,String)}
+ * to provide an implementation of {@link #checkCredentials(String, String)}
  * which is called to verify each incoming request.
  *
  * @since 1.6

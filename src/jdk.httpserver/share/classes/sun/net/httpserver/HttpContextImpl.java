@@ -35,7 +35,7 @@ import com.sun.net.httpserver.*;
  * to a {@link HttpHandler} which is invoked to handle requests destined
  * for the protocol/path on the associated HttpServer.
  * <p>
- * HttpContext instances are created by {@link HttpServer#createContext(String,String,HttpHandler,Object)}
+ * HttpContext instances are created by {@link HttpServer#createContext(String, String, HttpHandler, Object)}
  * <p>
  */
 class HttpContextImpl extends HttpContext {
@@ -44,7 +44,7 @@ class HttpContextImpl extends HttpContext {
     private final String protocol;
     private final ServerImpl server;
     private final AuthFilter authfilter;
-    private final Map<String,Object> attributes = new ConcurrentHashMap<>();
+    private final Map<String, Object> attributes = new ConcurrentHashMap<>();
     /* system filters, not visible to applications */
     private final List<Filter> sfilters = new CopyOnWriteArrayList<>();
     /* user filters, set by applications */
@@ -124,7 +124,7 @@ class HttpContextImpl extends HttpContext {
      * Every attribute stored in this Map will be visible to
      * every HttpExchange processed by this context
      */
-    public Map<String,Object> getAttributes() {
+    public Map<String, Object> getAttributes() {
         return attributes;
     }
 

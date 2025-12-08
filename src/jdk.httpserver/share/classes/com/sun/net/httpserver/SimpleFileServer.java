@@ -55,7 +55,7 @@ import sun.net.httpserver.simpleserver.OutputFilter;
  *
  * <h2>Simple file server</h2>
  *
- * <p> The {@link #createFileServer(InetSocketAddress,Path,OutputLevel) createFileServer}
+ * <p> The {@link #createFileServer(InetSocketAddress, Path, OutputLevel) createFileServer}
  * static factory method returns an {@link HttpServer HttpServer} that is a
  * simple out-of-the-box file server. The server comes with an initial handler
  * that serves files from a given directory path (and its subdirectories).

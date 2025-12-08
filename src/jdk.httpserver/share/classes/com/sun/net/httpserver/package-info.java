@@ -134,7 +134,6 @@
            params.setSSLParameters(sslparams);
            // statement above could throw IAE if any params invalid.
            // eg. if app has a UI and parameters supplied by a user.
-
        }
    });
    </pre></blockquote>

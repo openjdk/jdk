@@ -74,7 +74,7 @@ class ChunkedOutputStream extends FilterOutputStream
         assert count < CHUNK_SIZE;
     }
 
-    public void write(byte[]b, int off, int len) throws IOException {
+    public void write(byte[] b, int off, int len) throws IOException {
         Objects.checkFromIndexSize(off, len, b.length);
         if (len == 0) {
             return;
@@ -84,13 +84,13 @@ class ChunkedOutputStream extends FilterOutputStream
         }
         int remain = CHUNK_SIZE - count;
         if (len > remain) {
-            System.arraycopy(b,off,buf,pos,remain);
+            System.arraycopy(b, off, buf, pos, remain);
             count = CHUNK_SIZE;
             writeChunk();
             len -= remain;
             off += remain;
             while (len >= CHUNK_SIZE) {
-                System.arraycopy(b,off,buf,OFFSET,CHUNK_SIZE);
+                System.arraycopy(b, off, buf, OFFSET, CHUNK_SIZE);
                 len -= CHUNK_SIZE;
                 off += CHUNK_SIZE;
                 count = CHUNK_SIZE;
@@ -98,7 +98,7 @@ class ChunkedOutputStream extends FilterOutputStream
             }
         }
         if (len > 0) {
-            System.arraycopy(b,off,buf,pos,len);
+            System.arraycopy(b, off, buf, pos, len);
             count += len;
             pos += len;
         }

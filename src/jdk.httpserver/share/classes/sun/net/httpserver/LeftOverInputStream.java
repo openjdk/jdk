@@ -79,7 +79,7 @@ abstract class LeftOverInputStream extends FilterInputStream {
         return eof;
     }
 
-    protected abstract int readImpl(byte[]b, int off, int len) throws IOException;
+    protected abstract int readImpl(byte[] b, int off, int len) throws IOException;
 
     public synchronized int read() throws IOException {
         if (closed) {
@@ -93,7 +93,7 @@ abstract class LeftOverInputStream extends FilterInputStream {
         }
     }
 
-    public synchronized int read(byte[]b, int off, int len) throws IOException {
+    public synchronized int read(byte[] b, int off, int len) throws IOException {
         if (closed) {
             throw new IOException("Stream is closed");
         }

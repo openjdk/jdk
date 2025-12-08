@@ -54,11 +54,11 @@ class HttpExchangeImpl extends HttpExchange {
         return impl.getRequestURI();
     }
 
-    public String getRequestMethod(){
+    public String getRequestMethod() {
         return impl.getRequestMethod();
     }
 
-    public HttpContextImpl getHttpContext(){
+    public HttpContextImpl getHttpContext() {
         return impl.getHttpContext();
     }
 
@@ -85,15 +85,15 @@ class HttpExchangeImpl extends HttpExchange {
         impl.sendResponseHeaders(rCode, contentLen);
     }
 
-    public InetSocketAddress getRemoteAddress(){
+    public InetSocketAddress getRemoteAddress() {
         return impl.getRemoteAddress();
     }
 
-    public InetSocketAddress getLocalAddress(){
+    public InetSocketAddress getLocalAddress() {
         return impl.getLocalAddress();
     }
 
-    public String getProtocol(){
+    public String getProtocol() {
         return impl.getProtocol();
     }
 

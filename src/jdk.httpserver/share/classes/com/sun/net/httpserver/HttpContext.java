@@ -90,7 +90,7 @@ public abstract class HttpContext {
      *
      * @return a {@code Map} containing the attributes of this context
      */
-    public abstract Map<String,Object> getAttributes() ;
+    public abstract Map<String, Object> getAttributes() ;
 
     /**
      * Returns this context's {@link List} of {@linkplain Filter filters}. This

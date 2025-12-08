@@ -62,7 +62,7 @@ class FixedLengthOutputStream extends FilterOutputStream
         remaining --;
     }
 
-    public void write(byte[]b, int off, int len) throws IOException {
+    public void write(byte[] b, int off, int len) throws IOException {
         Objects.checkFromIndexSize(off, len, b.length);
         if (len == 0) {
             return;

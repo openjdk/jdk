@@ -82,7 +82,7 @@ class ExchangeImpl {
     PlaceholderOutputStream uos_orig;
 
     boolean sentHeaders; /* true after response headers sent */
-    final Map<String,Object> attributes;
+    final Map<String, Object> attributes;
     int rcode = -1;
     HttpPrincipal principal;
     ServerImpl server;
@@ -119,11 +119,11 @@ class ExchangeImpl {
         return uri;
     }
 
-    public String getRequestMethod(){
+    public String getRequestMethod() {
         return method;
     }
 
-    public HttpContextImpl getHttpContext(){
+    public HttpContextImpl getHttpContext() {
         return connection.getHttpContext();
     }
 
@@ -298,8 +298,8 @@ class ExchangeImpl {
     }
 
     void write(Headers map, OutputStream os) throws IOException {
-        Set<Map.Entry<String,List<String>>> entries = map.entrySet();
-        for (Map.Entry<String,List<String>> entry : entries) {
+        Set<Map.Entry<String, List<String>>> entries = map.entrySet();
+        for (Map.Entry<String, List<String>> entry : entries) {
             String key = entry.getKey();
             byte[] buf;
             List<String> values = entry.getValue();
@@ -341,21 +341,21 @@ class ExchangeImpl {
         return rspbuf;
     }
 
-    public InetSocketAddress getRemoteAddress(){
+    public InetSocketAddress getRemoteAddress() {
         Socket s = connection.getChannel().socket();
         InetAddress ia = s.getInetAddress();
         int port = s.getPort();
         return new InetSocketAddress(ia, port);
     }
 
-    public InetSocketAddress getLocalAddress(){
+    public InetSocketAddress getLocalAddress() {
         Socket s = connection.getChannel().socket();
         InetAddress ia = s.getLocalAddress();
         int port = s.getLocalPort();
         return new InetSocketAddress(ia, port);
     }
 
-    public String getProtocol(){
+    public String getProtocol() {
         String reqline = req.requestLine();
         int index = reqline.lastIndexOf(' ');
         return reqline.substring(index+1);

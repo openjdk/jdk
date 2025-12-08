@@ -67,7 +67,7 @@ class SSLStreams {
     }
 
     @SuppressWarnings("deprecation")
-    private void configureEngine(HttpsConfigurator cfg, InetSocketAddress addr){
+    private void configureEngine(HttpsConfigurator cfg, InetSocketAddress addr) {
         if (cfg != null) {
             Parameters params = new Parameters(cfg, addr);
 //BEGIN_TIGER_EXCLUDE
