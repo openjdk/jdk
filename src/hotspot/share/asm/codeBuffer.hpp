@@ -672,7 +672,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   }
 
   // (2) CodeBuffer referring to pre-allocated CodeBlob.
-  CodeBuffer(CodeBlob* blob);
+  CodeBuffer(const CodeBlob* blob);
 
   // (3) code buffer allocating codeBlob memory for code & relocation
   // info but with lazy initialization.  The name must be something

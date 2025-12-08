@@ -1880,6 +1880,13 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         }
     }
 
+    // Visible for tests
+    List<TimeoutEvent> timers() {
+        synchronized (this) {
+            return new ArrayList<>(timeouts);
+        }
+    }
+
     /**
      * Purges ( handles ) timer events that have passed their deadline, and
      * returns the amount of time, in milliseconds, until the next earliest
