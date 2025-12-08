@@ -75,6 +75,7 @@ public class NTLMFailTest {
             HttpURLConnection uc = (HttpURLConnection) url.openConnection();
             uc.setRequestMethod("HEAD");
             uc.getInputStream().readAllBytes();
+            throw new RuntimeException("Expected exception was not thrown");
         } catch (IOException e) {
             if (e.getMessage().contains("Authentication failure")) {
                 System.err.println("Got expected exception:");
