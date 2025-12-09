@@ -59,11 +59,20 @@ public class VectorAlgorithms {
     public static int[] aI;
     public static int[] rI;
 
+    public static int[] eI;
+    public static int idx = 0;
+
     @Setup
     public void init() {
         aI = new int[SIZE];
         rI = new int[SIZE];
         RANDOM = new Random(SEED);
+
+        // Populate with some random values from aI, and some totally random values.
+        eI = new int[0x10000];
+        for (int i = 0; i < eI.length; i++) {
+            eI[i] = (RANDOM.nextInt(10) == 0) ? RANDOM.nextInt() : aI[RANDOM.nextInt(SIZE)];
+        }
     }
 
     @Setup(Level.Iteration)
@@ -168,6 +177,20 @@ public class VectorAlgorithms {
     @Benchmark
     public int findMinIndexI_VectorAPI() {
         return VectorAlgorithmsImpl.findMinIndexI_VectorAPI(aI);
+    }
+
+    @Benchmark
+    public int findI_loop() {
+        idx = (idx + 1) & 0xffff;
+        int e = aI[idx];
+        return VectorAlgorithmsImpl.findI_loop(aI, e);
+    }
+
+    @Benchmark
+    public int findI_VectorAPI() {
+        idx = (idx + 1) & 0xffff;
+        int e = aI[idx];
+        return VectorAlgorithmsImpl.findI_VectorAPI(aI, e);
     }
 
     @Benchmark

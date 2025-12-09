@@ -284,6 +284,36 @@ public class VectorAlgorithmsImpl {
         return index;
     }
 
+    public static int findI_loop(int[] a, int e) {
+        for (int i = 0; i < a.length; i++) {
+            int ai = a[i];
+            if (ai == e) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public static int findI_VectorAPI(int[] a, int e) {
+        var es = IntVector.broadcast(SPECIES_I, e);
+        int i = 0;
+        for (; i < SPECIES_I.loopBound(a.length); i += SPECIES_I.length()) {
+            IntVector v = IntVector.fromArray(SPECIES_I512, a, i);
+            var mask = v.compare(VectorOperators.EQ, es);
+            if (mask.anyTrue()) {
+                var ml = mask.toLong();
+                return i + Long.numberOfTrailingZeros(ml);
+            }
+        }
+        for (; i < a.length; i++) {
+            int ai = a[i];
+            if (ai == e) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     public static Object reverseI_loop(int[] a, int[] r) {
         for (int i = 0; i < a.length; i++) {
             r[a.length - i - 1] = a[i];
