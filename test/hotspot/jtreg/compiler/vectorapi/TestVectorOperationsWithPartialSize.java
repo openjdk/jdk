@@ -35,7 +35,7 @@ import jdk.test.lib.Asserts;
  * @summary Test vector operations with vector size less than MaxVectorSize
  * @modules jdk.incubator.vector
  *
- * @run driver compiler.vectorapi.TestVectorOperationsWithPartialSize
+ * @run driver ${test.main.class}
  */
 
 public class TestVectorOperationsWithPartialSize {

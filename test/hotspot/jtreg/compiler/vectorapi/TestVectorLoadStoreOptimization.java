@@ -35,7 +35,7 @@ import jdk.test.lib.Asserts;
  * @summary Test the missing optimization issues for vector load/store caused by JDK-8286941
  * @modules jdk.incubator.vector
  *
- * @run driver compiler.vectorapi.TestVectorLoadStoreOptimization
+ * @run driver ${test.main.class}
  */
 public class TestVectorLoadStoreOptimization {
     private static final int LENGTH = 1024;
