@@ -76,6 +76,8 @@ class SerialHeap : public CollectedHeap {
 private:
   DefNewGeneration* _young_gen;
   TenuredGeneration* _old_gen;
+
+  // Used during young-gc
   HeapWord* _young_gen_saved_top;
   HeapWord* _old_gen_saved_top;
 
