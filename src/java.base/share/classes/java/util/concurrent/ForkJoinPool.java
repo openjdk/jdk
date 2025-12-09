@@ -1429,13 +1429,56 @@ public class ForkJoinPool extends AbstractExecutorService
         // specialized execution methods
 
         /**
-         * Runs the given task, as well as remaining local tasks
+         * Runs the given task, as well as remaining local tasks, and
+         * those from the given queue that can be polled without interference.
          */
-        final void topLevelExec(ForkJoinTask<?> task, int fifo) {
-            while (task != null) {
-                task.doExec();
-                task = (fifo != 0) ? localPoll() : localPop();
+        final int topLevelExec(ForkJoinTask<?> task, WorkQueue q,
+                                int fifo, int qbase) {
+            int stolen = 1;
+            if (task != null && q != null) {
+                outer: for (;;) {
+                    task.doExec();
+                    task = null;
+                    int p = top, cap; ForkJoinTask<?>[] a;
+                    if ((a = array) == null || (cap = a.length) <= 0)
+                        break;
+                    if (fifo == 0) {  // specialized localPop
+                        int s = p - 1; long k;
+                        if (U.getReference(
+                                a, k = slotOffset((cap - 1) & s)) != null &&
+                            (task = (ForkJoinTask<?>)
+                             U.getAndSetReference(a, k, null)) != null) {
+                            top = s;
+                            continue;
+                        }
+                    } else {         // specialized localPoll
+                        for (int b = base; p - b > 0; ) {
+                            int nb = b + 1;
+                            if ((task = (ForkJoinTask<?>)U.getAndSetReference(
+                                     a, slotOffset((cap - 1) & b), null)) != null) {
+                                base = nb;
+                                continue outer;
+                            }
+                            if (nb == p)
+                                break;
+                            while (b == (b = U.getIntAcquire(this, BASE)))
+                                Thread.onSpinWait();
+                        }
+                    }
+                    // one-shot steal attempt
+                    ForkJoinTask<?> t; ForkJoinTask<?>[] qa; int qcap; long qk;
+                    if ((qa = q.array) == null || (qcap = qa.length) <= 0 ||
+                        (t = (ForkJoinTask<?>)U.getReferenceAcquire(
+                            qa, qk = slotOffset((qcap - 1) & qbase))) == null ||
+                        q.base != qbase ||
+                        !U.compareAndSetReference(qa, qk, t, null))
+                        break;
+                    q.base = ++qbase;
+                    ++stolen;
+                    task = t;
+                }
             }
+            return stolen;
         }
 
         /**
@@ -2004,11 +2047,10 @@ public class ForkJoinPool extends AbstractExecutorService
                                     Object nt = U.getReferenceAcquire(a, np);
                                     w.source = qid;
                                     rescans = 1;
-                                    ++taken;
-                                    if (nt != null &&     // confirm a[nk]
+                                    if (nt != null &&
                                         U.getReferenceAcquire(a, np) == nt)
-                                        signalWork(a, nk); // propagate
-                                    w.topLevelExec(t, fifo);
+                                        signalWork(null, 0); // propagate
+                                    taken += w.topLevelExec(t, q, fifo, nb);
                                 }
                             }
                         }
