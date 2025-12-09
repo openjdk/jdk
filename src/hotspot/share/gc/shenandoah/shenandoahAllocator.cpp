@@ -156,7 +156,7 @@ HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::attempt_allocation_from_free_set
   HeapWord* obj;
   size_t min_free_words = req.is_lab_alloc() ? req.min_size() : req.size();
   ShenandoahHeapRegion* r = _free_set->find_heap_region_for_allocation(ALLOC_PARTITION, min_free_words, req.is_lab_alloc(), in_new_region);
-  // The region returned by find_heap_region_for_allocation must have sufficient free space for the allocation it if it is not nullptr
+  // The region returned by find_heap_region_for_allocation must have sufficient free space for the allocation if it is not nullptr
   if (r != nullptr) {
     bool ready_for_retire = false;
     obj = atomic_allocate_in(r, false, req, in_new_region, ready_for_retire);

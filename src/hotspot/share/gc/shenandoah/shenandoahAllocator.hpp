@@ -65,8 +65,9 @@ protected:
   // Caller have to hold heap lock.
   HeapWord* attempt_allocation_from_free_set(ShenandoahAllocRequest& req, bool& in_new_region);
 
-  // Attempt to allocate in shared alloc regions, the allocation attempt is done with atomic operation w/o
-  // holding heap lock.
+  // Attempt to allocate in a shared alloc region using atomic operation without holding the heap lock.
+  // Returns nullptr and overwrites regions_ready_for_refresh with the number of shared alloc regions that are ready
+  // to be retired if it is unable to satisfy the allocation request from the existing shared alloc regions.
   HeapWord* attempt_allocation_in_alloc_regions(ShenandoahAllocRequest& req, bool& in_new_region, uint const alloc_start_index, uint &regions_ready_for_refresh);
 
   // Allocate in a region with atomic.
