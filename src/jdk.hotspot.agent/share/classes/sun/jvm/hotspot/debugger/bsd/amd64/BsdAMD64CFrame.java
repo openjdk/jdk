@@ -63,9 +63,9 @@ public final class BsdAMD64CFrame extends BasicCFrame {
    @Override
    public CFrame sender(ThreadProxy thread, Address sp, Address fp, Address pc) {
       // Check fp
-      // Skip if both fp and pc are given - do not need to load from fp.
+      // Skip if both fp and pc are given - do not need to load from rbp.
       if (fp == null && pc == null) {
-        if (fp == null) {
+        if (rbp == null) {
           return null;
         }
 
