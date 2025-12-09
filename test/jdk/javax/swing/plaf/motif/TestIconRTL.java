@@ -32,7 +32,6 @@
 
 import java.awt.ComponentOrientation;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -41,7 +40,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 
 public class TestIconRTL {
 
@@ -49,8 +47,9 @@ public class TestIconRTL {
     private static JOptionPane pane;
 
     static final String INSTRUCTIONS = """
-        A JOptionPane is shown in Motif LookAndFeel.
-        Test with LTR and RTL Orientation
+        A JOptionPane is shown in Motif LookAndFeel with "Orientation" menu.
+        Click on "Orientation" menu and
+        test with "Left To Right" and "Right to Left" Orientation
         If JOptionPane is drawn properly in different orientation,
         then test passed, otherwise it failed.""";
 
@@ -59,7 +58,7 @@ public class TestIconRTL {
         PassFailJFrame.builder()
                 .title("TestIconRTL Instructions")
                 .instructions(INSTRUCTIONS)
-                .columns(50)
+                .columns(60)
                 .testUI(TestIconRTL::createTestUI)
                 .build()
                 .awaitAndCheck();
