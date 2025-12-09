@@ -54,6 +54,8 @@ import java.util.spi.ToolProvider;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.function.ExceptionBox;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.internal.util.function.ThrowingRunnable;
 
 /**
  * Configures the output streams of a process or a tool provider and executes
@@ -659,10 +661,13 @@ public final class CommandOutputControl {
         final var tpStreamConfig = ToolProviderStreamConfig.create(outputStreamsControl, redirectErrorStream);
 
         final int exitCode;
-        try (var tpStdout = tpStreamConfig.out().ps()) {
-            try (var tpStderr = tpStreamConfig.err().ps()) {
-                exitCode = tp.run(tpStdout, tpStderr, args);
-            }
+        var tpStdout = tpStreamConfig.out().ps();
+        var tpStderr = tpStreamConfig.err().ps();
+        try {
+            exitCode = tp.run(tpStdout, tpStderr, args);
+        } finally {
+            suppressIOException(tpStdout::flush);
+            suppressIOException(tpStderr::flush);
         }
 
         var stdout = read(outputStreamsControl.stdout(), tpStreamConfig.out());
@@ -769,10 +774,7 @@ public final class CommandOutputControl {
             return output;
         } finally {
             Consumer<Path> silentDeleter = path -> {
-                try {
-                    Files.delete(path);
-                } catch (IOException ignored) {
-                }
+                suppressIOException(Files::delete, path);
             };
 
             stdoutStorage.ifPresent(silentDeleter);
@@ -1007,7 +1009,7 @@ public final class CommandOutputControl {
 
                 final PrintStream ps;
                 if (buf.isPresent() && dumpStream != null) {
-                    ps = new PrintStream(new TeeOutputStream(List.of(buf.orElseThrow(), dumpStream)), true, dumpStream.charset());
+                    ps = new PrintStream(new TeeOutputStream(List.of(buf.get(), dumpStream)), true, dumpStream.charset());
                 } else if (!discard) {
                     ps = buf.map(PrintStream::new).or(() -> {
                         return Optional.ofNullable(dumpStream);
@@ -1327,6 +1329,21 @@ public final class CommandOutputControl {
         } catch (UnsupportedOperationException ex) {
             return Optional.empty();
         }
+    }
+
+    private static void suppressIOException(ThrowingRunnable r) {
+        try {
+            r.run();
+        } catch (IOException ex) {
+        } catch (Throwable t) {
+            throw ExceptionBox.rethrowUnchecked(t);
+        }
+    }
+
+    private static <T> void suppressIOException(ThrowingConsumer<T> c, T value) {
+        suppressIOException(() -> {
+            c.accept(value);
+        });
     }
 
     private final OutputStreamsControl outputStreamsControl;
