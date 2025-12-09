@@ -24,6 +24,7 @@
 import java.io.IOException;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.net.ssl.SNIHostName;
@@ -85,13 +86,12 @@ public class JdkServer extends AbstractServer {
             }
         }
 
-        if (builder.getNamedGroups() != null
-                && builder.getNamedGroups().length > 0) {
-            NamedGroup[] namedGroups = builder.getNamedGroups();
-            String[] namedGroupStrs = new String[namedGroups.length];
-            for (int i = 0 ; i < namedGroups.length ; ++i) {
-                namedGroupStrs[i] = namedGroups[i].name;
-            }
+        NamedGroup[] namedGroups = builder.getNamedGroups();
+        if (namedGroups != null
+                && namedGroups.length > 0) {
+            String[] namedGroupStrs = Arrays.stream(namedGroups)
+                    .map(NamedGroup::name)
+                    .toArray(String[]::new);
             sslParams.setNamedGroups(namedGroupStrs);
         }
 
