@@ -382,7 +382,8 @@ public class Hybrid {
         }
     }
 
-    public record SecretKeyImpl(SecretKey k1, SecretKey k2)
+    // Package-private
+    record SecretKeyImpl(SecretKey k1, SecretKey k2)
             implements SecretKey {
         @Override
         public String getAlgorithm() {
@@ -405,7 +406,8 @@ public class Hybrid {
      * Public keys can be transmitted/encoded because the hybrid protocol
      * requires the public component to be sent.
      */
-    public record PublicKeyImpl(String algorithm, PublicKey left,
+    // Package-private
+    record PublicKeyImpl(String algorithm, PublicKey left,
             PublicKey right) implements PublicKey {
         @Override
         public String getAlgorithm() {
@@ -450,7 +452,7 @@ public class Hybrid {
      * Hybrid private key combines two underlying private keys (left and right).
      * It is for internal use only. The private keys should never be exported.
      */
-    public record PrivateKeyImpl(String algorithm, PrivateKey left,
+    private record PrivateKeyImpl(String algorithm, PrivateKey left,
             PrivateKey right) implements PrivateKey {
 
         @Override
