@@ -245,9 +245,16 @@ void ShenandoahOldGeneration::handle_failed_transfer() {
 size_t ShenandoahOldGeneration::usage_trigger_threshold() const {
   size_t threshold_by_relative_growth =
     _live_bytes_after_last_mark + (_live_bytes_after_last_mark * _growth_percent_before_compaction) / 100;
-  size_t threshold_by_growth_into_percent_remaining = (size_t)
-    (_live_bytes_after_last_mark + ((ShenandoahHeap::heap()->soft_max_capacity() - _live_bytes_after_last_mark)
-                                    * ShenandoahMinOldGenGrowthRemainingHeapPercent / 100.0));
+  size_t soft_max_capacity = ShenandoahHeap::heap()->soft_max_capacity();
+  size_t threshold_by_growth_into_percent_remaining;
+  if (_live_bytes_after_last_mark < soft_max_capacity) {
+    threshold_by_growth_into_percent_remaining = (size_t)
+      (_live_bytes_after_last_mark + ((soft_max_capacity - _live_bytes_after_last_mark)
+                                      * ShenandoahMinOldGenGrowthRemainingHeapPercent / 100.0));
+  } else {
+    // we're already consuming more than soft max capacity, so we should start old GC right away.
+    threshold_by_growth_into_percent_remaining = soft_max_capacity;
+  }
   size_t result = MIN2(threshold_by_relative_growth, threshold_by_growth_into_percent_remaining);
   return result;
 }
