@@ -2606,6 +2606,42 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  void cipherBlockChaining_encryptAESCrypt(int round, Register from, Register to, Register key,
+                                          Register iv, Register input_len) {
+    const Register len        = x29;
+
+    VectorRegister working_vregs[] = {
+      v1, v2, v3, v4, v5, v6, v7, v8,
+      v9, v10, v11, v12, v13, v14, v15
+    };
+
+    const unsigned int BLOCK_SIZE = 16;
+
+    __ mv(len, input_len);
+    // load init iv
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    __ vle32_v(v16, iv);
+
+    generate_aes_loadkeys(key, working_vregs, round);
+    Label L_enc_loop;
+    __ bind(L_enc_loop);
+    // Encrypt from source by block size
+      __ vle32_v(v17, from);
+      __ addi(from, from, BLOCK_SIZE);
+      __ vxor_vv(v16, v16, v17);
+      generate_aes_encrypt(v16, working_vregs, round);
+      __ vse32_v(v16, to);
+      __ addi(to, to, BLOCK_SIZE);
+      __ subi(len, len, BLOCK_SIZE);
+      __ bnez(len, L_enc_loop);
+
+    // save current iv and return
+    __ vse32_v(v16, iv);
+    __ mv(x10, input_len);
+    __ leave();
+    __ ret();
+  }
+
   // Arguments:
   //
   // Inputs:
@@ -2632,23 +2668,11 @@ class StubGenerator: public StubCodeGenerator {
     const Register input_len  = c_rarg4;
 
     const Register keylen     = x28;
-    const Register len        = x29;
-
-    const unsigned int BLOCK_SIZE = 16;
-
-    VectorRegister working_vregs[] = {
-      v1, v2, v3, v4, v5, v6, v7, v8,
-      v9, v10, v11, v12, v13, v14, v15
-    };
 
     address start = __ pc();
     __ enter();
-    __ mv(len, input_len);
-    // load init iv
-    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
-    __ vle32_v(v16, iv);
 
-    Label L_aes128, L_aes192, L_aes128_loop, L_aes192_loop, L_aes256_loop;
+    Label L_aes128, L_aes192;
     // Compute #rounds for AES based on the length of the key array
     __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
     __ mv(t0, 52);
@@ -2657,62 +2681,55 @@ class StubGenerator: public StubCodeGenerator {
     // Else we fallthrough to the biggest case (256-bit key size)
 
     // Note: the following function performs key += 15*16
-    generate_aes_loadkeys(key, working_vregs, 15);
-    // Encrypt from source by block size
-    __ bind(L_aes256_loop);
-      __ vle32_v(v17, from);
-      __ addi(from, from, BLOCK_SIZE);
-      __ vxor_vv(v16, v16, v17);
-      generate_aes_encrypt(v16, working_vregs, 15);
-      __ vse32_v(v16, to);
-      __ addi(to, to, BLOCK_SIZE);
-      __ subi(len, len, BLOCK_SIZE);
-      __ bnez(len, L_aes256_loop);
-      // save current iv and return
-      __ vse32_v(v16, iv);
-      __ mv(x10, input_len);
-      __ leave();
-      __ ret();
+    cipherBlockChaining_encryptAESCrypt(15, from, to, key, iv, input_len);
 
     // Note: the following function performs key += 11*16
     __ bind(L_aes128);
-    generate_aes_loadkeys(key, working_vregs, 11);
-    // Encrypt from source by block size
-    __ bind(L_aes128_loop);
-      __ vle32_v(v17, from);
-      __ addi(from, from, BLOCK_SIZE);
-      __ vxor_vv(v16, v16, v17);
-      generate_aes_encrypt(v16, working_vregs, 11);
-      __ vse32_v(v16, to);
-      __ addi(to, to, BLOCK_SIZE);
-      __ subi(len, len, BLOCK_SIZE);
-      __ bnez(len, L_aes128_loop);
-      // save current iv and return
-      __ vse32_v(v16, iv);
-      __ mv(x10, input_len);
-      __ leave();
-      __ ret();
+    cipherBlockChaining_encryptAESCrypt(11, from, to, key, iv, input_len);
 
     // Note: the following function performs key += 13*16
     __ bind(L_aes192);
-    generate_aes_loadkeys(key, working_vregs, 13);
-    // Encrypt from source by block size
-    __ bind(L_aes192_loop);
-      __ vle32_v(v17, from);
-      __ addi(from, from, BLOCK_SIZE);
-      __ vxor_vv(v16, v16, v17);
-      generate_aes_encrypt(v16, working_vregs, 13);
-      __ vse32_v(v16, to);
-      __ addi(to, to, BLOCK_SIZE);
-      __ subi(len, len, BLOCK_SIZE);
-      __ bnez(len, L_aes192_loop);
-      // save current iv and return
-      __ vse32_v(v16, iv);
-      __ mv(x10, input_len);
-      __ leave();
-      __ ret();
+    cipherBlockChaining_encryptAESCrypt(13, from, to, key, iv, input_len);
 
     return start;
+  }
+
+  void cipherBlockChaining_decryptAESCrypt(int round, Register from, Register to, Register key,
+                                        Register iv, Register input_len) {
+    const Register len         = x29;
+
+    VectorRegister working_vregs[] = {
+      v1, v2, v3, v4, v5, v6, v7, v8,
+      v9, v10, v11, v12, v13, v14, v15
+    };
+
+    const unsigned int BLOCK_SIZE = 16;
+
+    __ mv(len, input_len);
+    // load init iv
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    __ vle32_v(v16, iv);
+
+    generate_aes_loadkeys(key, working_vregs, round);
+    Label L_dec_loop;
+    // Decrypt from source by block size
+    __ bind(L_dec_loop);
+      __ vle32_v(v17, from);
+      __ addi(from, from, BLOCK_SIZE);
+      __ vmv_v_v(v18, v17);
+      generate_aes_decrypt(v17, working_vregs, round);
+      __ vxor_vv(v17, v17, v16);
+      __ vse32_v(v17, to);
+      __ vmv_v_v(v16, v18);
+      __ addi(to, to, BLOCK_SIZE);
+      __ subi(len, len, BLOCK_SIZE);
+      __ bnez(len, L_dec_loop);
+
+    // save current iv and return
+    __ vse32_v(v16, iv);
+    __ mv(x10, input_len);
+    __ leave();
+    __ ret();
   }
 
   // Arguments:
@@ -2741,21 +2758,9 @@ class StubGenerator: public StubCodeGenerator {
     const Register input_len   = c_rarg4;
 
     const Register keylen      = x28;
-    const Register len         = x29;
-
-    const unsigned int BLOCK_SIZE = 16;
-
-    VectorRegister working_vregs[] = {
-      v1, v2, v3, v4, v5, v6, v7, v8,
-      v9, v10, v11, v12, v13, v14, v15
-    };
 
     address start = __ pc();
     __ enter();
-    __ mv(len, input_len);
-    // load init iv
-    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
-    __ vle32_v(v16, iv);
 
     Label L_aes128, L_aes192, L_aes128_loop, L_aes192_loop, L_aes256_loop;
     // Compute #rounds for AES based on the length of the key array
@@ -2766,66 +2771,15 @@ class StubGenerator: public StubCodeGenerator {
     // Else we fallthrough to the biggest case (256-bit key size)
 
     // Note: the following function performs key += 15*16
-    generate_aes_loadkeys(key, working_vregs, 15);
-    // Decrypt from source by block size
-    __ bind(L_aes256_loop);
-      __ vle32_v(v17, from);
-      __ addi(from, from, BLOCK_SIZE);
-      __ vmv_v_v(v18, v17);
-      generate_aes_decrypt(v17, working_vregs, 15);
-      __ vxor_vv(v17, v17, v16);
-      __ vse32_v(v17, to);
-      __ vmv_v_v(v16, v18);
-      __ addi(to, to, BLOCK_SIZE);
-      __ subi(len, len, BLOCK_SIZE);
-      __ bnez(len, L_aes256_loop);
-      // save current iv and return
-      __ vse32_v(v16, iv);
-      __ mv(x10, input_len);
-      __ leave();
-      __ ret();
+    cipherBlockChaining_decryptAESCrypt(15, from, to, key, iv, input_len);
 
     // Note: the following function performs key += 11*16
     __ bind(L_aes128);
-    generate_aes_loadkeys(key, working_vregs, 11);
-    // Decrypt from source by block size
-    __ bind(L_aes128_loop);
-      __ vle32_v(v17, from);
-      __ addi(from, from, BLOCK_SIZE);
-      __ vmv_v_v(v18, v17);
-      generate_aes_decrypt(v17, working_vregs, 11);
-      __ vxor_vv(v17, v17, v16);
-      __ vse32_v(v17, to);
-      __ vmv_v_v(v16, v18);
-      __ addi(to, to, BLOCK_SIZE);
-      __ subi(len, len, BLOCK_SIZE);
-      __ bnez(len, L_aes128_loop);
-      // save current iv and return
-      __ vse32_v(v16, iv);
-      __ mv(x10, input_len);
-      __ leave();
-      __ ret();
+    cipherBlockChaining_decryptAESCrypt(11, from, to, key, iv, input_len);
 
     // Note: the following function performs key += 13*16
     __ bind(L_aes192);
-    generate_aes_loadkeys(key, working_vregs, 13);
-    // Decrypt from source by block size
-    __ bind(L_aes192_loop);
-      __ vle32_v(v17, from);
-      __ addi(from, from, BLOCK_SIZE);
-      __ vmv_v_v(v18, v17);
-      generate_aes_decrypt(v17, working_vregs, 13);
-      __ vxor_vv(v17, v17, v16);
-      __ vse32_v(v17, to);
-      __ vmv_v_v(v16, v18);
-      __ addi(to, to, BLOCK_SIZE);
-      __ subi(len, len, BLOCK_SIZE);
-      __ bnez(len, L_aes192_loop);
-      // save current iv and return
-      __ vse32_v(v16, iv);
-      __ mv(x10, input_len);
-      __ leave();
-      __ ret();
+    cipherBlockChaining_decryptAESCrypt(13, from, to, key, iv, input_len);
 
     return start;
   }
