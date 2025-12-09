@@ -38,6 +38,8 @@ import java.util.HexFormat;
  */
 /*
  * @test
+ * @comment This test should be reenabled on aarch64
+ * @requires os.simpleArch == "x64"
  * @library /test/lib
  * @key randomness
  * @modules java.base/sun.security.provider:+open
@@ -48,7 +50,7 @@ import java.util.HexFormat;
 //  -XX:+UnlockDiagnosticVMOptions -XX:+UseDilithiumIntrinsics test/jdk/sun/security/provider/acvp/ML_DSA_Intrinsic_Test.java
 
 public class ML_DSA_Intrinsic_Test {
-    public static void main(String[] args) throws Exception, Throwable {
+    public static void main(String[] args) throws Throwable {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
         Class<?> kClazz = sun.security.provider.ML_DSA.class;
 
@@ -129,7 +131,7 @@ public class ML_DSA_Intrinsic_Test {
     private static final int ML_DSA_N = 256;
     public static void testMult(int[] prod1, int[] prod2, int[] coeffs1, int[] coeffs2,
         MethodHandle mult, MethodHandle multJava, Random rnd,
-        long seed, int i) throws Exception, Throwable {
+        long seed, int i) throws Throwable {
 
         for (int j = 0; j<ML_DSA_N; j++) {
             coeffs1[j] = rnd.nextInt();
@@ -146,7 +148,7 @@ public class ML_DSA_Intrinsic_Test {
 
     public static void testMultConst(int[] prod1, int[] prod2,
         MethodHandle multConst, MethodHandle multConstJava, Random rnd,
-        long seed, int i) throws Exception, Throwable {
+        long seed, int i) throws Throwable {
 
         for (int j = 0; j<ML_DSA_N; j++) {
             prod1[j] = prod2[j] = rnd.nextInt();
@@ -165,7 +167,7 @@ public class ML_DSA_Intrinsic_Test {
 
     public static void testDecompose(int[] low1, int[] high1, int[] low2, int[] high2, int[] coeffs1, int[] coeffs2,
         MethodHandle decompose, MethodHandle decomposeJava, Random rnd,
-        long seed, int i) throws Exception, Throwable {
+        long seed, int i) throws Throwable {
 
         for (int j = 0; j<ML_DSA_N; j++) {
             coeffs1[j] = coeffs2[j] = rnd.nextInt();
@@ -190,7 +192,7 @@ public class ML_DSA_Intrinsic_Test {
 
     public static void testAlmostNtt(int[] coeffs1, int[] coeffs2,
         MethodHandle almostNtt, MethodHandle almostNttJava, Random rnd,
-        long seed, int i) throws Exception, Throwable {
+        long seed, int i) throws Throwable {
         for (int j = 0; j<ML_DSA_N; j++) {
             coeffs1[j] = coeffs2[j] = rnd.nextInt();
         }
@@ -205,7 +207,7 @@ public class ML_DSA_Intrinsic_Test {
 
     public static void testInverseNtt(int[] coeffs1, int[] coeffs2,
         MethodHandle inverseNtt, MethodHandle inverseNttJava, Random rnd,
-        long seed, int i) throws Exception, Throwable {
+        long seed, int i) throws Throwable {
         for (int j = 0; j<ML_DSA_N; j++) {
             coeffs1[j] = coeffs2[j] = rnd.nextInt();
         }

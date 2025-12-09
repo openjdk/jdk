@@ -173,6 +173,7 @@ bool Jfr::on_start_flight_recording_option(const JavaVMOption** option, char* de
   return JfrOptionSet::parse_start_flight_recording_option(option, delimiter);
 }
 
+#if INCLUDE_CDS
 void Jfr::on_restoration(const Klass* k, JavaThread* jt) {
   assert(k != nullptr, "invariant");
   JfrTraceId::restore(k);
@@ -180,3 +181,4 @@ void Jfr::on_restoration(const Klass* k, JavaThread* jt) {
     JfrClassDefineEvent::on_restoration(InstanceKlass::cast(k), jt);
   }
 }
+#endif
