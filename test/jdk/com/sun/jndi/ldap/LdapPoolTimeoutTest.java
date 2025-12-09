@@ -125,6 +125,7 @@ public class LdapPoolTimeoutTest {
                         : namingEx.getCause().getMessage();
                 if (msg != null &&
                         (msg.contains("Network is unreachable")
+                                || msg.contains("No route to host")
                                 || msg.contains("Timed out waiting for lock")
                                 || msg.contains("Connect timed out")
                                 || msg.contains("Timeout exceeded while waiting for a connection"))) {
