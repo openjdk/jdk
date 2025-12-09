@@ -187,7 +187,7 @@ class ExchangeImpl {
          * cannot work with this restriction
          *
          * if (!sentHeaders) {
-         *    throw new IllegalStateException "headers not sent");
+         *    throw new IllegalStateException("headers not sent");
          * }
          */
         if (uos == null) {
