@@ -176,7 +176,7 @@ HeapWord* ShenandoahHeapRegion::allocate_atomic(size_t size, const ShenandoahAll
     if (free_words >= size) {
       if (try_allocate(obj, size)) {
         reset_age();
-        adjust_alloc_metadata(req.type(), size);
+        adjust_alloc_metadata(req, size);
         retire_checker._remnant_free_words = free_words - size;
         return obj;
       }
@@ -205,7 +205,7 @@ HeapWord* ShenandoahHeapRegion::allocate_lab_atomic(const ShenandoahAllocRequest
       if (try_allocate(obj, adjusted_size)) {
         reset_age();
         actual_size = adjusted_size;
-        adjust_alloc_metadata(req.type(), adjusted_size);
+        adjust_alloc_metadata(req, adjusted_size);
         retire_checker._remnant_free_words = free_words - adjusted_size;
         return obj;
       }
