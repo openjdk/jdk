@@ -29,6 +29,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.BufferedReader;
@@ -59,6 +62,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 public class CommandOutputControlTest {
 
+//    @Disabled
     @DisabledIf("cherryPickSavedOutputTestCases")
     @ParameterizedTest
     @MethodSource
@@ -111,7 +115,68 @@ public class CommandOutputControlTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     public void testExecutableSpec(boolean toolProvider) {
-        
+        var coc = new CommandOutputControl();
+        CommandOutputControl.Executable exec;
+        if (toolProvider) {
+            exec = coc.createExecutable(new ToolProvider() {
+
+                @Override
+                public String name() {
+                    return "runme";
+                }
+
+                @Override
+                public int run(PrintWriter out, PrintWriter err, String... args) {
+                    throw new UnsupportedOperationException();
+                }
+
+            }, "--foo", "--baz=10");
+        } else {
+            exec = coc.createExecutable(new ProcessBuilder("runme", "--foo", "--baz=10"));
+        }
+
+        assertEquals("runme --foo --baz=10", exec.spec().toString());
+    }
+
+    @Test
+    public void test_Result_no_args_ctor() {
+        var result = new CommandOutputControl.Result(7);
+        assertFalse(result.findContent().isPresent());
+        assertFalse(result.findStdout().isPresent());
+        assertFalse(result.findStderr().isPresent());
+        assertEquals(7, result.getExitCode());
+        assertSame(Objects.requireNonNull(CommandOutputControl.EMPTY_EXECUTABLE_SPEC), result.execSpec());
+    }
+
+    @Test
+    public void test_Result_expectExitCode() throws IOException {
+        var result = new CommandOutputControl.Result(7);
+
+        assertSame(result, result.expectExitCode(7));
+        assertSame(result, result.expectExitCode(7, 2));
+        assertSame(result, result.expectExitCode(2, 7));
+
+        assertSame(result, result.expectExitCode(List.of(7)));
+        assertSame(result, result.expectExitCode(Set.of(7, 2)));
+        assertSame(result, result.expectExitCode(List.of(2, 7)));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void test_Result_expectExitCode_negative(boolean collection) {
+        var result = new CommandOutputControl.Result(3);
+
+        var ex = assertThrowsExactly(CommandOutputControl.UnexpectedExitCodeException.class, () -> {
+            if (collection) {
+                result.expectExitCode(List.of(17, 12));
+            } else {
+                result.expectExitCode(17, 12);
+            }
+        });
+
+        assertNull(ex.getCause());
+        assertSame(result, ex.getResult());
+        assertEquals("Unexpected exit code 3 from executing the command <unknown>", ex.getMessage());
     }
 
     private static boolean cherryPickSavedOutputTestCases() {
@@ -170,7 +235,7 @@ public class CommandOutputControlTest {
                         }
                         testCases.add(new OutputTestSpec(
                                 toolProvider,
-                                new CommandOutputControlSpec(outputControl), 
+                                new CommandOutputControlSpec(outputControl),
                                 commandSpec));
                     }
                 }

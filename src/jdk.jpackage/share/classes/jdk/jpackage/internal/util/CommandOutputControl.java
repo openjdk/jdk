@@ -26,7 +26,6 @@ import static java.util.stream.Collectors.joining;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -425,21 +424,7 @@ public final class CommandOutputControl {
 
         Result execute() throws IOException, InterruptedException;
 
-        default Result execute(long timeout, TimeUnit unit) throws IOException, InterruptedException, TimeoutException {
-            var task = new FutureTask<>(this::execute);
-            Thread.ofVirtual().start(task);
-            try {
-                return task.get(timeout, unit);
-            } catch (ExecutionException ex) {
-                try {
-                    throw ex.getCause();
-                } catch (IOException|InterruptedException|TimeoutException|RuntimeException cause) {
-                    throw cause;
-                } catch (Throwable t) {
-                    throw ExceptionBox.rethrowUnchecked(t);
-                }
-            }
-        }
+        Result execute(long timeout, TimeUnit unit) throws IOException, InterruptedException, TimeoutException;
     }
 
     public record ProcessSpec(Optional<Long> pid, List<String> cmdline) implements Executable.ExecutableSpec {
@@ -594,7 +579,7 @@ public final class CommandOutputControl {
         }
 
         public UnexpectedExitCodeException(Result value) {
-            this(value, String.format("Unexpected exit code %d from executing the command %s", value.exitCode(), value.execSpec()));
+            this(value, String.format("Unexpected exit code %d from executing the command %s", value.getExitCode(), value.execSpec()));
         }
 
         private static final long serialVersionUID = 1L;
@@ -905,7 +890,7 @@ public final class CommandOutputControl {
             return CommandOutput.EMPTY;
         } else if (out.isEmpty()) {
             // This branch is unreachable because it is impossible to make it save stderr without saving stdout.
-            // If streams are configured for saving and stdout is discarded, 
+            // If streams are configured for saving and stdout is discarded,
             // its saved contents will be an Optional instance wrapping an empty list, not an empty Optional.
             throw new AssertionError();
         } else if (err.isEmpty()) {
@@ -1300,6 +1285,11 @@ public final class CommandOutputControl {
         @Override
         public Result execute() throws IOException {
             return coc.execute(tp, args.toArray(String[]::new));
+        }
+
+        @Override
+        public Result execute(long timeout, TimeUnit unit) throws IOException, InterruptedException, TimeoutException {
+            throw new UnsupportedOperationException();
         }
 
         @Override
