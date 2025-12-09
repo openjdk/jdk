@@ -560,6 +560,8 @@ ArchiveBuilder::FollowMode ArchiveBuilder::get_follow_mode(MetaspaceClosure::Ref
              ref->msotype() == MetaspaceObj::MethodTrainingDataType ||
              ref->msotype() == MetaspaceObj::CompileTrainingDataType) {
     if (TrainingData::need_data() || TrainingData::assembling_data()) {
+      // Only add MethodCounters that are reachable via MethodTrainingData,
+      // i.e. MethodCounters associated with a valid MethodTrainingData.
       if (ref->msotype() == MetaspaceObj::MethodCountersType) {
         MethodCounters* mcs = (MethodCounters*)obj;
         return mcs->has_valid_method_training_data() ? make_a_copy : set_to_null;
