@@ -209,6 +209,20 @@ public:
 private:
   void slide_pinned_regions_to_front();
   bool all_candidates_are_pinned();
+
+  // The normal old_garbage_threshold is specified by ShenandoahOldGarbageThreshold command-line argument, with default
+  // value 25, denoting that a region that has at least 25% garbage is eligible for compaction.  With default values for
+  // all command-line arguments, we make the following adjustments:
+  //  1. If the old generation has grown to consume more than 80% of the soft max capacity, adjust threshold to 10%
+  //  2. Otherwise, if the old generation has grown to consume more than 65%, adjust threshold to 15%
+  //  3. Otherwise, if the old generation has grown to consume more than 50%, adjust threshold to 20%
+  // The effect is to compact the old generation more aggressively as the old generation consumes larger percentages
+  // of the available heap memory.  In these circumstances, we pack the old generation more tightly in order to make
+  // more memory avaiable to the young generation so that the more frequent young collections can operate more
+  // efficiently.
+  //
+  // If the ShenandoahOldGarbageThreshold is specified on the command line, the effect of adjusting the old garbage
+  // threshold is scaled linearly.
   void adjust_old_garbage_threshold();
 };
 
