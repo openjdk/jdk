@@ -378,9 +378,7 @@ public final class Executor extends CommandArguments<Executor> {
         }
 
         StringBuilder sb = new StringBuilder(getPrintableCommandLine());
-        commandOutputControl.description().ifPresent(desc -> {
-            sb.append("; ").append(desc);
-        });
+        sb.append("; ").append(commandOutputControl.description());
 
         if (directory != null) {
             builder.directory(directory.toFile());
@@ -415,9 +413,7 @@ public final class Executor extends CommandArguments<Executor> {
 
     private Result runToolProvider() throws IOException, InterruptedException {
         final var sb = new StringBuilder(getPrintableCommandLine());
-        commandOutputControl.description().ifPresent(desc -> {
-            sb.append("; ").append(desc);
-        });
+        sb.append("; ").append(commandOutputControl.description());
 
         return execute(sb, commandOutputControl.createExecutable(toolProvider, args.toArray(String[]::new)));
     }

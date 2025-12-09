@@ -26,6 +26,9 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
 import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.BufferedReader;
@@ -37,6 +40,7 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -46,10 +50,12 @@ import java.util.function.Consumer;
 import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class CommandOutputControlTest {
 
@@ -68,12 +74,63 @@ public class CommandOutputControlTest {
         spec.test();
     }
 
+    @ParameterizedTest
+    @MethodSource
+    public void testDescription(CommandOutputControlSpec spec) {
+        // This test is mostly for coverage.
+        var desc = spec.create().description();
+        assertFalse(desc.isBlank());
+    }
+
+    @Test
+    public void testCopy_default() {
+        var orig = new CommandOutputControl();
+        var copy = orig.copy();
+        assertEquals(orig, copy);
+        assertNotSame(orig, copy);
+
+        assertNotEquals(orig, copy.discardStdout(true));
+    }
+
+    @Test
+    public void testCopy_some_overrides() {
+        var orig = new CommandOutputControl()
+                .processOutputCharset(StandardCharsets.US_ASCII)
+                .discardStderr(true)
+                .saveOutput(true)
+                .dumpOutput(true)
+                .redirectErrorStream(true)
+                .storeStreamsInFiles(true);
+        var copy = orig.copy();
+        assertEquals(orig, copy);
+        assertNotSame(orig, copy);
+
+        assertNotEquals(orig, copy.discardStdout(true));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testExecutableSpec(boolean toolProvider) {
+        
+    }
+
     private static boolean cherryPickSavedOutputTestCases() {
         return !testSomeSavedOutput().isEmpty();
     }
 
+    private static List<CommandOutputControlSpec> testDescription() {
+        List<CommandOutputControlSpec> testCases = new ArrayList<>();
+        for (final var toolProvider : BOOLEAN_VALUES) {
+            testCases.add(new CommandOutputControlSpec(Set.of()));
+            for (var outputControl : OutputControl.variants()) {
+                testCases.add(new CommandOutputControlSpec(outputControl));
+            }
+        }
+        return testCases;
+    }
+
     private static List<OutputTestSpec> testSomeSavedOutput() {
-        var testIds = List.<Integer>of();
+        var testIds = List.<Integer>of(/* 10, 67, 456 */);
         if (testIds.isEmpty()) {
             return List.of();
         } else {
@@ -111,7 +168,10 @@ public class CommandOutputControlTest {
                                 throw new IllegalStateException();
                             }
                         }
-                        testCases.add(new OutputTestSpec(toolProvider, outputControl, commandSpec));
+                        testCases.add(new OutputTestSpec(
+                                toolProvider,
+                                new CommandOutputControlSpec(outputControl), 
+                                commandSpec));
                     }
                 }
             }
@@ -274,12 +334,53 @@ public class CommandOutputControlTest {
         static final Set<OutputControl> SAVE = Set.of(SAVE_ALL, SAVE_FIRST_LINE);
     }
 
-    public record OutputTestSpec(boolean toolProvider, Set<OutputControl> outputControl, CommandSpec commandSpec) {
-        public OutputTestSpec {
+    public record CommandOutputControlSpec(Set<OutputControl> outputControl) {
+        public CommandOutputControlSpec {
             outputControl.forEach(Objects::requireNonNull);
             if (outputControl.containsAll(OutputControl.SAVE)) {
                 throw new IllegalArgumentException();
             }
+        }
+
+        @Override
+        public String toString() {
+            return outputControl.stream().map(OutputControl::name).sorted().collect(joining("+"));
+        }
+
+        boolean contains(OutputControl v) {
+            return outputControl.contains(Objects.requireNonNull(v));
+        }
+
+        boolean dumpOutput() {
+            return contains(OutputControl.DUMP);
+        }
+
+        boolean saveOutput() {
+            return !Collections.disjoint(outputControl, OutputControl.SAVE);
+        }
+
+        boolean discardStdout() {
+            return contains(OutputControl.DISCARD_STDOUT);
+        }
+
+        boolean discardStderr() {
+            return contains(OutputControl.DISCARD_STDERR);
+        }
+
+        boolean redirectStderr() {
+            return contains(OutputControl.REDIRECT_STDERR);
+        }
+
+        CommandOutputControl create() {
+            final CommandOutputControl coc = new CommandOutputControl();
+            outputControl.forEach(control -> control.applyTo(coc));
+            return coc;
+        }
+    }
+
+    public record OutputTestSpec(boolean toolProvider, CommandOutputControlSpec cocSpec, CommandSpec commandSpec) {
+        public OutputTestSpec {
+            Objects.requireNonNull(cocSpec);
             Objects.requireNonNull(commandSpec);
         }
 
@@ -291,10 +392,10 @@ public class CommandOutputControlTest {
                 tokens.add("tool-provider");
             }
 
-            tokens.add("output=" + format(outputControl));
+            tokens.add("output=" + cocSpec.toString());
             tokens.add("command=" + commandSpec);
 
-            return String.join(",", tokens.toArray(String[]::new));
+            return String.join(", ", tokens.toArray(String[]::new));
         }
 
         void test() {
@@ -311,32 +412,32 @@ public class CommandOutputControlTest {
             verifyResultContent(result.get(), command);
         }
 
+        boolean contains(OutputControl v) {
+            return cocSpec.contains(v);
+        }
+
         private boolean dumpOutput() {
-            return outputControl.contains(OutputControl.DUMP);
+            return cocSpec.dumpOutput();
         }
 
         private boolean saveOutput() {
-            return !Collections.disjoint(outputControl, OutputControl.SAVE);
+            return cocSpec.saveOutput();
         }
 
         private boolean discardStdout() {
-            return outputControl.contains(OutputControl.DISCARD_STDOUT);
+            return cocSpec.discardStdout();
         }
 
         private boolean discardStderr() {
-            return outputControl.contains(OutputControl.DISCARD_STDERR);
+            return cocSpec.discardStderr();
         }
 
         private boolean redirectStderr() {
-            return outputControl.contains(OutputControl.REDIRECT_STDERR);
+            return cocSpec.redirectStderr();
         }
 
         private boolean replaceStdoutWithStderr() {
             return redirectStderr() && discardStdout() && !discardStderr();
-        }
-
-        private static String format(Set<OutputControl> outputControl) {
-            return outputControl.stream().map(OutputControl::name).sorted().collect(joining("+"));
         }
 
         private void verifyDump(DumpCapture dumpCapture, Command command) {
@@ -419,11 +520,11 @@ public class CommandOutputControlTest {
             } else {
                 assertEquals(discardStderr(), result.findStdout().isPresent());
                 assertTrue(result.findStderr().isEmpty());
-                if (outputControl.contains(OutputControl.SAVE_FIRST_LINE)) {
+                if (contains(OutputControl.SAVE_FIRST_LINE)) {
                     assertTrue(List.of(command.stdout(), command.stderr()).contains(result.getContent()),
                             String.format("Saved content %s is either %s or %s",
                                     result.getContent(), command.stdout(), command.stderr()));
-                } else if (outputControl.contains(OutputControl.SAVE_ALL)) {
+                } else if (contains(OutputControl.SAVE_ALL)) {
                     var savedContent = new ArrayList<>(result.getContent());
                     savedContent.removeAll(command.stdout());
                     savedContent.removeAll(command.stderr());
@@ -437,9 +538,9 @@ public class CommandOutputControlTest {
 
         private List<String> expectedSavedStream(List<String> commandOutput) {
             Objects.requireNonNull(commandOutput);
-            if (outputControl.contains(OutputControl.SAVE_ALL)) {
+            if (contains(OutputControl.SAVE_ALL)) {
                 return commandOutput;
-            } else if (outputControl.contains(OutputControl.SAVE_FIRST_LINE)) {
+            } else if (contains(OutputControl.SAVE_FIRST_LINE)) {
                 return commandOutput.stream().findFirst().map(List::of).orElseGet(List::of);
             } else {
                 throw new IllegalStateException();
@@ -502,9 +603,7 @@ public class CommandOutputControlTest {
         }
 
         private CommandOutputControl.Executable createExecutable(Command command) {
-            final CommandOutputControl coc = new CommandOutputControl();
-            outputControl.forEach(control -> control.applyTo(coc));
-
+            final var coc = cocSpec.create();
             if (toolProvider) {
                 return coc.createExecutable(command.asToolProvider());
             } else {
