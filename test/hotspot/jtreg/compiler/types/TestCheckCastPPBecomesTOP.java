@@ -30,9 +30,6 @@
  * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
  *                   -XX:CompileOnly=TestCheckCastPPBecomesTOP::test1 -XX:LoopMaxUnroll=0
  *                   -XX:CompileCommand=dontinline,TestCheckCastPPBecomesTOP::notInlined -XX:+UseParallelGC TestCheckCastPPBecomesTOP
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
- *                   -XX:CompileOnly=TestCheckCastPPBecomesTOP::test1 -XX:LoopMaxUnroll=0
- *                   -XX:CompileCommand=dontinline,TestCheckCastPPBecomesTOP::notInlined -XX:+UseParallelGC -XX:-UseCompressedClassPointers TestCheckCastPPBecomesTOP
  *
  */
 

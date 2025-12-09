@@ -83,7 +83,9 @@ public class IncompatibleOptions {
     static final String COMPACT_STRING_MISMATCH =
         "The shared archive file's CompactStrings setting .* does not equal the current CompactStrings setting";
     static final String COMPRESSED_OOPS_NOT_CONSISTENT =
-        "The saved state of UseCompressedOops and UseCompressedClassPointers is different from runtime, CDS will be disabled.";
+        "The saved state of UseCompressedOops \\(%d\\) is different from runtime \\(%d\\), CDS will be disabled.";
+    static final String COMPRESSED_OOPS_NOT_CONSISTENT_10 = COMPRESSED_OOPS_NOT_CONSISTENT.formatted(1, 0);
+    static final String COMPRESSED_OOPS_NOT_CONSISTENT_01 = COMPRESSED_OOPS_NOT_CONSISTENT.formatted(0, 1);
     static String appJar;
     static String[] vmOptionsPrefix = {};
 
@@ -117,7 +119,7 @@ public class IncompatibleOptions {
 
         // Explicitly archive with compressed oops, run without.
         testDump(3, "-XX:+UseG1GC", "-XX:+UseCompressedOops", null, false);
-        testExec(3, "-XX:+UseG1GC", "-XX:-UseCompressedOops", COMPRESSED_OOPS_NOT_CONSISTENT, true);
+        testExec(3, "-XX:+UseG1GC", "-XX:-UseCompressedOops", COMPRESSED_OOPS_NOT_CONSISTENT_10, true);
 
         // NOTE: No warning is displayed, by design
         // Still run, to ensure no crash or exception
@@ -130,14 +132,14 @@ public class IncompatibleOptions {
         testExec(4, "-XX:+UseSerialGC", "", "", false);
 
         if (GC.Z.isSupported()) {
-            testExec(4, "-XX:+UseZGC", "", COMPRESSED_OOPS_NOT_CONSISTENT, true);
+            testExec(4, "-XX:+UseZGC", "", COMPRESSED_OOPS_NOT_CONSISTENT_10, true);
         }
 
         // Explicitly archive with object streaming and COOPs with one GC, run with other GCs.
         testDump(4, "-XX:-UseCompressedOops", "-XX:+AOTStreamableObjects", null, false);
-        testExec(4, "-XX:+UseG1GC", "", COMPRESSED_OOPS_NOT_CONSISTENT, true);
-        testExec(4, "-XX:+UseParallelGC", "", COMPRESSED_OOPS_NOT_CONSISTENT, true);
-        testExec(4, "-XX:+UseSerialGC", "", COMPRESSED_OOPS_NOT_CONSISTENT, true);
+        testExec(4, "-XX:+UseG1GC", "", COMPRESSED_OOPS_NOT_CONSISTENT_01, true);
+        testExec(4, "-XX:+UseParallelGC", "", COMPRESSED_OOPS_NOT_CONSISTENT_01, true);
+        testExec(4, "-XX:+UseSerialGC", "", COMPRESSED_OOPS_NOT_CONSISTENT_01, true);
 
         testExec(4, "-XX:+UseParallelGC", "-XX:-UseCompressedOops", "", false);
         testExec(4, "-XX:+UseSerialGC", "-XX:-UseCompressedOops", "", false);

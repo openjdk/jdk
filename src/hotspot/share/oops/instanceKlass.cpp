@@ -486,7 +486,7 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& par
     ik = new (loader_data, size, THREAD) InstanceKlass(parser);
   }
 
-  if (ik != nullptr && UseCompressedClassPointers) {
+  if (ik != nullptr) {
     assert(CompressedKlassPointers::is_encodable(ik),
            "Klass " PTR_FORMAT "needs a narrow Klass ID, but is not encodable", p2i(ik));
   }

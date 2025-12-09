@@ -30,53 +30,43 @@ import java.util.ArrayList;
 import java.util.List;
 
 /*
- * @test id=no_coops_no_ccptr_no_coh
+ * @test id=no_coops_no_coh
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:-UseCompactObjectHeaders TestOopMapSizeMinimal
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:-UseCompressedOops -XX:-UseCompactObjectHeaders TestOopMapSizeMinimal
  */
 
 /*
- * @test id=coops_no_ccptr_no_coh
+ * @test id=coops_no_coh
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+UseCompressedOops -XX:-UseCompressedClassPointers -XX:-UseCompactObjectHeaders TestOopMapSizeMinimal
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+UseCompressedOops -XX:-UseCompactObjectHeaders TestOopMapSizeMinimal
  */
 
 /*
- * @test id=no_coops_ccptr_no_coh
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:-UseCompressedOops -XX:+UseCompressedClassPointers -XX:-UseCompactObjectHeaders TestOopMapSizeMinimal
- */
-
-/*
- * @test id=coops_ccptr_no_coh
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:-UseCompactObjectHeaders TestOopMapSizeMinimal
- */
-
-/*
- * @test id=no_coops_ccptr_coh
+ * @test id=no_coops_coh
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:-UseCompressedOops -XX:+UseCompactObjectHeaders TestOopMapSizeMinimal
+ */
+
+/*
+ * @test id=coops_coh
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+UseCompressedOops -XX:+UseCompactObjectHeaders TestOopMapSizeMinimal
  */
 
 public class TestOopMapSizeMinimal {
@@ -99,10 +89,8 @@ public class TestOopMapSizeMinimal {
         if (is_64_bit) {
             if (WB.getBooleanVMFlag("UseCompactObjectHeaders")) {
                 HEADER_SIZE_IN_BYTES = 8;
-            } else if (WB.getBooleanVMFlag("UseCompressedClassPointers")) {
-                HEADER_SIZE_IN_BYTES = 12;
             } else {
-                HEADER_SIZE_IN_BYTES = 16;
+                HEADER_SIZE_IN_BYTES = 12;
             }
         } else {
             HEADER_SIZE_IN_BYTES = 8;
@@ -188,10 +176,9 @@ public class TestOopMapSizeMinimal {
         // DERIVED4  o4  oopmap entry 2  (reversed order)
         //           i4
 
-        // There are two combinations that have gaps:
-        // -UseCompressedOops + +COH, and -UseCompressedOops + -UseCompressedClassPointers.
-        // In both cases there is a gap following i1, and i2 will therefore nestle into that gap.
-        // Otherwise the same logic applies.
+        // There is one combination that has gaps:
+        // -UseCompressedOops + +COH: A gap will be following i1, and i2 will therefore nestle into that gap.
+        // Otherwise, the same logic applies.
 
         if (OOP_SIZE_IN_BYTES == 4 ||                               // oop size == int size
             (OOP_SIZE_IN_BYTES == 8 && HEADER_SIZE_IN_BYTES == 12)

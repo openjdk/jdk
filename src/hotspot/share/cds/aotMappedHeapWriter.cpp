@@ -466,7 +466,6 @@ int AOTMappedHeapWriter::filler_array_length(size_t fill_bytes) {
 }
 
 HeapWord* AOTMappedHeapWriter::init_filler_array_at_buffer_top(int array_length, size_t fill_bytes) {
-  assert(UseCompressedClassPointers, "Archived heap only supported for compressed klasses");
   Klass* oak = Universe::objectArrayKlass(); // already relocated to point to archived klass
   HeapWord* mem = offset_to_buffered_address<HeapWord*>(_buffer_used);
   memset(mem, 0, fill_bytes);
@@ -722,7 +721,6 @@ template <typename T> void AOTMappedHeapWriter::mark_oop_pointer(T* buffered_add
 }
 
 void AOTMappedHeapWriter::update_header_for_requested_obj(oop requested_obj, oop src_obj,  Klass* src_klass) {
-  assert(UseCompressedClassPointers, "Archived heap only supported for compressed klasses");
   narrowKlass nk = ArchiveBuilder::current()->get_requested_narrow_klass(src_klass);
   address buffered_addr = requested_addr_to_buffered_addr(cast_from_oop<address>(requested_obj));
 

@@ -38,7 +38,7 @@ TEST_VM(metaspace, MetaspaceUtils_reserved) {
 }
 
 TEST_VM(metaspace, MetaspaceUtils_reserved_compressed_class_pointers) {
-  if (UseCompressedClassPointers && CompressedKlassPointers::needs_class_space()) {
+  if (CompressedKlassPointers::needs_class_space()) {
     size_t reserved = MetaspaceUtils::reserved_bytes();
     EXPECT_GT(reserved, 0UL);
     size_t reserved_class = MetaspaceUtils::reserved_bytes(Metaspace::ClassType);
@@ -60,28 +60,13 @@ TEST_VM(metaspace, MetaspaceUtils_committed) {
 }
 
 TEST_VM(metaspace, MetaspaceUtils_committed_compressed_class_pointers) {
-  if (UseCompressedClassPointers && CompressedKlassPointers::needs_class_space()) {
+  if (CompressedKlassPointers::needs_class_space()) {
     size_t committed = MetaspaceUtils::committed_bytes();
     EXPECT_GT(committed, 0UL);
     size_t committed_class = MetaspaceUtils::committed_bytes(Metaspace::ClassType);
     EXPECT_GT(committed_class, 0UL);
     EXPECT_LE(committed_class, committed);
   }
-}
-
-TEST_VM(metaspace, MetaspaceUtils_non_compressed_class_pointers) {
-  if (UseCompressedClassPointers) {
-    return;
-  }
-
-  size_t committed_class = MetaspaceUtils::committed_bytes(Metaspace::ClassType);
-  EXPECT_EQ(committed_class, 0UL);
-
-  size_t used_class = MetaspaceUtils::used_bytes(Metaspace::ClassType);
-  EXPECT_EQ(used_class, 0UL);
-
-  size_t reserved_class = MetaspaceUtils::reserved_bytes(Metaspace::ClassType);
-  EXPECT_EQ(reserved_class, 0UL);
 }
 
 static void check_metaspace_stats_are_consistent(const MetaspaceStats& stats) {
@@ -102,7 +87,7 @@ TEST_VM(MetaspaceUtils, MetaspaceUtils_get_statistics) {
   check_metaspace_stats_are_not_null(combined_stats.non_class_space_stats());
   check_metaspace_stats_are_consistent(combined_stats.non_class_space_stats());
 
-  if (CompressedKlassPointers::needs_class_space() && UseCompressedClassPointers) {
+  if (CompressedKlassPointers::needs_class_space()) {
     check_metaspace_stats_are_not_null(combined_stats.class_space_stats());
     check_metaspace_stats_are_consistent(combined_stats.class_space_stats());
   } else {

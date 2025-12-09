@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,18 +38,20 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class TestZGCWithCDS {
-    public final static String HELLO = "Hello World";
-    public final static String UNABLE_TO_USE_ARCHIVE = "Unable to use shared archive.";
-    public final static String ERR_MSG = "The saved state of UseCompressedOops and UseCompressedClassPointers is different from runtime, CDS will be disabled.";
+    private final static String HELLO = "Hello World";
+    private final static String UNABLE_TO_USE_ARCHIVE = "Unable to use shared archive.";
+    private final static String ERR_MSG = "The saved state of UseCompressedOops (0) is different from runtime (1), CDS will be disabled.";
+    private final static String COMPACT_OBJECT_HEADERS = "-XX:+UseCompactObjectHeaders";
+
     public static void main(String... args) throws Exception {
-         String compactHeaders = "-XX:+UseCompactObjectHeaders";
+
          String helloJar = JarBuilder.build("hello", "Hello");
          System.out.println("0. Dump with ZGC");
          OutputAnalyzer out = TestCommon
                                   .dump(helloJar,
                                         new String[] {"Hello"},
                                         "-XX:+UseZGC",
-                                        compactHeaders,
+                                        COMPACT_OBJECT_HEADERS,
                                         "-Xlog:cds");
          out.shouldContain("Dumping shared data to file:");
          out.shouldHaveExitValue(0);
@@ -58,93 +60,52 @@ public class TestZGCWithCDS {
          out = TestCommon
                    .exec(helloJar,
                          "-XX:+UseZGC",
-                         compactHeaders,
+                         COMPACT_OBJECT_HEADERS,
                          "-Xlog:cds",
                          "Hello");
          out.shouldContain(HELLO);
          out.shouldHaveExitValue(0);
 
-         System.out.println("2. Run with +UseCompressedOops +UseCompressedClassPointers");
+         System.out.println("2. Run with +UseCompressedOops");
          out = TestCommon
                    .exec(helloJar,
                          "-XX:-UseZGC",
                          "-XX:+UseCompressedOops",           // in case turned off by vmoptions
-                         "-XX:+UseCompressedClassPointers",  // by jtreg
-                         compactHeaders,
+                         COMPACT_OBJECT_HEADERS,
                          "-Xlog:cds",
                          "Hello");
          out.shouldContain(UNABLE_TO_USE_ARCHIVE);
          out.shouldContain(ERR_MSG);
          out.shouldHaveExitValue(1);
 
-         System.out.println("3. Run with -UseCompressedOops -UseCompressedClassPointers");
+         System.out.println("4. Run with -UseCompressedOops");
          out = TestCommon
                    .exec(helloJar,
                          "-XX:+UseSerialGC",
                          "-XX:-UseCompressedOops",
-                         "-XX:-UseCompressedClassPointers",
-                         compactHeaders,
-                         "-Xlog:cds",
-                         "Hello");
-         out.shouldContain(UNABLE_TO_USE_ARCHIVE);
-         out.shouldContain(ERR_MSG);
-         out.shouldHaveExitValue(1);
-
-         System.out.println("4. Run with -UseCompressedOops +UseCompressedClassPointers");
-         out = TestCommon
-                   .exec(helloJar,
-                         "-XX:+UseSerialGC",
-                         "-XX:-UseCompressedOops",
-                         "-XX:+UseCompressedClassPointers",
-                         compactHeaders,
+                         COMPACT_OBJECT_HEADERS,
                          "-Xlog:cds",
                          "Hello");
          out.shouldContain(HELLO);
          out.shouldHaveExitValue(0);
 
-         System.out.println("5. Run with +UseCompressedOops -UseCompressedClassPointers");
+         System.out.println("6. Run with +UseCompressedOops");
          out = TestCommon
                    .exec(helloJar,
                          "-XX:+UseSerialGC",
                          "-XX:+UseCompressedOops",
-                         "-XX:-UseCompressedClassPointers",
-                         compactHeaders,
+                         COMPACT_OBJECT_HEADERS,
                          "-Xlog:cds",
                          "Hello");
          out.shouldContain(UNABLE_TO_USE_ARCHIVE);
          out.shouldContain(ERR_MSG);
          out.shouldHaveExitValue(1);
-
-         System.out.println("6. Run with +UseCompressedOops +UseCompressedClassPointers");
-         out = TestCommon
-                   .exec(helloJar,
-                         "-XX:+UseSerialGC",
-                         "-XX:+UseCompressedOops",
-                         "-XX:+UseCompressedClassPointers",
-                         compactHeaders,
-                         "-Xlog:cds",
-                         "Hello");
-         out.shouldContain(UNABLE_TO_USE_ARCHIVE);
-         out.shouldContain(ERR_MSG);
-         out.shouldHaveExitValue(1);
-
-         System.out.println("7. Dump with -UseCompressedOops -UseCompressedClassPointers");
-         out = TestCommon
-                   .dump(helloJar,
-                         new String[] {"Hello"},
-                         "-XX:+UseSerialGC",
-                         "-XX:-UseCompressedOops",
-                         "-XX:+UseCompressedClassPointers",
-                         compactHeaders,
-                         "-Xlog:cds");
-         out.shouldContain("Dumping shared data to file:");
-         out.shouldHaveExitValue(0);
 
          System.out.println("8. Run with ZGC");
          out = TestCommon
                    .exec(helloJar,
                          "-XX:+UseZGC",
-                         compactHeaders,
+                         COMPACT_OBJECT_HEADERS,
                          "-Xlog:cds",
                          "Hello");
          out.shouldContain(HELLO);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,6 @@ public class CommandLineFlagCombo {
     private static final String[] testTable = {
         "-XX:+UseG1GC", "-XX:+UseSerialGC", "-XX:+UseParallelGC",
         "-XX:+UseLargePages", // may only take effect on machines with large-pages
-        "-XX:+UseCompressedClassPointers",
         "-XX:+UseCompressedOops",
         "-XX:ObjectAlignmentInBytes=16",
         "-XX:ObjectAlignmentInBytes=32",
@@ -123,7 +122,6 @@ public class CommandLineFlagCombo {
         if (Platform.is32bit())
         {
             if (testEntry.equals("-XX:+UseCompressedOops") ||
-                testEntry.equals("-XX:+UseCompressedClassPointers") ||
                 testEntry.contains("ObjectAlignmentInBytes") )
             {
                 System.out.println("Test case not applicable on 32-bit platforms");

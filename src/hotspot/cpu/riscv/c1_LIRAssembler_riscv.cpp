@@ -58,20 +58,6 @@ const Register SHIFT_count = x10;   // where count for shift operations must be
 static void select_different_registers(Register preserve,
                                        Register extra,
                                        Register &tmp1,
-                                       Register &tmp2) {
-  if (tmp1 == preserve) {
-    assert_different_registers(tmp1, tmp2, extra);
-    tmp1 = extra;
-  } else if (tmp2 == preserve) {
-    assert_different_registers(tmp1, tmp2, extra);
-    tmp2 = extra;
-  }
-  assert_different_registers(preserve, tmp1, tmp2);
-}
-
-static void select_different_registers(Register preserve,
-                                       Register extra,
-                                       Register &tmp1,
                                        Register &tmp2,
                                        Register &tmp3) {
   if (tmp1 == preserve) {
@@ -1181,12 +1167,8 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   } else if (obj == klass_RInfo) {
     klass_RInfo = dst;
   }
-  if (k->is_loaded() && !UseCompressedClassPointers) {
-    select_different_registers(obj, dst, k_RInfo, klass_RInfo);
-  } else {
-    Rtmp1 = op->tmp3()->as_register();
-    select_different_registers(obj, dst, k_RInfo, klass_RInfo, Rtmp1);
-  }
+  Rtmp1 = op->tmp3()->as_register();
+  select_different_registers(obj, dst, k_RInfo, klass_RInfo, Rtmp1);
 
   assert_different_registers(obj, k_RInfo, klass_RInfo);
 

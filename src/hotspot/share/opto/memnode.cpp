@@ -2402,7 +2402,6 @@ Node* LoadKlassNode::make(PhaseGVN& gvn, Node* mem, Node* adr, const TypePtr* at
   assert(adr_type != nullptr, "expecting TypeKlassPtr");
 #ifdef _LP64
   if (adr_type->is_ptr_to_narrowklass()) {
-    assert(UseCompressedClassPointers, "no compressed klasses");
     Node* load_klass = gvn.transform(new LoadNKlassNode(mem, adr, at, tk->make_narrowklass(), MemNode::unordered));
     return new DecodeNKlassNode(load_klass, load_klass->bottom_type()->make_ptr());
   }
@@ -2710,8 +2709,7 @@ StoreNode* StoreNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const
       val = gvn.transform(new EncodePNode(val, val->bottom_type()->make_narrowoop()));
       return new StoreNNode(ctl, mem, adr, adr_type, val, mo);
     } else if (adr->bottom_type()->is_ptr_to_narrowklass() ||
-               (UseCompressedClassPointers && val->bottom_type()->isa_klassptr() &&
-                adr->bottom_type()->isa_rawptr())) {
+               (val->bottom_type()->isa_klassptr() && adr->bottom_type()->isa_rawptr())) {
       val = gvn.transform(new EncodePKlassNode(val, val->bottom_type()->make_narrowklass()));
       return new StoreNKlassNode(ctl, mem, adr, adr_type, val, mo);
     }
