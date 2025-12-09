@@ -29,8 +29,13 @@
  * @run main UIMapTest
  */
 
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.ActionMap;
 import javax.swing.ComponentInputMap;
+import javax.swing.InputMap;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -38,7 +43,11 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 
 public class UIMapTest {
+
     public static void main(String[] args) {
+
+        StringBuilder str = new StringBuilder();
+
         // Create the test button
         JButton button = new JButton("Test");
 
@@ -53,14 +62,29 @@ public class UIMapTest {
         // Attempt to remove the map
         SwingUtilities.replaceUIInputMap(button, JComponent.WHEN_IN_FOCUSED_WINDOW, null);
 
-        // Show the frame
-        JFrame frame = new JFrame("UIMapTest");
-        frame.add(button);
-
         if (button.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).
             get(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0)) != null) {
-            throw new RuntimeException("SwingUtilities.replaceUIInputMap " +
-                                       "didn't remove previously installed map");
+            str.append("\nSwingUtilities.replaceUIInputMap " +
+                       "didn't remove previously installed input map");
+        }
+
+        // Get the InputMap for the button when it has focus
+        InputMap inputMap = button.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+
+        // Map the VK_ENTER key stroke to a specific action name
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "doEnterAction");
+        Action enterAction = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) { }
+        };
+        button.getActionMap().put("doEnterAction",  enterAction);
+        SwingUtilities.replaceUIActionMap(button, null);
+        if (button.getActionMap().size() != 0) {
+            str.append("\nSwingUtilities.replaceUIActionMap " +
+                       "didn't remove previously installed action map");
+        }
+        if (str.length() != 0) {
+            throw new RuntimeException(str.toString());
         }
     }
 }
