@@ -105,13 +105,7 @@ class HandlerImpl {
 
  public:
 
-  static int emit_exception_handler(C2_MacroAssembler *masm);
   static int emit_deopt_handler(C2_MacroAssembler* masm);
-
-  static uint size_exception_handler() {
-    return ( 3 * 4 );
-  }
-
 
   static uint size_deopt_handler() {
     return ( 9 * 4 );
@@ -876,26 +870,6 @@ uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
 
 //=============================================================================
 
-// Emit exception handler code.
-int HandlerImpl::emit_exception_handler(C2_MacroAssembler* masm) {
-  address base = __ start_a_stub(size_exception_handler());
-  if (base == nullptr) {
-    ciEnv::current()->record_failure("CodeCache is full");
-    return 0;  // CodeBuffer::expand failed
-  }
-
-  int offset = __ offset();
-
-  // OK to trash LR, because exception blob will kill it
-  __ jump(OptoRuntime::exception_blob()->entry_point(), relocInfo::runtime_call_type, LR_tmp);
-
-  assert(__ offset() - offset <= (int) size_exception_handler(), "overflow");
-
-  __ end_a_stub();
-
-  return offset;
-}
-
 int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
   // Can't use any of the current frame's registers as we may have deopted
   // at a poll and everything can be live.
@@ -906,19 +880,28 @@ int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
   }
 
   int offset = __ offset();
-  address deopt_pc = __ pc();
 
-  __ sub(SP, SP, wordSize); // make room for saved PC
-  __ push(LR); // save LR that may be live when we get here
-  __ mov_relative_address(LR, deopt_pc);
-  __ str(LR, Address(SP, wordSize)); // save deopt PC
-  __ pop(LR); // restore LR
+  Label start;
+  __ bind(start);
+
   __ jump(SharedRuntime::deopt_blob()->unpack(), relocInfo::runtime_call_type, noreg);
 
+  int entry_offset = __ offset();
+  address deopt_pc = __ pc();
+  // Preserve R0 and reserve space for the address of the entry point
+  __ push(RegisterSet(R0) | RegisterSet(R1));
+  // Store the entry point address
+  __ mov_relative_address(R0, deopt_pc);
+  __ str(R0, Address(SP, wordSize));
+  __ pop(R0); // restore R0
+  __ b(start);
+
   assert(__ offset() - offset <= (int) size_deopt_handler(), "overflow");
+  assert(__ offset() - entry_offset >= NativePostCallNop::first_check_size,
+         "out of bounds read in post-call NOP check");
 
   __ end_a_stub();
-  return offset;
+  return entry_offset;
 }
 
 bool Matcher::match_rule_supported(int opcode) {
@@ -1003,6 +986,10 @@ bool Matcher::vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen
   return false;
 }
 
+bool Matcher::mask_op_prefers_predicate(int opcode, const TypeVect* vt) {
+  return false;
+}
+
 const RegMask* Matcher::predicate_reg_mask(void) {
   return nullptr;
 }
@@ -1073,6 +1060,10 @@ MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* original_opnd,
 
 bool Matcher::is_reg2reg_move(MachNode* m) {
   ShouldNotReachHere();  // generic vector operands not supported
+  return false;
+}
+
+bool Matcher::is_register_biasing_candidate(const MachNode* mdef, int oper_index) {
   return false;
 }
 

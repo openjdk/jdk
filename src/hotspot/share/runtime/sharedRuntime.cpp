@@ -87,6 +87,9 @@
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif
+#ifdef COMPILER2
+#include "opto/runtime.hpp"
+#endif
 #if INCLUDE_JFR
 #include "jfr/jfr.inline.hpp"
 #endif
@@ -601,6 +604,11 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
       // The deferred StackWatermarkSet::after_unwind check will be performed in
       // * OptoRuntime::handle_exception_C_helper for C2 code
       // * exception_handler_for_pc_helper via Runtime1::handle_exception_from_callee_id for C1 code
+#ifdef COMPILER2
+      if (nm->compiler_type() == compiler_c2) {
+        return OptoRuntime::exception_blob()->entry_point();
+      }
+#endif // COMPILER2
       return nm->exception_begin();
     }
   }
@@ -729,34 +737,6 @@ void SharedRuntime::throw_and_post_jvmti_exception(JavaThread* current, Symbol* 
   throw_and_post_jvmti_exception(current, h_exception);
 }
 
-#if INCLUDE_JVMTI
-JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_start(oopDesc* vt, jboolean hide, JavaThread* current))
-  assert(hide == JNI_FALSE, "must be VTMS transition finish");
-  jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
-  JvmtiVTMSTransitionDisabler::VTMS_vthread_start(vthread);
-  JNIHandles::destroy_local(vthread);
-JRT_END
-
-JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_end(oopDesc* vt, jboolean hide, JavaThread* current))
-  assert(hide == JNI_TRUE, "must be VTMS transition start");
-  jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
-  JvmtiVTMSTransitionDisabler::VTMS_vthread_end(vthread);
-  JNIHandles::destroy_local(vthread);
-JRT_END
-
-JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_mount(oopDesc* vt, jboolean hide, JavaThread* current))
-  jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
-  JvmtiVTMSTransitionDisabler::VTMS_vthread_mount(vthread, hide);
-  JNIHandles::destroy_local(vthread);
-JRT_END
-
-JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_unmount(oopDesc* vt, jboolean hide, JavaThread* current))
-  jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
-  JvmtiVTMSTransitionDisabler::VTMS_vthread_unmount(vthread, hide);
-  JNIHandles::destroy_local(vthread);
-JRT_END
-#endif // INCLUDE_JVMTI
-
 // The interpreter code to call this tracing function is only
 // called/generated when UL is on for redefine, class and has the right level
 // and tags. Since obsolete methods are never compiled, we don't have
@@ -801,6 +781,8 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
   // determine handler bci, if any
   EXCEPTION_MARK;
 
+  Handle orig_exception(THREAD, exception());
+
   int handler_bci = -1;
   int scope_depth = 0;
   if (!force_unwind) {
@@ -822,7 +804,7 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
         // thrown (bugs 4307310 and 4546590). Set "exception" reference
         // argument to ensure that the correct exception is thrown (4870175).
         recursive_exception_occurred = true;
-        exception = Handle(THREAD, PENDING_EXCEPTION);
+        exception.replace(PENDING_EXCEPTION);
         CLEAR_PENDING_EXCEPTION;
         if (handler_bci >= 0) {
           bci = handler_bci;
@@ -851,8 +833,10 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
 
   // If the compiler did not anticipate a recursive exception, resulting in an exception
   // thrown from the catch bci, then the compiled exception handler might be missing.
-  // This is rare.  Just deoptimize and let the interpreter handle it.
+  // This is rare.  Just deoptimize and let the interpreter rethrow the original
+  // exception at the original bci.
   if (t == nullptr && recursive_exception_occurred) {
+    exception.replace(orig_exception()); // restore original exception
     bool make_not_entrant = false;
     return Deoptimization::deoptimize_for_missing_exception_handler(nm, make_not_entrant);
   }
@@ -3396,42 +3380,12 @@ uint32_t AdapterHandlerLibrary::id(AdapterHandlerEntry* handler) {
   return handler->id();
 }
 
-bool AdapterHandlerLibrary::contains(const CodeBlob* b) {
-  bool found = false;
-#if INCLUDE_CDS
-  if (AOTCodeCache::is_using_adapter()) {
-    auto findblob_archived_table = [&] (AdapterHandlerEntry* handler) {
-      if (b == CodeCache::find_blob(handler->get_i2c_entry())) {
-        found = true;
-        return false; // abort iteration
-      } else {
-        return true; // keep looking
-      }
-    };
-    _aot_adapter_handler_table.iterate(findblob_archived_table);
-  }
-#endif // INCLUDE_CDS
-  if (!found) {
-    auto findblob_runtime_table = [&] (AdapterFingerPrint* key, AdapterHandlerEntry* handler) {
-      if (b == CodeCache::find_blob(handler->get_i2c_entry())) {
-        found = true;
-        return false; // abort iteration
-      } else {
-        return true; // keep looking
-      }
-    };
-    assert_locked_or_safepoint(AdapterHandlerLibrary_lock);
-    _adapter_handler_table->iterate(findblob_runtime_table);
-  }
-  return found;
-}
-
 void AdapterHandlerLibrary::print_handler_on(outputStream* st, const CodeBlob* b) {
   bool found = false;
 #if INCLUDE_CDS
   if (AOTCodeCache::is_using_adapter()) {
     auto findblob_archived_table = [&] (AdapterHandlerEntry* handler) {
-      if (b == CodeCache::find_blob(handler->get_i2c_entry())) {
+      if (b == handler->adapter_blob()) {
         found = true;
         st->print("Adapter for signature: ");
         handler->print_adapter_on(st);
@@ -3445,7 +3399,7 @@ void AdapterHandlerLibrary::print_handler_on(outputStream* st, const CodeBlob* b
 #endif // INCLUDE_CDS
   if (!found) {
     auto findblob_runtime_table = [&] (AdapterFingerPrint* key, AdapterHandlerEntry* handler) {
-      if (b == CodeCache::find_blob(handler->get_i2c_entry())) {
+      if (b == handler->adapter_blob()) {
         found = true;
         st->print("Adapter for signature: ");
         handler->print_adapter_on(st);

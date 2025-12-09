@@ -165,7 +165,8 @@ import javax.tools.StandardLocation;
  *                                                      the next
  * <tr><th scope="row">{@code finally}              <td>{@code finally} clauses that do not terminate normally
  * <tr><th scope="row">{@code identity}             <td>use of a value-based class where an identity class is expected
- * <tr><th scope="row">{@code lossy-conversions}    <td>possible lossy conversions in compound assignment
+ * <tr><th scope="row">{@code lossy-conversions}    <td>possible lossy conversions in compound assignments or bit shifts
+ *                                                      (more than \u00B131 bits for integers or \u00B163 bits for longs)
  * <tr><th scope="row">{@code missing-explicit-ctor} <td>missing explicit constructors in public and protected classes
  *                                                      in exported packages
  * <tr><th scope="row">{@code module}               <td>module system related issues

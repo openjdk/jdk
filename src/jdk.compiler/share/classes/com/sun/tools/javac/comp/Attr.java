@@ -124,6 +124,7 @@ public class Attr extends JCTree.Visitor {
     final ArgumentAttr argumentAttr;
     final MatchBindingsComputer matchBindingsComputer;
     final AttrRecover attrRecover;
+    final boolean captureMRefReturnType;
 
     public static Attr instance(Context context) {
         Attr instance = context.get(attrKey);
@@ -175,6 +176,7 @@ public class Attr extends JCTree.Visitor {
                              Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF.allowedInSource(source);
         sourceName = source.name;
         useBeforeDeclarationWarning = options.isSet("useBeforeDeclarationWarning");
+        captureMRefReturnType = Source.Feature.CAPTURE_MREF_RETURN_TYPE.allowedInSource(source);
 
         statInfo = new ResultInfo(KindSelector.NIL, Type.noType);
         varAssignmentInfo = new ResultInfo(KindSelector.ASG, Type.noType);
@@ -375,7 +377,7 @@ public class Attr extends JCTree.Visitor {
             @Override @DefinedBy(Api.COMPILER_TREE)
             public Symbol visitMemberSelect(MemberSelectTree node, Env<AttrContext> env) {
                 Symbol site = visit(node.getExpression(), env);
-                if (site.kind == ERR || site.kind == ABSENT_TYP || site.kind == HIDDEN)
+                if (site == null || site.kind == ERR || site.kind == ABSENT_TYP || site.kind == HIDDEN)
                     return site;
                 Name name = (Name)node.getIdentifier();
                 if (site.kind == PCK) {
@@ -1859,7 +1861,7 @@ public class Attr extends JCTree.Visitor {
                         boolean unconditional =
                                 unguarded &&
                                 !patternType.isErroneous() &&
-                                types.isUnconditionallyExact(seltype, patternType);
+                                types.isUnconditionallyExactTypeBased(seltype, patternType);
                         if (unconditional) {
                             if (hasUnconditionalPattern) {
                                 log.error(pat.pos(), Errors.DuplicateUnconditionalPattern);
@@ -3832,9 +3834,10 @@ public class Attr extends JCTree.Visitor {
         }
 
         if (!returnType.hasTag(VOID) && !resType.hasTag(VOID)) {
+            Type capturedResType = captureMRefReturnType ? types.capture(resType) : resType;
             if (resType.isErroneous() ||
-                    new FunctionalReturnContext(checkContext).compatible(resType, returnType,
-                            checkContext.checkWarner(tree, resType, returnType))) {
+                    new FunctionalReturnContext(checkContext).compatible(capturedResType, returnType,
+                            checkContext.checkWarner(tree, capturedResType, returnType))) {
                 incompatibleReturnType = null;
             }
         }
@@ -3998,6 +4001,7 @@ public class Attr extends JCTree.Visitor {
                               operator.type.getReturnType(),
                               owntype);
             chk.checkLossOfPrecision(tree.rhs.pos(), operand, owntype);
+            chk.checkOutOfRangeShift(tree.rhs.pos(), operator, operand);
         }
         result = check(tree, owntype, KindSelector.VAL, resultInfo);
     }
@@ -4088,6 +4092,7 @@ public class Attr extends JCTree.Visitor {
             }
 
             chk.checkDivZero(tree.rhs.pos(), operator, right);
+            chk.checkOutOfRangeShift(tree.rhs.pos(), operator, right);
         }
         result = check(tree, owntype, KindSelector.VAL, resultInfo);
     }
@@ -5629,12 +5634,16 @@ public class Attr extends JCTree.Visitor {
                 chk.validateRepeatable(c, repeatable, cbPos);
             }
         } else {
-            // Check that all extended classes and interfaces
-            // are compatible (i.e. no two define methods with same arguments
-            // yet different return types).  (JLS 8.4.8.3)
-            chk.checkCompatibleSupertypes(tree.pos(), c.type);
-            chk.checkDefaultMethodClashes(tree.pos(), c.type);
-            chk.checkPotentiallyAmbiguousOverloads(tree, c.type);
+            try {
+                // Check that all extended classes and interfaces
+                // are compatible (i.e. no two define methods with same arguments
+                // yet different return types).  (JLS 8.4.8.3)
+                chk.checkCompatibleSupertypes(tree.pos(), c.type);
+                chk.checkDefaultMethodClashes(tree.pos(), c.type);
+                chk.checkPotentiallyAmbiguousOverloads(tree, c.type);
+            } catch (CompletionFailure cf) {
+                chk.completionError(tree.pos(), cf);
+            }
         }
 
         // Check that class does not import the same parameterized interface

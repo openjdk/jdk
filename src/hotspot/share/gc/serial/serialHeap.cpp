@@ -147,7 +147,8 @@ GrowableArray<MemoryPool*> SerialHeap::memory_pools() {
 
 HeapWord* SerialHeap::allocate_loaded_archive_space(size_t word_size) {
   MutexLocker ml(Heap_lock);
-  return old_gen()->allocate(word_size);
+  HeapWord* const addr = old_gen()->allocate(word_size);
+  return addr != nullptr ? addr : old_gen()->expand_and_allocate(word_size);
 }
 
 void SerialHeap::complete_loaded_archive_space(MemRegion archive_space) {
@@ -304,9 +305,12 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size, bool is_tlab) {
   HeapWord* result = nullptr;
 
   for (uint try_count = 1; /* break */; try_count++) {
-    result = mem_allocate_cas_noexpand(size, is_tlab);
-    if (result != nullptr) {
-      break;
+    {
+      ConditionalMutexLocker locker(Heap_lock, !is_init_completed());
+      result = mem_allocate_cas_noexpand(size, is_tlab);
+      if (result != nullptr) {
+        break;
+      }
     }
     uint gc_count_before;  // Read inside the Heap_lock locked region.
     {
@@ -320,10 +324,15 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size, bool is_tlab) {
       }
 
       if (!is_init_completed()) {
-        // Can't do GC; try heap expansion to satisfy the request.
-        result = expand_heap_and_allocate(size, is_tlab);
-        if (result != nullptr) {
-          return result;
+        // Double checked locking, this ensure that is_init_completed() does not
+        // transition while expanding the heap.
+        MonitorLocker ml(InitCompleted_lock, Monitor::_no_safepoint_check_flag);
+        if (!is_init_completed()) {
+          // Can't do GC; try heap expansion to satisfy the request.
+          result = expand_heap_and_allocate(size, is_tlab);
+          if (result != nullptr) {
+            return result;
+          }
         }
       }
 
@@ -335,11 +344,6 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size, bool is_tlab) {
     if (op.gc_succeeded()) {
       result = op.result();
       break;
-    }
-
-    if (is_shutting_down()) {
-      stall_for_vm_shutdown();
-      return nullptr;
     }
 
     // Give a warning if we seem to be looping forever.
@@ -626,6 +630,14 @@ bool SerialHeap::requires_barriers(stackChunkOop obj) const {
 
 // Returns "TRUE" iff "p" points into the committed areas of the heap.
 bool SerialHeap::is_in(const void* p) const {
+  // precondition
+  verify_not_in_native_if_java_thread();
+
+  if (!is_in_reserved(p)) {
+    // If it's not even in reserved.
+    return false;
+  }
+
   return _young_gen->is_in(p) || _old_gen->is_in(p);
 }
 
@@ -793,3 +805,12 @@ void SerialHeap::gc_epilogue(bool full) {
 
   MetaspaceCounters::update_performance_counters();
 };
+
+#ifdef ASSERT
+void SerialHeap::verify_not_in_native_if_java_thread() {
+  if (Thread::current()->is_Java_thread()) {
+    JavaThread* thread = JavaThread::current();
+    assert(thread->thread_state() != _thread_in_native, "precondition");
+  }
+}
+#endif
