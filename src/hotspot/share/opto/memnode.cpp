@@ -4158,12 +4158,11 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
 
   // Bulk clear double-words
   Node* zsize = phase->transform(new SubXNode(zend, zbase) );
-  Node* adr = nullptr;
-  if (phase->C->get_alias_index(phase->type(dest)->is_ptr()) == Compile::AliasIdxRaw) {
-    adr = phase->transform(new AddPNode(phase->C->top(), dest, start_offset) );
-  } else {
-    adr = phase->transform(new AddPNode(dest, dest, start_offset) );
+  Node* base = dest;
+  if (phase->type(dest)->isa_oopptr() == nullptr) {
+    base = phase->C->top();
   }
+  Node* adr = phase->transform(new AddPNode(base, dest, start_offset));
   mem = new ClearArrayNode(ctl, mem, zsize, adr, false);
   return phase->transform(mem);
 }

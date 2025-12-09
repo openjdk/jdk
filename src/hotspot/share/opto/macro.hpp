@@ -50,9 +50,6 @@ public:
     return basic_plus_adr(base, base, offset);
   }
   Node* basic_plus_adr(Node* base, Node* ptr, Node* offset) {
-    if (base != C->top() && C->get_alias_index(_igvn.type(base)->is_ptr()) == Compile::AliasIdxRaw) {
-      base = C->top();
-    }
     Node* adr = new AddPNode(base, ptr, offset);
     return transform_later(adr);
   }

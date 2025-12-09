@@ -844,13 +844,7 @@ bool CallNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) {
       }
     }
     guarantee(dest != nullptr, "Call had only one ptr in, broken IR!");
-    if (dest->is_top()) {
-      return false;
-    }
-    if (phase->type(dest)->isa_oopptr() == nullptr) {
-      return true;
-    }
-    if (may_modify_arraycopy_helper(phase->type(dest)->is_oopptr(), t_oop, phase)) {
+    if (!dest->is_top() && may_modify_arraycopy_helper(phase->type(dest)->is_oopptr(), t_oop, phase)) {
       return true;
     }
     return false;
@@ -1739,7 +1733,7 @@ Node *AllocateNode::make_ideal_mark(PhaseGVN* phase, Node* control, Node* mem) {
   if (UseCompactObjectHeaders) {
     Node* klass_node = in(AllocateNode::KlassNode);
     Node* proto_adr = phase->transform(new AddPNode(phase->C->top(), klass_node, phase->MakeConX(in_bytes(Klass::prototype_header_offset()))));
-    mark_node = LoadNode::make(*phase, control, mem, proto_adr, phase->type(proto_adr)->is_ptr(), TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
+    mark_node = LoadNode::make(*phase, control, mem, proto_adr, TypeRawPtr::BOTTOM, TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
   } else {
     // For now only enable fast locking for non-array types
     mark_node = phase->MakeConX(markWord::prototype().value());
