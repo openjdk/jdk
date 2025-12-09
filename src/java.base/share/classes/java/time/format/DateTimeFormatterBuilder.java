@@ -709,7 +709,6 @@ public final class DateTimeFormatterBuilder {
             }
             // Replace the modified parser with the updated one
             active.printerParsers.set(activeValueParser, basePP);
-            checkField(basePP);
         } else {
             // The new Parser becomes the active parser
             active.valueParserIndex = appendInternal(pp);
