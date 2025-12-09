@@ -32,7 +32,6 @@ import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.Objects;
-import static sun.nio.ch.Streams.MAX_BUFFER_SIZE;
 
 /**
  * An OutputStream that writes bytes to a channel.
@@ -65,15 +64,15 @@ class ChannelOutputStream extends OutputStream {
      * If the channel is selectable then it must be configured blocking.
      */
     private void writeFully(ByteBuffer bb) throws IOException {
-        int limit = bb.limit();
-        while (bb.remaining() > 0) {
-            if (bb.remaining() > MAX_BUFFER_SIZE) {
-                bb.limit(bb.position() + MAX_BUFFER_SIZE);
-            }
+        int pos = bb.position();
+        int rem = bb.limit() - pos;
+        while (rem > 0) {
+            bb.limit(pos + Math.min(Streams.MAX_BUFFER_SIZE, rem));
             int n = ch.write(bb);
             if (n <= 0)
-                throw new RuntimeException("no bytes written");
-            bb.limit(limit);
+                throw new IOException("Write failed");
+            pos += n;
+            rem -= n;
         }
     }
 

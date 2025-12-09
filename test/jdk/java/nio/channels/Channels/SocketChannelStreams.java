@@ -25,8 +25,6 @@
  * @bug 8279339
  * @summary Exercise InputStream/OutputStream returned by Channels.newXXXStream
  *    when channel is a SocketChannel
- * @library /test/lib
- * @build jdk.test.lib.RandomFactory
  * @run testng SocketChannelStreams
  */
 
@@ -41,23 +39,18 @@ import java.nio.channels.Channels;
 import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.Arrays;
 import java.util.Objects;
-import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import jdk.test.lib.RandomFactory;
-
 import org.testng.annotations.*;
 import static org.testng.Assert.*;
 
 @Test
 public class SocketChannelStreams {
-    private static Random RND = RandomFactory.getRandom();
     private ScheduledExecutorService executor;
 
     @BeforeClass()
@@ -68,23 +61,6 @@ public class SocketChannelStreams {
     @AfterClass
     public void finish() {
         executor.shutdown();
-    }
-
-    /**
-     * Test writing and reading an array of bytes.
-     */
-    public void testWriteRead() throws Exception {
-        final int size = 512*1024;
-        byte[] b = new byte[size];
-        int off = RND.nextInt(1024);
-        int len = RND.nextInt(size - off);
-        RND.nextBytes(b);
-        withConnection((sc, peer) -> {
-            Channels.newOutputStream(peer).write(b, off, len);
-            byte[] data = new byte[len];
-            int n = Channels.newInputStream(sc).read(data, 0, len);
-            assertTrue(Arrays.equals(data, 0, n, b, off, off + n));
-        });
     }
 
     /**

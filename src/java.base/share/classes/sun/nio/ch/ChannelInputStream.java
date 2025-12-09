@@ -39,7 +39,6 @@ import java.util.Arrays;
 import java.util.Objects;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.Stable;
-import static sun.nio.ch.Streams.MAX_BUFFER_SIZE;
 
 /**
  * An InputStream that reads bytes from a channel.
@@ -110,7 +109,7 @@ class ChannelInputStream extends InputStream {
         if (len == 0)
             return 0;
 
-        len = Math.min(len, MAX_BUFFER_SIZE);
+        len = Math.min(len, Streams.MAX_BUFFER_SIZE);
         ByteBuffer bb = ((this.bs == bs)
                          ? this.bb
                          : ByteBuffer.wrap(bs));
