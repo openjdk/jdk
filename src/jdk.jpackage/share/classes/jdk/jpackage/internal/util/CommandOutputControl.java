@@ -26,6 +26,7 @@ import static java.util.stream.Collectors.joining;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -266,6 +267,25 @@ public final class CommandOutputControl {
         processOutputCharset = other.processOutputCharset;
         redirectErrorStream = other.redirectErrorStream;
         storeStreamsInFiles = other.storeStreamsInFiles;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(outputStreamsControl, processOutputCharset, redirectErrorStream, storeStreamsInFiles);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        CommandOutputControl other = (CommandOutputControl) obj;
+        return Objects.equals(outputStreamsControl, other.outputStreamsControl)
+                && Objects.equals(processOutputCharset, other.processOutputCharset)
+                && redirectErrorStream == other.redirectErrorStream && storeStreamsInFiles == other.storeStreamsInFiles;
     }
 
     /**
@@ -580,7 +600,7 @@ public final class CommandOutputControl {
         private static final long serialVersionUID = 1L;
     }
 
-    public Optional<String> description() {
+    public String description() {
         return outputStreamsControl.describe();
     }
 
@@ -654,13 +674,9 @@ public final class CommandOutputControl {
         final var tpStreamConfig = ToolProviderStreamConfig.create(outputStreamsControl, redirectErrorStream);
 
         final int exitCode;
-        try {
-            exitCode = tp.run(tpStreamConfig.out().ps(), tpStreamConfig.err().ps(), args);
-        } finally {
-            try {
-                tpStreamConfig.out().ps().flush();
-            } finally {
-                tpStreamConfig.err().ps().flush();
+        try (var tpStdout = tpStreamConfig.out().ps()) {
+            try (var tpStderr = tpStreamConfig.err().ps()) {
+                exitCode = tp.run(tpStdout, tpStderr, args);
             }
         }
 
@@ -876,8 +892,6 @@ public final class CommandOutputControl {
                 return Optional.of(bufReader.lines().findFirst().map(List::of).orElseGet(List::of));
             } else if (outputControl.saveAll()) {
                 return Optional.of(bufReader.lines().toList());
-            } else if (bufferAsString.isPresent()) {
-                return Optional.of(List.of());
             } else {
                 return Optional.empty();
             }
@@ -890,24 +904,15 @@ public final class CommandOutputControl {
         if (out.isEmpty() && err.isEmpty()) {
             return CommandOutput.EMPTY;
         } else if (out.isEmpty()) {
-            if (redirectErrorStream()) {
-                return new CommandOutput(err, Integer.MAX_VALUE, true);
-            } else {
-                return new CommandOutput(err, -1, false);
-            }
+            // This branch is unreachable because it is impossible to make it save stderr without saving stdout.
+            // If streams are configured for saving and stdout is discarded, 
+            // its saved contents will be an Optional instance wrapping an empty list, not an empty Optional.
+            throw new AssertionError();
         } else if (err.isEmpty()) {
             return new CommandOutput(out, Integer.MAX_VALUE, redirectErrorStream());
         } else {
             final var combined = Stream.of(out, err).map(Optional::orElseThrow).flatMap(List::stream);
-            if (outputStreamsControl.stdout().saveFirstLine() && outputStreamsControl.stderr().saveFirstLine() && redirectErrorStream()) {
-                return new CommandOutput(
-                        Optional.of(combined.findFirst().map(List::of).orElseGet(List::of)),
-                        Integer.min(1, out.orElseThrow().size()),
-                        true);
-            } else {
-                return new CommandOutput(
-                        Optional.of(combined.toList()), out.orElseThrow().size(), redirectErrorStream());
-            }
+            return new CommandOutput(Optional.of(combined.toList()), out.orElseThrow().size(), redirectErrorStream());
         }
     }
 
@@ -929,9 +934,9 @@ public final class CommandOutputControl {
             return new OutputStreamsControl(stdout.copy(), stderr.copy());
         }
 
-        Optional<String> describe() {
+        String describe() {
             final List<String> tokens = new ArrayList<>();
-            if (stdout.save() || stderr.save()) {
+            if (stdout.save()) { // Save flags are the same for stdout and stderr, checking stdout is sufficient.
                 streamsLabel("save ", true).ifPresent(tokens::add);
             }
             if (stdout.dump() || stderr.dump()) {
@@ -939,13 +944,14 @@ public final class CommandOutputControl {
             }
             streamsLabel("discard ", false).ifPresent(tokens::add);
             if (tokens.isEmpty()) {
-                return Optional.empty();
+                // Unreachable because there is always at least one token in the description.
+                throw new AssertionError();
             } else {
-                return Optional.of(String.join("; ", tokens));
+                return String.join("; ", tokens);
             }
         }
 
-        Optional<String> streamsLabel(String prefix, boolean negate) {
+        private Optional<String> streamsLabel(String prefix, boolean negate) {
             Objects.requireNonNull(prefix);
             final var str = Stream.of(stdoutLabel(negate), stderrLabel(negate))
                     .filter(Optional::isPresent)
@@ -1141,6 +1147,23 @@ public final class CommandOutputControl {
                 builder.dumpStream(dumpStream);
             }
             return builder;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(discard, dump, save);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            OutputControl other = (OutputControl) obj;
+            return discard == other.discard && dump == other.dump && Objects.equals(save, other.save);
         }
 
         private boolean dump;
