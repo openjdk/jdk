@@ -1313,7 +1313,7 @@ void PhaseMacroExpand::expand_allocate_common(
     initial_slow_test = nullptr;
   }
 
-  bool allocation_has_use = (alloc->result_cast() != nullptr) || (alloc->initialization() != nullptr && alloc->initialization()->is_complete_with_arraycopy());
+  bool allocation_has_use = (alloc->result_cast() != nullptr);
   if (!allocation_has_use) {
     InitializeNode* init = alloc->initialization();
     if (init != nullptr) {

@@ -379,7 +379,6 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
                                            bool disjoint_bases,
                                            bool length_never_negative,
                                            RegionNode* slow_region) {
-  Node* orig_dest = dest;
   if (slow_region == nullptr) {
     slow_region = new RegionNode(1);
     transform_later(slow_region);
@@ -412,7 +411,6 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
       assert(dest->is_CheckCastPP(), "sanity");
       assert(dest->in(0)->in(0) == init, "dest pinned");
       adr_type = TypeRawPtr::BOTTOM;  // all initializations are into raw memory
-      dest = dest->in(1);
       // From this point on, every exit path is responsible for
       // initializing any non-copied parts of the object to zero.
       // Also, if this flag is set we make sure that arraycopy interacts properly
@@ -841,7 +839,7 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
   _igvn.replace_node(_callprojs.fallthrough_catchproj, *ctrl);
 
 #ifdef ASSERT
-  const TypeOopPtr* dest_t = _igvn.type(orig_dest)->is_oopptr();
+  const TypeOopPtr* dest_t = _igvn.type(dest)->is_oopptr();
   if (dest_t->is_known_instance()) {
     ArrayCopyNode* ac = nullptr;
     assert(ArrayCopyNode::may_modify(dest_t, (*ctrl)->in(0)->as_MemBar(), &_igvn, ac), "dependency on arraycopy lost");

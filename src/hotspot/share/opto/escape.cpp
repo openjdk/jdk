@@ -4516,22 +4516,6 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
             alloc_worklist.append_if_missing(use);
           }
         }
-        for (UseIterator i(ptn); i.has_next(); i.next()) {
-          PointsToNode* use = i.get();
-          Node* n = use->ideal_node();
-          if (visited.test(n->_idx) || n->outcnt() == 0) {
-            continue;
-          }
-          if (n->is_Type()) {
-            assert(use->is_LocalVar(), "");
-            assert(n->is_CheckCastPP() ||
-                   n->is_EncodeP() ||
-                   n->is_DecodeN() ||
-                   (n->is_ConstraintCast() && n->Opcode() == Op_CastPP) || n->is_Phi(), "");
-
-            alloc_worklist.append_if_missing(n);
-          }
-        }
 
         // An allocation may have an Initialize which has raw stores. Scan
         // the users of the raw allocation result and push AddP users
@@ -4661,10 +4645,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
                  use->is_EncodeNarrowPtr() ||
                  use->is_DecodeNarrowPtr() ||
                  (use->is_ConstraintCast() && use->Opcode() == Op_CastPP)) {
-        assert(visited.test(use->_idx) || alloc_worklist.contains(use), "");
-        if (!visited.test(use->_idx)) {
-          alloc_worklist.append_if_missing(use);
-        }
+        alloc_worklist.append_if_missing(use);
 #ifdef ASSERT
       } else if (use->is_Mem()) {
         assert(use->in(MemNode::Address) != n, "EA: missing allocation reference path");
