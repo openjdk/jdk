@@ -104,7 +104,7 @@ public class TestNestHostErrorWithMultiThread {
           }
           System.out.println("OK - got expected exception: " + expected);
         } catch (InterruptedException e) {
-          throw new Error("Unexpected interrupt");
+            throw new Error("Unexpected interrupt", e);
         }
       } catch (Throwable t) {
         exception = t;
