@@ -470,7 +470,7 @@ bool G1CMRootMemRegions::wait_until_scan_finished() {
 
 G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
                                    G1RegionToSpaceMapper* bitmap_storage) :
-  // _cm_thread set inside the constructor
+  _cm_thread(nullptr),
   _g1h(g1h),
 
   _mark_bitmap(),
@@ -481,13 +481,12 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
 
   _global_mark_stack(),
 
-  // _finger set in set_non_marking_state
+  _finger(nullptr), // _finger set in set_non_marking_state
 
   _worker_id_offset(G1ConcRefinementThreads), // The refinement control thread does not refine cards, so it's just the worker threads.
   _max_num_tasks(MAX2(ConcGCThreads, ParallelGCThreads)),
-  // _num_active_tasks set in set_non_marking_state()
-  // _tasks set inside the constructor
-
+  _num_active_tasks(0), // _num_active_tasks set in set_non_marking_state()
+  _tasks(nullptr), // _tasks set inside late_init()
   _task_queues(new G1CMTaskQueueSet(_max_num_tasks)),
   _terminator(_max_num_tasks, _task_queues),
 
@@ -521,6 +520,32 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   assert(G1CGC_lock != nullptr, "CGC_lock must be initialized");
 
   _mark_bitmap.initialize(g1h->reserved(), bitmap_storage);
+}
+
+void G1ConcurrentMark::reset() {
+  _has_aborted = false;
+
+  reset_marking_for_restart();
+
+  // Reset all tasks, since different phases will use different number of active
+  // threads. So, it's easiest to have all of them ready.
+  for (uint i = 0; i < _max_num_tasks; ++i) {
+    _tasks[i]->reset(mark_bitmap());
+  }
+
+  uint max_num_regions = _g1h->max_num_regions();
+  for (uint i = 0; i < max_num_regions; i++) {
+    _top_at_rebuild_starts[i] = nullptr;
+    _region_mark_stats[i].clear();
+  }
+
+  _root_regions.reset();
+}
+
+void G1ConcurrentMark::fully_initialize() {
+  if (is_fully_initialized()) {
+    return;
+  }
 
   // Create & start ConcurrentMark thread.
   _cm_thread = new G1ConcurrentMarkThread(this);
@@ -556,24 +581,8 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   reset_at_marking_complete();
 }
 
-void G1ConcurrentMark::reset() {
-  _has_aborted = false;
-
-  reset_marking_for_restart();
-
-  // Reset all tasks, since different phases will use different number of active
-  // threads. So, it's easiest to have all of them ready.
-  for (uint i = 0; i < _max_num_tasks; ++i) {
-    _tasks[i]->reset(mark_bitmap());
-  }
-
-  uint max_num_regions = _g1h->max_num_regions();
-  for (uint i = 0; i < max_num_regions; i++) {
-    _top_at_rebuild_starts[i] = nullptr;
-    _region_mark_stats[i].clear();
-  }
-
-  _root_regions.reset();
+bool G1ConcurrentMark::in_progress() const {
+  return is_fully_initialized() ? _cm_thread->in_progress() : false;
 }
 
 void G1ConcurrentMark::clear_statistics(G1HeapRegion* r) {
@@ -738,7 +747,7 @@ private:
         // as asserts here to minimize their overhead on the product. However, we
         // will have them as guarantees at the beginning / end of the bitmap
         // clearing to get some checking in the product.
-        assert(!suspendible() || _cm->cm_thread()->in_progress(), "invariant");
+        assert(!suspendible() || _cm->in_progress(), "invariant");
         assert(!suspendible() || !G1CollectedHeap::heap()->collector_state()->mark_or_rebuild_in_progress(), "invariant");
 
         // Abort iteration if necessary.
@@ -794,7 +803,8 @@ void G1ConcurrentMark::clear_bitmap(WorkerThreads* workers, bool may_yield) {
 void G1ConcurrentMark::cleanup_for_next_mark() {
   // Make sure that the concurrent mark thread looks to still be in
   // the current cycle.
-  guarantee(cm_thread()->in_progress(), "invariant");
+  guarantee(is_fully_initialized(), "should be initializd");
+  guarantee(in_progress(), "invariant");
 
   // We are finishing up the current cycle by clearing the next
   // marking bitmap and getting it ready for the next cycle. During
@@ -805,7 +815,8 @@ void G1ConcurrentMark::cleanup_for_next_mark() {
   clear_bitmap(_concurrent_workers, true);
 
   // Repeat the asserts from above.
-  guarantee(cm_thread()->in_progress(), "invariant");
+  guarantee(is_fully_initialized(), "should be initializd");
+  guarantee(in_progress(), "invariant");
   guarantee(!_g1h->collector_state()->mark_or_rebuild_in_progress(), "invariant");
 }
 
@@ -1883,7 +1894,7 @@ bool G1ConcurrentMark::concurrent_cycle_abort() {
   // nothing, but this situation should be extremely rare (a full gc after shutdown
   // has been signalled is already rare), and this work should be negligible compared
   // to actual full gc work.
-  if (!cm_thread()->in_progress() && !_g1h->is_shutting_down()) {
+  if (!is_fully_initialized() || (!cm_thread()->in_progress() && !_g1h->is_shutting_down())) {
     return false;
   }
 
@@ -1945,6 +1956,10 @@ void G1ConcurrentMark::print_summary_info() {
   }
 
   log.trace(" Concurrent marking:");
+  if (!is_fully_initialized()) {
+    log.trace("    has not been initialized yet");
+    return;
+  }
   print_ms_time_info("  ", "remarks", _remark_times);
   {
     print_ms_time_info("     ", "final marks", _remark_mark_times);
@@ -1961,7 +1976,9 @@ void G1ConcurrentMark::print_summary_info() {
 }
 
 void G1ConcurrentMark::threads_do(ThreadClosure* tc) const {
-  _concurrent_workers->threads_do(tc);
+  if (is_fully_initialized()) { // they are initialized late
+    _concurrent_workers->threads_do(tc);
+  }
 }
 
 void G1ConcurrentMark::print_on(outputStream* st) const {
