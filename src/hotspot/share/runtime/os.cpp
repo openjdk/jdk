@@ -2577,6 +2577,10 @@ jint os::set_minimum_stack_sizes() {
   return JNI_OK;
 }
 
+jint os::get_minimum_java_stack_sizes() {
+  return _java_thread_min_stack_allowed;
+}
+
 // Builds a platform dependent Agent_OnLoad_<lib_name> function name
 // which is used to find statically linked in agents.
 // Parameters:

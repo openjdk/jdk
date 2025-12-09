@@ -77,6 +77,7 @@ public class WhiteBox {
   public native long getVMLargePageSize();
   public native long getHeapSpaceAlignment();
   public native long getHeapAlignment();
+  public native int  getMinimumJavaStackSize();
 
   public native boolean  shipsFullDebugInfo();
   public native boolean  shipsPublicDebugInfo();
