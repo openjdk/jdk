@@ -34,7 +34,7 @@
                             range,                                          \
                             constraint)                                     \
                                                                             \
-  product(double, ShenandoahAccelerationSamplePeriod, 0.0045, EXPERIMENTAL, \
+  product(double, ShenandoahAccelerationSamplePeriod, 0.0145, EXPERIMENTAL, \
           "When at least this much time (measured in seconds) has passed "  \
           "since the allocation rate was most recently sampled, capture "   \
           "another allocation rate sample for the purpose of detecting "    \
@@ -44,7 +44,7 @@
           "monitoring effort.")                                             \
           range(0.001, 1.00)                                                \
                                                                             \
-  product(uintx, ShenandoahRateAccelerationSampleSize, 12, EXPERIMENTAL,    \
+  product(uintx, ShenandoahRateAccelerationSampleSize, 5, EXPERIMENTAL,     \
           "In selected ShenandoahControlIntervals "                         \
           "(if ShenandoahAccelerationSamplePeriod seconds have passed "     \
           "since previous allocation rate sample), "                        \
@@ -66,7 +66,7 @@
           range(1,64)                                                       \
                                                                             \
   product(uintx, ShenandoahMomentaryAllocationRateSpikeSampleSize,          \
-          4, EXPERIMENTAL,                                                  \
+          2, EXPERIMENTAL,                                                  \
           "In selected ShenandoahControlIntervals "                         \
           "(if ShenandoahAccelerationSamplePeriod seconds have passed "     \
           "since previous allocation rate sample), we compute "             \
