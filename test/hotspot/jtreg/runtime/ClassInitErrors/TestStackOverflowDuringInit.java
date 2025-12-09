@@ -32,13 +32,16 @@
  * @library /test/lib
  * @comment Run with the smallest stack possible to limit the execution time.
  *          This is the smallest stack that is supported by all platforms.
- * @run main/othervm TestStackOverflowDuringInit
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestStackOverflowDuringInit
  */
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.whitebox.WhiteBox;
 
 public class TestStackOverflowDuringInit {
 
@@ -126,8 +129,10 @@ public class TestStackOverflowDuringInit {
     }
 
     public static void main(String[] args) throws Exception {
+        WhiteBox wb = WhiteBox.getWhiteBox();
+        int minimumJavaStackSize = wb.getMinimumJavaStackSize();
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-                "-Xss448K", "-Xint",
+                "-Xss" + Integer.toString(minimumJavaStackSize), "-Xint",
                 Launcher.class.getName());
 
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());

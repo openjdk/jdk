@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Using WhiteBox to get VM stack size
+ * @summary Using WhiteBox to get allowed minimum java stack size
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
@@ -36,11 +36,11 @@ import jdk.test.whitebox.WhiteBox;
 public class ReadMinimumJavaStackSize {
   public static void main(String args[]) throws Exception {
     WhiteBox wb = WhiteBox.getWhiteBox();
-    int minimumJavastackSize = wb.getMinimumJavaStackSize();
-    if (minimumJavastackSize <= 0) {
-      throw new RuntimeException("minimumJavastackSize <= 0");
+    int minimumJavaStackSize = wb.getMinimumJavaStackSize();
+    if (minimumJavaStackSize <= 0) {
+      throw new RuntimeException("minimumJavaStackSize <= 0");
     } else {
-      System.out.println("Stack size = " + minimumJavastackSize);
+      System.out.println("Stack size = " + minimumJavaStackSize);
     }
   }
 }
