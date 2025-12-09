@@ -94,7 +94,6 @@ gc/shenandoah/TestEvilSyncBug.java#generational 8345501 generic-all
 gc/shenandoah/TestRetainObjects.java#no-tlab 8361099 generic-all
 gc/shenandoah/TestSieveObjects.java#no-tlab 8361099 generic-all
 gc/shenandoah/TestSieveObjects.java#no-tlab-genshen 8361099 generic-all
-gc/cslocker/TestCSLocker.java 8373025 generic-all
 
 #############################################################################
 
@@ -139,9 +138,6 @@ serviceability/sa/ClhsdbPmap.java#core            8318754 macosx-aarch64
 serviceability/sa/ClhsdbPstack.java#core          8318754 macosx-aarch64
 serviceability/sa/TestJmapCore.java               8318754 macosx-aarch64
 serviceability/sa/TestJmapCoreMetaspace.java      8318754 macosx-aarch64
-
-serviceability/sa/ClhsdbScanOops.java#parallel    8373022 generic-all
-serviceability/sa/ClhsdbScanOops.java#serial      8373022 generic-all
 
 serviceability/sa/ClhsdbThreadContext.java        8356704 windows-x64
 
