@@ -106,7 +106,7 @@ void DFSClosure::drain_probe_stack() {
       _reference_stack[_depth] = reference;
     } else {
       if (_mark_bits->is_marked(pointee)) {
-return;//        continue;
+        continue;
       }
       _mark_bits->mark_obj(pointee);
       _reference_stack[_depth] = reference;
