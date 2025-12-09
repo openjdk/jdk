@@ -31,7 +31,6 @@
  */
 
 import java.awt.ComponentOrientation;
-import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
