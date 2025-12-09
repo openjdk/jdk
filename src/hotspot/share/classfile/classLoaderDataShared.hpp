@@ -27,6 +27,7 @@
 
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "utilities/macros.hpp"
 
 class ClassLoaderData;
 class MetaspaceClosure;
@@ -35,8 +36,11 @@ class SerializeClosure;
 
 class ClassLoaderDataShared : AllStatic {
   static bool _full_module_graph_loaded;
-  static void ensure_module_entry_table_exists(oop class_loader);
+  CDS_JAVA_HEAP_ONLY(static void ensure_module_entry_table_exists(oop class_loader);)
 public:
+  static void load_archived_platform_and_system_class_loaders() NOT_CDS_JAVA_HEAP_RETURN;
+  static void restore_archived_modules_for_preloading_classes(JavaThread* current) NOT_CDS_JAVA_HEAP_RETURN;
+#if INCLUDE_CDS_JAVA_HEAP
   static void ensure_module_entry_tables_exist();
   static void allocate_archived_tables();
   static void iterate_symbols(MetaspaceClosure* closure);
@@ -49,6 +53,7 @@ public:
   static void restore_java_system_loader_from_archive(ClassLoaderData* loader_data);
   static ModuleEntry* archived_boot_unnamed_module();
   static ModuleEntry* archived_unnamed_module(ClassLoaderData* loader_data);
+#endif // INCLUDE_CDS_JAVA_HEAP
   static bool is_full_module_graph_loaded() { return _full_module_graph_loaded; }
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,19 @@
  * @summary Test SourceCodeAnalysis
  * @modules jdk.compiler/com.sun.tools.javac.api
  * @build KullaTesting TestingInputStream KullaCompletenessStressTest CompletenessStressTest
- * @run testng KullaCompletenessStressTest
+ * @run junit KullaCompletenessStressTest
  */
 
 import java.io.File;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class KullaCompletenessStressTest extends CompletenessStressTest {
     @Override
+    @Test
     public File[] getDirectoriesToTest() {
         String src = System.getProperty("test.src");
         File file;
@@ -44,11 +47,10 @@ public class KullaCompletenessStressTest extends CompletenessStressTest {
         } else {
             file = new File(src, "../../../src/jdk.jshell/share/classes");
         }
-        if (!file.exists()) {
-            System.out.println("jdk.jshell sources are not exist. Test has been skipped. Path: " + file.toString());
-            return new File[]{};
-        }else {
-            return new File[]{file};
-        }
+
+        Assumptions.assumeTrue(file.exists(),
+                               "jdk.jshell sources are not exist. Test has been skipped. Path: " + file.toString());
+
+        return new File[]{file};
     }
 }

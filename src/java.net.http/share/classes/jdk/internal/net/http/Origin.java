@@ -26,6 +26,7 @@
 package jdk.internal.net.http;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Locale;
 import java.util.Objects;
 
@@ -130,6 +131,46 @@ public record Origin(String scheme, String host, int port) {
             return "[" + host + "]:" + port;
         }
         return host + ":" + port;
+    }
+
+    /**
+     * {@return true if the Origin's scheme is considered secure, else returns false}
+     */
+    boolean isSecure() {
+        // we consider https to be the only secure scheme
+        return scheme.equals("https");
+    }
+
+    /**
+     * {@return Creates and returns an Origin parsed from the ASCII serialized form as defined
+     * in section 6.2 of RFC-6454}
+     *
+     * @param value The value to be parsed
+     */
+    static Origin fromASCIISerializedForm(final String value) throws IllegalArgumentException {
+        Objects.requireNonNull(value);
+        try {
+            final URI uri = new URI(value);
+            // the ASCII-serialized form contains scheme://host, optionally followed by :port
+            if (uri.getScheme() == null || uri.getHost() == null) {
+                throw new IllegalArgumentException("Invalid ASCII serialized form of origin");
+            }
+            // normalize the origin string, check if we get the same result
+            String normalized = uri.getScheme() + "://" + uri.getHost();
+            if (uri.getPort() != -1) {
+                normalized += ":" + uri.getPort();
+            }
+            if (!value.equals(normalized)) {
+                throw new IllegalArgumentException("Invalid ASCII serialized form of origin");
+            }
+            try {
+                return Origin.from(uri);
+            } catch (IllegalArgumentException iae) {
+                throw new IllegalArgumentException("Invalid ASCII serialized form of origin", iae);
+            }
+        } catch (URISyntaxException use) {
+            throw new IllegalArgumentException("Invalid ASCII serialized form of origin", use);
+        }
     }
 
     private static boolean isValidScheme(final String scheme) {

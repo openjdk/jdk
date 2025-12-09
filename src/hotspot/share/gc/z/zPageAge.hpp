@@ -62,5 +62,6 @@ constexpr ZPageAgeRange ZPageAgeRangeYoung = ZPageAgeRange::create<ZPageAge::ede
 constexpr ZPageAgeRange ZPageAgeRangeSurvivor = ZPageAgeRange::create<ZPageAge::survivor1, ZPageAge::old>();
 constexpr ZPageAgeRange ZPageAgeRangeRelocation = ZPageAgeRange::create<ZPageAge::survivor1, ZPageAgeLastPlusOne>();
 constexpr ZPageAgeRange ZPageAgeRangeOld = ZPageAgeRange::create<ZPageAge::old, ZPageAgeLastPlusOne>();
+constexpr ZPageAgeRange ZPageAgeRangeAll = ZPageAgeRange();
 
 #endif // SHARE_GC_Z_ZPAGEAGE_HPP

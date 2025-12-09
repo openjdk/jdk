@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,6 +149,8 @@ public sealed interface CharacterRange extends PseudoInstruction
      * @param characterRangeStart the encoded start of the character range region (inclusive)
      * @param characterRangeEnd the encoded end of the character range region (exclusive)
      * @param flags a flags word, indicating the kind of range
+     * @throws IllegalArgumentException if {@code flags} is not {@link
+     *         java.lang.classfile##u2 u2}
      */
     static CharacterRange of(Label startScope, Label endScope, int characterRangeStart, int characterRangeEnd, int flags) {
         return new AbstractPseudoInstruction.UnboundCharacterRange(startScope, endScope, characterRangeStart, characterRangeEnd, flags);

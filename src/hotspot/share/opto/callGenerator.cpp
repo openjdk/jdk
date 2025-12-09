@@ -169,10 +169,6 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
     }
     // Mark the call node as virtual, sort of:
     call->set_optimized_virtual(true);
-    if (method()->is_method_handle_intrinsic() ||
-        method()->is_compiled_lambda_form()) {
-      call->set_method_handle_invoke(true);
-    }
   }
   kit.set_arguments_for_java_call(call);
   kit.set_edges_for_java_call(call, false, _separate_io_proj);
@@ -424,7 +420,6 @@ bool LateInlineMHCallGenerator::do_late_inline_check(Compile* C, JVMState* jvms)
     }
     assert(!cg->is_late_inline() || cg->is_mh_late_inline() || AlwaysIncrementalInline || StressIncrementalInlining, "we're doing late inlining");
     _inline_cg = cg;
-    C->dec_number_of_mh_late_inlines();
     return true;
   } else {
     // Method handle call which has a constant appendix argument should be either inlined or replaced with a direct call
@@ -436,7 +431,7 @@ bool LateInlineMHCallGenerator::do_late_inline_check(Compile* C, JVMState* jvms)
 
 CallGenerator* CallGenerator::for_mh_late_inline(ciMethod* caller, ciMethod* callee, bool input_not_const) {
   assert(IncrementalInlineMH, "required");
-  Compile::current()->inc_number_of_mh_late_inlines();
+  Compile::current()->mark_has_mh_late_inlines();
   CallGenerator* cg = new LateInlineMHCallGenerator(caller, callee, input_not_const);
   return cg;
 }
@@ -468,6 +463,10 @@ class LateInlineVirtualCallGenerator : public VirtualCallGenerator {
 
   // Convert the CallDynamicJava into an inline
   virtual void do_late_inline();
+
+  virtual ciMethod* callee_method() {
+    return _callee;
+  }
 
   virtual void set_callee_method(ciMethod* m) {
     assert(_callee == nullptr || _callee == m, "repeated inline attempt with different callee");

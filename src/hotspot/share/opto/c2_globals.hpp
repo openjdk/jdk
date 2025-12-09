@@ -359,6 +359,15 @@
   develop(bool, TraceLoopMultiversioning, false,                            \
           "Trace loop multiversioning")                                     \
                                                                             \
+  product(bool, UseAutoVectorizationPredicate, true, DIAGNOSTIC,            \
+          "Use AutoVectorization predicate (for speculative compilation)")  \
+                                                                            \
+  product(bool, UseAutoVectorizationSpeculativeAliasingChecks, true, DIAGNOSTIC, \
+          "Allow the use Multiversioning or Predicate to add aliasing"      \
+          "runtime checks. Runtime checks will only be inserted if either"  \
+          "LoopMultiversioning or UseAutoVectorizationPredicate are"        \
+          "enabled.")                                                       \
+                                                                            \
   product(bool, AllowVectorizeOnDemand, true,                               \
           "Globally suppress vectorization set in VectorizeMethod")         \
                                                                             \
@@ -419,7 +428,7 @@
           "0=print nothing except PhasePrintLevel directives, "             \
           "6=all details printed. "                                         \
           "Level of detail of printouts can be set on a per-method level "  \
-          "as well by using CompileCommand=PrintPhaseLevel.")                        \
+          "as well by using CompileCommand=PhasePrintLevel.")               \
           range(-1, 6)                                                      \
                                                                             \
   develop(bool, PrintIdealGraph, false,                                     \
@@ -665,6 +674,9 @@
                                                                             \
   product(bool, PrintIntrinsics, false, DIAGNOSTIC,                         \
           "prints attempted and successful inlining of intrinsics")         \
+                                                                            \
+  develop(bool, VerifyIntrinsicChecks, false,                               \
+          "Verify in intrinsic that Java level checks work as expected")    \
                                                                             \
   develop(bool, StressReflectiveCode, false,                                \
           "Use inexact types at allocations, etc., to test reflection")     \

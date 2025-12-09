@@ -32,6 +32,7 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.CallerSensitiveAdapter;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.util.ClassFileDumper;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.ValueConversions;
@@ -83,6 +84,7 @@ import static java.lang.invoke.MethodType.methodType;
  * @author John Rose, JSR 292 EG
  * @since 1.7
  */
+@AOTSafeClassInitializer
 public final class MethodHandles {
 
     private MethodHandles() { }  // do not instantiate
@@ -3427,12 +3429,15 @@ return mh1;
          *         or if the field is {@code final} and write access
          *         is not enabled on the {@code Field} object
          * @throws NullPointerException if the argument is null
+         * @see <a href="{@docRoot}/java.base/java/lang/reflect/doc-files/MutationMethods.html">Mutation methods</a>
          */
         public MethodHandle unreflectSetter(Field f) throws IllegalAccessException {
             return unreflectField(f, true);
         }
 
         private MethodHandle unreflectField(Field f, boolean isSetter) throws IllegalAccessException {
+            @SuppressWarnings("deprecation")
+            boolean isAccessible = f.isAccessible();
             MemberName field = new MemberName(f, isSetter);
             if (isSetter && field.isFinal()) {
                 if (field.isTrustedFinalField()) {
@@ -3440,12 +3445,15 @@ return mh1;
                                                   : "final field has no write access";
                     throw field.makeAccessException(msg, this);
                 }
+                // check if write access to final field allowed
+                if (!field.isStatic() && isAccessible) {
+                    SharedSecrets.getJavaLangReflectAccess().checkAllowedToUnreflectFinalSetter(lookupClass, f);
+                }
             }
             assert(isSetter
                     ? MethodHandleNatives.refKindIsSetter(field.getReferenceKind())
                     : MethodHandleNatives.refKindIsGetter(field.getReferenceKind()));
-            @SuppressWarnings("deprecation")
-            Lookup lookup = f.isAccessible() ? IMPL_LOOKUP : this;
+            Lookup lookup = isAccessible ? IMPL_LOOKUP : this;
             return lookup.getDirectField(field.getReferenceKind(), f.getDeclaringClass(), field);
         }
 
