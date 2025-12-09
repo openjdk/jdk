@@ -43,8 +43,8 @@
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
-void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box,
-                                              Register tmp1, Register tmp2, Register tmp3, Register tmp4) {
+void C2_MacroAssembler::fast_lock(Register obj, Register box,
+                                  Register tmp1, Register tmp2, Register tmp3, Register tmp4) {
   // Flag register, zero for success; non-zero for failure.
   Register flag = t1;
 
@@ -74,7 +74,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box,
   const Register tmp1_mark = tmp1;
   const Register tmp3_t = tmp3;
 
-  { // Lightweight locking
+  { // Fast locking
 
     // Push lock to the lock stack and finish successfully. MUST branch to with flag == 0
     Label push;
@@ -205,8 +205,8 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box,
   // C2 uses the value of flag (0 vs !0) to determine the continuation.
 }
 
-void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box,
-                                                Register tmp1, Register tmp2, Register tmp3) {
+void C2_MacroAssembler::fast_unlock(Register obj, Register box,
+                                    Register tmp1, Register tmp2, Register tmp3) {
   // Flag register, zero for success; non-zero for failure.
   Register flag = t1;
 
@@ -225,7 +225,7 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box,
   const Register tmp2_top = tmp2;
   const Register tmp3_t = tmp3;
 
-  { // Lightweight unlock
+  { // Fast unlock
     Label push_and_slow_path;
 
     // Check if obj is top of lock-stack.
@@ -2060,6 +2060,83 @@ void C2_MacroAssembler::enc_cmove_cmp_fp(int cmpFlag, FloatRegister op1, FloatRe
       break;
     case BoolTest::gt:
       cmov_cmp_fp_gt(op1, op2, dst, src, is_single);
+      break;
+    default:
+      assert(false, "unsupported compare condition");
+      ShouldNotReachHere();
+  }
+}
+
+void C2_MacroAssembler::enc_cmove_fp_cmp(int cmpFlag, Register op1, Register op2,
+                        FloatRegister dst, FloatRegister src, bool is_single) {
+  bool is_unsigned = (cmpFlag & unsigned_branch_mask) == unsigned_branch_mask;
+  int op_select = cmpFlag & (~unsigned_branch_mask);
+
+  switch (op_select) {
+    case BoolTest::eq:
+      cmov_fp_eq(op1, op2, dst, src, is_single);
+      break;
+    case BoolTest::ne:
+      cmov_fp_ne(op1, op2, dst, src, is_single);
+      break;
+    case BoolTest::le:
+      if (is_unsigned) {
+        cmov_fp_leu(op1, op2, dst, src, is_single);
+      } else {
+        cmov_fp_le(op1, op2, dst, src, is_single);
+      }
+      break;
+    case BoolTest::ge:
+      if (is_unsigned) {
+        cmov_fp_geu(op1, op2, dst, src, is_single);
+      } else {
+        cmov_fp_ge(op1, op2, dst, src, is_single);
+      }
+      break;
+    case BoolTest::lt:
+      if (is_unsigned) {
+        cmov_fp_ltu(op1, op2, dst, src, is_single);
+      } else {
+        cmov_fp_lt(op1, op2, dst, src, is_single);
+      }
+      break;
+    case BoolTest::gt:
+      if (is_unsigned) {
+        cmov_fp_gtu(op1, op2, dst, src, is_single);
+      } else {
+        cmov_fp_gt(op1, op2, dst, src, is_single);
+      }
+      break;
+    default:
+      assert(false, "unsupported compare condition");
+      ShouldNotReachHere();
+  }
+}
+
+void C2_MacroAssembler::enc_cmove_fp_cmp_fp(int cmpFlag,
+                           FloatRegister op1, FloatRegister op2,
+                           FloatRegister dst, FloatRegister src,
+                           bool cmp_single, bool cmov_single) {
+  int op_select = cmpFlag & (~unsigned_branch_mask);
+
+  switch (op_select) {
+    case BoolTest::eq:
+      cmov_fp_cmp_fp_eq(op1, op2, dst, src, cmp_single, cmov_single);
+      break;
+    case BoolTest::ne:
+      cmov_fp_cmp_fp_ne(op1, op2, dst, src, cmp_single, cmov_single);
+      break;
+    case BoolTest::le:
+      cmov_fp_cmp_fp_le(op1, op2, dst, src, cmp_single, cmov_single);
+      break;
+    case BoolTest::ge:
+      cmov_fp_cmp_fp_ge(op1, op2, dst, src, cmp_single, cmov_single);
+      break;
+    case BoolTest::lt:
+      cmov_fp_cmp_fp_lt(op1, op2, dst, src, cmp_single, cmov_single);
+      break;
+    case BoolTest::gt:
+      cmov_fp_cmp_fp_gt(op1, op2, dst, src, cmp_single, cmov_single);
       break;
     default:
       assert(false, "unsupported compare condition");

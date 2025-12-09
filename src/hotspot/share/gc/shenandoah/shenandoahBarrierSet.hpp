@@ -128,8 +128,8 @@ public:
   void write_ref_array(HeapWord* start, size_t count);
 
 private:
-  template <class T>
-  inline void arraycopy_marking(T* src, T* dst, size_t count, bool is_old_marking);
+  template <bool IS_GENERATIONAL, class T>
+  void arraycopy_marking(T* dst, size_t count);
   template <class T>
   inline void arraycopy_evacuation(T* src, size_t count);
   template <class T>

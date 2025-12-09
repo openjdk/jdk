@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotThread.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/vmClasses.hpp"
@@ -60,6 +61,7 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/keepStackGCProcessed.hpp"
+#include "runtime/mountUnmountDisabler.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
@@ -411,7 +413,7 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
     if (Continuations::enabled()) {
       // Virtual threads support for agents loaded into running VM.
       // There is a performance impact when VTMS transitions are enabled.
-      if (!JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
+      if (!MountUnmountDisabler::notify_jvmti_events()) {
         JvmtiEnvBase::enable_virtual_threads_notify_jvmti();
       }
     }
@@ -425,7 +427,7 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
     if (Continuations::enabled()) {
       // Virtual threads support for agents loaded at startup.
       // There is a performance impact when VTMS transitions are enabled.
-      JvmtiVTMSTransitionDisabler::set_VTMS_notify_jvmti_events(true);
+      MountUnmountDisabler::set_notify_jvmti_events(true, true /*is_onload*/);
     }
     return JNI_OK;
 
@@ -1337,21 +1339,19 @@ void JvmtiExport::at_single_stepping_point(JavaThread *thread, Method* method, a
 }
 
 
-void JvmtiExport::expose_single_stepping(JavaThread *thread) {
-  JvmtiThreadState *state = get_jvmti_thread_state(thread);
-  if (state != nullptr) {
-    state->clear_hide_single_stepping();
-  }
+void JvmtiExport::expose_single_stepping(JvmtiThreadState* state) {
+  assert(state != nullptr, "must be non-null");
+  state->clear_hide_single_stepping();
 }
 
 
-bool JvmtiExport::hide_single_stepping(JavaThread *thread) {
+JvmtiThreadState* JvmtiExport::hide_single_stepping(JavaThread *thread) {
   JvmtiThreadState *state = get_jvmti_thread_state(thread);
   if (state != nullptr && state->is_enabled(JVMTI_EVENT_SINGLE_STEP)) {
     state->set_hide_single_stepping();
-    return true;
+    return state;
   } else {
-    return false;
+    return nullptr;
   }
 }
 
@@ -1486,6 +1486,13 @@ void JvmtiExport::post_thread_start(JavaThread *thread) {
     return;
   }
   assert(thread->thread_state() == _thread_in_vm, "must be in vm state");
+
+  if (thread->is_aot_thread()) {
+    // The AOT thread is hidden from view but has no thread oop when it starts due
+    // to bootstrapping complexity, so we check for it before checking for bound
+    // virtual threads. When exiting it is filtered out due to being hidden.
+    return;
+  }
 
   EVT_TRIG_TRACE(JVMTI_EVENT_THREAD_START, ("[%s] Trg Thread Start event triggered",
                       JvmtiTrace::safe_get_thread_name(thread)));
@@ -1633,7 +1640,7 @@ void JvmtiExport::post_vthread_end(jobject vthread) {
         JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
         jvmtiEventVirtualThreadEnd callback = env->callbacks()->VirtualThreadEnd;
         if (callback != nullptr) {
-          (*callback)(env->jvmti_external(), jem.jni_env(), vthread);
+          (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread());
         }
       }
     }
@@ -1776,7 +1783,7 @@ void JvmtiExport::post_object_free(JvmtiEnv* env, GrowableArray<jlong>* objects)
   EVT_TRACE(JVMTI_EVENT_OBJECT_FREE, ("[?] Evt Object Free sent"));
 
   JvmtiThreadEventMark jem(javaThread);
-  JvmtiJavaThreadEventTransition jet(javaThread);
+  JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(javaThread)
   jvmtiEventObjectFree callback = env->callbacks()->ObjectFree;
   if (callback != nullptr) {
     for (int index = 0; index < objects->length(); index++) {
@@ -2918,13 +2925,13 @@ void JvmtiExport::vthread_post_monitor_waited(JavaThread *current, ObjectMonitor
   Handle vthread(current, current->vthread());
 
   // Finish the VTMS transition temporarily to post the event.
-  JvmtiVTMSTransitionDisabler::VTMS_vthread_mount((jthread)vthread.raw_value(), false);
+  MountUnmountDisabler::end_transition(current, vthread(), true /*is_mount*/, false /*is_thread_start*/);
 
   // Post event.
   JvmtiExport::post_monitor_waited(current, obj_mntr, timed_out);
 
   // Go back to VTMS transition state.
-  JvmtiVTMSTransitionDisabler::VTMS_vthread_unmount((jthread)vthread.raw_value(), true);
+  MountUnmountDisabler::start_transition(current, vthread(), false /*is_mount*/, false /*is_thread_start*/);
 }
 
 void JvmtiExport::post_vm_object_alloc(JavaThread *thread, oop object) {
@@ -3153,31 +3160,19 @@ void JvmtiObjectAllocEventCollector::record_allocation(oop obj) {
   _allocated->push(OopHandle(JvmtiExport::jvmti_oop_storage(), obj));
 }
 
-// Disable collection of VMObjectAlloc events
-NoJvmtiVMObjectAllocMark::NoJvmtiVMObjectAllocMark() : _collector(nullptr) {
-  // a no-op if VMObjectAlloc event is not enabled
-  if (!JvmtiExport::should_post_vm_object_alloc()) {
-    return;
-  }
+NoJvmtiEventsMark::NoJvmtiEventsMark() {
   Thread* thread = Thread::current_or_null();
   if (thread != nullptr && thread->is_Java_thread())  {
     JavaThread* current_thread = JavaThread::cast(thread);
-    JvmtiThreadState *state = current_thread->jvmti_thread_state();
-    if (state != nullptr) {
-      JvmtiVMObjectAllocEventCollector *collector;
-      collector = state->get_vm_object_alloc_event_collector();
-      if (collector != nullptr && collector->is_enabled()) {
-        _collector = collector;
-        _collector->set_enabled(false);
-      }
-    }
+    current_thread->disable_jvmti_events();
   }
 }
 
-// Re-Enable collection of VMObjectAlloc events (if previously enabled)
-NoJvmtiVMObjectAllocMark::~NoJvmtiVMObjectAllocMark() {
-  if (was_enabled()) {
-    _collector->set_enabled(true);
+NoJvmtiEventsMark::~NoJvmtiEventsMark() {
+  Thread* thread = Thread::current_or_null();
+  if (thread != nullptr && thread->is_Java_thread())  {
+    JavaThread* current_thread = JavaThread::cast(thread);
+    current_thread->enable_jvmti_events();
   }
 };
 

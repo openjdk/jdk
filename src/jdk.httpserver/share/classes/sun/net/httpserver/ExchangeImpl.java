@@ -38,6 +38,8 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.stream.Stream;
 import com.sun.net.httpserver.*;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_CHUNKED;
 
 class ExchangeImpl {
 
@@ -227,12 +229,12 @@ class ExchangeImpl {
             ||(rCode == 204)           /* no content */
             ||(rCode == 304))          /* not modified */
         {
-            if (contentLen != -1) {
+            if (contentLen != RSPBODY_EMPTY) {
                 String msg = "sendResponseHeaders: rCode = "+ rCode
-                    + ": forcing contentLen = -1";
+                    + ": forcing contentLen = RSPBODY_EMPTY";
                 logger.log (Level.WARNING, msg);
             }
-            contentLen = -1;
+            contentLen = RSPBODY_EMPTY;
             noContentLengthHeader = (rCode != 304);
         }
 
@@ -249,7 +251,7 @@ class ExchangeImpl {
             contentLen = 0;
             o.setWrappedStream (new FixedLengthOutputStream (this, ros, contentLen));
         } else { /* not a HEAD request or 304 response */
-            if (contentLen == 0) {
+            if (contentLen == RSPBODY_CHUNKED) {
                 if (http10) {
                     o.setWrappedStream (new UndefLengthOutputStream (this, ros));
                     close = true;
@@ -258,7 +260,7 @@ class ExchangeImpl {
                     o.setWrappedStream (new ChunkedOutputStream (this, ros));
                 }
             } else {
-                if (contentLen == -1) {
+                if (contentLen == RSPBODY_EMPTY) {
                     noContentToSend = true;
                     contentLen = 0;
                 }

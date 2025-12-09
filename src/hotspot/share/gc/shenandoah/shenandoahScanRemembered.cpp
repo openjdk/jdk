@@ -137,9 +137,8 @@ void ShenandoahDirectCardMarkRememberedSet::mark_write_table_as_clean() {
 
 // No lock required because arguments align with card boundaries.
 void ShenandoahCardCluster::reset_object_range(HeapWord* from, HeapWord* to) {
-  assert(((((unsigned long long) from) & (CardTable::card_size() - 1)) == 0) &&
-         ((((unsigned long long) to) & (CardTable::card_size() - 1)) == 0),
-         "reset_object_range bounds must align with card boundaries");
+  assert(CardTable::is_card_aligned(from) && CardTable::is_card_aligned(to),
+         "Must align with card boundaries");
   size_t card_at_start = _rs->card_index_for_addr(from);
   size_t num_cards = (to - from) / CardTable::card_size_in_words();
 
@@ -234,31 +233,88 @@ size_t ShenandoahCardCluster::get_last_start(size_t card_index) const {
   return _object_starts[card_index].offsets.last;
 }
 
-// Given a card_index, return the starting address of the first block in the heap
-// that straddles into this card. If this card is co-initial with an object, then
-// this would return the first address of the range that this card covers, which is
-// where the card's first object also begins.
-HeapWord* ShenandoahCardCluster::block_start(const size_t card_index) const {
+HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, const ShenandoahMarkingContext* const ctx,
+                                                    HeapWord* tams, HeapWord* end_range_of_interest) const {
 
   HeapWord* left = _rs->addr_for_card_index(card_index);
+  assert(left < end_range_of_interest, "No meaningful work to do");
+  ShenandoahHeapRegion* region = ShenandoahHeap::heap()->heap_region_containing(left);
 
 #ifdef ASSERT
   assert(ShenandoahHeap::heap()->mode()->is_generational(), "Do not use in non-generational mode");
-  ShenandoahHeapRegion* region = ShenandoahHeap::heap()->heap_region_containing(left);
   assert(region->is_old(), "Do not use for young regions");
   // For HumongousRegion:s it's more efficient to jump directly to the
   // start region.
   assert(!region->is_humongous(), "Use region->humongous_start_region() instead");
 #endif
+
+  HeapWord* right = MIN2(region->top(), end_range_of_interest);
+  HeapWord* end_of_search_next = MIN2(right, tams);
+  // Since end_range_of_interest may not align on a card boundary, last_relevant_card_index is conservative.  Not all of the
+  // memory within the last relevant card's span is < right.
+  size_t last_relevant_card_index;
+  if (end_range_of_interest == _end_of_heap) {
+    last_relevant_card_index = _rs->card_index_for_addr(end_range_of_interest - 1);
+  } else {
+    last_relevant_card_index = _rs->card_index_for_addr(end_range_of_interest);
+    if (_rs->addr_for_card_index(last_relevant_card_index) == end_range_of_interest) {
+      last_relevant_card_index--;
+    }
+  }
+  assert(card_index <= last_relevant_card_index, "sanity: card_index: %zu, last_relevant: %zu, left: " PTR_FORMAT
+         ", end_of_range: " PTR_FORMAT, card_index, last_relevant_card_index, p2i(left), p2i(end_range_of_interest));
+
+  // if marking context is valid and we are below tams, we use the marking bit map to find the first marked object that
+  // intersects with this card.  If no such object exists, we return the first marked object that follows the start
+  // of this card's memory range if such an object is found at or before last_relevant_card_index.  If there are no
+  // marked objects in this range, we return nullptr.
+  if ((ctx != nullptr) && (left < tams)) {
+    if (ctx->is_marked(left)) {
+      oop obj = cast_to_oop(left);
+      assert(oopDesc::is_oop(obj), "Should be an object");
+      return left;
+    }
+    // get the previous marked object, if any
+    if (region->bottom() < left) {
+      // In the case that this region was most recently marked as young, the fact that this region has been promoted in place
+      // denotes that final mark (Young) has completed.  In the case that this region was most recently marked as old, the
+      // fact that (ctx != nullptr) denotes that old marking has completed.  Otherwise, ctx would equal null.
+      HeapWord* prev = ctx->get_prev_marked_addr(region->bottom(), left - 1);
+      if (prev < left) {
+        oop obj = cast_to_oop(prev);
+        assert(oopDesc::is_oop(obj), "Should be an object");
+        HeapWord* obj_end = prev + obj->size();
+        if (obj_end > left) {
+          return prev;
+        }
+      }
+    }
+    // Either prev >= left (no previous object found), or the previous object that was found ends before my card range begins.
+    // In eiher case, find the next marked object if any on this or a following card
+    assert(!ctx->is_marked(left), "Was dealt with above");
+    assert(right > left, "We don't expect to be examining cards above the smaller of TAMS or top");
+    HeapWord* next = ctx->get_next_marked_addr(left, end_of_search_next);
+    // If end_of_search_next < right, we may return tams here, which is "marked" by default
+    if (next < right) {
+      oop obj = cast_to_oop(next);
+      assert(oopDesc::is_oop(obj), "Should be an object");
+      return next;
+    } else {
+      return nullptr;
+    }
+  }
+
+  assert((ctx == nullptr) || (left >= tams), "Should have returned above");
+
+  // The following code assumes that all data in region at or above left holds parsable objects
+  assert((left >= tams) || ShenandoahGenerationalHeap::heap()->old_generation()->is_parsable(),
+         "The code that follows expects a parsable heap");
   if (starts_object(card_index) && get_first_start(card_index) == 0) {
-    // This card contains a co-initial object; a fortiori, it covers
-    // also the case of a card being the first in a region.
+    // This card contains a co-initial object; a fortiori, it covers also the case of a card being the first in a region.
     assert(oopDesc::is_oop(cast_to_oop(left)), "Should be an object");
     return left;
   }
 
-  HeapWord* p = nullptr;
-  oop obj = cast_to_oop(p);
   ssize_t cur_index = (ssize_t)card_index;
   assert(cur_index >= 0, "Overflow");
   assert(cur_index > 0, "Should have returned above");
@@ -268,37 +324,65 @@ HeapWord* ShenandoahCardCluster::block_start(const size_t card_index) const {
   }
   // cur_index should start an object: we should not have walked
   // past the left end of the region.
-  assert(cur_index >= 0 && (cur_index <= (ssize_t)card_index), "Error");
+  assert(cur_index >= 0 && (cur_index <= (ssize_t) card_index), "Error");
   assert(region->bottom() <= _rs->addr_for_card_index(cur_index),
          "Fell off the bottom of containing region");
   assert(starts_object(cur_index), "Error");
   size_t offset = get_last_start(cur_index);
   // can avoid call via card size arithmetic below instead
-  p = _rs->addr_for_card_index(cur_index) + offset;
+  HeapWord* p = _rs->addr_for_card_index(cur_index) + offset;
+  if ((ctx != nullptr) && (p < tams)) {
+    if (ctx->is_marked(p)) {
+      oop obj = cast_to_oop(p);
+      assert(oopDesc::is_oop(obj), "Should be an object");
+      assert(p + obj->size() > left, "This object should span start of card");
+      assert(p < right, "Result must precede right");
+      return p;
+    } else {
+      // Object that spans start of card is dead, so should not be scanned
+      assert((ctx == nullptr) || (left + get_first_start(card_index) >= tams), "Should have handled this case above");
+      if (starts_object(card_index)) {
+        assert(left + get_first_start(card_index) < right, "Result must precede right");
+        return left + get_first_start(card_index);
+      } else {
+        // Spanning object is dead and this card does not start an object, so the start object is in some card that follows
+        size_t following_card_index = card_index;
+        do {
+          following_card_index++;
+          if (following_card_index > last_relevant_card_index) {
+            return nullptr;
+          }
+        } while (!starts_object(following_card_index));
+        HeapWord* result_candidate = _rs->addr_for_card_index(following_card_index) + get_first_start(following_card_index);
+        return (result_candidate >= right)? nullptr: result_candidate;
+      }
+    }
+  }
+
   // Recall that we already dealt with the co-initial object case above
   assert(p < left, "obj should start before left");
-  // While it is safe to ask an object its size in the loop that
-  // follows, the (ifdef'd out) loop should never be needed.
-  // 1. we ask this question only for regions in the old generation
+  // While it is safe to ask an object its size in the block that
+  // follows, the (ifdef'd out) block should never be needed.
+  // 1. we ask this question only for regions in the old generation, and those
+  //    that are not humongous regions
   // 2. there is no direct allocation ever by mutators in old generation
-  //    regions. Only GC will ever allocate in old regions, and then
-  //    too only during promotion/evacuation phases. Thus there is no danger
+  //    regions walked by this code. Only GC will ever allocate in old regions,
+  //    and then too only during promotion/evacuation phases. Thus there is no danger
   //    of races between reading from and writing to the object start array,
-  //    or of asking partially initialized objects their size (in the loop below).
+  //    or of asking partially initialized objects their size (in the ifdef below).
+  //    Furthermore, humongous regions (and their dirty cards) are never processed
+  //    by this code.
   // 3. only GC asks this question during phases when it is not concurrently
   //    evacuating/promoting, viz. during concurrent root scanning (before
   //    the evacuation phase) and during concurrent update refs (after the
   //    evacuation phase) of young collections. This is never called
-  //    during old or global collections.
+  //    during global collections during marking or update refs..
   // 4. Every allocation under TAMS updates the object start array.
-  NOT_PRODUCT(obj = cast_to_oop(p);)
+#ifdef ASSERT
+  oop obj = cast_to_oop(p);
   assert(oopDesc::is_oop(obj), "Should be an object");
-#define WALK_FORWARD_IN_BLOCK_START false
-  while (WALK_FORWARD_IN_BLOCK_START && p + obj->size() < left) {
-    p += obj->size();
-  }
-#undef WALK_FORWARD_IN_BLOCK_START // false
-  assert(p + obj->size() > left, "obj should end after left");
+  assert(p + obj->size() > left, "obj should end after left end of card");
+#endif // ASSERT
   return p;
 }
 

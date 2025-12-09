@@ -47,7 +47,7 @@ import toolbox.Task;
 
 public class HelpOutputColumnWidthTest extends TestRunner {
 
-    public static final int MAX_COLUMNS = 84;
+    public static final int MAX_COLUMNS = 80;
 
     protected ToolBox tb;
 
