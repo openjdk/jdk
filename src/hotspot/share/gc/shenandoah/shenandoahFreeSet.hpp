@@ -405,10 +405,7 @@ public:
   //       idx >= leftmost &&
   //       idx <= rightmost
   //     }
-  // Iff validate_totals is true, assert_bounds() confirms not only that bounds are correct, but also that total
-  // capacities and used within each partition are correct.
-  //
-  void assert_bounds(bool validate_totals) NOT_DEBUG_RETURN;
+  void assert_bounds() NOT_DEBUG_RETURN;
 };
 
 // Publicly, ShenandoahFreeSet represents memory that is available to mutator threads.  The public capacity(), used(),
