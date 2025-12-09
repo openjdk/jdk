@@ -734,7 +734,7 @@ public final class Class<T> implements java.io.Serializable,
     private transient volatile Constructor<T> cachedConstructor;
 
     /**
-     * Determines if an object reference of the type represented by this {@code
+     * Determines if a non-null reference of the type represented by this {@code
      * Class} may refer to the object specified by the argument.  This method is
      * the dynamic equivalent of the type comparison operator of the {@code
      * instanceof} Java keyword (JLS {@jls 15.20.2}).  This method returns
