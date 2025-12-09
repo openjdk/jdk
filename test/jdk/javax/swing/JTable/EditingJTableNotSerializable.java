@@ -39,14 +39,14 @@ import javax.swing.SwingUtilities;
 
 public class EditingJTableNotSerializable {
 
-    private static void serialize(JTable jt) throws Exception {
+    private static JTable serialize(JTable jt) throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(baos);
         oos.writeObject(jt);
         byte[] bdata = baos.toByteArray();
         ByteArrayInputStream bais = new ByteArrayInputStream(bdata);
         ObjectInputStream ois = new ObjectInputStream(bais);
-        ois.readObject();
+        return (JTable)ois.readObject();
     }
 
     public static void main(String[] args) throws Exception {
@@ -57,7 +57,10 @@ public class EditingJTableNotSerializable {
                 JTable jt = new JTable(data, names);
                 jt.editCellAt(0,3);
                 System.out.println("Serializing editing JTable");
-                serialize(jt);
+                JTable newjt = serialize(jt);
+                if (newjt.isEditing()) {
+                    throw new RuntimeException("Editing table is serializable");
+                }
 
                 TableCellEditor tce = jt.getCellEditor();
                 tce.stopCellEditing();
