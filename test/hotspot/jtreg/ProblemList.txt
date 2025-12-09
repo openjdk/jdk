@@ -49,7 +49,6 @@ compiler/cpuflags/TestAESIntrinsicsOnSupportedConfig.java 8190680 generic-all
 
 compiler/runtime/Test8168712.java#with-dtrace 8211769,8211771 generic-ppc64,generic-ppc64le,linux-s390x
 compiler/runtime/Test8168712.java#without-dtrace 8211769,8211771 generic-ppc64,generic-ppc64le,linux-s390x
-compiler/loopopts/TestUnreachableInnerLoop.java 8288981 linux-s390x
 
 compiler/c2/Test8004741.java 8235801 generic-all
 compiler/c2/irTests/TestDuplicateBackedge.java 8318904 generic-all
@@ -78,8 +77,6 @@ compiler/interpreter/Test6833129.java 8335266 generic-i586
 compiler/c2/aarch64/TestStaticCallStub.java 8359963 linux-aarch64,macosx-aarch64
 
 serviceability/jvmti/NMethodRelocation/NMethodRelocationTest.java 8369150 generic-all
-
-compiler/arguments/TestCodeEntryAlignment.java 8372703 generic-x64
 
 #############################################################################
 
