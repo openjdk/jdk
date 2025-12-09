@@ -73,6 +73,7 @@ class ChannelOutputStream extends OutputStream {
                 throw new IOException("Write failed");
             pos += n;
             rem -= n;
+            bb.position(pos);
         }
     }
 

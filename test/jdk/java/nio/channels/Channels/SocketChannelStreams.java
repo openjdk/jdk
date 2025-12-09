@@ -35,10 +35,13 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.IllegalBlockingModeException;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.channels.WritableByteChannel;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -51,6 +54,9 @@ import static org.testng.Assert.*;
 
 @Test
 public class SocketChannelStreams {
+    // Maximum size of internal temporary buffer
+    private static final int MAX_BUFFER_SIZE = 128*1024;
+
     private ScheduledExecutorService executor;
 
     @BeforeClass()
@@ -379,6 +385,25 @@ public class SocketChannelStreams {
         });
     }
 
+    /**
+     * Test that internal buffers have at most MAX_BUFFER_SIZE bytes remaining.
+     */
+    public void testReadLimit() throws IOException {
+        InputStream in = Channels.newInputStream(new ThrowingReadableChannel());
+        byte[] b = new byte[3*MAX_BUFFER_SIZE];
+        int n = in.read(b, 0, b.length);
+        assertEquals(n, MAX_BUFFER_SIZE);
+    }
+
+    /**
+     * Test that internal buffers have at most MAX_BUFFER_SIZE bytes remaining.
+     */
+    public void testWriteLimit() throws IOException {
+        OutputStream out = Channels.newOutputStream(new ThrowingWritableChannel());
+        byte[] b = new byte[3*MAX_BUFFER_SIZE];
+        out.write(b, 0, b.length);
+    }
+
     // -- test infrastructure --
 
     private interface ThrowingTask {
@@ -477,4 +502,53 @@ public class SocketChannelStreams {
     private Future<?> schedule(Runnable task, long delay) {
         return executor.schedule(task, delay, TimeUnit.MILLISECONDS);
     }
-}
+
+    /**
+     * ReadableByteChannel that throws if more than 128k bytes remain
+     * in the supplied buffer.
+     */
+    private class ThrowingReadableChannel implements ReadableByteChannel {
+        private boolean closed = false;
+
+        public ThrowingReadableChannel() {}
+
+        public int read(ByteBuffer dst) throws IOException {
+            int rem = dst.remaining();
+            if (rem > MAX_BUFFER_SIZE)
+                throw new IOException("Too many remaining bytes " + rem);
+            return rem;
+        }
+
+        public void close() throws IOException {
+            closed = true;
+        }
+
+        public boolean isOpen() {
+            return !closed;
+        }
+    }
+
+    /**
+     * WritableByteChannel that throws if more than 128k bytes remain
+     * in the supplied buffer.
+     */
+    private class ThrowingWritableChannel implements WritableByteChannel {
+        private boolean closed = false;
+
+        public ThrowingWritableChannel() {}
+
+        public int write(ByteBuffer src) throws IOException {
+            int rem = src.remaining();
+            if (rem > MAX_BUFFER_SIZE)
+                throw new IOException("Too many remaining bytes " + rem);
+            return rem;
+        }
+
+        public void close() throws IOException {
+            closed = true;
+        }
+
+        public boolean isOpen() {
+            return !closed;
+        }
+    }}
