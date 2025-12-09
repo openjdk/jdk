@@ -734,16 +734,16 @@ public final class Class<T> implements java.io.Serializable,
     private transient volatile Constructor<T> cachedConstructor;
 
     /**
-     * Determines if a non-null reference of the type represented by this {@code
-     * Class} may refer to the object specified by the argument.  This method is
-     * the dynamic equivalent of the type comparison operator of the {@code
-     * instanceof} Java keyword (JLS {@jls 15.20.2}).  This method returns
-     * {@code true} if and only if this {@code Class} represents a reference
-     * type, the specified {@code Object} argument refers to an object instead
-     * of {@code null}, and that referenced object can pass the run time
-     * validity check of a narrowing reference conversion (JLS {@jls 5.1.6.3})
-     * to the reference type represented by this {@code Class} object without
-     * throwing a {@code ClassCastException}.
+     * Determines if the reference type represented by this {@code Class} object
+     * is the same as or a proper supertype of the class of the object specified
+     * by the argument.  This method is the dynamic equivalent of the type
+     * comparison operator of the {@code instanceof} Java keyword (JLS {@jls
+     * 15.20.2}).  This method returns {@code true} if and only if this {@code
+     * Class} represents a reference type, the specified {@code Object} argument
+     * refers to an object instead of {@code null}, and that referenced object
+     * can pass the run time validity check of a narrowing reference conversion
+     * (JLS {@jls 5.1.6.3}) to the reference type represented by this {@code
+     * Class} object without throwing a {@code ClassCastException}.
      *
      * <p>This method behaves as if:
      * {@snippet lang=java :
