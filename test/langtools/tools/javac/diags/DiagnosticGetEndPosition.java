@@ -118,9 +118,13 @@ public class DiagnosticGetEndPosition {
             compiler.getTask(
                 null,
                 null,
-                d -> assertEquals("0",
-                                  implCode.substring((int) d.getStartPosition(),
-                                                     (int) d.getEndPosition())),
+                d -> {
+                    String substring = implCode.substring((int) d.getStartPosition(),
+                            (int) d.getEndPosition());
+                    //ideally would be "0", but the positions are not fully set yet
+                    assertTrue(substring.equals("0"), () ->
+                            String.format("%s at position '%s' ", d, substring));
+                },
                 List.of("-sourcepath", src.toString(), "-Xlint:divzero"),
                 null,
                 fm.getJavaFileObjects(src.resolve("test").resolve("Test.java"))
