@@ -243,7 +243,7 @@ public class VectorAlgorithmsImpl {
         return r;
     }
 
-    public static int findMinIndex_loop(int[] a) {
+    public static int findMinIndexI_loop(int[] a) {
         int min = a[0];
         int index = 0;
         for (int i = 1; i < a.length; i++) {
@@ -256,7 +256,7 @@ public class VectorAlgorithmsImpl {
         return index;
     }
 
-    public static int findMinIndex_VectorAPI(int[] a) {
+    public static int findMinIndexI_VectorAPI(int[] a) {
         // Main approach: have partial results in mins and idxs.
         var mins = IntVector.broadcast(SPECIES_I512, a[0]);
         var idxs = IntVector.broadcast(SPECIES_I512, 0);
@@ -284,7 +284,7 @@ public class VectorAlgorithmsImpl {
         return index;
     }
 
-    public static Object reverse_loop(int[] a, int[] r) {
+    public static Object reverseI_loop(int[] a, int[] r) {
         for (int i = 0; i < a.length; i++) {
             r[a.length - i - 1] = a[i];
         }
@@ -293,7 +293,7 @@ public class VectorAlgorithmsImpl {
 
     private static final VectorShuffle<Integer> REVERSE_SHUFFLE_I = SPECIES_I.iotaShuffle(SPECIES_I.length()-1, -1, true);
 
-    public static Object reverse_VectorAPI(int[] a, int[] r) {
+    public static Object reverseI_VectorAPI(int[] a, int[] r) {
         int i = 0;
         for (; i < SPECIES_I.loopBound(a.length); i += SPECIES_I.length()) {
             IntVector v = IntVector.fromArray(SPECIES_I, a, i);

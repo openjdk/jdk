@@ -161,22 +161,22 @@ public class VectorAlgorithms {
     }
 
     @Benchmark
-    public int findMinIndex_loop() {
-        return VectorAlgorithmsImpl.findMinIndex_loop(aI);
+    public int findMinIndexI_loop() {
+        return VectorAlgorithmsImpl.findMinIndexI_loop(aI);
     }
 
     @Benchmark
-    public int findMinIndex_VectorAPI() {
-        return VectorAlgorithmsImpl.findMinIndex_VectorAPI(aI);
+    public int findMinIndexI_VectorAPI() {
+        return VectorAlgorithmsImpl.findMinIndexI_VectorAPI(aI);
     }
 
     @Benchmark
-    public Object reverse_loop() {
-        return VectorAlgorithmsImpl.reverse_loop(aI, rI);
+    public Object reverseI_loop() {
+        return VectorAlgorithmsImpl.reverseI_loop(aI, rI);
     }
 
     @Benchmark
-    public Object reverse_VectorAPI() {
-        return VectorAlgorithmsImpl.reverse_VectorAPI(aI, rI);
+    public Object reverseI_VectorAPI() {
+        return VectorAlgorithmsImpl.reverseI_VectorAPI(aI, rI);
     }
 }
