@@ -107,9 +107,12 @@ public class LdapPoolTimeoutTest {
 
     private static void attemptConnect(Hashtable<Object, Object> env) throws Exception {
         try {
-            LdapTimeoutTest.assertCompletion(CONNECT_MILLIS - 1000,
-                   2 * CONNECT_MILLIS + TOLERANCE,
-                   () -> new InitialDirContext(env));
+            final InitialDirContext unexpectedCtx =
+                    LdapTimeoutTest.assertCompletion(CONNECT_MILLIS - 1000,
+                            2 * CONNECT_MILLIS + TOLERANCE,
+                            () -> new InitialDirContext(env));
+            throw new RuntimeException("InitialDirContext construction was expected to fail," +
+                    " but returned " + unexpectedCtx);
         } catch (Throwable t) {
             final NamingException namingEx = findNamingException(t);
             if (namingEx != null) {
