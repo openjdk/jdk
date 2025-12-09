@@ -440,8 +440,9 @@ HeapWord* ShenandoahOldCollectorAllocator::allocate(ShenandoahAllocRequest& req,
   HeapWord* obj = _free_set->allocate_for_collector(req, in_new_region);
   // Record the plab configuration for this result and register the object.
   if (obj != nullptr) {
-    old_gen->configure_plab_for_current_thread(req);
-    if (!req.is_lab_alloc()) {
+    if (req.is_lab_alloc()) {
+      old_gen->configure_plab_for_current_thread(req);
+    } else {
       // Register the newly allocated object while we're holding the global lock since there's no synchronization
       // built in to the implementation of register_object().  There are potential races when multiple independent
       // threads are allocating objects, some of which might span the same card region.  For example, consider
@@ -461,6 +462,13 @@ HeapWord* ShenandoahOldCollectorAllocator::allocate(ShenandoahAllocRequest& req,
       // last-start representing object b while first-start represents object c.  This is why we need to require all
       // register_object() invocations to be "mutually exclusive" with respect to each card's memory range.
       old_gen->card_scan()->register_object(obj);
+
+      if (req.is_promotion()) {
+        // Shared promotion.
+        const size_t actual_size = req.actual_size() * HeapWordSize;
+        log_debug(gc, plab)("Expend shared promotion of %zu bytes", actual_size);
+        old_gen->expend_promoted(actual_size);
+      }
     }
 
     return obj;
