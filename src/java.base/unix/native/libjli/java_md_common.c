@@ -260,34 +260,6 @@ JLI_ReportExceptionDescription(JNIEnv * env) {
 }
 
 /*
- *      Since using the file system as a registry is a bit risky, perform
- *      additional sanity checks on the identified directory to validate
- *      it as a valid JDK.
- *
- *      Return 0 if the tests fail; otherwise return non-zero (true).
- *
- *      Note that checking for anything more than the existence of an
- *      executable object at bin/java relative to the path being checked
- *      will break the regression tests.
- */
-static int
-CheckSanity(char *path, char *dir)
-{
-    char    buffer[PATH_MAX];
-    int snprintf_result;
-
-    if (JLI_StrLen(path) + JLI_StrLen(dir) + 11 > PATH_MAX)
-        return (0);     /* Silently reject "impossibly" long paths */
-
-    snprintf_result = JLI_Snprintf(buffer, sizeof(buffer), "%s/%s/bin/java", path, dir);
-    if ((snprintf_result < 0) || (snprintf_result >= (int)sizeof(buffer))) {
-      return (0);
-    }
-
-    return ((access(buffer, X_OK) == 0) ? 1 : 0);
-}
-
-/*
  * "Borrowed" from Solaris 10 where the unsetenv() function is being added
  * to libc thanks to SUSv3 (Standard Unix Specification, version 3). As
  * such, in the fullness of time this will appear in libc on all relevant
