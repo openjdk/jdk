@@ -24,7 +24,8 @@
 /*
  * @test
  * @bug 4459231
- * @summary Verifies getBaseline causes NPE for Nimbus L&F
+ * @summary Verifies if JTabbedPane(with Scrollable tablayout) changes focus
+ *          on change in LookAndFeel
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual TabbedPaneBugWithLNF
@@ -43,7 +44,6 @@ public class TabbedPaneBugWithLNF {
     private static String LNF = "com.sun.java.swing.plaf.motif.MotifLookAndFeel";
     private static JTabbedPane tabPane;
     private static JButton testBtn;
-    private String labelOfCurrentJBtn = null;
 
     static final String INSTRUCTIONS = """
         A JTabbedPane with 10 tabs will be shown.
@@ -107,3 +107,4 @@ public class TabbedPaneBugWithLNF {
         return frame;
     }
 }
+
