@@ -246,7 +246,7 @@ final class Executor {
                 Log.verbose(sb.toString());
             });
 
-            Log.verbose("Returned: " + result.exitCode() + "\n");
+            Log.verbose("Returned: " + result.getExitCode() + "\n");
         }
     }
 
