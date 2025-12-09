@@ -582,6 +582,10 @@ public:
 
   uint worker_id_offset() const { return _worker_id_offset; }
 
+  void fully_initialize();
+  bool is_fully_initialized() const { return _cm_thread != nullptr; }
+  bool in_progress() const;
+
   // Clear statistics gathered during the concurrent cycle for the given region after
   // it has been reclaimed.
   void clear_statistics(G1HeapRegion* r);

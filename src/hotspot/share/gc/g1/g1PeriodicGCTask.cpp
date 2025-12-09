@@ -38,8 +38,14 @@ bool G1PeriodicGCTask::should_start_periodic_gc(G1CollectedHeap* g1h,
   // Ensure no GC safepoints while we're doing the checks, to avoid data races.
   SuspendibleThreadSetJoiner sts;
 
+  // We should not start a concurrent gc if concurrent marking has not been initialized yet
+  if (!g1h->concurrent_mark()->is_fully_initialized()) {
+    log_debug(gc, periodic)("Concurrent marking has not been initialized. Skipping.");
+    return false;
+  }
+
   // If we are currently in a concurrent mark we are going to uncommit memory soon.
-  if (g1h->concurrent_mark()->cm_thread()->in_progress()) {
+  if (g1h->concurrent_mark()->in_progress()) {
     log_debug(gc, periodic)("Concurrent cycle in progress. Skipping.");
     return false;
   }

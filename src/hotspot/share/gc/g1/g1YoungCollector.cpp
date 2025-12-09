@@ -1124,6 +1124,7 @@ G1YoungCollector::G1YoungCollector(GCCause::Cause gc_cause,
 }
 
 void G1YoungCollector::collect() {
+  _g1h->_cm->fully_initialize();
   // Do timing/tracing/statistics/pre- and post-logging/verification work not
   // directly related to the collection. They should not be accounted for in
   // collection work timing.
