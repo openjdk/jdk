@@ -33,6 +33,11 @@ class JavaThread;
 class JfrChunkWriter;
 class JfrStackTrace;
 
+enum class StacksKind {
+  java,
+  native
+};
+
 class JfrStackTraceRepository : public JfrCHeapObj {
   friend class JfrDeprecatedEdge;
   friend class JfrRecorder;
@@ -48,6 +53,7 @@ class JfrStackTraceRepository : public JfrCHeapObj {
  private:
   static const u4 TABLE_SIZE = 2053;
   JfrStackTrace* _table[TABLE_SIZE];
+  u4 _last_native_entries;
   u4 _last_entries;
   u4 _entries;
 
@@ -60,7 +66,7 @@ class JfrStackTraceRepository : public JfrCHeapObj {
 
   static size_t clear();
   static size_t clear(JfrStackTraceRepository& repo);
-  size_t write(JfrChunkWriter& cw, bool clear);
+  size_t write(JfrChunkWriter& cw, bool clear, StacksKind kind);
 
   static const JfrStackTrace* lookup_for_leak_profiler(traceid hash, traceid id);
   static void record_for_leak_profiler(JavaThread* thread, int skip = 0);

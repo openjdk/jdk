@@ -55,6 +55,8 @@ import jdk.jfr.consumer.RecordedClassLoader;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedFrame;
 import jdk.jfr.consumer.RecordedMethod;
+import jdk.jfr.consumer.RecordedNativeFrame;
+import jdk.jfr.consumer.RecordedNativeStackTrace;
 import jdk.jfr.consumer.RecordedObject;
 import jdk.jfr.consumer.RecordedStackTrace;
 import jdk.jfr.consumer.RecordedThread;
@@ -256,6 +258,14 @@ public final class PrettyWriter extends EventPrintWriter {
             print(STACK_TRACE_FIELD + " = ");
             printStackTrace(event.getStackTrace());
         }
+        if (event.hasField("nativeStackTrace")) {
+            RecordedNativeStackTrace nst = event.getValue("nativeStackTrace");
+            if (nst != null) {
+                printIndent();
+                print("nativeStackTrace = ");
+                printNativeStackTrace(nst);
+            }
+        }
         retract();
         printIndent();
         println("}");
@@ -296,6 +306,30 @@ public final class PrettyWriter extends EventPrintWriter {
                 println();
                 depth++;
             }
+            i++;
+        }
+        if (stackTrace.isTruncated() || i == getStackDepth()) {
+            printIndent();
+            println("...");
+        }
+        retract();
+        printIndent();
+        println("]");
+    }
+
+    private void printNativeStackTrace(RecordedNativeStackTrace stackTrace) {
+        println("[");
+        List<RecordedNativeFrame> frames = stackTrace.getFrames();
+        indent();
+        int i = 0;
+        int depth = 0;
+        while (i < frames.size() && depth < getStackDepth()) {
+            RecordedNativeFrame frame = frames.get(i);
+            printIndent();
+            long pc = frame.getProgramCounter();
+            print(String.format("0x%016X", pc));
+            println();
+            depth++;
             i++;
         }
         if (stackTrace.isTruncated() || i == getStackDepth()) {
@@ -355,6 +389,7 @@ public final class PrettyWriter extends EventPrintWriter {
             case RecordedClass rc -> printClass(rc, postFix);
             case RecordedClassLoader rcl -> printClassLoader(rcl, postFix);
             case RecordedFrame rf when rf.isJavaFrame() -> printJavaFrame(rf, postFix);
+            case RecordedNativeFrame rnf -> printNativeFrame(rnf, postFix);
             case RecordedMethod rm -> println(formatMethod(rm));
             case RecordedObject ro when field.getTypeName().equals(TYPE_OLD_OBJECT) -> printOldObject(ro);
             default -> print(struct, postFix);
@@ -457,6 +492,11 @@ public final class PrettyWriter extends EventPrintWriter {
             print(" line: " + line);
         }
         print(postFix);
+    }
+
+    private void printNativeFrame(RecordedNativeFrame f, String postFix) {
+        print(String.format("0x%016X", f.getProgramCounter()));
+        println(postFix);
     }
 
     private String formatMethod(RecordedMethod m) {

@@ -431,6 +431,7 @@ final class FieldBuilder {
         set.add("jdk.types.Method");
         set.add("jdk.types.StackFrame");
         set.add("jdk.types.StackTrace");
+        set.add("jdk.types.NativeStackTrace");
         return set;
     }
 }
