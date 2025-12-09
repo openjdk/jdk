@@ -425,7 +425,7 @@ public final class Executor extends CommandArguments<Executor> {
 
         var result = exec.execute();
 
-        trace("Done. Exit code: " + result.exitCode());
+        trace("Done. Exit code: " + result.getExitCode());
 
         return createResult(result);
     }
