@@ -233,7 +233,7 @@ static double saturate(double value, double min, double max) {
 //    allocation rate computation independent.
 bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
-  size_t available = _space_info->soft_available_exclude_evac_reserve();
+  size_t available = _space_info->soft_mutator_available();
   size_t allocated = _space_info->bytes_allocated_since_gc_start();
 
   log_debug(gc, ergo)("should_start_gc calculation: available: " PROPERFMT ", soft_max_capacity: "  PROPERFMT ", "
@@ -252,9 +252,8 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 
   size_t min_threshold = min_free_threshold();
   if (available < min_threshold) {
-    log_trigger("Free (Soft) (%zu%s) is below minimum threshold (%zu%s)",
-                 byte_size_in_proper_unit(available), proper_unit_for_byte_size(available),
-                 byte_size_in_proper_unit(min_threshold), proper_unit_for_byte_size(min_threshold));
+    log_trigger("Free (Soft) (" PROPERFMT ") is below minimum threshold (" PROPERFMT ")",
+                 PROPERFMTARGS(available), PROPERFMTARGS(min_threshold));
     accept_trigger_with_type(OTHER);
     return true;
   }

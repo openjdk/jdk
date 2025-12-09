@@ -138,8 +138,8 @@ size_t ShenandoahYoungGeneration::available() const {
   return MIN2(available, ShenandoahHeap::heap()->free_set()->available());
 }
 
-size_t ShenandoahYoungGeneration::soft_available_exclude_evac_reserve() const {
-  size_t available = this->ShenandoahGeneration::soft_available_exclude_evac_reserve();
+size_t ShenandoahYoungGeneration::soft_mutator_available() const {
+  size_t available = this->ShenandoahGeneration::soft_mutator_available();
   return MIN2(available, ShenandoahHeap::heap()->free_set()->available());
 }
 

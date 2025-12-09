@@ -41,7 +41,7 @@ ShenandoahStaticHeuristics::~ShenandoahStaticHeuristics() {}
 
 bool ShenandoahStaticHeuristics::should_start_gc() {
   size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
-  size_t available = _space_info->soft_available_exclude_evac_reserve();
+  size_t available = _space_info->soft_mutator_available();
   size_t allocated = _space_info->bytes_allocated_since_gc_start();
 
   log_debug(gc, ergo)("should_start_gc calculation: available: " PROPERFMT ", soft_max_capacity: "  PROPERFMT ", "
@@ -51,9 +51,8 @@ bool ShenandoahStaticHeuristics::should_start_gc() {
   size_t threshold_available = capacity / 100 * ShenandoahMinFreeThreshold;
 
   if (available < threshold_available) {
-    log_trigger("Free (Soft) (%zu%s) is below minimum threshold (%zu%s)",
-                 byte_size_in_proper_unit(available),           proper_unit_for_byte_size(available),
-                 byte_size_in_proper_unit(threshold_available), proper_unit_for_byte_size(threshold_available));
+    log_trigger("Free (Soft) (" PROPERFMT ") is below minimum threshold (" PROPERFMT ")",
+                 PROPERFMTARGS(available), PROPERFMTARGS(threshold_available));
     accept_trigger();
     return true;
   }

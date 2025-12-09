@@ -78,14 +78,6 @@ size_t ShenandoahGlobalGeneration::available() const {
   return MIN2(available, ShenandoahHeap::heap()->free_set()->available());
 }
 
-size_t ShenandoahGlobalGeneration::soft_available_exclude_evac_reserve() const {
-  size_t soft_max =  ShenandoahHeap::heap()->soft_max_capacity();
-  assert(max_capacity() >= soft_max, "Max capacity must be greater than soft max capacity.");
-  size_t used = this->used();
-  size_t mutator_soft_max = soft_max * ((100.0 - ShenandoahEvacReserve) / 100);
-  return (mutator_soft_max > used) ? (mutator_soft_max - used) : 0;
-}
-
 void ShenandoahGlobalGeneration::set_concurrent_mark_in_progress(bool in_progress) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (in_progress && heap->mode()->is_generational()) {

@@ -3051,11 +3051,11 @@ void ShenandoahFreeSet::log_freeset_stats(ShenandoahFreeSetPartitionId partition
     }
   }
 
-  ls.print(" %s freeset stats: Partition count: %zu, Reserved: %zu%s, Max free available in a single region: %zu%s;",
+  ls.print(" %s freeset stats: Partition count: %zu, Reserved: " PROPERFMT ", Max free available in a single region: " PROPERFMT ";",
             partition_name(partition_id),
             _partitions.count(partition_id),
-            byte_size_in_proper_unit(total_free), proper_unit_for_byte_size(total_free),
-            byte_size_in_proper_unit(max),        proper_unit_for_byte_size(max));
+            PROPERFMTARGS(total_free), PROPERFMTARGS(max)
+          );
 }
 
 void ShenandoahFreeSet::log_status() {
@@ -3178,12 +3178,9 @@ void ShenandoahFreeSet::log_status() {
       // retired, the sum of used and capacities within regions that are still in the Mutator free partition may not match
       // my internally tracked values of used() and free().
       assert(free == total_free, "Free memory (%zu) should match calculated memory (%zu)", free, total_free);
-      ls.print("Whole heap stats: Total free: %zu%s, Total used: %zu%s, Max free in a single region: %zu%s, Max humongous: %zu%s; ",
-               byte_size_in_proper_unit(total_free),    proper_unit_for_byte_size(total_free),
-               byte_size_in_proper_unit(total_used), proper_unit_for_byte_size(total_used),
-               byte_size_in_proper_unit(max),           proper_unit_for_byte_size(max),
-               byte_size_in_proper_unit(max_humongous), proper_unit_for_byte_size(max_humongous)
-      );
+      ls.print("Whole heap stats: Total free: " PROPERFMT ", Total used: " PROPERFMT ", Max free in a single region: " PROPERFMT
+               ", Max humongous: " PROPERFMT "; ",
+               PROPERFMTARGS(total_free), PROPERFMTARGS(total_used), PROPERFMTARGS(max), PROPERFMTARGS(max_humongous));
 
       ls.print("Frag stats: ");
       size_t frag_ext;
