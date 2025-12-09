@@ -58,8 +58,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 
-PSYoungGen*  ParallelScavengeHeap::_young_gen = nullptr;
-PSOldGen*    ParallelScavengeHeap::_old_gen = nullptr;
 PSAdaptiveSizePolicy* ParallelScavengeHeap::_size_policy = nullptr;
 GCPolicyCounters* ParallelScavengeHeap::_gc_policy_counters = nullptr;
 size_t ParallelScavengeHeap::_desired_page_size = 0;
@@ -143,9 +141,9 @@ void ParallelScavengeHeap::initialize_serviceability() {
                                                 "PS Survivor Space",
                                                 false /* support_usage_threshold */);
 
-  _old_pool = new PSGenerationPool(_old_gen,
-                                   "PS Old Gen",
-                                   true /* support_usage_threshold */);
+  _old_pool = new PSOldGenerationPool(_old_gen,
+                                      "PS Old Gen",
+                                      true /* support_usage_threshold */);
 
   _young_manager = new GCMemoryManager("PS Scavenge");
   _old_manager = new GCMemoryManager("PS MarkSweep");
