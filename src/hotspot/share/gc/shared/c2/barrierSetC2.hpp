@@ -304,8 +304,6 @@ public:
                              Node*& fast_oop_ctrl, Node*& fast_oop_rawmem,
                              intx prefetch_lines) const;
 
-  virtual Node* ideal_node(PhaseGVN* phase, Node* n, bool can_reshape) const { return nullptr; }
-
   // These are general helper methods used by C2
   enum ArrayCopyPhase {
     Parsing,
@@ -317,18 +315,11 @@ public:
   virtual void clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const;
 
   // Support for GC barriers emitted during parsing
-  virtual bool has_load_barrier_nodes() const { return false; }
-  virtual bool is_gc_pre_barrier_node(Node* node) const { return false; }
   virtual bool is_gc_barrier_node(Node* node) const { return false; }
-  virtual Node* step_over_gc_barrier(Node* c) const { return c; }
 
   // Support for macro expanded GC barriers
-  virtual void register_potential_barrier_node(Node* node) const { }
-  virtual void unregister_potential_barrier_node(Node* node) const { }
   virtual void eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const { }
   virtual void eliminate_gc_barrier_data(Node* node) const { }
-  virtual void enqueue_useful_gc_barrier(PhaseIterGVN* igvn, Node* node) const {}
-  virtual void eliminate_useless_gc_barriers(Unique_Node_List &useful, Compile* C) const {}
 
   // Allow barrier sets to have shared state that is preserved across a compilation unit.
   // This could for example comprise macro nodes to be expanded during macro expansion.
@@ -336,9 +327,6 @@ public:
   // If the BarrierSetC2 state has barrier nodes in its compilation
   // unit state to be expanded later, then now is the time to do so.
   virtual bool expand_barriers(Compile* C, PhaseIterGVN& igvn) const { return false; }
-  virtual bool optimize_loops(PhaseIdealLoop* phase, LoopOptsMode mode, VectorSet& visited, Node_Stack& nstack, Node_List& worklist) const { return false; }
-  virtual bool strip_mined_loops_expanded(LoopOptsMode mode) const { return false; }
-  virtual bool is_gc_specific_loop_opts_pass(LoopOptsMode mode) const { return false; }
   // Estimated size of the node barrier in number of C2 Ideal nodes.
   // This is used to guide heuristics in C2, e.g. whether to unroll a loop.
   virtual uint estimated_barrier_size(const Node* node) const { return 0; }
@@ -354,15 +342,6 @@ public:
 #ifdef ASSERT
   virtual void verify_gc_barriers(Compile* compile, CompilePhase phase) const {}
 #endif
-
-  virtual bool final_graph_reshaping(Compile* compile, Node* n, uint opcode, Unique_Node_List& dead_nodes) const { return false; }
-
-  virtual bool escape_add_to_con_graph(ConnectionGraph* conn_graph, PhaseGVN* gvn, Unique_Node_List* delayed_worklist, Node* n, uint opcode) const { return false; }
-  virtual bool escape_add_final_edges(ConnectionGraph* conn_graph, PhaseGVN* gvn, Node* n, uint opcode) const { return false; }
-  virtual bool escape_has_out_with_unsafe_object(Node* n) const { return false; }
-
-  virtual bool matcher_find_shared_post_visit(Matcher* matcher, Node* n, uint opcode) const { return false; };
-  virtual bool matcher_is_store_load_barrier(Node* x, uint xop) const { return false; }
 
   // Whether the given phi node joins OOPs from fast and slow allocation paths.
   static bool is_allocation(const Node* node);

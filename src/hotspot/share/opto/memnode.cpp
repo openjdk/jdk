@@ -106,6 +106,7 @@ void MemNode::dump_spec(outputStream *st) const {
   if (_unsafe_access) {
     st->print(" unsafe");
   }
+  st->print(" barrier: %u", _barrier_data);
 }
 
 void MemNode::dump_adr_type(const TypePtr* adr_type, outputStream* st) {
@@ -650,10 +651,7 @@ ArrayCopyNode* MemNode::find_array_copy_clone(Node* ld_alloc, Node* mem) const {
           mb->in(0)->in(0) != nullptr && mb->in(0)->in(0)->is_ArrayCopy()) {
         ac = mb->in(0)->in(0)->as_ArrayCopy();
       } else {
-        // Step over GC barrier when ReduceInitialCardMarks is disabled
-        BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-        Node* control_proj_ac = bs->step_over_gc_barrier(mb->in(0));
-
+        Node* control_proj_ac = mb->in(0);
         if (control_proj_ac->is_Proj() && control_proj_ac->in(0)->is_ArrayCopy()) {
           ac = control_proj_ac->in(0)->as_ArrayCopy();
         }
@@ -1058,9 +1056,8 @@ Node* LoadNode::can_see_arraycopy_value(Node* st, PhaseGVN* phase) const {
     if (ac->as_ArrayCopy()->is_clonebasic()) {
       assert(ld_alloc != nullptr, "need an alloc");
       assert(addp->is_AddP(), "address must be addp");
-      BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-      assert(bs->step_over_gc_barrier(addp->in(AddPNode::Base)) == bs->step_over_gc_barrier(ac->in(ArrayCopyNode::Dest)), "strange pattern");
-      assert(bs->step_over_gc_barrier(addp->in(AddPNode::Address)) == bs->step_over_gc_barrier(ac->in(ArrayCopyNode::Dest)), "strange pattern");
+      assert(addp->in(AddPNode::Base) == ac->in(ArrayCopyNode::Dest), "strange pattern");
+      assert(addp->in(AddPNode::Address) == ac->in(ArrayCopyNode::Dest), "strange pattern");
       addp->set_req(AddPNode::Base, src);
       addp->set_req(AddPNode::Address, src);
     } else {
@@ -1244,8 +1241,6 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
         (tp != nullptr) && tp->is_ptr_to_boxed_value()) {
       intptr_t ignore = 0;
       Node* base = AddPNode::Ideal_base_and_offset(ld_adr, phase, ignore);
-      BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-      base = bs->step_over_gc_barrier(base);
       if (base != nullptr && base->is_Proj() &&
           base->as_Proj()->_con == TypeFunc::Parms &&
           base->in(0)->is_CallStaticJava() &&
@@ -2525,12 +2520,6 @@ Node* LoadNode::klass_identity_common(PhaseGVN* phase) {
   if (base == nullptr)     return this;
   const TypeOopPtr* toop = phase->type(adr)->isa_oopptr();
   if (toop == nullptr)     return this;
-
-  // Step over potential GC barrier for OopHandle resolve
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  if (bs->is_gc_barrier_node(base)) {
-    base = bs->step_over_gc_barrier(base);
-  }
 
   // We can fetch the klass directly through an AllocateNode.
   // This works even if the klass is not constant (clone or newArray).

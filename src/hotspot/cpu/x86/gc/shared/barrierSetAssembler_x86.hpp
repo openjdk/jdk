@@ -156,6 +156,7 @@ private:
 public:
   SaveLiveRegisters(MacroAssembler* masm, BarrierStubC2* stub);
   ~SaveLiveRegisters();
+  bool contains(Register r) const { return _gp_registers.contains(r); }
 };
 
 #endif // COMPILER2

@@ -520,9 +520,6 @@ Node *Node::clone() const {
     C->add_template_assertion_predicate_opaque(n->as_OpaqueTemplateAssertionPredicate());
   }
 
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  bs->register_potential_barrier_node(n);
-
   n->set_idx(C->next_unique()); // Get new unique index as well
   NOT_PRODUCT(n->_igv_idx = C->next_igv_idx());
   DEBUG_ONLY( n->verify_construction() );
@@ -642,8 +639,6 @@ void Node::destruct(PhaseValues* phase) {
       compile->remove_unstable_if_trap(as_CallStaticJava(), false);
     }
   }
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  bs->unregister_potential_barrier_node(this);
 
   // See if the input array was allocated just prior to the object
   int edge_size = _max*sizeof(void*);
@@ -1469,8 +1464,6 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
             igvn->add_users_to_worklist( n );
           } else if (dead->is_data_proj_of_pure_function(n)) {
             igvn->_worklist.push(n);
-          } else {
-            BarrierSet::barrier_set()->barrier_set_c2()->enqueue_useful_gc_barrier(igvn, n);
           }
         }
       }
