@@ -31,6 +31,7 @@ import java.util.List;
  * @bug 8358892 8357551
  * @summary The test is to trigger code path of BoolTest::ge/gt in C2_MacroAssembler::enc_cmove_cmp_fp
  * @requires vm.debug
+ * @requires os.arch == "riscv64" | os.arch=="aarch64"
  * @library /test/lib /
  * @run driver ${test.main.class}
  */
