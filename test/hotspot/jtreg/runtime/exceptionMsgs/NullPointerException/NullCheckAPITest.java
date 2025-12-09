@@ -54,7 +54,7 @@ public class NullCheckAPITest {
         if (arg == null) {
             if (NESTED_THROW) {
                 // 2 offset: nullCheck, throwNpe;
-                throwNpe();
+                throwNullPointerException();
             } else {
                 // 1 offset: nullCheck
                 throw JLA.extendedNullPointerException(1, 0);
@@ -62,7 +62,7 @@ public class NullCheckAPITest {
         }
     }
 
-    static void throwNpe() {
+    static void throwNullPointerException() {
         throw JLA.extendedNullPointerException(2, 0);
     }
 
@@ -90,8 +90,8 @@ public class NullCheckAPITest {
 
     @Test
     void test() {
-        checkSimpleMessage(() -> generateVariableNpe(null), "myA");
-        checkSimpleMessage(() -> generateVariableNpe(new Dummy()), "myA.field");
+        checkSimpleMessage(() -> generateVariableNullPointerException(null), "myA");
+        checkSimpleMessage(() -> generateVariableNullPointerException(new Dummy()), "myA.field");
 
         checkInvocationMessage(() -> nullCheck(int.class.getSuperclass()), "java.lang.Class.getSuperclass()");
     }
@@ -130,7 +130,7 @@ public class NullCheckAPITest {
     }
 
     // A method that generate NPE from variables
-    static void generateVariableNpe(Dummy myA) {
+    static void generateVariableNullPointerException(Dummy myA) {
         nullCheck(myA);
         nullCheck(myA.field);
     }

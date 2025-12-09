@@ -56,6 +56,7 @@ public class NullPointerException extends RuntimeException {
      * Constructs a {@code NullPointerException} with no detail message.
      */
     public NullPointerException() {
+        extendedMessageState = 0;
         super();
         extendedMessageState |= CONSTRUCTOR_FINISHED;
     }
@@ -67,15 +68,18 @@ public class NullPointerException extends RuntimeException {
      * @param   s   the detail message.
      */
     public NullPointerException(String s) {
+        extendedMessageState = 0;
         super(s);
         extendedMessageState |= CONSTRUCTOR_FINISHED;
     }
+
 
     // Creates an NPE with a custom backtrace configuration.
     // The exception has no message if detailed NPE is not enabled.
     NullPointerException(int stackOffset, int searchSlot) {
         extendedMessageState = setupCustomBackTrace(stackOffset, searchSlot);
-        this();
+        super();
+        extendedMessageState |= CONSTRUCTOR_FINISHED;
     }
 
     private static int setupCustomBackTrace(int stackOffset, int searchSlot) {
