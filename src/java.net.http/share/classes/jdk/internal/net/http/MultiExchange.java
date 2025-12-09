@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.ConnectException;
 import java.net.ProtocolException;
+import java.net.ProtocolException;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpHeaders;
@@ -255,7 +256,7 @@ class MultiExchange<T> implements Cancelable {
                 .map(ConnectTimeoutTracker::getRemaining);
     }
 
-    private void cancelTimer() {
+    void cancelTimer() {
         if (responseTimerEvent != null) {
             client.cancelTimer(responseTimerEvent);
             responseTimerEvent = null;
@@ -414,6 +415,8 @@ class MultiExchange<T> implements Cancelable {
                         processAltSvcHeader(r, client(), currentreq);
                         Exchange<T> exch = getExchange();
                         if (bodyNotPermitted(r)) {
+                            // No response body consumption is expected, we can cancel the timer right away
+                            cancelTimer();
                             try {
                                 ensureNoBody(r.headers);
                             } catch (ProtocolException pe) {
@@ -477,6 +480,8 @@ class MultiExchange<T> implements Cancelable {
 
     private CompletableFuture<Response> responseAsyncImpl(final boolean applyReqFilters) {
         if (currentreq.timeout().isPresent()) {
+            // Retried/Forwarded requests should reset the timer, if present
+            cancelTimer();
             responseTimerEvent = ResponseTimerEvent.of(this);
             client.registerTimer(responseTimerEvent);
         }
@@ -512,7 +517,6 @@ class MultiExchange<T> implements Cancelable {
                         }
                         return completedFuture(response);
                     } else {
-                        cancelTimer();
                         setNewResponse(currentreq, response, null, exch);
                         if (currentreq.isWebSocket()) {
                             // need to close the connection and open a new one.
@@ -530,11 +534,18 @@ class MultiExchange<T> implements Cancelable {
                     } })
                 .handle((response, ex) -> {
                     // 5. handle errors and cancel any timer set
-                    cancelTimer();
                     if (ex == null) {
                         assert response != null;
                         return completedFuture(response);
                     }
+
+                    // Cancel the timer. Note that we only do so if the
+                    // response has completed exceptionally. That is, we don't
+                    // cancel the timer if there are no exceptions, since the
+                    // response body might still get consumed, and it is
+                    // still subject to the response timer.
+                    cancelTimer();
+
                     // all exceptions thrown are handled here
                     final RetryContext retryCtx = checkRetryEligible(ex, exch);
                     assert retryCtx != null : "retry context is null";

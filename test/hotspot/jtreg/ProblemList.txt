@@ -49,7 +49,6 @@ compiler/cpuflags/TestAESIntrinsicsOnSupportedConfig.java 8190680 generic-all
 
 compiler/runtime/Test8168712.java#with-dtrace 8211769,8211771 generic-ppc64,generic-ppc64le,linux-s390x
 compiler/runtime/Test8168712.java#without-dtrace 8211769,8211771 generic-ppc64,generic-ppc64le,linux-s390x
-compiler/loopopts/TestUnreachableInnerLoop.java 8288981 linux-s390x
 
 compiler/c2/Test8004741.java 8235801 generic-all
 compiler/c2/irTests/TestDuplicateBackedge.java 8318904 generic-all
@@ -79,8 +78,6 @@ compiler/c2/aarch64/TestStaticCallStub.java 8359963 linux-aarch64,macosx-aarch64
 
 serviceability/jvmti/NMethodRelocation/NMethodRelocationTest.java 8369150 generic-all
 
-compiler/arguments/TestCodeEntryAlignment.java 8372703 generic-x64
-
 #############################################################################
 
 # :hotspot_gc
@@ -97,6 +94,7 @@ gc/shenandoah/TestEvilSyncBug.java#generational 8345501 generic-all
 gc/shenandoah/TestRetainObjects.java#no-tlab 8361099 generic-all
 gc/shenandoah/TestSieveObjects.java#no-tlab 8361099 generic-all
 gc/shenandoah/TestSieveObjects.java#no-tlab-genshen 8361099 generic-all
+gc/cslocker/TestCSLocker.java 8373025 generic-all
 
 #############################################################################
 
@@ -143,7 +141,6 @@ serviceability/sa/TestJmapCore.java               8318754 macosx-aarch64
 serviceability/sa/TestJmapCoreMetaspace.java      8318754 macosx-aarch64
 
 serviceability/sa/ClhsdbThreadContext.java        8356704 windows-x64
-serviceability/sa/TestJhsdbJstackMixedWithXComp.java 8371194 linux-x64
 
 serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStressTest.java 8315980 linux-all,windows-x64
 

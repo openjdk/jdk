@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,28 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_JFR_UTILITIES_JFRSPINLOCKHELPER_HPP
-#define SHARE_JFR_UTILITIES_JFRSPINLOCKHELPER_HPP
+/**
+ * @test
+ * @bug 8372039
+ * @summary The test verifies that object allocation sampling is disabled during AOT.
+ *
+ * Don't remove 'modules' line, it triggers the crash.
+ * @modules java.management
+ *
+ * @run main/othervm/native -agentlib:SamplingDuringInit SamplingDuringInit
+ * @run main/othervm/native -agentlib:SamplingDuringInit -XX:-UseCompressedOops SamplingDuringInit
+ */
 
-#include "runtime/javaThread.hpp"
+public class SamplingDuringInit {
 
-class JfrSpinlockHelper {
- private:
-  volatile int* const _lock;
-
- public:
-  JfrSpinlockHelper(volatile int* lock) : _lock(lock) {
-    Thread::SpinAcquire(_lock);
-  }
-
-  ~JfrSpinlockHelper() {
-    Thread::SpinRelease(_lock);
-  }
-};
-
-#endif // SHARE_JFR_UTILITIES_JFRSPINLOCKHELPER_HPP
+    public static Object[] tmp = new Object[1000];
+    public static void main(String[] args) throws Exception {
+        // Allocate some objects to trigger Sampling even if
+        // all JDK classes are preloaded.
+        for (int i = 0; i < tmp.length; i++) {
+            tmp[i] = new String("tmp" + i);
+        }
+    }
+}

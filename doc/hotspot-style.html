@@ -1037,8 +1037,8 @@ running destructors at exit can lead to problems.</p>
 <p>Some of the approaches used in HotSpot to avoid dynamic
 initialization include:</p>
 <ul>
-<li><p>Use the <code>Deferred&lt;T&gt;</code> class template. Add a call
-to its initialization function at an appropriate place during VM
+<li><p>Use the <code>DeferredStatic&lt;T&gt;</code> class template. Add
+a call to its initialization function at an appropriate place during VM
 initialization. The underlying object is never destroyed.</p></li>
 <li><p>For objects of class type, use a variable whose value is a
 pointer to the class, initialized to <code>nullptr</code>. Provide an
