@@ -2607,8 +2607,8 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   void cipherBlockChaining_encryptAESCrypt(int round, Register from, Register to, Register key,
-                                          Register iv, Register input_len) {
-    const Register len        = x29;
+                                           Register rvec, Register input_len) {
+    const Register len = x29;
 
     VectorRegister working_vregs[] = {
       v1, v2, v3, v4, v5, v6, v7, v8,
@@ -2618,9 +2618,9 @@ class StubGenerator: public StubCodeGenerator {
     const unsigned int BLOCK_SIZE = 16;
 
     __ mv(len, input_len);
-    // load init iv
+    // load init rvec
     __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
-    __ vle32_v(v16, iv);
+    __ vle32_v(v16, rvec);
 
     generate_aes_loadkeys(key, working_vregs, round);
     Label L_enc_loop;
@@ -2635,8 +2635,8 @@ class StubGenerator: public StubCodeGenerator {
       __ subi(len, len, BLOCK_SIZE);
       __ bnez(len, L_enc_loop);
 
-    // save current iv and return
-    __ vse32_v(v16, iv);
+    // save current rvec and return
+    __ vse32_v(v16, rvec);
     __ mv(x10, input_len);
     __ leave();
     __ ret();
@@ -2664,7 +2664,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register from       = c_rarg0;
     const Register to         = c_rarg1;
     const Register key        = c_rarg2;
-    const Register iv         = c_rarg3;
+    const Register rvec       = c_rarg3;
     const Register input_len  = c_rarg4;
 
     const Register keylen     = x28;
@@ -2681,22 +2681,22 @@ class StubGenerator: public StubCodeGenerator {
     // Else we fallthrough to the biggest case (256-bit key size)
 
     // Note: the following function performs key += 15*16
-    cipherBlockChaining_encryptAESCrypt(15, from, to, key, iv, input_len);
+    cipherBlockChaining_encryptAESCrypt(15, from, to, key, rvec, input_len);
 
     // Note: the following function performs key += 11*16
     __ bind(L_aes128);
-    cipherBlockChaining_encryptAESCrypt(11, from, to, key, iv, input_len);
+    cipherBlockChaining_encryptAESCrypt(11, from, to, key, rvec, input_len);
 
     // Note: the following function performs key += 13*16
     __ bind(L_aes192);
-    cipherBlockChaining_encryptAESCrypt(13, from, to, key, iv, input_len);
+    cipherBlockChaining_encryptAESCrypt(13, from, to, key, rvec, input_len);
 
     return start;
   }
 
   void cipherBlockChaining_decryptAESCrypt(int round, Register from, Register to, Register key,
-                                        Register iv, Register input_len) {
-    const Register len         = x29;
+                                           Register rvec, Register input_len) {
+    const Register len = x29;
 
     VectorRegister working_vregs[] = {
       v1, v2, v3, v4, v5, v6, v7, v8,
@@ -2706,9 +2706,9 @@ class StubGenerator: public StubCodeGenerator {
     const unsigned int BLOCK_SIZE = 16;
 
     __ mv(len, input_len);
-    // load init iv
+    // load init rvec
     __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
-    __ vle32_v(v16, iv);
+    __ vle32_v(v16, rvec);
 
     generate_aes_loadkeys(key, working_vregs, round);
     Label L_dec_loop;
@@ -2725,8 +2725,8 @@ class StubGenerator: public StubCodeGenerator {
       __ subi(len, len, BLOCK_SIZE);
       __ bnez(len, L_dec_loop);
 
-    // save current iv and return
-    __ vse32_v(v16, iv);
+    // save current rvec and return
+    __ vse32_v(v16, rvec);
     __ mv(x10, input_len);
     __ leave();
     __ ret();
@@ -2754,7 +2754,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register from        = c_rarg0;
     const Register to          = c_rarg1;
     const Register key         = c_rarg2;
-    const Register iv          = c_rarg3;
+    const Register rvec        = c_rarg3;
     const Register input_len   = c_rarg4;
 
     const Register keylen      = x28;
@@ -2771,15 +2771,15 @@ class StubGenerator: public StubCodeGenerator {
     // Else we fallthrough to the biggest case (256-bit key size)
 
     // Note: the following function performs key += 15*16
-    cipherBlockChaining_decryptAESCrypt(15, from, to, key, iv, input_len);
+    cipherBlockChaining_decryptAESCrypt(15, from, to, key, rvec, input_len);
 
     // Note: the following function performs key += 11*16
     __ bind(L_aes128);
-    cipherBlockChaining_decryptAESCrypt(11, from, to, key, iv, input_len);
+    cipherBlockChaining_decryptAESCrypt(11, from, to, key, rvec, input_len);
 
     // Note: the following function performs key += 13*16
     __ bind(L_aes192);
-    cipherBlockChaining_decryptAESCrypt(13, from, to, key, iv, input_len);
+    cipherBlockChaining_decryptAESCrypt(13, from, to, key, rvec, input_len);
 
     return start;
   }
