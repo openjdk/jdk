@@ -119,11 +119,11 @@ public class DiagnosticGetEndPosition {
                 null,
                 null,
                 d -> {
-                    String substring = implCode.substring((int) d.getStartPosition(),
-                            (int) d.getEndPosition());
+                    int pos = (int) d.getStartPosition();
+                    String substring = implCode.substring(pos, (int) d.getEndPosition());
                     //ideally would be "0", but the positions are not fully set yet
                     assertTrue(substring.equals("0"), () ->
-                            String.format("%s at position '%s' ", d, substring));
+                            String.format("%s at position %d '%s'", d, pos, substring));
                 },
                 List.of("-sourcepath", src.toString(), "-Xlint:divzero"),
                 null,
