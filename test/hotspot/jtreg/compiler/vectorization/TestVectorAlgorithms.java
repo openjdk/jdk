@@ -65,6 +65,7 @@ public class TestVectorAlgorithms {
     int[] rI2;
     int[] rI3;
     int[] rI4;
+    int eI;
 
     public static void main(String[] args) {
         TestFramework framework = new TestFramework();
@@ -117,6 +118,10 @@ public class TestVectorAlgorithms {
         testGroups.get("findMinIndexI").put("findMinIndexI_loop",      () -> { return findMinIndexI_loop(aI); });
         testGroups.get("findMinIndexI").put("findMinIndexI_VectorAPI", () -> { return findMinIndexI_VectorAPI(aI); });
 
+        testGroups.put("findI", new HashMap<String,TestFunction>());
+        testGroups.get("findI").put("findI_loop",      () -> { return findI_loop(aI, eI); });
+        testGroups.get("findI").put("findI_VectorAPI", () -> { return findI_VectorAPI(aI, eI); });
+
         testGroups.put("reverseI", new HashMap<String,TestFunction>());
         testGroups.get("reverseI").put("reverseI_loop",      () -> { return reverseI_loop(aI, rI1); });
         testGroups.get("reverseI").put("reverseI_VectorAPI", () -> { return reverseI_VectorAPI(aI, rI2); });
@@ -142,6 +147,8 @@ public class TestVectorAlgorithms {
                  "scanAddI_VectorAPI_permute_add",
                  "findMinIndexI_loop",
                  "findMinIndexI_VectorAPI",
+                 "findI_loop",
+                 "findI_VectorAPI",
                  "reverseI_loop",
                  "reverseI_VectorAPI"})
     public void runTests(RunInfo info) {
@@ -152,6 +159,8 @@ public class TestVectorAlgorithms {
             int size = 100_000 + RANDOM.nextInt(10_000);
             aI = new int[size];
             G.fill(INT_GEN, aI);
+            // Pick some random element. Most of the time it is in aI, sometimes not.
+            eI = (RANDOM.nextInt(10) == 0) ? RANDOM.nextInt() : aI[RANDOM.nextInt(size)];
             //for (int i = 0; i < aI.length; i++) { aI[i] = i; }
             rI1 = new int[size];
             rI2 = new int[size];
@@ -295,6 +304,16 @@ public class TestVectorAlgorithms {
     @Test
     public int findMinIndexI_VectorAPI(int[] a) {
         return VectorAlgorithmsImpl.findMinIndexI_VectorAPI(a);
+    }
+
+    @Test
+    public int findI_loop(int[] a, int e) {
+        return VectorAlgorithmsImpl.findI_loop(a, e);
+    }
+
+    @Test
+    public int findI_VectorAPI(int[] a, int e) {
+        return VectorAlgorithmsImpl.findI_VectorAPI(a, e);
     }
 
     @Test
