@@ -1083,8 +1083,13 @@ bool LibraryCallKit::inline_string_equals(StrIntrinsicNode::ArgEnc ae) {
 
   if (!stopped()) {
 
-    arg1 = must_be_not_null(arg1, true);
-    arg2 = must_be_not_null(arg2, true);
+    if (VerifyIntrinsicChecks) {
+      arg1 = must_be_not_null(arg1, true);
+      arg2 = must_be_not_null(arg2, true);
+      if (stopped()) {
+        return true;
+      }
+    }
 
     // Get start addr and length of first argument
     Node* arg1_start  = array_element_address(arg1, intcon(0), T_BYTE);

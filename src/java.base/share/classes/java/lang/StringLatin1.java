@@ -95,8 +95,23 @@ final class StringLatin1 {
         System.arraycopy(value, srcBegin, dst, dstBegin, srcEnd - srcBegin);
     }
 
-    @IntrinsicCandidate
+    /**
+     * {@return {@code true} if provided byte arrays contain identical content; {@code false} otherwise}.
+     *
+     * @param value a byte array
+     * @param other a byte array
+     *
+     * @throws NullPointerException if {@code value} or {@code other} is null
+     */
     static boolean equals(byte[] value, byte[] other) {
+        Objects.requireNonNull(value);
+        Objects.requireNonNull(other);
+        return equals0(value, other);
+    }
+
+    // inline_string_equals
+    @IntrinsicCandidate
+    private static boolean equals0(byte[] value, byte[] other) {
         if (value.length == other.length) {
             for (int i = 0; i < value.length; i++) {
                 if (value[i] != other[i]) {
