@@ -509,7 +509,6 @@ public abstract sealed class EnumSet<E extends Enum<E>> extends AbstractSet<E>
      * <p>The {@code Spliterator} reports {@link Spliterator#SIZED},
      * {@link Spliterator#DISTINCT}, {@link Spliterator#SORTED},
      * {@link Spliterator#NONNULL}, and {@link Spliterator#ORDERED}.
-     * Implementations should document the reporting of additional characteristic values.
      *
      * @implNote
      * The implementation creates a
@@ -522,7 +521,7 @@ public abstract sealed class EnumSet<E extends Enum<E>> extends AbstractSet<E>
      * @return a {@code Spliterator} over the elements in this set
      */
     @Override
-    public Spliterator<E> spliterator() {
+    public final Spliterator<E> spliterator() {
         return Spliterators.spliterator(this,
                 Spliterator.DISTINCT | Spliterator.SORTED | Spliterator.ORDERED | Spliterator.NONNULL);
     }
