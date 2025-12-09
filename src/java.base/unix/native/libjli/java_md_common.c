@@ -281,7 +281,7 @@ CheckSanity(char *path, char *dir)
 
     snprintf_result = JLI_Snprintf(buffer, sizeof(buffer), "%s/%s/bin/java", path, dir);
     if ((snprintf_result < 0) || (snprintf_result >= (int)sizeof(buffer))) {
-      return NULL;
+      return (0);
     }
 
     return ((access(buffer, X_OK) == 0) ? 1 : 0);
