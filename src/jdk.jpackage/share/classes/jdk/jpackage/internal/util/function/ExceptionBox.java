@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,23 +30,47 @@ public class ExceptionBox extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 
-    public static RuntimeException rethrowUnchecked(Throwable throwable) {
-        if (throwable instanceof RuntimeException err) {
-            throw err;
+    public static RuntimeException rethrowUnchecked(Exception ex) {
+        switch (ex) {
+            case RuntimeException rex -> {
+                throw rex;
+            }
+            case InvocationTargetException itex -> {
+                var t = itex.getCause();
+                if (t instanceof Exception cause) {
+                    throw rethrowUnchecked(cause);
+                } else {
+                    throw (Error)t;
+                }
+            }
+            default -> {
+                throw new ExceptionBox(ex);
+            }
         }
-
-        if (throwable instanceof Error err) {
-            throw err;
-        }
-
-        if (throwable instanceof InvocationTargetException err) {
-            throw rethrowUnchecked(err.getCause());
-        }
-
-        throw new ExceptionBox(throwable);
     }
 
-    private ExceptionBox(Throwable throwable) {
-        super(throwable);
+    public static Exception unbox(Throwable t) {
+        switch (t) {
+            case ExceptionBox ex -> {
+                return unbox(ex.getCause());
+            }
+            case InvocationTargetException ex -> {
+                return unbox(ex.getCause());
+            }
+            case Exception ex -> {
+                return ex;
+            }
+            case Error err -> {
+                throw err;
+            }
+            default -> {
+                // Unreachable
+                throw new AssertionError();
+            }
+        }
+    }
+
+    private ExceptionBox(Exception ex) {
+        super(ex);
     }
 }
