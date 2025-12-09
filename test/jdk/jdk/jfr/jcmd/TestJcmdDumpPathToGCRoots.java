@@ -163,7 +163,7 @@ public class TestJcmdDumpPathToGCRoots {
                 buildLeak();
                 System.gc();
                 System.gc();
-                File recording = new File("TestJcmdDumpPathToGCRoots" + r.getId() + ".jfr");
+                File recording = new File("TestJcmdDumpPathToGCRoots.jfr");
                 recording.delete();
                 JcmdHelper.jcmd("JFR.dump", "name=dodo", pathToGcRoots, "filename=" + recording.getAbsolutePath());
                 r.setSettings(Collections.emptyMap());

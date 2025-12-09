@@ -75,7 +75,7 @@ void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
 DFSClosure::DFSClosure(EdgeStore* edge_store, JFRBitSet* mark_bits, const Edge* start_edge)
   :_edge_store(edge_store), _mark_bits(mark_bits), _start_edge(start_edge),
   _max_depth(max_dfs_depth), _depth(0), _ignore_root_set(false),
-  _probe_stack(max_dfs_depth) {
+  _probe_stack(MIN2(256UL, max_dfs_depth)) {
 }
 
 #ifdef ASSERT
