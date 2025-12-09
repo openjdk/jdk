@@ -24,7 +24,12 @@
  */
 package jdk.jpackage.internal;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.nio.charset.Charset;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -33,8 +38,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.function.Predicate;
 import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.CommandLineFormat;
@@ -79,15 +82,6 @@ final class Executor {
         return this;
     }
 
-    Executor redirectErrorStream(boolean v) {
-        commandOutputControl.redirectErrorStream(v);
-        return this;
-    }
-
-    Executor redirectErrorStream() {
-        return redirectErrorStream(true);
-    }
-
     Executor storeStreamsInFiles(boolean v) {
         commandOutputControl.storeStreamsInFiles(v);
         return this;
@@ -116,8 +110,7 @@ final class Executor {
     }
 
     Executor timeout(long v, TimeUnit unit) {
-        timeout = Duration.of(v, unit.toChronoUnit());
-        return this;
+        return timeout(Duration.of(v, unit.toChronoUnit()));
     }
 
     Executor timeout(Duration v) {
@@ -152,15 +145,9 @@ final class Executor {
     }
 
     Result execute() throws IOException {
+        var coc = commandOutputControl.copy();
+
         final CommandOutputControl.Executable exec;
-
-        final CommandOutputControl coc;
-        if (quietCommand) {
-            coc = commandOutputControl;
-        } else {
-            coc = commandOutputControl.copy().saveOutput(true);
-        }
-
         if (processBuilder != null) {
             exec = coc.createExecutable(copyProcessBuilder());
         } else if (toolProvider != null) {
@@ -169,7 +156,20 @@ final class Executor {
             throw new IllegalStateException("No target to execute");
         }
 
-        if (!quietCommand) {
+        // Capture interleaved STDOUT & STDERR streams
+        final ByteArrayOutputStream sink;
+
+        if (dumpOutput()) {
+            sink = new ByteArrayOutputStream();
+            // Dump into the sink.
+            var ps = new PrintStream(sink);
+            // Redirect stderr in stdout.
+            coc.dumpOutput(true).dumpStdout(ps).dumpStderr(ps);
+        } else {
+            sink = null;
+        }
+
+        if (dumpOutput()) {
             Log.verbose(String.format("Running %s", CommandLineFormat.DEFAULT.apply(List.of(commandLine().getFirst()))));
         }
 
@@ -184,8 +184,8 @@ final class Executor {
             throw ExceptionBox.toUnchecked(ex);
         }
 
-        if (!quietCommand) {
-            log(result);
+        if (dumpOutput()) {
+            log(result, sink, coc.processOutputCharset());
         }
 
         return result;
@@ -219,38 +219,50 @@ final class Executor {
         return copy;
     }
 
-    private static void log(Result result) {
+    private boolean dumpOutput() {
+        return Log.isVerbose() && !quietCommand;
+    }
+
+    private static void log(Result result, ByteArrayOutputStream outputSink, Charset outputSinkCharset) throws IOException {
         Objects.requireNonNull(result);
-        if (Log.isVerbose()) {
-            Optional<Long> pid;
-            if (result.execSpec() instanceof ProcessSpec spec) {
-                pid = spec.pid();
-            } else {
-                pid = Optional.empty();
+        Objects.requireNonNull(outputSink);
+        Objects.requireNonNull(outputSinkCharset);
+
+        Optional<Long> pid;
+        if (result.execSpec() instanceof ProcessSpec spec) {
+            pid = spec.pid();
+        } else {
+            pid = Optional.empty();
+        }
+
+        var sb = new StringBuilder();
+        sb.append("Command");
+        pid.ifPresent(p -> {
+            sb.append(" [PID: ").append(p).append("]");
+        });
+        sb.append(":\n    ").append(result.execSpec());
+        Log.verbose(sb.toString());
+
+        var lines = toStringList(outputSink.toByteArray(), outputSinkCharset);
+        if (!lines.isEmpty()) {
+            sb.delete(0, sb.length());
+            sb.append("Output:");
+            for (String s : lines) {
+                sb.append("\n    ").append(s);
             }
-
-            var sb = new StringBuilder();
-            sb.append("Command");
-            pid.ifPresent(p -> {
-                sb.append(" [PID: ").append(p).append("]");
-            });
-            sb.append(":\n    ").append(result.execSpec());
             Log.verbose(sb.toString());
+        }
 
-            result.findContent().filter(Predicate.not(Collection::isEmpty)).ifPresent(output -> {
-                sb.delete(0, sb.length());
-                sb.append("Output:");
-                for (String s : output) {
-                    sb.append("\n    " + s);
-                }
-                Log.verbose(sb.toString());
-            });
+        result.exitCode().ifPresentOrElse(exitCode -> {
+            Log.verbose("Returned: " + exitCode + "\n");
+        }, () -> {
+            Log.verbose("Aborted: timed-out" + "\n");
+        });
+    }
 
-            result.exitCode().ifPresentOrElse(exitCode -> {
-                Log.verbose("Returned: " + exitCode + "\n");
-            }, () -> {
-                Log.verbose("Aborted: timed-out" + "\n");
-            });
+    private static List<String> toStringList(byte[] data, Charset charset) throws IOException {
+        try (var bufReader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(data), charset))) {
+            return bufReader.lines().toList();
         }
     }
 
