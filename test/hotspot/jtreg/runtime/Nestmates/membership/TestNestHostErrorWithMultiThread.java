@@ -41,7 +41,7 @@ import java.util.concurrent.CountDownLatch;
 
 public class TestNestHostErrorWithMultiThread {
 
-  public static void main(String args[]) {
+  public static void main(String args[]) throws Throwable {
     CountDownLatch runLatch = new CountDownLatch(1);
     CountDownLatch startLatch = new CountDownLatch(2);
 
@@ -62,7 +62,16 @@ public class TestNestHostErrorWithMultiThread {
       Throwable threadException = t1.exception() != null ? t1.exception()
                                                          : t2.exception();
       if (threadException != null) {
-        throw new Error("TestThread encountered unexpected exception", threadException);
+        Throwable t = threadException;
+        try {
+          throw new Error("TestThread encountered unexpected exception", t);
+        }
+        catch (OutOfMemoryError oome) {
+          // If we encounter an OOME trying to create the wrapper Error,
+          // then just re-throw the original exception so we report it and
+          // not the secondary OOME.
+          throw t;
+        }
       }
     } catch (InterruptedException e) {
       throw new Error("Unexpected interrupt");
