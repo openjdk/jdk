@@ -1493,14 +1493,6 @@ public final class DateTimeFormatter {
         this.resolverStyle = Objects.requireNonNull(resolverStyle, "resolverStyle");
         this.chrono = chrono;
         this.zone = zone;
-        if (resolverFields != null) {
-            for (TemporalField resolverField : resolverFields) {
-                if (!(resolverField instanceof ChronoField)) {
-                    onlyChronoField = false;
-                    break;
-                }
-            }
-        }
         this.onlyChronoField = onlyChronoField;
     }
 
