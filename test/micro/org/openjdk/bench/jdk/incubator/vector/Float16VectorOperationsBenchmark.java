@@ -33,7 +33,7 @@ import static java.lang.Float.*;
 @State(Scope.Thread)
 @Fork(jvmArgs = {"--add-modules=jdk.incubator.vector", "-Xbatch", "-XX:-TieredCompilation"})
 public class Float16VectorOperationsBenchmark {
-    @Param({"256", "512", "1024", "2048"})
+    @Param({"1024", "2057"})
     int vectorDim;
 
     int   [] rexp;
@@ -92,13 +92,16 @@ public class Float16VectorOperationsBenchmark {
         int i = 0;
         for (; i < HSPECIES.loopBound(vectorDim); i +=  HSPECIES.length()) {
             Float16Vector.fromArray(HSPECIES, vector1, i)
-                           .lanewise(VectorOperators.ADD,
-                                     Float16Vector.fromArray(HSPECIES, vector2, i))
-                           .intoArray(vectorRes, i);
+                         .lanewise(VectorOperators.ADD,
+                                   Float16Vector.fromArray(HSPECIES, vector2, i))
+                         .intoArray(vectorRes, i);
         }
-        for (; i < vectorDim; i++) {
-            vectorRes[i] = float16ToRawShortBits(add(shortBitsToFloat16(vector1[i]),
-                                                     shortBitsToFloat16(vector2[i])));
+        if (i < vectorDim) {
+            VectorMask<Float16> mask = HSPECIES.indexInRange(i, vectorDim);
+            Float16Vector.fromArray(HSPECIES, vector1, i, mask)
+                         .lanewise(VectorOperators.ADD,
+                                   Float16Vector.fromArray(HSPECIES, vector2, i))
+                         .intoArray(vectorRes, i, mask);
         }
     }
 
@@ -107,13 +110,16 @@ public class Float16VectorOperationsBenchmark {
         int i = 0;
         for (; i < HSPECIES.loopBound(vectorDim); i +=  HSPECIES.length()) {
             Float16Vector.fromArray(HSPECIES, vector1, i)
-                           .lanewise(VectorOperators.SUB,
-                                     Float16Vector.fromArray(HSPECIES, vector2, i))
-                           .intoArray(vectorRes, i);
+                         .lanewise(VectorOperators.SUB,
+                                   Float16Vector.fromArray(HSPECIES, vector2, i))
+                         .intoArray(vectorRes, i);
         }
-        for (; i < vectorDim; i++) {
-            vectorRes[i] = float16ToRawShortBits(subtract(shortBitsToFloat16(vector1[i]),
-                                                          shortBitsToFloat16(vector2[i])));
+        if (i < vectorDim) {
+            VectorMask<Float16> mask = HSPECIES.indexInRange(i, vectorDim);
+            Float16Vector.fromArray(HSPECIES, vector1, i)
+                         .lanewise(VectorOperators.SUB,
+                                   Float16Vector.fromArray(HSPECIES, vector2, i))
+                         .intoArray(vectorRes, i);
         }
     }
 
@@ -122,13 +128,16 @@ public class Float16VectorOperationsBenchmark {
         int i = 0;
         for (; i < HSPECIES.loopBound(vectorDim); i +=  HSPECIES.length()) {
             Float16Vector.fromArray(HSPECIES, vector1, i)
-                           .lanewise(VectorOperators.MUL,
-                                     Float16Vector.fromArray(HSPECIES, vector2, i))
-                           .intoArray(vectorRes, i);
+                         .lanewise(VectorOperators.MUL,
+                                   Float16Vector.fromArray(HSPECIES, vector2, i))
+                         .intoArray(vectorRes, i);
         }
-        for (; i < vectorDim; i++) {
-            vectorRes[i] = float16ToRawShortBits(multiply(shortBitsToFloat16(vector1[i]),
-                                                          shortBitsToFloat16(vector2[i])));
+        if (i < vectorDim) {
+            VectorMask<Float16> mask = HSPECIES.indexInRange(i, vectorDim);
+            Float16Vector.fromArray(HSPECIES, vector1, i, mask)
+                         .lanewise(VectorOperators.MUL,
+                                   Float16Vector.fromArray(HSPECIES, vector2, i, mask))
+                         .intoArray(vectorRes, i, mask);
         }
     }
 
@@ -137,13 +146,16 @@ public class Float16VectorOperationsBenchmark {
         int i = 0;
         for (; i < HSPECIES.loopBound(vectorDim); i +=  HSPECIES.length()) {
             Float16Vector.fromArray(HSPECIES, vector1, i)
-                           .lanewise(VectorOperators.DIV,
-                                     Float16Vector.fromArray(HSPECIES, vector2, i))
-                           .intoArray(vectorRes, i);
+                         .lanewise(VectorOperators.DIV,
+                                   Float16Vector.fromArray(HSPECIES, vector2, i))
+                         .intoArray(vectorRes, i);
         }
-        for (; i < vectorDim; i++) {
-            vectorRes[i] = float16ToRawShortBits(divide(shortBitsToFloat16(vector1[i]),
-                                                        shortBitsToFloat16(vector2[i])));
+        if (i < vectorDim) {
+            VectorMask<Float16> mask = HSPECIES.indexInRange(i, vectorDim);
+            Float16Vector.fromArray(HSPECIES, vector1, i, mask)
+                         .lanewise(VectorOperators.DIV,
+                                   Float16Vector.fromArray(HSPECIES, vector2, i, mask))
+                         .intoArray(vectorRes, i, mask);
         }
     }
 
@@ -152,15 +164,18 @@ public class Float16VectorOperationsBenchmark {
         int i = 0;
         for (; i < HSPECIES.loopBound(vectorDim); i +=  HSPECIES.length()) {
             Float16Vector.fromArray(HSPECIES, vector1, i)
-                           .lanewise(VectorOperators.FMA,
-                                     Float16Vector.fromArray(HSPECIES, vector2, i),
-                                     Float16Vector.fromArray(HSPECIES, vector3, i))
-                           .intoArray(vectorRes, i);
+                         .lanewise(VectorOperators.FMA,
+                                   Float16Vector.fromArray(HSPECIES, vector2, i),
+                                   Float16Vector.fromArray(HSPECIES, vector3, i))
+                         .intoArray(vectorRes, i);
         }
-        for (; i < vectorDim; i++) {
-            vectorRes[i] = float16ToRawShortBits(fma(shortBitsToFloat16(vector1[i]),
-                                                     shortBitsToFloat16(vector2[i]),
-                                                     shortBitsToFloat16(vector3[i])));
+        if (i < vectorDim) {
+            VectorMask<Float16> mask = HSPECIES.indexInRange(i, vectorDim);
+            Float16Vector.fromArray(HSPECIES, vector1, i, mask)
+                         .lanewise(VectorOperators.FMA,
+                                   Float16Vector.fromArray(HSPECIES, vector2, i, mask),
+                                   Float16Vector.fromArray(HSPECIES, vector3, i, mask))
+                         .intoArray(vectorRes, i, mask);
         }
     }
 
@@ -169,13 +184,16 @@ public class Float16VectorOperationsBenchmark {
         int i = 0;
         for (; i < HSPECIES.loopBound(vectorDim); i +=  HSPECIES.length()) {
             Float16Vector.fromArray(HSPECIES, vector1, i)
-                           .lanewise(VectorOperators.MAX,
-                                     Float16Vector.fromArray(HSPECIES, vector2, i))
-                           .intoArray(vectorRes, i);
+                         .lanewise(VectorOperators.MAX,
+                                   Float16Vector.fromArray(HSPECIES, vector2, i))
+                         .intoArray(vectorRes, i);
         }
-        for (; i < vectorDim; i++) {
-            vectorRes[i] = float16ToRawShortBits(max(shortBitsToFloat16(vector1[i]),
-                                                     shortBitsToFloat16(vector2[i])));
+        if (i < vectorDim) {
+            VectorMask<Float16> mask = HSPECIES.indexInRange(i, vectorDim);
+            Float16Vector.fromArray(HSPECIES, vector1, i, mask)
+                         .lanewise(VectorOperators.MAX,
+                                   Float16Vector.fromArray(HSPECIES, vector2, i, mask))
+                         .intoArray(vectorRes, i, mask);
         }
     }
 
@@ -184,13 +202,16 @@ public class Float16VectorOperationsBenchmark {
         int i = 0;
         for (; i < HSPECIES.loopBound(vectorDim); i +=  HSPECIES.length()) {
             Float16Vector.fromArray(HSPECIES, vector1, i)
-                           .lanewise(VectorOperators.MIN,
-                                     Float16Vector.fromArray(HSPECIES, vector2, i))
-                           .intoArray(vectorRes, i);
+                          .lanewise(VectorOperators.MIN,
+                                    Float16Vector.fromArray(HSPECIES, vector2, i))
+                          .intoArray(vectorRes, i);
         }
-        for (; i < vectorDim; i++) {
-            vectorRes[i] = float16ToRawShortBits(min(shortBitsToFloat16(vector1[i]),
-                                                     shortBitsToFloat16(vector2[i])));
+        if (i < vectorDim) {
+            VectorMask<Float16> mask = HSPECIES.indexInRange(i, vectorDim);
+            Float16Vector.fromArray(HSPECIES, vector1, i, mask)
+                         .lanewise(VectorOperators.MIN,
+                                   Float16Vector.fromArray(HSPECIES, vector2, i, mask))
+                         .intoArray(vectorRes, i, mask);
         }
     }
 
@@ -199,11 +220,14 @@ public class Float16VectorOperationsBenchmark {
         int i = 0;
         for (; i < HSPECIES.loopBound(vectorDim); i +=  HSPECIES.length()) {
             Float16Vector.fromArray(HSPECIES, vector1, i)
-                           .lanewise(VectorOperators.SQRT)
-                           .intoArray(vectorRes, i);
+                         .lanewise(VectorOperators.SQRT)
+                         .intoArray(vectorRes, i);
         }
-        for (; i < vectorDim; i++) {
-            vectorRes[i] = float16ToRawShortBits(sqrt(shortBitsToFloat16(vector1[i])));
+        if (i < vectorDim) {
+            VectorMask<Float16> mask = HSPECIES.indexInRange(i, vectorDim);
+            Float16Vector.fromArray(HSPECIES, vector1, i, mask)
+                         .lanewise(VectorOperators.SQRT)
+                         .intoArray(vectorRes, i, mask);
         }
     }
 
@@ -221,31 +245,31 @@ public class Float16VectorOperationsBenchmark {
             macResVec = vec1.lanewise(VectorOperators.MUL, vec2)
                             .lanewise(VectorOperators.ADD, macResVec);
             vector1SquareVec = vec1.lanewise(VectorOperators.MUL, vec1)
-                                .lanewise(VectorOperators.ADD, vector1SquareVec);
+                                   .lanewise(VectorOperators.ADD, vector1SquareVec);
             vector2SquareVec = vec2.lanewise(VectorOperators.MUL, vec2)
-                                .lanewise(VectorOperators.ADD, vector2SquareVec);
+                                   .lanewise(VectorOperators.ADD, vector2SquareVec);
         }
-        short macRes =  macResVec.lanewise(VectorOperators.DIV,
-                                           vector1SquareVec.lanewise(VectorOperators.MUL,
-                                                                  vector2SquareVec))
-                                 .reduceLanes(VectorOperators.ADD);
 
-        short vector1Square = floatToFloat16(0.0f);
-        short vector2Square = floatToFloat16(0.0f);
-        for (; i < vectorDim; i++) {
-            // Explicit add and multiply operation ensures double rounding.
-            Float16 vec1 = shortBitsToFloat16(vector1[i]);
-            Float16 vec2 = shortBitsToFloat16(vector2[i]);
-            macRes = float16ToRawShortBits(add(multiply(vec1, vec2),
-                                               shortBitsToFloat16(macRes)));
-            vector1Square = float16ToRawShortBits(add(multiply(vec1, vec1),
-                                                      shortBitsToFloat16(vector1Square)));
-            vector2Square = float16ToRawShortBits(add(multiply(vec2, vec2),
-                                                      shortBitsToFloat16(vector2Square)));
+        if (i < vectorDim) {
+            VectorMask<Float16> mask = HSPECIES.indexInRange(i, vectorDim);
+            Float16Vector vec1 = Float16Vector.fromArray(HSPECIES, vector1, i, mask);
+            Float16Vector vec2 = Float16Vector.fromArray(HSPECIES, vector2, i, mask);
+            macResVec = vec1.lanewise(VectorOperators.MUL, vec2)
+                            .lanewise(VectorOperators.ADD, macResVec);
+            vector1SquareVec = vec1.lanewise(VectorOperators.MUL, vec1)
+                                   .lanewise(VectorOperators.ADD, vector1SquareVec);
+            vector2SquareVec = vec2.lanewise(VectorOperators.MUL, vec2)
+                                   .lanewise(VectorOperators.ADD, vector2SquareVec);
+            return macResVec.lanewise(VectorOperators.DIV,
+                                      vector1SquareVec.lanewise(VectorOperators.MUL,
+                                                                vector2SquareVec))
+                            .reduceLanes(VectorOperators.ADD, mask);
+        } else {
+            return macResVec.lanewise(VectorOperators.DIV,
+                                      vector1SquareVec.lanewise(VectorOperators.MUL,
+                                                                vector2SquareVec))
+                            .reduceLanes(VectorOperators.ADD);
         }
-        return float16ToRawShortBits(divide(shortBitsToFloat16(macRes),
-                                            multiply(shortBitsToFloat16(vector1Square),
-                                                     shortBitsToFloat16(vector2Square))));
     }
 
     @Benchmark
@@ -263,27 +287,23 @@ public class Float16VectorOperationsBenchmark {
             vector1SquareVec = vec1.lanewise(VectorOperators.FMA, vec1, vector1SquareVec);
             vector2SquareVec = vec2.lanewise(VectorOperators.FMA, vec2, vector2SquareVec);
         }
-        short macRes =  macResVec.lanewise(VectorOperators.DIV,
-                                           vector1SquareVec.lanewise(VectorOperators.MUL,
-                                                                     vector2SquareVec))
-                                 .reduceLanes(VectorOperators.ADD);
-
-        short vector1Square = floatToFloat16(0.0f);
-        short vector2Square = floatToFloat16(0.0f);
-        for (; i < vectorDim; i++) {
-            // Explicit add and multiply operation ensures double rounding.
-            Float16 vec1 = shortBitsToFloat16(vector1[i]);
-            Float16 vec2 = shortBitsToFloat16(vector2[i]);
-            macRes = float16ToRawShortBits(fma(vec1, vec2,
-                                               shortBitsToFloat16(macRes)));
-            vector1Square = float16ToRawShortBits(fma(vec1, vec1,
-                                                      shortBitsToFloat16(vector1Square)));
-            vector2Square = float16ToRawShortBits(fma(vec2, vec2,
-                                                      shortBitsToFloat16(vector2Square)));
+        if (i < vectorDim) {
+            VectorMask<Float16> mask = HSPECIES.indexInRange(i, vectorDim);
+            Float16Vector vec1 = Float16Vector.fromArray(HSPECIES, vector1, i, mask);
+            Float16Vector vec2 = Float16Vector.fromArray(HSPECIES, vector2, i, mask);
+            macResVec = vec1.lanewise(VectorOperators.FMA, vec2, macResVec);
+            vector1SquareVec = vec1.lanewise(VectorOperators.FMA, vec1, vector1SquareVec);
+            vector2SquareVec = vec2.lanewise(VectorOperators.FMA, vec2, vector2SquareVec);
+            return macResVec.lanewise(VectorOperators.DIV,
+                                      vector1SquareVec.lanewise(VectorOperators.MUL,
+                                                                vector2SquareVec))
+                            .reduceLanes(VectorOperators.ADD, mask);
+        } else {
+            return macResVec.lanewise(VectorOperators.DIV,
+                                      vector1SquareVec.lanewise(VectorOperators.MUL,
+                                                                vector2SquareVec))
+                            .reduceLanes(VectorOperators.ADD);
         }
-        return float16ToRawShortBits(divide(shortBitsToFloat16(macRes),
-                                            multiply(shortBitsToFloat16(vector1Square),
-                                                     shortBitsToFloat16(vector2Square))));
     }
 
     @Benchmark
@@ -292,18 +312,22 @@ public class Float16VectorOperationsBenchmark {
         int i = 0;
         for (; i < HSPECIES.loopBound(vectorDim); i += HSPECIES.length()) {
             Float16Vector diffVec = Float16Vector.fromArray(HSPECIES, vector1, i)
-                                                     .lanewise(VectorOperators.SUB,
-                                                               Float16Vector.fromArray(HSPECIES, vector2, i));
+                                                 .lanewise(VectorOperators.SUB,
+                                                           Float16Vector.fromArray(HSPECIES, vector2, i));
             resVec = diffVec.lanewise(VectorOperators.FMA, diffVec, resVec);
         }
-        short distRes = resVec.lanewise(VectorOperators.SQRT)
-                              .reduceLanes(VectorOperators.ADD);
-        short squareRes = floatToFloat16(0.0f);
-        for (; i < vectorDim; i++) {
-            squareRes = float16ToRawShortBits(subtract(shortBitsToFloat16(vector1[i]), shortBitsToFloat16(vector2[i])));
-            distRes = float16ToRawShortBits(fma(shortBitsToFloat16(squareRes), shortBitsToFloat16(squareRes), shortBitsToFloat16(distRes)));
+        if (i < vectorDim) {
+            VectorMask<Float16> mask = HSPECIES.indexInRange(i, vectorDim);
+            Float16Vector diffVec = Float16Vector.fromArray(HSPECIES, vector1, i, mask)
+                                                 .lanewise(VectorOperators.SUB,
+                                                           Float16Vector.fromArray(HSPECIES, vector2, i, mask));
+            resVec = diffVec.lanewise(VectorOperators.FMA, diffVec, resVec);
+            return resVec.lanewise(VectorOperators.SQRT)
+                         .reduceLanes(VectorOperators.ADD, mask);
+        } else {
+            return resVec.lanewise(VectorOperators.SQRT)
+                         .reduceLanes(VectorOperators.ADD);
         }
-        return float16ToRawShortBits(sqrt(shortBitsToFloat16(distRes)));
     }
 
     @Benchmark
@@ -312,17 +336,19 @@ public class Float16VectorOperationsBenchmark {
         int i = 0;
         for (; i < HSPECIES.loopBound(vectorDim); i += HSPECIES.length()) {
             distResVec = Float16Vector.fromArray(HSPECIES, vector1, i)
-                                        .lanewise(VectorOperators.FMA,
-                                                  Float16Vector.fromArray(HSPECIES, vector2, i),
-                                                  distResVec);
+                                      .lanewise(VectorOperators.FMA,
+                                                Float16Vector.fromArray(HSPECIES, vector2, i),
+                                                distResVec);
         }
-        short distRes = distResVec.reduceLanes(VectorOperators.ADD);
-        for (; i < vectorDim; i++) {
-            vectorRes[i] = float16ToRawShortBits(multiply(shortBitsToFloat16(vector1[i]), shortBitsToFloat16(vector2[i])));
+        if (i < vectorDim) {
+            VectorMask<Float16> mask = HSPECIES.indexInRange(i, vectorDim);
+            distResVec = Float16Vector.fromArray(HSPECIES, vector1, i, mask)
+                                      .lanewise(VectorOperators.FMA,
+                                                Float16Vector.fromArray(HSPECIES, vector2, i, mask),
+                                                distResVec);
+            return distResVec.reduceLanes(VectorOperators.ADD, mask);
+        } else {
+            return distResVec.reduceLanes(VectorOperators.ADD);
         }
-        for (; i < vectorDim; i++) {
-            distRes = float16ToRawShortBits(add(shortBitsToFloat16(vectorRes[i]), shortBitsToFloat16(distRes)));
-        }
-        return distRes;
     }
 }

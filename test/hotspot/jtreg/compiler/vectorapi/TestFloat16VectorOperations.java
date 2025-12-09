@@ -46,7 +46,7 @@ public class TestFloat16VectorOperations {
     short[] input2;
     short[] input3;
     short[] output;
-    static final int LEN = 2048;
+    static final int LEN = 527;
     static short FP16_SCALAR = (short)0x7777;
 
     static final Float16 FP16_CONST = Float16.valueOf(1023.0f);
@@ -79,8 +79,6 @@ public class TestFloat16VectorOperations {
         input3 = new short[LEN];
         output = new short[LEN];
 
-        short min_value = float16ToRawShortBits(Float16.MIN_VALUE);
-        short max_value = float16ToRawShortBits(Float16.MAX_VALUE);
         Generator<Short> gen = G.float16s();
         for (int i = 0; i < LEN; ++i) {
             input1[i] = gen.next();
@@ -98,14 +96,16 @@ public class TestFloat16VectorOperations {
         int i = 0;
         for (; i < SPECIES.loopBound(LEN); i += SPECIES.length()) {
             Float16Vector.fromArray(SPECIES, input1, i)
-                           .lanewise(VectorOperators.ADD,
-                                     Float16Vector.fromArray(SPECIES, input2, i))
-                           .intoArray(output, i);
+                         .lanewise(VectorOperators.ADD,
+                                   Float16Vector.fromArray(SPECIES, input2, i))
+                         .intoArray(output, i);
         }
-        for (; i < LEN; i++) {
-            output[i] = float16ToRawShortBits(
-                            add(shortBitsToFloat16(input1[i]),
-                                shortBitsToFloat16(input2[i])));
+        if (i < LEN) {
+            VectorMask<Float16> mask = SPECIES.indexInRange(i, LEN);
+            Float16Vector.fromArray(SPECIES, input1, i, mask)
+                         .lanewise(VectorOperators.ADD,
+                                   Float16Vector.fromArray(SPECIES, input2, i, mask))
+                         .intoArray(output, i, mask);
         }
     }
 
@@ -127,14 +127,16 @@ public class TestFloat16VectorOperations {
         int i = 0;
         for (; i < SPECIES.loopBound(LEN); i += SPECIES.length()) {
             Float16Vector.fromArray(SPECIES, input1, i)
-                           .lanewise(VectorOperators.SUB,
-                                     Float16Vector.fromArray(SPECIES, input2, i))
-                           .intoArray(output, i);
+                         .lanewise(VectorOperators.SUB,
+                                   Float16Vector.fromArray(SPECIES, input2, i))
+                         .intoArray(output, i);
         }
-        for (; i < LEN; i++) {
-            output[i] = float16ToRawShortBits(
-                            subtract(shortBitsToFloat16(input1[i]),
-                                     shortBitsToFloat16(input2[i])));
+        if (i < LEN) {
+            VectorMask<Float16> mask = SPECIES.indexInRange(i, LEN);
+            Float16Vector.fromArray(SPECIES, input1, i, mask)
+                         .lanewise(VectorOperators.SUB,
+                                   Float16Vector.fromArray(SPECIES, input2, i, mask))
+                         .intoArray(output, i, mask);
         }
     }
 
@@ -156,14 +158,16 @@ public class TestFloat16VectorOperations {
         int i = 0;
         for (; i < SPECIES.loopBound(LEN); i += SPECIES.length()) {
             Float16Vector.fromArray(SPECIES, input1, i)
-                           .lanewise(VectorOperators.MUL,
-                                     Float16Vector.fromArray(SPECIES, input2, i))
-                           .intoArray(output, i);
+                         .lanewise(VectorOperators.MUL,
+                                   Float16Vector.fromArray(SPECIES, input2, i))
+                         .intoArray(output, i);
         }
-        for (; i < LEN; i++) {
-            output[i] = float16ToRawShortBits(
-                            multiply(shortBitsToFloat16(input1[i]),
-                                     shortBitsToFloat16(input2[i])));
+        if (i < LEN) {
+            VectorMask<Float16> mask = SPECIES.indexInRange(i, LEN);
+            Float16Vector.fromArray(SPECIES, input1, i, mask)
+                         .lanewise(VectorOperators.MUL,
+                                   Float16Vector.fromArray(SPECIES, input2, i, mask))
+                         .intoArray(output, i, mask);
         }
     }
 
@@ -184,14 +188,16 @@ public class TestFloat16VectorOperations {
         int i = 0;
         for (; i < SPECIES.loopBound(LEN); i += SPECIES.length()) {
             Float16Vector.fromArray(SPECIES, input1, i)
-                           .lanewise(VectorOperators.DIV,
-                                     Float16Vector.fromArray(SPECIES, input2, i))
-                           .intoArray(output, i);
+                         .lanewise(VectorOperators.DIV,
+                                   Float16Vector.fromArray(SPECIES, input2, i))
+                         .intoArray(output, i);
         }
-        for (; i < LEN; i++) {
-            output[i] = float16ToRawShortBits(
-                            divide(shortBitsToFloat16(input1[i]),
-                                   shortBitsToFloat16(input2[i])));
+        if (i < LEN) {
+            VectorMask<Float16> mask = SPECIES.indexInRange(i, LEN);
+            Float16Vector.fromArray(SPECIES, input1, i, mask)
+                         .lanewise(VectorOperators.DIV,
+                                   Float16Vector.fromArray(SPECIES, input2, i, mask))
+                         .intoArray(output, i, mask);
         }
     }
 
@@ -212,14 +218,16 @@ public class TestFloat16VectorOperations {
         int i = 0;
         for (; i < SPECIES.loopBound(LEN); i += SPECIES.length()) {
             Float16Vector.fromArray(SPECIES, input1, i)
-                           .lanewise(VectorOperators.MIN,
-                                     Float16Vector.fromArray(SPECIES, input2, i))
-                           .intoArray(output, i);
+                         .lanewise(VectorOperators.MIN,
+                                   Float16Vector.fromArray(SPECIES, input2, i))
+                         .intoArray(output, i);
         }
-        for (; i < LEN; i++) {
-            output[i] = float16ToRawShortBits(
-                            min(shortBitsToFloat16(input1[i]),
-                                shortBitsToFloat16(input2[i])));
+        if (i < LEN) {
+            VectorMask<Float16> mask = SPECIES.indexInRange(i, LEN);
+            Float16Vector.fromArray(SPECIES, input1, i, mask)
+                         .lanewise(VectorOperators.MIN,
+                                   Float16Vector.fromArray(SPECIES, input2, i, mask))
+                         .intoArray(output, i, mask);
         }
     }
 
@@ -240,14 +248,16 @@ public class TestFloat16VectorOperations {
         int i = 0;
         for (; i < SPECIES.loopBound(LEN); i += SPECIES.length()) {
             Float16Vector.fromArray(SPECIES, input1, i)
-                           .lanewise(VectorOperators.MAX,
-                                     Float16Vector.fromArray(SPECIES, input2, i))
-                           .intoArray(output, i);
+                         .lanewise(VectorOperators.MAX,
+                                   Float16Vector.fromArray(SPECIES, input2, i))
+                         .intoArray(output, i);
         }
-        for (; i < LEN; i++) {
-            output[i] = float16ToRawShortBits(
-                            max(shortBitsToFloat16(input1[i]),
-                                shortBitsToFloat16(input2[i])));
+        if (i < LEN) {
+            VectorMask<Float16> mask = SPECIES.indexInRange(i, LEN);
+            Float16Vector.fromArray(SPECIES, input1, i, mask)
+                         .lanewise(VectorOperators.MAX,
+                                   Float16Vector.fromArray(SPECIES, input2, i, mask))
+                         .intoArray(output, i, mask);
         }
     }
 
@@ -268,11 +278,14 @@ public class TestFloat16VectorOperations {
         int i = 0;
         for (; i < SPECIES.loopBound(LEN); i += SPECIES.length()) {
             Float16Vector.fromArray(SPECIES, input1, i)
-                           .lanewise(VectorOperators.SQRT)
-                           .intoArray(output, i);
+                         .lanewise(VectorOperators.SQRT)
+                         .intoArray(output, i);
         }
-        for (; i < LEN; i++) {
-            output[i] = float16ToRawShortBits(shortBitsToFloat16(input1[i]));
+        if (i < LEN) {
+            VectorMask<Float16> mask = SPECIES.indexInRange(i, LEN);
+            Float16Vector.fromArray(SPECIES, input1, i, mask)
+                         .lanewise(VectorOperators.SQRT)
+                         .intoArray(output, i, mask);
         }
     }
 
@@ -293,16 +306,18 @@ public class TestFloat16VectorOperations {
         int i = 0;
         for (; i < SPECIES.loopBound(LEN); i += SPECIES.length()) {
             Float16Vector.fromArray(SPECIES, input1, i)
-                           .lanewise(VectorOperators.FMA,
-                                     Float16Vector.fromArray(SPECIES, input2, i),
-                                     Float16Vector.fromArray(SPECIES, input3, i))
-                           .intoArray(output, i);
+                         .lanewise(VectorOperators.FMA,
+                                   Float16Vector.fromArray(SPECIES, input2, i),
+                                   Float16Vector.fromArray(SPECIES, input3, i))
+                         .intoArray(output, i);
         }
-        for (; i < LEN; i++) {
-            output[i] = float16ToRawShortBits(
-                            fma(shortBitsToFloat16(input1[i]),
-                                shortBitsToFloat16(input2[i]),
-                                shortBitsToFloat16(input3[i])));
+        if (i < LEN) {
+            VectorMask<Float16> mask = SPECIES.indexInRange(i, LEN);
+            Float16Vector.fromArray(SPECIES, input1, i, mask)
+                         .lanewise(VectorOperators.FMA,
+                                   Float16Vector.fromArray(SPECIES, input2, i, mask),
+                                   Float16Vector.fromArray(SPECIES, input3, i, mask))
+                         .intoArray(output, i, mask);
         }
     }
 
@@ -324,15 +339,18 @@ public class TestFloat16VectorOperations {
         int i = 0;
         for (; i < SPECIES.loopBound(LEN); i += SPECIES.length()) {
             Float16Vector.fromArray(SPECIES, input1, i)
-                           .lanewise(VectorOperators.FMA,
-                                     FP16_SCALAR,
-                                     floatToFloat16(3.0f))
-                           .intoArray(output, i);
+                         .lanewise(VectorOperators.FMA,
+                                   FP16_SCALAR,
+                                   floatToFloat16(3.0f))
+                         .intoArray(output, i);
         }
-        for (; i < LEN; i++) {
-            output[i] = float16ToRawShortBits(fma(shortBitsToFloat16(input1[i]),
-                                                  shortBitsToFloat16(FP16_SCALAR),
-                                                  shortBitsToFloat16(floatToFloat16(3.0f))));
+        if (i < LEN) {
+            VectorMask<Float16> mask = SPECIES.indexInRange(i, LEN);
+            Float16Vector.fromArray(SPECIES, input1, i, mask)
+                         .lanewise(VectorOperators.FMA,
+                                   FP16_SCALAR,
+                                   floatToFloat16(3.0f))
+                         .intoArray(output, i, mask);
         }
     }
 
@@ -356,15 +374,18 @@ public class TestFloat16VectorOperations {
         int i = 0;
         for (; i < SPECIES.loopBound(LEN); i += SPECIES.length()) {
             Float16Vector.fromArray(SPECIES, input1, i)
-                           .lanewise(VectorOperators.FMA,
-                                     Float16Vector.fromArray(SPECIES, input2, i),
-                                     input3)
-                           .intoArray(output, i);
+                         .lanewise(VectorOperators.FMA,
+                                   Float16Vector.fromArray(SPECIES, input2, i),
+                                   input3)
+                         .intoArray(output, i);
         }
-        for (; i < LEN; ++i) {
-            output[i] = float16ToRawShortBits(fma(shortBitsToFloat16(input1[i]),
-                                                  shortBitsToFloat16(input2[i]),
-                                                  shortBitsToFloat16(input3)));
+        if (i < LEN) {
+            VectorMask<Float16> mask = SPECIES.indexInRange(i, LEN);
+            Float16Vector.fromArray(SPECIES, input1, i, mask)
+                         .lanewise(VectorOperators.FMA,
+                                   Float16Vector.fromArray(SPECIES, input2, i, mask),
+                                   input3)
+                         .intoArray(output, i, mask);
         }
     }
 
@@ -390,15 +411,18 @@ public class TestFloat16VectorOperations {
         int i = 0;
         for (; i < SPECIES.loopBound(LEN); i += SPECIES.length()) {
             Float16Vector.broadcast(SPECIES, input1)
-                           .lanewise(VectorOperators.FMA,
-                                     input2,
-                                     input3)
-                           .intoArray(output, i);
+                         .lanewise(VectorOperators.FMA,
+                                   input2,
+                                   input3)
+                         .intoArray(output, i);
         }
-        for (; i < LEN; ++i) {
-            output[i] = float16ToRawShortBits(fma(shortBitsToFloat16(input1),
-                                                  shortBitsToFloat16(input2),
-                                                  shortBitsToFloat16(input3)));
+        if (i < LEN) {
+            VectorMask<Float16> mask = SPECIES.indexInRange(i, LEN);
+            Float16Vector.broadcast(SPECIES, input1)
+                         .lanewise(VectorOperators.FMA,
+                                   input2,
+                                   input3)
+                         .intoArray(output, i, mask);
         }
     }
 
@@ -423,15 +447,18 @@ public class TestFloat16VectorOperations {
         int i = 0;
         for (; i < SPECIES.loopBound(LEN); i += SPECIES.length()) {
             Float16Vector.fromArray(SPECIES, input1, i)
-                           .lanewise(VectorOperators.ADD,
-                                     float16ToRawShortBits(FP16_CONST))
-                           .intoArray(output, i);
+                         .lanewise(VectorOperators.ADD,
+                                   float16ToRawShortBits(FP16_CONST))
+                         .intoArray(output, i);
         }
-        for (; i < LEN; ++i) {
-            output[i] = float16ToRawShortBits(add(shortBitsToFloat16(input1[i]),
-                                                  FP16_CONST));
+        if (i < LEN) {
+            VectorMask<Float16> mask = SPECIES.indexInRange(i, LEN);
+            Float16Vector.fromArray(SPECIES, input1, i, mask)
+                         .lanewise(VectorOperators.ADD,
+                                   float16ToRawShortBits(FP16_CONST))
+                         .intoArray(output, i, mask);
         }
-     }
+    }
 
     @Check(test="vectorAddConstInputFloat16")
     void checkResultAddConstantInputFloat16() {
@@ -448,13 +475,16 @@ public class TestFloat16VectorOperations {
         int i = 0;
         for (; i < SPECIES.loopBound(LEN); i += SPECIES.length()) {
             Float16Vector.fromArray(SPECIES, input1, i)
-                           .lanewise(VectorOperators.SUB,
-                                     float16ToRawShortBits(FP16_CONST))
-                           .intoArray(output, i);
+                         .lanewise(VectorOperators.SUB,
+                                   float16ToRawShortBits(FP16_CONST))
+                         .intoArray(output, i);
         }
-        for (; i < LEN; ++i) {
-            output[i] = float16ToRawShortBits(subtract(shortBitsToFloat16(input1[i]),
-                                                       FP16_CONST));
+        if (i < LEN) {
+            VectorMask<Float16> mask = SPECIES.indexInRange(i, LEN);
+            Float16Vector.fromArray(SPECIES, input1, i, mask)
+                         .lanewise(VectorOperators.SUB,
+                                   float16ToRawShortBits(FP16_CONST))
+                         .intoArray(output, i, mask);
         }
     }
 
@@ -477,9 +507,12 @@ public class TestFloat16VectorOperations {
                                      float16ToRawShortBits(FP16_CONST))
                            .intoArray(output, i);
         }
-        for (; i < LEN; ++i) {
-            output[i] = float16ToRawShortBits(multiply(FP16_CONST,
-                                                       shortBitsToFloat16(input2[i])));
+        if (i < LEN) {
+            VectorMask<Float16> mask = SPECIES.indexInRange(i, LEN);
+            Float16Vector.fromArray(SPECIES, input2, i, mask)
+                         .lanewise(VectorOperators.MUL,
+                                   float16ToRawShortBits(FP16_CONST))
+                         .intoArray(output, i, mask);
         }
     }
 
@@ -498,13 +531,16 @@ public class TestFloat16VectorOperations {
         int i = 0;
         for (; i < SPECIES.loopBound(LEN); i += SPECIES.length()) {
             Float16Vector.fromArray(SPECIES, input2, i)
-                           .lanewise(VectorOperators.DIV,
-                                     float16ToRawShortBits(FP16_CONST))
-                           .intoArray(output, i);
+                         .lanewise(VectorOperators.DIV,
+                                   float16ToRawShortBits(FP16_CONST))
+                         .intoArray(output, i);
         }
-        for (; i < LEN; ++i) {
-            output[i] = float16ToRawShortBits(divide(shortBitsToFloat16(input2[i]),
-                                                     FP16_CONST));
+        if (i < LEN) {
+            VectorMask<Float16> mask = SPECIES.indexInRange(i, LEN);
+            Float16Vector.fromArray(SPECIES, input2, i, mask)
+                         .lanewise(VectorOperators.DIV,
+                                   float16ToRawShortBits(FP16_CONST))
+                         .intoArray(output, i, mask);
         }
     }
 
@@ -523,13 +559,16 @@ public class TestFloat16VectorOperations {
         int i = 0;
         for (; i < SPECIES.loopBound(LEN); i += SPECIES.length()) {
             Float16Vector.fromArray(SPECIES, input2, i)
-                           .lanewise(VectorOperators.MAX,
-                                     float16ToRawShortBits(FP16_CONST))
-                           .intoArray(output, i);
+                         .lanewise(VectorOperators.MAX,
+                                   float16ToRawShortBits(FP16_CONST))
+                         .intoArray(output, i);
         }
-        for (; i < LEN; ++i) {
-            output[i] = float16ToRawShortBits(max(FP16_CONST,
-                                                  shortBitsToFloat16(input2[i])));
+        if (i < LEN) {
+            VectorMask<Float16> mask = SPECIES.indexInRange(i, LEN);
+            Float16Vector.fromArray(SPECIES, input2, i, mask)
+                         .lanewise(VectorOperators.MAX,
+                                   float16ToRawShortBits(FP16_CONST))
+                         .intoArray(output, i, mask);
         }
     }
 
@@ -548,13 +587,16 @@ public class TestFloat16VectorOperations {
         int i = 0;
         for (; i < SPECIES.loopBound(LEN); i += SPECIES.length()) {
             Float16Vector.fromArray(SPECIES, input2, i)
-                           .lanewise(VectorOperators.MIN,
-                                     float16ToRawShortBits(FP16_CONST))
-                           .intoArray(output, i);
+                         .lanewise(VectorOperators.MIN,
+                                   float16ToRawShortBits(FP16_CONST))
+                         .intoArray(output, i);
         }
-        for (; i < LEN; ++i) {
-            output[i] = float16ToRawShortBits(min(FP16_CONST,
-                                                  shortBitsToFloat16(input2[i])));
+        if (i < LEN) {
+            VectorMask<Float16> mask = SPECIES.indexInRange(i, LEN);
+            Float16Vector.fromArray(SPECIES, input2, i, mask)
+                         .lanewise(VectorOperators.MIN,
+                                   float16ToRawShortBits(FP16_CONST))
+                         .intoArray(output, i, mask);
         }
     }
 

@@ -338,7 +338,6 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
   if (opr          == nullptr || !opr->is_con() ||
       laneType     == nullptr || !laneType->is_con() ||
       vector_klass == nullptr || vector_klass->const_oop() == nullptr ||
-      laneType     == nullptr || !laneType->is_con() ||
       vlen         == nullptr || !vlen->is_con()) {
     log_if_needed("  ** missing constant: opr=%s vclass=%s etype=%s vlen=%s",
                     NodeClassNames[argument(0)->Opcode()],
