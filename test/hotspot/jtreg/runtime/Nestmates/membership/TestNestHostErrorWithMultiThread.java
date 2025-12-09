@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,10 +45,8 @@ public class TestNestHostErrorWithMultiThread {
     CountDownLatch runLatch = new CountDownLatch(1);
     CountDownLatch startLatch = new CountDownLatch(2);
 
-    Runnable test = new Test(runLatch, startLatch);
-
-    Thread t1 = new Thread(test);
-    Thread t2 = new Thread(test);
+    TestThread t1 = new TestThread(runLatch, startLatch);
+    TestThread t2 = new TestThread(runLatch, startLatch);
 
     t1.start();
     t2.start();
@@ -59,39 +58,56 @@ public class TestNestHostErrorWithMultiThread {
 
       t1.join();
       t2.join();
+
+      Throwable threadException = t1.exception() != null ? t1.exception()
+                                                         : t2.exception();
+      if (threadException != null) {
+        throw new Error("TestThread encountered unexpected exception", threadException);
+      }
     } catch (InterruptedException e) {
       throw new Error("Unexpected interrupt");
     }
   }
 
-  static class Test implements Runnable {
+  static class TestThread extends Thread {
     private CountDownLatch runLatch;
     private CountDownLatch startLatch;
+    private Throwable exception;
 
-    Test(CountDownLatch runLatch, CountDownLatch startLatch) {
+    Throwable exception() {
+      return exception;
+    }
+
+    TestThread(CountDownLatch runLatch, CountDownLatch startLatch) {
       this.runLatch = runLatch;
       this.startLatch = startLatch;
     }
 
     @Override
     public void run() {
+      // Don't allow any exceptions to escape - the main thread will
+      // report them.
       try {
-        startLatch.countDown();
-        // Try to have all threads trigger the nesthost check at the same time
-        runLatch.await();
-        HostNoNestMember h = new HostNoNestMember();
-        h.test();
-        throw new Error("IllegalAccessError was not thrown as expected");
-      } catch (IllegalAccessError expected) {
-        String msg = "current type is not listed as a nest member";
-        if (!expected.getMessage().contains(msg)) {
-          throw new Error("Wrong " + expected.getClass().getSimpleName() +": \"" +
-                          expected.getMessage() + "\" does not contain \"" +
-                          msg + "\"", expected);
+        try {
+          startLatch.countDown();
+          // Try to have all threads trigger the nesthost check at the same time
+          runLatch.await();
+          HostNoNestMember h = new HostNoNestMember();
+          h.test();
+          throw new Error("IllegalAccessError was not thrown as expected");
+        } catch (IllegalAccessError expected) {
+          String msg = "current type is not listed as a nest member";
+          if (!expected.getMessage().contains(msg)) {
+            throw new Error("Wrong " + expected.getClass().getSimpleName() +": \"" +
+                            expected.getMessage() + "\" does not contain \"" +
+                            msg + "\"", expected);
+          }
+          System.out.println("OK - got expected exception: " + expected);
+        } catch (InterruptedException e) {
+          throw new Error("Unexpected interrupt");
         }
-        System.out.println("OK - got expected exception: " + expected);
-      } catch (InterruptedException e) {
-        throw new Error("Unexpected interrupt");
+      } catch (Throwable t) {
+        exception = t;
       }
     }
   }
