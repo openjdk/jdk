@@ -94,9 +94,6 @@ void WorkerThreads::initialize_workers() {
 }
 
 WorkerThread* WorkerThreads::create_worker(uint name_suffix) {
-  if (is_init_completed() && InjectGCWorkerCreationFailure) {
-    return nullptr;
-  }
 
   WorkerThread* const worker = new WorkerThread(_name, name_suffix, &_dispatcher);
 
@@ -116,6 +113,13 @@ uint WorkerThreads::set_active_workers(uint num_workers) {
   assert(num_workers > 0 && num_workers <= _max_workers,
          "Invalid number of active workers %u (should be 1-%u)",
          num_workers, _max_workers);
+
+  if (_created_workers > 0 && InjectGCWorkerCreationFailure) {
+    assert(is_init_completed(), "Would be interesting to see if this ever happens");
+    log_error(gc, task)("Failed to create worker thread (InjectGCWorkerCreationFailure)");
+    _active_workers = MIN2(_created_workers, num_workers);
+    return _active_workers;
+  }
 
   while (_created_workers < num_workers) {
     WorkerThread* const worker = create_worker(_created_workers);
