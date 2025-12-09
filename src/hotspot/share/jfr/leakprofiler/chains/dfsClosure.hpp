@@ -29,6 +29,7 @@
 #include "jfr/leakprofiler/utilities/unifiedOopRef.hpp"
 #include "memory/iterator.hpp"
 #include "nmt/memTag.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/stack.hpp"
 
 class Edge;
@@ -53,6 +54,7 @@ class DFSClosure : public BasicOopIterateClosure {
   Stack<ProbeStackItem, mtTracing> _probe_stack;
 
   DFSClosure(EdgeStore* edge_store, JFRBitSet* mark_bits, const Edge* start_edge);
+  DEBUG_ONLY(~DFSClosure());
 
   void add_chain();
   void drain_probe_stack();

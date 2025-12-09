@@ -35,6 +35,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/stack.inline.hpp"
 
 UnifiedOopRef DFSClosure::_reference_stack[max_dfs_depth];
@@ -73,16 +74,21 @@ void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
 
 DFSClosure::DFSClosure(EdgeStore* edge_store, JFRBitSet* mark_bits, const Edge* start_edge)
   :_edge_store(edge_store), _mark_bits(mark_bits), _start_edge(start_edge),
-  _max_depth(max_dfs_depth), _depth(0), _ignore_root_set(false) {
+  _max_depth(max_dfs_depth), _depth(0), _ignore_root_set(false),
+  _probe_stack(max_dfs_depth) {
 }
+
+#ifdef ASSERT
+DFSClosure::~DFSClosure() {
+  assert(_probe_stack.is_empty() || GranularTimer::is_finished(),
+         "Should have drained the probe stack");
+}
+#endif // ASSERT
 
 void DFSClosure::drain_probe_stack() {
 
-  while (!_probe_stack.is_empty()) {
-
-    if (GranularTimer::is_finished()) {
-      return;
-    }
+  while (!_probe_stack.is_empty() &&
+         !GranularTimer::is_finished()) {
 
     const ProbeStackItem psi = _probe_stack.pop();
 
@@ -100,7 +106,7 @@ void DFSClosure::drain_probe_stack() {
       _reference_stack[_depth] = reference;
     } else {
       if (_mark_bits->is_marked(pointee)) {
-        return;
+        continue;
       }
       _mark_bits->mark_obj(pointee);
       _reference_stack[_depth] = reference;
