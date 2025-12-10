@@ -287,8 +287,6 @@ public:
 private:
   State _state;
 
-  static const size_t FRACTIONAL_DENOMINATOR = 65536;
-
   // During initialization of the JVM, we search for the correct old-gen size by initially performing old-gen
   // collection when old-gen usage is 50% more (INITIAL_PERCENT_GROWTH_BEFORE_COMPACTION) than the initial old-gen size
   // estimate (16% of heap).  With each successive old-gen collection, we divide the growth trigger by two, but
