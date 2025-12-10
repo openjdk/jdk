@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8279339
+ * @bug 8279339 8371718
  * @summary Exercise InputStream/OutputStream returned by Channels.newXXXStream
  *    when channel is a SocketChannel
  * @run testng SocketChannelStreams
