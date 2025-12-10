@@ -585,29 +585,12 @@ class JvmtiSampledObjectAllocEventCollector : public JvmtiObjectAllocEventCollec
   static bool object_alloc_is_safe_to_sample() NOT_JVMTI_RETURN_(false);
 };
 
-// Marker class to disable the posting of VMObjectAlloc events
-// within its scope.
-//
-// Usage :-
-//
-// {
-//   NoJvmtiVMObjectAllocMark njm;
-//   :
-//   // VMObjAlloc event will not be posted
-//   JvmtiExport::vm_object_alloc_event_collector(obj);
-//   :
-// }
-
-class NoJvmtiVMObjectAllocMark : public StackObj {
- private:
-  // enclosing collector if enabled, null otherwise
-  JvmtiVMObjectAllocEventCollector *_collector;
-
-  bool was_enabled()    { return _collector != nullptr; }
+// Marker class to temporary disable posting of jvmti events.
+class NoJvmtiEventsMark : public StackObj {
 
  public:
-  NoJvmtiVMObjectAllocMark() NOT_JVMTI_RETURN;
-  ~NoJvmtiVMObjectAllocMark() NOT_JVMTI_RETURN;
+  NoJvmtiEventsMark() NOT_JVMTI_RETURN;
+  ~NoJvmtiEventsMark() NOT_JVMTI_RETURN;
 };
 
 

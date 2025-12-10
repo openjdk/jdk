@@ -187,7 +187,7 @@ ifelse($1$3,PAcq,INDENT(predicate(needs_acquiring_load_exclusive(n) && (n->as_Lo
        $3,Acq,INDENT(predicate(needs_acquiring_load_exclusive(n));),
        `dnl')
   match(Set oldval (GetAndSet$1 mem newval));
-  ins_cost(`'ifelse($4,Acq,,2*)VOLATILE_REF_COST);
+  ins_cost(`'ifelse($3,Acq,,2*)VOLATILE_REF_COST);
   format %{ "atomic_xchg$2`'ifelse($3,Acq,_acq)  $oldval, $newval, [$mem]" %}
   ins_encode %{
     __ atomic_xchg`'ifelse($3,Acq,al)$2($oldval$$Register, $newval$$Register, as_Register($mem$$base));
