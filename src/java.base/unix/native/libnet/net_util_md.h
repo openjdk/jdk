@@ -86,6 +86,6 @@ void NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
  * start timeval plus timeout milliseconds.
  * Return 0 otherwise.
  */
-extern int timerMillisExpired(struct timeval *start, int timeMillis);
+extern int timerMillisExpired(struct timeval *start, struct timeval *end, int timeMillis);
 
 #endif /* NET_UTILS_MD_H */

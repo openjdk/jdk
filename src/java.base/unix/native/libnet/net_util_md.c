@@ -650,26 +650,29 @@ NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout)
 #define ONE_MILLION 1000000
 
 /**
- * Return 1 if the current time is past
- * start timeval plus timeout milliseconds.
- * Return 0 otherwise.
+ * Return 0 (not expired) if the start timeval plus timeout 
+ * is past end timeval
+ * Return 1 (expired) if end is after start plus timeout
  */
-int timerMillisExpired(struct timeval *start, int timeMillis) {
+JNIEXPORT int JNICALL
+timerMillisExpired(struct timeval *start, struct timeval *end, int timeMillis) {
     int timeoutSec = timeMillis / 1000;
     int timeoutUsec = (timeMillis % 1000) * 1000;
     struct timeval tv0 = *start;
-    struct timeval tv1 = { 0, 0 };
-    gettimeofday(&tv1, NULL);
-    if (tv0.tv_usec + timeoutUsec >= ONE_MILLION) {
+    struct timeval tv1 = *end;
+    tv0.tv_sec += timeoutSec;
+    tv0.tv_usec += timeoutUsec;
+    if (tv0.tv_usec >= ONE_MILLION) {
         tv0.tv_sec ++;
         tv0.tv_usec -= ONE_MILLION;
     }
     /* Now check if tv1 is past tv0 */
     if (tv0.tv_sec < tv1.tv_sec) {
-        return 0; /* Not expired */
+        return 1; /* expired */
+    } else if (tv0.tv_sec == tv1.tv_sec) {
+        if (tv0.tv_usec < tv1.tv_usec) {
+            return 1; /* expired */
+        }
     }
-    if (tv0.tv_usec < tv1.tv_usec) {
-        return 0; /* Not expired */
-    }
-    return 1; /* Expired */
+    return 0; /* Expired */
 }

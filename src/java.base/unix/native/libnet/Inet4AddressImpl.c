@@ -401,7 +401,9 @@ ping4(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
         while (1) {
             n = sendto(fd, sendbuf, plen, 0, &sa->sa, sizeof(struct sockaddr_in));
             if (n < 0 && errno == EINTR) {
-                if (timerMillisExpired(&tv, timeout)) {
+		struct timeval now = {0, 0};
+		gettimeofday(&now, NULL);
+                if (timerMillisExpired(&tv, &now, timeout)) {
                     NET_ThrowNew(env, errno, "Can't send ICMP packet");
                     close(fd);
                     return JNI_FALSE;
