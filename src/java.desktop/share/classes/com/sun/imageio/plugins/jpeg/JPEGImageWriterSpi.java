@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,14 +63,17 @@ public class JPEGImageWriterSpi extends ImageWriterSpi {
               );
     }
 
+    @Override
     public String getDescription(Locale locale) {
         return "Standard JPEG Image Writer";
     }
 
+    @Override
     public boolean isFormatLossless() {
         return false;
     }
 
+    @Override
     public boolean canEncodeImage(ImageTypeSpecifier type) {
         SampleModel sampleModel = type.getSampleModel();
         ColorModel cm = type.getColorModel();
@@ -95,6 +98,7 @@ public class JPEGImageWriterSpi extends ImageWriterSpi {
         return true;
     }
 
+    @Override
     public ImageWriter createWriterInstance(Object extension)
         throws IIOException {
         return new JPEGImageWriter(this);

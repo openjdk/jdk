@@ -873,7 +873,7 @@ define SetupRunJtregTestBody
     $1_JTREG_BASIC_OPTIONS += -testThreadFactoryPath:$$(JTREG_TEST_THREAD_FACTORY_JAR)
     $1_JTREG_BASIC_OPTIONS += -testThreadFactory:$$(JTREG_TEST_THREAD_FACTORY)
     $1_JTREG_BASIC_OPTIONS += $$(addprefix $$(JTREG_PROBLEM_LIST_PREFIX), $$(wildcard \
-	$$(addprefix $$($1_TEST_ROOT)/, ProblemList-$$(JTREG_TEST_THREAD_FACTORY).txt) \
+        $$(addprefix $$($1_TEST_ROOT)/, ProblemList-$$(JTREG_TEST_THREAD_FACTORY).txt) \
     ))
   endif
 
@@ -881,8 +881,8 @@ define SetupRunJtregTestBody
     AGENT := $$(LIBRARY_PREFIX)JvmtiStressAgent$$(SHARED_LIBRARY_SUFFIX)=$$(JTREG_JVMTI_STRESS_AGENT)
     $1_JTREG_BASIC_OPTIONS += -javaoption:'-agentpath:$(TEST_IMAGE_DIR)/hotspot/jtreg/native/$$(AGENT)'
     $1_JTREG_BASIC_OPTIONS += $$(addprefix $$(JTREG_PROBLEM_LIST_PREFIX), $$(wildcard \
-	    $$(addprefix $$($1_TEST_ROOT)/, ProblemList-jvmti-stress-agent.txt) \
-        ))
+        $$(addprefix $$($1_TEST_ROOT)/, ProblemList-jvmti-stress-agent.txt) \
+    ))
   endif
 
 
@@ -1092,7 +1092,7 @@ define SetupRunJtregTestBody
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR) \
 	    $$($1_TEST_TMP_DIR))
 	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/jtreg, \
-            $$(COV_ENVIRONMENT) $$($1_COMMAND_LINE) \
+	    $$(COV_ENVIRONMENT) $$($1_COMMAND_LINE) \
 	)
 
   $1_RESULT_FILE := $$($1_TEST_RESULTS_DIR)/text/stats.txt
@@ -1102,11 +1102,11 @@ define SetupRunJtregTestBody
 	$$(call LogWarn, Test report is stored in $$(strip \
 	    $$(subst $$(TOPDIR)/, , $$($1_TEST_RESULTS_DIR))))
 
-	# Read jtreg documentation to learn on the test stats categories:
-	# https://github.com/openjdk/jtreg/blob/master/src/share/doc/javatest/regtest/faq.md#what-do-all-those-numbers-in-the-test-results-line-mean
-	# In jtreg, "skipped:" category accounts for tests that threw jtreg.SkippedException at runtime.
-	# At the same time these tests contribute to "passed:" tests.
-	# In here we don't want that and so we substract number of "skipped:" from "passed:".
+        # Read jtreg documentation to learn on the test stats categories:
+        # https://github.com/openjdk/jtreg/blob/master/src/share/doc/javatest/regtest/faq.md#what-do-all-those-numbers-in-the-test-results-line-mean
+        # In jtreg, "skipped:" category accounts for tests that threw jtreg.SkippedException at runtime.
+        # At the same time these tests contribute to "passed:" tests.
+        # In here we don't want that and so we substract number of "skipped:" from "passed:".
 
 	$$(if $$(wildcard $$($1_RESULT_FILE)), \
 	  $$(eval $1_PASSED_AND_RUNTIME_SKIPPED := $$(shell $$(AWK) '{ gsub(/[,;]/, ""); \

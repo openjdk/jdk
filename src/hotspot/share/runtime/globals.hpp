@@ -1369,6 +1369,7 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(int, SpecTrapLimitExtraEntries,  3, EXPERIMENTAL,                 \
           "Extra method data trap entries for speculation")                 \
+          range(0, 100)                                                     \
                                                                             \
   product(double, InlineFrequencyRatio, 0.25, DIAGNOSTIC,                   \
           "Ratio of call site execution to caller method invocation")       \
@@ -1671,8 +1672,9 @@ const int ObjectAlignmentInBytes = 8;
           "putback")                                                        \
                                                                             \
   /* new oopmap storage allocation */                                       \
-  develop(intx, MinOopMapAllocation,     8,                                 \
+  develop(int, MinOopMapAllocation, 8,                                      \
           "Minimum number of OopMap entries in an OopMapSet")               \
+          range(0, max_jint)                                                \
                                                                             \
   /* recompilation */                                                       \
   product_pd(intx, CompileThreshold,                                        \
