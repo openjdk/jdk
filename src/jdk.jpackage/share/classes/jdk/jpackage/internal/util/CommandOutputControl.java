@@ -25,7 +25,6 @@ package jdk.jpackage.internal.util;
 import static java.util.stream.Collectors.joining;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -48,16 +47,17 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
-import java.util.function.UnaryOperator;
 import java.util.spi.ToolProvider;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.internal.util.function.ThrowingSupplier;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
 
 /**
@@ -589,38 +589,44 @@ public final class CommandOutputControl {
 
         configureProcessBuilder(pb);
 
+        final CachingPrintStream stdoutCache = outputStreamsControl.stdout().buildCachingPrintStream(System.out).create();
+        final CachingPrintStream stderrCache;
+        if (redirectErrorStream) {
+            stderrCache = outputStreamsControl.stderr().buildCachingPrintStream(System.out).create();
+        } else {
+            stderrCache = outputStreamsControl.stderr().buildCachingPrintStream(System.err).create();
+        }
+
         var process = pb.start();
 
         Optional.ofNullable(processNotifier).ifPresent(c -> {
             c.accept(process);
         });
 
-        UnaryOperator<InputStream> gobbler = in -> {
-            var buf = new ByteArrayOutputStream();
-            try (in) {
-                in.transferTo(buf);
+        BiConsumer<InputStream, PrintStream> gobbler = (in, ps) -> {
+            try (var bufReader = new BufferedReader(new InputStreamReader(in, charset))) {
+                bufReader.lines().forEach(ps::println);
             } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
             }
-            return new ByteArrayInputStream(buf.toByteArray());
         };
 
         // Start fetching process output streams.
         // Do it before waiting for the process termination to avoid deadlocks.
 
-        final Optional<CompletableFuture<InputStream>> stdoutGobbler;
+        final Optional<CompletableFuture<Void>> stdoutGobbler;
         if (mustReadOutputStream(pb.redirectOutput())) {
-            stdoutGobbler = Optional.of(CompletableFuture.supplyAsync(() -> {
-                return gobbler.apply(process.getInputStream());
+            stdoutGobbler = Optional.of(CompletableFuture.runAsync(() -> {
+                gobbler.accept(process.getInputStream(), stdoutCache.ps());
             }));
         } else {
             stdoutGobbler = Optional.empty();
         }
 
-        final Optional<CompletableFuture<InputStream>> stderrGobbler;
+        final Optional<CompletableFuture<Void>> stderrGobbler;
         if (!pb.redirectErrorStream() && mustReadOutputStream(pb.redirectError())) {
-            stderrGobbler = Optional.of(CompletableFuture.supplyAsync(() -> {
-                return gobbler.apply(process.getErrorStream());
+            stderrGobbler = Optional.of(CompletableFuture.runAsync(() -> {
+                gobbler.accept(process.getErrorStream(), stderrCache.ps());
             }));
         } else {
             stderrGobbler = Optional.empty();
@@ -638,20 +644,35 @@ public final class CommandOutputControl {
 
         CommandOutput output;
         try {
+            ThrowingSupplier<CommandOutput, IOException> createCommandOutput = () -> {
+                var stdout = read(outputStreamsControl.stdout(), stdoutCache);
+                var stderr = read(outputStreamsControl.stderr(), stderrCache);
+
+                return combine(stdout, redirectErrorStream ? Optional.empty() : stderr);
+            };
+
             if (storeStreamsInFiles) {
                 var stdoutStorage = streamFileSink(pb.redirectOutput());
                 var stderrStorage = streamFileSink(pb.redirectError());
 
-                Function<Path, BufferedReader> toReader = path -> {
+                Function<Path, InputStream> toInputStream = path -> {
                     try {
-                        return Files.newBufferedReader(path, charset);
+                        return Files.newInputStream(path);
                     } catch (IOException ex) {
                         throw new UncheckedIOException(ex);
                     }
                 };
 
+                stdoutStorage.map(toInputStream).ifPresent(in -> {
+                    gobbler.accept(in, stdoutCache.ps());
+                });
+
+                stderrStorage.map(toInputStream).ifPresent(in -> {
+                    gobbler.accept(in, stderrCache.ps());
+                });
+
                 try {
-                    output = processCapturedProcessOutput(stdoutStorage.map(toReader), stderrStorage.map(toReader));
+                    output = createCommandOutput.get();
                 } finally {
                     Consumer<Path> silentDeleter = path -> {
                         suppressIOException(Files::delete, path);
@@ -661,17 +682,10 @@ public final class CommandOutputControl {
                     stderrStorage.ifPresent(silentDeleter);
                 }
             } else {
-                Function<CompletableFuture<InputStream>, Optional<BufferedReader>> toReader = streamGobbler -> {
-                    try {
-                        return joinProcessStreamGobbler(streamGobbler).map(in -> {
-                            return new BufferedReader(new InputStreamReader(in, charset));
-                        });
-                    } catch (IOException ex) {
-                        throw new UncheckedIOException(ex);
-                    }
-                };
+                stdoutGobbler.ifPresent(CommandOutputControl::joinProcessStreamGobbler);
+                stderrGobbler.ifPresent(CommandOutputControl::joinProcessStreamGobbler);
 
-                output = processCapturedProcessOutput(stdoutGobbler.flatMap(toReader), stderrGobbler.flatMap(toReader));
+                output = createCommandOutput.get();
             }
         } catch (UncheckedIOException ex) {
             throw ex.getCause();
@@ -681,11 +695,17 @@ public final class CommandOutputControl {
     }
 
     private Result execute(ToolProvider tp, String... args) throws IOException {
-        final var tpStreamConfig = ToolProviderStreamConfig.create(outputStreamsControl, redirectErrorStream);
+        CachingPrintStream stdoutCache = outputStreamsControl.stdout().buildCachingPrintStream(System.out).create();
+        CachingPrintStream stderrCache;
+        if (redirectErrorStream) {
+            stderrCache = outputStreamsControl.stderr().buildCachingPrintStream(System.out).create();
+        } else {
+            stderrCache = outputStreamsControl.stderr().buildCachingPrintStream(System.err).create();
+        }
 
         final int exitCode;
-        var tpStdout = tpStreamConfig.out().ps();
-        var tpStderr = tpStreamConfig.err().ps();
+        var tpStdout = stdoutCache.ps();
+        var tpStderr = stderrCache.ps();
         try {
             exitCode = tp.run(tpStdout, tpStderr, args);
         } finally {
@@ -693,10 +713,10 @@ public final class CommandOutputControl {
             suppressIOException(tpStderr::flush);
         }
 
-        var stdout = read(outputStreamsControl.stdout(), tpStreamConfig.out());
-        var stderr = read(outputStreamsControl.stderr(), tpStreamConfig.err());
+        var stdout = read(outputStreamsControl.stdout(), stdoutCache);
+        var stderr = read(outputStreamsControl.stderr(), stderrCache);
 
-        final var output = combine(stdout, redirectErrorStream ? Optional.empty() : stderr);
+        var output = combine(stdout, redirectErrorStream ? Optional.empty() : stderr);
 
         return new Result(Optional.of(exitCode), output, new ToolProviderSpec(tp.name(), List.of(args)));
     }
@@ -752,46 +772,6 @@ public final class CommandOutputControl {
         }
     }
 
-    private CommandOutput processCapturedProcessOutput(
-            Optional<? extends BufferedReader> stdoutReader,
-            Optional<? extends BufferedReader> stderrReader) throws IOException {
-
-        Objects.requireNonNull(stdoutReader);
-        Objects.requireNonNull(stderrReader);
-
-        final Optional<List<String>> stdout;
-        if (stdoutReader.isPresent()) {
-            try (final var reader = stdoutReader.get()) {
-                stdout = processProcessStream(outputStreamsControl.stdout(), reader, System.out);
-            }
-        } else if (outputStreamsControl.stdout().save()) {
-            stdout = Optional.of(List.of());
-        } else {
-            stdout = Optional.empty();
-        }
-
-        final Optional<List<String>> stderr;
-        if (stderrReader.isPresent()) {
-            var outputControl = outputStreamsControl.stderr();
-            PrintStream dumpStream;
-            if (replaceStdoutWithStderr() && outputControl.dump()) {
-                dumpStream = System.out;
-            } else {
-                dumpStream = System.err;
-            }
-            try (final var reader = stderrReader.get()) {
-                stderr = processProcessStream(outputControl, reader, dumpStream);
-            }
-        } else if (outputStreamsControl.stderr().save()) {
-            stderr = Optional.of(List.of());
-        } else {
-            stderr = Optional.empty();
-        }
-
-        final var output = combine(stdout, redirectErrorStream ? Optional.empty() : stderr);
-        return output;
-    }
-
     private boolean redirectErrorStream() {
         return redirectErrorStream && !outputStreamsControl.stderr().discard();
     }
@@ -800,19 +780,18 @@ public final class CommandOutputControl {
         return redirectErrorStream() && outputStreamsControl.stdout().discard();
     }
 
-    private static Optional<? extends InputStream> joinProcessStreamGobbler(
-            CompletableFuture<? extends InputStream> streamGobbler) throws IOException {
+    private static void joinProcessStreamGobbler(CompletableFuture<Void> streamGobbler) {
         try {
-            return Optional.of(streamGobbler.join());
+            streamGobbler.join();
         } catch (CancellationException ex) {
-            return Optional.empty();
+            return;
         } catch (CompletionException ex) {
             switch (ExceptionBox.unbox(ex.getCause())) {
                 case IOException cause -> {
-                    throw cause;
+                    throw new UncheckedIOException(cause);
                 }
                 case UncheckedIOException cause -> {
-                    throw cause.getCause();
+                    throw cause;
                 }
                 case Exception cause -> {
                     throw ExceptionBox.toUnchecked(cause);
@@ -823,39 +802,6 @@ public final class CommandOutputControl {
 
     private static boolean mustReadOutputStream(ProcessBuilder.Redirect redirect) {
         return redirect.equals(ProcessBuilder.Redirect.PIPE);
-    }
-
-    private static Optional<List<String>> processProcessStream(
-            OutputControl outputControl,
-            BufferedReader bufReader,
-            PrintStream dumpStream) throws IOException {
-
-        List<String> outputLines = null;
-        try {
-            if (outputControl.dump() || outputControl.saveAll()) {
-                outputLines = new ArrayList<>();
-                for (;;) {
-                    var line = bufReader.readLine();
-                    if (line == null) {
-                        break;
-                    }
-                    outputLines.add(line);
-                }
-            } else if (outputControl.saveFirstLine()) {
-                outputLines = Optional.ofNullable(bufReader.readLine()).map(List::of).orElseGet(List::of);
-            }
-        } finally {
-            if (outputControl.dump() && outputLines != null) {
-                outputLines.forEach(dumpStream::println);
-                if (outputControl.saveFirstLine()) {
-                    outputLines = outputLines.stream().findFirst().map(List::of).orElseGet(List::of);
-                }
-            }
-            if (!outputControl.save()) {
-                outputLines = null;
-            }
-        }
-        return Optional.ofNullable(outputLines);
     }
 
     private static Optional<List<String>> read(OutputControl outputControl, CachingPrintStream cps) throws IOException {
@@ -1010,24 +956,6 @@ public final class CommandOutputControl {
             private boolean save;
             private boolean discard;
             private PrintStream dumpStream;
-        }
-    }
-
-    private record ToolProviderStreamConfig(CachingPrintStream out, CachingPrintStream err) {
-        ToolProviderStreamConfig {
-            Objects.requireNonNull(out);
-            Objects.requireNonNull(err);
-        }
-
-        static ToolProviderStreamConfig create(OutputStreamsControl cfg, boolean redirectErrorStream) {
-            CachingPrintStream stdout = cfg.stdout().buildCachingPrintStream(System.out).create();
-            CachingPrintStream stderr;
-            if (redirectErrorStream) {
-                stderr = cfg.stderr().buildCachingPrintStream(System.out).create();
-            } else {
-                stderr = cfg.stderr().buildCachingPrintStream(System.err).create();
-            }
-            return new ToolProviderStreamConfig(stdout, stderr);
         }
     }
 
