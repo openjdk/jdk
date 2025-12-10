@@ -81,7 +81,7 @@ public class CollectionCounters001 extends MonitoringTestBase implements RunPara
                 validate(false /* don't check gc count increases */);
                 int iteration = 0;
                 do {
-                    System.out.println("=========== stressor iter: " + (stresser.getIteration())
+                    System.out.println("=========== stresser iter: " + (stresser.getIteration())
                                     + " runOne iter: " + (++iteration) + " ===========");
                     Algorithms.eatMemory(stresser);
                     updateCounters();
