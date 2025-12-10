@@ -33,6 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -43,16 +44,19 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.util.function.ExceptionBox;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.api.condition.EnabledIf;
@@ -87,29 +91,10 @@ public class CommandOutputControlTest {
     }
 
     @Test
-    public void testCopy_default() {
+    public void testCopy() {
         var orig = new CommandOutputControl();
         var copy = orig.copy();
-        assertEquals(orig, copy);
         assertNotSame(orig, copy);
-
-        assertNotEquals(orig, copy.discardStdout(true));
-    }
-
-    @Test
-    public void testCopy_some_overrides() {
-        var orig = new CommandOutputControl()
-                .processOutputCharset(StandardCharsets.US_ASCII)
-                .discardStderr(true)
-                .saveOutput(true)
-                .dumpOutput(true)
-                .redirectErrorStream(true)
-                .storeStreamsInFiles(true);
-        var copy = orig.copy();
-        assertEquals(orig, copy);
-        assertNotSame(orig, copy);
-
-        assertNotEquals(orig, copy.discardStdout(true));
     }
 
     @ParameterizedTest
@@ -179,19 +164,78 @@ public class CommandOutputControlTest {
         assertEquals("Unexpected exit code 3 from executing the command <unknown>", ex.getMessage());
     }
 
-    private static boolean cherryPickSavedOutputTestCases() {
-        return !testSomeSavedOutput().isEmpty();
+    @Test
+    public void testTimeout_expires() throws InterruptedException, IOException {
+        var cmdline = Command.createShellCommandLine(List.<CommandAction>of(
+                CommandAction.echoStdout("The quick brown fox jumps"),
+                CommandAction.sleep(5),
+                CommandAction.echoStdout("over the lazy dog")
+        ));
+
+        var coc = new CommandOutputControl().saveOutput(true).dumpOutput(true);
+        var exec = coc.createExecutable(new ProcessBuilder(cmdline));
+
+        var result = exec.execute(1, TimeUnit.SECONDS);
+        assertFalse(result.exitCode().isPresent());
+
+        var getExitCodeEx = assertThrowsExactly(UnsupportedOperationException.class, result::getExitCode);
+        assertEquals(("Exit code is unavailable for timed-out process"), getExitCodeEx.getMessage());
+
+        assertEquals(List.of("The quick brown fox jumps"), result.getOutput());
+    }
+
+    @Test
+    public void testTimeout() throws InterruptedException, IOException {
+        var cmdline = Command.createShellCommandLine(List.<CommandAction>of(
+                CommandAction.echoStdout("Sphinx of black quartz,"),
+                CommandAction.echoStdout("judge my vow")
+        ));
+
+        var coc = new CommandOutputControl().saveOutput(true).dumpOutput(true);
+        var exec = coc.createExecutable(new ProcessBuilder(cmdline));
+
+        var result = exec.execute(10, TimeUnit.SECONDS);
+        assertTrue(result.exitCode().isPresent());
+        assertEquals(List.of("Sphinx of black quartz,", "judge my vow"), result.getOutput());
+    }
+
+    @Test
+    public void test_externally_terminated() throws InterruptedException, IOException {
+        var cmdline = Command.createShellCommandLine(List.<CommandAction>of(
+                CommandAction.echoStderr("The five boxing wizards"),
+                CommandAction.sleep(10),
+                CommandAction.echoStderr("jump quickly")
+        ));
+
+        var processDestroyer = Slot.<CompletableFuture<Void>>createEmpty();
+
+        var coc = new CommandOutputControl().saveOutput(true).dumpOutput(true).processNotifier(process -> {
+            // Once we are notified the process  has been started, schedule its destruction.
+            // Give it a second to warm up and print some output and then destroy it.
+            processDestroyer.set(CompletableFuture.runAsync(toRunnable(() -> {
+                Thread.sleep(Duration.ofSeconds(1));
+                process.destroyForcibly();
+            })));
+        });
+        var exec = coc.createExecutable(new ProcessBuilder(cmdline));
+
+        var result = exec.execute();
+        assertNotEquals(0, result.getExitCode());
+        assertEquals(List.of("The five boxing wizards"), result.getOutput());
+        processDestroyer.get().join();
     }
 
     private static List<CommandOutputControlSpec> testDescription() {
         List<CommandOutputControlSpec> testCases = new ArrayList<>();
-        for (final var toolProvider : BOOLEAN_VALUES) {
-            testCases.add(new CommandOutputControlSpec(Set.of()));
-            for (var outputControl : OutputControl.variants()) {
-                testCases.add(new CommandOutputControlSpec(outputControl));
-            }
+        testCases.add(new CommandOutputControlSpec(Set.of()));
+        for (var outputControl : OutputControl.variants()) {
+            testCases.add(new CommandOutputControlSpec(outputControl));
         }
         return testCases;
+    }
+
+    private static boolean cherryPickSavedOutputTestCases() {
+        return !testSomeSavedOutput().isEmpty();
     }
 
     private static List<OutputTestSpec> testSomeSavedOutput() {
@@ -230,7 +274,7 @@ public class CommandOutputControlTest {
                             }
                             default -> {
                                 // Unreachable
-                                throw new IllegalStateException();
+                                throw ExceptionBox.reachedUnreachable();
                             }
                         }
                         testCases.add(new OutputTestSpec(
@@ -251,6 +295,34 @@ public class CommandOutputControlTest {
         ;
     }
 
+    private sealed interface CommandAction {
+        static SleepCommandAction sleep(int seconds) {
+            return new SleepCommandAction(seconds);
+        }
+
+        static EchoCommandAction echoStdout(String str) {
+            return new EchoCommandAction(str, false);
+        }
+
+        static EchoCommandAction echoStderr(String str) {
+            return new EchoCommandAction(str, true);
+        }
+    }
+
+    private record EchoCommandAction(String value, boolean stderr) implements CommandAction {
+        EchoCommandAction {
+            Objects.requireNonNull(value);
+        }
+    }
+
+    private record SleepCommandAction(int seconds) implements CommandAction {
+        SleepCommandAction {
+            if (seconds < 0) {
+                throw new IllegalArgumentException();
+            }
+        }
+    }
+
     private record Command(List<String> stdout, List<String> stderr) {
         Command {
             stdout.forEach(Objects::requireNonNull);
@@ -258,25 +330,10 @@ public class CommandOutputControlTest {
         }
 
         List<String> asExecutable() {
-            final List<String> commandline = new ArrayList<>();
-            if (OperatingSystem.isWindows()) {
-                commandline.addAll(List.of("cmd", "/C"));
-            } else {
-                commandline.addAll(List.of("sh", "-c"));
-            }
-            commandline.add(Stream.concat(createEchoCommands(stdout),
-                    createEchoCommands(stderr).map(v -> v + ">&2")).collect(joining(" && ")));
-            return commandline;
-        }
-
-        private static Stream<String> createEchoCommands(List<String> lines) {
-            return lines.stream().map(line -> {
-                if (OperatingSystem.isWindows()) {
-                    return "(echo " + line + ")";
-                } else {
-                    return "echo " + line;
-                }
-            });
+            return createShellCommandLine(Stream.concat(
+                    stdout.stream().map(CommandAction::echoStdout),
+                    stderr.stream().map(CommandAction::echoStderr)
+            ));
         }
 
         ToolProvider asToolProvider() {
@@ -295,6 +352,50 @@ public class CommandOutputControlTest {
                 }
             };
         }
+
+        static List<String> createShellCommandLine(Stream<CommandAction> actions) {
+            final List<String> commandline = new ArrayList<>();
+            if (OperatingSystem.isWindows()) {
+                commandline.addAll(List.of("cmd", "/C"));
+            } else {
+                commandline.addAll(List.of("sh", "-c"));
+            }
+            commandline.add(actions.map(Command::toString).collect(joining(" && ")));
+            return commandline;
+        }
+
+        static List<String> createShellCommandLine(List<CommandAction> actions) {
+            return createShellCommandLine(actions.stream());
+        }
+
+        private static String toString(CommandAction action) {
+            switch (action) {
+                case EchoCommandAction echo -> {
+                    String str;
+                    if (OperatingSystem.isWindows()) {
+                        str = "(echo " + echo.value() + ")";
+                    } else {
+                        str = "echo " + echo.value();
+                    }
+                    if (echo.stderr()) {
+                        str += ">&2";
+                    }
+                    return str;
+                }
+                case SleepCommandAction sleep -> {
+                    if (OperatingSystem.isWindows()) {
+                        // The standard way to sleep on Windows is to use the "ping" command.
+                        // It sends packets every second.
+                        // To wait N seconds, it should send N+1 packets.
+                        // The "timeout" command works only in a console.
+                        return String.format("(ping -n %d localhost > nul)", sleep.seconds() + 1);
+                    } else {
+                        return "sleep " + sleep.seconds();
+                    }
+                }
+            }
+        }
+
     }
 
     private enum OutputData {
@@ -582,6 +683,36 @@ public class CommandOutputControlTest {
                         command.stdout(),
                         command.stderr()
                 ).flatMap(List::stream).toList(), result.getContent());
+                if (contains(OutputControl.SAVE_FIRST_LINE)) {
+                    var stdout = result.stdout();
+                    var stderr = result.stderr();
+                    switch (result.getContent().size()) {
+                        case 0 -> {
+                            assertTrue(stdout.findFirstLineOfOutput().isEmpty());
+                            assertTrue(stderr.findFirstLineOfOutput().isEmpty());
+                            assertTrue(result.findFirstLineOfOutput().isEmpty());
+                        }
+                        case 1 -> {
+                            if (stdout.getContent().isEmpty()) {
+                                assertTrue(stdout.findFirstLineOfOutput().isEmpty());
+                                assertEquals(stderr.getContent(), List.of(stderr.getFirstLineOfOutput()));
+                                assertEquals(List.of(result.getFirstLineOfOutput()), stderr.getContent());
+                            } else {
+                                assertEquals(stdout.getContent(), List.of(stdout.getFirstLineOfOutput()));
+                                assertTrue(stderr.findFirstLineOfOutput().isEmpty());
+                                assertEquals(List.of(result.getFirstLineOfOutput()), stdout.getContent());
+                            }
+                        }
+                        case 2 -> {
+                            assertEquals(stdout.getContent(), List.of(stdout.getFirstLineOfOutput()));
+                            assertEquals(stderr.getContent(), List.of(stderr.getFirstLineOfOutput()));
+                            assertEquals(List.of(result.getFirstLineOfOutput()), stdout.getContent());
+                        }
+                        default -> {
+                            fail(String.format("Number of saved lines should be less than two. Actual: %d", result.getContent().size()));
+                        }
+                    }
+                }
             } else {
                 assertEquals(discardStderr(), result.findStdout().isPresent());
                 assertTrue(result.findStderr().isEmpty());
@@ -589,6 +720,7 @@ public class CommandOutputControlTest {
                     assertTrue(List.of(command.stdout(), command.stderr()).contains(result.getContent()),
                             String.format("Saved content %s is either %s or %s",
                                     result.getContent(), command.stdout(), command.stderr()));
+                    assertTrue(result.getContent().size() < 2);
                 } else if (contains(OutputControl.SAVE_ALL)) {
                     var savedContent = new ArrayList<>(result.getContent());
                     savedContent.removeAll(command.stdout());
@@ -596,7 +728,7 @@ public class CommandOutputControlTest {
                     assertEquals(List.of(), savedContent);
                 } else {
                     // Unreachable
-                    throw new AssertionError();
+                    throw ExceptionBox.reachedUnreachable();
                 }
             }
         }

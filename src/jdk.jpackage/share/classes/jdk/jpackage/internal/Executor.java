@@ -178,15 +178,10 @@ final class Executor {
             if (timeout == null) {
                 result = exec.execute();
             } else {
-                try {
-                    result = exec.execute(timeout.toMillis(), TimeUnit.MILLISECONDS);
-                } catch (TimeoutException tex) {
-                    var msg = String.format("Command %s timed out", CommandLineFormat.DEFAULT.apply(commandLine()));
-                    throw new IOException(msg, tex);
-                }
+                result = exec.execute(timeout.toMillis(), TimeUnit.MILLISECONDS);
             }
         } catch (InterruptedException ex) {
-            throw ExceptionBox.rethrowUnchecked(ex);
+            throw ExceptionBox.toUnchecked(ex);
         }
 
         if (!quietCommand) {
@@ -251,7 +246,11 @@ final class Executor {
                 Log.verbose(sb.toString());
             });
 
-            Log.verbose("Returned: " + result.getExitCode() + "\n");
+            result.exitCode().ifPresentOrElse(exitCode -> {
+                Log.verbose("Returned: " + exitCode + "\n");
+            }, () -> {
+                Log.verbose("Aborted: timed-out" + "\n");
+            });
         }
     }
 
