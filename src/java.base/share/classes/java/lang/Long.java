@@ -35,6 +35,7 @@ import java.util.Optional;
 
 import jdk.internal.misc.CDS;
 import jdk.internal.util.DecimalDigits;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
@@ -911,6 +912,7 @@ public final class Long extends Number
         return Long.valueOf(parseLong(s, 10));
     }
 
+    @AOTSafeClassInitializer
     private static final class LongCache {
         private LongCache() {}
 
