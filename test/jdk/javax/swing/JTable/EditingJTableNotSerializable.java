@@ -51,24 +51,43 @@ public class EditingJTableNotSerializable {
 
     public static void main(String[] args) throws Exception {
         SwingUtilities.invokeAndWait(() -> {
-            try {
-                Object[][] data = new Object[][]{ new Object[]{ 1,2,3,4,5}};
-                Object[] names = new Object[]{ 1,2,3,4,5};
-                JTable jt = new JTable(data, names);
-                jt.editCellAt(0,3);
-                System.out.println("Serializing editing JTable");
-                JTable newjt = serialize(jt);
-                if (newjt.isEditing()) {
-                    throw new RuntimeException("Editing table is serializable");
-                }
-
-                TableCellEditor tce = jt.getCellEditor();
-                tce.stopCellEditing();
-                System.out.println("Serializing non-editing JTable");
-                serialize(jt);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+            StringBuilder str = new StringBuilder();
+            testSerializeEditingTable(str);
+            testSerializeNonEditingTable(str);
+            if (str.length() != 0) {
+                throw new RuntimeException(str.toString());
             }
         });
+    }
+
+    private static void testSerializeEditingTable(StringBuilder str) {
+        try {
+            Object[][] data = new Object[][]{ new Object[]{ 1,2,3,4,5}};
+            Object[] names = new Object[]{ 1,2,3,4,5};
+            JTable jt = new JTable(data, names);
+            jt.editCellAt(0,3);
+            System.out.println("Serializing editing JTable");
+            JTable newjt = serialize(jt);
+            if (newjt.isEditing()) {
+                str.append("\nEditing table is serializable");
+            }
+        } catch (Exception e) {
+            str.append("Failed serializing editing table " + e);
+        }
+    }
+
+    private static void testSerializeNonEditingTable(StringBuilder str) {
+        try {
+            Object[][] data = new Object[][]{ new Object[]{ 1,2,3,4,5}};
+            Object[] names = new Object[]{ 1,2,3,4,5};
+            JTable jt = new JTable(data, names);
+            jt.editCellAt(0,3);
+            TableCellEditor tce = jt.getCellEditor();
+            tce.stopCellEditing();
+            System.out.println("Serializing non-editing JTable");
+            serialize(jt);
+        } catch (Exception e) {
+            str.append("Failed serializing non-editing table " + e);
+        }
     }
 }

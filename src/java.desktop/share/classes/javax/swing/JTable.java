@@ -5605,6 +5605,15 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         public Object getCellEditorValue() {
             return value;
         }
+
+        // All editor related fields in JTable are transient so
+        // editing JTable is not serializable
+        // but GenericEditor is Serializable so we need to stop cell editing
+        // during serialization of this class
+        private void writeObject(ObjectOutputStream s) throws IOException {
+            super.stopCellEditing();
+            s.defaultWriteObject();
+        }
     }
 
     static class NumberEditor extends GenericEditor {
