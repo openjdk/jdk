@@ -43,7 +43,7 @@ void ObjectToOopClosure::do_object(oop obj) {
 void NMethodToOopClosure::do_nmethod(nmethod* nm) {
   nm->oops_do(_cl);
   if (_fix_relocations) {
-    nm->fix_oop_relocations();
+    nm->fix_non_immediate_oop_relocations();
   }
 }
 

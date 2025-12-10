@@ -288,7 +288,7 @@ void ZNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl) {
 
   // Process non-immediate oops
   if (data->has_non_immediate_oops()) {
-    nm->fix_oop_relocations();
+    nm->fix_non_immediate_oop_relocations();
   }
 }
 

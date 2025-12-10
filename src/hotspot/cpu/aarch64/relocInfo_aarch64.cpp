@@ -65,20 +65,6 @@ void Relocation::pd_set_data_value(address x, bool verify_only) {
     assert(ICacheInvalidationContext::current()->mode() == ICacheInvalidation::DEFERRED ||
            ICacheInvalidationContext::current()->mode() == ICacheInvalidation::NOT_NEEDED,
            "ICache invalidation should be deferred or unneeded.");
-#ifdef ASSERT
-    if (_binding != nullptr && _binding->code() != nullptr) {
-      nmethod *nm = _binding->code();
-      if (!(BarrierSet::barrier_set()->barrier_set_nmethod()->is_armed(nm) ||
-            SafepointSynchronize::is_at_safepoint() ||
-            nm->is_unloading())) {
-        ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
-        assert(nm->is_not_installed(),
-             "ICache invalidation context should only be used for armed "
-             "or unloading or not installed nmethod or at safepoint");
-
-      }
-    }
-#endif
     return;
   }
 

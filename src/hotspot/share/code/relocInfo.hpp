@@ -988,8 +988,6 @@ class oop_Relocation : public DataRelocation {
   void pack_data_to(CodeSection* dest) override;
   void unpack_data() override;
 
-  bool fix_oop_relocation();        // reasserts oop value
-
   void verify_oop_relocation();
 
   address value() override { return *reinterpret_cast<address*>(oop_addr()); }

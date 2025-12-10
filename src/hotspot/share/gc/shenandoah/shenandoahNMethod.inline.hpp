@@ -61,7 +61,7 @@ void ShenandoahNMethod::oops_do(OopClosure* oops, bool fix_relocations) {
   }
 
   if (fix_relocations && _has_non_immed_oops) {
-    _nm->fix_oop_relocations();
+    _nm->fix_non_immediate_oop_relocations();
   }
 }
 

@@ -87,7 +87,7 @@ void G1NMethodClosure::do_evacuation_and_fixup(nmethod* nm) {
     bs_nm->disarm(nm);
   }
 
-  nm->fix_oop_relocations();
+  nm->fix_non_immediate_oop_relocations();
 }
 
 void G1NMethodClosure::do_marking(nmethod* nm) {
