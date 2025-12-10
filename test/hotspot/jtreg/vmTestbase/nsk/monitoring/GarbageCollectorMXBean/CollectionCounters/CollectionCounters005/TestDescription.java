@@ -36,6 +36,5 @@
  *      nsk.monitoring.GarbageCollectorMXBean.CollectionCounters.CollectionCounters001.CollectionCounters001
  *      -testMode=proxy
  *      -MBeanServer=custom
- *      -stressDebug
  */
 
