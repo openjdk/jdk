@@ -51,6 +51,7 @@ public class FrameVisualTest {
     private static Robot robot;
     private static volatile int batchStart;
     private static volatile int batchEnd;
+    private static volatile int frameNum;
     private static volatile Point p;
     private static volatile Dimension d;
     private static final int TOLERANCE = 5;
@@ -68,6 +69,7 @@ public class FrameVisualTest {
             try {
                 batchEnd = Math.min(i + 20, frames.length);
                 batchStart = i;
+                frameNum = 0;
 
                 for (int j = i; j < batchEnd; j++) {
                     int finalJ = j;
@@ -77,9 +79,12 @@ public class FrameVisualTest {
                         frames[finalJ].setSize(100, 100);
                         frames[finalJ].setUndecorated(true);
                         frames[finalJ].setBackground(Color.WHITE);
+                        frames[finalJ].setLocation(100 * (frameNum % 10),
+                                100 + 100 * ((frameNum / 10) % 10));
                         frames[finalJ].setVisible(true);
                         System.out.println("Frame " + finalJ + " created");
                     });
+                    frameNum++;
                 }
 
                 robot.delay(1000);
