@@ -125,6 +125,10 @@ public class TestVectorAlgorithms {
         testGroups.put("reverseI", new HashMap<String,TestFunction>());
         testGroups.get("reverseI").put("reverseI_loop",      () -> { return reverseI_loop(aI, rI1); });
         testGroups.get("reverseI").put("reverseI_VectorAPI", () -> { return reverseI_VectorAPI(aI, rI2); });
+
+        testGroups.put("filterI", new HashMap<String,TestFunction>());
+        testGroups.get("filterI").put("filterI_loop",      () -> { return filterI_loop(aI, rI1, eI); });
+        testGroups.get("filterI").put("filterI_VectorAPI", () -> { return filterI_VectorAPI(aI, rI2, eI); });
     }
 
     @Warmup(100)
@@ -150,7 +154,9 @@ public class TestVectorAlgorithms {
                  "findI_loop",
                  "findI_VectorAPI",
                  "reverseI_loop",
-                 "reverseI_VectorAPI"})
+                 "reverseI_VectorAPI",
+                 "filterI_loop",
+                 "filterI_VectorAPI"})
     public void runTests(RunInfo info) {
         // Repeat many times, so that we also have multiple iterations for post-warmup to potentially recompile
         int iters = info.isWarmUp() ? 1 : 20;
@@ -324,5 +330,15 @@ public class TestVectorAlgorithms {
     @Test
     public Object reverseI_VectorAPI(int[] a, int[] r) {
         return VectorAlgorithmsImpl.reverseI_VectorAPI(a, r);
+    }
+
+    @Test
+    public Object filterI_loop(int[] a, int[] r, int threshold) {
+        return VectorAlgorithmsImpl.filterI_loop(a, r, threshold);
+    }
+
+    @Test
+    public Object filterI_VectorAPI(int[] a, int[] r, int threshold) {
+        return VectorAlgorithmsImpl.filterI_VectorAPI(a, r, threshold);
     }
 }

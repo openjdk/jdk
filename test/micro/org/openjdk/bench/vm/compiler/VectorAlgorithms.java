@@ -202,4 +202,19 @@ public class VectorAlgorithms {
     public Object reverseI_VectorAPI() {
         return VectorAlgorithmsImpl.reverseI_VectorAPI(aI, rI);
     }
+
+    @Benchmark
+    public Object filterI_loop() {
+        idx = (idx + 1) & 0xffff;
+        int e = aI[idx];
+        return VectorAlgorithmsImpl.filterI_loop(aI, rI, e);
+    }
+
+    @Benchmark
+    public Object filterI_VectorAPI() {
+        idx = (idx + 1) & 0xffff;
+        int e = aI[idx];
+        return VectorAlgorithmsImpl.filterI_VectorAPI(aI, rI, e);
+    }
+
 }

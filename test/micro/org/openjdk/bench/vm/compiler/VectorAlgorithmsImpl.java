@@ -335,4 +335,42 @@ public class VectorAlgorithmsImpl {
         }
         return r;
     }
+
+    public static Object filterI_loop(int[] a, int[] r, int threshold) {
+        int j = 0;
+        for (int i = 0; i < a.length; i++) {
+            int ai = a[i];
+            if (ai >= threshold) {
+                r[j++] = ai;
+            }
+        }
+        // Just force the resulting length onto the same array.
+        r[r.length - 1] = j;
+        return r;
+    }
+
+    public static Object filterI_VectorAPI(int[] a, int[] r, int threshold) {
+        var thresholds = IntVector.broadcast(SPECIES_I, threshold);
+        int j = 0;
+        int i = 0;
+        for (; i < SPECIES_I.loopBound(a.length); i += SPECIES_I.length()) {
+            IntVector v = IntVector.fromArray(SPECIES_I, a, i);
+            var mask = v.compare(VectorOperators.GE, thresholds);
+            v = v.compress(mask);
+            int trueCount = mask.trueCount();
+            var prefixMask = VectorMask.fromLong(SPECIES_I, (1L << trueCount) - 1);
+            v.intoArray(r, j, prefixMask);
+            j += trueCount;
+        }
+
+        for (; i < a.length; i++) {
+            int ai = a[i];
+            if (ai >= threshold) {
+                r[j++] = ai;
+            }
+        }
+        // Just force the resulting length onto the same array.
+        r[r.length - 1] = j;
+        return r;
+    }
 }
