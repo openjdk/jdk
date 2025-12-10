@@ -1274,7 +1274,7 @@ public class ForkJoinPool extends AbstractExecutorService
                 if (pool != null &&
                     (room == 0 ||
                      U.getReferenceAcquire(a, slotOffset(m & (s - 1))) == null))
-                    pool.signalWork(a, k);    // may have appeared empty
+                    pool.signalWork(null, 0);    // may have appeared empty
             }
         }
 
@@ -1897,9 +1897,9 @@ public class ForkJoinPool extends AbstractExecutorService
 
     /**
      * Releases an idle worker, or creates one if not enough exist,
-     * giving up if array a is nonnull and task at a[k] already taken.
+     * giving up q is nonull and signalled slot already taken.
      */
-    final void signalWork(ForkJoinTask<?>[] a, int k) {
+    final void signalWork(WorkQueue q, int qbase) {
         int pc = parallelism;
         for (long c = ctl;;) {
             WorkQueue[] qs = queues;
@@ -1921,9 +1921,13 @@ public class ForkJoinPool extends AbstractExecutorService
                 break;
             else
                 nc = (v.stackPred & LMASK) | (c & TC_MASK) | ac;
-            if (a != null && k < a.length && k >= 0 && a[k] == null)
-                break;
-            if (c == (c = ctl) && c == (c = compareAndExchangeCtl(c, nc))) {
+            if (q != null) {
+                if (q.base != qbase)
+                    break;
+                if (c != (c = ctl))
+                    continue;
+            }
+            if (c == (c = compareAndExchangeCtl(c, nc))) {
                 if (v == null)
                     createWorker();
                 else {
@@ -2047,9 +2051,8 @@ public class ForkJoinPool extends AbstractExecutorService
                                     Object nt = U.getReferenceAcquire(a, np);
                                     w.source = qid;
                                     rescans = 1;
-                                    if (nt != null &&
-                                        U.getReferenceAcquire(a, np) == nt)
-                                        signalWork(null, 0); // propagate
+                                    if (nt != null)
+                                        signalWork(q, nb); // propagate
                                     taken += w.topLevelExec(t, q, fifo, nb);
                                 }
                             }
