@@ -126,7 +126,7 @@ public final class Parameter implements AnnotatedElement {
         final Type type = getParameterizedType();
         final String typename = type.getTypeName();
 
-        sb.append(Modifier.toString(getModifiers()));
+        sb.append(Modifier.toString(getModifiers() & Modifier.parameterModifiers() ));
 
         if(0 != modifiers)
             sb.append(' ');
