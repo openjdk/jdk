@@ -119,6 +119,10 @@
 #if INCLUDE_SERIALGC
 #include "gc/serial/serialHeap.hpp"
 #endif // INCLUDE_SERIALGC
+#if INCLUDE_SHENANDOAHGC
+#include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
+#endif // INCLUDE_SHENANDOAHGC
 #if INCLUDE_ZGC
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
@@ -689,6 +693,45 @@ WB_ENTRY(jlongArray, WB_G1GetMixedGCInfo(JNIEnv* env, jobject o, jint liveness))
 WB_END
 
 #endif // INCLUDE_G1GC
+
+#if INCLUDE_SHENANDOAHGC
+WB_ENTRY(jint, WB_ShenandoahRegionSize(JNIEnv* env, jobject o))
+  if (UseShenandoahGC) {
+    return ShenandoahHeapRegion::region_size_bytes_jint();
+  }
+THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_ShenandoahRegionSize: Shenandoah GC is not enabled");
+WB_END
+
+WB_ENTRY(jint, WB_ShenandoahRegionCount(JNIEnv* env, jobject o))
+  if (UseShenandoahGC) {
+    return static_cast<jint>(ShenandoahHeap::heap()->num_regions());
+  }
+THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_ShenandoahRegionSize: Shenandoah GC is not enabled");
+WB_END
+
+WB_ENTRY(jint, WB_ShenandoahRegionIndex(JNIEnv* env, jobject o, jobject obj))
+  if (UseShenandoahGC) {
+    oop resolved = JNIHandles::resolve(obj);
+    ShenandoahHeap* heap = ShenandoahHeap::heap();
+    if (heap->is_in(resolved)) {
+      return static_cast<jint>(heap->heap_region_containing(resolved)->index());
+    }
+    return -1;
+  }
+THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_ShenandoahRegionSize: Shenandoah GC is not enabled");
+WB_END
+
+WB_ENTRY(jboolean, WB_ShenandoahOldGC(JNIEnv* env, jobject o))
+  if (UseShenandoahGC) {
+    if (ShenandoahHeap::heap()->mode()->is_generational()) {
+      return ShenandoahGenerationalHeap::heap()->start_old_collection();
+    }
+    return false;
+  }
+THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_ShenandoahRegionSize: Shenandoah GC is not enabled");
+WB_END
+
+#endif
 
 // Alloc memory using the test memory tag so that we can use that to see if
 // NMT picks it up correctly
@@ -2858,6 +2901,14 @@ static JNINativeMethod methods[] = {
   {CC"g1MemoryNodeIds",    CC"()[I",                  (void*)&WB_G1MemoryNodeIds },
   {CC"g1GetMixedGCInfo",   CC"(I)[J",                 (void*)&WB_G1GetMixedGCInfo },
 #endif // INCLUDE_G1GC
+#if INCLUDE_SHENANDOAHGC
+  {CC"shenandoahRegionSize",   CC"()I",                   (void*)&WB_ShenandoahRegionSize  },
+  {CC"shenandoahRegionCount",  CC"()I",                   (void*)&WB_ShenandoahRegionCount },
+  {CC"shenandoahRegionIndex",  CC"(Ljava/lang/Object;)I", (void*)&WB_ShenandoahRegionIndex },
+  {CC"shenandoahOldGC",        CC"()Z",                   (void*)&WB_ShenandoahOldGC },
+
+#endif
+
   {CC"NMTMalloc",           CC"(J)J",                 (void*)&WB_NMTMalloc          },
   {CC"NMTMallocWithPseudoStack", CC"(JI)J",           (void*)&WB_NMTMallocWithPseudoStack},
   {CC"NMTMallocWithPseudoStackAndType", CC"(JII)J",   (void*)&WB_NMTMallocWithPseudoStackAndType},
