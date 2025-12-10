@@ -1720,13 +1720,17 @@ static Node* extract_obj_from_klass_load(PhaseGVN* gvn, Node* n) {
   return obj;
 }
 
+// Matches exact and inexact type check IR shapes during parsing.
+// On successful match, returns type checked object node and its type after successful check
+// as out parameters.
 static bool match_type_check(PhaseGVN& gvn,
                              BoolTest::mask btest,
                              Node* con, const Type* tcon,
                              Node* val, const Type* tval,
                              Node** obj, const TypeOopPtr** cast_type) { // out-parameters
-  // Look for opportunities to sharpen the type of a node
-  // whose klass is compared with a constant klass.
+  // Look for opportunities to sharpen the type of a node whose klass is compared with a constant klass.
+  // The constant klass being tested against can come from many bytecode instructions (implicitly or explicitly),
+  // and also from profile data used by speculative casts.
   if (btest == BoolTest::eq && tcon->isa_klassptr()) {
     // Found:
     //   Bool(CmpP(LoadKlass(obj._klass), ConP(Foo.klass)), [eq])
@@ -1797,6 +1801,7 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
                                   Node* val, const Type* tval) {
   Node* obj = nullptr;
   const TypeOopPtr* cast_type = nullptr;
+  // Insert a cast node with a narrowed type after a successful type check.
   if (match_type_check(_gvn, btest, con, tcon, val, tval,
                        &obj, &cast_type)) {
     assert(obj != nullptr && cast_type != nullptr, "missing type check info");
