@@ -35,7 +35,7 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/globalCounter.inline.hpp"
 
-SATBMarkQueue::SATBMarkQueue(SATBMarkQueueSet* qset) : 
+SATBMarkQueue::SATBMarkQueue(SATBMarkQueueSet* qset) :
   _buf(nullptr),
   _index(0),
   // SATB queues are only active during marking cycles. We create them
