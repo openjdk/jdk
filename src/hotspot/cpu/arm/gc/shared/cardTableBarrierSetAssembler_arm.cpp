@@ -67,7 +67,7 @@ void CardTableBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet d
 void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                                     Register addr, Register count, Register tmp) {
   BLOCK_COMMENT("CardTablePostBarrier");
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
+  CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
 
   Label L_cardtable_loop, L_done;
 
@@ -120,7 +120,7 @@ void CardTableBarrierSetAssembler::store_check_part1(MacroAssembler* masm, Regis
   assert(bs->kind() == BarrierSet::CardTableBarrierSet,
          "Wrong barrier set kind");
 
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
+  CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
 
   // Load card table base address.
 

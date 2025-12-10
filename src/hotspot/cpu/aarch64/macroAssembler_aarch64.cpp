@@ -5606,7 +5606,7 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, uint64_t &byte_off
 }
 
 void MacroAssembler::load_byte_map_base(Register reg) {
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
+  CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
 
   // Strictly speaking the card table base isn't an address at all, and it might
   // even be negative. It is thus materialised as a constant.

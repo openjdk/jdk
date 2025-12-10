@@ -61,6 +61,10 @@ public:
   CardTableBarrierSet(CardTable* card_table);
   virtual ~CardTableBarrierSet();
 
+  inline static CardTableBarrierSet* barrier_set() {
+    return barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
+  }
+
   template <DecoratorSet decorators, typename T>
   inline void write_ref_field_pre(T* addr) {}
 

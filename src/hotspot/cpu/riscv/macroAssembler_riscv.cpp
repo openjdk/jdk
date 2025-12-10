@@ -5110,7 +5110,7 @@ void MacroAssembler::get_thread(Register thread) {
 }
 
 void MacroAssembler::load_byte_map_base(Register reg) {
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
+  CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
   mv(reg, (uint64_t)ctbs->card_table_base_const());
 }
 

@@ -103,7 +103,7 @@ void CardTableBarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Registe
 
 void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators, Register addr,
                                                                     Register count, Register preserve) {
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
+  CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
   assert_different_registers(addr, count, R0);
 
   Label Lskip_loop, Lstore_loop;
@@ -139,7 +139,7 @@ void CardTableBarrierSetAssembler::card_table_write(MacroAssembler* masm,
 }
 
 void CardTableBarrierSetAssembler::card_write_barrier_post(MacroAssembler* masm, Register store_addr, Register tmp) {
-  CardTableBarrierSet* bs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
+  CardTableBarrierSet* bs = CardTableBarrierSet::barrier_set();
   card_table_write(masm, bs->card_table_base_const(), tmp, store_addr);
 }
 

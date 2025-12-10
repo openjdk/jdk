@@ -95,7 +95,7 @@ void CardTableBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet d
 
 void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                                     Register addr, Register count, Register tmp) {
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
+  CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
 
   Label L_loop, L_done;
   const Register end = count;
@@ -124,7 +124,7 @@ __ BIND(L_done);
 void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register obj, Address dst) {
   // Does a store check for the oop in register obj. The content of
   // register obj is destroyed afterwards.
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
+  CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
 
   __ shrptr(obj, CardTable::card_shift());
 

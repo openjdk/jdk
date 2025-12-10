@@ -43,6 +43,6 @@ const char* basictype_to_str(BasicType t) {
 // ------------------------------------------------------------------
 // card_table_base
 CardTable::CardValue* ci_card_table_address_const() {
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
+  CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
   return ctbs->card_table_base_const();
 }

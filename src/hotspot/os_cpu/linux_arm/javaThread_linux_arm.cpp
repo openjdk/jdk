@@ -43,7 +43,7 @@ void JavaThread::cache_global_variables() {
   BarrierSet* bs = BarrierSet::barrier_set();
 
   if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
-    CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
+    CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
     _card_table_base = (address) ctbs->card_table_base_const();
   } else {
     _card_table_base = nullptr;
