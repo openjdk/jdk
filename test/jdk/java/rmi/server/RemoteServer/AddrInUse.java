@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 /* @test
  * @bug 4111507
  * @summary retryServerSocket should not retry on BindException
- * @author Ann Wollrath
  *
  * @run main/othervm AddrInUse
  */
@@ -33,75 +32,54 @@ import java.net.ServerSocket;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.server.ExportException;
 
-public class AddrInUse implements Runnable {
+public class AddrInUse {
 
-    private static int port = -1;
-    private static final long TIMEOUT = 10000;
-
-    private boolean exportSucceeded = false;
-    private Throwable exportException = null;
-
-    public void run() {
-
-        /*
-         * Attempt to create (i.e. export) a registry on the port that
-         * has already been bound, and record the result.
-         */
-        try {
-            LocateRegistry.createRegistry(port);
-            synchronized (this) {
-                exportSucceeded = true;
-                notifyAll();
-            }
-        } catch (Throwable t) {
-            synchronized (this) {
-                exportException = t;
-                notifyAll();
-            }
-        }
-    }
+    private static volatile Throwable registryExportFailure = null;
 
     public static void main(String[] args) throws Exception {
-        System.err.println("\nRegression test for bug 4111507\n");
-
         /*
          * Bind a server socket to a port.
          */
-        ServerSocket server = new ServerSocket(0);
-        port = server.getLocalPort();
-        System.err.println("Created a ServerSocket on port " + port + "...");
-
-        /*
-         * Start a thread that creates a registry on the same port,
-         * and analyze the result.
-         */
-        System.err.println("create a registry on the same port...");
-        System.err.println("(should cause an ExportException)");
-        AddrInUse obj = new AddrInUse();
-        synchronized (obj) {
-            (new Thread(obj, "AddrInUse")).start();
+        try (ServerSocket server = new ServerSocket(0)) {
+            int port = server.getLocalPort();
+            System.err.println("Created a ServerSocket on port " + port + "...");
 
             /*
-             * Don't wait forever (original bug is that the export
-             * hangs).
+             * Start a thread that creates a registry on the same port,
+             * and analyze the result.
              */
-            obj.wait(TIMEOUT);
+            System.err.println("create a registry on the same port...");
+            System.err.println("(should cause an ExportException)");
 
-            if (obj.exportSucceeded) {
-                throw new RuntimeException(
-                    "TEST FAILED: export on already-bound port succeeded");
-            } else if (obj.exportException != null) {
-                obj.exportException.printStackTrace();
-                if (obj.exportException instanceof ExportException) {
-                    System.err.println("TEST PASSED");
-                } else {
-                    throw new RuntimeException(
-                        "TEST FAILED: unexpected exception occurred",
-                        obj.exportException);
+            Thread exportRegistryThread = new Thread(() -> {
+                /*
+                 * Attempt to create (i.e. export) a registry on the port that
+                 * has already been bound, and record the result.
+                 */
+                try {
+                    LocateRegistry.createRegistry(port);
+                } catch (Throwable t) {
+                    registryExportFailure = t;
                 }
-            } else {
-                throw new RuntimeException("TEST FAILED: export timed out");
+            }, "ExportRegistry-Thread");
+
+            exportRegistryThread.start();
+
+            /*
+             * Wait for the LocateRegistry.createRegistry() call to complete or
+             * if it blocks forever (due to the original bug), then let jtreg fail
+             * the test with a timeout
+             */
+            exportRegistryThread.join();
+            if (registryExportFailure == null) {
+                throw new RuntimeException(
+                        "TEST FAILED: export on already-bound port succeeded");
             }
+            if (!(registryExportFailure instanceof ExportException)) {
+                throw new RuntimeException(
+                        "TEST FAILED: unexpected exception occurred", registryExportFailure);
+            }
+            System.err.println("TEST PASSED, received expected exception: " + registryExportFailure);
         }
     }
 }
