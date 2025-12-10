@@ -1394,7 +1394,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     }
     if (addr->Opcode() == Op_AddP) {
       Node* orig_base = addr->in(AddPNode::Base);
-      Node* base = new CheckCastPPNode(ctrl, orig_base, orig_base->bottom_type(), ConstraintCastNode::StrongDependency);
+      Node* base = new CheckCastPPNode(ctrl, orig_base, orig_base->bottom_type(), ConstraintCastNode::DependencyType::NonFloatingNarrowing);
       phase->register_new_node(base, ctrl);
       if (addr->in(AddPNode::Base) == addr->in((AddPNode::Address))) {
         // Field access
