@@ -23,8 +23,9 @@
 
 /**
  * @test
- * @bug 8259039
+ * @bug 8259039 8373436
  * @summary Verify behavior of --release and -source related to com.sun.nio.file
+ *          and JDK 8 profiles
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -54,6 +55,7 @@ public class CtPropertiesTest {
 
         t.runSource();
         t.runRelease();
+        t.runCompactProfile();
     }
 
     void runSource() throws IOException {
@@ -71,12 +73,7 @@ public class CtPropertiesTest {
 
         List<String> versions = new ArrayList<>();
 
-        Path javaHome = FileSystems.getDefault().getPath(System.getProperty("java.home"));
-        Path thisSystemModules = javaHome.resolve("lib").resolve("modules");
-
-        if (Files.isRegularFile(thisSystemModules)) {
-            //only use -source 8 when running on full JDK images (not on the exploded JDK), as the
-            //classfiles are not considered to be part of JRT image when running with -source 8:
+        if (fullJDKImage()) {
             versions.add("8");
         }
 
@@ -136,4 +133,63 @@ public class CtPropertiesTest {
         }
     }
 
+    void runCompactProfile() throws IOException {
+        Path root = Paths.get(".");
+        Path classes = root.resolve("classes");
+        Files.createDirectories(classes);
+        ToolBox tb = new ToolBox();
+        List<String> log;
+        List<String> expected;
+
+        expected = List.of(
+                "Test.java:2:16: compiler.err.not.in.profile: javax.swing.JButton, compact1",
+                "1 error"
+        );
+
+        List<List<String>> variants = new ArrayList<>();
+
+        if (fullJDKImage()) {
+            variants.add(List.of("--source", "8", "--target", "8"));
+        }
+
+        variants.add(List.of("--release", "8"));
+
+        for (List<String> variant : variants) {
+            List<String> options = new ArrayList<>();
+
+            options.addAll(variant);
+            options.add("-XDrawDiagnostics");
+            options.add("-Xlint:-options");
+            options.add("-profile"); options.add("compact1");
+
+            log = new JavacTask(tb)
+                    .outdir(classes)
+                    .options(options)
+                    .sources("""
+                             public class Test {
+                                 javax.swing.JButton b;
+                             }
+                             """)
+                    .run(Task.Expect.FAIL)
+                    .writeAll()
+                    .getOutputLines(Task.OutputKind.DIRECT);
+
+            if (!expected.equals(log)) {
+                throw new AssertionError("Unexpected output: " + log +
+                                         ", variantOptions: " + variant);
+            }
+        }
+    }
+
+    /**
+     * Checks if the runtime JDK is a "package" JDK image, as source-based options
+     * don't work for exploded JDK. The system classfiles are not determined
+     * to be part of the JRT image for exploded JDK.
+     */
+    static boolean fullJDKImage() {
+        Path javaHome = FileSystems.getDefault().getPath(System.getProperty("java.home"));
+        Path thisSystemModules = javaHome.resolve("lib").resolve("modules");
+
+        return Files.isRegularFile(thisSystemModules);
+    }
 }

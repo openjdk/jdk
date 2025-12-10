@@ -69,7 +69,6 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
-import com.sun.tools.javac.file.LegacyCtSymAccess;
 import com.sun.tools.javac.file.RelativePath.RelativeDirectory;
 import com.sun.tools.javac.file.RelativePath.RelativeFile;
 import com.sun.tools.javac.main.Option;
@@ -402,7 +401,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
                          ListBuffer<JavaFileObject> resultList) throws IOException {
             try {
                 JRTIndex.Entry e = getJRTIndex().getEntry(subdirectory);
-                if (symbolFileEnabled && e.ctSym.hidden)
+                if (symbolFileEnabled && e.ctProperties.hidden)
                     return;
                 for (Path file: e.files.values()) {
                     if (fileKinds.contains(getKind(file))) {
@@ -426,7 +425,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         @Override
         public JavaFileObject getFileObject(Path userPath, RelativeFile name) throws IOException {
             JRTIndex.Entry e = getJRTIndex().getEntry(name.dirname());
-            if (symbolFileEnabled && e.ctSym.hidden)
+            if (symbolFileEnabled && e.ctProperties.hidden)
                 return null;
             Path p = e.files.get(name.basename());
             if (p != null) {
@@ -459,22 +458,22 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
     private JRTIndex jrtIndex;
 
-    public LegacyCtSymAccess getLegacyCtSymInfo() {
+    public LegacyCtPropertiesAccess getLegacyCtPropertiesInfo() {
         if (isDefaultBootClassPath() && isSymbolFileEnabled() && JRTIndex.isAvailable()) {
-            return new LegacyCtSymAccess() {
+            return new LegacyCtPropertiesAccess() {
                 private final JRTIndex jrtIndex = getJRTIndex();
                 @Override
-                public boolean isOnDefaultBootClassPath(JavaFileObject fo) {
+                public boolean supportsLegacyFlags(JavaFileObject fo) {
                     return jrtIndex.isInJRT(fo);
                 }
 
                 @Override
-                public LegacyCtSymInfo getInfo(CharSequence packge) throws IOException {
-                    return jrtIndex.getCtSym(packge);
+                public LegacyCtPropertiesInfo getInfo(CharSequence packge) throws IOException {
+                    return jrtIndex.getCtProperties(packge);
                 }
             };
         } else {
-            return LegacyCtSymAccess.NOOP;
+            return LegacyCtPropertiesAccess.NOOP;
         }
     }
 

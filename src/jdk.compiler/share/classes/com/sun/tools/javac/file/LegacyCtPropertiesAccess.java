@@ -29,29 +29,49 @@ import javax.tools.JavaFileObject;
 
 /**
  * Support for legacy ct.properties.
+ *
+ * This interface is used:
+ *
+ * - when compiling with --source 8 to fill in (JDK 8) profile information,
+ * mark classes in certain non-API packages as proprietary (which then leads to
+ * the "sun.proprietary" warning when used), and hide other non-API packages.
+ * For the source data see:
+ * src/jdk.compiler/share/classes/com/sun/tools/javac/resources/ct.properties
+ *
+ * - when compiling with --source >8, this interface is only used to determine
+ * if a file supports the proprietary flag (i.e. is on the default system path
+ * of the default filemanager, and the proprietary flag is not disabled). The
+ * proprietary flag is automatically filled for all classes in the jdk.unsupported
+ * module.
+ *
+ * The --source above may be explicit or implicit.
+ *
+ * When compiling with --release N, this legacy support is not directly used,
+ * as the relevant information is accessible from the lib/ct.sym file that
+ * contains the historical API record.
  */
-public interface LegacyCtSymAccess {
+public interface LegacyCtPropertiesAccess {
 
-    public static LegacyCtSymAccess NOOP = new LegacyCtSymAccess() {
+    public static LegacyCtPropertiesAccess NOOP = new LegacyCtPropertiesAccess() {
         @Override
-        public boolean isOnDefaultBootClassPath(JavaFileObject fo) {
+        public boolean supportsLegacyFlags(JavaFileObject fo) {
             return false;
         }
 
         @Override
-        public LegacyCtSymInfo getInfo(CharSequence packge) {
+        public LegacyCtPropertiesInfo getInfo(CharSequence packge) {
             throw new UnsupportedOperationException("Should not be called.");
         }
     };
 
-    public boolean isOnDefaultBootClassPath(JavaFileObject fo);
+    public boolean supportsLegacyFlags(JavaFileObject fo);
 
-    public LegacyCtSymInfo getInfo(CharSequence packge) throws IOException;
+    public LegacyCtPropertiesInfo getInfo(CharSequence packge) throws IOException;
 
     /**
      * The info that used to be in ct.sym for classes in a package.
      */
-    public static class LegacyCtSymInfo {
+    public static class LegacyCtPropertiesInfo {
         /**
          * The classes in this package are internal and not visible.
          */
@@ -65,7 +85,7 @@ public interface LegacyCtSymAccess {
          */
         public final String minProfile;
 
-        LegacyCtSymInfo(boolean hidden, boolean proprietary, String minProfile) {
+        LegacyCtPropertiesInfo(boolean hidden, boolean proprietary, String minProfile) {
             this.hidden = hidden;
             this.proprietary = proprietary;
             this.minProfile = minProfile;
@@ -92,7 +112,7 @@ public interface LegacyCtSymAccess {
             return sb.toString();
         }
 
-        static final LegacyCtSymInfo EMPTY = new LegacyCtSymInfo(false, false, null);
+        static final LegacyCtPropertiesInfo EMPTY = new LegacyCtPropertiesInfo(false, false, null);
     }
 
 }

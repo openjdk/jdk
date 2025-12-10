@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ import java.util.Set;
 
 import javax.tools.FileObject;
 
-import com.sun.tools.javac.file.LegacyCtSymAccess.LegacyCtSymInfo;
+import com.sun.tools.javac.file.LegacyCtPropertiesAccess.LegacyCtPropertiesInfo;
 import com.sun.tools.javac.file.RelativePath.RelativeDirectory;
 import com.sun.tools.javac.util.Context;
 
@@ -118,12 +118,12 @@ class JRTIndex {
         /**
          * The info that used to be in ct.sym for classes in this package.
          */
-        final LegacyCtSymInfo ctSym;
+        final LegacyCtPropertiesInfo ctProperties;
 
-        private Entry(Map<String, Path> files, Set<RelativeDirectory> subdirs, LegacyCtSymInfo ctSym) {
+        private Entry(Map<String, Path> files, Set<RelativeDirectory> subdirs, LegacyCtPropertiesInfo ctProperties) {
             this.files = files;
             this.subdirs = subdirs;
-            this.ctSym = ctSym;
+            this.ctProperties = ctProperties;
         }
     }
 
@@ -135,8 +135,8 @@ class JRTIndex {
         entries = new HashMap<>();
     }
 
-    public LegacyCtSymInfo getCtSym(CharSequence packageName) throws IOException {
-        return getEntry(RelativeDirectory.forPackage(packageName)).ctSym;
+    public LegacyCtPropertiesInfo getCtProperties(CharSequence packageName) throws IOException {
+        return getEntry(RelativeDirectory.forPackage(packageName)).ctProperties;
     }
 
     synchronized Entry getEntry(RelativeDirectory rd) throws IOException {
@@ -191,9 +191,9 @@ class JRTIndex {
         }
     }
 
-    private LegacyCtSymInfo getCtInfo(RelativeDirectory dir) {
+    private LegacyCtPropertiesInfo getCtInfo(RelativeDirectory dir) {
         if (dir.path.isEmpty())
-            return LegacyCtSymInfo.EMPTY;
+            return LegacyCtPropertiesInfo.EMPTY;
         // It's a side-effect of the default build rules that ct.properties
         // ends up as a resource bundle.
         if (ctBundle == null) {
@@ -217,9 +217,9 @@ class JRTIndex {
                         minProfile = attr;
                 }
             }
-            return new LegacyCtSymInfo(hidden, proprietary, minProfile);
+            return new LegacyCtPropertiesInfo(hidden, proprietary, minProfile);
         } catch (MissingResourceException e) {
-            return LegacyCtSymInfo.EMPTY;
+            return LegacyCtPropertiesInfo.EMPTY;
         }
 
     }
