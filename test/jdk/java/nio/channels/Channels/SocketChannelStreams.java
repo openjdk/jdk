@@ -22,10 +22,10 @@
  */
 
 /* @test
- * @bug 8279339
- * @run testng SocketChannelStreams
+ * @bug 8279339 8371718
  * @summary Exercise InputStream/OutputStream returned by Channels.newXXXStream
  *    when channel is a SocketChannel
+ * @run testng SocketChannelStreams
  */
 
 import java.io.Closeable;
@@ -35,6 +35,8 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.channels.ByteChannel;
 import java.nio.channels.Channels;
 import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.ServerSocketChannel;
@@ -51,6 +53,9 @@ import static org.testng.Assert.*;
 
 @Test
 public class SocketChannelStreams {
+    // Maximum size of internal temporary buffer
+    private static final int MAX_BUFFER_SIZE = 128*1024;
+
     private ScheduledExecutorService executor;
 
     @BeforeClass()
@@ -379,6 +384,25 @@ public class SocketChannelStreams {
         });
     }
 
+    /**
+     * Test that internal buffers have at most MAX_BUFFER_SIZE bytes remaining.
+     */
+    public void testReadLimit() throws IOException {
+        InputStream in = Channels.newInputStream(new TestChannel());
+        byte[] b = new byte[3*MAX_BUFFER_SIZE];
+        int n = in.read(b, 0, b.length);
+        assertEquals(n, MAX_BUFFER_SIZE);
+    }
+
+    /**
+     * Test that internal buffers have at most MAX_BUFFER_SIZE bytes remaining.
+     */
+    public void testWriteLimit() throws IOException {
+        OutputStream out = Channels.newOutputStream(new TestChannel());
+        byte[] b = new byte[3*MAX_BUFFER_SIZE];
+        out.write(b, 0, b.length);
+    }
+
     // -- test infrastructure --
 
     private interface ThrowingTask {
@@ -476,5 +500,41 @@ public class SocketChannelStreams {
      */
     private Future<?> schedule(Runnable task, long delay) {
         return executor.schedule(task, delay, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * ByteChannel that throws if more than 128k bytes remain
+     * in the buffer supplied for reading or writing.
+     */
+    private static class TestChannel implements ByteChannel {
+        @Override
+        public int read(ByteBuffer bb) throws IOException {
+            int rem = bb.remaining();
+            if (rem > MAX_BUFFER_SIZE) {
+                throw new IOException("too big");
+            }
+            bb.position(bb.limit());
+            return rem;
+        }
+
+        @Override
+        public int write(ByteBuffer bb) throws IOException {
+            int rem = bb.remaining();
+            if (rem > MAX_BUFFER_SIZE) {
+                throw new IOException("too big");
+            }
+            bb.position(bb.limit());
+            return rem;
+        }
+
+        @Override
+        public boolean isOpen() {
+            return true;
+        }
+
+        @Override
+        public void close() {
+            throw new UnsupportedOperationException();
+        }
     }
 }

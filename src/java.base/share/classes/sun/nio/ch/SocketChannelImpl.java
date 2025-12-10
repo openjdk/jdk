@@ -1373,6 +1373,7 @@ class SocketChannelImpl
             // nothing to do
             return 0;
         }
+        len = Math.min(len, Streams.MAX_BUFFER_SIZE);
 
         readLock.lock();
         try {
@@ -1469,7 +1470,7 @@ class SocketChannelImpl
                 beginWrite(true);
                 configureSocketNonBlockingIfVirtualThread();
                 while (pos < end && isOpen()) {
-                    int size = end - pos;
+                    int size = Math.min(end - pos, Streams.MAX_BUFFER_SIZE);
                     int n = tryWrite(b, pos, size);
                     while (IOStatus.okayToRetry(n) && isOpen()) {
                         park(Net.POLLOUT);
