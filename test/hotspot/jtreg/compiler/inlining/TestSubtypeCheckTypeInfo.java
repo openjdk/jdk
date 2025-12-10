@@ -40,12 +40,15 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Method;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class TestSubtypeCheckTypeInfo {
-    static final String TEST_CLASS_NAME = TestSubtypeCheckTypeInfo.class.getName();
+    static final Class<TestSubtypeCheckTypeInfo> THIS_CLASS = TestSubtypeCheckTypeInfo.class;
+    static final String TEST_CLASS_NAME = THIS_CLASS.getName();
 
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
@@ -65,15 +68,8 @@ public class TestSubtypeCheckTypeInfo {
         if (analyzer.getStderr().contains("Server VM")) {
             List<String> output = analyzer.asLinesWithoutVMWarnings();
 
-            int total = 18; // 18 test cases in total
-            int success = parseOutput(output);
-            if (success == total) {
-                System.out.println("TEST PASSED");
-            } else {
-                System.out.printf("TEST FAILED: %d out of %d test cases passed\n", success, total);
-                System.out.println(analyzer.getOutput());
-                throw new AssertionError("TEST FAILED");
-            }
+            parseOutput(output);
+            System.out.println("TEST PASSED");
         }
     }
 
@@ -102,6 +98,9 @@ public class TestSubtypeCheckTypeInfo {
             runTestCase(TestSubtypeCheckTypeInfo::testIsInstanceCondLate);
             runTestCase(TestSubtypeCheckTypeInfo::testIsInstanceCondLatePre);
             runTestCase(TestSubtypeCheckTypeInfo::testIsInstanceCondLatePost);
+
+            runTestCase(TestSubtypeCheckTypeInfo::testInstanceOfNulls);
+            runTestCase(TestSubtypeCheckTypeInfo::testIsInstanceNulls);
         }
     }
 
@@ -286,6 +285,28 @@ public class TestSubtypeCheckTypeInfo {
 
     /* =========================================================== */
 
+    @InlineFailure
+    // @ 20   compiler.inlining.TestSubtypeCheckTypeInfo$A::m (0 bytes)   failed to inline: virtual call
+    static void testInstanceOfNulls(A o, boolean cond) {
+        A recv = (cond ? o : null);
+        if (recv instanceof B) {
+            o.m();
+        }
+    }
+
+    @InlineFailure
+    //Inlining _isInstance on constant Class compiler/inlining/TestSubtypeCheckTypeInfo$B
+    // @ 13   java.lang.Class::isInstance (0 bytes)   (intrinsic)
+    // @ 20   compiler.inlining.TestSubtypeCheckTypeInfo$A::m (0 bytes)   failed to inline: virtual call
+    static void testIsInstanceNulls(A o, boolean cond) {
+        A recv = (cond ? o : null);
+        if (B.class.isInstance(recv)) {
+            o.m();
+        }
+    }
+
+    /* =========================================================== */
+
     static abstract class A {
         public abstract void m();
     }
@@ -340,41 +361,52 @@ public class TestSubtypeCheckTypeInfo {
     /* =========================================================== */
 
     // Parse compilation log (-XX:+PrintCompilation -XX:+PrintInlining output).
-    static int parseOutput(List<String> output) {
-        int successCount = 0;
+    static void parseOutput(List<String> output) {
         Pattern compilation = Pattern.compile("^\\d+\\s+\\d+.*");
         StringBuilder inlineTree = new StringBuilder();
+        Set<String> passedTests = new HashSet();
+        Set<String> failedTests = new HashSet();
         for (String line : output) {
             // Detect start of next compilation.
             if (compilation.matcher(line).matches()) {
                 // Parse output for previous compilation.
-                successCount += (validateInliningOutput(inlineTree.toString()) ? 1 : 0);
+                validateInliningOutput(inlineTree.toString(), passedTests, failedTests);
                 inlineTree = new StringBuilder(); // reset
             }
             inlineTree.append(line);
         }
         // Process last compilation
-        successCount += (validateInliningOutput(inlineTree.toString()) ? 1 : 0);
-        return successCount;
+        validateInliningOutput(inlineTree.toString(), passedTests, failedTests);
+
+        if (!failedTests.isEmpty()) {
+            String msg = String.format("TEST FAILED: %d test cases failed", failedTests.size());
+            throw new AssertionError(msg);
+        } else if (passedTests.size() != totalTestCount()) {
+            String msg = String.format("TEST FAILED: %d out of %d test cases passed", passedTests.size(), totalTestCount());
+            throw new AssertionError(msg);
+        }
     }
 
     // Sample:
     //    213   42    b        compiler.inlining.TestSubtypeCheckTypeInfo::testIsInstanceCondLatePost (13 bytes)
     static final Pattern TEST_CASE = Pattern.compile("^\\d+\\s+\\d+\\s+b\\s+" + TEST_CLASS_NAME + "::(\\w+) .*");
 
-    static boolean validateInliningOutput(String inlineTree) {
+    static boolean validateInliningOutput(String inlineTree, Set<String> passedTests, Set<String> failedTests) {
         Matcher m = TEST_CASE.matcher(inlineTree);
         if (m.matches()) {
             String testName = m.group(1);
             System.out.print(testName);
             try {
                 Method testMethod = TestSubtypeCheckTypeInfo.class.getDeclaredMethod(testName, A.class, boolean.class);
-                if (!validate(inlineTree, testMethod.getAnnotation(InlineSuccess.class)) ||
-                    !validate(inlineTree, testMethod.getAnnotation(InlineFailure.class))) {
+                if (validate(inlineTree, testMethod.getAnnotation(InlineSuccess.class)) &&
+                    validate(inlineTree, testMethod.getAnnotation(InlineFailure.class))) {
+                    System.out.println(": SUCCESS");
+                    passedTests.add(testName);
+                    return true;
+                } else {
+                    failedTests.add(testName);
                     return false;
                 }
-                System.out.println(": SUCCESS");
-                return true;
             } catch (NoSuchMethodException e) {
                 System.out.println(": FAILURE: Missing test info for " + testName + ": " + inlineTree);
                 throw new InternalError(e);
@@ -393,7 +425,7 @@ public class TestSubtypeCheckTypeInfo {
 
     static boolean validate(String message, InlineFailure ann) {
         if (ann != null) {
-            validatePatterns(message, ann.shouldContain(), ann.shouldNotContain());
+            return validatePatterns(message, ann.shouldContain(), ann.shouldNotContain());
         }
         return true; // no patterns to validate
     }
@@ -412,6 +444,21 @@ public class TestSubtypeCheckTypeInfo {
             }
         }
         return true;
+    }
+
+    static int totalTestCount() {
+        int count = 0;
+        for (Method m : THIS_CLASS.getDeclaredMethods()) {
+            if (m.isAnnotationPresent(InlineSuccess.class) || m.isAnnotationPresent(InlineFailure.class)) {
+                String testName = m.getName();
+                if (testName.startsWith("test")) {
+                    count++;
+                } else {
+                    throw new InternalError("wrong test name: " + testName);
+                }
+            }
+        }
+        return count;
     }
 
     /* =========================================================== */
