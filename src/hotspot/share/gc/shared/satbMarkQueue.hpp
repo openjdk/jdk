@@ -25,10 +25,15 @@
 #ifndef SHARE_GC_SHARED_SATBMARKQUEUE_HPP
 #define SHARE_GC_SHARED_SATBMARKQUEUE_HPP
 
+#include "gc/shared/bufferNode.hpp"
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/align.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/sizes.hpp"
 
 class Thread;
 class Monitor;
@@ -119,7 +124,7 @@ public:
   static ByteSize byte_offset_of_buf() {
     return byte_offset_of(SATBMarkQueue, _buf);
   }
-  
+
   static ByteSize byte_width_of_buf() { return in_ByteSize(_element_size); }
 
   static ByteSize byte_offset_of_active() {
@@ -203,7 +208,7 @@ public:
   void set_process_completed_buffers_threshold(size_t value);
 
   size_t buffer_enqueue_threshold() const { return _buffer_enqueue_threshold; }
-  
+
   void set_buffer_enqueue_threshold_percentage(uint value);
 
   // If there exists some completed buffer, pop and process it, and
