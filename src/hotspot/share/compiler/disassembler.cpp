@@ -615,7 +615,9 @@ void decode_env::print_address(address adr) {
 #if INCLUDE_SHENANDOAHGC
     } else if (bs->is_a(BarrierSet::ShenandoahBarrierSet)) {
       ShenandoahBarrierSet* sbs = barrier_set_cast<ShenandoahBarrierSet>(bs);
-      card_table_base = sbs->card_table()->byte_map_base();
+      if (sbs->card_table() != nullptr) {
+        card_table_base = sbs->card_table()->byte_map_base();
+      }
 #endif
     } else if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
       card_table_base = ci_card_table_address_as<address>();
