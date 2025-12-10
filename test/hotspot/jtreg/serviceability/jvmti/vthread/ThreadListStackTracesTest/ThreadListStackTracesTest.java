@@ -97,7 +97,7 @@ public class ThreadListStackTracesTest {
         String name = "ReentrantLockTestTask";
         TestTask task = new ReentrantLockTestTask();
         Thread vt = Thread.ofVirtual().name(name).start(task);
-        sleep(50); // allow potentially needed class loading to complete
+        TestTask.sleep(50); // allow potentially needed class loading to complete
         task.ensureReady(vt, expState);
         checkStates(vt, expState);
     }
