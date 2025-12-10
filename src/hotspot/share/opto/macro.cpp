@@ -2379,8 +2379,8 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
       continue;
     }
 
-    Node* iftrue = iff->as_If()->proj_out(1);
-    Node* iffalse = iff->as_If()->proj_out(0);
+    IfTrueNode* iftrue = iff->as_If()->true_proj();
+    IfFalseNode* iffalse = iff->as_If()->false_proj();
     Node* ctrl = iff->in(0);
 
     Node* subklass = nullptr;
