@@ -451,9 +451,7 @@ public class BytecodeHelpers {
     }
 
     public static void validateIncrement(Opcode opcode, int slot, int constant) {
-        boolean requiresWide = validateAndIsWideIinc(slot, constant);
-        int size = opcode.sizeIfFixed();
-        if ((size == 3 && requiresWide)) {
+        if (validateAndIsWideIinc(slot, constant) && opcode != Opcode.IINC_W) {
             throw new IllegalArgumentException(
                     "IINC: operands require wide encoding for %s".formatted(opcode));
         }

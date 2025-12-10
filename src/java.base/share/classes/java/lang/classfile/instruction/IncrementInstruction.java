@@ -91,16 +91,11 @@ public sealed interface IncrementInstruction extends Instruction
     /**
      * {@return an increment instruction}
      * <p>
-     * The ranges of {@code slot} and {@code constant} are restricted by the
-     * {@code op} and its {@linkplain Opcode#sizeIfFixed() size}:
-     * <ul>
-     * <li>If {@code op} has size 3, {@code slot} must be {@link
-     *     java.lang.classfile##u1 u1} and {@code constant} must be within
-     *     {@code [-128, 127]}.
-     * <li>If {@code op} has size 6, {@code slot} must be {@link
-     *     java.lang.classfile##u2 u2} and {@code constant} must be within
-     *     {@code [-32768, 32767]}.
-     * </ul>
+     * {@code slot} must be {@link java.lang.classfile##u1 u1} and
+     * {@code constant} must be within {@code [-128, 127]} for
+     * {@link Opcode#IINC iinc}, or {@code slot} must be
+     * {@link java.lang.classfile##u2 u2} and {@code constant} must be
+     * within {@code [-32768, 32767]} for {@link Opcode#IINC_W wide iinc}.
      *
      * @apiNote
      * The explicit {@code op} argument allows creating {@code wide} or
@@ -115,6 +110,7 @@ public sealed interface IncrementInstruction extends Instruction
      * @throws IllegalArgumentException if the opcode kind is not
      *         {@link Opcode.Kind#INCREMENT} or {@code slot} or
      *         {@code constant} is out of range
+     * @since 27
      */
     static IncrementInstruction of(Opcode op, int slot, int constant) {
         Util.checkKind(op, Opcode.Kind.INCREMENT);

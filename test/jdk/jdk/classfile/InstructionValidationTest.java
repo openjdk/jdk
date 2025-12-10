@@ -252,6 +252,13 @@ class InstructionValidationTest {
         IncrementInstruction.of(0, 2);
         IncrementInstruction.of(0, Short.MAX_VALUE);
         IncrementInstruction.of(0, Short.MIN_VALUE);
+        IncrementInstruction.of(IINC, 0, 2);
+        IncrementInstruction.of(IINC, 0, Byte.MIN_VALUE);
+        IncrementInstruction.of(IINC, 0, Byte.MAX_VALUE);
+        IncrementInstruction.of(IINC_W, 0, 2);
+        IncrementInstruction.of(IINC_W, 0, Short.MIN_VALUE);
+        IncrementInstruction.of(IINC_W, 0, Short.MAX_VALUE);
+
         for (int i : new int[] {Short.MIN_VALUE - 1, Short.MAX_VALUE + 1}) {
             assertThrows(IllegalArgumentException.class, () -> IncrementInstruction.of(0, i));
             TestUtil.runCodeHandler(cob -> {
@@ -259,18 +266,6 @@ class InstructionValidationTest {
                 cob.return_();
             });
         }
-    }
-
-    @Test
-    void testExplicitIincConstant() {
-        IncrementInstruction.of(IINC, 0, 2);
-        IncrementInstruction.of(IINC, 0, Byte.MIN_VALUE);
-        IncrementInstruction.of(IINC, 0, Byte.MAX_VALUE);
-
-        IncrementInstruction.of(IINC_W, 0, 2);
-        IncrementInstruction.of(IINC_W, 0, Short.MIN_VALUE);
-        IncrementInstruction.of(IINC_W, 0, Short.MAX_VALUE);
-
         for (int i : new int[] {Byte.MIN_VALUE - 1, Byte.MAX_VALUE + 1}) {
             assertThrows(IllegalArgumentException.class, () -> IncrementInstruction.of(IINC, 0, i));
         }
