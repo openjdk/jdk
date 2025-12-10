@@ -313,8 +313,7 @@ void CastIINode::remove_range_check_cast(Compile* C) {
   }
 }
 
-
-bool CastLLNode::is_inner_loop_backedge(IfProjNode* proj) const {
+bool CastLLNode::is_inner_loop_backedge(IfProjNode* proj) {
   if (proj != nullptr) {
     Node* ctrl_use = proj->unique_ctrl_out_or_null();
     if (ctrl_use != nullptr && ctrl_use->Opcode() == Op_Loop &&
