@@ -380,6 +380,7 @@ public class VectorAlgorithmsImpl {
     //
     // Task: Find all non-null oops, and dereference them, get the relevant field.
     //       Objects have 16 bytes, and the relevant field is at bytes 12-16.
+    //       That maps to 4 ints, and the relevant field is the 4th element of 4.
     //       Sum up all the field values.
     public static int reduceAddIFieldsX4_loop(int[] oops, int[] mem) {
         int sum = 0;

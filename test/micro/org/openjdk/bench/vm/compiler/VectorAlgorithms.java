@@ -52,6 +52,9 @@ public class VectorAlgorithms {
     @Param({"640000"})
     public int SIZE;
 
+    @Param({"10000"})
+    public int NUM_X_OBJECTS;
+
     @Param({"0"})
     public int SEED;
 
@@ -62,22 +65,40 @@ public class VectorAlgorithms {
     public static int[] eI;
     public static int idx = 0;
 
+    public static int[] oopsX4;
+    public static int[] memX4;
+
     @Setup
     public void init() {
-        aI = new int[SIZE];
-        rI = new int[SIZE];
         RANDOM = new Random(SEED);
 
-        // Populate with some random values from aI, and some totally random values.
+        aI = new int[SIZE];
+        rI = new int[SIZE];
+
         eI = new int[0x10000];
-        for (int i = 0; i < eI.length; i++) {
-            eI[i] = (RANDOM.nextInt(10) == 0) ? RANDOM.nextInt() : aI[RANDOM.nextInt(SIZE)];
-        }
+
+        oopsX4 = new int[SIZE];
+        memX4 = new int[NUM_X_OBJECTS * 4];
     }
 
     @Setup(Level.Iteration)
     public void resetInputs() {
         Arrays.setAll(aI, i -> RANDOM.nextInt());
+
+        // Populate with some random values from aI, and some totally random values.
+        for (int i = 0; i < eI.length; i++) {
+            eI[i] = (RANDOM.nextInt(10) == 0) ? RANDOM.nextInt() : aI[RANDOM.nextInt(SIZE)];
+        }
+
+        for (int i = 0; i < oopsX4.length; i++) {
+            // assign either a zero=null, or assign a random oop.
+            oopsX4[i] = (RANDOM.nextInt(10) == 0) ? 0 : RANDOM.nextInt(NUM_X_OBJECTS) * 4;
+        }
+        // Just fill the whole array with random values.
+        // The relevant field is only at every "4 * i + 3" though.
+        for (int i = 0; i < memX4.length; i++) {
+            memX4[i] = RANDOM.nextInt();
+        }
     }
 
     // ------------------------------------------------------------------------------------------
@@ -217,4 +238,13 @@ public class VectorAlgorithms {
         return VectorAlgorithmsImpl.filterI_VectorAPI(aI, rI, e);
     }
 
+    @Benchmark
+    public int reduceAddIFieldsX4_loop() {
+        return VectorAlgorithmsImpl.reduceAddIFieldsX4_loop(oopsX4, memX4);
+    }
+
+    @Benchmark
+    public int reduceAddIFieldsX4_VectorAPI() {
+        return VectorAlgorithmsImpl.reduceAddIFieldsX4_VectorAPI(oopsX4, memX4);
+    }
 }
