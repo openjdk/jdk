@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,88 @@
 // -----------------------------------------------------------------------------
 // ConcurrentHashTable storing links from objects to ObjectMonitors
 
-ObjectMonitorTable::ConcurrentTable* ObjectMonitorTable::_table = nullptr;
-volatile size_t ObjectMonitorTable::_items_count = 0;
-size_t ObjectMonitorTable::_table_size = 0;
-volatile bool ObjectMonitorTable::_resize = false;
+using ConcurrentTable = ConcurrentHashTable<ObjectMonitorTableConfig, mtObjectMonitor>;
+
+static ConcurrentTable* _table = nullptr;
+static volatile size_t _items_count = 0;
+static size_t _table_size = 0;
+static volatile bool _resize = false;
+
+class ObjectMonitorTableConfig : public AllStatic {
+ public:
+  using Value = ObjectMonitor*;
+  static uintx get_hash(Value const& value, bool* is_dead) {
+    return (uintx)value->hash();
+  }
+  static void* allocate_node(void* context, size_t size, Value const& value) {
+    ObjectMonitorTable::inc_items_count();
+    return AllocateHeap(size, mtObjectMonitor);
+  };
+  static void free_node(void* context, void* memory, Value const& value) {
+    ObjectMonitorTable::dec_items_count();
+    FreeHeap(memory);
+  }
+};
+
+class Lookup : public StackObj {
+  oop _obj;
+
+ public:
+  explicit Lookup(oop obj) : _obj(obj) {}
+
+  uintx get_hash() const {
+    uintx hash = _obj->mark().hash();
+    assert(hash != 0, "should have a hash");
+    return hash;
+  }
+
+  bool equals(ObjectMonitor** value) {
+    assert(*value != nullptr, "must be");
+    return (*value)->object_refers_to(_obj);
+  }
+
+  bool is_dead(ObjectMonitor** value) {
+    assert(*value != nullptr, "must be");
+    return false;
+  }
+};
+
+class LookupMonitor : public StackObj {
+  ObjectMonitor* _monitor;
+
+ public:
+  explicit LookupMonitor(ObjectMonitor* monitor) : _monitor(monitor) {}
+
+  uintx get_hash() const {
+    return _monitor->hash();
+  }
+
+  bool equals(ObjectMonitor** value) {
+    return (*value) == _monitor;
+  }
+
+  bool is_dead(ObjectMonitor** value) {
+    assert(*value != nullptr, "must be");
+    return (*value)->object_is_dead();
+  }
+};
+
+void ObjectMonitorTable::inc_items_count() {
+  AtomicAccess::inc(&_items_count, memory_order_relaxed);
+}
+
+void ObjectMonitorTable::dec_items_count() {
+  AtomicAccess::dec(&_items_count, memory_order_relaxed);
+}
+
+double ObjectMonitorTable::get_load_factor() {
+  size_t count = AtomicAccess::load(&_items_count);
+  return (double)count / (double)_table_size;
+}
+
+size_t ObjectMonitorTable::table_size(Thread* current) {
+  return ((size_t)1) << _table->get_size_log2(current);
+}
 
 size_t ObjectMonitorTable::max_log_size() {
   // TODO[OMTable]: Evaluate the max size.
@@ -55,10 +133,29 @@ size_t ObjectMonitorTable::max_log_size() {
   return MAX2(MIN2<size_t>(SIZE_BIG_LOG2, log_max_objects), min_log_size());
 }
 
+// ~= log(AvgMonitorsPerThreadEstimate default)
+size_t ObjectMonitorTable::min_log_size() {
+  return 10;
+}
+
+template<typename V>
+size_t ObjectMonitorTable::clamp_log_size(V log_size) {
+  return MAX2(MIN2(log_size, checked_cast<V>(max_log_size())), checked_cast<V>(min_log_size()));
+}
+
+size_t ObjectMonitorTable::initial_log_size() {
+  const size_t estimate = log2i(MAX2(os::processor_count(), 1)) + log2i(MAX2(AvgMonitorsPerThreadEstimate, size_t(1)));
+  return clamp_log_size(estimate);
+}
+
+size_t ObjectMonitorTable::grow_hint() {
+  return ConcurrentTable::DEFAULT_GROW_HINT;
+}
+
 void ObjectMonitorTable::create() {
   _table = new ConcurrentTable(initial_log_size(), max_log_size(), grow_hint());
   _items_count = 0;
-  _table_size = table_size();
+  _table_size = table_size(Thread::current());
   _resize = false;
 }
 
@@ -103,7 +200,7 @@ bool ObjectMonitorTable::should_resize() {
   return should_grow() || should_shrink() || AtomicAccess::load(&_resize);
 }
 
-template<typename Task, typename... Args>
+template <typename Task, typename... Args>
 bool ObjectMonitorTable::run_task(JavaThread* current, Task& task, const char* task_name, Args&... args) {
   if (task.prepare(current)) {
     log_trace(monitortable)("Started to %s", task_name);
