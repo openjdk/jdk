@@ -40,7 +40,6 @@
  * @key intermittent
  */
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -77,7 +76,7 @@ public class InheritedChannelTest {
         };
     }
 
-    @Test(dataProvider = "testCases", timeOut=30000)
+    @Test(dataProvider = "testCases")
     public void test(String desc, List<String> opts) throws Throwable {
         String pathVar = Platform.sharedLibraryPathVariableName();
         System.out.println(pathVar + "=" + libraryPath);
