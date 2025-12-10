@@ -245,7 +245,7 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
     cardtable_shift = CardTable::card_shift();
 #endif
   } else if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
-    CardTable::CardValue* base = ci_card_table_address();
+    CardTable::CardValue* base = ci_card_table_address_const();
     assert(base != nullptr, "unexpected byte_map_base");
     cardtable_start_address = base;
     cardtable_shift = CardTable::card_shift();

@@ -99,9 +99,11 @@ public:
     data(thread)->_byte_map_base = new_byte_map_base;
   }
 
+#ifndef PRODUCT
   static G1CardTable::CardValue* get_byte_map_base(Thread* thread) {
     return data(thread)->_byte_map_base;
   }
+#endif
 
   static G1RegionPinCache& pin_count_cache(Thread* thread) {
     return data(thread)->_pin_cache;
