@@ -25,7 +25,7 @@ package compiler.c2;
 
 /*
  * @test
- * @bug JDK-8372302
+ * @bug 8372302
  * @summary ModINode::Ideal and ModLNode::Ideal use an intermediate "hook" node
  *          to keep stuff alive between phase->transform(...) calls. In some cases,
  *          this node is not properly deleted before returning, causing failure
