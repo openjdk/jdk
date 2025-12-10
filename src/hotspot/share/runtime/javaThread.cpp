@@ -499,7 +499,7 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _suspend_resume_manager(this, &_handshake._lock),
 
   _is_in_vthread_transition(false),
-  DEBUG_ONLY(_is_vthread_transition_disabler(false) COMMA)
+  _is_vthread_transition_disabler(false),
   DEBUG_ONLY(_is_disabler_at_start(false) COMMA)
 
   _popframe_preserved_args(nullptr),
@@ -1161,11 +1161,11 @@ void JavaThread::set_is_in_vthread_transition(bool val) {
   AtomicAccess::store(&_is_in_vthread_transition, val);
 }
 
-#ifdef ASSERT
 void JavaThread::set_is_vthread_transition_disabler(bool val) {
   _is_vthread_transition_disabler = val;
 }
 
+#ifdef ASSERT
 void JavaThread::set_is_disabler_at_start(bool val) {
   _is_disabler_at_start = val;
 }
@@ -1179,7 +1179,7 @@ void JavaThread::set_is_disabler_at_start(bool val) {
 //
 bool JavaThread::java_suspend(bool register_vthread_SR) {
   // Suspending a vthread transition disabler can cause deadlocks.
-  assert(!is_vthread_transition_disabler(), "no suspend allowed for vthread transition disablers");
+  // The HandshakeState::has_operation does not allow such suspends.
 
   guarantee(Thread::is_JavaThread_protected(/* target */ this),
             "target JavaThread is not protected in calling context.");
