@@ -109,15 +109,15 @@ public class GoAwayWithErrorTest {
         CompletableFuture<HttpResponse<String>> first = client.sendAsync(
                 request, HttpResponse.BodyHandlers.ofString());
 
+        if (!goAwaySentLatch.await(5, TimeUnit.SECONDS)) {
+            throw new AssertionError("GOAWAY not sent in time");
+        }
+
         CompletableFuture<HttpResponse<String>> second = client.sendAsync(
                 request, HttpResponse.BodyHandlers.ofString());
 
         CompletableFuture<HttpResponse<String>> third = client.sendAsync(
                 request, HttpResponse.BodyHandlers.ofString());
-
-        if (!goAwaySentLatch.await(5, TimeUnit.SECONDS)) {
-            throw new AssertionError("GOAWAY not sent in time");
-        }
 
         CompletableFuture.allOf(first, second, third)
                 .orTimeout(20, TimeUnit.SECONDS)
