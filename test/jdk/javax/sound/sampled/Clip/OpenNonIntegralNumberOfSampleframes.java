@@ -32,6 +32,7 @@ import javax.sound.sampled.LineUnavailableException;
 
 /**
  * @test
+ * @key sound
  * @bug 8167435
  */
 public final class OpenNonIntegralNumberOfSampleframes {
