@@ -31,7 +31,6 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorageParState.hpp"
 #include "gc/shared/preGCValues.hpp"
-#include "gc/shared/softRefPolicy.hpp"
 #include "utilities/growableArray.hpp"
 
 class CardTableRS;
@@ -56,10 +55,10 @@ class TenuredGeneration;
 //                                              +-- generation boundary (fixed after startup)
 //                                              |
 // |<-    young gen (reserved MaxNewSize)     ->|<- old gen (reserved MaxOldSize) ->|
-// +-----------------+--------+--------+--------+---------------+-------------------+
-// |       eden      |  from  |   to   |        |      old      |                   |
-// |                 |  (to)  | (from) |        |               |                   |
-// +-----------------+--------+--------+--------+---------------+-------------------+
+// +--------+--------+-----------------+--------+---------------+-------------------+
+// |  from  |   to   |       eden      |        |      old      |                   |
+// |  (to)  | (from) |                 |        |               |                   |
+// +--------+--------+-----------------+--------+---------------+-------------------+
 // |<-          committed            ->|        |<- committed ->|
 //
 class SerialHeap : public CollectedHeap {
@@ -102,16 +101,7 @@ private:
   // old-gen.
   bool _is_heap_almost_full;
 
-  // Helper functions for allocation
-  HeapWord* attempt_allocation(size_t size,
-                               bool   is_tlab,
-                               bool   first_only);
-
   void do_full_collection(bool clear_all_soft_refs) override;
-
-  // Does the "cause" of GC indicate that
-  // we absolutely __must__ clear soft refs?
-  bool must_clear_all_soft_refs();
 
   bool is_young_gc_safe() const;
 
@@ -138,7 +128,7 @@ public:
 
   size_t max_capacity() const override;
 
-  HeapWord* mem_allocate(size_t size, bool*  gc_overhead_limit_was_exceeded) override;
+  HeapWord* mem_allocate(size_t size) override;
 
   // Callback from VM_SerialCollectForAllocation operation.
   // This function does everything necessary/possible to satisfy an
@@ -149,9 +139,6 @@ public:
   // Callback from VM_SerialGCCollect.
   void collect_at_safepoint(bool full);
 
-  // Perform a full collection of the heap; intended for use in implementing
-  // "System.gc". This implies as full a collection as the CollectedHeap
-  // supports. Caller does not hold the Heap_lock on entry.
   void collect(GCCause::Cause cause) override;
 
   // Returns "TRUE" iff "p" points into the committed areas of the heap.
@@ -199,9 +186,9 @@ public:
   bool block_is_obj(const HeapWord* addr) const;
 
   // Section on TLAB's.
-  size_t tlab_capacity(Thread* thr) const override;
-  size_t tlab_used(Thread* thr) const override;
-  size_t unsafe_max_tlab_alloc(Thread* thr) const override;
+  size_t tlab_capacity() const override;
+  size_t tlab_used() const override;
+  size_t unsafe_max_tlab_alloc() const override;
   HeapWord* allocate_new_tlab(size_t min_size,
                               size_t requested_size,
                               size_t* actual_size) override;
@@ -229,13 +216,10 @@ public:
   void save_marks();
 
 private:
-  // Return true if an allocation should be attempted in the older generation
-  // if it fails in the younger generation.  Return false, otherwise.
-  bool should_try_older_generation_allocation(size_t word_size) const;
-
   // Try to allocate space by expanding the heap.
   HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
 
+  HeapWord* mem_allocate_cas_noexpand(size_t size, bool is_tlab);
   HeapWord* mem_allocate_work(size_t size, bool is_tlab);
 
   MemoryPool* _eden_pool;
@@ -270,9 +254,6 @@ public:
 
   void scan_evacuated_objs(YoungGenScanClosure* young_cl,
                            OldGenScanClosure* old_cl);
-
-  void safepoint_synchronize_begin() override;
-  void safepoint_synchronize_end() override;
 
   // Support for loading objects from CDS archive into the heap
   bool can_load_archived_objects() const override { return true; }

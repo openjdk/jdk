@@ -326,6 +326,21 @@ public:
 };
 
 #if INCLUDE_CDS
+class AOTEndRecordingDCmd : public DCmd {
+public:
+  AOTEndRecordingDCmd(outputStream* output, bool heap) : DCmd(output, heap) { }
+    static const char* name() { return "AOT.end_recording"; }
+    static const char* description() {
+      return "End AOT recording.";
+    }
+    static const char* impact() {
+      return "Medium: Pause time depends on number of loaded classes";
+    }
+    virtual void execute(DCmdSource source, TRAPS);
+};
+#endif // INCLUDE_CDS
+
+#if INCLUDE_CDS
 class DumpSharedArchiveDCmd: public DCmdWithParser {
 protected:
   DCmdArgument<char*> _suboption;   // option of VM.cds
@@ -356,7 +371,9 @@ public:
   ThreadDumpDCmd(outputStream* output, bool heap);
   static const char* name() { return "Thread.print"; }
   static const char* description() {
-    return "Print all threads with stacktraces.";
+    return "Print all platform threads, and mounted virtual threads, "
+           "with stack traces. The Thread.dump_to_file command will "
+           "print all threads to a file.";
   }
   static const char* impact() {
     return "Medium: Depends on the number of threads.";
@@ -768,7 +785,8 @@ public:
     return "Thread.dump_to_file";
   }
   static const char *description() {
-    return "Dump threads, with stack traces, to a file in plain text or JSON format.";
+    return "Dump all threads, with stack traces, "
+           "to a file in plain text or JSON format.";
   }
   static const char* impact() {
     return "Medium: Depends on the number of threads.";

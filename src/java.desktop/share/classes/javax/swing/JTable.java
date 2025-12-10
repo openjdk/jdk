@@ -1164,7 +1164,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see     #setShowHorizontalLines
      */
     @BeanProperty(description
-            = "The color used to draw the grid lines.")
+            = "Whether grid lines are drawn around the cells.")
     public void setShowGrid(boolean showGrid) {
         setShowHorizontalLines(showGrid);
         setShowVerticalLines(showGrid);

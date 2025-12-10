@@ -64,8 +64,6 @@ class PSScavenge: AllStatic {
 
   static void clean_up_failed_promotion();
 
-  static bool should_attempt_scavenge();
-
   // Private accessors
   static PSCardTable* card_table()                 { assert(_card_table != nullptr, "Sanity"); return _card_table; }
   static const ParallelScavengeTracer* gc_tracer() { return &_gc_tracer; }
@@ -99,15 +97,6 @@ class PSScavenge: AllStatic {
   // Scavenge entry point.
   // Return true iff a young-gc is completed without promotion-failure.
   static bool invoke(bool clear_soft_refs);
-
-  template <class T> static inline bool should_scavenge(T* p);
-
-  // These call should_scavenge() above and, if it returns true, also check that
-  // the object was not newly copied into to_space.  The version with the bool
-  // argument is a convenience wrapper that fetches the to_space pointer from
-  // the heap and calls the other version (if the arg is true).
-  template <class T> static inline bool should_scavenge(T* p, MutableSpace* to_space);
-  template <class T> static inline bool should_scavenge(T* p, bool check_to_space);
 
   // Is an object in the young generation
   // This assumes that the 'o' is in the heap,

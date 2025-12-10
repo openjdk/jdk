@@ -24,7 +24,7 @@
 
 #include "jfr/recorder/service/jfrPostBox.hpp"
 #include "jfr/utilities/jfrTryLock.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
@@ -85,10 +85,10 @@ void JfrPostBox::post(JFR_Msg msg) {
 
 void JfrPostBox::deposit(int new_messages) {
   while (true) {
-    const int current_msgs = Atomic::load(&_messages);
+    const int current_msgs = AtomicAccess::load(&_messages);
     // OR the new message
     const int exchange_value = current_msgs | new_messages;
-    const int result = Atomic::cmpxchg(&_messages, current_msgs, exchange_value);
+    const int result = AtomicAccess::cmpxchg(&_messages, current_msgs, exchange_value);
     if (result == current_msgs) {
       return;
     }
@@ -116,7 +116,7 @@ void JfrPostBox::synchronous_post(int msg) {
   deposit(msg);
   // serial_id is used to check when what we send in has been processed.
   // _msg_read_serial is read under JfrMsg_lock protection.
-  const uintptr_t serial_id = Atomic::load(&_msg_read_serial) + 1;
+  const uintptr_t serial_id = AtomicAccess::load(&_msg_read_serial) + 1;
   msg_lock.notify_all();
   while (!is_message_processed(serial_id)) {
     msg_lock.wait();
@@ -131,17 +131,17 @@ void JfrPostBox::synchronous_post(int msg) {
  */
 bool JfrPostBox::is_message_processed(uintptr_t serial_id) const {
   assert(JfrMsg_lock->owned_by_self(), "_msg_handled_serial must be read under JfrMsg_lock protection");
-  return serial_id <= Atomic::load(&_msg_handled_serial);
+  return serial_id <= AtomicAccess::load(&_msg_handled_serial);
 }
 
 bool JfrPostBox::is_empty() const {
   assert(JfrMsg_lock->owned_by_self(), "not holding JfrMsg_lock!");
-  return Atomic::load(&_messages) == 0;
+  return AtomicAccess::load(&_messages) == 0;
 }
 
 int JfrPostBox::collect() {
   // get pending and reset to 0
-  const int messages = Atomic::xchg(&_messages, 0);
+  const int messages = AtomicAccess::xchg(&_messages, 0);
   if (check_waiters(messages)) {
     _has_waiters = true;
     assert(JfrMsg_lock->owned_by_self(), "incrementing _msg_read_serial is protected by JfrMsg_lock");

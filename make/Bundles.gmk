@@ -301,7 +301,7 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
 	$(call LogWarn, Signing $(JDK_BUNDLE_NAME))
 	$(CODESIGN) -s "$(MACOSX_CODESIGN_IDENTITY)" \
 	    --timestamp --options runtime --deep --force \
-	    $(JDK_MACOSX_BUNDLE_DIR_SIGNED)/$(JDK_MACOSX_BUNDLE_TOP_DIR) $(LOG_DEBUG)
+	    $(JDK_MACOSX_BUNDLE_DIR_SIGNED)/$(JDK_MACOSX_BUNDLE_TOP_SUBDIR) $(LOG_DEBUG)
 	$(TOUCH) $@
 
     $(eval $(call SetupBundleFile, BUILD_JDK_BUNDLE, \
@@ -330,7 +330,7 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
 	$(call LogWarn, Signing $(JRE_BUNDLE_NAME))
 	$(CODESIGN) -s "$(MACOSX_CODESIGN_IDENTITY)" \
 	    --timestamp --options runtime --deep --force \
-	    $(JRE_MACOSX_BUNDLE_DIR_SIGNED)/$(JRE_MACOSX_BUNDLE_TOP_DIR) $(LOG_DEBUG)
+	    $(JRE_MACOSX_BUNDLE_DIR_SIGNED)/$(JRE_MACOSX_BUNDLE_TOP_SUBDIR) $(LOG_DEBUG)
 	$(TOUCH) $@
 
     $(eval $(call SetupBundleFile, BUILD_JRE_BUNDLE, \

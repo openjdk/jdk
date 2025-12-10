@@ -51,7 +51,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBMLIB_IMAGE, \
         $(LIBMLIB_IMAGE_CFLAGS), \
     DISABLED_WARNINGS_gcc := unused-function, \
     DISABLED_WARNINGS_clang_mlib_ImageCreate.c := unused-function, \
-    LIBS_unix := $(LIBDL) $(LIBM), \
+    LIBS_unix := $(LIBM), \
 ))
 
 TARGETS += $(BUILD_LIBMLIB_IMAGE)
@@ -226,6 +226,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       EXCLUDE_FILES := imageioJPEG.c jpegdecoder.c pngtest.c, \
       EXCLUDES := $(LIBSPLASHSCREEN_EXCLUDES), \
       OPTIMIZATION := SIZE, \
+      LINK_TIME_OPTIMIZATION := true, \
       CFLAGS := $(LIBSPLASHSCREEN_CFLAGS) \
           $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS) \
           $(ICONV_CFLAGS), \
@@ -236,7 +237,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       DISABLED_WARNINGS_gcc_dgif_lib.c := sign-compare, \
       DISABLED_WARNINGS_gcc_jcmaster.c := implicit-fallthrough, \
       DISABLED_WARNINGS_gcc_jdphuff.c := shift-negative-value, \
-      DISABLED_WARNINGS_gcc_png.c := maybe-uninitialized unused-function, \
+      DISABLED_WARNINGS_gcc_png.c := maybe-uninitialized, \
       DISABLED_WARNINGS_gcc_pngerror.c := maybe-uninitialized, \
       DISABLED_WARNINGS_gcc_splashscreen_gfx_impl.c := implicit-fallthrough \
           maybe-uninitialized, \
@@ -247,7 +248,6 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       DISABLED_WARNINGS_clang := deprecated-non-prototype, \
       DISABLED_WARNINGS_clang_dgif_lib.c := sign-compare, \
       DISABLED_WARNINGS_clang_gzwrite.c := format-nonliteral, \
-      DISABLED_WARNINGS_clang_png.c := unused-function, \
       DISABLED_WARNINGS_clang_splashscreen_impl.c := sign-compare \
           unused-but-set-variable unused-function, \
       DISABLED_WARNINGS_clang_splashscreen_png.c := \
@@ -264,7 +264,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       JDK_LIBS_macosx := libosxapp, \
       LIBS := $(GIFLIB_LIBS) $(LIBJPEG_LIBS) $(LIBZ_LIBS) $(PNG_LIBS) $(ICONV_LIBS), \
       LIBS_unix := $(LIBM) $(LIBPTHREAD), \
-      LIBS_linux := $(LIBDL) $(X_LIBS) -lX11 -lXext, \
+      LIBS_linux := $(X_LIBS) -lX11 -lXext, \
       LIBS_macosx := \
           -framework ApplicationServices \
           -framework Cocoa \

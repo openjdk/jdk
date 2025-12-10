@@ -164,15 +164,16 @@ class StubGenerator: public StubCodeGenerator {
 
       // Save non-volatile registers to ABI of caller frame.
       BLOCK_COMMENT("save registers, push frame {");
-      __ z_stmg(Z_R6, Z_R14, 16, Z_SP);
-      __ z_std(Z_F8, 96, Z_SP);
-      __ z_std(Z_F9, 104, Z_SP);
-      __ z_std(Z_F10, 112, Z_SP);
-      __ z_std(Z_F11, 120, Z_SP);
-      __ z_std(Z_F12, 128, Z_SP);
-      __ z_std(Z_F13, 136, Z_SP);
-      __ z_std(Z_F14, 144, Z_SP);
-      __ z_std(Z_F15, 152, Z_SP);
+      __ save_return_pc();
+      __ z_stmg(Z_R6, Z_R13, 16, Z_SP);
+      __ z_std(Z_F8, 80, Z_SP);
+      __ z_std(Z_F9, 88, Z_SP);
+      __ z_std(Z_F10, 96, Z_SP);
+      __ z_std(Z_F11, 104, Z_SP);
+      __ z_std(Z_F12, 112, Z_SP);
+      __ z_std(Z_F13, 120, Z_SP);
+      __ z_std(Z_F14, 128, Z_SP);
+      __ z_std(Z_F15, 136, Z_SP);
 
       //
       // Push ENTRY_FRAME including arguments:
@@ -337,15 +338,16 @@ class StubGenerator: public StubCodeGenerator {
       __ z_lg(r_arg_result_type, result_type_offset, r_entryframe_fp);
 
       // Restore non-volatiles.
-      __ z_lmg(Z_R6, Z_R14, 16, Z_SP);
-      __ z_ld(Z_F8, 96, Z_SP);
-      __ z_ld(Z_F9, 104, Z_SP);
-      __ z_ld(Z_F10, 112, Z_SP);
-      __ z_ld(Z_F11, 120, Z_SP);
-      __ z_ld(Z_F12, 128, Z_SP);
-      __ z_ld(Z_F13, 136, Z_SP);
-      __ z_ld(Z_F14, 144, Z_SP);
-      __ z_ld(Z_F15, 152, Z_SP);
+      __ restore_return_pc();
+      __ z_lmg(Z_R6, Z_R13, 16, Z_SP);
+      __ z_ld(Z_F8, 80, Z_SP);
+      __ z_ld(Z_F9, 88, Z_SP);
+      __ z_ld(Z_F10, 96, Z_SP);
+      __ z_ld(Z_F11, 104, Z_SP);
+      __ z_ld(Z_F12, 112, Z_SP);
+      __ z_ld(Z_F13, 120, Z_SP);
+      __ z_ld(Z_F14, 128, Z_SP);
+      __ z_ld(Z_F15, 136, Z_SP);
       BLOCK_COMMENT("} restore");
 
       //

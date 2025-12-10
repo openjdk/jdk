@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 #include "jfr/utilities/jfrLinkedList.hpp"
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 template <typename NodeType, typename AllocPolicy>
 JfrLinkedList<NodeType, AllocPolicy>::JfrLinkedList() : _head(nullptr) {}
@@ -39,7 +39,7 @@ bool JfrLinkedList<NodeType, AllocPolicy>::initialize() {
 
 template <typename NodeType, typename AllocPolicy>
 inline NodeType* JfrLinkedList<NodeType, AllocPolicy>::head() const {
-  return (NodeType*)Atomic::load_acquire(&_head);
+  return (NodeType*)AtomicAccess::load_acquire(&_head);
 }
 
 template <typename NodeType, typename AllocPolicy>
@@ -59,7 +59,7 @@ inline void JfrLinkedList<NodeType, AllocPolicy>::add(NodeType* node) {
   do {
     next = head();
     node->_next = next;
-  } while (Atomic::cmpxchg(&_head, next, node) != next);
+  } while (AtomicAccess::cmpxchg(&_head, next, node) != next);
 }
 
 template <typename NodeType, typename AllocPolicy>
@@ -70,7 +70,7 @@ inline NodeType* JfrLinkedList<NodeType, AllocPolicy>::remove() {
     node = head();
     if (node == nullptr) break;
     next = (NodePtr)node->_next;
-  } while (Atomic::cmpxchg(&_head, node, next) != node);
+  } while (AtomicAccess::cmpxchg(&_head, node, next) != node);
   return node;
 }
 
@@ -91,7 +91,7 @@ template <typename NodeType, typename AllocPolicy>
 NodeType* JfrLinkedList<NodeType, AllocPolicy>::excise(NodeType* prev, NodeType* node) {
   NodePtr next = (NodePtr)node->_next;
   if (prev == nullptr) {
-    prev = Atomic::cmpxchg(&_head, node, next);
+    prev = AtomicAccess::cmpxchg(&_head, node, next);
     if (prev == node) {
       return nullptr;
     }
@@ -123,7 +123,7 @@ NodeType* JfrLinkedList<NodeType, AllocPolicy>::cut() {
   NodePtr node;
   do {
     node = head();
-  } while (Atomic::cmpxchg(&_head, node, (NodeType*)nullptr) != node);
+  } while (AtomicAccess::cmpxchg(&_head, node, (NodeType*)nullptr) != node);
   return node;
 }
 
@@ -136,7 +136,7 @@ void JfrLinkedList<NodeType, AllocPolicy>::clear() {
 template <typename NodeType, typename AllocPolicy>
 inline void JfrLinkedList<NodeType, AllocPolicy>::add_list(NodeType* first) {
   assert(head() == nullptr, "invariant");
-  Atomic::store(&_head, first);
+  AtomicAccess::store(&_head, first);
 }
 
 #endif // SHARE_JFR_UTILITIES_JFRLINKEDLIST_INLINE_HPP

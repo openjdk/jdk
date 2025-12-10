@@ -324,6 +324,24 @@ get_method_name(jvmtiEnv *jvmti, JNIEnv* jni, jmethodID method) {
   return mname;
 }
 
+static char*
+get_field_name(jvmtiEnv *jvmti, JNIEnv* jni, jclass field_class, jfieldID field) {
+  char* name = nullptr;
+  jvmtiError err = jvmti->GetFieldName(field_class, field, &name, nullptr, nullptr);
+  check_jvmti_status(jni, err, "get_field_name: error in JVMTI GetFieldName call");
+  return name;
+}
+
+static char*
+get_object_class_name(jvmtiEnv *jvmti, JNIEnv* jni, jobject object) {
+  char *obj_class_name = nullptr;
+  jclass object_class = jni->GetObjectClass(object);
+  jvmtiError err = jvmti->GetClassSignature(object_class, &obj_class_name, nullptr);
+  check_jvmti_error(err, "GetClassSignature");
+  jni->DeleteLocalRef(object_class);
+  return obj_class_name;
+}
+
 static jclass
 find_class(jvmtiEnv *jvmti, JNIEnv *jni, jobject loader, const char* cname) {
   jclass *classes = nullptr;

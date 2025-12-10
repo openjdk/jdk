@@ -807,14 +807,20 @@ private:
   int emit_eevex_prefix_or_demote_ndd(int dst_enc, int nds_enc, VexSimdPrefix pre, VexOpcode opc,
                                       InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false);
 
+  void emit_eevex_prefix_or_demote_arith_ndd(Register dst, Register src1, Register src2, VexSimdPrefix pre, VexOpcode opc,
+                                             int size, int op1, int op2, bool no_flags = false, bool is_commutative = false);
+
   void emit_eevex_prefix_or_demote_arith_ndd(Register dst, Register nds, int32_t imm32, VexSimdPrefix pre, VexOpcode opc,
                                              int size, int op1, int op2, bool no_flags);
 
   void emit_eevex_or_demote(Register dst, Register src1, Address src2, VexSimdPrefix pre, VexOpcode opc,
                             int size, int opcode_byte, bool no_flags = false, bool is_map1 = false);
 
+  void emit_eevex_or_demote(Register dst, Address src1, Register src2, VexSimdPrefix pre, VexOpcode opc,
+                            int size, int opcode_byte, bool no_flags = false, bool is_map1 = false, bool is_commutative = false);
+
   void emit_eevex_or_demote(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
-                            int size, int opcode_byte, bool no_flags, bool is_map1 = false, bool swap = false);
+                            int size, int opcode_byte, bool no_flags, bool is_map1 = false, bool swap = false, bool is_commutative = false);
 
   void emit_eevex_or_demote(int dst_enc, int nds_enc, int src_enc, int8_t imm8, VexSimdPrefix pre, VexOpcode opc,
                             int size, int opcode_byte, bool no_flags, bool is_map1 = false);
@@ -1149,6 +1155,7 @@ private:
   void eandl(Register dst, Register src, int32_t imm32, bool no_flags);
   void andl(Register dst, Address src);
   void eandl(Register dst, Register src1, Address src2, bool no_flags);
+  void eandl(Register dst, Address src1, Register src2, bool no_flags);
   void andl(Register dst, Register src);
   void eandl(Register dst, Register src1, Register src2, bool no_flags);
   void andl(Address dst, Register src);
@@ -1309,11 +1316,19 @@ private:
   void cvttsd2sil(Register dst, XMMRegister src);
   void cvttsd2siq(Register dst, Address src);
   void cvttsd2siq(Register dst, XMMRegister src);
+  void evcvttsd2sisl(Register dst, XMMRegister src);
+  void evcvttsd2sisl(Register dst, Address src);
+  void evcvttsd2sisq(Register dst, XMMRegister src);
+  void evcvttsd2sisq(Register dst, Address src);
 
   // Convert with Truncation Scalar Single-Precision Floating-Point Value to Doubleword Integer
   void cvttss2sil(Register dst, XMMRegister src);
   void cvttss2siq(Register dst, XMMRegister src);
   void cvtss2sil(Register dst, XMMRegister src);
+  void evcvttss2sisl(Register dst, XMMRegister src);
+  void evcvttss2sisl(Register dst, Address src);
+  void evcvttss2sisq(Register dst, XMMRegister src);
+  void evcvttss2sisq(Register dst, Address src);
 
   // Convert vector double to int
   void cvttpd2dq(XMMRegister dst, XMMRegister src);
@@ -1325,7 +1340,11 @@ private:
   // Convert vector float to int/long
   void vcvtps2dq(XMMRegister dst, XMMRegister src, int vector_len);
   void vcvttps2dq(XMMRegister dst, XMMRegister src, int vector_len);
+  void evcvttps2dqs(XMMRegister dst, XMMRegister src, int vector_len);
+  void evcvttps2dqs(XMMRegister dst, Address src, int vector_len);
   void evcvttps2qq(XMMRegister dst, XMMRegister src, int vector_len);
+  void evcvttps2qqs(XMMRegister dst, XMMRegister src, int vector_len);
+  void evcvttps2qqs(XMMRegister dst, Address src, int vector_len);
 
   // Convert vector long to vector FP
   void evcvtqq2ps(XMMRegister dst, XMMRegister src, int vector_len);
@@ -1334,9 +1353,13 @@ private:
   // Convert vector double to long
   void evcvtpd2qq(XMMRegister dst, XMMRegister src, int vector_len);
   void evcvttpd2qq(XMMRegister dst, XMMRegister src, int vector_len);
+  void evcvttpd2qqs(XMMRegister dst, XMMRegister src, int vector_len);
+  void evcvttpd2qqs(XMMRegister dst, Address src, int vector_len);
 
   // Convert vector double to int
   void vcvttpd2dq(XMMRegister dst, XMMRegister src, int vector_len);
+  void evcvttpd2dqs(XMMRegister dst, XMMRegister src, int vector_len);
+  void evcvttpd2dqs(XMMRegister dst, Address src, int vector_len);
 
   // Evex casts with truncation
   void evpmovwb(XMMRegister dst, XMMRegister src, int vector_len);
@@ -1640,6 +1663,11 @@ private:
   // Move Aligned 512bit Vector
   void evmovdqaq(XMMRegister dst, Address src, int vector_len);
   void evmovdqaq(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len);
+
+  void vmovsldup(XMMRegister dst, XMMRegister src, int vector_len);
+  void vmovshdup(XMMRegister dst, XMMRegister src, int vector_len);
+  void evmovsldup(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+  void evmovshdup(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
 
   // Move lower 64bit to high 64bit in 128bit register
   void movlhps(XMMRegister dst, XMMRegister src);

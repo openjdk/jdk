@@ -43,7 +43,7 @@ import java.util.List;
  * @bug 8328119
  * @summary test HKDF key derivation in SunPKCS11
  * @library /test/lib ..
- * @run main/othervm/timeout=30 TestHKDF
+ * @run main/othervm/timeout=120 TestHKDF
  */
 
 public final class TestHKDF extends PKCS11Test {

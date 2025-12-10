@@ -103,6 +103,13 @@ class GCCause : public AllStatic {
               cause == _codecache_GC_aggressive);
   }
 
+  // Does the "cause" of GC indicate that
+  // we absolutely __must__ clear soft refs?
+  inline static bool should_clear_all_soft_refs(GCCause::Cause cause) {
+    return cause == GCCause::_metadata_GC_clear_soft_refs ||
+           cause == GCCause::_wb_full_gc;
+  }
+
   // Return a string describing the GCCause.
   static const char* to_string(GCCause::Cause cause);
 };

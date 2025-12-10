@@ -36,7 +36,7 @@
  *                 JavacBenchApp$FileManager
  *                 JavacBenchApp$SourceFile
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello.jar Hello
- * @run driver AOTProfileFlags
+ * @run driver/timeout=480 AOTProfileFlags
  */
 
 import jdk.test.lib.cds.CDSTestUtils;

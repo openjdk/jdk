@@ -110,4 +110,4 @@ $MV $OUTPUTDIR/compare.log $OUTPUTDIR/compare.log.old 2> /dev/null
 
 export SCRIPT_DIR="$( cd "$( dirname "$0" )" > /dev/null && pwd )"
 
-$BASH $TOPDIR/make/scripts/logger.sh $OUTPUTDIR/compare.log $BASH "$REAL_COMPARE_SCRIPT" "$@"
+$BASH $TOPDIR/make/scripts/compare-logger.sh $OUTPUTDIR/compare.log $BASH "$REAL_COMPARE_SCRIPT" "$@"

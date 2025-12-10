@@ -58,10 +58,14 @@
 #endif
 
 #define CHECKED_MALLOC3(_pointer, _type, _size) \
+    CHECKED_MALLOC4(_pointer, _type, _size, {})
+
+#define CHECKED_MALLOC4(_pointer, _type, _size, _onFailure) \
     do { \
         _pointer = (_type)malloc(_size); \
         if (_pointer == NULL) { \
             JNU_ThrowOutOfMemoryError(env, "Native heap allocation failed"); \
+            do _onFailure while (0); \
             return ifs; /* return untouched list */ \
         } \
     } while(0)
@@ -995,7 +999,7 @@ static netif *addif(JNIEnv *env, int sock, const char *if_name, netif *ifs,
 
     // If "new" then create a netif structure and insert it into the list.
     if (currif == NULL) {
-         CHECKED_MALLOC3(currif, netif *, sizeof(netif) + IFNAMESIZE);
+         CHECKED_MALLOC4(currif, netif *, sizeof(netif) + IFNAMESIZE, { free(addrP); });
          currif->name = (char *)currif + sizeof(netif);
          strncpy(currif->name, name, IFNAMESIZE);
          currif->name[IFNAMESIZE - 1] = '\0';
@@ -1027,7 +1031,10 @@ static netif *addif(JNIEnv *env, int sock, const char *if_name, netif *ifs,
         }
 
         if (currif == NULL) {
-            CHECKED_MALLOC3(currif, netif *, sizeof(netif) + IFNAMESIZE);
+            CHECKED_MALLOC4(currif, netif *, sizeof(netif) + IFNAMESIZE, {
+                free(addrP);
+                free(parent);
+            });
             currif->name = (char *)currif + sizeof(netif);
             strncpy(currif->name, vname, IFNAMESIZE);
             currif->name[IFNAMESIZE - 1] = '\0';
@@ -1039,7 +1046,11 @@ static netif *addif(JNIEnv *env, int sock, const char *if_name, netif *ifs,
             parent->childs = currif;
         }
 
-        CHECKED_MALLOC3(tmpaddr, netaddr *, sizeof(netaddr) + 2 * addr_size);
+        CHECKED_MALLOC4(tmpaddr, netaddr *, sizeof(netaddr) + 2 * addr_size, {
+            free(addrP);
+            free(parent);
+            free(currif);
+        });
         memcpy(tmpaddr, addrP, sizeof(netaddr));
         if (addrP->addr != NULL) {
             tmpaddr->addr = (struct sockaddr *)

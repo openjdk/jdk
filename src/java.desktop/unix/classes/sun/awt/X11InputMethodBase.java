@@ -172,13 +172,6 @@ public abstract class X11InputMethodBase extends InputMethodAdapter {
         }
     }
 
-    @Override
-    @SuppressWarnings("removal")
-    protected void finalize() throws Throwable {
-        dispose();
-        super.finalize();
-    }
-
     /**
      * Invokes openIM() that invokes XOpenIM() if it's not opened yet.
      * @return  true if openXIM() is successful or it's already been opened.

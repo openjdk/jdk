@@ -29,7 +29,7 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -67,7 +67,7 @@ MemoryPool::MemoryPool(const char* name,
 {}
 
 bool MemoryPool::is_pool(instanceHandle pool) const {
-  if (Atomic::load_acquire(&_memory_pool_obj_initialized)) {
+  if (AtomicAccess::load_acquire(&_memory_pool_obj_initialized)) {
     return pool() == _memory_pool_obj.resolve();
   } else {
     return false;
@@ -90,7 +90,7 @@ instanceOop MemoryPool::get_memory_pool_instance(TRAPS) {
   // Lazily create the pool object.
   // Must do an acquire so as to force ordering of subsequent
   // loads from anything _memory_pool_obj points to or implies.
-  if (!Atomic::load_acquire(&_memory_pool_obj_initialized)) {
+  if (!AtomicAccess::load_acquire(&_memory_pool_obj_initialized)) {
     // It's ok for more than one thread to execute the code up to the locked region.
     // Extra pool instances will just be gc'ed.
     InstanceKlass* ik = Management::sun_management_ManagementFactoryHelper_klass(CHECK_NULL);
@@ -131,7 +131,7 @@ instanceOop MemoryPool::get_memory_pool_instance(TRAPS) {
     // Get lock since another thread may have created and installed the instance.
     MutexLocker ml(THREAD, Management_lock);
 
-    if (Atomic::load(&_memory_pool_obj_initialized)) {
+    if (AtomicAccess::load(&_memory_pool_obj_initialized)) {
       // Some other thread won the race.  Release the handle we allocated and
       // use the other one.  Relaxed load is sufficient because flag update is
       // under the lock.
@@ -142,7 +142,7 @@ instanceOop MemoryPool::get_memory_pool_instance(TRAPS) {
       _memory_pool_obj = pool_handle;
       // Record pool has been created.  Release matching unlocked acquire, to
       // safely publish the pool object.
-      Atomic::release_store(&_memory_pool_obj_initialized, true);
+      AtomicAccess::release_store(&_memory_pool_obj_initialized, true);
     }
   }
 

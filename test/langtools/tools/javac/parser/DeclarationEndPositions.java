@@ -49,7 +49,7 @@ import javax.tools.ToolProvider;
 
 public class DeclarationEndPositions {
 
-    public static void checkEndPosition(Class<? extends JCTree> nodeType, String input, String marker) throws IOException {
+    public static void checkPositions(Class<? extends JCTree> nodeType, String input, String markers) throws IOException {
 
         // Create source
         var source = new SimpleJavaFileObject(URI.create("file://T.java"), JavaFileObject.Kind.SOURCE) {
@@ -71,11 +71,26 @@ public class DeclarationEndPositions {
             public Void scan(Tree node, Void aVoid) {
                 if (nodeType.isInstance(node)) {
                     JCTree tree = (JCTree)node;
-                    int actual = TreeInfo.getEndPos(tree, unit.endPositions);
-                    int expected = marker.indexOf('^') + 1;
-                    if (actual != expected) {
+
+                    // Verify declaration start and end positions
+                    int start = tree.getStartPosition();
+                    if (markers.charAt(start) != '<') {
                         throw new AssertionError(String.format(
-                          "wrong end pos %d != %d for \"%s\" @ %d", actual, expected, input, tree.pos));
+                          "wrong %s pos %d for \"%s\" in \"%s\"", "start", start, tree, input));
+                    }
+                    int end = TreeInfo.getEndPos(tree, unit.endPositions);
+                    if (markers.charAt(end - 1) != '>') {
+                        throw new AssertionError(String.format(
+                          "wrong %s pos %d for \"%s\" in \"%s\"", "end", end, tree, input));
+                    }
+
+                    // For variable declarations using "var", verify the "var" position
+                    if (tree instanceof JCVariableDecl varDecl && varDecl.declaredUsingVar()) {
+                        int vpos = varDecl.typePos;
+                        if (!input.substring(vpos).startsWith("var")) {
+                            throw new AssertionError(String.format(
+                              "wrong %s pos %d for \"%s\" in \"%s\"", "var", vpos, tree, input));
+                        }
                     }
                 }
                 return super.scan(node, aVoid);
@@ -86,34 +101,74 @@ public class DeclarationEndPositions {
     public static void main(String... args) throws Exception {
 
         // JCModuleDecl
-        checkEndPosition(JCModuleDecl.class,
+        checkPositions(JCModuleDecl.class,
            "/* comment */ module fred { /* comment */ } /* comment */",
-           "                                          ^              ");
+           "              <--------------------------->              ");
 
         // JCPackageDecl
-        checkEndPosition(JCPackageDecl.class,
+        checkPositions(JCPackageDecl.class,
            "/* comment */ package fred; /* comment */",
-           "                          ^              ");
+           "              <----------->              ");
 
         // JCClassDecl
-        checkEndPosition(JCClassDecl.class,
+        checkPositions(JCClassDecl.class,
            "/* comment */ class Fred { /* comment */ } /* comment */",
-           "                                         ^              ");
+           "              <-------------------------->              ");
 
         // JCMethodDecl
-        checkEndPosition(JCMethodDecl.class,
+        checkPositions(JCMethodDecl.class,
            "/* comment */ class Fred { void m() { /* comment */ } } /* comment */",
-           "                                                    ^                ");
+           "                           <------------------------>                ");
 
         // JCVariableDecl
-        checkEndPosition(JCVariableDecl.class,
+        checkPositions(JCVariableDecl.class,
            "/* comment */ class Fred { int x; } /* comment */",
-           "                                ^                ");
-        checkEndPosition(JCVariableDecl.class,
+           "                           <---->                ");
+        checkPositions(JCVariableDecl.class,
            "/* comment */ class Fred { int x = 123; } /* comment */",
-           "                                      ^                ");
-        checkEndPosition(JCVariableDecl.class,
+           "                           <---------->                ");
+        checkPositions(JCVariableDecl.class,
            "/* comment */ class A { try {} catch (Error err) {} } /* comment */",
-           "                                              ^                    ");
+           "                                      <------->                    ");
+        checkPositions(JCVariableDecl.class,
+           "/* comment */ class Fred { final int x = 123; } /* comment */",
+           "                           <---------------->                ");
+        checkPositions(JCVariableDecl.class,
+           "/* comment */ class Fred { final int x = 123, y = 456; } /* comment */",
+           "                           <---------------->-------->                ");
+        checkPositions(JCVariableDecl.class,
+           "/* comment */ class A { void m() { try {} catch (Error err) {} } } /* comment */",
+           "                                                 <------->                    ");
+
+        // JCVariableDecl with "var" declarations
+        checkPositions(JCVariableDecl.class,
+           "class A { void m() { var foo; } }",
+           "                     <------>    ");
+        checkPositions(JCVariableDecl.class,
+           "class A { void m() { var foo = 42; } }",
+           "                     <----------->    ");
+        checkPositions(JCVariableDecl.class,
+           "class A { void m() { final var foo = 42; } }",
+           "                     <----------------->    ");
+
+        checkPositions(JCVariableDecl.class,
+           "class A { void m() { java.util.function.Consumer<Byte> = foo -> { } } }",
+           "                                                         <->           ");
+        checkPositions(JCVariableDecl.class,
+           "class A { void m() { java.util.function.Consumer<Byte> = (foo) -> { } } }",
+           "                                                          <->            ");
+        checkPositions(JCVariableDecl.class,
+           "class A { void m() { java.util.function.Consumer<Byte> = (var foo) -> { } } }",
+           "                                                          <----->            ");
+        checkPositions(JCVariableDecl.class,
+           "class A { void m() { java.util.function.Consumer<Byte> = (final var foo) -> { } } }",
+           "                                                          <----------->            ");
+
+        checkPositions(JCVariableDecl.class,
+           "class A { record R(int x) { } void m() { switch (null) { case R(var x) -> {} default -> {} } } }",
+           "                   <--->                                        <--->                           ");
+        checkPositions(JCVariableDecl.class,
+           "class A { record R(int x) { } void m() { switch (null) { case R(final var x) -> {} default -> {} } } }",
+           "                   <--->                                        <--------->                           ");
     }
 }

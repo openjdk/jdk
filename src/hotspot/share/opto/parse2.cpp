@@ -2782,8 +2782,10 @@ void Parse::do_one_bytecode() {
     jio_snprintf(buffer, sizeof(buffer), "Bytecode %d: %s", bci(), Bytecodes::name(bc()));
     bool old = printer->traverse_outs();
     printer->set_traverse_outs(true);
+    printer->set_parse(this);
     printer->print_graph(buffer);
     printer->set_traverse_outs(old);
+    printer->set_parse(nullptr);
   }
 #endif
 }

@@ -1197,7 +1197,7 @@ public:
   void work(uint worker_id) {
     ChtCountScan par_scan;
     _scan_task->do_safepoint_scan(par_scan);
-    Atomic::add(_total_scanned, par_scan._count);
+    AtomicAccess::add(_total_scanned, par_scan._count);
   }
 };
 

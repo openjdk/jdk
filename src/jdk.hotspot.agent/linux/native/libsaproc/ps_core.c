@@ -200,18 +200,6 @@ static bool core_handle_prstatus(struct ps_prochandle* ph, const char* buf, size
 
    if (is_debug()) {
       print_debug("integer regset\n");
-#ifdef i386
-      // print the regset
-      print_debug("\teax = 0x%x\n", newthr->regs.eax);
-      print_debug("\tebx = 0x%x\n", newthr->regs.ebx);
-      print_debug("\tecx = 0x%x\n", newthr->regs.ecx);
-      print_debug("\tedx = 0x%x\n", newthr->regs.edx);
-      print_debug("\tesp = 0x%x\n", newthr->regs.esp);
-      print_debug("\tebp = 0x%x\n", newthr->regs.ebp);
-      print_debug("\tesi = 0x%x\n", newthr->regs.esi);
-      print_debug("\tedi = 0x%x\n", newthr->regs.edi);
-      print_debug("\teip = 0x%x\n", newthr->regs.eip);
-#endif
 
 #if defined(amd64) || defined(x86_64)
       // print the regset
@@ -420,9 +408,15 @@ static bool read_lib_segments(struct ps_prochandle* ph, int lib_fd, ELF_EHDR* li
         // Coredump stores value of p_memsz elf field
         // rounded up to page boundary.
 
+        // Account for the PH being at some vaddr offset from mapping in core file.
+        uint64_t lib_memsz = lib_php->p_memsz;
+        if (target_vaddr > existing_map->vaddr) {
+            lib_memsz += target_vaddr - existing_map->vaddr;
+        }
+
         if ((existing_map->memsz != page_size) &&
             (existing_map->fd != lib_fd) &&
-            (ROUNDUP(existing_map->memsz, page_size) != ROUNDUP(lib_php->p_memsz, page_size))) {
+            (ROUNDUP(existing_map->memsz, page_size) != ROUNDUP(lib_memsz, page_size))) {
 
           print_error("address conflict @ 0x%lx (existing map size = %ld, size = %ld, flags = %d)\n",
                         target_vaddr, existing_map->memsz, lib_php->p_memsz, lib_php->p_flags);

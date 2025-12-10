@@ -123,7 +123,7 @@ class HierarchyVisitor : StackObj {
     InstanceKlass* interface_at(int index) {
       return _class->local_interfaces()->at(index);
     }
-    InstanceKlass* next_super() { return _class->java_super(); }
+    InstanceKlass* next_super() { return _class->super(); }
     InstanceKlass* next_interface() {
       return interface_at(interface_index());
     }
@@ -636,7 +636,7 @@ static void find_empty_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots,
 
   // Also any overpasses in our superclasses, that we haven't implemented.
   // (can't use the vtable because it is not guaranteed to be initialized yet)
-  InstanceKlass* super = klass->java_super();
+  InstanceKlass* super = klass->super();
   while (super != nullptr) {
     for (int i = 0; i < super->methods()->length(); ++i) {
       Method* m = super->methods()->at(i);
@@ -668,7 +668,7 @@ static void find_empty_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots,
         }
       }
     }
-    super = super->java_super();
+    super = super->super();
   }
 
   LogTarget(Debug, defaultmethods) lt;

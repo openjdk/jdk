@@ -57,6 +57,8 @@ public:
   static void check_archived_module_oop(oop orig_module_obj) NOT_CDS_JAVA_HEAP_RETURN;
   static void define_archived_modules(Handle h_platform_loader, Handle h_system_loader,
                                       TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
+  static void init_archived_modules(JavaThread* current, Handle h_platform_loader, Handle h_system_loader)
+                                   NOT_CDS_JAVA_HEAP_RETURN;
   static void verify_archived_modules() NOT_CDS_JAVA_HEAP_RETURN;
   static void dump_archived_module_info() NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize_archived_module_info(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;

@@ -210,17 +210,8 @@ AC_DEFUN([BASIC_SETUP_XCODE_SYSROOT],
     if test $? -ne 0; then
       AC_MSG_ERROR([The xcodebuild tool in the devkit reports an error: $XCODEBUILD_OUTPUT])
     fi
-  elif test "x$TOOLCHAIN_PATH" != x; then
-    UTIL_LOOKUP_PROGS(XCODEBUILD, xcodebuild, $TOOLCHAIN_PATH)
-    if test "x$XCODEBUILD" != x; then
-      XCODEBUILD_OUTPUT=`"$XCODEBUILD" -version 2>&1`
-      if test $? -ne 0; then
-        AC_MSG_WARN([Ignoring the located xcodebuild tool $XCODEBUILD due to an error: $XCODEBUILD_OUTPUT])
-        XCODEBUILD=
-      fi
-    fi
   else
-    UTIL_LOOKUP_PROGS(XCODEBUILD, xcodebuild)
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(XCODEBUILD, xcodebuild)
     if test "x$XCODEBUILD" != x; then
       XCODEBUILD_OUTPUT=`"$XCODEBUILD" -version 2>&1`
       if test $? -ne 0; then
@@ -348,19 +339,9 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
 
   # You can force the sysroot if the sysroot encoded into the compiler tools
   # is not correct.
-  AC_ARG_WITH(sys-root, [AS_HELP_STRING([--with-sys-root],
-      [alias for --with-sysroot for backwards compatibility])],
-      [SYSROOT=$with_sys_root]
-  )
-
   AC_ARG_WITH(sysroot, [AS_HELP_STRING([--with-sysroot],
       [use this directory as sysroot])],
       [SYSROOT=$with_sysroot]
-  )
-
-  AC_ARG_WITH([tools-dir], [AS_HELP_STRING([--with-tools-dir],
-      [alias for --with-toolchain-path for backwards compatibility])],
-      [UTIL_PREPEND_TO_PATH([TOOLCHAIN_PATH],$with_tools_dir)]
   )
 
   AC_ARG_WITH([toolchain-path], [AS_HELP_STRING([--with-toolchain-path],
@@ -370,6 +351,9 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
 
   AC_ARG_WITH([xcode-path], [AS_HELP_STRING([--with-xcode-path],
       [set up toolchain on Mac OS using a path to an Xcode installation])])
+
+  UTIL_DEPRECATED_ARG_WITH(sys-root)
+  UTIL_DEPRECATED_ARG_WITH(tools-dir)
 
   if test "x$with_xcode_path" != x; then
     if test "x$OPENJDK_BUILD_OS" = "xmacosx"; then

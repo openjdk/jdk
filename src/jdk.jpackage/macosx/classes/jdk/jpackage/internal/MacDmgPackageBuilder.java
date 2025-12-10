@@ -28,7 +28,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.MacDmgPackage;
 import jdk.jpackage.internal.model.MacDmgPackageMixin;
 
@@ -52,8 +51,7 @@ final class MacDmgPackageBuilder {
         return Optional.ofNullable(dmgContent).orElseGet(List::of);
     }
 
-    MacDmgPackage create() throws ConfigException {
-        final var superPkgBuilder = pkgBuilder.pkgBuilder();
+    MacDmgPackage create() {
         final var pkg = pkgBuilder.create();
 
         return MacDmgPackage.create(pkg, new MacDmgPackageMixin.Stub(

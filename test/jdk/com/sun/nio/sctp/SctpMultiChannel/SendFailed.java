@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /* @test
  * @bug 8067846
+ * @library /test/lib
  * @summary Test for send failed notification
  */
 
@@ -35,6 +36,8 @@ import java.nio.ByteBuffer;
 import static java.lang.System.out;
 import static java.nio.ByteBuffer.*;
 
+import jtreg.SkippedException;
+
 public class SendFailed {
 
     static final SocketAddress remoteAddress = new InetSocketAddress(InetAddress.getLoopbackAddress(), 3000);
@@ -44,12 +47,6 @@ public class SendFailed {
 
     void test(String[] args) throws IOException {
         SocketAddress address = null;
-
-        if (!Util.isSCTPSupported()) {
-            out.println("SCTP protocol is not supported");
-            out.println("Test cannot be run");
-            return;
-        }
 
         System.out.println("remote address: " + remoteAddress);
         System.out.println("Note, remote address should not be up");
@@ -186,6 +183,10 @@ public class SendFailed {
     void check(boolean cond, String failMessage) {if (cond) pass(); else fail(failMessage);}
     void debug(String message, Object... args) {if(debug) { out.printf(message, args); } }
     public static void main(String[] args) throws Throwable {
+        if (!Util.isSCTPSupported()) {
+            throw new SkippedException("SCTP protocol is not supported");
+        }
+
         Class<?> k = new Object(){}.getClass().getEnclosingClass();
         try {k.getMethod("instanceMain",String[].class)
                 .invoke( k.newInstance(), (Object) args);}

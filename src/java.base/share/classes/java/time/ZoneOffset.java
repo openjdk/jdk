@@ -88,6 +88,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
+import jdk.internal.util.DecimalDigits;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -417,9 +418,9 @@ public final class ZoneOffset
     /**
      * Obtains an instance of {@code ZoneOffset} specifying the total offset in seconds
      * <p>
-     * The offset must be in the range {@code -18:00} to {@code +18:00}, which corresponds to -64800 to +64800.
+     * The offset must be in the range {@code -18:00} to {@code +18:00}, which corresponds to -64,800 to +64,800.
      *
-     * @param totalSeconds  the total time-zone offset in seconds, from -64800 to +64800
+     * @param totalSeconds  the total time-zone offset in seconds, from -64,800 to +64,800
      * @return the ZoneOffset, not null
      * @throws DateTimeException if the offset is not in the required range
      */
@@ -450,7 +451,7 @@ public final class ZoneOffset
     /**
      * Constructor.
      *
-     * @param totalSeconds  the total time-zone offset in seconds, from -64800 to +64800
+     * @param totalSeconds  the total time-zone offset in seconds, from -64,800 to +64,800
      */
     private ZoneOffset(int totalSeconds) {
         this.totalSeconds = totalSeconds;
@@ -465,12 +466,14 @@ public final class ZoneOffset
             StringBuilder buf = new StringBuilder();
             int absHours = absTotalSeconds / SECONDS_PER_HOUR;
             int absMinutes = (absTotalSeconds / SECONDS_PER_MINUTE) % MINUTES_PER_HOUR;
-            buf.append(totalSeconds < 0 ? "-" : "+")
-                .append(absHours < 10 ? "0" : "").append(absHours)
-                .append(absMinutes < 10 ? ":0" : ":").append(absMinutes);
+            buf.append(totalSeconds < 0 ? '-' : '+');
+            DecimalDigits.appendPair(buf, absHours);
+            buf.append(':');
+            DecimalDigits.appendPair(buf, absMinutes);
             int absSeconds = absTotalSeconds % SECONDS_PER_MINUTE;
             if (absSeconds != 0) {
-                buf.append(absSeconds < 10 ? ":0" : ":").append(absSeconds);
+                buf.append(':');
+                DecimalDigits.appendPair(buf, absSeconds);
             }
             return buf.toString();
         }

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +24,7 @@
 
 /**
  * @test
- * @bug 8179678
+ * @bug 8179678 8297933 8371628
  * @summary ArrayCopy with same src and dst can cause incorrect execution or compiler crash
  *
  * @run main/othervm -XX:CompileCommand=compileonly,TestACSameSrcDst::test* TestACSameSrcDst
@@ -76,6 +77,17 @@ public class TestACSameSrcDst {
         return 0;
     }
 
+    static void test6(int x) {
+        int[] src = new int[10];
+        int l = 0;
+        while (l < 1) { l++; } // Delay folding.
+        // The bug relies on idealizations of ArrayCopy source and destination offsets but this would be limited if carried out before IGVN.
+
+        System.arraycopy(src, x + 1, src, x + 1, l);
+        // source and destination offsets are a shared AddNode that would go away during LShiftL idealization
+        // -- causing a crash if not for a hook node retaining its liveness.
+    }
+
     public static void main(String[] args) {
         int[] array = new int[15];
         for (int i = 0; i < 20000; i++) {
@@ -101,6 +113,7 @@ public class TestACSameSrcDst {
             if (res != 0) {
                 throw new RuntimeException("bad result: " + res + " != " + 0);
             }
+            test6(0);
         }
     }
 }

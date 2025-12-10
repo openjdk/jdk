@@ -28,7 +28,7 @@
 #include "nmt/memTracker.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"

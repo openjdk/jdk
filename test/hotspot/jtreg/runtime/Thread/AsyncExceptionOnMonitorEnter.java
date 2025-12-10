@@ -25,6 +25,7 @@
  * @test
  * @bug 8283044
  * @summary Stress delivery of asynchronous exceptions while target is at monitorenter
+ * @requires test.thread.factory == null
  * @library /test/hotspot/jtreg/testlibrary
  * @run main/othervm/native AsyncExceptionOnMonitorEnter 0
  * @run main/othervm/native -agentlib:AsyncExceptionOnMonitorEnter AsyncExceptionOnMonitorEnter 1

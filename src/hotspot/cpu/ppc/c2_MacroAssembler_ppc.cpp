@@ -36,14 +36,14 @@
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
 
-void C2_MacroAssembler::fast_lock_lightweight(ConditionRegister flag, Register obj, Register box,
-                                              Register tmp1, Register tmp2, Register tmp3) {
-  compiler_fast_lock_lightweight_object(flag, obj, box, tmp1, tmp2, tmp3);
+void C2_MacroAssembler::fast_lock(ConditionRegister flag, Register obj, Register box,
+                                  Register tmp1, Register tmp2, Register tmp3) {
+  compiler_fast_lock_object(flag, obj, box, tmp1, tmp2, tmp3);
 }
 
-void C2_MacroAssembler::fast_unlock_lightweight(ConditionRegister flag, Register obj, Register box,
-                                                Register tmp1, Register tmp2, Register tmp3) {
-  compiler_fast_unlock_lightweight_object(flag, obj, box, tmp1, tmp2, tmp3);
+void C2_MacroAssembler::fast_unlock(ConditionRegister flag, Register obj, Register box,
+                                    Register tmp1, Register tmp2, Register tmp3) {
+  compiler_fast_unlock_object(flag, obj, box, tmp1, tmp2, tmp3);
 }
 
 void C2_MacroAssembler::load_narrow_klass_compact_c2(Register dst, Register obj, int disp) {

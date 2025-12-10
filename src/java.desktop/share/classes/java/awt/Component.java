@@ -6287,7 +6287,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * and paint (and update) events.
      * For mouse move events the last event is always returned, causing
      * intermediate moves to be discarded.  For paint events, the new
-     * event is coalesced into a complex {@code RepaintArea} in the peer.
+     * event is coalesced into a complex repaint area in the peer.
      * The new {@code AWTEvent} is always returned.
      *
      * @param  existingEvent  the event already on the {@code EventQueue}

@@ -51,6 +51,7 @@ import jdk.tools.jlink.internal.plugins.DefaultCompressPlugin;
 import jdk.tools.jlink.internal.plugins.DefaultStripDebugPlugin;
 import jdk.tools.jlink.internal.plugins.ExcludeJmodSectionPlugin;
 import jdk.tools.jlink.internal.plugins.PluginsResourceBundle;
+import jdk.tools.jlink.internal.plugins.StripJavaDebugAttributesPlugin;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.Plugin.Category;
 
@@ -418,6 +419,9 @@ public final class TaskHelper {
 
             List<Plugin> pluginsList = new ArrayList<>();
             Set<String> seenPlugins = new HashSet<>();
+            // reference to the enabled DefaultStripDebugPlugin
+            DefaultStripDebugPlugin defaultStripDebugPlugin = null;
+
             for (Entry<Plugin, List<Map<String, String>>> entry : pluginToMaps.entrySet()) {
                 Plugin plugin = entry.getKey();
                 List<Map<String, String>> argsMaps = entry.getValue();
@@ -438,6 +442,10 @@ public final class TaskHelper {
                 }
 
                 if (!Utils.isDisabled(plugin)) {
+                    if (plugin instanceof DefaultStripDebugPlugin p) {
+                        defaultStripDebugPlugin = p;
+                    }
+
                     // make sure that --strip-debug and --strip-native-debug-symbols
                     // aren't being used at the same time. --strip-debug invokes --strip-native-debug-symbols on
                     // platforms that support it, so it makes little sense to allow both at the same time.
@@ -450,6 +458,11 @@ public final class TaskHelper {
                     pluginsList.add(plugin);
                     seenPlugins.add(plugin.getName());
                 }
+            }
+
+            // disable StripJavaDebugAttributesPlugin within DefaultStripDebug plugin if both enabled
+            if (seenPlugins.contains(StripJavaDebugAttributesPlugin.NAME) && defaultStripDebugPlugin != null) {
+                defaultStripDebugPlugin.enableJavaStripPlugin(false);
             }
 
             // recreate or postprocessing don't require an output directory.

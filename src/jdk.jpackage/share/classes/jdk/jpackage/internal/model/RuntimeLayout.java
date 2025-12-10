@@ -24,9 +24,10 @@
  */
 package jdk.jpackage.internal.model;
 
-import static jdk.jpackage.internal.util.PathUtils.resolveNullablePath;
+import static jdk.jpackage.internal.util.PathUtils.mapNullablePath;
 
 import java.nio.file.Path;
+import java.util.function.UnaryOperator;
 import jdk.jpackage.internal.util.CompositeProxy;
 
 /**
@@ -39,8 +40,27 @@ public interface RuntimeLayout extends AppImageLayout {
 
     @Override
     default RuntimeLayout resolveAt(Path root) {
-        return create(new AppImageLayout.Stub(resolveNullablePath(root, rootDirectory()),
-                resolveNullablePath(root, runtimeDirectory())));
+        return (RuntimeLayout)AppImageLayout.super.resolveAt(root);
+    }
+
+    @Override
+    default RuntimeLayout resetRootDirectory() {
+        if (isResolved()) {
+            return create(runtimeDirectory());
+        } else {
+            return this;
+        }
+    }
+
+    @Override
+    default RuntimeLayout unresolve() {
+        return (RuntimeLayout)AppImageLayout.super.unresolve();
+    }
+
+    @Override
+    default RuntimeLayout map(UnaryOperator<Path> mapper) {
+        return create(new RuntimeLayout.Stub(mapNullablePath(mapper, rootDirectory()),
+                mapNullablePath(mapper, runtimeDirectory())));
     }
 
     /**

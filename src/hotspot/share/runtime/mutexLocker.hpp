@@ -34,7 +34,6 @@ class Thread;
 // Mutexes used in the VM.
 
 extern Mutex*   NMethodState_lock;               // a lock used to guard a compiled method state
-extern Mutex*   NMethodEntryBarrier_lock;        // protects nmethod entry barrier
 extern Monitor* SystemDictionary_lock;           // a lock on the system dictionary
 extern Mutex*   InvokeMethodTypeTable_lock;
 extern Monitor* InvokeMethodIntrinsicTable_lock;
@@ -82,6 +81,7 @@ extern Monitor* TrainingReplayQueue_lock;        // a lock held when class are a
 extern Monitor* CompileTaskWait_lock;            // a lock held when CompileTasks are waited/notified
 extern Mutex*   CompileStatistics_lock;          // a lock held when updating compilation statistics
 extern Mutex*   DirectivesStack_lock;            // a lock held when mutating the dirstack and ref counting directives
+extern Monitor* AOTHeapLoading_lock;             // a lock used to guard materialization of AOT heap objects
 extern Monitor* Terminator_lock;                 // a lock used to guard termination of the vm
 extern Monitor* InitCompleted_lock;              // a lock used to signal threads waiting on init completed
 extern Monitor* BeforeExit_lock;                 // a lock used to guard cleanups and shutdown hooks
@@ -94,13 +94,13 @@ extern Mutex*   FullGCALot_lock;                 // a lock to make FullGCALot MT
 
 #if INCLUDE_G1GC
 extern Monitor* G1CGC_lock;                      // used for coordination between fore- & background G1 concurrent GC threads.
-extern Mutex*   G1DetachedRefinementStats_lock;  // Lock protecting detached refinement stats for G1.
 extern Mutex*   G1FreeList_lock;                 // protects the G1 free region list during safepoints
 extern Mutex*   G1MarkStackChunkList_lock;       // Protects access to the G1 global mark stack chunk list.
 extern Mutex*   G1MarkStackFreeList_lock;        // Protects access to the G1 global mark stack free list.
 extern Monitor* G1OldGCCount_lock;               // in support of "concurrent" full gc
 extern Mutex*   G1OldSets_lock;                  // protects the G1 old region sets
 extern Mutex*   G1RareEvent_lock;                // Synchronizes (rare) parallel GC operations.
+extern Mutex*   G1ReviseYoungLength_lock;        // Protects access to young gen length revising operations.
 extern Monitor* G1RootRegionScan_lock;           // used to notify that the G1 CM threads have finished scanning the root regions
 extern Mutex*   G1Uncommit_lock;                 // protects the G1 uncommit list when not at safepoints
 #endif

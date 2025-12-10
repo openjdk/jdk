@@ -26,7 +26,7 @@
 #include "gc/shared/workerThread.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
@@ -61,7 +61,7 @@ void WorkerTaskDispatcher::worker_run_task() {
   _start_semaphore.wait();
 
   // Get and set worker id.
-  const uint worker_id = Atomic::fetch_then_add(&_started, 1u);
+  const uint worker_id = AtomicAccess::fetch_then_add(&_started, 1u);
   WorkerThread::set_worker_id(worker_id);
 
   // Run task.
@@ -70,7 +70,7 @@ void WorkerTaskDispatcher::worker_run_task() {
 
   // Mark that the worker is done with the task.
   // The worker is not allowed to read the state variables after this line.
-  const uint not_finished = Atomic::sub(&_not_finished, 1u);
+  const uint not_finished = AtomicAccess::sub(&_not_finished, 1u);
 
   // The last worker signals to the coordinator that all work is completed.
   if (not_finished == 0) {

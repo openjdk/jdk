@@ -24,6 +24,9 @@
  */
 package jdk.jpackage.internal.model;
 
+import static jdk.jpackage.internal.cli.StandardAppImageFileOption.LINUX_LAUNCHER_SHORTCUT;
+
+import java.util.HashMap;
 import java.util.Map;
 import jdk.jpackage.internal.util.CompositeProxy;
 
@@ -36,9 +39,11 @@ public interface LinuxLauncher extends Launcher, LinuxLauncherMixin {
 
     @Override
     default Map<String, String> extraAppImageFileData() {
-        return shortcut().map(v -> {
-            return Map.of("shortcut", Boolean.toString(v));
-        }).orElseGet(Map::of);
+        Map<String, String> map = new HashMap<>();
+        shortcut().ifPresent(shortcut -> {
+            shortcut.store(LINUX_LAUNCHER_SHORTCUT.getName(), map::put);
+        });
+        return map;
     }
 
     /**

@@ -40,8 +40,8 @@ public:
 
   ~G1RegionsOnNodes();
 
-  // Increase _count_per_node for the node of given heap region and returns node index.
-  uint add(G1HeapRegion* hr);
+  // Increase _count_per_node for the node of given heap region.
+  void add(G1HeapRegion* hr);
 
   void clear();
 

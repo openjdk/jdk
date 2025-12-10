@@ -217,7 +217,7 @@ public:
   void push_va(ciEnv* ci, const char* fmt, va_list args) {
     char *e = ci->_dyno_name + strlen(ci->_dyno_name);
     char *m = ci->_dyno_name + ARRAY_SIZE(ci->_dyno_name) - 1;
-    os::vsnprintf(e, m - e, fmt, args);
+    (void) os::vsnprintf(e, m - e, fmt, args);
     assert(strlen(ci->_dyno_name) < (ARRAY_SIZE(ci->_dyno_name) - 1), "overflow");
   }
 
@@ -1057,7 +1057,9 @@ void ciEnv::register_method(ciMethod* target,
     }
 
     assert(offsets->value(CodeOffsets::Deopt) != -1, "must have deopt entry");
-    assert(offsets->value(CodeOffsets::Exceptions) != -1, "must have exception entry");
+
+    assert(compiler->type() == compiler_c2 ||
+           offsets->value(CodeOffsets::Exceptions) != -1, "must have exception entry");
 
     nm =  nmethod::new_nmethod(method,
                                compile_id(),
