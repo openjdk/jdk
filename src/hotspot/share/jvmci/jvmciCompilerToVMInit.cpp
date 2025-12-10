@@ -241,7 +241,7 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
     cardtable_start_address = nullptr;
     cardtable_shift = CardTable::card_shift();
   } else
-#fi
+#endif
 #if INCLUDE_SHENANDOAHGC
   if (bs->is_a(BarrierSet::ShenandoahBarrierSet)) {
     cardtable_start_address = nullptr;
