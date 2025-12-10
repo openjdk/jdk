@@ -1,0 +1,10 @@
+
+    static boolean b[[TEST]](boolean a, boolean b) {
+        return [[TEST_OP]];
+    }
+
+    @Test(dataProvider = "boolMaskBinaryOpProvider")
+    static void mask[[TEST]]$vectorteststype$(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+[[KERNEL]]
+        assertArraysEquals(r, a, b, $vectorteststype$::b[[TEST]]);
+    }
