@@ -316,7 +316,7 @@ public class Hybrid {
         @Override
         public KEM.Encapsulated engineEncapsulate(int from, int to,
                 String algorithm) {
-            int expectedSecretSize = le.secretSize() + re.secretSize();
+            int expectedSecretSize = engineSecretSize();
             if (!(from == 0 && to == expectedSecretSize)) {
                 throw new IllegalArgumentException(
                         "Invalid range for encapsulation: from = " + from +
@@ -353,10 +353,7 @@ public class Hybrid {
         @Override
         public SecretKey engineDecapsulate(byte[] encapsulation, int from,
                 int to, String algorithm) throws DecapsulateException {
-            int leftEncSize = ld.encapsulationSize();
-            int rightEncSize = rd.encapsulationSize();
-            int expectedEncSize = leftEncSize + rightEncSize;
-
+            int expectedEncSize = engineEncapsulationSize();
             if (encapsulation.length != expectedEncSize) {
                 throw new IllegalArgumentException(
                         "Invalid key encapsulation message length: " +
@@ -364,7 +361,7 @@ public class Hybrid {
                         ", expected = " + expectedEncSize);
             }
 
-            int expectedSecretSize = ld.secretSize() + rd.secretSize();
+            int expectedSecretSize = engineSecretSize();
             if (!(from == 0 && to == expectedSecretSize)) {
                 throw new IllegalArgumentException(
                         "Invalid range for decapsulation: from = " + from +
@@ -372,9 +369,9 @@ public class Hybrid {
                         expectedSecretSize);
             }
 
-            var left = Arrays.copyOf(encapsulation, leftEncSize);
+            var left = Arrays.copyOf(encapsulation, ld.encapsulationSize());
             var right = Arrays.copyOfRange(encapsulation,
-                    leftEncSize, encapsulation.length);
+                    ld.encapsulationSize(), encapsulation.length);
             return new SecretKeyImpl(
                     ld.decapsulate(left),
                     rd.decapsulate(right)
