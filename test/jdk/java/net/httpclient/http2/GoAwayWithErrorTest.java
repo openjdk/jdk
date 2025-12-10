@@ -176,10 +176,9 @@ public class GoAwayWithErrorTest {
 
             if (!firstRequestHandled.getAndSet(true)) {
                 int lastStreamId = impl.getStreamId();
-                System.out.println("Handler: sending GOAWAY(PROTOCOL_ERROR, lastStreamId=" + lastStreamId + ") and closing connection");
+                System.out.println("Handler: sending GOAWAY(PROTOCOL_ERROR, lastStreamId=" + lastStreamId + ")");
 
                 impl.getServerConnection().sendGoAway(lastStreamId, PROTOCOL_ERROR, DEBUG_DATA);
-                impl.getServerConnection().close(PROTOCOL_ERROR);
                 goAwaySentLatch.countDown();
                 return;
             }
