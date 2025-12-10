@@ -119,11 +119,13 @@ public class DiagnosticGetEndPosition {
                 null,
                 null,
                 d -> {
-                    int pos = (int) d.getStartPosition();
-                    String substring = implCode.substring(pos, (int) d.getEndPosition());
-                    //ideally would be "0", but the positions are not fully set yet
-                    assertTrue(substring.equals("0"), () ->
-                            String.format("%s at position %d '%s'", d, pos, substring));
+                    // Use line and column instead of start and end positions
+                    // to handle platform-dependent newlines, which could be
+                    // different between the text block and the written file.
+                    int line = (int) d.getLineNumber();
+                    int col = (int) d.getColumnNumber();
+                    String substring = implCode.split("\\R")[line - 1].substring(col - 1, col);
+                    assertEquals("0", substring);
                 },
                 List.of("-sourcepath", src.toString(), "-Xlint:divzero"),
                 null,
