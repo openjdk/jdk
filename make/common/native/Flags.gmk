@@ -234,9 +234,6 @@ define SetupLinkerFlags
     ifeq ($(call isTargetOs, macosx), true)
       $1_EXTRA_LDFLAGS += -Wl,-object_path_lto,$$($1_OBJECT_DIR)/$$($1_NAME)_lto_helper.o
     endif
-
-    # for lto, we have to use the debug prefix mapping flags to get rid of unwanted paths
-    # $1_EXTRA_LDFLAGS += $$(DEBUG_PREFIX_CFLAGS)
   endif
 
   $1_EXTRA_LDFLAGS += $$($1_LDFLAGS_$(OPENJDK_TARGET_OS_TYPE)) $$($1_LDFLAGS_$(OPENJDK_TARGET_OS)) \
