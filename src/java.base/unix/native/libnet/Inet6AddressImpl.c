@@ -618,7 +618,7 @@ ping6(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
             }
             break;
         }
-        if (n < 0 && errno != EINPROGRESS && errno != EINTR) {
+        if (n < 0 && errno != EINPROGRESS) {
 #if defined(__linux__)
             /*
              * On some Linux versions, when a socket is bound to the loopback

@@ -674,5 +674,5 @@ timerMillisExpired(struct timeval *start, struct timeval *end, int timeMillis) {
             return 1; /* expired */
         }
     }
-    return 0; /* Expired */
+    return 0; /* not expired */
 }
