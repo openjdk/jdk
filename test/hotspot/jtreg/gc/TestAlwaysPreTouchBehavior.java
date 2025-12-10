@@ -134,6 +134,7 @@ public class TestAlwaysPreTouchBehavior {
 
     public static void main(String [] args) {
         int maxIter = 20;
+        // RSS values we get are sometimes somewhat delayed or inaccurate
         for (int iter=0; iter < maxIter; iter++) {
             long rss = WhiteBox.getWhiteBox().rss();
             System.out.println("RSS: " + rss);
@@ -156,13 +157,13 @@ public class TestAlwaysPreTouchBehavior {
                 throw new SkippedException("cannot get RSS?");
             }
             if (available > requiredAvailable) {
-              if ((rss < minRequiredRss) && iter < maxIter-1) {
-                System.out.println("We got only an RSS value of " + rss + " but require " + minRequiredRss + ", let's retry!");
-              } else {
-                Asserts.assertGreaterThan(rss, minRequiredRss, "RSS of this process(" + rss + "b) should be bigger " +
-                                          "than or equal to heap size(" + heapSize + "b) (available memory: " + available + "). On Linux Kernel < 4.14 RSS can be inaccurate");
-                break;
-              }
+                if ((rss < minRequiredRss) && iter < maxIter-1) {
+                    System.out.println("We got only an RSS value of " + rss + " but require " + minRequiredRss + ", let's retry!");
+                } else {
+                    Asserts.assertGreaterThan(rss, minRequiredRss, "RSS of this process(" + rss + "b) should be bigger " +
+                                              "than or equal to heap size(" + heapSize + "b) (available memory: " + available + "). On Linux Kernel < 4.14 RSS can be inaccurate");
+                    break;
+                }
             }
         }
     }
