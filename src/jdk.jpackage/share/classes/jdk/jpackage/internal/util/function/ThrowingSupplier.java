@@ -36,7 +36,7 @@ public interface ThrowingSupplier<T, E extends Exception> {
             try {
                 return v.get();
             } catch (Exception ex) {
-                throw ExceptionBox.rethrowUnchecked(ex);
+                throw ExceptionBox.toUnchecked(ex);
             }
         };
     }

@@ -37,7 +37,7 @@ public interface ThrowingBiConsumer<T, U, E extends Exception> {
             try {
                 v.accept(t, u);
             } catch (Exception ex) {
-                throw ExceptionBox.rethrowUnchecked(ex);
+                throw ExceptionBox.toUnchecked(ex);
             }
         };
     }

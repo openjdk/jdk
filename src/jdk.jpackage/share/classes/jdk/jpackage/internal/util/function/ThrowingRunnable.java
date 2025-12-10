@@ -34,7 +34,7 @@ public interface ThrowingRunnable<E extends Exception> {
             try {
                 v.run();
             } catch (Exception ex) {
-                throw ExceptionBox.rethrowUnchecked(ex);
+                throw ExceptionBox.toUnchecked(ex);
             }
         };
     }
