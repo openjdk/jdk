@@ -40,6 +40,7 @@ import jdk.httpclient.test.lib.http2.Http2TestExchangeImpl;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.internal.net.http.frame.ErrorFrame;
 import jdk.test.lib.net.SimpleSSLContext;
+import jdk.test.lib.Utils;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -109,7 +110,7 @@ public class GoAwayWithErrorTest {
         CompletableFuture<HttpResponse<String>> first = client.sendAsync(
                 request, HttpResponse.BodyHandlers.ofString());
 
-        if (!goAwaySentLatch.await(5, TimeUnit.SECONDS)) {
+        if (!goAwaySentLatch.await(Utils.adjustTimeout(5), TimeUnit.SECONDS)) {
             throw new AssertionError("GOAWAY not sent in time");
         }
 
@@ -120,7 +121,7 @@ public class GoAwayWithErrorTest {
                 request, HttpResponse.BodyHandlers.ofString());
 
         CompletableFuture.allOf(first, second, third)
-                .orTimeout(20, TimeUnit.SECONDS)
+                .orTimeout(Utils.adjustTimeout(20), TimeUnit.SECONDS)
                 .exceptionally(ex -> null)
                 .join();
 
