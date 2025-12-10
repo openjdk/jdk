@@ -1456,6 +1456,10 @@ Node* MaxNode::IdealI(PhaseGVN* phase, bool can_reshape) {
 
 // Ideal transformations for MaxINode
 Node* MaxINode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* n = AddNode::Ideal(phase, can_reshape);
+  if (n != nullptr) {
+    return n;
+  }
   return IdealI(phase, can_reshape);
 }
 
