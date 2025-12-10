@@ -609,17 +609,21 @@ void decode_env::print_address(address adr) {
 
     address card_table_base = nullptr;
     BarrierSet* bs = BarrierSet::barrier_set();
+#if INCLUDE_G1GC
     if (bs->is_a(BarrierSet::G1BarrierSet)) {
       G1BarrierSet* g1bs = barrier_set_cast<G1BarrierSet>(bs);
       card_table_base = g1bs->card_table()->byte_map_base();
+    } else
+#endif
 #if INCLUDE_SHENANDOAHGC
-    } else if (bs->is_a(BarrierSet::ShenandoahBarrierSet)) {
+    if (bs->is_a(BarrierSet::ShenandoahBarrierSet)) {
       ShenandoahBarrierSet* sbs = barrier_set_cast<ShenandoahBarrierSet>(bs);
       if (sbs->card_table() != nullptr) {
         card_table_base = sbs->card_table()->byte_map_base();
       }
+    } else
 #endif
-    } else if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
+    if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
       card_table_base = ci_card_table_address_as<address>();
     }
     if (card_table_base != nullptr && adr == card_table_base) {

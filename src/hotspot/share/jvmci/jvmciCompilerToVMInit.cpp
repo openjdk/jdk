@@ -236,15 +236,19 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
   JVMTI_ONLY( _should_notify_object_alloc = &JvmtiExport::_should_notify_object_alloc; )
 
   BarrierSet* bs = BarrierSet::barrier_set();
+#if INCLUDE_G1GC
   if (bs->is_a(BarrierSet::G1BarrierSet)) {
     cardtable_start_address = nullptr;
     cardtable_shift = CardTable::card_shift();
+  } else
+#fi
 #if INCLUDE_SHENANDOAHGC
-  } else if (bs->is_a(BarrierSet::ShenandoahBarrierSet)) {
+  if (bs->is_a(BarrierSet::ShenandoahBarrierSet)) {
     cardtable_start_address = nullptr;
     cardtable_shift = CardTable::card_shift();
+  } else
 #endif
-  } else if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
+  if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
     CardTable::CardValue* base = ci_card_table_address_const();
     assert(base != nullptr, "unexpected byte_map_base");
     cardtable_start_address = base;
