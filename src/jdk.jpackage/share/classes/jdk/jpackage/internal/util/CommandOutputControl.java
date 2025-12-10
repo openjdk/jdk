@@ -39,6 +39,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -57,7 +58,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
-import jdk.jpackage.internal.util.function.ThrowingSupplier;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
 
 /**
@@ -68,6 +68,8 @@ import jdk.jpackage.internal.util.function.ThrowingRunnable;
  * discard it.
  * <p>
  * Supports separate configurations for stdout and stderr streams.
+ * <p>
+ * Output can be saved as byte or character streams.
  *
  * <p>
  * The table below describes how combinations of parameters affect content added
@@ -87,7 +89,7 @@ import jdk.jpackage.internal.util.function.ThrowingRunnable;
  * <th scope="row">redirectErrorStream(true) and dumpOutput(true)</th>
  * <td>
  * <p>
- * System.out: STDOUT & STDERR intertwined
+ * System.out: STDOUT & STDERR interleaved
  * <p>
  * System.err: unchanged</td>
  * <td>
@@ -144,7 +146,7 @@ import jdk.jpackage.internal.util.function.ThrowingRunnable;
  * discardStderr(false)</th>
  * <td>
  * <p>
- * Result.findContent(): STDOUT & STDERR intertwined
+ * Result.findContent(): STDOUT & STDERR interleaved
  * <p>
  * Result.findStdout(): {@code Optional.empty()}
  * <p>
@@ -152,7 +154,7 @@ import jdk.jpackage.internal.util.function.ThrowingRunnable;
  * <td>
  * <p>
  * Result.findContent(): an {@code Optional} object wrapping a single item list
- * with the first line of intertwined STDOUT & STDERR if a command wrote any of
+ * with the first line of interleaved STDOUT & STDERR if a command wrote any of
  * them; otherwise {@code Optional.of(List.of())}
  * <p>
  * Result.findStdout(): {@code Optional.empty()}
@@ -271,6 +273,7 @@ public final class CommandOutputControl {
         processOutputCharset = other.processOutputCharset;
         redirectErrorStream = other.redirectErrorStream;
         storeStreamsInFiles = other.storeStreamsInFiles;
+        binaryOutput = other.binaryOutput;
         processNotifier = other.processNotifier;
     }
 
@@ -326,12 +329,28 @@ public final class CommandOutputControl {
     }
 
     /**
+     * Configures this object to treat stdout and stderr streams from subsequently
+     * executed commands as byte streams rather than character streams.
+     *
+     * @param v if output streams from subsequently executed commands should be
+     *          treated as byte streams rather than character streams
+     *
+     * @return this
+     */
+    public CommandOutputControl binaryOutput(boolean v) {
+        binaryOutput = v;
+        return this;
+    }
+
+    /**
      * Sets character encoding for the stdout and the stderr streams of subprocesses
      * subsequently executed by this object. The default encoding is {@code UTF-8}.
      * <p>
      * Doesn't apply to executing {@code ToolProvider}-s.
+     * <p>
+     * The value will be ignored if this object is configured for byte output streams.
      *
-     * @param v character encoding for output stream of subsequently executed
+     * @param v character encoding for output streams of subsequently executed
      *          subprocesses
      *
      * @return this
@@ -475,13 +494,21 @@ public final class CommandOutputControl {
         }
     }
 
-    public record Result(Optional<Integer> exitCode, CommandOutput output, ExecutableSpec execSpec) implements Output {
+    public record Result(
+            Optional<Integer> exitCode,
+            Optional<CommandOutput<List<String>>> output,
+            Optional<CommandOutput<byte[]>> byteOutput,
+            ExecutableSpec execSpec) implements Output {
+
         public Result {
+            Objects.requireNonNull(exitCode);
             Objects.requireNonNull(output);
+            Objects.requireNonNull(byteOutput);
+            Objects.requireNonNull(execSpec);
         }
 
         public Result(int exitCode) {
-            this(Optional.of(exitCode), CommandOutput.EMPTY, EMPTY_EXECUTABLE_SPEC);
+            this(Optional.of(exitCode), Optional.empty(), Optional.empty(), EMPTY_EXECUTABLE_SPEC);
         }
 
         public int getExitCode() {
@@ -513,15 +540,15 @@ public final class CommandOutputControl {
 
         @Override
         public Optional<List<String>> findContent() {
-            return output.lines();
+            return output.flatMap(CommandOutput::combined);
         }
 
         public Optional<Output> findStdout() {
-            return output.stdoutLines().map(Result::createView);
+            return output.flatMap(CommandOutput::stdout).map(Result::createView);
         }
 
         public Optional<Output> findStderr() {
-            return output.stderrLines().map(Result::createView);
+            return output.flatMap(CommandOutput::stderr).map(Result::createView);
         }
 
         public Output stdout() {
@@ -530,6 +557,30 @@ public final class CommandOutputControl {
 
         public Output stderr() {
             return findStderr().orElseThrow();
+        }
+
+        public byte[] getByteContent() {
+            return findByteContent().orElseThrow();
+        }
+
+        public Optional<byte[]> findByteContent() {
+            return byteOutput.flatMap(CommandOutput::combined);
+        }
+
+        public Optional<byte[]> findByteStdout() {
+            return byteOutput.flatMap(CommandOutput::stdout);
+        }
+
+        public Optional<byte[]> findByteStderr() {
+            return byteOutput.flatMap(CommandOutput::stderr);
+        }
+
+        public byte[] byteStdout() {
+            return findByteStdout().orElseThrow();
+        }
+
+        public byte[] byteStderr() {
+            return findByteStderr().orElseThrow();
         }
 
         private static Output createView(List<String> lines) {
@@ -578,7 +629,14 @@ public final class CommandOutputControl {
     }
 
     public String description() {
-        return outputStreamsControl.describe();
+        var tokens = outputStreamsControl.descriptionTokens();
+        if (binaryOutput) {
+            tokens.add("byte");
+        }
+        if (redirectErrorStream()) {
+            tokens.add("interleave");
+        }
+        return String.join("; ", tokens);
     }
 
     private Result execute(ProcessBuilder pb, long timeoutMillis) throws IOException, InterruptedException {
@@ -589,13 +647,7 @@ public final class CommandOutputControl {
 
         configureProcessBuilder(pb);
 
-        final CachingPrintStream stdoutCache = outputStreamsControl.stdout().buildCachingPrintStream(System.out).create();
-        final CachingPrintStream stderrCache;
-        if (redirectErrorStream) {
-            stderrCache = outputStreamsControl.stderr().buildCachingPrintStream(System.out).create();
-        } else {
-            stderrCache = outputStreamsControl.stderr().buildCachingPrintStream(System.err).create();
-        }
+        var csc = new CachingStreamsConfig();
 
         var process = pb.start();
 
@@ -604,10 +656,18 @@ public final class CommandOutputControl {
         });
 
         BiConsumer<InputStream, PrintStream> gobbler = (in, ps) -> {
-            try (var bufReader = new BufferedReader(new InputStreamReader(in, charset))) {
-                bufReader.lines().forEach(ps::println);
-            } catch (IOException ex) {
-                throw new UncheckedIOException(ex);
+            if (binaryOutput) {
+                try (in) {
+                    in.transferTo(ps);
+                } catch (IOException ex) {
+                    throw new UncheckedIOException(ex);
+                }
+            } else {
+                try (var bufReader = new BufferedReader(new InputStreamReader(in, charset))) {
+                    bufReader.lines().forEach(ps::println);
+                } catch (IOException ex) {
+                    throw new UncheckedIOException(ex);
+                }
             }
         };
 
@@ -617,7 +677,7 @@ public final class CommandOutputControl {
         final Optional<CompletableFuture<Void>> stdoutGobbler;
         if (mustReadOutputStream(pb.redirectOutput())) {
             stdoutGobbler = Optional.of(CompletableFuture.runAsync(() -> {
-                gobbler.accept(process.getInputStream(), stdoutCache.ps());
+                gobbler.accept(process.getInputStream(), csc.out());
             }));
         } else {
             stdoutGobbler = Optional.empty();
@@ -626,7 +686,7 @@ public final class CommandOutputControl {
         final Optional<CompletableFuture<Void>> stderrGobbler;
         if (!pb.redirectErrorStream() && mustReadOutputStream(pb.redirectError())) {
             stderrGobbler = Optional.of(CompletableFuture.runAsync(() -> {
-                gobbler.accept(process.getErrorStream(), stderrCache.ps());
+                gobbler.accept(process.getErrorStream(), csc.err());
             }));
         } else {
             stderrGobbler = Optional.empty();
@@ -642,15 +702,7 @@ public final class CommandOutputControl {
             exitCode = Optional.of(process.exitValue());
         }
 
-        CommandOutput output;
         try {
-            ThrowingSupplier<CommandOutput, IOException> createCommandOutput = () -> {
-                var stdout = read(outputStreamsControl.stdout(), stdoutCache);
-                var stderr = read(outputStreamsControl.stderr(), stderrCache);
-
-                return combine(stdout, redirectErrorStream ? Optional.empty() : stderr);
-            };
-
             if (storeStreamsInFiles) {
                 var stdoutStorage = streamFileSink(pb.redirectOutput());
                 var stderrStorage = streamFileSink(pb.redirectError());
@@ -663,16 +715,14 @@ public final class CommandOutputControl {
                     }
                 };
 
-                stdoutStorage.map(toInputStream).ifPresent(in -> {
-                    gobbler.accept(in, stdoutCache.ps());
-                });
-
-                stderrStorage.map(toInputStream).ifPresent(in -> {
-                    gobbler.accept(in, stderrCache.ps());
-                });
-
                 try {
-                    output = createCommandOutput.get();
+                    stdoutStorage.map(toInputStream).ifPresent(in -> {
+                        gobbler.accept(in, csc.out());
+                    });
+
+                    stderrStorage.map(toInputStream).ifPresent(in -> {
+                        gobbler.accept(in, csc.err());
+                    });
                 } finally {
                     Consumer<Path> silentDeleter = path -> {
                         suppressIOException(Files::delete, path);
@@ -684,41 +734,28 @@ public final class CommandOutputControl {
             } else {
                 stdoutGobbler.ifPresent(CommandOutputControl::joinProcessStreamGobbler);
                 stderrGobbler.ifPresent(CommandOutputControl::joinProcessStreamGobbler);
-
-                output = createCommandOutput.get();
             }
         } catch (UncheckedIOException ex) {
             throw ex.getCause();
         }
 
-        return new Result(exitCode, output, new ProcessSpec(getPID(process), pb.command()));
+        return csc.createResult(exitCode, new ProcessSpec(getPID(process), pb.command()));
     }
 
     private Result execute(ToolProvider tp, String... args) throws IOException {
-        CachingPrintStream stdoutCache = outputStreamsControl.stdout().buildCachingPrintStream(System.out).create();
-        CachingPrintStream stderrCache;
-        if (redirectErrorStream) {
-            stderrCache = outputStreamsControl.stderr().buildCachingPrintStream(System.out).create();
-        } else {
-            stderrCache = outputStreamsControl.stderr().buildCachingPrintStream(System.err).create();
-        }
+        var csc = new CachingStreamsConfig();
 
         final int exitCode;
-        var tpStdout = stdoutCache.ps();
-        var tpStderr = stderrCache.ps();
+        var out = csc.out();
+        var err = csc.err();
         try {
-            exitCode = tp.run(tpStdout, tpStderr, args);
+            exitCode = tp.run(out, err, args);
         } finally {
-            suppressIOException(tpStdout::flush);
-            suppressIOException(tpStderr::flush);
+            suppressIOException(out::flush);
+            suppressIOException(err::flush);
         }
 
-        var stdout = read(outputStreamsControl.stdout(), stdoutCache);
-        var stderr = read(outputStreamsControl.stderr(), stderrCache);
-
-        var output = combine(stdout, redirectErrorStream ? Optional.empty() : stderr);
-
-        return new Result(Optional.of(exitCode), output, new ToolProviderSpec(tp.name(), List.of(args)));
+        return csc.createResult(Optional.of(exitCode), new ToolProviderSpec(tp.name(), List.of(args)));
     }
 
     private CommandOutputControl setOutputControl(boolean set, OutputControlOption v) {
@@ -819,24 +856,86 @@ public final class CommandOutputControl {
         }
     }
 
-    private CommandOutput combine(Optional<List<String>> out, Optional<List<String>> err) {
+    private static Optional<byte[]> readBinary(OutputControl outputControl, CachingPrintStream cps) {
+        if (outputControl.save()) {
+            return cps.buf().map(ByteArrayOutputStream::toByteArray).or(() -> {
+                return Optional.of(new byte[0]);
+            });
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    private <T> CommandOutput<T> combine(Optional<? extends Content<T>> out, Optional<? extends Content<T>> err) {
         if (out.isEmpty() && err.isEmpty()) {
-            return CommandOutput.EMPTY;
+            return CommandOutput.empty();
         } else if (out.isEmpty()) {
             // This branch is unreachable because it is impossible to make it save stderr without saving stdout.
             // If streams are configured for saving and stdout is discarded,
-            // its saved contents will be an Optional instance wrapping an empty list, not an empty Optional.
+            // its saved contents will be an Optional instance wrapping an empty content, not an empty Optional.
             throw ExceptionBox.reachedUnreachable();
         } else if (err.isEmpty()) {
-            return new CommandOutput(out, Integer.MAX_VALUE, redirectErrorStream());
+            return new CommandOutput<>(out, Integer.MAX_VALUE, redirectErrorStream());
         } else {
-            final var combined = Stream.of(out, err).map(Optional::orElseThrow).flatMap(List::stream);
-            return new CommandOutput(Optional.of(combined.toList()), out.orElseThrow().size(), redirectErrorStream());
+            final var combined = out.get().append(err.get());
+            return new CommandOutput<>(Optional.of(combined), out.orElseThrow().size(), redirectErrorStream());
         }
     }
 
     private static PrintStream nullPrintStream() {
         return new PrintStream(OutputStream.nullOutputStream());
+    }
+
+    private sealed interface Content<T> {
+        T data();
+        int size();
+        Content<T> slice(int from, int to);
+        Content<T> append(Content<T> other);
+    }
+
+    private record StringListContent(List<String> data) implements Content<List<String>> {
+        StringListContent {
+            Objects.requireNonNull(data);
+        }
+
+        @Override
+        public int size() {
+            return data.size();
+        }
+
+        @Override
+        public StringListContent slice(int from, int to) {
+            return new StringListContent(data.subList(from, to));
+        }
+
+        @Override
+        public StringListContent append(Content<List<String>> other) {
+            return new StringListContent(Stream.of(data, other.data()).flatMap(List::stream).toList());
+        }
+    }
+
+    private record ByteContent(byte[] data) implements Content<byte[]> {
+        ByteContent {
+            Objects.requireNonNull(data);
+        }
+
+        @Override
+        public int size() {
+            return data.length;
+        }
+
+        @Override
+        public ByteContent slice(int from, int to) {
+            return new ByteContent(Arrays.copyOfRange(data, from, to));
+        }
+
+        @Override
+        public ByteContent append(Content<byte[]> other) {
+            byte[] combined = new byte[size() + other.size()];
+            System.arraycopy(data, 0, combined, 0, data.length);
+            System.arraycopy(other.data(), 0, combined, data.length, other.size());
+            return new ByteContent(combined);
+        }
     }
 
     private record OutputStreamsControl(OutputControl stdout, OutputControl stderr) {
@@ -853,20 +952,20 @@ public final class CommandOutputControl {
             return new OutputStreamsControl(stdout.copy(), stderr.copy());
         }
 
-        String describe() {
+        List<String> descriptionTokens() {
             final List<String> tokens = new ArrayList<>();
             if (stdout.save()) { // Save flags are the same for stdout and stderr, checking stdout is sufficient.
                 streamsLabel("save ", true).ifPresent(tokens::add);
             }
             if (stdout.dump() || stderr.dump()) {
-                streamsLabel("inherit ", true).ifPresent(tokens::add);
+                streamsLabel("echo ", true).ifPresent(tokens::add);
             }
             streamsLabel("discard ", false).ifPresent(tokens::add);
             if (tokens.isEmpty()) {
                 // Unreachable because there is always at least one token in the description.
                 throw ExceptionBox.reachedUnreachable();
             } else {
-                return String.join("; ", tokens);
+                return tokens;
             }
         }
 
@@ -931,10 +1030,17 @@ public final class CommandOutputControl {
                 return this;
             }
 
+            Builder buffer(ByteArrayOutputStream v) {
+                externalBuffer = v;
+                return this;
+            }
+
             CachingPrintStream create() {
                 final Optional<ByteArrayOutputStream> buf;
                 if (save && !discard) {
-                    buf = Optional.of(new ByteArrayOutputStream());
+                    buf = Optional.ofNullable(externalBuffer).or(() -> {
+                        return Optional.of(new ByteArrayOutputStream());
+                    });
                 } else {
                     buf = Optional.empty();
                 }
@@ -956,7 +1062,74 @@ public final class CommandOutputControl {
             private boolean save;
             private boolean discard;
             private PrintStream dumpStream;
+            private ByteArrayOutputStream externalBuffer;
         }
+    }
+
+    private final class CachingStreamsConfig {
+
+        CachingStreamsConfig() {
+            out = outputStreamsControl.stdout().buildCachingPrintStream(System.out).create();
+            if (redirectErrorStream) {
+                var builder = outputStreamsControl.stderr().buildCachingPrintStream(System.out);
+                out.buf().ifPresent(builder::buffer);
+                err = builder.create();
+            } else {
+                err = outputStreamsControl.stderr().buildCachingPrintStream(System.err).create();
+            }
+        }
+
+        Result createResult(Optional<Integer> exitCode, ExecutableSpec execSpec) throws IOException {
+
+            CommandOutput<List<String>> output;
+            CommandOutput<byte[]> byteOutput;
+
+            CachingPrintStream effectiveOut;
+            if (out.buf().isEmpty() && redirectErrorStream) {
+                effectiveOut = new CachingPrintStream(nullPrintStream(), err.buf());
+            } else {
+                effectiveOut = out;
+            }
+
+            if (binaryOutput) {
+                Optional<ByteContent> outContent, errContent;
+                if (redirectErrorStream) {
+                    outContent = readBinary(outputStreamsControl.stdout(), effectiveOut).map(ByteContent::new);
+                    errContent = Optional.empty();
+                } else {
+                    outContent = readBinary(outputStreamsControl.stdout(), out).map(ByteContent::new);
+                    errContent = readBinary(outputStreamsControl.stderr(), err).map(ByteContent::new);
+                }
+
+                byteOutput = combine(outContent, errContent);
+                output = null;
+            } else {
+                Optional<StringListContent> outContent, errContent;
+                if (redirectErrorStream) {
+                    outContent = read(outputStreamsControl.stdout(), effectiveOut).map(StringListContent::new);
+                    errContent = Optional.empty();
+                } else {
+                    outContent = read(outputStreamsControl.stdout(), out).map(StringListContent::new);
+                    errContent = read(outputStreamsControl.stderr(), err).map(StringListContent::new);
+                }
+
+                output = combine(outContent, errContent);
+                byteOutput = null;
+            }
+
+            return new Result(exitCode, Optional.ofNullable(output), Optional.ofNullable(byteOutput), execSpec);
+        }
+
+        PrintStream out() {
+            return out.ps();
+        }
+
+        PrintStream err() {
+            return err.ps();
+        }
+
+        private final CachingPrintStream out;
+        private final CachingPrintStream err;
     }
 
     private static final class OutputControl {
@@ -1112,12 +1285,12 @@ public final class CommandOutputControl {
         private final Iterable<OutputStream> streams;
     }
 
-    private record CommandOutput(Optional<List<String>> lines, int stdoutLineCount, boolean intertwined) {
+    private record CommandOutput<T>(Optional<? extends Content<T>> content, int stdoutContentSize, boolean interleaved) {
 
         CommandOutput {
-            Objects.requireNonNull(lines);
-            if (intertwined) {
-                stdoutLineCount = lines.map(Collection::size).orElse(-1);
+            Objects.requireNonNull(content);
+            if (interleaved) {
+                stdoutContentSize = content.map(Content::size).orElse(-1);
             }
         }
 
@@ -1125,47 +1298,56 @@ public final class CommandOutputControl {
             this(Optional.empty(), 0, false);
         }
 
+        Optional<T> combined() {
+            return content.map(Content::data);
+        }
+
         /**
-         * Returns non-empty {@code Optional} if stdout is available and stdout and stderr are not intertwined.
+         * Returns non-empty {@code Optional} if stdout is available and stdout and stderr are not interleaved.
          * @return stdout if it can be extracted from the combined output
          */
-        Optional<List<String>> stdoutLines() {
+        Optional<T> stdout() {
             if (withoutExtractableStdout()) {
                 return Optional.empty();
             }
 
-            final var theLines = lines.orElseThrow();
-            if (stdoutLineCount == theLines.size()) {
-                return lines;
+            final var theContent = content.orElseThrow();
+            if (stdoutContentSize == theContent.size()) {
+                return combined();
             } else {
-                return Optional.of(theLines.subList(0, Integer.min(stdoutLineCount, theLines.size())));
+                return Optional.of(theContent.slice(0, Integer.min(stdoutContentSize, theContent.size())).data());
             }
         }
 
         /**
-         * Returns non-empty {@code Optional} if stderr is available and stdout and stderr are not intertwined.
+         * Returns non-empty {@code Optional} if stderr is available and stdout and stderr are not interleaved.
          * @return stderr if it can be extracted from the combined output
          */
-        Optional<List<String>> stderrLines() {
+        Optional<T> stderr() {
             if (withoutExtractableStderr()) {
                 return Optional.empty();
-            } else if (stdoutLineCount <= 0) {
-                return lines;
+            } else if (stdoutContentSize <= 0) {
+                return combined();
             } else {
-                final var theLines = lines.orElseThrow();
-                return Optional.of(theLines.subList(stdoutLineCount, theLines.size()));
+                final var theContent = content.orElseThrow();
+                return Optional.of(theContent.slice(stdoutContentSize, theContent.size()).data());
             }
         }
 
+        @SuppressWarnings("unchecked")
+        static <T> CommandOutput<T> empty() {
+            return (CommandOutput<T>)EMPTY;
+        }
+
         private boolean withoutExtractableStdout() {
-            return intertwined || lines.isEmpty() || stdoutLineCount < 0;
+            return interleaved || content.isEmpty() || stdoutContentSize < 0;
         }
 
         private boolean withoutExtractableStderr() {
-            return intertwined || lines.isEmpty() || stdoutLineCount > lines.get().size();
+            return interleaved || content.isEmpty() || stdoutContentSize > content.get().size();
         }
 
-        static final CommandOutput EMPTY = new CommandOutput();
+        private static final CommandOutput<?> EMPTY = new CommandOutput<>();
     }
 
     private record ToolProviderExecutable(ToolProvider tp, List<String> args, CommandOutputControl coc) implements Executable {
@@ -1239,6 +1421,7 @@ public final class CommandOutputControl {
     private Charset processOutputCharset;
     private boolean redirectErrorStream;
     private boolean storeStreamsInFiles;
+    private boolean binaryOutput;
     private Consumer<Process> processNotifier;
 
     private static enum OutputControlOption {

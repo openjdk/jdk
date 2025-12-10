@@ -22,6 +22,7 @@
  */
 package jdk.jpackage.internal.util;
 
+import static jdk.jpackage.internal.util.CommandOutputControlTestUtils.isInterleave;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
 import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
@@ -46,6 +47,7 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -59,7 +61,6 @@ import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.util.function.ExceptionBox;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.api.condition.EnabledIf;
@@ -92,6 +93,7 @@ public class CommandOutputControlTest {
         // This test is mostly for coverage.
         var desc = spec.create().description();
         assertFalse(desc.isBlank());
+//        System.out.println(desc);
     }
 
     @Test
@@ -258,6 +260,22 @@ public class CommandOutputControlTest {
         var ex = assertThrows(IOException.class, exec::execute);
         System.out.println("test_close_streams: " + action);
         ex.printStackTrace(System.out);
+    }
+
+    @Test
+    public void testInterleaved() throws IOException, InterruptedException {
+        var cmdline = Command.createShellCommandLine(List.<CommandAction>of(
+                CommandAction.echoStdout("Eat some more"),
+                CommandAction.echoStderr(" of these"),
+                CommandAction.echoStdout(" soft French pastries"),
+                CommandAction.echoStderr(" and drink some tea")
+        ));
+
+        var coc = new CommandOutputControl().saveOutput(true).dumpOutput(true).redirectErrorStream(true);
+        var exec = coc.createExecutable(new ProcessBuilder(cmdline));
+
+        var result = exec.execute();
+        assertEquals(List.of("Eat some more", " of these", " soft French pastries", " and drink some tea"), result.getOutput());
     }
 
     public enum CloseStream {
@@ -487,6 +505,9 @@ public class CommandOutputControlTest {
         STORE_STREAMS_IN_FILES(coc -> {
             coc.storeStreamsInFiles(true);
         }),
+        BINARY_STREAMS(coc -> {
+            coc.binaryOutput(true);
+        }),
         ;
 
         OutputControl(Consumer<CommandOutputControl> mutator) {
@@ -500,33 +521,41 @@ public class CommandOutputControlTest {
 
         static List<Set<OutputControl>> variants() {
             final List<Set<OutputControl>> variants = new ArrayList<>();
-            for (final var redirectStderr : BOOLEAN_VALUES) {
-                for (final var withDump : BOOLEAN_VALUES) {
-                    variants.addAll(Stream.of(
-                            Set.<OutputControl>of(),
-                            Set.of(SAVE_ALL),
-                            Set.of(SAVE_FIRST_LINE),
-                            Set.of(DISCARD_STDOUT),
-                            Set.of(DISCARD_STDERR),
-                            Set.of(SAVE_ALL, DISCARD_STDOUT),
-                            Set.of(SAVE_FIRST_LINE, DISCARD_STDOUT),
-                            Set.of(SAVE_ALL, DISCARD_STDERR),
-                            Set.of(SAVE_FIRST_LINE, DISCARD_STDERR),
-                            Set.of(SAVE_ALL, DISCARD_STDOUT, DISCARD_STDERR),
-                            Set.of(SAVE_FIRST_LINE, DISCARD_STDOUT, DISCARD_STDERR)
-                    ).map(v -> {
-                        if (withDump) {
-                            return new SetBuilder<OutputControl>().add(v).add(DUMP).create();
-                        } else {
-                            return v;
-                        }
-                    }).map(v -> {
-                        if (redirectStderr && !v.containsAll(List.of(DISCARD_STDOUT, DISCARD_STDERR))) {
-                            return new SetBuilder<OutputControl>().add(v).add(REDIRECT_STDERR).create();
-                        } else {
-                            return v;
-                        }
-                    }).toList());
+            for (final var binaryOutput : BOOLEAN_VALUES) {
+                for (final var redirectStderr : BOOLEAN_VALUES) {
+                    for (final var withDump : BOOLEAN_VALUES) {
+                        variants.addAll(Stream.of(
+                                Set.<OutputControl>of(),
+                                Set.of(SAVE_ALL),
+                                Set.of(SAVE_FIRST_LINE),
+                                Set.of(DISCARD_STDOUT),
+                                Set.of(DISCARD_STDERR),
+                                Set.of(SAVE_ALL, DISCARD_STDOUT),
+                                Set.of(SAVE_FIRST_LINE, DISCARD_STDOUT),
+                                Set.of(SAVE_ALL, DISCARD_STDERR),
+                                Set.of(SAVE_FIRST_LINE, DISCARD_STDERR),
+                                Set.of(SAVE_ALL, DISCARD_STDOUT, DISCARD_STDERR),
+                                Set.of(SAVE_FIRST_LINE, DISCARD_STDOUT, DISCARD_STDERR)
+                        ).map(v -> {
+                            if (withDump) {
+                                return new SetBuilder<OutputControl>().add(v).add(DUMP).create();
+                            } else {
+                                return v;
+                            }
+                        }).map(v -> {
+                            if (redirectStderr && !v.containsAll(List.of(DISCARD_STDOUT, DISCARD_STDERR))) {
+                                return new SetBuilder<OutputControl>().add(v).add(REDIRECT_STDERR).create();
+                            } else {
+                                return v;
+                            }
+                        }).map(v -> {
+                            if (binaryOutput) {
+                                return new SetBuilder<OutputControl>().add(v).add(BINARY_STREAMS).create();
+                            } else {
+                                return v;
+                            }
+                        }).toList());
+                    }
                 }
             }
             return variants.stream().map(options -> {
@@ -616,7 +645,11 @@ public class CommandOutputControlTest {
             assertEquals(0, result.get().getExitCode());
 
             verifyDump(dumpCapture, command);
-            verifyResultContent(result.get(), command);
+            if (contains(OutputControl.BINARY_STREAMS)) {
+                verifyByteResultContent(result.get(), command, StandardCharsets.UTF_8);
+            } else {
+                verifyResultContent(result.get(), command);
+            }
         }
 
         boolean contains(OutputControl v) {
@@ -676,14 +709,11 @@ public class CommandOutputControlTest {
             if (redirectStderr() && !discardStderr()) {
                 assertEquals(List.of(), dumpCapture.errLines());
 
-                // Intertwined STDOUT and STDERR
-                if (!Collections.disjoint(command.stdout(), command.stderr())) {
-                    throw new UnsupportedOperationException("Testee stdout and stderr must be disjoint");
+                // Interleaved STDOUT and STDERR
+                if (!isInterleave(dumpCapture.outLines(), command.stdout(), command.stderr())) {
+                    fail(String.format("Unexpected combined output=%s; stdout=%s; stderr=%s",
+                            dumpCapture.outLines(), command.stdout(), command.stderr()));
                 }
-                var capturedDump = new ArrayList<>(dumpCapture.outLines());
-                capturedDump.removeAll(command.stdout());
-                capturedDump.removeAll(command.stderr());
-                assertEquals(List.of(), capturedDump);
             } else {
                 if (discardStdout()) {
                     assertEquals(List.of(), dumpCapture.outLines());
@@ -700,6 +730,13 @@ public class CommandOutputControlTest {
         }
 
         private void verifyResultContent(CommandOutputControl.Result result, Command command) {
+            Objects.requireNonNull(result);
+            Objects.requireNonNull(command);
+
+            assertTrue(result.findByteContent().isEmpty());
+            assertTrue(result.findByteStdout().isEmpty());
+            assertTrue(result.findByteStderr().isEmpty());
+
             if (!saveOutput()) {
                 assertTrue(result.findContent().isEmpty());
                 assertTrue(result.findStdout().isEmpty());
@@ -708,11 +745,6 @@ public class CommandOutputControlTest {
             }
 
             assertTrue(result.findContent().isPresent());
-
-            if (redirectStderr() && !Collections.disjoint(command.stdout(), command.stderr())) {
-                // Intertwined STDOUT and STDERR
-                throw new UnsupportedOperationException("Testee stdout and stderr must be disjoint");
-            }
 
             command = filterSavedStreams(command);
 
@@ -762,10 +794,10 @@ public class CommandOutputControlTest {
                                     result.getContent(), command.stdout(), command.stderr()));
                     assertTrue(result.getContent().size() < 2);
                 } else if (contains(OutputControl.SAVE_ALL)) {
-                    var savedContent = new ArrayList<>(result.getContent());
-                    savedContent.removeAll(command.stdout());
-                    savedContent.removeAll(command.stderr());
-                    assertEquals(List.of(), savedContent);
+                    if (!isInterleave(result.getContent(), command.stdout(), command.stderr())) {
+                        fail(String.format("Unexpected combined saved content=%s; stdout=%s; stderr=%s",
+                                result.getContent(), command.stdout(), command.stderr()));
+                    }
                 } else {
                     // Unreachable
                     throw ExceptionBox.reachedUnreachable();
@@ -773,9 +805,54 @@ public class CommandOutputControlTest {
             }
         }
 
+        private void verifyByteResultContent(CommandOutputControl.Result result, Command command, Charset charset) {
+            Objects.requireNonNull(result);
+            Objects.requireNonNull(command);
+            Objects.requireNonNull(charset);
+
+            assertTrue(result.findContent().isEmpty());
+            assertTrue(result.findFirstLineOfOutput().isEmpty());
+            assertTrue(result.findStdout().isEmpty());
+            assertTrue(result.findStderr().isEmpty());
+
+            if (!saveOutput()) {
+                assertTrue(result.findByteContent().isEmpty());
+                assertTrue(result.findByteStdout().isEmpty());
+                assertTrue(result.findByteStderr().isEmpty());
+                return;
+            }
+
+            assertTrue(result.findByteContent().isPresent());
+
+            if (redirectStderr() && !Collections.disjoint(command.stdout(), command.stderr())) {
+                // Interleaved STDOUT and STDERR
+                throw new UnsupportedOperationException("Testee stdout and stderr must be disjoint");
+            }
+
+            command = filterSavedStreams(command);
+
+            if (!redirectStderr()) {
+                assertEquals(command.stdout(), toStringList(result.byteStdout(), charset));
+                assertEquals(command.stderr(), toStringList(result.byteStderr(), charset));
+                assertEquals(Stream.of(
+                        command.stdout(),
+                        command.stderr()
+                ).flatMap(List::stream).toList(), toStringList(result.getByteContent(), charset));
+            } else {
+                assertEquals(discardStderr(), result.findByteStdout().isPresent());
+                assertTrue(result.findByteStderr().isEmpty());
+
+                var combined = toStringList(result.getByteContent(), charset);
+                if (!isInterleave(combined, command.stdout(), command.stderr())) {
+                    fail(String.format("Unexpected combined saved content=%s; stdout=%s; stderr=%s",
+                            combined, command.stdout(), command.stderr()));
+                }
+            }
+        }
+
         private List<String> expectedSavedStream(List<String> commandOutput) {
             Objects.requireNonNull(commandOutput);
-            if (contains(OutputControl.SAVE_ALL)) {
+            if (contains(OutputControl.SAVE_ALL) || (contains(OutputControl.SAVE_FIRST_LINE) && contains(OutputControl.BINARY_STREAMS))) {
                 return commandOutput;
             } else if (contains(OutputControl.SAVE_FIRST_LINE)) {
                 return commandOutput.stream().findFirst().map(List::of).orElseGet(List::of);
@@ -799,21 +876,11 @@ public class CommandOutputControlTest {
             }
 
             List<String> outLines() {
-                return toLines(out, outCharset);
+                return toStringList(out, outCharset);
             }
 
             List<String> errLines() {
-                return toLines(err, errCharset);
-            }
-
-            private static List<String> toLines(byte[] buf, Charset charset) {
-                try (var reader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(buf), charset))) {
-                    return reader.lines().filter(line -> {
-                        return !line.contains("TRACE");
-                    }).toList();
-                } catch (IOException ex) {
-                    throw new UncheckedIOException(ex);
-                }
+                return toStringList(err, errCharset);
             }
 
             static DumpCapture captureDump(Runnable runnable) {
@@ -846,6 +913,14 @@ public class CommandOutputControlTest {
             } else {
                 return coc.createExecutable(new ProcessBuilder(command.asExecutable()));
             }
+        }
+    }
+
+    private static List<String> toStringList(byte[] data, Charset charset) {
+        try (var bufReader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(data), charset))) {
+            return bufReader.lines().toList();
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
         }
     }
 
