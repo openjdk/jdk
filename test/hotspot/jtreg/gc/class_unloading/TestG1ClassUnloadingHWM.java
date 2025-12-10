@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ public class TestG1ClassUnloadingHWM {
       "-XX:MetaspaceSize=" + MetaspaceSize,
       "-Xmn" + YoungGenSize,
       "-XX:+UseG1GC",
+      "-XX:G1HeapRegionSize=1m",
       "-XX:" + (enableUnloading ? "+" : "-") + "ClassUnloadingWithConcurrentMark",
       "-Xlog:gc",
       TestG1ClassUnloadingHWM.AllocateBeyondMetaspaceSize.class.getName(),
