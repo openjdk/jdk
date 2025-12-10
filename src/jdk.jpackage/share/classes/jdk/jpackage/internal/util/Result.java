@@ -24,7 +24,7 @@
  */
 package jdk.jpackage.internal.util;
 
-import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
+import static jdk.jpackage.internal.util.function.ExceptionBox.toUnchecked;
 
 import java.util.Collection;
 import java.util.List;
@@ -50,7 +50,7 @@ public record Result<T>(Optional<T> value, Collection<? extends Exception> error
 
     public T orElseThrow() {
         firstError().ifPresent(ex -> {
-            rethrowUnchecked(ex);
+            throw toUnchecked(ex);
         });
         return value.orElseThrow();
     }

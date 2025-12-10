@@ -64,7 +64,7 @@ public class ExceptionBoxTest {
         var ex = new Exception("foo");
         // There is no way to directly instantiate ExceptionBox, use a workaround.
         var box = assertThrowsExactly(ExceptionBox.class, () -> {
-            ExceptionBox.rethrowUnchecked(ex);
+            throw ExceptionBox.toUnchecked(ex);
         });
         assertSame(ex, ExceptionBox.unbox(box));
     }
@@ -98,7 +98,7 @@ public class ExceptionBoxTest {
     public void test_toUnchecked_ExceptionBox() {
         // There is no way to directly instantiate ExceptionBox, use a workaround.
         var box = assertThrowsExactly(ExceptionBox.class, () -> {
-            ExceptionBox.rethrowUnchecked(new Exception("foo"));
+            throw ExceptionBox.toUnchecked(new Exception("foo"));
         });
         assertToUnchecked(box, true);
     }
@@ -133,7 +133,7 @@ public class ExceptionBoxTest {
                     trace("notify about to interrupt itself");
                     workerThreadInterruptedExceptionCaught.notify();
                 }
-                trace("before rethrowUnchecked");
+                trace("before toUnchecked()");
                 var box = assertThrowsExactly(ExceptionBox.class, () -> {
                     throw ExceptionBox.toUnchecked(iex);
                 });
@@ -160,7 +160,7 @@ public class ExceptionBoxTest {
             }
         }
 
-        // Block waiting when ExceptionBox.rethrowUnchecked()
+        // Block waiting when ExceptionBox.toUnchecked()
         // called in the worker thread will interrupt the worker thread.
         while (!thread.isInterrupted()) {
             trace("wait %s is interrupted", thread);
@@ -184,7 +184,7 @@ public class ExceptionBoxTest {
             m.invoke(null);
         } catch (InvocationTargetException ex) {
             var cause = assertThrows(type.expectedThrownType, () -> {
-                ExceptionBox.rethrowUnchecked(ex);
+                throw ExceptionBox.toUnchecked(ex);
             });
             assertSame(ex.getCause(), type.expectedThrowableGetter.apply(cause));
         }

@@ -49,7 +49,7 @@ import static jdk.jpackage.internal.cli.StandardOption.PREDEFINED_RUNTIME_IMAGE;
 import static jdk.jpackage.internal.model.MacPackage.RUNTIME_BUNDLE_LAYOUT;
 import static jdk.jpackage.internal.model.StandardPackageType.MAC_DMG;
 import static jdk.jpackage.internal.model.StandardPackageType.MAC_PKG;
-import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
+import static jdk.jpackage.internal.util.function.ExceptionBox.toUnchecked;
 
 import java.nio.file.Path;
 import java.util.Objects;
@@ -153,11 +153,11 @@ final class MacFromOptions {
                 } catch (RuntimeException ex) {
                     // Some error occurred trying to configure the signing config for the package.
                     // Ignore it, bail out with the first error.
-                    rethrowUnchecked(expiredAppCertException);
+                    throw toUnchecked(expiredAppCertException);
                 }
 
                 Log.error(pkgSignConfigResult.firstError().orElseThrow().getMessage());
-                rethrowUnchecked(expiredAppCertException);
+                throw toUnchecked(expiredAppCertException);
             }
         }
 
@@ -303,7 +303,7 @@ final class MacFromOptions {
             }
         }
 
-        rethrowUnchecked(ex);
+        throw toUnchecked(ex);
     }
 
     private static SigningIdentityBuilder createSigningIdentityBuilder(Options options) {

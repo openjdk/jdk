@@ -22,7 +22,7 @@
  */
 package jdk.jpackage.test;
 
-import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
+import static jdk.jpackage.internal.util.function.ExceptionBox.toUnchecked;
 import static jdk.jpackage.internal.util.function.ThrowingBiConsumer.toBiConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
@@ -860,7 +860,7 @@ public final class PackageTest extends RunnablePackageTest {
                                 "Check the package has %d top installation directories",
                                 expectedRootCount));
             } catch (IOException ex) {
-                rethrowUnchecked(ex);
+                throw toUnchecked(ex);
             }
         }
 

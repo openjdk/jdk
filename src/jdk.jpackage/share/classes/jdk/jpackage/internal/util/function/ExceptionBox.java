@@ -30,8 +30,27 @@ public class ExceptionBox extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 
-    public static RuntimeException rethrowUnchecked(Exception ex) {
-        throw toUnchecked(ex);
+    public static RuntimeException toUnchecked(Exception ex) {
+        switch (ex) {
+            case RuntimeException rex -> {
+                return rex;
+            }
+            case InvocationTargetException itex -> {
+                var t = itex.getCause();
+                if (t instanceof Exception cause) {
+                    return toUnchecked(cause);
+                } else {
+                    throw (Error)t;
+                }
+            }
+            case InterruptedException _ -> {
+                Thread.currentThread().interrupt();
+                return new ExceptionBox(ex);
+            }
+            default -> {
+                return new ExceptionBox(ex);
+            }
+        }
     }
 
     public static Exception unbox(Throwable t) {
@@ -57,29 +76,6 @@ public class ExceptionBox extends RuntimeException {
 
     public static Error reachedUnreachable() {
         return new AssertionError("Reached unreachable!");
-    }
-
-    public static RuntimeException toUnchecked(Exception ex) {
-        switch (ex) {
-            case RuntimeException rex -> {
-                return rex;
-            }
-            case InvocationTargetException itex -> {
-                var t = itex.getCause();
-                if (t instanceof Exception cause) {
-                    return toUnchecked(cause);
-                } else {
-                    throw (Error)t;
-                }
-            }
-            case InterruptedException _ -> {
-                Thread.currentThread().interrupt();
-                return new ExceptionBox(ex);
-            }
-            default -> {
-                return new ExceptionBox(ex);
-            }
-        }
     }
 
     private ExceptionBox(Exception ex) {
