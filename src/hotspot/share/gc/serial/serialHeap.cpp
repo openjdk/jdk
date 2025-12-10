@@ -91,14 +91,16 @@ SerialHeap::SerialHeap() :
     CollectedHeap(),
     _young_gen(nullptr),
     _old_gen(nullptr),
+    _young_gen_saved_top(nullptr),
+    _old_gen_saved_top(nullptr),
     _rem_set(nullptr),
     _gc_policy_counters(new GCPolicyCounters("Copy:MSC", 2, 2)),
     _young_manager(nullptr),
     _old_manager(nullptr),
-    _is_heap_almost_full(false),
     _eden_pool(nullptr),
     _survivor_pool(nullptr),
-    _old_pool(nullptr) {
+    _old_pool(nullptr),
+    _is_heap_almost_full(false) {
   _young_manager = new GCMemoryManager("Copy");
   _old_manager = new GCMemoryManager("MarkSweepCompact");
   GCLocker::initialize();
