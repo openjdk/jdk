@@ -28,14 +28,14 @@
 
 int VM_Version::get_current_sve_vector_length() {
   assert(VM_Version::supports_sve(), "should not call this");
-  // TODO: This is not available in the Windows SDK yet , so conservatively go with the lowest value (128 bits)
+  // TODO: This is not available in the Windows SDK yet, so conservatively go with the lowest value (128 bits)
   // https://developer.arm.com/documentation/101427/0102/Register-descriptions/Scalable-vector-extensions--SVE--registers/ZCR-EL1--SVE-Control-Register--EL1
   return VM_Version::supports_sve() ? 128 / 8 : 0; // This value is in bytes
 }
 
 int VM_Version::set_and_get_current_sve_vector_length(int length) {
   assert(VM_Version::supports_sve(), "should not call this");
-  // TODO: This is not available in the Windows SDK yet , so conservatively go with the lowest value (128 bits)
+  // TODO: This is not available in the Windows SDK yet, so conservatively go with the lowest value (128 bits)
   // https://developer.arm.com/documentation/101427/0102/Register-descriptions/Scalable-vector-extensions--SVE--registers/ZCR-EL1--SVE-Control-Register--EL1
   return VM_Version::supports_sve() ? 128 / 8 : 0; // This value is in bytes
 }
