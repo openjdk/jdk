@@ -1110,7 +1110,7 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
       Node *divisor = in(2);      // Also is mask
 
       // Add a use to x to prevent it from dying
-      Node *hook = new Node(1);
+      Node* hook = new Node(1);
       hook->init_req(0, x);
       // Generate code to reduce X rapidly to nearly 2^k-1.
       for( int i = 0; i < trip_count; i++ ) {
@@ -1167,7 +1167,7 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Save in(1) so that it cannot be changed or deleted
-  Node *hook = new Node(1);
+  Node* hook = new Node(1);
   hook->init_req(0, in(1));
 
   // Divide using the transform from DivI to MulL
@@ -1408,7 +1408,7 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       Node *divisor = in(2);      // Also is mask
 
       // Add a use to x to prevent it from dying
-      Node *hook = new Node(1);
+      Node* hook = new Node(1);
       hook->init_req(0, x);
       // Generate code to reduce X rapidly to nearly 2^k-1.
       for( int i = 0; i < trip_count; i++ ) {
@@ -1466,7 +1466,7 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Save in(1) so that it cannot be changed or deleted
   // Add a use to x to prevent him from dying
-  Node *hook = new Node(1);
+  Node* hook = new Node(1);
   hook->init_req(0, in(1));
 
   // Divide using the transform from DivL to MulL
