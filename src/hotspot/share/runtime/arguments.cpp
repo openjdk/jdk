@@ -540,7 +540,6 @@ static SpecialFlag const special_jvm_flags[] = {
 #endif
   { "ParallelRefProcEnabled",       JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "ParallelRefProcBalancingEnabled", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "PSChunkLargeArrays",           JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "MaxRAM",                       JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "AggressiveHeap",               JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "NeverActAsServerClassMachine", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
@@ -580,6 +579,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "PretenureSizeThreshold",       JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
   { "HeapMaximumCompactionInterval",JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
 
+  { "PSChunkLargeArrays",           JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
 #endif
