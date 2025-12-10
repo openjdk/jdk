@@ -1035,6 +1035,8 @@ void *os::Bsd::dlopen_helper(const char *filename, int mode, char *ebuf, int ebu
   int rtn = fegetenv(&default_fenv);
   assert(rtn == 0, "fegetenv must succeed");
 
+  Events::log_dll_message(nullptr, "Attempting to load shared library %s", filename);
+
   void* result;
   JFR_ONLY(NativeLibraryLoadEvent load_event(filename, &result);)
   result = ::dlopen(filename, RTLD_LAZY);
@@ -1579,6 +1581,9 @@ void os::pd_disclaim_memory(char *addr, size_t bytes) {
 
 size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
   return page_size;
+}
+
+void os::numa_set_thread_affinity(Thread *thread, int node) {
 }
 
 void os::numa_make_global(char *addr, size_t bytes) {

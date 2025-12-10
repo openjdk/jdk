@@ -114,11 +114,13 @@ void ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
     invocation = C->congraph()->_invocation + 1;
   }
   ConnectionGraph* congraph = new(C->comp_arena()) ConnectionGraph(C, igvn, invocation);
+  NOT_PRODUCT(if (C->should_print_igv(/* Any level */ 1)) C->igv_printer()->set_congraph(congraph);)
   // Perform escape analysis
   if (congraph->compute_escape()) {
     // There are non escaping objects.
     C->set_congraph(congraph);
   }
+  NOT_PRODUCT(if (C->should_print_igv(/* Any level */ 1)) C->igv_printer()->set_congraph(nullptr);)
   // Cleanup.
   if (oop_null->outcnt() == 0) {
     igvn->hash_delete(oop_null);
@@ -126,6 +128,8 @@ void ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
   if (noop_null->outcnt() == 0) {
     igvn->hash_delete(noop_null);
   }
+
+  C->print_method(PHASE_AFTER_EA, 2);
 }
 
 bool ConnectionGraph::compute_escape() {
@@ -281,6 +285,8 @@ bool ConnectionGraph::compute_escape() {
     return false;
   }
 
+  _compile->print_method(PHASE_EA_AFTER_INITIAL_CONGRAPH, 4);
+
   // 2. Finish Graph construction by propagating references to all
   //    java objects through graph.
   if (!complete_connection_graph(ptnodes_worklist, non_escaped_allocs_worklist,
@@ -290,6 +296,8 @@ bool ConnectionGraph::compute_escape() {
     NOT_PRODUCT(escape_state_statistics(java_objects_worklist);)
     return false;
   }
+
+  _compile->print_method(PHASE_EA_AFTER_COMPLETE_CONGRAPH, 4);
 
   // 3. Adjust scalar_replaceable state of nonescaping objects and push
   //    scalar replaceable allocations on alloc_worklist for processing
@@ -312,6 +320,7 @@ bool ConnectionGraph::compute_escape() {
         found_nsr_alloc = true;
       }
     }
+    _compile->print_method(PHASE_EA_ADJUST_SCALAR_REPLACEABLE_ITER, 6, n);
   }
 
   // Propagate NSR (Not Scalar Replaceable) state.
@@ -350,6 +359,7 @@ bool ConnectionGraph::compute_escape() {
 
   _collecting = false;
 
+  _compile->print_method(PHASE_EA_AFTER_PROPAGATE_NSR, 4);
   } // TracePhase t3("connectionGraph")
 
   // 4. Optimize ideal graph based on EA information.
@@ -387,6 +397,8 @@ bool ConnectionGraph::compute_escape() {
   }
 #endif
 
+  _compile->print_method(PHASE_EA_AFTER_GRAPH_OPTIMIZATION, 4);
+
   // 5. Separate memory graph for scalar replaceable allcations.
   bool has_scalar_replaceable_candidates = (alloc_worklist.length() > 0);
   if (has_scalar_replaceable_candidates && EliminateAllocations) {
@@ -398,7 +410,6 @@ bool ConnectionGraph::compute_escape() {
       NOT_PRODUCT(escape_state_statistics(java_objects_worklist);)
       return false;
     }
-    C->print_method(PHASE_AFTER_EA, 2);
 
 #ifdef ASSERT
   } else if (Verbose && (PrintEscapeAnalysis || PrintEliminateAllocations)) {
@@ -412,6 +423,8 @@ bool ConnectionGraph::compute_escape() {
     tty->cr();
 #endif
   }
+
+  _compile->print_method(PHASE_EA_AFTER_SPLIT_UNIQUE_TYPES, 4);
 
   // 6. Reduce allocation merges used as debug information. This is done after
   // split_unique_types because the methods used to create SafePointScalarObject
@@ -453,6 +466,8 @@ bool ConnectionGraph::compute_escape() {
       }
     }
   }
+
+  _compile->print_method(PHASE_EA_AFTER_REDUCE_PHI_ON_SAFEPOINTS, 4);
 
   NOT_PRODUCT(escape_state_statistics(java_objects_worklist);)
   return has_non_escaping_obj;
@@ -1302,11 +1317,14 @@ void ConnectionGraph::reduce_phi(PhiNode* ophi, GrowableArray<Node*> &alloc_work
     }
   }
 
+  _compile->print_method(PHASE_EA_BEFORE_PHI_REDUCTION, 5, ophi);
+
   // CastPPs need to be processed before Cmps because during the process of
   // splitting CastPPs we make reference to the inputs of the Cmp that is used
   // by the If controlling the CastPP.
   for (uint i = 0; i < castpps.size(); i++) {
     reduce_phi_on_castpp_field_load(castpps.at(i), alloc_worklist);
+    _compile->print_method(PHASE_EA_AFTER_PHI_CASTPP_REDUCTION, 6, castpps.at(i));
   }
 
   for (uint i = 0; i < others.size(); i++) {
@@ -1314,8 +1332,10 @@ void ConnectionGraph::reduce_phi(PhiNode* ophi, GrowableArray<Node*> &alloc_work
 
     if (use->is_AddP()) {
       reduce_phi_on_field_access(use, alloc_worklist);
+      _compile->print_method(PHASE_EA_AFTER_PHI_ADDP_REDUCTION, 6, use);
     } else if(use->is_Cmp()) {
       reduce_phi_on_cmp(use);
+      _compile->print_method(PHASE_EA_AFTER_PHI_CMP_REDUCTION, 6, use);
     }
   }
 
@@ -2417,6 +2437,7 @@ bool ConnectionGraph::complete_connection_graph(
         timeout = true;
         break;
       }
+      _compile->print_method(PHASE_EA_COMPLETE_CONNECTION_GRAPH_ITER, 5);
     }
     if ((iterations < GRAPH_BUILD_ITER_LIMIT) && !timeout) {
       time.start();
@@ -2490,7 +2511,8 @@ bool ConnectionGraph::complete_connection_graph(
 // Propagate GlobalEscape and ArgEscape escape states to all nodes
 // and check that we still have non-escaping java objects.
 bool ConnectionGraph::find_non_escaped_objects(GrowableArray<PointsToNode*>& ptnodes_worklist,
-                                               GrowableArray<JavaObjectNode*>& non_escaped_allocs_worklist) {
+                                               GrowableArray<JavaObjectNode*>& non_escaped_allocs_worklist,
+                                               bool print_method) {
   GrowableArray<PointsToNode*> escape_worklist;
   // First, put all nodes with GlobalEscape and ArgEscape states on worklist.
   int ptnodes_length = ptnodes_worklist.length();
@@ -2549,6 +2571,9 @@ bool ConnectionGraph::find_non_escaped_objects(GrowableArray<PointsToNode*>& ptn
         if (es_changed) {
           escape_worklist.push(e);
         }
+      }
+      if (print_method) {
+        _compile->print_method(PHASE_EA_CONNECTION_GRAPH_PROPAGATE_ITER, 6, e->ideal_node());
       }
     }
   }
@@ -3137,6 +3162,7 @@ void ConnectionGraph::find_scalar_replaceable_allocs(GrowableArray<JavaObjectNod
             break;
           }
         }
+        _compile->print_method(PHASE_EA_PROPAGATE_NSR_ITER, 5, jobj->ideal_node());
       }
     }
   }
@@ -3159,7 +3185,7 @@ void ConnectionGraph::verify_connection_graph(
   assert(new_edges == 0, "graph was not complete");
   // Verify that escape state is final.
   int length = non_escaped_allocs_worklist.length();
-  find_non_escaped_objects(ptnodes_worklist, non_escaped_allocs_worklist);
+  find_non_escaped_objects(ptnodes_worklist, non_escaped_allocs_worklist, /*print_method=*/ false);
   assert((non_escaped_length == non_escaped_allocs_worklist.length()) &&
          (non_escaped_length == length) &&
          (_worklist.length() == 0), "escape state was not final");
@@ -4720,6 +4746,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
   // New alias types were created in split_AddP().
   uint new_index_end = (uint) _compile->num_alias_types();
 
+  _compile->print_method(PHASE_EA_AFTER_SPLIT_UNIQUE_TYPES_1, 5);
+
   //  Phase 2:  Process MemNode's from memnode_worklist. compute new address type and
   //            compute new values for Memory inputs  (the Memory inputs are not
   //            actually updated until phase 4.)
@@ -4920,6 +4948,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
     record_for_optimizer(nmm);
   }
 
+  _compile->print_method(PHASE_EA_AFTER_SPLIT_UNIQUE_TYPES_3, 5);
+
   //  Phase 4:  Update the inputs of non-instance memory Phis and
   //            the Memory input of memnodes
   // First update the inputs of any non-instance Phi's from
@@ -4988,6 +5018,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
     assert(old_cnt == old_mem->outcnt(), "old mem could be lost");
   }
 #endif
+  _compile->print_method(PHASE_EA_AFTER_SPLIT_UNIQUE_TYPES_4, 5);
 }
 
 #ifndef PRODUCT
@@ -5009,6 +5040,10 @@ static const char *esc_names[] = {
   "ArgEscape",
   "GlobalEscape"
 };
+
+const char* PointsToNode::esc_name() const {
+  return esc_names[(int)escape_state()];
+}
 
 void PointsToNode::dump_header(bool print_state, outputStream* out) const {
   NodeType nt = node_type();

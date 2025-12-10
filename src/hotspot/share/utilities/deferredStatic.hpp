@@ -25,10 +25,9 @@
 #ifndef SHARE_UTILITIES_DEFERREDSTATIC_HPP
 #define SHARE_UTILITIES_DEFERREDSTATIC_HPP
 
+#include "cppstdlib/new.hpp"
 #include "cppstdlib/type_traits.hpp"
 #include "utilities/globalDefinitions.hpp"
-
-#include <new>
 
 // The purpose of this class is to provide control over the initialization
 // time for an object of type T with static storage duration. An instance of

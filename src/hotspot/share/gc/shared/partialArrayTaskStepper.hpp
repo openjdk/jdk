@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_PARTIALARRAYTASKSTEPPER_HPP
 
 #include "oops/arrayOop.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class PartialArrayState;
@@ -73,7 +74,7 @@ private:
   uint _task_fanout;
 
   // For unit tests.
-  inline Step next_impl(size_t length, volatile size_t* index_addr) const;
+  inline Step next_impl(size_t length, Atomic<size_t>* index_addr) const;
 };
 
 #endif // SHARE_GC_SHARED_PARTIALARRAYTASKSTEPPER_HPP
