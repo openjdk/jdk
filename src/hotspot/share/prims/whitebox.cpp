@@ -199,7 +199,7 @@ WB_ENTRY(jint, WB_TakeLockAndHangInSafepoint(JNIEnv* env, jobject wb))
   return 0;
 WB_END
 
-WB_ENTRY(jint, WB_GetMinimumJavaStackSize(JNIEnv* env, jobject o))
+WB_ENTRY(jlong, WB_GetMinimumJavaStackSize(JNIEnv* env, jobject o))
   return os::get_minimum_java_stack_sizes();
 WB_END
 
@@ -3138,7 +3138,7 @@ static JNINativeMethod methods[] = {
   {CC"rss", CC"()J",                                  (void*)&WB_Rss},
   {CC"printString", CC"(Ljava/lang/String;I)Ljava/lang/String;", (void*)&WB_PrintString},
   {CC"lockAndStuckInSafepoint", CC"()V",              (void*)&WB_TakeLockAndHangInSafepoint},
-  {CC"getMinimumJavaStackSize", CC"()I",              (void*)&WB_GetMinimumJavaStackSize},
+  {CC"getMinimumJavaStackSize", CC"()J",              (void*)&WB_GetMinimumJavaStackSize},
   {CC"wordSize", CC"()J",                             (void*)&WB_WordSize},
   {CC"rootChunkWordSize", CC"()J",                    (void*)&WB_RootChunkWordSize},
   {CC"isStatic", CC"()Z",                             (void*)&WB_IsStaticallyLinked},

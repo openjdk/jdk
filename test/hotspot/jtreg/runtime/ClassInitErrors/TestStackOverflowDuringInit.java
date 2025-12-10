@@ -130,9 +130,9 @@ public class TestStackOverflowDuringInit {
 
     public static void main(String[] args) throws Exception {
         WhiteBox wb = WhiteBox.getWhiteBox();
-        int minimumJavaStackSize = wb.getMinimumJavaStackSize();
+        long minimumJavaStackSize = wb.getMinimumJavaStackSize();
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-                "-Xss" + Integer.toString(minimumJavaStackSize), "-Xint",
+                "-Xss" + Long.toString(minimumJavaStackSize), "-Xint",
                 Launcher.class.getName());
 
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());

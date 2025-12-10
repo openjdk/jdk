@@ -2577,8 +2577,8 @@ jint os::set_minimum_stack_sizes() {
   return JNI_OK;
 }
 
-jint os::get_minimum_java_stack_sizes() {
-  return static_cast<jint>(_java_thread_min_stack_allowed);
+jlong os::get_minimum_java_stack_sizes() {
+  return static_cast<jlong>(_java_thread_min_stack_allowed);
 }
 
 // Builds a platform dependent Agent_OnLoad_<lib_name> function name

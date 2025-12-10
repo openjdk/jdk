@@ -391,7 +391,7 @@ class os: AllStatic {
 
  public:
   // get allowed minimum java stack sizes
-  static jint get_minimum_java_stack_sizes();
+  static jlong get_minimum_java_stack_sizes();
   // Find committed memory region within specified range (start, start + size),
   // return true if found any
   static bool committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size);

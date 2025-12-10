@@ -36,7 +36,7 @@ import jdk.test.whitebox.WhiteBox;
 public class ReadMinimumJavaStackSize {
   public static void main(String args[]) throws Exception {
     WhiteBox wb = WhiteBox.getWhiteBox();
-    int minimumJavaStackSize = wb.getMinimumJavaStackSize();
+    long minimumJavaStackSize = wb.getMinimumJavaStackSize();
     if (minimumJavaStackSize <= 0) {
       throw new RuntimeException("minimumJavaStackSize <= 0");
     } else {
