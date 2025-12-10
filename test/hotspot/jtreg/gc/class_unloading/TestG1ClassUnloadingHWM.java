@@ -52,7 +52,6 @@ public class TestG1ClassUnloadingHWM {
       "-XX:MetaspaceSize=" + MetaspaceSize,
       "-Xmn" + YoungGenSize,
       "-XX:+UseG1GC",
-      "-XX:G1HeapRegionSize=1m",
       "-XX:" + (enableUnloading ? "+" : "-") + "ClassUnloadingWithConcurrentMark",
       "-Xlog:gc",
       TestG1ClassUnloadingHWM.AllocateBeyondMetaspaceSize.class.getName(),
@@ -69,11 +68,12 @@ public class TestG1ClassUnloadingHWM {
   }
 
   public static void testWithoutG1ClassUnloading() throws Exception {
-    // -XX:-ClassUnloadingWithConcurrentMark is used, so we expect a full GC instead of a concurrent cycle.
+    // -XX:-ClassUnloadingWithConcurrentMark is used, so we expect a full GC due to Metadata GC Threshold.
     OutputAnalyzer out = runWithoutG1ClassUnloading();
 
-    out.shouldMatch(".*Pause Full.*");
-    out.shouldNotMatch(".*Pause Young \\(Concurrent Start\\).*");
+    out.shouldMatch(".*Pause Full \\(Metadata GC Threshold\\).*");
+    // We don't check for "Pause Young (Concurrent Start)", because it may or may not happen due to
+    // reasons such as heap pressure.
   }
 
   public static void testWithG1ClassUnloading() throws Exception {
@@ -81,7 +81,7 @@ public class TestG1ClassUnloadingHWM {
     OutputAnalyzer out = runWithG1ClassUnloading();
 
     out.shouldMatch(".*Pause Young \\(Concurrent Start\\).*");
-    out.shouldNotMatch(".*Pause Full.*");
+    out.shouldNotMatch(".*Pause Full \\(Metadata GC Threshold\\).*");
   }
 
   public static void main(String args[]) throws Exception {
