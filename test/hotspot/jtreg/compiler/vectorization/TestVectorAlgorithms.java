@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.HashMap;
 import jdk.test.lib.Utils;
 import java.util.Random;
+import java.lang.foreign.*;
 
 import compiler.lib.ir_framework.*;
 import compiler.lib.generators.*;
@@ -66,6 +67,9 @@ public class TestVectorAlgorithms {
     int[] rI3;
     int[] rI4;
     int eI;
+
+    int[] oopsX4;
+    int[] memX4;
 
     public static void main(String[] args) {
         TestFramework framework = new TestFramework();
@@ -129,6 +133,10 @@ public class TestVectorAlgorithms {
         testGroups.put("filterI", new HashMap<String,TestFunction>());
         testGroups.get("filterI").put("filterI_loop",      () -> { return filterI_loop(aI, rI1, eI); });
         testGroups.get("filterI").put("filterI_VectorAPI", () -> { return filterI_VectorAPI(aI, rI2, eI); });
+
+        testGroups.put("reduceAddIFieldsX4", new HashMap<String,TestFunction>());
+        testGroups.get("reduceAddIFieldsX4").put("reduceAddIFieldsX4_loop",      () -> { return reduceAddIFieldsX4_loop(oopsX4, memX4); });
+        testGroups.get("reduceAddIFieldsX4").put("reduceAddIFieldsX4_VectorAPI", () -> { return reduceAddIFieldsX4_VectorAPI(oopsX4, memX4); });
     }
 
     @Warmup(100)
@@ -156,7 +164,9 @@ public class TestVectorAlgorithms {
                  "reverseI_loop",
                  "reverseI_VectorAPI",
                  "filterI_loop",
-                 "filterI_VectorAPI"})
+                 "filterI_VectorAPI",
+                 "reduceAddIFieldsX4_loop",
+                 "reduceAddIFieldsX4_VectorAPI"})
     public void runTests(RunInfo info) {
         // Repeat many times, so that we also have multiple iterations for post-warmup to potentially recompile
         int iters = info.isWarmUp() ? 1 : 20;
@@ -172,6 +182,20 @@ public class TestVectorAlgorithms {
             rI2 = new int[size];
             rI3 = new int[size];
             rI4 = new int[size];
+
+            // X4 oop setup.
+            oopsX4 = new int[size];
+            int numX4 = 10_000;
+            for (int i = 0; i < size; i++) {
+                // assign either a zero=null, or assign a random oop.
+                oopsX4[i] = (RANDOM.nextInt(10) == 0) ? 0 : RANDOM.nextInt(numX4) * 4;
+            }
+            // Just fill the whole array with random values.
+            // The relevant field is only at every "4 * i + 3" though.
+            memX4 = new int[4 * numX4];
+            for (int i = 0; i < 4 * numX4; i++) {
+                memX4[i] = RANDOM.nextInt();
+            }
 
             // Run all tests
             for (Map.Entry<String, Map<String,TestFunction>> group_entry : testGroups.entrySet()) {
@@ -340,5 +364,15 @@ public class TestVectorAlgorithms {
     @Test
     public Object filterI_VectorAPI(int[] a, int[] r, int threshold) {
         return VectorAlgorithmsImpl.filterI_VectorAPI(a, r, threshold);
+    }
+
+    @Test
+    public int reduceAddIFieldsX4_loop(int[] oops, int[] mem) {
+        return VectorAlgorithmsImpl.reduceAddIFieldsX4_loop(oops, mem);
+    }
+
+    @Test
+    public int reduceAddIFieldsX4_VectorAPI(int[] oops, int[] mem) {
+        return VectorAlgorithmsImpl.reduceAddIFieldsX4_VectorAPI(oops, mem);
     }
 }

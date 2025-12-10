@@ -373,4 +373,45 @@ public class VectorAlgorithmsImpl {
         r[r.length - 1] = j;
         return r;
     }
+
+    // X4: ints simulate 4-byte oops.
+    // oops: if non-zero (= non-null), every entry simpulates a 4-byte oop, pointing into mem.
+    // mem: an int array that simulates the memory.
+    //
+    // Task: Find all non-null oops, and dereference them, get the relevant field.
+    //       Objects have 16 bytes, and the relevant field is at bytes 12-16.
+    //       Sum up all the field values.
+    public static int reduceAddIFieldsX4_loop(int[] oops, int[] mem) {
+        int sum = 0;
+        for (int i = 0; i < oops.length; i++) {
+            int oop = oops[i];
+            if (oop != 0) {
+                int fieldValue = mem[oop + 3]; // oop+12
+                sum += fieldValue;
+            }
+        }
+        return sum;
+    }
+
+    public static int reduceAddIFieldsX4_VectorAPI(int[] oops, int[] mem) {
+        var nulls = IntVector.broadcast(SPECIES_I, 0);
+        var acc = IntVector.broadcast(SPECIES_I, 0);
+        int i = 0;
+        for (; i < SPECIES_I.loopBound(oops.length); i += SPECIES_I.length()) {
+            var oopv = IntVector.fromArray(SPECIES_I, oops, i);
+            var mask = oopv.compare(VectorOperators.NE, nulls);
+            // We are lucky today: we need to access mem[oop + 3]
+            var fieldValues = IntVector.fromArray(SPECIES_I, mem, 3, oops, i, mask);
+            acc = acc.add(fieldValues);
+        }
+        int sum = acc.reduceLanes(VectorOperators.ADD);
+        for (; i < oops.length; i++) {
+            int oop = oops[i];
+            if (oop != 0) {
+                int fieldValue = mem[oop + 3]; // oop+12
+                sum += fieldValue;
+            }
+        }
+        return sum;
+    }
 }
