@@ -104,15 +104,21 @@ void HotCodeGrouper::do_grouping(ThreadSampler& sampler) {
       break;
     }
 
-    nmethod* nm = sampler.get_candidate();
+    nmethod* candidate = sampler.get_candidate();
 
     MutexLocker ml_Compile_lock(Compile_lock);
     MutexLocker ml_CompiledIC_lock(CompiledIC_lock, Mutex::_no_safepoint_check_flag);
     MutexLocker ml_CodeCache_lock(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
+    // Verify that address still points to CodeBlob
+    CodeBlob* blob = CodeCache::find_blob(candidate);
+    if (blob == nullptr) {
+      continue;
+    }
+
     // Verify that nmethod address is still valid and not in hot code heap
-    nmethod* found_nm = CodeCache::find_blob(nm)->as_nmethod_or_null();
-    if (nm != found_nm || !nm->is_in_use() || CodeCache::get_code_blob_type(nm) == CodeBlobType::MethodHot) {
+    nmethod* nm = blob->as_nmethod_or_null();
+    if (nm != candidate || !nm->is_in_use() || !nm->is_compiled_by_c2() || CodeCache::get_code_blob_type(nm) == CodeBlobType::MethodNonProfiled) {
       continue;
     }
 
@@ -141,8 +147,14 @@ void HotCodeGrouper::do_grouping(ThreadSampler& sampler) {
         continue;
       }
 
+      // Check if destination is a CodeBlob
+      CodeBlob* dest_blob = CodeCache::find_blob(dest);
+      if (dest_blob == nullptr) {
+        continue;
+      }
+
       // Check if the destination is an nmethod
-      nmethod* dest_nm = CodeCache::find_blob(dest)->as_nmethod_or_null();
+      nmethod* dest_nm = dest_blob->as_nmethod_or_null();
       if (dest_nm == nullptr || dest_nm->method() == nullptr) {
         continue;
       }
