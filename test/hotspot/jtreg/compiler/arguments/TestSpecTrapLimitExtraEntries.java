@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,33 +21,20 @@
  * questions.
  */
 
-#include <jni.h>
+/*
+ * @test
+ * @bug 8364490
+ * @summary "Hello world" sanity test for SpecTrapLimitExtraEntries
+ *
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:SpecTrapLimitExtraEntries=0 compiler.arguments.TestSpecTrapLimitExtraEntries
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:SpecTrapLimitExtraEntries=100 compiler.arguments.TestSpecTrapLimitExtraEntries
+ */
 
-#ifdef WINDOWS
-#include <windows.h>
-#else
-#include <unistd.h>
-#endif
+package compiler.arguments;
 
-static volatile int release_critical = 0;
+public class TestSpecTrapLimitExtraEntries {
 
-JNIEXPORT jboolean JNICALL Java_gc_cslocker_CSLocker_criticalSection
-  (JNIEnv *env, jobject obj, jintArray array)
-{
-    jboolean retval = JNI_TRUE;
-    void *nativeArray = (*env)->GetPrimitiveArrayCritical(env, array, 0);
-
-    if (nativeArray == NULL) {
-        retval = JNI_FALSE;
-    } else {
-      // Wait for 5 seconds
-#ifdef WINDOWS
-      Sleep(5000);
-#else
-      sleep(5);
-#endif
+    public static void main(String[] args) {
+        System.out.println("Passed");
     }
-
-    (*env)->ReleasePrimitiveArrayCritical(env, array, nativeArray, 0);
-    return retval;
 }
