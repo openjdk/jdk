@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,7 @@ public class ThreadListStackTracesTest {
         String name = "ReentrantLockTestTask";
         TestTask task = new ReentrantLockTestTask();
         Thread vt = Thread.ofVirtual().name(name).start(task);
+        sleep(50); // allow potentially needed class loading to complete
         task.ensureReady(vt, expState);
         checkStates(vt, expState);
     }
