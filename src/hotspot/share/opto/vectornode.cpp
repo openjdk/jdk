@@ -408,10 +408,6 @@ bool VectorNode::is_populate_index_supported(BasicType bt) {
   return Matcher::match_rule_supported_vector(Op_PopulateIndex, vlen, bt);
 }
 
-bool VectorNode::is_different_use_def_size_supported() {
-  return Matcher::supports_vector_different_use_def_size();
-}
-
 bool VectorNode::is_shift_opcode(int opc) {
   switch (opc) {
   case Op_LShiftI:

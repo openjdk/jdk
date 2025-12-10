@@ -2312,7 +2312,7 @@ bool SuperWord::is_velt_basic_type_compatible_use_def(Node* use, Node* def) cons
   }
 
   // Allow CMove to have different type for comparision and moving.
-  if (VectorNode::is_different_use_def_size_supported() && use->is_CMove() && def->is_Bool()) {
+  if (Matcher::supports_vector_different_use_def_size() && use->is_CMove() && def->is_Bool()) {
     return true;
   }
 
