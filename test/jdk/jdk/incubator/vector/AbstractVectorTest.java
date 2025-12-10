@@ -110,19 +110,19 @@ public class AbstractVectorTest {
     }
 
     static final List<IntFunction<boolean[]>> BOOLEAN_MASK_GENERATORS = List.of(
-            withToString("mask[i % 2]", (int l) -> {
-                boolean[] a = new boolean[l];
-                for (int i = 0; i < l; i++) {
-                    a[i] = (i % 2 == 0);
-                }
-                return a;
+            withToString("mask[i % 2]", (int s) -> {
+                return fill_boolean(s,
+                        i -> ((i % 2) == 0));
             }),
-            withToString("mask[true]", (int l) -> {
-                boolean[] a = new boolean[l];
+            withToString("mask[true]", (int s) -> {
+                boolean[] a = new boolean[s];
                 Arrays.fill(a, true);
                 return a;
             }),
-            withToString("mask[false]", boolean[]::new)
+            withToString("mask[false]", boolean[]::new),
+            withToString("mask[random]", (int s) -> {
+                return fill_boolean(s,_i -> RAND.nextBoolean());
+            })
     );
 
     static final List<List<IntFunction<boolean[]>>>
@@ -130,6 +130,26 @@ public class AbstractVectorTest {
             Stream.of(BOOLEAN_MASK_GENERATORS.get(0)).
                 flatMap(fa -> BOOLEAN_MASK_GENERATORS.stream().skip(1).map(
                                       fb -> List.of(fa, fb))).collect(Collectors.toList());
+
+    static long[] pack_booleans_to_longs(boolean[] mask) {
+        int totalLongs = (mask.length + 63) / 64; // ceil division
+        long[] packed = new long[totalLongs];
+        for (int i = 0; i < mask.length; i++) {
+            int longIndex = i / 64;
+            int bitIndex = i % 64;
+            if (mask[i]) {
+                packed[longIndex] |= 1L << bitIndex;
+            }
+        }
+        return packed;
+    }
+
+    static final List<IntFunction<long[]>> LONG_MASK_GENERATORS = BOOLEAN_MASK_GENERATORS.stream()
+            .map(f -> withToString(
+                    f.toString().replace("mask", "long_mask"),
+                    (IntFunction<long[]>) (int l) -> pack_booleans_to_longs(f.apply(l))
+            ))
+            .collect(Collectors.toList());
 
     static final List<BiFunction<Integer,Integer,int[]>> INT_SHUFFLE_GENERATORS = List.of(
             withToStringBi("shuffle[random]",
@@ -208,21 +228,6 @@ public class AbstractVectorTest {
             a[i] = elem;
         }
         return a;
-    }
-
-    interface FBooleanBinOp {
-        boolean apply(boolean a, boolean b);
-    }
-
-    static void assertArraysEquals(boolean[] r, boolean[] a, boolean[] b, FBooleanBinOp f) {
-        int i = 0;
-        try {
-            for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], f.apply(a[i], b[i]));
-            }
-        } catch (AssertionError e) {
-            Assert.assertEquals(r[i], f.apply(a[i], b[i]), "(" + a[i] + ", " + b[i] + ") at index #" + i);
-        }
     }
 
     // Non-optimized test partial wrap derived from the Spec:
