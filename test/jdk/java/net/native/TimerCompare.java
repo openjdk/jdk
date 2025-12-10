@@ -44,10 +44,10 @@ public class TimerCompare {
     @DataProvider(name = "testArgs")
     private static Object[][] targs() {
         return new Object[][] {
-		// timeout is added to start timeval. If end timeval lies before this
- 		// time then timer should be expired. If after it, timer should not be.
-		//
-                //  start timeval       end timeval        
+                // timeout is added to start timeval. If end timeval lies before this
+                // time then timer should be expired. If after it, timer should not be.
+                //
+                //  start timeval       end timeval
                 // s_sec,   s_usec,   e_sec,    e_usec,   timeout(ms),    expired(int)
                   {10,      0,        10,       110,      1000,           0},
                   {1,       0,        1,        3000,     1,              1},
@@ -61,7 +61,7 @@ public class TimerCompare {
     static int count = 1;
 
     @Test(dataProvider = "testArgs")
-    public static void test(long s_sec, int s_usec, long e_sec, int e_usec, 
+    public static void test(long s_sec, int s_usec, long e_sec, int e_usec,
                             int timeout_ms, int expect) {
         System.out.println("Iteration: " + count++);
         MemorySegment start = timeval.allocate(autoAllocator);

@@ -20,7 +20,7 @@ public class timetest_h extends timetest_h$shared {
     static final Arena LIBRARY_ARENA = Arena.ofAuto();
 
     static final SymbolLookup SYMBOL_LOOKUP = SymbolLookup.libraryLookup(
-	System.mapLibraryName("net"), LIBRARY_ARENA);
+        System.mapLibraryName("net"), LIBRARY_ARENA);
 
     //static final SymbolLookup SYMBOL_LOOKUP = SymbolLookup.loaderLookup();
             //.or(Linker.nativeLinker().defaultLookup());

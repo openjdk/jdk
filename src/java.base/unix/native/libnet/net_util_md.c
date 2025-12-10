@@ -650,7 +650,7 @@ NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout)
 #define ONE_MILLION 1000000
 
 /**
- * Return 0 (not expired) if the start timeval plus timeout 
+ * Return 0 (not expired) if the start timeval plus timeout
  * is past end timeval
  * Return 1 (expired) if end is after start plus timeout
  */
