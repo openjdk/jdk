@@ -614,6 +614,7 @@ ping6(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
                     close(fd);
                     return JNI_FALSE;
                 }
+                continue;
             }
             break;
         }

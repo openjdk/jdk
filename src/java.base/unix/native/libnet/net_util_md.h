@@ -82,7 +82,7 @@ void NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
                                   const char *defaultDetail);
 
 /**
- * Return 1 if the current time is past
+ * Return 1 if the end timeval is past
  * start timeval plus timeout milliseconds.
  * Return 0 otherwise.
  */
