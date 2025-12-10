@@ -99,12 +99,6 @@ void VM_Version::get_os_cpu_info() {
   if (cpu_has("hw.optional.arm.FEAT_SB")) {
     set_feature(CPU_SB);
   }
-  if (cpu_has("hw.optional.arm.FEAT_ECV")) {
-    _features |= CPU_ECV;
-  }
-  if (cpu_has("hw.optional.arm.FEAT_WFXT")) {
-    _features |= CPU_WFXT;
-  }
 
   int cache_line_size;
   int hw_conf_cache_line[] = { CTL_HW, HW_CACHELINE };

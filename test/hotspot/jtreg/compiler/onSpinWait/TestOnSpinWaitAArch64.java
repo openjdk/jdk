@@ -22,7 +22,7 @@
  */
 
 /**
- * @test TestOnSpinWaitAArch64
+ * @test id=TestOnSpinWaitAArch64
  * @summary Checks that java.lang.Thread.onSpinWait is intrinsified with instructions specified with '-XX:OnSpinWaitInst' and '-XX:OnSpinWaitInstCount'
  * @bug 8186670
  * @library /test/lib
@@ -35,14 +35,26 @@
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 isb 3
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 yield 1
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 sb 1
- * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 wfet 1 1
- * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 wfet 1 10000
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 nop 7
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 isb 3
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 yield 1
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 sb 1
+ */
+
+/**
+ * @test id=TestOnSpinWaitAArch64-wfet
+ * @summary Checks that java.lang.Thread.onSpinWait with -XX:OnSpinWaitInst=wfet is intrinsified'
+ * @bug 8366441
+ * @library /test/lib
+ *
+ * @requires vm.flagless
+ * @requires (os.arch=="aarch64" & os.family=="linux")
+ * @requires vm.debug
+ *
+ * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 wfet 1 1
+ * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 wfet 1 1000
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 wfet 1 1
- * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 wfet 1 10000
+ * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 wfet 1 1000
  */
 
 package compiler.onSpinWait;
@@ -75,9 +87,12 @@ public class TestOnSpinWaitAArch64 {
             throw new RuntimeException("Unknown compiler: " + compiler);
         }
         command.add("-Xbatch");
+        if ("wfet".equals(spinWaitInst)) {
+          command.add("-XX:+UnlockExperimentalVMOptions");
+        }
         command.add("-XX:OnSpinWaitInst=" + spinWaitInst);
         command.add("-XX:OnSpinWaitInstCount=" + spinWaitInstCount);
-        if (spinWaitDelay != "") {
+        if (!spinWaitDelay.isEmpty()) {
           command.add("-XX:OnSpinWaitDelay=" + spinWaitDelay);
         }
         command.add("-XX:CompileCommand=compileonly," + Launcher.class.getName() + "::" + "test");
@@ -185,7 +200,7 @@ public class TestOnSpinWaitAArch64 {
             // When code is disassembled, we have one instruction per line.
             // Otherwise, there can be multiple hex instructions separated by '|'.
             foundCount += (int)Arrays.stream(line.split("\\|"))
-                                     .takeWhile(i -> i.startsWith(expectedInst))
+                                     .filter(i -> i.startsWith(expectedInst))
                                      .count();
         }
 

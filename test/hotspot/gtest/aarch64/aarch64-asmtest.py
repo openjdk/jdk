@@ -1612,9 +1612,7 @@ generate (Op, ["nop", "yield", "wfe", "sev", "sevl",
                "pacia1716", "paciasp", "paciaz", "pacib1716", "pacibsp", "pacibz",
                "eret", "drps", "isb", "sb",])
 
-# Requires -march=armv9.2-a
-# generate (OneRegOp, ["wfet x26"])
-generate (SpecialCases, [["wfet x26", "__ wfet(r26);", ".inst 0xd503101a"]])
+generate (OneRegOp, ["wfet"])
 
 # Ensure the "i" is not stripped off the end of the instruction
 generate (PostfixExceptionOp, ["wfi", "xpaclri"])
@@ -1632,12 +1630,8 @@ generate (OneRegOp, ["br", "blr",
 for system_reg in ["fpsr", "nzcv"]:
     generate (SystemOneRegOp, [ ["msr", system_reg] ])
 
-for system_reg in ["fpsr", "nzcv", "dczid_el0", "ctr_el0"]:
+for system_reg in ["fpsr", "nzcv", "dczid_el0", "ctr_el0", "cntvctss_el0"]:
     generate (OneRegSystemOp, [ ["mrs", system_reg] ])
-
-# Requires -march=armv9.1-a
-# generate (OneRegSystemOp, [ ["mrs", "cntvctss_el0"] ])
-generate (SpecialCases, [["mrs x26, cntvctss_el0", "__ mrs(3, 14, 0, 6, r26);", ".inst 0xd53be0c6"]])
 
 # Ensure the "i" is not stripped off the end of the instruction
 generate (PostfixExceptionOneRegOp, ["xpaci"])
@@ -2282,9 +2276,9 @@ outfile.write("forth:\n")
 
 outfile.close()
 
-# compile for sve with armv9-a+sha3+sve2-bitperm because of SHA3 crypto extension and SVE2 bitperm instructions.
+# compile for sve with armv9.2-a+sha3+sve2-bitperm because of SHA3 crypto extension and SVE2 bitperm instructions.
 # armv9-a enables sve and sve2 by default.
-subprocess.check_call([AARCH64_AS, "-march=armv9-a+sha3+sve2-bitperm", "aarch64ops.s", "-o", "aarch64ops.o"])
+subprocess.check_call([AARCH64_AS, "-march=armv9.2-a+sha3+sve2-bitperm", "aarch64ops.s", "-o", "aarch64ops.o"])
 
 print
 print "/*"

@@ -153,15 +153,27 @@ JVMFlag::Error OnSpinWaitInstNameConstraintFunc(ccstr value, bool verbose) {
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
+#ifdef LINUX
+  if (strcmp(value, "wfet") == 0) {
+    if (UnlockExperimentalVMOptions) {
+      return JVMFlag::SUCCESS;
+    } else {
+      JVMFlag::printError(verbose,
+                          "'wfet' value for OnSpinWaitInst is experimental and "
+                          "must be enabled via -XX:+UnlockExperimentalVMOptions\n");
+      return JVMFlag::VIOLATES_CONSTRAINT;
+    }
+  }
+#endif
+
   if (strcmp(value, "nop")   != 0 &&
       strcmp(value, "isb")   != 0 &&
       strcmp(value, "yield") != 0 &&
       strcmp(value, "sb")    != 0 &&
-      strcmp(value, "wfet")  != 0 &&
       strcmp(value, "none")  != 0) {
     JVMFlag::printError(verbose,
                         "Unrecognized value %s for OnSpinWaitInst. Must be one of the following: "
-                        "nop, isb, yield, sb, wfet, none\n",
+                        "nop, isb, yield, sb," LINUX_ONLY(" wfet,") " none\n",
                         value);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
