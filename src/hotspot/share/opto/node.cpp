@@ -2895,7 +2895,6 @@ bool Node::has_same_inputs_as(const Node* other) const {
   return true;
 }
 
-
 Node* Node::unique_multiple_edges_out_or_null() const {
   Node* use = nullptr;
   for (DUIterator_Fast kmax, k = fast_outs(kmax); k < kmax; k++) {
