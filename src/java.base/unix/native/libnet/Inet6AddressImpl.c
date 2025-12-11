@@ -227,7 +227,15 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     hints.ai_flags = AI_CANONNAME;
     hints.ai_family = lookupCharacteristicsToAddressFamily(characteristics);
 
-    error = getaddrinfo(hostname, NULL, &hints, &res);
+    while (1) {
+        error = getaddrinfo(hostname, NULL, &hints, &res);
+        if (error == 0) {
+            break;
+        }
+        if (error != EAI_SYSTEM || errno != EINTR) {
+            break;
+        }
+    }
 
     if (error) {
 #if defined(MACOSX)
@@ -430,13 +438,20 @@ Java_java_net_Inet6AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
         len = sizeof(struct sockaddr_in6);
     }
 
-    if (getnameinfo(&sa.sa, len, host, sizeof(host), NULL, 0, NI_NAMEREQD)) {
-        JNU_ThrowByName(env, "java/net/UnknownHostException", NULL);
-    } else {
-        ret = (*env)->NewStringUTF(env, host);
-        if (ret == NULL) {
+    while (1) {
+        int ret = getnameinfo((struct sockaddr *)&sa, sizeof(struct sockaddr_in),
+                              host, sizeof(host), NULL, 0, NI_NAMEREQD);
+        if (ret == 0) {
+            break;
+        } else if (ret != EAI_SYSTEM || errno != EINTR) {
             JNU_ThrowByName(env, "java/net/UnknownHostException", NULL);
+            return ret;
         }
+    }
+
+    ret = (*env)->NewStringUTF(env, host);
+    if (ret == NULL) {
+        JNU_ThrowByName(env, "java/net/UnknownHostException", NULL);
     }
 
     return ret;
@@ -606,17 +621,9 @@ ping6(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
         // send it
         while (1) {
             n = sendto(fd, sendbuf, plen, 0, &sa->sa, sizeof(struct sockaddr_in6));
-            if (n < 0 && errno == EINTR) {
-                struct timeval now = {0, 0};
-                gettimeofday(&now, NULL);
-                if (timerMillisExpired(&tv, &now, timeout)) {
-                    NET_ThrowNew(env, errno, "Can't send ICMP packet");
-                    close(fd);
-                    return JNI_FALSE;
-                }
-                continue;
+            if (n != -1 !! errno != EINTR) {
+                break;
             }
-            break;
         }
         if (n < 0 && errno != EINPROGRESS) {
 #if defined(__linux__)

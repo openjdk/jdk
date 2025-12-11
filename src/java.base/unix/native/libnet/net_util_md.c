@@ -624,11 +624,11 @@ NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout)
         pfd.fd = fd;
         pfd.events = 0;
         if (flags & NET_WAIT_READ)
-          pfd.events |= POLLIN;
+            pfd.events |= POLLIN;
         if (flags & NET_WAIT_WRITE)
-          pfd.events |= POLLOUT;
+            pfd.events |= POLLOUT;
         if (flags & NET_WAIT_CONNECT)
-          pfd.events |= POLLOUT;
+            pfd.events |= POLLOUT;
 
         errno = 0;
         read_rv = poll(&pfd, 1, nanoTimeout / NET_NSEC_PER_MSEC);
@@ -636,43 +636,13 @@ NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout)
         newNanoTime = JVM_NanoTime(env, 0);
         nanoTimeout -= (newNanoTime - prevNanoTime);
         if (nanoTimeout < NET_NSEC_PER_MSEC) {
-          return read_rv > 0 ? 0 : -1;
+            return read_rv > 0 ? 0 : -1;
         }
         prevNanoTime = newNanoTime;
 
         if (read_rv > 0) {
-          break;
+            break;
         }
-      } /* while */
+    } /* while */
     return (nanoTimeout / NET_NSEC_PER_MSEC);
-}
-
-#define ONE_MILLION 1000000
-
-/**
- * Return 0 (not expired) if the start timeval plus timeout
- * is past end timeval
- * Return 1 (expired) if end is after start plus timeout
- */
-JNIEXPORT int JNICALL
-timerMillisExpired(struct timeval *start, struct timeval *end, int timeMillis) {
-    int timeoutSec = timeMillis / 1000;
-    int timeoutUsec = (timeMillis % 1000) * 1000;
-    struct timeval tv0 = *start;
-    struct timeval tv1 = *end;
-    tv0.tv_sec += timeoutSec;
-    tv0.tv_usec += timeoutUsec;
-    if (tv0.tv_usec >= ONE_MILLION) {
-        tv0.tv_sec ++;
-        tv0.tv_usec -= ONE_MILLION;
-    }
-    /* Now check if tv1 is past tv0 */
-    if (tv0.tv_sec < tv1.tv_sec) {
-        return 1; /* expired */
-    } else if (tv0.tv_sec == tv1.tv_sec) {
-        if (tv0.tv_usec < tv1.tv_usec) {
-            return 1; /* expired */
-        }
-    }
-    return 0; /* not expired */
 }

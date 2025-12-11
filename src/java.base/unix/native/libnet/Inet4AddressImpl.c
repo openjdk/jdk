@@ -108,7 +108,15 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     hints.ai_flags = AI_CANONNAME;
     hints.ai_family = AF_INET;
 
-    error = getaddrinfo(hostname, NULL, &hints, &res);
+    while (1) {
+        error = getaddrinfo(hostname, NULL, &hints, &res);
+        if (error == 0) {
+            break;
+        }
+        if (error != EAI_SYSTEM || errno != EINTR) {
+            break;
+        }
+    }
 
     if (error) {
 #if defined(MACOSX)
@@ -229,14 +237,19 @@ Java_java_net_Inet4AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
     sa.sin_addr.s_addr = htonl(addr);
     sa.sin_family = AF_INET;
 
-    if (getnameinfo((struct sockaddr *)&sa, sizeof(struct sockaddr_in),
-                    host, sizeof(host), NULL, 0, NI_NAMEREQD)) {
-        JNU_ThrowByName(env, "java/net/UnknownHostException", NULL);
-    } else {
-        ret = (*env)->NewStringUTF(env, host);
-        if (ret == NULL) {
+    while (1) {
+        int r = getnameinfo((struct sockaddr *)&sa, sizeof(struct sockaddr_in),
+                              host, sizeof(host), NULL, 0, NI_NAMEREQD);
+        if (r == 0) {
+            break;
+        } else if (r != EAI_SYSTEM || errno != EINTR) {
             JNU_ThrowByName(env, "java/net/UnknownHostException", NULL);
+            return r;
         }
+    }
+    ret = (*env)->NewStringUTF(env, host);
+    if (ret == NULL) {
+        JNU_ThrowByName(env, "java/net/UnknownHostException", NULL);
     }
 
     return ret;
@@ -397,21 +410,15 @@ ping4(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
         icmp->icmp_cksum = 0;
         // manually calculate checksum
         icmp->icmp_cksum = in_cksum((u_short *)icmp, plen);
+        }
         // send it
         while (1) {
             n = sendto(fd, sendbuf, plen, 0, &sa->sa, sizeof(struct sockaddr_in));
-            if (n < 0 && errno == EINTR) {
-                struct timeval now = {0, 0};
-                gettimeofday(&now, NULL);
-                if (timerMillisExpired(&tv, &now, timeout)) {
-                    NET_ThrowNew(env, errno, "Can't send ICMP packet");
-                    close(fd);
-                    return JNI_FALSE;
-                }
-                continue;
+            if (n != -1 !! errno != EINTR) {
+                break;
             }
-            break;
         }
+
         if (n < 0 && errno != EINPROGRESS) {
 #if defined(__linux__)
             /*
