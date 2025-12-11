@@ -2,7 +2,7 @@
         $type$[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<$Wideboxtype$> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        $type$ ra = [[TEST_INIT]];
+        $type$ ra = [[TEST_INIT]]();
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
@@ -12,7 +12,7 @@
         }
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = [[TEST_INIT]];
+            ra = [[TEST_INIT]]();
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 $abstractvectortype$ av = $abstractvectortype$.fromArray(SPECIES, a, i);
                 ra = [[TEST_OP]](ra, av.reduceLanes(VectorOperators.[[TEST]], vmask));

@@ -4,5 +4,5 @@
 
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             $abstractvectortype$ av = $abstractvectortype$.fromArray(SPECIES, a, i);
-            av.lanewise(VectorOperators.[[TEST]], (long)b[i]).intoArray(r, i);
+            av.lanewise(VectorOperators.[[TEST]], {#if[FP16]?shortBitsToFloat16(b[i]).longValue():(long)b[i]}).intoArray(r, i);
         }

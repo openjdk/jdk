@@ -6,6 +6,6 @@
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 $abstractvectortype$ av = $abstractvectortype$.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.[[TEST]], bv_[[TEST]]_M, vmask).intoArray(r, i);
+                av.lanewise(VectorOperators.[[TEST]], bcast_vec, vmask).intoArray(r, i);
             }
         }
