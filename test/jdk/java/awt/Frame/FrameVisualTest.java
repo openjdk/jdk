@@ -46,78 +46,66 @@ import javax.imageio.ImageIO;
 public class FrameVisualTest {
     private static GraphicsConfiguration[] gcs;
     private static volatile Frame[] frames;
-    private static volatile int index;
 
     private static Robot robot;
-    private static volatile int batchStart;
-    private static volatile int batchEnd;
     private static volatile int frameNum;
     private static volatile Point p;
     private static volatile Dimension d;
     private static final int TOLERANCE = 5;
+    private static final int MAX_FRAME_COUNT = 30;
 
     public static void main(String[] args) throws Exception {
-        gcs = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getConfigurations();
+        gcs = GraphicsEnvironment.getLocalGraphicsEnvironment()
+                .getDefaultScreenDevice().getConfigurations();
         robot = new Robot();
         robot.setAutoDelay(100);
 
-        frames = new Frame[gcs.length];
-        System.out.println("frames.length: " + frames.length);
+        // Limit the number of frames tested if needed
+        if (gcs.length > MAX_FRAME_COUNT) {
+            frames = new Frame[MAX_FRAME_COUNT];
+        } else {
+            frames = new Frame[gcs.length];
+        }
+        System.out.println(gcs.length + " gcs found. Testing "
+                + frames.length + " frame(s).");
 
-        // Iterate through gcs in batches of 20
-        for (int i = 0; i < frames.length; i += 20) {
+        for (frameNum = 0; frameNum < frames.length; frameNum++) {
             try {
-                batchEnd = Math.min(i + 20, frames.length);
-                batchStart = i;
-                frameNum = 0;
-
-                for (int j = i; j < batchEnd; j++) {
-                    int finalJ = j;
-                    EventQueue.invokeAndWait(() -> {
-                        frames[finalJ] = new Frame("Frame w/ gc "
-                                + finalJ, gcs[finalJ]);
-                        frames[finalJ].setSize(100, 100);
-                        frames[finalJ].setUndecorated(true);
-                        frames[finalJ].setBackground(Color.WHITE);
-                        frames[finalJ].setLocation(100 * (frameNum % 10),
-                                100 + 100 * ((frameNum / 10) % 10));
-                        frames[finalJ].setVisible(true);
-                        System.out.println("Frame " + finalJ + " created");
-                    });
-                    frameNum++;
-                }
+                EventQueue.invokeAndWait(() -> {
+                    frames[frameNum] = new Frame("Frame w/ gc "
+                            + frameNum, gcs[frameNum]);
+                    frames[frameNum].setSize(100, 100);
+                    frames[frameNum].setUndecorated(true);
+                    frames[frameNum].setBackground(Color.WHITE);
+                    frames[frameNum].setVisible(true);
+                    System.out.println("Frame " + frameNum + " created");
+                });
 
                 robot.delay(1000);
 
-                for (index = i; index < batchEnd; index++) {
-                    int finalIndex = index;
-                    System.out.println("Frame " + finalIndex + " testing");
-                    EventQueue.invokeAndWait(() -> {
-                        p = frames[finalIndex].getLocation();
-                        d = frames[finalIndex].getSize();
-                    });
-                    Rectangle rect = new Rectangle(p, d);
-                    BufferedImage img = robot.createScreenCapture(rect);
-                    if (chkImgBackgroundColor(img)) {
-                        try {
-                            ImageIO.write(img, "png",
-                                    new File("Frame_"
-                                            + finalIndex + ".png"));
-                        } catch (IOException ignored) {}
-                        throw new RuntimeException("Frame visual test " +
-                                "failed with non-white background color");
-                    }
+                EventQueue.invokeAndWait(() -> {
+                    p = frames[frameNum].getLocation();
+                    d = frames[frameNum].getSize();
+                });
+
+                Rectangle rect = new Rectangle(p, d);
+                BufferedImage img = robot.createScreenCapture(rect);
+                if (chkImgBackgroundColor(img)) {
+                    try {
+                        ImageIO.write(img, "png",
+                                new File("Frame_"
+                                        + frameNum + ".png"));
+                    } catch (IOException ignored) {}
+                    throw new RuntimeException("Frame visual test " +
+                            "failed with non-white background color");
                 }
             } finally {
-                // Dispose batch of frames
-                for (index = batchStart; index < batchEnd; index++) {
-                    EventQueue.invokeAndWait(() -> {
-                        if (frames[index] != null) {
-                            System.out.println("Frame " + index + " disposed");
-                            frames[index].dispose();
-                        }
-                    });
-                }
+                EventQueue.invokeAndWait(() -> {
+                    if (frames[frameNum] != null) {
+                        frames[frameNum].dispose();
+                        System.out.println("Frame " + frameNum + " disposed");
+                    }
+                });
             }
         }
     }
