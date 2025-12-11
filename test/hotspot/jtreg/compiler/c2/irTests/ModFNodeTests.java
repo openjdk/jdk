@@ -65,14 +65,39 @@ public class ModFNodeTests {
     @Test
     @IR(failOn = {"frem"}, phase = CompilePhase.BEFORE_MATCHING)
     @IR(counts = {IRNode.CON_F, "1"})
+    // TODO: this case works because all constat folding happens before CCP, so no
+    //       ConF nodes are left without uses, those are all cleaned up at CCP.
     public float constant() {
         // All constants available during parsing
         return q % 72.0f % 30.0f;
     }
 
     @Test
-    @IR(failOn = {"frem"}, phase = CompilePhase.BEFORE_MATCHING)
-    @IR(counts = {IRNode.CON_F, "1"})
+    @IR(counts = {".*ModF.*frem.*", "1"},
+        phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {".*ModF.*frem.*", "0"},
+        phase = CompilePhase.BEFORE_MATCHING)
+    // We expect there to initially be a ModF, and then it gets constant folded.
+    //
+    // Note: we cannot count the ConF nodes here reliably. At least one has to
+    // stick around as the result of the constant folding. All other constants
+    // are eventually not needed any more. For example, before CCP, we have these
+    // constants:
+    //   22  ConF  === 0  [[ 72 83 39 50 61 ]]  #ftcon:0.000000
+    //  132  ConF  === 0  [[ ]]  #ftcon:45.511848
+    //  148  ConF  === 0  [[ ]]  #ftcon:31.431999
+    //  234  ConF  === 0  [[ 152 ]]  #ftcon:14.079849
+    // And after CCP, we have:
+    //   22  ConF  === 0  [[ 72 83 39 50 61 ]]  #ftcon:0.000000
+    //  234  ConF  === 0  [[ 152 ]]  #ftcon:14.079849
+    // CCP does that because the ConF nodes without uses are not in the useful
+    // list. But after some more optimizations, we remove all uses of the
+    // zero constant, but IGVN does not clean up constants, even if they
+    // have no use.
+    //   22  ConF  === 0  [[ ]]  #ftcon:0.000000
+    //  234  ConF  === 0  [[ 152 ]]  #ftcon:14.079849
+    // In conclusion: it would be too fragile to test for the cound of constant
+    // nodes, so let's not do it.
     public float alsoConstant() {
         // Make sure value is only available after second loop opts round
         float val = 0;
