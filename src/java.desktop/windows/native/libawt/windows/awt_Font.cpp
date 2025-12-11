@@ -1343,7 +1343,7 @@ typedef struct tagTABLE{
     ULONG   offset;
 } TABLE, *PTABLE;
 
-typedef struct tagSUBTABLE{
+[[maybe_unused]] typedef struct tagSUBTABLE{
     USHORT  format;
     USHORT  length;
     USHORT  version;
@@ -1572,7 +1572,7 @@ inline void CEUDCSegTable::GetData(DWORD dwOffset,
 
 void CEUDCSegTable::Create(LPCWSTR name)
 {
-typedef struct tagHEAD{
+[[maybe_unused]] typedef struct tagHEAD{
     FIXED   sfnt_version;
     USHORT  numTables;
     USHORT  searchRange;
@@ -1580,7 +1580,7 @@ typedef struct tagHEAD{
     USHORT  rangeShift;
 } HEAD, *PHEAD;
 
-typedef struct tagENTRY{
+[[maybe_unused]] typedef struct tagENTRY{
     ULONG   tag;
     ULONG   checkSum;
     ULONG   offset;
