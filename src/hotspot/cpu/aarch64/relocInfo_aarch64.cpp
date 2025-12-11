@@ -56,19 +56,7 @@ void Relocation::pd_set_data_value(address x, bool verify_only) {
     break;
   }
 
-  if (UseDeferredICacheInvalidation) {
-    // Defer the ICache invalidation to a later point where multiple patches can be handled together.
-    //
-    // Note: We rely on the fact that this function is only called from places where deferred invalidation
-    // is safe. This assumption helps to avoid overhead of accessing thread-local data here.
-    assert(ICacheInvalidationContext::current() != nullptr, "ICache invalidation context should be set");
-    assert(ICacheInvalidationContext::current()->mode() == ICacheInvalidation::DEFERRED ||
-           ICacheInvalidationContext::current()->mode() == ICacheInvalidation::NOT_NEEDED,
-           "ICache invalidation should be deferred or unneeded.");
-    return;
-  }
-
-  ICache::invalidate_range(addr(), bytes);
+  ICacheInvalidationContext::invalidate_range(addr(), bytes);
 }
 
 address Relocation::pd_call_destination(address orig_addr) {

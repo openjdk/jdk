@@ -53,6 +53,8 @@ protected:
   static int _max_supported_sve_vector_length;
   static bool _rop_protection;
   static uintptr_t _pac_mask;
+  static bool _cache_dic_enabled;
+  static bool _cache_idc_enabled;
 
   static SpinWait _spin_wait;
 
@@ -221,6 +223,9 @@ enum Ampere_CPU_Model {
   static bool use_neon_for_vector(int vector_length_in_bytes) {
     return vector_length_in_bytes <= 16;
   }
+
+  static bool is_cache_dic_enabled() { return _cache_dic_enabled; }
+  static bool is_cache_idc_enabled() { return _cache_idc_enabled; }
 };
 
 #endif // CPU_AARCH64_VM_VERSION_AARCH64_HPP

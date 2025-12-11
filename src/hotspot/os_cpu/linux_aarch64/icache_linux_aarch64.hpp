@@ -27,33 +27,9 @@
 #define OS_CPU_LINUX_AARCH64_ICACHE_AARCH64_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-inline void assert_hardware_cache_coherency() {
-  // For deferred icache invalidation, we expect hardware dcache
-  // and icache to be coherent: CTR_EL0.IDC == 1 and CTR_EL0.DIC == 1
-  // An exception is Neoverse N1 with erratum 1542419, which requires
-  // a use of 'IC IVAU' instruction. In such a case, we expect
-  // CTR_EL0.DIC == 0.
-#ifdef ASSERT
-  static unsigned int cache_info = 0;
-  if (cache_info == 0) {
-    asm volatile("mrs\t%0, ctr_el0" : "=r"(cache_info));
-  }
-  constexpr unsigned int CTR_IDC_SHIFT = 28;
-  constexpr unsigned int CTR_DIC_SHIFT = 29;
-  assert(((cache_info >> CTR_IDC_SHIFT) & 0x1) != 0x0,
-         "Expect CTR_EL0.IDC to be enabled");
-  if (NeoverseN1Errata1542419) {
-    assert(((cache_info >> CTR_DIC_SHIFT) & 0x1) == 0x0,
-           "Expect CTR_EL0.DIC to be disabled for Neoverse N1 with erratum "
-           "1542419");
-  } else {
-    assert(((cache_info >> CTR_DIC_SHIFT) & 0x1) != 0x0,
-           "Expect CTR_EL0.DIC to be enabled");
-  }
-#endif
-}
 
 // Interface for updating the instruction cache.  Whenever the VM
 // modifies code, part of the processor instruction cache potentially
@@ -67,7 +43,12 @@ class ICache : public AbstractICache {
   }
   static void invalidate_range(address start, int nbytes) {
     if (NeoverseN1Errata1542419) {
-      assert_hardware_cache_coherency();
+      assert(VM_Version::is_cache_idc_enabled(),
+             "Expect CTR_EL0.IDC to be enabled for Neoverse N1 with erratum "
+             "1542419");
+      assert(!VM_Version::is_cache_dic_enabled(),
+             "Expect CTR_EL0.DIC to be disabled for Neoverse N1 with erratum "
+             "1542419");
       asm volatile("dsb ish       \n"
                    "ic  ivau, xzr \n"
                    "dsb ish       \n"
@@ -152,11 +133,15 @@ class AArch64ICacheInvalidationContext final : StackObj {
       return;
     }
 
-    assert_hardware_cache_coherency();
+    assert(VM_Version::is_cache_idc_enabled(), "Expect CTR_EL0.IDC to be enabled");
 
     asm volatile("dsb ish" : : : "memory");
 
     if (NeoverseN1Errata1542419) {
+      assert(!VM_Version::is_cache_dic_enabled(),
+             "Expect CTR_EL0.DIC to be disabled for Neoverse N1 with erratum "
+             "1542419");
+
       // Errata 1542419: Neoverse N1 cores with the 'COHERENT_ICACHE' feature
       // may fetch stale instructions when software depends on
       // prefetch-speculation-protection instead of explicit synchronization.
@@ -189,6 +174,8 @@ class AArch64ICacheInvalidationContext final : StackObj {
           :
           :
           : "memory");
+    } else {
+      assert(VM_Version::is_cache_dic_enabled(), "Expect CTR_EL0.DIC to be enabled");
     }
     asm volatile("isb" : : : "memory");
   }
@@ -201,6 +188,22 @@ class AArch64ICacheInvalidationContext final : StackObj {
 
   static AArch64ICacheInvalidationContext* current() {
     return _current_context;
+  }
+
+  static void invalidate_range(address start, int nbytes) {
+    if (UseDeferredICacheInvalidation) {
+      assert(_current_context != nullptr &&
+             (_current_context->mode() == ICacheInvalidation::DEFERRED ||
+              _current_context->mode() == ICacheInvalidation::NOT_NEEDED),
+            "UseDeferredICacheInvalidation requires ICache invalidation mode to be deferred or unneeded.");
+      return;
+    }
+
+    ICache::invalidate_range(start, nbytes);
+  }
+
+  static void invalidate_word(address addr) {
+    invalidate_range(addr, 4);
   }
 };
 

@@ -52,6 +52,9 @@ uintptr_t VM_Version::_pac_mask;
 
 SpinWait VM_Version::_spin_wait;
 
+bool VM_Version::_cache_dic_enabled;
+bool VM_Version::_cache_idc_enabled;
+
 const char* VM_Version::_features_names[MAX_CPU_FEATURES] = { nullptr };
 
 static SpinWait get_spin_wait_desc() {
@@ -86,6 +89,9 @@ void VM_Version::initialize() {
   _supports_atomic_getadd4 = true;
   _supports_atomic_getset8 = true;
   _supports_atomic_getadd8 = true;
+
+  _cache_dic_enabled = false;
+  _cache_idc_enabled = false;
 
   get_os_cpu_info();
 
@@ -652,6 +658,10 @@ void VM_Version::initialize() {
   }
   if (UseSVE < 1) {
     clear_feature(CPU_SVE);
+  }
+
+  if (FLAG_IS_DEFAULT(UseDeferredICacheInvalidation) && is_cache_idc_enabled() && is_cache_dic_enabled()) {
+    FLAG_SET_DEFAULT(UseDeferredICacheInvalidation, true);
   }
 
   if (FLAG_IS_DEFAULT(NeoverseN1Errata1542419) && has_neoverse_n1_errata_1542419()) {
