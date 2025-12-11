@@ -782,9 +782,18 @@ public:
   // Changes to the values of these variables are performed with a lock.  A change to capacity or used "atomically"
   // adjusts available with respect to lock holders.  However, sequential calls to these three functions may produce
   // inconsistent data: available may not equal capacity - used because the intermediate states of any "atomic"
-  // locked action can be seen by these unlocked functions.
-  inline size_t capacity()  const { return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator);             }
-  inline size_t used()      const { return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);                 }
+  // locked action can be seen by these unlocked functions.  All three functions will wait for freeset rebulid to
+  // complete before returning an intermediate value that is not meaningful.
+  inline size_t capacity() {
+    shenandoah_assert_not_heaplocked();
+    ShenandoahRebuildLocker locker(rebuild_lock());
+    return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator);
+  }
+  inline size_t used() {
+    shenandoah_assert_not_heaplocked();
+    ShenandoahRebuildLocker locker(rebuild_lock());
+    return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);
+  }
   inline size_t available() {
     shenandoah_assert_not_heaplocked();
     ShenandoahRebuildLocker locker(rebuild_lock());
