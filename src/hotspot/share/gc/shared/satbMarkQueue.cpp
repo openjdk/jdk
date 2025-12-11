@@ -47,7 +47,7 @@ SATBMarkQueue::SATBMarkQueue(SATBMarkQueueSet* qset) :
 {}
 
 SATBMarkQueue::~SATBMarkQueue() {
-    assert(_buf == nullptr, "queue must be flushed before delete");
+  assert(_buf == nullptr, "queue must be flushed before delete");
 }
 
 #ifndef PRODUCT

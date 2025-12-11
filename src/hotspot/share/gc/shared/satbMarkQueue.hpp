@@ -138,6 +138,9 @@ public:
 // A SATBMarkQueueSet represents resources common to a set of SATBMarkQueues.
 // In particular, the individual queues allocate buffers from this shared
 // set, and return completed buffers to the set.
+// A completed buffer is a buffer the mutator is finished with, and
+// is ready to be processed by the collector.  It need not be full.
+
 class SATBMarkQueueSet {
 
   BufferNode::Allocator* _allocator;
@@ -157,6 +160,24 @@ class SATBMarkQueueSet {
   BufferNode* get_completed_buffer();
   void abandon_completed_buffers();
 
+  // Discard any buffered enqueued data.
+  void reset_queue(SATBMarkQueue& queue);
+
+  // Add value to queue's buffer, returning true.  If buffer is full
+  // or if queue doesn't have a buffer, does nothing and returns false.
+  bool try_enqueue(SATBMarkQueue& queue, void* value);
+
+  // Add value to queue's buffer.  The queue must have a non-full buffer.
+  // Used after an initial try_enqueue has failed and the situation resolved.
+  void retry_enqueue(SATBMarkQueue& queue, void* value);
+
+  // Installs a new buffer into queue.
+  // Returns the old buffer, or null if queue didn't have a buffer.
+  BufferNode* exchange_buffer_with_new(SATBMarkQueue& queue);
+
+  // Installs a new buffer into queue.
+  void install_new_buffer(SATBMarkQueue& queue);
+
 #ifdef ASSERT
   void dump_active_states(bool expected_active);
   void verify_active_states(bool expected_active);
@@ -175,24 +196,6 @@ protected:
 
   template<typename Filter>
   void apply_filter(Filter filter, SATBMarkQueue& queue);
-
-  // Discard any buffered enqueued data.
-  void reset_queue(SATBMarkQueue& queue);
-
-  // Add value to queue's buffer, returning true.  If buffer is full
-  // or if queue doesn't have a buffer, does nothing and returns false.
-  bool try_enqueue(SATBMarkQueue& queue, void* value);
-
-  // Add value to queue's buffer.  The queue must have a non-full buffer.
-  // Used after an initial try_enqueue has failed and the situation resolved.
-  void retry_enqueue(SATBMarkQueue& queue, void* value);
-
-  // Installs a new buffer into queue.
-  // Returns the old buffer, or null if queue didn't have a buffer.
-  BufferNode* exchange_buffer_with_new(SATBMarkQueue& queue);
-
-  // Installs a new buffer into queue.
-  void install_new_buffer(SATBMarkQueue& queue);
 
 public:
   virtual SATBMarkQueue& satb_queue_for_thread(Thread* const t) const = 0;
@@ -244,9 +247,6 @@ public:
   // Return an empty buffer to the free list.  The node is required
   // to have been allocated with a size of buffer_capacity().
   void deallocate_buffer(BufferNode* node);
-
-  // A completed buffer is a buffer the mutator is finished with, and
-  // is ready to be processed by the collector.  It need not be full.
 
   size_t buffer_capacity() const {
     return _allocator->buffer_capacity();
