@@ -288,10 +288,10 @@ private:
   State _state;
 
   // During initialization of the JVM, we search for the correct old-gen size by initially performing old-gen
-  // collection when old-gen usage is 50% more (INITIAL_PERCENT_GROWTH_BEFORE_COMPACTION) than the initial old-gen size
+  // collection when old-gen usage is 50% more (INITIAL_GROWTH_PERCENT_BEFORE_COLLECTION) than the initial old-gen size
   // estimate (16% of heap).  With each successive old-gen collection, we divide the growth trigger by two, but
   // never use a growth trigger smaller than ShenandoahMinOldGenGrowthPercent.
-  static const size_t INITIAL_PERCENT_GROWTH_BEFORE_COMPACTION = 50;
+  static const size_t INITIAL_GROWTH_PERCENT_BEFORE_COLLECTION = 50;
 
   // INITIAL_LIVE_PERCENT represents the initial guess of how large old-gen should be.  We estimate that old gen
   // needs to consume 16% of the total heap size.  And we "pretend" that we start out with this amount of live
@@ -300,10 +300,10 @@ private:
   // is 24% of the heap size.
   static const size_t INITIAL_LIVE_PERCENT = 16;
 
-  size_t _live_bytes_after_last_mark;
+  size_t _live_bytes_at_last_mark;
 
   // How much growth in usage before we trigger old collection as a percent of soft_max_capacity
-  size_t _growth_percent_before_compaction;
+  size_t _growth_percent_before_collection;
 
   void validate_transition(State new_state) NOT_DEBUG_RETURN;
 
@@ -318,8 +318,8 @@ public:
 
   void transition_to(State new_state);
 
-  size_t get_live_bytes_after_last_mark() const;
-  void set_live_bytes_after_last_mark(size_t new_live);
+  size_t get_live_bytes_at_last_mark() const;
+  void set_live_bytes_at_last_mark(size_t new_live);
 
   size_t usage_trigger_threshold() const;
 

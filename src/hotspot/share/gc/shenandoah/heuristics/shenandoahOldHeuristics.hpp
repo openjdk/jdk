@@ -102,7 +102,15 @@ private:
   size_t _fragmentation_first_old_region;
   size_t _fragmentation_last_old_region;
 
-  // adapted value of ShenandoahOldGarbageThreshold
+  // The value of command-line argument ShenandoahOldGarbageThreshold represents the percent of garbage that must
+  // be present within an old-generation region before that region is considered a good candidate for inclusion in
+  // the collection set under normal circumstances.  For our purposes, normal circustances are when the memory consumed
+  // by the old generation is less than 50% of the soft heap capacity.  When the old generation grows beyond the 50%
+  // threshold, we dynamically adjust the old garbage threshold, allowing us to invest in packing the old generation
+  // more tightly so that more memory can be made available to the more frequent young GC cycles.  This variable
+  // is used in place of ShenandoahOldGarbageThreshold.  Under normal circumstances, its value is equal to
+  // ShenandoahOldGarbageThreshold.  When the GC is under duress, this value may be adjusted to a smaller value,
+  // as scaled according to the severity of duress that we are experiencing.
   uintx _old_garbage_threshold;
 
   // Compare by live is used to prioritize compaction of old-gen regions.  With old-gen compaction, the goal is
@@ -203,7 +211,8 @@ public:
 
   bool is_experimental() override;
 
-
+  // Returns the current value of a dynamically adjusted threshold percentage of garbage above which an old region is
+  // deemed eligible for evacuation.
   inline uintx get_old_garbage_threshold() { return _old_garbage_threshold; }
 
 private:
@@ -211,7 +220,7 @@ private:
   bool all_candidates_are_pinned();
 
   // The normal old_garbage_threshold is specified by ShenandoahOldGarbageThreshold command-line argument, with default
-  // value 25, denoting that a region that has at least 25% garbage is eligible for compaction.  With default values for
+  // value 25, denoting that a region that has at least 25% garbage is eligible for evacuation.  With default values for
   // all command-line arguments, we make the following adjustments:
   //  1. If the old generation has grown to consume more than 80% of the soft max capacity, adjust threshold to 10%
   //  2. Otherwise, if the old generation has grown to consume more than 65%, adjust threshold to 15%

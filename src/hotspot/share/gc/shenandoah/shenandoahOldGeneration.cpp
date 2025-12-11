@@ -116,10 +116,10 @@ ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues)
     _is_parsable(true),
     _card_scan(nullptr),
     _state(WAITING_FOR_BOOTSTRAP),
-    _growth_percent_before_compaction(INITIAL_PERCENT_GROWTH_BEFORE_COMPACTION)
+    _growth_percent_before_collection(INITIAL_GROWTH_PERCENT_BEFORE_COLLECTION)
 {
   assert(type() == ShenandoahGenerationType::OLD, "OO sanity");
-  _live_bytes_after_last_mark = (ShenandoahHeap::heap()->soft_max_capacity() * INITIAL_LIVE_PERCENT) / 100;
+  _live_bytes_at_last_mark = (ShenandoahHeap::heap()->soft_max_capacity() * INITIAL_LIVE_PERCENT) / 100;
   // Always clear references for old generation
   ref_processor()->set_soft_reference_policy(true);
 
@@ -220,20 +220,20 @@ ShenandoahOldGeneration::configure_plab_for_current_thread(const ShenandoahAlloc
   }
 }
 
-size_t ShenandoahOldGeneration::get_live_bytes_after_last_mark() const {
-  return _live_bytes_after_last_mark;
+size_t ShenandoahOldGeneration::get_live_bytes_at_last_mark() const {
+  return _live_bytes_at_last_mark;
 }
 
-void ShenandoahOldGeneration::set_live_bytes_after_last_mark(size_t bytes) {
+void ShenandoahOldGeneration::set_live_bytes_at_last_mark(size_t bytes) {
   if (bytes == 0) {
     // Restart search for best old-gen size to the initial state
-    _live_bytes_after_last_mark = (ShenandoahHeap::heap()->soft_max_capacity() * INITIAL_LIVE_PERCENT) / 100;
-    _growth_percent_before_compaction = INITIAL_PERCENT_GROWTH_BEFORE_COMPACTION;
+    _live_bytes_at_last_mark = (ShenandoahHeap::heap()->soft_max_capacity() * INITIAL_LIVE_PERCENT) / 100;
+    _growth_percent_before_collection = INITIAL_GROWTH_PERCENT_BEFORE_COLLECTION;
   } else {
-    _live_bytes_after_last_mark = bytes;
-    _growth_percent_before_compaction /= 2;
-    if (_growth_percent_before_compaction < ShenandoahMinOldGenGrowthPercent) {
-      _growth_percent_before_compaction = ShenandoahMinOldGenGrowthPercent;
+    _live_bytes_at_last_mark = bytes;
+    _growth_percent_before_collection /= 2;
+    if (_growth_percent_before_collection < ShenandoahMinOldGenGrowthPercent) {
+      _growth_percent_before_collection = ShenandoahMinOldGenGrowthPercent;
     }
   }
 }
@@ -244,12 +244,12 @@ void ShenandoahOldGeneration::handle_failed_transfer() {
 
 size_t ShenandoahOldGeneration::usage_trigger_threshold() const {
   size_t threshold_by_relative_growth =
-    _live_bytes_after_last_mark + (_live_bytes_after_last_mark * _growth_percent_before_compaction) / 100;
+    _live_bytes_at_last_mark + (_live_bytes_at_last_mark * _growth_percent_before_collection) / 100;
   size_t soft_max_capacity = ShenandoahHeap::heap()->soft_max_capacity();
   size_t threshold_by_growth_into_percent_remaining;
-  if (_live_bytes_after_last_mark < soft_max_capacity) {
+  if (_live_bytes_at_last_mark < soft_max_capacity) {
     threshold_by_growth_into_percent_remaining = (size_t)
-      (_live_bytes_after_last_mark + ((soft_max_capacity - _live_bytes_after_last_mark)
+      (_live_bytes_at_last_mark + ((soft_max_capacity - _live_bytes_at_last_mark)
                                       * ShenandoahMinOldGenGrowthRemainingHeapPercent / 100.0));
   } else {
     // we're already consuming more than soft max capacity, so we should start old GC right away.

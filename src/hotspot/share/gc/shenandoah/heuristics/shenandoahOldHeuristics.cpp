@@ -374,7 +374,8 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
     }
   }
 
-  _old_generation->set_live_bytes_after_last_mark(live_data);
+  // TODO: subtract from live_data bytes promoted during concurrent GC.
+  _old_generation->set_live_bytes_at_last_mark(live_data);
 
   // Unlike young, we are more interested in efficiently packing OLD-gen than in reclaiming garbage first.  We sort by live-data.
   // Some regular regions may have been promoted in place with no garbage but also with very little live data.  When we "compact"
@@ -702,7 +703,7 @@ bool ShenandoahOldHeuristics::should_start_gc() {
                     consecutive_young_cycles);
       _growth_trigger = false;
     } else if (current_usage > trigger_threshold) {
-      const size_t live_at_previous_old = _old_generation->get_live_bytes_after_last_mark();
+      const size_t live_at_previous_old = _old_generation->get_live_bytes_at_last_mark();
       const double percent_growth = percent_of(current_usage - live_at_previous_old, live_at_previous_old);
       log_trigger("Old has overgrown, live at end of previous OLD marking: "
                   "%zu%s, current usage: %zu%s, percent growth: %.1f%%",

@@ -92,11 +92,12 @@
                                                                             \
   product(uintx, ShenandoahDoNotIgnoreGrowthAfterYoungCycles,               \
           100, EXPERIMENTAL,                                                \
-          "(Generational mode only) Even if the usage of old generation "   \
-          "is below ShenandoahIgnoreOldGrowthBelowPercentage, "             \
-          "trigger an old-generation mark if old has grown and this "       \
-          "many consecutive young-gen collections have been "               \
-          "completed following the preceding old-gen collection.")          \
+          "(Generational mode only) Trigger an old-generation mark "        \
+          "if old has grown and this many consecutive young-gen "           \
+          "collections have been completed following the preceding "        \
+          "old-gen collection.  We perform this old-generation mark "       \
+          "evvort even if the usage of old generation is below "            \
+          "ShenandoahIgnoreOldGrowthBelowPercentage.")                      \
                                                                             \
   product(bool, ShenandoahGenerationalAdaptiveTenuring, true, EXPERIMENTAL, \
           "(Generational mode only) Dynamically adapt tenuring age.")       \
