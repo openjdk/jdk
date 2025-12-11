@@ -67,7 +67,7 @@ import static org.testng.Assert.*;
  */
 public class H3MalformedResponseTest implements HttpServerAdapters {
 
-    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+    private SSLContext sslContext;
     private QuicStandaloneServer server;
     private String requestURIBase;
 
@@ -299,6 +299,10 @@ public class H3MalformedResponseTest implements HttpServerAdapters {
 
     @BeforeClass
     public void beforeClass() throws Exception {
+        sslContext = new SimpleSSLContext().get();
+        if (sslContext == null) {
+            throw new AssertionError("Unexpected null sslContext");
+        }
         server = QuicStandaloneServer.newBuilder()
                 .availableVersions(new QuicVersion[]{QuicVersion.QUIC_V1})
                 .sslContext(sslContext)

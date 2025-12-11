@@ -70,7 +70,7 @@ import static org.testng.Assert.*;
 // -Djava.security.debug=all
 public class H3LogHandshakeErrors implements HttpServerAdapters {
 
-    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+    private SSLContext sslContext;
     private HttpTestServer h3Server;
     private ServerSocket tcpServerSocket = null;
     private Thread tcpServerThread = null;
@@ -79,6 +79,10 @@ public class H3LogHandshakeErrors implements HttpServerAdapters {
 
     @BeforeClass
     public void beforeClass() throws Exception {
+        sslContext = new SimpleSSLContext().get();
+        if (sslContext == null) {
+            throw new AssertionError("Unexpected null sslContext");
+        }
         // create an H3 only server
         h3Server = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         h3Server.addHandler((exchange) -> exchange.sendResponseHeaders(200, 0), "/hello");

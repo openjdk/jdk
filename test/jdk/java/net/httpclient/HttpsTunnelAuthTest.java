@@ -74,9 +74,14 @@ public class HttpsTunnelAuthTest implements HttpServerAdapters, AutoCloseable {
         "Excepteur sint occaecat cupidatat non proident."
     };
 
-    private static final SSLContext context = SimpleSSLContext.findSSLContext();
+    static final SSLContext context;
     static {
-        SSLContext.setDefault(context);
+        try {
+            context = new SimpleSSLContext().get();
+            SSLContext.setDefault(context);
+        } catch (Exception x) {
+            throw new ExceptionInInitializerError(x);
+        }
     }
 
     final String realm = "earth";

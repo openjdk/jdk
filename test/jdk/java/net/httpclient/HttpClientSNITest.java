@@ -95,7 +95,8 @@ public class HttpClientSNITest {
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
     void testRequestToIPLiteralHost(final boolean sniConfiguredOnClient) throws Exception {
-        final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+        final SSLContext sslContext = new SimpleSSLContext().get();
+        assertNotNull(sslContext, "could not create a SSLContext");
         final String expectedSNI = "non-dns-resolvable.foo.bar.localhost";
         final ServerNameMatcher matcher = new ServerNameMatcher(expectedSNI);
         final HttpTestServer server = createServer(matcher, sslContext);
@@ -148,7 +149,8 @@ public class HttpClientSNITest {
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
     void testRequestResolvedHostName(final boolean sniConfiguredOnClient) throws Exception {
-        final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+        final SSLContext sslContext = new SimpleSSLContext().get();
+        assertNotNull(sslContext, "could not create a SSLContext");
         final String resolvedHostName = InetAddress.getLoopbackAddress().getHostName();
         final String expectedSNI = resolvedHostName;
         final ServerNameMatcher matcher = new ServerNameMatcher(expectedSNI);

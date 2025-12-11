@@ -83,7 +83,7 @@ public class H3QuicTLSConnection {
 
     public static void main(String[] args) throws Exception {
         // create and set the default SSLContext
-        SSLContext context = SimpleSSLContext.findSSLContext();
+        SSLContext context = new SimpleSSLContext().get();
         SSLContext.setDefault(context);
 
         Handler handler = new Handler();

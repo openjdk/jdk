@@ -70,10 +70,11 @@ public class H3UserInfoTest implements HttpServerAdapters {
     static HttpTestServer server3;
     static String serverURI;
     static String server3URI;
-    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+    static SSLContext sslContext;
 
     @BeforeAll
     static void before() throws Exception {
+        sslContext = new SimpleSSLContext().get();
         HttpTestHandler handler = new HttpHandler();
 
         server = HttpTestServer.create(ANY, sslContext);

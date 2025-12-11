@@ -72,10 +72,14 @@ public class HeadersLowerCaseTest implements HttpServerAdapters {
     private HttpTestServer h3server;
     private String h2ReqURIBase;
     private String h3ReqURIBase;
-    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+    private SSLContext sslContext;
 
     @BeforeAll
     public void beforeAll() throws Exception {
+        sslContext = new SimpleSSLContext().get();
+        if (sslContext == null) {
+            throw new AssertionError("Unexpected null sslContext");
+        }
         h2server = HttpTestServer.create(HTTP_2, sslContext);
         h2server.start();
         h2ReqURIBase = "https://" + h2server.serverAuthority();

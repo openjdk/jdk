@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public abstract class ShortResponseBody {
     String httpsURIVarLen;
     String httpURIFixLen;
 
-    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+    SSLContext sslContext;
     SSLParameters sslParameters;
     HttpClient client;
     int numberOfRequests;
@@ -657,6 +657,9 @@ public abstract class ShortResponseBody {
 
     @BeforeTest
     public void setup() throws Exception {
+        sslContext = new SimpleSSLContext().get();
+        if (sslContext == null)
+            throw new AssertionError("Unexpected null sslContext");
         SSLContext.setDefault(sslContext);
 
         sslParameters = new SSLParameters();

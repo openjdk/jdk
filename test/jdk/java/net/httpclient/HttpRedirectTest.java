@@ -80,9 +80,14 @@ import jdk.httpclient.test.lib.common.HttpServerAdapters;
 public class HttpRedirectTest implements HttpServerAdapters {
     static final String GET_RESPONSE_BODY = "Lorem ipsum dolor sit amet";
     static final String REQUEST_BODY = "Here it goes";
-    private static final SSLContext context = SimpleSSLContext.findSSLContext();
+    static final SSLContext context;
     static {
-        SSLContext.setDefault(context);
+        try {
+            context = new SimpleSSLContext().get();
+            SSLContext.setDefault(context);
+        } catch (Exception x) {
+            throw new ExceptionInInitializerError(x);
+        }
     }
 
     final AtomicLong requestCounter = new AtomicLong();

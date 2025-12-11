@@ -56,7 +56,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class HttpClientAuthRetryLimitTest implements HttpServerAdapters {
 
-    private static final SSLContext SSL_CONTEXT = SimpleSSLContext.findSSLContext();
+    private static final SSLContext SSL_CONTEXT = createSslContext();
+
+    private static SSLContext createSslContext() {
+        try {
+            return new SimpleSSLContext().get();
+        } catch (IOException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
 
     // This is the system default value for jdk.httpclient.auth.retrylimit
     private static final int DEFAULT_RETRY_LIMIT = 3;

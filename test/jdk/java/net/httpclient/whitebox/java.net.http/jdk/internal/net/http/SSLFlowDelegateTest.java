@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ public class SSLFlowDelegateTest {
     private static final byte DATA_BYTE = (byte) random.nextInt();
 
     private ExecutorService executor;
+    private SSLContext sslContext;
     private SSLParameters sslParams;
     private SSLServerSocket sslServerSocket;
     private SSLEngine clientEngine;
@@ -79,18 +80,18 @@ public class SSLFlowDelegateTest {
     @BeforeTest
     public void beforeTest() throws Exception {
         this.executor = Executors.newCachedThreadPool();
+        this.sslContext = new jdk.internal.net.http.SimpleSSLContext().get();
         this.testCompletion = new CompletableFuture<>();
 
         final SSLParameters sp = new SSLParameters();
         sp.setApplicationProtocols(new String[]{ALPN});
         this.sslParams = sp;
 
-        var sslContext = SimpleSSLContextWhiteboxAdapter.findSSLContext();
-        this.sslServerSocket = startServer(sslContext);
+        this.sslServerSocket = startServer(this.sslContext);
         println(debugTag, "Server started at " + this.sslServerSocket.getInetAddress() + ":"
                 + this.sslServerSocket.getLocalPort());
 
-        this.clientEngine = createClientEngine(sslContext);
+        this.clientEngine = createClientEngine(this.sslContext);
     }
 
     @AfterTest

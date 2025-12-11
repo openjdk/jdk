@@ -165,9 +165,14 @@ public class DigestEchoClient {
 
     static final AtomicInteger NC = new AtomicInteger();
     static final Random random = new Random();
-    private static final SSLContext context = SimpleSSLContext.findSSLContext();
+    static final SSLContext context;
     static {
-        SSLContext.setDefault(context);
+        try {
+            context = new SimpleSSLContext().get();
+            SSLContext.setDefault(context);
+        } catch (Exception x) {
+            throw new ExceptionInInitializerError(x);
+        }
     }
     static final List<Boolean> BOOLEANS = List.of(true, false);
 

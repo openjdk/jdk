@@ -68,7 +68,7 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
  */
 public class StreamLimitTest {
 
-    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+    private SSLContext sslContext;
     private HttpTestServer server;
     private QuicServer quicServer;
     private URI requestURI;
@@ -99,6 +99,10 @@ public class StreamLimitTest {
 
     @BeforeClass
     public void beforeClass() throws Exception {
+        sslContext = new SimpleSSLContext().get();
+        if (sslContext == null) {
+            throw new AssertionError("Unexpected null sslContext");
+        }
         quicServer = Http3TestServer.quicServerBuilder().sslContext(sslContext).build();
         final Http3TestServer h3Server = new Http3TestServer(quicServer) {
             @Override

@@ -70,12 +70,14 @@ import static java.net.http.HttpClient.Version.HTTP_2;
 public class SimpleGet implements HttpServerAdapters {
     static HttpTestServer httpsServer;
     static HttpClient client = null;
-    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+    static SSLContext sslContext;
     static String httpsURIString;
     static ExecutorService serverExec = Executors.newVirtualThreadPerTaskExecutor();
 
     static void initialize() throws Exception {
         try {
+            SimpleSSLContext sslct = new SimpleSSLContext();
+            sslContext = sslct.get();
             client = getClient();
 
             httpsServer = HttpTestServer.create(HTTP_2, sslContext, serverExec);
@@ -92,6 +94,9 @@ public class SimpleGet implements HttpServerAdapters {
     }
 
     private static void warmup() throws Exception {
+        SimpleSSLContext sslct = new SimpleSSLContext();
+        var sslContext = sslct.get();
+
         // warmup server
         try (var client2 = createClient(sslContext)) {
             HttpRequest request = HttpRequest.newBuilder(URI.create(httpsURIString))

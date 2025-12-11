@@ -72,7 +72,7 @@ import static org.testng.Assert.assertEquals;
  */
 public class H3DataLimitsTest implements HttpServerAdapters {
 
-    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+    SSLContext sslContext;
     HttpTestServer h3TestServer;
     String h3URI;
 
@@ -210,6 +210,11 @@ public class H3DataLimitsTest implements HttpServerAdapters {
 
     @BeforeTest
     public void setup() throws Exception {
+        sslContext = new SimpleSSLContext().get();
+        if (sslContext == null) {
+            throw new AssertionError("Unexpected null sslContext");
+        }
+
         // An HTTP/3 server that only supports HTTP/3
         h3TestServer = HttpTestServer.of(new Http3TestServer(sslContext));
         final HttpTestHandler h3Handler = new Handler();

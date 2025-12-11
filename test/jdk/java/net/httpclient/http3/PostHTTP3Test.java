@@ -96,7 +96,7 @@ public class PostHTTP3Test implements HttpServerAdapters {
             May the sun shine warm upon your face;
             """;
 
-    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+    SSLContext sslContext;
     HttpTestServer h3TestServer;  // HTTP/2 ( h2 + h3)
     String h3URI;
 
@@ -443,6 +443,9 @@ public class PostHTTP3Test implements HttpServerAdapters {
 
     @BeforeTest
     public void setup() throws Exception {
+        sslContext = new SimpleSSLContext().get();
+        if (sslContext == null)
+            throw new AssertionError("Unexpected null sslContext");
         final Http2TestServer h2WithAltService = new Http2TestServer("localhost", true, sslContext)
                 .enableH3AltServiceOnSamePort();
         h3TestServer = HttpTestServer.of(h2WithAltService);

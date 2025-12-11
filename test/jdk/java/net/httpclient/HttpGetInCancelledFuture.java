@@ -98,7 +98,11 @@ public class HttpGetInCancelledFuture {
                 ? HttpServerAdapters.createClientBuilderForH3()
                 : HttpClient.newBuilder();
         if (uri.getScheme().equalsIgnoreCase("https")) {
-            builder.sslContext(SimpleSSLContext.findSSLContext());
+            try {
+                builder.sslContext(new SimpleSSLContext().get());
+            } catch (IOException io) {
+                throw new UncheckedIOException(io);
+            }
         }
         return builder.connectTimeout(Duration.ofSeconds(1))
                 .executor(executor)

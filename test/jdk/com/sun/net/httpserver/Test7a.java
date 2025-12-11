@@ -59,7 +59,7 @@ public class Test7a extends Test {
         HttpsServer server = HttpsServer.create (addr, 0);
         HttpContext ctx = server.createContext ("/test", handler);
         ExecutorService executor = Executors.newCachedThreadPool();
-        SSLContext ssl = SimpleSSLContext.findSSLContext();
+        SSLContext ssl = new SimpleSSLContext().get();
         server.setHttpsConfigurator(new HttpsConfigurator (ssl));
         server.setExecutor (executor);
         server.start ();

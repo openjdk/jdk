@@ -69,7 +69,7 @@ public class Test1 extends Test {
     private static final String TEMP_FILE_PREFIX =
             HttpServer.class.getPackageName() + '-' + Test1.class.getSimpleName() + '-';
 
-    private static final SSLContext ctx = SimpleSSLContext.findSSLContext();
+    static SSLContext ctx;
 
     public static void main (String[] args) throws Exception {
         HttpServer s1 = null;
@@ -94,6 +94,7 @@ public class Test1 extends Test {
             executor = Executors.newCachedThreadPool();
             s1.setExecutor (executor);
             s2.setExecutor (executor);
+            ctx = new SimpleSSLContext().get();
             s2.setHttpsConfigurator(new HttpsConfigurator (ctx));
             s1.start();
             s2.start();

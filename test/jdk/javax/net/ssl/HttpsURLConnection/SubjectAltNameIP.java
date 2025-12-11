@@ -101,7 +101,7 @@ public class SubjectAltNameIP {
      */
     void doServerSide() throws Exception {
         SSLServerSocketFactory sslssf =
-            SimpleSSLContext.findSSLContext().getServerSocketFactory();
+            new SimpleSSLContext().get().getServerSocketFactory();
         SSLServerSocket sslServerSocket =
             (SSLServerSocket) sslssf.createServerSocket(
                     serverPort, 0,
@@ -139,7 +139,7 @@ public class SubjectAltNameIP {
             throw new RuntimeException("Server failed to start.", serverException);
         }
 
-        SSLSocketFactory sf = SimpleSSLContext.findSSLContext().getSocketFactory();
+        SSLSocketFactory sf = new SimpleSSLContext().get().getSocketFactory();
         URI uri = new URI("https://" + hostName + ":" + serverPort + "/index.html");
         HttpsURLConnection conn = (HttpsURLConnection)uri.toURL().openConnection();
 

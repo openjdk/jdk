@@ -36,7 +36,19 @@ import javax.net.ssl.*;
  */
 public final class SimpleSSLContext {
 
-    private SimpleSSLContext() {}
+    public static final String DEFAULT_PROTOCOL = "TLS";
+
+    private final String keyStoreFileRelPath;
+
+    // Made `public` for backward compatibility
+    public SimpleSSLContext() throws IOException {
+        this.keyStoreFileRelPath = null;
+    }
+
+    // Kept for backward compatibility
+    public SimpleSSLContext(String keyStoreFileRelPath) throws IOException {
+        this.keyStoreFileRelPath = Objects.requireNonNull(keyStoreFileRelPath);
+    }
 
     /**
      * {@return a new {@link SSLContext} instance by searching for a key store
@@ -46,7 +58,7 @@ public final class SimpleSSLContext {
      * one cannot be loaded
      */
     public static SSLContext findSSLContext() {
-        return findSSLContext("TLS");
+        return findSSLContext(DEFAULT_PROTOCOL);
     }
 
     /**
@@ -55,10 +67,12 @@ public final class SimpleSSLContext {
      *
      * @param protocol an {@link SSLContext} protocol
      *
+     * @throws NullPointerException if {@code protocol} is null
      * @throws RuntimeException if no key store file can be found or the found
      * one cannot be loaded
      */
     public static SSLContext findSSLContext(String protocol) {
+        Objects.requireNonNull(protocol);
         return findSSLContext("jdk/test/lib/net/testkeys", protocol);
     }
 
@@ -71,10 +85,13 @@ public final class SimpleSSLContext {
      *                            {@code test.src.path} system property
      * @param protocol an {@link SSLContext} protocol
      *
+     * @throws NullPointerException if {@code keyStoreFileRelPath} or {@code protocol} is null
      * @throws RuntimeException if no key store file can be found or the found
      * one cannot be loaded
      */
     public static SSLContext findSSLContext(String keyStoreFileRelPath, String protocol) {
+        Objects.requireNonNull(keyStoreFileRelPath);
+        Objects.requireNonNull(protocol);
         var sourcePaths = System.getProperty("test.src.path");
         for (var sourcePath : Collections.list(new StringTokenizer(sourcePaths, File.pathSeparator))) {
             var keyStoreFileAbsPath = Path.of((String) sourcePath, keyStoreFileRelPath);
@@ -115,6 +132,28 @@ public final class SimpleSSLContext {
             var message = "Failed loading 'SSLContext' from key store at location '%s' for protocol '%s'".formatted(
                     keyStoreFilePath, protocol);
             throw new RuntimeException(message, e);
+        }
+    }
+
+    // Kept for backward compatibility
+    public static SSLContext getContext(String protocol) throws IOException {
+        try {
+            return protocol == null || protocol.isEmpty()
+                    ? findSSLContext()
+                    : findSSLContext(protocol);
+        } catch (RuntimeException re) {
+            throw new IOException(re);
+        }
+    }
+
+    // Kept for backward compatibility
+    public SSLContext get() {
+        try {
+            return keyStoreFileRelPath != null
+                    ? findSSLContext(keyStoreFileRelPath, DEFAULT_PROTOCOL)
+                    : findSSLContext();
+        } catch (RuntimeException _) {
+            return null;
         }
     }
 

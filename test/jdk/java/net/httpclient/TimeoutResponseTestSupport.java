@@ -72,7 +72,7 @@ public class TimeoutResponseTestSupport {
 
     private static final Logger LOGGER = Utils.getDebugLogger(CLASS_NAME::toString, Utils.DEBUG);
 
-    private static final SSLContext SSL_CONTEXT = SimpleSSLContext.findSSLContext();
+    private static final SSLContext SSL_CONTEXT = createSslContext();
 
     protected static final Duration REQUEST_TIMEOUT =
             Duration.ofMillis(Long.parseLong(System.getProperty("test.requestTimeoutMillis")));
@@ -125,6 +125,14 @@ public class TimeoutResponseTestSupport {
             HTTP2 = ServerRequestPair.of(Version.HTTP_2, false),
             HTTPS2 = ServerRequestPair.of(Version.HTTP_2, true),
             HTTP3 = ServerRequestPair.of(Version.HTTP_3, true);
+
+    private static SSLContext createSslContext() {
+        try {
+            return new SimpleSSLContext().get();
+        } catch (IOException exception) {
+            throw new UncheckedIOException(exception);
+        }
+    }
 
     protected record ServerRequestPair(HttpTestServer server, HttpRequest request, boolean secure) {
 

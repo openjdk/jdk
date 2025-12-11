@@ -84,7 +84,7 @@ import static org.testng.Assert.assertEquals;
 
 public class UserCookieTest implements HttpServerAdapters {
 
-    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+    SSLContext sslContext;
     HttpTestServer httpTestServer;        // HTTP/1.1    [ 7 servers ]
     HttpTestServer httpsTestServer;       // HTTPS/1.1
     HttpTestServer http2TestServer;       // HTTP/2 ( h2c )
@@ -202,6 +202,10 @@ public class UserCookieTest implements HttpServerAdapters {
 
     @BeforeTest
     public void setup() throws Exception {
+        sslContext = new SimpleSSLContext().get();
+        if (sslContext == null)
+            throw new AssertionError("Unexpected null sslContext");
+
         httpTestServer = HttpTestServer.create(HTTP_1_1);
         httpTestServer.addHandler(new CookieValidationHandler(), "/http1/cookie/");
         httpURI = "http://" + httpTestServer.serverAuthority() + "/http1/cookie/retry";

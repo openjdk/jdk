@@ -64,12 +64,16 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
  */
 public class StopSendingTest implements HttpServerAdapters {
 
-    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+    private SSLContext sslContext;
     private HttpTestServer h3Server;
     private String requestURIBase;
 
     @BeforeClass
     public void beforeClass() throws Exception {
+        sslContext = new SimpleSSLContext().get();
+        if (sslContext == null) {
+            throw new AssertionError("Unexpected null sslContext");
+        }
         h3Server = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         h3Server.addHandler(new Handler(), "/hello");
         h3Server.start();

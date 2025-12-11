@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,7 +214,7 @@ public class HttpsCB {
         MyHttpHandler h = new MyHttpHandler();
         HttpsServer server = HttpsServer.create(new InetSocketAddress(0), 0);
         server.setHttpsConfigurator(
-                new HttpsConfigurator(SimpleSSLContext.findSSLContext()));
+                new HttpsConfigurator(new SimpleSSLContext().get()));
         server.createContext("/", h).setAuthenticator(
                 new MyServerAuthenticator(scheme, principal, ktab));
         server.start();

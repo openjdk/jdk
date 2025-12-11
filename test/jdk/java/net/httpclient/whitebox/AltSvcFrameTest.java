@@ -107,10 +107,11 @@ public class AltSvcFrameTest {
     static Http2TestServer https2Server;
     static String https2URI;
     static HttpClient client;
-    private static final SSLContext server = SimpleSSLContext.findSSLContext();
+    static SSLContext server;
 
     @BeforeTest
     public void setUp() throws Exception {
+        server = SimpleSSLContext.getContext("TLS");
         getRegistry();
         https2Server = new Http2TestServer("localhost", true, server);
         https2Server.addHandler(new AltSvcFrameTestHandler(), "/");

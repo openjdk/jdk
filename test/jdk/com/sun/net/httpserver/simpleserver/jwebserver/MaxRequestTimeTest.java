@@ -78,7 +78,7 @@ public class MaxRequestTimeTest {
     static final String LOOPBACK_ADDR = InetAddress.getLoopbackAddress().getHostAddress();
     static final AtomicInteger PORT = new AtomicInteger();
 
-    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+    static SSLContext sslContext;
 
     @BeforeTest
     public void setup() throws IOException {
@@ -86,6 +86,10 @@ public class MaxRequestTimeTest {
             FileUtils.deleteFileTreeWithRetry(TEST_DIR);
         }
         Files.createDirectories(TEST_DIR);
+
+        sslContext = new SimpleSSLContext().get();
+        if (sslContext == null)
+            throw new AssertionError("Unexpected null sslContext");
     }
 
     @Test

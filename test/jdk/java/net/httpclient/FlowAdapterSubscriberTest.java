@@ -77,7 +77,7 @@ import static org.testng.Assert.assertTrue;
 
 public class FlowAdapterSubscriberTest implements HttpServerAdapters {
 
-    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+    SSLContext sslContext;
     HttpTestServer httpTestServer;     // HTTP/1.1    [ 5 servers ]
     HttpTestServer httpsTestServer;    // HTTPS/1.1
     HttpTestServer http2TestServer;    // HTTP/2 ( h2c )
@@ -633,6 +633,10 @@ public class FlowAdapterSubscriberTest implements HttpServerAdapters {
 
     @BeforeTest
     public void setup() throws Exception {
+        sslContext = new SimpleSSLContext().get();
+        if (sslContext == null)
+            throw new AssertionError("Unexpected null sslContext");
+
         httpTestServer = HttpTestServer.create(Version.HTTP_1_1);
         httpTestServer.addHandler(new HttpEchoHandler(), "/http1/echo");
         httpURI = "http://" + httpTestServer.serverAuthority() + "/http1/echo";

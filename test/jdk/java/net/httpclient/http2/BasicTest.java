@@ -70,12 +70,14 @@ public class BasicTest {
     static HttpClient client = null;
     static ExecutorService clientExec;
     static ExecutorService serverExec;
-    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+    static SSLContext sslContext;
 
     static String pingURIString, httpURIString, httpsURIString;
 
     static void initialize() throws Exception {
         try {
+            SimpleSSLContext sslct = new SimpleSSLContext();
+            sslContext = sslct.get();
             client = getClient();
             httpServer = new Http2TestServer(false, 0, serverExec, sslContext);
             httpServer.addHandler(new Http2EchoHandler(), "/");

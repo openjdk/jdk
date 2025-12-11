@@ -70,12 +70,16 @@ import static org.testng.Assert.*;
  */
 public class H3MemoryHandlingTest implements HttpServerAdapters {
 
-    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+    private SSLContext sslContext;
     private QuicStandaloneServer server;
     private String requestURIBase;
 
     @BeforeClass
     public void beforeClass() throws Exception {
+        sslContext = new SimpleSSLContext().get();
+        if (sslContext == null) {
+            throw new AssertionError("Unexpected null sslContext");
+        }
         server = QuicStandaloneServer.newBuilder()
                 .availableVersions(new QuicVersion[]{QuicVersion.QUIC_V1})
                 .sslContext(sslContext)

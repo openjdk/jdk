@@ -81,7 +81,7 @@ public class CancelledResponse2 implements HttpServerAdapters {
     URI h3TestServerURI;
     HttpTestServer h2h3TestServer;
     HttpTestServer h3TestServer;
-    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+    SSLContext sslContext;
 
     @DataProvider(name = "versions")
     public Object[][] positive() {
@@ -152,6 +152,8 @@ public class CancelledResponse2 implements HttpServerAdapters {
 
     @BeforeTest
     public void setup() throws IOException {
+        sslContext = new SimpleSSLContext().get();
+
         h2TestServer = HttpTestServer.create(HTTP_2, sslContext);
         h2TestServer.addHandler(new CancelledResponseHandler(), "/h2");
         h2TestServerURI = URI.create("https://" + h2TestServer.serverAuthority() + "/h2");

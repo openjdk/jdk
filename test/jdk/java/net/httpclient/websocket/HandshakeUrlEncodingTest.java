@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ import static java.lang.System.out;
 
 public class HandshakeUrlEncodingTest {
 
-    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+    SSLContext sslContext;
     HttpServer httpTestServer;
     HttpsServer httpsTestServer;
     String httpURI;
@@ -135,6 +135,11 @@ public class HandshakeUrlEncodingTest {
 
     @BeforeTest
     public void setup() throws Exception {
+        sslContext = new SimpleSSLContext().get();
+        if (sslContext == null)
+            throw new AssertionError("Unexpected null sslContext");
+
+
         InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         queryPart = "?&raw=abc+def/ghi=xyz&encoded=abc%2Bdef%2Fghi%3Dxyz";
         httpTestServer = HttpServer.create(sa, 10);

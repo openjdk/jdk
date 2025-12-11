@@ -57,7 +57,7 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
 
 public class H3RedirectTest implements HttpServerAdapters {
     static int httpPort;
-    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+    static SSLContext sslContext;
     static HttpTestServer http3Server;
     static HttpClient client;
 
@@ -106,6 +106,8 @@ public class H3RedirectTest implements HttpServerAdapters {
 
     static void initialize() throws Exception {
         try {
+            SimpleSSLContext sslct = new SimpleSSLContext();
+            sslContext = sslct.get();
             client = getClient();
             http3Server = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
             httpPort = http3Server.getAddress().getPort();

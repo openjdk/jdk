@@ -67,11 +67,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class H3GoAwayTest {
 
     private static String REQ_URI_BASE;
-    private static final SSLContext sslCtx = SimpleSSLContext.findSSLContext();
+    private static SSLContext sslCtx;
     private static Http3TestServer server;
 
     @BeforeAll
     static void beforeAll() throws Exception {
+        sslCtx = new SimpleSSLContext().get();
+        assertNotNull(sslCtx, "SSLContext couldn't be created");
         server = new Http3TestServer(sslCtx);
         final RequestApprover reqApprover = new RequestApprover();
         server.setRequestApprover(reqApprover::allowNewRequest);

@@ -318,18 +318,18 @@ public class HttpClientBuilderTest {
     @Test
     public void testSSLContext() throws Exception {
         HttpClient.Builder builder = HttpClient.newBuilder();
-        SSLContext a = SimpleSSLContext.findSSLContext();
+        SSLContext a = (new SimpleSSLContext()).get();
         builder.sslContext(a);
         try (var closer = closeable(builder)) {
             assertTrue(closer.build().sslContext() == a);
         }
-        SSLContext b = SimpleSSLContext.findSSLContext();
+        SSLContext b = (new SimpleSSLContext()).get();
         builder.sslContext(b);
         try (var closer = closeable(builder)) {
             assertTrue(closer.build().sslContext() == b);
         }
         assertThrows(NPE, () -> builder.sslContext(null));
-        SSLContext c = SimpleSSLContext.findSSLContext();
+        SSLContext c = (new SimpleSSLContext()).get();
         builder.sslContext(c);
         try (var closer = closeable(builder)) {
             assertTrue(closer.build().sslContext() == c);
