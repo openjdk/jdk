@@ -1645,7 +1645,7 @@ static void SR_handler(int sig, siginfo_t* siginfo, void* context) {
 
   // Save and restore errno to avoid confusing native code with EINTR
   // after sigsuspend.
-  int old_errno = errno;
+  ErrnoPreserver ep;
 
   PosixSignals::unblock_error_signals();
 
@@ -1727,7 +1727,6 @@ static void SR_handler(int sig, siginfo_t* siginfo, void* context) {
     // ignore
   }
 
-  errno = old_errno;
 }
 
 static int SR_initialize() {

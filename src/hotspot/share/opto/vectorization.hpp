@@ -236,6 +236,8 @@ public:
   // Some nodes must be pre-loop invariant, so that they can be used for conditions
   // before or inside the pre-loop. For example, alignment of main-loop vector
   // memops must be achieved in the pre-loop, via the exit check in the pre-loop.
+  // Note: this condition is NOT strong enough for speculative checks, those happen
+  //       before the pre-loop. See is_available_for_speculative_check
   bool is_pre_loop_invariant(Node* n) const {
     // Must be in the main-loop, otherwise we can't access the pre-loop.
     // This fails during SuperWord::unrolling_analysis, but that is ok.
@@ -255,6 +257,28 @@ public:
     // compute n before the pre-loop.
     Node* early = phase()->compute_early_ctrl(n, ctrl);
     return is_before_pre_loop(early);
+  }
+
+  // Nodes that are to be used in speculative checks must be available early enough.
+  // Note: the speculative check happens before the pre-loop, either at the auto
+  //       vectorization predicate or the multiversion if. This is before the
+  //       pre-loop, and thus the condition here is stronger then the one from
+  //       is_pre_loop_invariant.
+  bool is_available_for_speculative_check(Node* n) const {
+    assert(are_speculative_checks_possible(), "meaningless without speculative check");
+    ParsePredicateSuccessProj* parse_predicate_proj = auto_vectorization_parse_predicate_proj();
+    // Find the control of the predicate:
+    ProjNode* proj = (parse_predicate_proj != nullptr) ? parse_predicate_proj : multiversioning_fast_proj();
+    Node* check_ctrl = proj->in(0)->as_If()->in(0);
+
+    // Often, the control of n already dominates that of the predicate.
+    Node* n_ctrl = phase()->get_ctrl(n);
+    if (phase()->is_dominator(n_ctrl, check_ctrl)) { return true; }
+
+    // But in some cases, the ctrl of n is after that of the predicate,
+    // but the early ctrl is before the predicate.
+    Node* n_early = phase()->compute_early_ctrl(n, n_ctrl);
+    return phase()->is_dominator(n_early, check_ctrl);
   }
 
   // Check if the loop passes some basic preconditions for vectorization.
