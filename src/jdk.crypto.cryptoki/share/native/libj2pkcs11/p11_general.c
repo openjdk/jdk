@@ -100,6 +100,12 @@ Java_sun_security_pkcs11_wrapper_PKCS11_initializeLibrary
 #ifndef NO_CALLBACKS
     if (notifyListLock == NULL) {
         notifyListLock = createLockObject(env);
+
+        /* Return immediately if lock creation failed or an exception is pending. */
+        if (notifyListLock == NULL || (*env)->ExceptionCheck(env)) {
+            TRACE0("DEBUG: createLockObject failed, aborting initialization\n");
+            return;
+        }
     }
 #endif
 
