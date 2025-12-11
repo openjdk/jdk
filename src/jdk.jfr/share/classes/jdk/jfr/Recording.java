@@ -162,8 +162,8 @@ public final class Recording implements Closeable {
      * After a successful invocation of this method, this recording is in the
      * {@code RUNNING} state.
      *
-     * @throws IllegalStateException if recording is already started or is in the
-     *         {@code CLOSED} state
+     * @throws IllegalStateException if recording is already started, is in the
+     *         {@code CLOSED} state, or if the recording is started during JVM shutdown
      */
     public void start() {
         internal.start();
