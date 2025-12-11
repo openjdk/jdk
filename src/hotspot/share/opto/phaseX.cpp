@@ -2061,7 +2061,7 @@ bool PhaseIterGVN::verify_Identity_for(Node* n) {
   return true;
 }
 
-// Some other verifications that are no specific to a particular transformation
+// Some other verifications that are not specific to a particular transformation.
 bool PhaseIterGVN::verify_node_invariants_for(Node* n) {
   if (n->is_AddP()) {
     Node* addp = n->in(AddPNode::Address);
