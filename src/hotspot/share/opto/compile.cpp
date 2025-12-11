@@ -73,6 +73,8 @@
 #include "opto/opcodes.hpp"
 #include "opto/output.hpp"
 #include "opto/parse.hpp"
+#include "opto/phase.hpp"
+#include "opto/phaseloadfolding.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
@@ -2401,6 +2403,19 @@ void Compile::Optimize() {
   remove_root_to_sfpts_edges(igvn);
 
   if (failing())  return;
+
+  {
+    // This phase is much faster than EA, so doing it before EA reduces the work of EA by reducing
+    // the number of loads. It also helps EA terminate sooner because folded loads may expose
+    // further EA opportunities, and it is better if an EA opportunity is revealed from the
+    // beginning than if it is only revealed after some rounds of EA.
+    TracePhase tp(_t_loadFolding);
+    PhaseLoadFolding load_folding(igvn);
+    load_folding.optimize();
+    if (failing()) {
+      return;
+    }
+  }
 
   if (has_loops()) {
     print_method(PHASE_BEFORE_LOOP_OPTS, 2);

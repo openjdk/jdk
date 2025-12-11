@@ -68,6 +68,7 @@ void Phase::print_timers() {
       tty->print_cr ("           Conn Graph:          %7.3f s", timers[_t_connectionGraph].seconds());
       tty->print_cr ("           Macro Eliminate:     %7.3f s", timers[_t_macroEliminate].seconds());
     }
+    tty->print_cr ("         Load Folding:        %7.3f s", timers[_t_loadFolding].seconds());
     tty->print_cr ("         GVN 1:               %7.3f s", timers[_t_iterGVN].seconds());
 
     {
@@ -100,6 +101,7 @@ void Phase::print_timers() {
 
     double other = timers[_t_optimizer].seconds() -
       (timers[_t_escapeAnalysis].seconds() +
+       timers[_t_loadFolding].seconds() +
        timers[_t_iterGVN].seconds() +
        timers[_t_incrInline].seconds() +
        timers[_t_vector].seconds() +
