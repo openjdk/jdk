@@ -39,7 +39,7 @@ import javax.management.ObjectName;
  * <p> Direct access to the MXBean interface can be obtained with
  * {@link ManagementFactory#getPlatformMXBean(Class)}.
  *
- * @since 26
+ * @since 27
  */
 public interface HotSpotAOTCacheMXBean extends PlatformManagedObject {
     /**
