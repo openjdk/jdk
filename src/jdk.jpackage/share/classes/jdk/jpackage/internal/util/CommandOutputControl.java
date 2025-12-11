@@ -25,6 +25,7 @@ package jdk.jpackage.internal.util;
 import static java.util.stream.Collectors.joining;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -513,7 +514,7 @@ public final class CommandOutputControl {
 
         public int getExitCode() {
             return exitCode.orElseThrow(() -> {
-                return new UnsupportedOperationException("Exit code is unavailable for timed-out process");
+                return new IllegalStateException("Exit code is unavailable for timed-out process");
             });
         }
 
@@ -583,6 +584,47 @@ public final class CommandOutputControl {
             return findByteStderr().orElseThrow();
         }
 
+        public Result toCharacterResult(Charset charset, boolean keepByteContent) throws IOException {
+            Objects.requireNonNull(charset);
+
+            if (byteOutput.isEmpty()) {
+                return this;
+            }
+
+            var theByteOutput = byteOutput.get();
+
+            try {
+                Optional<? extends Content<List<String>>> out;
+                if (theByteOutput.content().isEmpty()) {
+                    // The content is unavailable.
+                    out = Optional.empty();
+                } else if (theByteOutput.stdoutContentSize() == 0) {
+                    // The content is available, but empty.
+                    out = Optional.of(new StringListContent(List.of()));
+                } else if (theByteOutput.interleaved()) {
+                    // STDOUT and STDERR streams are interleaved.
+                    out = theByteOutput.combined().map(data -> {
+                        return toStringList(data, charset);
+                    });
+                } else {
+                    // Non-empty STDOUT not interleaved with STDERR.
+                    out = findByteStdout().map(data -> {
+                        return toStringList(data, charset);
+                    });
+                }
+
+                var err = findByteStderr().map(data -> {
+                    return toStringList(data, charset);
+                });
+
+                var newOutput = combine(out, err, theByteOutput.interleaved);
+
+                return new Result(exitCode, Optional.of(newOutput), byteOutput.filter(_ -> keepByteContent), execSpec);
+            } catch (UncheckedIOException ex) {
+                throw ex.getCause();
+            }
+        }
+
         private static Output createView(List<String> lines) {
             Objects.requireNonNull(lines);
             return new Output() {
@@ -592,6 +634,14 @@ public final class CommandOutputControl {
                     return Optional.of(lines);
                 }
             };
+        }
+
+        private static StringListContent toStringList(byte[] data, Charset charset) {
+            try (var bufReader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(data), charset))) {
+                return new StringListContent(bufReader.lines().toList());
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
         }
     }
 
@@ -643,7 +693,7 @@ public final class CommandOutputControl {
 
         Objects.requireNonNull(pb);
 
-        var charset = Optional.ofNullable(processOutputCharset).orElse(StandardCharsets.UTF_8);
+        var charset = processOutputCharset();
 
         configureProcessBuilder(pb);
 
@@ -780,7 +830,7 @@ public final class CommandOutputControl {
                 stdoutRedirect,
                 stderrRedirect
         ).noneMatch(Predicate.isEqual(ProcessBuilder.Redirect.DISCARD)) && redirectErrorStream()) {
-            throw new UnsupportedOperationException(String.format(
+            throw new IllegalStateException(String.format(
                     "Can't redirect stderr into stdout because they have different redirects: stdout=%s; stderr=%s",
                     stdoutRedirect, stderrRedirect));
         }
@@ -815,6 +865,10 @@ public final class CommandOutputControl {
 
     private boolean replaceStdoutWithStderr() {
         return redirectErrorStream() && outputStreamsControl.stdout().discard();
+    }
+
+    private Charset processOutputCharset() {
+        return Optional.ofNullable(processOutputCharset).orElse(StandardCharsets.UTF_8);
     }
 
     private static void joinProcessStreamGobbler(CompletableFuture<Void> streamGobbler) {
@@ -866,7 +920,11 @@ public final class CommandOutputControl {
         }
     }
 
-    private <T> CommandOutput<T> combine(Optional<? extends Content<T>> out, Optional<? extends Content<T>> err) {
+    private static <T> CommandOutput<T> combine(
+            Optional<? extends Content<T>> out,
+            Optional<? extends Content<T>> err,
+            boolean interleaved) {
+
         if (out.isEmpty() && err.isEmpty()) {
             return CommandOutput.empty();
         } else if (out.isEmpty()) {
@@ -875,10 +933,10 @@ public final class CommandOutputControl {
             // its saved contents will be an Optional instance wrapping an empty content, not an empty Optional.
             throw ExceptionBox.reachedUnreachable();
         } else if (err.isEmpty()) {
-            return new CommandOutput<>(out, Integer.MAX_VALUE, redirectErrorStream());
+            return new CommandOutput<>(out, Integer.MAX_VALUE, interleaved);
         } else {
             final var combined = out.get().append(err.get());
-            return new CommandOutput<>(Optional.of(combined), out.orElseThrow().size(), redirectErrorStream());
+            return new CommandOutput<>(Optional.of(combined), out.orElseThrow().size(), interleaved);
         }
     }
 
@@ -1101,7 +1159,7 @@ public final class CommandOutputControl {
                     errContent = readBinary(outputStreamsControl.stderr(), err).map(ByteContent::new);
                 }
 
-                byteOutput = combine(outContent, errContent);
+                byteOutput = combine(outContent, errContent, redirectErrorStream());
                 output = null;
             } else {
                 Optional<StringListContent> outContent, errContent;
@@ -1113,7 +1171,7 @@ public final class CommandOutputControl {
                     errContent = read(outputStreamsControl.stderr(), err).map(StringListContent::new);
                 }
 
-                output = combine(outContent, errContent);
+                output = combine(outContent, errContent, redirectErrorStream());
                 byteOutput = null;
             }
 
