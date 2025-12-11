@@ -30,7 +30,7 @@
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+IgnoreUnrecognizedVMOptions
  *                   -XX:+StressLoopPeeling -XX:+VerifyLoopOptimizations 
  *                   -XX:StressSeed=3106998670 TestVerifyLoopOptimizationsHighMemUsage
- * @run main TestVerifyLoopOptimizationsHighMemUsage
+ * @run main ${test.main.class}
  */
 
 public class TestVerifyLoopOptimizationsHighMemUsage {
