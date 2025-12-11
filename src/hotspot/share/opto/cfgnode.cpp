@@ -2681,11 +2681,11 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     progress = merge_through_phi(this, phase->is_IterGVN());
   }
 
-  // PhiNode::Identity replaces a non bottom memory phi with a bottom memory phi with same inputs if it exists
-  // If the bottom memory phi's inputs are changed (so it can now replace the non bottom memory phi) or if it's created
-  // only after the non bottom memory phi is processed by igvn, PhiNode::Identity doesn't run and the transformation
+  // PhiNode::Identity replaces a non-bottom memory phi with a bottom memory phi with the same inputs, if it exists.
+  // If the bottom memory phi's inputs are changed (so it can now replace the non-bottom memory phi) or if it's created
+  // only after the non-bottom memory phi is processed by igvn, PhiNode::Identity doesn't run and the transformation
   // doesn't happen.
-  // Look for non bottom Phis that should be transformed and enqueue them for igvn so PhiNode::Identity executes for
+  // Look for non-bottom Phis that should be transformed and enqueue them for igvn so that PhiNode::Identity executes for
   // them.
   if (can_reshape && type() == Type::MEMORY && adr_type() == TypePtr::BOTTOM) {
     PhaseIterGVN* igvn = phase->is_IterGVN();
