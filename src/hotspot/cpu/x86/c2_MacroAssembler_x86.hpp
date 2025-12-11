@@ -584,4 +584,6 @@ public:
 
   void reconstruct_frame_pointer(Register rtmp);
 
+  void imullq_imm(BasicType bt, Register dst, Register src, int32_t imm);
+
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP

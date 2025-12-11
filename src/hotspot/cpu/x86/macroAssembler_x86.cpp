@@ -9823,3 +9823,21 @@ void MacroAssembler::setcc(Assembler::Condition comparison, Register dst) {
     movzbl(dst, dst);
   }
 }
+
+void MacroAssembler::imullq(BasicType bt, Register dst, Register src, int32_t imm) {
+  if (bt == T_LONG) {
+    imulq(dst, src, imm);
+  } else {
+    assert(bt == T_INT, "Unexpected type");
+    imull(dst, src, imm);
+  }
+}
+
+void MacroAssembler::lealq(BasicType bt, Register dst, Address src) {
+  if (bt == T_LONG) {
+    leaq(dst, src);
+  } else {
+    assert(bt == T_INT, "Unexpected type");
+    leal(dst, src);
+  }
+}
