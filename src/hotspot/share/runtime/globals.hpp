@@ -1369,6 +1369,7 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(int, SpecTrapLimitExtraEntries,  3, EXPERIMENTAL,                 \
           "Extra method data trap entries for speculation")                 \
+          range(0, 100)                                                     \
                                                                             \
   product(double, InlineFrequencyRatio, 0.25, DIAGNOSTIC,                   \
           "Ratio of call site execution to caller method invocation")       \
