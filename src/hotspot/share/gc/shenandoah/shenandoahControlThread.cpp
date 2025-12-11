@@ -412,7 +412,6 @@ void ShenandoahControlThread::notify_gc_waiters() {
   ml.notify_all();
 }
 
-
 GCCause::Cause ShenandoahControlThread::current_requested_gc_cause() {
   if (_control_lock.owned_by_self()) return _requested_gc_cause;
   {
