@@ -290,7 +290,8 @@ tcp_ping4(JNIEnv *env, SOCKETADDRESS *sa, SOCKETADDRESS *netif, jint timeout,
     SET_NONBLOCKING(fd);
 
     sa->sa4.sin_port = htons(7); // echo port
-    connect_rv = connect(fd, &sa->sa, sizeof(struct sockaddr_in));
+    NET_RESTARTABLE(connect_rv, connect(fd, &sa->sa, sizeof(struct sockaddr_in)),
+                    connect_rv != -1);
 
     // connection established or refused immediately, either way it means
     // we were able to reach the host!
@@ -432,8 +433,8 @@ ping4(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
             tmout2 = NET_Wait(env, fd, NET_WAIT_READ, tmout2);
             if (tmout2 >= 0) {
                 len = sizeof(sa_recv);
-                n = recvfrom(fd, recvbuf, sizeof(recvbuf), 0,
-                             (struct sockaddr *)&sa_recv, &len);
+                NET_RESTARTABLE(n, recvfrom(fd, recvbuf, sizeof(recvbuf), 0,
+                                      (struct sockaddr *)&sa_recv, &len), n != -1);
                 // check if we received enough data
                 if (n < (jint)sizeof(struct ip)) {
                     continue;
