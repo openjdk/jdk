@@ -27,7 +27,8 @@
  * @bug 8370519
  * @summary C2: Hit MemLimit when running with +VerifyLoopOptimizations
  * @run main/othervm -XX:CompileCommand=compileonly,*TestVerifyLoopOptimizationsHighMemUsage*::* -XX:-TieredCompilation -Xbatch
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressLoopPeeling -XX:+VerifyLoopOptimizations
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+IgnoreUnrecognizedVMOptions
+ *                   -XX:+StressLoopPeeling -XX:+VerifyLoopOptimizations 
  *                   -XX:StressSeed=3106998670 TestVerifyLoopOptimizationsHighMemUsage
  * @run main TestVerifyLoopOptimizationsHighMemUsage
  */
