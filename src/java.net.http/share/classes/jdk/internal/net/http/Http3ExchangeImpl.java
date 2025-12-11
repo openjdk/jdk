@@ -1304,7 +1304,7 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
         }
 
         if (promiseHeaders.firstValue("Transfer-Encoding").isPresent()) {
-            throw new ProtocolException("push headers contain Transfer-Encoding for pushId=" + pushId);
+            throw new ProtocolException("push headers contain \"Transfer-Encoding\" for pushId=" + pushId);
         }
 
 
