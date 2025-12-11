@@ -2577,7 +2577,7 @@ jint os::set_minimum_stack_sizes() {
   return JNI_OK;
 }
 
-jlong os::get_minimum_java_stack_sizes() {
+jlong os::get_minimum_java_stack_size() {
   return static_cast<jlong>(_java_thread_min_stack_allowed);
 }
 
