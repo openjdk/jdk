@@ -25,7 +25,7 @@
  * @test
  * @bug 8370200
  * @summary Crash: assert(outer->outcnt() >= phis + 2 - be_loads && outer->outcnt() <= phis + 2 + stores + 1) failed: only phis
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:StressSeed=36200582 -XX:CompileCommand=quiet
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:StressSeed=36200582 -XX:CompileCommand=quiet
  *                   -XX:CompileCommand=compileonly,*TestMismatchedMemoryPhis*::mainTest -XX:-TieredCompilation
  *                   -Xcomp -XX:+StressIGVN -XX:+StressLoopPeeling -XX:PerMethodTrapLimit=0 TestMismatchedMemoryPhis
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:CompileCommand=quiet
