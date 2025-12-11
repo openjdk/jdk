@@ -2563,8 +2563,10 @@ Node* LoadNode::klass_identity_common(PhaseGVN* phase) {
            ) {
           int mirror_field = in_bytes(Klass::java_mirror_offset());
           if (tkls->offset() == mirror_field) {
+#ifdef ASSERT
             const TypeKlassPtr* tkls2 = phase->type(adr2->in(AddPNode::Address))->isa_klassptr();
-            assert(tkls2->offset() == 0, "");
+            assert(tkls2->offset() == 0, "not a load of java_mirror");
+#endif
             return adr2->in(AddPNode::Address);
           }
         }

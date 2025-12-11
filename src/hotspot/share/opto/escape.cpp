@@ -3741,9 +3741,9 @@ Node* ConnectionGraph::get_addp_base(Node *addp) {
   //       | |
   //       AddP  ( base == address )
   //
-  // case #6. Constant Pool, ThreadLocal, CastX2P or
+  // case #6. Constant Pool, ThreadLocal, CastX2P, Klass, OSR buffer buf or
   //          Raw object's field reference:
-  //      {ConP, ThreadLocal, CastX2P, raw Load}
+  //      {ConP, ThreadLocal, CastX2P, raw Load, Parm0}
   //  top   |
   //     \  |
   //     AddP  ( base == top )
