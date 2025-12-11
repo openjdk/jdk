@@ -252,7 +252,8 @@ void PhaseLoadFolding::process_candidates(VectorSet& candidate_mems, WorkLists& 
 
         for (DUIterator_Fast addp_out_max, addp_out_idx = addp->fast_outs(addp_out_max); addp_out_idx < addp_out_max; addp_out_idx++) {
           Node* addp_out = addp->fast_out(addp_out_idx);
-          if ((addp_out->is_Store() || addp_out->is_LoadStore()) && addp == addp_out->in(MemNode::Address)) {
+          if ((addp_out->is_Store() || addp_out->is_LoadStore())) {
+            assert(addp == addp_out->in(MemNode::Address), "store a derived pointer?");
             if (may_alias) {
               work_lists.may_alias.set(addp_out->_idx);
             }
@@ -264,6 +265,14 @@ void PhaseLoadFolding::process_candidates(VectorSet& candidate_mems, WorkLists& 
               // also lumped here because there is no LoadStoreNode::is_mismatched_access.
               work_lists.escapes.push(addp_out);
             }
+          } else if (addp_out->is_Mem()) {
+            // A load, does not affect the memory
+          } else if (addp_out->is_AddP()) {
+            // Another AddP, it should share the base with the current addp, so it will be visited
+            // later
+          } else {
+            // Some runtime calls receive the pointer without the base
+            work_lists.escapes.push(addp_out);
           }
         }
       } else if (out->is_Mem()) {

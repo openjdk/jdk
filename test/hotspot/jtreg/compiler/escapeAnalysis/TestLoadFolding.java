@@ -53,7 +53,7 @@ public class TestLoadFolding {
         TestFramework.run();
     }
 
-    @Run(test = {"test11", "test12", "test13", "test14", "test15", "test16"})
+    @Run(test = {"test11", "test12", "test13", "test14", "test15", "test16", "test17", "test18"})
     public void runPositiveTests() {
         test11();
         test12(false);
@@ -64,9 +64,11 @@ public class TestLoadFolding {
         test15(1, 16);
         test16(1, 16, false);
         test16(1, 16, true);
+        test17(0);
+        test18(0);
     }
 
-    @Run(test = {"test01", "test02", "test03", "test04"})
+    @Run(test = {"test01", "test02", "test03", "test04", "test05"})
     public void runNegativeTests() {
         test01();
         test02(false);
@@ -74,6 +76,7 @@ public class TestLoadFolding {
         test03(false);
         test03(true);
         test04(1, 16);
+        test05(0);
     }
 
     @DontInline
@@ -162,6 +165,37 @@ public class TestLoadFolding {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_I, "1", IRNode.ALLOC_ARRAY, "1"})
+    public int test17(int idx) {
+        // Array
+        int[] a = new int[2];
+        a[0] = 1;
+        a[1] = 2;
+        int res = a[idx & 1];
+        escape(null);
+        res += a[0] + a[1];
+        escape(a);
+        return res;
+    }
+
+    @Test
+    @IR(failOn = IRNode.LOAD_I, counts = {IRNode.ALLOC_ARRAY, "1"})
+    public int test18(int idx) {
+        // Array, even if we will give up if we encounter a[idx & 1] = 3, we meet a[0] = 4 first,
+        // so the load int res = a[0] can still be folded
+        int[] a = new int[2];
+        a[0] = 1;
+        a[1] = 2;
+        escape(null);
+        a[idx & 1] = 3;
+        a[0] = 4;
+        escape(null);
+        int res = a[0];
+        escape(a);
+        return res;
+    }
+
+    @Test
     @IR(counts = {IRNode.LOAD_I, "2", IRNode.ALLOC, "1"})
     public int test01() {
         Point p = new Point();
@@ -207,5 +241,18 @@ public class TestLoadFolding {
             escape(p);
         }
         return p;
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_I, "2", IRNode.ALLOC_ARRAY, "1"})
+    public int test05(int idx) {
+        int[] a = new int[2];
+        a[0] = 1;
+        a[1] = 2;
+        escape(null);
+        a[idx & 1] = 3;
+        // Cannot fold the loads because we do not know which element is written to by
+        // a[idx & 1] = 3
+        return a[0] + a[1];
     }
 }
