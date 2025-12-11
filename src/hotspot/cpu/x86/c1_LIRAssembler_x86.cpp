@@ -76,6 +76,15 @@ const Register SHIFT_count = rcx;   // where count for shift operations must be
 
 #define __ _masm->
 
+#define EMIT_UCOMX_OR_UCOMI_SS(reg, operand) \
+  ((VM_Version::supports_avx10_2()) ? \
+   (__ ucomxss(reg, operand)) : \
+   (__ ucomiss(reg, operand)))
+
+#define EMIT_UCOMX_OR_UCOMI_SD(reg, operand) \
+  ((VM_Version::supports_avx10_2()) ? \
+   (__ ucomxsd(reg, operand)) : \
+   (__ ucomisd(reg, operand)))
 
 static void select_different_registers(Register preserve,
                                        Register extra,
@@ -2062,35 +2071,19 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
     XMMRegister reg1 = opr1->as_xmm_float_reg();
     if (opr2->is_single_xmm()) {
       // xmm register - xmm register
-      if (VM_Version::supports_avx10_2()) {
-        __ ucomxss(reg1, opr2->as_xmm_float_reg());
-      } else {
-        __ ucomiss(reg1, opr2->as_xmm_float_reg());
-      }
+      EMIT_UCOMX_OR_UCOMI_SS(reg1, opr2->as_xmm_float_reg());
     } else if (opr2->is_stack()) {
       // xmm register - stack
-      if (VM_Version::supports_avx10_2()) {
-        __ ucomxss(reg1, frame_map()->address_for_slot(opr2->single_stack_ix()));
-      } else {
-        __ ucomiss(reg1, frame_map()->address_for_slot(opr2->single_stack_ix()));
-      }
+      EMIT_UCOMX_OR_UCOMI_SS(reg1, frame_map()->address_for_slot(opr2->single_stack_ix()));
     } else if (opr2->is_constant()) {
       // xmm register - constant
-      if (VM_Version::supports_avx10_2()) {
-        __ ucomxss(reg1, InternalAddress(float_constant(opr2->as_jfloat())));
-      } else {
-        __ ucomiss(reg1, InternalAddress(float_constant(opr2->as_jfloat())));
-      }
+      EMIT_UCOMX_OR_UCOMI_SS(reg1, InternalAddress(float_constant(opr2->as_jfloat())));
     } else if (opr2->is_address()) {
       // xmm register - address
       if (op->info() != nullptr) {
         add_debug_info_for_null_check_here(op->info());
       }
-      if (VM_Version::supports_avx10_2()) {
-        __ ucomxss(reg1, as_Address(opr2->as_address_ptr()));
-      } else {
-        __ ucomiss(reg1, as_Address(opr2->as_address_ptr()));
-      }
+      EMIT_UCOMX_OR_UCOMI_SS(reg1, as_Address(opr2->as_address_ptr()));
     } else {
       ShouldNotReachHere();
     }
@@ -2099,35 +2092,19 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
     XMMRegister reg1 = opr1->as_xmm_double_reg();
     if (opr2->is_double_xmm()) {
       // xmm register - xmm register
-      if (VM_Version::supports_avx10_2()) {
-        __ ucomxsd(reg1, opr2->as_xmm_double_reg());
-      } else {
-        __ ucomisd(reg1, opr2->as_xmm_double_reg());
-      }
+      EMIT_UCOMX_OR_UCOMI_SD(reg1, opr2->as_xmm_double_reg());
     } else if (opr2->is_stack()) {
       // xmm register - stack
-      if (VM_Version::supports_avx10_2()) {
-        __ ucomxsd(reg1, frame_map()->address_for_slot(opr2->double_stack_ix()));
-      } else {
-        __ ucomisd(reg1, frame_map()->address_for_slot(opr2->double_stack_ix()));
-      }
+      EMIT_UCOMX_OR_UCOMI_SD(reg1, frame_map()->address_for_slot(opr2->double_stack_ix()));
     } else if (opr2->is_constant()) {
       // xmm register - constant
-      if (VM_Version::supports_avx10_2()) {
-        __ ucomxsd(reg1, InternalAddress(double_constant(opr2->as_jdouble())));
-      } else {
-        __ ucomisd(reg1, InternalAddress(double_constant(opr2->as_jdouble())));
-      }
+      EMIT_UCOMX_OR_UCOMI_SD(reg1, InternalAddress(double_constant(opr2->as_jdouble())));
     } else if (opr2->is_address()) {
       // xmm register - address
       if (op->info() != nullptr) {
         add_debug_info_for_null_check_here(op->info());
       }
-      if (VM_Version::supports_avx10_2()) {
-        __ ucomxsd(reg1, as_Address(opr2->pointer()->as_address()));
-      } else {
-        __ ucomisd(reg1, as_Address(opr2->pointer()->as_address()));
-      }
+      EMIT_UCOMX_OR_UCOMI_SD(reg1, as_Address(opr2->pointer()->as_address()));
     } else {
       ShouldNotReachHere();
     }
