@@ -2319,6 +2319,7 @@ Node* VectorBlendNode::Identity(PhaseGVN* phase) {
   }
   return this;
 }
+
 static bool is_replicate_uint_constant(const Node* n) {
   return n->Opcode() == Op_Replicate &&
          n->in(1)->is_Con() &&

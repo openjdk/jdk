@@ -1473,7 +1473,15 @@ public class TestConditionalMove {
 
     //     I fo D
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"rvv", "true"},
+        applyIf = {"UseVectorCmov", "true"})
+    @IR(failOn = {IRNode.STORE_VECTOR},
+        applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_I, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
@@ -1487,7 +1495,15 @@ public class TestConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"rvv", "true"},
+        applyIf = {"UseVectorCmov", "true"})
+    @IR(failOn = {IRNode.STORE_VECTOR},
+        applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_I, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
@@ -1501,7 +1517,15 @@ public class TestConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"rvv", "true"},
+        applyIf = {"UseVectorCmov", "true"})
+    @IR(failOn = {IRNode.STORE_VECTOR},
+        applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_I, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
@@ -1515,7 +1539,15 @@ public class TestConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"rvv", "true"},
+        applyIf = {"UseVectorCmov", "true"})
+    @IR(failOn = {IRNode.STORE_VECTOR},
+        applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_I, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
@@ -1529,7 +1561,15 @@ public class TestConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"rvv", "true"},
+        applyIf = {"UseVectorCmov", "true"})
+    @IR(failOn = {IRNode.STORE_VECTOR},
+        applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_I, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
@@ -1543,7 +1583,15 @@ public class TestConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"rvv", "true"},
+        applyIf = {"UseVectorCmov", "true"})
+    @IR(failOn = {IRNode.STORE_VECTOR},
+        applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_I, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
@@ -1728,7 +1776,15 @@ public class TestConditionalMove {
 
     //     L fo F
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"rvv", "true"},
+        applyIf = {"UseVectorCmov", "true"})
+    @IR(failOn = {IRNode.STORE_VECTOR},
+        applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_L, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
@@ -1742,7 +1798,15 @@ public class TestConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"rvv", "true"},
+        applyIf = {"UseVectorCmov", "true"})
+    @IR(failOn = {IRNode.STORE_VECTOR},
+        applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_L, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
@@ -1756,7 +1820,15 @@ public class TestConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"rvv", "true"},
+        applyIf = {"UseVectorCmov", "true"})
+    @IR(failOn = {IRNode.STORE_VECTOR},
+        applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_L, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
@@ -1770,7 +1842,15 @@ public class TestConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"rvv", "true"},
+        applyIf = {"UseVectorCmov", "true"})
+    @IR(failOn = {IRNode.STORE_VECTOR},
+        applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_L, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
@@ -1784,7 +1864,15 @@ public class TestConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"rvv", "true"},
+        applyIf = {"UseVectorCmov", "true"})
+    @IR(failOn = {IRNode.STORE_VECTOR},
+        applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_L, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
@@ -1798,7 +1886,15 @@ public class TestConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"rvv", "true"},
+        applyIf = {"UseVectorCmov", "true"})
+    @IR(failOn = {IRNode.STORE_VECTOR},
+        applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_L, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
@@ -2256,7 +2352,15 @@ public class TestConditionalMove {
 
     //     I fo D
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"rvv", "true"},
+        applyIf = {"UseVectorCmov", "true"})
+    @IR(failOn = {IRNode.STORE_VECTOR},
+        applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_U, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
@@ -2270,7 +2374,15 @@ public class TestConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"rvv", "true"},
+        applyIf = {"UseVectorCmov", "true"})
+    @IR(failOn = {IRNode.STORE_VECTOR},
+        applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_U, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
@@ -2284,7 +2396,15 @@ public class TestConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"rvv", "true"},
+        applyIf = {"UseVectorCmov", "true"})
+    @IR(failOn = {IRNode.STORE_VECTOR},
+        applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_U, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
@@ -2298,7 +2418,15 @@ public class TestConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"rvv", "true"},
+        applyIf = {"UseVectorCmov", "true"})
+    @IR(failOn = {IRNode.STORE_VECTOR},
+        applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_U, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
@@ -2312,7 +2440,15 @@ public class TestConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"rvv", "true"},
+        applyIf = {"UseVectorCmov", "true"})
+    @IR(failOn = {IRNode.STORE_VECTOR},
+        applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_U, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
@@ -2326,7 +2462,15 @@ public class TestConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"rvv", "true"},
+        applyIf = {"UseVectorCmov", "true"})
+    @IR(failOn = {IRNode.STORE_VECTOR},
+        applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_U, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
@@ -2511,7 +2655,15 @@ public class TestConditionalMove {
 
     //     L fo F
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"rvv", "true"},
+        applyIf = {"UseVectorCmov", "true"})
+    @IR(failOn = {IRNode.STORE_VECTOR},
+        applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_UL, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
@@ -2525,7 +2677,15 @@ public class TestConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"rvv", "true"},
+        applyIf = {"UseVectorCmov", "true"})
+    @IR(failOn = {IRNode.STORE_VECTOR},
+        applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_UL, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
@@ -2539,7 +2699,15 @@ public class TestConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"rvv", "true"},
+        applyIf = {"UseVectorCmov", "true"})
+    @IR(failOn = {IRNode.STORE_VECTOR},
+        applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_UL, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
@@ -2553,7 +2721,15 @@ public class TestConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"rvv", "true"},
+        applyIf = {"UseVectorCmov", "true"})
+    @IR(failOn = {IRNode.STORE_VECTOR},
+        applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_UL, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
@@ -2567,7 +2743,15 @@ public class TestConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"rvv", "true"},
+        applyIf = {"UseVectorCmov", "true"})
+    @IR(failOn = {IRNode.STORE_VECTOR},
+        applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_UL, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
@@ -2581,7 +2765,15 @@ public class TestConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"rvv", "true"},
+        applyIf = {"UseVectorCmov", "true"})
+    @IR(failOn = {IRNode.STORE_VECTOR},
+        applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_UL, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
@@ -2783,7 +2975,15 @@ public class TestConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(counts = {IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_double, max_float)", ">0",
+                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_double, max_float)", ">0",
+                  IRNode.VECTOR_MASK_CMP_F, IRNode.VECTOR_SIZE + "min(max_double, max_float)", ">0",
+                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_double, max_float)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"rvv", "true"},
+        applyIf = {"UseVectorCmov", "true"})
+    @IR(failOn = {IRNode.STORE_VECTOR},
+        applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_F, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
@@ -2825,7 +3025,15 @@ public class TestConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(counts = {IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_double, max_float)", ">0",
+                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_double, max_float)", ">0",
+                  IRNode.VECTOR_MASK_CMP_D, IRNode.VECTOR_SIZE + "min(max_double, max_float)", ">0",
+                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_double, max_float)", ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"rvv", "true"},
+        applyIf = {"UseVectorCmov", "true"})
+    @IR(failOn = {IRNode.STORE_VECTOR},
+        applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_D, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
