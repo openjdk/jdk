@@ -66,7 +66,8 @@ void ShenandoahControlThread::run_service() {
     }
 
     // Figure out if we have pending requests.
-    const bool alloc_failure_pending = ShenandoahCollectorPolicy::is_allocation_failure(cancelled_cause);
+    const bool alloc_failure_pending = ShenandoahCollectorPolicy::is_allocation_failure(cancelled_cause) ||
+                                       ShenandoahCollectorPolicy::is_allocation_failure(_requested_gc_cause);
     const bool is_gc_requested = _gc_requested.is_set();
     const GCCause::Cause requested_gc_cause = _requested_gc_cause;
 
