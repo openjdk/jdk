@@ -270,11 +270,11 @@ public final class CommandOutputControl {
     }
 
     private CommandOutputControl(CommandOutputControl other) {
+        flags = other.flags;
         outputStreamsControl = other.outputStreamsControl.copy();
+        dumpStdout = other.dumpStdout;
+        dumpStderr = other.dumpStderr;
         processOutputCharset = other.processOutputCharset;
-        redirectErrorStream = other.redirectErrorStream;
-        storeStreamsInFiles = other.storeStreamsInFiles;
-        binaryOutput = other.binaryOutput;
         processNotifier = other.processNotifier;
     }
 
@@ -295,6 +295,10 @@ public final class CommandOutputControl {
         return setOutputControl(v, OutputControlOption.SAVE_ALL);
     }
 
+    public boolean isSaveOutput() {
+        return outputStreamsControl.stdout().saveAll();
+    }
+
     /**
      * Configures if the first line of the output, combined from stdout and stderr
      * streams from commands subsequently executed by this object, should be saved.
@@ -305,6 +309,10 @@ public final class CommandOutputControl {
      */
     public CommandOutputControl saveFirstLineOfOutput() {
         return setOutputControl(true, OutputControlOption.SAVE_FIRST_LINE);
+    }
+
+    public boolean isSaveFirstLineOfOutput() {
+        return outputStreamsControl.stdout().saveFirstLine();
     }
 
     /**
@@ -326,7 +334,12 @@ public final class CommandOutputControl {
      * @see #redirectErrorStream(boolean)
      */
     public CommandOutputControl dumpOutput(boolean v) {
+        setFlag(Flag.DUMP, v);
         return setOutputControl(v, OutputControlOption.DUMP);
+    }
+
+    public boolean isDumpOutput() {
+        return Flag.DUMP.isSet(flags);
     }
 
     /**
@@ -339,8 +352,11 @@ public final class CommandOutputControl {
      * @return this
      */
     public CommandOutputControl binaryOutput(boolean v) {
-        binaryOutput = v;
-        return this;
+        return setFlag(Flag.BINARY_OUTPUT, v);
+    }
+
+    public boolean isBinaryOutput() {
+        return Flag.BINARY_OUTPUT.isSet(flags);
     }
 
     /**
@@ -361,6 +377,10 @@ public final class CommandOutputControl {
         return this;
     }
 
+    public Charset processOutputCharset() {
+        return Optional.ofNullable(processOutputCharset).orElse(StandardCharsets.UTF_8);
+    }
+
     /**
      * Configures if the stderr stream should be redirected into the stdout stream
      * for commands subsequently executed by this object.
@@ -374,8 +394,11 @@ public final class CommandOutputControl {
      * @return this
      */
     public CommandOutputControl redirectErrorStream(boolean v) {
-        redirectErrorStream = v;
-        return this;
+        return setFlag(Flag.REDIRECT_STDERR, v);
+    }
+
+    public boolean isRedirectErrorStream() {
+        return Flag.REDIRECT_STDERR.isSet(flags);
     }
 
     /**
@@ -404,23 +427,58 @@ public final class CommandOutputControl {
      * @return this
      */
     public CommandOutputControl storeStreamsInFiles(boolean v) {
-        storeStreamsInFiles = v;
-        return this;
+        return setFlag(Flag.STORE_STREMS_IN_FILES, v);
+    }
+
+    public boolean isStoreStreamsInFiles() {
+        return Flag.STORE_STREMS_IN_FILES.isSet(flags);
     }
 
     public CommandOutputControl discardStdout(boolean v) {
+        setFlag(Flag.DISCARD_STDOUT, v);
         outputStreamsControl.stdout().discard(v);
         return this;
     }
 
+    public boolean isDiscardStdout() {
+        return Flag.DISCARD_STDOUT.isSet(flags);
+    }
+
     public CommandOutputControl discardStderr(boolean v) {
+        setFlag(Flag.DISCARD_STDERR, v);
         outputStreamsControl.stderr().discard(v);
         return this;
+    }
+
+    public boolean isDiscardStderr() {
+        return Flag.DISCARD_STDERR.isSet(flags);
+    }
+
+    public CommandOutputControl dumpStdout(PrintStream v) {
+        dumpStdout = v;
+        return this;
+    }
+
+    public PrintStream dumpStdout() {
+        return Optional.ofNullable(dumpStdout).orElse(System.out);
+    }
+
+    public CommandOutputControl dumpStderr(PrintStream v) {
+        dumpStderr = v;
+        return this;
+    }
+
+    public PrintStream dumpStderr() {
+        return Optional.ofNullable(dumpStdout).orElse(System.err);
     }
 
     public CommandOutputControl processNotifier(Consumer<Process> v) {
         processNotifier = v;
         return this;
+    }
+
+    public Optional<Consumer<Process>> processNotifier() {
+        return Optional.ofNullable(processNotifier);
     }
 
     public CommandOutputControl copy() {
@@ -625,6 +683,10 @@ public final class CommandOutputControl {
             }
         }
 
+        public Result copyWithExecutableSpec(ExecutableSpec execSpec) {
+            return new Result(exitCode, output, byteOutput, Objects.requireNonNull(execSpec));
+        }
+
         private static Output createView(List<String> lines) {
             Objects.requireNonNull(lines);
             return new Output() {
@@ -680,16 +742,17 @@ public final class CommandOutputControl {
 
     public String description() {
         var tokens = outputStreamsControl.descriptionTokens();
-        if (binaryOutput) {
+        if (isBinaryOutput()) {
             tokens.add("byte");
         }
-        if (redirectErrorStream()) {
+        if (redirectRetainedErrorStream()) {
             tokens.add("interleave");
         }
         return String.join("; ", tokens);
     }
 
-    private Result execute(ProcessBuilder pb, long timeoutMillis) throws IOException, InterruptedException {
+    private Result execute(ProcessBuilder pb, long timeoutMillis)
+            throws IOException, InterruptedException {
 
         Objects.requireNonNull(pb);
 
@@ -701,12 +764,12 @@ public final class CommandOutputControl {
 
         var process = pb.start();
 
-        Optional.ofNullable(processNotifier).ifPresent(c -> {
+        processNotifier().ifPresent(c -> {
             c.accept(process);
         });
 
         BiConsumer<InputStream, PrintStream> gobbler = (in, ps) -> {
-            if (binaryOutput) {
+            if (isBinaryOutput()) {
                 try (in) {
                     in.transferTo(ps);
                 } catch (IOException ex) {
@@ -753,7 +816,7 @@ public final class CommandOutputControl {
         }
 
         try {
-            if (storeStreamsInFiles) {
+            if (isStoreStreamsInFiles()) {
                 var stdoutStorage = streamFileSink(pb.redirectOutput());
                 var stderrStorage = streamFileSink(pb.redirectError());
 
@@ -792,7 +855,9 @@ public final class CommandOutputControl {
         return csc.createResult(exitCode, new ProcessSpec(getPID(process), pb.command()));
     }
 
-    private Result execute(ToolProvider tp, String... args) throws IOException {
+    private Result execute(ToolProvider tp, String... args)
+            throws IOException {
+
         var csc = new CachingStreamsConfig();
 
         final int exitCode;
@@ -814,6 +879,11 @@ public final class CommandOutputControl {
         return this;
     }
 
+    private CommandOutputControl setFlag(Flag flag, boolean v) {
+        flags = flag.set(flags, v);
+        return this;
+    }
+
     private Optional<Path> streamFileSink(ProcessBuilder.Redirect redirect) {
         return Optional.of(redirect)
                 .filter(Predicate.isEqual(ProcessBuilder.Redirect.DISCARD).negate())
@@ -829,13 +899,13 @@ public final class CommandOutputControl {
         if (!stdoutRedirect.equals(stderrRedirect) && Stream.of(
                 stdoutRedirect,
                 stderrRedirect
-        ).noneMatch(Predicate.isEqual(ProcessBuilder.Redirect.DISCARD)) && redirectErrorStream()) {
+        ).noneMatch(Predicate.isEqual(ProcessBuilder.Redirect.DISCARD)) && redirectRetainedErrorStream()) {
             throw new IllegalStateException(String.format(
                     "Can't redirect stderr into stdout because they have different redirects: stdout=%s; stderr=%s",
                     stdoutRedirect, stderrRedirect));
         }
 
-        pb.redirectErrorStream(redirectErrorStream());
+        pb.redirectErrorStream(redirectRetainedErrorStream());
         if (replaceStdoutWithStderr()) {
             if (stderrRedirect.equals(ProcessBuilder.Redirect.INHERIT)) {
                 stderrRedirect = ProcessBuilder.Redirect.PIPE;
@@ -851,7 +921,7 @@ public final class CommandOutputControl {
     }
 
     private ProcessBuilder.Redirect mapRedirect(ProcessBuilder.Redirect redirect) throws IOException {
-        if (storeStreamsInFiles && redirect.equals(ProcessBuilder.Redirect.PIPE)) {
+        if (isStoreStreamsInFiles() && redirect.equals(ProcessBuilder.Redirect.PIPE)) {
             var sink = Files.createTempFile("jpackageOutputTempFile", ".tmp");
             return ProcessBuilder.Redirect.to(sink.toFile());
         } else {
@@ -859,16 +929,20 @@ public final class CommandOutputControl {
         }
     }
 
-    private boolean redirectErrorStream() {
-        return redirectErrorStream && !outputStreamsControl.stderr().discard();
+    /**
+     * Returns {@code true} if STDERR is not discarded and should be redirected to STDOUT, and {@code false} otherwise.
+     */
+    private boolean redirectRetainedErrorStream() {
+        return isRedirectErrorStream() && !outputStreamsControl.stderr().discard();
     }
 
+    /**
+     * Returns {@code true} if STDERR will replace STDOUT, and {@code false} otherwise.
+     * <p>
+     * STDERR will replace STDOUT if it is redirected and not discarded, and if STDOUT is discarded.
+     */
     private boolean replaceStdoutWithStderr() {
-        return redirectErrorStream() && outputStreamsControl.stdout().discard();
-    }
-
-    private Charset processOutputCharset() {
-        return Optional.ofNullable(processOutputCharset).orElse(StandardCharsets.UTF_8);
+        return redirectRetainedErrorStream() && outputStreamsControl.stdout().discard();
     }
 
     private static void joinProcessStreamGobbler(CompletableFuture<Void> streamGobbler) {
@@ -1127,13 +1201,13 @@ public final class CommandOutputControl {
     private final class CachingStreamsConfig {
 
         CachingStreamsConfig() {
-            out = outputStreamsControl.stdout().buildCachingPrintStream(System.out).create();
-            if (redirectErrorStream) {
-                var builder = outputStreamsControl.stderr().buildCachingPrintStream(System.out);
+            out = outputStreamsControl.stdout().buildCachingPrintStream(dumpStdout()).create();
+            if (isRedirectErrorStream()) {
+                var builder = outputStreamsControl.stderr().buildCachingPrintStream(dumpStdout());
                 out.buf().ifPresent(builder::buffer);
                 err = builder.create();
             } else {
-                err = outputStreamsControl.stderr().buildCachingPrintStream(System.err).create();
+                err = outputStreamsControl.stderr().buildCachingPrintStream(dumpStderr()).create();
             }
         }
 
@@ -1143,15 +1217,15 @@ public final class CommandOutputControl {
             CommandOutput<byte[]> byteOutput;
 
             CachingPrintStream effectiveOut;
-            if (out.buf().isEmpty() && redirectErrorStream) {
+            if (out.buf().isEmpty() && isRedirectErrorStream()) {
                 effectiveOut = new CachingPrintStream(nullPrintStream(), err.buf());
             } else {
                 effectiveOut = out;
             }
 
-            if (binaryOutput) {
+            if (isBinaryOutput()) {
                 Optional<ByteContent> outContent, errContent;
-                if (redirectErrorStream) {
+                if (isRedirectErrorStream()) {
                     outContent = readBinary(outputStreamsControl.stdout(), effectiveOut).map(ByteContent::new);
                     errContent = Optional.empty();
                 } else {
@@ -1159,11 +1233,11 @@ public final class CommandOutputControl {
                     errContent = readBinary(outputStreamsControl.stderr(), err).map(ByteContent::new);
                 }
 
-                byteOutput = combine(outContent, errContent, redirectErrorStream());
+                byteOutput = combine(outContent, errContent, redirectRetainedErrorStream());
                 output = null;
             } else {
                 Optional<StringListContent> outContent, errContent;
-                if (redirectErrorStream) {
+                if (isRedirectErrorStream()) {
                     outContent = read(outputStreamsControl.stdout(), effectiveOut).map(StringListContent::new);
                     errContent = Optional.empty();
                 } else {
@@ -1171,7 +1245,7 @@ public final class CommandOutputControl {
                     errContent = read(outputStreamsControl.stderr(), err).map(StringListContent::new);
                 }
 
-                output = combine(outContent, errContent, redirectErrorStream());
+                output = combine(outContent, errContent, redirectRetainedErrorStream());
                 byteOutput = null;
             }
 
@@ -1475,14 +1549,42 @@ public final class CommandOutputControl {
         });
     }
 
+    private int flags;
     private final OutputStreamsControl outputStreamsControl;
+    private PrintStream dumpStdout;
+    private PrintStream dumpStderr;
     private Charset processOutputCharset;
-    private boolean redirectErrorStream;
-    private boolean storeStreamsInFiles;
-    private boolean binaryOutput;
     private Consumer<Process> processNotifier;
 
-    private static enum OutputControlOption {
+    private enum OutputControlOption {
         SAVE_ALL, SAVE_FIRST_LINE, DUMP
+    }
+
+    private enum Flag {
+        DUMP                    (0x01),
+        REDIRECT_STDERR         (0x02),
+        BINARY_OUTPUT           (0x04),
+        STORE_STREMS_IN_FILES   (0x08),
+        DISCARD_STDOUT          (0x10),
+        DISCARD_STDERR          (0x20),
+        ;
+
+        Flag(int value) {
+            this.value = value;
+        }
+
+        int set(int flags, boolean set) {
+            if (set) {
+                return flags | value;
+            } else {
+                return flags & ~value;
+            }
+        }
+
+        boolean isSet(int flags) {
+            return (flags & value) != 0;
+        }
+
+        private final int value;
     }
 }

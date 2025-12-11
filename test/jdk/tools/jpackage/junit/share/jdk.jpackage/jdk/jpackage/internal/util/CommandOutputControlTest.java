@@ -23,7 +23,6 @@
 package jdk.jpackage.internal.util;
 
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toSet;
 import static jdk.jpackage.internal.util.CommandOutputControlTestUtils.isInterleave;
 import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
@@ -57,7 +56,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
@@ -67,6 +69,7 @@ import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -101,6 +104,37 @@ public class CommandOutputControlTest {
         var orig = new CommandOutputControl();
         var copy = orig.copy();
         assertNotSame(orig, copy);
+    }
+
+    @ParameterizedTest
+    @EnumSource(names = "SAVE_NOTHING", mode = Mode.EXCLUDE)
+    public void testFlag(OutputControl flag) {
+        var coc = new CommandOutputControl();
+        assertFalse(flag.get(coc));
+        flag.set(coc);
+        assertTrue(flag.get(coc));
+        if (flag.canUnset()) {
+            flag.unset(coc);
+            assertFalse(flag.get(coc));
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    public void testMutualExclusiveFlags(List<OutputControl> controls) {
+        if (controls.isEmpty()) {
+            throw new IllegalArgumentException();
+        }
+
+        var coc = new CommandOutputControl();
+        for (var c : controls) {
+            c.set(coc);
+        }
+
+        for (var c : controls.subList(0, controls.size() - 1)) {
+            assertFalse(c.get(coc));
+        }
+        assertTrue(controls.getLast().get(coc));
     }
 
     @ParameterizedTest
@@ -195,6 +229,26 @@ public class CommandOutputControlTest {
     }
 
     @Test
+    public void test_Result_toCharacterResult_copyWithExecutableSpec() {
+
+        var empty = new CommandOutputControl.Result(0);
+
+        var execSpec = new CommandOutputControl.ExecutableSpec() {
+            @Override
+            public String toString() {
+                return "foo";
+            }
+        };
+
+        var copy = empty.copyWithExecutableSpec(execSpec);
+
+        assertSame(empty.exitCode(), copy.exitCode());
+        assertSame(empty.output(), copy.output());
+        assertSame(empty.byteOutput(), copy.byteOutput());
+        assertSame(execSpec, copy.execSpec());
+    }
+
+    @Test
     public void testTimeout_expires() throws InterruptedException, IOException {
         var cmdline = Command.createShellCommandLine(List.<CommandAction>of(
                 CommandAction.echoStdout("The quick brown fox jumps"),
@@ -285,20 +339,62 @@ public class CommandOutputControlTest {
         ex.printStackTrace(System.out);
     }
 
-    @Test
-    public void testInterleaved() throws IOException, InterruptedException {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testInterleaved(boolean customDumpStreams) throws IOException, InterruptedException {
         var cmdline = Command.createShellCommandLine(List.<CommandAction>of(
                 CommandAction.echoStdout("Eat some more"),
-                CommandAction.echoStderr(" of these"),
-                CommandAction.echoStdout(" soft French pastries"),
-                CommandAction.echoStderr(" and drink some tea")
+                CommandAction.echoStderr("of these"),
+                CommandAction.echoStdout("soft French pastries"),
+                CommandAction.echoStderr("and drink some tea")
         ));
 
-        var coc = new CommandOutputControl().saveOutput(true).dumpOutput(true).redirectErrorStream(true);
+        var coc = new CommandOutputControl();
         var exec = coc.createExecutable(new ProcessBuilder(cmdline));
 
-        var result = exec.execute();
-        assertEquals(List.of("Eat some more", " of these", " soft French pastries", " and drink some tea"), result.getOutput());
+        coc.saveOutput(true).dumpOutput(true);
+
+        CommandOutputControl.Result result;
+
+        if (customDumpStreams) {
+            // Execute the command so that its stdout and stderr are dumped to the same sink.
+            var sink = new ByteArrayOutputStream();
+            var ps = new PrintStream(sink);
+
+            coc.dumpStdout(ps).dumpStderr(ps);
+
+            result = exec.execute();
+
+            var commandStdout = List.of("Eat some more", "soft French pastries");
+            var commandStderr = List.of("of these", "and drink some tea");
+
+            var sinkContent = toStringList(sink.toByteArray(), StandardCharsets.US_ASCII);
+
+            if (!isInterleave(sinkContent, commandStdout, commandStderr)) {
+                fail(String.format("Unexpected combined output=%s; stdout=%s; stderr=%s",
+                        sinkContent, commandStdout, commandStderr));
+            }
+
+            // CommandOutputControl was not configured to redirect stderr in stdout,
+            // hence the output is ordered: stdout goes first, stderr follows.
+            assertEquals(Stream.of(commandStdout, commandStderr).flatMap(List::stream).toList(), result.getOutput());
+
+            // Saved stdout an stderr can be accessed individually.
+            assertEquals(commandStdout, result.stdout().getContent());
+            assertEquals(commandStderr, result.stderr().getContent());
+        } else {
+            // Execute the command so that its stdout and stderr are dumped into System.out.
+            coc.redirectErrorStream(true);
+            result = exec.execute();
+
+            // CommandOutputControl was configured to redirect stderr in stdout,
+            // hence the output is interleaved.
+            assertEquals(List.of("Eat some more", "of these", "soft French pastries", "and drink some tea"), result.getOutput());
+
+            // Saved stdout an stderr can NOT be accessed individually because they are interleaved.
+            assertTrue(result.findStdout().isEmpty());
+            assertTrue(result.findStderr().isEmpty());
+        }
     }
 
     public enum CloseStream {
@@ -314,6 +410,31 @@ public class CommandOutputControlTest {
             testCases.add(new CommandOutputControlSpec(outputControl));
         }
         return testCases;
+    }
+
+    private static List<List<OutputControl>> testMutualExclusiveFlags() {
+        List<List<OutputControl>> data = new ArrayList<>();
+
+        var flags = List.of(OutputControl.SAVE_ALL, OutputControl.SAVE_FIRST_LINE, OutputControl.SAVE_NOTHING);
+
+        List<OutputControl> seq = new ArrayList<>();
+        for (var _1 : flags) {
+            seq.add(_1);
+            var flags2 = flags.stream().filter(Predicate.isEqual(_1).negate()).toList();
+            for (var _2 : flags2) {
+                seq.add(_2);
+                var flags3 = flags2.stream().filter(Predicate.isEqual(_2).negate()).toList();
+                for (var _3 : flags3) {
+                    seq.add(_3);
+                    data.add(List.copyOf(seq));
+                    seq.removeLast();
+                }
+                seq.removeLast();
+            }
+            seq.removeLast();
+        }
+
+        return data;
     }
 
     public record ToCharacterResultTestSpec(OutputTestSpec execSpec, boolean keepByteContent) {
@@ -343,7 +464,7 @@ public class CommandOutputControlTest {
 
             var byteResult = coc.binaryOutput(true).createExecutable(command).execute();
 
-            var actual = byteResult.toCharacterResult(StandardCharsets.UTF_8, keepByteContent);
+            var actual = byteResult.toCharacterResult(coc.processOutputCharset(), keepByteContent);
 
             CommandOutputControl.Result expectedByteContent;
             if (keepByteContent) {
@@ -599,37 +720,54 @@ public class CommandOutputControlTest {
     }
 
     public enum OutputControl {
-        DUMP(coc -> {
-            coc.dumpOutput(true);
+        DUMP(CommandOutputControl::dumpOutput, CommandOutputControl::isDumpOutput),
+        SAVE_ALL(CommandOutputControl::saveOutput, CommandOutputControl::isSaveOutput),
+        SAVE_FIRST_LINE(CommandOutputControl::saveFirstLineOfOutput, CommandOutputControl::isSaveFirstLineOfOutput),
+        SAVE_NOTHING(coc -> {
+            coc.saveOutput(false);
+        }, coc -> {
+            return !coc.isSaveOutput() && !coc.isSaveFirstLineOfOutput();
         }),
-        SAVE_ALL(coc -> {
-            coc.saveOutput(true);
-        }),
-        SAVE_FIRST_LINE(CommandOutputControl::saveFirstLineOfOutput),
-        DISCARD_STDOUT(coc -> {
-            coc.discardStdout(true);
-        }),
-        DISCARD_STDERR(coc -> {
-            coc.discardStderr(true);
-        }),
-        REDIRECT_STDERR(coc -> {
-            coc.redirectErrorStream(true);
-        }),
-        STORE_STREAMS_IN_FILES(coc -> {
-            coc.storeStreamsInFiles(true);
-        }),
-        BINARY_OUTPUT(coc -> {
-            coc.binaryOutput(true);
-        }),
+        DISCARD_STDOUT(CommandOutputControl::discardStdout, CommandOutputControl::isDiscardStdout),
+        DISCARD_STDERR(CommandOutputControl::discardStderr, CommandOutputControl::isDiscardStderr),
+        REDIRECT_STDERR(CommandOutputControl::redirectErrorStream, CommandOutputControl::isRedirectErrorStream),
+        STORE_STREAMS_IN_FILES(CommandOutputControl::storeStreamsInFiles, CommandOutputControl::isStoreStreamsInFiles),
+        BINARY_OUTPUT(CommandOutputControl::binaryOutput, CommandOutputControl::isBinaryOutput),
         ;
 
-        OutputControl(Consumer<CommandOutputControl> mutator) {
-            this.mutator = Objects.requireNonNull(mutator);
+        OutputControl(Consumer<CommandOutputControl> setter, Function<CommandOutputControl, Boolean> getter) {
+            this.setter = Objects.requireNonNull(setter);
+            this.unsetter = null;
+            this.getter = Objects.requireNonNull(getter);
         }
 
-        CommandOutputControl applyTo(CommandOutputControl coc) {
-            mutator.accept(coc);
+        OutputControl(BiConsumer<CommandOutputControl, Boolean> setter, Function<CommandOutputControl, Boolean> getter) {
+            Objects.requireNonNull(setter);
+            this.setter = coc -> {
+                setter.accept(coc, true);
+            };
+            this.unsetter = coc -> {
+                setter.accept(coc, false);
+            };
+            this.getter = Objects.requireNonNull(getter);
+        }
+
+        CommandOutputControl set(CommandOutputControl coc) {
+            setter.accept(coc);
             return coc;
+        }
+
+        CommandOutputControl unset(CommandOutputControl coc) {
+            Objects.requireNonNull(unsetter).accept(coc);
+            return coc;
+        }
+
+        boolean canUnset() {
+            return unsetter != null;
+        }
+
+        boolean get(CommandOutputControl coc) {
+            return getter.apply(coc);
         }
 
         static List<Set<OutputControl>> variants() {
@@ -671,14 +809,12 @@ public class CommandOutputControlTest {
                     }
                 }
             }
-            return variants.stream().map(options -> {
-                return options.stream().filter(o -> {
-                    return o.mutator != NOP;
-                }).collect(toSet());
-            }).distinct().toList();
+            return variants.stream().distinct().toList();
         }
 
-        private final Consumer<CommandOutputControl> mutator;
+        private final Consumer<CommandOutputControl> setter;
+        private final Consumer<CommandOutputControl> unsetter;
+        private final Function<CommandOutputControl, Boolean> getter;
 
         static final Set<OutputControl> SAVE = Set.of(SAVE_ALL, SAVE_FIRST_LINE);
     }
@@ -722,7 +858,7 @@ public class CommandOutputControlTest {
 
         CommandOutputControl create() {
             final CommandOutputControl coc = new CommandOutputControl();
-            outputControl.forEach(control -> control.applyTo(coc));
+            outputControl.forEach(control -> control.set(coc));
             return coc;
         }
     }
@@ -1033,5 +1169,4 @@ public class CommandOutputControlTest {
     }
 
     private static final List<Boolean> BOOLEAN_VALUES = List.of(Boolean.TRUE, Boolean.FALSE);
-    private static final Consumer<CommandOutputControl> NOP = exec -> {};
 }
