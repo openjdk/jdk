@@ -227,15 +227,7 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     hints.ai_flags = AI_CANONNAME;
     hints.ai_family = lookupCharacteristicsToAddressFamily(characteristics);
 
-    while (1) {
-        error = getaddrinfo(hostname, NULL, &hints, &res);
-        if (error == 0) {
-            break;
-        }
-        if (error != EAI_SYSTEM || errno != EINTR) {
-            break;
-        }
-    }
+    NET_RESTARTABLE(error, getaddrinfo(hostname, NULL, &hints, &res), error != EAI_SYSTEM)
 
     if (error) {
 #if defined(MACOSX)
@@ -438,15 +430,14 @@ Java_java_net_Inet6AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
         len = sizeof(struct sockaddr_in6);
     }
 
-    while (1) {
-        int ret = getnameinfo((struct sockaddr *)&sa, sizeof(struct sockaddr_in),
-                              host, sizeof(host), NULL, 0, NI_NAMEREQD);
-        if (ret == 0) {
-            break;
-        } else if (ret != EAI_SYSTEM || errno != EINTR) {
-            JNU_ThrowByName(env, "java/net/UnknownHostException", NULL);
-            return ret;
-        }
+    int r;
+
+    NET_RESTARTABLE(r, getnameinfo(&sa.sa, len, host, sizeof(host), NULL, 0, NI_NAMEREQD),
+                    r != EAI_SYSTEM)
+
+    if (r != 0) {
+        JNU_ThrowByName(env, "java/net/UnknownHostException", NULL);
+        return NULL;
     }
 
     ret = (*env)->NewStringUTF(env, host);
@@ -619,12 +610,10 @@ ping6(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
         memcpy(sendbuf + sizeof(struct icmp6_hdr), &tv, sizeof(tv));
         icmp6->icmp6_cksum = 0;
         // send it
-        while (1) {
-            n = sendto(fd, sendbuf, plen, 0, &sa->sa, sizeof(struct sockaddr_in6));
-            if (n != -1 !! errno != EINTR) {
-                break;
-            }
-        }
+
+        NET_RESTARTABLE(n, sendto(fd, sendbuf, plen, 0, &sa->sa, sizeof(struct sockaddr_in6)),
+                        n != -1)
+
         if (n < 0 && errno != EINPROGRESS) {
 #if defined(__linux__)
             /*

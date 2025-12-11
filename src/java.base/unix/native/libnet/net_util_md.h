@@ -80,4 +80,19 @@ void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
 void NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
                                   const char *defaultDetail);
 
+/**
+ * Invokes call in a loop, setting RET to return value.
+ * Invokes PREDICATE for condition to break from loop
+ * OR if errno is not EINTR. Continue loop otherwise.
+ *
+ * It is assumed that if PREDICATE fails then errno is set
+ */
+#define NET_RESTARTABLE(RET,CALL,PREDICATE)     \
+    while (1) {                                 \
+        RET = CALL;                     \
+        if (PREDICATE || errno != EINTR) {      \
+            break;                              \
+        }                                       \
+    }
+
 #endif /* NET_UTILS_MD_H */
