@@ -402,7 +402,7 @@ public class TestFloat16VectorOperations {
     @Test
     @IR(counts = {IRNode.FMA_VHF, " >0 "},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
-    @IR(counts = {IRNode.FMA_VHF, " 0 "},
+    @IR(counts = {IRNode.FMA_VHF, " >0 "},
         applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     void vectorFmaFloat16AllConstants() {
         short input1 = floatToFloat16(1.0f);
@@ -470,7 +470,9 @@ public class TestFloat16VectorOperations {
 
     @Test
     @IR(counts = {IRNode.SUB_VHF, " >0 "},
-        applyIfCPUFeature = {"avx512_fp16", "true"})
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "sve", "true"})
+    @IR(counts = {IRNode.SUB_VHF, " >0 "},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     void vectorSubConstInputFloat16() {
         int i = 0;
         for (; i < SPECIES.loopBound(LEN); i += SPECIES.length()) {
@@ -498,7 +500,9 @@ public class TestFloat16VectorOperations {
 
     @Test
     @IR(counts = {IRNode.MUL_VHF, " >0 "},
-        applyIfCPUFeature = {"avx512_fp16", "true"})
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "sve", "true"})
+    @IR(counts = {IRNode.MUL_VHF, " >0 "},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     void vectorMulConstantInputFloat16() {
         int i = 0;
         for (; i < SPECIES.loopBound(LEN); i += SPECIES.length()) {
@@ -526,7 +530,9 @@ public class TestFloat16VectorOperations {
 
     @Test
     @IR(counts = {IRNode.DIV_VHF, " >0 "},
-        applyIfCPUFeature = {"avx512_fp16", "true"})
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "sve", "true"})
+    @IR(counts = {IRNode.DIV_VHF, " >0 "},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     void vectorDivConstantInputFloat16() {
         int i = 0;
         for (; i < SPECIES.loopBound(LEN); i += SPECIES.length()) {
@@ -554,7 +560,9 @@ public class TestFloat16VectorOperations {
 
     @Test
     @IR(counts = {IRNode.MAX_VHF, " >0 "},
-        applyIfCPUFeature = {"avx512_fp16", "true"})
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "sve", "true"})
+    @IR(counts = {IRNode.MAX_VHF, " >0 "},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     void vectorMaxConstantInputFloat16() {
         int i = 0;
         for (; i < SPECIES.loopBound(LEN); i += SPECIES.length()) {
@@ -582,7 +590,9 @@ public class TestFloat16VectorOperations {
 
     @Test
     @IR(counts = {IRNode.MIN_VHF, " >0 "},
-        applyIfCPUFeature = {"avx512_fp16", "true"})
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "sve", "true"})
+    @IR(counts = {IRNode.MIN_VHF, " >0 "},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     void vectorMinConstantInputFloat16() {
         int i = 0;
         for (; i < SPECIES.loopBound(LEN); i += SPECIES.length()) {
