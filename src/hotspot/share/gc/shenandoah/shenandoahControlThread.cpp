@@ -66,10 +66,10 @@ void ShenandoahControlThread::run_service() {
     }
 
     // Figure out if we have pending requests.
-    const bool alloc_failure_pending = ShenandoahCollectorPolicy::is_allocation_failure(cancelled_cause) ||
-                                       ShenandoahCollectorPolicy::is_allocation_failure(_requested_gc_cause.load_relaxed());
     const bool is_gc_requested = _gc_requested.is_set();
     const GCCause::Cause requested_gc_cause = _requested_gc_cause.load_relaxed();
+    const bool alloc_failure_pending = ShenandoahCollectorPolicy::is_allocation_failure(cancelled_cause) ||
+                                       ShenandoahCollectorPolicy::is_allocation_failure(requested_gc_cause);
     if (is_gc_requested) {
       _gc_requested.unset();
       _requested_gc_cause.store_relaxed(GCCause::_no_gc);
