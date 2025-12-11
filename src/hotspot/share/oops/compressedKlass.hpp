@@ -257,6 +257,10 @@ public:
   inline static void check_valid_narrow_klass_id(narrowKlass nk);
 #endif
 
+  static inline bool in_encoding_range(const void* addr) {
+    return (address)addr >= _klass_range_start && (address)addr < _klass_range_end;
+  }
+
   // Given a narrow Klass ID, returns true if it appears to be valid
   inline static bool is_valid_narrow_klass_id(narrowKlass nk);
 
@@ -268,8 +272,7 @@ public:
     // 1) the address lies within the klass range.
     // 2) It is suitably aligned to 2^encoding_shift. This only really matters for
     //    +UseCompactObjectHeaders, since the encoding shift can be large (max 10 bits -> 1KB).
-    return (address)addr >= _klass_range_start && (address)addr < _klass_range_end &&
-        is_aligned(addr, klass_alignment_in_bytes());
+    return in_encoding_range(addr) && is_aligned(addr, klass_alignment_in_bytes());
   }
 
   // Protect a zone a the start of the encoding range

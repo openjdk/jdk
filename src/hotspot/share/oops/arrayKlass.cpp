@@ -43,6 +43,7 @@
 
 ArrayKlass::ArrayKlass() {
   assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for CDS");
+  NOT_PRODUCT(set_metadata_token(array_klass_token);)
 }
 
 int ArrayKlass::static_size(int header_size) {
@@ -103,6 +104,7 @@ ArrayKlass::ArrayKlass(Symbol* name, KlassKind kind) :
   set_is_cloneable_fast();
   JFR_ONLY(INIT_ID(this);)
   log_array_class_load(this);
+  NOT_PRODUCT(set_metadata_token(array_klass_token);)
 }
 
 
