@@ -185,6 +185,12 @@ static int compare_strings(const char** s1, const char** s2) {
   return ::strcmp(*s1, *s2);
 }
 
+static void print_local_time(outputStream* output) {
+  char buf[32];
+  output->print_cr("%s", os::local_time_string(buf, sizeof(buf)));
+}
+
+
 void HelpDCmd::execute(DCmdSource source, TRAPS) {
   if (_all.value()) {
     GrowableArray<const char*>* cmd_list = DCmdFactory::DCmd_list(source);
@@ -252,6 +258,7 @@ PrintVMFlagsDCmd::PrintVMFlagsDCmd(outputStream* output, bool heap) :
 }
 
 void PrintVMFlagsDCmd::execute(DCmdSource source, TRAPS) {
+  print_local_time(output());
   if (_all.value()) {
     JVMFlag::printFlags(output(), true);
   } else {
@@ -400,6 +407,7 @@ void VMUptimeDCmd::execute(DCmdSource source, TRAPS) {
 }
 
 void VMInfoDCmd::execute(DCmdSource source, TRAPS) {
+  print_local_time(output());
   VMError::print_vm_info(_output);
 }
 
@@ -416,11 +424,13 @@ void RunFinalizationDCmd::execute(DCmdSource source, TRAPS) {
 }
 
 void HeapInfoDCmd::execute(DCmdSource source, TRAPS) {
+  print_local_time(output());
   MutexLocker hl(THREAD, Heap_lock);
   Universe::heap()->print_heap_on(output());
 }
 
 void FinalizerInfoDCmd::execute(DCmdSource source, TRAPS) {
+  print_local_time(output());
   ResourceMark rm(THREAD);
 
   if (!InstanceKlass::is_finalization_enabled()) {
@@ -494,6 +504,7 @@ HeapDumpDCmd::HeapDumpDCmd(outputStream* output, bool heap) :
 }
 
 void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
+  print_local_time(output());
   jlong level = -1; // -1 means no compression.
   jlong parallel = HeapDumper::default_num_of_dump_threads();
 
@@ -541,6 +552,7 @@ ClassHistogramDCmd::ClassHistogramDCmd(outputStream* output, bool heap) :
 }
 
 void ClassHistogramDCmd::execute(DCmdSource source, TRAPS) {
+  print_local_time(output());
   jlong num = _parallel_thread_num.value();
   if (num < 0) {
     output()->print_cr("Parallel thread number out of range (>=0): " JLONG_FORMAT, num);
@@ -566,6 +578,7 @@ ThreadDumpDCmd::ThreadDumpDCmd(outputStream* output, bool heap) :
 }
 
 void ThreadDumpDCmd::execute(DCmdSource source, TRAPS) {
+  print_local_time(output());
   // thread stacks and JNI global handles
   VM_PrintThreads op1(output(), _locks.value(), _extended.value(), true /* print JNI handle info */);
   VMThread::execute(&op1);
@@ -803,6 +816,7 @@ JMXStatusDCmd::JMXStatusDCmd(outputStream *output, bool heap_allocated) :
 }
 
 void JMXStatusDCmd::execute(DCmdSource source, TRAPS) {
+  print_local_time(output());
   ResourceMark rm(THREAD);
   HandleMark hm(THREAD);
 
@@ -836,20 +850,24 @@ VMDynamicLibrariesDCmd::VMDynamicLibrariesDCmd(outputStream *output, bool heap_a
 }
 
 void VMDynamicLibrariesDCmd::execute(DCmdSource source, TRAPS) {
+  print_local_time(output());
   os::print_dll_info(output());
   output()->cr();
 }
 
 void CompileQueueDCmd::execute(DCmdSource source, TRAPS) {
+  print_local_time(output());
   VM_PrintCompileQueue printCompileQueueOp(output());
   VMThread::execute(&printCompileQueueOp);
 }
 
 void CodeListDCmd::execute(DCmdSource source, TRAPS) {
+  print_local_time(output());
   CodeCache::print_codelist(output());
 }
 
 void CodeCacheDCmd::execute(DCmdSource source, TRAPS) {
+  print_local_time(output());
   CodeCache::print_layout(output());
 }
 
@@ -876,6 +894,7 @@ CodeHeapAnalyticsDCmd::CodeHeapAnalyticsDCmd(outputStream* output, bool heap) :
 }
 
 void CodeHeapAnalyticsDCmd::execute(DCmdSource source, TRAPS) {
+  print_local_time(output());
   jlong granularity = _granularity.value();
   if (granularity < 1) {
     Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_IllegalArgumentException(),
@@ -897,6 +916,7 @@ EventLogDCmd::EventLogDCmd(outputStream* output, bool heap) :
 }
 
 void EventLogDCmd::execute(DCmdSource source, TRAPS) {
+  print_local_time(output());
   int max = (int)_max.value();
   if (max < 0) {
     output()->print_cr("Invalid max option: \"%d\".", max);
@@ -911,6 +931,7 @@ void EventLogDCmd::execute(DCmdSource source, TRAPS) {
 }
 
 void CompilerDirectivesPrintDCmd::execute(DCmdSource source, TRAPS) {
+  print_local_time(output());
   DirectivesStack::print(output());
 }
 
@@ -931,6 +952,7 @@ void CompilerDirectivesRemoveDCmd::execute(DCmdSource source, TRAPS) {
 void CompilerDirectivesClearDCmd::execute(DCmdSource source, TRAPS) {
   DirectivesStack::clear();
 }
+
 #if INCLUDE_SERVICES
 ClassHierarchyDCmd::ClassHierarchyDCmd(outputStream* output, bool heap) :
                                        DCmdWithParser(output, heap),
@@ -947,6 +969,7 @@ ClassHierarchyDCmd::ClassHierarchyDCmd(outputStream* output, bool heap) :
 }
 
 void ClassHierarchyDCmd::execute(DCmdSource source, TRAPS) {
+  print_local_time(output());
   VM_PrintClassHierarchy printClassHierarchyOp(output(), _print_interfaces.value(),
                                                _print_subclasses.value(), _classname.value());
   VMThread::execute(&printClassHierarchyOp);
@@ -984,6 +1007,7 @@ public:
 };
 
 void ClassesDCmd::execute(DCmdSource source, TRAPS) {
+  print_local_time(output());
   VM_PrintClasses vmop(output(), _verbose.value());
   VMThread::execute(&vmop);
 }
@@ -1024,6 +1048,7 @@ DumpSharedArchiveDCmd::DumpSharedArchiveDCmd(outputStream* output, bool heap) :
 }
 
 void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
+  print_local_time(output());
   jboolean is_static;
   const char* scmd = _suboption.value();
 
@@ -1164,10 +1189,12 @@ static void execute_vthread_command(Symbol* method_name, outputStream* output, T
 }
 
 void VThreadSchedulerDCmd::execute(DCmdSource source, TRAPS) {
+  print_local_time(output());
   execute_vthread_command(vmSymbols::printScheduler_name(), output(), CHECK);
 }
 
 void VThreadPollersDCmd::execute(DCmdSource source, TRAPS) {
+  print_local_time(output());
   execute_vthread_command(vmSymbols::printPollers_name(), output(), CHECK);
 }
 
@@ -1182,6 +1209,7 @@ CompilationMemoryStatisticDCmd::CompilationMemoryStatisticDCmd(outputStream* out
 }
 
 void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
+  print_local_time(output());
   const size_t minsize = _minsize.has_value() ? _minsize.value()._size : 0;
   CompilationMemoryStatistic::print_jcmd_report(output(), _verbose.value(), _legend.value(), minsize);
 }
@@ -1191,6 +1219,7 @@ void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
 SystemMapDCmd::SystemMapDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
 
 void SystemMapDCmd::execute(DCmdSource source, TRAPS) {
+  print_local_time(output());
   MemMapPrinter::print_all_mappings(output());
 }
 
@@ -1203,6 +1232,7 @@ SystemDumpMapDCmd::SystemDumpMapDCmd(outputStream* output, bool heap) :
 }
 
 void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
+  print_local_time(output());
   const char* name = _filename.value();
   if (name == nullptr || name[0] == 0) {
     output()->print_cr("filename is empty or not specified.  No file written");
