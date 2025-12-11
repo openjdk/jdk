@@ -68,7 +68,9 @@ public class TestMinMaxIdeal {
         // Create a list to collect all tests.
         List<TemplateToken> testTemplateTokens = new ArrayList<>();
 
+        testTemplateTokens.add(new TestGenerator(Op.MIN_I).generate());
         testTemplateTokens.add(new TestGenerator(Op.MAX_I).generate());
+        testTemplateTokens.add(new TestGenerator(Op.MIN_L).generate());
         testTemplateTokens.add(new TestGenerator(Op.MAX_L).generate());
 
         // Create the test class, which runs all testTemplateTokens.
