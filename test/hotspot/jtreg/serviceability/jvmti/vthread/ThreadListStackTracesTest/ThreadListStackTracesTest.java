@@ -44,6 +44,13 @@ abstract class TestTask implements Runnable {
         }
     }
 
+    public void ensureReadyAndWaiting(Thread vt, Thread.State expState, ReentrantLock rlock) {
+        // wait while the thread is not ready or thread state is unexpected
+        while (!threadReady || (vt.getState() != expState) || !rlock.hasQueuedThreads()) {
+            sleep(1);
+        }
+    }
+
     public void ensureReady(Thread vt, Thread.State expState) {
         // wait while the thread is not ready or thread state is unexpected
         while (!threadReady || (vt.getState() != expState)) {
@@ -97,8 +104,7 @@ public class ThreadListStackTracesTest {
         String name = "ReentrantLockTestTask";
         TestTask task = new ReentrantLockTestTask();
         Thread vt = Thread.ofVirtual().name(name).start(task);
-        TestTask.sleep(50); // allow potentially needed class loading to complete
-        task.ensureReady(vt, expState);
+        task.ensureReadyAndWaiting(vt, expState, reentrantLock);
         checkStates(vt, expState);
     }
 
