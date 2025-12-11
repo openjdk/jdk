@@ -61,6 +61,7 @@ import jdk.test.lib.Utils;
 import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerRunOptions;
 import jdk.test.lib.containers.docker.DockerTestUtils;
+import jdk.test.lib.containers.docker.DockerfileConfig;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -95,9 +96,27 @@ public class TestJcmdWithSideCar {
 
     private static final String NET_BIND_SERVICE = "--cap-add=NET_BIND_SERVICE";
 
+
+    private static String generateDockerFileContent() {
+        String baseImage = DockerfileConfig.getBaseImageName();
+        String baseImageVersion = DockerfileConfig.getBaseImageVersion();
+        String template = "FROM %s:%s\n";
+        if (baseImage.contains("ubuntu") && DockerfileConfig.isUbsan()) {
+            template += "RUN apt-get update && apt-get install -y libubsan1\n";
+        }
+        // workdir is shared between main container and sidecar
+        template = template + """
+                COPY /jdk /jdk
+                ENV JAVA_HOME=/jdk
+                CMD ["/bin/bash"]
+                WORKDIR /workdir
+                """;
+        return String.format(template, baseImage, baseImageVersion);
+    }
+
     public static void main(String[] args) throws Exception {
         DockerTestUtils.checkCanTestDocker();
-        DockerTestUtils.buildJdkContainerImage(IMAGE_NAME);
+        DockerTestUtils.buildJdkContainerImage(IMAGE_NAME, generateDockerFileContent());
 
         try {
             for (final boolean elevated : USER.isPresent() ? new Boolean[] { false, true } : new Boolean[] { false }) {
