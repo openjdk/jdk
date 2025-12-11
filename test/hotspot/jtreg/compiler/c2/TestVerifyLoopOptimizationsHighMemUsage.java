@@ -28,10 +28,12 @@
  * @summary C2: Hit MemLimit when running with +VerifyLoopOptimizations
  * @run main/othervm -XX:CompileCommand=compileonly,*TestVerifyLoopOptimizationsHighMemUsage*::* -XX:-TieredCompilation -Xbatch
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+IgnoreUnrecognizedVMOptions
- *                   -XX:+StressLoopPeeling -XX:+VerifyLoopOptimizations 
- *                   -XX:StressSeed=3106998670 TestVerifyLoopOptimizationsHighMemUsage
+ *                   -XX:+StressLoopPeeling -XX:+VerifyLoopOptimizations
+ *                   -XX:StressSeed=3106998670 ${test.main.class}
  * @run main ${test.main.class}
  */
+
+package compiler.c2;
 
 public class TestVerifyLoopOptimizationsHighMemUsage {
 
