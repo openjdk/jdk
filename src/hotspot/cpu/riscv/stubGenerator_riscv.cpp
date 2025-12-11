@@ -3030,9 +3030,9 @@ class StubGenerator: public StubCodeGenerator {
     Register data    = c_rarg2;
     Register blocks  = c_rarg3;
 
-    VectorRegister partial_hash = v29;
-    VectorRegister hash_subkey = v30;
-    VectorRegister cipher_text = v31;
+    VectorRegister partial_hash = v1;
+    VectorRegister hash_subkey = v2;
+    VectorRegister cipher_text = v3;
 
     const unsigned int BLOCK_SIZE = 16;
 
@@ -7286,7 +7286,7 @@ static const int64_t right_3_bits = right_n_bits(3);
       StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt();
     }
 
-    if (UseGHASHIntrinsics && UseZvbb) {
+    if (UseGHASHIntrinsics) {
       StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
     }
 

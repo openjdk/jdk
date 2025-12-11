@@ -1985,8 +1985,6 @@ enum VectorMask {
   INSN(vmv4r_v, 0b1010111, 0b011, 0b00011, 0b1, 0b100111);
   INSN(vmv8r_v, 0b1010111, 0b011, 0b00111, 0b1, 0b100111);
 
-  // Vector GHASH (Zvkg) Extension
-  INSN(vgmul_vv, 0b1110111, 0b010, 0b10001, 0b1, 0b101000);
 #undef INSN
 
 #define INSN(NAME, op, funct3, Vs1, vm, funct6)           \
