@@ -21,19 +21,19 @@
  * questions.
  */
 
+package compiler.vectorization;
+
+import java.util.Random;
+import jdk.test.lib.Utils;
+
 /* @test
  * @bug 8349637
+ * @key randomness
  * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
  * @summary Ensure that vectorization of numberOfLeadingZeros and numberOfTrailingZeros outputs correct values
  * @library /test/lib /
  * @run main/othervm/timeout=480 compiler.vectorization.TestVectorZeroCount
  */
-
-package compiler.vectorization;
-
-import java.util.Random;
-
-import jdk.test.lib.Utils;
 
 public class TestVectorZeroCount {
     private static final int SIZE = 1024;
