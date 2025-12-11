@@ -179,6 +179,14 @@ class DefaultICacheInvalidationContext final : StackObj {
     // No-op for the default implementation.
   }
 
+  static void invalidate_range(address start, int nbytes) {
+    ICache::invalidate_range(start, nbytes);
+  }
+
+  static void invalidate_word(address addr) {
+    invalidate_range(addr, 4);
+  }
+
 #ifdef ASSERT
   static DefaultICacheInvalidationContext* current() {
     return _current_context;
