@@ -435,17 +435,15 @@ Java_java_net_Inet6AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
     NET_RESTARTABLE(r, getnameinfo(&sa.sa, len, host, sizeof(host), NULL, 0, NI_NAMEREQD),
                     r != EAI_SYSTEM)
 
-    if (r != 0) {
-        JNU_ThrowByName(env, "java/net/UnknownHostException", NULL);
-        return NULL;
+    if (r == 0) {
+        ret = (*env)->NewStringUTF(env, host);
+        if (ret != NULL) {
+            return ret;
+        }
     }
 
-    ret = (*env)->NewStringUTF(env, host);
-    if (ret == NULL) {
-        JNU_ThrowByName(env, "java/net/UnknownHostException", NULL);
-    }
-
-    return ret;
+    JNU_ThrowByName(env, "java/net/UnknownHostException", NULL);
+    return NULL;
 }
 
 /**
@@ -489,7 +487,7 @@ tcp_ping6(JNIEnv *env, SOCKETADDRESS *sa, SOCKETADDRESS *netif, jint timeout,
     SET_NONBLOCKING(fd);
 
     sa->sa6.sin6_port = htons(7); // echo port
-    NET_RESTARTABLE(connect_rv, connect(fd, &sa->sa, sizeof(struct sockaddr_in6)), 
+    NET_RESTARTABLE(connect_rv, connect(fd, &sa->sa, sizeof(struct sockaddr_in6)),
                     connect_rv != -1);
 
     // connection established or refused immediately, either way it means

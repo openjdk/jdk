@@ -236,17 +236,15 @@ Java_java_net_Inet4AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
                                    host, sizeof(host), NULL, 0, NI_NAMEREQD),
                     r != EAI_SYSTEM)
 
-    if (r != 0) {
-        JNU_ThrowByName(env, "java/net/UnknownHostException", NULL);
-        return NULL;
+    if (r == 0) {
+        ret = (*env)->NewStringUTF(env, host);
+        if (ret != NULL) {
+            return ret;
+        }
     }
 
-    ret = (*env)->NewStringUTF(env, host);
-    if (ret == NULL) {
-        JNU_ThrowByName(env, "java/net/UnknownHostException", NULL);
-    }
-
-    return ret;
+    JNU_ThrowByName(env, "java/net/UnknownHostException", NULL);
+    return NULL;
 }
 
 /**
