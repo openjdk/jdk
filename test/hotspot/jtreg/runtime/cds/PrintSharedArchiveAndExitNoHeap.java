@@ -23,11 +23,10 @@
 
 /**
  * @test
+ * @bug 8373411
  * @summary Testing -XX:+PrintSharedArchiveAndExit option with no shared heap
  * @requires vm.cds
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
