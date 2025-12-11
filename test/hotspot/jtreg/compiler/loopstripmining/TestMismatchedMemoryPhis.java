@@ -41,7 +41,7 @@ public class TestMismatchedMemoryPhis {
     void mainTest() {
         int i, i1, i15 = 4, i16 = 4;
         for (i = 1; i < 7; ++i) {
-           l = i;
+            l = i;
         }
         int j = 1;
         while (++j < 4) {
