@@ -57,7 +57,7 @@ void PhaseLoadFolding::optimize() {
 // from an object 'o' must be executed after an action 'a' that allows 'o' to escape, and in the
 // IR graph, the node 'L' corresponding to 'l' consumes the address 'O' + c, with 'O' being the
 // node corresponding to the newly allocated object 'o', then there must be a path along the
-// use-def edges from the memory input of 'L' to the node 'A' that corresponds to 'a'.
+// use-def edges from 'L' to the node 'A' that corresponds to 'a'.
 //
 // - If 'a' is a method invocation that receives 'o' as an argument, then in the graph, 'A' kills
 //   all memory. As a result, the memory input of 'L' must be a transitive use of 'A'. This is
@@ -97,10 +97,9 @@ void PhaseLoadFolding::optimize() {
 // - If 'a' is a store of 'o' into the memory, then 'l' must be executed after a iff:
 //   + There is a memory fence that prevents 'l' from being executed before 'a'. Since a memory
 //     fence kills all memory, the node 'F' corresponding to that fence must be a transitive use of
-//     'A', and 'L' must be a transitive use of 'F', similar to case 1.
+//     'A', and the memory input of 'L' must be a transitive use of 'F', similar to case 1.
 //   + There is a data dependency between 'l' and 'a'. In this case, there must be a path of
-//     use-def edges from the memory input of 'L' to 'A', since the address input of 'L' only
-//     depends on 'O'.
+//     use-def edges from 'L' to 'A'.
 //     For example:
 //       Integer o = new Integer(v);
 //       *p = o;
@@ -152,28 +151,28 @@ bool PhaseLoadFolding::do_optimize() {
   return progress;
 }
 
-// Find all loads from oop such that their memory inputs have not observed the escape of oop, and
-// try to find their corresponding stores
+// Find all loads from oop that have not observed the escape of oop, and try to find their
+// corresponding stores
 bool PhaseLoadFolding::process_allocate_result(Node* oop) {
   ResourceMark rm;
   Unique_Node_List candidates;
-  VectorSet candidate_mems;
+  VectorSet candidate_set;
 
-  collect_loads(candidates, candidate_mems, oop);
-  if (candidate_mems.is_empty()) {
+  collect_loads(candidates, candidate_set, oop);
+  if (candidate_set.is_empty()) {
     return false;
   }
 
   WorkLists work_lists;
-  process_candidates(candidate_mems, work_lists, oop);
-  if (candidate_mems.is_empty()) {
+  process_candidates(candidate_set, work_lists, oop);
+  if (candidate_set.is_empty()) {
     return false;
   }
 
   bool progress = false;
   for (uint candidate_idx = 0; candidate_idx < candidates.size(); candidate_idx++) {
     LoadNode* candidate = candidates.at(candidate_idx)->as_Load();
-    if (!candidate_mems.test(candidate->in(MemNode::Memory)->_idx)) {
+    if (!candidate_set.test(candidate->_idx)) {
       continue;
     }
 
@@ -188,8 +187,8 @@ bool PhaseLoadFolding::process_allocate_result(Node* oop) {
 }
 
 // Collect all loads from oop
-void PhaseLoadFolding::collect_loads(Unique_Node_List& candidates, VectorSet& candidate_mems, Node* oop) {
-  assert(candidates.size() == 0 && candidate_mems.is_empty(), "must start with no candidates");
+void PhaseLoadFolding::collect_loads(Unique_Node_List& candidates, VectorSet& candidate_set, Node* oop) {
+  assert(candidates.size() == 0 && candidate_set.is_empty(), "must start with no candidates");
   for (DUIterator_Fast oop_out_max, oop_out_idx = oop->fast_outs(oop_out_max); oop_out_idx < oop_out_max; oop_out_idx++) {
     Node* out = oop->fast_out(oop_out_idx);
     if (!out->is_AddP()) {
@@ -210,7 +209,7 @@ void PhaseLoadFolding::collect_loads(Unique_Node_List& candidates, VectorSet& ca
   }
 
   for (uint i = 0; i < candidates.size(); i++) {
-    candidate_mems.set(candidates.at(i)->in(MemNode::Memory)->_idx);
+    candidate_set.set(candidates.at(i)->_idx);
   }
 }
 
@@ -225,7 +224,7 @@ void PhaseLoadFolding::collect_loads(Unique_Node_List& candidates, VectorSet& ca
 // Then, the store phi.value = 1 may or may not modify o, this cannot be known at compile time. As
 // a result, when we walk the memory graph from a load, if we encounter such a store, we cannot
 // know if it is the value we are looking for, and must give up.
-void PhaseLoadFolding::process_candidates(VectorSet& candidate_mems, WorkLists& work_lists, Node* oop) {
+void PhaseLoadFolding::process_candidates(VectorSet& candidate_set, WorkLists& work_lists, Node* oop) {
   assert(work_lists.may_alias.is_empty() && work_lists.escapes.size() == 0 && work_lists.work_list.size() == 0, "must start with empty work lists");
   work_lists.work_list.push(oop);
   for (uint wl_idx = 0; wl_idx < work_lists.work_list.size(); wl_idx++) {
@@ -299,8 +298,8 @@ void PhaseLoadFolding::process_candidates(VectorSet& candidate_mems, WorkLists& 
   // observe that oop escapes
   for (uint idx = 0; idx < work_lists.escapes.size(); idx++) {
     Node* n = work_lists.escapes.at(idx);
-    candidate_mems.remove(n->_idx);
-    if (candidate_mems.is_empty()) {
+    candidate_set.remove(n->_idx);
+    if (candidate_set.is_empty()) {
       return;
     }
 
@@ -374,6 +373,7 @@ Node* PhaseLoadFolding::try_fold_recursive(Node* oop, LoadNode* candidate, Node*
         // Failure to find a captured store will return the memory output of the AllocateNode
         return _igvn.zerocon(candidate->value_basic_type());
       } else {
+        assert(res->is_Store() && res->as_Store()->value_basic_type() == candidate->value_basic_type(), "must match");
         return res->in(MemNode::ValueIn);
       }
     } else if (mem->is_SafePoint()) {
