@@ -171,7 +171,9 @@ void ShenandoahControlThread::run_service() {
       }
 
       // If this cycle completed without being cancelled, notify waiters about it
-      if (!heap->cancelled_gc() || ShenandoahCollectorPolicy::is_allocation_failure(_requested_gc_cause.load_relaxed())) {
+      if (!heap->cancelled_gc() ||
+          ShenandoahCollectorPolicy::is_allocation_failure(cause) ||
+          ShenandoahCollectorPolicy::is_allocation_failure(_requested_gc_cause.load_relaxed())) {
         notify_alloc_failure_waiters();
       }
 
