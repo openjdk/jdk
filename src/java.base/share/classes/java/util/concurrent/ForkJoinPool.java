@@ -1254,18 +1254,17 @@ public class ForkJoinPool extends AbstractExecutorService
          * @throws RejectedExecutionException if array could not be resized
          */
         final void push(ForkJoinTask<?> task, ForkJoinPool pool, boolean internal) {
-            int s = top, b = base, m, cap, room; ForkJoinTask<?>[] a, na;
+            int s = top, b = base, m, cap, room; ForkJoinTask<?>[] a;
             if ((a = array) != null && (cap = a.length) > 0) { // else disabled
-                int k = (m = cap - 1) & s;
-                if ((room = m - (s - b)) >= 0) {
+                if ((room = (m = cap - 1) - (s - b)) >= 0) {
                     top = s + 1;
-                    long pos = slotOffset(k);
+                    long pos = slotOffset(m & s);
                     if (!internal)
                         U.putReference(a, pos, task);       // inside lock
                     else
                         U.getAndSetReference(a, pos, task); // fully fenced
-                    if (room == 0 && (na = growArray(a, cap, s)) != null)
-                        k = ((a = na).length - 1) & s;      // resize
+                    if (room == 0)
+                        growArray(a, cap, s);
                 }
                 if (!internal)
                     unlockPhase();
@@ -1274,7 +1273,7 @@ public class ForkJoinPool extends AbstractExecutorService
                 if (pool != null &&
                     (room == 0 ||
                      U.getReferenceAcquire(a, slotOffset(m & (s - 1))) == null))
-                    pool.signalWork(null, 0);    // may have appeared empty
+                    pool.signalWork(this, s);    // may have appeared empty
             }
         }
 
@@ -1283,9 +1282,8 @@ public class ForkJoinPool extends AbstractExecutorService
          * @param a old array
          * @param cap old array capacity
          * @param s current top
-         * @return new array, or null on failure
          */
-        private ForkJoinTask<?>[] growArray(ForkJoinTask<?>[] a, int cap, int s) {
+        private void growArray(ForkJoinTask<?>[] a, int cap, int s) {
             int newCap = (cap >= 1 << 16) ? cap << 1 : cap << 2;
             ForkJoinTask<?>[] newArray = null;
             if (a != null && a.length == cap && cap > 0 && newCap > 0) {
@@ -1305,7 +1303,6 @@ public class ForkJoinPool extends AbstractExecutorService
                     updateArray(newArray);           // fully fenced
                 }
             }
-            return newArray;
         }
 
         /**
@@ -1466,8 +1463,9 @@ public class ForkJoinPool extends AbstractExecutorService
                         }
                     }
                     // one-shot steal attempt
-                    ForkJoinTask<?> t; ForkJoinTask<?>[] qa; int qcap; long qk;
-                    if ((qa = q.array) == null || (qcap = qa.length) <= 0 ||
+                    ForkJoinTask<?> t; int qcap; long qk;
+                    ForkJoinTask<?>[] qa = q.array;
+                    if (q.base != qbase || qa == null || (qcap = qa.length) <= 0 ||
                         (t = (ForkJoinTask<?>)U.getReferenceAcquire(
                             qa, qk = slotOffset((qcap - 1) & qbase))) == null ||
                         q.base != qbase ||
@@ -1921,13 +1919,9 @@ public class ForkJoinPool extends AbstractExecutorService
                 break;
             else
                 nc = (v.stackPred & LMASK) | (c & TC_MASK) | ac;
-            if (q != null) {
-                if (q.base != qbase)
+            if (q != null && q.base - qbase > 0)
                     break;
-                if (c != (c = ctl))
-                    continue;
-            }
-            if (c == (c = compareAndExchangeCtl(c, nc))) {
+            if (c == (c = ctl) && c == (c = compareAndExchangeCtl(c, nc))) {
                 if (v == null)
                     createWorker();
                 else {
@@ -2023,10 +2017,10 @@ public class ForkJoinPool extends AbstractExecutorService
                     if ((q = qs[qid = i & (n - 1)]) != null) {
                         ForkJoinTask<?>[] a; int cap;     // poll queue
                         while ((a = q.array) != null && (cap = a.length) > 0) {
-                            int b, nb, nk; long bp; ForkJoinTask<?> t;
+                            int b, nb; long bp; ForkJoinTask<?> t;
                             t = (ForkJoinTask<?>)U.getReferenceAcquire(
                                 a, bp = slotOffset((cap - 1) & (b = q.base)));
-                            long np = slotOffset(nk = (nb = b + 1) & (cap - 1));
+                            long np = slotOffset((nb = b + 1) & (cap - 1));
                             if (q.base == b) {            // else inconsistent
                                 if (t == null) {
                                     if (q.array == a) {   // else resized
