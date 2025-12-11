@@ -137,7 +137,7 @@ private:
 
   // Takes the request lock and updates the requested cause and generation, then notifies the control thread.
   // The overloaded variant should be used when the _control_lock is already held.
-  void notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation);
+  void notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation) override;
   void notify_control_thread(MonitorLocker& ml, GCCause::Cause cause, ShenandoahGeneration* generation);
 
   // Notifies the control thread, but does not update the requested cause or generation.

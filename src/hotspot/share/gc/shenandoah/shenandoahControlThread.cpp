@@ -170,7 +170,7 @@ void ShenandoahControlThread::run_service() {
       }
 
       // If this cycle completed without being cancelled, notify waiters about it
-      if (!heap->cancelled_gc()) {
+      if (!heap->cancelled_gc() || ShenandoahCollectorPolicy::is_allocation_failure(_requested_gc_cause)) {
         notify_alloc_failure_waiters();
       }
 
@@ -230,8 +230,12 @@ void ShenandoahControlThread::run_service() {
       last_sleep_adjust_time = current;
     }
 
-    MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
-    ml.wait(sleep);
+    {
+      MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
+      if (!_gc_requested.is_set()) {
+        ml.wait(sleep);
+      }
+    }
   }
 }
 
@@ -346,7 +350,8 @@ void ShenandoahControlThread::request_gc(GCCause::Cause cause) {
   }
 }
 
-void ShenandoahControlThread::notify_control_thread(GCCause::Cause cause) {
+void ShenandoahControlThread::notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation) {
+  assert(generation->is_global(), "Must be");
   // Although setting gc request is under _controller_lock, the read side (run_service())
   // does not take the lock. We need to enforce following order, so that read side sees
   // latest requested gc cause when the flag is set.
@@ -354,6 +359,10 @@ void ShenandoahControlThread::notify_control_thread(GCCause::Cause cause) {
   _requested_gc_cause = cause;
   _gc_requested.set();
   controller.notify();
+}
+
+void ShenandoahControlThread::notify_control_thread(GCCause::Cause cause) {
+  notify_control_thread(cause, ShenandoahHeap::heap()->global_generation());
 }
 
 void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {

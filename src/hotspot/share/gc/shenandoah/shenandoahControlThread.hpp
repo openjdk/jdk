@@ -55,6 +55,8 @@ public:
   void stop_service() override;
 
   void request_gc(GCCause::Cause cause) override;
+  // Sets the requested cause and flag and notifies the control thread
+  void notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation) override;
 
 private:
   // Sets the requested cause and flag and notifies the control thread
