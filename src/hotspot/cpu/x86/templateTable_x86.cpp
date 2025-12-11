@@ -1677,11 +1677,10 @@ void TemplateTable::float_cmp(bool is_float, int unordered_result) {
     }
   }
   if (unordered_result < 0) {
-    __ movl(rax, -1);
-    __ jccb(Assembler::parity, done);
-    __ jccb(Assembler::below, done);
-    __ setb(Assembler::notEqual, rdx);
+    __ setb(Assembler::above, rdx);
     __ movzbl(rax, rdx);
+    __ jcc(Assembler::aboveEqual, done);
+    __ movl(rax, -1);
   } else {
     __ movl(rax, 1);
     __ jccb(Assembler::parity, done);
