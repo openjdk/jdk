@@ -70,7 +70,10 @@ void ShenandoahControlThread::run_service() {
                                        ShenandoahCollectorPolicy::is_allocation_failure(_requested_gc_cause.load_relaxed());
     const bool is_gc_requested = _gc_requested.is_set();
     const GCCause::Cause requested_gc_cause = _requested_gc_cause.load_relaxed();
-
+    if (is_gc_requested) {
+      _gc_requested.unset();
+      _requested_gc_cause.store_relaxed(GCCause::_no_gc);
+    }
     // Choose which GC mode to run in. The block below should select a single mode.
     GCMode mode = none;
     GCCause::Cause cause = GCCause::_last_gc_cause;
@@ -170,10 +173,9 @@ void ShenandoahControlThread::run_service() {
         notify_gc_waiters();
       }
 
-      // If this cycle completed without being cancelled, notify waiters about it
-      if (!heap->cancelled_gc() ||
-          ShenandoahCollectorPolicy::is_allocation_failure(cause) ||
-          ShenandoahCollectorPolicy::is_allocation_failure(_requested_gc_cause.load_relaxed())) {
+      // If this cycle completed without being cancelled, or alloc_failure_pending is true(degen),
+      // notify waiters about it
+      if (!heap->cancelled_gc() || alloc_failure_pending) {
         notify_alloc_failure_waiters();
       }
 
@@ -407,7 +409,6 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
 }
 
 void ShenandoahControlThread::notify_gc_waiters() {
-  _gc_requested.unset();
   MonitorLocker ml(&_gc_waiters_lock);
   ml.notify_all();
 }
