@@ -1267,6 +1267,36 @@ ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
   clear_internal();
 }
 
+void ShenandoahFreeSet::move_unaffiliated_regions_from_collector_to_old_collector(ssize_t count) {
+  shenandoah_assert_heaplocked();
+  size_t region_size_bytes =  ShenandoahHeapRegion::region_size_bytes();
+
+  size_t old_capacity = _partitions.get_capacity(ShenandoahFreeSetPartitionId::OldCollector);
+  size_t collector_capacity = _partitions.get_capacity(ShenandoahFreeSetPartitionId::Collector);
+  if (count > 0) {
+    size_t ucount = count;
+    size_t bytes_moved = count * region_size_bytes;
+    assert(collector_capacity >= bytes_moved, "Cannot transfer");
+    assert(_partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::Collector) >= ucount,
+           "Cannot transfer %zu of %zu", ucount, _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::Collector));
+    _partitions.decrease_empty_region_counts(ShenandoahFreeSetPartitionId::Collector, ucount);
+    _partitions.set_capacity_of(ShenandoahFreeSetPartitionId::Collector, collector_capacity - bytes_moved);
+    _partitions.set_capacity_of(ShenandoahFreeSetPartitionId::OldCollector, old_capacity + bytes_moved);
+    _partitions.increase_empty_region_counts(ShenandoahFreeSetPartitionId::OldCollector, ucount);
+  } else if (count < 0) {
+    size_t ucount = -count;
+    size_t bytes_moved = count * region_size_bytes;
+    assert(old_capacity >= bytes_moved, "Cannot transfer");
+    assert(_partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::OldCollector) >= ucount,
+           "Cannot transfer %zu of %zu", ucount, _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::OldCollector));
+    _partitions.decrease_empty_region_counts(ShenandoahFreeSetPartitionId::OldCollector, ucount);
+    _partitions.set_capacity_of(ShenandoahFreeSetPartitionId::OldCollector, old_capacity - bytes_moved);
+    _partitions.set_capacity_of(ShenandoahFreeSetPartitionId::Collector, collector_capacity + bytes_moved);
+    _partitions.increase_empty_region_counts(ShenandoahFreeSetPartitionId::Collector, ucount);
+  }
+  // else, do nothing
+}
+
 // was pip_pad_bytes
 void ShenandoahFreeSet::add_promoted_in_place_region_to_old_collector(ShenandoahHeapRegion* region) {
   shenandoah_assert_heaplocked();

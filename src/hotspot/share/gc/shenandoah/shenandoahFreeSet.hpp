@@ -679,6 +679,9 @@ public:
     return _total_global_used;
   }
 
+  // A negative argument results in moving from old_collector to collector
+  void move_unaffiliated_regions_from_collector_to_old_collector(ssize_t regions);
+
   size_t global_unaffiliated_regions() {
     return _global_unaffiliated_regions;
   }
