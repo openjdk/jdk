@@ -2682,11 +2682,11 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // PhiNode::Identity replaces a non bottom memory phi with a bottom memory phi with same inputs if it exists
-  // This performs the mirror transformation: it looks for non bottom memory phis with same inputs as this bottom memory
-  // phi and replaces them by this phi.
-  // The reason for having the same transformation in 2 places is so all candidates are transformed. For instance, if
-  // the bottom memory phi's inputs are changed (so it can now replace the non bottom memory phi) only after the non
-  // bottom memory phi is processed by igvn, having the transformation in PhiNode::Identity is not sufficient
+  // If the bottom memory phi's inputs are changed (so it can now replace the non bottom memory phi) or if it's created
+  // only after the non bottom memory phi is processed by igvn, PhiNode::Identity doesn't run and the transformation
+  // doesn't happen.
+  // Look for non bottom Phis that should be transformed and enqueue them for igvn so PhiNode::Identity executes for
+  // them.
   if (can_reshape && type() == Type::MEMORY && adr_type() == TypePtr::BOTTOM) {
     PhaseIterGVN* igvn = phase->is_IterGVN();
     uint phi_len = req();
@@ -2695,8 +2695,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       Node* u = phi_reg->fast_out(i);
       assert(!u->is_Phi() || (u->in(0) == phi_reg && u->req() == phi_len), "broken Phi/Region subgraph");
       if (u->is_Phi() && u->as_Phi()->can_be_replaced_by(this)) {
-        igvn->replace_node(u, this);
-        --i; --imax;
+        igvn->_worklist.push(u);
       }
     }
   }
