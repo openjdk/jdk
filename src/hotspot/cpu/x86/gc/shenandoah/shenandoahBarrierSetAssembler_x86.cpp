@@ -971,6 +971,9 @@ void ShenandoahLoadRefBarrierStubC2::emit_code(MacroAssembler& masm) {
 
 void ShenandoahSATBBarrierStubC2::emit_code(MacroAssembler& masm) {
   __ bind(*entry());
+
+  Assembler::InlineSkippedInstructionsCounter skip_counter(&masm);
+
   Address index(r15_thread, in_bytes(ShenandoahThreadLocalData::satb_mark_queue_index_offset()));
   Address buffer(r15_thread, in_bytes(ShenandoahThreadLocalData::satb_mark_queue_buffer_offset()));
 
@@ -1015,6 +1018,7 @@ void ShenandoahSATBBarrierStubC2::emit_code(MacroAssembler& masm) {
 
 void ShenandoahCASBarrierMidStubC2::emit_code(MacroAssembler& masm) {
   __ bind(*entry());
+  Assembler::InlineSkippedInstructionsCounter skip_counter(&masm);
 
   if (!_cae) {
     // Set result to false, in case that we fail the following tests.
@@ -1041,6 +1045,7 @@ void ShenandoahCASBarrierMidStubC2::emit_code(MacroAssembler& masm) {
 
 void ShenandoahCASBarrierSlowStubC2::emit_code(MacroAssembler& masm) {
   __ bind(*entry());
+  Assembler::InlineSkippedInstructionsCounter skip_counter(&masm);
 
   assert(_expected == rax, "expected must be rax");
 
