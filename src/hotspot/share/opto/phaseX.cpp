@@ -2062,12 +2062,9 @@ bool PhaseIterGVN::verify_Identity_for(Node* n) {
 }
 
 // Some other verifications that are not specific to a particular transformation.
-bool PhaseIterGVN::verify_node_invariants_for(Node* n) {
+bool PhaseIterGVN::verify_node_invariants_for(const Node* n) {
   if (n->is_AddP()) {
-    Node* addp = n->in(AddPNode::Address);
-    if (addp->is_AddP() &&
-        !addp->in(AddPNode::Base)->is_top() &&
-        addp->in(AddPNode::Base) != n->in(AddPNode::Base)) {
+    if (!n->as_AddP()->address_input_has_same_base()) {
       stringStream ss; // Print as a block without tty lock.
       ss.cr();
       ss.print_cr("Base pointers must match for AddP chain:");
