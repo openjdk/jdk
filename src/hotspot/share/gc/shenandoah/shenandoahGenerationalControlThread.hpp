@@ -31,6 +31,7 @@
 #include "gc/shenandoah/shenandoahGC.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/atomic.hpp"
 
 class ShenandoahOldGeneration;
 class ShenandoahGeneration;

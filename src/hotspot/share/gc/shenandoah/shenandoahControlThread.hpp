@@ -31,6 +31,7 @@
 #include "gc/shenandoah/shenandoahGC.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
+#include "runtime/atomic.hpp"
 
 class ShenandoahControlThread: public ShenandoahController {
 private:
