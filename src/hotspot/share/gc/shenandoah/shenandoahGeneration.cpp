@@ -507,7 +507,7 @@ inline void assert_no_in_place_promotions() {
 
 // Preselect for inclusion into the collection set all regions whose age is at or above tenure age and for which the
 // garbage percentage exceeds a dynamically adjusted threshold (known as the old-garbage threshold percentage).  We
-// identify these regions by setting the appropriate entry of the collection set's preselected regions array to true.  
+// identify these regions by setting the appropriate entry of the collection set's preselected regions array to true.
 // All entries are initialized to false before calling this function.
 //
 // During the subsequent selection of the collection set, we give priority to these promotion set candidates.
