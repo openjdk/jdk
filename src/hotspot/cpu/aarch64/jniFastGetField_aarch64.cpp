@@ -121,7 +121,8 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   __ adrp(rcounter_addr,
           SafepointSynchronize::safepoint_counter_addr(), offset);
   Address safepoint_counter_addr(rcounter_addr, offset);
-  __ ldrw(rcounter, safepoint_counter_addr);
+  __ lea(rcounter, safepoint_counter_addr);
+  __ ldarw(rcounter, rcounter);
   __ tbnz(rcounter, 0, slow);
 
   // It doesn't need to issue a full barrier here even if the field
@@ -171,7 +172,8 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
     default:        ShouldNotReachHere();
   }
 
-  __ ldrw(rscratch1, safepoint_counter_addr);
+  __ lea(rscratch1, safepoint_counter_addr);
+  __ ldarw(rscratch1, rscratch1);
   __ cmpw(rcounter, rscratch1);
   __ br (Assembler::NE, slow);
 
