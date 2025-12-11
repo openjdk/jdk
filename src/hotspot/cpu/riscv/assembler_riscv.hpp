@@ -2663,7 +2663,7 @@ enum Nf {
   INSN(vsha2cl_vv,  0b1110111, 0b010, 0b1, 0b101111);
 
   // Vector GHASH (Zvkg) Extension
-  INSN(vghsh_vv, 0b1110111, 0b010, 0b1, 0b101100);
+  INSN(vghsh_vv,    0b1110111, 0b010, 0b1, 0b101100);
 
 #undef INSN
 

@@ -3031,8 +3031,8 @@ class StubGenerator: public StubCodeGenerator {
     Register blocks  = c_rarg3;
 
     VectorRegister partial_hash = v1;
-    VectorRegister hash_subkey = v2;
-    VectorRegister cipher_text = v3;
+    VectorRegister hash_subkey  = v2;
+    VectorRegister cipher_text  = v3;
 
     const unsigned int BLOCK_SIZE = 16;
 
@@ -3050,7 +3050,6 @@ class StubGenerator: public StubCodeGenerator {
       __ vghsh_vv(partial_hash, hash_subkey, cipher_text);
       __ subi(blocks, blocks, 1);
       __ bnez(blocks, L_ghash_loop);
-
     __ vsetivli(x0, 2, Assembler::e64, Assembler::m1);
     __ vrev8_v(partial_hash, partial_hash);
     __ vse64_v(partial_hash, state);
