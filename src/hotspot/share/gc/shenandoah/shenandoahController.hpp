@@ -60,14 +60,12 @@ public:
     _gc_waiters_lock(Mutex::safepoint-2, "ShenandoahRequestedGC_lock", true)
   { }
 
-  virtual ~ShenandoahController() = default;
-
   // Request a collection cycle. This handles "explicit" gc requests
   // like System.gc and "implicit" gc requests, like metaspace oom.
   virtual void request_gc(GCCause::Cause cause) = 0;
 
  // Sets the requested cause and flag and notifies the control thread
-  virtual void notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation);
+  virtual void notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation) { }
 
   // This cancels the collection cycle and has an option to block
   // until another cycle completes successfully.
