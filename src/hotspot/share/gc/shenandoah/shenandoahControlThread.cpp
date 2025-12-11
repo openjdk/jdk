@@ -67,12 +67,11 @@ void ShenandoahControlThread::run_service() {
 
     // Figure out if we have pending requests.
     const bool is_gc_requested = _gc_requested.is_set();
-    const GCCause::Cause requested_gc_cause = _requested_gc_cause.load_relaxed();
+    const GCCause::Cause requested_gc_cause = current_requested_gc_cause();
     const bool alloc_failure_pending = ShenandoahCollectorPolicy::is_allocation_failure(cancelled_cause) ||
                                        ShenandoahCollectorPolicy::is_allocation_failure(requested_gc_cause);
     if (is_gc_requested) {
-      _gc_requested.unset();
-      _requested_gc_cause.store_relaxed(GCCause::_no_gc);
+      reset_requested_gc();
     }
     // Choose which GC mode to run in. The block below should select a single mode.
     GCMode mode = none;
@@ -237,7 +236,7 @@ void ShenandoahControlThread::run_service() {
 
     {
       MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
-      if (_requested_gc_cause.load_relaxed() == GCCause::_no_gc) {
+      if (current_requested_gc_cause() == GCCause::_no_gc) {
         ml.wait(sleep);
       }
     }
@@ -365,7 +364,7 @@ void ShenandoahControlThread::notify_control_thread(GCCause::Cause cause, Shenan
   // does not take the lock. We need to enforce following order, so that read side sees
   // latest requested gc cause when the flag is set.
   MonitorLocker controller(&_control_lock, Mutex::_no_safepoint_check_flag);
-  _requested_gc_cause.store_relaxed(cause);
+  _requested_gc_cause = cause;
   _gc_requested.set();
   controller.notify();
 }
@@ -411,4 +410,21 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
 void ShenandoahControlThread::notify_gc_waiters() {
   MonitorLocker ml(&_gc_waiters_lock);
   ml.notify_all();
+}
+
+
+GCCause::Cause ShenandoahControlThread::current_requested_gc_cause() {
+  if (_control_lock.owned_by_self()) return _requested_gc_cause;
+  {
+    MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
+    return _requested_gc_cause;
+  }
+}
+
+void ShenandoahControlThread::reset_requested_gc() {
+  {
+    MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
+    _requested_gc_cause = GCCause::_no_gc;
+    _gc_requested.unset();
+  }
 }

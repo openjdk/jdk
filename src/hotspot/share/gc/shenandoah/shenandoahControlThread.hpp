@@ -31,7 +31,6 @@
 #include "gc/shenandoah/shenandoahGC.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
-#include "runtime/atomic.hpp"
 
 class ShenandoahControlThread: public ShenandoahController {
 private:
@@ -43,7 +42,7 @@ private:
   } GCMode;
 
   ShenandoahSharedFlag               _gc_requested;
-  Atomic<GCCause::Cause>             _requested_gc_cause;
+  GCCause::Cause                     _requested_gc_cause;
   ShenandoahGC::ShenandoahDegenPoint _degen_point;
 
   // This lock is used to coordinate waking up the control thread
@@ -73,6 +72,10 @@ private:
   // Handle GC request.
   // Blocks until GC is over.
   void handle_requested_gc(GCCause::Cause cause);
+
+  GCCause::Cause current_requested_gc_cause();
+
+  void reset_requested_gc();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONTROLTHREAD_HPP
