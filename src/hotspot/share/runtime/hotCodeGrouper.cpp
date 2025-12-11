@@ -118,7 +118,7 @@ void HotCodeGrouper::do_grouping(ThreadSampler& sampler) {
 
     // Verify that nmethod address is still valid and not in hot code heap
     nmethod* nm = blob->as_nmethod_or_null();
-    if (nm != candidate || !nm->is_in_use() || !nm->is_compiled_by_c2() || CodeCache::get_code_blob_type(nm) == CodeBlobType::MethodNonProfiled) {
+    if (nm != candidate || !nm->is_in_use() || !nm->is_compiled_by_c2() || CodeCache::get_code_blob_type(nm) == CodeBlobType::MethodHot) {
       continue;
     }
 
