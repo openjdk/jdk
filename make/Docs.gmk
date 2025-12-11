@@ -293,6 +293,7 @@ define SetupApiDocsGenerationBody
 
   $1_JAVA_ARGS := -Dextlink.spec.version=$$(VERSION_SPECIFICATION)
 
+
   ifeq ($$(ENABLE_FULL_DOCS), true)
     $1_SEALED_GRAPHS_DIR := $$(SUPPORT_OUTPUTDIR)/docs/$1-sealed-graphs
 
@@ -365,11 +366,15 @@ define SetupApiDocsGenerationBody
     $$(eval $1_OPTIONS += -group "$$($$g_GROUP_NAME)" "$$($$g_GROUP_MODULES)") \
   )
 
+
   ifeq ($$($1_JAVADOC_CMD), )
     $1_JAVADOC_CMD := $$(JAVA) -Djava.awt.headless=true $$($1_JAVA_ARGS) \
+        --add-exports jdk.javadoc.interim/jdk.javadoc.internal.doclets.formats.html=ALL-UNNAMED \
         $$(NEW_JAVADOC)
   else
-    $1_OPTIONS += $$(addprefix -J, $$($1_JAVA_ARGS))
+    $1_OPTIONS += $$(addprefix -J, $$($1_JAVA_ARGS)) \
+        --add-exports jdk.javadoc/jdk.javadoc.internal.doclets.formats.html=ALL-UNNAMED
+
   endif
 
   $1_VARDEPS := $$($1_JAVA_ARGS) $$($1_OPTIONS) $$(MODULES_SOURCE_PATH) \
