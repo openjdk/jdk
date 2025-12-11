@@ -225,7 +225,7 @@ public:
   // Add obj to queue.  This qset and the queue must be active.
   void enqueue_known_active(SATBMarkQueue& queue, oop obj);
   virtual void filter(SATBMarkQueue& queue) = 0;
-  virtual void enqueue_completed_buffer(BufferNode* node);
+  void enqueue_completed_buffer(BufferNode* node);
 
   // The number of buffers in the list.  Racy and not updated atomically
   // with the set of completed buffers.
