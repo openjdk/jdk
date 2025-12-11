@@ -470,7 +470,7 @@ public final class RemoteRecordingStream implements EventStream {
         stream.close();
         try {
             mbean.closeRecording(recordingId);
-        } catch (IOException e) {
+        } catch (IOException | IllegalArgumentException e) {
             ManagementSupport.logDebug(e.getMessage());
         }
         try {

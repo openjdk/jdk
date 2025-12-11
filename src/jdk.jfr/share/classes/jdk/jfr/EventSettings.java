@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import jdk.jfr.consumer.RecordingStream;
 import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.PlatformRecorder;
 import jdk.jfr.internal.PlatformRecording;
@@ -153,6 +154,11 @@ public abstract class EventSettings {
         @Override
         public EventSettings newEventSettings(EventSettingsModifier esm) {
             return new EventSettings.DelegatedEventSettings(esm);
+        }
+
+        @Override
+        public Recording newRecording(RecordingStream stream) {
+            return new Recording(Map.of(), stream);
         }
 
         @Override

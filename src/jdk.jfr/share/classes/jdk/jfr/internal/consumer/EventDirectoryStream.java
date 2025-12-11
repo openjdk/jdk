@@ -181,13 +181,6 @@ public final class EventDirectoryStream extends AbstractEventStream {
                     return;
                 }
 
-                if (isRecordingStream()) {
-                    if (recording.getState() == RecordingState.STOPPED && !barrier.used()) {
-                        logStreamEnd("recording stopped externally.");
-                        return;
-                    }
-                }
-
                 if (repositoryFiles.hasFixedPath() && currentParser.isFinalChunk()) {
                     logStreamEnd("JVM process exited/crashed, or repository migrated to an unknown location.");
                     return;
