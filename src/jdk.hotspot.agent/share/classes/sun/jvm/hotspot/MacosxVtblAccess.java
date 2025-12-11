@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,25 +22,37 @@
  *
  */
 
-package sun.jvm.hotspot.debugger.bsd.aarch64;
+package sun.jvm.hotspot;
 
 import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.debugger.aarch64.*;
-import sun.jvm.hotspot.debugger.bsd.*;
+import sun.jvm.hotspot.types.*;
+import sun.jvm.hotspot.types.basic.*;
 
-public class BsdAARCH64ThreadContext extends AARCH64ThreadContext {
-  private BsdDebugger debugger;
+public class MacosxVtblAccess extends BasicVtblAccess {
+  private String vt;
 
-  public BsdAARCH64ThreadContext(BsdDebugger debugger) {
-    super();
-    this.debugger = debugger;
+  public MacosxVtblAccess(SymbolLookup symbolLookup,
+                         String[] dllNames) {
+    super(symbolLookup, dllNames);
+    boolean oldVT = false;
+    boolean isDarwin = dllNames[0].lastIndexOf(".dylib") != -1;
+    String vtJavaThread = isDarwin ? "_vt_10JavaThread" : "__vt_10JavaThread";
+    for (String dllName : dllNames) {
+       if (symbolLookup.lookup(dllName, vtJavaThread) != null) {
+         oldVT = true;
+         break;
+       }
+    }
+    if (oldVT) {
+       // old C++ ABI
+       vt = isDarwin ? "_vt_" :  "__vt_";
+    } else {
+       // new C++ ABI
+       vt = "_ZTV";
+    }
   }
 
-  public void setRegisterAsAddress(int index, Address value) {
-    setRegister(index, debugger.getAddressValue(value));
-  }
-
-  public Address getRegisterAsAddress(int index) {
-    return debugger.newAddress(getRegister(index));
+  protected String vtblSymbolForType(Type type) {
+    return vt + type.getName().length() + type;
   }
 }

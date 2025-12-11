@@ -24,19 +24,19 @@
  *
  */
 
-package sun.jvm.hotspot.debugger.bsd.aarch64;
+package sun.jvm.hotspot.debugger.macosx.aarch64;
 
 import sun.jvm.hotspot.code.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.aarch64.*;
-import sun.jvm.hotspot.debugger.bsd.*;
+import sun.jvm.hotspot.debugger.macosx.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.cdbg.basic.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.runtime.aarch64.*;
 
-public final class BsdAARCH64CFrame extends BasicCFrame {
-   public BsdAARCH64CFrame(BsdDebugger dbg, Address sp, Address fp, Address pc) {
+public final class MacosxAARCH64CFrame extends BasicCFrame {
+   public MacosxAARCH64CFrame(MacosxDebugger dbg, Address sp, Address fp, Address pc) {
       super(dbg.getCDebugger());
       this.sp = sp;
       this.fp = fp;
@@ -111,7 +111,7 @@ public final class BsdAARCH64CFrame extends BasicCFrame {
         return null;
       }
 
-      return new BsdAARCH64CFrame(dbg, nextSP, nextFP, nextPC);
+      return new MacosxAARCH64CFrame(dbg, nextSP, nextFP, nextPC);
    }
 
    @Override
@@ -124,5 +124,5 @@ public final class BsdAARCH64CFrame extends BasicCFrame {
    private Address pc;
    private Address sp;
    private Address fp;
-   private BsdDebugger dbg;
+   private MacosxDebugger dbg;
 }

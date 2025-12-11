@@ -34,8 +34,8 @@ import sun.jvm.hotspot.runtime.linux_amd64.LinuxAMD64JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.linux_aarch64.LinuxAARCH64JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.linux_riscv64.LinuxRISCV64JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.linux_ppc64.LinuxPPC64JavaThreadPDAccess;
-import sun.jvm.hotspot.runtime.bsd_amd64.BsdAMD64JavaThreadPDAccess;
-import sun.jvm.hotspot.runtime.bsd_aarch64.BsdAARCH64JavaThreadPDAccess;
+import sun.jvm.hotspot.runtime.macosx_amd64.MacosxAMD64JavaThreadPDAccess;
+import sun.jvm.hotspot.runtime.macosx_aarch64.MacosxAARCH64JavaThreadPDAccess;
 import sun.jvm.hotspot.utilities.*;
 import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
@@ -118,15 +118,15 @@ public class Threads {
                                            " not yet supported");
               }
             }
-        } else if (os.equals("bsd")) {
+        } else if (os.equals("macosx")) {
             if (cpu.equals("amd64") || cpu.equals("x86_64")) {
-                access = new BsdAMD64JavaThreadPDAccess();
+                access = new MacosxAMD64JavaThreadPDAccess();
             }
         } else if (os.equals("darwin")) {
             if (cpu.equals("amd64") || cpu.equals("x86_64")) {
-                access = new BsdAMD64JavaThreadPDAccess();
+                access = new MacosxAMD64JavaThreadPDAccess();
             } else if (cpu.equals("aarch64")) {
-                access = new BsdAARCH64JavaThreadPDAccess();
+                access = new MacosxAARCH64JavaThreadPDAccess();
             }
         }
 

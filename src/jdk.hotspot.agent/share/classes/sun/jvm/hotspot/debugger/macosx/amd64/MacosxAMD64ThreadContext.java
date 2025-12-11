@@ -22,16 +22,16 @@
  *
  */
 
-package sun.jvm.hotspot.debugger.bsd.amd64;
+package sun.jvm.hotspot.debugger.macosx.amd64;
 
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.amd64.*;
-import sun.jvm.hotspot.debugger.bsd.*;
+import sun.jvm.hotspot.debugger.macosx.*;
 
-public class BsdAMD64ThreadContext extends AMD64ThreadContext {
-  private BsdDebugger debugger;
+public class MacosxAMD64ThreadContext extends AMD64ThreadContext {
+  private MacosxDebugger debugger;
 
-  public BsdAMD64ThreadContext(BsdDebugger debugger) {
+  public MacosxAMD64ThreadContext(MacosxDebugger debugger) {
     super();
     this.debugger = debugger;
   }

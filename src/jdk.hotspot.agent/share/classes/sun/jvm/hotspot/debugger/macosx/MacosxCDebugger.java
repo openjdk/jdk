@@ -23,7 +23,7 @@
  *
  */
 
-package sun.jvm.hotspot.debugger.bsd;
+package sun.jvm.hotspot.debugger.macosx;
 
 import java.io.*;
 import java.util.*;
@@ -31,14 +31,14 @@ import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.amd64.*;
 import sun.jvm.hotspot.debugger.aarch64.*;
-import sun.jvm.hotspot.debugger.bsd.amd64.*;
-import sun.jvm.hotspot.debugger.bsd.aarch64.*;
+import sun.jvm.hotspot.debugger.macosx.amd64.*;
+import sun.jvm.hotspot.debugger.macosx.aarch64.*;
 import sun.jvm.hotspot.utilities.*;
 
-class BsdCDebugger implements CDebugger {
-  private BsdDebugger dbg;
+class MacosxCDebugger implements CDebugger {
+  private MacosxDebugger dbg;
 
-  BsdCDebugger(BsdDebugger dbg) {
+  MacosxCDebugger(MacosxDebugger dbg) {
     this.dbg = dbg;
   }
 
@@ -92,7 +92,7 @@ class BsdCDebugger implements CDebugger {
        if (rbp == null) return null;
        Address pc  = context.getRegisterAsAddress(AMD64ThreadContext.RIP);
        if (pc == null) return null;
-       return new BsdAMD64CFrame(dbg, rsp, rbp, pc);
+       return new MacosxAMD64CFrame(dbg, rsp, rbp, pc);
     } else if (cpu.equals("aarch64")) {
        AARCH64ThreadContext context = (AARCH64ThreadContext) thread.getContext();
        Address sp = context.getRegisterAsAddress(AARCH64ThreadContext.SP);
@@ -101,7 +101,7 @@ class BsdCDebugger implements CDebugger {
        if (fp == null) return null;
        Address pc  = context.getRegisterAsAddress(AARCH64ThreadContext.PC);
        if (pc == null) return null;
-       return new BsdAARCH64CFrame(dbg, sp, fp, pc);
+       return new MacosxAARCH64CFrame(dbg, sp, fp, pc);
     } else {
        throw new DebuggerException(cpu + " is not yet supported");
     }

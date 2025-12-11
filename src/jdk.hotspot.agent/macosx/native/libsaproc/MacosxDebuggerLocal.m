@@ -178,12 +178,12 @@ static struct ps_prochandle* get_proc_handle(JNIEnv* env, jobject this_obj) {
 #endif
 
 /*
- * Class:     sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal
+ * Class:     sun_jvm_hotspot_debugger_macosx_MacosxDebuggerLocal
  * Method:    init0
  * Signature: ()V
  */
 JNIEXPORT void JNICALL
-Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_init0(JNIEnv *env, jclass cls) {
+Java_sun_jvm_hotspot_debugger_macosx_MacosxDebuggerLocal_init0(JNIEnv *env, jclass cls) {
   symbolicatorID = (*env)->GetFieldID(env, cls, "symbolicator", "J");
   CHECK_EXCEPTION;
   taskID = (*env)->GetFieldID(env, cls, "task", "J");
@@ -215,7 +215,7 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_init0(JNIEnv *env, jclass cls
   init_libproc(getenv("LIBSAPROC_DEBUG") != NULL);
 }
 
-JNIEXPORT jint JNICALL Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_getAddressSize
+JNIEXPORT jint JNICALL Java_sun_jvm_hotspot_debugger_macosx_MacosxDebuggerLocal_getAddressSize
   (JNIEnv *env, jclass cls)
 {
 #ifdef _LP64
@@ -225,7 +225,7 @@ JNIEXPORT jint JNICALL Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_getAdd
 #endif
 }
 
-/** called by Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_lookupByName0 */
+/** called by Java_sun_jvm_hotspot_debugger_macosx_MacosxDebuggerLocal_lookupByName0 */
 jlong lookupByNameIncore(
   JNIEnv *env, struct ps_prochandle *ph, jobject this_obj, jstring objectName, jstring symbolName)
 {
@@ -289,12 +289,12 @@ static NSString* JavaStringToNSString(JNIEnv *env, jstring jstr) {
 }
 
 /*
- * Class:     sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal
+ * Class:     sun_jvm_hotspot_debugger_macosx_MacosxDebuggerLocal
  * Method:    lookupByName0
  * Signature: (Ljava/lang/String;Ljava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL
-Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_lookupByName0(
+Java_sun_jvm_hotspot_debugger_macosx_MacosxDebuggerLocal_lookupByName0(
   JNIEnv *env, jobject this_obj,
   jstring objectName, jstring symbolName)
 {
@@ -324,11 +324,11 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_lookupByName0(
 }
 
 /*
- * Class:     sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal
+ * Class:     sun_jvm_hotspot_debugger_macosx_MacosxDebuggerLocal
  * Method:    lookupByAddress0
  * Signature: (J)Lsun/jvm/hotspot/debugger/cdbg/ClosestSymbol;
  */
-JNIEXPORT jobject JNICALL Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_lookupByAddress0
+JNIEXPORT jobject JNICALL Java_sun_jvm_hotspot_debugger_macosx_MacosxDebuggerLocal_lookupByAddress0
   (JNIEnv *env, jobject this_obj, jlong addr) {
   uintptr_t offset;
   const char* sym = NULL;
@@ -346,7 +346,7 @@ JNIEXPORT jobject JNICALL Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_loo
   return 0;
 }
 
-/** called from Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_readBytesFromProcess0 */
+/** called from Java_sun_jvm_hotspot_debugger_macosx_MacosxDebuggerLocal_readBytesFromProcess0 */
 jbyteArray readBytesFromCore(
   JNIEnv *env, struct ps_prochandle *ph, jobject this_obj, jlong addr, jlong numBytes)
 {
@@ -366,12 +366,12 @@ jbyteArray readBytesFromCore(
 }
 
 /*
- * Class:     sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal
+ * Class:     sun_jvm_hotspot_debugger_macosx_MacosxDebuggerLocal
  * Method:    readBytesFromProcess0
  * Signature: (JJ)Lsun/jvm/hotspot/debugger/ReadResult;
  */
 JNIEXPORT jbyteArray JNICALL
-Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_readBytesFromProcess0(
+Java_sun_jvm_hotspot_debugger_macosx_MacosxDebuggerLocal_readBytesFromProcess0(
   JNIEnv *env, jobject this_obj,
   jlong addr, jlong numBytes)
 {
@@ -463,7 +463,7 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_readBytesFromProcess0(
   * from Threads which store all java threads information when they are created. Here we can identify
   * them as java threads by checking if a thread's rsp or rbp within a java thread's stack.
   * Note Macosx uses unique_thread_id which is different from other platforms though printed ids
-  * are still pthread id. Function BsdDebuggerLocal.getJavaThreadsInfo returns an array of long
+  * are still pthread id. Function MacosxDebuggerLocal.getJavaThreadsInfo returns an array of long
   * integers to host all java threads' id, stack_start, stack_end as:
   * [uid0, stack_start0, stack_end0, uid1, stack_start1, stack_end1, ...]
   *
@@ -514,7 +514,7 @@ bool fill_java_threads(JNIEnv* env, jobject this_obj, struct ps_prochandle* ph) 
 }
 
 /* For core file only, called from
- * Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_getThreadIntegerRegisterSet0
+ * Java_sun_jvm_hotspot_debugger_macosx_MacosxDebuggerLocal_getThreadIntegerRegisterSet0
  */
 jlongArray getThreadIntegerRegisterSetFromCore(JNIEnv *env, jobject this_obj, long lwp_id, struct ps_prochandle* ph) {
   if (!_threads_filled)  {
@@ -677,12 +677,12 @@ lookupThreadFromThreadId(task_t task, jlong thread_id) {
 
 
 /*
- * Class:     sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal
+ * Class:     sun_jvm_hotspot_debugger_macosx_MacosxDebuggerLocal
  * Method:    getThreadIntegerRegisterSet0
  * Signature: (J)[J
  */
 JNIEXPORT jlongArray JNICALL
-Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_getThreadIntegerRegisterSet0(
+Java_sun_jvm_hotspot_debugger_macosx_MacosxDebuggerLocal_getThreadIntegerRegisterSet0(
   JNIEnv *env, jobject this_obj,
   jlong thread_id)
 {
@@ -809,7 +809,7 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_getThreadIntegerRegisterSet0(
 }
 
 /*
- * Class:     sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal
+ * Class:     sun_jvm_hotspot_debugger_macosx_MacosxDebuggerLocal
  * Method:    translateTID0
  * Signature: (I)I
  */
@@ -954,12 +954,12 @@ static int wait_for_exception() {
 }
 
 /*
- * Class:     sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal
+ * Class:     sun_jvm_hotspot_debugger_macosx_MacosxDebuggerLocal
  * Method:    attach0
  * Signature: (I)V
  */
 JNIEXPORT void JNICALL
-Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_attach0__I(
+Java_sun_jvm_hotspot_debugger_macosx_MacosxDebuggerLocal_attach0__I(
   JNIEnv *env, jobject this_obj, jint jpid)
 {
   print_debug("attach0 called for jpid=%d\n", (int)jpid);
@@ -1089,7 +1089,7 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_attach0__I(
 }
 
 /** For core file,
-    called from Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_attach0__Ljava_lang_String_2Ljava_lang_String_2 */
+    called from Java_sun_jvm_hotspot_debugger_macosx_MacosxDebuggerLocal_attach0__Ljava_lang_String_2Ljava_lang_String_2 */
 static void fillLoadObjects(JNIEnv* env, jobject this_obj, struct ps_prochandle* ph) {
   int n = 0, i = 0;
   jobject loadObjectList;
@@ -1120,12 +1120,12 @@ static void fillLoadObjects(JNIEnv* env, jobject this_obj, struct ps_prochandle*
 }
 
 /*
- * Class:     sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal
+ * Class:     sun_jvm_hotspot_debugger_macosx_MacosxDebuggerLocal
  * Method:    attach0
  * Signature: (Ljava/lang/String;Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL
-Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_attach0__Ljava_lang_String_2Ljava_lang_String_2(
+Java_sun_jvm_hotspot_debugger_macosx_MacosxDebuggerLocal_attach0__Ljava_lang_String_2Ljava_lang_String_2(
   JNIEnv *env, jobject this_obj, jstring execName, jstring coreName)
 {
   const char *execName_cstr;
@@ -1168,12 +1168,12 @@ static void detach_cleanup(task_t gTask, JNIEnv *env, jobject this_obj, bool thr
 }
 
 /*
- * Class:     sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal
+ * Class:     sun_jvm_hotspot_debugger_macosx_MacosxDebuggerLocal
  * Method:    detach0
  * Signature: ()V
  */
 JNIEXPORT void JNICALL
-Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_detach0(
+Java_sun_jvm_hotspot_debugger_macosx_MacosxDebuggerLocal_detach0(
   JNIEnv *env, jobject this_obj)
 {
   print_debug("detach0 called\n");

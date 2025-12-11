@@ -22,12 +22,12 @@
  *
  */
 
-package sun.jvm.hotspot.debugger.bsd;
+package sun.jvm.hotspot.debugger.macosx;
 
 import sun.jvm.hotspot.debugger.*;
 
-class BsdOopHandle extends BsdAddress implements OopHandle {
-  BsdOopHandle(BsdDebugger debugger, long addr) {
+class MacosxOopHandle extends MacosxAddress implements OopHandle {
+  MacosxOopHandle(MacosxDebugger debugger, long addr) {
     super(debugger, addr);
   }
 
@@ -36,11 +36,11 @@ class BsdOopHandle extends BsdAddress implements OopHandle {
       return false;
     }
 
-    if (!(arg instanceof BsdOopHandle)) {
+    if (!(arg instanceof MacosxOopHandle)) {
       return false;
     }
 
-    return (addr == ((BsdAddress) arg).addr);
+    return (addr == ((MacosxAddress) arg).addr);
   }
 
   public Address    addOffsetTo       (long offset) throws UnsupportedOperationException {

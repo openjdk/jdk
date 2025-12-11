@@ -22,7 +22,7 @@
  *
  */
 
-package sun.jvm.hotspot.debugger.bsd;
+package sun.jvm.hotspot.debugger.macosx;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -65,17 +65,17 @@ import sun.jvm.hotspot.utilities.PlatformInfo;
     configured with the Java primitive type sizes. </P> */
 
 @SuppressWarnings("restricted")
-public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
+public class MacosxDebuggerLocal extends DebuggerBase implements MacosxDebugger {
     private boolean useGCC32ABI;
     private boolean attached;
     private long    p_ps_prochandle;      // native debugger handle
     private long    symbolicator;         // macosx symbolicator handle
     private long    task;                 // macosx task handle
     private boolean isCore;
-    private boolean isDarwin;             // variant for bsd
+    private boolean isDarwin;             // variant for macosx
 
     // CDebugger support
-    private BsdCDebugger cdbg;
+    private MacosxCDebugger cdbg;
 
     // loadObjectList is filled by attach0 method
     private List<LoadObject> loadObjectList;
@@ -114,7 +114,17 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
                                 throws DebuggerException;
     public static native int  getAddressSize() ;
 
-    // Note on Bsd threads are really processes. When target process is
+    public native String demangle(String sym);
+
+    public native long findLibPtrByAddress0(long pc);
+
+    public Address findLibPtrByAddress(Address pc) {
+      long ptr = findLibPtrByAddress0(pc.asLongValue());
+      return (ptr == 0L) ? null
+                         : new MacosxAddress(this, ptr);
+    }
+
+    // Note on Macosx threads are really processes. When target process is
     // attached by a serviceability agent thread, only that thread can do
     // ptrace operations on the target. This is because from kernel's point
     // view, other threads are just separate processes and they are not
@@ -125,15 +135,15 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
     // all JNI functions that are making ptrace calls.
 
     interface WorkerThreadTask {
-       public void doit(BsdDebuggerLocal debugger) throws DebuggerException;
+       public void doit(MacosxDebuggerLocal debugger) throws DebuggerException;
     }
 
-    class BsdDebuggerLocalWorkerThread extends Thread {
-       BsdDebuggerLocal debugger;
+    class MacosxDebuggerLocalWorkerThread extends Thread {
+       MacosxDebuggerLocal debugger;
        WorkerThreadTask task;
        DebuggerException lastException;
 
-       public BsdDebuggerLocalWorkerThread(BsdDebuggerLocal debugger) {
+       public MacosxDebuggerLocalWorkerThread(MacosxDebuggerLocal debugger) {
          this.debugger = debugger;
          setDaemon(true);
        }
@@ -177,7 +187,7 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
        }
     }
 
-    private BsdDebuggerLocalWorkerThread workerThread = null;
+    private MacosxDebuggerLocalWorkerThread workerThread = null;
 
     //----------------------------------------------------------------------
     // Implementation of Debugger interface
@@ -188,7 +198,7 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
     <P> useCache should be set to true if debugging is being done
     locally, and to false if the debugger is being created for the
     purpose of supporting remote debugging. </P> */
-    public BsdDebuggerLocal(MachineDescription machDesc,
+    public MacosxDebuggerLocal(MachineDescription machDesc,
                               boolean useCache) throws DebuggerException {
         this.machDesc = machDesc;
         utils = new DebuggerUtilities(machDesc.getAddressSize(),
@@ -201,7 +211,7 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
         }
 
         isDarwin = getOS().equals("darwin");
-        workerThread = new BsdDebuggerLocalWorkerThread(this);
+        workerThread = new MacosxDebuggerLocalWorkerThread(this);
         workerThread.start();
     }
 
@@ -262,7 +272,7 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
         loadObjectList = new ArrayList<>();
         class AttachTask implements WorkerThreadTask {
            int pid;
-           public void doit(BsdDebuggerLocal debugger) {
+           public void doit(MacosxDebuggerLocal debugger) {
               debugger.attach0(pid);
               debugger.attached = true;
               debugger.isCore = false;
@@ -302,7 +312,7 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
             class DetachTask implements WorkerThreadTask {
                 boolean result = false;
 
-                public void doit(BsdDebuggerLocal debugger) {
+                public void doit(MacosxDebuggerLocal debugger) {
                     debugger.detach0();
                     debugger.attached = false;
                     result = true;
@@ -322,7 +332,7 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
         if (addr == 0) {
             return null;
         }
-        return new BsdAddress(this, addr);
+        return new MacosxAddress(this, addr);
     }
 
     /** From the Debugger interface via JVMDebugger */
@@ -340,7 +350,7 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
     }
 
     public String consoleExecuteCommand(String cmd) throws DebuggerException {
-        throw new DebuggerException("No debugger console available on Bsd");
+        throw new DebuggerException("No debugger console available on Macosx");
     }
 
     public String getConsolePrompt() throws DebuggerException {
@@ -366,15 +376,15 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
         if (isCore) {
             // MacOSX symbol with "_" as leading
             long addr = lookupByName0(objectName, isDarwin ? "_" + symbol : symbol);
-            return (addr == 0)? null : new BsdAddress(this, handleGCC32ABI(addr, symbol));
+            return (addr == 0)? null : new MacosxAddress(this, handleGCC32ABI(addr, symbol));
         } else {
             class LookupByNameTask implements WorkerThreadTask {
                 String objectName, symbol;
                 Address result;
 
-                public void doit(BsdDebuggerLocal debugger) {
+                public void doit(MacosxDebuggerLocal debugger) {
                     long addr = debugger.lookupByName0(objectName, symbol);
-                    result = (addr == 0 ? null : new BsdAddress(debugger, handleGCC32ABI(addr, symbol)));
+                    result = (addr == 0 ? null : new MacosxAddress(debugger, handleGCC32ABI(addr, symbol)));
                 }
             }
 
@@ -406,7 +416,7 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
 
     /** From the ThreadAccess interface via Debugger and JVMDebugger */
     public ThreadProxy getThreadForIdentifierAddress(Address threadIdAddr, Address uniqueThreadIdAddr) {
-        return new BsdThread(this, threadIdAddr, uniqueThreadIdAddr);
+        return new MacosxThread(this, threadIdAddr, uniqueThreadIdAddr);
     }
 
     @Override
@@ -416,49 +426,49 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
 
     /** From the ThreadAccess interface via Debugger and JVMDebugger */
     public ThreadProxy getThreadForThreadId(long id) {
-        return new BsdThread(this, id);
+        return new MacosxThread(this, id);
     }
 
     //----------------------------------------------------------------------
-    // Internal routines (for implementation of BsdAddress).
+    // Internal routines (for implementation of MacosxAddress).
     // These must not be called until the MachineDescription has been set up.
     //
 
-    /** From the BsdDebugger interface */
+    /** From the MacosxDebugger interface */
     public String addressValueToString(long address) {
         return utils.addressValueToString(address);
     }
 
-    /** From the BsdDebugger interface */
-    public BsdAddress readAddress(long address)
+    /** From the MacosxDebugger interface */
+    public MacosxAddress readAddress(long address)
             throws UnmappedAddressException, UnalignedAddressException {
         long value = readAddressValue(address);
-        return (value == 0 ? null : new BsdAddress(this, value));
+        return (value == 0 ? null : new MacosxAddress(this, value));
     }
-    public BsdAddress readCompOopAddress(long address)
+    public MacosxAddress readCompOopAddress(long address)
             throws UnmappedAddressException, UnalignedAddressException {
         long value = readCompOopAddressValue(address);
-        return (value == 0 ? null : new BsdAddress(this, value));
+        return (value == 0 ? null : new MacosxAddress(this, value));
     }
 
-    public BsdAddress readCompKlassAddress(long address)
+    public MacosxAddress readCompKlassAddress(long address)
             throws UnmappedAddressException, UnalignedAddressException {
         long value = readCompKlassAddressValue(address);
-        return (value == 0 ? null : new BsdAddress(this, value));
+        return (value == 0 ? null : new MacosxAddress(this, value));
     }
 
-    /** From the BsdDebugger interface */
-    public BsdOopHandle readOopHandle(long address)
+    /** From the MacosxDebugger interface */
+    public MacosxOopHandle readOopHandle(long address)
             throws UnmappedAddressException, UnalignedAddressException,
                 NotInHeapException {
         long value = readAddressValue(address);
-        return (value == 0 ? null : new BsdOopHandle(this, value));
+        return (value == 0 ? null : new MacosxOopHandle(this, value));
     }
-    public BsdOopHandle readCompOopHandle(long address)
+    public MacosxOopHandle readCompOopHandle(long address)
             throws UnmappedAddressException, UnalignedAddressException,
                 NotInHeapException {
         long value = readCompOopAddressValue(address);
-        return (value == 0 ? null : new BsdOopHandle(this, value));
+        return (value == 0 ? null : new MacosxOopHandle(this, value));
     }
 
     //----------------------------------------------------------------------
@@ -474,7 +484,7 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
             class GetThreadIntegerRegisterSetTask implements WorkerThreadTask {
                 long unique_thread_id;
                 long[] result;
-                public void doit(BsdDebuggerLocal debugger) {
+                public void doit(MacosxDebuggerLocal debugger) {
                     result = debugger.getThreadIntegerRegisterSet0(unique_thread_id);
                 }
             }
@@ -490,19 +500,19 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
     // Address access. Can not be package private, but should only be
     // accessed by the architecture-specific subpackages.
 
-    /** From the BsdDebugger interface */
+    /** From the MacosxDebugger interface */
     public long getAddressValue(Address addr) {
       if (addr == null) return 0;
       return addr.asLongValue();
     }
 
-    /** From the BsdDebugger interface */
+    /** From the MacosxDebugger interface */
     public Address newAddress(long value) {
       if (value == 0) return null;
-      return new BsdAddress(this, value);
+      return new MacosxAddress(this, value);
     }
 
-    /** From the BsdCDebugger interface */
+    /** From the MacosxCDebugger interface */
     public List<ThreadProxy> getThreadList() {
       requireAttach();
       if (javaThreadList == null) {
@@ -513,13 +523,13 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
                            .toList();
     }
 
-    /** From the BsdCDebugger interface */
+    /** From the MacosxCDebugger interface */
     public List<LoadObject> getLoadObjectList() {
       requireAttach();
       return loadObjectList;
     }
 
-    /** From the BsdCDebugger interface */
+    /** From the MacosxCDebugger interface */
     public synchronized ClosestSymbol lookup(long addr) {
        requireAttach();
        if (isCore) {
@@ -529,7 +539,7 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
              long addr;
              ClosestSymbol result;
 
-             public void doit(BsdDebuggerLocal debugger) {
+             public void doit(MacosxDebuggerLocal debugger) {
                  result = debugger.lookupByAddress0(addr);
              }
           }
@@ -543,7 +553,7 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
 
     public CDebugger getCDebugger() {
       if (cdbg == null) {
-         cdbg = new BsdCDebugger(this);
+         cdbg = new MacosxCDebugger(this);
       }
       return cdbg;
     }
@@ -559,7 +569,7 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
             class ReadBytesFromProcessTask implements WorkerThreadTask {
                 long address, numBytes;
                 ReadResult result;
-                public void doit(BsdDebuggerLocal debugger) {
+                public void doit(MacosxDebuggerLocal debugger) {
                     byte[] res = debugger.readBytesFromProcess0(address, numBytes);
                     if (res != null)
                         result = new ReadResult(res);
@@ -591,7 +601,7 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
         for (var t : javaThreadList) {
             end = t.getStackBaseValue();
             beg = end - t.getStackSize();
-            long uid = ((BsdThread)t.getThreadProxy()).getUniqueThreadId();
+            long uid = ((MacosxThread)t.getThreadProxy()).getUniqueThreadId();
             result[i] = uid;
             result[i + 1] = beg;
             result[i + 2] = end;

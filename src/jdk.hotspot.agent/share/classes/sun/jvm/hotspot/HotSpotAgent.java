@@ -38,8 +38,8 @@ import sun.jvm.hotspot.debugger.MachineDescriptionPPC64;
 import sun.jvm.hotspot.debugger.MachineDescriptionAArch64;
 import sun.jvm.hotspot.debugger.MachineDescriptionRISCV64;
 import sun.jvm.hotspot.debugger.NoSuchSymbolException;
-import sun.jvm.hotspot.debugger.bsd.BsdDebuggerLocal;
 import sun.jvm.hotspot.debugger.linux.LinuxDebuggerLocal;
+import sun.jvm.hotspot.debugger.macosx.MacosxDebuggerLocal;
 import sun.jvm.hotspot.debugger.remote.RemoteDebugger;
 import sun.jvm.hotspot.debugger.remote.RemoteDebuggerClient;
 import sun.jvm.hotspot.debugger.remote.RemoteDebuggerServer;
@@ -372,8 +372,6 @@ public class HotSpotAgent {
                     setupDebuggerWin32();
                 } else if (os.equals("linux")) {
                     setupDebuggerLinux();
-                } else if (os.equals("bsd")) {
-                    setupDebuggerBsd();
                 } else if (os.equals("darwin")) {
                     setupDebuggerDarwin();
                 } else {
@@ -417,13 +415,9 @@ public class HotSpotAgent {
                 db = new HotSpotTypeDataBase(machDesc,
                 new LinuxVtblAccess(debugger, jvmLibNames),
                 debugger, jvmLibNames);
-            } else if (os.equals("bsd")) {
-                db = new HotSpotTypeDataBase(machDesc,
-                new BsdVtblAccess(debugger, jvmLibNames),
-                debugger, jvmLibNames);
             } else if (os.equals("darwin")) {
                 db = new HotSpotTypeDataBase(machDesc,
-                new BsdVtblAccess(debugger, jvmLibNames),
+                new MacosxVtblAccess(debugger, jvmLibNames),
                 debugger, jvmLibNames);
             } else {
                 throw new DebuggerException("OS \"" + os + "\" not yet supported (no VtblAccess yet)");
@@ -505,8 +499,6 @@ public class HotSpotAgent {
             setupJVMLibNamesWin32();
         } else if (os.equals("linux")) {
             setupJVMLibNamesLinux();
-        } else if (os.equals("bsd")) {
-            setupJVMLibNamesBsd();
         } else if (os.equals("darwin")) {
             setupJVMLibNamesDarwin();
         } else {
@@ -581,29 +573,6 @@ public class HotSpotAgent {
     }
 
     //
-    // BSD
-    //
-
-    private void setupDebuggerBsd() {
-        setupJVMLibNamesBsd();
-
-        if (cpu.equals("amd64") || cpu.equals("x86_64")) {
-            machDesc = new MachineDescriptionAMD64();
-        } else {
-            throw new DebuggerException("BSD only supported on x86_64. Current arch: " + cpu);
-        }
-
-        BsdDebuggerLocal dbg = new BsdDebuggerLocal(machDesc, !isServer);
-        debugger = dbg;
-
-        attachDebugger();
-    }
-
-    private void setupJVMLibNamesBsd() {
-        jvmLibNames = new String[] { "libjvm.so" };
-    }
-
-    //
     // Darwin
     //
 
@@ -618,7 +587,7 @@ public class HotSpotAgent {
             throw new DebuggerException("Darwin only supported on x86_64/aarch64. Current arch: " + cpu);
         }
 
-        BsdDebuggerLocal dbg = new BsdDebuggerLocal(machDesc, !isServer);
+        MacosxDebuggerLocal dbg = new MacosxDebuggerLocal(machDesc, !isServer);
         debugger = dbg;
 
         attachDebugger();
