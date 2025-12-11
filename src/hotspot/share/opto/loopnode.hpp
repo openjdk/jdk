@@ -669,7 +669,7 @@ public:
   Node_List* _required_safept;  // A inner loop cannot delete these safepts;
   bool  _allow_optimizations;   // Allow loop optimizations
 
-  IdealLoopTree( PhaseIdealLoop* phase, Node *head, Node *tail );
+  IdealLoopTree(PhaseIdealLoop* phase, Node* head, Node* tail);
 
   // Is 'l' a member of 'this'?
   bool is_member(const IdealLoopTree *l) const; // Test for nested membership
