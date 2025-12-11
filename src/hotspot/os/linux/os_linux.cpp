@@ -4298,13 +4298,6 @@ OSReturn os::get_native_priority(const Thread* const thread,
   return (*priority_ptr != -1 || errno == 0 ? OS_OK : OS_ERR);
 }
 
-// This is the fastest way to get thread cpu time on Linux.
-// Returns cpu time (user+sys) for any thread, not only for current.
-// POSIX compliant clocks are implemented in the kernels 2.6.16+.
-// It might work on 2.6.10+ with a special kernel/glibc patch.
-// For reference, please, see IEEE Std 1003.1-2004:
-//   http://www.unix.org/single_unix_specification
-
 jlong os::Linux::thread_cpu_time(clockid_t clockid) {
   struct timespec tp;
   int status = clock_gettime(clockid, &tp);
