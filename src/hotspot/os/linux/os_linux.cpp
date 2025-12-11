@@ -4815,10 +4815,16 @@ void os::set_native_thread_name(const char *name) {
   // we preserve the end of the thread name by truncating the middle
   // (e.g. "Dispatc..read21").
   const size_t len = strlen(name);
-  if (len < sizeof(buf)) {
-    strcpy(buf, name);
-  } else {
-    (void) os::snprintf(buf, sizeof(buf), "%.7s..%.6s", name, name + len - 6);
+  const char *thread_name = name;
+  if (len >= sizeof(buf)) {
+    // truncate: first 7 bytes, "..", 6 bytes from the end = 7+2+6 = 15, then NUL terminator
+    memcpy(buf, name, 7);
+    buf[7] = '.';
+    buf[8] = '.';
+    memcpy(buf + 9, name + len - 6, 6);
+    buf[15] = '\0';
+
+    thread_name = buf;
   }
   // Note: we use the system call here instead of calling pthread_setname_np
   // since this is the only way to make ASAN aware of our thread names. Even
