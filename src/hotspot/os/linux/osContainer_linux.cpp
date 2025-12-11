@@ -288,11 +288,13 @@ bool OSContainer::pids_current(uint64_t& value) {
 }
 
 template<typename T> struct metric_fmt;
-template<> struct metric_fmt<uint64_t> { static constexpr const char* fmt = "%lu"; };
+template<> struct metric_fmt<unsigned long long int> { static constexpr const char* fmt = "%llu"; };
+template<> struct metric_fmt<unsigned long int> { static constexpr const char* fmt = "%lu"; };
 template<> struct metric_fmt<int> { static constexpr const char* fmt = "%d"; };
 template<> struct metric_fmt<const char*> { static constexpr const char* fmt = "%s"; };
 
-template void OSContainer::print_container_metric<uint64_t>(outputStream*, const char*, uint64_t, const char*);
+template void OSContainer::print_container_metric<unsigned long long int>(outputStream*, const char*, unsigned long long int, const char*);
+template void OSContainer::print_container_metric<unsigned long int>(outputStream*, const char*, unsigned long int, const char*);
 template void OSContainer::print_container_metric<int>(outputStream*, const char*, int, const char*);
 template void OSContainer::print_container_metric<const char*>(outputStream*, const char*, const char*, const char*);
 
