@@ -235,11 +235,15 @@ void ShenandoahControlThread::run_service() {
 
     {
       MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
-      if (!_gc_requested.is_set()) {
+      if (_requested_gc_cause.load_relaxed() == GCCause::_no_gc) {
         ml.wait(sleep);
       }
     }
   }
+
+  // In case any threads are waiting for a cycle to happen, notify them so they observe the shutdown.
+  notify_gc_waiters();
+  notify_alloc_failure_waiters();
 }
 
 void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cause) {
