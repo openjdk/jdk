@@ -22,11 +22,12 @@
  */
 package jdk.jpackage.internal.util;
 
-import static jdk.jpackage.internal.util.CommandOutputControlTestUtils.isInterleave;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
+import static jdk.jpackage.internal.util.CommandOutputControlTestUtils.isInterleave;
 import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
+import static jdk.jpackage.test.JUnitUtils.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -71,7 +72,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 public class CommandOutputControlTest {
 
-//    @Disabled
     @DisabledIf("cherryPickSavedOutputTestCases")
     @ParameterizedTest
     @MethodSource
@@ -171,6 +171,29 @@ public class CommandOutputControlTest {
         assertEquals("Unexpected exit code 3 from executing the command <unknown>", ex.getMessage());
     }
 
+    @ParameterizedTest
+    @MethodSource
+    public void test_Result_toCharacterResult(ToCharacterResultTestSpec spec) throws IOException, InterruptedException {
+        spec.test();
+    }
+
+    @Test
+    public void test_Result_toCharacterResult_nop() throws IOException, InterruptedException {
+
+        var charset = StandardCharsets.UTF_8;
+
+        var emptyResult = new CommandOutputControl.Result(7);
+        assertSame(emptyResult, emptyResult.toCharacterResult(charset, true));
+        assertSame(emptyResult, emptyResult.toCharacterResult(charset, false));
+
+        var coc = new CommandOutputControl().saveOutput(true);
+
+        var result = coc.createExecutable(new Command(List.of("foo"), List.of()).asToolProvider()).execute();
+
+        assertSame(result, result.toCharacterResult(charset, true));
+        assertSame(result, result.toCharacterResult(charset, false));
+    }
+
     @Test
     public void testTimeout_expires() throws InterruptedException, IOException {
         var cmdline = Command.createShellCommandLine(List.<CommandAction>of(
@@ -185,7 +208,7 @@ public class CommandOutputControlTest {
         var result = exec.execute(1, TimeUnit.SECONDS);
         assertFalse(result.exitCode().isPresent());
 
-        var getExitCodeEx = assertThrowsExactly(UnsupportedOperationException.class, result::getExitCode);
+        var getExitCodeEx = assertThrowsExactly(IllegalStateException.class, result::getExitCode);
         assertEquals(("Exit code is unavailable for timed-out process"), getExitCodeEx.getMessage());
 
         assertEquals(List.of("The quick brown fox jumps"), result.getOutput());
@@ -293,6 +316,82 @@ public class CommandOutputControlTest {
         return testCases;
     }
 
+    public record ToCharacterResultTestSpec(OutputTestSpec execSpec, boolean keepByteContent) {
+
+        public ToCharacterResultTestSpec {
+            Objects.requireNonNull(execSpec);
+        }
+
+        @Override
+        public String toString() {
+            final List<String> tokens = new ArrayList<>();
+
+            tokens.add(execSpec.toString());
+            if (keepByteContent) {
+                tokens.add("keepByteContent");
+            }
+
+            return String.join(", ", tokens.toArray(String[]::new));
+        }
+
+        void test() throws IOException, InterruptedException {
+            var coc = execSpec.cocSpec().create();
+
+            var command = execSpec.commandSpec().command().asToolProvider();
+
+            var expected = coc.binaryOutput(false).createExecutable(command).execute();
+
+            var byteResult = coc.binaryOutput(true).createExecutable(command).execute();
+
+            var actual = byteResult.toCharacterResult(StandardCharsets.UTF_8, keepByteContent);
+
+            CommandOutputControl.Result expectedByteContent;
+            if (keepByteContent) {
+                expectedByteContent = byteResult;
+            } else {
+                expectedByteContent = expected;
+            }
+
+            assertArrayEquals(expectedByteContent.findByteContent().orElse(null), actual.findByteContent().orElse(null));
+            assertArrayEquals(expectedByteContent.findByteStdout().orElse(null), actual.findByteStdout().orElse(null));
+            assertArrayEquals(expectedByteContent.findByteStderr().orElse(null), actual.findByteStderr().orElse(null));
+
+            assertEquals(expected.findContent(), actual.findContent());
+            assertEquals(
+                    expected.findStdout().flatMap(CommandOutputControl.Output::findContent),
+                    actual.findStdout().flatMap(CommandOutputControl.Output::findContent));
+            assertEquals(
+                    expected.findStderr().flatMap(CommandOutputControl.Output::findContent),
+                    actual.findStderr().flatMap(CommandOutputControl.Output::findContent));
+
+            assertSame(byteResult.execSpec(), actual.execSpec());
+            assertEquals(expected.exitCode(), actual.exitCode());
+        }
+    }
+
+    private static Stream<ToCharacterResultTestSpec> test_Result_toCharacterResult() {
+        List<OutputTestSpec> testCases = new ArrayList<>();
+
+        var skip = Set.of(OutputControl.BINARY_OUTPUT, OutputControl.DUMP, OutputControl.SAVE_FIRST_LINE);
+
+        for (var outputControl : OutputControl.variants().stream().filter(spec -> {
+            return !skip.stream().anyMatch(spec::contains);
+        }).toList()) {
+            for (var stdoutContent : List.of(OutputData.EMPTY, OutputData.MANY)) {
+                for (var stderrContent : List.of(OutputData.EMPTY, OutputData.MANY)) {
+                    var commandSpec = new CommandSpec(stdoutContent, stderrContent);
+                    testCases.add(new OutputTestSpec(false, new CommandOutputControlSpec(outputControl), commandSpec));
+                }
+            }
+        }
+
+        return testCases.stream().flatMap(execSpec -> {
+            return Stream.of(true, false).map(keepByteContent -> {
+                return new ToCharacterResultTestSpec(execSpec, keepByteContent);
+            });
+        });
+    }
+
     private static boolean cherryPickSavedOutputTestCases() {
         return !testSomeSavedOutput().isEmpty();
     }
@@ -315,6 +414,15 @@ public class CommandOutputControlTest {
             for (var outputControl : OutputControl.variants()) {
                 for (final var stdoutContent : List.of(OutputData.values())) {
                     for (final var stderrContent : List.of(OutputData.values())) {
+
+                        if (outputControl.contains(OutputControl.BINARY_OUTPUT)
+                                && (stdoutContent == OutputData.ONE_LINE || stderrContent == OutputData.ONE_LINE)) {
+                            // Skip a test case if it runs a command writing
+                            // a single line in stdout or stderr, and handles command output as a byte stream.
+                            // It duplicates test cases that write multiple lines in stdout or stderr.
+                            continue;
+                        }
+
                         final var commandSpec = new CommandSpec(stdoutContent, stderrContent);
                         boolean toolProvider;
                         switch (executableType) {
@@ -476,6 +584,11 @@ public class CommandOutputControlTest {
             Objects.requireNonNull(stderr);
         }
 
+        @Override
+        public String toString() {
+            return String.format("[stdout=%s, stderr=%s]", stdout, stderr);
+        }
+
         Command command() {
             return new Command(stdout.data.stream().map(line -> {
                 return "stdout." + line;
@@ -505,7 +618,7 @@ public class CommandOutputControlTest {
         STORE_STREAMS_IN_FILES(coc -> {
             coc.storeStreamsInFiles(true);
         }),
-        BINARY_STREAMS(coc -> {
+        BINARY_OUTPUT(coc -> {
             coc.binaryOutput(true);
         }),
         ;
@@ -550,7 +663,7 @@ public class CommandOutputControlTest {
                             }
                         }).map(v -> {
                             if (binaryOutput) {
-                                return new SetBuilder<OutputControl>().add(v).add(BINARY_STREAMS).create();
+                                return new SetBuilder<OutputControl>().add(v).add(BINARY_OUTPUT).create();
                             } else {
                                 return v;
                             }
@@ -645,14 +758,14 @@ public class CommandOutputControlTest {
             assertEquals(0, result.get().getExitCode());
 
             verifyDump(dumpCapture, command);
-            if (contains(OutputControl.BINARY_STREAMS)) {
+            if (contains(OutputControl.BINARY_OUTPUT)) {
                 verifyByteResultContent(result.get(), command, StandardCharsets.UTF_8);
             } else {
                 verifyResultContent(result.get(), command);
             }
         }
 
-        boolean contains(OutputControl v) {
+        private boolean contains(OutputControl v) {
             return cocSpec.contains(v);
         }
 
@@ -824,11 +937,6 @@ public class CommandOutputControlTest {
 
             assertTrue(result.findByteContent().isPresent());
 
-            if (redirectStderr() && !Collections.disjoint(command.stdout(), command.stderr())) {
-                // Interleaved STDOUT and STDERR
-                throw new UnsupportedOperationException("Testee stdout and stderr must be disjoint");
-            }
-
             command = filterSavedStreams(command);
 
             if (!redirectStderr()) {
@@ -852,7 +960,7 @@ public class CommandOutputControlTest {
 
         private List<String> expectedSavedStream(List<String> commandOutput) {
             Objects.requireNonNull(commandOutput);
-            if (contains(OutputControl.SAVE_ALL) || (contains(OutputControl.SAVE_FIRST_LINE) && contains(OutputControl.BINARY_STREAMS))) {
+            if (contains(OutputControl.SAVE_ALL) || (contains(OutputControl.SAVE_FIRST_LINE) && contains(OutputControl.BINARY_OUTPUT))) {
                 return commandOutput;
             } else if (contains(OutputControl.SAVE_FIRST_LINE)) {
                 return commandOutput.stream().findFirst().map(List::of).orElseGet(List::of);
