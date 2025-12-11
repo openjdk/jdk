@@ -54,7 +54,7 @@ import com.sun.tools.javac.util.Context;
 /**
  * A package-oriented index into the jrt: filesystem.
  */
-class JRTIndex {
+class JRTIndex implements LegacyCtPropertiesAccess {
     /** Get a shared instance of the cache. */
     private static JRTIndex sharedInstance;
     public static synchronized JRTIndex getSharedInstance() {
@@ -135,7 +135,8 @@ class JRTIndex {
         entries = new HashMap<>();
     }
 
-    public LegacyCtPropertiesInfo getCtProperties(CharSequence packageName) throws IOException {
+    @Override
+    public LegacyCtPropertiesInfo getInfo(CharSequence packageName) throws IOException {
         return getEntry(RelativeDirectory.forPackage(packageName)).ctProperties;
     }
 
@@ -182,7 +183,8 @@ class JRTIndex {
         return e;
     }
 
-    public boolean isInJRT(FileObject fo) {
+    @Override
+    public boolean supportsLegacyFlags(FileObject fo) {
         if (fo instanceof PathFileObject pathFileObject) {
             Path path = pathFileObject.getPath();
             return (path.getFileSystem() == jrtfs);

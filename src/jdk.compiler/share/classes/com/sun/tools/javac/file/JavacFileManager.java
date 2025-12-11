@@ -460,18 +460,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
     public LegacyCtPropertiesAccess getLegacyCtPropertiesInfo() {
         if (isDefaultBootClassPath() && isSymbolFileEnabled() && JRTIndex.isAvailable()) {
-            return new LegacyCtPropertiesAccess() {
-                private final JRTIndex jrtIndex = getJRTIndex();
-                @Override
-                public boolean supportsLegacyFlags(JavaFileObject fo) {
-                    return jrtIndex.isInJRT(fo);
-                }
-
-                @Override
-                public LegacyCtPropertiesInfo getInfo(CharSequence packge) throws IOException {
-                    return jrtIndex.getCtProperties(packge);
-                }
-            };
+            return getJRTIndex();
         } else {
             return LegacyCtPropertiesAccess.NOOP;
         }

@@ -25,7 +25,7 @@
 package com.sun.tools.javac.file;
 
 import java.io.IOException;
-import javax.tools.JavaFileObject;
+import javax.tools.FileObject;
 
 /**
  * Support for legacy ct.properties.
@@ -54,7 +54,7 @@ public interface LegacyCtPropertiesAccess {
 
     public static LegacyCtPropertiesAccess NOOP = new LegacyCtPropertiesAccess() {
         @Override
-        public boolean supportsLegacyFlags(JavaFileObject fo) {
+        public boolean supportsLegacyFlags(FileObject fo) {
             return false;
         }
 
@@ -64,7 +64,7 @@ public interface LegacyCtPropertiesAccess {
         }
     };
 
-    public boolean supportsLegacyFlags(JavaFileObject fo);
+    public boolean supportsLegacyFlags(FileObject fo);
 
     public LegacyCtPropertiesInfo getInfo(CharSequence packge) throws IOException;
 
