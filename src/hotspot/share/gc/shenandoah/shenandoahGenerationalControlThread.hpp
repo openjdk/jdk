@@ -63,7 +63,7 @@ private:
 
   // Represents a normal (non cancellation) gc request. This can be set by mutators (System.gc,
   // whitebox gc, etc.) or by the regulator thread when the heuristics want to start a cycle.
-  GCCause::Cause  _requested_gc_cause;
+  Atomic<GCCause::Cause> _requested_gc_cause;
 
   // This is the generation the request should operate on.
   ShenandoahGeneration* _requested_generation;

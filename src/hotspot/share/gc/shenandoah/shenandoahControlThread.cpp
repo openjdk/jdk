@@ -67,9 +67,9 @@ void ShenandoahControlThread::run_service() {
 
     // Figure out if we have pending requests.
     const bool alloc_failure_pending = ShenandoahCollectorPolicy::is_allocation_failure(cancelled_cause) ||
-                                       ShenandoahCollectorPolicy::is_allocation_failure(_requested_gc_cause);
+                                       ShenandoahCollectorPolicy::is_allocation_failure(_requested_gc_cause.load_relaxed());
     const bool is_gc_requested = _gc_requested.is_set();
-    const GCCause::Cause requested_gc_cause = _requested_gc_cause;
+    const GCCause::Cause requested_gc_cause = _requested_gc_cause.load_relaxed();
 
     // Choose which GC mode to run in. The block below should select a single mode.
     GCMode mode = none;
@@ -171,7 +171,7 @@ void ShenandoahControlThread::run_service() {
       }
 
       // If this cycle completed without being cancelled, notify waiters about it
-      if (!heap->cancelled_gc() || ShenandoahCollectorPolicy::is_allocation_failure(_requested_gc_cause)) {
+      if (!heap->cancelled_gc() || ShenandoahCollectorPolicy::is_allocation_failure(_requested_gc_cause.load_relaxed())) {
         notify_alloc_failure_waiters();
       }
 
@@ -357,7 +357,7 @@ void ShenandoahControlThread::notify_control_thread(GCCause::Cause cause, Shenan
   // does not take the lock. We need to enforce following order, so that read side sees
   // latest requested gc cause when the flag is set.
   MonitorLocker controller(&_control_lock, Mutex::_no_safepoint_check_flag);
-  _requested_gc_cause = cause;
+  _requested_gc_cause.store_relaxed(cause);
   _gc_requested.set();
   controller.notify();
 }

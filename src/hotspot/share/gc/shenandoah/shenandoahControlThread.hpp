@@ -41,8 +41,8 @@ private:
     stw_full
   } GCMode;
 
-  ShenandoahSharedFlag _gc_requested;
-  GCCause::Cause       _requested_gc_cause;
+  ShenandoahSharedFlag               _gc_requested;
+  Atomic<GCCause::Cause>             _requested_gc_cause;
   ShenandoahGC::ShenandoahDegenPoint _degen_point;
 
   // This lock is used to coordinate waking up the control thread
