@@ -29,8 +29,10 @@
 #include "opto/cfgnode.hpp"
 #include "opto/compile.hpp"
 #include "opto/memnode.hpp"
+#include "opto/mulnode.hpp"
 #include "opto/node.hpp"
 #include "opto/phaseloadfolding.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 void PhaseLoadFolding::optimize() {
   ciEnv* env = C->env();
@@ -238,6 +240,7 @@ void PhaseLoadFolding::process_candidates(VectorSet& candidate_set, WorkLists& w
         work_lists.work_list.push(out);
       } else if (out->is_AddP()) {
         AddPNode* addp = out->as_AddP();
+        assert(addp->base_node() == n, "unexpected base of an AddP");
 
         // A store that may or may not modify a field of oop (e.g. a store into a Phi which has oop
         // as one input, or a store into an element of oop at a variable index). This is
@@ -269,6 +272,7 @@ void PhaseLoadFolding::process_candidates(VectorSet& candidate_set, WorkLists& w
           } else if (addp_out->is_AddP()) {
             // Another AddP, it should share the base with the current addp, so it will be visited
             // later
+            assert(addp_out->in(AddPNode::Base) == n, "must have the same base");
           } else {
             // Some runtime calls receive the pointer without the base
             work_lists.escapes.push(addp_out);
@@ -315,6 +319,31 @@ void PhaseLoadFolding::process_candidates(VectorSet& candidate_set, WorkLists& w
 // Try to find the store that a load observes. Since we know that oop has not escaped, we can
 // inspect the graph aggressively, ignoring calls and memory barriers.
 Node* PhaseLoadFolding::try_fold_recursive(Node* oop, LoadNode* candidate, Node* mem, WorkLists& work_lists) {
+  // An arbitrary int can be the input to a StoreB or a StoreC, the load needs to do the
+  // normalization
+  auto extract_store_value = [&](StoreNode* store) {
+    assert(store->Opcode() == candidate->store_Opcode(), "must match %s - %s", store->Name(), candidate->Name());
+    Node* res = store->in(MemNode::ValueIn);
+    if (candidate->Opcode() == Op_LoadUB) {
+      res = new AndINode(res, _igvn.intcon(0xFF));
+      _igvn.register_new_node_with_optimizer(res);
+    } else if (candidate->Opcode() == Op_LoadB) {
+      res = new LShiftINode(res, _igvn.intcon(24));
+      _igvn.register_new_node_with_optimizer(res);
+      res = new RShiftINode(res, _igvn.intcon(24));
+      _igvn.register_new_node_with_optimizer(res);
+    } else if (candidate->Opcode() == Op_LoadUS) {
+      res = new AndINode(res, _igvn.intcon(0xFFFF));
+      _igvn.register_new_node_with_optimizer(res);
+    } else if (candidate->Opcode() == Op_LoadS) {
+      res = new LShiftINode(res, _igvn.intcon(16));
+      _igvn.register_new_node_with_optimizer(res);
+      res = new RShiftINode(res, _igvn.intcon(16));
+      _igvn.register_new_node_with_optimizer(res);
+    }
+    return res;
+  };
+
   Node* ptr = candidate->in(MemNode::Address);
   int alias_idx = C->get_alias_index(_igvn.type(ptr)->is_ptr());
   while (true) {
@@ -360,7 +389,7 @@ Node* PhaseLoadFolding::try_fold_recursive(Node* oop, LoadNode* candidate, Node*
 
       InitializeNode* init = mem->as_Initialize();
       assert(ptr->is_AddP() && ptr->in(AddPNode::Base) == oop && ptr->in(AddPNode::Address) == oop && ptr->in(AddPNode::Offset)->is_Con(),
-             "invalid pointer into a non-array object");
+             "invalid pointer");
 
 #ifdef _LP64
       Node* res = init->find_captured_store(ptr->in(AddPNode::Offset)->get_long(), candidate->memory_size(), &_igvn);
@@ -373,8 +402,8 @@ Node* PhaseLoadFolding::try_fold_recursive(Node* oop, LoadNode* candidate, Node*
         // Failure to find a captured store will return the memory output of the AllocateNode
         return _igvn.zerocon(candidate->value_basic_type());
       } else {
-        assert(res->is_Store() && res->as_Store()->value_basic_type() == candidate->value_basic_type(), "must match");
-        return res->in(MemNode::ValueIn);
+        assert(res->is_Store(), "must be a store %s", res->Name());
+        return extract_store_value(res->as_Store());
       }
     } else if (mem->is_SafePoint()) {
       mem = mem->in(TypeFunc::Memory);
@@ -382,7 +411,7 @@ Node* PhaseLoadFolding::try_fold_recursive(Node* oop, LoadNode* candidate, Node*
       // We discarded all stores that may write into this field but does not have the form oop + C,
       // so a simple comparison of the address input is enough
       if (ptr == mem->in(MemNode::Address)) {
-        return mem->in(MemNode::ValueIn);
+        return extract_store_value(mem->as_Store());
       } else {
         mem = mem->in(MemNode::Memory);
       }
