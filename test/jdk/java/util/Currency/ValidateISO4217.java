@@ -47,6 +47,8 @@
  * Valid MOCKED.TIME values are "setup", "check", and "true".
  */
 
+import java.util.HashMap;
+import java.util.Map;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -85,6 +87,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * This class tests the latest ISO 4217 data and Java's currency data which is
@@ -99,7 +102,9 @@ public class ValidateISO4217 {
     private static final File dataFile = new File(System.getProperty(
             "test.src", "."), "ISO4217-list-one.txt");
     // Code statuses
+    private static final File OTHER_CURRENCY_CODE_FILE =  Paths.get(System.getProperty("test.src", "."), "otherCurrencyCodesList.txt").toFile();
     private static final byte UNDEFINED = 0;
+    private static Map<String, List<String>> otherCurrencyCodeDetails = new HashMap<String, List<String>>();
     private static final byte DEFINED = 1;
     private static final byte SKIPPED = 2;
     private static final byte TESTED = 4;
@@ -112,6 +117,7 @@ public class ValidateISO4217 {
     private static final List<Arguments> additionalCodes = new ArrayList<Arguments>();
     // Currencies to test (derived from ISO4217Codes and additionalCodes)
     private static final Set<Currency> testCurrencies = new HashSet<>();
+    private static String[] otherCurrencyCodesList;
     // Special case currencies that should only exist after the cut-over occurs
     private static final Set<String> currenciesNotYetDefined = new HashSet<>();
     // Codes that are obsolete, do not have related country, extra currency
@@ -178,8 +184,45 @@ public class ValidateISO4217 {
     @BeforeAll
     static void setUp() throws Exception {
         checkUsage();
+        setUpOtherCurrenciesCode();
         setUpPatchedClasses();
         setUpTestingData();
+    }
+
+    private static void setUpOtherCurrenciesCode() throws Exception{
+        List<String> currencyDetails;
+        otherCurrencyCodesList = otherCodes.split("-");
+        System.out.println("--" + otherCurrencyCodesList[0]);
+        try (FileReader fr = new FileReader(OTHER_CURRENCY_CODE_FILE); BufferedReader in = new BufferedReader(fr)) {
+            String line;
+            while ((line = in.readLine()) != null) {
+                if (line.length() == 0 || line.charAt(0) == '#') {
+                    // Skip comments and empty lines
+                    continue;
+                }
+                StringTokenizer tokens = new StringTokenizer(line, "\t");
+                String otherCurrencyCode = tokens.nextToken();
+                if (otherCurrencyCode.length() != 3) {
+                    continue;
+                }
+                currencyDetails = new ArrayList<String>();
+                currencyDetails.add(tokens.nextToken());
+                currencyDetails.add(tokens.nextToken());
+                otherCurrencyCodeDetails.put(otherCurrencyCode, currencyDetails);
+                System.out.println("otherCurrencyCode = " + otherCurrencyCode + "--" + currencyDetails);
+            }
+        }
+    }
+
+    @Test
+    private static void verifyOtherCurrencyCodes(){
+        for (String currencyCode : otherCurrencyCodesList) {
+            Currency currency = Currency.getInstance(currencyCode);
+            List<String> currencyDetails = otherCurrencyCodeDetails.get(currencyCode);
+            assertNotNull(currencyDetails, "Missing details for " + currencyCode + " in otherCurrencyCodesList.txt");
+            assertEquals(String.valueOf(currency.getNumericCode()), currencyDetails.get(0), "Numeric code mismatch for " + currencyCode);
+            assertEquals(String.valueOf(currency.getDefaultFractionDigits()), currencyDetails.get(1), "Fraction digits mismatch for " + currencyCode);
+        }
     }
 
     // Enforce correct usage of ValidateISO4217
