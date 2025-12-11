@@ -132,14 +132,14 @@ jint ParallelScavengeHeap::initialize() {
 
 void ParallelScavengeHeap::initialize_serviceability() {
 
-  _eden_pool = new EdenMutableSpacePool(_young_gen,
-                                        _young_gen->eden_space(),
-                                        "PS Eden Space",
-                                        false /* support_usage_threshold */);
+  _eden_pool = new PSEdenSpacePool(_young_gen,
+                                   _young_gen->eden_space(),
+                                   "PS Eden Space",
+                                   false /* support_usage_threshold */);
 
-  _survivor_pool = new SurvivorMutableSpacePool(_young_gen,
-                                                "PS Survivor Space",
-                                                false /* support_usage_threshold */);
+  _survivor_pool = new PSSurvivorSpacePool(_young_gen,
+                                           "PS Survivor Space",
+                                           false /* support_usage_threshold */);
 
   _old_pool = new PSOldGenerationPool(_old_gen,
                                       "PS Old Gen",

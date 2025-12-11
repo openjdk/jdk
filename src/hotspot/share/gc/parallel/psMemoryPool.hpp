@@ -43,16 +43,16 @@ public:
   size_t max_size() const { return _old_gen->reserved().byte_size(); }
 };
 
-class EdenMutableSpacePool : public CollectedMemoryPool {
+class PSEdenSpacePool : public CollectedMemoryPool {
 private:
   PSYoungGen*   _young_gen;
   MutableSpace* _space;
 
 public:
-  EdenMutableSpacePool(PSYoungGen* young_gen,
-                       MutableSpace* space,
-                       const char* name,
-                       bool support_usage_threshold);
+  PSEdenSpacePool(PSYoungGen* young_gen,
+                  MutableSpace* space,
+                  const char* name,
+                  bool support_usage_threshold);
 
   MutableSpace* space()                     { return _space; }
   MemoryUsage get_memory_usage();
@@ -65,14 +65,14 @@ public:
   }
 };
 
-class SurvivorMutableSpacePool : public CollectedMemoryPool {
+class PSSurvivorSpacePool : public CollectedMemoryPool {
 private:
   PSYoungGen*   _young_gen;
 
 public:
-  SurvivorMutableSpacePool(PSYoungGen* young_gen,
-                           const char* name,
-                           bool support_usage_threshold);
+  PSSurvivorSpacePool(PSYoungGen* young_gen,
+                      const char* name,
+                      bool support_usage_threshold);
 
   MemoryUsage get_memory_usage();
 
