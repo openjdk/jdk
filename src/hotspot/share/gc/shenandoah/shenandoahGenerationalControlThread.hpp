@@ -30,8 +30,8 @@
 #include "gc/shenandoah/shenandoahController.hpp"
 #include "gc/shenandoah/shenandoahGC.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
-#include "runtime/mutexLocker.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/mutexLocker.hpp"
 
 class ShenandoahOldGeneration;
 class ShenandoahGeneration;
