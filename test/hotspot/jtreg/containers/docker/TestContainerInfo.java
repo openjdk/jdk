@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,6 +31,7 @@
  * @requires !vm.asan
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
+ *          java.base/jdk.internal.platform
  *          java.management
  *          jdk.jartool/sun.tools.jar
  * @build CheckContainerized jdk.test.whitebox.WhiteBox PrintContainerInfo
@@ -49,10 +50,7 @@ public class TestContainerInfo {
     private static final String imageName = Common.imageName("container-info");
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker()) {
-            return;
-        }
-
+        DockerTestUtils.checkCanTestDocker();
         Common.prepareWhiteBox();
         DockerTestUtils.buildJdkContainerImage(imageName);
 
