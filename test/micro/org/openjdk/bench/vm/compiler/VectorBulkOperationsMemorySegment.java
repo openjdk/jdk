@@ -96,6 +96,7 @@ public class VectorBulkOperationsMemorySegment {
     // - write region
     // We should make sure that the region is a multiple of 4k, so that the
     // 4k-aliasing prevention trick can work.
+    // See VectorBulkOperationsArray.java for a deeper explanation.
     //
     // It would be ince to set REGION_SIZE statically, but we want to keep it rather small if possible,
     // to avoid running out of cache. But it might be quite large if NUM_ACCESS_ELEMENTS is large.
@@ -149,6 +150,7 @@ public class VectorBulkOperationsMemorySegment {
     // -------------------------------- BYTE ------------------------------
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_zero_byte_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             long offset_store = offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
@@ -159,6 +161,7 @@ public class VectorBulkOperationsMemorySegment {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_var_byte_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             long offset_store = offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
@@ -169,6 +172,7 @@ public class VectorBulkOperationsMemorySegment {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_zero_byte_MS_fill() {
         for (int r = 0; r < REPETITIONS; r++) {
             long offset_store = offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
@@ -179,6 +183,7 @@ public class VectorBulkOperationsMemorySegment {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_var_byte_MS_fill() {
         for (int r = 0; r < REPETITIONS; r++) {
             long offset_store = offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
@@ -189,6 +194,7 @@ public class VectorBulkOperationsMemorySegment {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void copy_byte_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             long offset_load = offsetLoad(r);
@@ -201,6 +207,7 @@ public class VectorBulkOperationsMemorySegment {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void copy_byte_MemorySegment_copy() {
         for (int r = 0; r < REPETITIONS; r++) {
             long offset_load = offsetLoad(r);
@@ -212,6 +219,7 @@ public class VectorBulkOperationsMemorySegment {
     // -------------------------------- CHAR ------------------------------
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_var_char_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             long offset_store = 2L * offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
@@ -222,6 +230,7 @@ public class VectorBulkOperationsMemorySegment {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void copy_char_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             long offset_load = 2L * offsetLoad(r);
@@ -236,6 +245,7 @@ public class VectorBulkOperationsMemorySegment {
     // -------------------------------- SHORT ------------------------------
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_var_short_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             long offset_store = 2L * offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
@@ -246,6 +256,7 @@ public class VectorBulkOperationsMemorySegment {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void copy_short_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             long offset_load = 2L * offsetLoad(r);
@@ -260,6 +271,7 @@ public class VectorBulkOperationsMemorySegment {
     // -------------------------------- INT ------------------------------
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_var_int_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             long offset_store = 4L * offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
@@ -270,6 +282,7 @@ public class VectorBulkOperationsMemorySegment {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void copy_int_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             long offset_load = 4L * offsetLoad(r);
@@ -284,6 +297,7 @@ public class VectorBulkOperationsMemorySegment {
     // -------------------------------- LONG ------------------------------
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_var_long_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             long offset_store = 8L * offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
@@ -294,6 +308,7 @@ public class VectorBulkOperationsMemorySegment {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void copy_long_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             long offset_load = 8L * offsetLoad(r);
@@ -308,6 +323,7 @@ public class VectorBulkOperationsMemorySegment {
     // -------------------------------- FLOAT ------------------------------
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_var_float_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             long offset_store = 4L * offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
@@ -318,6 +334,7 @@ public class VectorBulkOperationsMemorySegment {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void copy_float_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             long offset_load = 4L * offsetLoad(r);
@@ -332,6 +349,7 @@ public class VectorBulkOperationsMemorySegment {
     // -------------------------------- DOUBLE ------------------------------
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_var_double_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             long offset_store = 8L * offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
@@ -342,6 +360,7 @@ public class VectorBulkOperationsMemorySegment {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void copy_double_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             long offset_load = 8L * offsetLoad(r);

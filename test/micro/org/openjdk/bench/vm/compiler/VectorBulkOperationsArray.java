@@ -90,12 +90,34 @@ public class VectorBulkOperationsArray {
             "290","291","292","293","294","295","296","297","298","299",
             "300"})
     public static int NUM_ACCESS_ELEMENTS;
+    // This is just a default to investigate small iteration loops.
 
     // Every array has two regions:
     // - read region
     // - write region
     // We should make sure that the region is a multiple of 4k, so that the
-    // 4k-aliasing prevention trick can work.
+    // 4k-aliasing prevention trick can work. If we used two arrays, then
+    // we would not know what the relative offset is between them, so we could
+    // not do anything about the 4k-aliasing effects.
+    // Background on 4k-aliasing: many modern CPUs have a store-to-load-forwarding
+    // mechanism that speeds up loads if the memory locations that were recently
+    // stored to. For this, the CPU needs to check if there is a store in the store
+    // buffer with the same address and size. There are various implementations
+    // with different performance characteristics on various CPUs. For x86, there
+    // is a special mechanism that quickly checks the lowest 12bits of the address,
+    // to see if there is a match. If there is a match on the 12bits, we then
+    // have to eventually check the rest of the bits. There seems to be something
+    // speculative going on, and so if we eventually find that there is a match
+    // things are really fast. But if we eventually find that the rest of the
+    // bits do not match, we have to abort and redo the load from memory/cache,
+    // and that can be slower than if we had gone to memory/cache directly. Hence,
+    // if we regularly have matches on the 12bits, but mismatches on the other
+    // bits, we can be slower than expected. 12bits of address gives us a cyclic
+    // patterns every 4k bytes. So if you load/store with a distance of 4k or
+    // a multiple, you can see slower performance than expected, you get a dip/
+    // spike in the curve that is a strange artifact. We would like to avoid this
+    // in our benchmark. That is why we make sure to have k * 4k + 2k offset
+    // between load and store.
     //
     // It would be ince to set REGION_SIZE statically, but we want to keep it rather small if possible,
     // to avoid running out of cache. But it might be quite large if NUM_ACCESS_ELEMENTS is large.
@@ -199,6 +221,7 @@ public class VectorBulkOperationsArray {
     // -------------------------------- BYTE ------------------------------
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_zero_byte_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
@@ -209,6 +232,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_var_byte_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
@@ -219,6 +243,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_zero_byte_arrays_fill() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
@@ -227,6 +252,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_var_byte_arrays_fill() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
@@ -235,6 +261,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void copy_byte_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_load = offsetLoad(r);
@@ -246,6 +273,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void copy_byte_system_arraycopy() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_load = offsetLoad(r);
@@ -257,6 +285,7 @@ public class VectorBulkOperationsArray {
     // -------------------------------- CHAR ------------------------------
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_zero_char_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_CHAR_OFFSET;
@@ -267,6 +296,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_var_char_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_CHAR_OFFSET;
@@ -277,6 +307,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_zero_char_arrays_fill() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_CHAR_OFFSET;
@@ -285,6 +316,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_var_char_arrays_fill() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_CHAR_OFFSET;
@@ -293,6 +325,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void copy_char_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_load = offsetLoad(r);
@@ -304,6 +337,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void copy_char_system_arraycopy() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_load = offsetLoad(r);
@@ -315,6 +349,7 @@ public class VectorBulkOperationsArray {
     // -------------------------------- SHORT ------------------------------
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_zero_short_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_SHORT_OFFSET;
@@ -325,6 +360,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_var_short_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_SHORT_OFFSET;
@@ -335,6 +371,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_zero_short_arrays_fill() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_SHORT_OFFSET;
@@ -343,6 +380,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_var_short_arrays_fill() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_SHORT_OFFSET;
@@ -351,6 +389,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void copy_short_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_load = offsetLoad(r);
@@ -362,6 +401,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void copy_short_system_arraycopy() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_load = offsetLoad(r);
@@ -373,6 +413,7 @@ public class VectorBulkOperationsArray {
     // -------------------------------- INT ------------------------------
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_zero_int_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_INT_OFFSET;
@@ -383,6 +424,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_var_int_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_INT_OFFSET;
@@ -393,6 +435,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_zero_int_arrays_fill() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_INT_OFFSET;
@@ -401,6 +444,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_var_int_arrays_fill() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_INT_OFFSET;
@@ -409,6 +453,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void copy_int_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_load = offsetLoad(r);
@@ -420,6 +465,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void copy_int_system_arraycopy() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_load = offsetLoad(r);
@@ -431,6 +477,7 @@ public class VectorBulkOperationsArray {
     // -------------------------------- LONG ------------------------------
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_zero_long_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_LONG_OFFSET;
@@ -441,6 +488,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_var_long_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_LONG_OFFSET;
@@ -451,6 +499,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_zero_long_arrays_fill() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_LONG_OFFSET;
@@ -459,6 +508,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_var_long_arrays_fill() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_LONG_OFFSET;
@@ -467,6 +517,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void copy_long_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_load = offsetLoad(r);
@@ -478,6 +529,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void copy_long_system_arraycopy() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_load = offsetLoad(r);
@@ -489,6 +541,7 @@ public class VectorBulkOperationsArray {
     // -------------------------------- FLOAT ------------------------------
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_zero_float_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_FLOAT_OFFSET;
@@ -499,6 +552,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_var_float_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_FLOAT_OFFSET;
@@ -509,6 +563,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_zero_float_arrays_fill() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_FLOAT_OFFSET;
@@ -517,6 +572,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_var_float_arrays_fill() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_FLOAT_OFFSET;
@@ -525,6 +581,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void copy_float_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_load = offsetLoad(r);
@@ -536,6 +593,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void copy_float_system_arraycopy() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_load = offsetLoad(r);
@@ -547,6 +605,7 @@ public class VectorBulkOperationsArray {
     // -------------------------------- DOUBLE ------------------------------
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_zero_double_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_DOUBLE_OFFSET;
@@ -557,6 +616,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_var_double_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_DOUBLE_OFFSET;
@@ -567,6 +627,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_zero_double_arrays_fill() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_DOUBLE_OFFSET;
@@ -575,6 +636,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_var_double_arrays_fill() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_DOUBLE_OFFSET;
@@ -583,6 +645,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void copy_double_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_load = offsetLoad(r);
@@ -594,6 +657,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void copy_double_system_arraycopy() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_load = offsetLoad(r);
@@ -605,6 +669,7 @@ public class VectorBulkOperationsArray {
     // -------------------------------- OBJECT ------------------------------
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_null_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_OBJECT_OFFSET;
@@ -615,6 +680,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_A2A_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_OBJECT_OFFSET;
@@ -625,6 +691,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_B2A_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_OBJECT_OFFSET;
@@ -635,6 +702,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_null_arrays_fill() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_OBJECT_OFFSET;
@@ -643,6 +711,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_A2A_arrays_fill() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_OBJECT_OFFSET;
@@ -651,6 +720,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void fill_B2A_arrays_fill() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_OBJECT_OFFSET;
@@ -659,6 +729,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void copy_A2A_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_load = offsetLoad(r);
@@ -670,6 +741,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void copy_B2A_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_load = offsetLoad(r);
@@ -681,6 +753,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void copy_A2A_system_arraycopy() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_load = offsetLoad(r);
@@ -690,6 +763,7 @@ public class VectorBulkOperationsArray {
     }
 
     @Benchmark
+    @OperationsPerInvocation(REPETITIONS)
     public void copy_B2A_system_arraycopy() {
         for (int r = 0; r < REPETITIONS; r++) {
             int offset_load = offsetLoad(r);
