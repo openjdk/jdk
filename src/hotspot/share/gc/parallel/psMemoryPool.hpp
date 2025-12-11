@@ -31,12 +31,12 @@
 #include "services/memoryPool.hpp"
 #include "services/memoryUsage.hpp"
 
-class PSGenerationPool : public CollectedMemoryPool {
+class PSOldGenerationPool : public CollectedMemoryPool {
 private:
   PSOldGen* _old_gen;
 
 public:
-  PSGenerationPool(PSOldGen* pool, const char* name, bool support_usage_threshold);
+  PSOldGenerationPool(PSOldGen* pool, const char* name, bool support_usage_threshold);
 
   MemoryUsage get_memory_usage();
   size_t used_in_bytes() { return _old_gen->used_in_bytes(); }

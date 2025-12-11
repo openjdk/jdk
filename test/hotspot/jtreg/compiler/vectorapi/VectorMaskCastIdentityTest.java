@@ -24,6 +24,7 @@
 /*
 * @test
 * @bug 8356760 8370863
+* @key randomness
 * @library /test/lib /
 * @summary test VectorMaskCast Identity() optimizations
 * @modules jdk.incubator.vector

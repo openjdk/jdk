@@ -2003,6 +2003,9 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
 
   if (bottom_type()->isa_vect() && !bottom_type()->isa_vectmask()) {
     uint ireg = ideal_reg();
+    DEBUG_ONLY(int algm = MIN2(RegMask::num_registers(ireg), (int)Matcher::stack_alignment_in_slots()) * VMRegImpl::stack_slot_size);
+    assert((src_lo_rc != rc_stack) || is_aligned(src_offset, algm), "unaligned vector spill sp offset %d (src)", src_offset);
+    assert((dst_lo_rc != rc_stack) || is_aligned(dst_offset, algm), "unaligned vector spill sp offset %d (dst)", dst_offset);
     if (ireg == Op_VecA && masm) {
       int sve_vector_reg_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
       if (src_lo_rc == rc_stack && dst_lo_rc == rc_stack) {
