@@ -29,12 +29,6 @@
  * @run main TestRowHeightWithColIdentifier
  */
 
-import java.awt.BorderLayout;
-import java.awt.event.ActionEvent;
-import java.awt.Robot;
-
-import javax.swing.JFrame;
-import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableModel;
@@ -42,58 +36,33 @@ import javax.swing.table.DefaultTableModel;
 public class TestRowHeightWithColIdentifier{
 
     private static DefaultTableModel model;
-    private static JFrame frame;
     private static JTable table;
     private static volatile int oldRowHeight;
     private static volatile int curRowHeight;
 
     public static void main(String[] args) throws Exception {
-        try {
-            Robot robot = new Robot();
-            SwingUtilities.invokeAndWait(() -> {
-                frame = new JFrame("TestColIdentifier");
-                model = new DefaultTableModel(null, new Object[] {"FOO", "BAR"});
-                table = new JTable(model);
+        SwingUtilities.invokeAndWait(() -> {
+            model = new DefaultTableModel(null, new Object[] {"FOO", "BAR"});
+            table = new JTable(model);
 
-                model.addRow(new Object[] {"00", "01"});
-                model.addRow(new Object[] {"10", "11"});
-                model.addRow(new Object[] {"20", "21"});
-                for (int row = 0; row < table.getRowCount(); row++) {
-                    table.setRowHeight(row, 100);
-                }
-                frame.getContentPane().setLayout(new BorderLayout());
-                frame.add(new JScrollPane(table), BorderLayout.CENTER);
-
-                frame.pack();
-                frame.setLocationRelativeTo(null);
-                frame.setVisible(true);
-            });
-            robot.waitForIdle();
-            robot.delay(1000);
-
-            SwingUtilities.invokeAndWait(() -> {
-                for (int row = 0; row < table.getRowCount(); row++) {
-                    System.out.println("Before table rowHeight " + table.getRowHeight(row));
-                }
-                oldRowHeight = table.getRowHeight(0);
-            });
-            robot.delay(1000);
-            SwingUtilities.invokeAndWait(() -> {
-                model.setColumnIdentifiers(new Object[] {"Check", "it out!"});
-                for (int row = 0; row < table.getRowCount(); row++) {
-                    System.out.println("AFter table rowHeight " + table.getRowHeight(row));
-                }
-                curRowHeight = table.getRowHeight(0);
-            });
+            model.addRow(new Object[] {"00", "01"});
+            model.addRow(new Object[] {"10", "11"});
+            model.addRow(new Object[] {"20", "21"});
+            for (int row = 0; row < table.getRowCount(); row++) {
+                table.setRowHeight(row, 100);
+            }
+            for (int row = 0; row < table.getRowCount(); row++) {
+                System.out.println("Before table rowHeight " + table.getRowHeight(row));
+            }
+            oldRowHeight = table.getRowHeight(0);
+            model.setColumnIdentifiers(new Object[] {"Check", "it out!"});
+            for (int row = 0; row < table.getRowCount(); row++) {
+                System.out.println("AFter table rowHeight " + table.getRowHeight(row));
+            }
+            curRowHeight = table.getRowHeight(0);
             if (curRowHeight != oldRowHeight) {
                 throw new RuntimeException("DefaultTableModel.setColumnIdentifiers() Clears JTable Row Heights");
             }
-        } finally {
-            SwingUtilities.invokeAndWait(() -> {
-                if (frame != null) {
-                    frame.dispose();
-                }
-            });
-        }
+        });
     }
 }
