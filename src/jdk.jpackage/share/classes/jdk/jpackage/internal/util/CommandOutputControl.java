@@ -62,21 +62,27 @@ import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
 
 /**
- * Configures the output streams of a process or a tool provider and executes
- * it.
+ * Runs commands and processes their stdout and stderr streams.
  * <p>
- * Can save the first line of an output stream, the entire output stream or
- * discard it.
+ * A command is either a subprocess represented by {@link ProcessBuilder} or a
+ * tool provided by {@link ToolProvider}.
  * <p>
- * Supports separate configurations for stdout and stderr streams.
+ * A command is executed synchronously, and the result of its execution is
+ * stored in a {@link Result} instance which captures the exit code and any
+ * saved output streams.
  * <p>
- * Output can be saved as byte or character streams.
- *
+ * Depending on the configuration, it can save the entire output stream, only
+ * the first line, or not save the output at all. Stdout and stderr streams can
+ * be configured independently.
  * <p>
- * The table below describes how combinations of parameters affect content added
- * to {@code System.out} and {@code System.err} streams for subsequently
- * executed {@link #execute(ProcessBuilder, long)} and
- * {@link #execute(ToolProvider, String...)} functions:
+ * Output streams can be treated as either byte streams or character streams.
+ * <p>
+ * The table below shows how different parameter combinations affect the content
+ * added to streams returned by {@link #dumpStdout()} and {@link #dumpStderr()}
+ * for commands subsequently executed via
+ * {@link #execute(ToolProvider, String...)} regardless of whether output
+ * streams are saved or via {@link #execute(ProcessBuilder, long)} if output
+ * streams are saved:
  * <table border="1">
  * <thead>
  * <tr>
@@ -87,53 +93,53 @@ import jdk.jpackage.internal.util.function.ThrowingRunnable;
  * </tr>
  * </thead> <tbody>
  * <tr>
- * <th scope="row">redirectErrorStream(true) and dumpOutput(true)</th>
+ * <th scope="row">redirectStderr(true) and dumpOutput(true)</th>
  * <td>
  * <p>
- * System.out: STDOUT & STDERR interleaved
+ * dumpStdout(): STDOUT & STDERR interleaved
  * <p>
- * System.err: unchanged</td>
+ * dumpStderr(): unchanged</td>
  * <td>
  * <p>
- * System.out: STDOUT
+ * dumpStdout(): STDOUT
  * <p>
- * System.err: unchanged</td>
+ * dumpStderr(): unchanged</td>
  * <td>
  * <p>
- * System.out: STDERR;
+ * dumpStdout(): STDERR;
  * <p>
  * The command's STDERR will be written into the stream object referenced by the
- * {@link System#out} field and not into the underlying file descriptor
+ * {@link #dumpStdout()} field and not into the underlying file descriptor
  * associated with the STDOUT of the Java process
  * <p>
- * System.err: unchanged</td>
+ * dumpStderr(): unchanged</td>
  * </tr>
  * <tr>
- * <th scope="row">redirectErrorStream(false) and dumpOutput(true)</th>
+ * <th scope="row">redirectStderr(false) and dumpOutput(true)</th>
  * <td>
  * <p>
- * System.out: STDOUT
+ * dumpStdout(): STDOUT
  * <p>
- * System.err: STDERR</td>
+ * dumpStderr(): STDERR</td>
  * <td>
  * <p>
- * System.out: STDOUT
+ * dumpStdout(): STDOUT
  * <p>
- * System.err: unchanged</td>
+ * dumpStderr(): unchanged</td>
  * <td>
  * <p>
- * System.out: unchanged
+ * dumpStdout(): unchanged
  * <p>
- * System.err: STDERR</td>
+ * dumpStderr(): STDERR</td>
  * </tr>
  * </tbody>
  * </table>
  *
  * <p>
- * The table below describes how combinations of parameters affect the
- * properties of {@link Result} objects returned from subsequently executed
- * {@link #execute(ProcessBuilder, long)} and
- * {@link #execute(ToolProvider, String...)} functions:
+ * The table below shows how different parameter combinations affect the
+ * properties of {@link Result} objects returned by
+ * {@link #execute(ProcessBuilder, long)} or
+ * {@link #execute(ToolProvider, String...)} when processing character streams:
  * <table border="1">
  * <thead>
  * <tr>
@@ -143,7 +149,7 @@ import jdk.jpackage.internal.util.function.ThrowingRunnable;
  * </tr>
  * </thead> <tbody>
  * <tr>
- * <th scope="row">redirectErrorStream(true) and discardStdout(false) and
+ * <th scope="row">redirectStderr(true) and discardStdout(false) and
  * discardStderr(false)</th>
  * <td>
  * <p>
@@ -163,7 +169,7 @@ import jdk.jpackage.internal.util.function.ThrowingRunnable;
  * Result.findStderr(): {@code Optional.empty()}</td>
  * </tr>
  * <tr>
- * <th scope="row">redirectErrorStream(false) and discardStdout(false) and
+ * <th scope="row">redirectStderr(false) and discardStdout(false) and
  * discardStderr(false)</th>
  * <td>
  * <p>
@@ -185,7 +191,7 @@ import jdk.jpackage.internal.util.function.ThrowingRunnable;
  * otherwise {@code Optional.of(List.of())}</td>
  * </tr>
  * <tr>
- * <th scope="row">redirectErrorStream(true) and discardStdout(false) and
+ * <th scope="row">redirectStderr(true) and discardStdout(false) and
  * discardStderr(true)</th>
  * <td>
  * <p>
@@ -204,7 +210,7 @@ import jdk.jpackage.internal.util.function.ThrowingRunnable;
  * Result.findStderr(): {@code Optional.empty()}</td>
  * </tr>
  * <tr>
- * <th scope="row">redirectErrorStream(false) and discardStdout(false) and
+ * <th scope="row">redirectStderr(false) and discardStdout(false) and
  * discardStderr(true)</th>
  * <td>
  * <p>
@@ -223,7 +229,7 @@ import jdk.jpackage.internal.util.function.ThrowingRunnable;
  * Result.findStderr(): {@code Optional.empty()}</td>
  * </tr>
  * <tr>
- * <th scope="row">redirectErrorStream(true) and discardStdout(true) and
+ * <th scope="row">redirectStderr(true) and discardStdout(true) and
  * discardStderr(false)</th>
  * <td>
  * <p>
@@ -242,7 +248,7 @@ import jdk.jpackage.internal.util.function.ThrowingRunnable;
  * Result.findStderr(): {@code Optional.empty()}</td>
  * </tr>
  * <tr>
- * <th scope="row">redirectErrorStream(false) and discardStdout(true) and
+ * <th scope="row">redirectStderr(false) and discardStdout(true) and
  * discardStderr(false)</th>
  * <td>
  * <p>
@@ -279,31 +285,39 @@ public final class CommandOutputControl {
     }
 
     /**
-     * Configures if the entire stdout and stderr streams from commands subsequently
-     * executed by this object should be saved.
+     * Specifies whether the full output produced by commands subsequently executed
+     * by this object will be saved.
      * <p>
-     * If {@code v} is {@code true}, the entire stdout and stderr streams will be
-     * saved; otherwise, they will be discarded.
+     * If {@code v} is {@code true}, both stdout and stderr streams will be saved;
+     * otherwise, they will not be saved.
      * <p>
-     * This function is mutually exclusive with {@link #saveFirstLineOfOutput()}.
+     * This setting is mutually exclusive with {@link #saveFirstLineOfOutput()}.
      *
-     * @param v if both stdout and stderr streams should be saved
-     *
+     * @param v {@code true} to save the full stdout and stderr streams;
+     *          {@code false} otherwise
      * @return this
      */
     public CommandOutputControl saveOutput(boolean v) {
         return setOutputControl(v, OutputControlOption.SAVE_ALL);
     }
 
+    /**
+     * Returns whether this object will save the complete output of commands
+     * subsequently executed.
+     *
+     * @return {@code true} if this object will save the full output of commands it
+     *         executes subsequently; {@code false} otherwise
+     */
     public boolean isSaveOutput() {
         return outputStreamsControl.stdout().saveAll();
     }
 
     /**
-     * Configures if the first line of the output, combined from stdout and stderr
-     * streams from commands subsequently executed by this object, should be saved.
+     * Specifies whether the first line of the output, combined from the stdout and
+     * stderr streams of commands subsequently executed by this object, will be
+     * saved.
      * <p>
-     * This function is mutually exclusive with {@link #saveOutput(boolean)}.
+     * This setting is mutually exclusive with {@link #saveOutput(boolean)}.
      *
      * @return this
      */
@@ -311,43 +325,61 @@ public final class CommandOutputControl {
         return setOutputControl(true, OutputControlOption.SAVE_FIRST_LINE);
     }
 
+    /**
+     * Returns whether this object will save the first line of the output of
+     * commands subsequently executed.
+     *
+     * @return {@code true} if this object will save the first line of the output of
+     *         commands it executes subsequently; {@code false} otherwise
+     */
     public boolean isSaveFirstLineOfOutput() {
         return outputStreamsControl.stdout().saveFirstLine();
     }
 
     /**
-     * Configures this object to dump stdout and stderr streams from subsequently
-     * executed commands into {@code System.out} and {@code System.err}
-     * respectively.
+     * Specifies whether this object will dump the output streams from
+     * subsequently executed commands into the streams returned by
+     * {@link #dumpStdout()} and {@link #dumpStdout()} methods respectively.
      * <p>
      * If this object is configured to redirect stderr of subsequently executed
-     * commands into their stdout ({@code redirectErrorStream(true)}), they will be
-     * dumped into {@code System.out}; {@code System.err} will remain unchanged.
-     * Otherwise, their stdout and stderr streams will be dumped into
-     * {@code System.out} and {@code System.err} respectively.
+     * commands into their stdout ({@code redirectStderr(true)}), their output
+     * streams will be dumped into the stream returned by {@code dumpStdout()}
+     * method. Otherwise, their stdout and stderr streams will be dumped into the
+     * stream returned by {@code dumpStdout()} and {@code dumpStderr()} methods
+     * respectively.
      *
-     * @param v if output streams from subsequently executed commands should be
-     *          dumped into {@code System.out} and {@code System.err} streams
+     * @param v if output streams from subsequently executed commands will be
+     *          dumped into streams returned by {@code dumpStdout()} and
+     *          {@code dumpStderr()} methods respectively
      *
      * @return this
      *
-     * @see #redirectErrorStream(boolean)
+     * @see #redirectStderr(boolean)
+     * @see #dumpStdout()
+     * @see #dumpStderr()
      */
     public CommandOutputControl dumpOutput(boolean v) {
         setFlag(Flag.DUMP, v);
         return setOutputControl(v, OutputControlOption.DUMP);
     }
 
+    /**
+     * Returns the value passed in the last call of {@link #dumpOutput(boolean)}
+     * method on this object, or {@code false} if the method has not been called.
+     * 
+     * @return the value passed in the last call of {@link #dumpOutput(boolean)}
+     */
     public boolean isDumpOutput() {
         return Flag.DUMP.isSet(flags);
     }
 
     /**
-     * Configures this object to treat stdout and stderr streams from subsequently
+     * Specifies whether this object will treat output streams of subsequently
      * executed commands as byte streams rather than character streams.
      *
-     * @param v if output streams from subsequently executed commands should be
-     *          treated as byte streams rather than character streams
+     * @param v {@code true} if this object will treat the output streams of
+     *          subsequently executed commands as byte streams, and {@code false}
+     *          otherwise
      *
      * @return this
      */
@@ -355,20 +387,30 @@ public final class CommandOutputControl {
         return setFlag(Flag.BINARY_OUTPUT, v);
     }
 
+    /**
+     * Returns the value passed in the last call of {@link #binaryOutput(boolean)}
+     * method on this object, or {@code false} if the method has not been called.
+     * 
+     * @return the value passed in the last call of {@link #binaryOutput(boolean)}
+     */
     public boolean isBinaryOutput() {
         return Flag.BINARY_OUTPUT.isSet(flags);
     }
 
     /**
-     * Sets character encoding for the stdout and the stderr streams of subprocesses
-     * subsequently executed by this object. The default encoding is {@code UTF-8}.
+     * Sets character encoding that will be applied to the stdout and the stderr
+     * streams of subprocesses subsequently executed by this object. The default
+     * encoding is {@code UTF-8}.
      * <p>
      * Doesn't apply to executing {@code ToolProvider}-s.
      * <p>
-     * The value will be ignored if this object is configured for byte output streams.
+     * The value will be ignored if this object is configured for byte output
+     * streams.
      *
      * @param v character encoding for output streams of subsequently executed
      *          subprocesses
+     * 
+     * @see #binaryOutput(boolean)
      *
      * @return this
      */
@@ -377,33 +419,47 @@ public final class CommandOutputControl {
         return this;
     }
 
+    /**
+     * Returns the value passed in the last call of
+     * {@link #processOutputCharset(Charset)} method on this object, or
+     * {@link StandardCharsets#UTF_8} if the method has not been called.
+     * 
+     * @return the character encoding that will be applied to the stdout and stderr
+     *         streams of subprocesses subsequently executed by this object
+     */
     public Charset processOutputCharset() {
         return Optional.ofNullable(processOutputCharset).orElse(StandardCharsets.UTF_8);
     }
 
     /**
-     * Configures if the stderr stream should be redirected into the stdout stream
+     * Specifies whether the stderr stream will be redirected into the stdout stream
      * for commands subsequently executed by this object.
      *
      * @see ProcessBuilder#redirectErrorStream(boolean)
      *
      * @param v {@code true} if the stderr stream of commands subsequently executed
-     *          by this object should be redirected into the stdout stream;
+     *          by this object will be redirected into the stdout stream;
      *          {@code false} otherwise
      *
      * @return this
      */
-    public CommandOutputControl redirectErrorStream(boolean v) {
+    public CommandOutputControl redirectStderr(boolean v) {
         return setFlag(Flag.REDIRECT_STDERR, v);
     }
 
-    public boolean isRedirectErrorStream() {
+    /**
+     * Returns the value passed in the last call of {@link #redirectStderr(boolean)}
+     * method on this object, or {@code false} if the method has not been called.
+     * 
+     * @return the value passed in the last call of {@link #redirectStderr(boolean)}
+     */
+    public boolean isRedirectStderr() {
         return Flag.REDIRECT_STDERR.isSet(flags);
     }
 
     /**
-     * Configures if stderr and stdout streams for subprocesses subsequently
-     * executed by this object should be stored in files.
+     * Specifies whether stderr and stdout streams for subprocesses subsequently
+     * executed by this object will be stored in files.
      * <p>
      * By default, if an output stream of a subprocess is configured for saving,
      * this object will retrieve the content using {@link Process#getInputStream()}
@@ -420,67 +476,169 @@ public final class CommandOutputControl {
      * {@link #execute(ProcessBuilder, long)} method.
      * <p>
      * Doesn't apply to executing {@code ToolProvider}-s.
+     * <p>
+     * Storing output streams in files takes longer than managing them in memory and
+     * should be avoided if possible.
      *
-     * @param v {@code true} if this object should use files to store saved output
+     * @param v {@code true} if this object will use files to store saved output
      *          streams of subsequently executed subprocesses; {@code false}
      *          otherwise
      * @return this
      */
-    public CommandOutputControl storeStreamsInFiles(boolean v) {
-        return setFlag(Flag.STORE_STREMS_IN_FILES, v);
+    public CommandOutputControl storeOutputInFiles(boolean v) {
+        return setFlag(Flag.STORE_OUTPUT_IN_FILES, v);
     }
 
-    public boolean isStoreStreamsInFiles() {
-        return Flag.STORE_STREMS_IN_FILES.isSet(flags);
+    /**
+     * Returns the value passed in the last call of {@link #isStoreOutputInFiles(boolean)}
+     * method on this object, or {@code false} if the method has not been called.
+     * 
+     * @return the value passed in the last call of {@link #isStoreOutputInFiles(boolean)}
+     */
+    public boolean isStoreOutputInFiles() {
+        return Flag.STORE_OUTPUT_IN_FILES.isSet(flags);
     }
 
+    /**
+     * Specifies whether stdout streams from commands subsequently executed by this
+     * object will be discarded.
+     * 
+     * @param v {@code true} if this object will discard stdout streams from
+     *          commands subsequently executed by this object; {@code false}
+     *          otherwise
+     * @return this
+     */
     public CommandOutputControl discardStdout(boolean v) {
         setFlag(Flag.DISCARD_STDOUT, v);
         outputStreamsControl.stdout().discard(v);
         return this;
     }
 
+    /**
+     * Returns the value passed in the last call of {@link #discardStdout(boolean)}
+     * method on this object, or {@code false} if the method has not been called.
+     * 
+     * @return the value passed in the last call of {@link #discardStdout(boolean)}
+     */
     public boolean isDiscardStdout() {
         return Flag.DISCARD_STDOUT.isSet(flags);
     }
 
+    /**
+     * Specifies whether stderr streams from commands subsequently executed by this
+     * object will be discarded.
+     * 
+     * @param v {@code true} if this object will discard stderr streams from
+     *          commands subsequently executed by this object; {@code false}
+     *          otherwise
+     * @return this
+     */
     public CommandOutputControl discardStderr(boolean v) {
         setFlag(Flag.DISCARD_STDERR, v);
         outputStreamsControl.stderr().discard(v);
         return this;
     }
 
+    /**
+     * Returns the value passed in the last call of {@link #discardStderr(boolean)}
+     * method on this object, or {@code false} if the method has not been called.
+     * 
+     * @return the value passed in the last call of {@link #discardStderr(boolean)}
+     */
     public boolean isDiscardStderr() {
         return Flag.DISCARD_STDERR.isSet(flags);
     }
 
+    /**
+     * Specifies the stream where stdout streams from commands subsequently executed
+     * by this object will be dumped.
+     * 
+     * @param v the stream where stdout streams from commands subsequently executed
+     *          by this object will be dumped; {@code null} permitted
+     * @return this
+     */
     public CommandOutputControl dumpStdout(PrintStream v) {
         dumpStdout = v;
         return this;
     }
 
+    /**
+     * Returns the value passed in the last call of {@link #dumpStdout(PrintStream)}
+     * method on this object, or {@link System#out} if the method has not been
+     * called.
+     * 
+     * @return the stream where stdout streams from commands subsequently executed
+     *         by this object will be dumped
+     */
     public PrintStream dumpStdout() {
         return Optional.ofNullable(dumpStdout).orElse(System.out);
     }
 
+    /**
+     * Specifies the stream where stderr streams from commands subsequently executed
+     * by this object will be dumped.
+     * 
+     * @param v the stream where stderr streams from commands subsequently executed
+     *          by this object will be dumped; {@code null} permitted
+     * @return this
+     */
     public CommandOutputControl dumpStderr(PrintStream v) {
         dumpStderr = v;
         return this;
     }
 
+    /**
+     * Returns the value passed in the last call of {@link #dumpStderr(PrintStream)}
+     * method on this object, or {@link System#err} if the method has not been
+     * called.
+     * 
+     * @return the stream where stdout streams from commands subsequently executed
+     *         by this object will be dumped
+     */
     public PrintStream dumpStderr() {
         return Optional.ofNullable(dumpStdout).orElse(System.err);
     }
 
+    /**
+     * Sets the callback to be invoked when this object starts a subprocess from
+     * subsequent {@link #execute(ProcessBuilder, long)} calls.
+     *
+     * <p>
+     * This object maintains a single callback. Calling this method replaces any
+     * previously set callback.
+     *
+     * <p>
+     * The callback is invoked on the thread that calls
+     * {@link #execute(ProcessBuilder, long)} after the subprocess's output streams
+     * begin being pumped.
+     * 
+     * @param v the callback for notifying a subprocess being started or
+     *          {@code null} to
+     * @return this
+     */
     public CommandOutputControl processNotifier(Consumer<Process> v) {
         processNotifier = v;
         return this;
     }
 
+    /**
+     * Returns an {@code Optional} wrapping the value passed in the last call of
+     * {@link #processNotifier(Consumer)} method on this object, or an empty
+     * {@code Optional} if the method has not been called.
+     * 
+     * @return an {@code Optional} wrapping the value passed in the last call of
+     *         {@link #processNotifier(Consumer)}
+     */
     public Optional<Consumer<Process>> processNotifier() {
         return Optional.ofNullable(processNotifier);
     }
 
+    /**
+     * Returns a deep copy of this object. Changes to the copy will not affect the
+     * original.
+     * 
+     * @return a deep copy of this object
+     */
     public CommandOutputControl copy() {
         return new CommandOutputControl(this);
     }
@@ -745,7 +903,7 @@ public final class CommandOutputControl {
         if (isBinaryOutput()) {
             tokens.add("byte");
         }
-        if (redirectRetainedErrorStream()) {
+        if (redirectRetainedStderr()) {
             tokens.add("interleave");
         }
         return String.join("; ", tokens);
@@ -763,10 +921,6 @@ public final class CommandOutputControl {
         var csc = new CachingStreamsConfig();
 
         var process = pb.start();
-
-        processNotifier().ifPresent(c -> {
-            c.accept(process);
-        });
 
         BiConsumer<InputStream, PrintStream> gobbler = (in, ps) -> {
             if (isBinaryOutput()) {
@@ -805,6 +959,10 @@ public final class CommandOutputControl {
             stderrGobbler = Optional.empty();
         }
 
+        processNotifier().ifPresent(c -> {
+            c.accept(process);
+        });
+
         final Optional<Integer> exitCode;
         if (timeoutMillis < 0) {
             exitCode = Optional.of(process.waitFor());
@@ -816,7 +974,7 @@ public final class CommandOutputControl {
         }
 
         try {
-            if (isStoreStreamsInFiles()) {
+            if (isStoreOutputInFiles()) {
                 var stdoutStorage = streamFileSink(pb.redirectOutput());
                 var stderrStorage = streamFileSink(pb.redirectError());
 
@@ -899,13 +1057,13 @@ public final class CommandOutputControl {
         if (!stdoutRedirect.equals(stderrRedirect) && Stream.of(
                 stdoutRedirect,
                 stderrRedirect
-        ).noneMatch(Predicate.isEqual(ProcessBuilder.Redirect.DISCARD)) && redirectRetainedErrorStream()) {
+        ).noneMatch(Predicate.isEqual(ProcessBuilder.Redirect.DISCARD)) && redirectRetainedStderr()) {
             throw new IllegalStateException(String.format(
                     "Can't redirect stderr into stdout because they have different redirects: stdout=%s; stderr=%s",
                     stdoutRedirect, stderrRedirect));
         }
 
-        pb.redirectErrorStream(redirectRetainedErrorStream());
+        pb.redirectErrorStream(redirectRetainedStderr());
         if (replaceStdoutWithStderr()) {
             if (stderrRedirect.equals(ProcessBuilder.Redirect.INHERIT)) {
                 stderrRedirect = ProcessBuilder.Redirect.PIPE;
@@ -921,7 +1079,7 @@ public final class CommandOutputControl {
     }
 
     private ProcessBuilder.Redirect mapRedirect(ProcessBuilder.Redirect redirect) throws IOException {
-        if (isStoreStreamsInFiles() && redirect.equals(ProcessBuilder.Redirect.PIPE)) {
+        if (isStoreOutputInFiles() && redirect.equals(ProcessBuilder.Redirect.PIPE)) {
             var sink = Files.createTempFile("jpackageOutputTempFile", ".tmp");
             return ProcessBuilder.Redirect.to(sink.toFile());
         } else {
@@ -930,10 +1088,10 @@ public final class CommandOutputControl {
     }
 
     /**
-     * Returns {@code true} if STDERR is not discarded and should be redirected to STDOUT, and {@code false} otherwise.
+     * Returns {@code true} if STDERR is not discarded and will be redirected to STDOUT, and {@code false} otherwise.
      */
-    private boolean redirectRetainedErrorStream() {
-        return isRedirectErrorStream() && !outputStreamsControl.stderr().discard();
+    private boolean redirectRetainedStderr() {
+        return isRedirectStderr() && !outputStreamsControl.stderr().discard();
     }
 
     /**
@@ -942,7 +1100,7 @@ public final class CommandOutputControl {
      * STDERR will replace STDOUT if it is redirected and not discarded, and if STDOUT is discarded.
      */
     private boolean replaceStdoutWithStderr() {
-        return redirectRetainedErrorStream() && outputStreamsControl.stdout().discard();
+        return redirectRetainedStderr() && outputStreamsControl.stdout().discard();
     }
 
     private static void joinProcessStreamGobbler(CompletableFuture<Void> streamGobbler) {
@@ -1202,7 +1360,7 @@ public final class CommandOutputControl {
 
         CachingStreamsConfig() {
             out = outputStreamsControl.stdout().buildCachingPrintStream(dumpStdout()).create();
-            if (isRedirectErrorStream()) {
+            if (isRedirectStderr()) {
                 var builder = outputStreamsControl.stderr().buildCachingPrintStream(dumpStdout());
                 out.buf().ifPresent(builder::buffer);
                 err = builder.create();
@@ -1217,7 +1375,7 @@ public final class CommandOutputControl {
             CommandOutput<byte[]> byteOutput;
 
             CachingPrintStream effectiveOut;
-            if (out.buf().isEmpty() && isRedirectErrorStream()) {
+            if (out.buf().isEmpty() && isRedirectStderr()) {
                 effectiveOut = new CachingPrintStream(nullPrintStream(), err.buf());
             } else {
                 effectiveOut = out;
@@ -1225,7 +1383,7 @@ public final class CommandOutputControl {
 
             if (isBinaryOutput()) {
                 Optional<ByteContent> outContent, errContent;
-                if (isRedirectErrorStream()) {
+                if (isRedirectStderr()) {
                     outContent = readBinary(outputStreamsControl.stdout(), effectiveOut).map(ByteContent::new);
                     errContent = Optional.empty();
                 } else {
@@ -1233,11 +1391,11 @@ public final class CommandOutputControl {
                     errContent = readBinary(outputStreamsControl.stderr(), err).map(ByteContent::new);
                 }
 
-                byteOutput = combine(outContent, errContent, redirectRetainedErrorStream());
+                byteOutput = combine(outContent, errContent, redirectRetainedStderr());
                 output = null;
             } else {
                 Optional<StringListContent> outContent, errContent;
-                if (isRedirectErrorStream()) {
+                if (isRedirectStderr()) {
                     outContent = read(outputStreamsControl.stdout(), effectiveOut).map(StringListContent::new);
                     errContent = Optional.empty();
                 } else {
@@ -1245,7 +1403,7 @@ public final class CommandOutputControl {
                     errContent = read(outputStreamsControl.stderr(), err).map(StringListContent::new);
                 }
 
-                output = combine(outContent, errContent, redirectRetainedErrorStream());
+                output = combine(outContent, errContent, redirectRetainedStderr());
                 byteOutput = null;
             }
 
@@ -1564,7 +1722,7 @@ public final class CommandOutputControl {
         DUMP                    (0x01),
         REDIRECT_STDERR         (0x02),
         BINARY_OUTPUT           (0x04),
-        STORE_STREMS_IN_FILES   (0x08),
+        STORE_OUTPUT_IN_FILES   (0x08),
         DISCARD_STDOUT          (0x10),
         DISCARD_STDERR          (0x20),
         ;
