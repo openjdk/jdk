@@ -1971,7 +1971,7 @@ public class MessageFormat extends Format {
     }
 
     // Corresponding to the FormatStyle pattern
-    // WARNING: fromString is dependent on ordinal positioning and String names.
+    // WARNING: fromString is dependent on ordinal positioning and Enum names.
     private enum FormatStyle {
         // Special styles
         DEFAULT,
@@ -1989,9 +1989,11 @@ public class MessageFormat extends Format {
         OR,
         UNIT;
 
-        // Returns a FormatStyle corresponding to the input text
-        // DEFAULT is the empty String, the pre-defined styles are 1-1 with their
-        // enum name, and SUBFORMATPATTERN is anything else.
+        // Returns a FormatStyle corresponding to the input text.
+        // DEFAULT is the empty String.
+        // Pre-defined styles are lower case versions of their enum name
+        // (but compared case-insensitive for historical compatibility).
+        // SUBFORMATPATTERN is anything else.
         private static FormatStyle fromString(String text) {
             var style = text.trim();
             if (style.isEmpty()) {
@@ -2001,8 +2003,7 @@ public class MessageFormat extends Format {
             // Match starting at the pre-defined styles -> [SHORT:]
             for (int i = 2; i < styles.length; i ++) {
                 var fStyle = styles[i];
-                // case-insensitive comp for compatibility
-                if (style.compareToIgnoreCase(fStyle.toString()) == 0) {
+                if (style.compareToIgnoreCase(fStyle.name()) == 0) {
                     return fStyle;
                 }
             }
