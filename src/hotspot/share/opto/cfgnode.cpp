@@ -2618,7 +2618,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       Node *ii = in(i);
       Node *new_in = MemNode::optimize_memory_chain(ii, at, nullptr, phase);
       if (ii != new_in ) {
-        set_req(i, new_in);
+        set_req_X(i, new_in, phase);
         progress = this;
       }
     }
