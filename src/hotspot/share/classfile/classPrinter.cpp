@@ -31,8 +31,8 @@
 #include "oops/klass.inline.hpp"
 #include "oops/method.hpp"
 #include "oops/symbol.hpp"
-#include "utilities/ostream.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/ostream.hpp"
 
 class ClassPrinter::KlassPrintClosure : public LockedClassesDo {
   const char* _class_name_pattern;
