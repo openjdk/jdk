@@ -38,6 +38,7 @@
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/movenode.hpp"
+#include "opto/opcodes.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
@@ -695,6 +696,8 @@ Node* next_mem(Node* mem, int alias) {
   } else if (mem->is_Store() || mem->is_LoadStore() || mem->is_ClearArray()) {
     assert(alias == Compile::AliasIdxRaw, "following raw memory can't lead to a barrier");
     res = mem->in(MemNode::Memory);
+  } else if (mem->Opcode() == Op_StrInflatedCopy || mem->Opcode() == Op_StrCompressedCopy || mem->Opcode() == Op_EncodeISOArray) {
+    res = mem->in(1);
   } else {
 #ifdef ASSERT
     mem->dump();
@@ -1601,6 +1604,9 @@ void MemoryGraphFixer::collect_memory_nodes() {
           assert(_alias == Compile::AliasIdxRaw, "");
           stack.push(mem, mem->req());
           mem = mem->in(MemNode::Memory);
+        } else if (mem->Opcode() == Op_StrInflatedCopy || mem->Opcode() == Op_StrCompressedCopy || mem->Opcode() == Op_EncodeISOArray) {
+          stack.push(mem, mem->req());
+          mem = mem->in(1);
         } else {
 #ifdef ASSERT
           mem->dump();
@@ -2145,7 +2151,8 @@ void MemoryGraphFixer::fix_mem(Node* ctrl, Node* new_ctrl, Node* mem, Node* mem_
             --i;
           }
         }
-      } else if ((u->adr_type() == TypePtr::BOTTOM && u->Opcode() != Op_StrInflatedCopy) ||
+      } else if ((u->adr_type() == TypePtr::BOTTOM &&
+                  u->Opcode() != Op_StrInflatedCopy && mem->Opcode() != Op_StrCompressedCopy && mem->Opcode() != Op_EncodeISOArray) ||
                  u->adr_type() == nullptr) {
         assert(u->adr_type() != nullptr ||
                u->Opcode() == Op_Rethrow ||
@@ -2331,7 +2338,8 @@ void MemoryGraphFixer::fix_memory_uses(Node* mem, Node* replacement, Node* rep_p
           }
 
         }
-      } else if ((u->adr_type() == TypePtr::BOTTOM && u->Opcode() != Op_StrInflatedCopy) ||
+      } else if ((u->adr_type() == TypePtr::BOTTOM &&
+                  u->Opcode() != Op_StrInflatedCopy && mem->Opcode() != Op_StrCompressedCopy && mem->Opcode() != Op_EncodeISOArray) ||
                  u->adr_type() == nullptr) {
         assert(u->adr_type() != nullptr ||
                u->Opcode() == Op_Rethrow ||
