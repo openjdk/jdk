@@ -1536,7 +1536,7 @@ public final class DateTimeFormatterBuilder {
      * @return this, for chaining, not null
      */
     public DateTimeFormatterBuilder appendLiteral(char literal) {
-        appendInternal(new CharLiteralPrinterParser(literal));
+        appendInternal(CharLiteralPrinterParser.of(literal));
         return this;
     }
 
@@ -1554,7 +1554,7 @@ public final class DateTimeFormatterBuilder {
         Objects.requireNonNull(literal, "literal");
         if (!literal.isEmpty()) {
             if (literal.length() == 1) {
-                appendInternal(new CharLiteralPrinterParser(literal.charAt(0)));
+                appendInternal(CharLiteralPrinterParser.of(literal.charAt(0)));
             } else {
                 appendInternal(new StringLiteralPrinterParser(literal));
             }
@@ -2728,7 +2728,7 @@ public final class DateTimeFormatterBuilder {
     /**
      * Prints or parses a character literal.
      */
-    static final class CharLiteralPrinterParser implements DateTimePrinterParser {
+    static class CharLiteralPrinterParser implements DateTimePrinterParser {
         final char literal;
         final boolean isSpaceSeparator;
 
@@ -2737,8 +2737,40 @@ public final class DateTimeFormatterBuilder {
             isSpaceSeparator = Character.getType(literal) == Character.SPACE_SEPARATOR;
         }
 
+        static CharLiteralPrinterParser of(char literal) {
+            if (Character.toUpperCase(literal) == literal && Character.toLowerCase(literal) == literal) {
+                if (Character.getType(literal) != Character.SPACE_SEPARATOR) {
+                    return new CharLiteralPrinterParser(literal) {
+                        @Override
+                        public int parse(DateTimeParseContext context, CharSequence text, int position) {
+                            if (position == text.length() || text.charAt(position) != literal) {
+                                return ~position;
+                            }
+                            return position + 1;
+                        }
+                    };
+                }
+            }
+            if (literal == 'T') {
+                return new CharLiteralPrinterParser(literal) {
+                    @Override
+                    public int parse(DateTimeParseContext context, CharSequence text, int position) {
+                        if (position == text.length()) {
+                            return ~position;
+                        }
+                        char ch = text.charAt(position);
+                        if (ch != 'T' && (ch != 't' || !context.isCaseSensitive())) {
+                            return ~position;
+                        }
+                        return position + 1;
+                    }
+                };
+            }
+            return new CharLiteralPrinterParser(literal);
+        }
+
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+        public final boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
             buf.append(literal);
             return true;
         }
@@ -3322,44 +3354,40 @@ public final class DateTimeFormatterBuilder {
                 return true;
             }
 
+            static int digit(char ch) {
+                return ch >= '0' && ch <= '9' ?  ch - '0' : -1;
+            }
+
             @Override
             public final int parse(DateTimeParseContext context, CharSequence text, int position) {
+                if (context.getDecimalStyle() != DecimalStyle.STANDARD) {
+                    return super.parse(context, text, position);
+                }
                 int length = text.length();
                 if (position == length) {
                     return ~position;
                 }
                 char sign = text.charAt(position);  // IOOBE if invalid position
                 boolean negative = false, positive = false;
-                var decimalStyle = context.getDecimalStyle();
-                var signStyle = this.signStyle;
-                int minWidth = this.minWidth, maxWidth = this.maxWidth;
                 boolean strict = context.isStrict();
-                if (sign == decimalStyle.getPositiveSign()) {
-                    if (!signStyle.parse(true, strict, false)) {
-                        return ~position;
-                    }
+                if (sign == '+') {
                     positive = true;
                     position++;
-                } else if (sign == decimalStyle.getNegativeSign()) {
-                    if (!signStyle.parse(false, strict, false)) {
-                        return ~position;
-                    }
+                } else if (sign == '-') {
                     negative = true;
                     position++;
                 }
 
-                int effMinWidth = (strict ? minWidth : 1);
-                int minEndPos = position + effMinWidth;
+                int minEndPos = position + (strict ? 4 : 1);
                 if (minEndPos > length) {
                     return ~position;
                 }
 
                 int total = 0;
                 int pos = position;
-                int maxEndPos = Math.min(pos + maxWidth, length);
+                int maxEndPos = Math.min(pos + 9, length);
                 while (pos < maxEndPos) {
-                    char ch = text.charAt(pos++);
-                    int digit = decimalStyle.convertToDigit(ch);
+                    int digit = digit(text.charAt(pos++));
                     if (digit < 0) {
                         pos--;
                         if (pos < minEndPos) {
@@ -3377,11 +3405,11 @@ public final class DateTimeFormatterBuilder {
                 } else if (strict) {
                     int parseLen = pos - position;
                     if (positive) {
-                        if (parseLen <= minWidth) {
+                        if (parseLen <= 4) {
                             return -position;  // '+' only parsed if minWidth exceeded
                         }
                     } else {
-                        if (parseLen > minWidth) {
+                        if (parseLen > 4) {
                             return ~position;  // '+' must be parsed if minWidth exceeded
                         }
                     }
