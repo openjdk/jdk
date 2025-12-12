@@ -137,7 +137,7 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
     }
 
     private Executor hdiutil(String... args) {
-        return Executor.of(sysEnv.hdiutil().toString()).args(args).storeStreamsInFiles();
+        return Executor.of(sysEnv.hdiutil().toString()).args(args).storeOutputInFiles();
     }
 
     private void prepareDMGSetupScript() throws IOException {
