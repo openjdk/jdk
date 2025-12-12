@@ -4890,7 +4890,7 @@ bool os::same_files(const char* file1, const char* file2) {
 #define FT2INT64(ft) \
 ((jlong)((jlong)(ft).dwHighDateTime << 32 | (julong)(ft).dwLowDateTime))
 
-CPUTime_t detailed_thread_cpu_time(Thread* t) {
+CPUTime_t os::detailed_thread_cpu_time(Thread* t) {
   FILETIME CreationTime;
   FILETIME ExitTime;
   FILETIME KernelTime;
