@@ -2306,7 +2306,7 @@ CPUTime_t os::detailed_thread_cpu_time(Thread* t) {
   return {
     ((jlong) tinfo.user_time.seconds * (jlong)1000000000) + ((jlong) tinfo.user_time.microseconds * (jlong)1000),
     ((jlong) tinfo.system_time.seconds * (jlong)1000000000) + ((jlong)tinfo.system_time.microseconds * (jlong)1000)
-  }
+  };
 #else
   Unimplemented();
   return {0,0};
