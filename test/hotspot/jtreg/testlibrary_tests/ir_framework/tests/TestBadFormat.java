@@ -125,7 +125,7 @@ public class TestBadFormat {
 
     private static void expectTestFormatException(Class<?> clazz, Class<?>... helpers) {
         // Single test
-        boolean exceptionCatched = false;
+        boolean exceptionCaught = false;
         try {
             if (helpers == null) {
                 TestFramework.run(clazz);
@@ -134,12 +134,12 @@ public class TestBadFormat {
             }
         } catch (Exception e) {
             checkException(clazz, e, helpers);
-            exceptionCatched = true;
+            exceptionCaught = true;
         }
-        Asserts.assertTrue(exceptionCatched, "Should catch an exception");
+        Asserts.assertTrue(exceptionCaught, "Should catch an exception");
 
         // Parallel scenarios
-        exceptionCatched = false;
+        exceptionCaught = false;
         try {
             if (helpers == null) {
                 new TestFramework(clazz).addScenarios(new Scenario(1), new Scenario(2), new Scenario(3))
@@ -150,9 +150,9 @@ public class TestBadFormat {
             }
         } catch (Exception e) {
             checkException(clazz, e, helpers);
-            exceptionCatched = true;
+            exceptionCaught = true;
         }
-        Asserts.assertTrue(exceptionCatched, "Should catch an exception");
+        Asserts.assertTrue(exceptionCaught, "Should catch an exception");
     }
 
     private static void checkException(Class<?> clazz, Exception e, Class<?>[] helpers) {
