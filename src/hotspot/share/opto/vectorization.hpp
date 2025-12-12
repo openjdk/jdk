@@ -1197,7 +1197,9 @@ private:
     bool success = true;
     mem_pointer().for_each_non_empty_summand([&] (const MemPointerSummand& s) {
       Node* variable = s.variable();
-      success &= _vloop.is_available_for_speculative_check(variable);
+      if (variable != _vloop.iv() && !_vloop.is_available_for_speculative_check(variable)) {
+        success = false;
+      }
     });
     return success;
   }
