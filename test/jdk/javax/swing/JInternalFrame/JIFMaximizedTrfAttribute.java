@@ -26,6 +26,7 @@
  * @bug 6681958
  * @summary Verifies Maximization state of JInternalFrames is
  *          not corrupted by WindowsDesktopManager
+ * @requires (os.family == "windows")
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual JIFMaximizedTrfAttribute
