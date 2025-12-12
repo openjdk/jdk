@@ -173,7 +173,7 @@ public final class Executor extends CommandArguments<Executor> {
         return binaryOutput(true);
     }
 
-    public record Result(CommandOutputControl.Result base) implements CommandOutputControl.Output {
+    public record Result(CommandOutputControl.Result base) {
         public Result {
             Objects.requireNonNull(base);
         }
@@ -182,28 +182,31 @@ public final class Executor extends CommandArguments<Executor> {
             this(new CommandOutputControl.Result(exitCode));
         }
 
-        @Override
         public Optional<List<String>> findContent() {
             return base.findContent();
         }
 
         public List<String> getOutput() {
-            return base.getOutput();
+            return base.content();
         }
 
-        public CommandOutputControl.Output stdout() {
+        public String getFirstLineOfOutput() {
+            return getOutput().getFirst();
+        }
+
+        public List<String> stdout() {
             return base.stdout();
         }
 
-        public CommandOutputControl.Output stderr() {
+        public List<String> stderr() {
             return base.stderr();
         }
 
-        public Optional<CommandOutputControl.Output> findStdout() {
+        public Optional<List<String>> findStdout() {
             return base.findStdout();
         }
 
-        public Optional<CommandOutputControl.Output> findStderr() {
+        public Optional<List<String>> findStderr() {
             return base.findStderr();
         }
 
@@ -292,7 +295,7 @@ public final class Executor extends CommandArguments<Executor> {
     }
 
     public String executeAndGetFirstLineOfOutput() {
-        return saveFirstLineOfOutput().execute().getFirstLineOfOutput();
+        return saveFirstLineOfOutput().execute().getOutput().getFirst();
     }
 
     public List<String> executeAndGetOutput() {

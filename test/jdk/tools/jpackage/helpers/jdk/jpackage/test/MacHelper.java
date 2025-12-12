@@ -98,7 +98,7 @@ public final class MacHelper {
                             JPackageCommand.escapeAndJoin(cmd.outputBundle().toString()),
                             "-plist"
                     )).saveOutput().toRetryExecutorCallable());
-        }).get().stdout().getContent();
+        }).get().stdout();
 
         final Path mountPoint;
 
