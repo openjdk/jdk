@@ -33,10 +33,10 @@ package compiler.c2;
  *          ensures that the intermediate node gets destroyed before returning.
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *      -Xcomp -XX:-TieredCompilation
- *      -XX:CompileCommand=compileonly,*TestModIdealCreatesUselessNode::test*
+ *      -XX:CompileCommand=compileonly,${test.main.class}::test*
  *      -XX:VerifyIterativeGVN=1110
- *      compiler.c2.TestModIdealCreatesUselessNode
- * @run main compiler.c2.TestModIdealCreatesUselessNode
+ *      ${test.main.class}
+ * @run main ${test.main.class}
  *
  */
 
