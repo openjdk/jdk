@@ -21,7 +21,7 @@
  * questions.
  */
 
-package compiler.c2;
+package compiler.c2.igvn;
 
 /*
  * @test
