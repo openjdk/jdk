@@ -22,14 +22,14 @@
  * questions.
  */
 
-/* pngdebug.h - Debugging macros for libpng, also used in pngtest.c
+/* pngdebug.h - internal debugging macros for libpng
  *
  * This file is available under and governed by the GNU General Public
  * License version 2 only, as published by the Free Software Foundation.
  * However, the following notice accompanied the original version of this
  * file and, per its terms, should not be removed:
  *
- * Copyright (c) 2018 Cosmin Truta
+ * Copyright (c) 2018-2025 Cosmin Truta
  * Copyright (c) 1998-2002,2004,2006-2013 Glenn Randers-Pehrson
  * Copyright (c) 1996-1997 Andreas Dilger
  * Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.
@@ -38,6 +38,10 @@
  * For conditions of distribution and use, see the disclaimer
  * and license in png.h
  */
+
+#ifndef PNGPRIV_H
+#  error This file must not be included by applications; please include <png.h>
+#endif
 
 /* Define PNG_DEBUG at compile time for debugging information.  Higher
  * numbers for PNG_DEBUG mean more debugging information.  This has
@@ -63,9 +67,6 @@
 #define PNGDEBUG_H
 /* These settings control the formatting of messages in png.c and pngerror.c */
 /* Moved to pngdebug.h at 1.5.0 */
-#  ifndef PNG_LITERAL_SHARP
-#    define PNG_LITERAL_SHARP 0x23
-#  endif
 #  ifndef PNG_LITERAL_LEFT_SQUARE_BRACKET
 #    define PNG_LITERAL_LEFT_SQUARE_BRACKET 0x5b
 #  endif

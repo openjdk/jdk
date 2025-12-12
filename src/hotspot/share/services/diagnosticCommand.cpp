@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
@@ -165,6 +166,7 @@ void DCmd::register_dcmds(){
 
 #if INCLUDE_CDS
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<DumpSharedArchiveDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<AOTEndRecordingDCmd>(full_export, true, false));
 #endif // INCLUDE_CDS
 
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<NMTDCmd>(full_export, true, false));
@@ -985,6 +987,28 @@ void ClassesDCmd::execute(DCmdSource source, TRAPS) {
   VM_PrintClasses vmop(output(), _verbose.value());
   VMThread::execute(&vmop);
 }
+
+#if INCLUDE_CDS
+void AOTEndRecordingDCmd::execute(DCmdSource source, TRAPS) {
+  if (!CDSConfig::is_dumping_preimage_static_archive()) {
+    output()->print_cr("AOT.end_recording is unsupported when VM flags -XX:AOTMode=record or -XX:AOTCacheOutput=<file> are missing.");
+    return;
+  }
+
+  if (AOTMetaspace::preimage_static_archive_dumped()) {
+    output()->print_cr("Recording has already ended.");
+    return;
+  }
+
+  AOTMetaspace::dump_static_archive(THREAD);
+  if (!AOTMetaspace::preimage_static_archive_dumped()) {
+    output()->print_cr("Error: Failed to end recording.");
+    return;
+  }
+
+  output()->print_cr("Recording ended successfully.");
+}
+#endif // INCLUDE_CDS
 
 #if INCLUDE_CDS
 #define DEFAULT_CDS_ARCHIVE_FILENAME "java_pid%p_<subcmd>.jsa"

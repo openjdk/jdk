@@ -418,12 +418,9 @@ final class OptionsAnalyzer {
                 asOptionList(PREDEFINED_RUNTIME_IMAGE, ADD_MODULES),
                 asOptionList(PREDEFINED_RUNTIME_IMAGE, JLINK_OPTIONS),
                 asOptionList(MAC_SIGNING_KEY_NAME, MAC_APP_IMAGE_SIGN_IDENTITY),
-                asOptionList(MAC_SIGNING_KEY_NAME, MAC_INSTALLER_SIGN_IDENTITY)
+                asOptionList(MAC_SIGNING_KEY_NAME, MAC_INSTALLER_SIGN_IDENTITY),
+                asOptionList(MODULE, MAIN_JAR)
         ).map(MutualExclusiveOptions::new).forEach(config::add);
-
-        config.add(new MutualExclusiveOptions(asOptionList(MODULE, MAIN_JAR), _ -> {
-            return error("ERR_BothMainJarAndModule");
-        }));
 
         MUTUAL_EXCLUSIVE_OPTIONS = List.copyOf(config);
     }
