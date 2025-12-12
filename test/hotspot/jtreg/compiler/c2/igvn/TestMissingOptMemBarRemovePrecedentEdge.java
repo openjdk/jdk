@@ -32,30 +32,30 @@
  *          This test ensures that this optimization is not missed.
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *      -Xcomp -XX:-TieredCompilation
- *      -XX:CompileCommand=compileonly,*TestMissingOptMemBarRemovePrecedentEdge::test*
+ *      -XX:CompileCommand=compileonly,${test.main.class}::test*
  *      -XX:VerifyIterativeGVN=1110
  *      -XX:-EliminateAutoBox
- *      compiler.c2.TestMissingOptMemBarRemovePrecedentEdge
+ *      ${test.main.class}
   * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *      -Xcomp -XX:-TieredCompilation
- *      -XX:CompileCommand=compileonly,*TestMissingOptMemBarRemovePrecedentEdge::test*
+ *      -XX:CompileCommand=compileonly,${test.main.class}::test*
  *      -XX:VerifyIterativeGVN=1110
  *      -XX:-EliminateAutoBox
  *      -XX:-DoEscapeAnalysis
- *      compiler.c2.TestMissingOptMemBarRemovePrecedentEdge
+ *      ${test.main.class}
   * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *      -Xcomp -XX:-TieredCompilation
- *      -XX:CompileCommand=compileonly,*TestMissingOptMemBarRemovePrecedentEdge::test*
+ *      -XX:CompileCommand=compileonly,${test.main.class}::test*
  *      -XX:VerifyIterativeGVN=1110
  *      -XX:-EliminateAutoBox
  *      -XX:-DoEscapeAnalysis
  *      -XX:+AlwaysIncrementalInline
- *      compiler.c2.TestMissingOptMemBarRemovePrecedentEdge
- * @run main compiler.c2.TestMissingOptMemBarRemovePrecedentEdge
+ *      ${test.main.class}
+ * @run main ${test.main.class}
  *
  */
 
-package compiler.c2;
+package compiler.c2.igvn;
 
 public class TestMissingOptMemBarRemovePrecedentEdge {
     static class MyClass {
