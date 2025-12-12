@@ -211,13 +211,17 @@ final class DateTimePrinterParserFactory {
                });
         });
         try {
-            var lookupClass = MethodHandles.lookup().lookupClass();
-            var loader      = lookupClass.getClassLoader();
-            var pd          = (loader != null) ? JLA.protectionDomain(lookupClass) : null;
-            return JLA.defineClass(loader, lookupClass, className, classBytes, pd, true, ACC_FINAL | ACC_PRIVATE | ACC_STATIC, null);
+            return defineClass(className, classBytes);
         } catch (Exception e) {
             throw new DateTimeException("Exception while spinning the DateTimePrinter class", e);
         }
+    }
+
+    private static Class<?> defineClass(String className, byte[] classBytes) {
+        var lookupClass = MethodHandles.lookup().lookupClass();
+        var loader      = lookupClass.getClassLoader();
+        var pd          = (loader != null) ? JLA.protectionDomain(lookupClass) : null;
+        return JLA.defineClass(loader, lookupClass, className, classBytes, pd, true, ACC_FINAL | ACC_PRIVATE | ACC_STATIC, null);
     }
 
     /**
@@ -319,10 +323,7 @@ final class DateTimePrinterParserFactory {
                     });
         });
         try {
-            var lookupClass = MethodHandles.lookup().lookupClass();
-            var loader      = lookupClass.getClassLoader();
-            var pd          = (loader != null) ? JLA.protectionDomain(lookupClass) : null;
-            return JLA.defineClass(loader, lookupClass, className, classBytes, pd, true, ACC_FINAL | ACC_PRIVATE | ACC_STATIC, null);
+            return defineClass(className, classBytes);
         } catch (Exception e) {
             throw new DateTimeException("Exception while spinning the DateTimePrinter class", e);
         }
