@@ -418,7 +418,7 @@ bool LateInlineMHCallGenerator::do_late_inline_check(Compile* C, JVMState* jvms)
       C->inline_printer()->record(cg->method(), call_node()->jvms(), InliningResult::FAILURE,
                                   "late method handle call resolution");
     }
-    assert(!cg->is_late_inline() || cg->is_mh_late_inline() || AlwaysIncrementalInline || StressIncrementalInlining, "we're doing late inlining");
+    assert(!cg->is_late_inline() || cg->is_mh_late_inline() || cg->is_virtual_late_inline() || AlwaysIncrementalInline || StressIncrementalInlining, "we're doing late inlining");
     _inline_cg = cg;
     C->dec_number_of_mh_late_inlines();
     return true;
