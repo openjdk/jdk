@@ -29,6 +29,8 @@
 #include "logging/logStream.hpp"
 #include "memory/universe.hpp"
 #include "runtime/os.hpp"
+#include "services/cpuTimeUsage.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 void GCTraceTimeLoggerImpl::log_start(Ticks start) {
   _start = start;
@@ -71,17 +73,20 @@ void GCTraceTimeLoggerImpl::log_end(Ticks end) {
 GCTraceCPUTime::GCTraceCPUTime(GCTracer* tracer) :
   _active(log_is_enabled(Info, gc, cpu) ||
           (tracer != nullptr && tracer->should_report_cpu_time_event())),
-  _starting_user_time(0.0),
-  _starting_system_time(0.0),
+  _starting_user_time(0),
+  _starting_system_time(0),
   _starting_real_time(0.0),
   _tracer(tracer)
 {
   if (_active) {
-    bool valid = os::getTimesSecs(&_starting_real_time,
-                                  &_starting_user_time,
-                                  &_starting_system_time);
-    if (!valid) {
-      log_warning(gc, cpu)("TraceCPUTime: os::getTimesSecs() returned invalid result");
+    CPUTime_t cpu_time_vm = CPUTimeUsage::GC::detailed_gc_operation_vm_thread();
+    CPUTime_t cpu_time_gc = CPUTimeUsage::GC::detailed_gc_threads();
+    CPUTime_t cpu_time_stringdedup = CPUTimeUsage::GC::detailed_stringdedup();
+    _starting_user_time = cpu_time_vm.user + cpu_time_gc.user + cpu_time_stringdedup.user;
+    _starting_system_time = cpu_time_vm.system + cpu_time_gc.system + cpu_time_stringdedup.system;
+    _starting_real_time = os::elapsedTime();
+    if (CPUTimeUsage::Error::has_error()) {
+      log_warning(gc, cpu)("TraceCPUTime: CPUTimeUsage may contain invalid results");
       _active = false;
     }
   }
@@ -89,18 +94,26 @@ GCTraceCPUTime::GCTraceCPUTime(GCTracer* tracer) :
 
 GCTraceCPUTime::~GCTraceCPUTime() {
   if (_active) {
-    double real_time, user_time, system_time;
-    bool valid = os::getTimesSecs(&real_time, &user_time, &system_time);
-    if (valid) {
+    CPUTime_t cpu_time_vm = CPUTimeUsage::GC::detailed_gc_operation_vm_thread();
+    CPUTime_t cpu_time_gc = CPUTimeUsage::GC::detailed_gc_threads();
+    CPUTime_t cpu_time_stringdedup = CPUTimeUsage::GC::detailed_stringdedup();
+
+    double real_time = os::elapsedTime() - _starting_real_time;
+    jlong user_time = cpu_time_vm.user + cpu_time_gc.user + cpu_time_stringdedup.user;
+    jlong system_time = cpu_time_vm.system + cpu_time_gc.system + cpu_time_stringdedup.system;
+
+    if (!CPUTimeUsage::Error::has_error()) {
       user_time -= _starting_user_time;
       system_time -= _starting_system_time;
       real_time -= _starting_real_time;
-      log_info(gc, cpu)("User=%3.2fs Sys=%3.2fs Real=%3.2fs", user_time, system_time, real_time);
+      double user_time_seconds = 1.0 * user_time / NANOSECS_PER_SEC;
+      double system_time_seconds = 1.0 * system_time / NANOSECS_PER_SEC;
+      log_info(gc, cpu)("User=%3.2fs Sys=%3.2fs Real=%3.2fs", user_time_seconds, system_time_seconds, real_time);
       if (_tracer != nullptr) {
         _tracer->report_cpu_time_event(user_time, system_time, real_time);
       }
     } else {
-      log_warning(gc, cpu)("TraceCPUTime: os::getTimesSecs() returned invalid result");
+      log_warning(gc, cpu)("TraceCPUTime: CPUTimeUsage may contain invalid results");
     }
   }
 }
