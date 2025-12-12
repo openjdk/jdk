@@ -746,6 +746,7 @@ public class TestFramework {
      * For scenarios: Run the tests with the scenario settings and collect all exceptions to be able to run all
      * scenarios without prematurely throwing an exception. Format violations, however, are wrong for all scenarios
      * and thus is reported immediately on the first scenario execution.
+     * 
      * @param parallel Run tests concurrently
      */
     private void startWithScenarios(boolean parallel) {
