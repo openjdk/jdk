@@ -371,8 +371,7 @@ public class PackageTestTest extends JUnitAdapter {
                         } catch (IOException ex) {
                             throw new UncheckedIOException(ex);
                         }
-                        return new Executor.Result(actualJPackageExitCode,
-                                this::getPrintableCommandLine).assertExitCodeIs(expectedExitCode);
+                        return new Executor.Result(actualJPackageExitCode).assertExitCodeIs(expectedExitCode);
                     }
                 };
             }).setExpectedExitCode(expectedJPackageExitCode)

@@ -173,7 +173,7 @@ public final class MacSignVerify {
         } else if (result.getExitCode() == 1 && result.getFirstLineOfOutput().endsWith("code object is not signed at all")) {
             return Optional.empty();
         } else {
-            reportUnexpectedCommandOutcome(exec.getPrintableCommandLine(), result);
+            reportUnexpectedCommandOutcome(result);
             return null; // Unreachable
         }
     }
@@ -205,7 +205,7 @@ public final class MacSignVerify {
                 TKit.trace("Try /usr/bin/codesign again with `sudo`");
                 assertSigned(path, true);
         } else {
-            reportUnexpectedCommandOutcome(exec.getPrintableCommandLine(), result);
+            reportUnexpectedCommandOutcome(result);
         }
     }
 
@@ -264,13 +264,13 @@ public final class MacSignVerify {
                 return signIdentities;
             } catch (Exception ex) {
                 ex.printStackTrace();
-                reportUnexpectedCommandOutcome(exec.getPrintableCommandLine(), result);
+                reportUnexpectedCommandOutcome(result);
                 return null; // Unreachable
             }
         } else if (result.getExitCode() == 1 && result.getOutput().getLast().endsWith("Status: no signature")) {
             return List.of();
         } else {
-            reportUnexpectedCommandOutcome(exec.getPrintableCommandLine(), result);
+            reportUnexpectedCommandOutcome(result);
             return null; // Unreachable
         }
     }
@@ -282,14 +282,13 @@ public final class MacSignVerify {
         }
     }
 
-    private static void reportUnexpectedCommandOutcome(String printableCommandLine, Executor.Result result) {
-        Objects.requireNonNull(printableCommandLine);
+    private static void reportUnexpectedCommandOutcome(Executor.Result result) {
         Objects.requireNonNull(result);
         TKit.trace(String.format("Command %s exited with exit code %d and the following output:",
-                printableCommandLine, result.getExitCode()));
+                result.getPrintableCommandLine(), result.getExitCode()));
         result.getOutput().forEach(TKit::trace);
         TKit.trace("Done");
-        TKit.assertUnexpected(String.format("Outcome of command %s", printableCommandLine));
+        TKit.assertUnexpected(String.format("Outcome of command %s", result.getPrintableCommandLine()));
     }
 
     private static final Pattern SIGN_IDENTITY_NAME_REGEXP = Pattern.compile("^\\s+\\d+\\.\\s+(.*)$");

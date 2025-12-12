@@ -23,6 +23,8 @@
 package jdk.jpackage.test;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -163,14 +165,22 @@ public final class Executor extends CommandArguments<Executor> {
         return discardStderr(true);
     }
 
-    public record Result(CommandOutputControl.Result base, Supplier<String> cmdline) implements CommandOutputControl.Output {
+    public Executor binaryOutput(boolean v) {
+        commandOutputControl.binaryOutput(v);
+        return this;
+    }
+
+    public Executor binaryOutput() {
+        return binaryOutput(true);
+    }
+
+    public record Result(CommandOutputControl.Result base) implements CommandOutputControl.Output {
         public Result {
             Objects.requireNonNull(base);
-            Objects.requireNonNull(cmdline);
         }
 
-        public Result(int exitCode, Supplier<String> cmdline) {
-            this(new CommandOutputControl.Result(exitCode), cmdline);
+        public Result(int exitCode) {
+            this(new CommandOutputControl.Result(exitCode));
         }
 
         @Override
@@ -179,7 +189,7 @@ public final class Executor extends CommandArguments<Executor> {
         }
 
         public List<String> getOutput() {
-            return getContent();
+            return base.getOutput();
         }
 
         public CommandOutputControl.Output stdout() {
@@ -198,10 +208,42 @@ public final class Executor extends CommandArguments<Executor> {
             return base.findStderr();
         }
 
+        public byte[] getByteContent() {
+            return findByteContent().orElseThrow();
+        }
+
+        public Optional<byte[]> findByteContent() {
+            return base.findByteContent();
+        }
+
+        public Optional<byte[]> findByteStdout() {
+            return base.findByteStdout();
+        }
+
+        public Optional<byte[]> findByteStderr() {
+            return base.findByteStderr();
+        }
+
+        public byte[] byteStdout() {
+            return base.byteStdout();
+        }
+
+        public byte[] byteStderr() {
+            return base.byteStderr();
+        }
+
+        public Result toCharacterResult(Charset charset, boolean keepByteContent) {
+            try {
+                return new Result(base.toCharacterResult(charset, keepByteContent));
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        }
+
         public Result assertExitCodeIs(int expectedExitCode) {
             TKit.assertEquals(expectedExitCode, getExitCode(), String.format(
                     "Check command %s exited with %d code",
-                    cmdline.get(), expectedExitCode));
+                    base.execSpec(), expectedExitCode));
             return this;
         }
 
@@ -211,6 +253,10 @@ public final class Executor extends CommandArguments<Executor> {
 
         public int getExitCode() {
             return base.getExitCode();
+        }
+
+        public String getPrintableCommandLine() {
+            return base.execSpec().toString();
         }
     }
 
@@ -431,7 +477,7 @@ public final class Executor extends CommandArguments<Executor> {
     }
 
     private Result createResult(CommandOutputControl.Result baseResult) {
-        return new Result(baseResult, this::getPrintableCommandLine);
+        return new Result(baseResult.copyWithExecutableSpec(new ExecutableSpec(getPrintableCommandLine())));
     }
 
     public String getPrintableCommandLine() {
@@ -450,6 +496,19 @@ public final class Executor extends CommandArguments<Executor> {
                 List::stream).toList();
 
         return String.format(format, CommandLineFormat.DEFAULT.apply(cmdline), cmdline.size());
+    }
+
+    private record ExecutableSpec(String cmdline) implements CommandOutputControl.ExecutableSpec {
+        ExecutableSpec {
+            if (cmdline.isBlank()) {
+                throw new IllegalArgumentException();
+            }
+        }
+
+        @Override
+        public String toString() {
+            return cmdline;
+        }
     }
 
     private static void trace(String msg) {
