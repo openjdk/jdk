@@ -267,8 +267,6 @@ void G1CollectionSetCandidates::set_candidates_from_marking(G1HeapRegion** candi
   // the same MixedGC.
   uint group_limit = p->calc_min_old_cset_length(num_candidates);
 
-  uint num_added_to_group = 0;
-
   G1CSetCandidateGroup::reset_next_group_id();
   G1CSetCandidateGroup* current = nullptr;
 
@@ -279,7 +277,7 @@ void G1CollectionSetCandidates::set_candidates_from_marking(G1HeapRegion** candi
     assert(!contains(r), "must not contain region %u", r->hrm_index());
     _contains_map[r->hrm_index()] = CandidateOrigin::Marking;
 
-    if (num_added_to_group == group_limit) {
+    if (current->length() == group_limit) {
       if (group_limit != G1OldCSetGroupSize) {
         group_limit = G1OldCSetGroupSize;
       }
@@ -287,10 +285,8 @@ void G1CollectionSetCandidates::set_candidates_from_marking(G1HeapRegion** candi
       _from_marking_groups.append(current);
 
       current = new G1CSetCandidateGroup();
-      num_added_to_group = 0;
     }
     current->add(r);
-    num_added_to_group++;
   }
 
   _from_marking_groups.append(current);

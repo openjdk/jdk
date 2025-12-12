@@ -23,8 +23,10 @@
  * questions.
  */
 package jdk.jpackage.internal;
+import static jdk.jpackage.internal.model.RuntimeBuilder.getDefaultModulePath;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.module.Configuration;
@@ -32,8 +34,8 @@ import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -48,10 +50,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.internal.module.ModulePath;
 import jdk.jpackage.internal.model.AppImageLayout;
-import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.LauncherModularStartupInfo;
 import jdk.jpackage.internal.model.LauncherStartupInfo;
-import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.model.RuntimeBuilder;
 
 final class JLinkRuntimeBuilder implements RuntimeBuilder {
@@ -61,7 +62,7 @@ final class JLinkRuntimeBuilder implements RuntimeBuilder {
     }
 
     @Override
-    public void create(AppImageLayout appImageLayout) throws PackagerException {
+    public void create(AppImageLayout appImageLayout) {
         var args = new ArrayList<String>();
         args.add("--output");
         args.add(appImageLayout.runtimeDirectory().toString());
@@ -76,8 +77,13 @@ final class JLinkRuntimeBuilder implements RuntimeBuilder {
         args.add(0, "jlink");
         Log.verbose(args, List.of(jlinkOut), retVal, -1);
         if (retVal != 0) {
-            throw new PackagerException("error.jlink.failed", jlinkOut);
+            throw new JPackageException(I18N.format("error.jlink.failed", jlinkOut));
         }
+    }
+
+    @Override
+    public boolean withNativeCommands() {
+        return !jlinkCmdLine.contains("--strip-native-commands");
     }
 
     static ModuleFinder createModuleFinder(Collection<Path> modulePath) {
@@ -88,13 +94,59 @@ final class JLinkRuntimeBuilder implements RuntimeBuilder {
     }
 
     static RuntimeBuilder createJLinkRuntimeBuilder(List<Path> modulePath, Set<String> addModules,
-            Set<String> limitModules, List<String> options, List<LauncherStartupInfo> startupInfos) throws ConfigException {
+            Set<String> limitModules, List<String> options, List<LauncherStartupInfo> startupInfos) {
         return new JLinkRuntimeBuilder(createJLinkCmdline(modulePath, addModules, limitModules,
                 options, startupInfos));
     }
 
+    /**
+     * Returns a list of paths that includes the location where the "java.base"
+     * module can be found.
+     * <p>
+     * Returns the specified path list if "java.base" module can be found in one of
+     * the paths from the specified path list.
+     * <p>
+     * Returns a new path list created from the specified path list with the path of
+     * "java.base" module in the current runtime appended otherwise.
+     *
+     * @param modulePath the path list where to look up for "java.base" module
+     * @return the path list that includes location of "java.base" module
+     */
+    static List<Path> ensureBaseModuleInModulePath(List<Path> modulePath) {
+        if (modulePath.stream().anyMatch(path -> {
+            return Files.isRegularFile(path.resolve("java.base.jmod"));
+        })) {
+            return modulePath;
+        } else {
+            // There is no "java.base.jmod" file in the `modulePath` path list.
+            // Pick items from the default module path list that are not yet
+            // in the `modulePath` path list and append them to it.
+
+            var missingDefaultModulePath = getDefaultModulePath();
+
+            if (!modulePath.isEmpty()) {
+                missingDefaultModulePath.stream().filter(defaultPath -> {
+                    return modulePath.stream().anyMatch(path -> {
+                        try {
+                            return Files.isSameFile(path, defaultPath);
+                        } catch (IOException ex) {
+                            // Assume `defaultPath` path doesn't exist in `modulePath` list.
+                            return false;
+                        }
+                    });
+                }).toList();
+            }
+
+            if (missingDefaultModulePath.isEmpty()) {
+                return modulePath;
+            } else {
+                return Stream.of(modulePath, missingDefaultModulePath).flatMap(Collection::stream).toList();
+            }
+        }
+    }
+
     private static List<String> createJLinkCmdline(List<Path> modulePath, Set<String> addModules,
-            Set<String> limitModules, List<String> options, List<LauncherStartupInfo> startupInfos) throws ConfigException {
+            Set<String> limitModules, List<String> options, List<LauncherStartupInfo> startupInfos) {
         List<String> launcherModules = startupInfos.stream().map(si -> {
             if (si instanceof LauncherModularStartupInfo siModular) {
                 return siModular.moduleName();
@@ -128,8 +180,7 @@ final class JLinkRuntimeBuilder implements RuntimeBuilder {
         for (String option : options) {
             switch (option) {
                 case "--output", "--add-modules", "--module-path" -> {
-                    throw new ConfigException(MessageFormat.format(I18N.getString(
-                            "error.blocked.option"), option), null);
+                    throw I18N.buildConfigException("error.blocked.option", option).create();
                 }
                 default -> {
                     args.add(option);
@@ -215,7 +266,7 @@ final class JLinkRuntimeBuilder implements RuntimeBuilder {
     }
 
     private static String getStringList(Set<String> strings) {
-        return strings.stream().collect(Collectors.joining(","));
+        return strings.stream().sorted().collect(Collectors.joining(","));
     }
 
     private final List<String> jlinkCmdLine;
@@ -230,5 +281,5 @@ final class JLinkRuntimeBuilder implements RuntimeBuilder {
 
         static final ToolProvider JLINK_TOOL = ToolProvider.findFirst(
                 "jlink").orElseThrow();
-    };
+    }
 }

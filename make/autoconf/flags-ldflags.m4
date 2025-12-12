@@ -34,7 +34,7 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS],
   FLAGS_SETUP_LDFLAGS_CPU_DEP([TARGET])
 
   # Setup the build toolchain
-  FLAGS_SETUP_LDFLAGS_CPU_DEP([BUILD], [OPENJDK_BUILD_])
+  FLAGS_SETUP_LDFLAGS_CPU_DEP([BUILD], [OPENJDK_BUILD_], [BUILD_])
 
   AC_SUBST(ADLC_LDFLAGS)
 ])
@@ -50,7 +50,9 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     # add -z,relro (mark relocations read only) for all libs
     # add -z,now ("full relro" - more of the Global Offset Table GOT is marked read only)
     # add --no-as-needed to disable default --as-needed link flag on some GCC toolchains
+    # add --icf=all (Identical Code Folding — merges identical functions)
     BASIC_LDFLAGS="-Wl,-z,defs -Wl,-z,relro -Wl,-z,now -Wl,--no-as-needed -Wl,--exclude-libs,ALL"
+
     # Linux : remove unused code+data in link step
     if test "x$ENABLE_LINKTIME_GC" = xtrue; then
       if test "x$OPENJDK_TARGET_CPU" = xs390x; then
@@ -61,6 +63,7 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     fi
 
     BASIC_LDFLAGS_JVM_ONLY=""
+    LDFLAGS_LTO="-flto=auto -fuse-linker-plugin -fno-strict-aliasing $DEBUG_PREFIX_CFLAGS"
 
     LDFLAGS_CXX_PARTIAL_LINKING="$MACHINE_FLAG -r"
 
@@ -68,6 +71,7 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     BASIC_LDFLAGS_JVM_ONLY="-mno-omit-leaf-frame-pointer -mstack-alignment=16 \
         -fPIC"
 
+    LDFLAGS_LTO="-flto=auto -fuse-linker-plugin -fno-strict-aliasing $DEBUG_PREFIX_CFLAGS"
     LDFLAGS_CXX_PARTIAL_LINKING="$MACHINE_FLAG -r"
 
     if test "x$OPENJDK_TARGET_OS" = xlinux; then
@@ -87,6 +91,7 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     BASIC_LDFLAGS="-opt:ref"
     BASIC_LDFLAGS_JDK_ONLY="-incremental:no"
     BASIC_LDFLAGS_JVM_ONLY="-opt:icf,8 -subsystem:windows"
+    LDFLAGS_LTO="-LTCG:INCREMENTAL"
   fi
 
   if (test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang) \
@@ -98,6 +103,9 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
 
   # Setup OS-dependent LDFLAGS
   if test "x$OPENJDK_TARGET_OS" = xmacosx && test "x$TOOLCHAIN_TYPE" = xclang; then
+    if test x$DEBUG_LEVEL = xrelease; then
+      BASIC_LDFLAGS_JDK_ONLY="$BASIC_LDFLAGS_JDK_ONLY -Wl,-dead_strip"
+    fi
     # FIXME: We should really generalize SetSharedLibraryOrigin instead.
     OS_LDFLAGS_JVM_ONLY="-Wl,-rpath,@loader_path/. -Wl,-rpath,@loader_path/.."
     OS_LDFLAGS="-mmacosx-version-min=$MACOSX_VERSION_MIN -Wl,-reproducible"
@@ -148,6 +156,7 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
 
   # Export some intermediate variables for compatibility
   LDFLAGS_CXX_JDK="$DEBUGLEVEL_LDFLAGS_JDK_ONLY"
+  AC_SUBST(LDFLAGS_LTO)
   AC_SUBST(LDFLAGS_CXX_JDK)
   AC_SUBST(LDFLAGS_CXX_PARTIAL_LINKING)
 ])
@@ -155,7 +164,8 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
 ################################################################################
 # $1 - Either BUILD or TARGET to pick the correct OS/CPU variables to check
 #      conditionals against.
-# $2 - Optional prefix for each variable defined.
+# $2 - Optional prefix for each variable defined (OPENJDK_BUILD_ or nothing).
+# $3 - Optional prefix for toolchain variables (BUILD_ or nothing).
 AC_DEFUN([FLAGS_SETUP_LDFLAGS_CPU_DEP],
 [
   # Setup CPU-dependent basic LDFLAGS. These can differ between the target and
@@ -186,6 +196,12 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_CPU_DEP],
     fi
     if test "x${OPENJDK_$1_CPU}" = "xx86"; then
       $1_CPU_LDFLAGS="-safeseh"
+    fi
+  fi
+
+  if test "x${$3LD_TYPE}" = "xgold"; then
+    if test x$DEBUG_LEVEL = xrelease; then
+      $1_CPU_LDFLAGS="${$1_CPU_LDFLAGS} -Wl,--icf=all"
     fi
   fi
 

@@ -395,7 +395,8 @@ static jboolean is_superclass(context_type *, fullinfo_type);
 
 static void initialize_exception_table(context_type *);
 static int instruction_length(unsigned char *iptr, unsigned char *end);
-static jboolean isLegalTarget(context_type *, int offset);
+static jboolean isLegalOffset(context_type *, int bci, int offset);
+static jboolean isLegalTarget(context_type *, int target);
 static void verify_constant_pool_type(context_type *, int, unsigned);
 
 static void initialize_dataflow(context_type *);
@@ -1154,9 +1155,9 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
     case JVM_OPC_goto: {
         /* Set the ->operand to be the instruction number of the target. */
         int jump = (((signed char)(code[offset+1])) << 8) + code[offset+2];
-        int target = offset + jump;
-        if (!isLegalTarget(context, target))
+        if (!isLegalOffset(context, offset, jump))
             CCerror(context, "Illegal target of jump or branch");
+        int target = offset + jump;
         this_idata->operand.i = code_data[target];
         break;
     }
@@ -1170,9 +1171,9 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
         int jump = (((signed char)(code[offset+1])) << 24) +
                      (code[offset+2] << 16) + (code[offset+3] << 8) +
                      (code[offset + 4]);
-        int target = offset + jump;
-        if (!isLegalTarget(context, target))
+        if (!isLegalOffset(context, offset, jump))
             CCerror(context, "Illegal target of jump or branch");
+        int target = offset + jump;
         this_idata->operand.i = code_data[target];
         break;
     }
@@ -1211,13 +1212,16 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
             }
         }
         saved_operand = NEW(int, keys + 2);
-        if (!isLegalTarget(context, offset + _ck_ntohl(lpc[0])))
+        int jump = _ck_ntohl(lpc[0]);
+        if (!isLegalOffset(context, offset, jump))
             CCerror(context, "Illegal default target in switch");
-        saved_operand[keys + 1] = code_data[offset + _ck_ntohl(lpc[0])];
+        int target = offset + jump;
+        saved_operand[keys + 1] = code_data[target];
         for (k = keys, lptr = &lpc[3]; --k >= 0; lptr += delta) {
-            int target = offset + _ck_ntohl(lptr[0]);
-            if (!isLegalTarget(context, target))
+            jump = _ck_ntohl(lptr[0]);
+            if (!isLegalOffset(context, offset, jump))
                 CCerror(context, "Illegal branch in tableswitch");
+            target = offset + jump;
             saved_operand[k + 1] = code_data[target];
         }
         saved_operand[0] = keys + 1; /* number of successors */
@@ -1746,11 +1750,24 @@ static int instruction_length(unsigned char *iptr, unsigned char *end)
 
 /* Given the target of a branch, make sure that it's a legal target. */
 static jboolean
-isLegalTarget(context_type *context, int offset)
+isLegalTarget(context_type *context, int target)
 {
     int code_length = context->code_length;
     int *code_data = context->code_data;
-    return (offset >= 0 && offset < code_length && code_data[offset] >= 0);
+    return (target >= 0 && target < code_length && code_data[target] >= 0);
+}
+
+/* Given a bci and offset, make sure the offset is valid and the target is legal */
+static jboolean
+isLegalOffset(context_type *context, int bci, int offset)
+{
+    int code_length = context->code_length;
+    int *code_data = context->code_data;
+    int max_offset = 65535; // JVMS 4.11
+    int min_offset = -65535;
+    if (offset < min_offset || offset > max_offset) return JNI_FALSE;
+    int target = bci + offset;
+    return (target >= 0 && target < code_length && code_data[target] >= 0);
 }
 
 

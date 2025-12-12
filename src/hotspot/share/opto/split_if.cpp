@@ -655,7 +655,7 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
 
     // Replace in the graph with lazy-update mechanism
     new_iff->set_req(0, new_iff); // hook self so it does not go dead
-    lazy_replace(ifp, ifpx);
+    replace_node_and_forward_ctrl(ifp, ifpx);
     new_iff->set_req(0, region);
 
     // Record bits for later xforms
@@ -669,9 +669,10 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
   }
   _igvn.remove_dead_node(new_iff);
   // Lazy replace IDOM info with the region's dominator
-  lazy_replace(iff, region_dom);
-  lazy_update(region, region_dom); // idom must be update before handle_uses
-  region->set_req(0, nullptr);        // Break the self-cycle. Required for lazy_update to work on region
+  replace_node_and_forward_ctrl(iff, region_dom);
+  // Break the self-cycle. Required for forward_ctrl to work on region.
+  region->set_req(0, nullptr);
+  forward_ctrl(region, region_dom); // idom must be updated before handle_use
 
   // Now make the original merge point go dead, by handling all its uses.
   small_cache region_cache;

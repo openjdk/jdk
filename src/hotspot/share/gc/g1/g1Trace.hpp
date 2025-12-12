@@ -73,13 +73,13 @@ private:
 
   void send_basic_ihop_statistics(size_t threshold,
                                   size_t target_occupancy,
-                                  size_t current_occupancy,
+                                  size_t non_young_occupancy,
                                   size_t last_allocation_size,
                                   double last_allocation_duration,
                                   double last_marking_length);
   void send_adaptive_ihop_statistics(size_t threshold,
                                      size_t internal_target_occupancy,
-                                     size_t current_occupancy,
+                                     size_t non_young_occupancy,
                                      size_t additional_buffer_size,
                                      double predicted_allocation_rate,
                                      double predicted_marking_length,

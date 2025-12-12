@@ -66,7 +66,7 @@ public class WhiteBox {
 
   // Memory
   private native long getObjectAddress0(Object o);
-  public           long getObjectAddress(Object o) {
+  public         long getObjectAddress(Object o) {
     Objects.requireNonNull(o);
     return getObjectAddress0(o);
   }
@@ -77,6 +77,13 @@ public class WhiteBox {
   public native long getVMLargePageSize();
   public native long getHeapSpaceAlignment();
   public native long getHeapAlignment();
+
+  public native boolean  shipsFullDebugInfo();
+  public native boolean  shipsPublicDebugInfo();
+
+  public        boolean  shipsDebugInfo() {
+    return shipsFullDebugInfo() || shipsPublicDebugInfo();
+  }
 
   private native boolean isObjectInOldGen0(Object o);
   public         boolean isObjectInOldGen(Object o) {
@@ -122,7 +129,7 @@ public class WhiteBox {
 
   public native int getLockStackCapacity();
 
-  public native boolean supportsRecursiveLightweightLocking();
+  public native boolean supportsRecursiveFastLocking();
 
   public native void forceSafepoint();
 
@@ -797,6 +804,8 @@ public class WhiteBox {
   public native boolean isJFRIncluded();
   public native boolean isDTraceIncluded();
   public native boolean canWriteJavaHeapArchive();
+  public native boolean canWriteMappedJavaHeapArchive();
+  public native boolean canWriteStreamedJavaHeapArchive();
   public native void    linkClass(Class<?> c);
   public native boolean areOpenArchiveHeapObjectsMapped();
 

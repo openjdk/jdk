@@ -855,12 +855,12 @@ void PhaseCFG::needed_for_next_call(Block* block, Node* this_call, VectorSet& ne
 static void add_call_kills(MachProjNode *proj, RegMask& regs, const char* save_policy, bool exclude_soe) {
   // Fill in the kill mask for the call
   for( OptoReg::Name r = OptoReg::Name(0); r < _last_Mach_Reg; r=OptoReg::add(r,1) ) {
-    if( !regs.Member(r) ) {     // Not already defined by the call
+    if (!regs.member(r)) { // Not already defined by the call
       // Save-on-call register?
       if ((save_policy[r] == 'C') ||
           (save_policy[r] == 'A') ||
           ((save_policy[r] == 'E') && exclude_soe)) {
-        proj->_rout.Insert(r);
+        proj->_rout.insert(r);
       }
     }
   }
@@ -884,7 +884,7 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
     // Schedule next to call
     block->map_node(n, node_cnt++);
     // Collect defined registers
-    regs.OR(n->out_RegMask());
+    regs.or_with(n->out_RegMask());
     // Check for scheduling the next control-definer
     if( n->bottom_type() == Type::CONTROL )
       // Warm up next pile of heuristic bits
@@ -907,12 +907,12 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
 
   // Act as if the call defines the Frame Pointer.
   // Certainly the FP is alive and well after the call.
-  regs.Insert(_matcher.c_frame_pointer());
+  regs.insert(_matcher.c_frame_pointer());
 
   // Set all registers killed and not already defined by the call.
   uint r_cnt = mcall->tf()->range()->cnt();
   int op = mcall->ideal_Opcode();
-  MachProjNode *proj = new MachProjNode( mcall, r_cnt+1, RegMask::Empty, MachProjNode::fat_proj );
+  MachProjNode* proj = new MachProjNode(mcall, r_cnt + 1, RegMask::EMPTY, MachProjNode::fat_proj);
   map_node_to_block(proj, block);
   block->insert_node(proj, node_cnt++);
 
@@ -1164,10 +1164,10 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
 
     if (n->is_Mach() && n->as_Mach()->has_call()) {
       RegMask regs;
-      regs.Insert(_matcher.c_frame_pointer());
-      regs.OR(n->out_RegMask());
+      regs.insert(_matcher.c_frame_pointer());
+      regs.or_with(n->out_RegMask());
 
-      MachProjNode *proj = new MachProjNode( n, 1, RegMask::Empty, MachProjNode::fat_proj );
+      MachProjNode* proj = new MachProjNode(n, 1, RegMask::EMPTY, MachProjNode::fat_proj);
       map_node_to_block(proj, block);
       block->insert_node(proj, phi_cnt++);
 

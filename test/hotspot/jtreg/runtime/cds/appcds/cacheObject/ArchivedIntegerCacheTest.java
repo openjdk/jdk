@@ -28,9 +28,11 @@
  * @requires vm.cds.write.archived.java.heap
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @compile --add-exports java.base/jdk.internal.misc=ALL-UNNAMED CheckIntegerCacheApp.java ArchivedIntegerHolder.java
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar boxCache.jar CheckIntegerCacheApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar boxCache-boot.jar ArchivedIntegerHolder
- * @run driver ArchivedIntegerCacheTest
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./WhiteBox.jar ArchivedIntegerCacheTest
  */
 
 import java.nio.file.Files;
@@ -39,8 +41,10 @@ import java.nio.file.Paths;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.helpers.ClassFileInstaller;
+import jdk.test.whitebox.WhiteBox;
 
 public class ArchivedIntegerCacheTest {
+    private static WhiteBox WB = WhiteBox.getWhiteBox();
 
     public static String[] mixArgs(String... args) {
         String bootJar = ClassFileInstaller.getJarPath("boxCache-boot.jar");
@@ -133,7 +137,9 @@ public class ArchivedIntegerCacheTest {
                         "-Xlog:cds+heap=info",
                         "-Xlog:gc+region+cds",
                         "-Xlog:gc+region=trace"));
-        TestCommon.checkDump(output,
-            "Cannot archive the sub-graph referenced from [Ljava.lang.Integer; object");
+        if (WB.canWriteMappedJavaHeapArchive()) {
+            // The mapping AOT heap archiving mechanism is unable to cache larger objects.
+            TestCommon.checkDump(output, "Cannot archive the sub-graph referenced from [Ljava.lang.Integer; object");
+        }
     }
 }

@@ -167,26 +167,19 @@ static bool is_set(int64_t key, uint64_t value_mask) {
 void RiscvHwprobe::add_features_from_query_result() {
   assert(rw_hwprobe_completed, "hwprobe not init yet.");
 
-  if (is_valid(RISCV_HWPROBE_KEY_MVENDORID)) {
-    VM_Version::mvendorid.enable_feature(query[RISCV_HWPROBE_KEY_MVENDORID].value);
-  }
-  if (is_valid(RISCV_HWPROBE_KEY_MARCHID)) {
-    VM_Version::marchid.enable_feature(query[RISCV_HWPROBE_KEY_MARCHID].value);
-  }
-  if (is_valid(RISCV_HWPROBE_KEY_MIMPID)) {
-    VM_Version::mimpid.enable_feature(query[RISCV_HWPROBE_KEY_MIMPID].value);
-  }
+  // ====== extensions ======
+  //
   if (is_set(RISCV_HWPROBE_KEY_BASE_BEHAVIOR, RISCV_HWPROBE_BASE_BEHAVIOR_IMA)) {
+    VM_Version::ext_a.enable_feature();
     VM_Version::ext_i.enable_feature();
     VM_Version::ext_m.enable_feature();
-    VM_Version::ext_a.enable_feature();
-  }
-  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_IMA_FD)) {
-    VM_Version::ext_f.enable_feature();
-    VM_Version::ext_d.enable_feature();
   }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_IMA_C)) {
     VM_Version::ext_c.enable_feature();
+  }
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_IMA_FD)) {
+    VM_Version::ext_d.enable_feature();
+    VM_Version::ext_f.enable_feature();
   }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_IMA_V)) {
     // Linux signal return bug when using vector with vlen > 128b in pre 6.8.5.
@@ -202,21 +195,29 @@ void RiscvHwprobe::add_features_from_query_result() {
       VM_Version::ext_v.enable_feature();
     }
   }
+
+#ifndef PRODUCT
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZACAS)) {
+    VM_Version::ext_Zacas.enable_feature();
+  }
+#endif
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZBA)) {
     VM_Version::ext_Zba.enable_feature();
   }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZBB)) {
     VM_Version::ext_Zbb.enable_feature();
   }
+#ifndef PRODUCT
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZBKB)) {
+    VM_Version::ext_Zbkb.enable_feature();
+  }
+#endif
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZBS)) {
     VM_Version::ext_Zbs.enable_feature();
   }
 #ifndef PRODUCT
-  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZICBOZ)) {
-    VM_Version::ext_Zicboz.enable_feature();
-  }
-  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZBKB)) {
-    VM_Version::ext_Zbkb.enable_feature();
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZFA)) {
+    VM_Version::ext_Zfa.enable_feature();
   }
 #endif
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZFH)) {
@@ -226,15 +227,28 @@ void RiscvHwprobe::add_features_from_query_result() {
     VM_Version::ext_Zfhmin.enable_feature();
   }
 #ifndef PRODUCT
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZICBOZ)) {
+    VM_Version::ext_Zicboz.enable_feature();
+  }
+  // Currently tests shows that cmove using Zicond instructions will bring
+  // performance regression, but to get a test coverage all the time, will
+  // still prefer to enabling it in debug version.
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZICOND)) {
+    VM_Version::ext_Zicond.enable_feature();
+  }
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZTSO)) {
+    VM_Version::ext_Ztso.enable_feature();
+  }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVBB)) {
     VM_Version::ext_Zvbb.enable_feature();
   }
-#endif
-#ifndef PRODUCT
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVBC)) {
     VM_Version::ext_Zvbc.enable_feature();
   }
 #endif
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVFH)) {
+    VM_Version::ext_Zvfh.enable_feature();
+  }
 #ifndef PRODUCT
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVKNED) &&
       is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVKNHB) &&
@@ -243,30 +257,18 @@ void RiscvHwprobe::add_features_from_query_result() {
     VM_Version::ext_Zvkn.enable_feature();
   }
 #endif
-  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVFH)) {
-    VM_Version::ext_Zvfh.enable_feature();
+
+  // ====== non-extensions ======
+  //
+  if (is_valid(RISCV_HWPROBE_KEY_MARCHID)) {
+    VM_Version::marchid.enable_feature(query[RISCV_HWPROBE_KEY_MARCHID].value);
   }
-#ifndef PRODUCT
-  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZFA)) {
-    VM_Version::ext_Zfa.enable_feature();
+  if (is_valid(RISCV_HWPROBE_KEY_MIMPID)) {
+    VM_Version::mimpid.enable_feature(query[RISCV_HWPROBE_KEY_MIMPID].value);
   }
-#endif
-#ifndef PRODUCT
-  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZTSO)) {
-    VM_Version::ext_Ztso.enable_feature();
+  if (is_valid(RISCV_HWPROBE_KEY_MVENDORID)) {
+    VM_Version::mvendorid.enable_feature(query[RISCV_HWPROBE_KEY_MVENDORID].value);
   }
-#endif
-#ifndef PRODUCT
-  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZACAS)) {
-    VM_Version::ext_Zacas.enable_feature();
-  }
-  // Currently tests shows that cmove using Zicond instructions will bring
-  // performance regression, but to get a test coverage all the time, will
-  // still prefer to enabling it in debug version.
-  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZICOND)) {
-    VM_Version::ext_Zicond.enable_feature();
-  }
-#endif
   // RISCV_HWPROBE_KEY_CPUPERF_0 is deprecated and returns similar values
   // to RISCV_HWPROBE_KEY_MISALIGNED_SCALAR_PERF. Keep it there for backward
   // compatibility with old kernels.
@@ -277,7 +279,6 @@ void RiscvHwprobe::add_features_from_query_result() {
     VM_Version::unaligned_scalar.enable_feature(
        query[RISCV_HWPROBE_KEY_MISALIGNED_SCALAR_PERF].value);
   }
-
   if (is_valid(RISCV_HWPROBE_KEY_MISALIGNED_VECTOR_PERF)) {
     VM_Version::unaligned_vector.enable_feature(
        query[RISCV_HWPROBE_KEY_MISALIGNED_VECTOR_PERF].value);
