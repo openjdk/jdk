@@ -502,7 +502,7 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
 
   bind(DO_LONG);
   mv(orig_cnt, cnt1);
-  if (AvoidUnalignedAccesses) {
+  if (!UseUnalignedAccesses) {
     Label ALIGNED;
     andi(unaligned_elems, str1, 0x7);
     beqz(unaligned_elems, ALIGNED);
@@ -1012,7 +1012,7 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
     slli(tmp3, result_tmp, haystack_chr_shift); // result as tmp
     add(haystack, haystack, tmp3);
     neg(hlen_neg, tmp3);
-    if (AvoidUnalignedAccesses) {
+    if (!UseUnalignedAccesses) {
       // preload first value, then we will read by 1 character per loop, instead of four
       // just shifting previous ch2 right by size of character in bits
       add(tmp3, haystack, hlen_neg);
@@ -1028,7 +1028,7 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
 
     bind(CH1_LOOP);
     add(tmp3, haystack, hlen_neg);
-    if (AvoidUnalignedAccesses) {
+    if (!UseUnalignedAccesses) {
       srli(ch2, ch2, isLL ? 8 : 16);
       (this->*haystack_load_1chr)(tmp3, Address(tmp3, isLL ? 3 : 6), noreg);
       slli(tmp3, tmp3, isLL ? 24 : 48);
@@ -1053,7 +1053,7 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
     slli(tmp3, result_tmp, haystack_chr_shift);
     add(haystack, haystack, tmp3);
     neg(hlen_neg, tmp3);
-    if (AvoidUnalignedAccesses) {
+    if (!UseUnalignedAccesses) {
       // preload first value, then we will read by 1 character per loop, instead of two
       // just shifting previous ch2 right by size of character in bits
       add(tmp3, haystack, hlen_neg);
@@ -1062,7 +1062,7 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
     }
     bind(CH1_LOOP);
     add(tmp3, haystack, hlen_neg);
-    if (AvoidUnalignedAccesses) {
+    if (!UseUnalignedAccesses) {
       srli(ch2, ch2, isLL ? 8 : 16);
       (this->*haystack_load_1chr)(tmp3, Address(tmp3, isLL ? 1 : 2), noreg);
       slli(tmp3, tmp3, isLL ? 8 : 16);
@@ -1093,7 +1093,7 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
 
     bind(FIRST_LOOP);
     add(ch2, haystack, hlen_neg);
-    if (AvoidUnalignedAccesses) {
+    if (!UseUnalignedAccesses) {
       (this->*haystack_load_1chr)(tmp2, Address(ch2, isLL ? 1 : 2), noreg); // we need a temp register, we can safely use hlen_tmp here, which is a synonym for tmp2
       (this->*haystack_load_1chr)(ch2, Address(ch2), noreg);
       slli(tmp2, tmp2, isLL ? 8 : 16);
@@ -1164,7 +1164,7 @@ void C2_MacroAssembler::string_compare_long_same_encoding(Register result, Regis
   // load first parts of strings and finish initialization while loading
   beq(str1, str2, *DONE);
   // Alignment
-  if (AvoidUnalignedAccesses && (base_offset % 8) != 0) {
+  if (!UseUnalignedAccesses && (base_offset % 8) != 0) {
     lwu(tmp1, Address(str1));
     lwu(tmp2, Address(str2));
     bne(tmp1, tmp2, DIFFERENCE);
@@ -1177,7 +1177,7 @@ void C2_MacroAssembler::string_compare_long_same_encoding(Register result, Regis
     ble(cnt2, t0, *SHORT_STRING);
   }
 #ifdef ASSERT
-  if (AvoidUnalignedAccesses) {
+  if (!UseUnalignedAccesses) {
     Label align_ok;
     orr(t0, str1, str2);
     andi(t0, t0, 0x7);
@@ -1206,7 +1206,7 @@ void C2_MacroAssembler::string_compare_long_same_encoding(Register result, Regis
 
   // main loop
   bind(NEXT_WORD);
-    // 8-byte aligned loads when AvoidUnalignedAccesses is enabled
+    // 8-byte aligned loads when UseUnalignedAccesses is not enabled
     add(t0, str1, cnt2);
     ld(tmp1, Address(t0));
     add(t0, str2, cnt2);
@@ -1494,7 +1494,7 @@ void C2_MacroAssembler::arrays_equals(Register a1, Register a2,
   la(a2, Address(a2, base_offset));
 
   // Load 4 bytes once to compare for alignment before main loop.
-  if (AvoidUnalignedAccesses && (base_offset % 8) != 0) {
+  if (!UseUnalignedAccesses && (base_offset % 8) != 0) {
     subi(cnt1, cnt1, elem_per_word / 2);
     bltz(cnt1, TAIL03);
     lwu(tmp1, Address(a1));
@@ -1509,7 +1509,7 @@ void C2_MacroAssembler::arrays_equals(Register a1, Register a2,
   bltz(cnt1, SHORT);
 
 #ifdef ASSERT
-  if (AvoidUnalignedAccesses) {
+  if (!UseUnalignedAccesses) {
     Label align_ok;
     orr(t0, a1, a2);
     andi(t0, t0, 0x7);
@@ -1600,7 +1600,7 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
   mv(result, false);
 
   // Load 4 bytes once to compare for alignment before main loop.
-  if (AvoidUnalignedAccesses && (base_offset % 8) != 0) {
+  if (!UseUnalignedAccesses && (base_offset % 8) != 0) {
     subi(cnt1, cnt1, 4);
     bltz(cnt1, TAIL03);
     lwu(tmp1, Address(a1));
@@ -1615,7 +1615,7 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
   bltz(cnt1, SHORT);
 
 #ifdef ASSERT
-  if (AvoidUnalignedAccesses) {
+  if (!UseUnalignedAccesses) {
     Label align_ok;
     orr(t0, a1, a2);
     andi(t0, t0, 0x7);
