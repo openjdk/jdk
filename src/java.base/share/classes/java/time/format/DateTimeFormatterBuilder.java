@@ -3245,18 +3245,18 @@ public final class DateTimeFormatterBuilder {
                                 break;
                         }
                     }
-                } else if (minWidth == 4 && maxWidth == 19 && signStyle == SignStyle.EXCEEDS_PAD) {
+                } else if (minWidth == 4 && (maxWidth == 10 || maxWidth == 19) && signStyle == SignStyle.EXCEEDS_PAD) {
                     if (field instanceof ChronoField chronoField) {
                         switch (chronoField) {
                             case YEAR:
-                                return new FixWidth49ExceedsPad(ChronoField.YEAR) {
+                                return new YearNumberPrinterParser(ChronoField.YEAR, 4, maxWidth) {
                                     @Override
                                     boolean notSupported(DateTimePrintContext context, boolean optional) {return optional && !context.isSupportYear();}
                                     @Override
                                     protected int getInt(DateTimePrintContext context) {return context.getYear();}
                                 };
                             case YEAR_OF_ERA:
-                                return new FixWidth49ExceedsPad(YEAR_OF_ERA) {
+                                return new YearNumberPrinterParser(YEAR_OF_ERA, 4, maxWidth) {
                                     @Override
                                     boolean notSupported(DateTimePrintContext context, boolean optional) {return optional && !context.isSupportYearOfEra();}
                                     @Override
@@ -3322,9 +3322,9 @@ public final class DateTimeFormatterBuilder {
             }
         }
 
-        static abstract class FixWidth49ExceedsPad extends NumberPrinterParser {
-            FixWidth49ExceedsPad(ChronoField field) {
-                super(field, 4, 19, SignStyle.EXCEEDS_PAD);
+        static abstract class YearNumberPrinterParser extends NumberPrinterParser {
+            private YearNumberPrinterParser(TemporalField field, int minWidth, int maxWidth) {
+                super(field, minWidth, maxWidth, SignStyle.EXCEEDS_PAD);
             }
 
             @Override
@@ -3358,6 +3358,7 @@ public final class DateTimeFormatterBuilder {
                     return ~position;
                 }
                 char sign = text.charAt(position);  // IOOBE if invalid position
+                int minWidth = this.minWidth;
                 boolean negative = false, positive = false;
                 boolean strict = context.isStrict();
                 if (sign == '+') {
@@ -3368,14 +3369,14 @@ public final class DateTimeFormatterBuilder {
                     position++;
                 }
 
-                int minEndPos = position + (strict ? 4 : 1);
+                int minEndPos = position + (strict ? minWidth : 1);
                 if (minEndPos > length) {
                     return ~position;
                 }
 
-                int total = 0;
+                long total = 0;
                 int pos = position;
-                int maxEndPos = Math.min(pos + 9, length);
+                int maxEndPos = Math.min(pos + this.maxWidth, length);
                 while (pos < maxEndPos) {
                     int digit = digit(text.charAt(pos++));
                     if (digit < 0) {
@@ -3395,11 +3396,11 @@ public final class DateTimeFormatterBuilder {
                 } else if (strict) {
                     int parseLen = pos - position;
                     if (positive) {
-                        if (parseLen <= 4) {
+                        if (parseLen <= minWidth) {
                             return -position;  // '+' only parsed if minWidth exceeded
                         }
                     } else {
-                        if (parseLen > 4) {
+                        if (parseLen > minWidth) {
                             return ~position;  // '+' must be parsed if minWidth exceeded
                         }
                     }
