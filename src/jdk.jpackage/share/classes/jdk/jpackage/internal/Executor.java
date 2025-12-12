@@ -78,7 +78,7 @@ final class Executor {
     }
 
     Executor storeStreamsInFiles(boolean v) {
-        commandOutputControl.storeStreamsInFiles(v);
+        commandOutputControl.storeOutputInFiles(v);
         return this;
     }
 
