@@ -150,10 +150,10 @@ void PhaseLoadFolding::optimize() {
 //         }
 //     In this case, even if the control flow forces the loads to be scheduled after the stores
 //     that allow o to escape, without actual memory barriers, the JMM does not require the CPU to
-//     execute the loads after the stores (e.g. the loads are in cache so it can be executed sooner
-//     while the stores need to wait for the acquisition of the corresponding cache lines). As a
-//     result, we can consider those loads to be loads from an object that has not escaped, and
-//     fold o.x to v1 and o.y to v2.
+//     execute the loads after the stores (e.g. the loads are in cache so they can be executed
+//     sooner while the stores need to wait for the acquisition of the corresponding cache lines).
+//     As a result, we can consider those loads to be from an object that has not escaped, and fold
+//     o.x to v1 and o.y to v2.
 bool PhaseLoadFolding::do_optimize() {
   bool progress = false;
   for (int macro_idx = 0; macro_idx < C->macro_count(); macro_idx++) {
@@ -377,8 +377,8 @@ Node* PhaseLoadFolding::try_fold_recursive(Node* oop, LoadNode* candidate, Node*
       }
     }
 
-    // If we encounter a store that we cannot decide if it modify the memory candidate loads from,
-    // give up
+    // If we encounter a store that we cannot decide if it modifies the memory candidate loads
+    // from, give up
     if (work_lists.may_alias.test(mem->_idx)) {
       return nullptr;
     }
@@ -423,9 +423,10 @@ Node* PhaseLoadFolding::try_fold_recursive(Node* oop, LoadNode* candidate, Node*
       } else if (res->is_Proj() && res->in(0) == init->allocation()) {
         // Failure to find a captured store will return the memory output of the AllocateNode
         return _igvn.zerocon(candidate->value_basic_type());
-      } else {
-        assert(res->is_Store(), "must be a store %s", res->Name());
+      } else if (res->Opcode() == candidate->store_Opcode()) {
         return extract_store_value(res->as_Store());
+      } else {
+        return nullptr;
       }
     } else if (mem->is_SafePoint()) {
       mem = mem->in(TypeFunc::Memory);
