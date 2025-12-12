@@ -30,7 +30,7 @@ import java.util.List;
  * Utility class to report a {@link TestFormatException}.
  */
 public class TestFormat {
-    private static final ThreadLocal<List<String>> threadLocalFailures = ThreadLocal.withInitial(ArrayList<String>::new);
+    private static final ThreadLocal<List<String>> threadLocalFailures = ThreadLocal.withInitial(ArrayList::new);
 
     public static void checkAndReport(boolean test, String failureMessage) {
         if (!test) {
