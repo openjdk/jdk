@@ -70,6 +70,8 @@ public class TestCodeCacheUnloadDuringConcCycle {
                                                                     "-Xbootclasspath/a:.",
                                                                     "-Xlog:gc=trace,codecache",
                                                                     "-XX:+WhiteBoxAPI",
+                                                                    "-XX:+UnlockExperimentalVMOptions",
+                                                                    "-XX:G1MixedGCLiveThresholdPercent=0",
                                                                     "-XX:ReservedCodeCacheSize=8M",
                                                                     "-XX:StartAggressiveSweepingAt=50",
                                                                     "-XX:CompileCommand=compileonly,gc.g1.SomeClass::*",
