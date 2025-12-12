@@ -33,7 +33,6 @@ CheckOopFunctionPointer check_oop_function = nullptr;
 
 void oop::register_oop() {
   assert (CheckUnhandledOops, "should only call when CheckUnhandledOops");
-  if (!Universe::is_fully_initialized()) return;
   // This gets expensive, which is why checking unhandled oops is on a switch.
   Thread* t = Thread::current_or_null();
   if (t != nullptr && t->is_Java_thread()) {
@@ -43,7 +42,6 @@ void oop::register_oop() {
 
 void oop::unregister_oop() {
   assert (CheckUnhandledOops, "should only call when CheckUnhandledOops");
-  if (!Universe::is_fully_initialized()) return;
   // This gets expensive, which is why checking unhandled oops is on a switch.
   Thread* t = Thread::current_or_null();
   if (t != nullptr && t->is_Java_thread()) {

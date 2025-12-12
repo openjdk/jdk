@@ -992,8 +992,8 @@ public final class Locale implements Cloneable, Serializable {
         }
     }
 
-    private static final Supplier<ReferencedKeyMap<Object, Locale>> LOCALE_CACHE =
-            StableValue.supplier(new Supplier<>() {
+    private static final LazyConstant<ReferencedKeyMap<Object, Locale>> LOCALE_CACHE =
+            LazyConstant.of(new Supplier<>() {
                 @Override
                 public ReferencedKeyMap<Object, Locale> get() {
                     return ReferencedKeyMap.create(true, ReferencedKeyMap.concurrentHashMapSupplier());
@@ -2330,8 +2330,8 @@ public final class Locale implements Cloneable, Serializable {
     private static volatile Locale defaultDisplayLocale;
     private static volatile Locale defaultFormatLocale;
 
-    private final transient Supplier<String> languageTag =
-            StableValue.supplier(new Supplier<>() {
+    private final transient LazyConstant<String> languageTag =
+            LazyConstant.of(new Supplier<>() {
                 @Override
                 public String get() {
                     return computeLanguageTag();
@@ -2364,27 +2364,22 @@ public final class Locale implements Cloneable, Serializable {
 
         if (ret == null || ret.equals(type)) {
             // no localization for this type. try combining key/type separately
-            String displayType = type;
-            switch (key) {
-            case "cu":
-                displayType = lr.getCurrencyName(type.toLowerCase(Locale.ROOT));
-                break;
-            case "rg":
-                if (type != null &&
-                    // UN M.49 code should not be allowed here
-                    type.matches("^[a-zA-Z]{2}[zZ]{4}$")) {
-                        displayType = lr.getLocaleName(type.substring(0, 2).toUpperCase(Locale.ROOT));
-                }
-                break;
-            case "tz":
-                displayType = TimeZoneNameUtility.convertLDMLShortID(type)
-                    .map(id -> TimeZoneNameUtility.retrieveGenericDisplayName(id, TimeZone.LONG, inLocale))
-                    .orElse(type);
-                break;
-            }
             ret = MessageFormat.format(lr.getLocaleName("ListKeyTypePattern"),
                 getDisplayString(key, null, inLocale, DISPLAY_UEXT_KEY),
-                Optional.ofNullable(displayType).orElse(type));
+                switch (key) {
+                    case "cu" -> {
+                        var cname = lr.getCurrencyName(type.toLowerCase(Locale.ROOT));
+                        yield cname != null ? cname : type;
+                    }
+                    case "rg" -> type != null && type.matches("^[a-zA-Z]{2}[zZ]{4}$") ?
+                        // UN M.49 code should not be allowed here
+                        lr.getLocaleName(type.substring(0, 2).toUpperCase(Locale.ROOT)) :
+                        type;
+                    case "tz" -> TimeZoneNameUtility.convertLDMLShortID(type)
+                        .map(id -> TimeZoneNameUtility.retrieveGenericDisplayName(id, TimeZone.LONG, inLocale))
+                        .orElse(type);
+                    default -> type;
+                });
         }
 
         return ret;

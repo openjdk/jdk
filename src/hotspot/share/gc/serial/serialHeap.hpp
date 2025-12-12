@@ -111,6 +111,8 @@ private:
   void print_tracing_info() const override;
   void stop() override {};
 
+  static void verify_not_in_native_if_java_thread() NOT_DEBUG_RETURN;
+
 public:
   // Returns JNI_OK on success
   jint initialize() override;
@@ -139,9 +141,6 @@ public:
   // Callback from VM_SerialGCCollect.
   void collect_at_safepoint(bool full);
 
-  // Perform a full collection of the heap; intended for use in implementing
-  // "System.gc". This implies as full a collection as the CollectedHeap
-  // supports. Caller does not hold the Heap_lock on entry.
   void collect(GCCause::Cause cause) override;
 
   // Returns "TRUE" iff "p" points into the committed areas of the heap.
@@ -189,9 +188,9 @@ public:
   bool block_is_obj(const HeapWord* addr) const;
 
   // Section on TLAB's.
-  size_t tlab_capacity(Thread* thr) const override;
-  size_t tlab_used(Thread* thr) const override;
-  size_t unsafe_max_tlab_alloc(Thread* thr) const override;
+  size_t tlab_capacity() const override;
+  size_t tlab_used() const override;
+  size_t unsafe_max_tlab_alloc() const override;
   HeapWord* allocate_new_tlab(size_t min_size,
                               size_t requested_size,
                               size_t* actual_size) override;

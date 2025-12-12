@@ -36,6 +36,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.dom.DOMSource;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
@@ -160,15 +161,13 @@ public final class PListReader {
      *                                name in the underlying "dict" element
      */
     public String queryValue(String keyName) {
-        final var node = getNode(keyName);
-        switch (node.getNodeName()) {
-            case "string" -> {
-                return node.getTextContent();
-            }
-            default -> {
-                throw new NoSuchElementException();
-            }
-        }
+        return findValue(keyName).orElseThrow(NoSuchElementException::new);
+    }
+
+    public Optional<String> findValue(String keyName) {
+        return findNode(keyName).filter(node -> {
+            return "string".equals(node.getNodeName());
+        }).map(Node::getTextContent);
     }
 
     /**
@@ -182,15 +181,13 @@ public final class PListReader {
      *                                name in the underlying "dict" element
      */
     public PListReader queryDictValue(String keyName) {
-        final var node = getNode(keyName);
-        switch (node.getNodeName()) {
-            case "dict" -> {
-                return new PListReader(node);
-            }
-            default -> {
-                throw new NoSuchElementException();
-            }
-        }
+        return findDictValue(keyName).orElseThrow(NoSuchElementException::new);
+    }
+
+    public Optional<PListReader> findDictValue(String keyName) {
+        return findNode(keyName).filter(node -> {
+            return "dict".equals(node.getNodeName());
+        }).map(PListReader::new);
     }
 
     /**
@@ -204,18 +201,20 @@ public final class PListReader {
      *                                name in the underlying "dict" element
      */
     public boolean queryBoolValue(String keyName) {
-        final var node = getNode(keyName);
-        switch (node.getNodeName()) {
-            case "true" -> {
-                return true;
+        return findBoolValue(keyName).orElseThrow(NoSuchElementException::new);
+    }
+
+    public Optional<Boolean> findBoolValue(String keyName) {
+        return findNode(keyName).filter(node -> {
+            switch (node.getNodeName()) {
+                case "true", "false" -> {
+                    return true;
+                }
+                default -> {
+                    return false;
+                }
             }
-            case "false" -> {
-                return false;
-            }
-            default -> {
-                throw new NoSuchElementException();
-            }
-        }
+        }).map(Node::getNodeName).map(Boolean::parseBoolean);
     }
 
     /**
@@ -233,14 +232,20 @@ public final class PListReader {
      *                                name in the underlying "dict" element
      */
     public List<String> queryStringArrayValue(String keyName) {
-        return queryArrayValue(keyName, false).map(v -> {
-            if (v instanceof Raw r) {
-                if (r.type() == Raw.Type.STRING) {
-                    return r.value();
+        return findStringArrayValue(keyName).orElseThrow(NoSuchElementException::new);
+    }
+
+    public Optional<List<String>> findStringArrayValue(String keyName) {
+        return findArrayValue(keyName, false).map(stream -> {
+            return stream.map(v -> {
+                if (v instanceof Raw r) {
+                    if (r.type() == Raw.Type.STRING) {
+                        return r.value();
+                    }
                 }
-            }
-            return (String)null;
-        }).filter(Objects::nonNull).toList();
+                return (String)null;
+            }).filter(Objects::nonNull).toList();
+        });
     }
 
     /**
@@ -266,15 +271,21 @@ public final class PListReader {
      *                                in the underlying "dict" element
      */
     public Stream<Object> queryArrayValue(String keyName, boolean fetchDictionaries) {
-        final var node = getNode(keyName);
-        switch (node.getNodeName()) {
-            case "array" -> {
-                return readArray(node, fetchDictionaries);
-            }
-            default -> {
-                throw new NoSuchElementException();
-            }
-        }
+        return findArrayValue(keyName, fetchDictionaries).orElseThrow(NoSuchElementException::new);
+    }
+
+    public Optional<Stream<Object>> findArrayValue(String keyName, boolean fetchDictionaries) {
+        return findNode(keyName).filter(node -> {
+            return "array".equals(node.getNodeName());
+        }).map(node -> {
+            return readArray(node, fetchDictionaries);
+        });
+    }
+
+    public XmlConsumer toXmlConsumer() {
+        return xml -> {
+            XmlUtils.concatXml(xml, new DOMSource(root));
+        };
     }
 
     /**
@@ -333,12 +344,12 @@ public final class PListReader {
         }).filter(Optional::isPresent).map(Optional::get);
     }
 
-    private Node getNode(String keyName) {
+    private Optional<Node> findNode(String keyName) {
         Objects.requireNonNull(keyName);
         final var query = String.format("*[preceding-sibling::key = \"%s\"][1]", keyName);
         return Optional.ofNullable(toSupplier(() -> {
             return (Node) XPathSingleton.INSTANCE.evaluate(query, root, XPathConstants.NODE);
-        }).get()).orElseThrow(NoSuchElementException::new);
+        }).get());
     }
 
 

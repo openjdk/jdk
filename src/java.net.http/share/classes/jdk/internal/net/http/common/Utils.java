@@ -242,6 +242,15 @@ public final class Utils {
                 return true;
             };
 
+    public enum UseVTForSelector { ALWAYS, NEVER, DEFAULT }
+
+    public static UseVTForSelector useVTForSelector(String property, String defval) {
+        String useVtForSelector = System.getProperty(property, defval);
+        return Stream.of(UseVTForSelector.values())
+                .filter((v) -> v.name().equalsIgnoreCase(useVtForSelector))
+                .findFirst().orElse(UseVTForSelector.DEFAULT);
+    }
+
     public static <T extends Throwable> T addSuppressed(T x, Throwable suppressed) {
         if (x != suppressed && suppressed != null) {
             var sup = x.getSuppressed();

@@ -29,4 +29,19 @@
 
 #include CPU_HEADER_INLINE(smallRegisterMap)
 
+typedef SmallRegisterMapType<false> SmallRegisterMapNoArgs;
+typedef SmallRegisterMapType<true>  SmallRegisterMapWithArgs;
+
+class SmallRegisterMap : AllStatic {
+public:
+  static const SmallRegisterMapNoArgs* instance_no_args() {
+    static constexpr SmallRegisterMapNoArgs the_instance{};
+    return &the_instance;
+  }
+  static const SmallRegisterMapWithArgs* instance_with_args() {
+    static constexpr SmallRegisterMapWithArgs the_instance_with_args{};
+    return &the_instance_with_args;
+  }
+};
+
 #endif // SHARE_RUNTIME_SMALLREGISTERMAP_HPP

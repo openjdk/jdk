@@ -23,11 +23,11 @@
  */
 
 #include "cds.h"
+#include "cds/aotMappedHeapLoader.hpp"
 #include "cds/aotMetaspace.hpp"
-#include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConstants.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.hpp"
+#include "cds/heapShared.inline.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderStats.hpp"
@@ -87,7 +87,6 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
-#include "runtime/lightweightSynchronizer.hpp"
 #include "runtime/lockStack.hpp"
 #include "runtime/os.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
@@ -509,8 +508,16 @@ WB_ENTRY(jboolean, WB_ConcurrentGCRunTo(JNIEnv* env, jobject o, jobject at))
   return ConcurrentGCBreakpoints::run_to(c_name);
 WB_END
 
-WB_ENTRY(jboolean, WB_HasExternalSymbolsStripped(JNIEnv* env, jobject o))
-#if defined(HAS_STRIPPED_DEBUGINFO)
+WB_ENTRY(jboolean, WB_ShipDebugInfoFull(JNIEnv* env, jobject o))
+#if defined(SHIP_DEBUGINFO_FULL)
+  return true;
+#else
+  return false;
+#endif
+WB_END
+
+WB_ENTRY(jboolean, WB_ShipDebugInfoPublic(JNIEnv* env, jobject o))
+#if defined(SHIP_DEBUGINFO_PUBLIC)
   return true;
 #else
   return false;
@@ -1679,7 +1686,7 @@ WB_ENTRY(void, WB_RelocateNMethodFromAddr(JNIEnv* env, jobject o, jlong addr, ji
   CodeBlob* blob = CodeCache::find_blob(address);
   if (blob != nullptr && blob->is_nmethod()) {
     nmethod* code = blob->as_nmethod();
-    if (code->is_in_use()) {
+    if (code->is_in_use() && !code->is_unloading()) {
       CompiledICLocker ic_locker(code);
       code->relocate(static_cast<CodeBlobType>(blob_type));
     }
@@ -1974,8 +1981,8 @@ WB_ENTRY(jint, WB_getLockStackCapacity(JNIEnv* env))
   return (jint) LockStack::CAPACITY;
 WB_END
 
-WB_ENTRY(jboolean, WB_supportsRecursiveLightweightLocking(JNIEnv* env))
-  return (jboolean) VM_Version::supports_recursive_lightweight_locking();
+WB_ENTRY(jboolean, WB_supportsRecursiveFastLocking(JNIEnv* env))
+  return (jboolean) VM_Version::supports_recursive_fast_locking();
 WB_END
 
 WB_ENTRY(jboolean, WB_DeflateIdleMonitors(JNIEnv* env, jobject wb))
@@ -2206,6 +2213,9 @@ WB_ENTRY(jboolean, WB_CDSMemoryMappingFailed(JNIEnv* env, jobject wb))
 WB_END
 
 WB_ENTRY(jboolean, WB_IsSharedInternedString(JNIEnv* env, jobject wb, jobject str))
+  if (!HeapShared::is_loading_mapping_mode()) {
+    return false;
+  }
   ResourceMark rm(THREAD);
   oop str_oop = JNIHandles::resolve(str);
   int length;
@@ -2218,7 +2228,7 @@ WB_ENTRY(jboolean, WB_IsSharedClass(JNIEnv* env, jobject wb, jclass clazz))
 WB_END
 
 WB_ENTRY(jboolean, WB_AreSharedStringsMapped(JNIEnv* env))
-  return ArchiveHeapLoader::is_mapped();
+  return AOTMappedHeapLoader::is_mapped();
 WB_END
 
 WB_ENTRY(void, WB_LinkClass(JNIEnv* env, jobject wb, jclass clazz))
@@ -2231,7 +2241,7 @@ WB_ENTRY(void, WB_LinkClass(JNIEnv* env, jobject wb, jclass clazz))
 WB_END
 
 WB_ENTRY(jboolean, WB_AreOpenArchiveHeapObjectsMapped(JNIEnv* env))
-  return ArchiveHeapLoader::is_mapped();
+  return AOTMappedHeapLoader::is_mapped();
 WB_END
 
 WB_ENTRY(jboolean, WB_IsCDSIncluded(JNIEnv* env))
@@ -2261,10 +2271,21 @@ WB_ENTRY(jboolean, WB_IsJVMCISupportedByGC(JNIEnv* env))
 #endif
 WB_END
 
-WB_ENTRY(jboolean, WB_CanWriteJavaHeapArchive(JNIEnv* env))
+static bool canWriteJavaHeapArchive() {
   return !CDSConfig::are_vm_options_incompatible_with_dumping_heap();
+}
+
+WB_ENTRY(jboolean, WB_CanWriteJavaHeapArchive(JNIEnv* env))
+  return canWriteJavaHeapArchive();
 WB_END
 
+WB_ENTRY(jboolean, WB_CanWriteMappedJavaHeapArchive(JNIEnv* env))
+  return canWriteJavaHeapArchive() && !AOTStreamableObjects;
+WB_END
+
+WB_ENTRY(jboolean, WB_CanWriteStreamedJavaHeapArchive(JNIEnv* env))
+  return canWriteJavaHeapArchive() && AOTStreamableObjects;
+WB_END
 
 WB_ENTRY(jboolean, WB_IsJFRIncluded(JNIEnv* env))
 #if INCLUDE_JFR
@@ -2577,7 +2598,13 @@ WB_END
 
 // Physical swap of the host machine (including containers), Linux only.
 WB_ENTRY(jlong, WB_HostPhysicalSwap(JNIEnv* env, jobject o))
-  LINUX_ONLY(return (jlong)os::Linux::host_swap();)
+#ifdef LINUX
+  physical_memory_size_type swap_val = 0;
+  if (!os::Linux::host_swap(swap_val)) {
+    return -1; // treat as unlimited
+  }
+  return static_cast<jlong>(swap_val);
+#endif
   return -1; // Not used/implemented on other platforms
 WB_END
 
@@ -2821,7 +2848,8 @@ static JNINativeMethod methods[] = {
   {CC"getVMLargePageSize",               CC"()J",                   (void*)&WB_GetVMLargePageSize},
   {CC"getHeapSpaceAlignment",            CC"()J",                   (void*)&WB_GetHeapSpaceAlignment},
   {CC"getHeapAlignment",                 CC"()J",                   (void*)&WB_GetHeapAlignment},
-  {CC"hasExternalSymbolsStripped",       CC"()Z",                   (void*)&WB_HasExternalSymbolsStripped},
+  {CC"shipsFullDebugInfo",               CC"()Z",                   (void*)&WB_ShipDebugInfoFull},
+  {CC"shipsPublicDebugInfo",             CC"()Z",                   (void*)&WB_ShipDebugInfoPublic},
   {CC"countAliveClasses0",               CC"(Ljava/lang/String;)I", (void*)&WB_CountAliveClasses },
   {CC"getSymbolRefcount",                CC"(Ljava/lang/String;)I", (void*)&WB_GetSymbolRefcount },
   {CC"parseCommandLine0",
@@ -2996,7 +3024,7 @@ static JNINativeMethod methods[] = {
   {CC"isUbsanEnabled", CC"()Z",                       (void*)&WB_IsUbsanEnabled },
   {CC"getInUseMonitorCount", CC"()J", (void*)&WB_getInUseMonitorCount  },
   {CC"getLockStackCapacity", CC"()I",                 (void*)&WB_getLockStackCapacity },
-  {CC"supportsRecursiveLightweightLocking", CC"()Z",  (void*)&WB_supportsRecursiveLightweightLocking },
+  {CC"supportsRecursiveFastLocking", CC"()Z",         (void*)&WB_supportsRecursiveFastLocking },
   {CC"forceSafepoint",     CC"()V",                   (void*)&WB_ForceSafepoint     },
   {CC"forceClassLoaderStatsSafepoint", CC"()V",       (void*)&WB_ForceClassLoaderStatsSafepoint },
   {CC"getConstantPool0",   CC"(Ljava/lang/Class;)J",  (void*)&WB_GetConstantPool    },
@@ -3041,6 +3069,8 @@ static JNINativeMethod methods[] = {
   {CC"isC2OrJVMCIIncluded",               CC"()Z",    (void*)&WB_isC2OrJVMCIIncluded },
   {CC"isJVMCISupportedByGC",              CC"()Z",    (void*)&WB_IsJVMCISupportedByGC},
   {CC"canWriteJavaHeapArchive",           CC"()Z",    (void*)&WB_CanWriteJavaHeapArchive },
+  {CC"canWriteMappedJavaHeapArchive",     CC"()Z",    (void*)&WB_CanWriteMappedJavaHeapArchive },
+  {CC"canWriteStreamedJavaHeapArchive",   CC"()Z",    (void*)&WB_CanWriteStreamedJavaHeapArchive },
   {CC"cdsMemoryMappingFailed",            CC"()Z",    (void*)&WB_CDSMemoryMappingFailed },
 
   {CC"clearInlineCaches0",  CC"(Z)V",                 (void*)&WB_ClearInlineCaches },
