@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -557,6 +558,19 @@ bool DirectiveSet::should_not_inline(ciMethod* inlinee) {
   }
   if (!CompilerDirectivesIgnoreCompileCommandsOption) {
     return CompilerOracle::should_not_inline(mh);
+  }
+  return false;
+}
+
+bool DirectiveSet::is_estimated_size_bigger_than(ciMethod* inlinee, const int threshold) {
+  inlinee->check_is_loaded();
+  VM_ENTRY_MARK;
+  methodHandle mh(THREAD, inlinee->get_Method());
+
+  if (_inlinematchers != nullptr) {
+    if (_inlinematchers->match_if_bigger_than(mh, threshold)) {
+      return true;
+    }
   }
   return false;
 }
