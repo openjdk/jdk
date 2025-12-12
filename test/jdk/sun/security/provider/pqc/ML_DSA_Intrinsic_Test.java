@@ -46,9 +46,9 @@ import java.util.HexFormat;
 
 // To run manually:
 // java --add-opens java.base/sun.security.provider=ALL-UNNAMED
-// --add-exports java.base/sun.security.provider=ALL-UNNAMED
+//  --add-exports java.base/sun.security.provider=ALL-UNNAMED
 //  -XX:+UnlockDiagnosticVMOptions -XX:+UseDilithiumIntrinsics
-//  test/jdk/sun/security/provider/acvp/ML_DSA_Intrinsic_Test.java
+//  test/jdk/sun/security/provider/pqc/ML_DSA_Intrinsic_Test.java
 
 public class ML_DSA_Intrinsic_Test {
     public static void main(String[] args) throws Throwable {
@@ -135,6 +135,10 @@ public class ML_DSA_Intrinsic_Test {
         MethodHandle mult, MethodHandle multJava, Random rnd,
         long seed, int i) throws Throwable {
 
+        // This method is always called with arrays whose elements are between
+        // -ML_DSA_Q and ML_DSA_Q, so we only test for these here (although
+        // both versions work fine with array element sizes that satisfy the
+        // montMul() preconditions in sun.security.provider.ML_DSA.java
         for (int j = 0; j < ML_DSA_N; j++) {
             coeffs1[j] = rnd.nextInt(2 * ML_DSA_Q) - ML_DSA_Q;
             coeffs2[j] = rnd.nextInt(2 * ML_DSA_Q) - ML_DSA_Q;
@@ -144,6 +148,9 @@ public class ML_DSA_Intrinsic_Test {
         multJava.invoke(prod2, coeffs1, coeffs2);
 
         if (!Arrays.equals(prod1, prod2)) {
+            // The Java version and the intrinsic version should not produce
+            // the exact same result (although usually they do), it is enough
+            // if the corresponding array elements are congruent modulo ML_DSA_Q
             boolean modQequal = true;
             for (int j = 0; j < ML_DSA_N; j++) {
                 if (prod1[j] != prod2[j]) {
