@@ -68,6 +68,13 @@ public class FloatMaxVectorTests extends AbstractVectorTest {
 
     private static final int Max = 256;  // juts so we can do N/Max
 
+
+    // Identity values for reduction operations
+    private static final float ADD_IDENTITY = (float)0;
+    private static final float FIRST_NONZERO_IDENTITY = (float)0;
+    private static final float MAX_IDENTITY = Float.NEGATIVE_INFINITY;
+    private static final float MIN_IDENTITY = Float.POSITIVE_INFINITY;
+    private static final float MUL_IDENTITY = (float)1;
     // for floating point addition reduction ops that may introduce rounding errors
     private static final float RELATIVE_ROUNDING_ERROR_FACTOR_ADD = (float)10.0;
 
@@ -2355,7 +2362,7 @@ relativeError));
     }
 
     static float ADDReduce(float[] a, int idx) {
-        float res = 0;
+        float res = ADD_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res += a[i];
         }
@@ -2364,7 +2371,7 @@ relativeError));
     }
 
     static float ADDReduceAll(float[] a) {
-        float res = 0;
+        float res = ADD_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res += ADDReduce(a, i);
         }
@@ -2379,17 +2386,11 @@ relativeError));
         float ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = ADD_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.ADD);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = 0;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                ra += av.reduceLanes(VectorOperators.ADD);
+                ra += r[i];
             }
         }
 
@@ -2398,7 +2399,7 @@ relativeError));
     }
 
     static float ADDReduceMasked(float[] a, int idx, boolean[] mask) {
-        float res = 0;
+        float res = ADD_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res += a[i];
@@ -2408,7 +2409,7 @@ relativeError));
     }
 
     static float ADDReduceAllMasked(float[] a, boolean[] mask) {
-        float res = 0;
+        float res = ADD_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res += ADDReduceMasked(a, i, mask);
         }
@@ -2425,17 +2426,11 @@ relativeError));
         float ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = ADD_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.ADD, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = 0;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                ra += av.reduceLanes(VectorOperators.ADD, vmask);
+                ra += r[i];
             }
         }
 
@@ -2444,7 +2439,7 @@ relativeError));
     }
 
     static float MULReduce(float[] a, int idx) {
-        float res = 1;
+        float res = MUL_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res *= a[i];
         }
@@ -2453,7 +2448,7 @@ relativeError));
     }
 
     static float MULReduceAll(float[] a) {
-        float res = 1;
+        float res = MUL_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res *= MULReduce(a, i);
         }
@@ -2465,20 +2460,14 @@ relativeError));
     static void MULReduceFloatMaxVectorTests(IntFunction<float[]> fa) {
         float[] a = fa.apply(SPECIES.length());
         float[] r = fr.apply(SPECIES.length());
-        float ra = 1;
+        float ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MUL_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.MUL);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = 1;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                ra *= av.reduceLanes(VectorOperators.MUL);
+                ra *= r[i];
             }
         }
 
@@ -2487,7 +2476,7 @@ relativeError));
     }
 
     static float MULReduceMasked(float[] a, int idx, boolean[] mask) {
-        float res = 1;
+        float res = MUL_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res *= a[i];
@@ -2497,7 +2486,7 @@ relativeError));
     }
 
     static float MULReduceAllMasked(float[] a, boolean[] mask) {
-        float res = 1;
+        float res = MUL_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res *= MULReduceMasked(a, i, mask);
         }
@@ -2511,20 +2500,14 @@ relativeError));
         float[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Float> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        float ra = 1;
+        float ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MUL_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.MUL, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = 1;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                ra *= av.reduceLanes(VectorOperators.MUL, vmask);
+                ra *= r[i];
             }
         }
 
@@ -2533,7 +2516,7 @@ relativeError));
     }
 
     static float MINReduce(float[] a, int idx) {
-        float res = Float.POSITIVE_INFINITY;
+        float res = MIN_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = (float) Math.min(res, a[i]);
         }
@@ -2542,7 +2525,7 @@ relativeError));
     }
 
     static float MINReduceAll(float[] a) {
-        float res = Float.POSITIVE_INFINITY;
+        float res = MIN_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (float) Math.min(res, MINReduce(a, i));
         }
@@ -2554,20 +2537,14 @@ relativeError));
     static void MINReduceFloatMaxVectorTests(IntFunction<float[]> fa) {
         float[] a = fa.apply(SPECIES.length());
         float[] r = fr.apply(SPECIES.length());
-        float ra = Float.POSITIVE_INFINITY;
+        float ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MIN_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.MIN);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Float.POSITIVE_INFINITY;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                ra = (float) Math.min(ra, av.reduceLanes(VectorOperators.MIN));
+                ra = (float) Math.min(ra, r[i]);
             }
         }
 
@@ -2576,7 +2553,7 @@ relativeError));
     }
 
     static float MINReduceMasked(float[] a, int idx, boolean[] mask) {
-        float res = Float.POSITIVE_INFINITY;
+        float res = MIN_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = (float) Math.min(res, a[i]);
@@ -2586,7 +2563,7 @@ relativeError));
     }
 
     static float MINReduceAllMasked(float[] a, boolean[] mask) {
-        float res = Float.POSITIVE_INFINITY;
+        float res = MIN_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (float) Math.min(res, MINReduceMasked(a, i, mask));
         }
@@ -2600,20 +2577,14 @@ relativeError));
         float[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Float> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        float ra = Float.POSITIVE_INFINITY;
+        float ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MIN_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.MIN, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Float.POSITIVE_INFINITY;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                ra = (float) Math.min(ra, av.reduceLanes(VectorOperators.MIN, vmask));
+                ra = (float) Math.min(ra, r[i]);
             }
         }
 
@@ -2622,7 +2593,7 @@ relativeError));
     }
 
     static float MAXReduce(float[] a, int idx) {
-        float res = Float.NEGATIVE_INFINITY;
+        float res = MAX_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = (float) Math.max(res, a[i]);
         }
@@ -2631,7 +2602,7 @@ relativeError));
     }
 
     static float MAXReduceAll(float[] a) {
-        float res = Float.NEGATIVE_INFINITY;
+        float res = MAX_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (float) Math.max(res, MAXReduce(a, i));
         }
@@ -2643,20 +2614,14 @@ relativeError));
     static void MAXReduceFloatMaxVectorTests(IntFunction<float[]> fa) {
         float[] a = fa.apply(SPECIES.length());
         float[] r = fr.apply(SPECIES.length());
-        float ra = Float.NEGATIVE_INFINITY;
+        float ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MAX_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.MAX);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Float.NEGATIVE_INFINITY;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                ra = (float) Math.max(ra, av.reduceLanes(VectorOperators.MAX));
+                ra = (float) Math.max(ra, r[i]);
             }
         }
 
@@ -2665,7 +2630,7 @@ relativeError));
     }
 
     static float MAXReduceMasked(float[] a, int idx, boolean[] mask) {
-        float res = Float.NEGATIVE_INFINITY;
+        float res = MAX_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = (float) Math.max(res, a[i]);
@@ -2675,7 +2640,7 @@ relativeError));
     }
 
     static float MAXReduceAllMasked(float[] a, boolean[] mask) {
-        float res = Float.NEGATIVE_INFINITY;
+        float res = MAX_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (float) Math.max(res, MAXReduceMasked(a, i, mask));
         }
@@ -2689,20 +2654,14 @@ relativeError));
         float[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Float> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        float ra = Float.NEGATIVE_INFINITY;
+        float ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MAX_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.MAX, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Float.NEGATIVE_INFINITY;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                ra = (float) Math.max(ra, av.reduceLanes(VectorOperators.MAX, vmask));
+                ra = (float) Math.max(ra, r[i]);
             }
         }
 
@@ -2711,7 +2670,7 @@ relativeError));
     }
 
     static float FIRST_NONZEROReduce(float[] a, int idx) {
-        float res = (float) 0;
+        float res = FIRST_NONZERO_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = firstNonZero(res, a[i]);
         }
@@ -2720,7 +2679,7 @@ relativeError));
     }
 
     static float FIRST_NONZEROReduceAll(float[] a) {
-        float res = (float) 0;
+        float res = FIRST_NONZERO_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = firstNonZero(res, FIRST_NONZEROReduce(a, i));
         }
@@ -2732,20 +2691,14 @@ relativeError));
     static void FIRST_NONZEROReduceFloatMaxVectorTests(IntFunction<float[]> fa) {
         float[] a = fa.apply(SPECIES.length());
         float[] r = fr.apply(SPECIES.length());
-        float ra = (float) 0;
+        float ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = FIRST_NONZERO_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.FIRST_NONZERO);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = (float) 0;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                ra = firstNonZero(ra, av.reduceLanes(VectorOperators.FIRST_NONZERO));
+                ra = firstNonZero(ra, r[i]);
             }
         }
 
@@ -2754,7 +2707,7 @@ relativeError));
     }
 
     static float FIRST_NONZEROReduceMasked(float[] a, int idx, boolean[] mask) {
-        float res = (float) 0;
+        float res = FIRST_NONZERO_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = firstNonZero(res, a[i]);
@@ -2764,7 +2717,7 @@ relativeError));
     }
 
     static float FIRST_NONZEROReduceAllMasked(float[] a, boolean[] mask) {
-        float res = (float) 0;
+        float res = FIRST_NONZERO_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = firstNonZero(res, FIRST_NONZEROReduceMasked(a, i, mask));
         }
@@ -2778,20 +2731,14 @@ relativeError));
         float[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Float> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        float ra = (float) 0;
+        float ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = FIRST_NONZERO_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.FIRST_NONZERO, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = (float) 0;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                ra = firstNonZero(ra, av.reduceLanes(VectorOperators.FIRST_NONZERO, vmask));
+                ra = firstNonZero(ra, r[i]);
             }
         }
 
@@ -4778,6 +4725,57 @@ relativeError));
         }
 
         assertArraysEquals(r, a, mask, FloatMaxVectorTests::SQRT);
+    }
+
+    @Test(dataProvider = "floatUnaryOpProvider")
+    static void testIdentityValues(IntFunction<float[]> fa) {
+        float[] a = fa.apply(SPECIES.length());
+
+        for (int i = 0; i < a.length; i++) {
+            float x = a[i];
+
+            // ADD identity: 0 + x == x
+            Assert.assertEquals((float)(ADD_IDENTITY + x), x,
+                                "ADD(ADD_IDENTITY, " + x + ") != " + x);
+
+            // FIRST_NONZERO identity: firstNonZero(0, x) == x
+            Assert.assertEquals(firstNonZero(FIRST_NONZERO_IDENTITY, x), x,
+                                "FIRST_NONZERO(FIRST_NONZERO_IDENTITY, " + x + ") != " + x);
+
+            // MAX identity: max(Float.NEGATIVE_INFINITY, x) == x
+            Assert.assertEquals((float) Math.max(MAX_IDENTITY, x), x,
+                                "MAX(MAX_IDENTITY, " + x + ") != " + x);
+
+            // MIN identity: min(Float.POSITIVE_INFINITY, x) == x
+            Assert.assertEquals((float) Math.min(MIN_IDENTITY, x), x,
+                                "MIN(MIN_IDENTITY, " + x + ") != " + x);
+
+            // MUL identity: 1 * x == x
+            Assert.assertEquals((float)(MUL_IDENTITY * x), x,
+                                "MUL(MUL_IDENTITY, " + x + ") != " + x);
+        }
+    }
+
+    @Test(dataProvider = "floatUnaryOpProvider")
+    static void testMaskedReductionIdentityAllFalse(IntFunction<float[]> fa) {
+        float[] a = fa.apply(SPECIES.length());
+        VectorMask<Float> allFalseMask = SPECIES.maskAll(false);
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            FloatVector av = FloatVector.fromArray(SPECIES, a, i);
+
+            // When mask is all false, reduction should return identity value
+            Assert.assertEquals(av.reduceLanes(VectorOperators.ADD, allFalseMask), ADD_IDENTITY,
+                                "ADD with all-false mask should return ADD_IDENTITY");
+            Assert.assertEquals(av.reduceLanes(VectorOperators.FIRST_NONZERO, allFalseMask), FIRST_NONZERO_IDENTITY,
+                                "FIRST_NONZERO with all-false mask should return FIRST_NONZERO_IDENTITY");
+            Assert.assertEquals(av.reduceLanes(VectorOperators.MAX, allFalseMask), MAX_IDENTITY,
+                                "MAX with all-false mask should return MAX_IDENTITY");
+            Assert.assertEquals(av.reduceLanes(VectorOperators.MIN, allFalseMask), MIN_IDENTITY,
+                                "MIN with all-false mask should return MIN_IDENTITY");
+            Assert.assertEquals(av.reduceLanes(VectorOperators.MUL, allFalseMask), MUL_IDENTITY,
+                                "MUL with all-false mask should return MUL_IDENTITY");
+        }
     }
 
     @Test(dataProvider = "floatCompareOpProvider")

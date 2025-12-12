@@ -66,6 +66,19 @@ public class Int256VectorTests extends AbstractVectorTest {
 
     private static final int CONST_SHIFT = Integer.SIZE / 2;
 
+    // Identity values for reduction operations
+    private static final int ADD_IDENTITY = (int)0;
+    private static final int AND_IDENTITY = (int)-1;
+    private static final int FIRST_NONZERO_IDENTITY = (int)0;
+    private static final int MAX_IDENTITY = Integer.MIN_VALUE;
+    private static final int MIN_IDENTITY = Integer.MAX_VALUE;
+    private static final int MUL_IDENTITY = (int)1;
+    private static final int OR_IDENTITY = (int)0;
+    private static final int SUADD_IDENTITY = (int)0;
+    private static final int UMAX_IDENTITY = (int)0;   // Minimum unsigned value
+    private static final int UMIN_IDENTITY = (int)-1;  // Maximum unsigned value
+    private static final int XOR_IDENTITY = (int)0;
+
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 256);
 
     static void assertArraysStrictlyEquals(int[] r, int[] a) {
@@ -3610,7 +3623,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int ANDReduce(int[] a, int idx) {
-        int res = -1;
+        int res = AND_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res &= a[i];
         }
@@ -3619,7 +3632,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int ANDReduceAll(int[] a) {
-        int res = -1;
+        int res = AND_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res &= ANDReduce(a, i);
         }
@@ -3631,20 +3644,14 @@ public class Int256VectorTests extends AbstractVectorTest {
     static void ANDReduceInt256VectorTests(IntFunction<int[]> fa) {
         int[] a = fa.apply(SPECIES.length());
         int[] r = fr.apply(SPECIES.length());
-        int ra = -1;
+        int ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = AND_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.AND);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = -1;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                IntVector av = IntVector.fromArray(SPECIES, a, i);
-                ra &= av.reduceLanes(VectorOperators.AND);
+                ra &= r[i];
             }
         }
 
@@ -3653,7 +3660,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int ANDReduceMasked(int[] a, int idx, boolean[] mask) {
-        int res = -1;
+        int res = AND_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res &= a[i];
@@ -3663,7 +3670,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int ANDReduceAllMasked(int[] a, boolean[] mask) {
-        int res = -1;
+        int res = AND_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res &= ANDReduceMasked(a, i, mask);
         }
@@ -3677,20 +3684,14 @@ public class Int256VectorTests extends AbstractVectorTest {
         int[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Integer> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        int ra = -1;
+        int ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = AND_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.AND, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = -1;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                IntVector av = IntVector.fromArray(SPECIES, a, i);
-                ra &= av.reduceLanes(VectorOperators.AND, vmask);
+                ra &= r[i];
             }
         }
 
@@ -3699,7 +3700,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int ORReduce(int[] a, int idx) {
-        int res = 0;
+        int res = OR_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res |= a[i];
         }
@@ -3708,7 +3709,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int ORReduceAll(int[] a) {
-        int res = 0;
+        int res = OR_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res |= ORReduce(a, i);
         }
@@ -3723,17 +3724,11 @@ public class Int256VectorTests extends AbstractVectorTest {
         int ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = OR_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.OR);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = 0;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                IntVector av = IntVector.fromArray(SPECIES, a, i);
-                ra |= av.reduceLanes(VectorOperators.OR);
+                ra |= r[i];
             }
         }
 
@@ -3742,7 +3737,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int ORReduceMasked(int[] a, int idx, boolean[] mask) {
-        int res = 0;
+        int res = OR_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res |= a[i];
@@ -3752,7 +3747,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int ORReduceAllMasked(int[] a, boolean[] mask) {
-        int res = 0;
+        int res = OR_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res |= ORReduceMasked(a, i, mask);
         }
@@ -3769,17 +3764,11 @@ public class Int256VectorTests extends AbstractVectorTest {
         int ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = OR_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.OR, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = 0;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                IntVector av = IntVector.fromArray(SPECIES, a, i);
-                ra |= av.reduceLanes(VectorOperators.OR, vmask);
+                ra |= r[i];
             }
         }
 
@@ -3788,7 +3777,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int XORReduce(int[] a, int idx) {
-        int res = 0;
+        int res = XOR_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res ^= a[i];
         }
@@ -3797,7 +3786,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int XORReduceAll(int[] a) {
-        int res = 0;
+        int res = XOR_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res ^= XORReduce(a, i);
         }
@@ -3812,17 +3801,11 @@ public class Int256VectorTests extends AbstractVectorTest {
         int ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = XOR_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.XOR);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = 0;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                IntVector av = IntVector.fromArray(SPECIES, a, i);
-                ra ^= av.reduceLanes(VectorOperators.XOR);
+                ra ^= r[i];
             }
         }
 
@@ -3831,7 +3814,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int XORReduceMasked(int[] a, int idx, boolean[] mask) {
-        int res = 0;
+        int res = XOR_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res ^= a[i];
@@ -3841,7 +3824,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int XORReduceAllMasked(int[] a, boolean[] mask) {
-        int res = 0;
+        int res = XOR_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res ^= XORReduceMasked(a, i, mask);
         }
@@ -3858,17 +3841,11 @@ public class Int256VectorTests extends AbstractVectorTest {
         int ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = XOR_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.XOR, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = 0;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                IntVector av = IntVector.fromArray(SPECIES, a, i);
-                ra ^= av.reduceLanes(VectorOperators.XOR, vmask);
+                ra ^= r[i];
             }
         }
 
@@ -3877,7 +3854,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int ADDReduce(int[] a, int idx) {
-        int res = 0;
+        int res = ADD_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res += a[i];
         }
@@ -3886,7 +3863,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int ADDReduceAll(int[] a) {
-        int res = 0;
+        int res = ADD_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res += ADDReduce(a, i);
         }
@@ -3901,17 +3878,11 @@ public class Int256VectorTests extends AbstractVectorTest {
         int ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = ADD_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.ADD);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = 0;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                IntVector av = IntVector.fromArray(SPECIES, a, i);
-                ra += av.reduceLanes(VectorOperators.ADD);
+                ra += r[i];
             }
         }
 
@@ -3920,7 +3891,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int ADDReduceMasked(int[] a, int idx, boolean[] mask) {
-        int res = 0;
+        int res = ADD_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res += a[i];
@@ -3930,7 +3901,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int ADDReduceAllMasked(int[] a, boolean[] mask) {
-        int res = 0;
+        int res = ADD_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res += ADDReduceMasked(a, i, mask);
         }
@@ -3947,17 +3918,11 @@ public class Int256VectorTests extends AbstractVectorTest {
         int ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = ADD_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.ADD, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = 0;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                IntVector av = IntVector.fromArray(SPECIES, a, i);
-                ra += av.reduceLanes(VectorOperators.ADD, vmask);
+                ra += r[i];
             }
         }
 
@@ -3966,7 +3931,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int MULReduce(int[] a, int idx) {
-        int res = 1;
+        int res = MUL_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res *= a[i];
         }
@@ -3975,7 +3940,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int MULReduceAll(int[] a) {
-        int res = 1;
+        int res = MUL_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res *= MULReduce(a, i);
         }
@@ -3987,20 +3952,14 @@ public class Int256VectorTests extends AbstractVectorTest {
     static void MULReduceInt256VectorTests(IntFunction<int[]> fa) {
         int[] a = fa.apply(SPECIES.length());
         int[] r = fr.apply(SPECIES.length());
-        int ra = 1;
+        int ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MUL_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.MUL);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = 1;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                IntVector av = IntVector.fromArray(SPECIES, a, i);
-                ra *= av.reduceLanes(VectorOperators.MUL);
+                ra *= r[i];
             }
         }
 
@@ -4009,7 +3968,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int MULReduceMasked(int[] a, int idx, boolean[] mask) {
-        int res = 1;
+        int res = MUL_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res *= a[i];
@@ -4019,7 +3978,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int MULReduceAllMasked(int[] a, boolean[] mask) {
-        int res = 1;
+        int res = MUL_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res *= MULReduceMasked(a, i, mask);
         }
@@ -4033,20 +3992,14 @@ public class Int256VectorTests extends AbstractVectorTest {
         int[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Integer> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        int ra = 1;
+        int ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MUL_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.MUL, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = 1;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                IntVector av = IntVector.fromArray(SPECIES, a, i);
-                ra *= av.reduceLanes(VectorOperators.MUL, vmask);
+                ra *= r[i];
             }
         }
 
@@ -4055,7 +4008,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int MINReduce(int[] a, int idx) {
-        int res = Integer.MAX_VALUE;
+        int res = MIN_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = (int) Math.min(res, a[i]);
         }
@@ -4064,7 +4017,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int MINReduceAll(int[] a) {
-        int res = Integer.MAX_VALUE;
+        int res = MIN_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (int) Math.min(res, MINReduce(a, i));
         }
@@ -4076,20 +4029,14 @@ public class Int256VectorTests extends AbstractVectorTest {
     static void MINReduceInt256VectorTests(IntFunction<int[]> fa) {
         int[] a = fa.apply(SPECIES.length());
         int[] r = fr.apply(SPECIES.length());
-        int ra = Integer.MAX_VALUE;
+        int ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MIN_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.MIN);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Integer.MAX_VALUE;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                IntVector av = IntVector.fromArray(SPECIES, a, i);
-                ra = (int) Math.min(ra, av.reduceLanes(VectorOperators.MIN));
+                ra = (int) Math.min(ra, r[i]);
             }
         }
 
@@ -4098,7 +4045,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int MINReduceMasked(int[] a, int idx, boolean[] mask) {
-        int res = Integer.MAX_VALUE;
+        int res = MIN_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = (int) Math.min(res, a[i]);
@@ -4108,7 +4055,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int MINReduceAllMasked(int[] a, boolean[] mask) {
-        int res = Integer.MAX_VALUE;
+        int res = MIN_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (int) Math.min(res, MINReduceMasked(a, i, mask));
         }
@@ -4122,20 +4069,14 @@ public class Int256VectorTests extends AbstractVectorTest {
         int[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Integer> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        int ra = Integer.MAX_VALUE;
+        int ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MIN_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.MIN, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Integer.MAX_VALUE;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                IntVector av = IntVector.fromArray(SPECIES, a, i);
-                ra = (int) Math.min(ra, av.reduceLanes(VectorOperators.MIN, vmask));
+                ra = (int) Math.min(ra, r[i]);
             }
         }
 
@@ -4144,7 +4085,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int MAXReduce(int[] a, int idx) {
-        int res = Integer.MIN_VALUE;
+        int res = MAX_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = (int) Math.max(res, a[i]);
         }
@@ -4153,7 +4094,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int MAXReduceAll(int[] a) {
-        int res = Integer.MIN_VALUE;
+        int res = MAX_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (int) Math.max(res, MAXReduce(a, i));
         }
@@ -4165,20 +4106,14 @@ public class Int256VectorTests extends AbstractVectorTest {
     static void MAXReduceInt256VectorTests(IntFunction<int[]> fa) {
         int[] a = fa.apply(SPECIES.length());
         int[] r = fr.apply(SPECIES.length());
-        int ra = Integer.MIN_VALUE;
+        int ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MAX_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.MAX);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Integer.MIN_VALUE;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                IntVector av = IntVector.fromArray(SPECIES, a, i);
-                ra = (int) Math.max(ra, av.reduceLanes(VectorOperators.MAX));
+                ra = (int) Math.max(ra, r[i]);
             }
         }
 
@@ -4187,7 +4122,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int MAXReduceMasked(int[] a, int idx, boolean[] mask) {
-        int res = Integer.MIN_VALUE;
+        int res = MAX_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = (int) Math.max(res, a[i]);
@@ -4197,7 +4132,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int MAXReduceAllMasked(int[] a, boolean[] mask) {
-        int res = Integer.MIN_VALUE;
+        int res = MAX_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (int) Math.max(res, MAXReduceMasked(a, i, mask));
         }
@@ -4211,20 +4146,14 @@ public class Int256VectorTests extends AbstractVectorTest {
         int[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Integer> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        int ra = Integer.MIN_VALUE;
+        int ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MAX_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.MAX, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Integer.MIN_VALUE;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                IntVector av = IntVector.fromArray(SPECIES, a, i);
-                ra = (int) Math.max(ra, av.reduceLanes(VectorOperators.MAX, vmask));
+                ra = (int) Math.max(ra, r[i]);
             }
         }
 
@@ -4233,7 +4162,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int UMINReduce(int[] a, int idx) {
-        int res = (int)-1;
+        int res = UMIN_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = (int) VectorMath.minUnsigned(res, a[i]);
         }
@@ -4242,7 +4171,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int UMINReduceAll(int[] a) {
-        int res = (int)-1;
+        int res = UMIN_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (int) VectorMath.minUnsigned(res, UMINReduce(a, i));
         }
@@ -4254,20 +4183,14 @@ public class Int256VectorTests extends AbstractVectorTest {
     static void UMINReduceInt256VectorTests(IntFunction<int[]> fa) {
         int[] a = fa.apply(SPECIES.length());
         int[] r = fr.apply(SPECIES.length());
-        int ra = (int)-1;
+        int ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = UMIN_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.UMIN);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = (int)-1;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                IntVector av = IntVector.fromArray(SPECIES, a, i);
-                ra = (int) VectorMath.minUnsigned(ra, av.reduceLanes(VectorOperators.UMIN));
+                ra = (int) VectorMath.minUnsigned(ra, r[i]);
             }
         }
 
@@ -4276,7 +4199,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int UMINReduceMasked(int[] a, int idx, boolean[] mask) {
-        int res = (int)-1;
+        int res = UMIN_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = (int) VectorMath.minUnsigned(res, a[i]);
@@ -4286,7 +4209,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int UMINReduceAllMasked(int[] a, boolean[] mask) {
-        int res = (int)-1;
+        int res = UMIN_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (int) VectorMath.minUnsigned(res, UMINReduceMasked(a, i, mask));
         }
@@ -4300,20 +4223,14 @@ public class Int256VectorTests extends AbstractVectorTest {
         int[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Integer> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        int ra = (int)-1;
+        int ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = UMIN_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.UMIN, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = (int)-1;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                IntVector av = IntVector.fromArray(SPECIES, a, i);
-                ra = (int) VectorMath.minUnsigned(ra, av.reduceLanes(VectorOperators.UMIN, vmask));
+                ra = (int) VectorMath.minUnsigned(ra, r[i]);
             }
         }
 
@@ -4322,7 +4239,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int UMAXReduce(int[] a, int idx) {
-        int res = (int)0;
+        int res = UMAX_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = (int) VectorMath.maxUnsigned(res, a[i]);
         }
@@ -4331,7 +4248,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int UMAXReduceAll(int[] a) {
-        int res = (int)0;
+        int res = UMAX_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (int) VectorMath.maxUnsigned(res, UMAXReduce(a, i));
         }
@@ -4343,20 +4260,14 @@ public class Int256VectorTests extends AbstractVectorTest {
     static void UMAXReduceInt256VectorTests(IntFunction<int[]> fa) {
         int[] a = fa.apply(SPECIES.length());
         int[] r = fr.apply(SPECIES.length());
-        int ra = (int)0;
+        int ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = UMAX_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.UMAX);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = (int)0;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                IntVector av = IntVector.fromArray(SPECIES, a, i);
-                ra = (int) VectorMath.maxUnsigned(ra, av.reduceLanes(VectorOperators.UMAX));
+                ra = (int) VectorMath.maxUnsigned(ra, r[i]);
             }
         }
 
@@ -4365,7 +4276,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int UMAXReduceMasked(int[] a, int idx, boolean[] mask) {
-        int res = (int)0;
+        int res = UMAX_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = (int) VectorMath.maxUnsigned(res, a[i]);
@@ -4375,7 +4286,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int UMAXReduceAllMasked(int[] a, boolean[] mask) {
-        int res = (int)0;
+        int res = UMAX_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (int) VectorMath.maxUnsigned(res, UMAXReduceMasked(a, i, mask));
         }
@@ -4389,20 +4300,14 @@ public class Int256VectorTests extends AbstractVectorTest {
         int[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Integer> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        int ra = (int)0;
+        int ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = UMAX_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.UMAX, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = (int)0;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                IntVector av = IntVector.fromArray(SPECIES, a, i);
-                ra = (int) VectorMath.maxUnsigned(ra, av.reduceLanes(VectorOperators.UMAX, vmask));
+                ra = (int) VectorMath.maxUnsigned(ra, r[i]);
             }
         }
 
@@ -4411,7 +4316,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int FIRST_NONZEROReduce(int[] a, int idx) {
-        int res = (int) 0;
+        int res = FIRST_NONZERO_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = firstNonZero(res, a[i]);
         }
@@ -4420,7 +4325,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int FIRST_NONZEROReduceAll(int[] a) {
-        int res = (int) 0;
+        int res = FIRST_NONZERO_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = firstNonZero(res, FIRST_NONZEROReduce(a, i));
         }
@@ -4432,20 +4337,14 @@ public class Int256VectorTests extends AbstractVectorTest {
     static void FIRST_NONZEROReduceInt256VectorTests(IntFunction<int[]> fa) {
         int[] a = fa.apply(SPECIES.length());
         int[] r = fr.apply(SPECIES.length());
-        int ra = (int) 0;
+        int ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = FIRST_NONZERO_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.FIRST_NONZERO);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = (int) 0;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                IntVector av = IntVector.fromArray(SPECIES, a, i);
-                ra = firstNonZero(ra, av.reduceLanes(VectorOperators.FIRST_NONZERO));
+                ra = firstNonZero(ra, r[i]);
             }
         }
 
@@ -4454,7 +4353,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int FIRST_NONZEROReduceMasked(int[] a, int idx, boolean[] mask) {
-        int res = (int) 0;
+        int res = FIRST_NONZERO_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = firstNonZero(res, a[i]);
@@ -4464,7 +4363,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int FIRST_NONZEROReduceAllMasked(int[] a, boolean[] mask) {
-        int res = (int) 0;
+        int res = FIRST_NONZERO_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = firstNonZero(res, FIRST_NONZEROReduceMasked(a, i, mask));
         }
@@ -4478,20 +4377,14 @@ public class Int256VectorTests extends AbstractVectorTest {
         int[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Integer> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        int ra = (int) 0;
+        int ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = FIRST_NONZERO_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.FIRST_NONZERO, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = (int) 0;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                IntVector av = IntVector.fromArray(SPECIES, a, i);
-                ra = firstNonZero(ra, av.reduceLanes(VectorOperators.FIRST_NONZERO, vmask));
+                ra = firstNonZero(ra, r[i]);
             }
         }
 
@@ -4548,7 +4441,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int SUADDReduce(int[] a, int idx) {
-        int res = 0;
+        int res = SUADD_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = (int) VectorMath.addSaturatingUnsigned(res, a[i]);
         }
@@ -4557,7 +4450,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int SUADDReduceAll(int[] a) {
-        int res = 0;
+        int res = SUADD_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (int) VectorMath.addSaturatingUnsigned(res, SUADDReduce(a, i));
         }
@@ -4572,17 +4465,11 @@ public class Int256VectorTests extends AbstractVectorTest {
         int ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = SUADD_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.SUADD);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = 0;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                IntVector av = IntVector.fromArray(SPECIES, a, i);
-                ra = (int) VectorMath.addSaturatingUnsigned(ra, av.reduceLanes(VectorOperators.SUADD));
+                ra = (int) VectorMath.addSaturatingUnsigned(ra, r[i]);
             }
         }
 
@@ -4591,7 +4478,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int SUADDReduceMasked(int[] a, int idx, boolean[] mask) {
-        int res = 0;
+        int res = SUADD_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = (int) VectorMath.addSaturatingUnsigned(res, a[i]);
@@ -4601,7 +4488,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     static int SUADDReduceAllMasked(int[] a, boolean[] mask) {
-        int res = 0;
+        int res = SUADD_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (int) VectorMath.addSaturatingUnsigned(res, SUADDReduceMasked(a, i, mask));
         }
@@ -4617,17 +4504,11 @@ public class Int256VectorTests extends AbstractVectorTest {
         int ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = SUADD_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 r[i] = av.reduceLanes(VectorOperators.SUADD, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = 0;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                IntVector av = IntVector.fromArray(SPECIES, a, i);
-                ra = (int) VectorMath.addSaturatingUnsigned(ra, av.reduceLanes(VectorOperators.SUADD, vmask));
+                ra = (int) VectorMath.addSaturatingUnsigned(ra, r[i]);
             }
         }
 
@@ -6432,6 +6313,93 @@ public class Int256VectorTests extends AbstractVectorTest {
         }
 
         assertArraysEquals(r, a, mask, Int256VectorTests::REVERSE_BYTES);
+    }
+
+    @Test(dataProvider = "intUnaryOpProvider")
+    static void testIdentityValues(IntFunction<int[]> fa) {
+        int[] a = fa.apply(SPECIES.length());
+
+        for (int i = 0; i < a.length; i++) {
+            int x = a[i];
+
+            // ADD identity: 0 + x == x
+            Assert.assertEquals((int)(ADD_IDENTITY + x), x,
+                                "ADD(ADD_IDENTITY, " + x + ") != " + x);
+
+            // AND identity: -1 & x == x
+            Assert.assertEquals((int)(AND_IDENTITY & x), x,
+                                "AND(AND_IDENTITY, " + x + ") != " + x);
+
+            // FIRST_NONZERO identity: firstNonZero(0, x) == x
+            Assert.assertEquals(firstNonZero(FIRST_NONZERO_IDENTITY, x), x,
+                                "FIRST_NONZERO(FIRST_NONZERO_IDENTITY, " + x + ") != " + x);
+
+            // MAX identity: max(Integer.MIN_VALUE, x) == x
+            Assert.assertEquals((int) Math.max(MAX_IDENTITY, x), x,
+                                "MAX(MAX_IDENTITY, " + x + ") != " + x);
+
+            // MIN identity: min(Integer.MAX_VALUE, x) == x
+            Assert.assertEquals((int) Math.min(MIN_IDENTITY, x), x,
+                                "MIN(MIN_IDENTITY, " + x + ") != " + x);
+
+            // MUL identity: 1 * x == x
+            Assert.assertEquals((int)(MUL_IDENTITY * x), x,
+                                "MUL(MUL_IDENTITY, " + x + ") != " + x);
+
+            // OR identity: 0 | x == x
+            Assert.assertEquals((int)(OR_IDENTITY | x), x,
+                                "OR(OR_IDENTITY, " + x + ") != " + x);
+
+            // SUADD identity: addSaturatingUnsigned(0, x) == x
+            Assert.assertEquals((int) VectorMath.addSaturatingUnsigned(SUADD_IDENTITY, x), x,
+                                "SUADD(SUADD_IDENTITY, " + x + ") != " + x);
+
+            // UMAX identity: maxUnsigned(0, x) == x
+            Assert.assertEquals((int) VectorMath.maxUnsigned(UMAX_IDENTITY, x), x,
+                                "UMAX(UMAX_IDENTITY, " + x + ") != " + x);
+
+            // UMIN identity: minUnsigned(-1, x) == x
+            Assert.assertEquals((int) VectorMath.minUnsigned(UMIN_IDENTITY, x), x,
+                                "UMIN(UMIN_IDENTITY, " + x + ") != " + x);
+
+            // XOR identity: 0 ^ x == x
+            Assert.assertEquals((int)(XOR_IDENTITY ^ x), x,
+                                "XOR(XOR_IDENTITY, " + x + ") != " + x);
+        }
+    }
+
+    @Test(dataProvider = "intUnaryOpProvider")
+    static void testMaskedReductionIdentityAllFalse(IntFunction<int[]> fa) {
+        int[] a = fa.apply(SPECIES.length());
+        VectorMask<Integer> allFalseMask = SPECIES.maskAll(false);
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            IntVector av = IntVector.fromArray(SPECIES, a, i);
+
+            // When mask is all false, reduction should return identity value
+            Assert.assertEquals(av.reduceLanes(VectorOperators.ADD, allFalseMask), ADD_IDENTITY,
+                                "ADD with all-false mask should return ADD_IDENTITY");
+            Assert.assertEquals(av.reduceLanes(VectorOperators.AND, allFalseMask), AND_IDENTITY,
+                                "AND with all-false mask should return AND_IDENTITY");
+            Assert.assertEquals(av.reduceLanes(VectorOperators.FIRST_NONZERO, allFalseMask), FIRST_NONZERO_IDENTITY,
+                                "FIRST_NONZERO with all-false mask should return FIRST_NONZERO_IDENTITY");
+            Assert.assertEquals(av.reduceLanes(VectorOperators.MAX, allFalseMask), MAX_IDENTITY,
+                                "MAX with all-false mask should return MAX_IDENTITY");
+            Assert.assertEquals(av.reduceLanes(VectorOperators.MIN, allFalseMask), MIN_IDENTITY,
+                                "MIN with all-false mask should return MIN_IDENTITY");
+            Assert.assertEquals(av.reduceLanes(VectorOperators.MUL, allFalseMask), MUL_IDENTITY,
+                                "MUL with all-false mask should return MUL_IDENTITY");
+            Assert.assertEquals(av.reduceLanes(VectorOperators.OR, allFalseMask), OR_IDENTITY,
+                                "OR with all-false mask should return OR_IDENTITY");
+            Assert.assertEquals(av.reduceLanes(VectorOperators.SUADD, allFalseMask), SUADD_IDENTITY,
+                                "SUADD with all-false mask should return SUADD_IDENTITY");
+            Assert.assertEquals(av.reduceLanes(VectorOperators.UMAX, allFalseMask), UMAX_IDENTITY,
+                                "UMAX with all-false mask should return UMAX_IDENTITY");
+            Assert.assertEquals(av.reduceLanes(VectorOperators.UMIN, allFalseMask), UMIN_IDENTITY,
+                                "UMIN with all-false mask should return UMIN_IDENTITY");
+            Assert.assertEquals(av.reduceLanes(VectorOperators.XOR, allFalseMask), XOR_IDENTITY,
+                                "XOR with all-false mask should return XOR_IDENTITY");
+        }
     }
 
     @Test(dataProvider = "intCompareOpProvider")

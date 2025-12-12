@@ -507,23 +507,23 @@ gen_binary_bcst_op_no_masked "MAX+max" "Math.max(a, b)"
 gen_saturating_binary_op_associative "SUADD" "VectorMath.addSaturatingUnsigned(a, b)" "BITWISE"
 
 # Reductions.
-gen_reduction_op "AND" "\&" "BITWISE" "-1"
-gen_reduction_op "OR" "|" "BITWISE" "0"
-gen_reduction_op "XOR" "^" "BITWISE" "0"
-gen_reduction_op "ADD" "+" "" "0"
-gen_reduction_op "MUL" "*" "" "1"
-gen_reduction_op_func "MIN" "(\$type\$) Math.min" "" "\$Wideboxtype\$.\$MaxValue\$"
-gen_reduction_op_func "MAX" "(\$type\$) Math.max" "" "\$Wideboxtype\$.\$MinValue\$"
-gen_reduction_op_func "UMIN" "(\$type\$) VectorMath.minUnsigned" "BITWISE" "(\$type\$)-1"
-gen_reduction_op_func "UMAX" "(\$type\$) VectorMath.maxUnsigned" "BITWISE" "(\$type\$)0"
-gen_reduction_op_func "FIRST_NONZERO" "firstNonZero" "" "(\$type\$) 0"
+gen_reduction_op "AND" "\&" "BITWISE" "AND_IDENTITY"
+gen_reduction_op "OR" "|" "BITWISE" "OR_IDENTITY"
+gen_reduction_op "XOR" "^" "BITWISE" "XOR_IDENTITY"
+gen_reduction_op "ADD" "+" "" "ADD_IDENTITY"
+gen_reduction_op "MUL" "*" "" "MUL_IDENTITY"
+gen_reduction_op_func "MIN" "(\$type\$) Math.min" "" "MIN_IDENTITY"
+gen_reduction_op_func "MAX" "(\$type\$) Math.max" "" "MAX_IDENTITY"
+gen_reduction_op_func "UMIN" "(\$type\$) VectorMath.minUnsigned" "BITWISE" "UMIN_IDENTITY"
+gen_reduction_op_func "UMAX" "(\$type\$) VectorMath.maxUnsigned" "BITWISE" "UMAX_IDENTITY"
+gen_reduction_op_func "FIRST_NONZERO" "firstNonZero" "" "FIRST_NONZERO_IDENTITY"
 
 # Boolean reductions.
 gen_bool_reduction_op "anyTrue" "|" "BITWISE" "false"
 gen_bool_reduction_op "allTrue" "\&" "BITWISE" "true"
 
 # Saturating reductions.
-gen_saturating_reduction_op "SUADD" "(\$type\$) VectorMath.addSaturatingUnsigned" "BITWISE" "0"
+gen_saturating_reduction_op "SUADD" "(\$type\$) VectorMath.addSaturatingUnsigned" "BITWISE" "SUADD_IDENTITY"
 
 #Insert
 gen_with_op "withLane" "" "" ""
@@ -624,6 +624,9 @@ gen_unary_alu_op "REVERSE" "REVERSE_scalar(a)" "BITWISE"
 gen_unary_alu_op "REVERSE_BYTES" "\$Boxtype\$.reverseBytes(a)" "intOrLong"
 gen_unary_alu_op "REVERSE_BYTES" "\$Boxtype\$.reverseBytes(a)" "short"
 gen_unary_alu_op "REVERSE_BYTES" "a" "byte"
+
+# Identity value tests
+gen_op_tmpl "Identity-test" "Identity" "" ""
 
 # Miscellaneous Smoke Tests
 gen_op_tmpl $miscellaneous_template "MISC" "" ""
