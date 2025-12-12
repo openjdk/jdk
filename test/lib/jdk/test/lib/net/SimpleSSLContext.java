@@ -39,18 +39,6 @@ public final class SimpleSSLContext {
 
     private static final String DEFAULT_KEY_STORE_FILE_REL_PATH = "jdk/test/lib/net/testkeys";
 
-    private final SSLContext ssl;
-
-    // Made `public` for backward compatibility
-    public SimpleSSLContext() throws IOException {
-        this.ssl = findSSLContext(DEFAULT_KEY_STORE_FILE_REL_PATH, DEFAULT_PROTOCOL);
-    }
-
-    // Kept for backward compatibility
-    public SimpleSSLContext(String keyStoreFileRelPath) throws IOException {
-        this.ssl = findSSLContext(Objects.requireNonNull(keyStoreFileRelPath), DEFAULT_PROTOCOL);
-    }
-
     /**
      * {@return a new {@link SSLContext} instance by searching for a key store
      * file path, and loading the first found one}
@@ -134,22 +122,6 @@ public final class SimpleSSLContext {
                     keyStoreFilePath, protocol);
             throw new RuntimeException(message, e);
         }
-    }
-
-    // Kept for backward compatibility
-    public static SSLContext getContext(String protocol) throws IOException {
-        try {
-            return protocol == null || protocol.isEmpty()
-                    ? findSSLContext()
-                    : findSSLContext(protocol);
-        } catch (RuntimeException re) {
-            throw new IOException(re);
-        }
-    }
-
-    // Kept for backward compatibility
-    public SSLContext get() {
-        return ssl;
     }
 
 }
