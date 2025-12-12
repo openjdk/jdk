@@ -62,7 +62,7 @@ public class OpaqueOverlapping extends OverlappingTestBase {
         skipClassNames = new String[] { "Choice" };
     }
     private String testSeq;
-    private final static String checkSeq = "010000101";
+    private static final String checkSeq = "010000101";
     private Point heavyLoc;
     private JButton light;
     private Frame frame = null;
