@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -853,7 +854,7 @@ static bool is_always_within_branch_range(Address entry) {
 
 // Maybe emit a call via a trampoline. If the code cache is small
 // trampolines won't be emitted.
-address MacroAssembler::trampoline_call(Address entry) {
+address MacroAssembler::trampoline_call(Address entry, ciMethod* callee /* = nullptr */) {
   assert(entry.rspec().type() == relocInfo::runtime_call_type
          || entry.rspec().type() == relocInfo::opt_virtual_call_type
          || entry.rspec().type() == relocInfo::static_call_type
@@ -867,7 +868,11 @@ address MacroAssembler::trampoline_call(Address entry) {
       // code during its branch shortening phase.
       if (entry.rspec().type() == relocInfo::runtime_call_type) {
         assert(CodeBuffer::supports_shared_stubs(), "must support shared stubs");
-        code()->share_trampoline_for(entry.target(), offset());
+        assert(callee == nullptr, "must not have a callee");
+        code()->share_trampoline_for(entry.target(), entry.target(), offset());
+      } else if (entry.rspec().type() == relocInfo::static_call_type && callee != nullptr) {
+        assert(CodeBuffer::supports_shared_stubs(), "must support shared stubs");
+        code()->share_trampoline_for(address(callee), entry.target(), offset());
       } else {
         address stub = emit_trampoline_stub(offset(), target);
         if (stub == nullptr) {
