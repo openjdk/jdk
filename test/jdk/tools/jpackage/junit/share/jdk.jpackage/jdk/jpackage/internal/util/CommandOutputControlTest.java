@@ -24,6 +24,7 @@ package jdk.jpackage.internal.util;
 
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
+import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -31,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -57,10 +59,12 @@ import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.util.function.ExceptionBox;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -112,7 +116,8 @@ public class CommandOutputControlTest {
 
                 @Override
                 public int run(PrintWriter out, PrintWriter err, String... args) {
-                    throw new UnsupportedOperationException();
+                    fail("Should never be called");
+                    return 0;
                 }
 
             }, "--foo", "--baz=10");
@@ -223,6 +228,42 @@ public class CommandOutputControlTest {
         assertNotEquals(0, result.getExitCode());
         assertEquals(List.of("The five boxing wizards"), result.getOutput());
         processDestroyer.get().join();
+    }
+
+    @ParameterizedTest
+    @EnumSource(CloseStream.class)
+    public void test_close_streams(CloseStream action) throws InterruptedException, IOException {
+        var cmdline = Command.createShellCommandLine(List.<CommandAction>of(
+                CommandAction.echoStdout("Hello stdout"),
+                CommandAction.echoStderr("Bye stderr")
+        ));
+
+        var coc = new CommandOutputControl().saveOutput(true).dumpOutput(true).processNotifier(toConsumer(process -> {
+            // Close process output stream(s). This should make corresponding stream gobbler(s) throw IOException.
+            switch (action) {
+                case STDOUT -> {
+                    process.getInputStream().close();
+                }
+                case STDERR -> {
+                    process.getErrorStream().close();
+                }
+                case STDOUT_AND_STDERR -> {
+                    process.getInputStream().close();
+                    process.getErrorStream().close();
+                }
+            }
+        }));
+        var exec = coc.createExecutable(new ProcessBuilder(cmdline));
+
+        var ex = assertThrows(IOException.class, exec::execute);
+        System.out.println("test_close_streams: " + action);
+        ex.printStackTrace(System.out);
+    }
+
+    public enum CloseStream {
+        STDOUT,
+        STDERR,
+        STDOUT_AND_STDERR
     }
 
     private static List<CommandOutputControlSpec> testDescription() {
@@ -608,6 +649,7 @@ public class CommandOutputControlTest {
 
         private void verifyDump(DumpCapture dumpCapture, Command command) {
             if (replaceStdoutWithStderr()) {
+                // STDERR replaces STDOUT
                 if (dumpOutput()) {
                     assertEquals(command.stderr(), dumpCapture.outLines());
                 } else {
@@ -627,23 +669,21 @@ public class CommandOutputControlTest {
                 return;
             }
 
+            if (redirectStderr() && !discardStdout() && discardStderr()) {
+                assertEquals(command.stdout(), dumpCapture.outLines());
+            }
+
             if (redirectStderr() && !discardStderr()) {
                 assertEquals(List.of(), dumpCapture.errLines());
-                if (discardStdout() && !discardStderr()) {
-                    // STDERR replaces STDOUT
-                    assertEquals(command.stderr(), dumpCapture.outLines());
-                } else if (!discardStdout() && discardStderr()) {
-                    assertEquals(command.stdout(), dumpCapture.outLines());
-                } else {
-                    // Intertwined STDOUT and STDERR
-                    if (!Collections.disjoint(command.stdout(), command.stderr())) {
-                        throw new UnsupportedOperationException("Testee stdout and stderr must be disjoint");
-                    }
-                    var capturedDump = new ArrayList<>(dumpCapture.outLines());
-                    capturedDump.removeAll(command.stdout());
-                    capturedDump.removeAll(command.stderr());
-                    assertEquals(List.of(), capturedDump);
+
+                // Intertwined STDOUT and STDERR
+                if (!Collections.disjoint(command.stdout(), command.stderr())) {
+                    throw new UnsupportedOperationException("Testee stdout and stderr must be disjoint");
                 }
+                var capturedDump = new ArrayList<>(dumpCapture.outLines());
+                capturedDump.removeAll(command.stdout());
+                capturedDump.removeAll(command.stderr());
+                assertEquals(List.of(), capturedDump);
             } else {
                 if (discardStdout()) {
                     assertEquals(List.of(), dumpCapture.outLines());
