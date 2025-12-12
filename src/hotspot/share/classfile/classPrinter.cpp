@@ -28,7 +28,7 @@
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
-#include "oops/klass.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/method.hpp"
 #include "oops/symbol.hpp"
 #include "utilities/ostream.hpp"
@@ -93,11 +93,14 @@ public:
     if (!k->is_instance_klass()) {
       return;
     }
-    _klasses.append(InstanceKlass::cast(k));
+    InstanceKlass* ik = InstanceKlass::cast(k);
+    if (ik->is_loaded() && ik->name()->is_star_match(_class_name_pattern)) {
+      _klasses.append(ik);
+    }
   }
 
   void print() {
-    _klasses.sort(compare_klasses_alphadetically);
+    _klasses.sort(compare_klasses_alphabetically);
     for (int i = 0; i < _klasses.length(); i++) {
       print_instance_klass(_klasses.at(i));
     }
@@ -108,21 +111,21 @@ public:
     return (pattern == nullptr || sym->is_star_match(pattern));
   }
 
-  static int compare_klasses_alphadetically(InstanceKlass** a, InstanceKlass** b) {
-    return compare_symbols_alphadetically((*a)->name(), (*b)->name());
+  static int compare_klasses_alphabetically(InstanceKlass** a, InstanceKlass** b) {
+    return compare_symbols_alphabetically((*a)->name(), (*b)->name());
   }
 
-  static int compare_methods_alphadetically(const void* a, const void* b) {
+  static int compare_methods_alphabetically(const void* a, const void* b) {
     Method* ma = *(Method**)a;
     Method* mb = *(Method**)b;
-    int n = compare_symbols_alphadetically(ma->name(), mb->name());
+    int n = compare_symbols_alphabetically(ma->name(), mb->name());
     if (n == 0) {
-      n = compare_symbols_alphadetically(ma->signature(), mb->signature());
+      n = compare_symbols_alphabetically(ma->signature(), mb->signature());
     }
     return n;
   }
 
-  static int compare_symbols_alphadetically(Symbol* a, Symbol *b) {
+  static int compare_symbols_alphabetically(Symbol* a, Symbol *b) {
     if (a == b) {
       return 0;
     }
@@ -144,56 +147,54 @@ public:
   }
 
   void print_instance_klass(InstanceKlass* ik) {
-    if (ik->is_loaded() && ik->name()->is_star_match(_class_name_pattern)) {
-      ResourceMark rm;
-      if (_has_printed_methods) {
-        // We have printed some methods in the previous class.
-        // Print a new line to separate the two classes
-        _st->cr();
-      }
-      _has_printed_methods = false;
-      if (_always_print_class_name) {
-        print_klass_name(ik);
-      }
+    ResourceMark rm;
+    if (_has_printed_methods) {
+      // We have printed some methods in the previous class.
+      // Print a new line to separate the two classes
+      _st->cr();
+    }
+    _has_printed_methods = false;
+    if (_always_print_class_name) {
+      print_klass_name(ik);
+    }
 
-      if (has_mode(_flags, ClassPrinter::PRINT_CLASS_DETAILS)) {
-        _st->print("InstanceKlass: ");
-        ik->print_on(_st);
-        oop mirror = ik->java_mirror();
-        if (mirror != nullptr) {
+    if (has_mode(_flags, ClassPrinter::PRINT_CLASS_DETAILS)) {
+      _st->print("InstanceKlass: ");
+      ik->print_on(_st);
+      oop mirror = ik->java_mirror();
+      if (mirror != nullptr) {
         _st->print("\nJava mirror oop for %s: ", ik->name()->as_C_string());
-          mirror->print_on(_st);
-        }
+        mirror->print_on(_st);
+      }
+    }
+
+    if (has_mode(_flags, ClassPrinter::PRINT_METHOD_NAME)) {
+      bool print_codes = has_mode(_flags, ClassPrinter::PRINT_BYTECODE);
+      int len = ik->methods()->length();
+      int num_methods_printed = 0;
+
+      Method** sorted_methods = NEW_RESOURCE_ARRAY(Method*, len);
+      for (int index = 0; index < len; index++) {
+        sorted_methods[index] = ik->methods()->at(index);
       }
 
-      if (has_mode(_flags, ClassPrinter::PRINT_METHOD_NAME)) {
-        bool print_codes = has_mode(_flags, ClassPrinter::PRINT_BYTECODE);
-        int len = ik->methods()->length();
-        int num_methods_printed = 0;
+      qsort(sorted_methods, len, sizeof(Method*), compare_methods_alphabetically);
 
-        Method** sorted_methods = NEW_RESOURCE_ARRAY(Method*, len);
-        for (int index = 0; index < len; index++) {
-          sorted_methods[index] = ik->methods()->at(index);
-        }
-
-        qsort(sorted_methods, len, sizeof(Method*), compare_methods_alphadetically);
-
-        for (int index = 0; index < len; index++) {
-          Method* m = sorted_methods[index];
-          if (match(_method_name_pattern, m->name()) &&
-              match(_method_signature_pattern, m->signature())) {
-            if (print_codes && num_methods_printed++ > 0) {
-              _st->cr();
-            }
-
-            if (_has_printed_methods == false) {
-              if (!_always_print_class_name) {
-                print_klass_name(ik);
-              }
-              _has_printed_methods = true;
-            }
-            print_method(m);
+      for (int index = 0; index < len; index++) {
+        Method* m = sorted_methods[index];
+        if (match(_method_name_pattern, m->name()) &&
+            match(_method_signature_pattern, m->signature())) {
+          if (print_codes && num_methods_printed++ > 0) {
+            _st->cr();
           }
+
+          if (_has_printed_methods == false) {
+            if (!_always_print_class_name) {
+              print_klass_name(ik);
+            }
+            _has_printed_methods = true;
+          }
+          print_method(m);
         }
       }
     }
