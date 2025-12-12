@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ class Request {
     private OutputStream os;
     private final int maxReqHeaderSize;
 
-    Request (InputStream rawInputStream, OutputStream rawout) throws IOException {
+    Request(InputStream rawInputStream, OutputStream rawout) throws IOException {
         this.maxReqHeaderSize = ServerConfig.getMaxReqHeaderSize();
         is = rawInputStream;
         os = rawout;
@@ -57,15 +57,15 @@ class Request {
     }
 
 
-    char[] buf = new char [BUF_LEN];
+    char[] buf = new char[BUF_LEN];
     int pos;
     StringBuffer lineBuf;
 
-    public InputStream inputStream () {
+    public InputStream inputStream() {
         return is;
     }
 
-    public OutputStream outputStream () {
+    public OutputStream outputStream() {
         return os;
     }
 
@@ -74,7 +74,7 @@ class Request {
      * Not used for reading headers.
      */
 
-    public String readLine () throws IOException {
+    public String readLine() throws IOException {
         boolean gotCR = false, gotLF = false;
         pos = 0; lineBuf = new StringBuffer();
         long lsize = 32;
@@ -88,15 +88,15 @@ class Request {
                     gotLF = true;
                 } else {
                     gotCR = false;
-                    consume (CR);
-                    consume (c);
+                    consume(CR);
+                    consume(c);
                     lsize = lsize + 2;
                 }
             } else {
                 if (c == CR) {
                     gotCR = true;
                 } else {
-                    consume (c);
+                    consume(c);
                     lsize = lsize + 1;
                 }
             }
@@ -106,13 +106,13 @@ class Request {
                         ServerConfig.getMaxReqHeaderSize() + ".");
             }
         }
-        lineBuf.append (buf, 0, pos);
-        return new String (lineBuf);
+        lineBuf.append(buf, 0, pos);
+        return new String(lineBuf);
     }
 
-    private void consume (int c) throws IOException {
+    private void consume(int c) throws IOException {
         if (pos == BUF_LEN) {
-            lineBuf.append (buf);
+            lineBuf.append(buf);
             pos = 0;
         }
         buf[pos++] = (char)c;
@@ -121,13 +121,13 @@ class Request {
     /**
      * returns the request line (first line of a request)
      */
-    public String requestLine () {
+    public String requestLine() {
         return startLine;
     }
 
     Headers hdrs = null;
     @SuppressWarnings("fallthrough")
-    Headers headers () throws IOException {
+    Headers headers() throws IOException {
         if (hdrs != null) {
             return hdrs;
         }
@@ -239,7 +239,7 @@ class Request {
             if (k == null) {  // Headers disallows null keys, use empty string
                 k = "";       // instead to represent invalid key
             }
-            hdrs.add (k,v);
+            hdrs.add(k, v);
             len = 0;
         }
         return hdrs;
@@ -262,21 +262,21 @@ class Request {
         ServerImpl server;
         static final int BUFSIZE = 8 * 1024;
 
-        public ReadStream (ServerImpl server, SocketChannel chan) throws IOException {
+        public ReadStream(ServerImpl server, SocketChannel chan) throws IOException {
             this.channel = chan;
             this.server = server;
-            chanbuf = ByteBuffer.allocate (BUFSIZE);
+            chanbuf = ByteBuffer.allocate(BUFSIZE);
             chanbuf.clear();
             one = new byte[1];
             closed = marked = reset = false;
         }
 
-        public synchronized int read (byte[] b) throws IOException {
-            return read (b, 0, b.length);
+        public synchronized int read(byte[] b) throws IOException {
+            return read(b, 0, b.length);
         }
 
-        public synchronized int read () throws IOException {
-            int result = read (one, 0, 1);
+        public synchronized int read() throws IOException {
+            int result = read(one, 0, 1);
             if (result == 1) {
                 return one[0] & 0xFF;
             } else {
@@ -284,12 +284,12 @@ class Request {
             }
         }
 
-        public synchronized int read (byte[] b, int off, int srclen) throws IOException {
+        public synchronized int read(byte[] b, int off, int srclen) throws IOException {
 
             int canreturn, willreturn;
 
             if (closed)
-                throw new IOException ("Stream closed");
+                throw new IOException("Stream closed");
 
             if (eof) {
                 return -1;
@@ -300,30 +300,30 @@ class Request {
             Objects.checkFromIndexSize(off, srclen, b.length);
 
             if (reset) { /* satisfy from markBuf */
-                canreturn = markBuf.remaining ();
+                canreturn = markBuf.remaining();
                 willreturn = canreturn>srclen ? srclen : canreturn;
                 markBuf.get(b, off, willreturn);
                 if (canreturn == willreturn) {
                     reset = false;
                 }
             } else { /* satisfy from channel */
-                chanbuf.clear ();
+                chanbuf.clear();
                 if (srclen <  BUFSIZE) {
-                    chanbuf.limit (srclen);
+                    chanbuf.limit(srclen);
                 }
                 do {
-                    willreturn = channel.read (chanbuf);
+                    willreturn = channel.read(chanbuf);
                 } while (willreturn == 0);
                 if (willreturn == -1) {
                     eof = true;
                     return -1;
                 }
-                chanbuf.flip ();
+                chanbuf.flip();
                 chanbuf.get(b, off, willreturn);
 
                 if (marked) { /* copy into markBuf */
                     try {
-                        markBuf.put (b, off, willreturn);
+                        markBuf.put(b, off, willreturn);
                     } catch (BufferOverflowException e) {
                         marked = false;
                     }
@@ -332,14 +332,14 @@ class Request {
             return willreturn;
         }
 
-        public boolean markSupported () {
+        public boolean markSupported() {
             return true;
         }
 
         /* Does not query the OS socket */
-        public synchronized int available () throws IOException {
+        public synchronized int available() throws IOException {
             if (closed)
-                throw new IOException ("Stream is closed");
+                throw new IOException("Stream is closed");
 
             if (eof)
                 return -1;
@@ -350,31 +350,31 @@ class Request {
             return chanbuf.remaining();
         }
 
-        public void close () throws IOException {
+        public void close() throws IOException {
             if (closed) {
                 return;
             }
-            channel.close ();
+            channel.close();
             closed = true;
         }
 
-        public synchronized void mark (int readlimit) {
+        public synchronized void mark(int readlimit) {
             if (closed)
                 return;
             this.readlimit = readlimit;
-            markBuf = ByteBuffer.allocate (readlimit);
+            markBuf = ByteBuffer.allocate(readlimit);
             marked = true;
             reset = false;
         }
 
-        public synchronized void reset () throws IOException {
+        public synchronized void reset() throws IOException {
             if (closed )
                 return;
             if (!marked)
-                throw new IOException ("Stream not marked");
+                throw new IOException("Stream not marked");
             marked = false;
             reset = true;
-            markBuf.flip ();
+            markBuf.flip();
         }
     }
 
@@ -386,50 +386,50 @@ class Request {
         byte[] one;
         ServerImpl server;
 
-        public WriteStream (ServerImpl server, SocketChannel channel) throws IOException {
+        public WriteStream(ServerImpl server, SocketChannel channel) throws IOException {
             this.channel = channel;
             this.server = server;
             assert channel.isBlocking();
             closed = false;
             one = new byte [1];
-            buf = ByteBuffer.allocate (4096);
+            buf = ByteBuffer.allocate(4096);
         }
 
-        public synchronized void write (int b) throws IOException {
+        public synchronized void write(int b) throws IOException {
             one[0] = (byte)b;
             write (one, 0, 1);
         }
 
-        public synchronized void write (byte[] b) throws IOException {
+        public synchronized void write(byte[] b) throws IOException {
             write (b, 0, b.length);
         }
 
-        public synchronized void write (byte[] b, int off, int len) throws IOException {
+        public synchronized void write(byte[] b, int off, int len) throws IOException {
             int l = len;
             if (closed)
-                throw new IOException ("stream is closed");
+                throw new IOException("stream is closed");
 
             int cap = buf.capacity();
             if (cap < len) {
                 int diff = len - cap;
-                buf = ByteBuffer.allocate (2*(cap+diff));
+                buf = ByteBuffer.allocate(2*(cap+diff));
             }
             buf.clear();
-            buf.put (b, off, len);
-            buf.flip ();
+            buf.put(b, off, len);
+            buf.flip();
             int n;
-            while ((n = channel.write (buf)) < l) {
+            while ((n = channel.write(buf)) < l) {
                 l -= n;
                 if (l == 0)
                     return;
             }
         }
 
-        public void close () throws IOException {
+        public void close() throws IOException {
             if (closed)
                 return;
-            //server.logStackTrace ("Request.OS.close: isOpen="+channel.isOpen());
-            channel.close ();
+            //server.logStackTrace("Request.OS.close: isOpen="+channel.isOpen());
+            channel.close();
             closed = true;
         }
     }

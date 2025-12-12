@@ -82,12 +82,12 @@ class ExchangeImpl {
     PlaceholderOutputStream uos_orig;
 
     boolean sentHeaders; /* true after response headers sent */
-    final Map<String,Object> attributes;
+    final Map<String, Object> attributes;
     int rcode = -1;
     HttpPrincipal principal;
     ServerImpl server;
 
-    ExchangeImpl (
+    ExchangeImpl(
         String m, URI u, Request req, long len, HttpConnection connection
     ) throws IOException {
         this.req = req;
@@ -107,23 +107,23 @@ class ExchangeImpl {
         server.startExchange();
     }
 
-    public Headers getRequestHeaders () {
+    public Headers getRequestHeaders() {
         return reqHdrs;
     }
 
-    public Headers getResponseHeaders () {
+    public Headers getResponseHeaders() {
         return rspHdrs;
     }
 
-    public URI getRequestURI () {
+    public URI getRequestURI() {
         return uri;
     }
 
-    public String getRequestMethod (){
+    public String getRequestMethod() {
         return method;
     }
 
-    public HttpContextImpl getHttpContext (){
+    public HttpContextImpl getHttpContext() {
         return connection.getHttpContext();
     }
 
@@ -131,7 +131,7 @@ class ExchangeImpl {
         return HEAD.equals(getRequestMethod());
     }
 
-    public void close () {
+    public void close() {
         if (closed) {
             return;
         }
@@ -160,38 +160,38 @@ class ExchangeImpl {
         }
     }
 
-    public InputStream getRequestBody () {
+    public InputStream getRequestBody() {
         if (uis != null) {
             return uis;
         }
         if (reqContentLen == -1L) {
-            uis_orig = new ChunkedInputStream (this, ris);
+            uis_orig = new ChunkedInputStream(this, ris);
             uis = uis_orig;
         } else {
-            uis_orig = new FixedLengthInputStream (this, ris, reqContentLen);
+            uis_orig = new FixedLengthInputStream(this, ris, reqContentLen);
             uis = uis_orig;
         }
         return uis;
     }
 
-    LeftOverInputStream getOriginalInputStream () {
+    LeftOverInputStream getOriginalInputStream() {
         return uis_orig;
     }
 
-    public int getResponseCode () {
+    public int getResponseCode() {
         return rcode;
     }
 
-    public OutputStream getResponseBody () {
+    public OutputStream getResponseBody() {
         /* TODO. Change spec to remove restriction below. Filters
          * cannot work with this restriction
          *
          * if (!sentHeaders) {
-         *    throw new IllegalStateException ("headers not sent");
+         *    throw new IllegalStateException("headers not sent");
          * }
          */
         if (uos == null) {
-            uos_orig = new PlaceholderOutputStream (null);
+            uos_orig = new PlaceholderOutputStream(null);
             uos = uos_orig;
         }
         return uos;
@@ -202,37 +202,37 @@ class ExchangeImpl {
      * returned from the 1st call to getResponseBody()
      * The "real" ouputstream is then placed inside this
      */
-    PlaceholderOutputStream getPlaceholderResponseBody () {
+    PlaceholderOutputStream getPlaceholderResponseBody() {
         getResponseBody();
         return uos_orig;
     }
 
-    public void sendResponseHeaders (int rCode, long contentLen)
+    public void sendResponseHeaders(int rCode, long contentLen)
     throws IOException
     {
         final Logger logger = server.getLogger();
         if (sentHeaders) {
-            throw new IOException ("headers already sent");
+            throw new IOException("headers already sent");
         }
         this.rcode = rCode;
-        String statusLine = "HTTP/1.1 "+rCode+Code.msg(rCode)+"\r\n";
+        String statusLine = "HTTP/1.1 " + rCode + Code.msg(rCode) + "\r\n";
         ByteArrayOutputStream tmpout = new ByteArrayOutputStream();
         PlaceholderOutputStream o = getPlaceholderResponseBody();
-        tmpout.write (bytes(statusLine, 0), 0, statusLine.length());
+        tmpout.write(bytes(statusLine, 0), 0, statusLine.length());
         boolean noContentToSend = false; // assume there is content
         boolean noContentLengthHeader = false; // must not send Content-length is set
         rspHdrs.set("Date", FORMATTER.format(Instant.now()));
 
         /* check for response type that is not allowed to send a body */
 
-        if ((rCode>=100 && rCode <200) /* informational */
+        if ((rCode >= 100 && rCode < 200) /* informational */
             ||(rCode == 204)           /* no content */
             ||(rCode == 304))          /* not modified */
         {
             if (contentLen != RSPBODY_EMPTY) {
-                String msg = "sendResponseHeaders: rCode = "+ rCode
+                String msg = "sendResponseHeaders: rCode = " + rCode
                     + ": forcing contentLen = RSPBODY_EMPTY";
-                logger.log (Level.WARNING, msg);
+                logger.log(Level.WARNING, msg);
             }
             contentLen = RSPBODY_EMPTY;
             noContentLengthHeader = (rCode != 304);
@@ -245,19 +245,19 @@ class ExchangeImpl {
             if (contentLen >= 0) {
                 String msg =
                     "sendResponseHeaders: being invoked with a content length for a HEAD request";
-                logger.log (Level.WARNING, msg);
+                logger.log(Level.WARNING, msg);
             }
             noContentToSend = true;
             contentLen = 0;
-            o.setWrappedStream (new FixedLengthOutputStream (this, ros, contentLen));
+            o.setWrappedStream(new FixedLengthOutputStream(this, ros, contentLen));
         } else { /* not a HEAD request or 304 response */
             if (contentLen == RSPBODY_CHUNKED) {
                 if (http10) {
-                    o.setWrappedStream (new UndefLengthOutputStream (this, ros));
+                    o.setWrappedStream(new UndefLengthOutputStream(this, ros));
                     close = true;
                 } else {
-                    rspHdrs.set ("Transfer-encoding", "chunked");
-                    o.setWrappedStream (new ChunkedOutputStream (this, ros));
+                    rspHdrs.set("Transfer-encoding", "chunked");
+                    o.setWrappedStream(new ChunkedOutputStream(this, ros));
                 }
             } else {
                 if (contentLen == RSPBODY_EMPTY) {
@@ -267,7 +267,7 @@ class ExchangeImpl {
                 if (!noContentLengthHeader) {
                     rspHdrs.set("Content-length", Long.toString(contentLen));
                 }
-                o.setWrappedStream (new FixedLengthOutputStream (this, ros, contentLen));
+                o.setWrappedStream(new FixedLengthOutputStream(this, ros, contentLen));
             }
         }
 
@@ -280,12 +280,12 @@ class ExchangeImpl {
                     Optional.ofNullable(rspHdrs.get("Connection"))
                     .map(List::stream).orElse(Stream.empty());
             if (conheader.anyMatch("close"::equalsIgnoreCase)) {
-                logger.log (Level.DEBUG, "Connection: close requested by handler");
+                logger.log(Level.DEBUG, "Connection: close requested by handler");
                 close = true;
             }
         }
 
-        write (rspHdrs, tmpout);
+        write(rspHdrs, tmpout);
         this.rspContentLen = contentLen;
         tmpout.writeTo(ros);
         sentHeaders = true;
@@ -294,33 +294,33 @@ class ExchangeImpl {
             ros.flush();
             close();
         }
-        server.logReply (rCode, req.requestLine(), null);
+        server.logReply(rCode, req.requestLine(), null);
     }
 
-    void write (Headers map, OutputStream os) throws IOException {
-        Set<Map.Entry<String,List<String>>> entries = map.entrySet();
-        for (Map.Entry<String,List<String>> entry : entries) {
+    void write(Headers map, OutputStream os) throws IOException {
+        Set<Map.Entry<String, List<String>>> entries = map.entrySet();
+        for (Map.Entry<String, List<String>> entry : entries) {
             String key = entry.getKey();
             byte[] buf;
             List<String> values = entry.getValue();
             for (String val : values) {
                 int i = key.length();
-                buf = bytes (key, 2);
+                buf = bytes(key, 2);
                 buf[i++] = ':';
                 buf[i++] = ' ';
-                os.write (buf, 0, i);
-                buf = bytes (val, 2);
+                os.write(buf, 0, i);
+                buf = bytes(val, 2);
                 i = val.length();
                 buf[i++] = '\r';
                 buf[i++] = '\n';
-                os.write (buf, 0, i);
+                os.write(buf, 0, i);
             }
         }
-        os.write ('\r');
-        os.write ('\n');
+        os.write('\r');
+        os.write('\n');
     }
 
-    private byte[] rspbuf = new byte [128]; // used by bytes()
+    private byte[] rspbuf = new byte[128]; // used by bytes()
 
     /**
      * convert string to byte[], using rspbuf
@@ -328,7 +328,7 @@ class ExchangeImpl {
      * of rspbuf. Reallocate rspbuf if not big enough.
      * caller must check return value to see if rspbuf moved
      */
-    private byte[] bytes (String s, int extra) {
+    private byte[] bytes(String s, int extra) {
         int slen = s.length();
         if (slen+extra > rspbuf.length) {
             int diff = slen + extra - rspbuf.length;
@@ -341,27 +341,27 @@ class ExchangeImpl {
         return rspbuf;
     }
 
-    public InetSocketAddress getRemoteAddress (){
+    public InetSocketAddress getRemoteAddress() {
         Socket s = connection.getChannel().socket();
         InetAddress ia = s.getInetAddress();
         int port = s.getPort();
-        return new InetSocketAddress (ia, port);
+        return new InetSocketAddress(ia, port);
     }
 
-    public InetSocketAddress getLocalAddress (){
+    public InetSocketAddress getLocalAddress() {
         Socket s = connection.getChannel().socket();
         InetAddress ia = s.getLocalAddress();
         int port = s.getLocalPort();
-        return new InetSocketAddress (ia, port);
+        return new InetSocketAddress(ia, port);
     }
 
-    public String getProtocol (){
+    public String getProtocol() {
         String reqline = req.requestLine();
-        int index = reqline.lastIndexOf (' ');
-        return reqline.substring (index+1);
+        int index = reqline.lastIndexOf(' ');
+        return reqline.substring(index+1);
     }
 
-    public SSLSession getSSLSession () {
+    public SSLSession getSSLSession() {
         SSLEngine e = connection.getSSLEngine();
         if (e == null) {
             return null;
@@ -369,11 +369,11 @@ class ExchangeImpl {
         return e.getSession();
     }
 
-    public Object getAttribute (String name) {
+    public Object getAttribute(String name) {
         return attributes.get(Objects.requireNonNull(name, "null name parameter"));
     }
 
-    public void setAttribute (String name, Object value) {
+    public void setAttribute(String name, Object value) {
         var key = Objects.requireNonNull(name, "null name parameter");
         if (value != null) {
             attributes.put(key, value);
@@ -382,7 +382,7 @@ class ExchangeImpl {
         }
     }
 
-    public void setStreams (InputStream i, OutputStream o) {
+    public void setStreams(InputStream i, OutputStream o) {
         assert uis != null;
         if (i != null) {
             uis = i;
@@ -395,23 +395,23 @@ class ExchangeImpl {
     /**
      * PP
      */
-    HttpConnection getConnection () {
+    HttpConnection getConnection() {
         return connection;
     }
 
-    ServerImpl getServerImpl () {
+    ServerImpl getServerImpl() {
         return getHttpContext().getServerImpl();
     }
 
-    public HttpPrincipal getPrincipal () {
+    public HttpPrincipal getPrincipal() {
         return principal;
     }
 
-    void setPrincipal (HttpPrincipal principal) {
+    void setPrincipal(HttpPrincipal principal) {
         this.principal = principal;
     }
 
-    static ExchangeImpl get (HttpExchange t) {
+    static ExchangeImpl get(HttpExchange t) {
         if (t instanceof HttpExchangeImpl) {
             return ((HttpExchangeImpl)t).getExchangeImpl();
         } else {
@@ -432,37 +432,37 @@ class PlaceholderOutputStream extends java.io.OutputStream {
 
     OutputStream wrapped;
 
-    PlaceholderOutputStream (OutputStream os) {
+    PlaceholderOutputStream(OutputStream os) {
         wrapped = os;
     }
 
-    void setWrappedStream (OutputStream os) {
+    void setWrappedStream(OutputStream os) {
         wrapped = os;
     }
 
-    boolean isWrapped () {
+    boolean isWrapped() {
         return wrapped != null;
     }
 
-    private void checkWrap () throws IOException {
+    private void checkWrap() throws IOException {
         if (wrapped == null) {
-            throw new IOException ("response headers not sent yet");
+            throw new IOException("response headers not sent yet");
         }
     }
 
     public void write(int b) throws IOException {
         checkWrap();
-        wrapped.write (b);
+        wrapped.write(b);
     }
 
     public void write(byte b[]) throws IOException {
         checkWrap();
-        wrapped.write (b);
+        wrapped.write(b);
     }
 
     public void write(byte b[], int off, int len) throws IOException {
         checkWrap();
-        wrapped.write (b, off, len);
+        wrapped.write(b, off, len);
     }
 
     public void flush() throws IOException {
