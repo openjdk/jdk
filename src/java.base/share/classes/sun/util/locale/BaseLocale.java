@@ -34,7 +34,6 @@ package sun.util.locale;
 
 import jdk.internal.misc.CDS;
 import jdk.internal.util.ReferencedKeySet;
-import jdk.internal.util.StaticProperty;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.StringJoiner;
@@ -110,16 +109,14 @@ public final class BaseLocale {
     private @Stable int hash;
 
     /**
-     * Boolean for the old ISO language code compatibility.
-     * The system property "java.locale.useOldISOCodes" is not security sensitive,
-     * so no need to ensure privileged access here.
+     * Emit the warning message if the system property "java.locale.useOldISOCodes" is
+     * specified.
      */
-    private static final boolean OLD_ISO_CODES = StaticProperty.javaLocaleUseOldISOCodes()
-            .equalsIgnoreCase("true");
     static {
-        if (OLD_ISO_CODES) {
-            System.err.println("WARNING: The use of the system property \"java.locale.useOldISOCodes\"" +
-                " is deprecated. It will be removed in a future release of the JDK.");
+        if (System.getProperty("java.locale.useOldISOCodes") != null) {
+            System.err.println("WARNING: The system property" +
+                " \"java.locale.useOldISOCodes\" is no longer supported." +
+                " Any specified value will be ignored.");
         }
     }
 
@@ -166,7 +163,8 @@ public final class BaseLocale {
             }
         }
 
-        // JDK uses deprecated ISO639.1 language codes for he, yi and id
+        // Normalize deprecated ISO 639-1 language codes for Hebrew, Yiddish,
+        // and Indonesian to their current standard forms.
         if (!language.isEmpty()) {
             language = convertOldISOCodes(language);
         }
@@ -183,9 +181,9 @@ public final class BaseLocale {
 
     public static String convertOldISOCodes(String language) {
         return switch (language) {
-            case "he", "iw" -> OLD_ISO_CODES ? "iw" : "he";
-            case "id", "in" -> OLD_ISO_CODES ? "in" : "id";
-            case "yi", "ji" -> OLD_ISO_CODES ? "ji" : "yi";
+            case "iw" -> "he";
+            case "in" -> "id";
+            case "ji" -> "yi";
             default -> language;
         };
     }
