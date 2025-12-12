@@ -998,7 +998,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             outputValidator.accept(result.getOutput().iterator());
         }
 
-        if (result.exitCode() == 0 && expectedExitCode.isPresent()) {
+        if (result.getExitCode() == 0 && expectedExitCode.isPresent()) {
             verifyActions.run();
         }
 

@@ -213,7 +213,7 @@ public class PackageTestTest extends JUnitAdapter {
         @Override
         public void accept(JPackageCommand cmd, Executor.Result result) {
             tick();
-            jpackageExitCode = result.exitCode();
+            jpackageExitCode = result.getExitCode();
         }
 
         @Override

@@ -1172,7 +1172,7 @@ public final class MacSign {
                     "-c", certFile.normalize().toString(),
                     "-k", keychain.name(),
                     "-p", resolvedCertificateRequest.installed().type().verifyPolicy()).saveOutput(!quite).executeWithoutExitCodeCheck();
-            if (result.exitCode() == 0) {
+            if (result.getExitCode() == 0) {
                 return VerifyStatus.VERIFY_OK;
             }
         }
