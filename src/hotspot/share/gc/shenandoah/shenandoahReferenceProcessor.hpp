@@ -194,11 +194,30 @@ public:
     _old_generation_ref_processor = nullptr;
   }
 
+  ShenandoahReferenceProcessor* get_old_generation_ref_processor() const {
+    return _old_generation_ref_processor;
+  }
+
   // The generational mode for Shenandoah will collect _referents_ for the generation
   // being collected. For example, if we have a young reference pointing to an old
   // referent, that young reference will be processed after we finish marking the old
-  // generation.
-  void heap_discovered_lists() const;
+  // generation. This presents a problem for discovery.
+  //
+  // When the young mark _encounters_ a young reference with an old referent, it
+  // cannot "discover" it because old marking hasn't finished. However, if it does not
+  // discover it, the old referent will be strongly marked. This will prevent the
+  // old generation from clearing the referent (if it even reaches it again during
+  // old marking).
+  //
+  // To solve this, we let young reference processing discover the old reference
+  // by having it use the old generation reference processor to discover it. This means
+  // the old reference processor can have a discovered list that contains young
+  // weak references. If any of these young references reside in a region that is collected,
+  // old reference processing will crash when it processes this young reference. Therefore,
+  // we have this method to traverse the discovered lists after young evacuation is
+  // complete. It will replace any forwarded entries in the discovered list with the
+  // forwardee.
+  void heal_discovered_lists() const;
 
   bool discover_reference(oop obj, ReferenceType type) override;
 

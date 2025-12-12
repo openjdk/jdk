@@ -282,7 +282,7 @@ void ShenandoahReferenceProcessor::set_soft_reference_policy(bool clear) {
   _soft_reference_policy->setup();
 }
 
-void ShenandoahReferenceProcessor::heap_discovered_lists() const {
+void ShenandoahReferenceProcessor::heal_discovered_lists() const {
   for (uint i = 0; i < ShenandoahHeap::heap()->max_workers(); i++) {
     if (UseCompressedOops) {
       _ref_proc_thread_locals[i].heal_discovered_list<narrowOop>();

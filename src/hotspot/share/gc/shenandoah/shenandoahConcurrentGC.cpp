@@ -714,25 +714,29 @@ void ShenandoahConcurrentGC::op_init_mark() {
   }
 
   _generation->set_concurrent_mark_in_progress(true);
-  _generation->ref_processor()->clear_old_generation_ref_processor();
 
   start_mark();
 
-  if (_do_old_gc_bootstrap) {
-    shenandoah_assert_generational();
-    assert(_generation->is_young(), "Expect young for bootstrap");
-    // Update region state for both young and old regions
-    ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_update_region_states);
-    ShenandoahInitMarkUpdateRegionStateClosure cl;
-    heap->parallel_heap_region_iterate(&cl);
-    ShenandoahReferenceProcessor* old_ref_processor = heap->old_generation()->ref_processor();
-    old_ref_processor->reset_thread_locals();
-    _generation->ref_processor()->set_old_generation_ref_processor(old_ref_processor);
-  } else {
+  if (!_do_old_gc_bootstrap) {
     // Update region state for only young regions
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_update_region_states);
     ShenandoahInitMarkUpdateRegionStateClosure cl;
     _generation->parallel_heap_region_iterate(&cl);
+  } else {
+    shenandoah_assert_generational();
+    assert(_generation->is_young(), "Expect young for bootstrap");
+    assert(_generation->ref_processor()->get_old_generation_ref_processor() == nullptr,
+           "Young ref processor should not have old ref processor here");
+
+    // Update region state for both young and old regions
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_update_region_states);
+    ShenandoahInitMarkUpdateRegionStateClosure cl;
+    heap->parallel_heap_region_iterate(&cl);
+
+    // Configure old ref processor for bootstrap and old marking
+    ShenandoahReferenceProcessor* old_ref_processor = heap->old_generation()->ref_processor();
+    old_ref_processor->reset_thread_locals();
+    _generation->ref_processor()->set_old_generation_ref_processor(old_ref_processor);
   }
 
   // Weak reference processing
@@ -1126,11 +1130,10 @@ void ShenandoahConcurrentGC::op_init_update_refs() {
 void ShenandoahConcurrentGC::op_update_refs() const {
   ShenandoahHeap::heap()->update_heap_references(_generation, true /*concurrent*/);
 
-  if (_do_old_gc_bootstrap) {
-    assert(_generation->is_young(), "Only young can bootstrap");
-    const ShenandoahHeap* heap = ShenandoahHeap::heap();
-    const ShenandoahOldGeneration* old = heap->old_generation();
-    old->ref_processor()->heap_discovered_lists();
+  ShenandoahReferenceProcessor* old = _generation->ref_processor()->get_old_generation_ref_processor();
+  if (old != nullptr) {
+    assert(_generation->is_young(), "Only young ref processor can have an old ref processor");
+    old->heal_discovered_lists();
   }
 }
 
