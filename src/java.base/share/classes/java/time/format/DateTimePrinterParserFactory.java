@@ -176,7 +176,8 @@ final class DateTimePrinterParserFactory {
                .withMethodBody("format", MTD_format, ACC_PUBLIC | ACC_FINAL, cb -> {
                    int thisSlot    = cb.receiverSlot(),
                        contextSlot = cb.parameterSlot(0),
-                       bufSlot     = cb.parameterSlot(1);
+                       bufSlot     = cb.parameterSlot(1),
+                       parserSlot  = cb.allocateLocal(TypeKind.REFERENCE);
                    /*
                     * return printers[0].format(context, buf, optional)
                     *     && printers[1].format(context, buf, optional)
@@ -184,9 +185,11 @@ final class DateTimePrinterParserFactory {
                     *        ...
                     */
                    Label L0 = cb.newLabel(), L1 = cb.newLabel();
+                   cb.aload(thisSlot)
+                           .getfield(classDesc, fieldName, CD_DateTimePrinterParser_array)
+                           .astore(parserSlot);
                    for (int i = 0; i < printers.length; ++i) {
-                       cb.aload(thisSlot)
-                         .getfield(classDesc, fieldName, CD_DateTimePrinterParser_array)
+                       cb.aload(parserSlot)
                          .bipush(i)
                          .aaload()
                          .aload(contextSlot)
@@ -281,8 +284,10 @@ final class DateTimePrinterParserFactory {
                         int thisSlot     = cb.receiverSlot(),
                             contextSlot  = cb.parameterSlot(0),
                             textSlot     = cb.parameterSlot(1),
-                            positionSlot = cb.parameterSlot(2);
+                            positionSlot = cb.parameterSlot(2),
+                            parserSlot   = cb.allocateLocal(TypeKind.REFERENCE);
                         /*
+                         *  var printerParsers = this.printerParsers;
                          *  if ((position = printerParsers[0].parse(context, text, position)) >= 0) {
                          *      if ((position = printerParsers[1].parse(context, text, position)) >= 0) {
                          *          if ((position = printerParsers[2].parse(context, text, position)) >= 0) {
@@ -293,9 +298,11 @@ final class DateTimePrinterParserFactory {
                          * return position;
                          */
                         var L0 = cb.newLabel();
+                        cb.aload(thisSlot)
+                          .getfield(classDesc, fieldName, CD_DateTimePrinterParser_array)
+                          .astore(parserSlot);
                         for (int i = 0; i < printers.length; ++i) {
-                            cb.aload(thisSlot)
-                              .getfield(classDesc, fieldName, CD_DateTimePrinterParser_array)
+                            cb.aload(parserSlot)
                               .bipush(i)
                               .aaload()
                               .aload(contextSlot)
