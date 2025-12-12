@@ -32,6 +32,7 @@
 #include "oops/method.hpp"
 #include "oops/symbol.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/growableArray.hpp"
 
 class ClassPrinter::KlassPrintClosure : public LockedClassesDo {
   const char* _class_name_pattern;
@@ -42,16 +43,15 @@ class ClassPrinter::KlassPrintClosure : public LockedClassesDo {
   outputStream* _st;
   int _num;
   bool _has_printed_methods;
+  GrowableArray<InstanceKlass*> _klasses;
+
 public:
   KlassPrintClosure(const char* class_name_pattern,
                     const char* method_name_pattern,
                     const char* method_signature_pattern,
                     bool always_print_class_name,
                     int flags, outputStream* st)
-    : _class_name_pattern(class_name_pattern),
-      _method_name_pattern(method_name_pattern),
-      _method_signature_pattern(method_signature_pattern),
-      _always_print_class_name(always_print_class_name),
+    : _always_print_class_name(always_print_class_name),
       _flags(flags), _st(st), _num(0), _has_printed_methods(false)
   {
     if (has_mode(_flags, PRINT_METHOD_HANDLE)) {
@@ -66,21 +66,79 @@ public:
     if (has_mode(_flags, PRINT_BYTECODE)) {
       _flags |= (PRINT_METHOD_NAME);
     }
+
+    if (has_mode(_flags, PRINT_CLASS_DETAILS)) {
+      _always_print_class_name = true;
+    }
+
+    _class_name_pattern = copy_pattern(class_name_pattern);
+    _method_name_pattern = copy_pattern(method_name_pattern);
+    _method_signature_pattern = copy_pattern(method_signature_pattern);
+  }
+
+  static const char* copy_pattern(const char* pattern) {
+    if (pattern == nullptr) {
+      return nullptr;
+    }
+    char* copy = ResourceArea::strdup(pattern);
+    for (char* p = copy; *p; p++) {
+      if (*p == '.') {
+        *p = '/';
+      }
+    }
+    return copy;
   }
 
   virtual void do_klass(Klass* k) {
     if (!k->is_instance_klass()) {
       return;
     }
-    print_instance_klass(InstanceKlass::cast(k));
+    _klasses.append(InstanceKlass::cast(k));
   }
+
+  void print() {
+    _klasses.sort(compare_klasses_alphadetically);
+    for (int i = 0; i < _klasses.length(); i++) {
+      print_instance_klass(_klasses.at(i));
+    }
+  }
+
 
   static bool match(const char* pattern, Symbol* sym) {
     return (pattern == nullptr || sym->is_star_match(pattern));
   }
 
+  static int compare_klasses_alphadetically(InstanceKlass** a, InstanceKlass** b) {
+    return compare_symbols_alphadetically((*a)->name(), (*b)->name());
+  }
+
+  static int compare_methods_alphadetically(const void* a, const void* b) {
+    Method* ma = *(Method**)a;
+    Method* mb = *(Method**)b;
+    int n = compare_symbols_alphadetically(ma->name(), mb->name());
+    if (n == 0) {
+      n = compare_symbols_alphadetically(ma->signature(), mb->signature());
+    }
+    return n;
+  }
+
+  static int compare_symbols_alphadetically(Symbol* a, Symbol *b) {
+    if (a == b) {
+      return 0;
+    }
+    if (a != nullptr && b == nullptr) {
+      return 1;
+    }
+    if (a == nullptr && b != nullptr) {
+      return -1;
+    }
+
+    return strcmp(a->as_C_string(), b->as_C_string());
+  }
+
   void print_klass_name(InstanceKlass* ik) {
-    _st->print("[%3d] " INTPTR_FORMAT " class %s ", _num++, p2i(ik), ik->name()->as_C_string());
+    _st->print("[%3d] " INTPTR_FORMAT " class: %s mirror: " INTPTR_FORMAT " ", _num++,
+               p2i(ik), ik->name()->as_C_string(), p2i(ik->java_mirror()));
     ik->class_loader_data()->print_value_on(_st);
     _st->cr();
   }
@@ -98,13 +156,30 @@ public:
         print_klass_name(ik);
       }
 
+      if (has_mode(_flags, ClassPrinter::PRINT_CLASS_DETAILS)) {
+        _st->print("InstanceKlass: ");
+        ik->print_on(_st);
+        oop mirror = ik->java_mirror();
+        if (mirror != nullptr) {
+        _st->print("\nJava mirror oop for %s: ", ik->name()->as_C_string());
+          mirror->print_on(_st);
+        }
+      }
+
       if (has_mode(_flags, ClassPrinter::PRINT_METHOD_NAME)) {
         bool print_codes = has_mode(_flags, ClassPrinter::PRINT_BYTECODE);
         int len = ik->methods()->length();
         int num_methods_printed = 0;
 
+        Method** sorted_methods = NEW_RESOURCE_ARRAY(Method*, len);
         for (int index = 0; index < len; index++) {
-          Method* m = ik->methods()->at(index);
+          sorted_methods[index] = ik->methods()->at(index);
+        }
+
+        qsort(sorted_methods, len, sizeof(Method*), compare_methods_alphadetically);
+
+        for (int index = 0; index < len; index++) {
+          Method* m = sorted_methods[index];
           if (match(_method_name_pattern, m->name()) &&
               match(_method_signature_pattern, m->signature())) {
             if (print_codes && num_methods_printed++ > 0) {
@@ -125,11 +200,15 @@ public:
   }
 
   void print_method(Method* m) {
-    bool print_codes = has_mode(_flags, ClassPrinter::PRINT_BYTECODE);
     _st->print_cr(INTPTR_FORMAT " %smethod %s : %s", p2i(m),
                   m->is_static() ? "static " : "",
                   m->name()->as_C_string(), m->signature()->as_C_string());
-    if (print_codes) {
+
+    if (has_mode(_flags, ClassPrinter::PRINT_METHOD_DETAILS)) {
+      m->print_on(_st);
+    }
+
+    if (has_mode(_flags, ClassPrinter::PRINT_BYTECODE)) {
       m->print_codes_on(_st, _flags);
     }
   }
@@ -142,12 +221,16 @@ void ClassPrinter::print_flags_help(outputStream* os) {
   os->print_cr("   0x%02x  - print the address of bytecodes", PRINT_BYTECODE_ADDR);
   os->print_cr("   0x%02x  - print info for invokedynamic", PRINT_DYNAMIC);
   os->print_cr("   0x%02x  - print info for invokehandle",  PRINT_METHOD_HANDLE);
+  os->print_cr("   0x%02x  - print details of the C++ and Java objects that represent classes",  PRINT_CLASS_DETAILS);
+  os->print_cr("   0x%02x  - print details of the C++ objects that represent methods",  PRINT_METHOD_DETAILS);
   os->cr();
 }
 
 void ClassPrinter::print_classes(const char* class_name_pattern, int flags, outputStream* os) {
+  ResourceMark rm;
   KlassPrintClosure closure(class_name_pattern, nullptr, nullptr, true, flags, os);
   ClassLoaderDataGraph::classes_do(&closure);
+  closure.print();
 }
 
 void ClassPrinter::print_methods(const char* class_name_pattern,
@@ -174,4 +257,5 @@ void ClassPrinter::print_methods(const char* class_name_pattern,
   KlassPrintClosure closure(class_name_pattern, method_name_pattern, method_signature_pattern,
                             false, flags | PRINT_METHOD_NAME, os);
   ClassLoaderDataGraph::classes_do(&closure);
+  closure.print();
 }
