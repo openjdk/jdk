@@ -35,15 +35,11 @@ import javax.swing.table.DefaultTableModel;
 
 public class TestRowHeightWithColIdentifier{
 
-    private static DefaultTableModel model;
-    private static JTable table;
-    private static volatile int oldRowHeight;
-    private static volatile int curRowHeight;
 
     public static void main(String[] args) throws Exception {
         SwingUtilities.invokeAndWait(() -> {
-            model = new DefaultTableModel(null, new Object[] {"FOO", "BAR"});
-            table = new JTable(model);
+            DefaultTableModel model = new DefaultTableModel(null, new Object[] {"FOO", "BAR"});
+            JTable table = new JTable(model);
 
             model.addRow(new Object[] {"00", "01"});
             model.addRow(new Object[] {"10", "11"});
@@ -54,14 +50,14 @@ public class TestRowHeightWithColIdentifier{
             for (int row = 0; row < table.getRowCount(); row++) {
                 System.out.println("Before table rowHeight " + table.getRowHeight(row));
             }
-            oldRowHeight = table.getRowHeight(0);
+            int oldRowHeight = table.getRowHeight(0);
             model.setColumnIdentifiers(new Object[] {"Check", "it out!"});
             for (int row = 0; row < table.getRowCount(); row++) {
-                System.out.println("AFter table rowHeight " + table.getRowHeight(row));
+                System.out.println("After table rowHeight " + table.getRowHeight(row));
             }
-            curRowHeight = table.getRowHeight(0);
+            int curRowHeight = table.getRowHeight(0);
             if (curRowHeight != oldRowHeight) {
-                throw new RuntimeException("DefaultTableModel.setColumnIdentifiers() Clears JTable Row Heights");
+                throw new RuntimeException("DefaultTableModel.setColumnIdentifiers() Clears JTable Row Height");
             }
         });
     }
