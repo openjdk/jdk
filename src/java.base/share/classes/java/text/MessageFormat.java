@@ -1997,9 +1997,10 @@ public class MessageFormat extends Format {
             if (style.isEmpty()) {
                 return FormatStyle.DEFAULT;
             }
+            var styles = values();
             // Match starting at the pre-defined styles -> [SHORT:]
-            for (int i = 2; i < values().length; i ++) {
-                var fStyle = values()[i];
+            for (int i = 2; i < styles.length; i ++) {
+                var fStyle = styles[i];
                 // case-insensitive comp for compatibility
                 if (style.compareToIgnoreCase(fStyle.toString()) == 0) {
                     return fStyle;
