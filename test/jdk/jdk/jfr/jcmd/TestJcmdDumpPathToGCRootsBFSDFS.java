@@ -47,7 +47,7 @@ import jdk.test.lib.jfr.EventNames;
  * @modules jdk.jfr/jdk.jfr.internal.test
  * @library /test/lib /test/jdk
  *
- * @run main/othervm -XX:TLABSize=2k -Xmx256m jdk.jfr.jcmd.TestJcmdDumpPathToGCRootsMixed dfs-only
+ * @run main/othervm -XX:TLABSize=2k -Xmx256m jdk.jfr.jcmd.TestJcmdDumpPathToGCRootsBFSDFS dfs-only
  */
 
 /**
@@ -58,7 +58,7 @@ import jdk.test.lib.jfr.EventNames;
  * @modules jdk.jfr/jdk.jfr.internal.test
  * @library /test/lib /test/jdk
  *
- * @run main/othervm -XX:TLABSize=2k -Xmx256m jdk.jfr.jcmd.TestJcmdDumpPathToGCRootsMixed bfs-only
+ * @run main/othervm -XX:TLABSize=2k -Xmx256m jdk.jfr.jcmd.TestJcmdDumpPathToGCRootsBFSDFS bfs-only
  */
 
 /**
@@ -69,7 +69,7 @@ import jdk.test.lib.jfr.EventNames;
  * @modules jdk.jfr/jdk.jfr.internal.test
  * @library /test/lib /test/jdk
  *
- * @run main/othervm -XX:TLABSize=2k -Xmx256m jdk.jfr.jcmd.TestJcmdDumpPathToGCRootsMixed bfsdfs
+ * @run main/othervm -XX:TLABSize=2k -Xmx256m jdk.jfr.jcmd.TestJcmdDumpPathToGCRootsBFSDFS bfsdfs
  */
 public class TestJcmdDumpPathToGCRootsBFSDFS {
 
