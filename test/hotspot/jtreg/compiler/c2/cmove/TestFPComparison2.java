@@ -30,10 +30,9 @@ import java.util.List;
  * @test
  * @bug 8358892 8357551
  * @summary The test is to trigger code path of BoolTest::ge/gt in C2_MacroAssembler::enc_cmove_cmp_fp
- * @requires os.arch == "riscv64"
  * @requires vm.debug
  * @library /test/lib /
- * @run driver compiler.c2.irTests.TestFPComparison2
+ * @run driver ${test.main.class}
  */
 public class TestFPComparison2 {
     static final double[] DOUBLES = new double[] {
@@ -109,7 +108,8 @@ public class TestFPComparison2 {
 
 class Test_ge_1 {
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_float_BoolTest_ge_fixed_1_0(float x, float y) {
         // return 1
         //      when either x or y is NaN
@@ -124,7 +124,8 @@ class Test_ge_1 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_double_BoolTest_ge_fixed_1_0(double x, double y) {
         // return 1
         //      when either x or y is NaN
@@ -139,7 +140,8 @@ class Test_ge_1 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_float_BoolTest_ge_fixed_0_1(float x, float y) {
         return !(x <= y) ? 0 : 1;
     }
@@ -149,7 +151,8 @@ class Test_ge_1 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_double_BoolTest_ge_fixed_0_1(double x, double y) {
         return !(x <= y) ? 0 : 1;
     }
@@ -159,7 +162,8 @@ class Test_ge_1 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_float_BoolTest_ge_fixed_10_20(float x, float y) {
         return !(x <= y) ? 10 : 20;
     }
@@ -169,7 +173,8 @@ class Test_ge_1 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_double_BoolTest_ge_fixed_10_20(double x, double y) {
         return !(x <= y) ? 10 : 20;
     }
@@ -179,7 +184,8 @@ class Test_ge_1 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_float_BoolTest_ge_variable_results(float x, float y, int a, int b) {
         return !(x <= y) ? a : b;
     }
@@ -189,7 +195,8 @@ class Test_ge_1 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_double_BoolTest_ge_variable_results(double x, double y, int a, int b) {
         return !(x <= y) ? a : b;
     }
@@ -338,7 +345,8 @@ class Test_ge_1 {
 
 class Test_ge_cmove_fp_1 {
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_float_BoolTest_ge_fixed_1_0(float x, float y) {
         // return 1
         //      when either x or y is NaN
@@ -353,7 +361,8 @@ class Test_ge_cmove_fp_1 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_double_BoolTest_ge_fixed_1_0(double x, double y) {
         // return 1
         //      when either x or y is NaN
@@ -368,7 +377,8 @@ class Test_ge_cmove_fp_1 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_float_BoolTest_ge_fixed_0_1(float x, float y) {
         return !(x <= y) ? 0.0f : 1.0f;
     }
@@ -378,7 +388,8 @@ class Test_ge_cmove_fp_1 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_double_BoolTest_ge_fixed_0_1(double x, double y) {
         return !(x <= y) ? 0.0f : 1.0f;
     }
@@ -388,7 +399,8 @@ class Test_ge_cmove_fp_1 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_float_BoolTest_ge_fixed_10_20(float x, float y) {
         return !(x <= y) ? 10.0f : 20.0f;
     }
@@ -398,7 +410,8 @@ class Test_ge_cmove_fp_1 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_double_BoolTest_ge_fixed_10_20(double x, double y) {
         return !(x <= y) ? 10.0f : 20.0f;
     }
@@ -408,7 +421,8 @@ class Test_ge_cmove_fp_1 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_float_BoolTest_ge_variable_results(float x, float y, float a, float b) {
         return !(x <= y) ? a : b;
     }
@@ -418,7 +432,8 @@ class Test_ge_cmove_fp_1 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_double_BoolTest_ge_variable_results(double x, double y, float a, float b) {
         return !(x <= y) ? a : b;
     }
@@ -566,7 +581,8 @@ class Test_ge_cmove_fp_1 {
 
 class Test_ge_2 {
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_float_BoolTest_ge_fixed_1_0(float x, float y) {
         // return 1
         //      when either x or y is NaN
@@ -581,7 +597,8 @@ class Test_ge_2 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_double_BoolTest_ge_fixed_1_0(double x, double y) {
         // return 1
         //      when either x or y is NaN
@@ -596,7 +613,8 @@ class Test_ge_2 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_float_BoolTest_ge_fixed_0_1(float x, float y) {
         return !(x >= y) ? 0 : 1;
     }
@@ -606,7 +624,8 @@ class Test_ge_2 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_double_BoolTest_ge_fixed_0_1(double x, double y) {
         return !(x >= y) ? 0 : 1;
     }
@@ -616,7 +635,8 @@ class Test_ge_2 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_float_BoolTest_ge_fixed_10_20(float x, float y) {
         return !(x >= y) ? 10 : 20;
     }
@@ -626,7 +646,8 @@ class Test_ge_2 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_double_BoolTest_ge_fixed_10_20(double x, double y) {
         return !(x >= y) ? 10 : 20;
     }
@@ -636,7 +657,8 @@ class Test_ge_2 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_float_BoolTest_ge_variable_results(float x, float y, int a, int b) {
         return !(x >= y) ? a : b;
     }
@@ -646,7 +668,8 @@ class Test_ge_2 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_double_BoolTest_ge_variable_results(double x, double y, int a, int b) {
         return !(x >= y) ? a : b;
     }
@@ -794,7 +817,8 @@ class Test_ge_2 {
 
 class Test_ge_cmove_fp_2 {
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_float_BoolTest_ge_fixed_1_0(float x, float y) {
         // return 1
         //      when either x or y is NaN
@@ -809,7 +833,8 @@ class Test_ge_cmove_fp_2 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_double_BoolTest_ge_fixed_1_0(double x, double y) {
         // return 1
         //      when either x or y is NaN
@@ -824,7 +849,8 @@ class Test_ge_cmove_fp_2 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_float_BoolTest_ge_fixed_0_1(float x, float y) {
         return !(x >= y) ? 0.0f : 1.0f;
     }
@@ -834,7 +860,8 @@ class Test_ge_cmove_fp_2 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_double_BoolTest_ge_fixed_0_1(double x, double y) {
         return !(x >= y) ? 0.0f : 1.0f;
     }
@@ -844,7 +871,8 @@ class Test_ge_cmove_fp_2 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_float_BoolTest_ge_fixed_10_20(float x, float y) {
         return !(x >= y) ? 10.0f : 20.0f;
     }
@@ -854,7 +882,8 @@ class Test_ge_cmove_fp_2 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_double_BoolTest_ge_fixed_10_20(double x, double y) {
         return !(x >= y) ? 10.0f : 20.0f;
     }
@@ -864,7 +893,8 @@ class Test_ge_cmove_fp_2 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_float_BoolTest_ge_variable_results(float x, float y, float a, float b) {
         return !(x >= y) ? a : b;
     }
@@ -874,7 +904,8 @@ class Test_ge_cmove_fp_2 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_double_BoolTest_ge_variable_results(double x, double y, float a, float b) {
         return !(x >= y) ? a : b;
     }
@@ -1022,7 +1053,8 @@ class Test_ge_cmove_fp_2 {
 
 class Test_gt_1 {
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_float_BoolTest_gt_fixed_1_0(float x, float y) {
         // return 1
         //      when either x or y is NaN
@@ -1037,7 +1069,8 @@ class Test_gt_1 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_double_BoolTest_gt_fixed_1_0(double x, double y) {
         // return 1
         //      when either x or y is NaN
@@ -1052,7 +1085,8 @@ class Test_gt_1 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_float_BoolTest_gt_fixed_0_1(float x, float y) {
         return !(x < y) ? 0 : 1;
     }
@@ -1062,7 +1096,8 @@ class Test_gt_1 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_double_BoolTest_gt_fixed_0_1(double x, double y) {
         return !(x < y) ? 0 : 1;
     }
@@ -1072,7 +1107,8 @@ class Test_gt_1 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_float_BoolTest_gt_fixed_10_20(float x, float y) {
         return !(x < y) ? 10 : 20;
     }
@@ -1082,7 +1118,8 @@ class Test_gt_1 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_double_BoolTest_gt_fixed_10_20(double x, double y) {
         return !(x < y) ? 10 : 20;
     }
@@ -1092,7 +1129,8 @@ class Test_gt_1 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_float_BoolTest_gt_variable_results(float x, float y, int a, int b) {
         return !(x < y) ? a : b;
     }
@@ -1102,7 +1140,8 @@ class Test_gt_1 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_double_BoolTest_gt_variable_results(double x, double y, int a, int b) {
         return !(x < y) ? a : b;
     }
@@ -1250,7 +1289,8 @@ class Test_gt_1 {
 
 class Test_gt_cmove_fp_1 {
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_float_BoolTest_gt_fixed_1_0(float x, float y) {
         // return 1
         //      when either x or y is NaN
@@ -1265,7 +1305,8 @@ class Test_gt_cmove_fp_1 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_double_BoolTest_gt_fixed_1_0(double x, double y) {
         // return 1
         //      when either x or y is NaN
@@ -1280,7 +1321,8 @@ class Test_gt_cmove_fp_1 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_float_BoolTest_gt_fixed_0_1(float x, float y) {
         return !(x < y) ? 0.0f : 1.0f;
     }
@@ -1290,7 +1332,8 @@ class Test_gt_cmove_fp_1 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_double_BoolTest_gt_fixed_0_1(double x, double y) {
         return !(x < y) ? 0.0f : 1.0f;
     }
@@ -1300,7 +1343,8 @@ class Test_gt_cmove_fp_1 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_float_BoolTest_gt_fixed_10_20(float x, float y) {
         return !(x < y) ? 10.0f : 20.0f;
     }
@@ -1310,7 +1354,8 @@ class Test_gt_cmove_fp_1 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_double_BoolTest_gt_fixed_10_20(double x, double y) {
         return !(x < y) ? 10.0f : 20.0f;
     }
@@ -1320,7 +1365,8 @@ class Test_gt_cmove_fp_1 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_float_BoolTest_gt_variable_results(float x, float y, float a, float b) {
         return !(x < y) ? a : b;
     }
@@ -1330,7 +1376,8 @@ class Test_gt_cmove_fp_1 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_double_BoolTest_gt_variable_results(double x, double y, float a, float b) {
         return !(x < y) ? a : b;
     }
@@ -1478,7 +1525,8 @@ class Test_gt_cmove_fp_1 {
 
 class Test_gt_2 {
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_float_BoolTest_gt_fixed_1_0(float x, float y) {
         // return 1
         //      when either x or y is NaN
@@ -1493,7 +1541,8 @@ class Test_gt_2 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_double_BoolTest_gt_fixed_1_0(double x, double y) {
         // return 1
         //      when either x or y is NaN
@@ -1508,7 +1557,8 @@ class Test_gt_2 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_float_BoolTest_gt_fixed_0_1(float x, float y) {
         return !(x > y) ? 0 : 1;
     }
@@ -1518,7 +1568,8 @@ class Test_gt_2 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_double_BoolTest_gt_fixed_0_1(double x, double y) {
         return !(x > y) ? 0 : 1;
     }
@@ -1528,7 +1579,8 @@ class Test_gt_2 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_float_BoolTest_gt_fixed_10_20(float x, float y) {
         return !(x > y) ? 10 : 20;
     }
@@ -1538,7 +1590,8 @@ class Test_gt_2 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_double_BoolTest_gt_fixed_10_20(double x, double y) {
         return !(x > y) ? 10 : 20;
     }
@@ -1548,7 +1601,8 @@ class Test_gt_2 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_float_BoolTest_gt_variable_results(float x, float y, int a, int b) {
         return !(x > y) ? a : b;
     }
@@ -1558,7 +1612,8 @@ class Test_gt_2 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_I, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static int test_double_BoolTest_gt_variable_results(double x, double y, int a, int b) {
         return !(x > y) ? a : b;
     }
@@ -1706,7 +1761,8 @@ class Test_gt_2 {
 
 class Test_gt_cmove_fp_2 {
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_float_BoolTest_gt_fixed_1_0(float x, float y) {
         // return 1
         //      when either x or y is NaN
@@ -1721,7 +1777,8 @@ class Test_gt_cmove_fp_2 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_double_BoolTest_gt_fixed_1_0(double x, double y) {
         // return 1
         //      when either x or y is NaN
@@ -1736,7 +1793,8 @@ class Test_gt_cmove_fp_2 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_float_BoolTest_gt_fixed_0_1(float x, float y) {
         return !(x > y) ? 0.0f : 1.0f;
     }
@@ -1746,7 +1804,8 @@ class Test_gt_cmove_fp_2 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_double_BoolTest_gt_fixed_0_1(double x, double y) {
         return !(x > y) ? 0.0f : 1.0f;
     }
@@ -1756,7 +1815,8 @@ class Test_gt_cmove_fp_2 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_float_BoolTest_gt_fixed_10_20(float x, float y) {
         return !(x > y) ? 10.0f : 20.0f;
     }
@@ -1766,7 +1826,8 @@ class Test_gt_cmove_fp_2 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_double_BoolTest_gt_fixed_10_20(double x, double y) {
         return !(x > y) ? 10.0f : 20.0f;
     }
@@ -1776,7 +1837,8 @@ class Test_gt_cmove_fp_2 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_float_BoolTest_gt_variable_results(float x, float y, float a, float b) {
         return !(x > y) ? a : b;
     }
@@ -1786,7 +1848,8 @@ class Test_gt_cmove_fp_2 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_double_BoolTest_gt_variable_results(double x, double y, float a, float b) {
         return !(x > y) ? a : b;
     }
@@ -1934,7 +1997,8 @@ class Test_gt_cmove_fp_2 {
 
 class Test_cmov_fp_cmp_fp_ge_3 {
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_float_BoolTest_gt_x_lt_0(float x) {
         return x < 0 ? 0 : x;
     }
@@ -1944,7 +2008,8 @@ class Test_cmov_fp_cmp_fp_ge_3 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_float_BoolTest_gt_x_gt_0(float x) {
         return x > 0 ? 0 : x;
     }
@@ -1954,7 +2019,8 @@ class Test_cmov_fp_cmp_fp_ge_3 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_float_BoolTest_gt_neg_x_lt_0(float x) {
         return !(x < 0) ? 0 : x;
     }
@@ -1964,7 +2030,8 @@ class Test_cmov_fp_cmp_fp_ge_3 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_float_BoolTest_gt_neg_x_gt_0(float x) {
         return !(x > 0) ? 0 : x;
     }
@@ -2038,7 +2105,8 @@ class Test_cmov_fp_cmp_fp_ge_3 {
 
 class Test_cmov_fp_cmp_fp_ge_4 {
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_float_BoolTest_ge_x_le_0(float x) {
         return x <= 0 ? 0 : x;
     }
@@ -2048,7 +2116,8 @@ class Test_cmov_fp_cmp_fp_ge_4 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_float_BoolTest_ge_x_ge_0(float x) {
         return x >= 0 ? 0 : x;
     }
@@ -2058,7 +2127,8 @@ class Test_cmov_fp_cmp_fp_ge_4 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_float_BoolTest_ge_neg_x_le_0(float x) {
         return !(x <= 0) ? 0 : x;
     }
@@ -2068,7 +2138,8 @@ class Test_cmov_fp_cmp_fp_ge_4 {
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVE_F, "1"})
+    @IR(counts = {IRNode.CMOVE_F, "1"},
+        applyIfPlatformOr = {"riscv64", "true", "aarch64", "true"})
     public static float test_float_BoolTest_ge_neg_x_ge_0(float x) {
         return !(x >= 0) ? 0 : x;
     }
