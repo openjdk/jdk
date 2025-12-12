@@ -4896,7 +4896,7 @@ CPUTime_t os::detailed_thread_cpu_time(Thread* t) {
   FILETIME KernelTime;
   FILETIME UserTime;
 
-  if (GetThreadTimes(thread->osthread()->thread_handle(), &CreationTime,
+  if (GetThreadTimes(t->osthread()->thread_handle(), &CreationTime,
                       &ExitTime, &KernelTime, &UserTime) == 0) {
     return {
       -1,
