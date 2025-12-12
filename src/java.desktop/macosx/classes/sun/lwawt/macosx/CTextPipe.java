@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,8 +97,14 @@ public class CTextPipe implements TextPipe {
         if (f2d instanceof CFont) {
             CompositeFont cf = ((CFont)f2d).getCompositeFont2D();
             PhysicalFont pf = cf.getSlotFont(slot);
-            Font f = new Font(pf.getFontName(null),
-                              font.getStyle(), font.getSize());
+            String name = pf.getFontName(null);
+            Font f = new Font(name, font.getStyle(), font.getSize());
+            if (font.isTransformed()) {
+                f = f.deriveFont(font.getTransform());
+            }
+            if (font.hasLayoutAttributes()) {
+                f = f.deriveFont(font.getAttributes());
+            }
             return f;
         }
         return null;
