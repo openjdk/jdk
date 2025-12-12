@@ -326,6 +326,7 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
   size_t live_data = 0;
 
   RegionData* candidates = _region_data;
+  size_t old_memory_allocated_during_old_marking = 0;
   for (size_t i = 0; i < num_regions; i++) {
     ShenandoahHeapRegion* region = heap->get_region(i);
     if (!region->is_old()) {
@@ -334,7 +335,10 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
 
     size_t garbage = region->garbage();
     size_t live_bytes = region->get_live_data_bytes();
-    live_data += live_bytes;
+    if (!region->was_promoted_in_place()) {
+      live_data += live_bytes;
+    }
+    // else, regions that were promoted in place had 0 old live data at mark start
 
     if (region->is_regular() || region->is_regular_pinned()) {
         // Only place regular or pinned regions with live data into the candidate set.
@@ -372,6 +376,9 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
       immediate_garbage += garbage;
     }
   }
+
+  // As currently implemented, region->get_live_data_bytes() represents bytes concurrently marked.  This is SATB value
+  // except for regions promoted in place.
 
   _old_generation->set_live_bytes_after_last_mark(live_data);
 
