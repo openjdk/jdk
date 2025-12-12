@@ -98,6 +98,9 @@ public:
   }
 
   template<typename T>
+  void heal_discovered_list();
+
+  template<typename T>
   T* discovered_list_addr();
   template<typename T>
   oop discovered_list_head() const;
@@ -142,6 +145,8 @@ private:
 
   ShenandoahGeneration* _generation;
 
+  ShenandoahReferenceProcessor* _old_generation_ref_processor;
+
   template <typename T>
   bool is_inactive(oop reference, oop referent, ReferenceType type) const;
   bool is_strongly_live(oop referent) const;
@@ -180,6 +185,20 @@ public:
   void set_mark_closure(uint worker_id, ShenandoahMarkRefsSuperClosure* mark_closure);
 
   void set_soft_reference_policy(bool clear);
+
+  void set_old_generation_ref_processor(ShenandoahReferenceProcessor* ref_processor) {
+    _old_generation_ref_processor = ref_processor;
+  }
+
+  void clear_old_generation_ref_processor() {
+    _old_generation_ref_processor = nullptr;
+  }
+
+  // The generational mode for Shenandoah will collect _referents_ for the generation
+  // being collected. For example, if we have a young reference pointing to an old
+  // referent, that young reference will be processed after we finish marking the old
+  // generation.
+  void heap_discovered_lists() const;
 
   bool discover_reference(oop obj, ReferenceType type) override;
 

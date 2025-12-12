@@ -197,6 +197,29 @@ void ShenandoahRefProcThreadLocal::reset() {
 }
 
 template <typename T>
+void ShenandoahRefProcThreadLocal::heal_discovered_list() {
+  if (_discovered_list == nullptr) {
+    return;
+  }
+
+  T* list = reinterpret_cast<T*>(&_discovered_list);
+  while (list != nullptr) {
+    // Update our list with the forwarded object
+    const oop reference = lrb(CompressedOops::decode(*list));
+    if (CompressedOops::decode(*list) != reference) {
+      RawAccess<IS_NOT_NULL>::oop_store(list, reference);
+    }
+
+    // Discovered list terminates with a self-loop
+    const oop discovered = lrb(reference_discovered<T>(reference));
+    if (reference == discovered) {
+      break;
+    }
+    list = reference_discovered_addr<T>(reference);
+  }
+}
+
+template <typename T>
 T* ShenandoahRefProcThreadLocal::discovered_list_addr() {
   return reinterpret_cast<T*>(&_discovered_list);
 }
@@ -259,6 +282,17 @@ void ShenandoahReferenceProcessor::set_soft_reference_policy(bool clear) {
   _soft_reference_policy->setup();
 }
 
+void ShenandoahReferenceProcessor::heap_discovered_lists() const {
+  for (uint i = 0; i < ShenandoahHeap::heap()->max_workers(); i++) {
+    if (UseCompressedOops) {
+      _ref_proc_thread_locals[i].heal_discovered_list<narrowOop>();
+    } else {
+      _ref_proc_thread_locals[i].heal_discovered_list<oop>();
+    }
+  }
+}
+
+
 template <typename T>
 bool ShenandoahReferenceProcessor::is_inactive(oop reference, oop referent, ReferenceType type) const {
   if (type == REF_FINAL) {
@@ -294,7 +328,6 @@ bool ShenandoahReferenceProcessor::should_discover(oop reference, ReferenceType 
   T* referent_addr = (T*) java_lang_ref_Reference::referent_addr_raw(reference);
   T heap_oop = RawAccess<>::oop_load(referent_addr);
   oop referent = CompressedOops::decode(heap_oop);
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   if (is_inactive<T>(reference, referent, type)) {
     log_trace(gc,ref)("Reference inactive: " PTR_FORMAT, p2i(reference));
@@ -312,6 +345,12 @@ bool ShenandoahReferenceProcessor::should_discover(oop reference, ReferenceType 
   }
 
   if (!_generation->contains(referent)) {
+    if (_old_generation_ref_processor != nullptr) {
+      log_trace(gc,ref)("Discovered reference for old: " PTR_FORMAT, p2i(reference));
+      _old_generation_ref_processor->discover_reference(reference, type);
+      return true;
+    }
+
     log_trace(gc,ref)("Referent outside of active generation: " PTR_FORMAT, p2i(referent));
     return false;
   }
