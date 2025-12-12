@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,13 @@ abstract class TestTask implements Runnable {
             Thread.sleep(millis);
         } catch (InterruptedException e) {
             throw new RuntimeException("Interruption in TestTask.sleep: \n\t" + e);
+        }
+    }
+
+    public void ensureReadyAndWaiting(Thread vt, Thread.State expState, ReentrantLock rlock) {
+        // wait while the thread is not ready or thread state is unexpected
+        while (!threadReady || (vt.getState() != expState) || !rlock.hasQueuedThreads()) {
+            sleep(1);
         }
     }
 
@@ -97,7 +104,7 @@ public class ThreadListStackTracesTest {
         String name = "ReentrantLockTestTask";
         TestTask task = new ReentrantLockTestTask();
         Thread vt = Thread.ofVirtual().name(name).start(task);
-        task.ensureReady(vt, expState);
+        task.ensureReadyAndWaiting(vt, expState, reentrantLock);
         checkStates(vt, expState);
     }
 
