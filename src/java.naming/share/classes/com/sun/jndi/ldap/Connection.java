@@ -652,9 +652,10 @@ public final class Connection implements Runnable {
                     }
                 } finally {
 
-                    flushAndCloseOutputStream();
+                    flushOutputStream();
                     // 8313657 socket is not closed until GC is run
-                    closeOpenedSocket(sock);
+                    // due to the bug 8362268, the closure of the resource is moved to LdapClient.java
+                    //closeOpenedSocket(sock);
                     tryUnpauseReader();
 
                     if (!notifyParent) {
@@ -673,7 +674,6 @@ public final class Connection implements Runnable {
                             tlsHandshakeListener.tlsHandshakeCompleted.cancel(false);
                         }
                     }
-                    sock = null;
                 }
                 nparent = notifyParent;
             }
@@ -693,18 +693,12 @@ public final class Connection implements Runnable {
     }
 
     // flush and close output stream
-    private void flushAndCloseOutputStream() {
+    private void flushOutputStream() {
         try {
             outStream.flush();
         } catch (IOException ioEx) {
             if (debug)
                 System.err.println("Connection.flushOutputStream: OutputStream flush problem " + ioEx);
-        }
-        try {
-            outStream.close();
-        } catch (IOException ioEx) {
-            if (debug)
-                System.err.println("Connection.closeOutputStream: OutputStream close problem " + ioEx);
         }
     }
 
@@ -720,7 +714,26 @@ public final class Connection implements Runnable {
             }
         }
     }
+    void cleanupAndClose(Control[] reqCtls) {
+        lock.lock();
+        try {
 
+            cleanup(reqCtls, false);
+
+            // 8313657 socket is not closed until GC is run
+            // it caused the bug 8362268, hence moved here
+            if (outStream != null) {
+                outStream.close();
+            }
+            if (!sock.isClosed()) {
+                sock.close();
+            }
+        } catch (IOException ignored) {
+            // we're closing, ignore IO.
+        } finally {
+            lock.unlock();
+        }
+    }
     // unpause reader
     private void tryUnpauseReader() {
         try {
