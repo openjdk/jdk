@@ -1589,8 +1589,8 @@ void Arguments::set_heap_size() {
     }
 
     if (UseCompressedOops) {
-      size_t heap_end = HeapBaseMinAddress + MaxHeapSize;
-      size_t max_coop_heap = max_heap_for_compressed_oops();
+      uintptr_t heap_end = HeapBaseMinAddress + MaxHeapSize;
+      uintptr_t max_coop_heap = max_heap_for_compressed_oops();
 
       // Limit the heap size to the maximum possible when using compressed oops
       if (heap_end < max_coop_heap) {
@@ -1604,10 +1604,10 @@ void Arguments::set_heap_size() {
       // and UseCompressedOops was not specified.
       if (reasonable_max > max_coop_heap) {
         if (FLAG_IS_ERGO(UseCompressedOops) && has_ram_limit) {
-          aot_log_info(aot)("UseCompressedOops disabled due to "
-                            "max heap %zu > compressed oop heap %zu. "
-                            "Please check the setting of MaxRAMPercentage %5.2f.",
-                            reasonable_max, max_coop_heap, MaxRAMPercentage);
+          log_debug(gc, heap, coops)("UseCompressedOops disabled due to "
+                                     "max heap %zu > compressed oop heap %zu. "
+                                     "Please check the setting of MaxRAMPercentage %5.2f.",
+                                     reasonable_max, (size_t)max_coop_heap, MaxRAMPercentage);
           FLAG_SET_ERGO(UseCompressedOops, false);
         } else {
           reasonable_max = max_coop_heap;
