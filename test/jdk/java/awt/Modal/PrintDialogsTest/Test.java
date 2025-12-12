@@ -191,6 +191,7 @@ public class Test {
                 break;
             case DIALOG:
                 dialog = new CustomDialog(parent);
+                break;
             case FRAME:
                 dialog = new CustomDialog(frame);
                 break;
