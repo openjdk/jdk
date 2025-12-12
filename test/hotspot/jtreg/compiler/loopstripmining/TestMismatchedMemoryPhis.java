@@ -31,7 +31,7 @@
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:CompileCommand=quiet
  *                   -XX:CompileCommand=compileonly,*TestMismatchedMemoryPhis*::mainTest -XX:-TieredCompilation
  *                   -Xcomp -XX:+StressIGVN -XX:+StressLoopPeeling -XX:PerMethodTrapLimit=0 TestMismatchedMemoryPhis
- * @run main TestMismatchedMemoryPhis
+ * @run main ${test.main.class}
  */
 
 public class TestMismatchedMemoryPhis {
