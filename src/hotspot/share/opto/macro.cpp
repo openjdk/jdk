@@ -1974,16 +1974,16 @@ void PhaseMacroExpand::expand_allocate(AllocateNode *alloc) {
 
 void PhaseMacroExpand::expand_allocate_array(AllocateArrayNode *alloc) {
   Node* length = alloc->in(AllocateNode::ALength);
-  Node* result_cast = alloc->result_cast();
-  if (result_cast != nullptr) {
-    const TypeInt* length_t = _igvn.type(length)->is_int();
-    const TypeAryPtr* ary_t = _igvn.type(result_cast)->is_aryptr();
-    const TypeInt* new_length_t = length_t->join(ary_t->size())->is_int();
-    const Type* new_ary_t = ary_t->cast_to_size(new_length_t);
-    Node* new_cast = _igvn.transform(new CheckCastPPNode(result_cast->in(0), result_cast->in(1), new_ary_t));
-    new_cast->dump();
-    _igvn.replace_node(result_cast, new_cast);
-  }
+  // Node* result_cast = alloc->result_cast();
+  // if (result_cast != nullptr) {
+  //   const TypeInt* length_t = _igvn.type(length)->is_int();
+  //   const TypeAryPtr* ary_t = _igvn.type(result_cast)->is_aryptr();
+  //   const TypeInt* new_length_t = length_t->join(ary_t->size())->is_int();
+  //   const Type* new_ary_t = ary_t->cast_to_size(new_length_t);
+  //   Node* new_cast = _igvn.transform(new CheckCastPPNode(result_cast->in(0), result_cast->in(1), new_ary_t));
+  //   new_cast->dump();
+  //   _igvn.replace_node(result_cast, new_cast);
+  // }
   Node* valid_length_test = alloc->in(AllocateNode::ValidLengthTest);
   InitializeNode* init = alloc->initialization();
   Node* klass_node = alloc->in(AllocateNode::KlassNode);
