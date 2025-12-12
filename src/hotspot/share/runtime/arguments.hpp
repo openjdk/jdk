@@ -28,9 +28,9 @@
 #include "jni.h"
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/java.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // Arguments parses the command line and recognizes options
 
