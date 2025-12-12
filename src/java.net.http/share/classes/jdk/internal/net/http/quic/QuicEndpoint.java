@@ -1600,14 +1600,11 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
     private DrainingConnection remapDraining(QuicConnectionId id, QuicPacketReceiver conn, DrainingConnection draining) {
         if (closed) return null;
         var debugOn =  debug.on() && !Thread.currentThread().isVirtual();
-        if (conn instanceof ClosingConnection) {
+        if (conn instanceof QuicConnectionImpl || conn instanceof ClosingConnection) {
             if (debugOn) debug.log("remapping %s to DrainingConnection", id);
             return draining;
         } else if (conn instanceof DrainingConnection d) {
             return d;
-        } else if (conn instanceof QuicConnectionImpl) {
-            if (debugOn) debug.log("remapping %s to DrainingConnection", id);
-            return draining;
         } else if (conn == null) {
             // connection absent (was probably removed), don't remap to draining
             if (debugOn) {
@@ -1640,14 +1637,14 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
     private ClosedConnection remapClosing(QuicConnectionId id, QuicPacketReceiver conn, ClosingConnection closingConnection) {
         if (closed) return null;
         var debugOn =  debug.on() && !Thread.currentThread().isVirtual();
-        if (conn instanceof ClosingConnection closing) {
+        if (conn instanceof QuicConnectionImpl) {
+            if (debugOn) debug.log("remapping %s to ClosingConnection", id);
+            return closingConnection;
+        } else if (conn instanceof ClosingConnection closing) {
             // we already have a closing datagram, drop the new one
             return closing;
         } else if (conn instanceof DrainingConnection draining) {
             return draining;
-        } else if (conn instanceof QuicConnectionImpl) {
-            if (debugOn) debug.log("remapping %s to ClosingConnection", id);
-            return closingConnection;
         } else if (conn == null) {
             // connection absent (was probably removed), don't remap to closing
             if (debugOn) {
