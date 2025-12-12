@@ -2109,19 +2109,27 @@ public final class DateTimeFormatter {
         if (context == null || pos.getErrorIndex() >= 0 || (position == null && pos.getIndex() < text.length())) {
             String abbr;
             if (text.length() > 64) {
-                abbr = text.subSequence(0, 64).toString() + "...";
+                abbr = text.subSequence(0, 64).toString().concat("...");
             } else {
                 abbr = text.toString();
             }
             if (pos.getErrorIndex() >= 0) {
-                throw new DateTimeParseException("Text '" + abbr + "' could not be parsed at index " +
-                        pos.getErrorIndex(), text, pos.getErrorIndex());
+                throw errorIndex(text, abbr, pos);
             } else {
-                throw new DateTimeParseException("Text '" + abbr + "' could not be parsed, unparsed text found at index " +
-                        pos.getIndex(), text, pos.getIndex());
+                throw error(text, abbr, pos);
             }
         }
         return context.toResolved(resolverStyle, resolverFields);
+    }
+
+    private static DateTimeParseException error(CharSequence text, String abbr, ParsePosition pos) {
+        return new DateTimeParseException("Text '" + abbr + "' could not be parsed, unparsed text found at index " +
+                pos.getIndex(), text, pos.getIndex());
+    }
+
+    private static DateTimeParseException errorIndex(CharSequence text, String abbr, ParsePosition pos) {
+        return new DateTimeParseException("Text '" + abbr + "' could not be parsed at index " +
+                pos.getErrorIndex(), text, pos.getErrorIndex());
     }
 
     /**
