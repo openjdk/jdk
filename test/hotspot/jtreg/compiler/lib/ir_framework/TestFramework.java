@@ -750,7 +750,6 @@ public class TestFramework {
      */
     private void startWithScenarios(boolean parallel) {
         Map<Scenario, Exception> exceptionMap = new ConcurrentSkipListMap<>(Comparator.comparingInt(Scenario::getIndex));
-        record Outcome(Scenario scenario, Exception other) {}
         final Object printLock = new Object();
         AtomicReference<TestFormatException> testFormatException = new AtomicReference<>();
         Stream<Scenario> stream = parallel ? scenarios.parallelStream() : scenarios.stream();
