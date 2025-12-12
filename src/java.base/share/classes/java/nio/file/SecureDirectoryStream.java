@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,6 +136,190 @@ public interface SecureDirectoryStream<T>
         throws IOException;
 
     /**
+     * Creates a new and empty file, failing if the file already exists.
+     *
+     * <p>This method works in exactly the manner specified by
+     * {@linkplain Files#createFile
+     * Files.createFile}. If the {@code path} parameter is an {@linkplain
+     * Path#isAbsolute absolute} path then it locates the file to create. If
+     * the parameter is a relative path then it is located relative to this
+     * open directory.
+     *
+     * <p> The {@code attrs} parameter is optional with effects as specified
+     * for {@linkplain Files#createFile Files.createFile}.
+     *
+     * @param   path
+     *          the path of the file to create
+     * @param   attrs
+     *          an optional list of file attributes to set atomically when
+     *          creating the file
+     *
+     * @return  the file
+     *
+     * @throws  ClosedDirectoryStreamException
+     *          if the directory stream is closed
+     * @throws  UnsupportedOperationException
+     *          if the array contains an attribute that cannot be set atomically
+     *          when creating the directory
+     * @throws  FileAlreadyExistsException
+     *          if a file could not otherwise be created because a file of
+     *          that name already exists <i>(optional specific exception)</i>
+     * @throws  IOException
+     *          if an I/O error occurs or the parent directory does not exist
+     *
+     * @since 26
+     */
+    T createFile(T path, FileAttribute<?>... attrs)
+        throws IOException;
+
+    /**
+     * Creates a new directory, failing if a file of that name already exists.
+     *
+     * <p>This method works in a similar manner to {@linkplain
+     * Files#createDirectory Files.createDirectory}. If the {@code path}
+     * parameter is an {@linkplain Path#isAbsolute absolute} path then it
+     * locates the directory to create. If the parameter is a relative path
+     * then it is located relative to this open directory.
+     *
+     * <p> The {@code attrs} parameter is optional with effects as specified
+     * for {@linkplain Files#createDirectory Files.createDirectory}.
+     *
+     * @param   dir
+     *          the path of the directory to create
+     * @param   attrs
+     *          an optional list of file attributes to set atomically when
+     *          creating the directory
+     *
+     * @return  the directory
+     *
+     * @throws  ClosedDirectoryStreamException
+     *          if the directory stream is closed
+     * @throws  UnsupportedOperationException
+     *          if the array contains an attribute that cannot be set atomically
+     *          when creating the directory
+     * @throws  FileAlreadyExistsException
+     *          if a directory could not otherwise be created because a file of
+     *          that name already exists <i>(optional specific exception)</i>
+     * @throws  IOException
+     *          if an I/O error occurs or the parent directory does not exist
+     *
+     * @since 26
+     */
+    T createDirectory(T dir, FileAttribute<?>... attrs)
+        throws IOException;
+
+    /**
+     * Creates a new link (directory entry) for an existing file <i>(optional
+     * operation)</i>.
+     *
+     * <p>This method works in a similar manner to {@linkplain Files#createLink
+     * Files.createLink}.  If the {@code link} parameter is an {@link
+     * Path#isAbsolute absolute} path then it locates the link file. If the
+     * {@code link} parameter is a relative path then it is located relative to
+     * this open directory. If the {@code existing} parameter is an absolute
+     * path then it locates the target file (the {@code targetdir} parameter is
+     * ignored). If the {@code existing} parameter is a relative path it is
+     * located relative to the open directory identified by the {@code
+     * targetdir} parameter, unless {@code targetdir} is {@code null}, in which
+     * case it is located relative to the current working directory. By default,
+     * symbolic links are followed. If the option
+     * {@linkplain LinkOption#NOFOLLOW_LINKS NOFOLLOW_LINKS} is present then
+     * symbolic links are not followed.
+     *
+     * @param   link
+     *          the link (directory entry) to create
+     * @param   targetdir
+     *          the destination directory
+     * @param   existing
+     *          a path to an existing file
+     * @param   options
+     *          options indicating how symbolic links are handled
+     *
+     * @return  the path to the link (directory entry)
+     *
+     * @throws  ClosedDirectoryStreamException
+     *          if the directory stream is closed
+     * @throws  UnsupportedOperationException
+     *          if the implementation does not support adding an existing file
+     *          to a directory
+     * @throws  FileAlreadyExistsException
+     *          if the entry could not otherwise be created because a file of
+     *          that name already exists <i>(optional specific exception)</i>
+     * @throws  NoSuchFileException
+     *          if the file specified by the combination of {@code targetdir}
+     *          and {@code existing} does not exist
+     * @throws  IOException
+     *          if an I/O error occurs
+     *
+     * @since 26
+     */
+    T createLink(T link, SecureDirectoryStream<T> targetdir, T existing,
+                 LinkOption... options)
+        throws IOException;
+
+    /**
+     * Creates a symbolic link to a target <i>(optional operation)</i>.
+     *
+     * <p>This method works in a similar manner to {@linkplain Files#createSymbolicLink
+     * Files.createSymbolicLink}.  If the {@code link} parameter is an {@link
+     * Path#isAbsolute absolute} path then it locates the link file. If the
+     * {@code link} parameter is a relative path then it is located relative to
+     * this open directory. The {@code target} parameter is the target of the
+     * link and behaves as specified for {@linkplain Files#createSymbolicLink
+     * Files.createSymbolicLink}.
+     *
+     * @param   link
+     *          the path of the symbolic link to create
+     * @param   target
+     *          the target of the symbolic link
+     * @param   attrs
+     *          the array of attributes to set atomically when creating the
+     *          symbolic link
+     *
+     * @return  the path to the symbolic link
+     *
+     * @throws  ClosedDirectoryStreamException
+     *          if the directory stream is closed
+     * @throws  UnsupportedOperationException
+     *          if the implementation does not support symbolic links or the
+     *          array contains an attribute that cannot be set atomically when
+     *          creating the symbolic link
+     * @throws  FileAlreadyExistsException
+     *          if a file with the name already exists <i>(optional specific
+     *          exception)</i>
+     * @throws  IOException
+     *          if an I/O error occurs
+     */
+    T createSymbolicLink(T link, T target, FileAttribute<?>... attrs)
+        throws IOException;
+
+    /**
+     * Reads the target of a symbolic link <i>(optional operation)</i>.
+     *
+     * <p>This method works in a similar manner to {@linkplain Files#readSymbolicLink
+     * Files.readSymbolicLink}.  If the {@code link} parameter is an {@link
+     * Path#isAbsolute absolute} path then it locates the link file. If the
+     * {@code link} parameter is a relative path then it is located relative to
+     * this open directory.
+     *
+     * @param   link
+     *          the path to the symbolic link
+     *
+     * @return  a {@code Path} object representing the target of the link
+     *
+     * @throws  ClosedDirectoryStreamException
+     *          if the directory stream is closed
+     * @throws  UnsupportedOperationException
+     *          if the implementation does not support symbolic links
+     * @throws  NotLinkException
+     *          if the target could otherwise not be read because the file
+     *          is not a symbolic link <i>(optional specific exception)</i>
+     * @throws  IOException
+     *          if an I/O error occurs
+     */
+    T readSymbolicLink(T link) throws IOException;
+
+    /**
      * Deletes a file.
      *
      * <p> Unlike the {@link Files#delete delete()} method, this method does
@@ -185,8 +369,8 @@ public interface SecureDirectoryStream<T>
     /**
      * Move a file from this directory to another directory.
      *
-     * <p> This method works in a similar manner to {@link Files#move move}
-     * method when the {@link StandardCopyOption#ATOMIC_MOVE ATOMIC_MOVE} option
+     * <p> This method works in a similar manner to {@link Files#move Files.move}
+     * when the {@link StandardCopyOption#ATOMIC_MOVE ATOMIC_MOVE} option
      * is specified. That is, this method moves a file as an atomic file system
      * operation. If the {@code srcpath} parameter is an {@link Path#isAbsolute
      * absolute} path then it locates the source file. If the parameter is a
