@@ -72,6 +72,11 @@ final class Executor {
         return saveOutput(true);
     }
 
+    public Executor saveFirstLineOfOutput() {
+        commandOutputControl.saveFirstLineOfOutput();
+        return this;
+    }
+
     Executor processOutputCharset(Charset v) {
         commandOutputControl.processOutputCharset(v);
         return this;
