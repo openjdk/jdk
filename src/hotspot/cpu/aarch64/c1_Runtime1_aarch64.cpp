@@ -310,7 +310,18 @@ static void restore_live_registers(StubAssembler* sasm, bool restore_fpu_registe
     __ add(sp, sp, 32 * wordSize);
   }
 
+#ifdef _WINDOWS
+  /*
+  Do not modify r18_tls when restoring registers on Windows as it is used to
+  store the pointer to the current thread's TEB (where TLS variables are stored).
+  See r18_tls comment in register_aarch64.hpp.
+  */
+  __ pop(RegSet::range(r0, r17), sp);
+  __ ldp(zr, r19, Address(__ post(sp, 2 * wordSize)));
+  __ pop(RegSet::range(r20, r29), sp);
+#else
   __ pop(RegSet::range(r0, r29), sp);
+#endif
 }
 
 static void restore_live_registers_except_r0(StubAssembler* sasm, bool restore_fpu_registers = true)  {
@@ -323,8 +334,20 @@ static void restore_live_registers_except_r0(StubAssembler* sasm, bool restore_f
     __ add(sp, sp, 32 * wordSize);
   }
 
+#ifdef _WINDOWS
+  /*
+  Do not modify r18_tls when restoring registers on Windows as it is used to
+  store the pointer to the current thread's TEB (where TLS variables are stored).
+  See r18_tls comment in register_aarch64.hpp.
+  */
+  __ ldp(zr, r1, Address(__ post(sp, 2 * wordSize)));
+  __ pop(RegSet::range(r2, r17), sp);
+  __ ldp(zr, r19, Address(__ post(sp, 2 * wordSize)));
+  __ pop(RegSet::range(r20, r29), sp);
+#else
   __ ldp(zr, r1, Address(__ post(sp, 16)));
   __ pop(RegSet::range(r2, r29), sp);
+#endif
 }
 
 
