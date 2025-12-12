@@ -170,6 +170,12 @@ public final class DateTimeFormatterBuilder {
     private int valueParserIndex = -1;
 
     /**
+     * Flag indicating whether this builder only uses ChronoField instances.
+     * This is used to optimize the storage of parsed field values in the Parsed class.
+     */
+    private boolean onlyChronoField = true;
+
+    /**
      * Gets the formatting pattern for date and time styles for a locale and chronology.
      * The locale and chronology are used to lookup the locale specific format
      * for the requested dateStyle and/or timeStyle.
@@ -2340,9 +2346,31 @@ public final class DateTimeFormatterBuilder {
             active.padNextWidth = 0;
             active.padNextChar = 0;
         }
+        checkField(pp);
         active.printerParsers.add(pp);
         active.valueParserIndex = -1;
         return active.printerParsers.size() - 1;
+    }
+
+    /**
+     * Update the onlyChronoField flag if the printer/parser uses non-ChronoField instances
+     * @param pp the printer-parser
+     */
+    private void checkField(DateTimePrinterParser pp) {
+        TemporalField field;
+        if (pp instanceof NumberPrinterParser npp) {
+            field = npp.field;
+        } else if (pp instanceof TextPrinterParser tpp) {
+            field = tpp.field;
+        } else if (pp instanceof DefaultValueParser dvp) {
+            field = dvp.field;
+        } else {
+            return;
+        }
+
+        if (!(field instanceof ChronoField)) {
+            active.onlyChronoField = false;
+        }
     }
 
     //-----------------------------------------------------------------------
@@ -2412,7 +2440,7 @@ public final class DateTimeFormatterBuilder {
         }
         CompositePrinterParser pp = new CompositePrinterParser(printerParsers, false);
         return new DateTimeFormatter(pp, locale, DecimalStyle.STANDARD,
-                resolverStyle, null, chrono, null);
+                resolverStyle, null, chrono, null, onlyChronoField);
     }
 
     //-----------------------------------------------------------------------

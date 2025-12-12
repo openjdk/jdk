@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,7 +129,7 @@ final class Parsed implements TemporalAccessor {
     /**
      * The parsed fields.
      */
-    final Map<TemporalField, Long> fieldValues = new HashMap<>();
+    final Map<TemporalField, Long> fieldValues;
     /**
      * The parsed zone.
      */
@@ -169,7 +170,12 @@ final class Parsed implements TemporalAccessor {
     /**
      * Creates an instance.
      */
-    Parsed() {
+    @SuppressWarnings("unchecked")
+    Parsed(boolean onlyChronoField) {
+        // Create the EnumMap with raw types and cast it appropriately
+        // This is safe because ChronoField implements TemporalField
+        fieldValues = onlyChronoField ? (Map<TemporalField, Long>) (Map) new ChronoFieldMap()
+                : new HashMap<>();
     }
 
     /**
@@ -177,7 +183,7 @@ final class Parsed implements TemporalAccessor {
      */
     Parsed copy() {
         // only copy fields used in parsing stage
-        Parsed cloned = new Parsed();
+        Parsed cloned = new Parsed((Map) fieldValues instanceof ChronoFieldMap);
         cloned.fieldValues.putAll(this.fieldValues);
         cloned.zone = this.zone;
         cloned.zoneNameType = this.zoneNameType;

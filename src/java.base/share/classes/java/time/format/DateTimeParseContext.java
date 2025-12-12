@@ -120,7 +120,7 @@ final class DateTimeParseContext {
     DateTimeParseContext(DateTimeFormatter formatter) {
         super();
         this.formatter = formatter;
-        parsed.add(new Parsed());
+        parsed.add(new Parsed(formatter.onlyChronoField));
     }
 
     /**
