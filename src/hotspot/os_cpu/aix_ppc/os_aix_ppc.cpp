@@ -62,10 +62,6 @@
 // put OS-includes here
 # include <ucontext.h>
 
-address os::current_stack_pointer() {
-  return (address)__builtin_frame_address(0);
-}
-
 char* os::non_memory_address_word() {
   // Must never look like an address returned by reserve_memory,
   // even in its subfields (as defined by the CPU immediate fields,

@@ -51,11 +51,6 @@
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
 
-address os::current_stack_pointer() {
-  // return the address of the current function
-  return (address)__builtin_frame_address(0);
-}
-
 frame os::get_sender_for_C_frame(frame* fr) {
   ShouldNotCallThis();
   return frame(nullptr, nullptr); // silence compile warning.
