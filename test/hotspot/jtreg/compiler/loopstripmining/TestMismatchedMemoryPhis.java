@@ -27,12 +27,14 @@
  * @summary Crash: assert(outer->outcnt() >= phis + 2 - be_loads && outer->outcnt() <= phis + 2 + stores + 1) failed: only phis
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:StressSeed=36200582 -XX:CompileCommand=quiet
  *                   -XX:CompileCommand=compileonly,*TestMismatchedMemoryPhis*::mainTest -XX:-TieredCompilation
- *                   -Xcomp -XX:+StressIGVN -XX:+StressLoopPeeling -XX:PerMethodTrapLimit=0 TestMismatchedMemoryPhis
+ *                   -Xcomp -XX:+StressIGVN -XX:+StressLoopPeeling -XX:PerMethodTrapLimit=0 ${test.main.class}
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:CompileCommand=quiet
  *                   -XX:CompileCommand=compileonly,*TestMismatchedMemoryPhis*::mainTest -XX:-TieredCompilation
- *                   -Xcomp -XX:+StressIGVN -XX:+StressLoopPeeling -XX:PerMethodTrapLimit=0 TestMismatchedMemoryPhis
+ *                   -Xcomp -XX:+StressIGVN -XX:+StressLoopPeeling -XX:PerMethodTrapLimit=0 ${test.main.class}
  * @run main ${test.main.class}
  */
+
+package compiler.loopstripmining;
 
 public class TestMismatchedMemoryPhis {
     long l;
