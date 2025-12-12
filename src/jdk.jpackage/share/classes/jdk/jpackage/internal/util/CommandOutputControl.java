@@ -76,13 +76,13 @@ import jdk.jpackage.internal.util.function.ThrowingRunnable;
  * be configured independently.
  * <p>
  * Output streams can be treated as either byte streams or character streams.
+ *
  * <p>
  * The table below shows how different parameter combinations affect the content
- * added to streams returned by {@link #dumpStdout()} and {@link #dumpStderr()}
- * for commands subsequently executed via
- * {@link #execute(ToolProvider, String...)} regardless of whether output
- * streams are saved or via {@link #execute(ProcessBuilder, long)} if output
- * streams are saved:
+ * written to streams returned by {@link #dumpStdout()} and
+ * {@link #dumpStderr()} for subsequently executed tools, regardless of whether
+ * their output streams are saved, or for subprocesses when the output streams
+ * are saved:
  * <table border="1">
  * <thead>
  * <tr>
@@ -108,10 +108,6 @@ import jdk.jpackage.internal.util.function.ThrowingRunnable;
  * <p>
  * dumpStdout(): STDERR;
  * <p>
- * The command's STDERR will be written into the stream object referenced by the
- * {@link #dumpStdout()} field and not into the underlying file descriptor
- * associated with the STDOUT of the Java process
- * <p>
  * dumpStderr(): unchanged</td>
  * </tr>
  * <tr>
@@ -136,9 +132,66 @@ import jdk.jpackage.internal.util.function.ThrowingRunnable;
  * </table>
  *
  * <p>
+ * The table below shows how different parameter combinations affect the content
+ * written to the native file descriptors associated with {@link System#out} and
+ * {@link System#err} for subsequently executed subprocesses when the output
+ * streams are not saved:
+ * <table border="1">
+ * <thead>
+ * <tr>
+ * <th></th>
+ * <th>discardStdout(false) and discardStderr(false)</th>
+ * <th>discardStdout(false) and discardStderr(true)</th>
+ * <th>discardStdout(true) and discardStderr(false)</th>
+ * </tr>
+ * </thead> <tbody>
+ * <tr>
+ * <th scope="row">redirectStderr(true) and dumpOutput(true)</th>
+ * <td>
+ * <p>
+ * System.out: STDOUT & STDERR interleaved
+ * <p>
+ * System.err: unchanged</td>
+ * <td>
+ * <p>
+ * System.out: STDOUT
+ * <p>
+ * System.err: unchanged</td>
+ * <td>
+ * <p>
+ * System.out: STDERR;
+ * <p>
+ * The command's STDERR will be written to the stream referenced by
+ * {@link #dumpStdout()} rather than to the underlying file descriptor
+ * associated with the Java process's STDOUT
+ * <p>
+ * System.err: unchanged</td>
+ * </tr>
+ * <tr>
+ * <th scope="row">redirectStderr(false) and dumpOutput(true)</th>
+ * <td>
+ * <p>
+ * System.out: STDOUT
+ * <p>
+ * System.err: STDERR</td>
+ * <td>
+ * <p>
+ * System.out: STDOUT
+ * <p>
+ * System.err: unchanged</td>
+ * <td>
+ * <p>
+ * System.out: unchanged
+ * <p>
+ * System.err: STDERR</td>
+ * </tr>
+ * </tbody>
+ * </table>
+ *
+ * <p>
  * The table below shows how different parameter combinations affect the
  * properties of {@link Result} objects returned by
- * {@link #execute(ProcessBuilder, long)} or
+ * {@link #execute(ProcessBuilder)} or {@link #execute(ProcessBuilder, long)} or
  * {@link #execute(ToolProvider, String...)} when processing character streams:
  * <table border="1">
  * <thead>
@@ -153,118 +206,197 @@ import jdk.jpackage.internal.util.function.ThrowingRunnable;
  * discardStderr(false)</th>
  * <td>
  * <p>
- * Result.findContent(): STDOUT & STDERR interleaved
+ * content(): STDOUT & STDERR interleaved
  * <p>
- * Result.findStdout(): {@code Optional.empty()}
+ * findStdout(): {@code Optional.empty()}
  * <p>
- * Result.findStderr(): {@code Optional.empty()}</td>
+ * findStderr(): {@code Optional.empty()}</td>
  * <td>
  * <p>
- * Result.findContent(): an {@code Optional} object wrapping a single item list
- * with the first line of interleaved STDOUT & STDERR if a command wrote any of
- * them; otherwise {@code Optional.of(List.of())}
+ * content(): a single-item list containing the first line of interleaved STDOUT
+ * and STDERR if the command produced any output; otherwise, an empty list
  * <p>
- * Result.findStdout(): {@code Optional.empty()}
+ * findStdout(): {@code Optional.empty()}
  * <p>
- * Result.findStderr(): {@code Optional.empty()}</td>
+ * findStderr(): {@code Optional.empty()}</td>
  * </tr>
  * <tr>
  * <th scope="row">redirectStderr(false) and discardStdout(false) and
  * discardStderr(false)</th>
  * <td>
  * <p>
- * Result.findContent(): STDOUT followed by STDERR
+ * content(): STDOUT followed by STDERR
  * <p>
- * Result.findStdout(): STDOUT
+ * stdout(): STDOUT
  * <p>
- * Result.findStderr(): STDERR</td>
+ * stderr(): STDERR</td>
  * <td>
  * <p>
- * Result.findContent(): The first line of STDOUT if a command wrote it,
- * followed by the first line of STDERR if the command wrote it; an
- * {@code Optional} object wraps a list with at most two items
+ * content(): a list containing at most two items: the first line of STDOUT (if
+ * the command produced any), followed by the first line of STDERR (if the
+ * command produced any)
  * <p>
- * Result.findStdout(): The first line of STDOUT if a command wrote it;
- * otherwise {@code Optional.of(List.of())}
+ * stdout(): The first line of STDOUT (if the command produced any); otherwise
+ * an empty list
  * <p>
- * Result.findStderr(): The first line of STDERR if a command wrote it;
- * otherwise {@code Optional.of(List.of())}</td>
+ * findStderr(): The first line of STDERR (if the command produced any);
+ * otherwise an empty list
  * </tr>
  * <tr>
  * <th scope="row">redirectStderr(true) and discardStdout(false) and
  * discardStderr(true)</th>
  * <td>
  * <p>
- * Result.findContent(): STDOUT
+ * content(): STDOUT
  * <p>
- * Result.findStdout(): The same as Result.findContent()
+ * stdout(): The same as content()
  * <p>
- * Result.findStderr(): {@code Optional.empty()}</td>
+ * findStderr(): {@code Optional.empty()}</td>
  * <td>
  * <p>
- * Result.findContent(): The first line of STDOUT if the command wrote it;
- * otherwise {@code Optional.of(List.of())}
+ * content(): The first line of STDOUT (if the command produced any); otherwise
+ * an empty list
  * <p>
- * Result.findStdout(): The same as Result.findContent()
+ * stdout(): The same as content()
  * <p>
- * Result.findStderr(): {@code Optional.empty()}</td>
+ * findStderr(): {@code Optional.empty()}</td>
  * </tr>
  * <tr>
  * <th scope="row">redirectStderr(false) and discardStdout(false) and
  * discardStderr(true)</th>
  * <td>
  * <p>
- * Result.findContent(): STDOUT
+ * content(): STDOUT
  * <p>
- * Result.findStdout(): The same as Result.findContent()
+ * stdout(): The same as content()
  * <p>
- * Result.findStderr(): {@code Optional.empty()}</td>
+ * stderr(): an empty list</td>
  * <td>
  * <p>
- * Result.findContent(): The first line of STDOUT if the command wrote it;
- * otherwise {@code Optional.of(List.of())}
+ * content(): The first line of STDOUT (if the command produced any); otherwise
+ * an empty list
  * <p>
- * Result.findStdout(): The same as Result.findContent()
+ * stdout(): The same as content()
  * <p>
- * Result.findStderr(): {@code Optional.empty()}</td>
+ * stderr(): an empty list</td>
  * </tr>
  * <tr>
  * <th scope="row">redirectStderr(true) and discardStdout(true) and
  * discardStderr(false)</th>
  * <td>
  * <p>
- * Result.findContent(): STDERR
+ * content(): STDERR
  * <p>
- * Result.findStdout(): The same as Result.findContent()
+ * stdout(): The same as content()
  * <p>
- * Result.findStderr(): {@code Optional.empty()}</td>
+ * findStderr(): {@code Optional.empty()}</td>
  * <td>
  * <p>
- * Result.findContent(): The first line of STDERR if the command wrote it;
- * otherwise {@code Optional.of(List.of())}
+ * content(): The first line of STDERR (if the command produced any); otherwise
+ * an empty list
  * <p>
- * Result.findStdout(): The same as Result.findContent()
+ * stdout(): The same as content()
  * <p>
- * Result.findStderr(): {@code Optional.empty()}</td>
+ * findStderr(): {@code Optional.empty()}</td>
  * </tr>
  * <tr>
  * <th scope="row">redirectStderr(false) and discardStdout(true) and
  * discardStderr(false)</th>
  * <td>
  * <p>
- * Result.findContent(): STDERR
+ * content(): STDERR
  * <p>
- * Result.findStdout(): {@code Optional.empty()}
+ * findStdout(): an empty list
  * <p>
- * Result.findStderr(): The same as Result.findContent()</td>
+ * stderr(): The same as content()</td>
  * <td>
  * <p>
- * Result.findContent(): The first line of STDERR if the command wrote it;
- * otherwise {@code Optional.of(List.of())}
+ * content(): The first line of STDERR (if the command produced any); otherwise
+ * an empty list
  * <p>
- * Result.findStdout(): {@code Optional.empty()}
+ * findStdout(): an empty list
  * <p>
- * Result.findStderr(): The same as Result.findContent()</td>
+ * stderr(): The same as content()</td>
+ * </tr>
+ * </tbody>
+ * </table>
+ * <p>
+ * The table below shows how different parameter combinations affect the
+ * properties of {@link Result} objects returned by
+ * {@link #execute(ProcessBuilder)} or {@link #execute(ProcessBuilder, long)} or
+ * {@link #execute(ToolProvider, String...)} when processing byte streams:
+ * <table border="1">
+ * <thead>
+ * <tr>
+ * <th></th>
+ * <th>saveOutput(true) or saveFirstLineOfOutput()</th>
+ * </tr>
+ * </thead> <tbody>
+ * <tr>
+ * <th scope="row">redirectStderr(true) and discardStdout(false) and
+ * discardStderr(false)</th>
+ * <td>
+ * <p>
+ * byteContent(): STDOUT & STDERR interleaved
+ * <p>
+ * findByteStdout(): {@code Optional.empty()}
+ * <p>
+ * findByteStderr(): {@code Optional.empty()}</td>
+ * </tr>
+ * <tr>
+ * <th scope="row">redirectStderr(false) and discardStdout(false) and
+ * discardStderr(false)</th>
+ * <td>
+ * <p>
+ * byteContent(): STDOUT followed by STDERR
+ * <p>
+ * byteStdout(): STDOUT
+ * <p>
+ * byteStderr(): STDERR</td>
+ * </tr>
+ * <tr>
+ * <th scope="row">redirectStderr(true) and discardStdout(false) and
+ * discardStderr(true)</th>
+ * <td>
+ * <p>
+ * byteContent(): STDOUT
+ * <p>
+ * byteStdout(): The same as byteContent()
+ * <p>
+ * findByteStderr(): {@code Optional.empty()}</td>
+ * </tr>
+ * <tr>
+ * <th scope="row">redirectStderr(false) and discardStdout(false) and
+ * discardStderr(true)</th>
+ * <td>
+ * <p>
+ * byteContent(): STDOUT
+ * <p>
+ * byteStdout(): The same as byteContent()
+ * <p>
+ * byteStderr(): an empty array</td>
+ * </tr>
+ * <tr>
+ * <th scope="row">redirectStderr(true) and discardStdout(true) and
+ * discardStderr(false)</th>
+ * <td>
+ * <p>
+ * byteContent(): STDERR
+ * <p>
+ * byteStdout(): The same as byteContent()
+ * <p>
+ * findByteStderr(): {@code Optional.empty()}</td>
+ * </tr>
+ * <tr>
+ * <th scope="row">redirectStderr(false) and discardStdout(true) and
+ * discardStderr(false)</th>
+ * <td>
+ * <p>
+ * byteContent(): STDERR
+ * <p>
+ * findByteStdout(): an empty array
+ * <p>
+ * byteStderr(): The same as byteContent()</td>
  * </tr>
  * </tbody>
  * </table>
@@ -366,7 +498,7 @@ public final class CommandOutputControl {
     /**
      * Returns the value passed in the last call of {@link #dumpOutput(boolean)}
      * method on this object, or {@code false} if the method has not been called.
-     * 
+     *
      * @return the value passed in the last call of {@link #dumpOutput(boolean)}
      */
     public boolean isDumpOutput() {
@@ -390,7 +522,7 @@ public final class CommandOutputControl {
     /**
      * Returns the value passed in the last call of {@link #binaryOutput(boolean)}
      * method on this object, or {@code false} if the method has not been called.
-     * 
+     *
      * @return the value passed in the last call of {@link #binaryOutput(boolean)}
      */
     public boolean isBinaryOutput() {
@@ -409,7 +541,7 @@ public final class CommandOutputControl {
      *
      * @param v character encoding for output streams of subsequently executed
      *          subprocesses
-     * 
+     *
      * @see #binaryOutput(boolean)
      *
      * @return this
@@ -423,7 +555,7 @@ public final class CommandOutputControl {
      * Returns the value passed in the last call of
      * {@link #processOutputCharset(Charset)} method on this object, or
      * {@link StandardCharsets#UTF_8} if the method has not been called.
-     * 
+     *
      * @return the character encoding that will be applied to the stdout and stderr
      *         streams of subprocesses subsequently executed by this object
      */
@@ -450,7 +582,7 @@ public final class CommandOutputControl {
     /**
      * Returns the value passed in the last call of {@link #redirectStderr(boolean)}
      * method on this object, or {@code false} if the method has not been called.
-     * 
+     *
      * @return the value passed in the last call of {@link #redirectStderr(boolean)}
      */
     public boolean isRedirectStderr() {
@@ -492,7 +624,7 @@ public final class CommandOutputControl {
     /**
      * Returns the value passed in the last call of {@link #isStoreOutputInFiles(boolean)}
      * method on this object, or {@code false} if the method has not been called.
-     * 
+     *
      * @return the value passed in the last call of {@link #isStoreOutputInFiles(boolean)}
      */
     public boolean isStoreOutputInFiles() {
@@ -502,7 +634,7 @@ public final class CommandOutputControl {
     /**
      * Specifies whether stdout streams from commands subsequently executed by this
      * object will be discarded.
-     * 
+     *
      * @param v {@code true} if this object will discard stdout streams from
      *          commands subsequently executed by this object; {@code false}
      *          otherwise
@@ -517,7 +649,7 @@ public final class CommandOutputControl {
     /**
      * Returns the value passed in the last call of {@link #discardStdout(boolean)}
      * method on this object, or {@code false} if the method has not been called.
-     * 
+     *
      * @return the value passed in the last call of {@link #discardStdout(boolean)}
      */
     public boolean isDiscardStdout() {
@@ -527,7 +659,7 @@ public final class CommandOutputControl {
     /**
      * Specifies whether stderr streams from commands subsequently executed by this
      * object will be discarded.
-     * 
+     *
      * @param v {@code true} if this object will discard stderr streams from
      *          commands subsequently executed by this object; {@code false}
      *          otherwise
@@ -542,7 +674,7 @@ public final class CommandOutputControl {
     /**
      * Returns the value passed in the last call of {@link #discardStderr(boolean)}
      * method on this object, or {@code false} if the method has not been called.
-     * 
+     *
      * @return the value passed in the last call of {@link #discardStderr(boolean)}
      */
     public boolean isDiscardStderr() {
@@ -552,7 +684,7 @@ public final class CommandOutputControl {
     /**
      * Specifies the stream where stdout streams from commands subsequently executed
      * by this object will be dumped.
-     * 
+     *
      * @param v the stream where stdout streams from commands subsequently executed
      *          by this object will be dumped; {@code null} permitted
      * @return this
@@ -566,7 +698,7 @@ public final class CommandOutputControl {
      * Returns the value passed in the last call of {@link #dumpStdout(PrintStream)}
      * method on this object, or {@link System#out} if the method has not been
      * called.
-     * 
+     *
      * @return the stream where stdout streams from commands subsequently executed
      *         by this object will be dumped
      */
@@ -577,7 +709,7 @@ public final class CommandOutputControl {
     /**
      * Specifies the stream where stderr streams from commands subsequently executed
      * by this object will be dumped.
-     * 
+     *
      * @param v the stream where stderr streams from commands subsequently executed
      *          by this object will be dumped; {@code null} permitted
      * @return this
@@ -591,7 +723,7 @@ public final class CommandOutputControl {
      * Returns the value passed in the last call of {@link #dumpStderr(PrintStream)}
      * method on this object, or {@link System#err} if the method has not been
      * called.
-     * 
+     *
      * @return the stream where stdout streams from commands subsequently executed
      *         by this object will be dumped
      */
@@ -611,7 +743,7 @@ public final class CommandOutputControl {
      * The callback is invoked on the thread that calls
      * {@link #execute(ProcessBuilder, long)} after the subprocess's output streams
      * begin being pumped.
-     * 
+     *
      * @param v the callback for notifying a subprocess being started or
      *          {@code null} to
      * @return this
@@ -625,7 +757,7 @@ public final class CommandOutputControl {
      * Returns an {@code Optional} wrapping the value passed in the last call of
      * {@link #processNotifier(Consumer)} method on this object, or an empty
      * {@code Optional} if the method has not been called.
-     * 
+     *
      * @return an {@code Optional} wrapping the value passed in the last call of
      *         {@link #processNotifier(Consumer)}
      */
@@ -636,7 +768,7 @@ public final class CommandOutputControl {
     /**
      * Returns a deep copy of this object. Changes to the copy will not affect the
      * original.
-     * 
+     *
      * @return a deep copy of this object
      */
     public CommandOutputControl copy() {
@@ -694,28 +826,11 @@ public final class CommandOutputControl {
         return new ProcessExecutable(pb, this);
     }
 
-    public interface Output {
-
-        public Optional<List<String>> findContent();
-
-        public default List<String> getContent() {
-            return findContent().orElseThrow();
-        }
-
-        public default String getFirstLineOfOutput() {
-            return findFirstLineOfOutput().orElseThrow();
-        }
-
-        public default Optional<String> findFirstLineOfOutput() {
-            return findContent().map(List::stream).flatMap(Stream::findFirst);
-        }
-    }
-
     public record Result(
             Optional<Integer> exitCode,
             Optional<CommandOutput<List<String>>> output,
             Optional<CommandOutput<byte[]>> byteOutput,
-            ExecutableSpec execSpec) implements Output {
+            ExecutableSpec execSpec) {
 
         public Result {
             Objects.requireNonNull(exitCode);
@@ -751,33 +866,33 @@ public final class CommandOutputControl {
             return this;
         }
 
-        public List<String> getOutput() {
-            return getContent();
-        }
-
-        @Override
         public Optional<List<String>> findContent() {
             return output.flatMap(CommandOutput::combined);
         }
 
-        public Optional<Output> findStdout() {
-            return output.flatMap(CommandOutput::stdout).map(Result::createView);
+        public Optional<List<String>> findStdout() {
+            return output.flatMap(CommandOutput::stdout);
         }
 
-        public Optional<Output> findStderr() {
-            return output.flatMap(CommandOutput::stderr).map(Result::createView);
+        public Optional<List<String>> findStderr() {
+            return output.flatMap(CommandOutput::stderr);
         }
 
-        public Output stdout() {
+        // For backward compatibility
+        public List<String> getOutput() {
+            return content();
+        }
+
+        public List<String> content() {
+            return findContent().orElseThrow();
+        }
+
+        public List<String> stdout() {
             return findStdout().orElseThrow();
         }
 
-        public Output stderr() {
+        public List<String> stderr() {
             return findStderr().orElseThrow();
-        }
-
-        public byte[] getByteContent() {
-            return findByteContent().orElseThrow();
         }
 
         public Optional<byte[]> findByteContent() {
@@ -790,6 +905,10 @@ public final class CommandOutputControl {
 
         public Optional<byte[]> findByteStderr() {
             return byteOutput.flatMap(CommandOutput::stderr);
+        }
+
+        public byte[] byteContent() {
+            return findByteContent().orElseThrow();
         }
 
         public byte[] byteStdout() {
@@ -845,17 +964,6 @@ public final class CommandOutputControl {
             return new Result(exitCode, output, byteOutput, Objects.requireNonNull(execSpec));
         }
 
-        private static Output createView(List<String> lines) {
-            Objects.requireNonNull(lines);
-            return new Output() {
-
-                @Override
-                public Optional<List<String>> findContent() {
-                    return Optional.of(lines);
-                }
-            };
-        }
-
         private static StringListContent toStringList(byte[] data, Charset charset) {
             try (var bufReader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(data), charset))) {
                 return new StringListContent(bufReader.lines().toList());
@@ -876,7 +984,7 @@ public final class CommandOutputControl {
             this(value, String.format("Unexpected result from executing the command %s", value.execSpec()));
         }
 
-        Result getResult() {
+        public Result getResult() {
             return value;
         }
 
