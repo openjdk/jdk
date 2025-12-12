@@ -24,6 +24,7 @@
  */
 
 #include "gc/shenandoah/heuristics/shenandoahGlobalHeuristics.hpp"
+#include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahGlobalGeneration.hpp"
@@ -49,6 +50,7 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
                                                               const ShenandoahHeuristics::RegionData* data,
                                                               size_t size, size_t actual_free,
                                                               size_t cur_young_garbage) const {
+  shenandoah_assert_heaplocked_or_safepoint();
   auto heap = ShenandoahGenerationalHeap::heap();
   size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
   size_t capacity = heap->soft_max_capacity();
@@ -65,6 +67,7 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
   size_t unaffiliated_young_memory = unaffiliated_young_regions * region_size_bytes;
   size_t unaffiliated_old_regions = heap->old_generation()->free_unaffiliated_regions();
   size_t unaffiliated_old_memory = unaffiliated_old_regions * region_size_bytes;
+
 
 #undef KELVIN_DEBUG
 #ifdef KELVIN_DEBUG
@@ -292,22 +295,27 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
 
   if (heap->young_generation()->get_evacuation_reserve() < young_evac_reserve) {
     size_t delta_bytes = young_evac_reserve - heap->young_generation()->get_evacuation_reserve();
-    ssize_t regions = -delta_bytes / region_size_bytes;
+    size_t delta_regions = delta_bytes / region_size_bytes;
+    size_t regions_to_transfer = MIN2(unaffiliated_old_regions, delta_regions);
 #ifdef KELVIN_DEBUG
-    log_info(gc)("young_evac_reserve grew from %zu to %zu, representing %zu regions (%zu bytes)",
-                 heap->young_generation()->get_evacuation_reserve(), young_evac_reserve, regions, delta_bytes);
+    log_info(gc)("young_evac_reserve grew from %zu to %zu, representing %zu regions (%zu bytes, %zu regions)",
+                 heap->young_generation()->get_evacuation_reserve(), young_evac_reserve, regions, delta_bytes, delta_regions);
+    log_info(gc)("Truncated to %zu regions", regions_to_transfer);
 #endif
-    log_info(gc)("Global GC moves %zu unaffiliated regions from Old Collector to young Collector reserves", regions);
-    heap->free_set()->move_unaffiliated_regions_from_collector_to_old_collector(regions);
+    log_info(gc)("Global GC moves %zu unaffiliated regions from old collector to young collector reserves", regions_to_transfer);
+    ssize_t negated_regions = -regions_to_transfer;
+    heap->free_set()->move_unaffiliated_regions_from_collector_to_old_collector(negated_regions);
   } else if (heap->young_generation()->get_evacuation_reserve() > young_evac_reserve) {
     size_t delta_bytes = heap->young_generation()->get_evacuation_reserve() - young_evac_reserve;
-    ssize_t regions = delta_bytes / region_size_bytes;
+    size_t delta_regions = delta_bytes / region_size_bytes;
+    size_t regions_to_transfer = MIN2(unaffiliated_young_regions, delta_regions);
 #ifdef KELVIN_DEBUG
-    log_info(gc)("young_evac_reserve shrunk from %zu to %zu, representing %zu regions (%zu bytes)",
-                 heap->young_generation()->get_evacuation_reserve(), young_evac_reserve, regions, delta_bytes);
+    log_info(gc)("young_evac_reserve shrunk from %zu to %zu, representing %zu regions (%zu bytes, %zu regions)",
+                 heap->young_generation()->get_evacuation_reserve(), young_evac_reserve, regions, delta_bytes, delta_regions);
+    log_info(gc)("Truncated to %zu regions", regions_to_transfer);
 #endif
-    log_info(gc)("Global GC moves %zu unaffiliated regions from young Collector to Old Collector reserves", regions);
-    heap->free_set()->move_unaffiliated_regions_from_collector_to_old_collector(regions);
+    log_info(gc)("Global GC moves %zu unaffiliated regions from young collector to old collector reserves", regions_to_transfer);
+    heap->free_set()->move_unaffiliated_regions_from_collector_to_old_collector(regions_to_transfer);
   }
 
   heap->young_generation()->set_evacuation_reserve(young_evac_reserve);
