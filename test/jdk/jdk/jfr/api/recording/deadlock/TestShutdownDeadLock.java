@@ -52,7 +52,7 @@ public class TestShutdownDeadLock {
             }
             Asserts.assertNotNull(thrownException);
             Asserts.assertEquals(thrownException.getClass(), IllegalStateException.class);
-            Asserts.assertEquals(thrownException.getMessage(), "Can not start new recording after VM shutdown");
+            Asserts.assertEquals(thrownException.getMessage(), "Shutdown in progress");
         }));
 
         System.out.println("Exiting");

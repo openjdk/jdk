@@ -68,9 +68,6 @@ public final class PlatformRecorder {
     private RepositoryChunk currentChunk;
     private boolean runPeriodicTask;
 
-    // synchronization lock between recording start & shutdown
-    private static final Object lock = new Object();
-
     public PlatformRecorder() throws Exception {
         repository = Repository.getRepository();
         Logger.log(JFR_SYSTEM, INFO, "Initialized disk repository");
@@ -152,9 +149,7 @@ public final class PlatformRecorder {
     }
 
     static void setInShutDown() {
-        synchronized(lock) {
-            inShutdown = true;
-        }
+        inShutdown = true;
     }
 
     static boolean isInShutDown() {
@@ -204,83 +199,77 @@ public final class PlatformRecorder {
     }
 
     synchronized long start(PlatformRecording recording) {
-        synchronized (lock) {
-            if (inShutdown) {
-                throw new IllegalStateException("Can not start new recording after VM shutdown");
-            }
-
-            // State can only be NEW or DELAYED because of previous checks
-            Instant startTime = null;
-            boolean toDisk = recording.isToDisk();
-            boolean beginPhysical = true;
-            long streamInterval = recording.getStreamIntervalMillis();
-            for (PlatformRecording s : getRecordings()) {
-                if (s.getState() == RecordingState.RUNNING) {
-                    beginPhysical = false;
-                    if (s.isToDisk()) {
-                        toDisk = true;
-                    }
-                    streamInterval = Math.min(streamInterval, s.getStreamIntervalMillis());
+        // State can only be NEW or DELAYED because of previous checks
+        Instant startTime = null;
+        boolean toDisk = recording.isToDisk();
+        boolean beginPhysical = true;
+        long streamInterval = recording.getStreamIntervalMillis();
+        for (PlatformRecording s : getRecordings()) {
+            if (s.getState() == RecordingState.RUNNING) {
+                beginPhysical = false;
+                if (s.isToDisk()) {
+                    toDisk = true;
                 }
+                streamInterval = Math.min(streamInterval, s.getStreamIntervalMillis());
             }
-            long startNanos = -1;
-            if (beginPhysical) {
-                RepositoryChunk newChunk = null;
-                if (toDisk) {
-                    newChunk = repository.newChunk();
-                    if (EventLog.shouldLog()) {
-                        EventLog.start();
-                    }
-                    MetadataRepository.getInstance().setOutput(newChunk.getFile().toString());
-                } else {
-                    MetadataRepository.getInstance().setOutput(null);
-                }
-                currentChunk = newChunk;
-                JVM.beginRecording();
-                startNanos = JVMSupport.getChunkStartNanos();
-                startTime = Utils.epochNanosToInstant(startNanos);
-                if (currentChunk != null) {
-                    currentChunk.setStartTime(startTime);
-                }
-                recording.setState(RecordingState.RUNNING);
-                updateSettings(false);
-                recording.setStartTime(startTime);
-                writeMetaEvents();
-                setRunPeriodicTask(true);
-            } else {
-                RepositoryChunk newChunk = null;
-                if (toDisk) {
-                    newChunk = repository.newChunk();
-                    if (EventLog.shouldLog()) {
-                        EventLog.start();
-                    }
-                    PeriodicEvents.doChunkEnd();
-                    String p = newChunk.getFile().toString();
-                    startTime = MetadataRepository.getInstance().setOutput(p);
-                    newChunk.setStartTime(startTime);
-                }
-                startNanos = JVMSupport.getChunkStartNanos();
-                startTime = Utils.epochNanosToInstant(startNanos);
-                recording.setStartTime(startTime);
-                recording.setState(RecordingState.RUNNING);
-                updateSettings(false);
-                writeMetaEvents();
-                if (currentChunk != null) {
-                    finishChunk(currentChunk, startTime, recording);
-                }
-                currentChunk = newChunk;
-            }
-            if (toDisk) {
-                PeriodicEvents.setFlushInterval(streamInterval);
-            }
-            PeriodicEvents.doChunkBegin(true);
-            Duration duration = recording.getDuration();
-            if (duration != null) {
-                recording.setStopTime(startTime.plus(duration));
-            }
-            recording.updateTimer();
-            return startNanos;
         }
+        long startNanos = -1;
+        if (beginPhysical) {
+            RepositoryChunk newChunk = null;
+            if (toDisk) {
+                newChunk = repository.newChunk();
+                if (EventLog.shouldLog()) {
+                    EventLog.start();
+                }
+                MetadataRepository.getInstance().setOutput(newChunk.getFile().toString());
+            } else {
+                MetadataRepository.getInstance().setOutput(null);
+            }
+            currentChunk = newChunk;
+            JVM.beginRecording();
+            startNanos = JVMSupport.getChunkStartNanos();
+            startTime = Utils.epochNanosToInstant(startNanos);
+            if (currentChunk != null) {
+                currentChunk.setStartTime(startTime);
+            }
+            recording.setState(RecordingState.RUNNING);
+            updateSettings(false);
+            recording.setStartTime(startTime);
+            writeMetaEvents();
+            setRunPeriodicTask(true);
+        } else {
+            RepositoryChunk newChunk = null;
+            if (toDisk) {
+                newChunk = repository.newChunk();
+                if (EventLog.shouldLog()) {
+                    EventLog.start();
+                }
+                PeriodicEvents.doChunkEnd();
+                String p = newChunk.getFile().toString();
+                startTime = MetadataRepository.getInstance().setOutput(p);
+                newChunk.setStartTime(startTime);
+            }
+            startNanos = JVMSupport.getChunkStartNanos();
+            startTime = Utils.epochNanosToInstant(startNanos);
+            recording.setStartTime(startTime);
+            recording.setState(RecordingState.RUNNING);
+            updateSettings(false);
+            writeMetaEvents();
+            if (currentChunk != null) {
+                finishChunk(currentChunk, startTime, recording);
+            }
+            currentChunk = newChunk;
+        }
+        if (toDisk) {
+            PeriodicEvents.setFlushInterval(streamInterval);
+        }
+        PeriodicEvents.doChunkBegin(true);
+        Duration duration = recording.getDuration();
+        if (duration != null) {
+            recording.setStopTime(startTime.plus(duration));
+        }
+        recording.updateTimer();
+        return startNanos;
     }
 
     synchronized void stop(PlatformRecording recording) {
