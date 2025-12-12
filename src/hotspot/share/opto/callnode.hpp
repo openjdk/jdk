@@ -730,9 +730,10 @@ public:
   // for some macro nodes whose expansion does not have a safepoint on the fast path.
   virtual bool        guaranteed_safepoint()  { return true; }
   // For macro nodes, the JVMState gets modified during expansion. If calls
-  // use MachConstantBase, it gets modified during matching. So when cloning
-  // the node the JVMState must be deep cloned. Default is to shallow clone.
-  virtual bool needs_deep_clone_jvms(Compile* C) { return C->needs_deep_clone_jvms(); }
+  // use MachConstantBase, it gets modified during matching. If the call is
+  // late inlined, it also needs the full JVMState. So when cloning the
+  // node the JVMState must be deep cloned. Default is to shallow clone.
+  virtual bool needs_deep_clone_jvms(Compile* C) { return _generator != nullptr || C->needs_deep_clone_jvms(); }
 
   // Returns true if the call may modify n
   virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseValues* phase);
@@ -778,7 +779,6 @@ protected:
 
   ciMethod* _method;               // Method being direct called
   bool    _optimized_virtual;
-  bool    _method_handle_invoke;
   bool    _override_symbolic_info; // Override symbolic call site info from bytecode
   bool    _arg_escape;             // ArgEscape in parameter list
 public:
@@ -786,7 +786,6 @@ public:
     : CallNode(tf, addr, TypePtr::BOTTOM),
       _method(method),
       _optimized_virtual(false),
-      _method_handle_invoke(false),
       _override_symbolic_info(false),
       _arg_escape(false)
   {
@@ -798,8 +797,6 @@ public:
   void  set_method(ciMethod *m)            { _method = m; }
   void  set_optimized_virtual(bool f)      { _optimized_virtual = f; }
   bool  is_optimized_virtual() const       { return _optimized_virtual; }
-  void  set_method_handle_invoke(bool f)   { _method_handle_invoke = f; }
-  bool  is_method_handle_invoke() const    { return _method_handle_invoke; }
   void  set_override_symbolic_info(bool f) { _override_symbolic_info = f; }
   bool  override_symbolic_info() const     { return _override_symbolic_info; }
   void  set_arg_escape(bool f)             { _arg_escape = f; }

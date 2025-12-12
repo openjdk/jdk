@@ -501,6 +501,11 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, Node *sfpt_ctl, BasicType
       }
     } else if (mem->is_ArrayCopy()) {
       done = true;
+    } else if (mem->is_top()) {
+      // The slice is on a dead path. Returning nullptr would lead to elimination
+      // bailout, but we want to prevent that. Just forwarding the top is also legal,
+      // and IGVN can just clean things up, and remove whatever receives top.
+      return mem;
     } else {
       DEBUG_ONLY( mem->dump(); )
       assert(false, "unexpected node");
@@ -595,6 +600,11 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
         for (DUIterator_Fast kmax, k = use->fast_outs(kmax);
                                    k < kmax && can_eliminate; k++) {
           Node* n = use->fast_out(k);
+          if (n->is_Mem() && n->as_Mem()->is_mismatched_access()) {
+            DEBUG_ONLY(disq_node = n);
+            NOT_PRODUCT(fail_eliminate = "Mismatched access");
+            can_eliminate = false;
+          }
           if (!n->is_Store() && n->Opcode() != Op_CastP2X && !bs->is_gc_pre_barrier_node(n) && !reduce_merge_precheck) {
             DEBUG_ONLY(disq_node = n;)
             if (n->is_Load() || n->is_LoadStore()) {
@@ -732,6 +742,41 @@ void PhaseMacroExpand::undo_previous_scalarizations(GrowableArray <SafePointNode
   }
 }
 
+#ifdef ASSERT
+  // Verify if a value can be written into a field.
+  void verify_type_compatability(const Type* value_type, const Type* field_type) {
+    BasicType value_bt = value_type->basic_type();
+    BasicType field_bt = field_type->basic_type();
+
+    // Primitive types must match.
+    if (is_java_primitive(value_bt) && value_bt == field_bt) { return; }
+
+    // I have been struggling to make a similar assert for non-primitive
+    // types. I we can add one in the future. For now, I just let them
+    // pass without checks.
+    // In particular, I was struggling with a value that came from a call,
+    // and had only a non-null check CastPP. There was also a checkcast
+    // in the graph to verify the interface, but the corresponding
+    // CheckCastPP result was not updated in the stack slot, and so
+    // we ended up using the CastPP. That means that the field knows
+    // that it should get an oop from an interface, but the value lost
+    // that information, and so it is not a subtype.
+    // There may be other issues, feel free to investigate further!
+    if (!is_java_primitive(value_bt)) { return; }
+
+    tty->print_cr("value not compatible for field: %s vs %s",
+                  type2name(value_bt),
+                  type2name(field_bt));
+    tty->print("value_type: ");
+    value_type->dump();
+    tty->cr();
+    tty->print("field_type: ");
+    field_type->dump();
+    tty->cr();
+    assert(false, "value_type does not fit field_type");
+  }
+#endif
+
 SafePointScalarObjectNode* PhaseMacroExpand::create_scalarized_object_description(AllocateNode *alloc, SafePointNode* sfpt) {
   // Fields of scalar objs are referenced only at the end
   // of regular debuginfo at the last (youngest) JVMS.
@@ -848,6 +893,7 @@ SafePointScalarObjectNode* PhaseMacroExpand::create_scalarized_object_descriptio
         field_val = transform_later(new DecodeNNode(field_val, field_val->get_ptr_type()));
       }
     }
+    DEBUG_ONLY(verify_type_compatability(field_val->bottom_type(), field_type);)
     sfpt->add_req(field_val);
   }
 
@@ -996,7 +1042,6 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
       if (use->is_Initialize()) {
         // Eliminate Initialize node.
         InitializeNode *init = use->as_Initialize();
-        assert(init->outcnt() <= 2, "only a control and memory projection expected");
         Node *ctrl_proj = init->proj_out_or_null(TypeFunc::Control);
         if (ctrl_proj != nullptr) {
           _igvn.replace_node(ctrl_proj, init->in(TypeFunc::Control));
@@ -1006,18 +1051,18 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
           assert(tmp == nullptr || tmp == _callprojs.fallthrough_catchproj, "allocation control projection");
 #endif
         }
-        Node *mem_proj = init->proj_out_or_null(TypeFunc::Memory);
-        if (mem_proj != nullptr) {
-          Node *mem = init->in(TypeFunc::Memory);
+        Node* mem = init->in(TypeFunc::Memory);
 #ifdef ASSERT
+        if (init->number_of_projs(TypeFunc::Memory) > 0) {
           if (mem->is_MergeMem()) {
-            assert(mem->in(TypeFunc::Memory) == _callprojs.fallthrough_memproj, "allocation memory projection");
+            assert(mem->as_MergeMem()->memory_at(Compile::AliasIdxRaw) == _callprojs.fallthrough_memproj, "allocation memory projection");
           } else {
             assert(mem == _callprojs.fallthrough_memproj, "allocation memory projection");
           }
-#endif
-          _igvn.replace_node(mem_proj, mem);
         }
+#endif
+        init->replace_mem_projs_by(mem, &_igvn);
+        assert(init->outcnt() == 0, "should only have had a control and some memory projections, and we removed them");
       } else  {
         assert(false, "only Initialize or AddP expected");
       }
@@ -1604,7 +1649,16 @@ void PhaseMacroExpand::expand_initialize_membar(AllocateNode* alloc, InitializeN
       // No InitializeNode or no stores captured by zeroing
       // elimination. Simply add the MemBarStoreStore after object
       // initialization.
-      MemBarNode* mb = MemBarNode::make(C, Op_MemBarStoreStore, Compile::AliasIdxBot);
+      // What we want is to prevent the compiler and the CPU from re-ordering the stores that initialize this object
+      // with subsequent stores to any slice. As a consequence, this MemBar should capture the entire memory state at
+      // this point in the IR and produce a new memory state that should cover all slices. However, the Initialize node
+      // only captures/produces a partial memory state making it complicated to insert such a MemBar. Because
+      // re-ordering by the compiler can't happen by construction (a later Store that publishes the just allocated
+      // object reference is indirectly control dependent on the Initialize node), preventing reordering by the CPU is
+      // sufficient. For that a MemBar on the raw memory slice is good enough.
+      // If init is null, this allocation does have an InitializeNode but this logic can't locate it (see comment in
+      // PhaseMacroExpand::initialize_object()).
+      MemBarNode* mb = MemBarNode::make(C, Op_MemBarStoreStore, Compile::AliasIdxRaw);
       transform_later(mb);
 
       mb->init_req(TypeFunc::Memory, fast_oop_rawmem);
@@ -1620,24 +1674,33 @@ void PhaseMacroExpand::expand_initialize_membar(AllocateNode* alloc, InitializeN
       // barrier.
 
       Node* init_ctrl = init->proj_out_or_null(TypeFunc::Control);
-      Node* init_mem = init->proj_out_or_null(TypeFunc::Memory);
 
-      MemBarNode* mb = MemBarNode::make(C, Op_MemBarStoreStore, Compile::AliasIdxBot);
+      // See comment above that explains why a raw memory MemBar is good enough.
+      MemBarNode* mb = MemBarNode::make(C, Op_MemBarStoreStore, Compile::AliasIdxRaw);
       transform_later(mb);
 
       Node* ctrl = new ProjNode(init, TypeFunc::Control);
       transform_later(ctrl);
-      Node* mem = new ProjNode(init, TypeFunc::Memory);
-      transform_later(mem);
+      Node* old_raw_mem_proj = nullptr;
+      auto find_raw_mem = [&](ProjNode* proj) {
+        if (C->get_alias_index(proj->adr_type()) == Compile::AliasIdxRaw) {
+          assert(old_raw_mem_proj == nullptr, "only one expected");
+          old_raw_mem_proj = proj;
+        }
+      };
+      init->for_each_proj(find_raw_mem, TypeFunc::Memory);
+      assert(old_raw_mem_proj != nullptr, "should have found raw mem Proj");
+      Node* raw_mem_proj = new ProjNode(init, TypeFunc::Memory);
+      transform_later(raw_mem_proj);
 
       // The MemBarStoreStore depends on control and memory coming
       // from the InitializeNode
-      mb->init_req(TypeFunc::Memory, mem);
+      mb->init_req(TypeFunc::Memory, raw_mem_proj);
       mb->init_req(TypeFunc::Control, ctrl);
 
       ctrl = new ProjNode(mb, TypeFunc::Control);
       transform_later(ctrl);
-      mem = new ProjNode(mb, TypeFunc::Memory);
+      Node* mem = new ProjNode(mb, TypeFunc::Memory);
       transform_later(mem);
 
       // All nodes that depended on the InitializeNode for control
@@ -1646,9 +1709,7 @@ void PhaseMacroExpand::expand_initialize_membar(AllocateNode* alloc, InitializeN
       if (init_ctrl != nullptr) {
         _igvn.replace_node(init_ctrl, ctrl);
       }
-      if (init_mem != nullptr) {
-        _igvn.replace_node(init_mem, mem);
-      }
+      _igvn.replace_node(old_raw_mem_proj, mem);
     }
   }
 }

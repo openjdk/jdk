@@ -127,6 +127,10 @@ public final class EventFileStream extends AbstractEventStream {
                 cacheSorted[index++] = event;
             }
             dispatchOrdered(c, index);
+            if (index > 100_000 && 4 * index < cacheSorted.length) {
+                cacheSorted = new RecordedEvent[2 * index];
+            }
+            onFlush();
             index = 0;
         }
     }
@@ -136,8 +140,8 @@ public final class EventFileStream extends AbstractEventStream {
         Arrays.sort(cacheSorted, 0, index, EVENT_COMPARATOR);
         for (int i = 0; i < index; i++) {
             c.dispatch(cacheSorted[i]);
+            cacheSorted[i] = null;
         }
-        onFlush();
     }
 
     private void processUnordered(Dispatcher c) throws IOException {

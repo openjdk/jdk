@@ -25,3 +25,9 @@ NashornProfile.txt
 **/core.[0-9]*
 *.rej
 *.orig
+test/benchmarks/**/target
+/src/hotspot/CMakeLists.txt
+/src/hotspot/compile_commands.json
+/src/hotspot/cmake-build-debug/
+/src/hotspot/.cache/
+/src/hotspot/.idea/

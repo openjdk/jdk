@@ -755,7 +755,7 @@ private:
   static void fill_range_in_dense_prefix(HeapWord* start, HeapWord* end);
 
 public:
-  static void fill_dead_objs_in_dense_prefix(uint worker_id, uint num_workers);
+  static void fill_dead_objs_in_dense_prefix();
 
   // This method invokes a full collection.
   // clear_all_soft_refs controls whether soft-refs should be cleared or not.

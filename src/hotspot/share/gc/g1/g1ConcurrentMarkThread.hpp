@@ -33,8 +33,6 @@ class G1Policy;
 // The concurrent mark thread triggers the various steps of the concurrent marking
 // cycle, including various marking cleanup.
 class G1ConcurrentMarkThread: public ConcurrentGCThread {
-  friend class VMStructs;
-
   G1ConcurrentMark* _cm;
 
   enum ServiceState : uint {

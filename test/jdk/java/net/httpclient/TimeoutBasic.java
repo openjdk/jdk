@@ -43,6 +43,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
 import static java.lang.System.out;
@@ -139,6 +140,31 @@ public class TimeoutBasic {
         return request;
     }
 
+    private static void assertTimeout(Throwable e) {
+        Throwable x = e;
+        while (x != null) {
+            if (x instanceof HttpTimeoutException) {
+                out.println("Caught expected timeout: " + x);
+                return;
+            } else {
+                x = x.getCause();
+            }
+        }
+        assert x == null;
+
+        // print not matching exception stack trace
+        e.printStackTrace(out);
+
+        // eliminate leading CompletionException / ExecutionException and
+        // throws assertion error
+        x = e;
+        while (x instanceof CompletionException || x instanceof ExecutionException) {
+            x = x.getCause();
+        }
+        if (x == null) x = e; // should not happen, but ensure we have a stack trace to report
+        throw new AssertionError("Unexpected exception (no timeout in cause chain): " + x, x);
+    }
+
     public static void test(HttpClient.Version version,
                             HttpClient.Version reqVersion,
                             String scheme,
@@ -215,18 +241,7 @@ public class TimeoutBasic {
                     out.println("Body (should be null): " + resp.body());
                     throw new RuntimeException("Unexpected response: " + resp.statusCode());
                 } catch (CompletionException e) {
-                    Throwable x = e;
-                    if (x.getCause() instanceof SSLHandshakeException s) {
-                        if (s.getCause() instanceof HttpTimeoutException) {
-                            x = s;
-                        }
-                    }
-                    if (!(x.getCause() instanceof HttpTimeoutException)) {
-                        e.printStackTrace(out);
-                        throw new RuntimeException("Unexpected exception: " + e.getCause());
-                    } else {
-                        out.println("Caught expected timeout: " + x.getCause());
-                    }
+                    assertTimeout(e);
                 }
             }
             assert count >= TIMEOUTS.size() -1;
@@ -248,8 +263,8 @@ public class TimeoutBasic {
                 try {
                     HttpResponse<?> resp = client.send(request, BodyHandlers.discarding());
                     throw new RuntimeException("Unexpected response: " + resp.statusCode());
-                } catch (HttpTimeoutException e) {
-                    out.println("Caught expected timeout: " + e);
+                } catch (Throwable e) {
+                    assertTimeout(e);
                 }
             }
             assert count >= TIMEOUTS.size() -1;

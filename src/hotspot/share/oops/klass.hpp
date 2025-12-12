@@ -30,7 +30,6 @@
 #include "oops/metadata.hpp"
 #include "oops/oop.hpp"
 #include "oops/oopHandle.hpp"
-#include "utilities/accessFlags.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
 #include "jfr/support/jfrTraceIdExtension.hpp"
@@ -120,9 +119,8 @@ class Klass : public Metadata {
   //  - Various type checking in the JVM
   const KlassKind _kind;
 
-  AccessFlags _access_flags;    // Access flags. The class/interface distinction is stored here.
-                                // Some flags created by the JVM, not in the class file itself,
-                                // are in _misc_flags below.
+  // Some flags created by the JVM, not in the class file itself,
+  // are in _misc_flags below.
   KlassFlags  _misc_flags;
 
   // The fields _super_check_offset, _secondary_super_cache, _secondary_supers
@@ -300,7 +298,7 @@ protected:
   // Use InstanceKlass::contains_field_offset to classify field offsets.
 
   // sub/superklass links
-  Klass* subklass(bool log = false) const;
+  Klass* subklass() const;
   Klass* next_sibling(bool log = false) const;
 
   void append_to_sibling_list();           // add newly created receiver to superklass' subklass list
@@ -413,9 +411,9 @@ protected:
   virtual ModuleEntry* module() const = 0;
   virtual PackageEntry* package() const = 0;
 
+  void     set_next_sibling(Klass* s);
  protected:                                // internal accessors
   void     set_subklass(Klass* s);
-  void     set_next_sibling(Klass* s);
 
  private:
   static uint8_t compute_hash_slot(Symbol* s);
@@ -453,7 +451,6 @@ protected:
   static ByteSize java_mirror_offset()           { return byte_offset_of(Klass, _java_mirror); }
   static ByteSize class_loader_data_offset()     { return byte_offset_of(Klass, _class_loader_data); }
   static ByteSize layout_helper_offset()         { return byte_offset_of(Klass, _layout_helper); }
-  static ByteSize access_flags_offset()          { return byte_offset_of(Klass, _access_flags); }
 #if INCLUDE_JVMCI
   static ByteSize subklass_offset()              { return byte_offset_of(Klass, _subklass); }
   static ByteSize next_sibling_offset()          { return byte_offset_of(Klass, _next_sibling); }
@@ -580,6 +577,7 @@ public:
   virtual bool should_be_initialized() const    { return false; }
   // initializes the klass
   virtual void initialize(TRAPS);
+  virtual void initialize_preemptable(TRAPS);
   virtual Klass* find_field(Symbol* name, Symbol* signature, fieldDescriptor* fd) const;
   virtual Method* uncached_lookup_method(const Symbol* name, const Symbol* signature,
                                          OverpassLookupMode overpass_mode,
@@ -706,17 +704,10 @@ public:
   bool is_typeArray_klass()             const { return assert_same_query( _kind == TypeArrayKlassKind, is_typeArray_klass_slow()); }
   #undef assert_same_query
 
-  // Access flags
-  AccessFlags access_flags() const         { return _access_flags;  }
-  void set_access_flags(AccessFlags flags) { _access_flags = flags; }
 
-  bool is_public() const                { return _access_flags.is_public(); }
-  bool is_final() const                 { return _access_flags.is_final(); }
-  bool is_interface() const             { return _access_flags.is_interface(); }
-  bool is_abstract() const              { return _access_flags.is_abstract(); }
-  bool is_super() const                 { return _access_flags.is_super(); }
-  bool is_synthetic() const             { return _access_flags.is_synthetic(); }
-  void set_is_synthetic()               { _access_flags.set_is_synthetic(); }
+  virtual bool is_interface() const     { return false; }
+  virtual bool is_abstract() const      { return false; }
+
   bool has_finalizer() const            { return _misc_flags.has_finalizer(); }
   void set_has_finalizer()              { _misc_flags.set_has_finalizer(true); }
   bool is_hidden() const                { return _misc_flags.is_hidden_class(); }
@@ -729,7 +720,7 @@ public:
   inline bool is_non_strong_hidden() const;
 
   bool is_cloneable() const;
-  void set_is_cloneable();
+  void set_is_cloneable_fast() { _misc_flags.set_is_cloneable_fast(true); }
 
   inline markWord prototype_header() const;
   inline void set_prototype_header(markWord header);
@@ -743,7 +734,7 @@ public:
   inline bool is_loader_alive() const;
   inline bool is_loader_present_and_alive() const;
 
-  void clean_subklass();
+  Klass* clean_subklass(bool log = false);
 
   // Clean out unnecessary weak klass links from the whole klass hierarchy.
   static void clean_weak_klass_links(bool unloading_occurred, bool clean_alive_klasses = true);

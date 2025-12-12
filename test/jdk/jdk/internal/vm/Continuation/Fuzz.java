@@ -96,6 +96,9 @@ public class Fuzz implements Runnable {
         if (Platform.isPPC()) {
             COMPILATION_TIMEOUT = COMPILATION_TIMEOUT * 2;
         }
+        if (Platform.isDebugBuild()) {
+            COMPILATION_TIMEOUT = COMPILATION_TIMEOUT * 2;
+        }
         warmup();
         for (int compileLevel : new int[]{4}) {
             for (boolean compileRun : new boolean[]{true}) {

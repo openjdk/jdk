@@ -338,10 +338,9 @@ public class H3MalformedResponseTest implements HttpServerAdapters {
         HttpClient client = getHttpClient();
         try {
             HttpRequest request = getRequest();
-            final HttpResponse<Void> response1 = client.sendAsync(
+            final HttpResponse<Void> response1 = client.send(
                     request,
-                    BodyHandlers.discarding())
-                    .get(10, TimeUnit.SECONDS);
+                    BodyHandlers.discarding());
             assertEquals(response1.statusCode(), 200);
             assertFalse(errorCF.isDone(), "Expected the connection to be open");
         } finally {
@@ -366,13 +365,10 @@ public class H3MalformedResponseTest implements HttpServerAdapters {
         HttpClient client = getHttpClient();
         try {
             HttpRequest request = getRequest();
-            final HttpResponse<Void> response1 = client.sendAsync(
+            final HttpResponse<Void> response1 = client.send(
                             request,
-                            BodyHandlers.discarding())
-                    .get(Utils.adjustTimeout(10), TimeUnit.SECONDS);
+                            BodyHandlers.discarding());
             fail("Expected the request to fail, got " + response1);
-        } catch (TimeoutException e) {
-            throw e;
         } catch (Exception e) {
             System.out.println("Got expected exception: " +e);
             e.printStackTrace();
@@ -395,13 +391,10 @@ public class H3MalformedResponseTest implements HttpServerAdapters {
         HttpClient client = getHttpClient();
         try {
             HttpRequest request = getRequest();
-            final HttpResponse<Void> response1 = client.sendAsync(
+            final HttpResponse<Void> response1 = client.send(
                             request,
-                            BodyHandlers.discarding())
-                    .get(10, TimeUnit.SECONDS);
+                            BodyHandlers.discarding());
             fail("Expected the request to fail, got " + response1);
-        } catch (TimeoutException e) {
-            throw e;
         } catch (Exception e) {
             System.out.println("Got expected exception: " +e);
             e.printStackTrace();

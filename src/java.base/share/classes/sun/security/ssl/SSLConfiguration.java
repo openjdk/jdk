@@ -38,6 +38,7 @@ import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSocket;
 import sun.security.ssl.SSLExtension.ClientExtensions;
 import sun.security.ssl.SSLExtension.ServerExtensions;
+import sun.security.ssl.SignatureScheme.SupportedSigSchemes;
 
 /**
  * SSL/(D)TLS configuration.
@@ -203,7 +204,7 @@ final class SSLConfiguration implements Cloneable {
         if (nstServerCount == null || nstServerCount < 0 ||
             nstServerCount > 10) {
             serverNewSessionTicketCount = SERVER_NST_DEFAULT;
-            if (nstServerCount != null && SSLLogger.isOn &&
+            if (nstServerCount != null && SSLLogger.isOn() &&
                 SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "jdk.tls.server.newSessionTicketCount defaults to " +
@@ -212,7 +213,7 @@ final class SSLConfiguration implements Cloneable {
             }
         } else {
             serverNewSessionTicketCount = nstServerCount;
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "jdk.tls.server.newSessionTicketCount set to " +
                         serverNewSessionTicketCount);
@@ -241,8 +242,12 @@ final class SSLConfiguration implements Cloneable {
         this.maximumPacketSize = 0;         // please reset it explicitly later
 
         this.signatureSchemes = isClientMode ?
-                CustomizedClientSignatureSchemes.signatureSchemes :
-                CustomizedServerSignatureSchemes.signatureSchemes;
+                CustomizedClientSignatureSchemes.signatureSchemes != null ?
+                        CustomizedClientSignatureSchemes.signatureSchemes :
+                        SupportedSigSchemes.DEFAULT :
+                CustomizedServerSignatureSchemes.signatureSchemes != null ?
+                        CustomizedServerSignatureSchemes.signatureSchemes :
+                        SupportedSigSchemes.DEFAULT;
         this.namedGroups = NamedGroup.SupportedGroups.namedGroups;
         this.maximumProtocolVersion = ProtocolVersion.NONE;
         for (ProtocolVersion pv : enabledProtocols) {
@@ -362,7 +367,9 @@ final class SSLConfiguration implements Cloneable {
             // Note if 'ss' is empty, then no signature schemes should be
             // specified over the connections.
             this.signatureSchemes = ss;
-        }   // Otherwise, use the default values
+        } else {    // Otherwise, use the default values.
+            this.signatureSchemes = SupportedSigSchemes.DEFAULT;
+        }
 
         String[] ngs = params.getNamedGroups();
         if (ngs != null) {
@@ -514,7 +521,8 @@ final class SSLConfiguration implements Cloneable {
     void toggleClientMode() {
         this.isClientMode ^= true;
 
-        // Reset the signature schemes, if it was configured with SSLParameters.
+        // Reset the signature schemes, if it was configured with a
+        // system property.
         if (Arrays.equals(signatureSchemes,
                 CustomizedClientSignatureSchemes.signatureSchemes) ||
             Arrays.equals(signatureSchemes,
@@ -578,7 +586,7 @@ final class SSLConfiguration implements Cloneable {
         String property = System.getProperty(propertyName);
         // this method is called from class initializer; logging here
         // will occasionally pin threads and deadlock if called from a virtual thread
-        if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")
+        if (SSLLogger.isOn() && SSLLogger.isOn("ssl,sslctx")
                 && !Thread.currentThread().isVirtual()) {
             SSLLogger.fine(
                     "System property " + propertyName + " is set to '" +
@@ -607,7 +615,7 @@ final class SSLConfiguration implements Cloneable {
                 if (scheme != null && scheme.isAvailable) {
                     signatureSchemes.add(schemeName);
                 } else {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")
+                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl,sslctx")
                             && !Thread.currentThread().isVirtual()) {
                         SSLLogger.fine(
                         "The current installed providers do not " +

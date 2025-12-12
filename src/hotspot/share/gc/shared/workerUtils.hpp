@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 #ifndef SHARE_GC_SHARED_WORKERUTILS_HPP
 #define SHARE_GC_SHARED_WORKERUTILS_HPP
 
+#include "cppstdlib/type_traits.hpp"
 #include "memory/allocation.hpp"
 #include "metaprogramming/enableIf.hpp"
-#include "metaprogramming/logical.hpp"
 #include "runtime/mutex.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -103,7 +103,7 @@ public:
   // explicitly passed as extra arguments. Every thread in the parallel task
   // must execute this.
   template<typename T0, typename... Ts,
-          ENABLE_IF(Conjunction<std::is_same<T0, Ts>...>::value)>
+           ENABLE_IF(std::conjunction_v<std::is_same<T0, Ts>...>)>
   void all_tasks_claimed(T0 first_skipped, Ts... more_skipped) {
     static_assert(std::is_convertible<T0, uint>::value, "not convertible");
     uint skipped[] = { static_cast<uint>(first_skipped), static_cast<uint>(more_skipped)... };

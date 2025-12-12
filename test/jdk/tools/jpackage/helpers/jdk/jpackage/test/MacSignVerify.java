@@ -44,6 +44,41 @@ import jdk.jpackage.test.MacSign.CertificateRequest;
  */
 public final class MacSignVerify {
 
+    public static void verifyAppImageSigned(
+            JPackageCommand cmd, CertificateRequest certRequest, MacSign.ResolvedKeychain keychain) {
+
+        cmd.verifyIsOfType(PackageType.MAC);
+        Objects.requireNonNull(certRequest);
+        Objects.requireNonNull(keychain);
+
+        final Path bundleRoot;
+        if (cmd.isImagePackageType()) {
+            bundleRoot = cmd.outputBundle();
+        } else {
+            bundleRoot = cmd.pathToUnpackedPackageFile(
+                    cmd.appInstallationDirectory());
+        }
+
+        assertSigned(bundleRoot, certRequest);
+
+        cmd.addLauncherNames(true).stream().map(cmd::appLauncherPath).forEach(launcherPath -> {
+            assertSigned(launcherPath, certRequest);
+        });
+
+        // Set to "null" if the sign origin is not found, instead of bailing out with an exception.
+        // Let is fail in the following TKit.assertEquals() call with a proper log message.
+        var signOrigin = findSpctlSignOrigin(SpctlType.EXEC, bundleRoot).orElse(null);
+
+        TKit.assertEquals(certRequest.name(), signOrigin,
+                String.format("Check [%s] has sign origin as expected", bundleRoot));
+    }
+
+    public static void verifyPkgSigned(JPackageCommand cmd, CertificateRequest certRequest, MacSign.ResolvedKeychain keychain) {
+        cmd.verifyIsOfType(PackageType.MAC_PKG);
+        assertPkgSigned(cmd.outputBundle(), certRequest,
+                Objects.requireNonNull(keychain.mapCertificateRequests().get(certRequest)));
+    }
+
     public static void assertSigned(Path path, CertificateRequest certRequest) {
         assertSigned(path);
         TKit.assertEquals(certRequest.name(), findCodesignSignOrigin(path).orElse(null),
@@ -54,6 +89,17 @@ public final class MacSignVerify {
         assertSigned(path);
         TKit.assertEquals(ADHOC_SIGN_ORIGIN, findCodesignSignOrigin(path).orElse(null),
                 String.format("Check [%s] signed with adhoc signature", path));
+    }
+
+    public static Optional<PListReader> findEntitlements(Path path) {
+        final var exec = Executor.of("/usr/bin/codesign", "-d", "--entitlements", "-", "--xml", path.toString()).saveOutput().dumpOutput();
+        final var result = exec.execute();
+        var xml = result.stdout().getOutput();
+        if (xml.isEmpty()) {
+            return Optional.empty();
+        } else {
+            return Optional.of(MacHelper.readPList(xml));
+        }
     }
 
     public static void assertUnsigned(Path path) {
@@ -103,8 +149,8 @@ public final class MacSignVerify {
     }
 
     public static Optional<String> findCodesignSignOrigin(Path path) {
-        final var exec = Executor.of("/usr/bin/codesign", "--display", "--verbose=4", path.toString()).saveOutput();
-        final var result = exec.executeWithoutExitCodeCheck();
+        final var exec = Executor.of("/usr/bin/codesign", "--display", "--verbose=4", path.toString());
+        final var result = exec.saveOutput().executeWithoutExitCodeCheck();
         if (result.getExitCode() == 0) {
             return Optional.of(result.getOutput().stream().map(line -> {
                 if (line.equals("Signature=adhoc")) {
@@ -133,12 +179,34 @@ public final class MacSignVerify {
     }
 
     public static void assertSigned(Path path) {
-        final var verifier = TKit.TextStreamVerifier.group()
-                .add(TKit.assertTextStream(": valid on disk").predicate(String::endsWith))
-                .add(TKit.assertTextStream(": satisfies its Designated Requirement").predicate(String::endsWith))
-                .create();
-        verifier.accept(Executor.of("/usr/bin/codesign", "--verify", "--deep",
-                "--strict", "--verbose=2", path.toString()).executeAndGetOutput().iterator());
+        assertSigned(path, false);
+    }
+
+    private static void assertSigned(Path path, boolean sudo) {
+        final Executor exec;
+        if (sudo) {
+            exec = Executor.of("sudo", "/usr/bin/codesign");
+        } else {
+            exec = Executor.of("/usr/bin/codesign");
+        }
+        exec.addArguments("--verify", "--deep", "--strict", "--verbose=2", path.toString());
+        final var result = exec.saveOutput().executeWithoutExitCodeCheck();
+        if (result.getExitCode() == 0) {
+            TKit.TextStreamVerifier.group()
+                    .add(TKit.assertTextStream(": valid on disk").predicate(String::endsWith))
+                    .add(TKit.assertTextStream(": satisfies its Designated Requirement").predicate(String::endsWith))
+                    .create().accept(result.getOutput().iterator());
+        } else if (!sudo && result.getOutput().stream().findFirst().filter(str -> {
+            // By some reason /usr/bin/codesign command fails for some installed bundles.
+            // It is known to fail for some AppContentTest test cases and all FileAssociationsTest test cases.
+            // Rerunning the command with "sudo" works, though.
+            return str.equals(String.format("%s: Permission denied", path));
+        }).isPresent()) {
+                TKit.trace("Try /usr/bin/codesign again with `sudo`");
+                assertSigned(path, true);
+        } else {
+            reportUnexpectedCommandOutcome(exec.getPrintableCommandLine(), result);
+        }
     }
 
     public static List<SignIdentity> getPkgCertificateChain(Path path) {

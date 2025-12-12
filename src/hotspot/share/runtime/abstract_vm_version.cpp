@@ -204,7 +204,6 @@ const char* Abstract_VM_Version::vm_release() {
 #else
 #define CPU      AARCH64_ONLY("aarch64")         \
                  AMD64_ONLY("amd64")             \
-                 IA32_ONLY("x86")                \
                  S390_ONLY("s390")               \
                  RISCV64_ONLY("riscv64")
 #endif // !ZERO

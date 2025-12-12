@@ -70,7 +70,6 @@ class HeapBlock {
 };
 
 class FreeBlock: public HeapBlock {
-  friend class VMStructs;
  protected:
   FreeBlock* _link;
 

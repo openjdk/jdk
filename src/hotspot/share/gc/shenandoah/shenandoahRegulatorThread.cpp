@@ -58,6 +58,7 @@ void ShenandoahRegulatorThread::run_service() {
 
 void ShenandoahRegulatorThread::regulate_young_and_old_cycles() {
   while (!should_terminate()) {
+    SuspendibleThreadSetJoiner joiner;
     ShenandoahGenerationalControlThread::GCMode mode = _control_thread->gc_mode();
     if (mode == ShenandoahGenerationalControlThread::none) {
       if (should_start_metaspace_gc()) {
@@ -95,6 +96,7 @@ void ShenandoahRegulatorThread::regulate_young_and_old_cycles() {
 
 void ShenandoahRegulatorThread::regulate_young_and_global_cycles() {
   while (!should_terminate()) {
+    SuspendibleThreadSetJoiner joiner;
     if (_control_thread->gc_mode() == ShenandoahGenerationalControlThread::none) {
       if (start_global_cycle()) {
         log_debug(gc)("Heuristics request for global collection accepted.");
@@ -122,6 +124,7 @@ void ShenandoahRegulatorThread::regulator_sleep() {
     _last_sleep_adjust_time = current;
   }
 
+  SuspendibleThreadSetLeaver leaver;
   os::naked_short_sleep(_sleep);
   if (LogTarget(Debug, gc, thread)::is_enabled()) {
     double elapsed = os::elapsedTime() - current;
