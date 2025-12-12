@@ -44,6 +44,7 @@
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subtypenode.hpp"
+#include "opto/type.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -4154,24 +4155,22 @@ void GraphKit::store_String_coder(Node* str, Node* value) {
 }
 
 // Capture src and dst memory state with a MergeMemNode
-Node* GraphKit::capture_memory(const TypePtr* src_type, const TypePtr* dst_type) {
+Node* GraphKit::capture_memory(const TypePtr*& combined_type, const TypePtr* src_type, const TypePtr* dst_type) {
   if (src_type == dst_type) {
     // Types are equal, we don't need a MergeMemNode
+    combined_type = src_type;
     return memory(src_type);
   }
-  MergeMemNode* merge = MergeMemNode::make(map()->memory());
-  record_for_igvn(merge); // fold it up later, if possible
-  int src_idx = C->get_alias_index(src_type);
-  int dst_idx = C->get_alias_index(dst_type);
-  merge->set_memory_at(src_idx, memory(src_idx));
-  merge->set_memory_at(dst_idx, memory(dst_idx));
-  return merge;
+  Node* mem = reset_memory();
+  set_all_memory(mem);
+  combined_type = TypePtr::BOTTOM;
+  return mem;
 }
 
 Node* GraphKit::compress_string(Node* src, const TypeAryPtr* src_type, Node* dst, Node* count) {
   assert(Matcher::match_rule_supported(Op_StrCompressedCopy), "Intrinsic not supported");
   assert(src_type == TypeAryPtr::BYTES || src_type == TypeAryPtr::CHARS, "invalid source type");
-  // If input and output memory types differ, capture both states to preserve
+  // If input and output memory types differ, capture the whole memory to preserve
   // the dependency between preceding and subsequent loads/stores.
   // For example, the following program:
   //  StoreB
@@ -4183,11 +4182,16 @@ Node* GraphKit::compress_string(Node* src, const TypeAryPtr* src_type, Node* dst
   // The intrinsic hides the dependency between LoadB and StoreB, causing
   // the load to read from memory not containing the result of the StoreB.
   // The correct memory graph should look like this:
-  //  LoadB -> compress_string -> MergeMem(CharMem, StoreB(ByteMem))
-  Node* mem = capture_memory(src_type, TypeAryPtr::BYTES);
-  StrCompressedCopyNode* str = new StrCompressedCopyNode(control(), mem, src, dst, count);
+  //  LoadB -> compress_string -> MergeMem -> StoreB
+  const TypePtr* adr_type;
+  Node* mem = capture_memory(adr_type, src_type, TypeAryPtr::BYTES);
+  StrCompressedCopyNode* str = new StrCompressedCopyNode(control(), mem, adr_type, src, dst, count);
   Node* res_mem = _gvn.transform(new SCMemProjNode(_gvn.transform(str)));
-  set_memory(res_mem, TypeAryPtr::BYTES);
+  if (adr_type == TypePtr::BOTTOM) {
+    set_all_memory(res_mem);
+  } else {
+    set_memory(res_mem, adr_type);
+  }
   return str;
 }
 
@@ -4195,9 +4199,15 @@ void GraphKit::inflate_string(Node* src, Node* dst, const TypeAryPtr* dst_type, 
   assert(Matcher::match_rule_supported(Op_StrInflatedCopy), "Intrinsic not supported");
   assert(dst_type == TypeAryPtr::BYTES || dst_type == TypeAryPtr::CHARS, "invalid dest type");
   // Capture src and dst memory (see comment in 'compress_string').
-  Node* mem = capture_memory(TypeAryPtr::BYTES, dst_type);
-  StrInflatedCopyNode* str = new StrInflatedCopyNode(control(), mem, src, dst, count);
-  set_memory(_gvn.transform(str), dst_type);
+  const TypePtr* adr_type;
+  Node* mem = capture_memory(adr_type, TypeAryPtr::BYTES, dst_type);
+  StrInflatedCopyNode* str = new StrInflatedCopyNode(control(), mem, adr_type, src, dst, count);
+  Node* res_mem = _gvn.transform(str);
+  if (adr_type == TypePtr::BOTTOM) {
+    set_all_memory(res_mem);
+  } else {
+    set_memory(res_mem, adr_type);
+  }
 }
 
 void GraphKit::inflate_string_slow(Node* src, Node* dst, Node* start, Node* count) {
