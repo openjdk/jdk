@@ -1043,9 +1043,10 @@ void LIRGenerator::volatile_field_store(LIR_Opr value, LIR_Address* address,
   __ store(value, address, info);
 }
 
-void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
+bool LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
                                        CodeEmitInfo* info) {
   __ load(address, result, info);
+  return true;
 }
 
 void LIRGenerator::do_update_CRC32(Intrinsic* x) {
