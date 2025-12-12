@@ -28,7 +28,6 @@ import java.nio.file.Path;
 import java.util.*;
 import java.io.*;
 import java.security.*;
-import java.security.cert.*;
 import javax.net.ssl.*;
 
 /**
@@ -36,18 +35,28 @@ import javax.net.ssl.*;
  */
 public final class SimpleSSLContext {
 
-    public static final String DEFAULT_PROTOCOL = "TLS";
+    private static final String DEFAULT_PROTOCOL = "TLS";
 
-    private final String keyStoreFileRelPath;
+    private static final String DEFAULT_KEY_STORE_FILE_REL_PATH = "jdk/test/lib/net/testkeys";
+
+    private final SSLContext ssl;
 
     // Made `public` for backward compatibility
     public SimpleSSLContext() throws IOException {
-        this.keyStoreFileRelPath = null;
+        this.ssl = findSSLContextOrNull(DEFAULT_KEY_STORE_FILE_REL_PATH);
     }
 
     // Kept for backward compatibility
     public SimpleSSLContext(String keyStoreFileRelPath) throws IOException {
-        this.keyStoreFileRelPath = Objects.requireNonNull(keyStoreFileRelPath);
+        this.ssl = findSSLContextOrNull(Objects.requireNonNull(keyStoreFileRelPath));
+    }
+
+    private static SSLContext findSSLContextOrNull(String keyStoreFileRelPath) throws IOException {
+        try {
+            return findSSLContext(keyStoreFileRelPath, SimpleSSLContext.DEFAULT_PROTOCOL);
+        } catch (RuntimeException re) {
+            throw new IOException(re);
+        }
     }
 
     /**
@@ -73,7 +82,7 @@ public final class SimpleSSLContext {
      */
     public static SSLContext findSSLContext(String protocol) {
         Objects.requireNonNull(protocol);
-        return findSSLContext("jdk/test/lib/net/testkeys", protocol);
+        return findSSLContext(DEFAULT_KEY_STORE_FILE_REL_PATH, protocol);
     }
 
     /**
@@ -148,13 +157,7 @@ public final class SimpleSSLContext {
 
     // Kept for backward compatibility
     public SSLContext get() {
-        try {
-            return keyStoreFileRelPath != null
-                    ? findSSLContext(keyStoreFileRelPath, DEFAULT_PROTOCOL)
-                    : findSSLContext();
-        } catch (RuntimeException _) {
-            return null;
-        }
+        return ssl;
     }
 
 }
