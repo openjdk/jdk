@@ -750,9 +750,9 @@ final class Parsed implements TemporalAccessor {
     }
 
     private void resolveInstant0() {
-        Long offsetSecs = fieldValues.get(OFFSET_SECONDS);
-        if (offsetSecs != null) {
-            ZoneOffset offset = ZoneOffset.ofTotalSeconds(offsetSecs.intValue());
+        if (fieldValues.containsKey(OFFSET_SECONDS)) {
+            long offsetSecs = fieldValues.get(OFFSET_SECONDS);
+            ZoneOffset offset = ZoneOffset.ofTotalSeconds((int) offsetSecs);
             long instant = date.atTime(time).atZone(offset).toEpochSecond();
             fieldValues.put(INSTANT_SECONDS, instant);
         } else {
@@ -800,7 +800,7 @@ final class Parsed implements TemporalAccessor {
         }
         if (time != null) {
             crossCheck(time);
-            if (date != null && fieldValues.size() > 0) {
+            if (date != null && !fieldValues.isEmpty()) {
                 crossCheck(date.atTime(time));
             }
         }
