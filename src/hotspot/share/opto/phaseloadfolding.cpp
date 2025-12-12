@@ -126,12 +126,34 @@ void PhaseLoadFolding::optimize() {
 //   It is important to remind that even if 'l' is scheduled after the store 'a', unless there is a
 //   memory fence between 'l' and 'a', it is generally not required that 'l' is executed after 'a'.
 //   For example:
-//       Integer o = new Integer(v);
-//       *p = o;
-//       int x = o.value;
-//   In this case, even if the load x = o.value is declared after the store of o to p that allows o
-//   to escape, it is valid for the load to actually happen before the store. As a result, we can
-//   consider x = o.value to be a load from an object that has not escaped, and fold it to v.
+//     1.  Integer o = new Integer(v);
+//         *p = o;
+//         int x = o.value;
+//     In this case, even if the load x = o.value is declared after the store of o to p that allows o
+//     to escape, it is valid for the load to actually happen before the store. If the developer
+//     wants to ensure that the order in which the memory accesses appear in the program is the same
+//     as the order they are executed, memory barriers (e.g. a store-load barrier) must be placed
+//     between them. As a result, we can consider x = o.value to be a load from an object that has
+//     not escaped, and fold it to v.
+//     2.  boolean b1, b2;
+//         Point o = new Point(v1, v2);
+//         int r;
+//         if (b1) {
+//           *p = o;
+//         } else {
+//           *q = o;
+//         }
+//         if (b2) {
+//           r = o.x;
+//         } else {
+//           r = o.y;
+//         }
+//     In this case, even if the control flow forces the loads to be scheduled after the stores
+//     that allow o to escape, without actual memory barriers, the JMM does not require the CPU to
+//     execute the loads after the stores (e.g. the loads are in cache so it can be executed sooner
+//     while the stores need to wait for the acquisition of the corresponding cache lines). As a
+//     result, we can consider those loads to be loads from an object that has not escaped, and
+//     fold o.x to v1 and o.y to v2.
 bool PhaseLoadFolding::do_optimize() {
   bool progress = false;
   for (int macro_idx = 0; macro_idx < C->macro_count(); macro_idx++) {
