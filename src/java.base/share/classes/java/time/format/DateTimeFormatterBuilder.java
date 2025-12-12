@@ -2759,7 +2759,7 @@ public final class DateTimeFormatterBuilder {
                             return ~position;
                         }
                         char ch = text.charAt(position);
-                        if (ch != 'T' && (ch != 't' || !context.isCaseSensitive())) {
+                        if (ch != 'T' && (ch != 't' || context.isCaseSensitive())) {
                             return ~position;
                         }
                         return position + 1;
@@ -2977,6 +2977,10 @@ public final class DateTimeFormatterBuilder {
                 buf.append(decimalStyle.convertNumberToI18N(str));
             }
             return true;
+        }
+
+        static int digit(char ch) {
+            return ch >= '0' && ch <= '9' ?  ch - '0' : -1;
         }
 
         private DateTimeException notNegativeError(long value) {
@@ -3264,22 +3268,11 @@ public final class DateTimeFormatterBuilder {
                     }
                 }
             }
-            if (field instanceof ChronoField chronoField) {
-                if (chronoField.range().isIntValue()) {
-                    return new IntNumberPrinterParser(field, minWidth, maxWidth, signStyle);
-                }
-            }
 
             return new NumberPrinterParser(field, minWidth, maxWidth, signStyle, subsequentWidth);
         }
 
-        static class IntNumberPrinterParser extends NumberPrinterParser {
-            IntNumberPrinterParser(TemporalField field, int minWidth, int maxWidth, SignStyle signStyle) {
-                super(field, minWidth, maxWidth, signStyle);
-            }
-        }
-
-        static abstract class FixWidth4ExceedsPad extends IntNumberPrinterParser {
+        static abstract class FixWidth4ExceedsPad extends NumberPrinterParser {
             FixWidth4ExceedsPad(ChronoField field) {
                 super(field, 4, 4, SignStyle.EXCEEDS_PAD);
             }
@@ -3301,12 +3294,11 @@ public final class DateTimeFormatterBuilder {
                 return true;
             }
 
-            static int digit4(DateTimeParseContext context, char c0, char c1, char c2, char c3) {
-                var decimalStyle = context.getDecimalStyle();
-                int d0 = decimalStyle.convertToDigit(c0),
-                    d1 = decimalStyle.convertToDigit(c1),
-                    d2 = decimalStyle.convertToDigit(c2),
-                    d3 = decimalStyle.convertToDigit(c3);
+            static int digit4(char c0, char c1, char c2, char c3) {
+                int d0 = digit(c0),
+                    d1 = digit(c1),
+                    d2 = digit(c2),
+                    d3 = digit(c3);
                 if ((d0 | d1 | d2 | d3) < 0) {
                     return -1;
                 }
@@ -3315,20 +3307,22 @@ public final class DateTimeFormatterBuilder {
 
             @Override
             public final int parse(DateTimeParseContext context, CharSequence text, int position) {
+                if (context.getDecimalStyle() != DecimalStyle.STANDARD || !context.isStrict()) {
+                    return super.parse(context, text, position);
+                }
                 int d;
                 if ((text.length() - position) < 4
-                        || (d = digit4(context,
-                                text.charAt(position),
-                                text.charAt(position + 1),
-                                text.charAt(position + 2),
-                                text.charAt(position + 3))) < 0) {
+                        || (d = digit4(text.charAt(position),
+                                       text.charAt(position + 1),
+                                       text.charAt(position + 2),
+                                       text.charAt(position + 3))) < 0) {
                     return ~position;
                 }
                 return setValue(context, d, position, position + 2);
             }
         }
 
-        static abstract class FixWidth49ExceedsPad extends IntNumberPrinterParser {
+        static abstract class FixWidth49ExceedsPad extends NumberPrinterParser {
             FixWidth49ExceedsPad(ChronoField field) {
                 super(field, 4, 19, SignStyle.EXCEEDS_PAD);
             }
@@ -3354,13 +3348,9 @@ public final class DateTimeFormatterBuilder {
                 return true;
             }
 
-            static int digit(char ch) {
-                return ch >= '0' && ch <= '9' ?  ch - '0' : -1;
-            }
-
             @Override
             public final int parse(DateTimeParseContext context, CharSequence text, int position) {
-                if (context.getDecimalStyle() != DecimalStyle.STANDARD) {
+                if (context.getDecimalStyle() != DecimalStyle.STANDARD || !context.isStrict()) {
                     return super.parse(context, text, position);
                 }
                 int length = text.length();
@@ -3419,7 +3409,7 @@ public final class DateTimeFormatterBuilder {
             }
         }
 
-        static abstract class FixWidth2NotNegative extends IntNumberPrinterParser {
+        static abstract class FixWidth2NotNegative extends NumberPrinterParser {
             FixWidth2NotNegative(ChronoField field) {
                 super(field, 2, 2, SignStyle.NOT_NEGATIVE);
             }
@@ -3436,10 +3426,8 @@ public final class DateTimeFormatterBuilder {
                 return true;
             }
 
-            static int digit2(DateTimeParseContext context, char c0, char c1) {
-                var decimalStyle = context.getDecimalStyle();
-                int d0 = decimalStyle.convertToDigit(c0),
-                    d1 = decimalStyle.convertToDigit(c1);
+            static int digit2(char c0, char c1) {
+                int d0 = digit(c0), d1 = digit(c1);
                 if ((d0 | d1) < 0) {
                     return -1;
                 }
@@ -3448,9 +3436,12 @@ public final class DateTimeFormatterBuilder {
 
             @Override
             public final int parse(DateTimeParseContext context, CharSequence text, int position) {
+                if (context.getDecimalStyle() != DecimalStyle.STANDARD || !context.isStrict()) {
+                    return super.parse(context, text, position);
+                }
                 int d;
                 if ((text.length() - position) < 2
-                        || (d = digit2(context, text.charAt(position), text.charAt(position + 1))) < 0) {
+                        || (d = digit2(text.charAt(position), text.charAt(position + 1))) < 0) {
                     return ~position;
                 }
                 return setValue(context, d, position, position + 2);

@@ -94,7 +94,7 @@ final class DateTimePrinterParserFactory {
      */
     static DateTimePrinter createFormatter(DateTimePrinterParser[] printers, boolean optional) {
         int length = printers.length;
-        if (length > DATETIME_PRINTER_CONSTRUCTORS.length()) {
+        if (length == 0 || length > DATETIME_PRINTER_CONSTRUCTORS.length()) {
             return (context, buf, opt) -> {
                 for (var pp : printers) {
                     if (!pp.format(context, buf, opt)) {
@@ -174,10 +174,11 @@ final class DateTimePrinterParserFactory {
                      .return_();
                })
                .withMethodBody("format", MTD_format, ACC_PUBLIC | ACC_FINAL, cb -> {
-                   int thisSlot    = cb.receiverSlot(),
-                       contextSlot = cb.parameterSlot(0),
-                       bufSlot     = cb.parameterSlot(1),
-                       parserSlot  = cb.allocateLocal(TypeKind.REFERENCE);
+                   int thisSlot     = cb.receiverSlot(),
+                       contextSlot  = cb.parameterSlot(0),
+                       bufSlot      = cb.parameterSlot(1),
+                       optionalSlot = cb.parameterSlot(2),
+                       parserSlot   = cb.allocateLocal(TypeKind.REFERENCE);
                    /*
                     * return printers[0].format(context, buf, optional)
                     *     && printers[1].format(context, buf, optional)
@@ -193,13 +194,9 @@ final class DateTimePrinterParserFactory {
                          .bipush(i)
                          .aaload()
                          .aload(contextSlot)
-                         .aload(bufSlot);
-                       if (optional) {
-                           cb.iconst_1();
-                       } else {
-                           cb.iconst_0();
-                       }
-                       cb.invokeinterface(CD_DateTimePrinterParser, "format", MTD_format)
+                         .aload(bufSlot)
+                         .iload(optionalSlot)
+                         .invokeinterface(CD_DateTimePrinterParser, "format", MTD_format)
                          .ifeq(L0);
                    }
                    cb.iconst_1()
@@ -344,7 +341,7 @@ final class DateTimePrinterParserFactory {
     static DateTimeParser createParser(DateTimePrinterParser[] printerParsers, boolean optional) {
         int length = printerParsers.length;
         DateTimeParser parser;
-        if (length > DATETIME_PRINTER_CONSTRUCTORS.length()) {
+        if (length == 0 || length > DATETIME_PRINTER_CONSTRUCTORS.length()) {
             parser = (context, text, position) -> {
                 for (var pp : printerParsers) {
                     position = pp.parse(context, text, position);
