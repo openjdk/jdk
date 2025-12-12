@@ -49,7 +49,6 @@ import java.util.function.Consumer;
 
 public class TestScenarios {
     public static void main(String[] args) {
-        TestFramework testFramework;
         Consumer<TestFramework> startMethod =
                 args.length > 0 && args[0].equals("parallel") ? TestFramework::startParallel : TestFramework::start;
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
