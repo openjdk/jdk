@@ -430,7 +430,7 @@ public class TestFramework {
     /**
      * Start the testing of the implicitly (by {@link #TestFramework()}) or explicitly (by {@link #TestFramework(Class)})
      * set test class. Scenarios are run in parallel. Note: scenarios could still be run sequentially if flag
-     *  {@code -DForceSequentialScenarios=true} is given.
+     *  {@code -DForceSequentialScenarios=true} is used.
      */
     public void startParallel() {
         start(!FORCE_SEQUENTIAL_SCENARIOS);
