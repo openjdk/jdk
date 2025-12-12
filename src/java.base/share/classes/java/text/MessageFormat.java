@@ -2001,7 +2001,7 @@ public class MessageFormat extends Format {
             }
             var styles = values();
             // Match starting at the pre-defined styles -> [SHORT:]
-            for (int i = 2; i < styles.length; i ++) {
+            for (int i = SHORT.ordinal(); i < styles.length; i ++) {
                 var fStyle = styles[i];
                 if (style.compareToIgnoreCase(fStyle.name()) == 0) {
                     return fStyle;
