@@ -336,6 +336,9 @@ void ShenandoahDegenGC::op_finish_mark() {
 
 void ShenandoahDegenGC::op_prepare_evacuation() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
+
+  heap->free_set()->release_alloc_regions_under_lock();
+
   if (ShenandoahVerify) {
     heap->verifier()->verify_roots_no_forwarded(_generation);
   }
@@ -374,6 +377,14 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
 
     if (VerifyAfterGC) {
       Universe::verify();
+    }
+  }
+
+  {
+    if (heap->is_evacuation_in_progress()) {
+      // Reserve alloc regions for evacuation.
+      ShenandoahHeapLocker locker(heap->lock());
+      heap->free_set()->collector_allocator()->reserve_alloc_regions();
     }
   }
 }
@@ -423,6 +434,7 @@ void ShenandoahDegenGC::op_update_roots() {
     Universe::verify();
   }
 
+  heap->free_set()->release_alloc_regions_under_lock();
   heap->rebuild_free_set(false /*concurrent*/);
 }
 
