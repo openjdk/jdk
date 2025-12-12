@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4305,7 +4305,7 @@ public class LongMaxVectorTests extends AbstractVectorTest {
     }
 
     static long UMINReduce(long[] a, int idx) {
-        long res = Long.MAX_VALUE;
+        long res = (long)-1;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = (long) VectorMath.minUnsigned(res, a[i]);
         }
@@ -4314,7 +4314,7 @@ public class LongMaxVectorTests extends AbstractVectorTest {
     }
 
     static long UMINReduceAll(long[] a) {
-        long res = Long.MAX_VALUE;
+        long res = (long)-1;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (long) VectorMath.minUnsigned(res, UMINReduce(a, i));
         }
@@ -4326,7 +4326,7 @@ public class LongMaxVectorTests extends AbstractVectorTest {
     static void UMINReduceLongMaxVectorTests(IntFunction<long[]> fa) {
         long[] a = fa.apply(SPECIES.length());
         long[] r = fr.apply(SPECIES.length());
-        long ra = Long.MAX_VALUE;
+        long ra = (long)-1;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
@@ -4336,7 +4336,7 @@ public class LongMaxVectorTests extends AbstractVectorTest {
         }
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Long.MAX_VALUE;
+            ra = (long)-1;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 LongVector av = LongVector.fromArray(SPECIES, a, i);
                 ra = (long) VectorMath.minUnsigned(ra, av.reduceLanes(VectorOperators.UMIN));
@@ -4348,7 +4348,7 @@ public class LongMaxVectorTests extends AbstractVectorTest {
     }
 
     static long UMINReduceMasked(long[] a, int idx, boolean[] mask) {
-        long res = Long.MAX_VALUE;
+        long res = (long)-1;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = (long) VectorMath.minUnsigned(res, a[i]);
@@ -4358,7 +4358,7 @@ public class LongMaxVectorTests extends AbstractVectorTest {
     }
 
     static long UMINReduceAllMasked(long[] a, boolean[] mask) {
-        long res = Long.MAX_VALUE;
+        long res = (long)-1;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (long) VectorMath.minUnsigned(res, UMINReduceMasked(a, i, mask));
         }
@@ -4372,7 +4372,7 @@ public class LongMaxVectorTests extends AbstractVectorTest {
         long[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Long> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        long ra = Long.MAX_VALUE;
+        long ra = (long)-1;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
@@ -4382,7 +4382,7 @@ public class LongMaxVectorTests extends AbstractVectorTest {
         }
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Long.MAX_VALUE;
+            ra = (long)-1;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 LongVector av = LongVector.fromArray(SPECIES, a, i);
                 ra = (long) VectorMath.minUnsigned(ra, av.reduceLanes(VectorOperators.UMIN, vmask));
@@ -4394,7 +4394,7 @@ public class LongMaxVectorTests extends AbstractVectorTest {
     }
 
     static long UMAXReduce(long[] a, int idx) {
-        long res = Long.MIN_VALUE;
+        long res = (long)0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = (long) VectorMath.maxUnsigned(res, a[i]);
         }
@@ -4403,7 +4403,7 @@ public class LongMaxVectorTests extends AbstractVectorTest {
     }
 
     static long UMAXReduceAll(long[] a) {
-        long res = Long.MIN_VALUE;
+        long res = (long)0;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (long) VectorMath.maxUnsigned(res, UMAXReduce(a, i));
         }
@@ -4415,7 +4415,7 @@ public class LongMaxVectorTests extends AbstractVectorTest {
     static void UMAXReduceLongMaxVectorTests(IntFunction<long[]> fa) {
         long[] a = fa.apply(SPECIES.length());
         long[] r = fr.apply(SPECIES.length());
-        long ra = Long.MIN_VALUE;
+        long ra = (long)0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
@@ -4425,7 +4425,7 @@ public class LongMaxVectorTests extends AbstractVectorTest {
         }
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Long.MIN_VALUE;
+            ra = (long)0;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 LongVector av = LongVector.fromArray(SPECIES, a, i);
                 ra = (long) VectorMath.maxUnsigned(ra, av.reduceLanes(VectorOperators.UMAX));
@@ -4437,7 +4437,7 @@ public class LongMaxVectorTests extends AbstractVectorTest {
     }
 
     static long UMAXReduceMasked(long[] a, int idx, boolean[] mask) {
-        long res = Long.MIN_VALUE;
+        long res = (long)0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = (long) VectorMath.maxUnsigned(res, a[i]);
@@ -4447,7 +4447,7 @@ public class LongMaxVectorTests extends AbstractVectorTest {
     }
 
     static long UMAXReduceAllMasked(long[] a, boolean[] mask) {
-        long res = Long.MIN_VALUE;
+        long res = (long)0;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (long) VectorMath.maxUnsigned(res, UMAXReduceMasked(a, i, mask));
         }
@@ -4461,7 +4461,7 @@ public class LongMaxVectorTests extends AbstractVectorTest {
         long[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Long> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        long ra = Long.MIN_VALUE;
+        long ra = (long)0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
@@ -4471,7 +4471,7 @@ public class LongMaxVectorTests extends AbstractVectorTest {
         }
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Long.MIN_VALUE;
+            ra = (long)0;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 LongVector av = LongVector.fromArray(SPECIES, a, i);
                 ra = (long) VectorMath.maxUnsigned(ra, av.reduceLanes(VectorOperators.UMAX, vmask));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4225,7 +4225,7 @@ public class Short128VectorTests extends AbstractVectorTest {
     }
 
     static short UMINReduce(short[] a, int idx) {
-        short res = Short.MAX_VALUE;
+        short res = (short)-1;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = (short) VectorMath.minUnsigned(res, a[i]);
         }
@@ -4234,7 +4234,7 @@ public class Short128VectorTests extends AbstractVectorTest {
     }
 
     static short UMINReduceAll(short[] a) {
-        short res = Short.MAX_VALUE;
+        short res = (short)-1;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (short) VectorMath.minUnsigned(res, UMINReduce(a, i));
         }
@@ -4246,7 +4246,7 @@ public class Short128VectorTests extends AbstractVectorTest {
     static void UMINReduceShort128VectorTests(IntFunction<short[]> fa) {
         short[] a = fa.apply(SPECIES.length());
         short[] r = fr.apply(SPECIES.length());
-        short ra = Short.MAX_VALUE;
+        short ra = (short)-1;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
@@ -4256,7 +4256,7 @@ public class Short128VectorTests extends AbstractVectorTest {
         }
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Short.MAX_VALUE;
+            ra = (short)-1;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
                 ra = (short) VectorMath.minUnsigned(ra, av.reduceLanes(VectorOperators.UMIN));
@@ -4268,7 +4268,7 @@ public class Short128VectorTests extends AbstractVectorTest {
     }
 
     static short UMINReduceMasked(short[] a, int idx, boolean[] mask) {
-        short res = Short.MAX_VALUE;
+        short res = (short)-1;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = (short) VectorMath.minUnsigned(res, a[i]);
@@ -4278,7 +4278,7 @@ public class Short128VectorTests extends AbstractVectorTest {
     }
 
     static short UMINReduceAllMasked(short[] a, boolean[] mask) {
-        short res = Short.MAX_VALUE;
+        short res = (short)-1;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (short) VectorMath.minUnsigned(res, UMINReduceMasked(a, i, mask));
         }
@@ -4292,7 +4292,7 @@ public class Short128VectorTests extends AbstractVectorTest {
         short[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        short ra = Short.MAX_VALUE;
+        short ra = (short)-1;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
@@ -4302,7 +4302,7 @@ public class Short128VectorTests extends AbstractVectorTest {
         }
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Short.MAX_VALUE;
+            ra = (short)-1;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
                 ra = (short) VectorMath.minUnsigned(ra, av.reduceLanes(VectorOperators.UMIN, vmask));
@@ -4314,7 +4314,7 @@ public class Short128VectorTests extends AbstractVectorTest {
     }
 
     static short UMAXReduce(short[] a, int idx) {
-        short res = Short.MIN_VALUE;
+        short res = (short)0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = (short) VectorMath.maxUnsigned(res, a[i]);
         }
@@ -4323,7 +4323,7 @@ public class Short128VectorTests extends AbstractVectorTest {
     }
 
     static short UMAXReduceAll(short[] a) {
-        short res = Short.MIN_VALUE;
+        short res = (short)0;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (short) VectorMath.maxUnsigned(res, UMAXReduce(a, i));
         }
@@ -4335,7 +4335,7 @@ public class Short128VectorTests extends AbstractVectorTest {
     static void UMAXReduceShort128VectorTests(IntFunction<short[]> fa) {
         short[] a = fa.apply(SPECIES.length());
         short[] r = fr.apply(SPECIES.length());
-        short ra = Short.MIN_VALUE;
+        short ra = (short)0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
@@ -4345,7 +4345,7 @@ public class Short128VectorTests extends AbstractVectorTest {
         }
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Short.MIN_VALUE;
+            ra = (short)0;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
                 ra = (short) VectorMath.maxUnsigned(ra, av.reduceLanes(VectorOperators.UMAX));
@@ -4357,7 +4357,7 @@ public class Short128VectorTests extends AbstractVectorTest {
     }
 
     static short UMAXReduceMasked(short[] a, int idx, boolean[] mask) {
-        short res = Short.MIN_VALUE;
+        short res = (short)0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = (short) VectorMath.maxUnsigned(res, a[i]);
@@ -4367,7 +4367,7 @@ public class Short128VectorTests extends AbstractVectorTest {
     }
 
     static short UMAXReduceAllMasked(short[] a, boolean[] mask) {
-        short res = Short.MIN_VALUE;
+        short res = (short)0;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (short) VectorMath.maxUnsigned(res, UMAXReduceMasked(a, i, mask));
         }
@@ -4381,7 +4381,7 @@ public class Short128VectorTests extends AbstractVectorTest {
         short[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        short ra = Short.MIN_VALUE;
+        short ra = (short)0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
@@ -4391,7 +4391,7 @@ public class Short128VectorTests extends AbstractVectorTest {
         }
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Short.MIN_VALUE;
+            ra = (short)0;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
                 ra = (short) VectorMath.maxUnsigned(ra, av.reduceLanes(VectorOperators.UMAX, vmask));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4234,7 +4234,7 @@ public class Byte128VectorTests extends AbstractVectorTest {
     }
 
     static byte UMINReduce(byte[] a, int idx) {
-        byte res = Byte.MAX_VALUE;
+        byte res = (byte)-1;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = (byte) VectorMath.minUnsigned(res, a[i]);
         }
@@ -4243,7 +4243,7 @@ public class Byte128VectorTests extends AbstractVectorTest {
     }
 
     static byte UMINReduceAll(byte[] a) {
-        byte res = Byte.MAX_VALUE;
+        byte res = (byte)-1;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (byte) VectorMath.minUnsigned(res, UMINReduce(a, i));
         }
@@ -4255,7 +4255,7 @@ public class Byte128VectorTests extends AbstractVectorTest {
     static void UMINReduceByte128VectorTests(IntFunction<byte[]> fa) {
         byte[] a = fa.apply(SPECIES.length());
         byte[] r = fr.apply(SPECIES.length());
-        byte ra = Byte.MAX_VALUE;
+        byte ra = (byte)-1;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
@@ -4265,7 +4265,7 @@ public class Byte128VectorTests extends AbstractVectorTest {
         }
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Byte.MAX_VALUE;
+            ra = (byte)-1;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
                 ra = (byte) VectorMath.minUnsigned(ra, av.reduceLanes(VectorOperators.UMIN));
@@ -4277,7 +4277,7 @@ public class Byte128VectorTests extends AbstractVectorTest {
     }
 
     static byte UMINReduceMasked(byte[] a, int idx, boolean[] mask) {
-        byte res = Byte.MAX_VALUE;
+        byte res = (byte)-1;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = (byte) VectorMath.minUnsigned(res, a[i]);
@@ -4287,7 +4287,7 @@ public class Byte128VectorTests extends AbstractVectorTest {
     }
 
     static byte UMINReduceAllMasked(byte[] a, boolean[] mask) {
-        byte res = Byte.MAX_VALUE;
+        byte res = (byte)-1;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (byte) VectorMath.minUnsigned(res, UMINReduceMasked(a, i, mask));
         }
@@ -4301,7 +4301,7 @@ public class Byte128VectorTests extends AbstractVectorTest {
         byte[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Byte> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        byte ra = Byte.MAX_VALUE;
+        byte ra = (byte)-1;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
@@ -4311,7 +4311,7 @@ public class Byte128VectorTests extends AbstractVectorTest {
         }
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Byte.MAX_VALUE;
+            ra = (byte)-1;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
                 ra = (byte) VectorMath.minUnsigned(ra, av.reduceLanes(VectorOperators.UMIN, vmask));
@@ -4323,7 +4323,7 @@ public class Byte128VectorTests extends AbstractVectorTest {
     }
 
     static byte UMAXReduce(byte[] a, int idx) {
-        byte res = Byte.MIN_VALUE;
+        byte res = (byte)0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = (byte) VectorMath.maxUnsigned(res, a[i]);
         }
@@ -4332,7 +4332,7 @@ public class Byte128VectorTests extends AbstractVectorTest {
     }
 
     static byte UMAXReduceAll(byte[] a) {
-        byte res = Byte.MIN_VALUE;
+        byte res = (byte)0;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (byte) VectorMath.maxUnsigned(res, UMAXReduce(a, i));
         }
@@ -4344,7 +4344,7 @@ public class Byte128VectorTests extends AbstractVectorTest {
     static void UMAXReduceByte128VectorTests(IntFunction<byte[]> fa) {
         byte[] a = fa.apply(SPECIES.length());
         byte[] r = fr.apply(SPECIES.length());
-        byte ra = Byte.MIN_VALUE;
+        byte ra = (byte)0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
@@ -4354,7 +4354,7 @@ public class Byte128VectorTests extends AbstractVectorTest {
         }
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Byte.MIN_VALUE;
+            ra = (byte)0;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
                 ra = (byte) VectorMath.maxUnsigned(ra, av.reduceLanes(VectorOperators.UMAX));
@@ -4366,7 +4366,7 @@ public class Byte128VectorTests extends AbstractVectorTest {
     }
 
     static byte UMAXReduceMasked(byte[] a, int idx, boolean[] mask) {
-        byte res = Byte.MIN_VALUE;
+        byte res = (byte)0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = (byte) VectorMath.maxUnsigned(res, a[i]);
@@ -4376,7 +4376,7 @@ public class Byte128VectorTests extends AbstractVectorTest {
     }
 
     static byte UMAXReduceAllMasked(byte[] a, boolean[] mask) {
-        byte res = Byte.MIN_VALUE;
+        byte res = (byte)0;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (byte) VectorMath.maxUnsigned(res, UMAXReduceMasked(a, i, mask));
         }
@@ -4390,7 +4390,7 @@ public class Byte128VectorTests extends AbstractVectorTest {
         byte[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Byte> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        byte ra = Byte.MIN_VALUE;
+        byte ra = (byte)0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
@@ -4400,7 +4400,7 @@ public class Byte128VectorTests extends AbstractVectorTest {
         }
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Byte.MIN_VALUE;
+            ra = (byte)0;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
                 ra = (byte) VectorMath.maxUnsigned(ra, av.reduceLanes(VectorOperators.UMAX, vmask));
