@@ -26,15 +26,24 @@
 #define SHARE_SERVICES_CPUTIMEUSAGE_HPP
 
 #include "memory/allStatic.hpp"
+#include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 namespace CPUTimeUsage {
   class GC : public AllStatic {
   public:
+    // user + system time
     static jlong total();
     static jlong gc_threads();
     static jlong vm_thread();
     static jlong stringdedup();
+
+    // user and system reported separately
+    static CPUTime_t detailed_gc_threads();
+    // detailed_gc_operation_vm_thread assumes it is called
+    // during the start and end of a GC safepoint.
+    static CPUTime_t detailed_gc_operation_vm_thread();
+    static CPUTime_t detailed_stringdedup();
   };
 
   class Error : public AllStatic {

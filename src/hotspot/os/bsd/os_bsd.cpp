@@ -2290,6 +2290,15 @@ int os::open(const char *path, int oflag, int mode) {
   return fd;
 }
 
+CPUTime_t detailed_thread_cpu_time(Thread* t) {
+#ifdef __APPLE__
+  Unimplemented();
+#else
+  Unimplemented();
+  return {0,0};
+#endif
+}
+
 // current_thread_cpu_time(bool) and thread_cpu_time(Thread*, bool)
 // are used by JVM M&M and JVMTI to get user+sys or user CPU time
 // of a thread.

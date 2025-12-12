@@ -143,6 +143,7 @@ class os::Linux {
   static void expand_stack_to(address bottom);
 
   static jlong thread_cpu_time(clockid_t clockid);
+  static CPUTime_t detailed_thread_cpu_time(Thread* t);
 
   static jlong sendfile(int out_fd, int in_fd, jlong* offset, jlong count);
 
