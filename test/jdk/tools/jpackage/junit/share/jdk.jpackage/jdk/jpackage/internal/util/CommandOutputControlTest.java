@@ -384,7 +384,7 @@ public class CommandOutputControlTest {
             assertEquals(commandStderr, result.stderr().getContent());
         } else {
             // Execute the command so that its stdout and stderr are dumped into System.out.
-            coc.redirectErrorStream(true);
+            coc.redirectStderr(true);
             result = exec.execute();
 
             // CommandOutputControl was configured to redirect stderr in stdout,
@@ -730,8 +730,8 @@ public class CommandOutputControlTest {
         }),
         DISCARD_STDOUT(CommandOutputControl::discardStdout, CommandOutputControl::isDiscardStdout),
         DISCARD_STDERR(CommandOutputControl::discardStderr, CommandOutputControl::isDiscardStderr),
-        REDIRECT_STDERR(CommandOutputControl::redirectErrorStream, CommandOutputControl::isRedirectErrorStream),
-        STORE_STREAMS_IN_FILES(CommandOutputControl::storeStreamsInFiles, CommandOutputControl::isStoreStreamsInFiles),
+        REDIRECT_STDERR(CommandOutputControl::redirectStderr, CommandOutputControl::isRedirectStderr),
+        STORE_STREAMS_IN_FILES(CommandOutputControl::storeOutputInFiles, CommandOutputControl::isStoreOutputInFiles),
         BINARY_OUTPUT(CommandOutputControl::binaryOutput, CommandOutputControl::isBinaryOutput),
         ;
 
