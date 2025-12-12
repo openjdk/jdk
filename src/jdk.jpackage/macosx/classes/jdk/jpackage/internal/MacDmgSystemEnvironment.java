@@ -27,6 +27,7 @@ package jdk.jpackage.internal;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -76,8 +77,8 @@ record MacDmgSystemEnvironment(Path hdiutil, Path osascript, Optional<Path> setF
         // generic find attempt
         try {
             final var executor = Executor.of("/usr/bin/xcrun", "-find", "SetFile");
-            final var result = executor.setQuiet(true).saveOutput(true).execute();
-            return result.findFirstLineOfOutput().filter(_ -> {
+            final var result = executor.setQuiet(true).saveFirstLineOfOutput().execute();
+            return result.findContent().map(List::getFirst).filter(_ -> {
                 return result.getExitCode() == 0;
             }).map(Path::of).filter(v -> {
                 return new ToolValidator(v).checkExistsOnly().validate() == null;
