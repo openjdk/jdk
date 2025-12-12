@@ -119,6 +119,8 @@ public:
   void relocate(ZRelocationSet* relocation_set);
 
   void flip_age_pages(const ZArray<ZPage*>* pages);
+  void barrier_promoted_pages(const ZArray<ZPage*>* flip_promoted_pages,
+                              const ZArray<ZPage*>* relocate_promoted_pages);
 
   void synchronize();
   void desynchronize();

@@ -1132,7 +1132,7 @@ void PhaseIterGVN::verify_empty_worklist(Node* node) {
 // (1) Integer "widen" changes, but the range is the same.
 // (2) LoadNode performs deep traversals. Load is not notified for changes far away.
 // (3) CmpPNode performs deep traversals if it compares oopptr. CmpP is not notified for changes far away.
-bool PhaseIterGVN::verify_Value_for(Node* n) {
+bool PhaseIterGVN::verify_Value_for(Node* n, bool strict) {
   // If we assert inside type(n), because the type is still a null, then maybe
   // the node never went through gvn.transform, which would be a bug.
   const Type* told = type(n);
@@ -1152,7 +1152,7 @@ bool PhaseIterGVN::verify_Value_for(Node* n) {
   }
   // Exception (2)
   // LoadNode performs deep traversals. Load is not notified for changes far away.
-  if (n->is_Load() && !told->singleton()) {
+  if (!strict && n->is_Load() && !told->singleton()) {
     // MemNode::can_see_stored_value looks up through many memory nodes,
     // which means we would need to notify modifications from far up in
     // the inputs all the way down to the LoadNode. We don't do that.
@@ -1160,7 +1160,7 @@ bool PhaseIterGVN::verify_Value_for(Node* n) {
   }
   // Exception (3)
   // CmpPNode performs deep traversals if it compares oopptr. CmpP is not notified for changes far away.
-  if (n->Opcode() == Op_CmpP && type(n->in(1))->isa_oopptr() && type(n->in(2))->isa_oopptr()) {
+  if (!strict && n->Opcode() == Op_CmpP && type(n->in(1))->isa_oopptr() && type(n->in(2))->isa_oopptr()) {
     // SubNode::Value
     // CmpPNode::sub
     // MemNode::detect_ptr_independence
@@ -2799,6 +2799,7 @@ void PhaseCCP::analyze() {
   // Compile is over. The local arena gets de-allocated at the end of its scope.
   ResourceArea local_arena(mtCompiler);
   Unique_Node_List worklist(&local_arena);
+  Unique_Node_List worklist_revisit(&local_arena);
   DEBUG_ONLY(Unique_Node_List worklist_verify(&local_arena);)
 
   // Push root onto worklist
@@ -2807,45 +2808,86 @@ void PhaseCCP::analyze() {
   assert(_root_and_safepoints.size() == 0, "must be empty (unused)");
   _root_and_safepoints.push(C->root());
 
-  // Pull from worklist; compute new value; push changes out.
-  // This loop is the meat of CCP.
+  // This is the meat of CCP: pull from worklist; compute new value; push changes out.
+
+  // Do the first round. Since all initial types are TOP, this will visit all alive nodes.
   while (worklist.size() != 0) {
     Node* n = fetch_next_node(worklist);
     DEBUG_ONLY(worklist_verify.push(n);)
+    if (needs_revisit(n)) {
+      worklist_revisit.push(n);
+    }
     if (n->is_SafePoint()) {
       // Make sure safepoints are processed by PhaseCCP::transform even if they are
       // not reachable from the bottom. Otherwise, infinite loops would be removed.
       _root_and_safepoints.push(n);
     }
-    const Type* new_type = n->Value(this);
-    if (new_type != type(n)) {
-      DEBUG_ONLY(verify_type(n, new_type, type(n));)
-      dump_type_and_node(n, new_type);
-      set_type(n, new_type);
-      push_child_nodes_to_worklist(worklist, n);
-    }
-    if (KillPathsReachableByDeadTypeNode && n->is_Type() && new_type == Type::TOP) {
-      // Keep track of Type nodes to kill CFG paths that use Type
-      // nodes that become dead.
-      _maybe_top_type_nodes.push(n);
-    }
+    analyze_step(worklist, n);
   }
+
+  // More rounds to catch updates far in the graph.
+  // Revisit nodes that might be able to refine their types at the end of the round.
+  // If so, process these nodes. If there is remaining work, start another round.
+  do {
+    while (worklist.size() != 0) {
+      Node* n = fetch_next_node(worklist);
+      analyze_step(worklist, n);
+    }
+    for (uint t = 0; t < worklist_revisit.size(); t++) {
+      Node* n = worklist_revisit.at(t);
+      analyze_step(worklist, n);
+    }
+  } while (worklist.size() != 0);
+
   DEBUG_ONLY(verify_analyze(worklist_verify);)
+}
+
+void PhaseCCP::analyze_step(Unique_Node_List& worklist, Node* n) {
+  const Type* new_type = n->Value(this);
+  if (new_type != type(n)) {
+    DEBUG_ONLY(verify_type(n, new_type, type(n));)
+    dump_type_and_node(n, new_type);
+    set_type(n, new_type);
+    push_child_nodes_to_worklist(worklist, n);
+  }
+  if (KillPathsReachableByDeadTypeNode && n->is_Type() && new_type == Type::TOP) {
+    // Keep track of Type nodes to kill CFG paths that use Type
+    // nodes that become dead.
+    _maybe_top_type_nodes.push(n);
+  }
+}
+
+// Some nodes can refine their types due to type change somewhere deep
+// in the graph. We will need to revisit them before claiming convergence.
+// Add nodes here if particular *Node::Value is doing deep graph traversals
+// not handled by PhaseCCP::push_more_uses().
+bool PhaseCCP::needs_revisit(Node* n) const {
+  // LoadNode performs deep traversals. Load is not notified for changes far away.
+  if (n->is_Load()) {
+    return true;
+  }
+  // CmpPNode performs deep traversals if it compares oopptr. CmpP is not notified for changes far away.
+  if (n->Opcode() == Op_CmpP && type(n->in(1))->isa_oopptr() && type(n->in(2))->isa_oopptr()) {
+    return true;
+  }
+  return false;
 }
 
 #ifdef ASSERT
 // For every node n on verify list, check if type(n) == n->Value()
-// We have a list of exceptions, see comments in verify_Value_for.
+// Note for CCP the non-convergence can lead to unsound analysis and mis-compilation.
+// Therefore, we are verifying Value convergence strictly.
 void PhaseCCP::verify_analyze(Unique_Node_List& worklist_verify) {
   bool failure = false;
   while (worklist_verify.size()) {
     Node* n = worklist_verify.pop();
-    failure |= verify_Value_for(n);
+    failure |= verify_Value_for(n, /* strict = */ true);
   }
   // If we get this assert, check why the reported nodes were not processed again in CCP.
   // We should either make sure that these nodes are properly added back to the CCP worklist
-  // in PhaseCCP::push_child_nodes_to_worklist() to update their type or add an exception
-  // in the verification code above if that is not possible for some reason (like Load nodes).
+  // in PhaseCCP::push_child_nodes_to_worklist() to update their type in the same round,
+  // or that they are added in PhaseCCP::needs_revisit() so that analysis revisits
+  // them at the end of the round.
   assert(!failure, "PhaseCCP not at fixpoint: analysis result may be unsound.");
 }
 #endif

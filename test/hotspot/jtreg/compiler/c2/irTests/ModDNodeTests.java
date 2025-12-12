@@ -30,6 +30,7 @@ import compiler.lib.ir_framework.*;
 /*
  * @test
  * @bug 8345766
+ * @key randomness
  * @summary Test that Ideal transformations of ModDNode are being performed as expected.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.ModDNodeTests

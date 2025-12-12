@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import static org.testng.Assert.*;
  * @test
  * @bug 8066619
  * @modules java.base/java.util.jar:+open
- * @run testng/othervm NullAndEmptyKeysAndValues
+ * @run testng/othervm --enable-final-field-mutation=ALL-UNNAMED NullAndEmptyKeysAndValues
  * @summary Tests manifests with {@code null} and empty string {@code ""}
  * values as section name, header name, or value in both main and named
  * attributes sections.

@@ -25,6 +25,7 @@ import static java.util.Collections.unmodifiableSortedSet;
 import static java.util.Map.entry;
 import jdk.jpackage.internal.util.Slot;
 import static jdk.jpackage.internal.util.PListWriter.writeDict;
+import static jdk.jpackage.internal.util.PListWriter.writeKey;
 import static jdk.jpackage.internal.util.PListWriter.writePList;
 import static jdk.jpackage.internal.util.PListWriter.writeString;
 import static jdk.jpackage.internal.util.XmlUtils.createXml;
@@ -431,6 +432,10 @@ public class CustomInfoPListTest {
                     writeString(xml, "CFBundleShortVersionString", value("CF_BUNDLE_SHORT_VERSION_STRING", cmd.version()));
                     writeString(xml, "CFBundleVersion", value("CF_BUNDLE_VERSION", cmd.version()));
                     writeString(xml, "CustomInfoPListFA", "DEPLOY_FILE_ASSOCIATIONS");
+                    writeKey(xml, "JavaVM");
+                    writeDict(xml, toXmlConsumer(() -> {
+                        writeString(xml, "JVMVersion", value("CF_BUNDLE_VERSION", cmd.version()));
+                    }));
                 }));
             }));
         }
