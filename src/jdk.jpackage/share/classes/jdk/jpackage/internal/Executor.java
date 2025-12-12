@@ -82,13 +82,13 @@ final class Executor {
         return this;
     }
 
-    Executor storeStreamsInFiles(boolean v) {
-        commandOutputControl.storeStreamsInFiles(v);
+    Executor storeOutputInFiles(boolean v) {
+        commandOutputControl.storeOutputInFiles(v);
         return this;
     }
 
-    Executor storeStreamsInFiles() {
-        return storeStreamsInFiles(true);
+    Executor storeOutputInFiles() {
+        return storeOutputInFiles(true);
     }
 
     Executor discardStdout(boolean v) {
