@@ -43,8 +43,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @run junit OfByteArrayTest
  *
  * @comment Using `main/othervm` to initiate tests that depend on a custom-configured JVM
- * @run main/othervm -Djdk.httpclient.bufsize=-1 OfByteArrayTest testInvalidBufferSize
- * @run main/othervm -Djdk.httpclient.bufsize=0 OfByteArrayTest testInvalidBufferSize
  * @run main/othervm -Djdk.httpclient.bufsize=3 OfByteArrayTest testChunking "" 0 0 ""
  * @run main/othervm -Djdk.httpclient.bufsize=3 OfByteArrayTest testChunking a 0 0 ""
  * @run main/othervm -Djdk.httpclient.bufsize=3 OfByteArrayTest testChunking a 1 0 ""
@@ -88,7 +86,6 @@ public class OfByteArrayTest {
      */
     public static void main(String[] args) throws InterruptedException {
         switch (args[0]) {
-            case "testInvalidBufferSize" -> testInvalidBufferSize();
             case "testChunking" -> testChunking(
                     parseStringArg(args[1]),
                     Integer.parseInt(args[2]),
@@ -100,10 +97,6 @@ public class OfByteArrayTest {
 
     private static String parseStringArg(String arg) {
         return arg == null || arg.trim().equals("\"\"") ? "" : arg;
-    }
-
-    private static void testInvalidBufferSize() {
-        assertThrows(IllegalArgumentException.class, () -> HttpRequest.BodyPublishers.ofByteArray(new byte[1]));
     }
 
     private static void testChunking(

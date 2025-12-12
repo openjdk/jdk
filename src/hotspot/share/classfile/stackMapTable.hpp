@@ -67,7 +67,7 @@ class StackMapTable : public StackObj {
 
   // Check jump instructions. Make sure there are no uninitialized
   // instances on backward branch.
-  void check_jump_target(StackMapFrame* frame, int32_t target, TRAPS) const;
+  void check_jump_target(StackMapFrame* frame, int bci, int offset, TRAPS) const;
 
   // The following methods are only used inside this class.
 

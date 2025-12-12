@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8196027 8196202 8320458 8342705
+ * @bug 8196027 8196202 8320458 8342705 8371021
  * @summary test navigation links
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -36,7 +36,6 @@
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import javadoc.tester.JavadocTester;
 import toolbox.ModuleBuilder;
@@ -87,9 +86,7 @@ public class TestModuleNavigation extends JavadocTester {
                     <li><a href="../index-all.html">Index</a></li>
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#module">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"><img src="..\
-                    /resource-files/sun.svg" alt="Select Theme" class="theme-light"><img src="../resource-fil\
-                    es/moon.svg" alt="Select Theme" class="theme-dark"></button></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
                     </ul>""");
 
         checkOutput("overview-tree.html", true,
@@ -101,9 +98,7 @@ public class TestModuleNavigation extends JavadocTester {
                     <li><a href="index-all.html">Index</a></li>
                     <li><a href="search.html">Search</a></li>
                     <li><a href="help-doc.html#tree">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"><img src="re\
-                    source-files/sun.svg" alt="Select Theme" class="theme-light"><img src="resource-files/moo\
-                    n.svg" alt="Select Theme" class="theme-dark"></button></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
                     </ul>""");
 
         checkOutput("deprecated-list.html", true,
@@ -115,9 +110,7 @@ public class TestModuleNavigation extends JavadocTester {
                     <li><a href="index-all.html">Index</a></li>
                     <li><a href="search.html">Search</a></li>
                     <li><a href="help-doc.html#deprecated">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"><img src="re\
-                    source-files/sun.svg" alt="Select Theme" class="theme-light"><img src="resource-files/moo\
-                    n.svg" alt="Select Theme" class="theme-dark"></button></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
                     </ul>""");
 
         checkOutput("index-all.html", true,
@@ -129,9 +122,7 @@ public class TestModuleNavigation extends JavadocTester {
                     <li class="nav-bar-cell1-rev">Index</li>
                     <li><a href="search.html">Search</a></li>
                     <li><a href="help-doc.html#index">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"><img src="re\
-                    source-files/sun.svg" alt="Select Theme" class="theme-light"><img src="resource-files/moo\
-                    n.svg" alt="Select Theme" class="theme-dark"></button></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
                     </ul>""");
 
         checkOutput("search.html", true,
@@ -143,9 +134,7 @@ public class TestModuleNavigation extends JavadocTester {
                     <li><a href="index-all.html">Index</a></li>
                     <li class="nav-bar-cell1-rev">Search</li>
                     <li><a href="help-doc.html#search">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"><img src="re\
-                    source-files/sun.svg" alt="Select Theme" class="theme-light"><img src="resource-files/moo\
-                    n.svg" alt="Select Theme" class="theme-dark"></button></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
                     </ul>""");
 
         checkOutput("help-doc.html", true,
@@ -157,9 +146,7 @@ public class TestModuleNavigation extends JavadocTester {
                     <li><a href="index-all.html">Index</a></li>
                     <li><a href="search.html">Search</a></li>
                     <li class="nav-bar-cell1-rev">Help</li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"><img src="re\
-                    source-files/sun.svg" alt="Select Theme" class="theme-light"><img src="resource-files/moo\
-                    n.svg" alt="Select Theme" class="theme-dark"></button></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
                     </ul>""");
 
         checkOutput("m/p1/package-summary.html", true,
@@ -172,9 +159,7 @@ public class TestModuleNavigation extends JavadocTester {
                     <li><a href="../../index-all.html">Index</a></li>
                     <li><a href="../../search.html">Search</a></li>
                     <li><a href="../../help-doc.html#package">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"><img src="..\
-                    /../resource-files/sun.svg" alt="Select Theme" class="theme-light"><img src="../../resour\
-                    ce-files/moon.svg" alt="Select Theme" class="theme-dark"></button></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
                     </ul>""");
 
         checkOutput("m/p1/A.html", true,
@@ -187,9 +172,7 @@ public class TestModuleNavigation extends JavadocTester {
                     <li><a href="../../index-all.html">Index</a></li>
                     <li><a href="../../search.html">Search</a></li>
                     <li><a href="../../help-doc.html#class">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"><img src="..\
-                    /../resource-files/sun.svg" alt="Select Theme" class="theme-light"><img src="../../resour\
-                    ce-files/moon.svg" alt="Select Theme" class="theme-dark"></button></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
                     </ul>""");
     }
 

@@ -35,6 +35,9 @@ final class UniformDoubleGenerator extends UniformIntersectionRestrictableGenera
      */
     public UniformDoubleGenerator(Generators g, double lo, double hi) {
         super(g, lo, hi);
+        if (Double.compare(lo, hi) >= 0) {
+            throw new EmptyGeneratorException();
+        }
     }
 
     @Override

@@ -39,6 +39,7 @@ class RegisterMap;
 
 // Metadata stored in the continuation entry frame
 class ContinuationEntry {
+  friend class VMStructs;
   friend class JVMCIVMStructs;
   ContinuationEntryPD _pd;
 #ifdef ASSERT

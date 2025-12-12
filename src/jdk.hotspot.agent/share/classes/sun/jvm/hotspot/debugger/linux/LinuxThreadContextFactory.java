@@ -27,15 +27,12 @@ package sun.jvm.hotspot.debugger.linux;
 import java.lang.reflect.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.linux.amd64.*;
-import sun.jvm.hotspot.debugger.linux.x86.*;
 import sun.jvm.hotspot.debugger.linux.ppc64.*;
 
 class LinuxThreadContextFactory {
    static ThreadContext createThreadContext(LinuxDebugger dbg) {
       String cpu = dbg.getCPU();
-      if (cpu.equals("x86")) {
-         return new LinuxX86ThreadContext(dbg);
-      } else if (cpu.equals("amd64")) {
+      if (cpu.equals("amd64")) {
          return new LinuxAMD64ThreadContext(dbg);
       }  else if (cpu.equals("ppc64")) {
           return new LinuxPPC64ThreadContext(dbg);

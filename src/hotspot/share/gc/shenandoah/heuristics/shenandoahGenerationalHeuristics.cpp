@@ -45,7 +45,7 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
 
 
   // Check all pinned regions have updated status before choosing the collection set.
-  heap->assert_pinned_region_status();
+  heap->assert_pinned_region_status(_generation);
 
   // Step 1. Build up the region candidates we care about, rejecting losers and accepting winners right away.
 
@@ -127,7 +127,7 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
       // Reclaim humongous regions here, and count them as the immediate garbage
 #ifdef ASSERT
       bool reg_live = region->has_live();
-      bool bm_live = heap->active_generation()->complete_marking_context()->is_marked(cast_to_oop(region->bottom()));
+      bool bm_live = _generation->complete_marking_context()->is_marked(cast_to_oop(region->bottom()));
       assert(reg_live == bm_live,
              "Humongous liveness and marks should agree. Region live: %s; Bitmap live: %s; Region Live Words: %zu",
              BOOL_TO_STR(reg_live), BOOL_TO_STR(bm_live), region->get_live_data_words());

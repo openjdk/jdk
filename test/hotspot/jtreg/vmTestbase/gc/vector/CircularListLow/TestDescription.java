@@ -31,6 +31,5 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @requires vm.gc != "Serial"
  * @run main/othervm/timeout=480 gc.vector.SimpleGC.SimpleGC -ms low -gp circularList(low)
  */

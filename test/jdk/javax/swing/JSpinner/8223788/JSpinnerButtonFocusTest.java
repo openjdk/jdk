@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ public class JSpinnerButtonFocusTest {
                 robot.setAutoDelay(50);
 
                 SwingUtilities.invokeAndWait(() -> {
-                    frame = new JFrame();
+                    frame = new JFrame("JSpinnerButtonFocusTest");
                     spinner1 = new JSpinner();
                     spinner2 = new JSpinner();
 
@@ -72,6 +72,15 @@ public class JSpinnerButtonFocusTest {
                     frame.getContentPane().add(spinner2, BorderLayout.SOUTH);
 
                     editor1 = ((DefaultEditor)spinner1.getEditor());
+                    editor1.getTextField().addFocusListener(new FocusAdapter() {
+                        @Override
+                        public void focusGained(FocusEvent e) {
+                            super.focusGained(e);
+                            robot.keyPress(KeyEvent.VK_TAB);
+                            robot.keyRelease(KeyEvent.VK_TAB);
+                            latch1.countDown();
+                        }
+                    });
                     editor1.setFocusable(false);
                     spinner1.setFocusable(false);
 
@@ -84,26 +93,18 @@ public class JSpinnerButtonFocusTest {
                     frame.setFocusTraversalPolicyProvider(true);
 
                     frame.setAlwaysOnTop(true);
-                    frame.pack();
+                    frame.setSize(100, 100);
+                    frame.setLocationRelativeTo(null);
                     frame.setVisible(true);
                 });
                 robot.waitForIdle();
-
-                editor1.getTextField().addFocusListener(new FocusAdapter() {
-                    @Override
-                    public void focusGained(FocusEvent e) {
-                        super.focusGained(e);
-                        robot.keyPress(KeyEvent.VK_TAB);
-                        robot.keyRelease(KeyEvent.VK_TAB);
-                        latch1.countDown();
-                    }
-                });
+                robot.delay(1000);
 
                 SwingUtilities.invokeAndWait(() -> {
                     editor1.getTextField().requestFocusInWindow();
                 });
 
-                if (!latch1.await(15, TimeUnit.MINUTES)) {
+                if (!latch1.await(1, TimeUnit.MINUTES)) {
                     throw new RuntimeException(LF.getClassName() +
                             ": Timeout waiting for editor1 to gain focus.");
                 }

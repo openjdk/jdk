@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.net.httpserver;
 
 import com.sun.net.httpserver.*;
 import java.io.*;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
 public class AuthFilter extends Filter {
 
@@ -66,11 +67,11 @@ public class AuthFilter extends Filter {
             } else if (r instanceof Authenticator.Retry) {
                 Authenticator.Retry ry = (Authenticator.Retry)r;
                 consumeInput (t);
-                t.sendResponseHeaders (ry.getResponseCode(), -1);
+                t.sendResponseHeaders (ry.getResponseCode(), RSPBODY_EMPTY);
             } else if (r instanceof Authenticator.Failure) {
                 Authenticator.Failure f = (Authenticator.Failure)r;
                 consumeInput (t);
-                t.sendResponseHeaders (f.getResponseCode(), -1);
+                t.sendResponseHeaders (f.getResponseCode(), RSPBODY_EMPTY);
             }
         } else {
             chain.doFilter (t);

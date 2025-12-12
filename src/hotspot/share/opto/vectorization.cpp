@@ -287,7 +287,7 @@ void VLoopVPointers::compute_and_cache_vpointers() {
   int pointers_idx = 0;
   _body.for_each_mem([&] (MemNode* const mem, int bb_idx) {
     // Placement new: construct directly into the array.
-    ::new (&_vpointers[pointers_idx]) VPointer(mem, _vloop);
+    ::new (&_vpointers[pointers_idx]) VPointer(mem, _vloop, _pointer_expression_nodes);
     _bb_idx_to_vpointer.at_put(bb_idx, pointers_idx);
     pointers_idx++;
   });
@@ -539,6 +539,108 @@ void VLoopDependencyGraph::PredsIterator::next() {
     _is_current_memory_edge = false;
     _is_current_weak_memory_edge = false;
   }
+}
+
+// Cost-model heuristic for nodes that do not contribute to computational
+// cost inside the loop.
+bool VLoopAnalyzer::has_zero_cost(Node* n) const {
+  // Outside body?
+  if (!_vloop.in_bb(n)) { return true; }
+
+  // Internal nodes of pointer expressions are most likely folded into
+  // the load / store and have no additional cost.
+  if (vpointers().is_in_pointer_expression(n)) { return true; }
+
+  // Not all AddP nodes can be detected in VPointer parsing, so
+  // we filter them out here.
+  // We don't want to explicitly model the cost of control flow,
+  // since we have the same CFG structure before and after
+  // vectorization: A loop head, a loop exit, with a backedge.
+  if (n->is_AddP() || // Pointer expression
+      n->is_CFG() ||  // CFG
+      n->is_Phi() ||  // CFG
+      n->is_Cmp() ||  // CFG
+      n->is_Bool()) { // CFG
+    return true;
+  }
+
+  // All other nodes have a non-zero cost.
+  return false;
+}
+
+// Compute the cost over all operations in the (scalar) loop.
+float VLoopAnalyzer::cost_for_scalar_loop() const {
+#ifndef PRODUCT
+  if (_vloop.is_trace_cost()) {
+    tty->print_cr("\nVLoopAnalyzer::cost_for_scalar_loop:");
+  }
+#endif
+
+  float sum = 0;
+  for (int j = 0; j < body().body().length(); j++) {
+    Node* n = body().body().at(j);
+    if (!has_zero_cost(n)) {
+      float c = cost_for_scalar_node(n->Opcode());
+      sum += c;
+#ifndef PRODUCT
+      if (_vloop.is_trace_cost_verbose()) {
+        tty->print_cr("  -> cost = %.2f for %d %s", c, n->_idx, n->Name());
+      }
+#endif
+    }
+  }
+
+#ifndef PRODUCT
+  if (_vloop.is_trace_cost()) {
+    tty->print_cr("  total_cost = %.2f", sum);
+  }
+#endif
+  return sum;
+}
+
+// For now, we use unit cost. We might refine that in the future.
+// If needed, we could also use platform specific costs, if the
+// default here is not accurate enough.
+float VLoopAnalyzer::cost_for_scalar_node(int opcode) const {
+  float c = 1;
+#ifndef PRODUCT
+  if (_vloop.is_trace_cost()) {
+    tty->print_cr("  cost = %.2f opc=%s", c, NodeClassNames[opcode]);
+  }
+#endif
+  return c;
+}
+
+// For now, we use unit cost. We might refine that in the future.
+// If needed, we could also use platform specific costs, if the
+// default here is not accurate enough.
+float VLoopAnalyzer::cost_for_vector_node(int opcode, int vlen, BasicType bt) const {
+  float c = 1;
+#ifndef PRODUCT
+  if (_vloop.is_trace_cost()) {
+    tty->print_cr("  cost = %.2f opc=%s vlen=%d bt=%s",
+                  c, NodeClassNames[opcode], vlen, type2name(bt));
+  }
+#endif
+  return c;
+}
+
+// For now, we use unit cost, i.e. we count the number of backend instructions
+// that the vtnode will use. We might refine that in the future.
+// If needed, we could also use platform specific costs, if the
+// default here is not accurate enough.
+float VLoopAnalyzer::cost_for_vector_reduction_node(int opcode, int vlen, BasicType bt, bool requires_strict_order) const {
+  // Each reduction is composed of multiple instructions, each estimated with a unit cost.
+  //                                Linear: shuffle and reduce    Recursive: shuffle and reduce
+  float c = requires_strict_order ? 2 * vlen                    : 2 * exact_log2(vlen);
+#ifndef PRODUCT
+  if (_vloop.is_trace_cost()) {
+    tty->print_cr("  cost = %.2f opc=%s vlen=%d bt=%s requires_strict_order=%s",
+                  c, NodeClassNames[opcode], vlen, type2name(bt),
+                  requires_strict_order ? "true" : "false");
+  }
+#endif
+  return c;
 }
 
 // Computing aliasing runtime check using init and last of main-loop
@@ -920,27 +1022,39 @@ bool VPointer::can_make_speculative_aliasing_check_with(const VPointer& other) c
   // or at the multiversion_if. That is before the pre-loop. From the construction of
   // VPointer, we already know that all its variables (except iv) are pre-loop invariant.
   //
-  // For the computation of main_init, we also need the pre_limit, and so we need
-  // to check that this value is pre-loop invariant. In the case of non-equal iv_scales,
-  // we also need the main_limit in the aliasing check, and so this value must then
-  // also be pre-loop invariant.
+  // In VPointer::make_speculative_aliasing_check_with we compute main_init in all
+  // cases. For this, we require pre_init and pre_limit. These values must be available
+  // for the speculative check, i.e. their control must dominate the speculative check.
+  // Further, "if vp1.iv_scale() != vp2.iv_scale()" we additionally need to have
+  // main_limit available for the speculative check.
+  // Note: no matter if the speculative check is inserted as a predicate or at the
+  //       multiversion if, the speculative check happens before (dominates) the
+  //       pre-loop.
+  Node* pre_init = _vloop.pre_loop_end()->init_trip();
   Opaque1Node* pre_limit_opaq = _vloop.pre_loop_end()->limit()->as_Opaque1();
   Node* pre_limit = pre_limit_opaq->in(1);
   Node* main_limit = _vloop.cl()->limit();
-
-  if (!_vloop.is_pre_loop_invariant(pre_limit)) {
+  if (!_vloop.is_available_for_speculative_check(pre_init)) {
 #ifdef ASSERT
     if (_vloop.is_trace_speculative_aliasing_analysis()) {
-      tty->print_cr("VPointer::can_make_speculative_aliasing_check_with: pre_limit is not pre-loop independent!");
+      tty->print_cr("VPointer::can_make_speculative_aliasing_check_with: pre_limit is not available at speculative check!");
+    }
+#endif
+    return false;
+  }
+  if (!_vloop.is_available_for_speculative_check(pre_limit)) {
+#ifdef ASSERT
+    if (_vloop.is_trace_speculative_aliasing_analysis()) {
+      tty->print_cr("VPointer::can_make_speculative_aliasing_check_with: pre_limit is not available at speculative check!");
     }
 #endif
     return false;
   }
 
-  if (vp1.iv_scale() != vp2.iv_scale() && !_vloop.is_pre_loop_invariant(main_limit)) {
+  if (vp1.iv_scale() != vp2.iv_scale() && !_vloop.is_available_for_speculative_check(main_limit)) {
 #ifdef ASSERT
     if (_vloop.is_trace_speculative_aliasing_analysis()) {
-      tty->print_cr("VPointer::can_make_speculative_aliasing_check_with: main_limit is not pre-loop independent!");
+      tty->print_cr("VPointer::can_make_speculative_aliasing_check_with: main_limit is not available at speculative check!");
     }
 #endif
     return false;
@@ -1017,6 +1131,8 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other, 
   Node* pre_limit = pre_limit_opaq->in(1);
   assert(_vloop.is_pre_loop_invariant(pre_init),  "needed for aliasing check before pre-loop");
   assert(_vloop.is_pre_loop_invariant(pre_limit), "needed for aliasing check before pre-loop");
+  assert(_vloop.is_available_for_speculative_check(pre_init),  "ctrl must be early enough to avoid cycles");
+  assert(_vloop.is_available_for_speculative_check(pre_limit), "ctrl must be early enough to avoid cycles");
 
   Node* pre_initL = new ConvI2LNode(pre_init);
   Node* pre_limitL = new ConvI2LNode(pre_limit);
@@ -1078,6 +1194,7 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other, 
     jint main_iv_stride = _vloop.iv_stride();
     Node* main_limit = _vloop.cl()->limit();
     assert(_vloop.is_pre_loop_invariant(main_limit), "needed for aliasing check before pre-loop");
+    assert(_vloop.is_available_for_speculative_check(main_limit), "ctrl must be early enough to avoid cycles");
 
     Node* main_limitL = new ConvI2LNode(main_limit);
     phase->register_new_node_with_ctrl_of(main_limitL, pre_init);

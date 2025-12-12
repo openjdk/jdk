@@ -1398,6 +1398,21 @@ const Type *BoolTest::cc2logical( const Type *CC ) const {
   return TypeInt::BOOL;
 }
 
+BoolTest::mask BoolTest::unsigned_mask(BoolTest::mask btm) {
+  switch(btm) {
+    case eq:
+    case ne:
+      return btm;
+    case lt:
+    case le:
+    case gt:
+    case ge:
+      return mask(btm | unsigned_compare);
+    default:
+      ShouldNotReachHere();
+  }
+}
+
 //------------------------------dump_spec-------------------------------------
 // Print special per-node info
 void BoolTest::dump_on(outputStream *st) const {

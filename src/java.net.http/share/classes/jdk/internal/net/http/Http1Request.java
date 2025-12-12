@@ -290,7 +290,8 @@ class Http1Request {
         }
         String uriString = requestURI();
         StringBuilder sb = new StringBuilder(64);
-        sb.append(request.method())
+        String method = request.method();
+        sb.append(method)
           .append(' ')
           .append(uriString)
           .append(" HTTP/1.1\r\n");
@@ -300,11 +301,15 @@ class Http1Request {
             systemHeadersBuilder.setHeader("Host", hostString());
         }
 
-        // GET, HEAD and DELETE with no request body should not set the Content-Length header
         if (requestPublisher != null) {
             contentLength = requestPublisher.contentLength();
             if (contentLength == 0) {
-                systemHeadersBuilder.setHeader("Content-Length", "0");
+                // PUT and POST with no request body should set the Content-Length header
+                // even when the content is empty.
+                // Other methods defined in RFC 9110 should not send the header in that case.
+                if ("POST".equals(method) || "PUT".equals(method)) {
+                    systemHeadersBuilder.setHeader("Content-Length", "0");
+                }
             } else if (contentLength > 0) {
                 systemHeadersBuilder.setHeader("Content-Length", Long.toString(contentLength));
                 streaming = false;

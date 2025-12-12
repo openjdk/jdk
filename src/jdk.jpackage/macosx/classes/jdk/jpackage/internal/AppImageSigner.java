@@ -106,7 +106,7 @@ final class AppImageSigner {
             throw new IllegalArgumentException();
         }
 
-        app = normalizeAppImageLayout(app);
+        app = copyWithUnresolvedAppImageLayout(app);
 
         final var fileFilter = new SignFilter(app, appImage);
 
@@ -127,7 +127,12 @@ final class AppImageSigner {
         // Sign runtime root directory if present
         app.asApplicationLayout().map(appLayout -> {
             return appLayout.resolveAt(appImage.root());
-        }).map(MacApplicationLayout.class::cast).map(MacApplicationLayout::runtimeRootDirectory).ifPresent(codesigners);
+        }).map(MacApplicationLayout.class::cast)
+                .map(MacApplicationLayout::runtimeRootDirectory)
+                .flatMap(MacBundle::fromPath)
+                .filter(MacBundle::isValid)
+                .map(MacBundle::root)
+                .ifPresent(codesigners);
 
         final var frameworkPath = appImage.contentsDir().resolve("Frameworks");
         if (Files.isDirectory(frameworkPath)) {
@@ -243,7 +248,7 @@ final class AppImageSigner {
         }
     }
 
-    private static MacApplication normalizeAppImageLayout(MacApplication app) {
+    private static MacApplication copyWithUnresolvedAppImageLayout(MacApplication app) {
         switch (app.imageLayout()) {
             case MacApplicationLayout macLayout -> {
                 return MacApplicationBuilder.overrideAppImageLayout(app, APPLICATION_LAYOUT);

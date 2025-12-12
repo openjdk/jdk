@@ -1008,7 +1008,7 @@ C2V_VMENTRY_NULL(jobject, resolveFieldInPool, (JNIEnv* env, jobject, ARGUMENT_PA
   }
 
   LinkInfo link_info(cp, index, mh, code, CHECK_NULL);
-  LinkResolver::resolve_field(fd, link_info, Bytecodes::java_code(code), false, CHECK_NULL);
+  LinkResolver::resolve_field(fd, link_info, Bytecodes::java_code(code), ClassInitMode::dont_init, CHECK_NULL);
   JVMCIPrimitiveArray info = JVMCIENV->wrap(info_handle);
   if (info.is_null() || JVMCIENV->get_length(info) != 4) {
     JVMCI_ERROR_NULL("info must not be null and have a length of 4");
