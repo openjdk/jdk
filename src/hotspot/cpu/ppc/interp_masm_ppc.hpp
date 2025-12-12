@@ -235,7 +235,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // Interpreter profiling operations
   void set_method_data_pointer_for_bcp();
-  void test_method_data_pointer(Label& zero_continue);
+  void test_method_data_pointer(Label& zero_continue, bool may_be_far = false);
   void verify_method_data_pointer();
 
   void set_mdp_data_at(int constant, Register value);
