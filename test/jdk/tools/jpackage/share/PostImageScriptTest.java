@@ -229,7 +229,7 @@ public class PostImageScriptTest {
             cmd.saveConsoleOutput(true);
 
         }).addBundleVerifier((cmd, result) -> {
-            final var imageDir = result.stdout().getContent().stream().map(String::stripLeading).filter(str -> {
+            final var imageDir = result.stdout().stream().map(String::stripLeading).filter(str -> {
                 return str.startsWith(imageDirOutputPrefix);
             }).map(str -> {
                 return str.substring(imageDirOutputPrefix.length());

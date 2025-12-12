@@ -93,7 +93,7 @@ public final class LibProvidersLookup {
             return Collections.emptyList();
         }
 
-        return result.stdout().getContent().stream().map(line -> {
+        return result.stdout().stream().map(line -> {
             Matcher matcher = LIB_IN_LDD_OUTPUT_REGEX.matcher(line);
             if (matcher.find()) {
                 return matcher.group(1);

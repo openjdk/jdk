@@ -70,7 +70,7 @@ public final class RetryExecutor {
 
     static RetryExecutor retryOnKnownErrorMessage(String v) {
         return new RetryExecutor().setIterationCallback(exec -> {
-            var stderr = exec.getResult().stderr().getContent();
+            var stderr = exec.getResult().stderr();
             if (!stderr.stream().anyMatch(v::equals)) {
                 exec.abort();
             }

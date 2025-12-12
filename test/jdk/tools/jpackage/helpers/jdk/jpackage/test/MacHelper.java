@@ -105,7 +105,7 @@ public final class MacHelper {
                             "-nobrowse",
                             "-plist"
                     )).saveOutput().toRetryExecutorCallable());
-        }).get().stdout().getContent();
+        }).get().stdout();
 
         final Path mountPoint;
 

@@ -77,7 +77,7 @@ final class LinuxPackageArch {
                 try {
                     return Result.ofValue(Executor.of(cmdline).saveOutput(true).executeExpectSuccess()).flatMap(result -> {
                         try {
-                            return Result.ofValue(result.stdout().getFirstLineOfOutput());
+                            return Result.ofValue(result.stdout().getFirst());
                         } catch (NoSuchElementException ex) {
                             return Result.ofError(ex);
                         }
