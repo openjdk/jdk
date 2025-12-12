@@ -265,7 +265,7 @@ public class CommandOutputControlTest {
         var getExitCodeEx = assertThrowsExactly(IllegalStateException.class, result::getExitCode);
         assertEquals(("Exit code is unavailable for timed-out process"), getExitCodeEx.getMessage());
 
-        assertEquals(List.of("The quick brown fox jumps"), result.getOutput());
+        assertEquals(List.of("The quick brown fox jumps"), result.content());
     }
 
     @Test
@@ -280,7 +280,7 @@ public class CommandOutputControlTest {
 
         var result = exec.execute(10, TimeUnit.SECONDS);
         assertTrue(result.exitCode().isPresent());
-        assertEquals(List.of("Sphinx of black quartz,", "judge my vow"), result.getOutput());
+        assertEquals(List.of("Sphinx of black quartz,", "judge my vow"), result.content());
     }
 
     @Test
@@ -305,7 +305,7 @@ public class CommandOutputControlTest {
 
         var result = exec.execute();
         assertNotEquals(0, result.getExitCode());
-        assertEquals(List.of("The five boxing wizards"), result.getOutput());
+        assertEquals(List.of("The five boxing wizards"), result.content());
         processDestroyer.get().join();
     }
 
@@ -377,11 +377,11 @@ public class CommandOutputControlTest {
 
             // CommandOutputControl was not configured to redirect stderr in stdout,
             // hence the output is ordered: stdout goes first, stderr follows.
-            assertEquals(Stream.of(commandStdout, commandStderr).flatMap(List::stream).toList(), result.getOutput());
+            assertEquals(Stream.of(commandStdout, commandStderr).flatMap(List::stream).toList(), result.content());
 
             // Saved stdout an stderr can be accessed individually.
-            assertEquals(commandStdout, result.stdout().getContent());
-            assertEquals(commandStderr, result.stderr().getContent());
+            assertEquals(commandStdout, result.stdout());
+            assertEquals(commandStderr, result.stderr());
         } else {
             // Execute the command so that its stdout and stderr are dumped into System.out.
             coc.redirectStderr(true);
@@ -389,7 +389,7 @@ public class CommandOutputControlTest {
 
             // CommandOutputControl was configured to redirect stderr in stdout,
             // hence the output is interleaved.
-            assertEquals(List.of("Eat some more", "of these", "soft French pastries", "and drink some tea"), result.getOutput());
+            assertEquals(List.of("Eat some more", "of these", "soft French pastries", "and drink some tea"), result.content());
 
             // Saved stdout an stderr can NOT be accessed individually because they are interleaved.
             assertTrue(result.findStdout().isEmpty());
@@ -478,12 +478,8 @@ public class CommandOutputControlTest {
             assertArrayEquals(expectedByteContent.findByteStderr().orElse(null), actual.findByteStderr().orElse(null));
 
             assertEquals(expected.findContent(), actual.findContent());
-            assertEquals(
-                    expected.findStdout().flatMap(CommandOutputControl.Output::findContent),
-                    actual.findStdout().flatMap(CommandOutputControl.Output::findContent));
-            assertEquals(
-                    expected.findStderr().flatMap(CommandOutputControl.Output::findContent),
-                    actual.findStderr().flatMap(CommandOutputControl.Output::findContent));
+            assertEquals(expected.findStdout(), actual.findStdout());
+            assertEquals(expected.findStderr(), actual.findStderr());
 
             assertSame(byteResult.execSpec(), actual.execSpec());
             assertEquals(expected.exitCode(), actual.exitCode());
@@ -997,55 +993,33 @@ public class CommandOutputControlTest {
 
             command = filterSavedStreams(command);
 
+            var content = result.content();
+
+            if (contains(OutputControl.SAVE_FIRST_LINE)) {
+                assertTrue(content.size() <= 2, String.format("The number of saved lines must be less than or equal to two. Actual: %d", result.content().size()));
+            }
+
             if (!redirectStderr()) {
-                assertEquals(command.stdout(), result.stdout().getContent());
-                assertEquals(command.stderr(), result.stderr().getContent());
+                var stdout = result.stdout();
+                var stderr = result.stderr();
+
+                assertEquals(command.stdout(), stdout);
+                assertEquals(command.stderr(), stderr);
                 assertEquals(Stream.of(
-                        command.stdout(),
-                        command.stderr()
-                ).flatMap(List::stream).toList(), result.getContent());
-                if (contains(OutputControl.SAVE_FIRST_LINE)) {
-                    var stdout = result.stdout();
-                    var stderr = result.stderr();
-                    switch (result.getContent().size()) {
-                        case 0 -> {
-                            assertTrue(stdout.findFirstLineOfOutput().isEmpty());
-                            assertTrue(stderr.findFirstLineOfOutput().isEmpty());
-                            assertTrue(result.findFirstLineOfOutput().isEmpty());
-                        }
-                        case 1 -> {
-                            if (stdout.getContent().isEmpty()) {
-                                assertTrue(stdout.findFirstLineOfOutput().isEmpty());
-                                assertEquals(stderr.getContent(), List.of(stderr.getFirstLineOfOutput()));
-                                assertEquals(List.of(result.getFirstLineOfOutput()), stderr.getContent());
-                            } else {
-                                assertEquals(stdout.getContent(), List.of(stdout.getFirstLineOfOutput()));
-                                assertTrue(stderr.findFirstLineOfOutput().isEmpty());
-                                assertEquals(List.of(result.getFirstLineOfOutput()), stdout.getContent());
-                            }
-                        }
-                        case 2 -> {
-                            assertEquals(stdout.getContent(), List.of(stdout.getFirstLineOfOutput()));
-                            assertEquals(stderr.getContent(), List.of(stderr.getFirstLineOfOutput()));
-                            assertEquals(List.of(result.getFirstLineOfOutput()), stdout.getContent());
-                        }
-                        default -> {
-                            fail(String.format("Number of saved lines should be less than two. Actual: %d", result.getContent().size()));
-                        }
-                    }
-                }
+                        stdout,
+                        stderr
+                ).flatMap(List::stream).toList(), content);
             } else {
                 assertEquals(discardStderr(), result.findStdout().isPresent());
                 assertTrue(result.findStderr().isEmpty());
                 if (contains(OutputControl.SAVE_FIRST_LINE)) {
-                    assertTrue(List.of(command.stdout(), command.stderr()).contains(result.getContent()),
+                    assertTrue(List.of(command.stdout(), command.stderr()).contains(result.content()),
                             String.format("Saved content %s is either %s or %s",
-                                    result.getContent(), command.stdout(), command.stderr()));
-                    assertTrue(result.getContent().size() < 2);
+                                    content, command.stdout(), command.stderr()));
                 } else if (contains(OutputControl.SAVE_ALL)) {
-                    if (!isInterleave(result.getContent(), command.stdout(), command.stderr())) {
+                    if (!isInterleave(content, command.stdout(), command.stderr())) {
                         fail(String.format("Unexpected combined saved content=%s; stdout=%s; stderr=%s",
-                                result.getContent(), command.stdout(), command.stderr()));
+                                content, command.stdout(), command.stderr()));
                     }
                 } else {
                     // Unreachable
@@ -1060,7 +1034,6 @@ public class CommandOutputControlTest {
             Objects.requireNonNull(charset);
 
             assertTrue(result.findContent().isEmpty());
-            assertTrue(result.findFirstLineOfOutput().isEmpty());
             assertTrue(result.findStdout().isEmpty());
             assertTrue(result.findStderr().isEmpty());
 
@@ -1081,12 +1054,12 @@ public class CommandOutputControlTest {
                 assertEquals(Stream.of(
                         command.stdout(),
                         command.stderr()
-                ).flatMap(List::stream).toList(), toStringList(result.getByteContent(), charset));
+                ).flatMap(List::stream).toList(), toStringList(result.byteContent(), charset));
             } else {
                 assertEquals(discardStderr(), result.findByteStdout().isPresent());
                 assertTrue(result.findByteStderr().isEmpty());
 
-                var combined = toStringList(result.getByteContent(), charset);
+                var combined = toStringList(result.byteContent(), charset);
                 if (!isInterleave(combined, command.stdout(), command.stderr())) {
                     fail(String.format("Unexpected combined saved content=%s; stdout=%s; stderr=%s",
                             combined, command.stdout(), command.stderr()));
