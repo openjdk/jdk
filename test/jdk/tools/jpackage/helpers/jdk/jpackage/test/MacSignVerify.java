@@ -137,7 +137,7 @@ public final class MacSignVerify {
     public static Optional<String> findSpctlSignOrigin(SpctlType type, Path path) {
         final var exec = Executor.of("/usr/sbin/spctl", "-vv", "--raw", "--assess", "--type", type.value(), path.toString()).saveOutput().discardStderr();
         final var result = exec.executeWithoutExitCodeCheck();
-        TKit.assertTrue(Set.of(0, 3).contains(result.exitCode()),
+        TKit.assertTrue(Set.of(0, 3).contains(result.getExitCode()),
                 String.format("Check exit code of command %s is either 0 or 3", exec.getPrintableCommandLine()));
         return toSupplier(() -> {
             try {
