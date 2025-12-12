@@ -54,11 +54,12 @@ public class CrashNaNTest {
 
     static final boolean SAVE_IMAGE = false;
 
+    // initialize j.u.l Looger:
+    static final Logger log = Logger.getLogger("sun.java2d.marlin");
+
     public static void main(String argv[]) {
         Locale.setDefault(Locale.US);
 
-        // initialize j.u.l Looger:
-        final Logger log = Logger.getLogger("sun.java2d.marlin");
         log.addHandler(new Handler() {
             @Override
             public void publish(LogRecord record) {
