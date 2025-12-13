@@ -40,6 +40,7 @@ import jdk.httpclient.test.lib.http2.Http2TestExchangeImpl;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.internal.net.http.frame.ErrorFrame;
 import jdk.test.lib.net.SimpleSSLContext;
+import jdk.test.lib.net.URIBuilder;
 import jdk.test.lib.Utils;
 
 import org.junit.jupiter.api.AfterAll;
@@ -102,7 +103,12 @@ public class GoAwayWithErrorTest {
                 .version(HTTP_2)
                 .build();
 
-        URI uri = URI.create("https://localhost:" + port + "/test");
+        URI uri = URIBuilder.newBuilder()
+                .scheme("https")
+                .host(server.getAddress().getAddress())
+                .port(server.getAddress().getPort())
+                .path("/test")
+                .build();
         HttpRequest request = HttpRequest.newBuilder(uri)
                 .POST(HttpRequest.BodyPublishers.ofString("test data"))
                 .build();
@@ -110,9 +116,7 @@ public class GoAwayWithErrorTest {
         CompletableFuture<HttpResponse<String>> first = client.sendAsync(
                 request, HttpResponse.BodyHandlers.ofString());
 
-        if (!goAwaySentLatch.await(Utils.adjustTimeout(5), TimeUnit.SECONDS)) {
-            throw new AssertionError("GOAWAY not sent in time");
-        }
+        goAwaySentLatch.await();
 
         CompletableFuture<HttpResponse<String>> second = client.sendAsync(
                 request, HttpResponse.BodyHandlers.ofString());
@@ -120,23 +124,15 @@ public class GoAwayWithErrorTest {
         CompletableFuture<HttpResponse<String>> third = client.sendAsync(
                 request, HttpResponse.BodyHandlers.ofString());
 
-        CompletableFuture.allOf(first, second, third)
-                .orTimeout(Utils.adjustTimeout(20), TimeUnit.SECONDS)
-                .exceptionally(ex -> null)
-                .join();
-
         List<CompletableFuture<HttpResponse<String>>> requests = List.of(first, second, third);
 
         int failureCount = 0;
-        int successCount = 0;
         Throwable goawayError = null;
 
         for (CompletableFuture<HttpResponse<String>> req : requests) {
             try {
                 HttpResponse<String> response = req.join();
-                if (response.statusCode() == 200) {
-                    successCount++;
-                }
+                assertEquals(200, response.statusCode(), "unexpected status code");
             } catch (CompletionException e) {
                 failureCount++;
                 if (goawayError == null) {
@@ -151,7 +147,6 @@ public class GoAwayWithErrorTest {
         }
 
         assertEquals(1, failureCount, "Exactly one request should fail");
-        assertEquals(2, successCount, "Exactly two requests should succeed");
 
         assertTrue(goawayError != null && goawayError.getMessage() != null,
                 "Failed request should have GOAWAY error");

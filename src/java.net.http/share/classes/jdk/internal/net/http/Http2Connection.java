@@ -1463,21 +1463,17 @@ class Http2Connection implements Closeable {
         final Http2TerminationCause cause = Http2TerminationCause.forH2Error(errorCode, errorMsg);
 
         final AtomicInteger numUnprocessed = new AtomicInteger();
-        final AtomicInteger numFailed = new AtomicInteger();
 
         streams.forEach((id, stream) -> {
             if (id > lastProcessedStream) {
                 stream.closeAsUnprocessed();
                 numUnprocessed.incrementAndGet();
-            } else {
-                stream.connectionClosing(cause.getCloseCause());
-                numFailed.incrementAndGet();
             }
         });
 
         if (debug.on()) {
-            debug.log("%d stream(s) marked as unprocessed, %d stream(s) failed due to GOAWAY error",
-                    numUnprocessed.get(), numFailed.get());
+            debug.log("%d stream(s) marked as unprocessed, processed streams will be closed by termination",
+                    numUnprocessed.get());
         }
 
         close(cause);
