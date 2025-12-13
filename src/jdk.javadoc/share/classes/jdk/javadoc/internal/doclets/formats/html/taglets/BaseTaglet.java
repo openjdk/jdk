@@ -67,7 +67,7 @@ public class BaseTaglet implements Taglet {
         this(config, name, inline ? DocTree.Kind.UNKNOWN_INLINE_TAG : DocTree.Kind.UNKNOWN_BLOCK_TAG, inline, sites);
     }
 
-    private BaseTaglet(HtmlConfiguration config, String name, DocTree.Kind tagKind, boolean inline, Set<Location> sites) {
+    protected BaseTaglet(HtmlConfiguration config, String name, DocTree.Kind tagKind, boolean inline, Set<Location> sites) {
         this.config = config;
         this.messages = config.getMessages();
         this.resources = config.getDocResources();

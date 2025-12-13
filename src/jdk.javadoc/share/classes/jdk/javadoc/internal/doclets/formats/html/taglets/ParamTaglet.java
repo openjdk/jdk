@@ -73,17 +73,16 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     @Override
-    public Output inherit(Element dst, Element src, DocTree tag, boolean isFirstSentence) {
+    public Output inherit(ExecutableElement dst, ExecutableElement src, DocTree tag, boolean isFirstSentence) {
         assert dst.getKind() == ElementKind.METHOD;
         assert tag.getKind() == DocTree.Kind.PARAM;
-        var method = (ExecutableElement) dst;
         var param = (ParamTree) tag;
         // find the position of an owner parameter described by the given tag
         List<? extends Element> parameterElements;
         if (param.isTypeParameter()) {
-            parameterElements = method.getTypeParameters();
+            parameterElements = dst.getTypeParameters();
         } else {
-            parameterElements = method.getParameters();
+            parameterElements = dst.getParameters();
         }
         Map<String, Integer> stringIntegerMap = mapNameToPosition(utils, parameterElements);
         CommentHelper ch = utils.getCommentHelper(dst);
@@ -95,16 +94,9 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         try {
             var docFinder = utils.docFinder();
 
-            Optional<Documentation> r;
-            if (src != null){
-                r = docFinder.search((ExecutableElement) src,
-                                m -> DocFinder.Result.fromOptional(extract(utils, m, position, param.isTypeParameter())))
-                        .toOptional();
-            } else {
-                r = docFinder.find((ExecutableElement) dst,
-                                m -> DocFinder.Result.fromOptional(extract(utils, m, position, param.isTypeParameter())))
-                        .toOptional();
-            }
+            Optional<Documentation> r = docFinder.searchInherited(dst, src,
+                            m -> DocFinder.Result.fromOptional(extract(utils, m, position, param.isTypeParameter())))
+                    .toOptional();
             return r.map(result -> new Output(result.paramTree, result.method, result.paramTree.getDescription(), true))
                     .orElseGet(() -> new Output(null, null, List.of(), true));
         } catch (DocFinder.NoOverriddenMethodFound e) {
