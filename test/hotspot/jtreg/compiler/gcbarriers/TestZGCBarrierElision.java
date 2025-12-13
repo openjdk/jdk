@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -251,7 +251,7 @@ class TestZGCCorrectBarrierElision {
 class TestZGCEffectiveBarrierElision {
 
     @Test
-    @IR(counts = { IRNode.Z_LOAD_P_WITH_BARRIER_FLAG, Common.ELIDED, "1" }, phase = CompilePhase.FINAL_CODE)
+    @IR(failOn = {IRNode.LOAD_P_OF_CLASS, "Outer", IRNode.LOAD_N_OF_CLASS, "Outer"})
     static void testAllocateThenLoad() {
         Outer o1 = new Outer();
         Common.blackhole(o1);

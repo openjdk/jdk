@@ -95,6 +95,7 @@ protected:
   virtual Node* find_previous_arraycopy(PhaseValues* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const { return nullptr; }
   ArrayCopyNode* find_array_copy_clone(Node* ld_alloc, Node* mem) const;
   static bool check_if_adr_maybe_raw(Node* adr);
+  static bool check_not_escaped(PhaseValues* phase, Unique_Node_List& aliases, AllocateNode* alloc, Node* ctl);
 
 public:
   // Helpers for the optimizer.  Documented in memnode.cpp.
