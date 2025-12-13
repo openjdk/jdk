@@ -75,6 +75,8 @@ public class HttpsUrlConnClient {
     static String SIGALG;
     static String KEYALG;
 
+    static final double TIMEOUT_FACTOR = Double.parseDouble(System.getProperty("test.timeout.factor", "1.0"));
+
     // Turn on TLS debugging
     static boolean debug = true;
 
@@ -312,10 +314,12 @@ public class HttpsUrlConnClient {
     void doClientSide(ClientParameters cliParams) throws Exception {
 
         // Wait 5 seconds for server ready
-        for (int i = 0; (i < 100 && !serverReady); i++) {
+        int maxWait = (int)(TIMEOUT_FACTOR * 100);
+        for (int i = 0; (i < maxWait && !serverReady); i++) {
             Thread.sleep(50);
         }
         if (!serverReady) {
+            System.out.println("Server wasn't ready after " + maxWait / 20 + " seconds");
             throw new RuntimeException("Server not ready yet");
         }
 
@@ -467,7 +471,7 @@ public class HttpsUrlConnClient {
                          *
                          * Release the client, if not active already...
                          */
-                        System.err.println("Server died...");
+                        System.err.println("Server died: " + e);
                         serverReady = true;
                         serverException = e;
                     }
@@ -478,6 +482,7 @@ public class HttpsUrlConnClient {
             try {
                 doServerSide(servParams);
             } catch (Exception e) {
+                System.err.println("Server died: " + e);
                 serverException = e;
             } finally {
                 serverReady = true;
@@ -497,7 +502,7 @@ public class HttpsUrlConnClient {
                         /*
                          * Our client thread just died.
                          */
-                        System.err.println("Client died...");
+                        System.err.println("Client died: " + e);
                         clientException = e;
                     }
                 }
@@ -508,6 +513,7 @@ public class HttpsUrlConnClient {
                 doClientSide(cliParams);
             } catch (Exception e) {
                 clientException = e;
+                System.err.println("Client died: " + e);
             }
         }
     }
