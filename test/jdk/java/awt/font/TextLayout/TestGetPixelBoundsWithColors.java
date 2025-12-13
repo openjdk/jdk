@@ -59,10 +59,12 @@ public class TestGetPixelBoundsWithColors {
     }
 
     private static void test(Color c) {
-        Font font1 = new Font(Font.DIALOG, Font.PLAIN, 60);
-        Map< TextAttribute, Object > attributes = new HashMap<>();
-        attributes.put(TextAttribute.FOREGROUND, c);
-        Font font2 = font1.deriveFont(attributes);
+        Map< TextAttribute, Object > underline = new HashMap<>();
+        underline.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
+        Font font1 = new Font(Font.DIALOG, Font.PLAIN, 60).deriveFont(underline);
+        Map< TextAttribute, Object > foreground = new HashMap<>();
+        foreground.put(TextAttribute.FOREGROUND, c);
+        Font font2 = font1.deriveFont(foreground);
         FontRenderContext frc = new FontRenderContext(null, true, true);
         TextLayout layout1 = new TextLayout("TEST", font1, frc);
         TextLayout layout2 = new TextLayout("TEST", font2, frc);
@@ -90,7 +92,7 @@ public class TestGetPixelBoundsWithColors {
         TextLayout layout = new TextLayout("TEST", font2, frc);
         Rectangle r = layout.getPixelBounds(frc, 0, 0);
         if (!r.isEmpty()) {
-            throw new RuntimeException("Expected empty pixel bounds for " + c);
+            throw new RuntimeException("Expected empty pixel bounds for " + c + " but got " + r);
         }
     }
 }
