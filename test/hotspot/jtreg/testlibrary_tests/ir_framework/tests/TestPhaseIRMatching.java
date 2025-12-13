@@ -67,7 +67,8 @@ public class TestPhaseIRMatching {
         List<String> noAdditionalFlags = new ArrayList<>();
         FlagVMProcess flagVMProcess = new FlagVMProcess(testClass, noAdditionalFlags);
         List<String> testVMFlags = flagVMProcess.getTestVMFlags();
-        TestVMProcess testVMProcess = new TestVMProcess(testVMFlags, testClass, null, -1, false, false);
+        TestVMProcess testVMProcess = new TestVMProcess();
+        testVMProcess.runProcess(testVMFlags, testClass, null, -1, false, false, System.out);
         TestClassParser testClassParser = new TestClassParser(testClass, false);
         Matchable testClassMatchable = testClassParser.parse(testVMProcess.getHotspotPidFileName(),
                                                              testVMProcess.getIrEncoding());

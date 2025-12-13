@@ -35,12 +35,12 @@ import compiler.lib.ir_framework.TestFramework;
  * @library /test/lib /
  * @run main/othervm -DFlipC1C2=true -DExcludeRandom=true -DVerifyVM=true -DDumpReplay=true -DVerbose=true
  *                   -DShuffleTests=false -DReproduce=true -DReportStdout=true -DGCAfter=true -DPrintTimes=true
- *                   -DIgnoreCompilerControls=true -DExcludeRandom=true -DVerifyIR=true
- *                   -DPreferCommandLineFlags=true -DPrintRuleMatchingTime=true ir_framework.tests.TestDFlags
+ *                   -DIgnoreCompilerControls=true -DExcludeRandom=true -DVerifyIR=true -DPreferCommandLineFlags=true
+ *                   -DPrintRuleMatchingTime=true -DForceSequentialScenarios=true ir_framework.tests.TestDFlags
  * @run main/othervm -DFlipC1C2=true -DExcludeRandom=true -DVerifyVM=true -DDumpReplay=true -DVerbose=true
  *                   -DShuffleTests=false -DReproduce=true -DReportStdout=true -DGCAfter=true -DPrintTimes=true
- *                   -DIgnoreCompilerControls=true -DExcludeRandom=true -DVerifyIR=false
- *                   -DPreferCommandLineFlags=true -DPrintRuleMatchingTime=true ir_framework.tests.TestDFlags
+ *                   -DIgnoreCompilerControls=true -DExcludeRandom=true -DVerifyIR=false -DPreferCommandLineFlags=true
+ *                   -DPrintRuleMatchingTime=true -DForceSequentialScenarios=true ir_framework.tests.TestDFlags
  */
 
 public class TestDFlags {
