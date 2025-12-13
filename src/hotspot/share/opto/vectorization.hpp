@@ -1188,6 +1188,22 @@ private:
     return true;
   }
 
+  // We already know that all non-iv summands are pre loop invariant.
+  // See init_are_non_iv_summands_pre_loop_invariant
+  // That is good enough for alignment computations in the pre-loop limit. But it is not
+  // sufficient if we want to use the variables of the VPointer at the speculative check,
+  // which is further up before the pre-loop.
+  bool can_make_pointer_expression_at_speculative_check() const {
+    bool success = true;
+    mem_pointer().for_each_non_empty_summand([&] (const MemPointerSummand& s) {
+      Node* variable = s.variable();
+      if (variable != _vloop.iv() && !_vloop.is_available_for_speculative_check(variable)) {
+        success = false;
+      }
+    });
+    return success;
+  }
+
   // In the pointer analysis, and especially the AlignVector analysis, we assume that
   // stride and scale are not too large. For example, we multiply "iv_scale * iv_stride",
   // and assume that this does not overflow the int range. We also take "abs(iv_scale)"
