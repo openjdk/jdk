@@ -3071,6 +3071,23 @@ public abstract class ShortVector extends AbstractVector<Short> {
         return vsp.dummyVector().fromArray0(a, offset, m, OFFSET_OUT_OF_RANGE);
     }
 
+    @ForceInline
+    private static
+    ShortVector loadWithMap(VectorSpecies<Short> species,
+                            VectorSpecies<Integer> lsp,
+                            IntVector vix, short[] a, int offset,
+                            int[] indexMap, int mapOffset) {
+        ShortSpecies vsp = (ShortSpecies) species;
+        Class<? extends ShortVector> vectorType = vsp.vectorType();
+        return VectorSupport.loadWithMap(
+            vectorType, null, short.class, vsp.laneCount(),
+            lsp.vectorType(), lsp.length(),
+            a, ARRAY_BASE, vix, null,
+            a, offset, indexMap, mapOffset, vsp,
+            (c, idx, iMap, idy, s, vm, num) ->
+            s.vOp(n -> (n < num) ? c[idx + iMap[idy + n]] : 0));
+    }
+
     /**
      * Gathers a new vector composed of elements from an array of type
      * {@code short[]},
@@ -3111,8 +3128,6 @@ public abstract class ShortVector extends AbstractVector<Short> {
         IntVector.IntSpecies isp = IntVector.species(vsp.indexShape());
         Objects.requireNonNull(a);
         Objects.requireNonNull(indexMap);
-        Class<? extends ShortVector> vectorType = vsp.vectorType();
-
 
         // Constant folding should sweep out following conditonal logic.
         VectorSpecies<Integer> lsp;
@@ -3122,25 +3137,43 @@ public abstract class ShortVector extends AbstractVector<Short> {
             lsp = isp;
         }
 
+        int vlen = vsp.length();
+        int idx_vlen = lsp.length();
+        if (vlen > idx_vlen * 2) {
+            // Fall back to scalar version when the vector is too large relative to the
+            // index vector. This occurs when the vector size exceeds the max vector size
+            // supported by the hardware. For example, when loading a Byte256Vector on
+            // hardware with MaxVectorSize of 16 bytes (128 bits), the index species "lsp"
+            // would be IntVector.SPECIES_128 with 4 int elements, while the byte vector
+            // has 32 elements (256/8). Since 32 > 4*4, the condition matches. We disable
+            // intrinsification in such cases because the compiler will eventually fall back
+            // to the Java implementation anyway since the vector size exceeds the hardware
+            // limit. While calling the intrinsic would also work, it would negatively impact
+            // performance because the implementation would need to split the operation into
+            // multiple smaller sub-operations.
+            return vsp.vOp(n -> a[offset + indexMap[mapOffset + n]]);
+        }
+
         // Check indices are within array bounds.
         IntVector vix0 = IntVector.fromArray(lsp, indexMap, mapOffset).add(offset);
         VectorIntrinsics.checkIndex(vix0, a.length);
 
-        int vlen = vsp.length();
-        int idx_vlen = lsp.length();
         IntVector vix1 = null;
         if (vlen >= idx_vlen * 2) {
             vix1 = IntVector.fromArray(lsp, indexMap, mapOffset + idx_vlen).add(offset);
             VectorIntrinsics.checkIndex(vix1, a.length);
         }
 
-        return VectorSupport.loadWithMap(
-            vectorType, null, short.class, vsp.laneCount(),
-            lsp.vectorType(), lsp.length(),
-            a, ARRAY_BASE, vix0, vix1, null, null, null,
-            a, offset, indexMap, mapOffset, vsp,
-            (c, idx, iMap, idy, s, vm) ->
-            s.vOp(n -> c[idx + iMap[idy+n]]));
+        // The first time of gather-load.
+        ShortVector vec = loadWithMap(vsp, lsp, vix0, a, offset, indexMap, mapOffset);
+
+        // The second time of gather-load.
+        if (vix1 != null) {
+            ShortVector vec1 = loadWithMap(vsp, lsp, vix1, a, offset, indexMap, mapOffset + idx_vlen);
+            // Merge with previous gather-load result: vec = [vec, vec1]
+            vec = vec.or(vsp.broadcast(0).slice(vlen - idx_vlen, vec1));
+        }
+        return vec;
     }
 
     /**
@@ -3846,6 +3879,34 @@ public abstract class ShortVector extends AbstractVector<Short> {
                                         (arr_, off_, i) -> arr_[off_ + i]));
     }
 
+    @ForceInline
+    private static
+    <M extends VectorMask<Short>>
+    ShortVector loadWithMap(Class<M> maskClass,
+                            VectorSpecies<Short> species,
+                            VectorSpecies<Integer> lsp,
+                            IntVector vix, short[] a, int offset,
+                            int[] indexMap, int mapOffset, M m) {
+        ShortSpecies vsp = (ShortSpecies) species;
+        Class<? extends ShortVector> vectorType = vsp.vectorType();
+        return VectorSupport.loadWithMap(
+            vectorType, maskClass, short.class, vsp.laneCount(),
+            lsp.vectorType(), lsp.length(),
+            a, ARRAY_BASE, vix, m,
+            a, offset, indexMap, mapOffset, vsp,
+            (c, idx, iMap, idy, s, vm, num) ->
+            s.vOp(vm, n -> (n < num) ? c[idx + iMap[idy + n]] : 0));
+    }
+
+    @ForceInline
+    @SuppressWarnings("unchecked")
+    private static
+    <M extends VectorMask<Short>>
+    M slideDownVectorMask(M m, int origin) {
+        Vector<Short> vector = m.toVector();
+        return (M) vector.slice(origin).compare(NE, 0);
+    }
+
     /*package-private*/
     abstract
     ShortVector fromArray0(short[] a, int offset,
@@ -3861,8 +3922,6 @@ public abstract class ShortVector extends AbstractVector<Short> {
         Objects.requireNonNull(a);
         Objects.requireNonNull(indexMap);
         m.check(vsp);
-        Class<? extends ShortVector> vectorType = vsp.vectorType();
-
 
         // Constant folding should sweep out following conditonal logic.
         VectorSpecies<Integer> lsp;
@@ -3872,26 +3931,45 @@ public abstract class ShortVector extends AbstractVector<Short> {
             lsp = isp;
         }
 
+        int vlen = vsp.length();
+        int idx_vlen = lsp.length();
+        if (vlen > idx_vlen * 2) {
+            // Fall back to scalar version when the vector is too large relative to the
+            // index vector. This occurs when the vector size exceeds the max vector size
+            // supported by the hardware. For example, when loading a Byte256Vector on
+            // hardware with MaxVectorSize of 16 bytes (128 bits), the index species "lsp"
+            // would be IntVector.SPECIES_128 with 4 int elements, while the byte vector
+            // has 32 elements (256/8). Since 32 > 4*4, the condition matches. We disable
+            // intrinsification in such cases because the compiler will eventually fall back
+            // to the Java implementation anyway since the vector size exceeds the hardware
+            // limit. While calling the intrinsic would also work, it would negatively impact
+            // performance because the implementation would need to split the operation into
+            // multiple smaller sub-operations.
+            return vsp.vOp(m, n -> a[offset + indexMap[mapOffset + n]]);
+        }
+
         // Check indices are within array bounds.
         // FIXME: Check index under mask controlling.
         IntVector vix0 = IntVector.fromArray(lsp, indexMap, mapOffset).add(offset);
         VectorIntrinsics.checkIndex(vix0, a.length);
 
-        int vlen = vsp.length();
-        int idx_vlen = lsp.length();
         IntVector vix1 = null;
         if (vlen >= idx_vlen * 2) {
             vix1 = IntVector.fromArray(lsp, indexMap, mapOffset + idx_vlen).add(offset);
             VectorIntrinsics.checkIndex(vix1, a.length);
         }
 
-        return VectorSupport.loadWithMap(
-            vectorType, maskClass, short.class, vsp.laneCount(),
-            lsp.vectorType(), lsp.length(),
-            a, ARRAY_BASE, vix0, vix1, null, null, m,
-            a, offset, indexMap, mapOffset, vsp,
-            (c, idx, iMap, idy, s, vm) ->
-            s.vOp(vm, n -> c[idx + iMap[idy+n]]));
+        // The first time of gather-load.
+        ShortVector vec = loadWithMap(maskClass, vsp, lsp, vix0, a, offset, indexMap, mapOffset, m);
+
+        // The second time of gather-load.
+        if (vix1 != null) {
+            M m1 = slideDownVectorMask(m, idx_vlen);
+            ShortVector vec1 = loadWithMap(maskClass, vsp, lsp, vix1, a, offset, indexMap, mapOffset + idx_vlen, m1);
+            // Merge with previous gather load result: vec = [vec, vec1]
+            vec = vec.or(vsp.broadcast(0).slice(vlen - idx_vlen, vec1));
+        }
+        return vec;
     }
 
     /*package-private*/

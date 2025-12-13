@@ -1396,52 +1396,39 @@ void C2_MacroAssembler::vinsert(BasicType typ, XMMRegister dst, XMMRegister src,
   }
 }
 
-void C2_MacroAssembler::vgather8b_masked(BasicType elem_bt, XMMRegister dst,
-                                         Register base, Register idx_base,
-                                         Register mask, Register mask_idx,
-                                         Register rtmp, int vlen_enc) {
+void C2_MacroAssembler::vgather_le8b_masked(BasicType elem_bt, XMMRegister dst,
+                                            Register base, Register idx_base,
+                                            Register mask, Register mask_idx,
+                                            Register rtmp, int vector_len, int vlen_enc) {
   vpxor(dst, dst, dst, vlen_enc);
-  if (elem_bt == T_SHORT) {
-    for (int i = 0; i < 4; i++) {
-      // dst[i] = mask[i] ? src[idx_base[i]] : 0
-      Label skip_load;
-      btq(mask, mask_idx);
-      jccb(Assembler::carryClear, skip_load);
-      movl(rtmp, Address(idx_base, i * 4));
+  for (int i = 0; i < vector_len; i++) {
+    // dst[i] = mask[i] ? src[idx_base[i]] : 0
+    Label skip_load;
+    btq(mask, mask_idx);
+    jccb(Assembler::carryClear, skip_load);
+    movl(rtmp, Address(idx_base, i * 4));
+    if (elem_bt == T_SHORT) {
       pinsrw(dst, Address(base, rtmp, Address::times_2), i);
-      bind(skip_load);
-      incq(mask_idx);
-    }
-  } else {
-    assert(elem_bt == T_BYTE, "");
-    for (int i = 0; i < 8; i++) {
-      // dst[i] = mask[i] ? src[idx_base[i]] : 0
-      Label skip_load;
-      btq(mask, mask_idx);
-      jccb(Assembler::carryClear, skip_load);
-      movl(rtmp, Address(idx_base, i * 4));
+    } else {
+      assert(elem_bt == T_BYTE, "");
       pinsrb(dst, Address(base, rtmp), i);
-      bind(skip_load);
-      incq(mask_idx);
     }
+    bind(skip_load);
+    incq(mask_idx);
   }
 }
 
-void C2_MacroAssembler::vgather8b(BasicType elem_bt, XMMRegister dst,
-                                  Register base, Register idx_base,
-                                  Register rtmp, int vlen_enc) {
+void C2_MacroAssembler::vgather_le8b(BasicType elem_bt, XMMRegister dst,
+                                     Register base, Register idx_base,
+                                     Register rtmp, int vector_len, int vlen_enc) {
   vpxor(dst, dst, dst, vlen_enc);
-  if (elem_bt == T_SHORT) {
-    for (int i = 0; i < 4; i++) {
-      // dst[i] = src[idx_base[i]]
-      movl(rtmp, Address(idx_base, i * 4));
+  for (int i = 0; i < vector_len; i++) {
+    // dst[i] = src[idx_base[i]]
+    movl(rtmp, Address(idx_base, i * 4));
+    if (elem_bt == T_SHORT) {
       pinsrw(dst, Address(base, rtmp, Address::times_2), i);
-    }
-  } else {
-    assert(elem_bt == T_BYTE, "");
-    for (int i = 0; i < 8; i++) {
-      // dst[i] = src[idx_base[i]]
-      movl(rtmp, Address(idx_base, i * 4));
+    } else {
+      assert(elem_bt == T_BYTE, "");
       pinsrb(dst, Address(base, rtmp), i);
     }
   }
@@ -1484,12 +1471,14 @@ void C2_MacroAssembler::vgather_subword(BasicType elem_ty, XMMRegister dst,
   vpslld(xtmp2, xtmp2, 1, vlen_enc); // xtmp2 = {2, 2, ...}
   load_iota_indices(xtmp1, vector_len * type2aelembytes(elem_ty), T_INT); // xtmp1 = {0, 1, 2, ...}
 
+  int gather8b_vlen = 8 / type2aelembytes(elem_ty);
+
   bind(GATHER8_LOOP);
     // TMP_VEC_64(temp_dst) = PICK_SUB_WORDS_FROM_GATHER_INDICES
     if (mask == noreg) {
-      vgather8b(elem_ty, temp_dst, base, idx_base, rtmp, vlen_enc);
+      vgather_le8b(elem_ty, temp_dst, base, idx_base, rtmp, gather8b_vlen, vlen_enc);
     } else {
-      vgather8b_masked(elem_ty, temp_dst, base, idx_base, mask, mask_idx, rtmp, vlen_enc);
+      vgather_le8b_masked(elem_ty, temp_dst, base, idx_base, mask, mask_idx, rtmp, gather8b_vlen, vlen_enc);
     }
     // TEMP_PERM_VEC(temp_dst) = PERMUTE TMP_VEC_64(temp_dst) PERM_INDEX(xtmp1)
     vpermd(temp_dst, xtmp1, temp_dst, vlen_enc == Assembler::AVX_512bit ? vlen_enc : Assembler::AVX_256bit);
