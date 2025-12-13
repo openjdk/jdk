@@ -1142,6 +1142,11 @@ class ImmutableCollections {
         @Override public boolean replace(K key, V oldValue, V newValue) { throw uoe(); }
         @Override public void replaceAll(BiFunction<? super K,? super V,? extends V> f) { throw uoe(); }
 
+        // Subclasses of AbstractImmutableMap should override keySet and values with implementations
+        // that throw UnsupportedOperationException on attempts to modify them.
+        @Override public abstract Set<K> keySet();
+        @Override public abstract Collection<V> values();
+
         /**
          * @implNote {@code null} values are disallowed in these immutable maps,
          * so we can improve upon the default implementation since a
@@ -1172,6 +1177,16 @@ class ImmutableCollections {
         @Override
         public Set<Map.Entry<K,V>> entrySet() {
             return Set.of(new KeyValueHolder<>(k0, v0));
+        }
+
+        @Override
+        public Set<K> keySet() {
+            return Set.of(k0);
+        }
+
+        @Override
+        public Collection<V> values() {
+            return List.of(v0);
         }
 
         @Override
@@ -1369,7 +1384,7 @@ class ImmutableCollections {
 
         @Override
         public Set<Map.Entry<K,V>> entrySet() {
-            return new AbstractSet<>() {
+            return new AbstractImmutableSet<>() {
                 @Override
                 public int size() {
                     return MapN.this.size;
@@ -1379,8 +1394,66 @@ class ImmutableCollections {
                 public Iterator<Map.Entry<K,V>> iterator() {
                     return new MapNIterator();
                 }
+
+                @Override
+                public int hashCode() {
+                    return MapN.this.hashCode();
+                }
             };
         }
+
+        @Override
+        public Set<K> keySet() {
+            Set<K> ks = keySet;
+            if (ks == null) {
+                ks = new AbstractImmutableSet<>() {
+                    @Override
+                    public int size() {
+                        return MapN.this.size;
+                    }
+
+                    @Override
+                    public Iterator<K> iterator() {
+                        return new KeyIterator();
+                    }
+
+                    @Override
+                    public int hashCode() {
+                        int hash = 0;
+                        for (int i = 0; i < table.length; i += 2) {
+                            Object k = table[i];
+                            if (k != null) {
+                                hash += k.hashCode();
+                            }
+                        }
+                        return hash;
+                    }
+                };
+                keySet = ks;
+            }
+            return ks;
+        }
+
+        @Override
+        public Collection<V> values() {
+            Collection<V> vals = values;
+            if (vals == null) {
+                vals = new AbstractImmutableCollection<>() {
+                    @Override
+                    public int size() {
+                        return MapN.this.size;
+                    }
+
+                    @Override
+                    public Iterator<V> iterator() {
+                        return new ValueIterator();
+                    }
+                };
+                values = vals;
+            }
+            return vals;
+        }
+
 
         // returns index at which the probe key is present; or if absent,
         // (-i - 1) where i is location where element should be inserted.

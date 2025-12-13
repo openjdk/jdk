@@ -26,7 +26,7 @@
  * @bug     6207984 6272521 6192552 6269713 6197726 6260652 5073546 4137464
  *          4155650 4216399 4294891 6282555 6318622 6355327 6383475 6420753
  *          6431845 4802633 6570566 6570575 6570631 6570924 6691185 6691215
- *          4802647 7123424 8024709 8193128 8327858 8368178 8371164
+ *          4802647 7123424 8024709 8193128 8327858 8368178 8371164 8328821
  * @summary Run many tests on many Collection and Map implementations
  * @author  Martin Buchholz
  * @modules java.base/java.util:open
@@ -368,6 +368,9 @@ public class MOAT {
         testEmptyMap(Map.ofLazy(Set.of(), k -> k));
         testMapMutatorsAlwaysThrow(Map.ofLazy(Set.of(), k -> k));
         testEmptyMapMutatorsAlwaysThrow(Map.ofLazy(Set.of(), k -> k));
+        testEmptyCollMutatorsAlwaysThrow(Map.of().entrySet());
+        testEmptyCollMutatorsAlwaysThrow(Map.of().keySet());
+        testEmptyCollMutatorsAlwaysThrow(Map.of().values());
         for (Map<Integer,Integer> map : Arrays.asList(
                 Map.<Integer,Integer>of(),
                 Map.of(1, 101),
@@ -387,6 +390,9 @@ public class MOAT {
             testMap(map);
             testImmutableMap(map);
             testMapMutatorsAlwaysThrow(map);
+            testCollMutatorsAlwaysThrow(map.entrySet(), Map.entry(42, 43));
+            testCollMutatorsAlwaysThrow(map.keySet());
+            testCollMutatorsAlwaysThrow(map.values());
         }
 
         Map<Integer,Integer> mapCopy = Map.copyOf(new HashMap<>(Map.of(1, 101, 2, 202, 3, 303)));
@@ -555,9 +561,13 @@ public class MOAT {
      * @param c the collection instance to test
      */
     private static void testCollMutatorsAlwaysThrow(Collection<Integer> c) {
+        testCollMutatorsAlwaysThrow(c, ABSENT_VALUE);
+    }
+
+    private static <T> void testCollMutatorsAlwaysThrow(Collection<T> c, T t) {
         THROWS(UnsupportedOperationException.class,
                 () -> c.addAll(Collections.emptyList()),
-                () -> c.remove(ABSENT_VALUE),
+                () -> c.remove(t),
                 () -> c.removeAll(Collections.emptyList()),
                 () -> c.removeIf(x -> false),
                 () -> c.retainAll(c));
@@ -602,7 +612,7 @@ public class MOAT {
      *
      * @param c the collection instance to test, must be empty
      */
-    private static void testEmptyCollMutatorsAlwaysThrow(Collection<Integer> c) {
+    private static void testEmptyCollMutatorsAlwaysThrow(Collection<?> c) {
         if (! c.isEmpty()) {
             fail("collection is not empty");
         }
@@ -1411,6 +1421,8 @@ public class MOAT {
             hashCode += entryHash;
         }
         check(m.hashCode() == hashCode);
+        check(m.hashCode() == m.entrySet().hashCode());
+        check(Set.copyOf(m.keySet()).hashCode() == m.keySet().hashCode());
 
         if (m instanceof ConcurrentMap)
             testConcurrentMap((ConcurrentMap<Integer,Integer>) m);
