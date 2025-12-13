@@ -87,9 +87,16 @@ bool MemNode::check_if_adr_maybe_raw(Node* adr) {
 }
 
 // Check whether an allocation has escaped at a certain control node ctl, the allocation does not
-// escape at ctl if there is no node that make it escape at any transitive input of ctl
+// escape at ctl if there is no node that:
+// 1. Make the allocation escape.
+// 2. Either:
+//   a. Has no control input.
+//   b. Has a control input that is a transitive control input of ctl.
+//
+// In other word, alloc is determined not to escape at ctl if all nodes that make alloc escape have
+// a control input that is not a transitive control input of ctl.
 bool MemNode::check_not_escaped(PhaseValues* phase, Unique_Node_List& aliases, AllocateNode* alloc, Node* ctl) {
-  if (!phase->is_IterGVN() || alloc == nullptr) {
+  if (!phase->is_IterGVN() || alloc == nullptr || ctl->is_top()) {
     return false;
   }
   ciEnv* env = phase->C->env();
@@ -120,15 +127,15 @@ bool MemNode::check_not_escaped(PhaseValues* phase, Unique_Node_List& aliases, A
     }
   }
 
-  // Find all control nodes from ctl to alloc, alloc must dominate ctl, which means all paths from
-  // ctl must arrive at alloc, or a dead end
+  // Find all transitive control inputs of ctl
   ResourceMark rm;
+  Node* start = phase->C->start();
   Unique_Node_List controls;
   controls.push(ctl);
   for (uint control_idx = 0; control_idx < controls.size(); control_idx++) {
     Node* n = controls.at(control_idx);
-    assert(!n->is_Start(), "alloc must dominate ctl");
-    if (n == alloc) {
+    assert(n->bottom_type() == Type::CONTROL || n->bottom_type()->base() == Type::Tuple, "must be a control node %s", n->Name());
+    if (n == start) {
       continue;
     }
 
@@ -147,12 +154,13 @@ bool MemNode::check_not_escaped(PhaseValues* phase, Unique_Node_List& aliases, A
     }
   }
 
-  if (!controls.member(alloc)) {
-    // If there is no control path from ctl to alloc, ctl is a dead path, give up
+  if (!controls.member(start)) {
+    // If there is no control path from ctl to start, ctl is a dead path, give up
     return false;
   }
 
-  // Find all nodes that may escape alloc, and see whether they may be between ctl and alloc
+  // Find all nodes that may escape alloc, and decide that it is provable that they must be
+  // executed after ctl
   for (uint idx = 0; idx < aliases.size(); idx++) {
     Node* n = aliases.at(idx);
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
@@ -163,8 +171,8 @@ bool MemNode::check_not_escaped(PhaseValues* phase, Unique_Node_List& aliases, A
           // out is a dead node, ignore it
           continue;
         } else if (!controls.member(c)) {
-          // out is not executed before ctl, so it does not affect the escape status of alloc at
-          // ctl
+          // c is not a transitive control input of ctl, so out is not executed before ctl, which
+          // means it does not affect the escape status of alloc at ctl
           continue;
         }
       }
