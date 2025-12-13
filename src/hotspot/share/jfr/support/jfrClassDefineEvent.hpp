@@ -26,6 +26,7 @@
 #define SHARE_JFR_SUPPORT_JFRCLASSDEFINEEVENT_HPP
 
 #include "memory/allStatic.hpp"
+#include "utilities/macros.hpp"
 
 class ClassFileParser;
 class InstanceKlass;
@@ -34,7 +35,7 @@ class JavaThread;
 class JfrClassDefineEvent : AllStatic {
  public:
   static void on_creation(const InstanceKlass* ik, const ClassFileParser& parser, JavaThread* jt);
-  static void on_restoration(const InstanceKlass* ik, JavaThread* jt);
+  CDS_ONLY(static void on_restoration(const InstanceKlass* ik, JavaThread* jt);)
 };
 
 #endif // SHARE_JFR_SUPPORT_JFRCLASSDEFINEEVENT_HPP
