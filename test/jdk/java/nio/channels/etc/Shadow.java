@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,12 @@
  * @bug 4455376
  * @summary Ensure that socket objects obtained from channels
  *          carry the correct address information
+ * @library /test/lib
+ * @build jdk.test.lib.net.IPSupport
+ * @run main Shadow
  */
+
+import jdk.test.lib.net.IPSupport;
 
 import java.io.*;
 import java.net.*;
@@ -66,6 +71,7 @@ public class Shadow {
     }
 
     public static void main(String[] args) throws Exception {
+        IPSupport.printPlatformSupport(System.out);
         boolean useChannels
             = ((args.length == 0) || Boolean.valueOf(args[0]).booleanValue());
         int port = (args.length > 1 ? Integer.parseInt(args[1]) : -1);
