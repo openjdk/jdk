@@ -79,6 +79,11 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             super(form, exact);
             this.be = be;
         }
+
+        @Override
+        boolean isReachableFrom(ClassLoader cl) {
+            return true;
+        }
     }
 
     static final class ArrayHandle extends ByteArrayViewVarHandle {

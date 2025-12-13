@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.lang.invoke.VarHandle;
 
 /*
  * @test
- * bug 8308444
+ * @bug 8308444
  * @summary verify that the correct node is matched for atomic getAndAdd
  * @requires os.simpleArch == "x64"
  * @requires vm.compiler2.enabled
