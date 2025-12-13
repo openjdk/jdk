@@ -346,24 +346,24 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Returns a string describing this {@code Field}.  The format is
-     * the access modifiers for the field, if any, followed
-     * by the field type, followed by a space, followed by
-     * the fully-qualified name of the class declaring the field,
-     * followed by a period, followed by the name of the field.
+     * {@return a string describing this {@code Field}}
+     *
+     * The string includes information about access modifiers of the
+     * field, the type of the field, the type declaring the field,
+     * and the name of the field.
+     *
      * For example:
      * <pre>
      *    public static final int java.lang.Thread.MIN_PRIORITY
      *    private int java.io.FileDescriptor.fd
+     *    public static java.util.List Foo.bar
      * </pre>
      *
-     * <p>The modifiers are placed in canonical order as specified by
-     * "The Java Language Specification".  This is {@code public},
-     * {@code protected} or {@code private} first, and then other
-     * modifiers in the following order: {@code static}, {@code final},
-     * {@code transient}, {@code volatile}.
+     * @apiNote
+     * Specific information about {@linkplain #getModifiers()
+     * modifiers} or other aspects of the field should be retrieved
+     * using methods for that purpose.
      *
-     * @return a string describing this {@code Field}
      * @jls 8.3.1 Field Modifiers
      */
     public String toString() {
@@ -380,21 +380,24 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Returns a string describing this {@code Field}, including
-     * its generic type.  The format is the access modifiers for the
-     * field, if any, followed by the generic field type, followed by
-     * a space, followed by the fully-qualified name of the class
-     * declaring the field, followed by a period, followed by the name
-     * of the field.
+     * {@return a string describing this {@code Field}, including
+     * its generic type}
      *
-     * <p>The modifiers are placed in canonical order as specified by
-     * "The Java Language Specification".  This is {@code public},
-     * {@code protected} or {@code private} first, and then other
-     * modifiers in the following order: {@code static}, {@code final},
-     * {@code transient}, {@code volatile}.
+     * The string includes information about access modifiers of the
+     * field, the type of the field, the type declaring the field,
+     * and the name of the field.
      *
-     * @return a string describing this {@code Field}, including
-     * its generic type
+     * For example:
+     * <pre>
+     *    public static final int java.lang.Thread.MIN_PRIORITY
+     *    private int java.io.FileDescriptor.fd
+     *    public static java.util.List&lt;java.lang.String&gt; Foo.bar
+     * </pre>
+     *
+     * @apiNote
+     * Specific information about {@linkplain #getModifiers()
+     * modifiers} or other aspects of the field should be retrieved
+     * using methods for that purpose.
      *
      * @since 1.5
      * @jls 8.3.1 Field Modifiers
