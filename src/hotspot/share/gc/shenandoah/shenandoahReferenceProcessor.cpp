@@ -252,7 +252,8 @@ ShenandoahReferenceProcessor::ShenandoahReferenceProcessor(ShenandoahGeneration*
   _pending_list(nullptr),
   _pending_list_tail(&_pending_list),
   _iterate_discovered_list_id(0U),
-  _generation(generation) {
+  _generation(generation),
+  _old_generation_ref_processor(nullptr) {
   for (size_t i = 0; i < max_workers; i++) {
     _ref_proc_thread_locals[i].reset();
   }
