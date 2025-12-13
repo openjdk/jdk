@@ -121,7 +121,7 @@ bool MemNode::check_not_escaped(PhaseValues* phase, Unique_Node_List& aliases, A
   }
 
   // Find all control nodes from ctl to alloc, alloc must dominate ctl, which means all paths from
-  // ctl must arrive at alloc
+  // ctl must arrive at alloc, or a dead end
   ResourceMark rm;
   Unique_Node_List controls;
   controls.push(ctl);
@@ -145,6 +145,11 @@ bool MemNode::check_not_escaped(PhaseValues* phase, Unique_Node_List& aliases, A
         controls.push(in);
       }
     }
+  }
+
+  if (!controls.member(alloc)) {
+    // If there is no control path from ctl to alloc, ctl is a dead path, give up
+    return false;
   }
 
   // Find all nodes that may escape alloc, and see whether they may be between ctl and alloc
