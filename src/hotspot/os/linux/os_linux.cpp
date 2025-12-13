@@ -2432,62 +2432,57 @@ bool os::Linux::print_container_info(outputStream* st) {
   st->print_cr("container (cgroup) information:");
 
   const char *p_ct = OSContainer::container_type();
-  st->print_cr("container_type: %s", p_ct != nullptr ? p_ct : "not supported");
+  OSContainer::print_container_metric(st, "container_type", p_ct != nullptr ? p_ct : "not supported");
 
   char *p = OSContainer::cpu_cpuset_cpus();
-  st->print_cr("cpu_cpuset_cpus: %s", p != nullptr ? p : "not supported");
+  OSContainer::print_container_metric(st, "cpu_cpuset_cpus", p != nullptr ? p : "not supported");
   free(p);
 
   p = OSContainer::cpu_cpuset_memory_nodes();
-  st->print_cr("cpu_memory_nodes: %s", p != nullptr ? p : "not supported");
+  OSContainer::print_container_metric(st, "cpu_memory_nodes", p != nullptr ? p : "not supported");
   free(p);
 
   int i = -1;
   bool supported = OSContainer::active_processor_count(i);
-  st->print("active_processor_count: ");
   if (supported) {
     assert(i > 0, "must be");
     if (ActiveProcessorCount > 0) {
-      st->print_cr("%d, but overridden by -XX:ActiveProcessorCount %d", i, ActiveProcessorCount);
+      OSContainer::print_container_metric(st, "active_processor_count", ActiveProcessorCount, "(from -XX:ActiveProcessorCount)");
     } else {
-      st->print_cr("%d", i);
+      OSContainer::print_container_metric(st, "active_processor_count", i);
     }
   } else {
-    st->print_cr("not supported");
+    OSContainer::print_container_metric(st, "active_processor_count", "not supported");
   }
 
 
   supported = OSContainer::cpu_quota(i);
-  st->print("cpu_quota: ");
   if (supported && i > 0) {
-    st->print_cr("%d", i);
+    OSContainer::print_container_metric(st, "cpu_quota", i);
   } else {
-    st->print_cr("%s", !supported ? "not supported" : "no quota");
+    OSContainer::print_container_metric(st, "cpu_quota", !supported ? "not supported" : "no quota");
   }
 
   supported = OSContainer::cpu_period(i);
-  st->print("cpu_period: ");
   if (supported && i > 0) {
-    st->print_cr("%d", i);
+    OSContainer::print_container_metric(st, "cpu_period", i);
   } else {
-    st->print_cr("%s", !supported ? "not supported" : "no period");
+    OSContainer::print_container_metric(st, "cpu_period", !supported ? "not supported" : "no period");
   }
 
   supported = OSContainer::cpu_shares(i);
-  st->print("cpu_shares: ");
   if (supported && i > 0) {
-    st->print_cr("%d", i);
+    OSContainer::print_container_metric(st, "cpu_shares", i);
   } else {
-    st->print_cr("%s", !supported ? "not supported" : "no shares");
+    OSContainer::print_container_metric(st, "cpu_shares", !supported ? "not supported" : "no shares");
   }
 
   uint64_t j = 0;
   supported = OSContainer::cpu_usage_in_micros(j);
-  st->print("cpu_usage_in_micros: ");
   if (supported && j > 0) {
-    st->print_cr(UINT64_FORMAT, j);
+    OSContainer::print_container_metric(st, "cpu_usage", j, "us");
   } else {
-    st->print_cr("%s", !supported ? "not supported" : "no usage");
+    OSContainer::print_container_metric(st, "cpu_usage", !supported ? "not supported" : "no usage");
   }
 
   MetricResult memory_limit;
@@ -2530,31 +2525,29 @@ bool os::Linux::print_container_info(outputStream* st) {
   if (OSContainer::cache_usage_in_bytes(val)) {
     cache_usage.set_value(val);
   }
-  OSContainer::print_container_helper(st, memory_limit, "memory_limit_in_bytes");
-  OSContainer::print_container_helper(st, mem_swap_limit, "memory_and_swap_limit_in_bytes");
-  OSContainer::print_container_helper(st, mem_soft_limit, "memory_soft_limit_in_bytes");
-  OSContainer::print_container_helper(st, mem_throttle_limit, "memory_throttle_limit_in_bytes");
-  OSContainer::print_container_helper(st, mem_usage, "memory_usage_in_bytes");
-  OSContainer::print_container_helper(st, mem_max_usage, "memory_max_usage_in_bytes");
-  OSContainer::print_container_helper(st, rss_usage, "rss_usage_in_bytes");
-  OSContainer::print_container_helper(st, cache_usage, "cache_usage_in_bytes");
+  OSContainer::print_container_helper(st, memory_limit, "memory_limit");
+  OSContainer::print_container_helper(st, mem_swap_limit, "memory_and_swap_limit");
+  OSContainer::print_container_helper(st, mem_soft_limit, "memory_soft_limit");
+  OSContainer::print_container_helper(st, mem_throttle_limit, "memory_throttle_limit");
+  OSContainer::print_container_helper(st, mem_usage, "memory_usage");
+  OSContainer::print_container_helper(st, mem_max_usage, "memory_max_usage");
+  OSContainer::print_container_helper(st, rss_usage, "rss_usage");
+  OSContainer::print_container_helper(st, cache_usage, "cache_usage");
 
   OSContainer::print_version_specific_info(st);
 
   supported = OSContainer::pids_max(j);
-  st->print("maximum number of tasks: ");
   if (supported && j != value_unlimited) {
-    st->print_cr(UINT64_FORMAT, j);
+    OSContainer::print_container_metric(st, "maximum number of tasks", j);
   } else {
-    st->print_cr("%s", !supported ? "not supported" : "unlimited");
+    OSContainer::print_container_metric(st, "maximum number of tasks", !supported ? "not supported" : "unlimited");
   }
 
   supported = OSContainer::pids_current(j);
-  st->print("current number of tasks: ");
   if (supported && j > 0) {
-    st->print_cr(UINT64_FORMAT, j);
+    OSContainer::print_container_metric(st, "current number of tasks", j);
   } else {
-    st->print_cr("%s", !supported ? "not supported" : "no current tasks");
+    OSContainer::print_container_metric(st, "current number of tasks", !supported ? "not supported" : "no tasks");
   }
 
   return true;
