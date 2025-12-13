@@ -127,7 +127,9 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Branch Protection to use: none, standard, pac-ret")          \
   product(bool, AlwaysMergeDMB, true, DIAGNOSTIC,                       \
           "Always merge DMB instructions in code emission")             \
-
+  product(bool, UseSVELibSimdSortForFP, false, EXPERIMENTAL,            \
+          "Use SVE-based LibSimdSort for float type on SVE supporting " \
+          "machines")                                                   \
 // end of ARCH_FLAGS
 
 #endif // CPU_AARCH64_GLOBALS_AARCH64_HPP
