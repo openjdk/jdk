@@ -4998,6 +4998,15 @@ static jlong total_thread_cpu_time(Thread *thread) {
   return success ? os::Linux::thread_cpu_time(clockid) : -1;
 }
 
+CPUTime_t os::detailed_thread_cpu_time(Thread* t) {
+  jlong user = user_thread_cpu_time(t);
+  jlong total = total_thread_cpu_time(t);
+  return {
+    user,
+    total - user
+  };
+}
+
 // current_thread_cpu_time(bool) and thread_cpu_time(Thread*, bool)
 // are used by JVM M&M and JVMTI to get user+sys or user CPU time
 // of a thread.

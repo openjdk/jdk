@@ -35,6 +35,15 @@
 
 volatile bool CPUTimeUsage::Error::_has_error = false;
 
+static inline CPUTime_t detailed_thread_cpu_time_or_zero(Thread* thread) {
+  CPUTime_t cpu_time = os::detailed_thread_cpu_time(thread);
+  if (cpu_time.system == -1 || cpu_time.user == -1) {
+    CPUTimeUsage::Error::mark_error();
+    return {0, 0};
+  }
+  return cpu_time;
+}
+
 static inline jlong thread_cpu_time_or_zero(Thread* thread) {
   jlong cpu_time = os::thread_cpu_time(thread);
   if (cpu_time == -1) {
@@ -55,8 +64,21 @@ public:
   jlong cpu_time() { return _cpu_time; };
 };
 
-jlong CPUTimeUsage::GC::vm_thread() {
-  return Universe::heap()->_vmthread_cpu_time;
+class DetailedCPUTimeThreadClosure : public ThreadClosure {
+private:
+  CPUTime_t _cpu_time = {0, 0};
+
+public:
+  virtual void do_thread(Thread* thread) {
+    CPUTime_t new_value = detailed_thread_cpu_time_or_zero(thread);
+    _cpu_time.user += new_value.user;
+    _cpu_time.system += new_value.system;
+  }
+  CPUTime_t cpu_time() { return _cpu_time; };
+};
+
+jlong CPUTimeUsage::GC::total() {
+  return gc_threads() + vm_thread() + stringdedup();
 }
 
 jlong CPUTimeUsage::GC::gc_threads() {
@@ -65,8 +87,8 @@ jlong CPUTimeUsage::GC::gc_threads() {
   return cl.cpu_time();
 }
 
-jlong CPUTimeUsage::GC::total() {
-  return gc_threads() + vm_thread() + stringdedup();
+jlong CPUTimeUsage::GC::vm_thread() {
+  return Universe::heap()->_vmthread_cpu_time;
 }
 
 jlong CPUTimeUsage::GC::stringdedup() {
@@ -74,6 +96,24 @@ jlong CPUTimeUsage::GC::stringdedup() {
     return thread_cpu_time_or_zero((Thread*)StringDedup::_processor->_thread);
   }
   return 0;
+}
+
+CPUTime_t CPUTimeUsage::GC::detailed_gc_threads() {
+  DetailedCPUTimeThreadClosure cl;
+  Universe::heap()->gc_threads_do(&cl);
+  return cl.cpu_time();
+}
+
+CPUTime_t CPUTimeUsage::GC::detailed_gc_operation_vm_thread() {
+  assert_at_safepoint();
+  return detailed_thread_cpu_time_or_zero((Thread*)VMThread::vm_thread());
+}
+
+CPUTime_t CPUTimeUsage::GC::detailed_stringdedup() {
+  if (UseStringDeduplication) {
+    return detailed_thread_cpu_time_or_zero((Thread*)StringDedup::_processor->_thread);
+  }
+  return {0, 0};
 }
 
 bool CPUTimeUsage::Error::has_error() {

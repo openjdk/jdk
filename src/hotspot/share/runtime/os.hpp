@@ -167,6 +167,12 @@ public:
   int saved_errno() { return _e; }
 };
 
+struct CPUTime {
+  jlong user;
+  jlong system;
+};
+typedef struct CPUTime CPUTime_t;
+
 class os: AllStatic {
   friend class JVMCIVMStructs;
   friend class MallocTracker;
@@ -993,6 +999,8 @@ class os: AllStatic {
   // Otherwise, only user time is returned
   static jlong current_thread_cpu_time(bool user_sys_cpu_time);
   static jlong thread_cpu_time(Thread* t, bool user_sys_cpu_time);
+
+  static CPUTime_t detailed_thread_cpu_time(Thread* t);
 
   // Return a bunch of info about the timers.
   // Note that the returned info for these two functions may be different
