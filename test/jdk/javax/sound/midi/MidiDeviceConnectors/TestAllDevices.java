@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4933700
+ * @key sound
  * @summary Tests that default devices return MidiDeviceTransmitter/Receiver and returned objects return correct MidiDevice
  * @compile TestAllDevices.java
  * @run main TestAllDevices

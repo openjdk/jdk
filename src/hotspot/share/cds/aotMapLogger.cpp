@@ -796,7 +796,7 @@ void AOTMapLogger::dumptime_log_mapped_heap_region(ArchiveMappedHeapInfo* heap_i
   address buffer_start = address(r.start()); // start of the current oop inside the buffer
   address buffer_end = address(r.end());
 
-  address requested_base = UseCompressedOops ? (address)CompressedOops::base() : (address)AOTMappedHeapWriter::NOCOOPS_REQUESTED_BASE;
+  address requested_base = UseCompressedOops ? AOTMappedHeapWriter::narrow_oop_base() : (address)AOTMappedHeapWriter::NOCOOPS_REQUESTED_BASE;
   address requested_start = UseCompressedOops ? AOTMappedHeapWriter::buffered_addr_to_requested_addr(buffer_start) : requested_base;
 
   log_region_range("heap", buffer_start, buffer_end, requested_start);

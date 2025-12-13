@@ -526,7 +526,7 @@ void CDSConfig::check_aotmode_record() {
   bool has_output = !FLAG_IS_DEFAULT(AOTCacheOutput);
 
   if (!has_output && !has_config) {
-      vm_exit_during_initialization("At least one of AOTCacheOutput and AOTConfiguration must be specified when using -XX:AOTMode=record");
+    vm_exit_during_initialization("At least one of AOTCacheOutput and AOTConfiguration must be specified when using -XX:AOTMode=record");
   }
 
   if (has_output) {

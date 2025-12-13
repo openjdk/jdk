@@ -32,7 +32,7 @@
  *          jdk.jshell/jdk.jshell:open
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build KullaTesting TestingInputStream Compiler
- * @run junit/timeout=480 CompletionSuggestionTest
+ * @run junit/othervm/timeout=480 --enable-final-field-mutation=ALL-UNNAMED CompletionSuggestionTest
  */
 
 import java.io.IOException;
@@ -947,7 +947,7 @@ public class CompletionSuggestionTest extends KullaTesting {
     public void testMultiSnippet() {
         assertCompletion("String s = \"\"; s.len|", true, "length()");
         assertCompletion("String s() { return \"\"; } s().len|", true, "length()");
-        assertCompletion("String s() { return \"\"; } import java.util.List; List.o|", true, "of(");
+        assertCompletion("String s() { return \"\"; } import java.util.List; List.o|", true, "of(", "ofLazy(");
         assertCompletion("String s() { return \"\"; } import java.ut| ", true, "util.");
         assertCompletion("class S { public int length() { return 0; } } new S().len|", true, "length()");
         assertSignature("void f() { } f(|", "void f()");

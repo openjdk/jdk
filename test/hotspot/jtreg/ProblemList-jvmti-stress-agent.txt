@@ -33,7 +33,7 @@ gc/stringdedup/TestStringDeduplicationPrintOptions.java 8362562 generic-all
 
 
 serviceability/jvmti/events/SingleStep/singlestep02/singlestep02.java       8362350 generic-all
-vmTestbase/nsk/jvmti/scenarios/events/EM02/em02t007/TestDescription.java	8362350 generic-all
+vmTestbase/nsk/jvmti/scenarios/events/EM02/em02t007/TestDescription.java    8362350 generic-all
 
 # Incompatbile tests
 
