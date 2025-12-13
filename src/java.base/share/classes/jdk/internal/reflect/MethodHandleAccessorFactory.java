@@ -42,6 +42,8 @@ import jdk.internal.misc.VM;
 
 import static java.lang.invoke.MethodType.genericMethodType;
 import static java.lang.invoke.MethodType.methodType;
+
+import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64CallArranger;
 import static jdk.internal.reflect.MethodHandleAccessorFactory.LazyStaticHolder.*;
 
 final class MethodHandleAccessorFactory {
@@ -86,6 +88,32 @@ final class MethodHandleAccessorFactory {
     }
 
     /**
+     * Creates a MethodAccessor for the given reflected method with the given
+     * direct method handle.
+     */
+     static MethodAccessorImpl newMethodAccessor(Method method, MethodHandle dmh, boolean callerSensitive) {
+        if (useNativeAccessor(method)) {
+            return DirectMethodHandleAccessor.nativeAccessor(method, callerSensitive);
+        }
+        // ExceptionInInitializerError may be thrown during class initialization
+        // Ensure class initialized outside the invocation of method handle
+        // so that EIIE is propagated (not wrapped with ITE)
+        ensureClassInitialized(method.getDeclaringClass());
+        if (callerSensitive) {
+            return DirectMethodHandleAccessor.callerSensitiveAdapter(method, dmh);
+        }
+        var isStatic = Modifier.isStatic(method.getModifiers());
+        if (callerSensitive) {
+            // the reflectiveInvoker for caller-sensitive method expects the same signature
+            // as Method::invoke i.e. (Object, Object[])Object
+            dmh = makeTarget(dmh, isStatic, false);
+        } else {
+            dmh = makeSpecializedTarget(dmh, isStatic, false);
+        }
+        return DirectMethodHandleAccessor.methodAccessor(method, dmh);
+    }
+
+    /**
      * Creates a ConstructorAccessor for the given reflected constructor.
      *
      * If a given constructor is called before the java.lang.invoke initialization,
@@ -108,6 +136,18 @@ final class MethodHandleAccessorFactory {
         } catch (IllegalAccessException e) {
             throw new InternalError(e);
         }
+    }
+
+    static ConstructorAccessorImpl newConstructorAccessor(Constructor<?> ctor,  MethodHandle dmh) {
+        if (useNativeAccessor(ctor)) {
+            return DirectConstructorHandleAccessor.nativeAccessor(ctor);
+        }
+
+        // ExceptionInInitializerError may be thrown during class initialization
+        // Ensure class initialized outside the invocation of method handle
+        // so that EIIE is propagated (not wrapped with ITE)
+        ensureClassInitialized(ctor.getDeclaringClass());
+        return DirectConstructorHandleAccessor.constructorAccessor(ctor, dmh);
     }
 
     /**
@@ -329,6 +369,7 @@ final class MethodHandleAccessorFactory {
             // add leading 'this' parameter to static method which is then ignored
             target = MethodHandles.dropArguments(target, 0, Object.class);
         }
+System.out.println("                [MethodHandleAccessorFactory:makeTarget()] target=" + target);
         return target.asType(mtype);
     }
 
@@ -433,6 +474,15 @@ final class MethodHandleAccessorFactory {
         // Single parameter of declared type Object[]
         Class<?>[] parameters = reflectionFactory.getExecutableSharedParameterTypes(method);
         return parameters.length == 1 && parameters[0] == Object[].class;
+    }
+
+    /**
+     * Returns a MethodHandles.Lookup with full capabilities to the given class.
+     * This method is used by core reflection implementation to
+     * create method handles for method/constructor/field accessors.
+     */
+    static MethodHandles.Lookup getLookup(Class<?> lookupClass) {
+        return JLIA.getLookup(lookupClass);
     }
 
     /*
