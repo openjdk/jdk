@@ -251,11 +251,13 @@ class TestZGCCorrectBarrierElision {
 class TestZGCEffectiveBarrierElision {
 
     @Test
-    @IR(failOn = {IRNode.LOAD_P_OF_CLASS, "Outer", IRNode.LOAD_N_OF_CLASS, "Outer"})
+    @IR(counts = { IRNode.Z_LOAD_P_WITH_BARRIER_FLAG, Common.ELIDED, "2" }, phase = CompilePhase.FINAL_CODE)
     static void testAllocateThenLoad() {
         Outer o1 = new Outer();
-        Common.blackhole(o1);
-        // This load is directly optimized away by C2.
+        Common.outer = o1;
+        // Prevent the field loads from getting folded by making o1 escape, the fullFence is
+        // necessary because otherwise the loads can float above the store and get folded
+        VarHandle.fullFence();
         Common.blackhole(o1.field1);
         Common.blackhole(o1.field1);
     }
