@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,7 @@
  */
 
 // SunJSSE does not support dynamic system properties, no way to re-use
-// system properties in samevm/agentvm mode.  For further debugging output
-// set the -Djavax.net.debug=ssl:handshake property on the @run lines.
+// system properties in samevm/agentvm mode.
 
 /*
  * @test
@@ -46,6 +45,17 @@ import java.util.*;
 
 public class ClientHelloKeyShares {
 
+    /*
+     * Enables the JSSE system debugging system property:
+     *
+     *     -Djavax.net.debug=ssl,handshake
+     *
+     * This gives a lot of low-level information about operations underway,
+     * including specific handshake messages, and might be best examined
+     * after gaining some familiarity with this application.
+     */
+    private static final boolean debug = false;
+
     // Some TLS constants we'll use for testing
     private static final int TLS_REC_HANDSHAKE = 22;
     private static final int HELLO_EXT_SUPP_GROUPS = 10;
@@ -58,6 +68,10 @@ public class ClientHelloKeyShares {
     private static final int NG_X448 = 0x001E;
 
     public static void main(String args[]) throws Exception {
+        if (debug) {
+            System.setProperty("javax.net.debug", "ssl,handshake");
+        }
+
         // Arguments to this test are an abitrary number of integer
         // values which will be the expected NamedGroup IDs in the key_share
         // extension.  Expected named group assertions may also be affected
