@@ -967,7 +967,8 @@ static Node* ideal_partial_operations(PhaseGVN* phase, Node* node, const TypeVec
   case Op_LoadVectorGather:
     return new LoadVectorGatherMaskedNode(node->in(0), node->in(1), node->in(2),
                                           node->as_LoadVector()->adr_type(), vt,
-                                          node->in(3), mask);
+                                          node->in(3), mask,
+                                          node->as_LoadVectorGather()->mem_bt());
   case Op_StoreVector:
     return new StoreVectorMaskedNode(node->in(0), node->in(1), node->in(2), node->in(3),
                                      node->as_StoreVector()->adr_type(), mask);

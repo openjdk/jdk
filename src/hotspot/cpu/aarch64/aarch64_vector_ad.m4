@@ -164,19 +164,18 @@ source %{
       case Op_MaskAll:
       case Op_VectorMaskGen:
       case Op_LoadVectorMasked:
+      case Op_LoadVectorGather:
+      case Op_LoadVectorGatherMasked:
       case Op_StoreVectorMasked:
       case Op_StoreVectorScatter:
       case Op_StoreVectorScatterMasked:
       case Op_PopulateIndex:
       case Op_CompressM:
       case Op_CompressV:
+      // Temporarily disable vector mask widen support for NEON,
+      // because we do not have the use case now.
+      case Op_VectorMaskWiden:
         if (UseSVE == 0) {
-          return false;
-        }
-        break;
-      case Op_LoadVectorGather:
-      case Op_LoadVectorGatherMasked:
-        if (UseSVE == 0 || is_subword_type(bt)) {
           return false;
         }
         break;
@@ -3507,6 +3506,24 @@ EXTRACT_FP(F, fmovs, 4, S, 2)
 // DOUBLE
 EXTRACT_FP(D, fmovd, 2, D, 3)
 
+// ------------------------- VectorConcatenateAndNarrow ------------------------
+instruct vconcatenate(vReg dst, vReg src1, vReg src2) %{
+  match(Set dst (VectorConcatenateAndNarrow src1 src2));
+  format %{ "vconcatenate $dst, $src1, $src2" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+      __ uzp1($dst$$FloatRegister, get_arrangement(this),
+              $src1$$FloatRegister, $src2$$FloatRegister);
+    } else {
+      assert(UseSVE > 0, "must be sve");
+      __ sve_uzp1($dst$$FloatRegister, get_reg_variant(this),
+                  $src1$$FloatRegister, $src2$$FloatRegister);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // ------------------------------ Vector mask load/store -----------------------
 
 // vector load mask
@@ -4078,6 +4095,28 @@ instruct vmaskcast_narrow_sve(pReg dst, pReg src, pReg ptmp) %{
   %}
   ins_pipe(pipe_slow);
 %}
+dnl
+dnl VECTOR_MASK_WIDEN($1)
+dnl VECTOR_MASK_WIDEN(part)
+define(`VECTOR_MASK_WIDEN', `
+instruct vmaskwiden_$1_sve(pReg dst, pReg src) %{
+  predicate(UseSVE > 0 && ifelse(lo, $1, !, `')n->as_VectorMaskWiden()->is_hi());
+  match(Set dst (VectorMaskWiden src));
+  format %{ "vmaskwiden_$1_sve $dst, $src" %}
+  ins_encode %{
+    __ sve_punpk$1($dst$$PRegister, $src$$PRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+
+// Vector mask widen to twice size
+//
+// Unpack elements from the lower or upper half of the source
+// predicate and place in elements of twice their size within
+// the destination predicate.
+VECTOR_MASK_WIDEN(lo)
+VECTOR_MASK_WIDEN(hi)
 
 // vector mask reinterpret
 
@@ -4776,26 +4815,49 @@ instruct rearrange(vReg dst, vReg src, vReg shuffle) %{
   %}
   ins_pipe(pipe_slow);
 %}
-
-// ------------------------------ Vector Load Gather ---------------------------
-
-instruct gather_loadS(vReg dst, indirect mem, vReg idx) %{
+dnl
+dnl VECTOR_GATHER_LOAD_BHS($1,   $2,   $3  )
+dnl VECTOR_GATHER_LOAD_BHS(type, size, inst)
+define(`VECTOR_GATHER_LOAD_BHS', `
+instruct gather_load$1(vReg dst, indirect mem, vReg idx) %{
   predicate(UseSVE > 0 &&
-            type2aelembytes(Matcher::vector_element_basic_type(n)) == 4);
+            type2aelembytes(n->as_LoadVectorGather()->mem_bt()) == $2);
   match(Set dst (LoadVectorGather mem idx));
-  format %{ "gather_loadS $dst, $mem, $idx\t# vector (sve)" %}
+  format %{ "gather_load$1 $dst, $mem, $idx\t# vector (sve)" %}
   ins_encode %{
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     assert(length_in_bytes == MaxVectorSize, "invalid vector length");
-    __ sve_ld1w_gather($dst$$FloatRegister, ptrue,
+    __ sve_$3_gather($dst$$FloatRegister, ptrue,
                        as_Register($mem$$base), $idx$$FloatRegister);
- %}
+  %}
   ins_pipe(pipe_slow);
-%}
+%}')dnl
+dnl
+dnl
+dnl VECTOR_GATHER_LOAD_PREDICATE_BHS($1,   $2,   $3  )
+dnl VECTOR_GATHER_LOAD_PREDICATE_BHS(type, size, inst)
+define(`VECTOR_GATHER_LOAD_PREDICATE_BHS', `
+instruct gather_load$1_masked(vReg dst, indirect mem, vReg idx, pRegGov pg) %{
+  predicate(UseSVE > 0 &&
+            type2aelembytes(n->as_LoadVectorGatherMasked()->mem_bt()) == $2);
+  match(Set dst (LoadVectorGatherMasked mem (Binary idx pg)));
+  format %{ "gather_load$1_masked $dst, $pg, $mem, $idx" %}
+  ins_encode %{
+    __ sve_$3_gather($dst$$FloatRegister, $pg$$PRegister,
+                       as_Register($mem$$base), $idx$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+
+// ------------------------------ Vector Load Gather ---------------------------
+VECTOR_GATHER_LOAD_BHS(B, 1, ld1b)
+VECTOR_GATHER_LOAD_BHS(H, 2, ld1h)
+VECTOR_GATHER_LOAD_BHS(S, 4, ld1w)
 
 instruct gather_loadD(vReg dst, indirect mem, vReg idx, vReg tmp) %{
   predicate(UseSVE > 0 &&
-            type2aelembytes(Matcher::vector_element_basic_type(n)) == 8);
+            type2aelembytes(n->as_LoadVectorGather()->mem_bt()) == 8);
   match(Set dst (LoadVectorGather mem idx));
   effect(TEMP tmp);
   format %{ "gather_loadD $dst, $mem, $idx\t# vector (sve). KILL $tmp" %}
@@ -4809,21 +4871,14 @@ instruct gather_loadD(vReg dst, indirect mem, vReg idx, vReg tmp) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct gather_loadS_masked(vReg dst, indirect mem, vReg idx, pRegGov pg) %{
-  predicate(UseSVE > 0 &&
-            type2aelembytes(Matcher::vector_element_basic_type(n)) == 4);
-  match(Set dst (LoadVectorGatherMasked mem (Binary idx pg)));
-  format %{ "gather_loadS_masked $dst, $pg, $mem, $idx" %}
-  ins_encode %{
-    __ sve_ld1w_gather($dst$$FloatRegister, $pg$$PRegister,
-                       as_Register($mem$$base), $idx$$FloatRegister);
-  %}
-  ins_pipe(pipe_slow);
-%}
+// ------------------------------ Vector Load Gather Masked ---------------------------
+VECTOR_GATHER_LOAD_PREDICATE_BHS(B, 1, ld1b)
+VECTOR_GATHER_LOAD_PREDICATE_BHS(H, 2, ld1h)
+VECTOR_GATHER_LOAD_PREDICATE_BHS(S, 4, ld1w)
 
 instruct gather_loadD_masked(vReg dst, indirect mem, vReg idx, pRegGov pg, vReg tmp) %{
   predicate(UseSVE > 0 &&
-            type2aelembytes(Matcher::vector_element_basic_type(n)) == 8);
+            type2aelembytes(n->as_LoadVectorGatherMasked()->mem_bt()) == 8);
   match(Set dst (LoadVectorGatherMasked mem (Binary idx pg)));
   effect(TEMP tmp);
   format %{ "gather_loadD_masked $dst, $pg, $mem, $idx\t# KILL $tmp" %}
