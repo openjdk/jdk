@@ -44,6 +44,7 @@
 #include "utilities/checkedCast.hpp"
 #include "utilities/deferredStatic.hpp"
 #include "utilities/events.hpp"
+#include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/parseInteger.hpp"
 #include "utilities/vmError.hpp"
@@ -568,6 +569,10 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
   // Preserve errno value over signal handler.
   //  (note: RAII ok here, even with JFR thread crash protection, see below).
   ErrnoPreserver ep;
+
+  // We are called from a signal handler, so stop the stack backtrace here.
+  // See os::is_first_C_frame() in os::get_native_stack().
+  os::FirstNativeFrameMark fnfm;
 
   // Unblock all synchronous error signals (see JDK-8252533)
   PosixSignals::unblock_error_signals();
