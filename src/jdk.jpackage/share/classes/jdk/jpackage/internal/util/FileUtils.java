@@ -37,7 +37,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import jdk.internal.util.OperatingSystem;
-import jdk.jpackage.internal.util.function.ExceptionBox;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 
 public final class FileUtils {
@@ -170,15 +169,13 @@ public final class FileUtils {
             }
         }
 
-        private void runActionOnPath(ThrowingConsumer<Path> action, Path path) {
+        private void runActionOnPath(ThrowingConsumer<Path, IOException> action, Path path) {
             try {
                 action.accept(path);
             } catch (IOException ex) {
                 if (this.ex == null) {
                     this.ex = ex;
                 }
-            } catch (Throwable t) {
-                throw ExceptionBox.rethrowUnchecked(t);
             }
         }
 

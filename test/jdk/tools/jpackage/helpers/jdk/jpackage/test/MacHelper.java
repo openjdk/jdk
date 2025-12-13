@@ -78,7 +78,7 @@ import org.xml.sax.SAXException;
 public final class MacHelper {
 
     public static void withExplodedDmg(JPackageCommand cmd,
-            ThrowingConsumer<Path> consumer) {
+            ThrowingConsumer<Path, ? extends Exception> consumer) {
         cmd.verifyIsOfType(PackageType.MAC_DMG);
 
         // Explode DMG assuming this can require interaction, thus use `yes`.

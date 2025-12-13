@@ -198,7 +198,7 @@ final class AppImageFile {
 
         } catch (XPathExpressionException ex) {
             // This should never happen as XPath expressions should be correct
-            throw ExceptionBox.rethrowUnchecked(ex);
+            throw ExceptionBox.toUnchecked(ex);
         } catch (SAXException ex) {
             // Malformed input XML
             throw new JPackageException(I18N.format("error.malformed-app-image-file", relativeAppImageFilePath, appImageDir), ex);

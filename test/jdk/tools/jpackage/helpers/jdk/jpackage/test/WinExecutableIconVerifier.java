@@ -22,7 +22,7 @@
  */
 package jdk.jpackage.test;
 
-import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
+import static jdk.jpackage.internal.util.function.ExceptionBox.toUnchecked;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -195,7 +195,7 @@ public final class WinExecutableIconVerifier {
             iconSwap.setAccessible(true);
         } catch (ClassNotFoundException | NoSuchMethodException
                 | SecurityException ex) {
-            throw rethrowUnchecked(ex);
+            throw toUnchecked(ex);
         }
     }
 
@@ -268,7 +268,7 @@ public final class WinExecutableIconVerifier {
                     }
                 }
             } catch (IllegalAccessException | InvocationTargetException ex) {
-                throw rethrowUnchecked(ex);
+                throw toUnchecked(ex);
             }
         } finally {
             executable.toFile().setWritable(false, true);
