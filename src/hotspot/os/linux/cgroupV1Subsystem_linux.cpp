@@ -328,8 +328,8 @@ CgroupV1Subsystem::CgroupV1Subsystem(CgroupV1Controller* cpuset,
     _pids(pids) {
   CgroupUtil::adjust_controller(memory);
   CgroupUtil::adjust_controller(cpu);
-  _memory = new CachingCgroupController<CgroupMemoryController>(memory);
-  _cpu = new CachingCgroupController<CgroupCpuController>(cpu);
+  _memory = new CachingCgroupController<CgroupMemoryController, physical_memory_size_type>(memory);
+  _cpu = new CachingCgroupController<CgroupCpuController, double>(cpu);
 }
 
 bool CgroupV1Subsystem::is_containerized() {
