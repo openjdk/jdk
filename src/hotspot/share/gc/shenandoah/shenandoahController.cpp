@@ -47,7 +47,7 @@ void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest& re
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   if (heap->cancel_gc(cause)) {
     log_info(gc)("Failed to allocate %s, " PROPERFMT, req.type_string(), PROPERFMTARGS(req.size() * HeapWordSize));
-    request_gc(cause);
+    notify_control_thread(cause, heap->mode()->is_generational() ? reinterpret_cast<ShenandoahGeneration *>(heap->young_generation()) : heap->global_generation());
   }
 
   if (block) {
