@@ -69,7 +69,7 @@ public class ClientHelloKeyShares {
 
     public static void main(String args[]) throws Exception {
         if (debug) {
-            System.setProperty("javax.net.debug", "ssl:handshake");
+            System.setProperty("javax.net.debug", "ssl,handshake");
         }
 
         // Arguments to this test are an abitrary number of integer

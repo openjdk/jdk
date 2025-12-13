@@ -50,7 +50,7 @@ public class StatusResponseManagerTests {
     /*
      * Enables the JSSE system debugging system property:
      *
-     *     -Djavax.net.debug=all
+     *     -Djavax.net.debug=ssl:respmgr
      *
      * This gives a lot of low-level information about operations underway,
      * including specific handshake messages, and might be best examined
