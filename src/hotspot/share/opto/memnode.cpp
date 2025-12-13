@@ -96,7 +96,7 @@ bool MemNode::check_if_adr_maybe_raw(Node* adr) {
 // In other word, alloc is determined not to escape at ctl if all nodes that make alloc escape have
 // a control input that is not a transitive control input of ctl.
 bool MemNode::check_not_escaped(PhaseValues* phase, Unique_Node_List& aliases, AllocateNode* alloc, Node* ctl) {
-  if (!phase->is_IterGVN() || alloc == nullptr || ctl->is_top()) {
+  if (!phase->is_IterGVN() || alloc == nullptr || phase->type(ctl) == Type::TOP) {
     return false;
   }
   ciEnv* env = phase->C->env();
@@ -127,14 +127,14 @@ bool MemNode::check_not_escaped(PhaseValues* phase, Unique_Node_List& aliases, A
     }
   }
 
-  // Find all transitive control inputs of ctl
+  // Find all transitive control inputs of ctl that are not dead
   ResourceMark rm;
   Node* start = phase->C->start();
   Unique_Node_List controls;
   controls.push(ctl);
   for (uint control_idx = 0; control_idx < controls.size(); control_idx++) {
     Node* n = controls.at(control_idx);
-    assert(n->bottom_type() == Type::CONTROL || n->bottom_type()->base() == Type::Tuple, "must be a control node %s", n->Name());
+    assert(phase->type(n) == Type::CONTROL || phase->type(n)->base() == Type::Tuple, "must be a control node %s", n->Name());
     if (n == start) {
       continue;
     }
@@ -142,13 +142,13 @@ bool MemNode::check_not_escaped(PhaseValues* phase, Unique_Node_List& aliases, A
     if (n->is_Region()) {
       for (uint i = 1; i < n->req(); i++) {
         Node* in = n->in(i);
-        if (in != nullptr && !in->is_top()) {
+        if (in != nullptr && phase->type(in) != Type::TOP) {
           controls.push(in);
         }
       }
     } else {
       Node* in = n->in(0);
-      if (in != nullptr && !in->is_top()) {
+      if (in != nullptr && phase->type(in) != Type::TOP) {
         controls.push(in);
       }
     }
@@ -166,15 +166,10 @@ bool MemNode::check_not_escaped(PhaseValues* phase, Unique_Node_List& aliases, A
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node* out = n->fast_out(i);
       Node* c = out->in(0);
-      if (c != nullptr) {
-        if (c->is_top()) {
-          // out is a dead node, ignore it
-          continue;
-        } else if (!controls.member(c)) {
-          // c is not a transitive control input of ctl, so out is not executed before ctl, which
-          // means it does not affect the escape status of alloc at ctl
-          continue;
-        }
+      if (c != nullptr && !controls.member(c)) {
+        // c is not a live transitive control input of ctl, so out is not executed before ctl,
+        // which means it does not affect the escape status of alloc at ctl
+        continue;
       }
 
       if (aliases.member(out)) {
