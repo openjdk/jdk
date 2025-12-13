@@ -26,6 +26,7 @@
 package java.lang.reflect;
 
 import java.lang.annotation.Annotation;
+import java.lang.invoke.MethodHandles;
 import java.net.URL;
 import java.security.CodeSource;
 import java.util.Map;
@@ -55,10 +56,6 @@ import sun.reflect.annotation.TypeAnnotationParser;
  * A {@code Field} provides information about, and dynamic access to, a
  * single field of a class or an interface.  The reflected field may
  * be a class (static) field or an instance field.
- *
- * <p>A {@code Field} permits widening conversions to occur during a get or
- * set access operation, but throws an {@code IllegalArgumentException} if a
- * narrowing conversion would occur.
  *
  * @see Member
  * @see java.lang.Class
@@ -409,9 +406,9 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Returns the value of the field represented by this {@code Field}, on
-     * the specified object. The value is automatically wrapped in an
-     * object if it has a primitive type.
+     * Returns the value of the static or instance field represented by this
+     * {@code Field}, {@linkplain java.lang.reflect##output-conversions
+     * converted} from the field's underlying type to {@code Object}.
      *
      * <p>The underlying field's value is obtained as follows:
      *
@@ -431,9 +428,10 @@ class Field extends AccessibleObject implements Member {
      * field is initialized if it has not already been initialized.
      *
      * <p>Otherwise, the value is retrieved from the underlying instance
-     * or static field.  If the field has a primitive type, the value
-     * is wrapped in an object before being returned, otherwise it is
-     * returned as is.
+     * or static field.  The value is {@linkplain java.lang.reflect##output-conversions
+     * converted} to the return type of the accessor.  This conversion never
+     * fails for {@code get}, but may fail for other primitive-typed accessors,
+     * which would fail with an {@code IllegalArgumentException}.
      *
      * <p>If the field is hidden in the type of {@code obj},
      * the field's value is obtained according to the preceding rules.
@@ -454,6 +452,10 @@ class Field extends AccessibleObject implements Member {
      *              and the field is an instance field.
      * @throws    ExceptionInInitializerError if the initialization provoked
      *              by this method fails.
+     *
+     * @see MethodHandles.Lookup#findGetter
+     * @see MethodHandles.Lookup#findStaticGetter
+     * @see MethodHandles.Lookup#unreflectGetter
      */
     @CallerSensitive
     @ForceInline // to ensure Reflection.getCallerClass optimization
@@ -470,7 +472,10 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Gets the value of a static or instance {@code boolean} field.
+     * Returns the value of the static or instance field represented by this
+     * {@code Field}, {@linkplain java.lang.reflect##output-conversions
+     * converted} from the field's underlying type to {@code boolean}. The
+     * operation proceeds as specified in {@link #get get}.
      *
      * @param obj the object to extract the {@code boolean} value
      * from
@@ -482,9 +487,7 @@ class Field extends AccessibleObject implements Member {
      * @throws    IllegalArgumentException  if the specified object is not
      *              an instance of the class or interface declaring the
      *              underlying field (or a subclass or implementor
-     *              thereof), or if the field value cannot be
-     *              converted to the type {@code boolean} by a
-     *              widening conversion.
+     *              thereof), or if the conversion fails
      * @throws    NullPointerException      if the specified object is null
      *              and the field is an instance field.
      * @throws    ExceptionInInitializerError if the initialization provoked
@@ -506,7 +509,10 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Gets the value of a static or instance {@code byte} field.
+     * Returns the value of the static or instance field represented by this
+     * {@code Field}, {@linkplain java.lang.reflect##output-conversions
+     * converted} from the field's underlying type to {@code byte}. The
+     * operation proceeds as specified in {@link #get get}.
      *
      * @param obj the object to extract the {@code byte} value
      * from
@@ -518,9 +524,7 @@ class Field extends AccessibleObject implements Member {
      * @throws    IllegalArgumentException  if the specified object is not
      *              an instance of the class or interface declaring the
      *              underlying field (or a subclass or implementor
-     *              thereof), or if the field value cannot be
-     *              converted to the type {@code byte} by a
-     *              widening conversion.
+     *              thereof), or if the conversion fails
      * @throws    NullPointerException      if the specified object is null
      *              and the field is an instance field.
      * @throws    ExceptionInInitializerError if the initialization provoked
@@ -542,9 +546,10 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Gets the value of a static or instance field of type
-     * {@code char} or of another primitive type convertible to
-     * type {@code char} via a widening conversion.
+     * Returns the value of the static or instance field represented by this
+     * {@code Field}, {@linkplain java.lang.reflect##output-conversions
+     * converted} from the field's underlying type to {@code char}. The
+     * operation proceeds as specified in {@link #get get}.
      *
      * @param obj the object to extract the {@code char} value
      * from
@@ -556,9 +561,7 @@ class Field extends AccessibleObject implements Member {
      * @throws    IllegalArgumentException  if the specified object is not
      *              an instance of the class or interface declaring the
      *              underlying field (or a subclass or implementor
-     *              thereof), or if the field value cannot be
-     *              converted to the type {@code char} by a
-     *              widening conversion.
+     *              thereof), or if the conversion fails
      * @throws    NullPointerException      if the specified object is null
      *              and the field is an instance field.
      * @throws    ExceptionInInitializerError if the initialization provoked
@@ -580,9 +583,10 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Gets the value of a static or instance field of type
-     * {@code short} or of another primitive type convertible to
-     * type {@code short} via a widening conversion.
+     * Returns the value of the static or instance field represented by this
+     * {@code Field}, {@linkplain java.lang.reflect##output-conversions
+     * converted} from the field's underlying type to {@code short}. The
+     * operation proceeds as specified in {@link #get get}.
      *
      * @param obj the object to extract the {@code short} value
      * from
@@ -594,9 +598,7 @@ class Field extends AccessibleObject implements Member {
      * @throws    IllegalArgumentException  if the specified object is not
      *              an instance of the class or interface declaring the
      *              underlying field (or a subclass or implementor
-     *              thereof), or if the field value cannot be
-     *              converted to the type {@code short} by a
-     *              widening conversion.
+     *              thereof), or if the conversion fails
      * @throws    NullPointerException      if the specified object is null
      *              and the field is an instance field.
      * @throws    ExceptionInInitializerError if the initialization provoked
@@ -618,9 +620,10 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Gets the value of a static or instance field of type
-     * {@code int} or of another primitive type convertible to
-     * type {@code int} via a widening conversion.
+     * Returns the value of the static or instance field represented by this
+     * {@code Field}, {@linkplain java.lang.reflect##output-conversions
+     * converted} from the field's underlying type to {@code int}. The
+     * operation proceeds as specified in {@link #get get}.
      *
      * @param obj the object to extract the {@code int} value
      * from
@@ -632,9 +635,7 @@ class Field extends AccessibleObject implements Member {
      * @throws    IllegalArgumentException  if the specified object is not
      *              an instance of the class or interface declaring the
      *              underlying field (or a subclass or implementor
-     *              thereof), or if the field value cannot be
-     *              converted to the type {@code int} by a
-     *              widening conversion.
+     *              thereof), or if the conversion fails
      * @throws    NullPointerException      if the specified object is null
      *              and the field is an instance field.
      * @throws    ExceptionInInitializerError if the initialization provoked
@@ -656,9 +657,10 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Gets the value of a static or instance field of type
-     * {@code long} or of another primitive type convertible to
-     * type {@code long} via a widening conversion.
+     * Returns the value of the static or instance field represented by this
+     * {@code Field}, {@linkplain java.lang.reflect##output-conversions
+     * converted} from the field's underlying type to {@code long}. The
+     * operation proceeds as specified in {@link #get get}.
      *
      * @param obj the object to extract the {@code long} value
      * from
@@ -694,9 +696,10 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Gets the value of a static or instance field of type
-     * {@code float} or of another primitive type convertible to
-     * type {@code float} via a widening conversion.
+     * Returns the value of the static or instance field represented by this
+     * {@code Field}, {@linkplain java.lang.reflect##output-conversions
+     * converted} from the field's underlying type to {@code float}. The
+     * operation proceeds as specified in {@link #get get}.
      *
      * @param obj the object to extract the {@code float} value
      * from
@@ -732,9 +735,10 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Gets the value of a static or instance field of type
-     * {@code double} or of another primitive type convertible to
-     * type {@code double} via a widening conversion.
+     * Returns the value of the static or instance field represented by this
+     * {@code Field}, {@linkplain java.lang.reflect##output-conversions
+     * converted} from the field's underlying type to {@code double}. The
+     * operation proceeds as specified in {@link #get get}.
      *
      * @param obj the object to extract the {@code double} value
      * from
@@ -770,10 +774,9 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Sets the field represented by this {@code Field} object on the
-     * specified object argument to the specified new value. The new
-     * value is automatically unwrapped if the underlying field has a
-     * primitive type.
+     * Sets the static or instance field represented by this {@code Field}
+     * to the new value {@linkplain java.lang.reflect##input-conversions
+     * converted} from the specified {@code Object} value.
      *
      * <p>The operation proceeds as follows:
      *
@@ -853,20 +856,15 @@ class Field extends AccessibleObject implements Member {
      * in which other parts of a program continue to use the original
      * value of this field.
      *
-     * <p>If the underlying field is of a primitive type, an unwrapping
-     * conversion is attempted to convert the new value to a value of
-     * a primitive type.  If this attempt fails, the method throws an
-     * {@code IllegalArgumentException}.
-     *
-     * <p>If, after possible unwrapping, the new value cannot be
-     * converted to the type of the underlying field by an identity or
-     * widening conversion, the method throws an
+     * <p>This method {@linkplain java.lang.reflect##input-conversions
+     * converts} the incoming argument to the type of the underlying field.
+     * If this attempt fails, the method throws an
      * {@code IllegalArgumentException}.
      *
      * <p>If the underlying field is static, the class that declared the
      * field is initialized if it has not already been initialized.
      *
-     * <p>The field is set to the possibly unwrapped and widened new value.
+     * <p>The field is set to the converted new value.
      *
      * <p>If the field is hidden in the type of {@code obj},
      * the field's value is set according to the preceding rules.
@@ -882,12 +880,15 @@ class Field extends AccessibleObject implements Member {
      * @throws    IllegalArgumentException  if the specified object is not an
      *              instance of the class or interface declaring the underlying
      *              field (or a subclass or implementor thereof),
-     *              or if an unwrapping conversion fails.
+     *              or if the conversion fails
      * @throws    NullPointerException      if the specified object is null
      *              and the field is an instance field.
      * @throws    ExceptionInInitializerError if the initialization provoked
      *              by this method fails.
      *
+     * @see MethodHandles.Lookup#findSetter
+     * @see MethodHandles.Lookup#findStaticSetter
+     * @see MethodHandles.Lookup#unreflectSetter
      * @see <a href="doc-files/MutationMethods.html">Mutation methods</a>
      */
     @CallerSensitive
@@ -911,11 +912,10 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Sets the value of a field as a {@code boolean} on the specified object.
-     * This method is equivalent to
-     * {@code set(obj, zObj)},
-     * where {@code zObj} is a {@code Boolean} object and
-     * {@code zObj.booleanValue() == z}.
+     * Sets the static or instance field represented by this {@code Field}
+     * to the new value {@linkplain java.lang.reflect##input-conversions
+     * converted} from the specified {@code Object} value.  The operation
+     * proceeds as specified in {@link #set set}.
      *
      * @param obj the object whose field should be modified
      * @param z   the new value for the field of {@code obj}
@@ -928,7 +928,7 @@ class Field extends AccessibleObject implements Member {
      * @throws    IllegalArgumentException  if the specified object is not an
      *              instance of the class or interface declaring the underlying
      *              field (or a subclass or implementor thereof),
-     *              or if an unwrapping conversion fails.
+     *              or if the conversion fails
      * @throws    NullPointerException      if the specified object is null
      *              and the field is an instance field.
      * @throws    ExceptionInInitializerError if the initialization provoked
@@ -956,11 +956,10 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Sets the value of a field as a {@code byte} on the specified object.
-     * This method is equivalent to
-     * {@code set(obj, bObj)},
-     * where {@code bObj} is a {@code Byte} object and
-     * {@code bObj.byteValue() == b}.
+     * Sets the static or instance field represented by this {@code Field}
+     * to the new value {@linkplain java.lang.reflect##input-conversions
+     * converted} from the specified {@code byte} value.  The operation
+     * proceeds as specified in {@link #set set}.
      *
      * @param obj the object whose field should be modified
      * @param b   the new value for the field of {@code obj}
@@ -973,7 +972,7 @@ class Field extends AccessibleObject implements Member {
      * @throws    IllegalArgumentException  if the specified object is not an
      *              instance of the class or interface declaring the underlying
      *              field (or a subclass or implementor thereof),
-     *              or if an unwrapping conversion fails.
+     *              or if the conversion fails
      * @throws    NullPointerException      if the specified object is null
      *              and the field is an instance field.
      * @throws    ExceptionInInitializerError if the initialization provoked
@@ -1001,11 +1000,10 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Sets the value of a field as a {@code char} on the specified object.
-     * This method is equivalent to
-     * {@code set(obj, cObj)},
-     * where {@code cObj} is a {@code Character} object and
-     * {@code cObj.charValue() == c}.
+     * Sets the static or instance field represented by this {@code Field}
+     * to the new value {@linkplain java.lang.reflect##input-conversions
+     * converted} from the specified {@code char} value.  The operation
+     * proceeds as specified in {@link #set set}.
      *
      * @param obj the object whose field should be modified
      * @param c   the new value for the field of {@code obj}
@@ -1018,7 +1016,7 @@ class Field extends AccessibleObject implements Member {
      * @throws    IllegalArgumentException  if the specified object is not an
      *              instance of the class or interface declaring the underlying
      *              field (or a subclass or implementor thereof),
-     *              or if an unwrapping conversion fails.
+     *              or if the conversion fails
      * @throws    NullPointerException      if the specified object is null
      *              and the field is an instance field.
      * @throws    ExceptionInInitializerError if the initialization provoked
@@ -1046,11 +1044,10 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Sets the value of a field as a {@code short} on the specified object.
-     * This method is equivalent to
-     * {@code set(obj, sObj)},
-     * where {@code sObj} is a {@code Short} object and
-     * {@code sObj.shortValue() == s}.
+     * Sets the static or instance field represented by this {@code Field}
+     * to the new value {@linkplain java.lang.reflect##input-conversions
+     * converted} from the specified {@code short} value.  The operation
+     * proceeds as specified in {@link #set set}.
      *
      * @param obj the object whose field should be modified
      * @param s   the new value for the field of {@code obj}
@@ -1063,7 +1060,7 @@ class Field extends AccessibleObject implements Member {
      * @throws    IllegalArgumentException  if the specified object is not an
      *              instance of the class or interface declaring the underlying
      *              field (or a subclass or implementor thereof),
-     *              or if an unwrapping conversion fails.
+     *              or if the conversion fails
      * @throws    NullPointerException      if the specified object is null
      *              and the field is an instance field.
      * @throws    ExceptionInInitializerError if the initialization provoked
@@ -1091,11 +1088,10 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Sets the value of a field as an {@code int} on the specified object.
-     * This method is equivalent to
-     * {@code set(obj, iObj)},
-     * where {@code iObj} is an {@code Integer} object and
-     * {@code iObj.intValue() == i}.
+     * Sets the static or instance field represented by this {@code Field}
+     * to the new value {@linkplain java.lang.reflect##input-conversions
+     * converted} from the specified {@code int} value.  The operation
+     * proceeds as specified in {@link #set set}.
      *
      * @param obj the object whose field should be modified
      * @param i   the new value for the field of {@code obj}
@@ -1108,7 +1104,7 @@ class Field extends AccessibleObject implements Member {
      * @throws    IllegalArgumentException  if the specified object is not an
      *              instance of the class or interface declaring the underlying
      *              field (or a subclass or implementor thereof),
-     *              or if an unwrapping conversion fails.
+     *              or if the conversion fails
      * @throws    NullPointerException      if the specified object is null
      *              and the field is an instance field.
      * @throws    ExceptionInInitializerError if the initialization provoked
@@ -1136,11 +1132,10 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Sets the value of a field as a {@code long} on the specified object.
-     * This method is equivalent to
-     * {@code set(obj, lObj)},
-     * where {@code lObj} is a {@code Long} object and
-     * {@code lObj.longValue() == l}.
+     * Sets the static or instance field represented by this {@code Field}
+     * to the new value {@linkplain java.lang.reflect##input-conversions
+     * converted} from the specified {@code long} value.  The operation
+     * proceeds as specified in {@link #set set}.
      *
      * @param obj the object whose field should be modified
      * @param l   the new value for the field of {@code obj}
@@ -1153,7 +1148,7 @@ class Field extends AccessibleObject implements Member {
      * @throws    IllegalArgumentException  if the specified object is not an
      *              instance of the class or interface declaring the underlying
      *              field (or a subclass or implementor thereof),
-     *              or if an unwrapping conversion fails.
+     *              or if the conversion fails
      * @throws    NullPointerException      if the specified object is null
      *              and the field is an instance field.
      * @throws    ExceptionInInitializerError if the initialization provoked
@@ -1181,11 +1176,10 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Sets the value of a field as a {@code float} on the specified object.
-     * This method is equivalent to
-     * {@code set(obj, fObj)},
-     * where {@code fObj} is a {@code Float} object and
-     * {@code fObj.floatValue() == f}.
+     * Sets the static or instance field represented by this {@code Field}
+     * to the new value {@linkplain java.lang.reflect##input-conversions
+     * converted} from the specified {@code float} value.  The operation
+     * proceeds as specified in {@link #set set}.
      *
      * @param obj the object whose field should be modified
      * @param f   the new value for the field of {@code obj}
@@ -1198,7 +1192,7 @@ class Field extends AccessibleObject implements Member {
      * @throws    IllegalArgumentException  if the specified object is not an
      *              instance of the class or interface declaring the underlying
      *              field (or a subclass or implementor thereof),
-     *              or if an unwrapping conversion fails.
+     *              or if the conversion fails
      * @throws    NullPointerException      if the specified object is null
      *              and the field is an instance field.
      * @throws    ExceptionInInitializerError if the initialization provoked
@@ -1226,11 +1220,10 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Sets the value of a field as a {@code double} on the specified object.
-     * This method is equivalent to
-     * {@code set(obj, dObj)},
-     * where {@code dObj} is a {@code Double} object and
-     * {@code dObj.doubleValue() == d}.
+     * Sets the static or instance field represented by this {@code Field}
+     * to the new value {@linkplain java.lang.reflect##input-conversions
+     * converted} from the specified {@code double} value.  The operation
+     * proceeds as specified in {@link #set set}.
      *
      * @param obj the object whose field should be modified
      * @param d   the new value for the field of {@code obj}
@@ -1243,7 +1236,7 @@ class Field extends AccessibleObject implements Member {
      * @throws    IllegalArgumentException  if the specified object is not an
      *              instance of the class or interface declaring the underlying
      *              field (or a subclass or implementor thereof),
-     *              or if an unwrapping conversion fails.
+     *              or if the conversion fails
      * @throws    NullPointerException      if the specified object is null
      *              and the field is an instance field.
      * @throws    ExceptionInInitializerError if the initialization provoked
