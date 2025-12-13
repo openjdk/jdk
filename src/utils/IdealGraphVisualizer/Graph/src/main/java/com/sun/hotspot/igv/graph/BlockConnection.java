@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,19 +35,31 @@ public class BlockConnection implements Connection {
     private final Block destinationBlock;
     private final String label;
     private List<Point> controlPoints;
+    private ConnectionStyle style;
+    private Color color;
 
     public BlockConnection(Block src, Block dst, String label) {
         this.sourceBlock = src;
         this.destinationBlock = dst;
         this.label = label;
+        this.style = ConnectionStyle.NORMAL;
+        this.color = Color.BLUE;
     }
 
     public Color getColor() {
-        return Color.BLUE;
+        return color;
+    }
+
+    public void setColor(Color color) {
+         this.color = color;
     }
 
     public ConnectionStyle getStyle() {
-        return ConnectionStyle.BOLD;
+        return style;
+    }
+
+    public void setStyle(ConnectionStyle s) {
+        style = s;
     }
 
     @Override

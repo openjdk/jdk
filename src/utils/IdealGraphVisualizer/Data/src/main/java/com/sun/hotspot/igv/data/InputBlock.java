@@ -33,6 +33,8 @@ public class InputBlock {
 
     private List<InputNode> nodes;
     private final String name;
+    private String iDom;
+    private int domDepth;
     private final InputGraph graph;
     private final Set<InputBlock> successors;
     private Set<Integer> liveOut;
@@ -83,18 +85,22 @@ public class InputBlock {
         return true;
     }
 
-    InputBlock(InputGraph graph, String name) {
+    InputBlock(InputGraph graph, String name, String iDom) {
         this.graph = graph;
         this.name = name;
+        this.iDom = iDom;
         nodes = new ArrayList<>();
         successors = new LinkedHashSet<>(2);
         liveOut = new HashSet<Integer>(0);
         artificial = false;
+        domDepth = 1;
     }
 
     public String getName() {
         return name;
     }
+    public String getIDom() { return iDom; }
+    public int getDomDepth() { return domDepth; }
 
     public List<InputNode> getNodes() {
         return Collections.unmodifiableList(nodes);
@@ -141,5 +147,13 @@ public class InputBlock {
 
     public boolean isArtificial() {
         return artificial;
+    }
+
+    public void setIDom(String iDom) {
+        this.iDom = iDom;
+    }
+
+    public void setDomDepth(int domDepth) {
+        this.domDepth = domDepth;
     }
 }
