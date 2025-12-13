@@ -29,6 +29,7 @@ import javax.sound.sampled.SourceDataLine;
 /**
  * @test
  * @bug 5049129
+ * @key sound
  * @summary DataLine.getLongFramePosition
  */
 public class LongFramePosition {
