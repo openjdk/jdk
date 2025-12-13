@@ -51,7 +51,7 @@
                                        do_arch_blob,                    \
                                        do_arch_entry,                   \
                                        do_arch_entry_init)              \
-  do_arch_blob(compiler, 70000)                                         \
+  do_arch_blob(compiler, 75000)                                         \
   do_stub(compiler, vector_iota_indices)                                \
   do_arch_entry(aarch64, compiler, vector_iota_indices,                 \
                 vector_iota_indices, vector_iota_indices)               \
