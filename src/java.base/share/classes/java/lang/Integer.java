@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -479,52 +480,53 @@ public final class Integer extends Number
      */
     public static int parseInt(String s, int radix)
                 throws NumberFormatException {
-        /*
-         * WARNING: This method may be invoked early during VM initialization
-         * before IntegerCache is initialized. Care must be taken to not use
-         * the valueOf method.
-         */
+        int len;
+        byte[] value;
+        if (s == null || radix != 10 || (len = (value = s.value()).length) == 0 || !s.isLatin1()) {
+            return parseInt0(s, radix);
+        }
+        /* Accumulating negatively avoids surprises near MAX_VALUE */
+        int fc = value[0];
+        int result = Integer.isDigitLatin1(fc)
+                ? '0' - fc
+                : len != 1 && (fc == '-' || fc == '+')
+                ? 0
+                : 1;  // or any value > 0
+        int i = 1;
+        int d;
+        while (i + 1 < len
+                && (d = DecimalDigits.digit2(value, i)) != -1
+                && MIN_VALUE / 100 <= result & result <= 0) {
+            result = result * 100 - d;  // overflow from d => result > 0
+            i += 2;
+        }
+        if (i < len
+                && Integer.isDigitLatin1(d = value[i])
+                && MIN_VALUE / 10 <= result & result <= 0) {
+            result = result * 10 + '0' - d;  // overflow from '0' - d => result > 0
+            i += 1;
+        }
+        if (i == len
+                & result <= 0
+                & (MIN_VALUE < result || fc == '-')) {
+            return fc == '-' ? result : -result;
+        }
+        throw NumberFormatException.forInputString(s);
+    }
 
+    private static int parseInt0(String s, int radix) {
         if (s == null) {
-            throw new NumberFormatException("Cannot parse null string");
+            throw NumberFormatException.nullInput();
         }
+        int len;
+        if ((len = s.length()) == 0) {
+            throw NumberFormatException.forInputString(s);
+        }
+        return parseInt(s, 0, len, radix);
+    }
 
-        if (radix < Character.MIN_RADIX) {
-            throw new NumberFormatException(String.format(
-                "radix %s less than Character.MIN_RADIX", radix));
-        }
-
-        if (radix > Character.MAX_RADIX) {
-            throw new NumberFormatException(String.format(
-                "radix %s greater than Character.MAX_RADIX", radix));
-        }
-
-        int len = s.length();
-        if (len == 0) {
-            throw NumberFormatException.forInputString("", radix);
-        }
-        int digit = ~0xFF;
-        int i = 0;
-        char firstChar = s.charAt(i++);
-        if (firstChar != '-' && firstChar != '+') {
-            digit = digit(firstChar, radix);
-        }
-        if (digit >= 0 || digit == ~0xFF && len > 1) {
-            int limit = firstChar != '-' ? MIN_VALUE + 1 : MIN_VALUE;
-            int multmin = limit / radix;
-            int result = -(digit & 0xFF);
-            boolean inRange = true;
-            /* Accumulating negatively avoids surprises near MAX_VALUE */
-            while (i < len && (digit = digit(s.charAt(i++), radix)) >= 0
-                    && (inRange = result > multmin
-                        || result == multmin && digit <= radix * multmin - limit)) {
-                result = radix * result - digit;
-            }
-            if (inRange && i == len && digit >= 0) {
-                return firstChar != '-' ? -result : result;
-            }
-        }
-        throw NumberFormatException.forInputString(s, radix);
+    static boolean isDigitLatin1(int ch) {
+        return CharacterDataLatin1.instance.isDigit(ch);
     }
 
     /**
