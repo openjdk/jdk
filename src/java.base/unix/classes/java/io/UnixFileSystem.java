@@ -34,10 +34,16 @@ final class UnixFileSystem extends FileSystem {
     private final String userDir;
 
     private String getPathForSysCalls(String path) {
+        if (FAIL_IF_EMPTY_PATH)
+            return path;
+
         return path.isEmpty() ? getCWD().getPath() : path;
     }
 
     private File getFileForSysCalls(File file) {
+        if (FAIL_IF_EMPTY_PATH)
+            return file;
+
         return file.getPath().isEmpty() ? getCWD() : file;
     }
 
