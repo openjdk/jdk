@@ -3718,6 +3718,22 @@ public abstract class IntVector extends AbstractVector<Integer> {
         return this;
     }
 
+    @Override
+    @ForceInline
+    final
+    IntVector maybeSwapOnConverted(ByteOrder bo, AbstractSpecies<?> srcSpecies) {
+        if (bo == java.nio.ByteOrder.BIG_ENDIAN) {
+            int sBytes = srcSpecies.elementSize();
+            int tBytes = this.vspecies().elementSize();
+            if (sBytes == tBytes) return this;
+            if (sBytes % tBytes != 0) return this;
+            int subLanesPerSrc = sBytes / tBytes;
+            VectorShuffle<Integer> shuffle = normalizeSubLanesForSpecies(this.vspecies(), subLanesPerSrc);
+            return this.rearrange(shuffle);
+        }
+        return this;
+    }
+
     static final int ARRAY_SHIFT =
         31 - Integer.numberOfLeadingZeros(Unsafe.ARRAY_INT_INDEX_SCALE);
     static final long ARRAY_BASE =
