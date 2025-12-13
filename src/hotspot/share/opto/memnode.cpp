@@ -909,7 +909,7 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
         known_independent = true;
       } else if (has_not_escaped.is_default()) {
         // Both of the previous approaches fail, try to compute the set of all nodes that can have
-        // the same runtime value as base and whether 
+        // the same runtime value as base and whether st_base is one of them
         has_not_escaped = check_not_escaped(phase, aliases, alloc, mem->in(0));
         if (has_not_escaped) {
           known_independent = !aliases.member(st_base);
