@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -945,6 +945,11 @@ final class CertificateRequest {
             // update
             //
             shc.certRequestContext = crm.requestContext.clone();
+            if (shc.certInflaters != null && !shc.certInflaters.isEmpty()) {
+                    shc.handshakeConsumers.put(
+                        SSLHandshake.COMPRESSED_CERTIFICATE.id,
+                        SSLHandshake.COMPRESSED_CERTIFICATE);
+            }
             shc.handshakeConsumers.put(SSLHandshake.CERTIFICATE.id,
                     SSLHandshake.CERTIFICATE);
             shc.handshakeConsumers.put(SSLHandshake.CERTIFICATE_VERIFY.id,
