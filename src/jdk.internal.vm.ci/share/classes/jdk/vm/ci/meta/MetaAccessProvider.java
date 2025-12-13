@@ -26,7 +26,10 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.RecordComponent;
+import java.util.Objects;
 
+import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.meta.SpeculationLog.Speculation;
 
 /**
@@ -73,6 +76,22 @@ public interface MetaAccessProvider {
      * @return {@code null} if {@code constant.isNull() || !constant.kind.isObject()}
      */
     ResolvedJavaType lookupJavaType(JavaConstant constant);
+
+    /**
+     * Provides the {@link ResolvedJavaRecordComponent} for {@code recordComponent}.
+     */
+    default ResolvedJavaRecordComponent lookupJavaRecordComponent(RecordComponent recordComponent){
+        Class<?> declaringRecord = recordComponent.getDeclaringRecord();
+        ResolvedJavaType holder = Objects.requireNonNull(lookupJavaType(declaringRecord));
+        ResolvedJavaRecordComponent[] recordComponents = holder.getRecordComponents();
+        ResolvedJavaType fieldType = lookupJavaType(recordComponent.getType());
+        for (ResolvedJavaRecordComponent rc : recordComponents) {
+            if (rc.getName().equals(recordComponent.getName()) && rc.getType().equals(fieldType)) {
+                return rc;
+            }
+        }
+        throw new JVMCIError("unresolved RecordComponent %s", recordComponent);
+    }
 
     /**
      * Returns the number of bytes occupied by this constant value or constant object.

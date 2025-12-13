@@ -22,11 +22,10 @@
  */
 package jdk.vm.ci.hotspot;
 
-import java.util.List;
-
-import jdk.vm.ci.meta.AnnotationData;
 import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.UnresolvedJavaType;
 
 public abstract class HotSpotResolvedJavaType extends HotSpotJavaType implements ResolvedJavaType {
 
@@ -77,13 +76,12 @@ public abstract class HotSpotResolvedJavaType extends HotSpotJavaType implements
         }
     }
 
-    static void checkAreAnnotations(ResolvedJavaType... types) {
-        for (ResolvedJavaType type : types) {
-            checkIsAnnotation(type);
+    static ResolvedJavaType lookupType(UnresolvedJavaType unresolvedJavaType, HotSpotResolvedObjectType accessingType, boolean resolve) {
+        JavaType javaType = HotSpotJVMCIRuntime.runtime().lookupType(unresolvedJavaType.getName(), accessingType, resolve);
+        if (javaType instanceof ResolvedJavaType resolved) {
+            return resolved;
         }
+        return null;
     }
 
-    static AnnotationData getFirstAnnotationOrNull(List<AnnotationData> list) {
-        return list.isEmpty() ? null : list.get(0);
-    }
 }
