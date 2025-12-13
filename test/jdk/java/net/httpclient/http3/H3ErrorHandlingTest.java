@@ -71,6 +71,7 @@ import static org.testng.Assert.*;
 
 /*
  * @test
+ * @bug 8373409
  * @key intermittent
  * @comment testResetControlStream may fail if the client doesn't read the stream type
  *              before the stream is reset,
