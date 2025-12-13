@@ -173,7 +173,6 @@ final class StringUTF16 {
      * @param off an offset
      * @param len a length
      */
-    @IntrinsicCandidate
     static byte[] toBytes(char[] value, int off, int len) {
         byte[] val = newBytesFor(len);
         for (int i = 0; i < len; i++) {
