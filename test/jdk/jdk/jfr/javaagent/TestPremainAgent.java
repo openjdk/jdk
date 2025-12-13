@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @requires os.arch != "s390x"
  * @requires vm.flagless
  * @summary Tests emitting event before main using a Java agent
  * @requires vm.hasJFR

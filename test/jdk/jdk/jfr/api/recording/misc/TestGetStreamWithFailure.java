@@ -38,6 +38,7 @@ import jdk.jfr.Recording;
 /**
  * @test
  * @summary Verify that resources are not leaked in case of failure
+ * @requires os.arch != "s390x"
  * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib

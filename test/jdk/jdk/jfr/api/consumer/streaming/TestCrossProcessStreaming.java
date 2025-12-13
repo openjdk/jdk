@@ -42,6 +42,7 @@ import jdk.test.lib.process.ProcessTools;
  * @test
  * @summary Test scenario where JFR event producer is in a different process
  *          with respect to the JFR event stream consumer.
+ * @requires os.arch != "s390x"
  * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk

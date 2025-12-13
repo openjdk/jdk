@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @requires os.arch != "s390x"
  * @requires vm.flagless
  * @summary Tests emitting events in a dynamically loaded Java agent
  * @requires vm.hasJFR

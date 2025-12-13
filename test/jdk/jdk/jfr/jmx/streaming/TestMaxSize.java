@@ -38,6 +38,7 @@ import jdk.management.jfr.RemoteRecordingStream;
 
 /**
  * @test
+ * @requires os.arch != "s390x"
  * @requires vm.flagless
  * @summary Tests that max size can be set for a RemoteRecordingStream
  * @requires vm.hasJFR

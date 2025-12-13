@@ -33,6 +33,7 @@ import jdk.jfr.consumer.RecordingFile;
 /**
  * @test
  * @summary Tests that java.lang.String can be traced.
+ * @requires os.arch != "s390x"
  * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib

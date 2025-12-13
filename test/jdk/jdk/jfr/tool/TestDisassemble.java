@@ -40,6 +40,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @test
  * @bug 8253050
  * @summary Test jfr split
+ * @requires os.arch != "s390x"
  * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
