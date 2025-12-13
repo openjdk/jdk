@@ -1351,6 +1351,61 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
   }
 #endif //ASSERT
 
+  // In rare cases, during an IGVN call to `PhiNode::Value`, `_type` and `t` have incompatible opinion on speculative type,
+  // resulting into a too small intersection (such as AnyNull), which is removed in cleanup_speculative.
+  // From that `ft` has no speculative type (ft->speculative() == nullptr).
+  // After the end of the current `PhiNode::Value` call, `ft` (that is returned) is being store into `_type`
+  // (see PhaseIterGVN::transform_old -> raise_bottom_type -> set_type).
+  //
+  // It is possible that verification happens immediately after, without any change to the current node, or any of its inputs.
+  // In the verification invocation of `PhiNode::Value`, `t` would be the same as the IGVN `t` (union of input types, that are unchanged),
+  // but the new `_type` is the value returned by the IGVN invocation of `PhiNode::Value`, the former `ft`, that has no speculative type.
+  // Thus, the result of `t->filter_speculative(_type)`, the new `ft`, gets the speculative type of `t`, which is not empty. Since the
+  // result of the verification invocation of `PhiNode::Value` has some speculative type, it is not the same as the previously returned type
+  // (that had no speculative type), making verification fail.
+  //
+  // In such a case, doing the filtering one time more allows to reach a fixpoint.
+  if (ft->speculative() == nullptr && t->speculative() != nullptr) {
+    ft = t->filter_speculative(ft);
+  }
+
+#ifdef ASSERT
+  const Type* ft_ = t->filter_speculative(ft);
+  if (!Type::equals(ft, ft_)) {
+    stringStream ss;
+
+    ss.print_cr("At node:");
+    this->dump("\n", false, &ss);
+
+    for (uint i = 1; i < req(); ++i) {
+      ss.print("in(%d): ", i);
+      if (r->in(i) != nullptr && phase->type(r->in(i)) == Type::CONTROL) {
+        const Type* ti = phase->type(in(i));
+        ti->dump_on(&ss);
+      }
+      ss.print_cr("");
+    }
+
+    ss.print("t: ");
+    t->dump_on(&ss);
+    ss.print_cr("");
+
+    ss.print("_type: ");
+    _type->dump_on(&ss);
+    ss.print_cr("");
+
+    ss.print("Filter once: ");
+    ft->dump_on(&ss);
+    ss.print_cr("");
+    ss.print("Filter twice: ");
+    ft_->dump_on(&ss);
+    ss.print_cr("");
+    tty->print("%s", ss.base());
+    tty->flush();
+    assert(false, "computed type would not pass verification");
+  }
+#endif
+
   // Deal with conversion problems found in data loops.
   ft = phase->saturate_and_maybe_push_to_igvn_worklist(this, ft);
   return ft;
