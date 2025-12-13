@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,31 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.internal.util.function;
+package jdk.jpackage.internal.util;
 
-import java.util.function.BiFunction;
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
-@FunctionalInterface
-public interface ThrowingBiFunction<T, U, R, E extends Exception> {
+/**
+ * Formats command line arguments.
+ */
+public final class CommandLineFormat {
 
-    R apply(T t, U u) throws E;
-
-    public static <T, U, R> BiFunction<T, U, R> toBiFunction(
-            ThrowingBiFunction<T, U, R, ? extends Exception> v) {
-        return (t, u) -> {
-            try {
-                return v.apply(t, u);
-            } catch (Exception ex) {
-                throw ExceptionBox.toUnchecked(ex);
-            }
-        };
+    public String format(List<String> cmdline) {
+        return cmdline.stream().map(enquoter::applyTo).collect(Collectors.joining(" "));
     }
 
+    public static CommandLineFormat platform() {
+        var format = new CommandLineFormat();
+        format.enquoter = Enquoter.identity().setEnquotePredicate(Enquoter.QUOTE_IF_WHITESPACES).setQuoteChar('\'');
+        return format;
+    }
+
+    private CommandLineFormat() {
+    }
+
+    private Enquoter enquoter;
+
+    public static final Function<List<String>, String> DEFAULT = platform()::format;
 }

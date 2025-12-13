@@ -34,6 +34,7 @@ import static jdk.jpackage.internal.util.PListWriter.writeStringOptional;
 import static jdk.jpackage.internal.util.XmlUtils.initDocumentBuilder;
 import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -43,16 +44,17 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -66,6 +68,7 @@ import javax.xml.stream.XMLStreamWriter;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 import jdk.jpackage.internal.RetryExecutor;
+import jdk.jpackage.internal.util.FileUtils;
 import jdk.jpackage.internal.util.PListReader;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.XmlUtils;
@@ -73,46 +76,47 @@ import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingSupplier;
 import jdk.jpackage.test.MacSign.CertificateRequest;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
+import jdk.jpackage.test.RunnablePackageTest.Action;
 import org.xml.sax.SAXException;
 
 public final class MacHelper {
 
     public static void withExplodedDmg(JPackageCommand cmd,
-            ThrowingConsumer<Path> consumer) {
+            ThrowingConsumer<Path, ? extends Exception> consumer) {
         cmd.verifyIsOfType(PackageType.MAC_DMG);
 
         // Explode DMG assuming this can require interaction, thus use `yes`.
-        String attachCMD[] = {
-            "sh", "-c",
-            String.join(" ", "yes", "|", "/usr/bin/hdiutil", "attach",
-                        JPackageCommand.escapeAndJoin(
-                                cmd.outputBundle().toString()), "-plist")};
-        RetryExecutor attachExecutor = new RetryExecutor();
-        try {
-            // 10 times with 6 second delays.
-            attachExecutor.setMaxAttemptsCount(10)
-                    .setAttemptTimeoutMillis(6000)
-                    .setWriteOutputToFile(true)
-                    .saveOutput(true)
-                    .execute(attachCMD);
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
+        final var attachStdout = toSupplier(() -> {
+            return new RetryExecutor()
+                    .setMaxAttemptsCount(10)
+                    .setAttemptTimeout(6, TimeUnit.SECONDS)
+                    .execute(Executor.of("sh", "-c", String.join(" ",
+                            "yes",
+                            "|",
+                            "/usr/bin/hdiutil",
+                            "attach",
+                            JPackageCommand.escapeAndJoin(cmd.outputBundle().toString()),
+                            "-plist"
+                    )).saveOutput().toRetryExecutorCallable());
+        }).get().stdout();
 
-        Path mountPoint = null;
+        final Path mountPoint;
+
+        boolean mountPointInitialized = false;
         try {
             // One of "dict" items of "system-entities" array property should contain "mount-point" string property.
-            mountPoint = readPList(attachExecutor.getOutput()).queryArrayValue("system-entities", false).map(PListReader.class::cast).map(dict -> {
-                try {
-                    return dict.queryValue("mount-point");
-                } catch (NoSuchElementException ex) {
-                    return (String)null;
-                }
-            }).filter(Objects::nonNull).map(Path::of).findFirst().orElseThrow();
+            mountPoint = readPList(attachStdout).queryArrayValue("system-entities", false)
+                    .map(PListReader.class::cast)
+                    .map(dict -> {
+                        return dict.findValue("mount-point");
+                    })
+                    .filter(Optional::isPresent).map(Optional::get)
+                    .map(Path::of).findFirst().orElseThrow();
+            mountPointInitialized = true;
         } finally {
-            if (mountPoint == null) {
+            if (!mountPointInitialized) {
                 TKit.trace("Unexpected plist file missing `system-entities` array:");
-                attachExecutor.getOutput().forEach(TKit::trace);
+                attachStdout.forEach(TKit::trace);
                 TKit.trace("Done");
             }
         }
@@ -129,38 +133,29 @@ public final class MacHelper {
                 ThrowingConsumer.toConsumer(consumer).accept(childPath);
             }
         } finally {
-            String detachCMD[] = {
-                "/usr/bin/hdiutil",
-                "detach",
-                "-verbose",
-                mountPoint.toAbsolutePath().toString()};
+            Function<Boolean, Executor> detach = force -> {
+                var exec = Executor.of("/usr/bin/hdiutil", "detach");
+                if (force) {
+                    exec.addArgument("-force");
+                }
+                return exec.addArgument(mountPoint);
+            };
+
             // "hdiutil detach" might not work right away due to resource busy error, so
             // repeat detach several times.
-            RetryExecutor detachExecutor = new RetryExecutor();
-            // Image can get detach even if we got resource busy error, so stop
-            // trying to detach it if it is no longer attached.
-            final Path mp = mountPoint;
-            detachExecutor.setExecutorInitializer(exec -> {
-                if (!Files.exists(mp)) {
-                    detachExecutor.abort();
+            var retry = new RetryExecutor().setIterationCallback(r -> {
+                if (!Files.exists(mountPoint)) {
+                    // Image can get detached even if we got resource busy error, so stop
+                    // trying to detach it if it is no longer attached.
+                    r.abort();
                 }
-            });
+            }).setMaxAttemptsCount(10).setAttemptTimeout(6, TimeUnit.SECONDS);
+
             try {
-                // 10 times with 6 second delays.
-                detachExecutor.setMaxAttemptsCount(10)
-                        .setAttemptTimeoutMillis(6000)
-                        .setWriteOutputToFile(true)
-                        .saveOutput(true)
-                        .execute(detachCMD);
+                retry.execute(detach.apply(false).toRetryExecutorCallable());
             } catch (IOException ex) {
-                if (!detachExecutor.isAborted()) {
-                    // Now force to detach if it still attached
-                    if (Files.exists(mountPoint)) {
-                        Executor.of("/usr/bin/hdiutil", "detach",
-                                    "-force", "-verbose")
-                                 .addArgument(mountPoint).execute();
-                    }
-                }
+                // Now force to detach as it still attached.
+                detach.apply(true).execute();
             }
         }
     }
@@ -431,27 +426,25 @@ public final class MacHelper {
 
         final var unpackadeRuntimeBundleDir = runtimeBundleWorkDir.resolve("unpacked");
 
-        var cmd = new JPackageCommand()
-                .useToolProvider(true)
-                .ignoreDefaultRuntime(true)
-                .dumpOutput(true)
-                .setPackageType(PackageType.MAC_DMG)
-                .setArgumentValue("--name", "foo")
-                .addArguments("--runtime-image", runtimeImage)
-                .addArguments("--dest", runtimeBundleWorkDir);
+        // Preferably create a DMG bundle, fallback to PKG if DMG packaging is disabled.
+        new PackageTest().forTypes(Stream.of(
+                PackageType.MAC_DMG,
+                PackageType.MAC_PKG
+        ).filter(PackageType::isEnabled).findFirst().orElseThrow(PackageType::throwSkippedExceptionIfNativePackagingUnavailable))
+        .addInitializer(cmd -> {
+            cmd.useToolProvider(true)
+            .ignoreDefaultRuntime(true)
+            .dumpOutput(true)
+            .removeArgumentWithValue("--input")
+            .setArgumentValue("--name", "foo")
+            .setArgumentValue("--runtime-image", runtimeImage)
+            .setArgumentValue("--dest", runtimeBundleWorkDir);
 
-        mutator.ifPresent(cmd::mutate);
-
-        cmd.execute();
-
-        MacHelper.withExplodedDmg(cmd, dmgImage -> {
-            if (dmgImage.endsWith(cmd.appInstallationDirectory().getFileName())) {
-                Executor.of("cp", "-R")
-                        .addArgument(dmgImage)
-                        .addArgument(unpackadeRuntimeBundleDir)
-                        .execute(0);
-            }
-        });
+            mutator.ifPresent(cmd::mutate);
+        }).addInstallVerifier(cmd -> {
+            final Path bundleRoot = cmd.pathToUnpackedPackageFile(cmd.appInstallationDirectory());
+            FileUtils.copyRecursive(bundleRoot, unpackadeRuntimeBundleDir, LinkOption.NOFOLLOW_LINKS);
+        }).run(Action.CREATE, Action.UNPACK, Action.VERIFY_INSTALL, Action.PURGE);
 
         return unpackadeRuntimeBundleDir;
     }

@@ -21,11 +21,13 @@
  * questions.
  */
 
-package jdk.jpackage.internal;
+package jdk.jpackage.internal.util;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.stream.Stream;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 
@@ -45,27 +47,41 @@ public class EnquoterTest {
         assertEquals(expected, actual);
     }
 
-    private static Stream<org.junit.jupiter.params.provider.Arguments> testForShellLiterals() {
+    @ParameterizedTest
+    @MethodSource
+    public void testIdentity(String input) {
+        var actual = Enquoter.identity().applyTo(input);
+        assertEquals(input, actual);
+    }
+
+    @ParameterizedTest
+    @MethodSource("testIdentity")
+    public void testNoEscaper(String input) {
+        var actual = Enquoter.identity().setEnquotePredicate(_ -> true).applyTo(input);
+        assertEquals('"' + input + '"', actual);
+    }
+
+    private static Stream<Arguments> testForShellLiterals() {
         return Stream.of(
-                makeArguments("''", ""),
-                makeArguments("'foo'", "foo"),
-                makeArguments("' foo '", " foo "),
-                makeArguments("'foo bar'", "foo bar"),
-                makeArguments("'foo\\' bar'", "foo' bar")
+                Arguments.of("''", ""),
+                Arguments.of("'foo'", "foo"),
+                Arguments.of("' foo '", " foo "),
+                Arguments.of("'foo bar'", "foo bar"),
+                Arguments.of("'foo\\' bar'", "foo' bar")
         );
     }
 
-    private static Stream<org.junit.jupiter.params.provider.Arguments> testForPropertyValues() {
+    private static Stream<Arguments> testForPropertyValues() {
         return Stream.of(
-                makeArguments("", ""),
-                makeArguments("foo", "foo"),
-                makeArguments("\" foo \"", " foo "),
-                makeArguments("\"foo bar\"", "foo bar"),
-                makeArguments("\"foo' bar\"", "foo' bar")
+                Arguments.of("", ""),
+                Arguments.of("foo", "foo"),
+                Arguments.of("\" foo \"", " foo "),
+                Arguments.of("\"foo bar\"", "foo bar"),
+                Arguments.of("\"foo' bar\"", "foo' bar")
         );
     }
 
-    static org.junit.jupiter.params.provider.Arguments makeArguments(Object ... args) {
-        return org.junit.jupiter.params.provider.Arguments.of(args);
+    private static Stream<String> testIdentity() {
+        return Stream.of("", "foo", " foo ", "foo bar", "foo' bar");
     }
 }

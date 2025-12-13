@@ -49,7 +49,7 @@ public class JUnitAdapter {
         }
     }
 
-    public static Stream<DynamicTest> createJPackageTests(ClassLoader testClassLoader, String... args) throws Throwable {
+    public static Stream<DynamicTest> createJPackageTests(ClassLoader testClassLoader, String... args) throws Exception {
         final List<TestInstance> tests = new ArrayList<>();
         try (final var testBuilder = TestBuilder.build().workDirRoot(Path.of("")).testClassLoader(testClassLoader).testConsumer(tests::add).create()) {
             for (final var arg : args) {
@@ -64,11 +64,11 @@ public class JUnitAdapter {
     }
 
     @TestFactory
-    Stream<DynamicTest> createJPackageTests() throws Throwable {
+    Stream<DynamicTest> createJPackageTests() throws Exception {
         return createJPackageTests(getClass().getClassLoader(), "--jpt-run=" + getClass().getName());
     }
 
-    static List<String> captureJPackageTestLog(ThrowingRunnable runnable) {
+    static List<String> captureJPackageTestLog(ThrowingRunnable<? extends Exception> runnable) {
         final var buf = new ByteArrayOutputStream();
         try (PrintStream ps = new PrintStream(buf, true, StandardCharsets.UTF_8)) {
             TKit.withExtraLogStream(runnable, ps);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,53 +25,118 @@
 package jdk.jpackage.internal;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.PrintStream;
+import java.nio.charset.Charset;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
+import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.util.CommandLineFormat;
+import jdk.jpackage.internal.util.CommandOutputControl;
+import jdk.jpackage.internal.util.CommandOutputControl.ProcessSpec;
+import jdk.jpackage.internal.util.CommandOutputControl.Result;
+import jdk.jpackage.internal.util.function.ExceptionBox;
 
-public final class Executor {
+final class Executor {
+
+    static Executor of(String... cmdline) {
+        return of(List.of(cmdline));
+    }
+
+    static Executor of(List<String> cmdline) {
+        return of(new ProcessBuilder(cmdline));
+    }
+
+    static Executor of(ProcessBuilder pb) {
+        return new Executor().processBuilder(pb);
+    }
 
     Executor() {
     }
 
-    Executor setOutputConsumer(Consumer<Stream<String>> v) {
-        outputConsumer = v;
-        return this;
-    }
-
     Executor saveOutput(boolean v) {
-        saveOutput = v;
+        commandOutputControl.saveOutput(v);
         return this;
     }
 
-    Executor setWriteOutputToFile(boolean v) {
-        writeOutputToFile = v;
+    Executor saveOutput() {
+        return saveOutput(true);
+    }
+
+    public Executor saveFirstLineOfOutput() {
+        commandOutputControl.saveFirstLineOfOutput();
         return this;
     }
 
-    Executor setTimeout(long v) {
+    Executor processOutputCharset(Charset v) {
+        commandOutputControl.processOutputCharset(v);
+        return this;
+    }
+
+    Executor storeStreamsInFiles(boolean v) {
+        commandOutputControl.storeOutputInFiles(v);
+        return this;
+    }
+
+    Executor storeStreamsInFiles() {
+        return storeStreamsInFiles(true);
+    }
+
+    Executor discardStdout(boolean v) {
+        commandOutputControl.discardStdout(v);
+        return this;
+    }
+
+    Executor discardStdout() {
+        return discardStdout(true);
+    }
+
+    Executor discardStderr(boolean v) {
+        commandOutputControl.discardStderr(v);
+        return this;
+    }
+
+    Executor discardStderr() {
+        return discardStderr(true);
+    }
+
+    Executor timeout(long v, TimeUnit unit) {
+        return timeout(Duration.of(v, unit.toChronoUnit()));
+    }
+
+    Executor timeout(Duration v) {
         timeout = v;
-        if (timeout != INFINITE_TIMEOUT) {
-            // Redirect output to file if timeout is requested, otherwise we will
-            // reading until process ends and timeout will never be reached.
-            setWriteOutputToFile(true);
-        }
         return this;
     }
 
-    Executor setProcessBuilder(ProcessBuilder v) {
-        pb = v;
+    Executor toolProvider(ToolProvider v) {
+        toolProvider = Objects.requireNonNull(v);
+        processBuilder = null;
         return this;
     }
 
-    Executor setCommandLine(String... cmdline) {
-        return setProcessBuilder(new ProcessBuilder(cmdline));
+    Executor processBuilder(ProcessBuilder v) {
+        processBuilder = Objects.requireNonNull(v);
+        toolProvider = null;
+        return this;
+    }
+
+    Executor args(List<String> v) {
+        args.addAll(v);
+        return this;
+    }
+
+    Executor args(String... args) {
+        return args(List.of(args));
     }
 
     Executor setQuiet(boolean v) {
@@ -79,159 +144,132 @@ public final class Executor {
         return this;
     }
 
-    List<String> getOutput() {
-        return output;
-    }
+    Result execute() throws IOException {
+        var coc = commandOutputControl.copy();
 
-    Executor executeExpectSuccess() throws IOException {
-        int ret = execute();
-        if (0 != ret) {
-            throw new IOException(
-                    String.format("Command %s exited with %d code",
-                            createLogMessage(pb, false), ret));
-        }
-        return this;
-    }
-
-    int execute() throws IOException {
-        output = null;
-
-        boolean needProcessOutput = outputConsumer != null || Log.isVerbose() || saveOutput;
-        Path outputFile = null;
-        if (needProcessOutput) {
-            pb.redirectErrorStream(true);
-            if (writeOutputToFile) {
-                outputFile = Files.createTempFile("jpackageOutputTempFile", ".tmp");
-                pb.redirectOutput(outputFile.toFile());
-            }
+        final CommandOutputControl.Executable exec;
+        if (processBuilder != null) {
+            exec = coc.createExecutable(copyProcessBuilder());
+        } else if (toolProvider != null) {
+            exec = coc.createExecutable(toolProvider, args.toArray(String[]::new));
         } else {
-            // We are not going to read process output, so need to notify
-            // ProcessBuilder about this. Otherwise some processes might just
-            // hang up (`ldconfig -p`).
-            pb.redirectError(ProcessBuilder.Redirect.DISCARD);
-            pb.redirectOutput(ProcessBuilder.Redirect.DISCARD);
+            throw new IllegalStateException("No target to execute");
         }
 
-        if (!quietCommand) {
-            Log.verbose(String.format("Running %s", createLogMessage(pb, true)));
+        // Capture interleaved STDOUT & STDERR streams
+        final ByteArrayOutputStream sink;
+
+        if (dumpOutput()) {
+            sink = new ByteArrayOutputStream();
+            // Dump into the sink.
+            var ps = new PrintStream(sink);
+            // Redirect stderr in stdout.
+            coc.dumpOutput(true).dumpStdout(ps).dumpStderr(ps);
+        } else {
+            sink = null;
         }
 
-        Process p = pb.start();
-
-        int code = 0;
-        if (writeOutputToFile) {
-            try {
-                code = waitForProcess(p);
-            } catch (InterruptedException ex) {
-                Log.verbose(ex);
-                throw new RuntimeException(ex);
-            }
+        if (dumpOutput()) {
+            Log.verbose(String.format("Running %s", CommandLineFormat.DEFAULT.apply(List.of(commandLine().getFirst()))));
         }
 
-        if (needProcessOutput) {
-            final List<String> savedOutput;
-            Supplier<Stream<String>> outputStream;
-
-            if (writeOutputToFile) {
-                output = savedOutput = Files.readAllLines(outputFile);
-                Files.delete(outputFile);
-                outputStream = () -> {
-                    if (savedOutput != null) {
-                        return savedOutput.stream();
-                    }
-                    return null;
-                };
-                if (outputConsumer != null) {
-                    outputConsumer.accept(outputStream.get());
-                }
-            } else {
-                try (var br = new BufferedReader(new InputStreamReader(
-                        p.getInputStream()))) {
-
-                    if ((outputConsumer != null || Log.isVerbose())
-                            || saveOutput) {
-                        savedOutput = br.lines().toList();
-                    } else {
-                        savedOutput = null;
-                    }
-                    output = savedOutput;
-
-                    outputStream = () -> {
-                        if (savedOutput != null) {
-                            return savedOutput.stream();
-                        }
-                        return br.lines();
-                    };
-                    if (outputConsumer != null) {
-                        outputConsumer.accept(outputStream.get());
-                    }
-
-                    if (savedOutput == null) {
-                        // For some processes on Linux if the output stream
-                        // of the process is opened but not consumed, the process
-                        // would exit with code 141.
-                        // It turned out that reading just a single line of process
-                        // output fixes the problem, but let's process
-                        // all of the output, just in case.
-                        br.lines().forEach(x -> {});
-                    }
-                }
-            }
-        }
-
+        Result result;
         try {
-            if (!writeOutputToFile) {
-                code = p.waitFor();
-            }
-            if (!quietCommand) {
-                Log.verbose(pb.command(), getOutput(), code, IOUtils.getPID(p));
-            }
-            return code;
-        } catch (InterruptedException ex) {
-            Log.verbose(ex);
-            throw new RuntimeException(ex);
-        }
-    }
-
-    private int waitForProcess(Process p) throws InterruptedException {
-        if (timeout == INFINITE_TIMEOUT) {
-            return p.waitFor();
-        } else {
-            if (p.waitFor(timeout, TimeUnit.SECONDS)) {
-                return p.exitValue();
+            if (timeout == null) {
+                result = exec.execute();
             } else {
-                Log.verbose(String.format("Command %s timeout after %d seconds",
-                            createLogMessage(pb, false), timeout));
-                p.destroy();
-                return -1;
+                result = exec.execute(timeout.toMillis(), TimeUnit.MILLISECONDS);
             }
+        } catch (InterruptedException ex) {
+            throw ExceptionBox.toUnchecked(ex);
+        }
+
+        if (dumpOutput()) {
+            log(result, sink, coc.processOutputCharset());
+        }
+
+        return result;
+    }
+
+    Result executeExpectSuccess() throws IOException {
+        return execute().expectExitCode(0);
+    }
+
+    private List<String> commandLine() {
+        if (processBuilder != null) {
+            return Stream.of(processBuilder.command(), args).flatMap(Collection::stream).toList();
+        } else if (toolProvider != null) {
+            return Stream.concat(Stream.of(toolProvider.name()), args.stream()).toList();
+        } else {
+            throw new IllegalStateException("No target to execute");
         }
     }
 
-    static Executor of(String... cmdline) {
-        return new Executor().setCommandLine(cmdline);
-    }
-
-    static Executor of(ProcessBuilder pb) {
-        return new Executor().setProcessBuilder(pb);
-    }
-
-    private static String createLogMessage(ProcessBuilder pb, boolean quiet) {
-        StringBuilder sb = new StringBuilder();
-        sb.append((quiet) ? pb.command().get(0) : pb.command());
-        if (pb.directory() != null) {
-            sb.append(String.format(" in %s", pb.directory().getAbsolutePath()));
+    private ProcessBuilder copyProcessBuilder() {
+        if (processBuilder == null) {
+            throw new IllegalStateException();
         }
-        return sb.toString();
+
+        var copy = new ProcessBuilder(commandLine());
+        copy.directory(processBuilder.directory());
+        var env = copy.environment();
+        env.clear();
+        env.putAll(processBuilder.environment());
+
+        return copy;
     }
 
-    public static final int INFINITE_TIMEOUT = -1;
+    private boolean dumpOutput() {
+        return Log.isVerbose() && !quietCommand;
+    }
 
-    private ProcessBuilder pb;
-    private boolean saveOutput;
-    private boolean writeOutputToFile;
+    private static void log(Result result, ByteArrayOutputStream outputSink, Charset outputSinkCharset) throws IOException {
+        Objects.requireNonNull(result);
+        Objects.requireNonNull(outputSink);
+        Objects.requireNonNull(outputSinkCharset);
+
+        Optional<Long> pid;
+        if (result.execSpec() instanceof ProcessSpec spec) {
+            pid = spec.pid();
+        } else {
+            pid = Optional.empty();
+        }
+
+        var sb = new StringBuilder();
+        sb.append("Command");
+        pid.ifPresent(p -> {
+            sb.append(" [PID: ").append(p).append("]");
+        });
+        sb.append(":\n    ").append(result.execSpec());
+        Log.verbose(sb.toString());
+
+        var lines = toStringList(outputSink.toByteArray(), outputSinkCharset);
+        if (!lines.isEmpty()) {
+            sb.delete(0, sb.length());
+            sb.append("Output:");
+            for (String s : lines) {
+                sb.append("\n    ").append(s);
+            }
+            Log.verbose(sb.toString());
+        }
+
+        result.exitCode().ifPresentOrElse(exitCode -> {
+            Log.verbose("Returned: " + exitCode + "\n");
+        }, () -> {
+            Log.verbose("Aborted: timed-out" + "\n");
+        });
+    }
+
+    private static List<String> toStringList(byte[] data, Charset charset) throws IOException {
+        try (var bufReader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(data), charset))) {
+            return bufReader.lines().toList();
+        }
+    }
+
+    private final CommandOutputControl commandOutputControl = new CommandOutputControl();
     private boolean quietCommand;
-    private long timeout = INFINITE_TIMEOUT;
-    private List<String> output;
-    private Consumer<Stream<String>> outputConsumer;
+    private List<String> args = new ArrayList<>();
+    private ProcessBuilder processBuilder;
+    private ToolProvider toolProvider;
+    private Duration timeout;
 }

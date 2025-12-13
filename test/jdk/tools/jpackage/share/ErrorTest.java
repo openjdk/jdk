@@ -441,10 +441,7 @@ public final class ErrorTest {
                     .error("error.no-module-in-path", "com.foo.bar"),
             // non-existing argument file
             testSpec().noAppDesc().notype().addArgs("@foo")
-                    .error("ERR_CannotParseOptions", "foo"),
-            // invalid jlink option
-            testSpec().addArgs("--jlink-options", "--foo")
-                    .error("error.jlink.failed", "Error: unknown option: --foo")
+                    .error("ERR_CannotParseOptions", "foo")
         ).map(TestSpec.Builder::create).toList());
 
         // --main-jar and --module-name

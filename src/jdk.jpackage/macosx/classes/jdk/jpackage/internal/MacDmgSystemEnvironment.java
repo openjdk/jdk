@@ -27,6 +27,7 @@ package jdk.jpackage.internal;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -63,10 +64,10 @@ record MacDmgSystemEnvironment(Path hdiutil, Path osascript, Optional<Path> setF
             // Validate SetFile, if Xcode is not installed it will run, but exit with error
             // code
             try {
-                if (Executor.of(setFilePath.orElseThrow().toString(), "-h").setQuiet(true).execute() == 0) {
+                if (Executor.of(setFilePath.orElseThrow().toString(), "-h").setQuiet(true).execute().getExitCode() == 0) {
                     return setFilePath;
                 }
-            } catch (Exception ignored) {
+            } catch (IOException ignored) {
                 // No need for generic find attempt. We found it, but it does not work.
                 // Probably due to missing xcode.
                 return Optional.empty();
@@ -76,14 +77,12 @@ record MacDmgSystemEnvironment(Path hdiutil, Path osascript, Optional<Path> setF
         // generic find attempt
         try {
             final var executor = Executor.of("/usr/bin/xcrun", "-find", "SetFile");
-            final var code = executor.setQuiet(true).saveOutput(true).execute();
-            if (code == 0 && !executor.getOutput().isEmpty()) {
-                final var firstLine = executor.getOutput().getFirst();
-                Path f = Path.of(firstLine);
-                if (new ToolValidator(f).checkExistsOnly().validate() == null) {
-                    return Optional.of(f.toAbsolutePath());
-                }
-            }
+            final var result = executor.setQuiet(true).saveFirstLineOfOutput().execute();
+            return result.findContent().map(List::getFirst).filter(_ -> {
+                return result.getExitCode() == 0;
+            }).map(Path::of).filter(v -> {
+                return new ToolValidator(v).checkExistsOnly().validate() == null;
+            }).map(Path::toAbsolutePath);
         } catch (IOException ignored) {}
 
         return Optional.empty();

@@ -145,8 +145,8 @@ public enum StandardBundlingOperation implements BundlingOperationOptionScope {
 
     static final Set<BundlingOperationOptionScope> LINUX = LINUX_CREATE_BUNDLE;
 
-    static final Set<BundlingOperationOptionScope> MACOS = SetBuilder.build(
-            BundlingOperationOptionScope.class).add(MACOS_CREATE_BUNDLE).add(SIGN_MAC_APP_IMAGE).create();
+    static final Set<BundlingOperationOptionScope> MACOS = SetBuilder.<BundlingOperationOptionScope>build(
+            ).add(MACOS_CREATE_BUNDLE).add(SIGN_MAC_APP_IMAGE).create();
 
     static final Set<BundlingOperationOptionScope> MACOS_APP_IMAGE = Set.of(
             SIGN_MAC_APP_IMAGE, CREATE_MAC_APP_IMAGE);

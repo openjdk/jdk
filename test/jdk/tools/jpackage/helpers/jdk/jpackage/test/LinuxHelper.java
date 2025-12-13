@@ -645,7 +645,7 @@ public final class LinuxHelper {
     }
 
     private static void withTestFileAssociationsFile(FileAssociations fa,
-            ThrowingConsumer<Path> consumer) {
+            ThrowingConsumer<Path, ? extends Exception> consumer) {
         boolean iterated[] = new boolean[] { false };
         PackageTest.withFileAssociationsTestRuns(fa, (testRun, testFiles) -> {
             if (!iterated[0]) {
@@ -723,7 +723,7 @@ public final class LinuxHelper {
 
     private static Optional<String> queryMimeTypeDefaultHandler(String mimeType) {
         return Executor.of("xdg-mime", "query", "default", mimeType)
-                .discardStderr().saveFirstLineOfOutput().execute().findFirstLineOfOutput();
+                .discardStderr().saveFirstLineOfOutput().execute().findContent().map(List::getFirst);
     }
 
     private static void verifyIconInScriptlet(Scriptlet scriptletType,

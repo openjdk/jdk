@@ -37,6 +37,7 @@ import java.util.function.Predicate;
 import java.util.spi.ToolProvider;
 import java.util.stream.IntStream;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
+import jdk.jpackage.internal.util.Slot;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.HelloApp;
@@ -61,7 +62,7 @@ import jdk.jpackage.test.TKit;
 public class AsyncTest {
 
     @Test
-    public void test() throws Throwable {
+    public void test() throws Exception {
 
         // Create test jar only once.
         // Besides of saving time, this avoids asynchronous invocations of java tool provider that randomly fail.
@@ -94,7 +95,7 @@ public class AsyncTest {
                 future.get(3, TimeUnit.MINUTES);
             }
 
-            Throwable[] fatalError = new Throwable[1];
+            var fatalError = Slot.<Exception>createEmpty();
 
             for (var future : futures) {
                 var result = future.get();
@@ -102,13 +103,11 @@ public class AsyncTest {
                 TKit.trace(String.format("[%s] STDOUT END", result.id()));
                 TKit.trace(String.format("[%s] STDERR BEGIN\n%s", result.id(), result.stderrBuffer()));
                 TKit.trace(String.format("[%s] STDERR END", result.id()));
-                result.throwable().filter(Predicate.not(TKit::isSkippedException)).ifPresent(t -> {
-                    fatalError[0] = t;
-                });
+                result.exception().filter(Predicate.not(TKit::isSkippedException)).ifPresent(fatalError::set);
             }
 
-            if (fatalError[0] != null) {
-                throw fatalError[0];
+            if (fatalError.find().isPresent()) {
+                throw fatalError.get();
             }
         }
     }
@@ -143,13 +142,13 @@ public class AsyncTest {
     }
 
 
-    private record Result(String stdoutBuffer, String stderrBuffer, String id, Optional<Throwable> throwable) {
+    private record Result(String stdoutBuffer, String stderrBuffer, String id, Optional<Exception> exception) {
 
         Result {
             Objects.requireNonNull(stdoutBuffer);
             Objects.requireNonNull(stderrBuffer);
             Objects.requireNonNull(id);
-            Objects.requireNonNull(throwable);
+            Objects.requireNonNull(exception);
         }
     }
 
@@ -157,7 +156,7 @@ public class AsyncTest {
     private record Workload(
             ByteArrayOutputStream stdoutBuffer,
             ByteArrayOutputStream stderrBuffer,
-            ThrowingRunnable runnable,
+            ThrowingRunnable<? extends Exception> runnable,
             String id) implements Callable<Result>  {
 
         Workload {
@@ -167,7 +166,7 @@ public class AsyncTest {
             Objects.requireNonNull(id);
         }
 
-        Workload(ThrowingRunnable runnable, String id) {
+        Workload(ThrowingRunnable<? extends Exception> runnable, String id) {
             this(new ByteArrayOutputStream(), new ByteArrayOutputStream(), runnable, id);
         }
 
@@ -202,14 +201,14 @@ public class AsyncTest {
                 }
             });
 
-            Optional<Throwable> err = Optional.empty();
+            Optional<Exception> err = Optional.empty();
             try (var bufOut = new PrintStream(stdoutBuffer, true, StandardCharsets.UTF_8);
                     var bufErr = new PrintStream(stderrBuffer, true, StandardCharsets.UTF_8)) {
                 TKit.withStackTraceStream(() -> {
                     TKit.withMainLogStream(runnable, bufOut);
                 }, bufErr);
-            } catch (Throwable t) {
-                err = Optional.of(t);
+            } catch (Exception ex) {
+                err = Optional.of(ex);
             }
             return new Result(stdoutBufferAsString(), stderrBufferAsString(), id, err);
         }

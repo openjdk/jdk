@@ -543,7 +543,7 @@ public final class StandardOption {
                 .description("help.option." + name)
                 .scope(fromOptionName(name))
                 .scope(scope -> {
-                    return SetBuilder.build(OptionScope.class)
+                    return SetBuilder.<OptionScope>build()
                             .add(scope)
                             .add(BundlingOperationModifier.values())
                             .create();

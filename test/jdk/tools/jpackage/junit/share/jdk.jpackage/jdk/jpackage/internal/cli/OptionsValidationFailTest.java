@@ -160,7 +160,7 @@ public class OptionsValidationFailTest {
     }
 
     @TestFactory
-    Stream<DynamicTest> getTestCasesFromErrorTest() throws Throwable {
+    Stream<DynamicTest> getTestCasesFromErrorTest() throws Exception {
         final var jpackageTestsUnnamedModule = JUnitAdapter.class.getModule();
 
         final var testClassloader = new InMemoryClassLoader(Stream.of(

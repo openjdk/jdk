@@ -203,7 +203,7 @@ public class IconTest {
         return withDesktopFile;
     }
 
-    private ThrowingBiConsumer<JPackageCommand, Executor.Result> createBundleVerifier() {
+    private ThrowingBiConsumer<JPackageCommand, Executor.Result, IOException> createBundleVerifier() {
         return (cmd, result) -> {
             Stream.of(Launcher.Main, Launcher.Additional).filter(config::containsKey).forEach(launcher -> {
                 createConsoleOutputVerifier(cmd, launcher).ifPresent(verifier -> {
@@ -276,7 +276,7 @@ public class IconTest {
         return Optional.of(TKit.assertTextStream(lookupString.getValue()));
     }
 
-    private ThrowingConsumer<JPackageCommand> createInstallVerifier() {
+    private ThrowingConsumer<JPackageCommand, IOException> createInstallVerifier() {
         return cmd -> {
             var verifier = new LauncherIconVerifier();
 
