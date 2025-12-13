@@ -979,12 +979,6 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
       int alias_idx = phase->C->get_alias_index(adr_type());
       mem = mem->as_MergeMem()->memory_at(alias_idx);
       continue;
-    } else if (mem->is_Proj() && mem->in(0)->Opcode() == Op_SafePoint) {
-      // Pure safepoints do not modify heap memory
-      if (base != nullptr) {
-        mem = mem->in(0)->in(TypeFunc::Memory);
-        continue;
-      }
     } else if (mem->is_Proj() && mem->in(0)->is_Call()) {
       // We can walk past a call if we can prove that the call does not modify the memory we are
       // accessing, this is the case if the allocation has not escaped at this call
