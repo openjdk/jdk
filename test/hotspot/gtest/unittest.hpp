@@ -24,9 +24,9 @@
 #ifndef UNITTEST_HPP
 #define UNITTEST_HPP
 
+#include "cppstdlib/cstdlib.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#include <stdlib.h>
 #include <stdio.h>
 
 #define GTEST_DONT_DEFINE_TEST 1

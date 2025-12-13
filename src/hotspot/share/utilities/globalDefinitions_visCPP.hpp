@@ -34,6 +34,8 @@
 // Need this on windows to get the math constants (e.g., M_PI).
 #define _USE_MATH_DEFINES
 
+#include "cppstdlib/cstdlib.hpp"
+
 # include <ctype.h>
 # include <fcntl.h>
 # include <float.h> // for _isnan
@@ -45,7 +47,6 @@
 # include <stddef.h>// for offsetof
 # include <stdint.h>
 # include <stdio.h>
-# include <stdlib.h>
 # include <string.h>
 # include <sys/stat.h>
 # include <time.h>
