@@ -1918,7 +1918,7 @@ public:
                                    Node* inner_iters_actual_int, Node* inner_phi,
                                    Node* iv_add, LoopNode* inner_head);
 
-  Node* get_late_ctrl_with_anti_dep(LoadNode* n, Node* early, Node* LCA);
+  Node* get_late_ctrl_with_anti_dep(Node* n, Node* early, Node* LCA);
 
   bool ctrl_of_use_out_of_loop(const Node* n, Node* n_ctrl, IdealLoopTree* n_loop, Node* ctrl);
 

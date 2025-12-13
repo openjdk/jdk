@@ -112,8 +112,6 @@ public:
     return dom_result == DomResult::Dominate;
   }
 
-  virtual const class TypePtr *adr_type() const;  // returns bottom_type of address
-
   // Shared code for Ideal methods:
   Node *Ideal_common(PhaseGVN *phase, bool can_reshape);  // Return -1 for short-circuit null.
 
@@ -170,6 +168,10 @@ public:
   static void dump_adr_type(const TypePtr* adr_type, outputStream* st);
   virtual void dump_spec(outputStream *st) const;
 #endif
+
+private:
+  virtual const TypePtr* out_adr_type_impl() const { return is_Load() ? nullptr : in_adr_type_impl(); }
+  virtual const TypePtr* in_adr_type_impl() const;  // returns bottom_type of address
 };
 
 //------------------------------LoadNode---------------------------------------
@@ -797,11 +799,6 @@ public:
   virtual int Opcode() const;
   virtual bool      is_CFG() const  { return false; }
   virtual const Type *bottom_type() const {return Type::MEMORY;}
-  virtual const TypePtr *adr_type() const {
-    Node* ctrl = in(0);
-    if (ctrl == nullptr)  return nullptr; // node is dead
-    return ctrl->in(MemNode::Memory)->adr_type();
-  }
   virtual uint ideal_reg() const { return 0;} // memory projections don't have a register
   virtual const Type* Value(PhaseGVN* phase) const;
 #ifndef PRODUCT
@@ -814,9 +811,14 @@ public:
 class LoadStoreNode : public Node {
 private:
   const Type* const _type;      // What kind of value is loaded?
-  const TypePtr* _adr_type;     // What kind of memory is being addressed?
   uint8_t _barrier_data;        // Bit field with barrier information
+
+#ifdef ASSERT
+  const TypePtr* _adr_type;     // What kind of memory is being addressed?
+#endif // ASSERT
+
   virtual uint size_of() const; // Size is bigger
+
 public:
   LoadStoreNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at, const Type* rt, uint required );
   virtual bool depends_only_on_test() const { return false; }
@@ -824,7 +826,6 @@ public:
 
   virtual const Type *bottom_type() const { return _type; }
   virtual uint ideal_reg() const;
-  virtual const class TypePtr *adr_type() const { return _adr_type; }  // returns bottom_type of address
   virtual const Type* Value(PhaseGVN* phase) const;
 
   bool result_not_used() const;
@@ -832,6 +833,9 @@ public:
 
   uint8_t barrier_data() { return _barrier_data; }
   void set_barrier_data(uint8_t barrier_data) { _barrier_data = barrier_data; }
+
+private:
+  virtual const class TypePtr* out_adr_type_impl() const;
 };
 
 class LoadStoreConditionalNode : public LoadStoreNode {
@@ -1082,9 +1086,6 @@ public:
   }
   virtual int         Opcode() const;
   virtual const Type *bottom_type() const { return Type::MEMORY; }
-  // ClearArray modifies array elements, and so affects only the
-  // array memory addressed by the bottom_type of its base address.
-  virtual const class TypePtr *adr_type() const;
   virtual Node* Identity(PhaseGVN* phase);
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual uint match_edge(uint idx) const;
@@ -1114,6 +1115,11 @@ public:
   // Return allocation input memory edge if it is different instance
   // or itself if it is the one we are looking for.
   static bool step_through(Node** np, uint instance_id, PhaseValues* phase);
+
+private:
+  // ClearArray modifies array elements, and so affects only the
+  // array memory addressed by the bottom_type of its base address.
+  virtual const TypePtr* out_adr_type_impl() const;
 };
 
 //------------------------------MemBar-----------------------------------------
@@ -1154,7 +1160,6 @@ public:
   };
   MemBarNode(Compile* C, int alias_idx, Node* precedent);
   virtual int Opcode() const = 0;
-  virtual const class TypePtr *adr_type() const { return _adr_type; }
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual uint match_edge(uint idx) const { return 0; }
@@ -1185,6 +1190,9 @@ public:
   static void set_load_store_pair(MemBarNode* leading, MemBarNode* trailing);
 
   void remove(PhaseIterGVN *igvn);
+
+private:
+  virtual const TypePtr* out_adr_type_impl() const { return _adr_type; }
 };
 
 // "Acquire" - no following ref can move before (but earlier refs can
@@ -1451,7 +1459,6 @@ public:
   virtual uint match_edge(uint idx) const { return 0; }
   virtual const RegMask &out_RegMask() const;
   virtual const Type *bottom_type() const { return Type::MEMORY; }
-  virtual const TypePtr *adr_type() const { return TypePtr::BOTTOM; }
   // sparse accessors
   // Fetch the previously stored "set_memory_at", or else the base memory.
   // (Caller should clone it if it is a phi-nest.)
@@ -1474,6 +1481,9 @@ public:
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
+
+private:
+  virtual const TypePtr* out_adr_type_impl() const { return TypePtr::BOTTOM; }
 };
 
 class MergeMemStream : public StackObj {
@@ -1674,8 +1684,10 @@ public:
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return NotAMachineReg; }
   virtual uint match_edge(uint idx) const { return (idx == 2); }
-  virtual const TypePtr *adr_type() const { return TypePtr::BOTTOM; }
   virtual const Type *bottom_type() const { return Type::MEMORY; }
+
+private:
+  virtual const TypePtr* out_adr_type_impl() const { return TypePtr::BOTTOM; }
 };
 
 // cachewb pre sync node for ensuring that writebacks are serialised
@@ -1686,8 +1698,10 @@ public:
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return NotAMachineReg; }
   virtual uint match_edge(uint idx) const { return false; }
-  virtual const TypePtr *adr_type() const { return TypePtr::BOTTOM; }
   virtual const Type *bottom_type() const { return Type::MEMORY; }
+
+private:
+  virtual const TypePtr* out_adr_type_impl() const { return TypePtr::BOTTOM; }
 };
 
 // cachewb pre sync node for ensuring that writebacks are serialised
@@ -1698,8 +1712,10 @@ public:
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return NotAMachineReg; }
   virtual uint match_edge(uint idx) const { return false; }
-  virtual const TypePtr *adr_type() const { return TypePtr::BOTTOM; }
   virtual const Type *bottom_type() const { return Type::MEMORY; }
+
+private:
+  virtual const TypePtr* out_adr_type_impl() const { return TypePtr::BOTTOM; }
 };
 
 //------------------------------Prefetch---------------------------------------

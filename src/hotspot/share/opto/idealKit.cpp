@@ -470,7 +470,7 @@ Node* IdealKit::make_leaf_call(const TypeFunc *slow_call_type,
   uint adr_idx = C->get_alias_index(adr_type);
 
   // Slow-path leaf call
-  CallNode *call =  (CallNode*)new CallLeafNode( slow_call_type, slow_call, leaf_name, adr_type);
+  CallNode *call =  (CallNode*)new CallLeafNode( slow_call_type, slow_call, leaf_name, adr_type, adr_type);
 
   // Set fixed predefined input arguments
   call->init_req( TypeFunc::Control, ctrl() );
@@ -522,7 +522,7 @@ void IdealKit::make_leaf_call_no_fp(const TypeFunc *slow_call_type,
   uint adr_idx = C->get_alias_index(adr_type);
 
   // Slow-path leaf call
-  CallNode *call =  (CallNode*)new CallLeafNoFPNode( slow_call_type, slow_call, leaf_name, adr_type);
+  CallNode *call =  (CallNode*)new CallLeafNoFPNode( slow_call_type, slow_call, leaf_name, adr_type, adr_type);
 
   // Set fixed predefined input arguments
   call->init_req( TypeFunc::Control, ctrl() );

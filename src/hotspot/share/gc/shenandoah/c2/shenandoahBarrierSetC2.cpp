@@ -886,7 +886,7 @@ void ShenandoahBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCo
 
     enum { _heap_stable = 1, _heap_unstable, PATH_LIMIT };
     Node* region = new RegionNode(PATH_LIMIT);
-    Node* mem_phi = new PhiNode(region, Type::MEMORY, TypeRawPtr::BOTTOM);
+    Node* mem_phi = new PhiNode(region, Type::MEMORY, TypePtr::BOTTOM);
 
     Node* thread = phase->transform_later(new ThreadLocalNode());
     Node* offset = phase->igvn().MakeConX(in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
@@ -914,7 +914,7 @@ void ShenandoahBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCo
                                        ShenandoahBarrierSetC2::clone_barrier_Type(),
                                        CAST_FROM_FN_PTR(address, ShenandoahRuntime::clone_barrier),
                                        "shenandoah_clone",
-                                       TypeRawPtr::BOTTOM,
+                                       TypePtr::BOTTOM,
                                        src_base);
     call = phase->transform_later(call);
 

@@ -77,12 +77,13 @@ Node* PhaseMacroExpand::ConvI2L(Node* offset) {
 Node* PhaseMacroExpand::make_leaf_call(Node* ctrl, Node* mem,
                                        const TypeFunc* call_type, address call_addr,
                                        const char* call_name,
-                                       const TypePtr* adr_type,
+                                       const TypePtr* out_adr_type,
                                        Node* parm0, Node* parm1,
                                        Node* parm2, Node* parm3,
                                        Node* parm4, Node* parm5,
                                        Node* parm6, Node* parm7) {
-  Node* call = new CallLeafNoFPNode(call_type, call_addr, call_name, adr_type);
+  assert(mem->out_adr_type() == TypePtr::BOTTOM, "should have bottom memory input");
+  Node* call = new CallLeafNoFPNode(call_type, call_addr, call_name, out_adr_type, TypePtr::BOTTOM);
   call->init_req(TypeFunc::Control, ctrl);
   call->init_req(TypeFunc::I_O    , top());
   call->init_req(TypeFunc::Memory , mem);
@@ -1064,10 +1065,11 @@ MergeMemNode* PhaseMacroExpand::generate_slow_arraycopy(ArrayCopyNode *ac,
                                                         Node* dest, Node* dest_offset,
                                                         Node* copy_length, bool dest_uninitialized) {
   assert(!dest_uninitialized, "Invariant");
+  assert(mem->out_adr_type() == TypePtr::BOTTOM, "should have bottom memory input");
 
   const TypeFunc* call_type = OptoRuntime::slow_arraycopy_Type();
   CallNode* call = new CallStaticJavaNode(call_type, OptoRuntime::slow_arraycopy_Java(),
-                                          "slow_arraycopy", TypePtr::BOTTOM);
+                                          "slow_arraycopy", adr_type, TypePtr::BOTTOM);
 
   call->init_req(TypeFunc::Control, *ctrl);
   call->init_req(TypeFunc::I_O    , *io);
