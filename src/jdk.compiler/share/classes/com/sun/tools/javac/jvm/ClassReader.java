@@ -56,6 +56,7 @@ import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.comp.Annotate.AnnotationTypeMetadata;
+import com.sun.tools.javac.comp.Check;
 import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.file.PathFileObject;
 import com.sun.tools.javac.jvm.ClassFile.Version;
@@ -2309,7 +2310,15 @@ public class ClassReader {
                 currentClassFile = classFile;
                 List<Attribute.TypeCompound> newList = deproxyTypeCompoundList(proxies);
                 sym.setTypeAttributes(newList.prependList(sym.getRawTypeAttributes()));
-                addTypeAnnotationsToSymbol(sym, newList);
+                if (sym instanceof ClassSymbol) {
+                    addTypeAnnotationsToSymbol(sym, newList);
+                } else {
+                    Completer previousCompleter = sym.completer;
+                    sym.completer = sym -> {
+                        previousCompleter.complete(sym);
+                        addTypeAnnotationsToSymbol(sym, newList);
+                    };
+                }
             } finally {
                 currentClassFile = previousClassFile;
             }
@@ -2325,6 +2334,7 @@ public class ClassReader {
      * 4.7.20.2 type_path to associate the annotation with the correct contained type.
      */
     private void addTypeAnnotationsToSymbol(Symbol s, List<Attribute.TypeCompound> attributes) {
+        DeferredCompletionFailureHandler.Handler prevCFHandler = dcfh.setHandler(dcfh.speculativeCodeHandler);
         try {
             new TypeAnnotationSymbolVisitor(attributes).visit(s, null);
         } catch (CompletionFailure ex) {
@@ -2334,6 +2344,8 @@ public class ClassReader {
             } finally {
                 log.useSource(prev);
             }
+        } finally {
+            dcfh.setHandler(prevCFHandler);
         }
     }
 
