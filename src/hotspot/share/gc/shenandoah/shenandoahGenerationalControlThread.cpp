@@ -170,19 +170,18 @@ ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread:
 }
 
 ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread::prepare_for_explicit_gc(ShenandoahGCRequest &request) const {
-  ShenandoahHeuristics* global_heuristics = _heap->global_generation()->heuristics();
-  request.generation = _heap->global_generation();
-  global_heuristics->log_trigger("GC request (%s)", GCCause::to_string(request.cause));
-  global_heuristics->record_requested_gc();
+  ShenandoahHeuristics* heuristics = request.generation->heuristics();
+  heuristics->log_trigger("GC request (%s)", GCCause::to_string(request.cause));
+  heuristics->record_requested_gc();
 
   if (ShenandoahCollectorPolicy::should_run_full_gc(request.cause)) {
-    return stw_full;;
-  } else {
-    // Unload and clean up everything. Note that this is an _explicit_ request and so does not use
-    // the same `should_unload_classes` call as the regulator's concurrent gc request.
-    _heap->set_unload_classes(global_heuristics->can_unload_classes());
-    return concurrent_normal;
+    return stw_full;
   }
+
+  // Unload and clean up everything. Note that this is an _explicit_ request and so does not use
+  // the same `should_unload_classes` call as the regulator's concurrent gc request.
+  _heap->set_unload_classes(heuristics->can_unload_classes());
+  return concurrent_normal;
 }
 
 ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread::prepare_for_concurrent_gc(const ShenandoahGCRequest &request) const {
@@ -716,16 +715,7 @@ bool ShenandoahGenerationalControlThread::preempt_old_marking(ShenandoahGenerati
   return generation->is_young() && _allow_old_preemption.try_unset();
 }
 
-void ShenandoahGenerationalControlThread::handle_requested_gc(GCCause::Cause cause) {
-  // For normal requested GCs (System.gc) we want to block the caller. However,
-  // for whitebox requested GC, we want to initiate the GC and return immediately.
-  // The whitebox caller thread will arrange for itself to wait until the GC notifies
-  // it that has reached the requested breakpoint (phase in the GC).
-  if (cause == GCCause::_wb_breakpoint) {
-    notify_control_thread(cause, ShenandoahHeap::heap()->global_generation());
-    return;
-  }
-
+void ShenandoahGenerationalControlThread::wait_for_gc_cycle(GCCause::Cause cause, ShenandoahGeneration* generation) {
   // Make sure we have at least one complete GC cycle before unblocking
   // from the explicit GC request.
   //
@@ -740,10 +730,25 @@ void ShenandoahGenerationalControlThread::handle_requested_gc(GCCause::Cause cau
   const size_t required_gc_id = current_gc_id + 1;
   while (current_gc_id < required_gc_id && !should_terminate()) {
     // Make requests to run a global cycle until at least one is completed
-    notify_control_thread(cause, ShenandoahHeap::heap()->global_generation());
+    notify_control_thread(cause, generation);
     ml.wait();
     current_gc_id = get_gc_id();
   }
+}
+
+void ShenandoahGenerationalControlThread::handle_requested_gc(GCCause::Cause cause) {
+  // For normal requested GCs (System.gc) we want to block the caller. However,
+  // for whitebox requested GC, we want to initiate the GC and return immediately.
+  // The whitebox caller thread will arrange for itself to wait until the GC notifies
+  // it that has reached the requested breakpoint (phase in the GC).
+  if (cause == GCCause::_wb_breakpoint) {
+    notify_control_thread(cause, ShenandoahHeap::heap()->global_generation());
+    return;
+  }
+  ShenandoahGeneration* generation = cause == GCCause::_wb_young_gc
+                                   ? ShenandoahHeap::heap()->young_generation()
+                                   : ShenandoahHeap::heap()->global_generation();
+  wait_for_gc_cycle(cause, generation);
 }
 
 void ShenandoahGenerationalControlThread::notify_gc_waiters() {

@@ -127,6 +127,11 @@ void ShenandoahGenerationalHeap::post_initialize_heuristics() {
   _old_generation->post_initialize(this);
 }
 
+bool ShenandoahGenerationalHeap::start_old_collection() {
+  static_cast<ShenandoahGenerationalControlThread*>(_control_thread)->wait_for_gc_cycle(GCCause::_shenandoah_concurrent_gc, old_generation());
+  return true;
+}
+
 void ShenandoahGenerationalHeap::initialize_serviceability() {
   assert(mode()->is_generational(), "Only for the generational mode");
   _young_gen_memory_pool = new ShenandoahYoungGenMemoryPool(this);
