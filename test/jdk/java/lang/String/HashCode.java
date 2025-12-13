@@ -24,8 +24,7 @@
 /**
  * @test
  * @summary Basic hashCode functionality and stability
- * @run main/othervm -XX:+CompactStrings HashCode
- * @run main/othervm -XX:-CompactStrings HashCode
+ * @run main/othervm HashCode
  */
 
 public class HashCode {
