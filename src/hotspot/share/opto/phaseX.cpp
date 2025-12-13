@@ -1665,15 +1665,6 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     case Op_StrIndexOfChar:
       return false;
 
-    // StrEqualsNode::Identity
-    //
-    // Found (linux x64 only?) with:
-    //   serviceability/sa/ClhsdbThreadContext.java
-    //   -XX:+UnlockExperimentalVMOptions -XX:LockingMode=1 -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
-    //   Note: The -XX:LockingMode option is not available anymore.
-    case Op_StrEquals:
-      return false;
-
     // AryEqNode::Ideal
     // Not investigated. Reshapes itself and adds lots of nodes to the worklist.
     //
