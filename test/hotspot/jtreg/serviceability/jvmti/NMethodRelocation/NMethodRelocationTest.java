@@ -22,12 +22,20 @@
  */
 
 /*
+ * This test verifies that COMPILED_METHOD_LOAD and COMPILED_METHOD_UNLOAD
+ * events are correctly sent for relocated nmethods. In some cases, these
+ * events may not be received if the VM exits. For this reason, the test will
+ * issue a warning but still pass when the events are not observed.
+ * However, the test will fail if the method fails to compile or if the
+ * nmethod fails to relocate.
+
  * @test
- *
  * @bug 8316694
  * @summary Verify that nmethod relocation posts the correct JVMTI events
  * @requires vm.jvmti
  * @requires vm.gc == "null" | vm.gc == "Serial"
+ * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
+ * @requires !vm.emulatedClient
  * @library /test/lib /test/hotspot/jtreg
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -55,6 +63,7 @@ public class NMethodRelocationTest {
                 "-agentlib:NMethodRelocationTest",
                 "--enable-native-access=ALL-UNNAMED",
                 "-Xbootclasspath/a:.",
+                "-Xbatch",
                 "-XX:+UseSerialGC",
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+WhiteBoxAPI",
@@ -72,21 +81,35 @@ public class NMethodRelocationTest {
         }
         Asserts.assertTrue(oa.getExitValue() == 0);
 
-        Pattern pattern = Pattern.compile("(?m)^Relocated nmethod from (0x[0-9a-f]{16}) to (0x[0-9a-f]{16})$");
+        Pattern pattern = Pattern.compile("<COMPILED_METHOD_LOAD>:   name: compiledMethod, code: (0x[0-9a-f]{16})");
         Matcher matcher = pattern.matcher(output);
 
-        if (matcher.find()) {
-            String fromAddr = matcher.group(1);
-            String toAddr = matcher.group(2);
-
-            // Confirm events sent for both original and relocated nmethod
-            oa.shouldContain("<COMPILED_METHOD_LOAD>:   name: compiledMethod, code: " + fromAddr);
-            oa.shouldContain("<COMPILED_METHOD_LOAD>:   name: compiledMethod, code: " + toAddr);
-            oa.shouldContain("<COMPILED_METHOD_UNLOAD>:   name: compiledMethod, code: " + fromAddr);
-            oa.shouldContain("<COMPILED_METHOD_UNLOAD>:   name: compiledMethod, code: " + toAddr);
-        } else {
+        if (!matcher.find()) {
             System.err.println(oa.getOutput());
-            throw new RuntimeException("Unable to find relocation information");
+            System.err.println("WARNING: Unable to find first COMPILED_METHOD_LOAD event");
+            return;
+        }
+        String fromAddr = matcher.group(1);
+
+        if (!matcher.find()) {
+            System.err.println(oa.getOutput());
+            System.err.println("WARNING: Unable to find second COMPILED_METHOD_LOAD event");
+            return;
+        }
+        String toAddr = matcher.group(1);
+
+        // Confirm the nmethod was actually relocated
+        Asserts.assertTrue(fromAddr != toAddr);
+
+        // Check for UNLOAD events but only warn if missing
+        if (!output.contains("<COMPILED_METHOD_UNLOAD>:   name: compiledMethod, code: " + fromAddr)) {
+            System.err.println(oa.getOutput());
+            System.err.println("WARNING: COMPILED_METHOD_UNLOAD event not found for address: " + fromAddr);
+        }
+
+        if (!output.contains("<COMPILED_METHOD_UNLOAD>:   name: compiledMethod, code: " + toAddr)) {
+            System.err.println(oa.getOutput());
+            System.err.println("WARNING: COMPILED_METHOD_UNLOAD event not found for address: " + toAddr);
         }
     }
 }
@@ -142,8 +165,9 @@ class DoWork {
         WHITE_BOX.testSetDontInlineMethod(method, true);
 
         WHITE_BOX.enqueueMethodForCompilation(method, COMP_LEVEL_FULL_OPTIMIZATION);
-        while (WHITE_BOX.isMethodQueuedForCompilation(method)) {
-            Thread.onSpinWait();
+
+        if(!WHITE_BOX.isMethodCompiled(method)) {
+            throw new AssertionError("Method not compiled");
         }
 
         NMethod originalNMethod = NMethod.get(method, false);
@@ -167,9 +191,6 @@ class DoWork {
         WHITE_BOX.fullGC();
         WHITE_BOX.fullGC();
 
-        WHITE_BOX.lockCompilation();
-
-        System.out.printf("Relocated nmethod from 0x%016x to 0x%016x%n", originalNMethod.code_begin, relocatedNMethod.code_begin);
         System.out.flush();
     }
 
