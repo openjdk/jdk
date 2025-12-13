@@ -50,6 +50,7 @@ public:
     Remove_Useless_And_Renumber_Live, // First, remove useless nodes from the graph. Then, renumber live nodes.
     Optimistic,                       // Optimistic analysis phase
     GVN,                              // Pessimistic global value numbering phase
+    LoadFolding,                      // Aggressively look through loads
     Ins_Select,                       // Instruction selection phase
     CFG,                              // Build a CFG
     BlockLayout,                      // Linear ordering of blocks
@@ -73,6 +74,7 @@ public:
     f(     _t_escapeAnalysis,        "escapeAnalysis")           \
     f(       _t_connectionGraph,     "connectionGraph")          \
     f(       _t_macroEliminate,      "macroEliminate")           \
+    f(     _t_loadFolding,           "loadFolding")              \
     f(     _t_iterGVN,               "iterGVN")                  \
     f(     _t_incrInline,            "incrementalInline")        \
     f(       _t_incrInline_ideal,    "incrementalInline_ideal")  \
