@@ -50,6 +50,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
+#include "runtime/icache.hpp"
 #include "utilities/debug.hpp"
 
 static ZNMethodData* gc_data(const nmethod* nm) {
@@ -247,6 +248,10 @@ void ZNMethod::set_guard_value(nmethod* nm, int value) {
 void ZNMethod::nmethod_patch_barriers(nmethod* nm) {
   ZBarrierSetAssembler* const bs_asm = ZBarrierSet::assembler();
   ZArrayIterator<ZNMethodDataBarrier> iter(gc_data(nm)->barriers());
+  ICacheInvalidationContext icic;
+  if (gc_data(nm)->barriers()->is_nonempty()) {
+    icic.set_has_modified_code();
+  }
   for (ZNMethodDataBarrier barrier; iter.next(&barrier);) {
     bs_asm->patch_barrier_relocation(barrier._reloc_addr, barrier._reloc_format);
   }
@@ -283,7 +288,7 @@ void ZNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl) {
 
   // Process non-immediate oops
   if (data->has_non_immediate_oops()) {
-    nm->fix_oop_relocations();
+    nm->fix_non_immediate_oop_relocations();
   }
 }
 

@@ -26,6 +26,7 @@
 #include "asm/macroAssembler.hpp"
 #include "code/nmethod.hpp"
 #include "code/relocInfo.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "nativeInst_aarch64.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/safepoint.hpp"
@@ -54,7 +55,8 @@ void Relocation::pd_set_data_value(address x, bool verify_only) {
     bytes = MacroAssembler::pd_patch_instruction_size(addr(), x);
     break;
   }
-  ICache::invalidate_range(addr(), bytes);
+
+  ICacheInvalidationContext::invalidate_range(addr(), bytes);
 }
 
 address Relocation::pd_call_destination(address orig_addr) {
