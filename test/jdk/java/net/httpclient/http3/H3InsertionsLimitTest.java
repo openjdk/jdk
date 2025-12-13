@@ -74,7 +74,7 @@ public class H3InsertionsLimitTest implements HttpServerAdapters {
 
     private static final long HEADER_SIZE_LIMIT_BYTES = 8192;
     private static final long MAX_SERVER_DT_CAPACITY = 4096;
-    private SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     private HttpTestServer h3Server;
     private String requestURIBase;
     public static final long MAX_LITERALS_WITH_INDEXING = 32L;
@@ -122,10 +122,6 @@ public class H3InsertionsLimitTest implements HttpServerAdapters {
 
     @BeforeClass
     public void beforeClass() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null) {
-            throw new AssertionError("Unexpected null sslContext");
-        }
         final QuicServer quicServer = Http3TestServer.quicServerBuilder()
                 .bindAddress(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0))
                 .sslContext(sslContext)
