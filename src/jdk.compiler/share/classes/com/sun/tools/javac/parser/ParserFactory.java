@@ -89,13 +89,13 @@ public class ParserFactory {
         this.trees = JavacTrees.instance(context);
     }
 
-    public JavacParser newParser(CharSequence input, boolean keepDocComments, boolean keepEndPos, boolean keepLineMap) {
-        return newParser(input, keepDocComments, keepEndPos, keepLineMap, false);
+    public JavacParser newParser(CharSequence input, boolean keepDocComments, boolean keepLineMap) {
+        return newParser(input, keepDocComments, keepLineMap, false);
     }
 
-    public JavacParser newParser(CharSequence input, boolean keepDocComments, boolean keepEndPos, boolean keepLineMap, boolean parseModuleInfo) {
+    public JavacParser newParser(CharSequence input, boolean keepDocComments, boolean keepLineMap, boolean parseModuleInfo) {
         Lexer lexer = scannerFactory.newScanner(input, keepDocComments);
-        return new JavacParser(this, lexer, keepDocComments, keepLineMap, keepEndPos, parseModuleInfo);
+        return new JavacParser(this, lexer, keepDocComments, keepLineMap, parseModuleInfo);
     }
 
     public JavacTrees getTrees() {
