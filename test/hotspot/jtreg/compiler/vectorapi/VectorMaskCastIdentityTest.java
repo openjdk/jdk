@@ -23,10 +23,10 @@
 
 /*
 * @test
-* @bug 8356760
+* @bug 8356760 8370863
 * @key randomness
 * @library /test/lib /
-* @summary Optimize VectorMask.fromLong for all-true/all-false cases
+* @summary test VectorMaskCast Identity() optimizations
 * @modules jdk.incubator.vector
 *
 * @run driver compiler.vectorapi.VectorMaskCastIdentityTest
@@ -49,71 +49,82 @@ public class VectorMaskCastIdentityTest {
         }
     }
 
-    @Test
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "= 2" }, applyIfCPUFeatureOr = {"asimd", "true"})
-    public static int testTwoCastToDifferentType() {
-        // The types before and after the two casts are not the same, so the cast cannot be eliminated.
-        VectorMask<Float> mFloat64 = VectorMask.fromArray(FloatVector.SPECIES_64, mr, 0);
-        VectorMask<Double> mDouble128 = mFloat64.cast(DoubleVector.SPECIES_128);
-        VectorMask<Integer> mInt64 = mDouble128.cast(IntVector.SPECIES_64);
-        return mInt64.trueCount();
-    }
-
-    @Run(test = "testTwoCastToDifferentType")
-    public static void testTwoCastToDifferentType_runner() {
-        int count = testTwoCastToDifferentType();
-        VectorMask<Float> mFloat64 = VectorMask.fromArray(FloatVector.SPECIES_64, mr, 0);
-        Asserts.assertEquals(count, mFloat64.trueCount());
-    }
+    // The types before and after the cast sequence are the same,
+    // so the casts will be eliminated.
 
     @Test
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "= 2" }, applyIfCPUFeatureOr = {"avx2", "true"})
-    public static int testTwoCastToDifferentType2() {
-        // The types before and after the two casts are not the same, so the cast cannot be eliminated.
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "= 0" },
+        applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true" },
+        applyIf = { "MaxVectorSize", ">= 16" })
+    public static int testOneCastToSameType() {
         VectorMask<Integer> mInt128 = VectorMask.fromArray(IntVector.SPECIES_128, mr, 0);
-        VectorMask<Double> mDouble256 = mInt128.cast(DoubleVector.SPECIES_256);
-        VectorMask<Short>  mShort64 = mDouble256.cast(ShortVector.SPECIES_64);
-        return mShort64.trueCount();
+        mInt128 = mInt128.cast(IntVector.SPECIES_128);
+        // Insert a not() to prevent the casts being optimized by the optimization:
+        // (VectorStoreMask (VectorMaskCast ... (VectorLoadMask x))) => x
+        return mInt128.not().trueCount();
     }
 
-    @Run(test = "testTwoCastToDifferentType2")
-    public static void testTwoCastToDifferentType2_runner() {
-        int count = testTwoCastToDifferentType2();
+    @Run(test = "testOneCastToSameType")
+    public static void testOneCastToSameType_runner() {
+        int count = testOneCastToSameType();
         VectorMask<Integer> mInt128 = VectorMask.fromArray(IntVector.SPECIES_128, mr, 0);
-        Asserts.assertEquals(count, mInt128.trueCount());
+        Asserts.assertEquals(count, mInt128.not().trueCount());
     }
 
     @Test
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "= 0" }, applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "= 0" },
+        applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true" },
+        applyIf = { "MaxVectorSize", ">= 16" })
     public static int testTwoCastToSameType() {
-        // The types before and after the two casts are the same, so the cast will be eliminated.
         VectorMask<Integer> mInt128 = VectorMask.fromArray(IntVector.SPECIES_128, mr, 0);
         VectorMask<Float> mFloat128 = mInt128.cast(FloatVector.SPECIES_128);
         VectorMask<Integer> mInt128_2 = mFloat128.cast(IntVector.SPECIES_128);
-        return mInt128_2.trueCount();
+        return mInt128_2.not().trueCount();
     }
 
     @Run(test = "testTwoCastToSameType")
     public static void testTwoCastToSameType_runner() {
         int count = testTwoCastToSameType();
         VectorMask<Integer> mInt128 = VectorMask.fromArray(IntVector.SPECIES_128, mr, 0);
-        Asserts.assertEquals(count, mInt128.trueCount());
+        Asserts.assertEquals(count, mInt128.not().trueCount());
     }
 
+    // The types before and after the cast sequence are different,
+    // so the casts will not be eliminated.
+
     @Test
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "= 1" }, applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "= 1" },
+        applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true" },
+        applyIf = { "MaxVectorSize", ">= 16" })
     public static int testOneCastToDifferentType() {
-        // The types before and after the only cast are different, the cast will not be eliminated.
-        VectorMask<Float> mFloat128 = VectorMask.fromArray(FloatVector.SPECIES_128, mr, 0).not();
-        VectorMask<Integer> mInt128 = mFloat128.cast(IntVector.SPECIES_128);
-        return mInt128.trueCount();
+        VectorMask<Integer> mInt128 = VectorMask.fromArray(IntVector.SPECIES_128, mr, 0);
+        VectorMask<Short> mShort64 = mInt128.cast(ShortVector.SPECIES_64);
+        return mShort64.not().trueCount();
     }
 
     @Run(test = "testOneCastToDifferentType")
     public static void testOneCastToDifferentType_runner() {
         int count = testOneCastToDifferentType();
-        VectorMask<Float> mInt128 = VectorMask.fromArray(FloatVector.SPECIES_128, mr, 0).not();
-        Asserts.assertEquals(count, mInt128.trueCount());
+        VectorMask<Integer> mInt128 = VectorMask.fromArray(IntVector.SPECIES_128, mr, 0);
+        Asserts.assertEquals(count, mInt128.not().trueCount());
+    }
+
+    @Test
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "= 2" },
+        applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true" },
+        applyIf = { "MaxVectorSize", ">= 16" })
+    public static int testTwoCastToDifferentType() {
+        VectorMask<Short> mShort64 = VectorMask.fromArray(ShortVector.SPECIES_64, mr, 0);
+        VectorMask<Float> mFloat128 = mShort64.cast(FloatVector.SPECIES_128);
+        VectorMask<Integer> mInt128 = mFloat128.cast(IntVector.SPECIES_128);
+        return mInt128.not().trueCount();
+    }
+
+    @Run(test = "testTwoCastToDifferentType")
+    public static void testTwoCastToDifferentType_runner() {
+        int count = testTwoCastToDifferentType();
+        VectorMask<Short> mShort64 = VectorMask.fromArray(ShortVector.SPECIES_64, mr, 0);
+        Asserts.assertEquals(count, mShort64.not().trueCount());
     }
 
     public static void main(String[] args) {
