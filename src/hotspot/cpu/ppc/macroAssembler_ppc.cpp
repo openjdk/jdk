@@ -2756,39 +2756,57 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
       addi(owner_addr, mark, in_bytes(ObjectMonitor::owner_offset()) - monitor_tag);
       mark = noreg;
     } else {
+      const Register cache_addr = tmp2;
+      const Register tmp3_bucket = tmp3;
+      Label found_in_cache;
+      Label lookup_in_table;
       Label monitor_found;
-      Register cache_addr = tmp2;
 
       // Load cache address
       addi(cache_addr, R16_thread, in_bytes(JavaThread::om_cache_oops_offset()));
 
-      const int num_unrolled = 2;
+      const int num_unrolled = OMCache::CAPACITY;
       for (int i = 0; i < num_unrolled; i++) {
         ld(R0, 0, cache_addr);
         cmpd(CR0, R0, obj);
-        beq(CR0, monitor_found);
+        beq(CR0, found_in_cache);
         addi(cache_addr, cache_addr, in_bytes(OMCache::oop_to_oop_difference()));
       }
+      b(lookup_in_table);
 
-      Label loop;
+      bind(found_in_cache);
+      ld(monitor, in_bytes(OMCache::oop_to_monitor_difference()), cache_addr);
+      b(monitor_found);
 
-      // Search for obj in cache.
-      bind(loop);
+      bind(lookup_in_table);
 
-      // Check for match.
-      ld(R0, 0, cache_addr);
-      cmpd(CR0, R0, obj);
-      beq(CR0, monitor_found);
+      // Get the hash code.
+      srdi(mark, mark, markWord::hash_shift);
 
-      // Search until null encountered, guaranteed _null_sentinel at end.
-      addi(cache_addr, cache_addr, in_bytes(OMCache::oop_to_oop_difference()));
-      cmpdi(CR1, R0, 0);
-      bne(CR1, loop);
-      // Cache Miss, CR0.NE set from cmp above
-      b(slow_path);
+      // Get the table and calculate the bucket's address
+      load_const_optimized(tmp3, ObjectMonitorTable::current_table_address(), R0);
+      ld_ptr(tmp3, 0, tmp3);
+      ld(tmp2, in_bytes(ObjectMonitorTable::table_capacity_mask_offset()), tmp3);
+      andr(mark, mark, tmp2);
+      ld(tmp3, in_bytes(ObjectMonitorTable::table_buckets_offset()), tmp3);
+      sldi(mark, mark, LogBytesPerWord);
+      add(tmp3_bucket, tmp3, mark);
+
+      // Read the monitor from the bucket.
+      ld_ptr(monitor, 0, tmp3_bucket);
+
+      // Check if the monitor in the bucket is special (empty, tombstone or removed).
+      cmpdi(CR0, monitor, ObjectMonitorTable::SpecialPointerValues::below_is_special);
+      blt(CR0, slow_path);
+
+      // Check if object matches.
+      ld(tmp3, in_bytes(ObjectMonitor::object_offset()), monitor);
+      BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+      bs_asm->try_resolve_weak_handle_in_c2(this, tmp3, tmp2, slow_path);
+      cmpd(CR0, tmp3, obj);
+      bne(CR0, slow_path);
 
       bind(monitor_found);
-      ld(monitor, in_bytes(OMCache::oop_to_monitor_difference()), cache_addr);
 
       // Compute owner address.
       addi(owner_addr, monitor, in_bytes(ObjectMonitor::owner_offset()));

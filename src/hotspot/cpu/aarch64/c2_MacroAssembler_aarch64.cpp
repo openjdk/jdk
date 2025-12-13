@@ -31,6 +31,7 @@
 #include "opto/output.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/synchronizer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -221,37 +222,54 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
     if (!UseObjectMonitorTable) {
       assert(t1_monitor == t1_mark, "should be the same here");
     } else {
+      Label found_in_cache;
+      Label lookup_in_table;
       Label monitor_found;
 
       // Load cache address
       lea(t3_t, Address(rthread, JavaThread::om_cache_oops_offset()));
 
-      const int num_unrolled = 2;
+      const int num_unrolled = OMCache::CAPACITY;
       for (int i = 0; i < num_unrolled; i++) {
-        ldr(t1, Address(t3_t));
-        cmp(obj, t1);
-        br(Assembler::EQ, monitor_found);
+        ldr(t2, Address(t3_t));
+        cmp(obj, t2);
+        br(Assembler::EQ, found_in_cache);
         increment(t3_t, in_bytes(OMCache::oop_to_oop_difference()));
       }
+      b(lookup_in_table);
 
-      Label loop;
+      bind(found_in_cache);
+      ldr(t1_monitor, Address(t3_t, OMCache::oop_to_monitor_difference()));
+      b(monitor_found);
 
-      // Search for obj in cache.
-      bind(loop);
+      bind(lookup_in_table);
 
-      // Check for match.
-      ldr(t1, Address(t3_t));
-      cmp(obj, t1);
-      br(Assembler::EQ, monitor_found);
+      // Get the hash code.
+      ubfx(t1_mark, t1_mark, markWord::hash_shift, markWord::hash_bits);
 
-      // Search until null encountered, guaranteed _null_sentinel at end.
-      increment(t3_t, in_bytes(OMCache::oop_to_oop_difference()));
-      cbnz(t1, loop);
-      // Cache Miss, NE set from cmp above, cbnz does not set flags
-      b(slow_path);
+      // Get the table and calculate the bucket's address
+      lea(t3, ExternalAddress(ObjectMonitorTable::current_table_address()));
+      ldr(t3, Address(t3));
+      ldr(t2, Address(t3, ObjectMonitorTable::table_capacity_mask_offset()));
+      ands(t1_mark, t1_mark, t2);
+      ldr(t3, Address(t3, ObjectMonitorTable::table_buckets_offset()));
+
+      // Read the monitor from the bucket.
+      lsl(t1_mark, t1_mark, LogBytesPerWord);
+      ldr(t1_monitor, Address(t3, t1_mark));
+
+      // Check if the monitor in the bucket is special (empty, tombstone or removed).
+      cmp(t1_monitor, (unsigned char)ObjectMonitorTable::SpecialPointerValues::below_is_special);
+      br(Assembler::LT, slow_path);
+
+      // Check if object matches.
+      ldr(t3, Address(t1_monitor, ObjectMonitor::object_offset()));
+      BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+      bs_asm->try_resolve_weak_handle_in_c2(this, t3, t2, slow_path);
+      cmp(t3, obj);
+      br(Assembler::NE, slow_path);
 
       bind(monitor_found);
-      ldr(t1_monitor, Address(t3_t, OMCache::oop_to_monitor_difference()));
     }
 
     const Register t2_owner_addr = t2;
