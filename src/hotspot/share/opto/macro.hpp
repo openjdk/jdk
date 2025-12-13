@@ -144,11 +144,10 @@ private:
                             Node* slice_idx,
                             Node* slice_len,
                             Node* dest_size);
-  bool generate_block_arraycopy(Node** ctrl, MergeMemNode** mem, Node* io,
+  bool generate_block_arraycopy(Node** ctrl, MergeMemNode** mem,
                                 const TypePtr* adr_type,
                                 BasicType basic_elem_type,
-                                AllocateNode* alloc,
-                                Node* src,  Node* src_offset,
+                                Node* src, Node* src_offset,
                                 Node* dest, Node* dest_offset,
                                 Node* dest_size, bool dest_uninitialized);
   MergeMemNode* generate_slow_arraycopy(ArrayCopyNode *ac,

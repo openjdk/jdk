@@ -2563,7 +2563,11 @@ Node* LoadNode::klass_identity_common(PhaseGVN* phase) {
            ) {
           int mirror_field = in_bytes(Klass::java_mirror_offset());
           if (tkls->offset() == mirror_field) {
-            return adr2->in(AddPNode::Base);
+#ifdef ASSERT
+            const TypeKlassPtr* tkls2 = phase->type(adr2->in(AddPNode::Address))->isa_klassptr();
+            assert(tkls2->offset() == 0, "not a load of java_mirror");
+#endif
+            return adr2->in(AddPNode::Address);
           }
         }
       }
@@ -4117,7 +4121,11 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
 
   int unit = BytesPerLong;
   if ((offset % unit) != 0) {
-    Node* adr = new AddPNode(dest, dest, phase->MakeConX(offset));
+    Node* base = dest;
+    if (phase->type(dest)->isa_oopptr() == nullptr) {
+      base = phase->C->top();
+    }
+    Node* adr = new AddPNode(base, dest, phase->MakeConX(offset));
     adr = phase->transform(adr);
     const TypePtr* atp = TypeRawPtr::BOTTOM;
     mem = StoreNode::make(*phase, ctl, mem, adr, atp, phase->zerocon(T_INT), T_INT, MemNode::unordered);
@@ -4152,7 +4160,11 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
 
   // Bulk clear double-words
   Node* zsize = phase->transform(new SubXNode(zend, zbase) );
-  Node* adr = phase->transform(new AddPNode(dest, dest, start_offset) );
+  Node* base = dest;
+  if (phase->type(dest)->isa_oopptr() == nullptr) {
+    base = phase->C->top();
+  }
+  Node* adr = phase->transform(new AddPNode(base, dest, start_offset));
   mem = new ClearArrayNode(ctl, mem, zsize, adr, false);
   return phase->transform(mem);
 }
@@ -4176,7 +4188,11 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
                        start_offset, phase->MakeConX(done_offset), phase);
   }
   if (done_offset < end_offset) { // emit the final 32-bit store
-    Node* adr = new AddPNode(dest, dest, phase->MakeConX(done_offset));
+    Node* base = dest;
+    if (phase->type(dest)->isa_oopptr() == nullptr) {
+      base = phase->C->top();
+    }
+    Node* adr = new AddPNode(base, dest, phase->MakeConX(done_offset));
     adr = phase->transform(adr);
     const TypePtr* atp = TypeRawPtr::BOTTOM;
     mem = StoreNode::make(*phase, ctl, mem, adr, atp, phase->zerocon(T_INT), T_INT, MemNode::unordered);
