@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,21 @@
 
 import jdk.test.lib.SecurityTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import jtreg.SkippedException;
 
-import java.io.*;
-import java.security.*;
-import java.util.*;
-import javax.crypto.*;
-import javax.crypto.spec.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.KeyStoreException;
+import java.security.UnrecoverableKeyException;
+import javax.crypto.SecretKey;
+import java.security.KeyStore;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.PBEParameterSpec;
+import java.util.Arrays;
 
 /*
  * Store and retrieve passwords protected by a selection of PBE algorithms,
@@ -148,11 +157,9 @@ public class StorePasswords {
                                 algorithm, specWithEightByteSalt));
                         count++;
 
-                    } else if (inner2  instanceof InvalidKeyException) {
-                        System.out.println("...skipping due to: " +
-                            inner2.getMessage());
+                    } else if (inner2 instanceof InvalidKeyException) {
+                        throw new SkippedException(inner2.getMessage());
                         // Unsupported crypto keysize
-                        continue;
                     }
                 } else {
                     throw e;
