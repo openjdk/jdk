@@ -1128,6 +1128,8 @@ public:
 
   bool singleton(void) const;
   bool has_non_array_interface() const;
+
+  ciInstanceKlass* has_unique_implementor(ciInstanceKlass* context) const;
 };
 
 //------------------------------TypePtr----------------------------------------
@@ -1584,6 +1586,11 @@ public:
   virtual const Type *xdual() const;    // Compute dual right now.
 
   const TypeKlassPtr* as_klass_type(bool try_for_exact = false) const;
+
+  bool is_interface() const;
+
+  // Find one (of possibly many) most specific superinterfaces with a unique implementor.
+  ciInstanceKlass* has_unique_implementor(ciInstanceKlass* context_intf) const;
 
   // Convenience common pre-built types.
   static const TypeInstPtr *NOTNULL;
