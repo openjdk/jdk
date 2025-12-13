@@ -91,6 +91,7 @@ public class NTLMAuthSequence {
 
     private native long getCredentialsHandle (String user, String domain, String password);
 
-    private native byte[] getNextToken (long crdHandle, byte[] lastToken, Status returned);
+    private native byte[] getNextToken (long crdHandle, byte[] lastToken, Status returned)
+            throws IOException;
 }
 
