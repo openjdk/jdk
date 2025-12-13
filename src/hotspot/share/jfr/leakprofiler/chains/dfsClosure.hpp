@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,9 @@
 #include "jfr/leakprofiler/chains/jfrbitset.hpp"
 #include "jfr/leakprofiler/utilities/unifiedOopRef.hpp"
 #include "memory/iterator.hpp"
+#include "nmt/memTag.hpp"
+#include "utilities/macros.hpp"
+#include "utilities/stack.hpp"
 
 class Edge;
 class EdgeStore;
@@ -47,10 +50,14 @@ class DFSClosure : public BasicOopIterateClosure {
   size_t _depth;
   bool _ignore_root_set;
 
+  struct ProbeStackItem { UnifiedOopRef r; size_t d; };
+  Stack<ProbeStackItem, mtTracing> _probe_stack;
+
   DFSClosure(EdgeStore* edge_store, JFRBitSet* mark_bits, const Edge* start_edge);
+  DEBUG_ONLY(~DFSClosure());
 
   void add_chain();
-  void closure_impl(UnifiedOopRef reference, const oop pointee);
+  void drain_probe_stack();
 
  public:
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS_EXCEPT_REFERENT; }
