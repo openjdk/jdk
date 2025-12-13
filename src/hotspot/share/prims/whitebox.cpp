@@ -199,6 +199,10 @@ WB_ENTRY(jint, WB_TakeLockAndHangInSafepoint(JNIEnv* env, jobject wb))
   return 0;
 WB_END
 
+WB_ENTRY(jlong, WB_GetMinimumJavaStackSize(JNIEnv* env, jobject o))
+  return os::get_minimum_java_stack_size();
+WB_END
+
 class WBIsKlassAliveClosure : public LockedClassesDo {
     Symbol* _name;
     int _count;
@@ -3133,7 +3137,8 @@ static JNINativeMethod methods[] = {
   {CC"cleanMetaspaces", CC"()V",                      (void*)&WB_CleanMetaspaces},
   {CC"rss", CC"()J",                                  (void*)&WB_Rss},
   {CC"printString", CC"(Ljava/lang/String;I)Ljava/lang/String;", (void*)&WB_PrintString},
-  {CC"lockAndStuckInSafepoint", CC"()V", (void*)&WB_TakeLockAndHangInSafepoint},
+  {CC"lockAndStuckInSafepoint", CC"()V",              (void*)&WB_TakeLockAndHangInSafepoint},
+  {CC"getMinimumJavaStackSize", CC"()J",              (void*)&WB_GetMinimumJavaStackSize},
   {CC"wordSize", CC"()J",                             (void*)&WB_WordSize},
   {CC"rootChunkWordSize", CC"()J",                    (void*)&WB_RootChunkWordSize},
   {CC"isStatic", CC"()Z",                             (void*)&WB_IsStaticallyLinked},
