@@ -4089,7 +4089,7 @@ public final class DateTimeFormatterBuilder {
 
         @Override
         public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
-            if(optional && !context.isSupported(field)) {
+            if (optional && !context.isSupported(field)) {
                 return false;
             }
 
