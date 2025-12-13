@@ -104,6 +104,10 @@ public final class PlatformRecording implements AutoCloseable {
         RecordingState oldState;
         RecordingState newState;
         synchronized (recorder) {
+            if (PlatformRecorder.isInShutDown()) {
+                throw new IllegalStateException("Flight recorder is already shutdown");
+            }
+
             oldState = getState();
             if (!Utils.isBefore(state, RecordingState.RUNNING)) {
                 throw new IllegalStateException("Recording can only be started once.");
