@@ -106,6 +106,9 @@ public class Encodings {
         if (!equals(bs, bytes))
             throw new Exception(charset + ": String.getBytes failed");
 
+        if (bs.length != str.getBytesLength(charset))
+            throw new Exception(charset + ": String.getBytesLength failed");
+
         // Calls to String.getBytes(Charset) shouldn't automatically
         // use the cached thread-local encoder.
         if (charset.name().equals("UTF-16BE")) {
