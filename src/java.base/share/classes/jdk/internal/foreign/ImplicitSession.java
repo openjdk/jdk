@@ -38,22 +38,23 @@ import java.lang.ref.Reference;
  * {@link DirectBuffer#address()}, where obtaining an address of a buffer instance associated
  * with a potentially closeable session is forbidden.
  */
-final class ImplicitSession extends SharedSession {
+final class ImplicitSession extends MemorySessionImpl {
 
     public ImplicitSession(Cleaner cleaner) {
-        super();
+        super(null, new SharedResourceList());
         this.state = NONCLOSEABLE;
         cleaner.register(this, resourceList);
     }
 
     @Override
-    public void release0() {
+    public void release0(int ticket) {
         Reference.reachabilityFence(this);
     }
 
     @Override
-    public void acquire0() {
+    public int acquire0() {
         // do nothing
+        return 0;
     }
 
     @Override

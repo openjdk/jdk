@@ -74,6 +74,7 @@ import java.util.Deque;
 import java.util.List;
 
 import static java.lang.classfile.ClassFile.*;
+import static java.lang.classfile.TypeKind.INT;
 import static java.lang.classfile.TypeKind.LONG;
 import static java.lang.classfile.TypeKind.REFERENCE;
 import static java.lang.constant.ConstantDescs.*;
@@ -123,8 +124,8 @@ public class BindingSpecializer {
     private static final MethodTypeDesc MTD_LONG_TO_ADDRESS_SCOPE = MethodTypeDesc.of(CD_MemorySegment, CD_long, CD_long, CD_long, CD_MemorySessionImpl);
     private static final MethodTypeDesc MTD_ALLOCATE = MethodTypeDesc.of(CD_MemorySegment, CD_long, CD_long);
     private static final MethodTypeDesc MTD_HANDLE_UNCAUGHT_EXCEPTION = MethodTypeDesc.of(CD_void, CD_Throwable);
-    private static final MethodTypeDesc MTD_RELEASE0 = MTD_void;
-    private static final MethodTypeDesc MTD_ACQUIRE0 = MTD_void;
+    private static final MethodTypeDesc MTD_RELEASE0 = MethodTypeDesc.of(CD_void, CD_int);
+    private static final MethodTypeDesc MTD_ACQUIRE0 = MethodTypeDesc.of(CD_int);
     private static final MethodTypeDesc MTD_INTEGER_TO_UNSIGNED_LONG = MethodTypeDesc.of(CD_long, CD_int);
     private static final MethodTypeDesc MTD_SHORT_TO_UNSIGNED_LONG = MethodTypeDesc.of(CD_long, CD_short);
     private static final MethodTypeDesc MTD_BYTE_TO_UNSIGNED_LONG = MethodTypeDesc.of(CD_long, CD_byte);
@@ -145,6 +146,7 @@ public class BindingSpecializer {
 
     private int[] leafArgSlots;
     private int[] scopeSlots;
+    private int[] sessionTickets;
     private int curScopeLocalIdx = -1;
     private int returnAllocatorIdx = -1;
     private int contextIdx = -1;
@@ -290,6 +292,15 @@ public class BindingSpecializer {
                 }
             }
             scopeSlots = Arrays.copyOf(initialScopeSlots, numScopes); // fit to size
+
+            sessionTickets = new int[numScopes];
+            for (int i = 0; i < numScopes; i++) {
+                int ticketLocal = cb.allocateLocal(INT);
+                sessionTickets[i] = ticketLocal;
+                cb.loadConstant(0)
+                .istore(ticketLocal);
+            }
+
             curScopeLocalIdx = 0; // used from emitGetInput
         }
 
@@ -530,9 +541,12 @@ public class BindingSpecializer {
 
         // 1 scope to acquire on the stack
         cb.dup();
-        int nextScopeLocal = scopeSlots[curScopeLocalIdx++];
+        int nextScopeLocal = scopeSlots[curScopeLocalIdx];
+        int nextSessionTicketLocal = sessionTickets[curScopeLocalIdx];
+        curScopeLocalIdx++;
         // call acquire first here. So that if it fails, we don't call release
         cb.invokevirtual(CD_MemorySessionImpl, "acquire0", MTD_ACQUIRE0) // call acquire on the other
+          .istore(nextSessionTicketLocal)
           .astore(nextScopeLocal); // store off one to release later
 
         if (hasLookup) { // avoid ASM generating a bunch of nops for the dead code
@@ -545,11 +559,14 @@ public class BindingSpecializer {
     }
 
     private void emitReleaseScopes() {
-        for (int scopeLocal : scopeSlots) {
+        for (int i = 0; i < scopeSlots.length; i++) {
+            int scopeLocal = scopeSlots[i];
+            int ticketLocal = sessionTickets[i];
             cb.aload(scopeLocal)
-              .ifThen(Opcode.IFNONNULL, ifCb -> {
+            .ifThen(Opcode.IFNONNULL, ifCb -> {
                 ifCb.aload(scopeLocal)
-                    .invokevirtual(CD_MemorySessionImpl, "release0", MTD_RELEASE0);
+                .iload(ticketLocal)
+                .invokevirtual(CD_MemorySessionImpl, "release0", MTD_RELEASE0);
             });
         }
     }
