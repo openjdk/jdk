@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -86,18 +86,22 @@ class BsdCDebugger implements CDebugger {
     String cpu = dbg.getCPU();
     if (cpu.equals("amd64") || cpu.equals("x86_64")) {
        AMD64ThreadContext context = (AMD64ThreadContext) thread.getContext();
+       Address rsp = context.getRegisterAsAddress(AMD64ThreadContext.RSP);
+       if (rsp == null) return null;
        Address rbp = context.getRegisterAsAddress(AMD64ThreadContext.RBP);
        if (rbp == null) return null;
        Address pc  = context.getRegisterAsAddress(AMD64ThreadContext.RIP);
        if (pc == null) return null;
-       return new BsdAMD64CFrame(dbg, rbp, pc);
+       return new BsdAMD64CFrame(dbg, rsp, rbp, pc);
     } else if (cpu.equals("aarch64")) {
        AARCH64ThreadContext context = (AARCH64ThreadContext) thread.getContext();
+       Address sp = context.getRegisterAsAddress(AARCH64ThreadContext.SP);
+       if (sp == null) return null;
        Address fp = context.getRegisterAsAddress(AARCH64ThreadContext.FP);
        if (fp == null) return null;
        Address pc  = context.getRegisterAsAddress(AARCH64ThreadContext.PC);
        if (pc == null) return null;
-       return new BsdAARCH64CFrame(dbg, fp, pc);
+       return new BsdAARCH64CFrame(dbg, sp, fp, pc);
     } else {
        throw new DebuggerException(cpu + " is not yet supported");
     }
