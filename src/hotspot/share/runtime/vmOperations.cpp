@@ -52,6 +52,7 @@
 #include "runtime/vmOperations.hpp"
 #include "services/threadService.hpp"
 #include "utilities/ticks.hpp"
+#include "utilities/linkedlist.hpp"
 
 #define VM_OP_NAME_INITIALIZE(name) #name,
 
