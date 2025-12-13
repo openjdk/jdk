@@ -413,8 +413,7 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
         ShenandoahPhaseTimings::final_rebuild_freeset :
         ShenandoahPhaseTimings::degen_gc_final_rebuild_freeset);
     ShenandoahHeapLocker locker(heap->lock());
-    size_t young_trash_regions, old_trash_regions;
-    size_t first_old, last_old, num_old;
+    size_t young_trash_regions, old_trash_regions, first_old, last_old, num_old;
     heap->free_set()->prepare_to_rebuild(young_trash_regions, old_trash_regions, first_old, last_old, num_old);
     // At the end of old-gen, we may find that we have reclaimed immediate garbage, allowing a longer allocation runway.
     // We may also find that we have accumulated canddiate regions for mixed evacuation.  If so, we will want to expand
@@ -424,8 +423,7 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
     ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
     size_t allocation_runway =
       gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_trash_regions);
-    gen_heap->compute_old_generation_balance(allocation_runway, old_trash_regions);
-
+    gen_heap->compute_old_generation_balance(allocation_runway, old_trash_regions, young_trash_regions);
     heap->free_set()->finish_rebuild(young_trash_regions, old_trash_regions, num_old);
   }
 }
