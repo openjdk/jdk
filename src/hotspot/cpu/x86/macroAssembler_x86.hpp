@@ -2061,6 +2061,9 @@ public:
   void save_legacy_gprs();
   void restore_legacy_gprs();
   void setcc(Assembler::Condition comparison, Register dst);
+
+  void imullq(BasicType bt, Register dst, Register src, int32_t imm);
+  void lealq(BasicType bt, Register dst, Address src);
 };
 
 #endif // CPU_X86_MACROASSEMBLER_X86_HPP
