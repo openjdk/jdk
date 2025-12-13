@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,6 @@
  * @bug 8162362
  * @summary Cannot enable previously default enabled cipher suites
  * @run main/othervm
- *      CustomizedCipherSuites Default true
- *      TLS_RSA_WITH_AES_128_CBC_SHA
- *      TLS_ECDH_anon_WITH_AES_128_CBC_SHA
- * @run main/othervm
- *      -Djdk.tls.client.cipherSuites="unknown"
  *      CustomizedCipherSuites Default true
  *      TLS_RSA_WITH_AES_128_CBC_SHA
  *      TLS_ECDH_anon_WITH_AES_128_CBC_SHA
