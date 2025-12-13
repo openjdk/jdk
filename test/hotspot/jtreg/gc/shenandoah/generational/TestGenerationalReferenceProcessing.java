@@ -22,7 +22,7 @@ import jdk.test.whitebox.WhiteBox;
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
  *      -XX:ShenandoahGenerationalMinTenuringAge=1 -XX:ShenandoahGenerationalMaxTenuringAge=1
  *      -XX:ShenandoahLearningSteps=0 -ea
- *      gc.shenandoah.generational.TestOldReferenceProcessing young
+ *      gc.shenandoah.generational.TestGenerationalReferenceProcessing young
  */
 
 /*
@@ -42,7 +42,7 @@ import jdk.test.whitebox.WhiteBox;
  *      -XX:ShenandoahIgnoreGarbageThreshold=0 -XX:ShenandoahOldGarbageThreshold=0 -XX:ShenandoahGarbageThreshold=0
  *      -XX:-UseCompressedOops
  *      -Xmx128M -Xms128M -ea
- *      gc.shenandoah.generational.TestOldReferenceProcessing old
+ *      gc.shenandoah.generational.TestGenerationalReferenceProcessing old
  */
 public class TestGenerationalReferenceProcessing {
     static final int OLD = 0;
