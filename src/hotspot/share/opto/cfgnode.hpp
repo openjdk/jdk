@@ -339,15 +339,15 @@ class IfNode : public MultiBranchNode {
   // Helper methods for fold_compares
   bool cmpi_folds(PhaseIterGVN* igvn, bool fold_ne = false);
   bool is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn);
-  bool has_shared_region(ProjNode* proj, ProjNode*& success, ProjNode*& fail);
-  bool has_only_uncommon_traps(ProjNode* proj, ProjNode*& success, ProjNode*& fail, PhaseIterGVN* igvn);
-  Node* merge_uncommon_traps(ProjNode* proj, ProjNode* success, ProjNode* fail, PhaseIterGVN* igvn);
+  bool has_shared_region(IfProjNode* proj, IfProjNode*& success, IfProjNode*& fail) const;
+  bool has_only_uncommon_traps(IfProjNode* proj, IfProjNode*& success, IfProjNode*& fail, PhaseIterGVN* igvn) const;
+  Node* merge_uncommon_traps(IfProjNode* proj, IfProjNode* success, IfProjNode* fail, PhaseIterGVN* igvn);
   static void improve_address_types(Node* l, Node* r, ProjNode* fail, PhaseIterGVN* igvn);
-  bool is_cmp_with_loadrange(ProjNode* proj);
-  bool is_null_check(ProjNode* proj, PhaseIterGVN* igvn);
-  bool is_side_effect_free_test(ProjNode* proj, PhaseIterGVN* igvn);
-  void reroute_side_effect_free_unc(ProjNode* proj, ProjNode* dom_proj, PhaseIterGVN* igvn);
-  bool fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* fail, PhaseIterGVN* igvn);
+  bool is_cmp_with_loadrange(IfProjNode* proj) const;
+  bool is_null_check(IfProjNode* proj, PhaseIterGVN* igvn) const;
+  bool is_side_effect_free_test(IfProjNode* proj, PhaseIterGVN* igvn) const;
+  static void reroute_side_effect_free_unc(IfProjNode* proj, IfProjNode* dom_proj, PhaseIterGVN* igvn);
+  bool fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjNode* fail, PhaseIterGVN* igvn);
   static bool is_dominator_unc(CallStaticJavaNode* dom_unc, CallStaticJavaNode* unc);
 
 protected:
@@ -537,6 +537,11 @@ class IfProjNode : public CProjNode {
 public:
   IfProjNode(IfNode *ifnode, uint idx) : CProjNode(ifnode,idx) {}
   virtual Node* Identity(PhaseGVN* phase);
+
+  // Return the other IfProj node.
+  IfProjNode* other_if_proj() const {
+    return in(0)->as_If()->proj_out(1 - _con)->as_IfProj();
+  }
 
   void pin_array_access_nodes(PhaseIterGVN* igvn);
 
