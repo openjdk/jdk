@@ -44,6 +44,7 @@ public class ThreadStateTest {
 
     private static native void setSingleSteppingMode(boolean enable);
     private static native void setMonitorContendedMode(boolean enable);
+    private static native void setFramePopEvent(Thread thread);
     private static native void testGetThreadState(Thread thread);
     private static native void testGetThreadListStackTraces(Thread thread);
 
@@ -51,6 +52,10 @@ public class ThreadStateTest {
         testGetThreadState(Thread.currentThread());
         testGetThreadListStackTraces(Thread.currentThread());
         Thread.yield();
+        for (int i = 0; i < 10; i++) {
+            testGetThreadListStackTraces(Thread.currentThread());
+            Thread.yield();
+        }
     };
 
     private void runTest() throws Exception {
@@ -75,7 +80,13 @@ public class ThreadStateTest {
             }
 
             // Give some time for vthreads to finish.
-            Thread.sleep(10);
+            Thread.sleep(50);
+
+            for (Thread t : virtualThreads) {
+                if (tryCount % 4 == 0) {
+                    setFramePopEvent(t);
+                }
+            }
 
             // Trigger race of JvmtiThreadState creation with terminating vthreads.
             setMonitorContendedMode(false);
