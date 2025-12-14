@@ -27,7 +27,7 @@ package jdk.jpackage.internal;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 import java.io.IOException;
-import java.util.NoSuchElementException;
+import java.util.stream.Stream;
 import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.StandardPackageType;
 import jdk.jpackage.internal.util.Result;
@@ -74,17 +74,9 @@ final class LinuxPackageArch {
             }
 
             Result<String> getRpmArch() {
-                try {
-                    return Result.ofValue(Executor.of(cmdline).saveOutput(true).executeExpectSuccess()).flatMap(result -> {
-                        try {
-                            return Result.ofValue(result.stdout().getFirst());
-                        } catch (NoSuchElementException ex) {
-                            return Result.ofError(ex);
-                        }
-                    });
-                } catch (IOException ex) {
-                    return Result.ofError(ex);
-                }
+                return Result.of(Executor.of(cmdline).saveOutput(true)::executeExpectSuccess, IOException.class).flatMap(result -> {
+                    return Result.of(result.stdout()::getFirst);
+                });
             }
 
             private final String[] cmdline;
@@ -92,14 +84,13 @@ final class LinuxPackageArch {
 
         static final String VALUE = toSupplier(RpmPackageArch::getValue).get();
 
-        private static String getValue() throws IOException {
-            for (var rpmArchReader : RpmArchReader.values()) {
-                var result = rpmArchReader.getRpmArch();
-                if (result.hasValue()) {
-                    return result.value().orElseThrow();
-                }
-            }
-            throw new JPackageException("error.rpm-arch-not-detected");
+        private static String getValue() {
+            return Stream.of(RpmArchReader.values())
+                    .map(RpmArchReader::getRpmArch)
+                    .filter(Result::hasValue)
+                    .map(Result::orElseThrow).findFirst().orElseThrow(() -> {
+                        return new JPackageException(I18N.getString("error.rpm-arch-not-detected"));
+                    });
         }
     }
 }

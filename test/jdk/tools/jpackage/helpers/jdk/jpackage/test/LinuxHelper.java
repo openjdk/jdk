@@ -723,7 +723,9 @@ public final class LinuxHelper {
 
     private static Optional<String> queryMimeTypeDefaultHandler(String mimeType) {
         return Executor.of("xdg-mime", "query", "default", mimeType)
-                .discardStderr().saveFirstLineOfOutput().execute().findContent().map(List::getFirst);
+                .discardStderr()
+                .saveFirstLineOfOutput()
+                .execute().getOutput().stream().findFirst();
     }
 
     private static void verifyIconInScriptlet(Scriptlet scriptletType,
