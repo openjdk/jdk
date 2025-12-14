@@ -2001,7 +2001,7 @@ public class ForkJoinPool extends AbstractExecutorService
                                 }
                                 else if (U.compareAndSetReference(a, bp, t, null)) {
                                     q.base = nb;
-                                    Object nt = U.getReferenceAcquire(a, np);
+                                    Object nt = U.getReference(a, np);
                                     w.source = qid;
                                     rescans = 1;
                                     ++taken;
