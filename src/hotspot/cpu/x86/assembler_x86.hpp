@@ -2892,7 +2892,11 @@ private:
   void vpsravd(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len);
   void evpsravq(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len);
 
+  // Variable shift left logical packed integers
+  void vpshldvw(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len);
   void vpshldvd(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len);
+
+  // Variable shift right logical packed integers
   void vpshrdvd(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len);
 
   // And packed integers

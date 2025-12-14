@@ -9625,6 +9625,14 @@ void Assembler::evpsravq(XMMRegister dst, XMMRegister src, XMMRegister shift, in
   emit_int16(0x46, (0xC0 | encode));
 }
 
+void Assembler::vpshldvw(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len) {
+  assert(VM_Version::supports_avx512_vbmi2(), "requires vbmi2");
+  InstructionAttr attributes(vector_len, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
+  attributes.set_is_evex_instruction();
+  int encode = vex_prefix_and_encode(dst->encoding(), src->encoding(), shift->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int16(0x70, (0xC0 | encode));
+}
+
 void Assembler::vpshldvd(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len) {
   assert(VM_Version::supports_avx512_vbmi2(), "requires vbmi2");
   InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
