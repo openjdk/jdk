@@ -42,7 +42,7 @@ class ConcurrentHashTable<CONFIG, MT>::BucketsOperation {
   ConcurrentHashTable<CONFIG, MT>* _cht;
 
   class InternalTableClaimer {
-    volatile size_t _next;
+    Atomic<size_t> _next;
     size_t _limit;
     size_t _size;
 
@@ -57,14 +57,14 @@ public:
 
     void set(size_t claim_size, InternalTable* table) {
       assert(table != nullptr, "precondition");
-      _next = 0;
+      _next.store_relaxed(0);
       _limit = table->_size;
       _size  = MIN2(claim_size, _limit);
     }
 
     bool claim(size_t* start, size_t* stop) {
-      if (AtomicAccess::load(&_next) < _limit) {
-        size_t claimed = AtomicAccess::fetch_then_add(&_next, _size);
+      if (_next.load_relaxed() < _limit) {
+        size_t claimed = _next.fetch_then_add(_size);
         if (claimed < _limit) {
           *start = claimed;
           *stop  = MIN2(claimed + _size, _limit);
@@ -79,7 +79,7 @@ public:
     }
 
     bool have_more_work() {
-      return AtomicAccess::load_acquire(&_next) >= _limit;
+      return _next.load_acquire() >= _limit;
     }
   };
 
