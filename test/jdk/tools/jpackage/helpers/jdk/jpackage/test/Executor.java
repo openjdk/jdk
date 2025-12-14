@@ -34,14 +34,17 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.spi.ToolProvider;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.CommandLineFormat;
 import jdk.jpackage.internal.util.CommandOutputControl;
-import jdk.jpackage.internal.util.function.ThrowingSupplier;
+import jdk.jpackage.internal.util.CommandOutputControl.UnexpectedExitCodeException;
+import jdk.jpackage.internal.util.RetryExecutor;
 import jdk.jpackage.internal.util.function.ExceptionBox;
+import jdk.jpackage.internal.util.function.ThrowingSupplier;
 
 public final class Executor extends CommandArguments<Executor> {
 
@@ -174,6 +177,15 @@ public final class Executor extends CommandArguments<Executor> {
         return binaryOutput(true);
     }
 
+    Executor storeOutputInFiles(boolean v) {
+        commandOutputControl.storeOutputInFiles(v);
+        return this;
+    }
+
+    Executor storeOutputInFiles() {
+        return storeOutputInFiles(true);
+    }
+
     public record Result(CommandOutputControl.Result base) {
         public Result {
             Objects.requireNonNull(base);
@@ -243,10 +255,30 @@ public final class Executor extends CommandArguments<Executor> {
             }
         }
 
-        public Result assertExitCodeIs(int expectedExitCode) {
-            TKit.assertEquals(expectedExitCode, getExitCode(), String.format(
-                    "Check command %s exited with %d code",
-                    base.execSpec(), expectedExitCode));
+        public Result assertExitCodeIs(int main, int... other) {
+            if (other.length != 0) {
+                return assertExitCodeIs(IntStream.concat(IntStream.of(main), IntStream.of(other)).boxed().toList());
+            } else {
+                return assertExitCodeIs(List.of(main));
+            }
+        }
+
+        private Result assertExitCodeIs(List<Integer> expectedExitCodes) {
+            Objects.requireNonNull(expectedExitCodes);
+            switch (expectedExitCodes.size()) {
+                case 0 -> {
+                    throw new IllegalArgumentException();
+                } case 1 -> {
+                    long expectedExitCode = expectedExitCodes.getFirst();
+                    TKit.assertEquals(expectedExitCode, getExitCode(), String.format(
+                            "Check command %s exited with %d code",
+                            base.execSpec(), expectedExitCode));
+                } default -> {
+                    TKit.assertTrue(expectedExitCodes.contains(getExitCode()), String.format(
+                            "Check command %s exited with one of %s codes",
+                            base.execSpec(), expectedExitCodes.stream().sorted()));
+                }
+            }
             return this;
         }
 
@@ -303,27 +335,29 @@ public final class Executor extends CommandArguments<Executor> {
         return saveOutput().execute().getOutput();
     }
 
-    public Callable<CommandOutputControl.Result> toRetryExecutorCallable() {
-        return () -> {
-            return executeWithoutExitCodeCheck().base().expectExitCode(0);
-        };
-    }
-
-    private static class BadResultException extends RuntimeException {
-        BadResultException(Result v) {
-            value = v;
+    private static class FailedAttemptException extends Exception {
+        FailedAttemptException(Exception cause) {
+            super(Objects.requireNonNull(cause));
         }
 
-        Result getValue() {
-            return value;
-        }
-
-        private final transient Result value;
         private static final long serialVersionUID = 1L;
     }
 
+    public RetryExecutor<Result, UnexpectedExitCodeException> retryUntilExitCodeIs(
+            int mainExpectedExitCode, int... otherExpectedExitCodes) {
+        return new RetryExecutor<Result, UnexpectedExitCodeException>(UnexpectedExitCodeException.class).setExecutable(() -> {
+            var result = executeWithoutExitCodeCheck();
+            result.base().expectExitCode(mainExpectedExitCode, otherExpectedExitCodes);
+            return result;
+        }).setExceptionMapper((UnexpectedExitCodeException ex) -> {
+            createResult(ex.getResult()).assertExitCodeIs(mainExpectedExitCode, otherExpectedExitCodes);
+            // Unreachable, because the above `Result.assertExitCodeIs(...)` must throw.
+            throw ExceptionBox.reachedUnreachable();
+        });
+    }
+
     /**
-     * Executes the configured command {@code max} at most times and waits for
+     * Executes the configured command at most {@code max} times and waits for
      * {@code wait} seconds between each execution until the command exits with
      * {@code expectedCode} exit code.
      *
@@ -333,17 +367,10 @@ public final class Executor extends CommandArguments<Executor> {
      *                         command
      */
     public Result executeAndRepeatUntilExitCode(int expectedExitCode, int max, int wait) {
-        try {
-            return tryRunMultipleTimes(() -> {
-                Result result = executeWithoutExitCodeCheck();
-                if (result.getExitCode() != expectedExitCode) {
-                    throw new BadResultException(result);
-                }
-                return result;
-            }, max, wait).assertExitCodeIs(expectedExitCode);
-        } catch (BadResultException ex) {
-            return ex.getValue().assertExitCodeIs(expectedExitCode);
-        }
+        return retryUntilExitCodeIs(expectedExitCode)
+                .setAttemptTimeout(wait, TimeUnit.SECONDS)
+                .setMaxAttemptsCount(max)
+                .executeUnchecked();
     }
 
     /**
@@ -360,26 +387,16 @@ public final class Executor extends CommandArguments<Executor> {
      * @param wait number of seconds to wait between executions of the
      */
     public static <T> T tryRunMultipleTimes(Supplier<T> task, int max, int wait) {
-        RuntimeException lastException = null;
-        int count = 0;
-
-        do {
+        return new RetryExecutor<T, FailedAttemptException>(FailedAttemptException.class).setExecutable(() -> {
             try {
                 return task.get();
             } catch (RuntimeException ex) {
-                lastException = ex;
+                throw new FailedAttemptException(ex);
             }
+        }).setExceptionMapper((FailedAttemptException ex) -> {
+            return (RuntimeException)ex.getCause();
+        }).setAttemptTimeout(wait, TimeUnit.SECONDS).setMaxAttemptsCount(max).executeUnchecked();
 
-            try {
-                Thread.sleep(wait * 1000);
-            } catch (InterruptedException ex) {
-                throw new RuntimeException(ex);
-            }
-
-            count++;
-        } while (count < max);
-
-        throw lastException;
     }
 
     public static void tryRunMultipleTimes(Runnable task, int max, int wait) {

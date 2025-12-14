@@ -44,6 +44,7 @@ import jdk.jpackage.internal.util.CommandLineFormat;
 import jdk.jpackage.internal.util.CommandOutputControl;
 import jdk.jpackage.internal.util.CommandOutputControl.ProcessSpec;
 import jdk.jpackage.internal.util.CommandOutputControl.Result;
+import jdk.jpackage.internal.util.RetryExecutor;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 
 final class Executor {
@@ -72,7 +73,7 @@ final class Executor {
         return saveOutput(true);
     }
 
-    public Executor saveFirstLineOfOutput() {
+    Executor saveFirstLineOfOutput() {
         commandOutputControl.saveFirstLineOfOutput();
         return this;
     }
@@ -193,6 +194,22 @@ final class Executor {
 
     Result executeExpectSuccess() throws IOException {
         return execute().expectExitCode(0);
+    }
+
+    RetryExecutor<Result, IOException> retry() {
+        return new RetryExecutor<Result, IOException>(IOException.class).setExecutable(this::executeExpectSuccess);
+    }
+
+    RetryExecutor<Result, IOException> retryOnKnownErrorMessage(String msg) {
+        Objects.requireNonNull(msg);
+        return saveOutput().retry().setExecutable(() -> {
+            // Execute it without exit code check.
+            var result = execute();
+            if (result.stderr().stream().anyMatch(msg::equals)) {
+                throw result.unexpected();
+            }
+            return result;
+        });
     }
 
     private List<String> commandLine() {

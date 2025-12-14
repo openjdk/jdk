@@ -158,8 +158,8 @@ final class LinuxDebPackager extends LinuxPackager<LinuxDebPackage> {
         cmdline.addAll(List.of("-b", env.appImageDir().toString(), debFile.toAbsolutePath().toString()));
 
         // run dpkg
-        RetryExecutor.retryOnKnownErrorMessage(
-                "semop(1): encountered an error: Invalid argument").execute(Executor.of(cmdline).saveOutput());
+        Executor.of(cmdline).retryOnKnownErrorMessage(
+                "semop(1): encountered an error: Invalid argument").execute();
 
         Log.verbose(I18N.format("message.output-to-location", debFile.toAbsolutePath()));
     }
