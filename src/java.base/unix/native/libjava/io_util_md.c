@@ -75,20 +75,28 @@ FD
 handleOpen(const char *path, int oflag, int mode) {
     FD fd;
     RESTARTABLE(open(path, oflag, mode), fd);
-    if (fd != -1) {
-        struct stat buf;
-        int result;
-        RESTARTABLE(fstat(fd, &buf), result);
-        if (result != -1) {
-            if (S_ISDIR(buf.st_mode)) {
-                close(fd);
-                errno = EISDIR;
-                fd = -1;
-            }
-        } else {
+
+    // Fast-path, either it is an error or if it's
+    // not a read access mode then the Unix standard
+    // guarantees to have failed with EISDIR
+    if (fd == -1 || (oflag & O_RDONLY) != 0) {
+        return fd;
+    }
+
+    // Slow-path, while Unix allow for directories
+    // to be read, Java don't
+    struct stat buf;
+    int result;
+    RESTARTABLE(fstat(fd, &buf), result);
+    if (result != -1) {
+        if (S_ISDIR(buf.st_mode)) {
             close(fd);
+            errno = EISDIR;
             fd = -1;
         }
+    } else {
+        close(fd);
+        fd = -1;
     }
     return fd;
 }
