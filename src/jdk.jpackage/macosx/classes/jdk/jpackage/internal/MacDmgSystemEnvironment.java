@@ -59,33 +59,21 @@ record MacDmgSystemEnvironment(Path hdiutil, Path osascript, Optional<Path> setF
         String typicalPaths[] = {"/Developer/Tools/SetFile",
                 "/usr/bin/SetFile", "/Developer/usr/bin/SetFile"};
 
-        final var setFilePath = Stream.of(typicalPaths).map(Path::of).filter(Files::isExecutable).findFirst();
-        if (setFilePath.isPresent()) {
-            // Validate SetFile, if Xcode is not installed it will run, but exit with error
-            // code
-            try {
-                if (Executor.of(setFilePath.orElseThrow().toString(), "-h").setQuiet(true).execute().getExitCode() == 0) {
-                    return setFilePath;
-                }
-            } catch (IOException ignored) {
-                // No need for generic find attempt. We found it, but it does not work.
-                // Probably due to missing xcode.
-                return Optional.empty();
-            }
-        }
+        return Stream.of(typicalPaths).map(Path::of).filter(Files::isExecutable).findFirst().filter(setFilePath -> {
+            // Validate SetFile, if Xcode is not installed it will run, but exit with error code
+            return Result.of(
+                    Executor.of(setFilePath.toString(), "-h").setQuiet(true)::executeExpectSuccess,
+                    IOException.class).hasValue();
+        }).or(() -> {
+            // generic find attempt
+            final var executor = Executor.of("/usr/bin/xcrun", "-find", "SetFile").setQuiet(true).saveFirstLineOfOutput();
 
-        // generic find attempt
-        try {
-            final var executor = Executor.of("/usr/bin/xcrun", "-find", "SetFile");
-            final var result = executor.setQuiet(true).saveFirstLineOfOutput().execute();
-            return result.findContent().map(List::getFirst).filter(_ -> {
-                return result.getExitCode() == 0;
-            }).map(Path::of).filter(v -> {
+            return Result.of(executor::executeExpectSuccess, IOException.class).value().flatMap(execResult -> {
+                return execResult.findContent().stream().flatMap(List::stream).findFirst().map(Path::of);
+            }).filter(v -> {
                 return new ToolValidator(v).checkExistsOnly().validate() == null;
             }).map(Path::toAbsolutePath);
-        } catch (IOException ignored) {}
-
-        return Optional.empty();
+        });
     }
 
     private static final Path HDIUTIL = Path.of("/usr/bin/hdiutil");
