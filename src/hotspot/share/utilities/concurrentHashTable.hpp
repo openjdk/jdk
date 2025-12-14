@@ -256,7 +256,7 @@ class ConcurrentHashTable : public CHeapObj<MT> {
   // taking the mutex after a safepoint this bool is the actual state. After
   // acquiring the mutex you must check if this is already locked. If so you
   // must drop the mutex until the real lock holder grabs the mutex.
-  volatile Thread* _resize_lock_owner;
+  Atomic<Thread*> _resize_lock_owner;
 
   // Return true if lock mutex/state succeeded.
   bool try_resize_lock(Thread* locker);
@@ -440,7 +440,7 @@ class ConcurrentHashTable : public CHeapObj<MT> {
 
   // This means no paused bucket resize operation is going to resume
   // on this table.
-  bool is_safepoint_safe() { return _resize_lock_owner == nullptr; }
+  bool is_safepoint_safe() { return _resize_lock_owner.load_relaxed() == nullptr; }
 
   // Re-size operations.
   bool shrink(Thread* thread, size_t size_limit_log2 = 0);

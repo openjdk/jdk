@@ -283,7 +283,7 @@ template <typename CONFIG, MemTag MT>
 inline void ConcurrentHashTable<CONFIG, MT>::
   write_synchonize_on_visible_epoch(Thread* thread)
 {
-  assert(_resize_lock_owner == thread, "Re-size lock not held");
+  assert(_resize_lock_owner.load_relaxed() == thread, "Re-size lock not held");
   OrderAccess::fence(); // Prevent below load from floating up.
   // If no reader saw this version we can skip write_synchronize.
   if (_invisible_epoch.load_acquire() == thread) {
@@ -301,8 +301,8 @@ inline bool ConcurrentHashTable<CONFIG, MT>::
   try_resize_lock(Thread* locker)
 {
   if (_resize_lock->try_lock()) {
-    if (_resize_lock_owner != nullptr) {
-      assert(locker != _resize_lock_owner, "Already own lock");
+    if (_resize_lock_owner.load_relaxed() != nullptr) {
+      assert(locker != _resize_lock_owner.load_relaxed(), "Already own lock");
       // We got mutex but internal state is locked.
       _resize_lock->unlock();
       return false;
@@ -311,7 +311,7 @@ inline bool ConcurrentHashTable<CONFIG, MT>::
     return false;
   }
   _invisible_epoch.store_relaxed(nullptr);
-  _resize_lock_owner = locker;
+  _resize_lock_owner.store_relaxed(locker);
   return true;
 }
 
@@ -327,8 +327,8 @@ inline void ConcurrentHashTable<CONFIG, MT>::
     _resize_lock->lock_without_safepoint_check();
     // If holder of lock dropped mutex for safepoint mutex might be unlocked,
     // and _resize_lock_owner will contain the owner.
-    if (_resize_lock_owner != nullptr) {
-      assert(locker != _resize_lock_owner, "Already own lock");
+    if (_resize_lock_owner.load_relaxed() != nullptr) {
+      assert(locker != _resize_lock_owner.load_relaxed(), "Already own lock");
       // We got mutex but internal state is locked.
       _resize_lock->unlock();
       yield.wait();
@@ -336,7 +336,7 @@ inline void ConcurrentHashTable<CONFIG, MT>::
       break;
     }
   } while(true);
-  _resize_lock_owner = locker;
+  _resize_lock_owner.store_relaxed(locker);
   _invisible_epoch.store_relaxed(nullptr);
 }
 
@@ -345,8 +345,8 @@ inline void ConcurrentHashTable<CONFIG, MT>::
   unlock_resize_lock(Thread* locker)
 {
   _invisible_epoch.store_relaxed(nullptr);
-  assert(locker == _resize_lock_owner, "Not unlocked by locker.");
-  _resize_lock_owner = nullptr;
+  assert(locker == _resize_lock_owner.load_relaxed(), "Not unlocked by locker.");
+  _resize_lock_owner.store_relaxed(nullptr);
   _resize_lock->unlock();
 }
 
@@ -478,8 +478,8 @@ inline void ConcurrentHashTable<CONFIG, MT>::
 {
   // Here we have resize lock so table is SMR safe, and there is no new
   // table. Can do this in parallel if we want.
-  assert((is_mt && _resize_lock_owner != nullptr) ||
-         (!is_mt && _resize_lock_owner == thread), "Re-size lock not held");
+  assert((is_mt && _resize_lock_owner.load_relaxed() != nullptr) ||
+         (!is_mt && _resize_lock_owner.load_relaxed() == thread), "Re-size lock not held");
   Node* ndel_stack[StackBufferSize];
   InternalTable* table = get_table();
   assert(start_idx < stop_idx, "Must be");
@@ -697,7 +697,7 @@ inline bool ConcurrentHashTable<CONFIG, MT>::
   if (!try_resize_lock(thread)) {
     return false;
   }
-  assert(_resize_lock_owner == thread, "Re-size lock not held");
+  assert(_resize_lock_owner.load_relaxed() == thread, "Re-size lock not held");
   if (_table->_log2_size == _log2_start_size ||
       _table->_log2_size <= log2_size) {
     unlock_resize_lock(thread);
@@ -711,7 +711,7 @@ template <typename CONFIG, MemTag MT>
 inline void ConcurrentHashTable<CONFIG, MT>::
   internal_shrink_epilog(Thread* thread)
 {
-  assert(_resize_lock_owner == thread, "Re-size lock not held");
+  assert(_resize_lock_owner.load_relaxed() == thread, "Re-size lock not held");
 
   InternalTable* old_table = set_table_from_new();
   _size_limit_reached.store_relaxed(false);
@@ -768,13 +768,13 @@ inline bool ConcurrentHashTable<CONFIG, MT>::
   internal_shrink(Thread* thread, size_t log2_size)
 {
   if (!internal_shrink_prolog(thread, log2_size)) {
-    assert(_resize_lock_owner != thread, "Re-size lock held");
+    assert(_resize_lock_owner.load_relaxed() != thread, "Re-size lock held");
     return false;
   }
-  assert(_resize_lock_owner == thread, "Should be locked by me");
+  assert(_resize_lock_owner.load_relaxed() == thread, "Should be locked by me");
   internal_shrink_range(thread, 0, _new_table->_size);
   internal_shrink_epilog(thread);
-  assert(_resize_lock_owner != thread, "Re-size lock held");
+  assert(_resize_lock_owner.load_relaxed() != thread, "Re-size lock held");
   return true;
 }
 
@@ -822,7 +822,7 @@ template <typename CONFIG, MemTag MT>
 inline void ConcurrentHashTable<CONFIG, MT>::
   internal_grow_epilog(Thread* thread)
 {
-  assert(_resize_lock_owner == thread, "Should be locked");
+  assert(_resize_lock_owner.load_relaxed() == thread, "Should be locked");
 
   InternalTable* old_table = set_table_from_new();
   unlock_resize_lock(thread);
@@ -841,13 +841,13 @@ inline bool ConcurrentHashTable<CONFIG, MT>::
   internal_grow(Thread* thread, size_t log2_size)
 {
   if (!internal_grow_prolog(thread, log2_size)) {
-    assert(_resize_lock_owner != thread, "Re-size lock held");
+    assert(_resize_lock_owner.load_relaxed() != thread, "Re-size lock held");
     return false;
   }
-  assert(_resize_lock_owner == thread, "Should be locked by me");
+  assert(_resize_lock_owner.load_relaxed() == thread, "Should be locked by me");
   internal_grow_range(thread, 0, _table->_size);
   internal_grow_epilog(thread);
-  assert(_resize_lock_owner != thread, "Re-size lock held");
+  assert(_resize_lock_owner.load_relaxed() != thread, "Re-size lock held");
   return true;
 }
 
@@ -962,7 +962,7 @@ template <typename FUNC>
 inline void ConcurrentHashTable<CONFIG, MT>::
   do_scan_locked(Thread* thread, FUNC& scan_f)
 {
-  assert(_resize_lock_owner == thread, "Re-size lock not held");
+  assert(_resize_lock_owner.load_relaxed() == thread, "Re-size lock not held");
   // We can do a critical section over the entire loop but that would block
   // updates for a long time. Instead we choose to block resizes.
   InternalTable* table = get_table();
@@ -1140,11 +1140,11 @@ inline void ConcurrentHashTable<CONFIG, MT>::
 {
   assert(!SafepointSynchronize::is_at_safepoint(),
          "must be outside a safepoint");
-  assert(_resize_lock_owner != thread, "Re-size lock held");
+  assert(_resize_lock_owner.load_relaxed() != thread, "Re-size lock held");
   lock_resize_lock(thread);
   do_scan_locked(thread, scan_f);
   unlock_resize_lock(thread);
-  assert(_resize_lock_owner != thread, "Re-size lock held");
+  assert(_resize_lock_owner.load_relaxed() != thread, "Re-size lock held");
 }
 
 template <typename CONFIG, MemTag MT>
@@ -1206,7 +1206,7 @@ inline bool ConcurrentHashTable<CONFIG, MT>::
   }
   do_bulk_delete_locked(thread, eval_f, del_f);
   unlock_resize_lock(thread);
-  assert(_resize_lock_owner != thread, "Re-size lock held");
+  assert(_resize_lock_owner.load_relaxed() != thread, "Re-size lock held");
   return true;
 }
 
