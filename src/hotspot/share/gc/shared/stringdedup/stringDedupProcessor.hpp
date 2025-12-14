@@ -29,7 +29,6 @@
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
 #include "services/cpuTimeUsage.hpp"
-#include "utilities/deferredStatic.hpp"
 #include "utilities/macros.hpp"
 
 class JavaThread;
@@ -53,7 +52,7 @@ class StringDedup::Processor : public CHeapObj<mtGC> {
   NONCOPYABLE(Processor);
 
   static OopStorage* _storages[2];
-  static DeferredStatic<Atomic<StorageUse*>> _storage_for_requests;
+  static Atomic<StorageUse*> _storage_for_requests;
   static StorageUse* _storage_for_processing;
 
   JavaThread* _thread;

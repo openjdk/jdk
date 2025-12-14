@@ -45,17 +45,17 @@
 
 OopStorage* StringDedup::Processor::_storages[2] = {};
 
-DeferredStatic<Atomic<StringDedup::StorageUse*>> StringDedup::Processor::_storage_for_requests{};
+Atomic<StringDedup::StorageUse*> StringDedup::Processor::_storage_for_requests{};
 StringDedup::StorageUse* StringDedup::Processor::_storage_for_processing = nullptr;
 
 void StringDedup::Processor::initialize_storage() {
   assert(_storages[0] == nullptr, "storage already created");
   assert(_storages[1] == nullptr, "storage already created");
+  assert(_storage_for_requests.load_relaxed() == nullptr, "storage already created");
   assert(_storage_for_processing == nullptr, "storage already created");
   _storages[0] = OopStorageSet::create_weak("StringDedup Requests0 Weak", mtStringDedup);
   _storages[1] = OopStorageSet::create_weak("StringDedup Requests1 Weak", mtStringDedup);
-  auto sfr = new StorageUse(_storages[0]); // Work around lack of std::forward.
-  _storage_for_requests.initialize(sfr);
+  _storage_for_requests.store_relaxed(new StorageUse(_storages[0]));
   _storage_for_processing = new StorageUse(_storages[1]);
 }
 
@@ -74,7 +74,7 @@ void StringDedup::Processor::wait_for_requests() const {
   {
     ThreadBlockInVM tbivm(_thread);
     MonitorLocker ml(StringDedup_lock, Mutex::_no_safepoint_check_flag);
-    OopStorage* storage = _storage_for_requests->load_relaxed()->storage();
+    OopStorage* storage = _storage_for_requests.load_relaxed()->storage();
     while ((storage->allocation_count() == 0) &&
            !Table::is_dead_entry_removal_needed()) {
       ml.wait();
@@ -82,7 +82,7 @@ void StringDedup::Processor::wait_for_requests() const {
   }
   // Swap the request and processing storage objects.
   log_trace(stringdedup)("swapping request storages");
-  _storage_for_processing = _storage_for_requests->exchange(_storage_for_processing);
+  _storage_for_processing = _storage_for_requests.exchange(_storage_for_processing);
   GlobalCounter::write_synchronize();
   // Wait for the now current processing storage object to no longer be used
   // by an in-progress GC.  Again here, the num-dead notification from the
@@ -98,7 +98,7 @@ void StringDedup::Processor::wait_for_requests() const {
 }
 
 StringDedup::StorageUse* StringDedup::Processor::storage_for_requests() {
-  return StorageUse::obtain(_storage_for_requests.get());
+  return StorageUse::obtain(&_storage_for_requests);
 }
 
 void StringDedup::Processor::yield() const {
