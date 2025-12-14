@@ -1878,9 +1878,7 @@ public class ForkJoinPool extends AbstractExecutorService
                 break;
             else
                 nc = (v.stackPred & LMASK) | (c & TC_MASK) | ac;
-            if (q != null && q.base - qbase > 0)
-                break;
-            if (c == (c = ctl) && c == (c = compareAndExchangeCtl(c, nc))) {
+            if (c == (c = compareAndExchangeCtl(c, nc))) {
                 if (v == null)
                     createWorker();
                 else {
@@ -1890,6 +1888,8 @@ public class ForkJoinPool extends AbstractExecutorService
                 }
                 break;
             }
+            if (q != null && q.base - qbase > 0)
+                break;
         }
     }
 
