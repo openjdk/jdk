@@ -3002,6 +3002,8 @@ No documented java options have been removed in JDK @@VERSION_SPECIFICATION@@.
 
 For the lists and descriptions of options removed in previous releases see the *Removed Java Options* section in:
 
+-   [The `java` Command, Release 26](https://docs.oracle.com/en/java/javase/26/docs/specs/man/java.html)
+
 -   [The `java` Command, Release 25](https://docs.oracle.com/en/java/javase/25/docs/specs/man/java.html)
 
 -   [The `java` Command, Release 24](https://docs.oracle.com/en/java/javase/24/docs/specs/man/java.html)
