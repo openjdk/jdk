@@ -27,6 +27,7 @@
 #include "jvm.h"
 #include "io_util.h"
 #include "io_util_md.h"
+#include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -75,11 +76,10 @@ FD
 handleOpen(const char *path, int oflag, int mode) {
     FD fd;
     RESTARTABLE(open(path, oflag, mode), fd);
-
     // Fast-path, either it is an error or if it's
     // not a read access mode then the Unix standard
     // guarantees to have failed with EISDIR
-    if (fd == -1 || (oflag & O_RDONLY) != 0) {
+    if (fd == -1 || ((oflag & O_ACCMODE) != O_RDONLY) != 0) {
         return fd;
     }
 
