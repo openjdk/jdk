@@ -86,8 +86,8 @@ void OSContainer::init() {
     //  2.) On a physical Linux system with a limit enforced by other means (like systemd slice)
     physical_memory_size_type mem_limit_val = value_unlimited;
     (void)memory_limit_in_bytes(mem_limit_val);  // discard error and use default
-    int host_cpus = os::Linux::active_processor_count();
-    int cpus = host_cpus;
+    double host_cpus = os::Linux::active_processor_count();
+    double cpus = host_cpus;
     (void)active_processor_count(cpus);  // discard error and use default
     any_mem_cpu_limit_present = mem_limit_val != value_unlimited || host_cpus != cpus;
     if (any_mem_cpu_limit_present) {
@@ -127,8 +127,7 @@ bool OSContainer::available_memory_in_bytes(physical_memory_size_type& value) {
   return false;
 }
 
-bool OSContainer::available_swap_in_bytes(physical_memory_size_type host_free_swap,
-                                          physical_memory_size_type& value) {
+bool OSContainer::available_swap_in_bytes(physical_memory_size_type& value) {
   physical_memory_size_type mem_limit = 0;
   physical_memory_size_type mem_swap_limit = 0;
   if (memory_limit_in_bytes(mem_limit) &&
@@ -179,8 +178,7 @@ bool OSContainer::available_swap_in_bytes(physical_memory_size_type host_free_sw
     assert(num < 25, "buffer too small");
     mem_limit_buf[num] = '\0';
     log_trace(os,container)("OSContainer::available_swap_in_bytes: container_swap_limit=%s"
-                            " container_mem_limit=%s, host_free_swap: " PHYS_MEM_TYPE_FORMAT,
-                            mem_swap_buf, mem_limit_buf, host_free_swap);
+                            " container_mem_limit=%s", mem_swap_buf, mem_limit_buf);
   }
   return false;
 }
@@ -252,7 +250,7 @@ char * OSContainer::cpu_cpuset_memory_nodes() {
   return cgroup_subsystem->cpu_cpuset_memory_nodes();
 }
 
-bool OSContainer::active_processor_count(int& value) {
+bool OSContainer::active_processor_count(double& value) {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
   return cgroup_subsystem->active_processor_count(value);
 }
