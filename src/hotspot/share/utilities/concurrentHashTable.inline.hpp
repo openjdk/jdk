@@ -222,8 +222,8 @@ inline ConcurrentHashTable<CONFIG, MT>::
       _cs_context(GlobalCounter::critical_section_begin(_thread))
 {
   // This version is published now.
-  if (AtomicAccess::load_acquire(&_cht->_invisible_epoch) != nullptr) {
-    AtomicAccess::release_store_fence(&_cht->_invisible_epoch, (Thread*)nullptr);
+  if (_cht->_invisible_epoch.load_acquire() != nullptr) {
+    _cht->_invisible_epoch.release_store_fence(nullptr);
   }
 }
 
@@ -286,13 +286,13 @@ inline void ConcurrentHashTable<CONFIG, MT>::
   assert(_resize_lock_owner == thread, "Re-size lock not held");
   OrderAccess::fence(); // Prevent below load from floating up.
   // If no reader saw this version we can skip write_synchronize.
-  if (AtomicAccess::load_acquire(&_invisible_epoch) == thread) {
+  if (_invisible_epoch.load_acquire() == thread) {
     return;
   }
-  assert(_invisible_epoch == nullptr, "Two thread doing bulk operations");
+  assert(_invisible_epoch.load_relaxed() == nullptr, "Two thread doing bulk operations");
   // We set this/next version that we are synchronizing for to not published.
   // A reader will zero this flag if it reads this/next version.
-  AtomicAccess::release_store(&_invisible_epoch, thread);
+  _invisible_epoch.release_store(thread);
   GlobalCounter::write_synchronize();
 }
 
@@ -310,7 +310,7 @@ inline bool ConcurrentHashTable<CONFIG, MT>::
   } else {
     return false;
   }
-  _invisible_epoch = nullptr;
+  _invisible_epoch.store_relaxed(nullptr);
   _resize_lock_owner = locker;
   return true;
 }
@@ -337,14 +337,14 @@ inline void ConcurrentHashTable<CONFIG, MT>::
     }
   } while(true);
   _resize_lock_owner = locker;
-  _invisible_epoch = nullptr;
+  _invisible_epoch.store_relaxed(nullptr);
 }
 
 template <typename CONFIG, MemTag MT>
 inline void ConcurrentHashTable<CONFIG, MT>::
   unlock_resize_lock(Thread* locker)
 {
-  _invisible_epoch = nullptr;
+  _invisible_epoch.store_relaxed(nullptr);
   assert(locker == _resize_lock_owner, "Not unlocked by locker.");
   _resize_lock_owner = nullptr;
   _resize_lock->unlock();

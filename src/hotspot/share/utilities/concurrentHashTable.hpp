@@ -274,7 +274,7 @@ class ConcurrentHashTable : public CHeapObj<MT> {
   // this field keep tracks if a version of the hash-table was ever been seen.
   // We the working thread pointer as tag for debugging. The _invisible_epoch
   // can only be used by the owner of _resize_lock.
-  volatile Thread* _invisible_epoch;
+  Atomic<Thread*> _invisible_epoch;
 
   // Scoped critical section, which also handles the invisible epochs.
   // An invisible epoch/version do not need a write_synchronize().
