@@ -86,16 +86,16 @@ bool MemNode::check_if_adr_maybe_raw(Node* adr) {
   return false;
 }
 
-// Check whether an allocation has escaped at a certain control node ctl, the allocation does not
-// escape at ctl if there is no node that:
+// Check whether an allocation has escaped at a certain control node ctl, the allocation has not
+// escaped at ctl if there is no node that:
 // 1. Make the allocation escape.
 // 2. Either:
 //   a. Has no control input.
-//   b. Has a control input that is a transitive control input of ctl.
+//   b. Has a control input that is ctl or a transitive control input of ctl.
 //
-// In other word, alloc is determined not to escape at ctl if all nodes that make alloc escape have
-// a control input that is not a transitive control input of ctl.
-bool MemNode::check_not_escaped(PhaseValues* phase, Unique_Node_List& aliases, AllocateNode* alloc, Node* ctl) {
+// In other word, alloc is determined that it has not escaped at ctl if all nodes that make alloc
+// escape have a control input that is neither nullptr, ctl, nor a transitive control input of ctl.
+bool MemNode::check_not_escaped(PhaseValues* phase, Unique_Node_List& aliases, Unique_Node_List& not_escaped_controls, AllocateNode* alloc, Node* ctl) {
   if (!phase->is_IterGVN() || alloc == nullptr || phase->type(ctl) == Type::TOP) {
     return false;
   }
@@ -105,35 +105,13 @@ bool MemNode::check_not_escaped(PhaseValues* phase, Unique_Node_List& aliases, A
     return false;
   }
 
-  Node* base = alloc->result_cast();
-  assert(base != nullptr, "must have a result cast");
-
-  // Find all nodes that may alias base, if any of these nodes escapes, then we conservatively say
-  // that base escapes
-  assert(aliases.size() == 0, "must not be computed yet");
-  aliases.push(base);
-  for (uint wl_idx = 0; wl_idx < aliases.size(); wl_idx++) {
-    Node* n = aliases.at(wl_idx);
-    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-      Node* out = n->fast_out(i);
-      if (out->is_ConstraintCast() || out->is_EncodeP() || out->is_DecodeN() ||
-          out->is_Phi() || out->is_CMove()) {
-        aliases.push(out);
-      } else if (out->is_AddP()) {
-        // Some runtime calls receive a derived pointer but not its base, so we consider these
-        // derived pointers aliases, too
-        aliases.push(out);
-      }
-    }
-  }
-
-  // Find all transitive control inputs of ctl that are not dead
-  ResourceMark rm;
+  // Find all transitive control inputs of ctl that are not dead, if it is determined that alloc
+  // has not escaped at ctl, then it must be the case that it has not escaped at all of these
+  assert(not_escaped_controls.size() == 0, "must not be computed yet");
   Node* start = phase->C->start();
-  Unique_Node_List controls;
-  controls.push(ctl);
-  for (uint control_idx = 0; control_idx < controls.size(); control_idx++) {
-    Node* n = controls.at(control_idx);
+  not_escaped_controls.push(ctl);
+  for (uint control_idx = 0; control_idx < not_escaped_controls.size(); control_idx++) {
+    Node* n = not_escaped_controls.at(control_idx);
     assert(phase->type(n) == Type::CONTROL || phase->type(n)->base() == Type::Tuple, "must be a control node %s", n->Name());
     if (n == start) {
       continue;
@@ -143,55 +121,75 @@ bool MemNode::check_not_escaped(PhaseValues* phase, Unique_Node_List& aliases, A
       for (uint i = 1; i < n->req(); i++) {
         Node* in = n->in(i);
         if (in != nullptr && phase->type(in) != Type::TOP) {
-          controls.push(in);
+          not_escaped_controls.push(in);
         }
       }
     } else {
       Node* in = n->in(0);
       if (in != nullptr && phase->type(in) != Type::TOP) {
-        controls.push(in);
+        not_escaped_controls.push(in);
       }
     }
   }
 
-  if (!controls.member(start)) {
+  if (!not_escaped_controls.member(start)) {
     // If there is no control path from ctl to start, ctl is a dead path, give up
+    not_escaped_controls.clear();
     return false;
   }
 
+  Node* base = alloc->result_cast();
+  assert(base != nullptr, "must have a result cast");
+
   // Find all nodes that may escape alloc, and decide that it is provable that they must be
   // executed after ctl
+  bool res = true;
+  aliases.push(base);
   for (uint idx = 0; idx < aliases.size(); idx++) {
     Node* n = aliases.at(idx);
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node* out = n->fast_out(i);
+      if (out->is_ConstraintCast() || out->is_EncodeP() || out->is_DecodeN() ||
+          out->is_Phi() || out->is_CMove()) {
+        // A node that may alias base, if any of these nodes escapes, then we conservatively say
+        // that base escapes
+        aliases.push(out);
+        continue;
+      } else if (out->is_AddP()) {
+        // Some runtime calls receive a derived pointer but not its base, so we consider these
+        // derived pointers aliases, too
+        aliases.push(out);
+        continue;
+      }
+
       Node* c = out->in(0);
-      if (c != nullptr && !controls.member(c)) {
+      if (c != nullptr && !not_escaped_controls.member(c)) {
         // c is not a live transitive control input of ctl, so out is not executed before ctl,
         // which means it does not affect the escape status of alloc at ctl
         continue;
       }
 
-      if (aliases.member(out)) {
-        // Just a node that may alias n, such as Phi, CMove, CastPP
-      } else if (out->is_Load()) {
+      if (out->is_Load()) {
         // A Load does not escape alloc
       } else if (out->is_Mem()) {
         // A Store or a LoadStore
         if (n == out->in(MemNode::ValueIn)) {
           // If an object is stored to memory, then it escapes
-          return false;
+          res = false;
+          break;
         } else if (n == out->in(MemNode::Address) && (!out->is_Store() || out->as_Store()->is_mismatched_access())) {
           // Mismatched accesses can lie in a different alias class and are protected by memory
           // barriers, so we cannot be aggressive and walk past memory barriers if there is a
           // mismatched store into it. LoadStoreNodes are also lumped here because there is no
           // LoadStoreNode::is_mismatched_access.
-          return false;
+          res = false;
+          break;
         }
       } else if (out->is_Call()) {
         if (!out->is_AbstractLock() && out->as_Call()->has_non_debug_use(n)) {
           // A call that receives an object as an argument makes that object escape
-          return false;
+          res = false;
+          break;
         }
       } else if (out->is_SafePoint()) {
         // Non-call safepoints are pure control nodes
@@ -200,12 +198,20 @@ bool MemNode::check_not_escaped(PhaseValues* phase, Unique_Node_List& aliases, A
         // unpredictable)
       } else {
         // Conservatively consider all other nodes to make alloc escape
-        return false;
+        res = false;
+        break;
       }
+    }
+
+    if (!res) {
+      break;
     }
   }
 
-  return true;
+  if (!res) {
+    not_escaped_controls.clear();
+  }
+  return res;
 }
 
 #ifndef PRODUCT
@@ -832,14 +838,22 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
     cnt = 1000;
   }
 
-  // Can't use optimize_simple_memory_chain() since it needs PhaseGVN.
-  bool is_known_instance = addr_t != nullptr && addr_t->is_known_instance_field();
+  ResourceMark rm;
   // If alloc != nullptr and the allocated object has not escaped the current compilation unit, we
   // can be more aggressive, walk past calls and memory barriers to find a corresponding store
+  bool is_known_instance = addr_t != nullptr && addr_t->is_known_instance_field();
   TriBool has_not_escaped = is_known_instance ? TriBool(true) : (is_Load() ? TriBool() : TriBool(false));
   // If has_not_escaped and it is not empty, this is the set of all nodes that can alias base
-  ResourceMark rm;
   Unique_Node_List aliases;
+  // If it is known that alloc has not escaped at a control node c1, then it must be the case that
+  // alloc has not escaped at all of the transitive control inputs of the node. Otherwise, there
+  // will be a control flow following the path from a transitive input c2 of c1 to c1 in which
+  // alloc has escaped at c2 but has also not escaped at a later point c1, which is impossible.
+  // As a result, when alloc is determined that it has not escaped at a control node, we record
+  // that node as well as all of its transitive control inputs here.
+  Unique_Node_List not_escaped_controls;
+
+  // Can't use optimize_simple_memory_chain() since it needs PhaseGVN.
   for (;;) {                // While we can dance past unrelated stores...
     if (--cnt < 0)  break;  // Caught in cycle or a complicated dance?
 
@@ -897,14 +911,13 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
       // Try to prove that 2 different base nodes at compile time are different values at runtime
       bool known_independent = false;
       if (has_not_escaped && aliases.size() > 0) {
-#ifdef ASSERT
         assert(!is_known_instance, "aliases are not computed for known instances");
-        ResourceMark rm;
-        Unique_Node_List verify_aliases;
-        // Since we are walking from a node to its input, if alloc is found not to escape at an
-        // earlier iteration, it must also be found not to escape at the current iteration
-        assert(check_not_escaped(phase, verify_aliases, alloc, mem->in(0)), "inconsistent");
-#endif // ASSERT
+
+        // Since we are walking from a node to its input, if alloc is found that it has not escaped
+        // at an earlier iteration, it must also be found that it has not escaped at the current
+        // iteration
+        assert(not_escaped_controls.member(mem->in(0)), "inconsistent");
+
         // If base is the result of an allocation that has not escaped, we can know all the nodes
         // that may have the same runtime value as base, these are the transitive outputs of base
         // along some chains that consist of ConstraintCasts, EncodePs, DecodeNs, Phis, and CMoves
@@ -912,16 +925,9 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
       } else if (detect_ptr_independence(base, alloc, st_base,
                                          AllocateNode::Ideal_allocation(st_base),
                                          phase)) {
-        // detect_ptr_independence == true means that it can prove that base and st_base can not
+        // detect_ptr_independence == true means that it can prove that base and st_base cannot
         // have the same runtime value
         known_independent = true;
-      } else if (has_not_escaped.is_default()) {
-        // Both of the previous approaches fail, try to compute the set of all nodes that can have
-        // the same runtime value as base and whether st_base is one of them
-        has_not_escaped = check_not_escaped(phase, aliases, alloc, mem->in(0));
-        if (has_not_escaped) {
-          known_independent = !aliases.member(st_base);
-        }
       }
 
       if (known_independent) {
@@ -978,17 +984,14 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
       // We can walk past a call if we can prove that the call does not modify the memory we are
       // accessing, this is the case if the allocation has not escaped at this call
       CallNode* call = mem->in(0)->as_Call();
-#ifdef ASSERT
       if (has_not_escaped && !is_known_instance) {
-        ResourceMark rm;
-        Unique_Node_List verify_aliases;
-        // Since we are walking from a node to its input, if alloc is found not to escape at an
-        // earlier iteration, it must also be found not to escape at the current iteration
-        assert(check_not_escaped(phase, verify_aliases, alloc, call), "inconsistent");
+        // Since we are walking from a node to its input, if alloc is found that it has not escaped
+        // at an earlier iteration, it must also be found that it has not escaped at the current
+        // iteration
+        assert(not_escaped_controls.member(call), "inconsistent");
       }
-#endif // ASSERT
       if (has_not_escaped.is_default()) {
-        has_not_escaped = check_not_escaped(phase, aliases, alloc, call);
+        has_not_escaped = check_not_escaped(phase, aliases, not_escaped_controls, alloc, call);
       }
       if (!has_not_escaped) {
         break;
@@ -1003,17 +1006,14 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
     } else if (mem->is_Proj() && mem->in(0)->is_MemBar()) {
       // We can walk past a memory barrier if we can prove that the allocation has not escaped at
       // this barrier, hence it is invisible to other threads
-#ifdef ASSERT
       if (has_not_escaped && !is_known_instance) {
-        ResourceMark rm;
-        Unique_Node_List verify_aliases;
-        // Since we are walking from a node to its input, if alloc is found not to escape at an
-        // earlier iteration, it must also be found not to escape at the current iteration
-        assert(check_not_escaped(phase, verify_aliases, alloc, mem->in(0)), "inconsistent");
+        // Since we are walking from a node to its input, if alloc is found that it has not escaped
+        // at an earlier iteration, it must also be found that it has not escaped at the current
+        // iteration
+        assert(not_escaped_controls.member(mem->in(0)), "inconsistent");
       }
-#endif // ASSERT
       if (has_not_escaped.is_default()) {
-        has_not_escaped = check_not_escaped(phase, aliases, alloc, mem->in(0));
+        has_not_escaped = check_not_escaped(phase, aliases, not_escaped_controls, alloc, mem->in(0));
       }
       if (!has_not_escaped) {
         break;

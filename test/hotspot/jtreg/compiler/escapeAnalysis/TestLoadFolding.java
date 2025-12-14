@@ -26,6 +26,7 @@ package compiler.escapeAnalysis;
 import compiler.lib.ir_framework.*;
 
 import java.lang.invoke.VarHandle;
+import java.util.function.Supplier;
 
 /**
  * @test
@@ -50,33 +51,9 @@ public class TestLoadFolding {
     static Point staticField;
 
     public static void main(String[] args) {
-        TestFramework.run();
-    }
-
-    @Run(test = {"test11", "test12", "test13", "test14", "test15", "test16", "test17", "test18"})
-    public void runPositiveTests() {
-        test11();
-        test12(false);
-        test12(true);
-        test13(false);
-        test13(true);
-        test14();
-        test15(1, 16);
-        test16(1, 16, false);
-        test16(1, 16, true);
-        test17(0);
-        test18(0);
-    }
-
-    @Run(test = {"test01", "test02", "test03", "test04", "test05"})
-    public void runNegativeTests() {
-        test01();
-        test02(false);
-        test02(true);
-        test03(false);
-        test03(true);
-        test04(1, 16);
-        test05(0);
+        var framework = new TestFramework();
+        framework.setDefaultWarmup(1);
+        framework.start();
     }
 
     @DontInline
@@ -195,6 +172,40 @@ public class TestLoadFolding {
         return res;
     }
 
+    static class SupplierHolder {
+        Supplier<String> f;
+
+        static final Supplier<String> DEFAULT_VALUE = () -> "test";
+    }
+
+    @Test
+    @IR(failOn = {IRNode.DYNAMIC_CALL_OF_METHOD, "get", IRNode.LOAD_OF_FIELD, "f", IRNode.CLASS_CHECK_TRAP}, counts = {IRNode.ALLOC, "1"})
+    public String test19() {
+        // Folding of the load o.f allows o.f.get to get devirtualized
+        SupplierHolder o = new SupplierHolder();
+        o.f = SupplierHolder.DEFAULT_VALUE;
+        escape(null);
+        String res = o.f.get();
+        escape(o);
+        return res;
+    }
+
+    @Run(test = {"test11", "test12", "test13", "test14", "test15", "test16", "test17", "test18", "test19"})
+    public void runPositiveTests() {
+        test11();
+        test12(false);
+        test12(true);
+        test13(false);
+        test13(true);
+        test14();
+        test15(1, 16);
+        test16(1, 16, false);
+        test16(1, 16, true);
+        test17(0);
+        test18(0);
+        test19();
+    }
+
     @Test
     @IR(counts = {IRNode.LOAD_I, "2", IRNode.ALLOC, "1"})
     public int test01() {
@@ -254,5 +265,16 @@ public class TestLoadFolding {
         // Cannot fold the loads because we do not know which element is written to by
         // a[idx & 1] = 3
         return a[0] + a[1];
+    }
+
+    @Run(test = {"test01", "test02", "test03", "test04", "test05"})
+    public void runNegativeTests() {
+        test01();
+        test02(false);
+        test02(true);
+        test03(false);
+        test03(true);
+        test04(1, 16);
+        test05(0);
     }
 }
