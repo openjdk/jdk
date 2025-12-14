@@ -67,7 +67,7 @@ const Register scratch = r10;
 ATTRIBUTE_ALIGNED(64) static const uint16_t kyberAvx512_12To16PermOut[] = {
 // 0 - 31
     0, 1, 2, 2, 3, 4, 5, 5, 6, 7, 8, 8, 9, 10, 11, 11, 12, 13, 14, 14, 15, 16,
-		17, 17, 18, 19, 20, 20, 21, 22, 23, 23
+    17, 17, 18, 19, 20, 20, 21, 22, 23, 23
   };
 
 static address kyberAvx512_12To16PermOutAddr() {
@@ -77,7 +77,7 @@ static address kyberAvx512_12To16PermOutAddr() {
 ATTRIBUTE_ALIGNED(64) static const uint16_t kyberAvx512_12To16PermTmp[] = {
 // 0 - 31
     0, 0, 1, 2, 3, 3, 4, 5, 6, 6, 7, 8, 9, 9, 10, 11, 12, 12, 13, 14, 15, 15,
-		16, 17, 18, 18, 19, 20, 21, 21, 22, 23
+    16, 17, 18, 18, 19, 20, 21, 21, 22, 23
   };
 
 static address kyberAvx512_12To16PermTmpAddr() {
@@ -87,7 +87,7 @@ static address kyberAvx512_12To16PermTmpAddr() {
 ATTRIBUTE_ALIGNED(64) static const uint16_t kyberAvx512_12To16Shift[] = {
 // 0 - 31
     0, 4, 8, 12, 0, 4, 8, 12, 0, 4, 8, 12, 0, 4, 8, 12, 0, 4, 8, 12, 0, 4, 8,
-		12, 0, 4, 8, 12, 0, 4, 8, 12
+    12, 0, 4, 8, 12, 0, 4, 8, 12
   };
 
 static address kyberAvx512_12To16ShiftAddr() {
@@ -97,8 +97,8 @@ static address kyberAvx512_12To16ShiftAddr() {
 ATTRIBUTE_ALIGNED(64) static const uint64_t kyberAvx512_12To16And[] = {
 // 0 - 7
     0x0FFF0FFF0FFF0FFF, 0x0FFF0FFF0FFF0FFF, 0x0FFF0FFF0FFF0FFF,
-		0x0FFF0FFF0FFF0FFF, 0x0FFF0FFF0FFF0FFF, 0x0FFF0FFF0FFF0FFF,
-		0x0FFF0FFF0FFF0FFF, 0x0FFF0FFF0FFF0FFF
+    0x0FFF0FFF0FFF0FFF, 0x0FFF0FFF0FFF0FFF, 0x0FFF0FFF0FFF0FFF,
+    0x0FFF0FFF0FFF0FFF, 0x0FFF0FFF0FFF0FFF
   };
 
 static address kyberAvx512_12To16AndAddr() {
