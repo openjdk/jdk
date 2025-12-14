@@ -24,16 +24,16 @@
  */
 package jdk.jpackage.internal.util;
 
-import static jdk.jpackage.internal.util.function.ExceptionBox.toUnchecked;
-
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.StreamSupport;
+import jdk.jpackage.internal.util.function.ExceptionBox;
+import jdk.jpackage.internal.util.function.ThrowingSupplier;
 
 
 public record Result<T>(Optional<T> value, Collection<? extends Exception> errors) {
@@ -50,7 +50,7 @@ public record Result<T>(Optional<T> value, Collection<? extends Exception> error
 
     public T orElseThrow() {
         firstError().ifPresent(ex -> {
-            throw toUnchecked(ex);
+            throw ExceptionBox.toUnchecked(ex);
         });
         return value.orElseThrow();
     }
@@ -97,11 +97,19 @@ public record Result<T>(Optional<T> value, Collection<? extends Exception> error
         return errors.stream().findFirst();
     }
 
-    public static <T> Result<T> create(Supplier<T> supplier) {
+    @SuppressWarnings("unchecked")
+    public static <T, E extends Exception> Result<T> of(ThrowingSupplier<T, E> supplier) {
+        Objects.requireNonNull(supplier);
         try {
             return ofValue(supplier.get());
         } catch (Exception ex) {
-            return ofError(ex);
+            final E castEx;
+            try {
+                castEx = (E)ex;
+            } catch (ClassCastException cce) {
+                return ofError(ExceptionBox.unbox(ex));
+            }
+            return ofError(castEx);
         }
     }
 

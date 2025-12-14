@@ -106,7 +106,7 @@ final class MacFromOptions {
         final boolean sign = MAC_SIGN.findIn(options).orElse(false);
         final boolean appStore = MAC_APP_STORE.findIn(options).orElse(false);
 
-        final var appResult = Result.create(() -> createMacApplicationInternal(options));
+        final var appResult = Result.of(() -> createMacApplicationInternal(options));
 
         final Optional<MacPkgPackageBuilder> pkgBuilder;
         if (appResult.hasValue()) {
@@ -146,7 +146,7 @@ final class MacFromOptions {
 
                 final var expiredAppCertException = appResult.firstError().orElseThrow();
 
-                final var pkgSignConfigResult = Result.create(signingIdentityBuilder::create);
+                final var pkgSignConfigResult = Result.of(signingIdentityBuilder::create);
                 try {
                     rethrowIfNotExpiredCertificateException(pkgSignConfigResult);
                     // The certificate for the package signing config is also expired!
