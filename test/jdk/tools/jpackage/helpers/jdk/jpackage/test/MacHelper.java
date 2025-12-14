@@ -34,7 +34,6 @@ import static jdk.jpackage.internal.util.PListWriter.writeStringOptional;
 import static jdk.jpackage.internal.util.XmlUtils.initDocumentBuilder;
 import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
-import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -67,10 +66,10 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
-import jdk.jpackage.internal.RetryExecutor;
 import jdk.jpackage.internal.util.FileUtils;
 import jdk.jpackage.internal.util.PListReader;
 import jdk.jpackage.internal.util.PathUtils;
+import jdk.jpackage.internal.util.RetryExecutor;
 import jdk.jpackage.internal.util.XmlUtils;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingSupplier;
@@ -91,21 +90,16 @@ public final class MacHelper {
         final var mountRoot = TKit.createTempDirectory("mountRoot");
 
         // Explode DMG assuming this can require interaction, thus use `yes`.
-        final var attachStdout = toSupplier(() -> {
-            return new RetryExecutor()
-                    .setMaxAttemptsCount(10)
-                    .setAttemptTimeout(6, TimeUnit.SECONDS)
-                    .execute(Executor.of("sh", "-c", String.join(" ",
-                            "yes",
-                            "|",
-                            "/usr/bin/hdiutil",
-                            "attach",
-                            JPackageCommand.escapeAndJoin(cmd.outputBundle().toString()),
-                            "-mountroot", PathUtils.normalizedAbsolutePathString(mountRoot),
-                            "-nobrowse",
-                            "-plist"
-                    )).saveOutput().toRetryExecutorCallable());
-        }).get().stdout();
+        final var attachStdout = Executor.of("sh", "-c", String.join(" ",
+                "yes",
+                "|",
+                "/usr/bin/hdiutil",
+                "attach",
+                JPackageCommand.escapeAndJoin(cmd.outputBundle().toString()),
+                "-mountroot", PathUtils.normalizedAbsolutePathString(mountRoot),
+                "-nobrowse",
+                "-plist"
+        )).saveOutput().storeOutputInFiles().executeAndRepeatUntilExitCode(0, 10, 6).stdout();
 
         final Path mountPoint;
 
@@ -140,30 +134,27 @@ public final class MacHelper {
                 ThrowingConsumer.toConsumer(consumer).accept(childPath);
             }
         } finally {
-            Function<Boolean, Executor> detach = force -> {
-                var exec = Executor.of("/usr/bin/hdiutil", "detach");
-                if (force) {
-                    exec.addArgument("-force");
-                }
-                return exec.addArgument(mountPoint);
-            };
-
             // "hdiutil detach" might not work right away due to resource busy error, so
             // repeat detach several times.
-            var retry = new RetryExecutor().setIterationCallback(r -> {
-                if (!Files.exists(mountPoint)) {
-                    // Image can get detached even if we got resource busy error, so stop
-                    // trying to detach it if it is no longer attached.
-                    r.abort();
+            new RetryExecutor<Void, RuntimeException>(RuntimeException.class).setExecutable(context -> {
+                var exec = Executor.of("/usr/bin/hdiutil", "detach").storeOutputInFiles();
+                if (context.isLastAttempt()) {
+                    // The last attempt, force detach.
+                    exec.addArgument("-force");
                 }
-            }).setMaxAttemptsCount(10).setAttemptTimeout(6, TimeUnit.SECONDS);
+                exec.addArgument(mountPoint);
 
-            try {
-                retry.execute(detach.apply(false).toRetryExecutorCallable());
-            } catch (IOException ex) {
-                // Now force to detach as it still attached.
-                detach.apply(true).execute();
-            }
+                // The image can get detached even if we get a resource busy error,
+                // so execute the detach command without checking the exit code.
+                var result = exec.executeWithoutExitCodeCheck();
+
+                if (result.getExitCode() == 0 || !Files.exists(mountPoint)) {
+                    // Detached successfully!
+                    return null;
+                } else {
+                    throw new RuntimeException(String.format("[%s] mount point still attached", mountPoint));
+                }
+            }).setMaxAttemptsCount(10).setAttemptTimeout(6, TimeUnit.SECONDS).execute();
         }
     }
 

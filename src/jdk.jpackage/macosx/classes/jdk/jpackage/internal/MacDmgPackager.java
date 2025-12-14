@@ -45,8 +45,10 @@ import java.util.function.Function;
 import jdk.jpackage.internal.PackagingPipeline.PackageTaskID;
 import jdk.jpackage.internal.PackagingPipeline.TaskID;
 import jdk.jpackage.internal.model.MacDmgPackage;
+import jdk.jpackage.internal.util.CommandOutputControl;
 import jdk.jpackage.internal.util.FileUtils;
 import jdk.jpackage.internal.util.PathGroup;
+import jdk.jpackage.internal.util.RetryExecutor;
 
 record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
         MacDmgSystemEnvironment sysEnv) implements Consumer<PackagingPipeline.Builder> {
@@ -272,17 +274,17 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
             // not be bigger, but it will able to hold additional 50 megabytes of data.
             // We need extra room for icons and background image. When we providing
             // actual files to hdiutil, it will create DMG with ~50 megabytes extra room.
-            var exec = hdiutil(
+            hdiutil(
                     "create",
                     hdiUtilVerbosityFlag,
                     "-size", String.valueOf(size),
                     "-volname", volumeName(),
                     "-ov", normalizedAbsolutePathString(protoDMG),
-                    "-fs", "HFS+");
-            new RetryExecutor()
+                    "-fs", "HFS+"
+            ).retry()
                     .setMaxAttemptsCount(10)
                     .setAttemptTimeout(3, TimeUnit.SECONDS)
-                    .execute(exec);
+                    .execute();
         }
 
         final Path mountedVolume = volumePath();
@@ -366,16 +368,15 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
 
         //add license if needed
         if (pkg.licenseFile().isPresent()) {
-            var exec = hdiutil(
+            hdiutil(
                     "udifrez",
                     normalizedAbsolutePathString(finalDMG),
                     "-xml",
                     normalizedAbsolutePathString(licenseFile())
-            );
-            new RetryExecutor()
+            ).retry()
                     .setMaxAttemptsCount(10)
                     .setAttemptTimeout(3, TimeUnit.SECONDS)
-                    .execute(exec);
+                    .execute();
         }
 
         try {
@@ -394,11 +395,15 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
     private void detachVolume() throws IOException {
         var mountedVolume = volumePath();
 
-        Function<Boolean, Executor> detach = force -> {
+        // "hdiutil detach" might not work right away due to resource busy error, so
+        // repeat detach several times.
+        new RetryExecutor<Void, IOException>(IOException.class).setExecutable(context -> {
+
             List<String> cmdline = new ArrayList<>();
             cmdline.add("detach");
 
-            if (force) {
+            if (context.isLastAttempt()) {
+                // The last attempt, force detach.
                 cmdline.add("-force");
             }
 
@@ -407,26 +412,17 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
                     normalizedAbsolutePathString(mountedVolume)
             ));
 
-            return hdiutil(cmdline.toArray(String[]::new));
-        };
+            // The image can get detached even if we get a resource busy error,
+            // so execute the detach command without checking the exit code.
+            var result = hdiutil(cmdline.toArray(String[]::new)).execute();
 
-        // "hdiutil detach" might not work right away due to resource busy error, so
-        // repeat detach several times.
-        var retry = new RetryExecutor().setIterationCallback(r -> {
-            if (!Files.exists(mountedVolume)) {
-                // Image can get detached even if we got resource busy error, so stop
-                // trying to detach it if it is no longer attached.
-                r.abort();
+            if (result.getExitCode() == 0 || !Files.exists(mountedVolume)) {
+                // Detached successfully!
+                return null;
+            } else {
+                throw new CommandOutputControl.UnexpectedResultException(result);
             }
-        }).setMaxAttemptsCount(10).setAttemptTimeout(6, TimeUnit.SECONDS);
-
-        try {
-            retry.execute(detach.apply(false));
-        } catch (IOException ex) {
-            Log.verbose(ex);
-            // Now force to detach as it still attached.
-            detach.apply(true).executeExpectSuccess();
-        }
+        }).setMaxAttemptsCount(10).setAttemptTimeout(6, TimeUnit.SECONDS).execute();
     }
 
     private void convertProtoDmg() throws IOException {
@@ -442,10 +438,10 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
 
         // Convert it to a new image.
         try {
-            new RetryExecutor()
+            convert.apply(protoDmg()).retry()
                 .setMaxAttemptsCount(10)
                 .setAttemptTimeout(3, TimeUnit.SECONDS)
-                .execute(convert.apply(protoDmg()));
+                .execute();
         } catch (IOException ex) {
             Log.verbose(ex);
             // Something holds the file, try to convert a copy.
