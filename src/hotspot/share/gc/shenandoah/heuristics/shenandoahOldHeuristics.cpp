@@ -84,16 +84,12 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
   _evacuated_old_bytes = 0;
   _collected_old_bytes = 0;
 
-#undef KELVIN_DEBUG
-#ifdef KELVIN_DEBUG
-  log_info(gc)("prime_collection_set(), %s preparing for mark",  _old_generation->is_preparing_for_mark()? "is": "is not");
-#endif
-
   if (_old_generation->is_preparing_for_mark()) {
     // We have unprocessed old collection candidates, but the heuristic has given up on evacuating them.
     // This is most likely because they were _all_ pinned at the time of the last mixed evacuation (and
     // this in turn is most likely because there are just one or two candidate regions remaining).
-    log_info(gc, ergo)("Remaining " UINT32_FORMAT " old regions are being coalesced and filled", unprocessed_old_collection_candidates());
+    log_info(gc, ergo)("Remaining " UINT32_FORMAT
+                       " old regions are being coalesced and filled", unprocessed_old_collection_candidates());
     return false;
   }
 
@@ -123,10 +119,6 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
   if (unaffiliated_available > _old_evacuation_reserve) {
     _unspent_unfragmented_old_budget = _old_evacuation_budget;
     _unspent_fragmented_old_budget = 0;
-#ifdef KELVIN_DEBUG
-    log_info(gc)(" setting _unspent_unfragmented_old_budget to %zu, _unspent_fragmented_old_budget to zero",
-                 _unspent_unfragmented_old_budget);
-#endif
     _excess_fragmented_old_budget = 0;
   } else {
     assert(_old_generation->available() >= _old_evacuation_reserve, "Cannot reserve more than is available");
@@ -138,14 +130,6 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
     }
     _unspent_fragmented_old_budget = (size_t) ((double) affiliated_available / ShenandoahOldEvacWaste);
     _unspent_unfragmented_old_budget = (size_t) ((double) unaffiliated_available / ShenandoahOldEvacWaste);
-#ifdef KELVIN_DEBUG
-    log_info(gc)("               _old_evacuation_reserve: %zu", _old_evacuation_reserve);
-    log_info(gc)("                  affiliated_available: %zu", affiliated_available);
-    log_info(gc)("        _unspent_fragmented_old_budget: %zu", _unspent_fragmented_old_budget);
-    log_info(gc)("                unaffiliated_available: %zu", unaffiliated_available);
-    log_info(gc)("      _unspent_unfragmented_old_budget: %zu", _unspent_unfragmented_old_budget);
-    log_info(gc)("          _excess_fragmented_old_budget: %zu", _excess_fragmented_old_budget);
-#endif
   }
 
   log_debug(gc)("Choose old regions for mixed collection: old evacuation budget: %zu%s, candidates: %u",
@@ -230,18 +214,6 @@ bool ShenandoahOldHeuristics::add_old_regions_to_cset() {
     return false;
   }
   _first_pinned_candidate = NOT_FOUND;
-#undef KELVIN_DEBUG
-#ifdef KELVIN_DEBUG
-  size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
-  ShenandoahOldGeneration* old_gen = _heap->old_generation();
-  log_info(gc)("add_old_regions_to_cset() with non-zero unprocessed candidates, old available: %zu",
-               old_gen->available());
-  log_info(gc)("          _excess_fragmented_old_budget: %zu", _excess_fragmented_old_budget);
-  log_info(gc)("        _unspent_fragmented_old_budget: %zu", _unspent_fragmented_old_budget);
-  log_info(gc)("      _unspent_unfragmented_old_budget: %zu", _unspent_unfragmented_old_budget);
-  log_info(gc)("                  _evacuated_old_bytes: %zu", _evacuated_old_bytes);
-  log_info(gc)("                  _collected_old_bytes: %zu", _collected_old_bytes);
-#endif
 
   // The number of old-gen regions that were selected as candidates for collection at the end of the most recent old-gen
   // concurrent marking phase and have not yet been collected is represented by unprocessed_old_collection_candidates().
@@ -261,13 +233,6 @@ bool ShenandoahOldHeuristics::add_old_regions_to_cset() {
     const size_t live_data_for_evacuation = r->get_live_data_bytes();
     size_t lost_available = r->free();
 
-#ifdef KELVIN_DEBUG
-    log_info(gc)(" Consider adding region: %zu, with live_bytes: %zu, garbage: %zu, and available: %zu",
-                 r->index(), live_data_for_evacuation, r->garbage(), lost_available);
-    ssize_t delta = region_size_bytes - (live_data_for_evacuation + r->garbage() + lost_available);
-    log_info(gc)(" We expect that garbage plus live + lost_available is region_size_bytes, off by: %zd", delta);
-#endif
-
     ssize_t fragmented_delta = 0;
     ssize_t unfragmented_delta = 0;
     ssize_t excess_delta = 0;
@@ -276,9 +241,6 @@ bool ShenandoahOldHeuristics::add_old_regions_to_cset() {
     // longer available was likely "promised" to promotions, so we must decrease our mixed evacuations now.
     // (e.g. if we loose 14 bytes of available old memory, we must decrease the evacuation budget by 10 bytes.)
     size_t scaled_loss = (size_t) (((double) lost_available) / ShenandoahOldEvacWaste);
-#ifdef KELVIN_DEBUG
-    log_info(gc)(" Computed scaled_loss: %zu", scaled_loss);
-#endif
     if (lost_available > 0) {
       // We need to subtract lost_available from our working evacuation budgets
       if (scaled_loss < _excess_fragmented_old_budget) {
@@ -292,35 +254,21 @@ bool ShenandoahOldHeuristics::add_old_regions_to_cset() {
       if (scaled_loss < _unspent_fragmented_old_budget) {
         _unspent_fragmented_old_budget -= scaled_loss;
         fragmented_delta = -scaled_loss;
-#ifdef KELVIN_DEBUG
-        log_info(gc)(" Decrease _unspent_fragmented_old_budget by scaled_loss: %zu to yield: %zu",
-                     scaled_loss, _unspent_fragmented_old_budget);
-#endif
         scaled_loss = 0;
       } else {
         scaled_loss -= _unspent_fragmented_old_budget;
         fragmented_delta = -_unspent_fragmented_old_budget;
         _unspent_fragmented_old_budget = 0;
-#ifdef KELVIN_DEBUG
-        log_info(gc)(" Zeroing _unspent_fragmented_old_budget, scaled_loss is: %zu", scaled_loss);
-#endif
       }
 
       if (scaled_loss < _unspent_unfragmented_old_budget) {
         _unspent_unfragmented_old_budget -= scaled_loss;
         unfragmented_delta = -scaled_loss;
-#ifdef KELVIN_DEBUG
-        log_info(gc)(" Decrease _unspent_unfragmented_old_budget by scaled_loss: %zu to yield: %zu",
-                     scaled_loss, _unspent_unfragmented_old_budget);
-#endif
         scaled_loss = 0;
       } else {
         scaled_loss -= _unspent_unfragmented_old_budget;
         fragmented_delta = -_unspent_unfragmented_old_budget;
         _unspent_unfragmented_old_budget = 0;
-#ifdef KELVIN_DEBUG
-        log_info(gc)(" Zeroing _unspent_unfragmented_old_budget");
-#endif
       }
     }
 
@@ -328,36 +276,20 @@ bool ShenandoahOldHeuristics::add_old_regions_to_cset() {
     size_t evacuation_need = live_data_for_evacuation;
     if (evacuation_need < _unspent_unfragmented_old_budget) {
       _unspent_unfragmented_old_budget -= evacuation_need;
-#ifdef KELVIN_DEBUG
-      log_info(gc)(" Decrementing _unspent_unfragmented_old_budget by evacuation_need: %zu, yielding: %zu",
-                   evacuation_need, _unspent_unfragmented_old_budget);
-#endif
     } else {
       if (_unspent_unfragmented_old_budget > 0) {
         evacuation_need -= _unspent_unfragmented_old_budget;
         unfragmented_delta -= _unspent_unfragmented_old_budget;
         _unspent_unfragmented_old_budget = 0;
-#ifdef KELVIN_DEBUG
-        log_info(gc)(" Zeroing _unspent_unfragmented_old_budget");
-#endif
       }
       // Take the remaining allocation out of fragmented available
       if (_unspent_fragmented_old_budget > evacuation_need) {
         _unspent_fragmented_old_budget -= evacuation_need;
-#ifdef KELVIN_DEBUG
-        log_info(gc)(" Decreasing _unspent_fragmented_old_budget by %zu to yield: %zu", evacuation_need, _unspent_fragmented_old_budget);
-#endif
       } else {
         // We cannot add this region into the collection set.  We're done.  Undo the adjustments to available.
         _unspent_fragmented_old_budget -= fragmented_delta;
         _unspent_unfragmented_old_budget -= unfragmented_delta;
         _excess_fragmented_old_budget -= excess_delta;
-#ifdef KELVIN_DEBUG
-        log_info(gc)(" Never mind, region %zu cannot be added to cset.  Breaking out of loop after ...", r->index());
-        log_info(gc)("    restoring _unspent_fragmented_old_budget to %zu", _unspent_fragmented_old_budget);
-        log_info(gc)("  restoring _unspent_unfragmented_old_budget to %zu", _unspent_unfragmented_old_budget);
-        log_info(gc)("     restoring _excess_fragmented_old_budget to %zu", _excess_fragmented_old_budget);
-#endif
         break;
       }
     }
@@ -366,12 +298,6 @@ bool ShenandoahOldHeuristics::add_old_regions_to_cset() {
     _evacuated_old_bytes += live_data_for_evacuation;
     _collected_old_bytes += r->garbage();
     consume_old_collection_candidate();
-#ifdef KELVIN_DEBUG
-    log_info(gc)(" Successfully added region %zu to collection set, old_available is now: %zu", r->index(),
-                 old_gen->available());
-    log_info(gc)(" _evacuated_old_bytes is now %zu", _evacuated_old_bytes);
-    log_info(gc)(" _collected_old_bytes is now %zu", _collected_old_bytes);
-#endif
   }
   return true;
 }
@@ -429,17 +355,6 @@ bool ShenandoahOldHeuristics::top_off_collection_set(ssize_t &add_regions_to_old
     size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
     size_t regions_required_for_collector_reserve = (consumed_from_young_cset + region_size_bytes - 1) / region_size_bytes;
 
-#undef KELVIN_DEBUG
-#ifdef KELVIN_DEBUG
-    ShenandoahOldGeneration* old_gen = _heap->old_generation();
-    log_info(gc)("top_off_collection_set(), young available with reserves: %zu", old_gen->available());
-    log_info(gc)(" young unaffiliated regions: %zu, bytes: %zu", young_unaffiliated_regions,
-                 young_unaffiliated_regions * region_size_bytes);
-    log_info(gc)(" young evacuation reserve with waste: %zu", max_young_cset);
-    log_info(gc)(" planed_young_evac: %zu, consumed_from_young_cset: %zu", planned_young_evac, consumed_from_young_cset);
-    log_info(gc)(" regions required for collector reserve: %zu", regions_required_for_collector_reserve);
-#endif
-
     assert(consumed_from_young_cset <= max_young_cset, "sanity");
     assert(max_young_cset <= young_unaffiliated_regions * region_size_bytes, "sanity");
 
@@ -451,18 +366,10 @@ bool ShenandoahOldHeuristics::top_off_collection_set(ssize_t &add_regions_to_old
       size_t consumed_unaffiliated_regions = (consumed_from_young_cset + region_size_bytes - 1) / region_size_bytes;
       size_t available_unaffiliated_regions = ((young_unaffiliated_regions > consumed_unaffiliated_regions)?
                                                young_unaffiliated_regions - consumed_unaffiliated_regions: 0);
-#ifdef KELVIN_DEBUG
-      log_info(gc)(" excess_young_reserves: %zu", excess_young_reserves);
-      log_info(gc)(" consumed_unaffiliated_regions: %zu", consumed_unaffiliated_regions);
-      log_info(gc)(" available_unaffiliated_regions: %zu", available_unaffiliated_regions);
-#endif
       regions_for_old_expansion = MIN2(available_unaffiliated_regions, excess_young_reserves / region_size_bytes);
     } else {
       regions_for_old_expansion = 0;
     }
-#ifdef KELVIN_DEBUG
-    log_info(gc)(" regions_for_old_expansion: %zu", regions_for_old_expansion);
-#endif
     if (regions_for_old_expansion > 0) {
       log_info(gc)("Augmenting old-gen evacuation budget from unexpended young-generation reserve by %zu regions",
                    regions_for_old_expansion);
@@ -471,14 +378,6 @@ bool ShenandoahOldHeuristics::top_off_collection_set(ssize_t &add_regions_to_old
       size_t supplement_without_waste = (size_t) (((double) budget_supplement) / ShenandoahOldEvacWaste);
       _old_evacuation_budget += supplement_without_waste;
       _unspent_unfragmented_old_budget += supplement_without_waste;
-#ifdef KELVIN_DEBUG
-      log_info(gc)(" budget_supplement: %zu, without waste: %zu", budget_supplement, supplement_without_waste);
-      log_info(gc)(" expanded _old_evacuation_budget: %zu", _old_evacuation_budget);
-      log_info(gc)(" expanded _unspent_unfragmented_old_budget: %zu", _unspent_unfragmented_old_budget);
-      log_info(gc)(" aumgenting old_gen->evacuatino_reserve() by %zu", budget_supplement);
-      log_info(gc)(" decreasing young_gen->evacuation_reserve() by the same");
-#endif
-
       _old_generation->augment_evacuation_reserve(budget_supplement);
       young_generation->set_evacuation_reserve(max_young_cset - budget_supplement);
 

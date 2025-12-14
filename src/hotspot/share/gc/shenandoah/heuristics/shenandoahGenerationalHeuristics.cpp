@@ -63,10 +63,6 @@ ssize_t ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollec
 
   size_t free = 0;
   size_t free_regions = 0;
-#undef KELVIN_DEBUG
-#ifdef KELVIN_DEBUG
-  log_info(gc)("ShenandoahGenerationalHeuristics::choose_collection_set()");
-#endif
 
   // This counts number of humongous regions that we intend to promote in this cycle.
   size_t humongous_regions_promoted = 0;
@@ -172,12 +168,7 @@ ssize_t ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollec
           byte_size_in_proper_unit(total_garbage), proper_unit_for_byte_size(total_garbage));
 
   size_t immediate_percent = (total_garbage == 0) ? 0 : (immediate_garbage * 100 / total_garbage);
-
   bool doing_promote_in_place = (humongous_regions_promoted + regular_regions_promoted_in_place > 0);
-#ifdef KELVIN_DEBUG
-  log_info(gc)(" choose_collection_set() finds doing_promote_in_place: %s, preselected_candidates: %zu, immediate_percent: %zu",
-               doing_promote_in_place? "true": "false", preselected_candidates, immediate_percent);
-#endif
 
   ssize_t add_regions_to_old = 0;
   if (doing_promote_in_place || (preselected_candidates > 0) || (immediate_percent <= ShenandoahImmediateThreshold)) {

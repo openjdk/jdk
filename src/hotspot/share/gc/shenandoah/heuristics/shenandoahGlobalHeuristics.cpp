@@ -68,14 +68,6 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
   size_t unaffiliated_old_regions = heap->old_generation()->free_unaffiliated_regions();
   size_t unaffiliated_old_memory = unaffiliated_old_regions * region_size_bytes;
 
-
-#undef KELVIN_DEBUG
-#ifdef KELVIN_DEBUG
-  log_info(gc)("choose GLOBAL cset, initial reserves (young, old, promo) = (%zu, %zu, %zu)",
-               young_evac_reserve, old_evac_reserve, old_promo_reserve);
-  log_info(gc)("     unaffiliated old: %zu, young: %zu", unaffiliated_old_memory, unaffiliated_young_memory);
-#endif
-
   // Figure out how many unaffiliated regions are dedicated to Collector and OldCollector reserves.  Let these
   // be shuffled between young and old generations in order to expedite evacuation of whichever regions have the
   // most garbage, regardless of whether these garbage-first regions reside in young or old generation.
@@ -102,22 +94,8 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
   }
   old_evac_reserve = 0;
 
-#ifdef KELVIN_DEBUG
-  log_info(gc)("choose GLOBAL cset, adjusted reserves (young, old, promo, discretionary) = (%zu, %zu, %zu, %zu)",
-               young_evac_reserve, old_evac_reserve, old_promo_reserve, shared_reserve_regions * region_size_bytes);
-#endif
-
   size_t shared_reserves = shared_reserve_regions * region_size_bytes;
   size_t committed_from_shared_reserves = 0;
-#ifdef KELVIN_DEPRECATE
-  size_t max_young_cset = 0;
-  size_t max_old_cset = 0;
-  size_t young_cur_cset = 0;
-  size_t old_cur_cset = 0;
-
-  size_t max_total_cset = (max_young_cset + max_old_cset +
-                           (size_t) (shared_reserve_regions * region_size_bytes) / ShenandoahOldEvacWaste);
-#endif
 
   size_t promo_bytes = 0;
   size_t old_evac_bytes = 0;
@@ -181,18 +159,9 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
           consumed_by_promo = new_promo_consumption;
           cur_garbage = new_garbage;
           old_regions_evacuated++;
-#ifdef KELVIN_DEBUG
-          log_info(gc)("GLOBAL cset adds one region to old evac, "
-                       "bytes totalling: %zu to evacuate old region %zu with live bytes: %zu",
-                       old_evac_bytes, r->index(), live_bytes);
-#endif
         } else {
           // We failed to sufficiently expand old so unwind proposed expansion
           committed_from_shared_reserves -= proposed_old_region_expansion * region_size_bytes;
-#ifdef KELVIN_DEBUG
-          log_info(gc)("GLOBAL cset rejects old region %zu with live bytes: %zu because could not expand old_evac_reserve: %zu",
-                       r->index(), live_bytes, old_evac_reserve);
-#endif
         }
       } else if (heap->is_tenurable(r)) {
         size_t anticipated_consumption = (size_t) (live_bytes * ShenandoahPromoEvacWaste);
@@ -211,18 +180,9 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
           consumed_by_promo = new_promo_consumption;
           cur_garbage = new_garbage;
           aged_regions_promoted++;
-#ifdef KELVIN_DEBUG
-          log_info(gc)("GLOBAL cset adds one region to promo evac, "
-                       "bytes totalling: %zu to evacuate aged region %zu with live bytes: %zu",
-                       old_evac_bytes, r->index(), live_bytes);
-#endif
         } else {
           // We failed to sufficiently expand old so unwind proposed expansion
           committed_from_shared_reserves -= proposed_old_region_expansion * region_size_bytes;
-#ifdef KELVIN_DEBUG
-          log_info(gc)("GLOBAL cset rejects aged region %zu with live bytes: %zu because could not expand promo_reserve: %zu",
-                       r->index(), live_bytes, old_promo_reserve);
-#endif
         }
       } else {
         assert(r->is_young() && !heap->is_tenurable(r), "DeMorgan's law (assuming r->is_affiliated)");
@@ -242,28 +202,12 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
           consumed_by_young_evac = new_young_evac_consumption;
           cur_garbage = new_garbage;
           young_regions_evacuated++;
-#ifdef KELVIN_DEBUG
-          log_info(gc)("GLOBAL cset adds region to young evac, "
-                       "bytes totalling: %zu to evacuate young region %zu with live bytes: %zu",
-                       young_evac_bytes, r->index(), live_bytes);
-#endif
         } else {
           // We failed to sufficiently expand old so unwind proposed expansion
           committed_from_shared_reserves -= proposed_young_region_expansion * region_size_bytes;
-#ifdef KELVIN_DEBUG
-          log_info(gc)("GLOBAL cset rejects young region %zu with live bytes: %zu "
-                       "because could not expand young_evac_reserve: %zu",
-                       r->index(), live_bytes, young_evac_reserve);
-#endif
         }
       }
     }
-#ifdef KELVIN_DEBUG
-    else {
-      log_info(gc)("GLOBAL gc not considering region %zu because garbage (%zu) < threshold (%zu)",
-                   r->index(), region_garbage, garbage_threshold);
-    }
-#endif
     if (add_region) {
       cset->add_region(r);
     }
@@ -297,11 +241,6 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
     size_t delta_bytes = young_evac_reserve - heap->young_generation()->get_evacuation_reserve();
     size_t delta_regions = delta_bytes / region_size_bytes;
     size_t regions_to_transfer = MIN2(unaffiliated_old_regions, delta_regions);
-#ifdef KELVIN_DEBUG
-    log_info(gc)("young_evac_reserve grew from %zu to %zu, representing %zu regions (%zu bytes, %zu regions)",
-                 heap->young_generation()->get_evacuation_reserve(), young_evac_reserve, regions, delta_bytes, delta_regions);
-    log_info(gc)("Truncated to %zu regions", regions_to_transfer);
-#endif
     log_info(gc)("Global GC moves %zu unaffiliated regions from old collector to young collector reserves", regions_to_transfer);
     ssize_t negated_regions = -regions_to_transfer;
     heap->free_set()->move_unaffiliated_regions_from_collector_to_old_collector(negated_regions);
@@ -309,11 +248,6 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
     size_t delta_bytes = heap->young_generation()->get_evacuation_reserve() - young_evac_reserve;
     size_t delta_regions = delta_bytes / region_size_bytes;
     size_t regions_to_transfer = MIN2(unaffiliated_young_regions, delta_regions);
-#ifdef KELVIN_DEBUG
-    log_info(gc)("young_evac_reserve shrunk from %zu to %zu, representing %zu regions (%zu bytes, %zu regions)",
-                 heap->young_generation()->get_evacuation_reserve(), young_evac_reserve, regions, delta_bytes, delta_regions);
-    log_info(gc)("Truncated to %zu regions", regions_to_transfer);
-#endif
     log_info(gc)("Global GC moves %zu unaffiliated regions from young collector to old collector reserves", regions_to_transfer);
     heap->free_set()->move_unaffiliated_regions_from_collector_to_old_collector(regions_to_transfer);
   }

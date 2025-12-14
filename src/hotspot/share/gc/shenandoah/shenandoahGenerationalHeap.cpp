@@ -609,11 +609,6 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
   //                     = OE/YE
   //  =>              OE = YE*SOEP/(100-SOEP)
 
-#undef KELVIN_DEBUG
-#ifdef KELVIN_DEBUG
-  log_info(gc)("compute_old_generation_balance(%zu, %zu, %zu)", mutator_xfer_limit, old_trashed_regions, young_trashed_regions);
-#endif
-
   // We have to be careful in the event that SOEP is set to 100 by the user.
   assert(ShenandoahOldEvacPercent <= 100, "Error");
   const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
@@ -724,17 +719,11 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
     old_region_surplus = old_surplus / region_size_bytes;
     const size_t unaffiliated_old_regions = old_generation()->free_unaffiliated_regions() + old_trashed_regions;
     old_region_surplus = MIN2(old_region_surplus, unaffiliated_old_regions);
-#ifdef KELVIN_DEBUG
-    log_info(gc)(" setting region balance to surplus: %zd", old_region_surplus);
-#endif
     old_generation()->set_region_balance(checked_cast<ssize_t>(old_region_surplus));
   } else if (old_available + mutator_xfer_limit >= old_reserve) {
     // Mutator's xfer limit is sufficient to satisfy our need: transfer all memory from there
     size_t old_deficit = old_reserve - old_available;
     old_region_deficit = (old_deficit + region_size_bytes - 1) / region_size_bytes;
-#ifdef KELVIN_DEBUG
-    log_info(gc)(" setting region balance to deficit: %zd", old_region_deficit);
-#endif
     old_generation()->set_region_balance(0 - checked_cast<ssize_t>(old_region_deficit));
   } else {
    // We'll try to xfer from both mutator excess and from young collector reserve
@@ -774,16 +763,8 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
     // Shrink young_reserve to account for loan to old reserve
     const size_t reserve_xfer_regions = old_region_deficit - mutator_region_xfer_limit;
     young_reserve -= reserve_xfer_regions * region_size_bytes;
-#ifdef KELVIN_DEBUG
-    log_info(gc)(" setting region balance to deficit: %zd", old_region_deficit);
-#endif
     old_generation()->set_region_balance(0 - checked_cast<ssize_t>(old_region_deficit));
   }
-
-#ifdef KELVIN_DEBUG
-  log_info(gc)("compute_old_generation_balance() setting evac_reserve: %zu, old evac reserve: %zu, promo reserve: %zu",
-               young_reserve, reserve_for_mixed, reserve_for_promo);
-#endif
 
   assert(old_region_deficit == 0 || old_region_surplus == 0, "Only surplus or deficit, never both");
   assert(young_reserve + reserve_for_mixed + reserve_for_promo <= old_available + young_available,

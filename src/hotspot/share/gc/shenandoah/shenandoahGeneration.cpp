@@ -252,10 +252,6 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
   ShenandoahYoungGeneration* const young_generation = heap->young_generation();
   const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
 
-#undef KELVIN_DEBUG
-#ifdef KELVIN_DEBUG
-  log_info(gc)("compute_evacuation_budgets()");
-#endif
   // During initialization and phase changes, it is more likely that fewer objects die young and old-gen
   // memory is not yet full (or is in the process of being replaced).  During these times especially, it
   // is beneficial to loan memory from old-gen to young-gen during the evacuation and update-refs phases
@@ -271,10 +267,6 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
   // maximum_young_evacuation_reserve is upper bound on memory to be evacuated into young Collector Reserve.  This is
   // bounded at the end of previous GC cycle, based on available memory and balancing of evacuation to old and young.
   size_t maximum_young_evacuation_reserve = young_generation->get_evacuation_reserve();
-#ifdef KELVIN_DEBUG
-  log_info(gc)(" maximum_young_evacuation_reserve: %zu, available_with_reserve: %zu",
-               maximum_young_evacuation_reserve, young_generation->available_with_reserve());
-#endif
 
   // maximum_old_evacuation_reserve is an upper bound on memory evacuated from old and evacuated to old (promoted),
   // clamped by the old generation space available.
@@ -300,14 +292,6 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
 
   // In some cases, maximum_old_reserve < old_available (when limited by ShenandoahOldEvacPercent)
   // This limit affects mixed evacuations, but does not affect promotions.
-
-
-#ifdef KELVIN_DEBUG
-  log_info(gc)(" old_available: %zu, ShenandoahOldEvacPercent limit: %zu",
-               old_available, (maximum_young_evacuation_reserve * ShenandoahOldEvacPercent) / (100 - ShenandoahOldEvacPercent));
-  log_info(gc)(" old_unaffiliated is: %zu", old_generation->free_unaffiliated_regions() * region_size_bytes);
-  log_info(gc)(" maximum_old_evacuation_reserve: %zu", maximum_old_evacuation_reserve);
-#endif
 
   // Second priority is to reclaim garbage out of old-gen if there are old-gen collection candidates.  Third priority
   // is to promote as much as we have room to promote.  However, if old-gen memory is in short supply, this means young
@@ -371,14 +355,6 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
   // and collector partitions, due to padding of remnant memory within each promoted in place region.  This will affect
   // young_evacuation_reserve but not old_evacuation_reserve or consumed_by_advance_promotion.  So recompute.
   size_t young_evacuation_reserve = MIN2(maximum_young_evacuation_reserve, young_unaffiliated);
-#ifdef KELVIN_DEBUG
-  log_info(gc)(" young_evacuation_reserve: %zu is MIN2(%zu, %zu)",
-               young_evacuation_reserve, maximum_young_evacuation_reserve, young_unaffiliated);
-  log_info(gc)("   (previously, was bounded by %zu instead of %zu)",
-               young_generation->available_with_reserve(), young_unaffiliated);
-  log_info(gc)(" setting reserves to young: %zu, old evac: %zu, consumed_by_advance_promotin: %zu",
-               young_evacuation_reserve, old_evacuation_reserve, consumed_by_advance_promotion);
-#endif
 
   // Note that unused old_promo_reserve might not be entirely consumed_by_advance_promotion.  Do not transfer this
   // to old_evacuation_reserve because this memory is likely very fragmented, and we do not want to increase the likelihood
@@ -419,20 +395,11 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
   size_t old_evacuated_committed = (size_t) (ShenandoahOldEvacWaste * double(old_evacuated));
   size_t old_evacuation_reserve = old_generation->get_evacuation_reserve();
 
-#ifdef KELVIN_DEBUG
-  log_info(gc)("adjust_evacuation_budgets");
-  log_info(gc)(" old_evacuated: %zu, old_evacuated_committed: %zu, reserved: %zu",
-               old_evacuated, old_evacuated_committed, old_evacuation_reserve);
-#endif
-
   if (old_evacuated_committed > old_evacuation_reserve) {
     // This should only happen due to round-off errors when enforcing ShenandoahOldEvacWaste
     assert(old_evacuated_committed <= (33 * old_evacuation_reserve) / 32,
            "Round-off errors should be less than 3.125%%, committed: %zu, reserved: %zu",
            old_evacuated_committed, old_evacuation_reserve);
-#ifdef KELVIN_DEBUG
-    log_info(gc)(" Truncating old_evacuated_committed to reserve due to round-off errors");
-#endif
     old_evacuated_committed = old_evacuation_reserve;
     // Leave old_evac_reserve as previously configured
   } else if (old_evacuated_committed < old_evacuation_reserve) {
@@ -441,9 +408,6 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
                         PROPERFMTARGS(old_evacuated_committed));
     old_evacuation_reserve = old_evacuated_committed;
     old_generation->set_evacuation_reserve(old_evacuation_reserve);
-#ifdef KELVIN_DEBUG
-    log_info(gc)(" Shrinking old_evacuation reserve to %zu (use it or lose it)", old_evacuation_reserve);
-#endif
   }
 
   size_t young_advance_promoted = collection_set->get_live_bytes_in_tenurable_regions();
@@ -454,13 +418,6 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
 
   size_t total_young_available = young_generation->available_with_reserve() - add_regions_to_old * region_size_bytes;;
   assert(young_evacuated_reserve_used <= total_young_available, "Cannot evacuate more than is available in young");
-#ifdef KELVIN_DEBUG
-  log_info(gc)(" total_young_available: %zu computed from %zu - %zu * %zu", total_young_available,
-               young_generation->available_with_reserve(), add_regions_to_old, region_size_bytes);
-  size_t alternative_young = young_generation->available_with_reserve() - collection_set->get_young_available_bytes_collected();
-  log_info(gc)(" alternative computation: %zu = %zu - %zu", alternative_young,
-                 young_generation->available_with_reserve(), collection_set->get_young_available_bytes_collected());
-#endif
   young_generation->set_evacuation_reserve(young_evacuated_reserve_used);
 
   // We have not yet rebuilt the free set.  Memory that is available at this moment may not be available after the
@@ -469,12 +426,6 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
 
   size_t old_available =
     old_generation->available() + add_regions_to_old * region_size_bytes - collection_set->get_old_available_bytes_collected();
-#ifdef KELVIN_DEBUG
-  log_info(gc)(" old_available computed as %zu (%zu + %zu * %zu - %zu)",
-               old_available, add_regions_to_old, region_size_bytes, old_generation->available(), collection_set->get_old_available_bytes_collected());
-  log_info(gc)("   (previously computed as simply old_gen->available(): %zu)", old_generation->available());
-  log_info(gc)("   How can I be sure that cset regions are not in the available?");
-#endif
 
   // Now that we've established the collection set, we know how much memory is really required by old-gen for evacuation
   // and promotion reserves.  Try shrinking OLD now in case that gives us a bit more runway for mutator allocations during
@@ -484,28 +435,15 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
   if (old_available < old_consumed) {
     // This can happen due to round-off errors when adding the results of truncated integer arithmetic.
     // We've already truncated old_evacuated_committed.  Truncate young_advance_promoted_reserve_used here.
-#ifdef KELVIN_DEBUG
-    log_info(gc)(" young_advance_promote_reserve_used: %zu, old_available: %zu, old_evacuated_committed: %zu, delta: %zu",
-                 young_advance_promoted_reserve_used, old_available, old_evacuated_committed,
-                 old_available - old_evacuated_committed);
-#endif
 
     assert(young_advance_promoted_reserve_used <= (33 * (old_available - old_evacuated_committed)) / 32,
            "Round-off errors should be less than 3.125%%, committed: %zu, reserved: %zu",
            young_advance_promoted_reserve_used, old_available - old_evacuated_committed);
     if (old_available > old_evacuated_committed) {
       young_advance_promoted_reserve_used = old_available - old_evacuated_committed;
-#ifdef KELVIN_DEBUG
-      log_info(gc)(" overwriting young_advanced_promoted_reserved_used with updated value: %zu",
-                   young_advance_promoted_reserve_used);
-#endif
     } else {
       young_advance_promoted_reserve_used = 0;
       old_evacuated_committed = old_available;
-#ifdef KELVIN_DEBUG
-      log_info(gc)(" overwriting young_advanced_promoted_reserved_used with updated value: %zu",
-                   young_advance_promoted_reserve_used);
-#endif
     }
     // TODO: reserve for full promotion reserve, not just for advance (preselected) promotion
     old_consumed = old_evacuated_committed + young_advance_promoted_reserve_used;
@@ -519,10 +457,6 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
   assert(unaffiliated_old >= old_evacuated_committed, "Do not evacuate (%zu) more than unaffiliated old (%zu)",
          old_evacuated_committed, unaffiliated_old);
 
-#ifdef KELVIN_DEBUG
-  log_info(gc)(" unaffiliated_old: %zu should be >= old_evacuated_committed: %zu", unaffiliated_old, old_evacuated_committed);
-#endif
-
   // Make sure old_evac_committed is unaffiliated
   if (old_evacuated_committed > 0) {
     if (unaffiliated_old > old_evacuated_committed) {
@@ -530,9 +464,6 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
       size_t giveaway_regions = giveaway / region_size_bytes;  // round down
       if (giveaway_regions > 0) {
         excess_old = MIN2(excess_old, giveaway_regions * region_size_bytes);
-#ifdef KELVIN_DEBUG
-        log_info(gc)(" giveaway_regions: %zu, excess_old: %zu", giveaway_regions, excess_old);
-#endif
       } else {
         excess_old = 0;
       }
@@ -548,19 +479,11 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
     // we can give back unaffiliated_old (all of unaffiliated is excess)
     if (unaffiliated_old_regions > 0) {
       add_regions_to_young = unaffiliated_old_regions;
-#ifdef KELVIN_DEBUG
-      log_info(gc)(" Transferring %zu regions to Mutator because excess_old > unaffiliated_old and unaffiliated_regions > 0",
-                   regions_to_xfer);
-#endif
     }
   } else if (unaffiliated_old_regions > 0) {
     // excess_old < unaffiliated old: we can give back MIN(excess_old/region_size_bytes, unaffiliated_old_regions)
     size_t excess_regions = excess_old / region_size_bytes;
     add_regions_to_young = MIN2(excess_regions, unaffiliated_old_regions);
-#ifdef KELVIN_DEBUG
-    log_info(gc)(" Transferring %zu regions to Mutator because excess_old <= unaffiliated_old and unaffiliated_regions > 0",
-                 regions_to_xfer);
-#endif
   }
 
   if (add_regions_to_young > 0) {
@@ -573,11 +496,6 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
   // Add in the excess_old memory to hold unanticipated promotions, if any.  If there are more unanticipated
   // promotions than fit in reserved memory, they will be deferred until a future GC pass.
   size_t total_promotion_reserve = young_advance_promoted_reserve_used + excess_old;
-
-#ifdef KELVIN_DEBUG
-  log_info(gc)(" Adjusting total_promotion_reserve to %zu (expanding previous value by %zu)", total_promotion_reserve, excess_old);
-  log_info(gc)("   (regions are relinquished for mutator because we shrunk the old evacuation reserve above)");
-#endif
 
   old_generation->set_promoted_reserve(total_promotion_reserve);
   old_generation->reset_promoted_expended();
