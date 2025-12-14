@@ -58,7 +58,7 @@ class PollsetPoller extends Poller {
     }
 
     @Override
-    void implRegister(int fd) throws IOException {
+    void implStartPoll(int fd) throws IOException {
         int ret = Pollset.pollsetCtl(setid, Pollset.PS_MOD, fd, Pollset.PS_POLLPRI | event);
         if (ret != 0) {
             throw new IOException("Unable to register fd " + fd);
@@ -66,7 +66,7 @@ class PollsetPoller extends Poller {
     }
 
     @Override
-    void implDeregister(int fd, boolean polled) {
+    void implStopPoll(int fd, boolean polled) {
         int ret = Pollset.pollsetCtl(setid, Pollset.PS_DELETE, fd, 0);
         assert ret == 0;
     }

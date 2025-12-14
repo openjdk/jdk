@@ -30,11 +30,19 @@ import java.io.IOException;
  * Default PollerProvider for Windows based on wepoll.
  */
 class DefaultPollerProvider extends PollerProvider {
-    DefaultPollerProvider() { }
+    DefaultPollerProvider(Poller.Mode mode) {
+        if (mode != Poller.Mode.SYSTEM_THREADS) {
+            throw new UnsupportedOperationException();
+        }
+        super(mode);
+    }
+
+    DefaultPollerProvider() {
+        this(Poller.Mode.SYSTEM_THREADS);
+    }
 
     @Override
-    int defaultReadPollers(Poller.Mode mode) {
-        assert mode == Poller.Mode.SYSTEM_THREADS;
+    int defaultReadPollers() {
         int ncpus = Runtime.getRuntime().availableProcessors();
         return Math.max(Integer.highestOneBit(ncpus / 8), 1);
     }
@@ -46,13 +54,15 @@ class DefaultPollerProvider extends PollerProvider {
 
     @Override
     Poller readPoller(boolean subPoller) throws IOException {
-        assert !subPoller;
+        if (subPoller)
+            throw new UnsupportedOperationException();
         return new WEPollPoller(true);
     }
 
     @Override
     Poller writePoller(boolean subPoller) throws IOException {
-        assert !subPoller;
+        if (subPoller)
+            throw new UnsupportedOperationException();
         return new WEPollPoller(false);
     }
 }

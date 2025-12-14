@@ -2277,6 +2277,14 @@ public final class System {
                 return Thread.scopedValueBindings();
             }
 
+            public long nativeThreadID(Thread thread) {
+                return thread.nativeThreadID();
+            }
+
+            public void setThreadNativeID(long id) {
+                Thread.currentThread().setNativeThreadID(id);
+            }
+
             public Continuation getContinuation(Thread thread) {
                 return thread.getContinuation();
             }
@@ -2311,7 +2319,7 @@ public final class System {
                 if (thread instanceof BaseVirtualThread vthread) {
                     vthread.unpark();
                 } else {
-                    throw new WrongThreadException();
+                    throw new IllegalArgumentException();
                 }
             }
 

@@ -30,15 +30,21 @@ import java.io.IOException;
  * Default PollerProvider for macOS.
  */
 class DefaultPollerProvider extends PollerProvider {
-    DefaultPollerProvider() { }
+    DefaultPollerProvider(Poller.Mode mode) {
+        super(mode);
+    }
+
+    DefaultPollerProvider() {
+        this(Poller.Mode.SYSTEM_THREADS);
+    }
 
     @Override
     Poller readPoller(boolean subPoller) throws IOException {
-        return new KQueuePoller(subPoller, true);
+        return new KQueuePoller(pollerMode(), subPoller, true);
     }
 
     @Override
     Poller writePoller(boolean subPoller) throws IOException {
-        return new KQueuePoller(subPoller, false);
+        return new KQueuePoller(pollerMode(), subPoller, false);
     }
 }

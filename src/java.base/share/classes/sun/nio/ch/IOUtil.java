@@ -587,9 +587,12 @@ public final class IOUtil {
      */
     static native int drain1(int fd) throws IOException;
 
-    public static native void configureBlocking(FileDescriptor fd,
-                                                boolean blocking)
+    public static native void configureBlocking(FileDescriptor fd, boolean blocking)
         throws IOException;
+
+    public static void configureBlocking(int fd, boolean blocking) throws IOException {
+        configureBlocking(newFD(fd), blocking);
+    }
 
     public static native int fdVal(FileDescriptor fd);
 
