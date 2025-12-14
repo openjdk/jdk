@@ -254,6 +254,10 @@ public class CustomInfoPListTest {
                         .addArguments(cmd.getAllArguments())
                         .setPackageType(PackageType.IMAGE)
                         .removeArgumentWithValue("--resource-dir")
+                        // Ignore externally configured runtime if any.
+                        // It may or may not have the "bin" directory, it also can be a bundle.
+                        // These factors affect the runtime plist file (see JDK-8363980) which may not be the default one.
+                        .ignoreDefaultRuntime(true)
                         .setArgumentValue("--dest", TKit.createTempDirectory("vanilla"));
                 vanillaCmd.execute();
 
