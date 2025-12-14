@@ -26,6 +26,7 @@
 #define SHARE_UTILITIES_CONCURRENTHASHTABLE_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/mutex.hpp"
 #include "utilities/globalCounter.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -246,7 +247,7 @@ class ConcurrentHashTable : public CHeapObj<MT> {
   const size_t _log2_start_size;  // Start size.
   const size_t _grow_hint;        // Number of linked items
 
-  volatile bool _size_limit_reached;
+  Atomic<bool> _size_limit_reached;
 
   // We serialize resizers and other bulk operations which do not support
   // concurrent resize with this lock.
@@ -435,7 +436,7 @@ class ConcurrentHashTable : public CHeapObj<MT> {
   size_t get_size_log2(Thread* thread);
   static size_t get_node_size() { return sizeof(Node); }
   static size_t get_dynamic_node_size(size_t value_size);
-  bool is_max_size_reached() { return _size_limit_reached; }
+  bool is_max_size_reached() { return _size_limit_reached.load_relaxed(); }
 
   // This means no paused bucket resize operation is going to resume
   // on this table.

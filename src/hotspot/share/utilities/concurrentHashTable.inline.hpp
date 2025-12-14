@@ -29,6 +29,7 @@
 
 #include "cppstdlib/type_traits.hpp"
 #include "memory/allocation.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/prefetch.inline.hpp"
@@ -713,7 +714,7 @@ inline void ConcurrentHashTable<CONFIG, MT>::
   assert(_resize_lock_owner == thread, "Re-size lock not held");
 
   InternalTable* old_table = set_table_from_new();
-  _size_limit_reached = false;
+  _size_limit_reached.store_relaxed(false);
   unlock_resize_lock(thread);
 #ifdef ASSERT
   for (size_t i = 0; i < old_table->_size; i++) {
@@ -787,7 +788,7 @@ inline void ConcurrentHashTable<CONFIG, MT>::
   delete _table;
   // Create and publish a new table
   InternalTable* table = new InternalTable(log2_size);
-  _size_limit_reached = (log2_size == _log2_size_limit);
+  _size_limit_reached.store_relaxed(log2_size == _log2_size_limit);
   AtomicAccess::release_store(&_table, table);
 }
 
@@ -812,7 +813,7 @@ inline bool ConcurrentHashTable<CONFIG, MT>::
   }
 
   _new_table = new InternalTable(_table->_log2_size + 1);
-  _size_limit_reached = _new_table->_log2_size == _log2_size_limit;
+  _size_limit_reached.store_relaxed(_new_table->_log2_size == _log2_size_limit);
 
   return true;
 }
@@ -1020,7 +1021,7 @@ ConcurrentHashTable(size_t log2size, size_t log2size_limit, size_t grow_hint, bo
   _resize_lock = new Mutex(rank, "ConcurrentHashTableResize_lock");
   _table = new InternalTable(log2size);
   assert(log2size_limit >= log2size, "bad ergo");
-  _size_limit_reached = _table->_log2_size == _log2_size_limit;
+  _size_limit_reached.store_relaxed(_table->_log2_size == _log2_size_limit);
 }
 
 template <typename CONFIG, MemTag MT>
