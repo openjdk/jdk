@@ -754,9 +754,8 @@ public final class Class<T> implements java.io.Serializable,
      * method returns {@code false}.
      *
      * @param obj the reference to check, an object or {@code null}
-     * @return true if an object reference of the type represented by this
-     *         {@code Class} may refer to the same object as {@code obj};
-     *         false otherwise
+     * @return true the reference type represented by this {@code Class} is
+     *         a supertype of the class of {@code obj}; false otherwise
      * @jls 4.3 Reference Types and Values
      * @jls 5.1.6.3 Narrowing Reference Conversions at Run Time
      * @see #cast(Object)
