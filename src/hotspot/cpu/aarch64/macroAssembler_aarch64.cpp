@@ -6274,26 +6274,26 @@ address MacroAssembler::zero_words(Register base, uint64_t cnt)
     }
 #endif
     // Use 16 words (128 bytes) as the block size to unroll.
-    const int block_size = 2 * MacroAssembler::zero_words_block_size;
-    if (cnt >= block_size) {
-      uint64_t loops = cnt/block_size;
+    const int unroll_words = 2 * MacroAssembler::zero_words_block_size;
+    if (cnt >= unroll_words) {
+      uint64_t loops = cnt/unroll_words;
       if (loops > 1) {
         mov(rscratch2, loops - 1);
       }
       {
         Label loop;
         bind(loop);
-        for (int i = 0; i < block_size; i += 2) {
+        for (int i = 0; i < unroll_words; i += 2) {
           stp(zr, zr, Address(base, i * BytesPerWord));
         }
-        add(base, base, block_size * BytesPerWord);
+        add(base, base, unroll_words * BytesPerWord);
         if (loops > 1) {
           subs(rscratch2, rscratch2, 1);
           br(GE, loop);
         }
       }
     }
-    cnt %= block_size;
+    cnt %= unroll_words;
     int i = cnt & 1;  // store any odd word to start
     if (i) str(zr, Address(base));
     for (; i < (int)cnt; i += 2) {

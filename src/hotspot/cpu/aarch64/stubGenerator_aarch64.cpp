@@ -690,18 +690,19 @@ class StubGenerator: public StubCodeGenerator {
 
     {
       // Process any remaining blocks not handled by the stub.
-      const int unroll = MacroAssembler::zero_words_block_size / 2;
+      const int unroll_words = MacroAssembler::zero_words_block_size;
       // Clear the remaining blocks.
       Label loop;
-      __ subs(cnt, cnt, unroll * 2);
+      __ subs(cnt, cnt, unroll_words);
       __ br(Assembler::LT, done);
       __ bind(loop);
-      for (int i = 0; i < unroll; i++)
-        __ stp(zr, zr, __ post(base, 16));
-      __ subs(cnt, cnt, unroll * 2);
+      for (int i = 0; i < unroll_words; i += 2) {
+        __ stp(zr, zr, __ post(base, 2 * BytesPerWord));
+      }
+      __ subs(cnt, cnt, unroll_words);
       __ br(Assembler::GE, loop);
       __ bind(done);
-      __ add(cnt, cnt, unroll * 2);
+      __ add(cnt, cnt, unroll_words);
     }
 
     __ ret(lr);
