@@ -109,6 +109,8 @@ public:
 #ifdef COMPILER2
   OptoReg::Name refine_register(const Node* node,
                                 OptoReg::Name opto_reg);
+
+  virtual void try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj, Label& slowpath);
 #endif // COMPILER2
 };
 

@@ -6372,39 +6372,56 @@ void MacroAssembler::compiler_fast_lock_object(Register obj, Register box, Regis
     if (!UseObjectMonitorTable) {
       assert(tmp1_monitor == mark, "should be the same here");
     } else {
+      const Register cache_addr = tmp2;
+      const Register tmp1_bucket = tmp1;
+      NearLabel found_in_cache;
+      NearLabel lookup_in_table;
       NearLabel monitor_found;
 
       // load cache address
-      z_la(tmp1, Address(Z_thread, JavaThread::om_cache_oops_offset()));
+      z_la(cache_addr, Address(Z_thread, JavaThread::om_cache_oops_offset()));
 
       const int num_unrolled = 2;
       for (int i = 0; i < num_unrolled; i++) {
-        z_cg(obj, Address(tmp1));
-        z_bre(monitor_found);
-        add2reg(tmp1, in_bytes(OMCache::oop_to_oop_difference()));
+        z_cg(obj, Address(cache_addr));
+        z_bre(found_in_cache);
+        add2reg(cache_addr, in_bytes(OMCache::oop_to_oop_difference()));
       }
+      z_bru(lookup_in_table);
 
-      NearLabel loop;
-      // Search for obj in cache
+      bind(found_in_cache);
+      z_lg(tmp1_monitor, Address(cache_addr, OMCache::oop_to_monitor_difference()));
+      z_bru(monitor_found);
 
-      bind(loop);
+      bind(lookup_in_table);
 
-      // check for match.
-      z_cg(obj, Address(tmp1));
-      z_bre(monitor_found);
+      // Get the hash code.
+      z_srlg(mark, mark, markWord::hash_shift);
 
-      // search until null encountered, guaranteed _null_sentinel at end.
-      add2reg(tmp1, in_bytes(OMCache::oop_to_oop_difference()));
-      z_cghsi(0, tmp1, 0);
-      z_brne(loop); // if not EQ to 0, go for another loop
+      // Get the table and calculate the bucket's address.
+      load_const_optimized(tmp2, ObjectMonitorTable::current_table_address());
+      z_lg(tmp2, Address(tmp2));
+      z_lg(Z_R0_scratch, Address(tmp2, ObjectMonitorTable::table_capacity_mask_offset()));
+      z_ngr(mark, Z_R0_scratch);
+      z_lg(Z_R0_scratch, Address(tmp2, ObjectMonitorTable::table_buckets_offset()));
+      z_sllg(mark, mark, LogBytesPerWord);
+      z_agr(tmp1_bucket, Z_R0_scratch);
 
-      // we reached to the end, cache miss
-      z_ltgr(obj, obj); // set CC to NE
-      z_bru(slow_path);
+      // Read the monitor from the bucket.
+      z_lg(tmp1_monitor, Address(tmp1_bucket));
 
-      // cache hit
+      // Check if the monitor in the bucket is special (empty, tombstone or removed).
+      z_cghi(tmp1_monitor, ObjectMonitorTable::SpecialPointerValues::below_is_special);
+      z_brl(slow_path);
+
+      // Check if object matches.
+      z_lg(tmp2, Address(tmp1_monitor, ObjectMonitor::object_offset()));
+      BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+      bs_asm->try_resolve_weak_handle_in_c2(this, tmp2, Z_R0_scratch, slow_path);
+      z_cgr(obj, tmp2);
+      z_brne(slow_path);
+
       bind(monitor_found);
-      z_lg(tmp1_monitor, Address(tmp1, OMCache::oop_to_monitor_difference()));
     }
     NearLabel monitor_locked;
     // lock the monitor

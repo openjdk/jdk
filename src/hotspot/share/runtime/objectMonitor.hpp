@@ -218,6 +218,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   static int Knob_SpinLimit;
 
+  static ByteSize object_offset()      { return byte_offset_of(ObjectMonitor, _object); }
   static ByteSize metadata_offset()    { return byte_offset_of(ObjectMonitor, _metadata); }
   static ByteSize owner_offset()       { return byte_offset_of(ObjectMonitor, _owner); }
   static ByteSize recursions_offset()  { return byte_offset_of(ObjectMonitor, _recursions); }

@@ -206,6 +206,10 @@ OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Na
   return opto_reg;
 }
 
+void BarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path) {
+  __ z_lg(obj, Address(obj));
+}
+
 #undef __
 #define __ _masm->
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -81,6 +81,8 @@ public:
 
 #ifdef COMPILER2
   OptoReg::Name refine_register(const Node* node, OptoReg::Name opto_reg) const;
+  virtual void try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj,
+                                             Register tmp, Label& slow_path);
 #endif // COMPILER2
 };
 
