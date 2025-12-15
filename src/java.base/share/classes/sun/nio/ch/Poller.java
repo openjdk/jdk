@@ -48,8 +48,6 @@ import jdk.internal.vm.annotation.Stable;
 
 /**
  * I/O poller to allow virtual threads park until a file descriptor is ready for I/O.
- * Implementations also optionally support read/write operations where virtual threads
- * park until bytes are read or written.
  */
 public abstract class Poller {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
