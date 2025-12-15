@@ -21,8 +21,9 @@
  * questions.
  */
 
-package compiler.c2.irTests.constantFold;
+package compiler.intrinsics.object;
 
+import compiler.lib.ir_framework.Check;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.Test;
@@ -34,7 +35,7 @@ import compiler.lib.ir_framework.TestFramework;
  * @summary Verify constant folding is possible for identity hash code
  * @library /test/lib /
  * @requires vm.compiler2.enabled
- * @run driver compiler.c2.irTests.constantFold.IdentityHashCodeFold
+ * @run driver ${test.main.class}
  */
 public class IdentityHashCodeFold {
 
@@ -44,10 +45,24 @@ public class IdentityHashCodeFold {
 
     static final Object a = new Object(), b = new Object();
 
+    static final int expectedResult;
+
+    static {
+        // This code runs in the interpreter
+        expectedResult = System.identityHashCode(a) + System.identityHashCode(b);
+    }
+
     @Test
     @IR(failOn = {IRNode.ADD_I})
     public int testSum() {
         return a.hashCode() + System.identityHashCode(b);
+    }
+
+    @Check(test = "testSum")
+    public void checkSum(int sum) {
+        if (sum != expectedResult) {
+            throw new IllegalStateException("Unexpected hash sum, expected %X actual %X".formatted(expectedResult, sum));
+        }
     }
 
 }
