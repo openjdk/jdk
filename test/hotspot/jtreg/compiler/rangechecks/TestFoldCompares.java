@@ -60,7 +60,7 @@ public class TestFoldCompares {
         TestFramework framework = new TestFramework();
         switch (args[0]) {
             case "vanilla" -> { /* no extra flags */ }
-            case "Xcomp"   -> { framework.addFlags("-Xcomp", "-XX:CompileCommand=compileonly,compiler.rangechecks.TestFoldCompares::test*"); }
+            case "Xcomp"   -> { framework.addFlags("-Xcomp", "-XX:-TieredCompilation", "-XX:CompileCommand=compileonly,compiler.rangechecks.TestFoldCompares::test*"); }
             default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
         };
         framework.start();
@@ -315,5 +315,38 @@ public class TestFoldCompares {
             return; // always success
         }
         throw new RuntimeException("should not be reached");
+    }
+
+    // Now test that we can use a.length, which means we do a null-check
+    // and then a comparison with a LoadRange that has type int[>=0]
+
+    public static int[] ARR = new int[256];
+
+    @Test
+    @IR(counts = {IRNode.CMP_I, "= 2", IRNode.CMP_U, "= 0"}, phase = CompilePhase.AFTER_PARSING,
+        applyIf = {"TieredCompilation", "true"}) // proxy for "not Xcomp"
+    @IR(counts = {IRNode.CMP_I, "= 0", IRNode.CMP_U, "= 1"},
+        applyIf = {"TieredCompilation", "true"}) // proxy for "not Xcomp"
+    @Arguments(setup = "range256")
+    // Note: cannot get optimized with Xcomp
+    static int test_array_length_and_null_check_1(int i) {
+        if (i < 0 || i >= ARR.length) {
+            return -1; // never happens
+        }
+        return i;
+    }
+
+    @Test
+    @IR(counts = {IRNode.CMP_I, "= 2", IRNode.CMP_U, "= 0"}, phase = CompilePhase.AFTER_PARSING,
+        applyIf = {"TieredCompilation", "true"}) // proxy for "not Xcomp"
+    @IR(counts = {IRNode.CMP_I, "= 0", IRNode.CMP_U, "= 1"},
+        applyIf = {"TieredCompilation", "true"}) // proxy for "not Xcomp"
+    @Arguments(setup = "range256")
+    // Note: cannot get optimized with Xcomp
+    static int test_array_length_and_null_check_2(int i) {
+        if (i < 0 || i >= ARR.length) {
+            throw new RuntimeException("never go out of bounds");
+        }
+        return i;
     }
 }
