@@ -230,6 +230,8 @@ JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequenc
     }
 
     if (ss < 0) {
+        SetLastError(ss);
+        JNU_ThrowIOExceptionWithLastError(env, "InitializeSecurityContext");
         endSequence (pCred, pCtx, env, status);
         return 0;
     }
@@ -238,6 +240,8 @@ JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequenc
         ss = CompleteAuthToken( pCtx, &OutBuffDesc );
 
         if (ss < 0) {
+            SetLastError(ss);
+            JNU_ThrowIOExceptionWithLastError(env, "CompleteAuthToken");
             endSequence (pCred, pCtx, env, status);
             return 0;
         }
