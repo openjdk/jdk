@@ -246,6 +246,13 @@ public:
 
   // Do not match base-ptr edge
   virtual uint match_edge(uint idx) const;
+
+#ifdef ASSERT
+  bool address_input_has_same_base() const {
+    Node *addp = in(Address);
+    return !addp->is_AddP() || addp->in(Base)->is_top() || addp->in(Base) == in(Base);
+  }
+#endif
 };
 
 //------------------------------OrINode----------------------------------------
