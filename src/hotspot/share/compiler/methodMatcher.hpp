@@ -100,6 +100,7 @@ public:
   enum InlineType {
       unknown_inline,
       dont_inline,
+      delay_inline,
       force_inline
     };
 
