@@ -169,11 +169,11 @@ public class TestMemoryAwareness {
         opts.addDockerOpts("--memory-swap=" + swapToSet);
 
         Common.run(opts)
-            .shouldMatch("memory_limit_in_bytes:.*" + expectedMem)
-            .shouldNotMatch("memory_and_swap_limit_in_bytes:.*not supported")
+            .shouldMatch("memory_limit:.*" + expectedMem)
+            .shouldNotMatch("memory_and_swap_limit:.*not supported")
             // On systems with swapaccount=0 this returns the memory limit.
             // On systems with swapaccount=1 this returns the set memory+swap value.
-            .shouldMatch("memory_and_swap_limit_in_bytes:.*(" + expectedMem + "|" + expectedSwap + ")");
+            .shouldMatch("memory_and_swap_limit:.*(" + expectedMem + "|" + expectedSwap + ")");
     }
 
     /*
