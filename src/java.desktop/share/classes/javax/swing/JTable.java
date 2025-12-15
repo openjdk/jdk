@@ -52,6 +52,7 @@ import java.beans.BeanProperty;
 import java.beans.JavaBean;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.Externalizable;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
@@ -5606,25 +5607,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             return value;
         }
 
-        public void writeExternal(java.io.ObjectOutput out) throws IOException {
-            //System.out.println("GenricEditor writeExternal");
-        }
+        public void writeExternal(java.io.ObjectOutput out) throws IOException {}
 
-        public void readExternal(java.io.ObjectInput in) throws IOException {
-            //System.out.println("GenricEditor readExternal");
-        }
-
-//        // All editor related fields in JTable are transient so
-//        // editing JTable is not serializable
-//        // but GenericEditor is Serializable so we need to stop cell editing
-//        // and also prevent serializing and deserializing its objects
-//        private void writeObject(ObjectOutputStream s) throws IOException {
-//            System.out.println("GenericEditor writeObject");
-//        }
-//        private void readObject(ObjectInputStream s)
-//                throws IOException, ClassNotFoundException {
-//            System.out.println("GenericEditor readObject");
-//        }
+        public void readExternal(java.io.ObjectInput in) throws IOException {}
     }
 
     static class NumberEditor extends GenericEditor {
@@ -5945,9 +5930,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             setEditingColumn(-1);
             setEditingRow(-1);
             editorComp = null;
-//            defaultEditorsByColumnClass.remove(Object.class);
-//            defaultEditorsByColumnClass.remove(Number.class);
-//            defaultEditorsByColumnClass.remove(Boolean.class);
 
             repaint(cellRect);
         }
@@ -5963,10 +5945,8 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      */
     @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
-        System.out.println("writeObject " + this.isEditing() + " getComponentCount " + this.getComponentCount());
         if (this.isEditing()) {
             this.getCellEditor().cancelCellEditing();
-            this.editorComp = null;
         }
         s.defaultWriteObject();
         if (getUIClassID().equals(uiClassID)) {
@@ -5976,14 +5956,12 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 ui.installUI(this);
             }
         }
-        System.out.println("writeObject1 " + this.isEditing() + " getComponentCount " + this.getComponentCount());
     }
 
     @Serial
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException
     {
-        System.out.println("readObject " + this.isEditing() + " getComponentCount " + this.getComponentCount());
         ObjectInputStream.GetField f = s.readFields();
 
         TableModel newDataModel = (TableModel) f.get("dataModel", null);
@@ -6053,6 +6031,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         checkDropMode(newDropMode);
         dropMode = newDropMode;
 
+        if ((ui != null) && (getUIClassID().equals(uiClassID))) {
+            ui.installUI(this);
+        }
         createDefaultRenderers();
         createDefaultEditors();
 
@@ -6061,7 +6042,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         // to re-register here
         if (getToolTipText() == null) {
             ToolTipManager.sharedInstance().registerComponent(this);
-         }
+        }
     }
 
     /* Called from the JComponent's EnableSerializationFocusListener to

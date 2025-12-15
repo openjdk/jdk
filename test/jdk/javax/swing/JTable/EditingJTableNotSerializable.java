@@ -50,22 +50,23 @@ public class EditingJTableNotSerializable {
     }
 
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeAndWait(() -> {
-            StringBuilder str = new StringBuilder();
-            testSerializeEditingTable(str);
-            testSerializeNonEditingTable(str);
-            if (str.length() != 0) {
-                throw new RuntimeException(str.toString());
-            }
-        });
+        StringBuilder str = new StringBuilder();
+        testSerializeEditingTable(str);
+        testSerializeNonEditingTable(str);
+        if (str.length() != 0) {
+            throw new RuntimeException(str.toString());
+        }
     }
 
+    private static JTable jt;
     private static void testSerializeEditingTable(StringBuilder str) {
         try {
             Object[][] data = new Object[][]{ new Object[]{ 1,2,3,4,5}};
             Object[] names = new Object[]{ 1,2,3,4,5};
-            JTable jt = new JTable(data, names);
-            jt.editCellAt(0,3);
+            SwingUtilities.invokeAndWait(() -> {
+                jt = new JTable(data, names);
+                jt.editCellAt(0,3);
+            });
             System.out.println("Serializing editing JTable");
             JTable newjt = serialize(jt);
             if (newjt.isEditing()) {
@@ -80,10 +81,12 @@ public class EditingJTableNotSerializable {
         try {
             Object[][] data = new Object[][]{ new Object[]{ 1,2,3,4,5}};
             Object[] names = new Object[]{ 1,2,3,4,5};
-            JTable jt = new JTable(data, names);
-            jt.editCellAt(0,3);
-            TableCellEditor tce = jt.getCellEditor();
-            tce.stopCellEditing();
+            SwingUtilities.invokeAndWait(() -> {
+                jt = new JTable(data, names);
+                jt.editCellAt(0,3);
+                TableCellEditor tce = jt.getCellEditor();
+                tce.stopCellEditing();
+            });
             System.out.println("Serializing non-editing JTable");
             serialize(jt);
         } catch (Exception e) {
