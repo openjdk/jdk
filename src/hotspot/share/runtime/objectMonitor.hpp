@@ -353,6 +353,13 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   bool      check_owner(TRAPS);
 
  private:
+   class ClearSuccOnSuspend {
+   protected:
+     ObjectMonitor* _om;
+   public:
+     ClearSuccOnSuspend(ObjectMonitor* om) : _om(om) {}
+     void operator()(JavaThread* current);
+   };
   class ExitOnSuspend {
    protected:
     ObjectMonitor* _om;
