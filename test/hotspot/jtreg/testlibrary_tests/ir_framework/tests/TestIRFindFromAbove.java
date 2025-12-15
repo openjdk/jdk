@@ -54,7 +54,7 @@ public class TestIRFindFromAbove {
         if (flag) {
             // This loop has no exit. So it is at first not connected down to Root.
             while (true) {
-                // Durint HASEIDEALLOOP1, we insert a NeverBranch here, with a fake
+                // During PHASEIDEALLOOP1, we insert a NeverBranch here, with a fake
                 // exit, that connects the loop down to Root.
                 fld++; // LoadI and StoreI
             }
