@@ -4830,7 +4830,7 @@ void os::set_native_thread_name(const char *name) {
   // since this is the only way to make ASAN aware of our thread names. Even
   // though ASAN intercepts both prctl and pthread_setname_np, it only processes
   // the thread name given to the former.
-  int rc = prctl(PR_SET_NAME, buf);
+  int rc = prctl(PR_SET_NAME, thread_name);
   assert(rc == 0, "prctl(PR_SET_NAME) failed");
 }
 
