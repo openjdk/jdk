@@ -86,7 +86,7 @@ public final class AckFrame extends QuicFrame {
         }
         var ackRanges = new ArrayList<AckRange>(ackRangeCount + 1);
         AckRange first = AckRange.of(0, firstAckRange);
-        ackRanges.add(0, first);
+        ackRanges.addFirst(first);
         for (int i=1; i <= ackRangeCount; i++) {
             long gap = decodeVLField(buffer, "gap");
             long len = decodeVLField(buffer, "range length");
@@ -139,10 +139,10 @@ public final class AckFrame extends QuicFrame {
         super(ACK);
         this.largestAcknowledged = requireVLRange(largestAcknowledged, "largestAcknowledged");
         this.ackDelay = requireVLRange(ackDelay, "ackDelay");
-        if (ackRanges.size() < 1) {
+        if (ackRanges.isEmpty()) {
             throw new IllegalArgumentException("insufficient ackRanges");
         }
-        if (ackRanges.get(0).gap() != 0) {
+        if (ackRanges.getFirst().gap() != 0) {
             throw new IllegalArgumentException("first range must have zero gap");
         }
         this.ackRanges = List.copyOf(ackRanges);
@@ -178,7 +178,7 @@ public final class AckFrame extends QuicFrame {
         encodeVLField(buffer, largestAcknowledged, "largestAcknowledged");
         encodeVLField(buffer, ackDelay, "ackDelay");
         encodeVLField(buffer, ackRangeCount, "ackRangeCount");
-        encodeVLField(buffer, ackRanges.get(0).range(), "firstAckRange");
+        encodeVLField(buffer, ackRanges.getFirst().range(), "firstAckRange");
         for (int i=1; i <= ackRangeCount; i++) {
             AckRange ar = ackRanges.get(i);
             encodeVLField(buffer, ar.gap(), "gap");
@@ -198,7 +198,7 @@ public final class AckFrame extends QuicFrame {
                 + getVLFieldLengthFor(largestAcknowledged)
                 + getVLFieldLengthFor(ackDelay)
                 + getVLFieldLengthFor(ackRangeCount)
-                + getVLFieldLengthFor(ackRanges.get(0).range())
+                + getVLFieldLengthFor(ackRanges.getFirst().range())
                 + ackRanges.stream().skip(1).mapToInt(AckRange::size).sum();
         if (countsPresent) {
             size = size + getVLFieldLengthFor(ect0Count)
@@ -236,7 +236,7 @@ public final class AckFrame extends QuicFrame {
     /**
      * {@return a new {@code AckFrame} identical to this one, but
      * with the given {@code ackDelay}};
-     * @param   ackDelay
+     * @param ackDelay the delay sending the Ack Frame
      */
     public AckFrame withAckDelay(long ackDelay) {
         if (ackDelay == this.ackDelay) return this;
@@ -361,9 +361,9 @@ public final class AckFrame extends QuicFrame {
             return null;
         }
         private final Iterator<AckRange> ackRangeIterator;
-        private volatile long largest;
-        private volatile long smallest;
-        private volatile long pn;  // the current packet number
+        private long largest;
+        private long smallest;
+        private long pn;  // the current packet number
 
         // The stream returns packet number in decreasing order
         // (largest packet number is returned first)
@@ -377,7 +377,7 @@ public final class AckFrame extends QuicFrame {
         @Override
         public boolean tryAdvance(LongConsumer action) {
             // First call will see pn == 0 and smallest >= 2,
-            // which guarantees we will not enter the if below
+            // which guarantees we will not enter the `if` below
             // before pn has been initialized from the
             // first ackRange value
             if (pn >= smallest) {
@@ -687,7 +687,7 @@ public final class AckFrame extends QuicFrame {
                             return this;
                         } else if (packetNumber == smallest - 1) {
                             // Otherwise, if the packet number to be acknowledged is
-                            // just below the smallest packet ackowledged by the current
+                            // just below the smallest packet acknowledged by the current
                             // range, there are again two cases, depending on
                             // whether the next ackRange has a gap that can be reduced,
                             // or not
@@ -855,7 +855,7 @@ public final class AckFrame extends QuicFrame {
         private AckFrameBuilder acknowledgeLargerPacket(long largerThanLargest) {
             var packetNumber = largerThanLargest;
             // the new packet is larger than the largest acknowledged
-            var firstAckRange = ackRanges.get(0);
+            var firstAckRange = ackRanges.getFirst();
             if (largestAcknowledged == packetNumber -1) {
                 // if packetNumber is largestAcknowledged + 1, we can simply
                 // extend the first ack range by 1
@@ -864,7 +864,7 @@ public final class AckFrame extends QuicFrame {
             } else {
                 // otherwise - we have a gap - we need to acknowledge the new packetNumber,
                 // and then add the gap that separate it from the previous largestAcknowledged...
-                ackRanges.add(0, AckRange.INITIAL); // acknowledge packetNumber only
+                ackRanges.addFirst(AckRange.INITIAL); // acknowledge packetNumber only
                 long gap = packetNumber - largestAcknowledged -2;
                 var secondAckRange = AckRange.of(gap, firstAckRange.range);
                 ackRanges.set(1, secondAckRange); // add the gap

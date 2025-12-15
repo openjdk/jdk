@@ -428,7 +428,7 @@
           "0=print nothing except PhasePrintLevel directives, "             \
           "6=all details printed. "                                         \
           "Level of detail of printouts can be set on a per-method level "  \
-          "as well by using CompileCommand=PrintPhaseLevel.")                        \
+          "as well by using CompileCommand=PhasePrintLevel.")               \
           range(-1, 6)                                                      \
                                                                             \
   develop(bool, PrintIdealGraph, false,                                     \

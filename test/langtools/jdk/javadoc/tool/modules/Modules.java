@@ -672,4 +672,35 @@ public class Modules extends ModuleTestBase {
         checkTypesIncluded("p.P");
     }
 
+    @Test
+    public void testImportModules(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path mod = Paths.get(src.toString(), "m1");
+        tb.writeJavaFiles(mod,
+                """
+                import module m1;
+                module m1 {
+                    exports p;
+                    uses Service;
+                    provides Service with ServiceImpl;
+                }
+                """,
+                """
+                package p;
+                public interface Service {
+                }
+                """,
+                """
+                package p;
+                public class ServiceImpl implements Service {
+                }
+                """);
+        execTask("--module-source-path", src.toString(),
+                 "--module", "m1");
+        checkModulesSpecified("m1");
+        checkPackagesIncluded("p");
+        checkTypesIncluded("p.Service");
+        checkTypesIncluded("p.ServiceImpl");
+    }
+
 }

@@ -112,7 +112,7 @@ void MemPointerParser::canonicalize_raw_summands() {
       }
     }
     // Keep summands with non-zero scale.
-    if (!scaleI.is_zero() && !scaleL.is_NaN()) {
+    if (!scaleI.is_zero() && !scaleL.is_zero()) {
       _raw_summands.at_put(pos_put++, MemPointerRawSummand(variable, scaleI, scaleL, int_group));
     }
   }
