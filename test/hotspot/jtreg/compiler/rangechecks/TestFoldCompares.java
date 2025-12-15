@@ -39,19 +39,12 @@
 
 package compiler.rangechecks;
 
-// TODO: do we really need all?
-import jdk.test.lib.Utils;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Random;
-
 import compiler.lib.ir_framework.*;
-import compiler.lib.verify.*;
-import static compiler.lib.generators.Generators.G;
-import compiler.lib.generators.Generator;
 
 /**
- * TODO: link to fuzzer, explain that we do no result verification here, except that we don't hit exceptions.
+ * This test here is here to cover some basic cases of IfNode::fold_compares. It also contains the
+ * reproducers for JDK-8346420. We don't do any result verification, other than that we should never
+ * hit an Exception. For a test with result verification, see TestFoldComparesFuzzer.java
  */
 public class TestFoldCompares {
     public static boolean FLAG_FALSE = false;
