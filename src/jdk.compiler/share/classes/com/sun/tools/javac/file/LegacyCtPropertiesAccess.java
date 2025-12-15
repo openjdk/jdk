@@ -150,6 +150,6 @@ public interface LegacyCtPropertiesAccess {
 
         private static ResourceBundle ctBundle;
 
-        static final LegacyCtPropertiesInfo EMPTY = new LegacyCtPropertiesInfo(false, false, null);
+        private static final LegacyCtPropertiesInfo EMPTY = new LegacyCtPropertiesInfo(false, false, null);
     }
 }
