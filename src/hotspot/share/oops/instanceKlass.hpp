@@ -903,7 +903,7 @@ public:
   GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots,
                                                   Array<InstanceKlass*>* transitive_interfaces) override;
   bool can_be_primary_super_slow() const override;
-  size_t oop_size(oop obj)  const override    { return size_helper(); }
+  size_t oop_size(oop obj) const override { return size_helper(); }
   // slow because it's a virtual call and used for verifying the layout_helper.
   // Using the layout_helper bits, we can call is_instance_klass without a virtual call.
   DEBUG_ONLY(bool is_instance_klass_slow() const override { return true; })
@@ -950,9 +950,9 @@ public:
   }
 
   int size() const override           { return size(vtable_length(),
-                                               itable_length(),
-                                               nonstatic_oop_map_size(),
-                                               is_interface());
+                                                    itable_length(),
+                                                    nonstatic_oop_map_size(),
+                                                    is_interface());
   }
 
 
