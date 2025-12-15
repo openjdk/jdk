@@ -2096,6 +2096,20 @@ bool PhiNode::is_split_through_mergemem_terminating() const {
   return true;
 }
 
+// Is one of the inputs a Cast that has not been processed by igvn yet?
+bool PhiNode::wait_for_cast_input_igvn(const PhaseIterGVN* igvn) const {
+  for (uint i = 1, cnt = req(); i < cnt; ++i) {
+    Node* n = in(i);
+    while (n != nullptr && n->is_ConstraintCast()) {
+      if (igvn->_worklist.member(n)) {
+        return true;
+      }
+      n = n->in(1);
+    }
+  }
+  return false;
+}
+
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Must preserve
 // the CFG, but we can still strip out dead paths.
@@ -2154,6 +2168,28 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // If there is a chance that the region can be optimized out do
       // not add a cast node that we can't remove yet.
       !wait_for_region_igvn(phase)) {
+    // If one of the inputs is a cast that has yet to be processed by igvn, delay processing of this node to give the
+    // inputs a chance to optimize and possibly end up with identical inputs (casts included).
+    // Say we have:
+    // (Phi region (Cast#1 c uin) (Cast#2 c uin))
+    // and Cast#1 and Cast#2 have not had a chance to common yet
+    // if the unique_input() transformation below proceeds, then PhiNode::Ideal returns:
+    // (Cast#3 region uin) (1)
+    // If PhiNode::Ideal is delayed until Cast#1 and Cast#2 common, then it returns:
+    // (Cast#1 c uin) (2)
+    //
+    // In (1) the resulting cast is conservatively pinned at a later control and while Cast#3 and Cast#1/Cast#2 still
+    // have a chance to common, that requires proving that c dominates region in ConstraintCastNode::dominating_cast()
+    // which may not happen if control flow is too complicated and another pass of loop opts doesn't run. Delaying the
+    // transformation here should allow a more optimal result.
+    // Beyond the efficiency concern, there is a risk, if the casts are CastPPs, to end up with a chain of AddPs with
+    // different base inputs (but a unique uncasted base input). This breaks an invariant in the shape of address
+    // subtrees.
+    PhaseIterGVN* igvn = phase->is_IterGVN();
+    if (wait_for_cast_input_igvn(igvn)) {
+      igvn->_worklist.push(this);
+      return nullptr;
+    }
     uncasted = true;
     uin = unique_input(phase, true);
   }
@@ -2192,7 +2228,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       if (phi_type->isa_ptr()) {
         const Type* uin_type = phase->type(uin);
         if (!phi_type->isa_oopptr() && !uin_type->isa_oopptr()) {
-          cast = new CastPPNode(r, uin, phi_type, ConstraintCastNode::StrongDependency, extra_types);
+          cast = new CastPPNode(r, uin, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing, extra_types);
         } else {
           // Use a CastPP for a cast to not null and a CheckCastPP for
           // a cast to a new klass (and both if both null-ness and
@@ -2202,7 +2238,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           // null, uin's type must be casted to not null
           if (phi_type->join(TypePtr::NOTNULL) == phi_type->remove_speculative() &&
               uin_type->join(TypePtr::NOTNULL) != uin_type->remove_speculative()) {
-            cast = new CastPPNode(r, uin, TypePtr::NOTNULL, ConstraintCastNode::StrongDependency, extra_types);
+            cast = new CastPPNode(r, uin, TypePtr::NOTNULL, ConstraintCastNode::DependencyType::NonFloatingNarrowing, extra_types);
           }
 
           // If the type of phi and uin, both casted to not null,
@@ -2214,14 +2250,14 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
               cast = phase->transform(cast);
               n = cast;
             }
-            cast = new CheckCastPPNode(r, n, phi_type, ConstraintCastNode::StrongDependency, extra_types);
+            cast = new CheckCastPPNode(r, n, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing, extra_types);
           }
           if (cast == nullptr) {
-            cast = new CastPPNode(r, uin, phi_type, ConstraintCastNode::StrongDependency, extra_types);
+            cast = new CastPPNode(r, uin, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing, extra_types);
           }
         }
       } else {
-        cast = ConstraintCastNode::make_cast_for_type(r, uin, phi_type, ConstraintCastNode::StrongDependency, extra_types);
+        cast = ConstraintCastNode::make_cast_for_type(r, uin, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing, extra_types);
       }
       assert(cast != nullptr, "cast should be set");
       cast = phase->transform(cast);

@@ -695,7 +695,7 @@ instruct getAndSetP(indirect mem, iRegP newval, iRegPNoSp oldval) %{
 instruct getAndSetIAcq(indirect mem, iRegI newval, iRegINoSp oldval) %{
   predicate(needs_acquiring_load_exclusive(n));
   match(Set oldval (GetAndSetI mem newval));
-  ins_cost(2*VOLATILE_REF_COST);
+  ins_cost(VOLATILE_REF_COST);
   format %{ "atomic_xchgw_acq  $oldval, $newval, [$mem]" %}
   ins_encode %{
     __ atomic_xchgalw($oldval$$Register, $newval$$Register, as_Register($mem$$base));
@@ -706,7 +706,7 @@ instruct getAndSetIAcq(indirect mem, iRegI newval, iRegINoSp oldval) %{
 instruct getAndSetLAcq(indirect mem, iRegL newval, iRegLNoSp oldval) %{
   predicate(needs_acquiring_load_exclusive(n));
   match(Set oldval (GetAndSetL mem newval));
-  ins_cost(2*VOLATILE_REF_COST);
+  ins_cost(VOLATILE_REF_COST);
   format %{ "atomic_xchg_acq  $oldval, $newval, [$mem]" %}
   ins_encode %{
     __ atomic_xchgal($oldval$$Register, $newval$$Register, as_Register($mem$$base));
@@ -717,7 +717,7 @@ instruct getAndSetLAcq(indirect mem, iRegL newval, iRegLNoSp oldval) %{
 instruct getAndSetNAcq(indirect mem, iRegN newval, iRegNNoSp oldval) %{
   predicate(needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() == 0);
   match(Set oldval (GetAndSetN mem newval));
-  ins_cost(2*VOLATILE_REF_COST);
+  ins_cost(VOLATILE_REF_COST);
   format %{ "atomic_xchgw_acq  $oldval, $newval, [$mem]" %}
   ins_encode %{
     __ atomic_xchgalw($oldval$$Register, $newval$$Register, as_Register($mem$$base));
@@ -728,7 +728,7 @@ instruct getAndSetNAcq(indirect mem, iRegN newval, iRegNNoSp oldval) %{
 instruct getAndSetPAcq(indirect mem, iRegP newval, iRegPNoSp oldval) %{
   predicate(needs_acquiring_load_exclusive(n) && (n->as_LoadStore()->barrier_data() == 0));
   match(Set oldval (GetAndSetP mem newval));
-  ins_cost(2*VOLATILE_REF_COST);
+  ins_cost(VOLATILE_REF_COST);
   format %{ "atomic_xchg_acq  $oldval, $newval, [$mem]" %}
   ins_encode %{
     __ atomic_xchgal($oldval$$Register, $newval$$Register, as_Register($mem$$base));
