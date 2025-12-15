@@ -118,7 +118,11 @@ public final class Main {
 
             final var parseResult = Utils.buildParser(OperatingSystem.current(), bundlingEnv).create().apply(args);
 
-            return new Runner().run(() -> {
+            return new Runner(t -> {
+                new ErrorReporter(_ -> {
+                    t.printStackTrace(err);
+                }, Log::fatalError, Log.isVerbose()).reportError(t);
+            }).run(() -> {
                 final var parsedOptionsBuilder = parseResult.orElseThrow();
 
                 final var options = parsedOptionsBuilder.create();
@@ -164,11 +168,33 @@ public final class Main {
         }
     }
 
+    /*
+     * Exception (error) reporting:
+     *
+     * There are two types of exceptions to handle:
+     *
+     * 1. Exceptions explicitly thrown by jpackage code with localized,
+     *    jpackage-specific error messages. These are usually instances of
+     *    JPackageException.
+     *
+     * 2. Exceptions thrown by JDK code (for example, an NPE from Optional.of(...)).
+     *    These should normally not occur or should be handled at the point
+     *    where they arise. If they reach this level of exception handling,
+     *    it indicates a flaw in jpackage’s internal logic.
+     *
+     * Always print stack traces for exceptions of type #2.
+     * Print stack traces for exceptions of type #1 only in verbose mode.
+     * Always print the messages for exceptions of any type.
+     */
 
-    record ErrorReporter(Consumer<Throwable> stackTracePrinter, Consumer<String> messagePrinter) {
+    record ErrorReporter(Consumer<Throwable> stackTracePrinter, Consumer<String> messagePrinter, boolean verbose) {
         ErrorReporter {
             Objects.requireNonNull(stackTracePrinter);
             Objects.requireNonNull(messagePrinter);
+        }
+
+        ErrorReporter(Consumer<Throwable> stackTracePrinter, Consumer<String> messagePrinter) {
+            this(stackTracePrinter, messagePrinter, true);
         }
 
         void reportError(Throwable t) {
@@ -184,10 +210,14 @@ public final class Main {
         }
 
         private void printError(Throwable t, Optional<String> advice) {
-            stackTracePrinter.accept(t);
+            var isAlienException = isAlienExceptionType(t);
+
+            if (isAlienException || verbose) {
+                stackTracePrinter.accept(t);
+            }
 
             String msg;
-            if (isAlienExceptionType(t)) {
+            if (isAlienException) {
                 msg = t.toString();
             } else {
                 msg = t.getMessage();
@@ -216,15 +246,18 @@ public final class Main {
     }
 
 
-    static final class Runner {
+    record Runner(Consumer<Throwable> errorReporter) {
+
+        Runner {
+            Objects.requireNonNull(errorReporter);
+        }
 
         int run(Supplier<? extends Collection<? extends Exception>> r) {
             final var exceptions = runIt(r);
             if (exceptions.isEmpty()) {
                 return 0;
             } else {
-                var errorReporter = new ErrorReporter(Log::verbose, Log::fatalError);
-                exceptions.forEach(errorReporter::reportError);
+                exceptions.forEach(errorReporter);
                 return 1;
             }
         }
