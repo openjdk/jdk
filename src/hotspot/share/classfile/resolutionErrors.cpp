@@ -128,6 +128,7 @@ ResolutionErrorEntry::~ResolutionErrorEntry() {
 
 void ResolutionErrorEntry::set_nest_host_error(const char* message) {
   assert(_nest_host_error == nullptr, "caller should have checked");
+  assert_lock_strong(SystemDictionary_lock);
   _nest_host_error = message;
 }
 

@@ -1877,8 +1877,7 @@ void SystemDictionary::add_nest_host_error(const constantPoolHandle& pool,
       const char* nhe = entry->nest_host_error();
       if (nhe == nullptr) {
         entry->set_nest_host_error(message.as_string(true /* on C-heap */));
-      }
-      else {
+      } else {
         DEBUG_ONLY(const char* msg = message.base();)
         assert(strcmp(nhe, msg) == 0, "New message %s, differs from original %s", msg, nhe);
       }
