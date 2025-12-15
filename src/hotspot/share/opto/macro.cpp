@@ -2665,8 +2665,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       case Op_ModD:
       case Op_ModF: {
         CallNode* mod_macro = n->as_Call();
-        CallNode* call = new CallLeafPureNode(mod_macro->tf(), mod_macro->entry_point(),
-                                              mod_macro->_name, TypeRawPtr::BOTTOM);
+        CallNode* call = new CallLeafPureNode(mod_macro->tf(), mod_macro->entry_point(), mod_macro->_name);
         call->init_req(TypeFunc::Control, mod_macro->in(TypeFunc::Control));
         call->init_req(TypeFunc::I_O, C->top());
         call->init_req(TypeFunc::Memory, C->top());

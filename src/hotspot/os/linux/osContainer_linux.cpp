@@ -287,20 +287,44 @@ bool OSContainer::pids_current(uint64_t& value) {
   return cgroup_subsystem->pids_current(value);
 }
 
+template<typename T> struct metric_fmt;
+template<> struct metric_fmt<unsigned long long int> { static constexpr const char* fmt = "%llu"; };
+template<> struct metric_fmt<unsigned long int> { static constexpr const char* fmt = "%lu"; };
+template<> struct metric_fmt<int> { static constexpr const char* fmt = "%d"; };
+template<> struct metric_fmt<const char*> { static constexpr const char* fmt = "%s"; };
+
+template void OSContainer::print_container_metric<unsigned long long int>(outputStream*, const char*, unsigned long long int, const char*);
+template void OSContainer::print_container_metric<unsigned long int>(outputStream*, const char*, unsigned long int, const char*);
+template void OSContainer::print_container_metric<int>(outputStream*, const char*, int, const char*);
+template void OSContainer::print_container_metric<const char*>(outputStream*, const char*, const char*, const char*);
+
+template <typename T>
+void OSContainer::print_container_metric(outputStream* st, const char* metrics, T value, const char* unit) {
+  constexpr int max_length = 38; // Longest "metric: value" string ("maximum number of tasks: not supported")
+  constexpr int longest_value = max_length - 11; // Max length - shortest "metric: " string ("cpu_quota: ")
+  char value_str[longest_value + 1] = {};
+  os::snprintf_checked(value_str, longest_value, metric_fmt<T>::fmt, value);
+  st->print("%s: %*s", metrics, max_length - static_cast<int>(strlen(metrics)) - 2, value_str); // -2 for the ": "
+  if (unit[0] != '\0') {
+    st->print_cr(" %s", unit);
+  } else {
+    st->print_cr("");
+  }
+}
+
 void OSContainer::print_container_helper(outputStream* st, MetricResult& res, const char* metrics) {
-  st->print("%s: ", metrics);
   if (res.success()) {
     if (res.value() != value_unlimited) {
       if (res.value() >= 1024) {
-        st->print_cr(PHYS_MEM_TYPE_FORMAT " k", (physical_memory_size_type)(res.value() / K));
+        print_container_metric(st, metrics, res.value() / K, "kB");
       } else {
-        st->print_cr(PHYS_MEM_TYPE_FORMAT, res.value());
+        print_container_metric(st, metrics, res.value(), "B");
       }
     } else {
-      st->print_cr("%s", "unlimited");
+      print_container_metric(st, metrics, "unlimited");
     }
   } else {
     // Not supported
-    st->print_cr("%s", "unavailable");
+    print_container_metric(st, metrics, "unavailable");
   }
 }

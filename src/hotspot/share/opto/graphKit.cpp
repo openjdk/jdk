@@ -2509,7 +2509,8 @@ Node* GraphKit::make_runtime_call(int flags,
     uint num_bits = call_type->range()->field_at(TypeFunc::Parms)->is_vect()->length_in_bytes() * BitsPerByte;
     call = new CallLeafVectorNode(call_type, call_addr, call_name, adr_type, num_bits);
   } else if (flags & RC_PURE) {
-    call = new CallLeafPureNode(call_type, call_addr, call_name, adr_type);
+    assert(adr_type == nullptr, "pure call does not touch memory");
+    call = new CallLeafPureNode(call_type, call_addr, call_name);
   } else {
     call = new CallLeafNode(call_type, call_addr, call_name, adr_type);
   }

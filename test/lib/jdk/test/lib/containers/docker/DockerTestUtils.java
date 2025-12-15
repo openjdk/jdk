@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.regex.Pattern;
 import jdk.internal.platform.Metrics;
 import jdk.test.lib.Container;
 import jdk.test.lib.Utils;
@@ -339,6 +340,16 @@ public class DockerTestUtils {
         System.out.println("Full child process STDOUT was saved to " + stdoutLogFile);
 
         return output;
+    }
+
+    public static void shouldMatchWithValue(OutputAnalyzer output, String metric, String value) throws Exception {
+        String pattern = "^" + Pattern.quote(metric) + ":\\s*" + Pattern.quote(value) + ".*$";
+        output.shouldMatch(pattern);
+    }
+
+    public static void shouldNotMatchWithValue(OutputAnalyzer output, String metric, String value) throws Exception {
+        String pattern = "^" + Pattern.quote(metric) + ":\\s*" + Pattern.quote(value) + ".*$";
+        output.shouldNotMatch(pattern);
     }
 
 
