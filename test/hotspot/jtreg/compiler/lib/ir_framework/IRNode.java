@@ -2781,6 +2781,16 @@ public class IRNode {
         machOnlyNameRegex(VSTOREMASK_TRUECOUNT, "vstoremask_truecount_neon");
     }
 
+    public static final String X86_MULT_IMM_I = PREFIX + "X86_MULT_IMM_I" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_MULT_IMM_I, "mulI_rReg_imm");
+    }
+
+    public static final String X86_MULT_IMM_L = PREFIX + "X86_MULT_IMM_L" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_MULT_IMM_L, "mulL_rReg_imm");
+    }
+
     public static final String X86_SCONV_D2I = PREFIX + "X86_SCONV_D2I" + POSTFIX;
     static {
         machOnlyNameRegex(X86_SCONV_D2I, "convD2I_reg_reg");

@@ -7084,14 +7084,8 @@ void C2_MacroAssembler::imullq_imm(BasicType bt, Register dst, Register src, int
   };
 
   static const LeaPattern patterns[] = {
-    {  6, Address::times_2, false, Address::times_1 },
-    {  7, Address::times_2, true,  Address::times_2 },
-    { 10, Address::times_4, false, Address::times_1 },
     { 11, Address::times_4, true,  Address::times_2 },
     { 13, Address::times_2, true,  Address::times_4 },
-    { 15, Address::times_2, false, Address::times_4 },
-    { 17, Address::times_1, true,  Address::times_8 },
-    { 18, Address::times_8, false, Address::times_1 },
     { 19, Address::times_8, true,  Address::times_2 },
     { 21, Address::times_4, true,  Address::times_4 },
     { 25, Address::times_4, false, Address::times_4 },

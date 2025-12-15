@@ -49,11 +49,11 @@ public class ConstantMultiplierOptimization {
     public static int mul_by_27_I(int a) {
        return a * 27;
     }
-    public static int mul_by_17_I(int a) {
-       return a * 17;
+    public static int mul_by_37_I(int a) {
+       return a * 37;
     }
-    public static int mul_by_15_I(int a) {
-       return a * 15;
+    public static int mul_by_19_I(int a) {
+       return a * 19;
     }
     public static int mul_by_13_I(int a) {
        return a * 13;
@@ -68,11 +68,11 @@ public class ConstantMultiplierOptimization {
     public static long mul_by_27_L(long a) {
        return a * 27;
     }
-    public static long mul_by_17_L(long a) {
-       return a * 17;
+    public static long mul_by_37_L(long a) {
+       return a * 37;
     }
-    public static long mul_by_15_L(long a) {
-       return a * 15;
+    public static long mul_by_19_L(long a) {
+       return a * 19;
     }
     public static long mul_by_13_L(long a) {
        return a * 13;
@@ -85,10 +85,10 @@ public class ConstantMultiplierOptimization {
     public long testConstMultiplierL() {
         long res = 0;
         for (long i = 0 ; i < 100000000; i++) {
+            res += mul_by_37_L(i);
             res += mul_by_25_L(i);
             res += mul_by_27_L(i);
-            res += mul_by_17_L(i);
-            res += mul_by_15_L(i);
+            res += mul_by_19_L(i);
             res += mul_by_13_L(i);
             res += mul_by_11_L(i);
         }
@@ -99,10 +99,10 @@ public class ConstantMultiplierOptimization {
     public int testConstMultiplierI() {
         int res = 0;
         for (int i = 0 ; i < 100000000; i++) {
+            res += mul_by_37_I(i);
             res += mul_by_25_I(i);
             res += mul_by_27_I(i);
-            res += mul_by_17_I(i);
-            res += mul_by_15_I(i);
+            res += mul_by_19_I(i);
             res += mul_by_13_I(i);
             res += mul_by_11_I(i);
         }
