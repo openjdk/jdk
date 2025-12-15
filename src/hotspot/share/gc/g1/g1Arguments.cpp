@@ -77,10 +77,11 @@ void G1Arguments::initialize_alignments() {
 }
 
 size_t G1Arguments::conservative_max_heap_alignment() {
-  if (FLAG_IS_DEFAULT(G1HeapRegionSize)) {
-    return G1HeapRegion::max_ergonomics_size();
-  }
-  return G1HeapRegion::max_region_size();
+  const size_t region_size = FLAG_IS_DEFAULT(G1HeapRegionSize)
+                           ? G1HeapRegion::max_ergonomics_size()
+                           : G1HeapRegion::max_region_size();
+
+  return calculate_heap_alignment(region_size);
 }
 
 void G1Arguments::initialize_verification_types() {

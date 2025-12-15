@@ -1914,7 +1914,8 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       transform_later(cache_adr);
       cache_adr = new CastP2XNode(needgc_false, cache_adr);
       transform_later(cache_adr);
-      // Address is aligned to execute prefetch to the beginning of cache line size.
+      // Address is aligned to execute prefetch to the beginning of cache line size
+      // (it is important when BIS instruction is used on SPARC as prefetch).
       Node* mask = _igvn.MakeConX(~(intptr_t)(step_size-1));
       cache_adr = new AndXNode(cache_adr, mask);
       transform_later(cache_adr);
@@ -2657,8 +2658,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       case Op_ModD:
       case Op_ModF: {
         CallNode* mod_macro = n->as_Call();
-        CallNode* call = new CallLeafPureNode(mod_macro->tf(), mod_macro->entry_point(),
-                                              mod_macro->_name, TypeRawPtr::BOTTOM);
+        CallNode* call = new CallLeafPureNode(mod_macro->tf(), mod_macro->entry_point(), mod_macro->_name);
         call->init_req(TypeFunc::Control, mod_macro->in(TypeFunc::Control));
         call->init_req(TypeFunc::I_O, C->top());
         call->init_req(TypeFunc::Memory, C->top());

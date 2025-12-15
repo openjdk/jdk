@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8359412 8370922
+ * @key randomness
  * @summary Use the template framework library to generate random expressions.
  * @modules java.base/jdk.internal.misc
  * @modules jdk.incubator.vector
