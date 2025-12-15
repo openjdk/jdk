@@ -83,7 +83,7 @@ asm (R"(
     .type   _ZN2os21current_stack_pointerEv, @function
 _ZN2os21current_stack_pointerEv:
     mov     x0, sp
-    ret 
+    ret
 )");
 
 char* os::non_memory_address_word() {
