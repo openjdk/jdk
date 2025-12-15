@@ -30,7 +30,7 @@
  * @run driver compiler.c2.irTests.TestMinMaxIdeal
  */
 
-package compiler.c2.irTests;
+package compiler.igvn;
 
 import compiler.lib.compile_framework.CompileFramework;
 import compiler.lib.template_framework.Template;
@@ -51,7 +51,7 @@ public class TestMinMaxIdeal {
         // Create a new CompileFramework instance.
         CompileFramework comp = new CompileFramework();
 
-        String templatedPackage ="compiler.c2.templated";
+        String templatedPackage ="compiler.igvn.templated";
         String templatedClassName ="MinMaxIdeal";
         String templatedFQN = "%s.%s".formatted(templatedPackage, templatedClassName);
 
