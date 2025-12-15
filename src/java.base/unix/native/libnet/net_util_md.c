@@ -239,7 +239,9 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port,
     JNU_CHECK_EXCEPTION_RETURN(env, -1);
     memset((char *)sa, 0, sizeof(SOCKETADDRESS));
 
-    if (ipv6_available() &&
+    jint ipv6av = ipv6_available();
+
+    if (ipv6av &&
         !(family == java_net_InetAddress_IPv4 &&
           v4MappedAddress == JNI_FALSE))
     {
@@ -282,7 +284,11 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port,
     } else {
         jint address;
         if (family != java_net_InetAddress_IPv4) {
-            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Protocol family unavailable");
+            if (ipv6av) {
+                JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Protocol family ipv6, ipv6 on machine available");
+            } else {
+                JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Protocol family ipv6, ipv6 on machine unavailable");
+            }
             return -1;
         }
         address = getInetAddress_addr(env, iaObj);
