@@ -62,6 +62,12 @@ public class ModDNodeTests {
         Asserts.assertEQ(unusedResultAfterLoopOpt3(1.1d, 2.2d), 0.d);
     }
 
+    // Note: we used to check for ConF nodes in the IR. But that is a bit brittle:
+    // Constant nodes can appear during IR transformations, and then lose their outputs.
+    // During IGNV, the constants stay in the graph even if they lose the inputs. But
+    // CCP cleans them out because they are not in the useful set. So for now, we do not
+    // rely on any constant counting, just on counting the operation nodes.
+
     @Test
     @IR(failOn = {"drem"}, phase = CompilePhase.BEFORE_MATCHING)
     @IR(counts = {IRNode.CON_D, "1"})
