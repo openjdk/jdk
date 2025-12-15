@@ -31,7 +31,6 @@
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/nativeStack.hpp"
 #include "utilities/ostream.hpp"
 #ifdef __APPLE__
 # include <mach/mach_time.h>
@@ -1110,8 +1109,35 @@ class os: AllStatic {
 
 extern "C" int SpinPause();
 
+/*
+ * A bit of a back, but it was the least ugly and complex way to
+ * implement the optimized version os::current_stack_pointer()
+ * that was possible without tons of extra code being added to
+ * the implementation files, and also least disruptive since
+ * having this in the inline hpp files means the declaration
+ * inside the os class has to depend on conditionals and users
+ * of this method would also need to include os.inline.hpp but
+ * only sometimes depending on whether the optimized version was
+ * available. With so many issues arising otherwise, let's just
+ * implement the optimized version here.
+ */
+
+#if defined(__has_builtin) && __has_builtin(__builtin_stack_address)
 ALWAYSINLINE address os::current_stack_pointer() {
-  return NativeStack::current();
+  return static_cast<address>(__builtin_stack_address());
 }
+#elif defined(_WIN32)
+/*
+ * For Windows, the optimized route is the only implementation
+ * available, unless gcc is the compiler, which means you're
+ * using the Windows/gcc Port that is not part of the mainline
+ * JDK.
+ */
+ALWAYSINLINE address os::current_stack_pointer() {
+  CONTEXT context;
+  ::RtlCaptureContext(&context);
+  return reinterpret_cast<address>(AMD64_ONLY(context.Rsp) AARCH64_ONLY(context.Sp));
+}
+#endif
 
 #endif // SHARE_RUNTIME_OS_HPP
