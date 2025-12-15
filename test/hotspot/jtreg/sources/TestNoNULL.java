@@ -25,7 +25,7 @@
  * @test
  * @bug 8343802
  * @comment Only need to run this once, in tier1.
- * @requires vm.flagless & os.family == "linux" & os.arch == "amd64" & vm.debug == true
+ * @requires vm.flagless & vm.debug == true
  * @summary Test prevent NULL backsliding in hotspot code and tests
  * @run main TestNoNULL
  */
