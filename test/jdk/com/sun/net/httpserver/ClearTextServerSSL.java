@@ -54,7 +54,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLHandshakeException;
 
 import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
@@ -142,7 +141,8 @@ public class ClearTextServerSSL {
     }
 
     /**
-     * A test handler that discards the request and sends a response
+     * A test handler that reads any request bytes and sends
+     * an empty 200 response
      */
     static class TestHandler implements HttpHandler {
         @java.lang.Override
