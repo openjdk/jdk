@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,25 +25,17 @@
 
 package sun.nio.cs;
 
-/*
- * FastPath char[]/byte[] -> byte[] encoder, REPLACE on malformed input or
- * unmappable input.
+/**
+ * Fast-path for {@code byte[]}-to-{@code byte[]} encoding,
+ * {@link java.nio.charset.CodingErrorAction#REPLACE REPLACE} on malformed
+ * input, or unmappable input.
  */
-
 public interface ArrayEncoder {
 
-    //  is only used by j.u.zip.ZipCoder for utf8
-    int encode(char[] src, int off, int len, byte[] dst);
+    int encodeFromLatin1(byte[] src, int sp, int len, byte[] dst, int dp);
 
-    default int encodeFromLatin1(byte[] src, int sp, int len, byte[] dst) {
-        return -1;
-    }
+    int encodeFromUTF16(byte[] src, int sp, int len, byte[] dst, int dp);
 
-    default int encodeFromUTF16(byte[] src, int sp, int len, byte[] dst) {
-        return -1;
-    }
+    boolean isASCIICompatible();
 
-    default boolean isASCIICompatible() {
-        return false;
-    }
 }

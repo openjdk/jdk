@@ -28,17 +28,15 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Set;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import jdk.jpackage.internal.model.AppImageLayout;
+import jdk.jpackage.internal.model.AppImageSigningConfig;
 import jdk.jpackage.internal.model.Application;
-import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.MacApplicationMixin;
-import jdk.jpackage.internal.model.AppImageLayout;
-import jdk.jpackage.internal.model.AppImageSigningConfig;
 
 final class MacApplicationBuilder {
 
@@ -92,7 +90,7 @@ final class MacApplicationBuilder {
         return this;
     }
 
-    MacApplication create() throws ConfigException {
+    MacApplication create() {
         if (externalInfoPlistFile != null) {
             return createCopyForExternalInfoPlistFile().create();
         }
@@ -136,7 +134,7 @@ final class MacApplicationBuilder {
         return true;
     }
 
-    private static void validateAppVersion(Application app) throws ConfigException {
+    private static void validateAppVersion(Application app) {
         try {
             CFBundleVersion.of(app.version());
         } catch (IllegalArgumentException ex) {
@@ -156,7 +154,7 @@ final class MacApplicationBuilder {
         }
     }
 
-    private MacApplicationBuilder createCopyForExternalInfoPlistFile() throws ConfigException {
+    private MacApplicationBuilder createCopyForExternalInfoPlistFile() {
         try {
             final var plistFile = AppImageInfoPListFile.loadFromInfoPList(externalInfoPlistFile);
 
@@ -187,15 +185,11 @@ final class MacApplicationBuilder {
         }
     }
 
-    private Optional<AppImageSigningConfig> createSigningConfig() throws ConfigException {
-        if (signingBuilder != null) {
-            return signingBuilder.create();
-        } else {
-            return Optional.empty();
-        }
+    private Optional<AppImageSigningConfig> createSigningConfig() {
+        return Optional.ofNullable(signingBuilder).flatMap(AppImageSigningConfigBuilder::create);
     }
 
-    private String validatedBundleName() throws ConfigException {
+    private String validatedBundleName() {
         final var value = Optional.ofNullable(bundleName).orElseGet(() -> {
             final var appName = app.name();
 // Commented out for backward compatibility
@@ -214,7 +208,7 @@ final class MacApplicationBuilder {
         return value;
     }
 
-    private String validatedBundleIdentifier() throws ConfigException {
+    private String validatedBundleIdentifier() {
         final var value = Optional.ofNullable(bundleIdentifier).orElseGet(() -> {
             return app.mainLauncher()
                     .flatMap(Launcher::startupInfo)
@@ -238,16 +232,12 @@ final class MacApplicationBuilder {
         return value;
     }
 
-    private String validatedCategory() throws ConfigException {
+    private String validatedCategory() {
         return "public.app-category." + Optional.ofNullable(category).orElseGet(DEFAULTS::category);
     }
 
-    private Optional<Path> validatedIcon() throws ConfigException {
-        if (icon != null) {
-            LauncherBuilder.validateIcon(icon);
-        }
-
-        return Optional.ofNullable(icon);
+    private Optional<Path> validatedIcon() {
+        return Optional.ofNullable(icon).map(LauncherBuilder::validateIcon);
     }
 
     private record Defaults(String category) {

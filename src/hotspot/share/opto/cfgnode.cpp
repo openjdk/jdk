@@ -326,7 +326,7 @@ bool RegionNode::is_unreachable_region(const PhaseGVN* phase) {
 
   // First, cut the simple case of fallthrough region when NONE of
   // region's phis references itself directly or through a data node.
-  if (is_possible_unsafe_loop(phase)) {
+  if (is_possible_unsafe_loop()) {
     // If we have a possible unsafe loop, check if the region node is actually unreachable from root.
     if (is_unreachable_from_root(phase)) {
       _is_unreachable_region = true;
@@ -336,7 +336,7 @@ bool RegionNode::is_unreachable_region(const PhaseGVN* phase) {
   return false;
 }
 
-bool RegionNode::is_possible_unsafe_loop(const PhaseGVN* phase) const {
+bool RegionNode::is_possible_unsafe_loop() const {
   uint max = outcnt();
   uint i;
   for (i = 0; i < max; i++) {
@@ -634,8 +634,8 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   } else if (can_reshape && cnt == 1) {
     // Is it dead loop?
-    // If it is LoopNopde it had 2 (+1 itself) inputs and
-    // one of them was cut. The loop is dead if it was EntryContol.
+    // If it is LoopNode it had 2 (+1 itself) inputs and
+    // one of them was cut. The loop is dead if it was EntryControl.
     // Loop node may have only one input because entry path
     // is removed in PhaseIdealLoop::Dominators().
     assert(!this->is_Loop() || cnt_orig <= 3, "Loop node should have 3 or less inputs");
@@ -1014,7 +1014,7 @@ bool RegionNode::optimize_trichotomy(PhaseIterGVN* igvn) {
 }
 
 const RegMask &RegionNode::out_RegMask() const {
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 #ifndef PRODUCT
@@ -1392,7 +1392,7 @@ bool PhiNode::try_clean_memory_phi(PhaseIterGVN* igvn) {
   }
   assert(is_diamond_phi() > 0, "sanity");
   assert(req() == 3, "same as region");
-  const Node* region = in(0);
+  RegionNode* region = in(0)->as_Region();
   for (uint i = 1; i < 3; i++) {
     Node* phi_input = in(i);
     if (phi_input != nullptr && phi_input->is_MergeMem() && region->in(i)->outcnt() == 1) {
@@ -1400,8 +1400,9 @@ bool PhiNode::try_clean_memory_phi(PhaseIterGVN* igvn) {
       MergeMemNode* merge_mem = phi_input->as_MergeMem();
       uint j = 3 - i;
       Node* other_phi_input = in(j);
-      if (other_phi_input != nullptr && other_phi_input == merge_mem->base_memory()) {
+      if (other_phi_input != nullptr && other_phi_input == merge_mem->base_memory() && !is_data_loop(region, phi_input, igvn)) {
         // merge_mem is a successor memory to other_phi_input, and is not pinned inside the diamond, so push it out.
+        // Only proceed if the transformation doesn't create a data loop
         // This will allow the diamond to collapse completely if there are no other phis left.
         igvn->replace_node(this, merge_mem);
         return true;
@@ -2095,6 +2096,20 @@ bool PhiNode::is_split_through_mergemem_terminating() const {
   return true;
 }
 
+// Is one of the inputs a Cast that has not been processed by igvn yet?
+bool PhiNode::wait_for_cast_input_igvn(const PhaseIterGVN* igvn) const {
+  for (uint i = 1, cnt = req(); i < cnt; ++i) {
+    Node* n = in(i);
+    while (n != nullptr && n->is_ConstraintCast()) {
+      if (igvn->_worklist.member(n)) {
+        return true;
+      }
+      n = n->in(1);
+    }
+  }
+  return false;
+}
+
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Must preserve
 // the CFG, but we can still strip out dead paths.
@@ -2153,6 +2168,28 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // If there is a chance that the region can be optimized out do
       // not add a cast node that we can't remove yet.
       !wait_for_region_igvn(phase)) {
+    // If one of the inputs is a cast that has yet to be processed by igvn, delay processing of this node to give the
+    // inputs a chance to optimize and possibly end up with identical inputs (casts included).
+    // Say we have:
+    // (Phi region (Cast#1 c uin) (Cast#2 c uin))
+    // and Cast#1 and Cast#2 have not had a chance to common yet
+    // if the unique_input() transformation below proceeds, then PhiNode::Ideal returns:
+    // (Cast#3 region uin) (1)
+    // If PhiNode::Ideal is delayed until Cast#1 and Cast#2 common, then it returns:
+    // (Cast#1 c uin) (2)
+    //
+    // In (1) the resulting cast is conservatively pinned at a later control and while Cast#3 and Cast#1/Cast#2 still
+    // have a chance to common, that requires proving that c dominates region in ConstraintCastNode::dominating_cast()
+    // which may not happen if control flow is too complicated and another pass of loop opts doesn't run. Delaying the
+    // transformation here should allow a more optimal result.
+    // Beyond the efficiency concern, there is a risk, if the casts are CastPPs, to end up with a chain of AddPs with
+    // different base inputs (but a unique uncasted base input). This breaks an invariant in the shape of address
+    // subtrees.
+    PhaseIterGVN* igvn = phase->is_IterGVN();
+    if (wait_for_cast_input_igvn(igvn)) {
+      igvn->_worklist.push(this);
+      return nullptr;
+    }
     uncasted = true;
     uin = unique_input(phase, true);
   }
@@ -2191,7 +2228,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       if (phi_type->isa_ptr()) {
         const Type* uin_type = phase->type(uin);
         if (!phi_type->isa_oopptr() && !uin_type->isa_oopptr()) {
-          cast = new CastPPNode(r, uin, phi_type, ConstraintCastNode::StrongDependency, extra_types);
+          cast = new CastPPNode(r, uin, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing, extra_types);
         } else {
           // Use a CastPP for a cast to not null and a CheckCastPP for
           // a cast to a new klass (and both if both null-ness and
@@ -2201,7 +2238,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           // null, uin's type must be casted to not null
           if (phi_type->join(TypePtr::NOTNULL) == phi_type->remove_speculative() &&
               uin_type->join(TypePtr::NOTNULL) != uin_type->remove_speculative()) {
-            cast = new CastPPNode(r, uin, TypePtr::NOTNULL, ConstraintCastNode::StrongDependency, extra_types);
+            cast = new CastPPNode(r, uin, TypePtr::NOTNULL, ConstraintCastNode::DependencyType::NonFloatingNarrowing, extra_types);
           }
 
           // If the type of phi and uin, both casted to not null,
@@ -2213,14 +2250,14 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
               cast = phase->transform(cast);
               n = cast;
             }
-            cast = new CheckCastPPNode(r, n, phi_type, ConstraintCastNode::StrongDependency, extra_types);
+            cast = new CheckCastPPNode(r, n, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing, extra_types);
           }
           if (cast == nullptr) {
-            cast = new CastPPNode(r, uin, phi_type, ConstraintCastNode::StrongDependency, extra_types);
+            cast = new CastPPNode(r, uin, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing, extra_types);
           }
         }
       } else {
-        cast = ConstraintCastNode::make_cast_for_type(r, uin, phi_type, ConstraintCastNode::StrongDependency, extra_types);
+        cast = ConstraintCastNode::make_cast_for_type(r, uin, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing, extra_types);
       }
       assert(cast != nullptr, "cast should be set");
       cast = phase->transform(cast);
@@ -2859,13 +2896,15 @@ bool PhiNode::is_tripcount(BasicType bt) const {
 
 //------------------------------out_RegMask------------------------------------
 const RegMask &PhiNode::in_RegMask(uint i) const {
-  return i ? out_RegMask() : RegMask::Empty;
+  return i ? out_RegMask() : RegMask::EMPTY;
 }
 
 const RegMask &PhiNode::out_RegMask() const {
   uint ideal_reg = _type->ideal_reg();
   assert( ideal_reg != Node::NotAMachineReg, "invalid type at Phi" );
-  if( ideal_reg == 0 ) return RegMask::Empty;
+  if (ideal_reg == 0) {
+    return RegMask::EMPTY;
+  }
   assert(ideal_reg != Op_RegFlags, "flags register is not spillable");
   return *(Compile::current()->matcher()->idealreg2spillmask[ideal_reg]);
 }
@@ -2892,22 +2931,22 @@ Node* GotoNode::Identity(PhaseGVN* phase) {
 }
 
 const RegMask &GotoNode::out_RegMask() const {
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 //=============================================================================
 const RegMask &JumpNode::out_RegMask() const {
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 //=============================================================================
 const RegMask &JProjNode::out_RegMask() const {
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 //=============================================================================
 const RegMask &CProjNode::out_RegMask() const {
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 

@@ -38,7 +38,13 @@ import jdk.test.lib.Asserts;
 public class TestSubNodeFloatDoubleNegation {
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector", "-XX:CompileCommand=inline,jdk.incubator.vector.Float16::*");
+        // Disable inlining for java.lang.Float::float16ToFloat and java.lang.Float::floatToFloat16.
+        // Otherwise, they could be inlined into testHalfFloat on platforms where there is no support
+        // for fp16, which causes unexpected IR graph.
+        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector",
+                                   "-XX:CompileCommand=inline,jdk.incubator.vector.Float16::*",
+                                   "-XX:CompileCommand=dontinline,java.lang.Float::float16ToFloat",
+                                   "-XX:CompileCommand=dontinline,java.lang.Float::floatToFloat16");
     }
 
     @Run(test = { "testHalfFloat", "testFloat", "testDouble" })

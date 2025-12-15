@@ -59,7 +59,7 @@ public class Test9 extends Test {
             HttpServer.class.getPackageName() + '-' + Test9.class.getSimpleName() + '-';
 
     static SSLContext ctx;
-    static boolean error = false;
+    static volatile boolean error = false;
 
     public static void main (String[] args) throws Exception {
         HttpServer s1 = null;
@@ -67,6 +67,8 @@ public class Test9 extends Test {
         ExecutorService executor=null;
         Path smallFilePath = createTempFileOfSize(TEMP_FILE_PREFIX, null, 23);
         Path largeFilePath = createTempFileOfSize(TEMP_FILE_PREFIX, null, 2730088);
+        smallFilePath.toFile().deleteOnExit();
+        largeFilePath.toFile().deleteOnExit();
         try {
             System.out.print ("Test9: ");
             InetAddress loopback = InetAddress.getLoopbackAddress();
@@ -122,12 +124,8 @@ public class Test9 extends Test {
                 s2.stop(0);
             if (executor != null)
                 executor.shutdown ();
-            Files.delete(smallFilePath);
-            Files.delete(largeFilePath);
         }
     }
-
-    static int foo = 1;
 
     static ClientThread test (boolean fixedLen, String protocol, int port, Path filePath) throws Exception {
         ClientThread t = new ClientThread (fixedLen, protocol, port, filePath);
@@ -135,7 +133,7 @@ public class Test9 extends Test {
         return t;
     }
 
-    static Object fileLock = new Object();
+    static final Object fileLock = new Object();
 
     static class ClientThread extends Thread {
 
@@ -203,9 +201,8 @@ public class Test9 extends Test {
                     error = true;
                 }
                 assertFileContentsEqual(filePath, temp.toPath());
-                temp.delete();
             } catch (Exception e) {
-                e.printStackTrace();
+                System.err.println("Error occurred: " + e);
                 error = true;
             }
         }

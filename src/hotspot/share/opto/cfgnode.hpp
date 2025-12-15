@@ -84,7 +84,7 @@ private:
   bool _is_unreachable_region;
   LoopStatus _loop_status;
 
-  bool is_possible_unsafe_loop(const PhaseGVN* phase) const;
+  bool is_possible_unsafe_loop() const;
   bool is_unreachable_from_root(const PhaseGVN* phase) const;
 public:
   // Node layout (parallels PhiNode):
@@ -181,6 +181,8 @@ class PhiNode : public TypeNode {
   bool must_wait_for_region_in_irreducible_loop(PhaseGVN* phase) const;
 
   bool is_split_through_mergemem_terminating() const;
+
+  bool wait_for_cast_input_igvn(const PhaseIterGVN* igvn) const;
 
 public:
   // Node layout (parallels RegionNode):
@@ -741,7 +743,7 @@ public:
     // Fake the incoming arguments mask for blackholes: accept all registers
     // and all stack slots. This would avoid any redundant register moves
     // for blackhole inputs.
-    return RegMask::All;
+    return RegMask::ALL;
   }
 #ifndef PRODUCT
   virtual void format(PhaseRegAlloc* ra, outputStream* st) const;

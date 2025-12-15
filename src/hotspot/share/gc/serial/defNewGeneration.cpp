@@ -236,7 +236,10 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
   // These values are exported as performance counters.
   uintx size = _virtual_space.reserved_size();
   _max_survivor_size = compute_survivor_size(size, SpaceAlignment);
-  _max_eden_size = size - (2*_max_survivor_size);
+
+  // Eden might grow to be almost as large as the entire young generation.
+  // We approximate this as the entire virtual space.
+  _max_eden_size = size;
 
   // allocate the performance counters
 
@@ -297,9 +300,9 @@ void DefNewGeneration::init_spaces() {
   MemRegion edenMR((HeapWord*)eden_start, (HeapWord*)eden_end);
 
   // Reset the spaces for their new regions.
-  from()->initialize(fromMR, from()->is_empty(), SpaceDecorator::Mangle);
-  to()->initialize(toMR, true, SpaceDecorator::Mangle);
-  eden()->initialize(edenMR, true, SpaceDecorator::Mangle);
+  from()->initialize(fromMR, from()->is_empty());
+  to()->initialize(toMR, true);
+  eden()->initialize(edenMR, true);
 
   post_resize();
 }
@@ -340,7 +343,7 @@ void DefNewGeneration::expand_eden_by(size_t delta_bytes) {
   }
 
   MemRegion eden_mr{eden()->bottom(), (HeapWord*)_virtual_space.high()};
-  eden()->initialize(eden_mr, eden()->is_empty(), SpaceDecorator::Mangle);
+  eden()->initialize(eden_mr, eden()->is_empty());
 
   post_resize();
 }
@@ -844,8 +847,7 @@ void DefNewGeneration::print_on(outputStream* st) const {
 }
 
 HeapWord* DefNewGeneration::expand_and_allocate(size_t word_size) {
-  assert(SafepointSynchronize::is_at_safepoint(), "precondition");
-  assert(Thread::current()->is_VM_thread(), "precondition");
+  assert(Heap_lock->is_locked(), "precondition");
 
   size_t eden_free_bytes = eden()->free();
   size_t requested_bytes = word_size * HeapWordSize;

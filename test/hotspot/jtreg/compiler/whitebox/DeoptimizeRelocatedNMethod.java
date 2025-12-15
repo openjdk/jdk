@@ -23,67 +23,16 @@
  */
 
 /*
- * @test id=Serial
+ * @test
  * @bug 8316694
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc java.management
  * @requires vm.opt.DeoptimizeALot != true
- * @requires vm.gc.Serial
+ * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
+ * @requires !vm.emulatedClient
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache -XX:+UseSerialGC
- * -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation compiler.whitebox.DeoptimizeRelocatedNMethod
- */
-
-/*
- * @test id=Parallel
- * @bug 8316694
- * @library /test/lib /
- * @modules java.base/jdk.internal.misc java.management
- * @requires vm.opt.DeoptimizeALot != true
- * @requires vm.gc.Parallel
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache -XX:+UseParallelGC
- * -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation compiler.whitebox.DeoptimizeRelocatedNMethod
- */
-
-/*
- * @test id=G1
- * @bug 8316694
- * @library /test/lib /
- * @modules java.base/jdk.internal.misc java.management
- * @requires vm.opt.DeoptimizeALot != true
- * @requires vm.gc.G1
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache -XX:+UseG1GC
- * -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation compiler.whitebox.DeoptimizeRelocatedNMethod
- */
-
-/*
- * @test id=Shenandoah
- * @bug 8316694
- * @library /test/lib /
- * @modules java.base/jdk.internal.misc java.management
- * @requires vm.opt.DeoptimizeALot != true
- * @requires vm.gc.Shenandoah
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache -XX:+UseShenandoahGC
- * -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation compiler.whitebox.DeoptimizeRelocatedNMethod
- */
-
-/*
- * @test id=ZGC
- * @bug 8316694
- * @library /test/lib /
- * @modules java.base/jdk.internal.misc java.management
- * @requires vm.opt.DeoptimizeALot != true
- * @requires vm.gc.Z
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache -XX:+UseZGC
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache
  * -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation compiler.whitebox.DeoptimizeRelocatedNMethod
  */
 
@@ -108,8 +57,8 @@ public class DeoptimizeRelocatedNMethod {
         // Verify not initially compiled
         CompilerWhiteBoxTest.checkNotCompiled(method, false);
 
-        // Call function enough to compile
-        callFunction();
+        // Enqueue method for compilation. This will block since background compilation is disabled
+        WHITE_BOX.enqueueMethodForCompilation(method, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
 
         // Verify now compiled
         CompilerWhiteBoxTest.checkCompiled(method, false);
@@ -118,7 +67,7 @@ public class DeoptimizeRelocatedNMethod {
         NMethod origNmethod = NMethod.get(method, false);
 
         // Relocate nmethod and mark old for cleanup
-        WHITE_BOX.relocateNMethodFromMethod(method, BlobType.MethodProfiled.id);
+        WHITE_BOX.relocateNMethodFromMethod(method, BlobType.MethodNonProfiled.id);
 
         // Trigger GC to clean up old nmethod
         WHITE_BOX.fullGC();
@@ -142,13 +91,6 @@ public class DeoptimizeRelocatedNMethod {
 
         // Call to verify everything still works
         function();
-    }
-
-    // Call function multiple times to trigger compilation
-    private static void callFunction() {
-        for (int i = 0; i < CompilerWhiteBoxTest.THRESHOLD; i++) {
-            function();
-        }
     }
 
     public static void function() {

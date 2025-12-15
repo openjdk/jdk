@@ -197,11 +197,6 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
 
     // END compositing support API
 
-    @Override
-    public void invalidate() {
-        // always valid
-    }
-
      // graphics primitives drawing implementation:
 
     // certain primitives don't care about all the states (ex. drawing an image needs not involve setting current paint)
@@ -988,13 +983,13 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
         return pi.getWindingRule();
     }
 
-    public void doLine(CRenderer renderer, SunGraphics2D sg2d, float x1, float y1, float x2, float y2) {
+    public synchronized void doLine(CRenderer renderer, SunGraphics2D sg2d, float x1, float y1, float x2, float y2) {
         // System.err.println("-- doLine x1="+x1+" y1="+y1+" x2="+x2+" y2="+y2+" paint="+sg2d.paint);
         setupGraphicsState(sg2d, kLine, sg2d.font, 0, 0, fBounds.width, fBounds.height);
         renderer.doLine(this, x1, y1, x2, y2);
     }
 
-    public void doRect(CRenderer renderer, SunGraphics2D sg2d, float x, float y, float width, float height, boolean isfill) {
+    public synchronized void doRect(CRenderer renderer, SunGraphics2D sg2d, float x, float y, float width, float height, boolean isfill) {
         // System.err.println("-- doRect x="+x+" y="+y+" w="+width+" h="+height+" isfill="+isfill+" paint="+sg2d.paint);
         if ((isfill) && (isCustomPaint(sg2d))) {
             setupGraphicsState(sg2d, kRect, (int) x, (int) y, (int) width, (int) height);
@@ -1004,7 +999,7 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
         renderer.doRect(this, x, y, width, height, isfill);
     }
 
-    public void doRoundRect(CRenderer renderer, SunGraphics2D sg2d, float x, float y, float width, float height, float arcW, float arcH, boolean isfill) {
+    public synchronized void doRoundRect(CRenderer renderer, SunGraphics2D sg2d, float x, float y, float width, float height, float arcW, float arcH, boolean isfill) {
         // System.err.println("--- doRoundRect");
         if ((isfill) && (isCustomPaint(sg2d))) {
             setupGraphicsState(sg2d, kRoundRect, (int) x, (int) y, (int) width, (int) height);
@@ -1014,7 +1009,7 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
         renderer.doRoundRect(this, x, y, width, height, arcW, arcH, isfill);
     }
 
-    public void doOval(CRenderer renderer, SunGraphics2D sg2d, float x, float y, float width, float height, boolean isfill) {
+    public synchronized void doOval(CRenderer renderer, SunGraphics2D sg2d, float x, float y, float width, float height, boolean isfill) {
         // System.err.println("--- doOval");
         if ((isfill) && (isCustomPaint(sg2d))) {
             setupGraphicsState(sg2d, kOval, (int) x, (int) y, (int) width, (int) height);
@@ -1024,7 +1019,7 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
         renderer.doOval(this, x, y, width, height, isfill);
     }
 
-    public void doArc(CRenderer renderer, SunGraphics2D sg2d, float x, float y, float width, float height, float startAngle, float arcAngle, int type, boolean isfill) {
+    public synchronized void doArc(CRenderer renderer, SunGraphics2D sg2d, float x, float y, float width, float height, float startAngle, float arcAngle, int type, boolean isfill) {
         // System.err.println("--- doArc");
         if ((isfill) && (isCustomPaint(sg2d))) {
             setupGraphicsState(sg2d, kArc, (int) x, (int) y, (int) width, (int) height);
@@ -1035,7 +1030,7 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
         renderer.doArc(this, x, y, width, height, startAngle, arcAngle, type, isfill);
     }
 
-    public void doPolygon(CRenderer renderer, SunGraphics2D sg2d, int[] xpoints, int[] ypoints, int npoints, boolean ispolygon, boolean isfill) {
+    public synchronized void doPolygon(CRenderer renderer, SunGraphics2D sg2d, int[] xpoints, int[] ypoints, int npoints, boolean ispolygon, boolean isfill) {
         // System.err.println("--- doPolygon");
 
         if ((isfill) && (isCustomPaint(sg2d))) {
@@ -1068,7 +1063,7 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
     FloatBuffer shapeCoordinatesArray = null;
     IntBuffer shapeTypesArray = null;
 
-    public void drawfillShape(CRenderer renderer, SunGraphics2D sg2d, GeneralPath gp, boolean isfill, boolean shouldApplyOffset) {
+    public synchronized void drawfillShape(CRenderer renderer, SunGraphics2D sg2d, GeneralPath gp, boolean isfill, boolean shouldApplyOffset) {
         // System.err.println("--- drawfillShape");
 
         if ((isfill) && (isCustomPaint(sg2d))) {
@@ -1093,7 +1088,7 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
         renderer.doShape(this, shapeLength, shapeCoordinatesArray, shapeTypesArray, windingRule, isfill, shouldApplyOffset);
     }
 
-    public void blitImage(CRenderer renderer, SunGraphics2D sg2d, SurfaceData img, boolean fliph, boolean flipv, int sx, int sy, int sw, int sh, int dx, int dy, int dw, int dh, Color bgColor) {
+    public synchronized void blitImage(CRenderer renderer, SunGraphics2D sg2d, SurfaceData img, boolean fliph, boolean flipv, int sx, int sy, int sw, int sh, int dx, int dy, int dw, int dh, Color bgColor) {
         // System.err.println("--- blitImage sx="+sx+", sy="+sy+", sw="+sw+", sh="+sh+", img="+img);
         OSXOffScreenSurfaceData osxsd = (OSXOffScreenSurfaceData) img;
         synchronized (osxsd.getLockObject()) {
@@ -1116,7 +1111,7 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
         public void drawIntoCGContext(final long cgContext);
     }
 
-    public void drawString(CTextPipe renderer, SunGraphics2D sg2d, long nativeStrikePtr, String str, double x, double y) {
+    public synchronized void drawString(CTextPipe renderer, SunGraphics2D sg2d, long nativeStrikePtr, String str, double x, double y) {
         // System.err.println("--- drawString str=\""+str+"\"");
         // see <rdar://problem/3825795>. We don't want to call anything if the string is empty!
         if (str.length() == 0) { return; }
@@ -1125,13 +1120,13 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
         renderer.doDrawString(this, nativeStrikePtr, str, x, y);
     }
 
-    public void drawGlyphs(CTextPipe renderer, SunGraphics2D sg2d, long nativeStrikePtr, GlyphVector gv, float x, float y) {
+    public synchronized void drawGlyphs(CTextPipe renderer, SunGraphics2D sg2d, long nativeStrikePtr, GlyphVector gv, float x, float y) {
         // System.err.println("--- drawGlyphs");
         setupGraphicsState(sg2d, kGlyphs, gv.getFont(), 0, 0, fBounds.width, fBounds.height);
         renderer.doDrawGlyphs(this, nativeStrikePtr, gv, x, y);
     }
 
-    public void drawUnicodes(CTextPipe renderer, SunGraphics2D sg2d, long nativeStrikePtr, char[] unicodes, int offset, int length, float x, float y) {
+    public synchronized void drawUnicodes(CTextPipe renderer, SunGraphics2D sg2d, long nativeStrikePtr, char[] unicodes, int offset, int length, float x, float y) {
         // System.err.println("--- drawUnicodes "+(new String(unicodes, offset, length)));
         setupGraphicsState(sg2d, kUnicodes, sg2d.font, 0, 0, fBounds.width, fBounds.height);
         if (length == 1) {

@@ -83,12 +83,12 @@ void PSYoungGen::initialize_work() {
   }
 
   if (UseNUMA) {
-    _eden_space = new MutableNUMASpace(virtual_space()->alignment());
+    _eden_space = new MutableNUMASpace(virtual_space()->page_size());
   } else {
-    _eden_space = new MutableSpace(virtual_space()->alignment());
+    _eden_space = new MutableSpace(virtual_space()->page_size());
   }
-  _from_space = new MutableSpace(virtual_space()->alignment());
-  _to_space   = new MutableSpace(virtual_space()->alignment());
+  _from_space = new MutableSpace(virtual_space()->page_size());
+  _to_space   = new MutableSpace(virtual_space()->page_size());
 
   // Generation Counters - generation 0, 3 subspaces
   _gen_counters = new GenerationCounters("new", 0, 3, min_gen_size(),
@@ -301,8 +301,7 @@ bool PSYoungGen::try_expand_to_hold(size_t word_size) {
 }
 
 HeapWord* PSYoungGen::expand_and_allocate(size_t word_size) {
-  assert(SafepointSynchronize::is_at_safepoint(), "precondition");
-  assert(Thread::current()->is_VM_thread(), "precondition");
+  assert(Heap_lock->is_locked(), "precondition");
 
   {
     size_t available_word_size = pointer_delta(virtual_space()->reserved_high_addr(),
@@ -356,7 +355,7 @@ void PSYoungGen::compute_desired_sizes(bool is_survivor_overflowing,
     // Keep survivor and adjust eden to meet min-gen-size
     eden_size = min_gen_size() - 2 * survivor_size;
   } else if (max_gen_size() < new_gen_size) {
-    log_info(gc, ergo)("Requested sizes exceeds MaxNewSize (K): %zu vs %zu)", new_gen_size/K, max_gen_size()/K);
+    log_info(gc, ergo)("Requested sizes exceeds MaxNewSize (K): %zu vs %zu", new_gen_size/K, max_gen_size()/K);
     // New capacity would exceed max; need to revise these desired sizes.
     // Favor survivor over eden in order to reduce promotion (overflow).
     if (2 * survivor_size >= max_gen_size()) {

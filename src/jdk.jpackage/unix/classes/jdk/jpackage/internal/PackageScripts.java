@@ -24,15 +24,16 @@
  */
 package jdk.jpackage.internal;
 
+import static java.util.stream.Collectors.toMap;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
 import jdk.jpackage.internal.resources.ResourceLocator;
 
 /**
@@ -46,11 +47,11 @@ final class PackageScripts<T extends Enum<T> & Supplier<OverridableResource>> {
     }
 
     PackageScripts(Class<T> scriptIdsType) {
-        scripts = EnumSet.allOf(scriptIdsType).stream().collect(
-                Collectors.toMap(UnaryOperator.identity(), scriptId -> {
-                    return new ShellScriptResource(scriptId.name()).setResource(
-                            scriptId.get());
-                }));
+        scripts = EnumSet.allOf(scriptIdsType).stream().collect(toMap(x -> x, scriptId -> {
+            return new ShellScriptResource(scriptId.name()).setResource(scriptId.get());
+        }, (a, b) -> {
+            throw new UnsupportedOperationException();
+        }, TreeMap::new));
     }
 
     PackageScripts<T> setSubstitutionData(T id, Map<String, String> data) {

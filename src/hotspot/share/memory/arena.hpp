@@ -31,15 +31,16 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-#include <new>
-
 // The byte alignment to be used by Arena::Amalloc.
 #define ARENA_AMALLOC_ALIGNMENT BytesPerLong
 #define ARENA_ALIGN(x) (align_up((x), ARENA_AMALLOC_ALIGNMENT))
 
 class ChunkPoolLocker : public StackObj {
+  bool _locked;
  public:
-  ChunkPoolLocker();
+  enum class LockStrategy { Lock, Try };
+
+  ChunkPoolLocker(LockStrategy ls = LockStrategy::Lock);
   ~ChunkPoolLocker();
 };
 
