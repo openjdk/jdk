@@ -1051,7 +1051,7 @@ Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 //
 // Due to the unique nature of vector masks, for specific IR patterns,
 // VectorMaskCast does not affect the output results. For example:
-//   (VectorStoreMask (VectorMaskCast ... (VectorLoadMask x))) => (x)
+//   (VectorStoreMask (VectorMaskCast* (VectorLoadMask x))) => (x)
 //   x remains to be a bool vector with no changes.
 // This function can be used to eliminate the VectorMaskCast in such patterns.
 Node* VectorNode::uncast_mask(Node* n) {
@@ -1486,7 +1486,7 @@ Node* VectorLoadMaskNode::Identity(PhaseGVN* phase) {
 
 Node* VectorStoreMaskNode::Identity(PhaseGVN* phase) {
   // Identity transformation on boolean vectors.
-  //   VectorStoreMask (VectorMaskCast ... VectorLoadMask bv) elem_size ==> bv
+  //   VectorStoreMask (VectorMaskCast* VectorLoadMask bv) elem_size ==> bv
   //   vector[n]{bool} => vector[n]{t} => vector[n]{bool}
   Node* in1 = VectorNode::uncast_mask(in(1));
   if (in1->Opcode() == Op_VectorLoadMask && length() == in1->as_Vector()->length()) {
@@ -1920,7 +1920,7 @@ Node* VectorMaskOpNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 }
 
 Node* VectorMaskCastNode::Identity(PhaseGVN* phase) {
-  // (VectorMaskCast (VectorMaskCast ... x)) => (x)
+  // (VectorMaskCast+ x) => (x)
   // If the types of the input and output nodes in a VectorMaskCast chain are
   // exactly the same, the intermediate VectorMaskCast nodes can be eliminated.
   Node* n = VectorNode::uncast_mask(this);

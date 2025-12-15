@@ -239,7 +239,7 @@ public class VectorMaskToLongTest {
     // Test VectorMask.fromLong().toLong() with Float species.
     // For floating-point types, VectorMaskCast is inserted between fromLong and toLong to convert
     // between float and integer types. There are two relevant optimizations:
-    //   1. (VectorStoreMask (VectorMaskCast ... (VectorLoadMask x))) => (x)
+    //   1. (VectorStoreMask (VectorMaskCast* (VectorLoadMask x))) => (x)
     //   2. (VectorMaskToLong (VectorLongToMask x)) => (x)
     // The optimization behavior varies by architecture:
     // - SVE with bitperm: IR chain is (VectorMaskToLong (VectorStoreMask (VectorMaskCast

@@ -60,7 +60,7 @@ public class VectorMaskCastIdentityTest {
         VectorMask<Integer> mInt128 = VectorMask.fromArray(IntVector.SPECIES_128, mr, 0);
         mInt128 = mInt128.cast(IntVector.SPECIES_128);
         // Insert a not() to prevent the casts being optimized by the optimization:
-        // (VectorStoreMask (VectorMaskCast ... (VectorLoadMask x))) => x
+        // (VectorStoreMask (VectorMaskCast* (VectorLoadMask x))) => x
         return mInt128.not().trueCount();
     }
 
