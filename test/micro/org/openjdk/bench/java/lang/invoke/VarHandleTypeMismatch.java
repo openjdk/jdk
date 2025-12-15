@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,10 @@
  */
 package org.openjdk.bench.java.lang.invoke;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+import java.util.concurrent.TimeUnit;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -32,28 +36,23 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
-import java.util.concurrent.TimeUnit;
-
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Fork(3)
-public class VarHandleExact {
+public class VarHandleTypeMismatch {
 
-    static final VarHandle exact;
-    static final VarHandle generic;
+    static final VarHandle handle, noiseHandle;
 
     static {
         try {
-            generic = MethodHandles.lookup().findVarHandle(Data.class, "longField", long.class);
+            handle = MethodHandles.lookup().findVarHandle(Data.class, "longField", long.class);
+            noiseHandle = MethodHandles.lookup().findVarHandle(Data.class, "longField", long.class);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
-        exact = generic.withInvokeExactBehavior();
     }
 
     Data data;
@@ -65,20 +64,26 @@ public class VarHandleExact {
     @Setup
     public void setup() {
         data = new Data();
+        if (handle == noiseHandle) {
+            throw new IllegalStateException("Must use different handles to pollute signature");
+        }
+        // Pollute the set(VH, byte)void signature
+        noiseHandle.set(data, (byte) 42);
+        handle.set(data, (byte) 42);
     }
 
     @Benchmark
-    public void exact_exactInvocation() {
-        exact.set(data, (long) 42);
+    public void pollutedInvocation() {
+        handle.set(data, (byte) 42);
     }
 
     @Benchmark
-    public void generic_genericInvocation() {
-        generic.set(data, 42);
+    public void genericInvocation() {
+        handle.set(data, 42);
     }
 
     @Benchmark
-    public void generic_exactInvocation() {
-        generic.set(data, (long) 42);
+    public void exactInvocation() {
+        handle.set(data, (long) 42);
     }
 }

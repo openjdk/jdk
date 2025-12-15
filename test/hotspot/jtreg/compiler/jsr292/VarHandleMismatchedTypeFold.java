@@ -66,8 +66,7 @@ public class VarHandleMismatchedTypeFold {
     }
 
     @Check(test = "testSum")
-    public void runTestSum() {
-        long sum = testSum();
+    public void checkTestSum(long sum) {
         if (sum != 2L + 5L) {
             throw new IllegalStateException("Failed, unexpected sum " + sum);
         }
