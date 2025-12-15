@@ -331,6 +331,7 @@ public class ExpressionFuzzer {
 
         // Generate expressions with the primitive types.
         for (PrimitiveType type : PRIMITIVE_TYPES) {
+            // Prmitive expressions are most important, so let's create many expressions per output type.
             for (int i = 0; i < 10; i++) {
                 // The depth determines roughly how many operations are going to be used in the expression.
                 int depth = RANDOM.nextInt(1, 20);
@@ -341,6 +342,11 @@ public class ExpressionFuzzer {
 
         // Generate expressions with any scalar numeric types.
         for (CodeGenerationDataNameType type : SCALAR_NUMERIC_TYPES) {
+            // The extended set of scalar numeric expressions (incl. special types such as Float16) are relevant
+            // but don't currently warrant the same number amount of testing time, so we only create 2 cases
+            // per type. Note: this still produces a lot of expressions, given that we have a lot of output
+            // types, and even if the output type is "float", we can still use other types in the expression,
+            // such as "float -> Float16 -> float". We can consider adjusting this arbitrary count in the future.
             for (int i = 0; i < 2; i++) {
                 // The depth determines roughly how many operations are going to be used in the expression.
                 int depth = RANDOM.nextInt(1, 20);
