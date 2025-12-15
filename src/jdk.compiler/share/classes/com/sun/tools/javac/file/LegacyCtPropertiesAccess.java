@@ -68,8 +68,14 @@ public interface LegacyCtPropertiesAccess {
         }
     };
 
+    /**
+     * {@return true iff legacy flags may be needed for the given file.}
+     */
     public boolean supportsLegacyFlags(FileObject fo);
 
+    /**
+     * {@return The legacy information for the given package.}
+     */
     public LegacyCtPropertiesInfo getInfo(CharSequence packge) throws IOException;
 
     /**
@@ -89,7 +95,7 @@ public interface LegacyCtPropertiesAccess {
          */
         public final String minProfile;
 
-        LegacyCtPropertiesInfo(boolean hidden, boolean proprietary, String minProfile) {
+        private LegacyCtPropertiesInfo(boolean hidden, boolean proprietary, String minProfile) {
             this.hidden = hidden;
             this.proprietary = proprietary;
             this.minProfile = minProfile;
