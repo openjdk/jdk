@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 0000000
+ * @bug 8373677
  * @summary Tests for verifying that a non-SSL server can detect
  *          when a client attempts to use SSL.
  * @library /test/lib
