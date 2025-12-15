@@ -2455,8 +2455,7 @@ Java HotSpot VM.
 `-XX:InitialRAMPercentage=`*percent*
 :   Sets the initial amount of memory that the JVM will use for the Java heap
     before applying ergonomics heuristics as a percentage of the maximum amount
-    determined as described in the `-XX:MaxRAM` option. The default value is
-    0.2 percent.
+    determined as described in the `-XX:MaxRAM` option.
 
     The following example shows how to set the percentage of the initial
     amount of memory used for the Java heap:
@@ -3002,6 +3001,8 @@ when they're used.
 No documented java options have been removed in JDK @@VERSION_SPECIFICATION@@.
 
 For the lists and descriptions of options removed in previous releases see the *Removed Java Options* section in:
+
+-   [The `java` Command, Release 26](https://docs.oracle.com/en/java/javase/26/docs/specs/man/java.html)
 
 -   [The `java` Command, Release 25](https://docs.oracle.com/en/java/javase/25/docs/specs/man/java.html)
 
