@@ -22,13 +22,29 @@
  */
 
 /*
- * @test
+ * @test id=vanilla
  * @bug 8373026
  * @summary Test auto vectorization and Vector API with some vector
  *          algorithms. Related benchmark: VectorAlgorithms.java
  * @library /test/lib /
  * @modules jdk.incubator.vector
- * @run driver ${test.main.class}
+ * @run driver ${test.main.class} vanilla
+ */
+
+/*
+ * @test id=noSuperWord
+ * @bug 8373026
+ * @library /test/lib /
+ * @modules jdk.incubator.vector
+ * @run driver ${test.main.class} noSuperWord
+ */
+
+/*
+ * @test id=noOptimizeFill
+ * @bug 8373026
+ * @library /test/lib /
+ * @modules jdk.incubator.vector
+ * @run driver ${test.main.class} noOptimizeFill
  */
 
 package compiler.vectorization;
@@ -76,6 +92,12 @@ public class TestVectorAlgorithms {
         // TODO: run with and without SuperWord, and also some intrinsics should be disabled in a run.
         //       make sure that all those flags are also mentioned in the JMH.
         framework.addFlags("--add-modules=jdk.incubator.vector", "-XX:CompileCommand=inline,*VectorAlgorithmsImpl::*");
+        switch (args[0]) {
+            case "vanilla"        -> { /* no extra flags */ }
+            case "noSuperWord"    -> { framework.addFlags("-XX:-UseSuperWord"); }
+            case "noOptimizeFill" -> { framework.addFlags("-XX:-OptimizeFill"); }
+            default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
+        }
         framework.start();
     }
 
@@ -224,10 +246,16 @@ public class TestVectorAlgorithms {
     }
 
     @Test
-    //@IR(counts = {IRNode.STORE_VECTOR, "> 0"},
-    //    applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // TODO:
-    //   250  CallLeafNoFP  === 208 1 7 8 9 (248 131 251 1 ) [[ 253 254 ]] # arrayof_jint_fill void ...
+    @IR(counts = {IRNode.REPLICATE_I,  "= 1",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfAnd = {"UseSuperWord", "true", "OptimizeFill", "false"})
+    @IR(counts = {".*CallLeafNoFP.*arrayof_jint_fill.*", "= 1"},
+        phase = CompilePhase.BEFORE_MATCHING,
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"OptimizeFill", "true"})
+    // By default, the fill intrinsic "arrayof_jint_fill" is used, but we can disable
+    // the detection of the fill loop, and then we auto vectorize.
     public Object fillI_loop(int[] r) {
         return VectorAlgorithmsImpl.fillI_loop(r);
     }
@@ -245,7 +273,8 @@ public class TestVectorAlgorithms {
     @Test
     @IR(counts = {IRNode.POPULATE_INDEX, "> 0",
                   IRNode.STORE_VECTOR,   "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"UseSuperWord", "true"})
     public Object iotaI_loop(int[] r) {
         return VectorAlgorithmsImpl.iotaI_loop(r);
     }
@@ -258,7 +287,8 @@ public class TestVectorAlgorithms {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"UseSuperWord", "true"})
     public Object copyI_loop(int[] a, int[] r) {
         return VectorAlgorithmsImpl.copyI_loop(a, r);
     }
@@ -277,7 +307,8 @@ public class TestVectorAlgorithms {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
                   IRNode.MUL_VI,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"UseSuperWord", "true"})
     public Object mapI_loop(int[] a, int[] r) {
         return VectorAlgorithmsImpl.mapI_loop(a, r);
     }
@@ -291,7 +322,8 @@ public class TestVectorAlgorithms {
     @IR(counts = {IRNode.LOAD_VECTOR_I,    "> 0",
                   IRNode.ADD_REDUCTION_VI, "> 0",
                   IRNode.ADD_VI,           "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"UseSuperWord", "true"})
     public int reduceAddI_loop(int[] a) {
         return VectorAlgorithmsImpl.reduceAddI_loop(a);
     }
