@@ -2,4 +2,5 @@ NewLocalNotInInner.java:12:21: compiler.err.local.cant.be.inst.static: kindname.
 NewLocalNotInInner.java:22:21: compiler.err.local.cant.be.inst.static: kindname.class, Local
 NewLocalNotInInner.java:32:21: compiler.err.local.cant.be.inst.static: kindname.class, Local
 NewLocalNotInInner.java:42:21: compiler.err.local.cant.be.inst.static: kindname.class, Local
-4 errors
+NewLocalNotInInner.java:52:21: compiler.err.local.cant.be.inst.static: kindname.class, Local
+5 errors
