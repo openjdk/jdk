@@ -27,7 +27,7 @@
  * @summary Verify that min/max add ideal optimizations get applied correctly
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver compiler.c2.irTests.TestMinMaxIdeal
+ * @run driver ${test.main.class}
  */
 
 package compiler.igvn;
