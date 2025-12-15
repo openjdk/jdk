@@ -2321,8 +2321,8 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         // We can't return top if we are in Parse phase - cut inputs only
         // to stop further optimizations for this phi. Identity will return TOP.
         assert(req() == 3, "only diamond merge phi here");
-        set_req(1, top);
-        set_req(2, top);
+        set_req_X(1, top, phase);
+        set_req_X(2, top, phase);
         return nullptr;
       } else {
         return opt;
@@ -2587,7 +2587,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
               }
               Node* phi = mms.memory();
               assert(made_new_phi || phi->in(i) == n, "replace the i-th merge by a slice");
-              phi->set_req(i, mms.memory2());
+              phi->set_req_X(i, mms.memory2(), phase);
             }
           }
         }
@@ -2596,7 +2596,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           for (MergeMemStream mms(result); mms.next_non_empty(); ) {
             Node* phi = mms.memory();
             for (uint i = 1; i < req(); ++i) {
-              if (phi->in(i) == this)  phi->set_req(i, phi);
+              if (phi->in(i) == this)  phi->set_req_X(i, phi, phase);
             }
           }
         }
@@ -2674,7 +2674,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
             igvn->register_new_node_with_optimizer(new_ii);
           }
         }
-        new_phi->set_req(i, new_ii);
+        new_phi->set_req_X(i, new_ii, phase);
       }
       igvn->register_new_node_with_optimizer(new_phi, this);
       if (is_decodeN) {
