@@ -62,6 +62,10 @@
 // put OS-includes here
 # include <ucontext.h>
 
+NOINLINE address os::current_stack_pointer() {
+  return static_cast<address>(__builtin_dwarf_cfa());
+}
+
 char* os::non_memory_address_word() {
   // Must never look like an address returned by reserve_memory,
   // even in its subfields (as defined by the CPU immediate fields,
