@@ -458,11 +458,20 @@ void VM_Version::c2_initialize() {
     }
   }
 
-  if (UseZvkg && UseZvbb) {
-    FLAG_SET_DEFAULT(UseGHASHIntrinsics, true);
+  if (UseZvkg) {
+    if (FLAG_IS_DEFAULT(UseGHASHIntrinsics) && UseZvbb) {
+      FLAG_SET_DEFAULT(UseGHASHIntrinsics, true);
+    }
+
+    if (UseGHASHIntrinsics && !UseZvbb) {
+      warning("Cannot enable UseGHASHIntrinsics on cpu without UseZvbb support");
+      FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
+    }
   } else {
-    warning("GHASH intrinsics are not available on this CPU");
-    FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
+    if (UseGHASHIntrinsics) {
+      warning("Cannot enable UseGHASHIntrinsics on cpu without UseZvkg support");
+      FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
+    }
   }
 }
 

@@ -2655,8 +2655,7 @@ class StubGenerator: public StubCodeGenerator {
   //   x10       - input length
   //
   address generate_cipherBlockChaining_encryptAESCrypt() {
-    assert(UseAESIntrinsics, "Must be");
-    assert(UseZvkn, "need AES instructions (Zvkned extension) support");
+    assert(UseAESIntrinsics, "need AES instructions (Zvkned extension) support");
     __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_cipherBlockChaining_encryptAESCrypt_id;
     StubCodeMark mark(this, stub_id);
@@ -2745,8 +2744,7 @@ class StubGenerator: public StubCodeGenerator {
   //   x10       - input length
   //
   address generate_cipherBlockChaining_decryptAESCrypt() {
-    assert(UseAESIntrinsics, "Must be");
-    assert(UseZvkn, "need AES instructions (Zvkned extension) support");
+    assert(UseAESIntrinsics, "need AES instructions (Zvkned extension) support");
     __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_cipherBlockChaining_decryptAESCrypt_id;
     StubCodeMark mark(this, stub_id);
@@ -2950,9 +2948,7 @@ class StubGenerator: public StubCodeGenerator {
   //   x10       - input length
   //
   address generate_counterMode_AESCrypt() {
-    assert(UseAESCTRIntrinsics, "Must be");
-    assert(UseZvkn, "need AES instructions (Zvkned extension) support");
-    assert(UseZbb, "need basic bit manipulation (Zbb extension) support");
+    assert(UseAESCTRIntrinsics, "need AES instructions (Zvkned extension) and Zbb extension support");
 
     __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_counterMode_AESCrypt_id;
@@ -3014,9 +3010,7 @@ class StubGenerator: public StubCodeGenerator {
    *  Updated state at c_rarg0
    */
   address generate_ghash_processBlocks() {
-    assert(UseGHASHIntrinsics, "Must be");
-    assert(UseZvbb, "need Zvbb extension support");
-    assert(UseZvkg, "need GHASH instructions (Zvkg extension) support");
+    assert(UseGHASHIntrinsics, "need GHASH instructions (Zvkg extension) and Zvbb support");
 
     __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_ghash_processBlocks_id;
@@ -3050,6 +3044,7 @@ class StubGenerator: public StubCodeGenerator {
       __ vghsh_vv(partial_hash, hash_subkey, cipher_text);
       __ subi(blocks, blocks, 1);
       __ bnez(blocks, L_ghash_loop);
+
     __ vsetivli(x0, 2, Assembler::e64, Assembler::m1);
     __ vrev8_v(partial_hash, partial_hash);
     __ vse64_v(partial_hash, state);
