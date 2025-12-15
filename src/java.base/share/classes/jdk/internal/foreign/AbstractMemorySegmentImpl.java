@@ -552,10 +552,10 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     @Override
-    public String getString(long offset, Charset charset, long length) {
-        Utils.checkNonNegativeArgument(length, "length");
+    public String getString(long offset, Charset charset, long byteLength) {
+        Utils.checkNonNegativeArgument(byteLength, "byteLength");
         Objects.requireNonNull(charset);
-        return StringSupport.read(this, offset, charset, length);
+        return StringSupport.read(this, offset, charset, byteLength);
     }
 
     @Override

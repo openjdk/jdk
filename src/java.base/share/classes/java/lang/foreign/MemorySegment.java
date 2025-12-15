@@ -1341,7 +1341,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *                access operation will occur
      * @param charset the charset used to {@linkplain Charset#newDecoder() decode} the
      *                string bytes
-     * @param length  length, in bytes, of the region of memory to read and decode into
+     * @param byteLength length, in bytes, of the region of memory to read and decode into
      *                a string
      * @return a Java string constructed from the bytes read from the given starting
      *         address up to the given length
@@ -1355,7 +1355,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         such that {@code isAccessibleBy(T) == false}
      * @throws IllegalArgumentException if {@code length < 0}
      */
-    String getString(long offset, Charset charset, long length);
+    String getString(long offset, Charset charset, long byteLength);
 
     /**
      * Writes the given string into this segment at the given offset, converting it to
