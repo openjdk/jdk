@@ -734,7 +734,7 @@ class ServerImpl {
                     connection.raw = rawin;
                     connection.rawout = rawout;
                 }
-                
+
                 Request req;
                 try {
                     req = new Request(rawin, rawout, newconnection && !https);
