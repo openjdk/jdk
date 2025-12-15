@@ -57,7 +57,10 @@ TEST_VM(ClassPrinter, print_classes) {
   ASSERT_THAT(o3, HasSubstr("class: java/lang/Integer mirror:")) << "must find java/lang/Integer";
   ASSERT_THAT(o3, HasSubstr("InstanceKlass: java.lang.Integer {0x")) << "must print InstanceKlass";
   ASSERT_THAT(o3, HasSubstr("Java mirror oop for java/lang/Integer:")) << "must print mirror oop";
+#if GTEST_USES_POSIX_RE
+  // Complex regex not available on Windows
   ASSERT_THAT(o3, ContainsRegex("public static final 'MIN_VALUE' 'I'.* -2147483648 [(]0x80000000[)]")) << "must print static fields";
+#endif
 }
 
 TEST_VM(ClassPrinter, print_methods) {
@@ -92,6 +95,9 @@ TEST_VM(ClassPrinter, print_methods) {
   const char* o3 = s3.freeze();
   ASSERT_THAT(o3, HasSubstr("method wait : ()V")) << "must find java/lang/Object::wait()";
   ASSERT_THAT(o3, HasSubstr("{method}")) << "must print Method metadata";
+
+#if GTEST_USES_POSIX_RE
+  // Complex regex not available on Windows
   ASSERT_THAT(o3, ContainsRegex("method holder:.*'java/lang/Object'")) << "must print Method metadata";
   ASSERT_THAT(o3, ContainsRegex("name: *'wait'")) << "must print Method metadata";
 
@@ -99,6 +105,8 @@ TEST_VM(ClassPrinter, print_methods) {
   // The print out should look like this:
   // 0x000000004adf73ad    5 return
   ASSERT_THAT(o3, ContainsRegex("0x[0-9a-f]+ +[0-9]+ +return")) << "must print return bytecode";
-#endif
+#endif // GTEST_USES_POSIX_RE
+
+#endif // PRODUCT
 
 }
