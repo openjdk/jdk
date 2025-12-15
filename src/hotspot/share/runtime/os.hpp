@@ -980,10 +980,7 @@ class os: AllStatic {
   // The thread_cpu_time() and current_thread_cpu_time() are only
   // supported if is_thread_cpu_time_supported() returns true.
 
-  // Thread CPU Time - return the fast estimate on a platform
-  // On Linux   - fast clock_gettime where available - user+sys
-  //            - otherwise: very slow /proc fs - user+sys
-  // On Windows - GetThreadTimes - user+sys
+  // Thread CPU Time - return the fast estimate on a platform - user+sys
   static jlong current_thread_cpu_time();
   static jlong thread_cpu_time(Thread* t);
 
