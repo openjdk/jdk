@@ -83,7 +83,7 @@ asm (R"(
     .type   _ZN2os21current_stack_pointerEv, @function
 _ZN2os21current_stack_pointerEv:
     mr 3, 1
-    blr     
+    blr
 #   .long 0
 #   .byte 0, 9, 0, 0, 0, 0, 0, 0
 )");
