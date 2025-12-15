@@ -83,7 +83,7 @@ final class LinuxPackageBuilder {
                 category(),
                 Optional.ofNullable(additionalDependencies),
                 release(),
-                pkg.asStandardPackageType().map(LinuxPackageArch::getValue).orElseThrow()));
+                arch.value()));
     }
 
     LinuxPackageBuilder literalName(String v) {
@@ -117,6 +117,11 @@ final class LinuxPackageBuilder {
 
     Optional<String> release() {
         return Optional.ofNullable(release);
+    }
+
+    LinuxPackageBuilder arch(LinuxPackageArch v) {
+        arch = v;
+        return this;
     }
 
     private static LinuxApplicationLayout usrTreePackageLayout(Path prefix, String packageName) {
@@ -184,6 +189,7 @@ final class LinuxPackageBuilder {
     private String category;
     private String additionalDependencies;
     private String release;
+    private LinuxPackageArch arch;
 
     private final PackageBuilder pkgBuilder;
 

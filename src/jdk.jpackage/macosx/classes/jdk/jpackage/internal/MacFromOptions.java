@@ -308,6 +308,7 @@ final class MacFromOptions {
 
     private static SigningIdentityBuilder createSigningIdentityBuilder(Options options) {
         final var builder = new SigningIdentityBuilder();
+        builder.executorFactory(OptionUtils.objectFactory(options));
         MAC_SIGNING_KEYCHAIN.findIn(options).map(Path::toString).ifPresent(builder::keychain);
         return builder;
     }

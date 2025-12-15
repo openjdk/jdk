@@ -45,10 +45,8 @@ import java.util.function.Function;
 import jdk.jpackage.internal.PackagingPipeline.PackageTaskID;
 import jdk.jpackage.internal.PackagingPipeline.TaskID;
 import jdk.jpackage.internal.model.MacDmgPackage;
-import jdk.jpackage.internal.util.CommandOutputControl;
 import jdk.jpackage.internal.util.FileUtils;
 import jdk.jpackage.internal.util.PathGroup;
-import jdk.jpackage.internal.util.RetryExecutor;
 
 record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
         MacDmgSystemEnvironment sysEnv) implements Consumer<PackagingPipeline.Builder> {
@@ -139,7 +137,7 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
     }
 
     private Executor hdiutil(String... args) {
-        return Executor.of(sysEnv.hdiutil().toString()).args(args).storeOutputInFiles();
+        return env.objectFactory().executor(sysEnv.hdiutil().toString()).args(args).storeOutputInFiles();
     }
 
     private void prepareDMGSetupScript() throws IOException {
@@ -311,7 +309,7 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
             // to install-dir in DMG as critical error, since it can fail in
             // headless environment.
             try {
-                Executor.of(
+                env.objectFactory().executor(
                         sysEnv.osascript().toString(),
                         normalizedAbsolutePathString(volumeScript())
                 )
@@ -338,14 +336,14 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
                     // but it seems Finder excepts these bytes to be
                     // "icnC" for the volume icon
                     // (might not work on Mac 10.13 with old XCode)
-                    Executor.of(
+                    env.objectFactory().executor(
                             sysEnv.setFileUtility().orElseThrow().toString(),
                             "-c", "icnC",
                             normalizedAbsolutePathString(volumeIconFile)
                     ).executeExpectSuccess();
                     volumeIconFile.toFile().setReadOnly();
 
-                    Executor.of(
+                    env.objectFactory().executor(
                             sysEnv.setFileUtility().orElseThrow().toString(),
                             "-a", "C",
                             normalizedAbsolutePathString(mountedVolume)
@@ -397,7 +395,7 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
 
         // "hdiutil detach" might not work right away due to resource busy error, so
         // repeat detach several times.
-        new RetryExecutor<Void, IOException>(IOException.class).setExecutable(context -> {
+        env.objectFactory().<Void, IOException>retryExecutor(IOException.class).setExecutable(context -> {
 
             List<String> cmdline = new ArrayList<>();
             cmdline.add("detach");
@@ -420,7 +418,7 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
                 // Detached successfully!
                 return null;
             } else {
-                throw new CommandOutputControl.UnexpectedResultException(result);
+                throw result.unexpected();
             }
         }).setMaxAttemptsCount(10).setAttemptTimeout(6, TimeUnit.SECONDS).execute();
     }

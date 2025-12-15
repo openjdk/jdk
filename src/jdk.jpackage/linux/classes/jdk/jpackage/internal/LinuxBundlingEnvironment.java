@@ -33,30 +33,50 @@ import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_LINUX_R
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.cli.Options;
+import jdk.jpackage.internal.util.Result;
 import jdk.jpackage.internal.cli.StandardBundlingOperation;
 import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.internal.model.LinuxPackage;
 import jdk.jpackage.internal.model.PackageType;
-import jdk.jpackage.internal.util.Result;
 
 public class LinuxBundlingEnvironment extends DefaultBundlingEnvironment {
 
+    public LinuxBundlingEnvironment(ObjectFactory objectFactory) {
+        super(build(objectFactory).mutate(builder -> {
+
+            // Wrap the generic Linux system environment supplier in the run-once wrapper
+            // as this supplier is called from both RPM and DEB Linux system environment suppliers.
+            var sysEnv = runOnce(() -> {
+                return LinuxSystemEnvironment.create(objectFactory);
+            });
+
+            Supplier<Result<LinuxDebSystemEnvironment>> debSysEnv = () -> {
+                return LinuxDebSystemEnvironment.create(sysEnv.get(), objectFactory);
+            };
+
+            Supplier<Result<LinuxRpmSystemEnvironment>> rpmSysEnv = () -> {
+                return LinuxRpmSystemEnvironment.create(sysEnv.get(), objectFactory);
+            };
+
+            builder.defaultOperation(() -> {
+                return sysEnv.get().value().map(LinuxSystemEnvironment::nativePackageType).map(DESCRIPTORS::get);
+            })
+            .bundler(CREATE_LINUX_DEB, debSysEnv, LinuxBundlingEnvironment::createDebPackage)
+            .bundler(CREATE_LINUX_RPM, rpmSysEnv, LinuxBundlingEnvironment::createRpmPackage);
+        }).bundler(CREATE_LINUX_APP_IMAGE, LinuxBundlingEnvironment::createAppImage));
+    }
+
     public LinuxBundlingEnvironment() {
-        super(build()
-                .defaultOperation(() -> {
-                    return LazyLoad.SYS_ENV.value().map(LinuxSystemEnvironment::nativePackageType).map(DESCRIPTORS::get);
-                })
-                .bundler(CREATE_LINUX_APP_IMAGE, LinuxBundlingEnvironment::createAppImage)
-                .bundler(CREATE_LINUX_DEB, LazyLoad::debSysEnv, LinuxBundlingEnvironment::createDebPackage)
-                .bundler(CREATE_LINUX_RPM, LazyLoad::rpmSysEnv, LinuxBundlingEnvironment::createRpmPackage));
+        this(ObjectFactory.DEFAULT);
     }
 
     private static void createDebPackage(Options options, LinuxDebSystemEnvironment sysEnv) {
 
         createNativePackage(options,
-                LinuxFromOptions.createLinuxDebPackage(options),
+                LinuxFromOptions.createLinuxDebPackage(options, sysEnv),
                 buildEnv()::create,
                 LinuxBundlingEnvironment::buildPipeline,
                 (env, pkg, outputDir) -> {
@@ -67,7 +87,7 @@ public class LinuxBundlingEnvironment extends DefaultBundlingEnvironment {
     private static void createRpmPackage(Options options, LinuxRpmSystemEnvironment sysEnv) {
 
         createNativePackage(options,
-                LinuxFromOptions.createLinuxRpmPackage(options),
+                LinuxFromOptions.createLinuxRpmPackage(options, sysEnv),
                 buildEnv()::create,
                 LinuxBundlingEnvironment::buildPipeline,
                 (env, pkg, outputDir) -> {
@@ -88,23 +108,6 @@ public class LinuxBundlingEnvironment extends DefaultBundlingEnvironment {
 
     private static BuildEnvFromOptions buildEnv() {
         return new BuildEnvFromOptions().predefinedAppImageLayout(APPLICATION_LAYOUT);
-    }
-
-    private static final class LazyLoad {
-
-        static Result<LinuxDebSystemEnvironment> debSysEnv() {
-            return DEB_SYS_ENV;
-        }
-
-        static Result<LinuxRpmSystemEnvironment> rpmSysEnv() {
-            return RPM_SYS_ENV;
-        }
-
-        private static final Result<LinuxSystemEnvironment> SYS_ENV = LinuxSystemEnvironment.create();
-
-        private static final Result<LinuxDebSystemEnvironment> DEB_SYS_ENV = LinuxDebSystemEnvironment.create(SYS_ENV);
-
-        private static final Result<LinuxRpmSystemEnvironment> RPM_SYS_ENV = LinuxRpmSystemEnvironment.create(SYS_ENV);
     }
 
     private static final Map<PackageType, BundlingOperationDescriptor> DESCRIPTORS = Stream.of(

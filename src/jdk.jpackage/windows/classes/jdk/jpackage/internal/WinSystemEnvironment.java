@@ -33,7 +33,9 @@ record WinSystemEnvironment(WixToolset wixToolset) implements SystemEnvironment 
         Objects.requireNonNull(wixToolset);
     }
 
-    static Result<WinSystemEnvironment> create() {
-        return Result.of(WixTool::createToolset).map(WinSystemEnvironment::new);
+    static Result<WinSystemEnvironment> create(ExecutorFactory ef) {
+        return Result.of(() -> {
+            return WixTool.createToolset(ef);
+        }).map(WinSystemEnvironment::new);
     }
 }

@@ -25,11 +25,11 @@
 package jdk.jpackage.internal;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.Result;
 
@@ -38,7 +38,7 @@ record MacDmgSystemEnvironment(Path hdiutil, Path osascript, Optional<Path> setF
     MacDmgSystemEnvironment {
     }
 
-    static Result<MacDmgSystemEnvironment> create() {
+    static Result<MacDmgSystemEnvironment> create(ExecutorFactory ef) {
         final var errors = Stream.of(HDIUTIL, OSASCRIPT)
                 .map(ToolValidator::new)
                 .map(ToolValidator::checkExistsOnly)
@@ -46,7 +46,7 @@ record MacDmgSystemEnvironment(Path hdiutil, Path osascript, Optional<Path> setF
                 .filter(Objects::nonNull)
                 .toList();
         if (errors.isEmpty()) {
-            return Result.ofValue(new MacDmgSystemEnvironment(HDIUTIL, OSASCRIPT, findSetFileUtility()));
+            return Result.ofValue(new MacDmgSystemEnvironment(HDIUTIL, OSASCRIPT, findSetFileUtility(ef)));
         } else {
             return Result.ofErrors(errors);
         }
@@ -55,26 +55,34 @@ record MacDmgSystemEnvironment(Path hdiutil, Path osascript, Optional<Path> setF
     // Location of SetFile utility may be different depending on MacOS version
     // We look for several known places and if none of them work will
     // try to find it
-    private static Optional<Path> findSetFileUtility() {
-        String typicalPaths[] = {"/Developer/Tools/SetFile",
-                "/usr/bin/SetFile", "/Developer/usr/bin/SetFile"};
+    static Optional<Path> findSetFileUtility(ExecutorFactory ef) {
+        Objects.requireNonNull(ef);
 
-        return Stream.of(typicalPaths).map(Path::of).filter(Files::isExecutable).findFirst().filter(setFilePath -> {
+        return SETFILE_KNOWN_PATHS.stream().filter(setFilePath -> {
             // Validate SetFile, if Xcode is not installed it will run, but exit with error code
             return Result.of(
-                    Executor.of(setFilePath.toString(), "-h").setQuiet(true)::executeExpectSuccess,
+                    ef.executor(setFilePath.toString(), "-h").setQuiet(true)::executeExpectSuccess,
                     IOException.class).hasValue();
-        }).or(() -> {
+        }).findFirst().or(() -> {
             // generic find attempt
-            final var executor = Executor.of("/usr/bin/xcrun", "-find", "SetFile").setQuiet(true).saveFirstLineOfOutput();
+            final var executor = ef.executor("/usr/bin/xcrun", "-find", "SetFile").setQuiet(true).saveFirstLineOfOutput();
 
-            return Result.of(executor::executeExpectSuccess, IOException.class).value().flatMap(execResult -> {
-                return execResult.findContent().stream().flatMap(List::stream).findFirst().map(Path::of);
-            }).filter(v -> {
+            return Result.of(executor::executeExpectSuccess, IOException.class).flatMap(execResult -> {
+                return Result.of(() -> {
+                    return execResult.stdout().stream().findFirst().map(Path::of).orElseThrow(() -> {
+                        return execResult.unexpected();
+                    });
+                }, Exception.class);
+            }).value().filter(v -> {
                 return new ToolValidator(v).checkExistsOnly().validate() == null;
             }).map(Path::toAbsolutePath);
         });
     }
+
+    static final List<Path> SETFILE_KNOWN_PATHS = Stream.of(
+            "/Developer/Tools/SetFile",
+            "/usr/bin/SetFile",
+            "/Developer/usr/bin/SetFile").map(Path::of).collect(Collectors.toUnmodifiableList());
 
     private static final Path HDIUTIL = Path.of("/usr/bin/hdiutil");
     private static final Path OSASCRIPT = Path.of("/usr/bin/osascript");

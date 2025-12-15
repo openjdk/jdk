@@ -129,7 +129,7 @@ public class RetryExecutor<T, E extends Exception> {
             if (exceptionType.isInstance(ex)) {
                 throw Optional.ofNullable(toUnchecked).orElse(ExceptionBox::toUnchecked).apply(exceptionType.cast(ex));
             } else {
-                // Unreachable unless it is a direct subclass of Throwable, 
+                // Unreachable unless it is a direct subclass of Throwable,
                 // which is not Error or Exception which should not happen.
                 throw ExceptionBox.reachedUnreachable();
             }

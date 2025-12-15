@@ -31,16 +31,23 @@ import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_WIN_EXE
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_WIN_MSI;
 
 import jdk.jpackage.internal.cli.Options;
-import jdk.jpackage.internal.util.Result;
 
 public class WinBundlingEnvironment extends DefaultBundlingEnvironment {
 
+    public WinBundlingEnvironment(ObjectFactory objectFactory) {
+        super(build(objectFactory).mutate(builder -> {
+            var sysEnv = runOnce(() -> {
+                return WinSystemEnvironment.create(objectFactory);
+            });
+
+            builder
+            .bundler(CREATE_WIN_EXE, sysEnv, WinBundlingEnvironment::createExePackage)
+            .bundler(CREATE_WIN_MSI, sysEnv, WinBundlingEnvironment::createMsiPackage);
+        }).defaultOperation(CREATE_WIN_EXE).bundler(CREATE_WIN_APP_IMAGE, WinBundlingEnvironment::createAppImage));
+    }
+
     public WinBundlingEnvironment() {
-        super(build()
-                .defaultOperation(CREATE_WIN_EXE)
-                .bundler(CREATE_WIN_APP_IMAGE, WinBundlingEnvironment::createAppImage)
-                .bundler(CREATE_WIN_EXE, LazyLoad::sysEnv, WinBundlingEnvironment::createExePackage)
-                .bundler(CREATE_WIN_MSI, LazyLoad::sysEnv, WinBundlingEnvironment::createMsiPackage));
+        this(ObjectFactory.DEFAULT);
     }
 
     private static void createMsiPackage(Options options, WinSystemEnvironment sysEnv) {
@@ -98,12 +105,4 @@ public class WinBundlingEnvironment extends DefaultBundlingEnvironment {
         }
     }
 
-    private static final class LazyLoad {
-
-        static Result<WinSystemEnvironment> sysEnv() {
-            return SYS_ENV;
-        }
-
-        private static final Result<WinSystemEnvironment> SYS_ENV = WinSystemEnvironment.create();
-    }
 }

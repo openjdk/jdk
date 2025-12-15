@@ -24,39 +24,24 @@
  */
 package jdk.jpackage.internal;
 
-import java.nio.file.Path;
-import java.util.Objects;
-import java.util.stream.Stream;
-import jdk.jpackage.internal.util.Result;
+import java.util.List;
 
-public interface LinuxDebSystemEnvironmentMixin {
-    Path dpkg();
-    Path dpkgdeb();
-    Path fakeroot();
+@FunctionalInterface
+interface ExecutorFactory {
 
-    record Stub(Path dpkg, Path dpkgdeb, Path fakeroot) implements LinuxDebSystemEnvironmentMixin {
+    default Executor executor(String... cmdline) {
+        return executor(List.of(cmdline));
     }
 
-    static Result<LinuxDebSystemEnvironmentMixin> create(ExecutorFactory ef) {
-        final var errors = Stream.of(Internal.TOOL_DPKG_DEB, Internal.TOOL_DPKG, Internal.TOOL_FAKEROOT)
-                .map(ToolValidator::new)
-                .map(validator -> {
-                    return validator.executorFactory(ef);
-                })
-                .map(ToolValidator::validate)
-                .filter(Objects::nonNull)
-                .toList();
-        if (errors.isEmpty()) {
-            return Result.ofValue(new Stub(Internal.TOOL_DPKG, Internal.TOOL_DPKG_DEB, Internal.TOOL_FAKEROOT));
-        } else {
-            return Result.ofErrors(errors);
-        }
+    default Executor executor(List<String> cmdline) {
+        return executor(new ProcessBuilder(cmdline));
     }
 
-    static final class Internal {
-
-        private static final Path TOOL_DPKG_DEB = Path.of("dpkg-deb");
-        private static final Path TOOL_DPKG = Path.of("dpkg");
-        private static final Path TOOL_FAKEROOT = Path.of("fakeroot");
+    default Executor executor(ProcessBuilder pb) {
+        return executor().processBuilder(pb);
     }
+
+    Executor executor();
+
+    static final ExecutorFactory DEFAULT = Executor::new;
 }

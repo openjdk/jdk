@@ -49,6 +49,8 @@ interface BuildEnv {
      */
     boolean verbose();
 
+    ObjectFactory objectFactory();
+
     /**
      * Returns the path of the resource directory or an empty {@link Optional}
      * instance if none is configured with the build.
@@ -108,20 +110,35 @@ interface BuildEnv {
         return ((Internal.DefaultBuildEnv)env).copyWithAppImageLayout(appImageLayout);
     }
 
-    static BuildEnv create(Path buildRoot, Optional<Path> resourceDir, boolean verbose,
-            Class<?> resourceLocator, AppImageLayout appImageLayout) {
-        return new Internal.DefaultBuildEnv(buildRoot, resourceDir, verbose,
-                resourceLocator, appImageLayout);
+    static BuildEnv create(
+            Path buildRoot,
+            Optional<Path> resourceDir,
+            boolean verbose,
+            ObjectFactory objectFactory,
+            Class<?> resourceLocator,
+            AppImageLayout appImageLayout) {
+        return new Internal.DefaultBuildEnv(
+                buildRoot,
+                resourceDir,
+                verbose,
+                objectFactory,
+                resourceLocator,
+                appImageLayout);
     }
 
     static final class Internal {
-        private record DefaultBuildEnv(Path buildRoot, Optional<Path> resourceDir,
-                boolean verbose, Class<?> resourceLocator,
+        private record DefaultBuildEnv(
+                Path buildRoot,
+                Optional<Path> resourceDir,
+                boolean verbose,
+                ObjectFactory objectFactory,
+                Class<?> resourceLocator,
                 AppImageLayout appImageLayout) implements BuildEnv {
 
             DefaultBuildEnv {
                 Objects.requireNonNull(buildRoot);
                 Objects.requireNonNull(resourceDir);
+                Objects.requireNonNull(objectFactory);
                 Objects.requireNonNull(resourceLocator);
                 Objects.requireNonNull(appImageLayout);
             }
@@ -131,7 +148,7 @@ interface BuildEnv {
             }
 
             DefaultBuildEnv copyWithAppImageLayout(AppImageLayout v) {
-                return new DefaultBuildEnv(buildRoot, resourceDir, verbose, resourceLocator, v);
+                return new DefaultBuildEnv(buildRoot, resourceDir, verbose, objectFactory, resourceLocator, v);
             }
 
             @Override
