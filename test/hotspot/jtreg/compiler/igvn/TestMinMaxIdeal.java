@@ -51,20 +51,16 @@ public class TestMinMaxIdeal {
         // Create a new CompileFramework instance.
         CompileFramework comp = new CompileFramework();
 
-        String templatedPackage ="compiler.igvn.templated";
-        String templatedClassName ="MinMaxIdeal";
-        String templatedFQN = "%s.%s".formatted(templatedPackage, templatedClassName);
-
         // Add a java source file.
-        comp.addJavaSourceCode(templatedFQN, generate(templatedClassName, templatedPackage, comp));
+        comp.addJavaSourceCode("compiler.igvn.templated.MinMaxIdeal", generate(comp));
 
         // Compile the source file.
         comp.compile();
 
-        comp.invoke(templatedFQN, "main", new Object[] {new String[] {}});
+        comp.invoke("compiler.igvn.templated.MinMaxIdeal", "main", new Object[] {new String[] {}});
     }
 
-    private static String generate(String templatedClassName, String templatedPackage, CompileFramework comp) {
+    private static String generate(CompileFramework comp) {
         // Create a list to collect all tests.
         List<TemplateToken> testTemplateTokens = new ArrayList<>();
 
@@ -76,7 +72,7 @@ public class TestMinMaxIdeal {
         // Create the test class, which runs all testTemplateTokens.
         return TestFrameworkClass.render(
             // package and class name.
-            templatedPackage, templatedClassName,
+            "compiler.igvn.templated", "MinMaxIdeal",
             // List of imports.
             Collections.emptySet(),
             // classpath, so the Test VM has access to the compiled class files.
