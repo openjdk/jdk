@@ -92,6 +92,7 @@ public class DetectMutableStaticFields {
         ignore("com/sun/tools/javac/util/JCDiagnostic", "fragmentFormatter");
         ignore("com/sun/tools/javac/util/JavacMessages", "defaultBundle", "defaultMessages");
         ignore("com/sun/tools/javac/file/JRTIndex", "sharedInstance");
+        ignore("com/sun/tools/javac/file/LegacyCtPropertiesAccess$LegacyCtPropertiesInfo", "ctBundle");
         ignore("com/sun/tools/javac/main/JavaCompiler", "versionRB");
         ignore("com/sun/tools/javac/code/Type", "moreInfo");
         ignore("com/sun/tools/javac/util/SharedNameTable", "freelist");

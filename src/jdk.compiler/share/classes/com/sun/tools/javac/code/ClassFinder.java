@@ -203,12 +203,8 @@ public class ClassFinder {
             ? names.fromString(options.get("failcomplete"))
             : null;
 
-        JavaFileManager fm = context.get(JavaFileManager.class);
-        if (fm instanceof JavacFileManager javacFileManager) {
-            legacyCtPropertiesInfoAccess = javacFileManager.getLegacyCtPropertiesInfo();
-        } else {
-            legacyCtPropertiesInfoAccess = LegacyCtPropertiesAccess.NOOP;
-        }
+        legacyCtPropertiesInfoAccess =
+                JavacFileManager.getLegacyCtPropertiesInfo(fileManager);
 
         profile = Profile.instance(context);
         cachedCompletionFailure = new CompletionFailure(null, () -> null, dcfh);
@@ -247,12 +243,13 @@ public class ClassFinder {
             try {
                 ModuleSymbol owningModule = packge.modle;
                 if (owningModule == syms.noModule) {
-                    LegacyCtPropertiesInfo info = legacyCtPropertiesInfoAccess.getInfo(packge.flatName());
+                    LegacyCtPropertiesInfo legacyInfo =
+                            legacyCtPropertiesInfoAccess.getInfo(packge.flatName());
                     Profile minProfile = Profile.DEFAULT;
-                    if (info.proprietary)
+                    if (legacyInfo.proprietary)
                         newFlags |= PROPRIETARY;
-                    if (info.minProfile != null)
-                        minProfile = Profile.lookup(info.minProfile);
+                    if (legacyInfo.minProfile != null)
+                        minProfile = Profile.lookup(legacyInfo.minProfile);
                     if (profile != Profile.DEFAULT && minProfile.value > profile.value) {
                         newFlags |= NOT_IN_PROFILE;
                     }

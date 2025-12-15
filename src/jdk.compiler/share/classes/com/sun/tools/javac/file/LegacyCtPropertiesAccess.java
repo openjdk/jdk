@@ -25,7 +25,11 @@
 package com.sun.tools.javac.file;
 
 import java.io.IOException;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
 import javax.tools.FileObject;
+
+import com.sun.tools.javac.file.RelativePath.RelativeDirectory;
 
 /**
  * Support for legacy ct.properties.
@@ -112,7 +116,40 @@ public interface LegacyCtPropertiesAccess {
             return sb.toString();
         }
 
+        static LegacyCtPropertiesInfo createLegacyCtPropertiesInfo(RelativeDirectory dir) {
+            if (dir.path.isEmpty())
+                return LegacyCtPropertiesInfo.EMPTY;
+            // It's a side-effect of the default build rules that ct.properties
+            // ends up as a resource bundle.
+            if (ctBundle == null) {
+                final String bundleName = "com.sun.tools.javac.resources.ct";
+                ctBundle = ResourceBundle.getBundle(bundleName);
+            }
+            try {
+                String attrs = ctBundle.getString(dir.path.replace('/', '.') + '*');
+                boolean hidden = false;
+                boolean proprietary = false;
+                String minProfile = null;
+                for (String attr: attrs.split(" +", 0)) {
+                    switch (attr) {
+                        case "hidden":
+                            hidden = true;
+                            break;
+                        case "proprietary":
+                            proprietary = true;
+                            break;
+                        default:
+                            minProfile = attr;
+                    }
+                }
+                return new LegacyCtPropertiesInfo(hidden, proprietary, minProfile);
+            } catch (MissingResourceException e) {
+                return LegacyCtPropertiesInfo.EMPTY;
+            }
+        }
+
+        private static ResourceBundle ctBundle;
+
         static final LegacyCtPropertiesInfo EMPTY = new LegacyCtPropertiesInfo(false, false, null);
     }
-
 }

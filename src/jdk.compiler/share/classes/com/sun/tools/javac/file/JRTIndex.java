@@ -41,8 +41,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
 import java.util.Set;
 
 import javax.tools.FileObject;
@@ -177,7 +175,7 @@ class JRTIndex implements LegacyCtPropertiesAccess {
             }
             e = new Entry(Collections.unmodifiableMap(files),
                     Collections.unmodifiableSet(subdirs),
-                    getCtInfo(rd));
+                    LegacyCtPropertiesInfo.createLegacyCtPropertiesInfo(rd));
             entries.put(rd, new SoftReference<>(e));
         }
         return e;
@@ -193,38 +191,4 @@ class JRTIndex implements LegacyCtPropertiesAccess {
         }
     }
 
-    private LegacyCtPropertiesInfo getCtInfo(RelativeDirectory dir) {
-        if (dir.path.isEmpty())
-            return LegacyCtPropertiesInfo.EMPTY;
-        // It's a side-effect of the default build rules that ct.properties
-        // ends up as a resource bundle.
-        if (ctBundle == null) {
-            final String bundleName = "com.sun.tools.javac.resources.ct";
-            ctBundle = ResourceBundle.getBundle(bundleName);
-        }
-        try {
-            String attrs = ctBundle.getString(dir.path.replace('/', '.') + '*');
-            boolean hidden = false;
-            boolean proprietary = false;
-            String minProfile = null;
-            for (String attr: attrs.split(" +", 0)) {
-                switch (attr) {
-                    case "hidden":
-                        hidden = true;
-                        break;
-                    case "proprietary":
-                        proprietary = true;
-                        break;
-                    default:
-                        minProfile = attr;
-                }
-            }
-            return new LegacyCtPropertiesInfo(hidden, proprietary, minProfile);
-        } catch (MissingResourceException e) {
-            return LegacyCtPropertiesInfo.EMPTY;
-        }
-
-    }
-
-    private ResourceBundle ctBundle;
 }
