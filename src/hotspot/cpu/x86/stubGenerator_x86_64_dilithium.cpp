@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Intel Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +31,6 @@
 
 #define __ _masm->
 
-#define xmm(i) as_XMMRegister(i)
-
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
 #else
@@ -40,15 +39,13 @@
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
-#define XMMBYTES 64
-
 // Constants
 //
 ATTRIBUTE_ALIGNED(64) static const uint32_t dilithiumAvx512Consts[] = {
     58728449, // montQInvModR
-    8380417, // dilithium_q
-    2365951, // montRSquareModQ
-    5373807 // Barrett addend for modular reduction
+    8380417,  // dilithium_q
+    2365951,  // montRSquareModQ
+    5373807   // Barrett addend for modular reduction
 };
 
 const int montQInvModRIdx = 0;
@@ -60,392 +57,590 @@ static address dilithiumAvx512ConstsAddr(int offset) {
   return ((address) dilithiumAvx512Consts) + offset;
 }
 
-const Register scratch = r10;
-const XMMRegister montMulPerm = xmm28;
-const XMMRegister montQInvModR = xmm30;
-const XMMRegister dilithium_q = xmm31;
+ATTRIBUTE_ALIGNED(64) static const uint32_t unshufflePerms[] = {
+  // Shuffle for the 128-bit element swap (uint64_t)
+  0, 0, 1,  0, 8,  0, 9, 0, 4, 0, 5, 0, 12, 0, 13, 0,
+  10, 0, 11, 0, 2, 0, 3, 0, 14, 0, 15, 0, 6, 0, 7, 0,
 
+  // Final shuffle for AlmostNtt
+  0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23,
+  24, 8, 25, 9, 26, 10, 27, 11, 28, 12, 29, 13, 30, 14, 31, 15,
 
-ATTRIBUTE_ALIGNED(64) static const uint32_t dilithiumAvx512Perms[] = {
-     // collect montmul results into the destination register
-    17, 1, 19, 3, 21, 5, 23, 7, 25, 9, 27, 11, 29, 13, 31, 15,
-    // ntt
-    // level 4
-    0, 1, 2, 3, 4, 5, 6, 7, 16, 17, 18, 19, 20, 21, 22, 23,
-    8, 9, 10, 11, 12, 13, 14, 15, 24, 25, 26, 27, 28, 29, 30, 31,
-    // level 5
-    0, 1, 2, 3, 16, 17, 18, 19, 8, 9, 10, 11, 24, 25, 26, 27,
-    4, 5, 6, 7, 20, 21, 22, 23, 12, 13, 14, 15, 28, 29, 30, 31,
-    // level 6
-    0, 1, 16, 17, 4, 5, 20, 21, 8, 9, 24, 25, 12, 13, 28, 29,
-    2, 3, 18, 19, 6, 7, 22, 23, 10, 11, 26, 27, 14, 15, 30, 31,
-    // level 7
-    0, 16, 2, 18, 4, 20, 6, 22, 8, 24, 10, 26, 12, 28, 14, 30,
-    1, 17, 3, 19, 5, 21, 7, 23, 9, 25, 11, 27, 13, 29, 15, 31,
-    0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23,
-    8, 24, 9, 25, 10, 26, 11, 27, 12, 28, 13, 29, 14, 30, 15, 31,
-
-    // ntt inverse
-    // level 0
-    0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30,
-    1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31,
-    // level 1
-    0, 16, 2, 18, 4, 20, 6, 22, 8, 24, 10, 26, 12, 28, 14, 30,
-    1, 17, 3, 19, 5, 21, 7, 23, 9, 25, 11, 27, 13, 29, 15, 31,
-    // level 2
-    0, 1, 16, 17, 4, 5, 20, 21, 8, 9, 24, 25, 12, 13, 28, 29,
-    2, 3, 18, 19, 6, 7, 22, 23, 10, 11, 26, 27, 14, 15, 30, 31,
-    // level 3
-    0, 1, 2, 3, 16, 17, 18, 19, 8, 9, 10, 11, 24, 25, 26, 27,
-    4, 5, 6, 7, 20, 21, 22, 23, 12, 13, 14, 15, 28, 29, 30, 31,
-    // level 4
-    0, 1, 2, 3, 4, 5, 6, 7, 16, 17, 18, 19, 20, 21, 22, 23,
-    8, 9, 10, 11, 12, 13, 14, 15, 24, 25, 26, 27, 28, 29, 30, 31
+  // Initial shuffle for AlmostInverseNtt
+  0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30,
+  17, 19, 21, 23, 25, 27, 29, 31, 1, 3, 5, 7, 9, 11, 13, 15
 };
 
-const int montMulPermsIdx = 0;
-const int nttL4PermsIdx = 64;
-const int nttL5PermsIdx = 192;
-const int nttL6PermsIdx = 320;
-const int nttL7PermsIdx = 448;
-const int nttInvL0PermsIdx = 704;
-const int nttInvL1PermsIdx = 832;
-const int nttInvL2PermsIdx = 960;
-const int nttInvL3PermsIdx = 1088;
-const int nttInvL4PermsIdx = 1216;
-
-static address dilithiumAvx512PermsAddr() {
-  return (address) dilithiumAvx512Perms;
+static address unshufflePermsAddr(int offset) {
+  return ((address) unshufflePerms) + offset*64;
 }
 
-// We do Montgomery multiplications of two vectors of 16 ints each in 4 steps:
-// 1. Do the multiplications of the corresponding even numbered slots into
-//    the odd numbered slots of a third register.
-// 2. Swap the even and odd numbered slots of the original input registers.
-// 3. Similar to step 1, but into a different output register.
-// 4. Combine the outputs of step 1 and step 3 into the output of the Montgomery
-//    multiplication.
-// (For levels 0-6 in the Ntt and levels 1-7 of the inverse Ntt we only swap the
-// odd-even slots of the first multiplicand as in the second (zetas) the
-// odd slots contain the same number as the corresponding even one.)
-// The indexes of the registers to be multiplied
-// are in inputRegs1[] and inputRegs[2].
-// The results go to the registers whose indexes are in outputRegs.
-// scratchRegs should contain 12 different register indexes.
-// The set in outputRegs should not overlap with the set of the middle four
-// scratch registers.
-// The sets in inputRegs1 and inputRegs2 cannot overlap with the set of the
-// first eight scratch registers.
-// In most of the cases, the odd and the corresponding even slices of the
-// registers indexed by the numbers in inputRegs2 will contain the same number,
-// this should be indicated by calling this function with
-// input2NeedsShuffle=false .
+// The following function swaps elements A<->B, C<->D, and so forth.
+// input1[] is shuffled in place; shuffle of input2[] is copied to output2[].
+// Element size (in bits) is specified by size parameter.
+// +-----+-----+-----+-----+-----
+// |     |  A  |     |  C  | ...
+// +-----+-----+-----+-----+-----
+// +-----+-----+-----+-----+-----
+// |  B  |     |  D  |     | ...
+// +-----+-----+-----+-----+-----
 //
-static void montMul64(int outputRegs[], int inputRegs1[], int inputRegs2[],
-                      int scratchRegs[], bool input2NeedsShuffle,
-                      MacroAssembler *_masm) {
+// NOTE: size 0 and 1 are used for initial and final shuffles respectively of
+// dilithiumAlmostInverseNtt and dilithiumAlmostNtt. For size 0 and 1, input1[]
+// and input2[] are modified in-place (and output2 is used as a temporary)
+//
+// Using C++ lambdas for improved readability (to hide parameters that always repeat)
+static auto whole_shuffle(Register scratch, KRegister mergeMask1, KRegister mergeMask2,
+  const XMMRegister unshuffle1, const XMMRegister unshuffle2, int vector_len, MacroAssembler *_masm) {
 
-  for (int i = 0; i < 4; i++) {
-    __ vpmuldq(xmm(scratchRegs[i]), xmm(inputRegs1[i]), xmm(inputRegs2[i]),
-               Assembler::AVX_512bit);
-  }
-  for (int i = 0; i < 4; i++) {
-    __ vpmulld(xmm(scratchRegs[i + 4]), xmm(scratchRegs[i]), montQInvModR,
-               Assembler::AVX_512bit);
-  }
-  for (int i = 0; i < 4; i++) {
-    __ vpmuldq(xmm(scratchRegs[i + 4]), xmm(scratchRegs[i + 4]), dilithium_q,
-               Assembler::AVX_512bit);
-  }
-  for (int i = 0; i < 4; i++) {
-    __ evpsubd(xmm(scratchRegs[i + 4]), k0, xmm(scratchRegs[i]),
-               xmm(scratchRegs[i + 4]), false, Assembler::AVX_512bit);
+  int regCnt = 4;
+  if (vector_len == Assembler::AVX_256bit) {
+    regCnt = 2;
   }
 
-  for (int i = 0; i < 4; i++) {
-    __ vpshufd(xmm(inputRegs1[i]), xmm(inputRegs1[i]), 0xB1,
-               Assembler::AVX_512bit);
-    if (input2NeedsShuffle) {
-       __ vpshufd(xmm(inputRegs2[i]), xmm(inputRegs2[i]), 0xB1,
-                  Assembler::AVX_512bit);
+  return [=](const XMMRegister output2[], const XMMRegister input1[],
+    const XMMRegister input2[], int size) {
+    if (vector_len == Assembler::AVX_256bit) {
+      switch (size) {
+        case 128:
+          for (int i = 0; i < regCnt; i++) {
+            __ vperm2i128(output2[i], input1[i], input2[i], 0b110001);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ vinserti128(input1[i], input1[i], input2[i], 1);
+          }
+          break;
+        case 64:
+          for (int i = 0; i < regCnt; i++) {
+            __ vshufpd(output2[i], input1[i], input2[i], 0b11111111, vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ vshufpd(input1[i], input1[i], input2[i], 0b00000000, vector_len);
+          }
+          break;
+        case 32:
+          for (int i = 0; i < regCnt; i++) {
+            __ vmovshdup(output2[i], input1[i], vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ vpblendd(output2[i], output2[i], input2[i], 0b10101010, vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ vmovsldup(input2[i], input2[i], vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ vpblendd(input1[i], input1[i], input2[i], 0b10101010, vector_len);
+          }
+          break;
+        // Special cases
+        case 1: // initial shuffle for dilithiumAlmostInverseNtt
+          // shuffle all even 32bit columns to input1, and odd to input2
+          for (int i = 0; i < regCnt; i++) {
+            // 0b-3-1-3-1
+            __ vshufps(output2[i], input1[i], input2[i], 0b11011101, vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            // 0b-2-0-2-0
+            __ vshufps(input1[i], input1[i], input2[i], 0b10001000, vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ vpermq(input2[i], output2[i], 0b11011000, vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            // 0b-3-1-2-0
+            __ vpermq(input1[i], input1[i], 0b11011000, vector_len);
+          }
+          break;
+        case 0: // final unshuffle for dilithiumAlmostNtt
+          // reverse case 1: all even are in input1 and odd in input2, put back
+          for (int i = 0; i < regCnt; i++) {
+            __ vpunpckhdq(output2[i], input1[i], input2[i], vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ vpunpckldq(input1[i], input1[i], input2[i], vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ vperm2i128(input2[i], input1[i], output2[i], 0b110001);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ vinserti128(input1[i], input1[i], output2[i], 1);
+          }
+          break;
+        default:
+          assert(false, "Don't call here");
+      }
+    } else {
+      switch (size) {
+        case 256:
+          for (int i = 0; i < regCnt; i++) {
+            // 0b-3-2-3-2
+            __ evshufi64x2(output2[i], input1[i], input2[i], 0b11101110, vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ vinserti64x4(input1[i], input1[i], input2[i], 1);
+          }
+          break;
+        case 128:
+          for (int i = 0; i < regCnt; i++) {
+            __ vmovdqu(output2[i], input2[i], vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ evpermt2q(output2[i], unshuffle2, input1[i], vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ evpermt2q(input1[i], unshuffle1, input2[i], vector_len);
+          }
+
+          break;
+        case 64:
+          for (int i = 0; i < regCnt; i++) {
+            __ vshufpd(output2[i], input1[i], input2[i], 0b11111111, vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ vshufpd(input1[i], input1[i], input2[i], 0b00000000, vector_len);
+          }
+          break;
+        case 32:
+          for (int i = 0; i < regCnt; i++) {
+            __ vmovdqu(output2[i], input2[i], vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ evmovshdup(output2[i], mergeMask2, input1[i], true, vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ evmovsldup(input1[i], mergeMask1, input2[i], true, vector_len);
+          }
+          break;
+        // Special cases
+        case 1: // initial shuffle for dilithiumAlmostInverseNtt
+          // shuffle all even 32bit columns to input1, and odd to input2
+          for (int i = 0; i < regCnt; i++) {
+            __ vmovdqu(output2[i], input2[i], vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ evpermt2d(input2[i], unshuffle2, input1[i], vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ evpermt2d(input1[i], unshuffle1, output2[i], vector_len);
+          }
+          break;
+        case 0: // final unshuffle for dilithiumAlmostNtt
+          // reverse case 1: all even are in input1 and odd in input2, put back
+          for (int i = 0; i < regCnt; i++) {
+            __ vmovdqu(output2[i], input2[i], vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ evpermt2d(input2[i], unshuffle2, input1[i], vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ evpermt2d(input1[i], unshuffle1, output2[i], vector_len);
+          }
+          break;
+        default:
+          assert(false, "Don't call here");
+      }
     }
-  }
-
-  for (int i = 0; i < 4; i++) {
-    __ vpmuldq(xmm(scratchRegs[i]), xmm(inputRegs1[i]), xmm(inputRegs2[i]),
-               Assembler::AVX_512bit);
-  }
-  for (int i = 0; i < 4; i++) {
-    __ vpmulld(xmm(scratchRegs[i + 8]), xmm(scratchRegs[i]), montQInvModR,
-               Assembler::AVX_512bit);
-  }
-  for (int i = 0; i < 4; i++) {
-    __ vpmuldq(xmm(scratchRegs[i + 8]), xmm(scratchRegs[i + 8]), dilithium_q,
-               Assembler::AVX_512bit);
-  }
-  for (int i = 0; i < 4; i++) {
-    __ evpsubd(xmm(outputRegs[i]), k0, xmm(scratchRegs[i]),
-               xmm(scratchRegs[i + 8]), false, Assembler::AVX_512bit);
-  }
-
-  for (int i = 0; i < 4; i++) {
-    __ evpermt2d(xmm(outputRegs[i]), montMulPerm, xmm(scratchRegs[i + 4]),
-                 Assembler::AVX_512bit);
-  }
+  }; // return
 }
 
-static void montMul64(int outputRegs[], int inputRegs1[], int inputRegs2[],
-                       int scratchRegs[], MacroAssembler *_masm) {
-   montMul64(outputRegs, inputRegs1, inputRegs2, scratchRegs, false, _masm);
-}
-
-static void sub_add(int subResult[], int addResult[],
-                    int input1[], int input2[], MacroAssembler *_masm) {
-
-  for (int i = 0; i < 4; i++) {
-    __ evpsubd(xmm(subResult[i]), k0, xmm(input1[i]), xmm(input2[i]), false,
-               Assembler::AVX_512bit);
+// We do Montgomery multiplications of two AVX registers in 4 steps:
+// 1. Do the multiplications of the corresponding even numbered slots into
+//    the odd numbered slots of the scratch2 register.
+// 2. Swap the even and odd numbered slots of the original input registers.(*Note)
+// 3. Similar to step 1, but multiplication result is placed into output register.
+// 4. Combine odd/even slots respectively from the scratch2 and output registers
+//    into the output register for the final result of the Montgomery multiplication.
+// (*Note: For levels 0-6 in the Ntt and levels 1-7 of the inverse Ntt, need NOT
+//         swap the second operand (zetas) since the odd slots contain the same number
+//         as the corresponding even one. This is indicated by input2NeedsShuffle=false)
+//
+// The registers to be multiplied are in input1[] and inputs2[]. The results go
+// into output[]. Two scratch[] register arrays are expected. input1[] can
+// overlap with either output[] or scratch1[]
+// - If AVX512, all register arrays are of length 4
+// - If AVX2, first two registers of each array are in xmm0-xmm15 range
+// Constants montQInvModR, dilithium_q and mergeMask expected to have already
+// been loaded.
+//
+// Using C++ lambdas for improved readability (to hide parameters that always repeat)
+static auto whole_montMul(XMMRegister montQInvModR, XMMRegister dilithium_q,
+    KRegister mergeMask, int vector_len, MacroAssembler *_masm) {
+  int regCnt = 4;
+  int regSize = 64;
+  if (vector_len == Assembler::AVX_256bit) {
+    regCnt = 2;
+    regSize = 32;
   }
 
-  for (int i = 0; i < 4; i++) {
-    __ evpaddd(xmm(addResult[i]), k0, xmm(input1[i]), xmm(input2[i]), false,
-               Assembler::AVX_512bit);
-  }
-}
+  return [=](const XMMRegister output[], const XMMRegister input1[],
+    const XMMRegister input2[], const XMMRegister scratch1[],
+    const XMMRegister scratch2[], bool input2NeedsShuffle = false) {
+    // (Register overloading) Can't always use scratch1 (could override input1).
+    // If so, use output:
+    const XMMRegister* scratch = scratch1 == input1 ? output: scratch1;
 
-static void loadPerm(int destinationRegs[], Register perms,
-                      int offset, MacroAssembler *_masm) {
-  __ evmovdqul(xmm(destinationRegs[0]), Address(perms, offset),
-                 Assembler::AVX_512bit);
-  for (int i = 1; i < 4; i++) {
-      __ evmovdqul(xmm(destinationRegs[i]), xmm(destinationRegs[0]),
-                   Assembler::AVX_512bit);
+    // scratch = input1_even * intput2_even
+    for (int i = 0; i < regCnt; i++) {
+      __ vpmuldq(scratch[i], input1[i], input2[i], vector_len);
     }
+
+    // scratch2_low = scratch_low * montQInvModR
+    for (int i = 0; i < regCnt; i++) {
+      __ vpmuldq(scratch2[i], scratch[i], montQInvModR, vector_len);
+    }
+
+    // scratch2 = scratch2_low * dilithium_q
+    for (int i = 0; i < regCnt; i++) {
+      __ vpmuldq(scratch2[i], scratch2[i], dilithium_q, vector_len);
+    }
+
+    // scratch2_high = scratch2_high - scratch_high
+    for (int i = 0; i < regCnt; i++) {
+      __ vpsubd(scratch2[i], scratch[i], scratch2[i], vector_len);
+    }
+
+    // input1_even = input1_odd
+    // input2_even = input2_odd
+    for (int i = 0; i < regCnt; i++) {
+      __ vpshufd(input1[i], input1[i], 0xB1, vector_len);
+      if (input2NeedsShuffle) {
+        __ vpshufd(input2[i], input2[i], 0xB1, vector_len);
+      }
+    }
+
+    // scratch1 = input1_even*intput2_even
+    for (int i = 0; i < regCnt; i++) {
+      __ vpmuldq(scratch1[i], input1[i], input2[i], vector_len);
+    }
+
+    // output = scratch1_low * montQInvModR
+    for (int i = 0; i < regCnt; i++) {
+      __ vpmuldq(output[i], scratch1[i], montQInvModR, vector_len);
+    }
+
+    // output = output * dilithium_q
+    for (int i = 0; i < regCnt; i++) {
+      __ vpmuldq(output[i], output[i], dilithium_q, vector_len);
+    }
+
+    // output_high = scratch1_high - output_high
+    for (int i = 0; i < regCnt; i++) {
+      __ vpsubd(output[i], scratch1[i], output[i], vector_len);
+    }
+
+    // output = select(output_high, scratch2_high)
+    if (vector_len == Assembler::AVX_256bit) {
+      for (int i = 0; i < regCnt; i++) {
+        __ vmovshdup(scratch2[i], scratch2[i], vector_len);
+      }
+      for (int i = 0; i < regCnt; i++) {
+        __ vpblendd(output[i], output[i], scratch2[i], 0b01010101, vector_len);
+      }
+    } else {
+      for (int i = 0; i < regCnt; i++) {
+        __ evmovshdup(output[i], mergeMask, scratch2[i], true, vector_len);
+      }
+    }
+  }; // return
 }
 
-static void load4Xmms(int destinationRegs[], Register source, int offset,
-                       MacroAssembler *_masm) {
-  for (int i = 0; i < 4; i++) {
-    __ evmovdqul(xmm(destinationRegs[i]), Address(source, offset + i * XMMBYTES),
-                 Assembler::AVX_512bit);
+static void sub_add(const XMMRegister subResult[], const XMMRegister addResult[],
+                    const XMMRegister input1[], const XMMRegister input2[],
+                    int vector_len, MacroAssembler *_masm) {
+  int regCnt = 4;
+  if (vector_len == Assembler::AVX_256bit) {
+    regCnt = 2;
+  }
+
+  for (int i = 0; i < regCnt; i++) {
+    __ vpsubd(subResult[i], input1[i], input2[i], vector_len);
+  }
+
+  for (int i = 0; i < regCnt; i++) {
+    __ vpaddd(addResult[i], input1[i], input2[i], vector_len);
   }
 }
 
-static void loadXmm29(Register source, int offset, MacroAssembler *_masm) {
-    __ evmovdqul(xmm29, Address(source, offset), Assembler::AVX_512bit);
-}
+static void loadXmms(const XMMRegister destinationRegs[], Register source, int offset,
+                     int vector_len, MacroAssembler *_masm, int regCnt = -1, int memStep = -1) {
 
-static void store4Xmms(Register destination, int offset, int xmmRegs[],
-                       MacroAssembler *_masm) {
-  for (int i = 0; i < 4; i++) {
-    __ evmovdqul(Address(destination, offset + i * XMMBYTES), xmm(xmmRegs[i]),
-                 Assembler::AVX_512bit);
+  if (vector_len == Assembler::AVX_256bit) {
+    regCnt = regCnt == -1 ? 2 : regCnt;
+    memStep = memStep == -1 ? 32 : memStep;
+  } else {
+    regCnt = 4;
+    memStep = 64;
+  }
+
+  for (int i = 0; i < regCnt; i++) {
+    __ vmovdqu(destinationRegs[i], Address(source, offset + i * memStep), vector_len);
   }
 }
 
-static int xmm0_3[] = {0, 1, 2, 3};
-static int xmm0145[] = {0, 1, 4, 5};
-static int xmm0246[] = {0, 2, 4, 6};
-static int xmm0426[] = {0, 4, 2, 6};
-static int xmm1357[] = {1, 3, 5, 7};
-static int xmm1537[] = {1, 5, 3, 7};
-static int xmm2367[] = {2, 3, 6, 7};
-static int xmm4_7[] = {4, 5, 6, 7};
-static int xmm8_11[] = {8, 9, 10, 11};
-static int xmm12_15[] = {12, 13, 14, 15};
-static int xmm16_19[] = {16, 17, 18, 19};
-static int xmm20_23[] = {20, 21, 22, 23};
-static int xmm20222426[] = {20, 22, 24, 26};
-static int xmm21232527[] = {21, 23, 25, 27};
-static int xmm24_27[] = {24, 25, 26, 27};
-static int xmm4_20_24[] = {4, 5, 6, 7, 20, 21, 22, 23, 24, 25, 26, 27};
-static int xmm16_27[] = {16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27};
-static int xmm29_29[] = {29, 29, 29, 29};
+static void storeXmms(Register destination, int offset, const XMMRegister xmmRegs[],
+                      int vector_len, MacroAssembler *_masm, int regCnt = -1, int memStep = -1) {
+  if (vector_len == Assembler::AVX_256bit) {
+    regCnt = regCnt == -1 ? 2 : regCnt;
+    memStep = memStep == -1 ? 32 : memStep;
+  } else {
+    regCnt = 4;
+    memStep = 64;
+  }
+
+  for (int i = 0; i < regCnt; i++) {
+    __ vmovdqu(Address(destination, offset + i * memStep), xmmRegs[i], vector_len);
+  }
+}
 
 // Dilithium NTT function except for the final "normalization" to |coeff| < Q.
 // Implements
 // static int implDilithiumAlmostNtt(int[] coeffs, int zetas[]) {}
 //
 // coeffs (int[256]) = c_rarg0
-// zetas (int[256]) = c_rarg1
+// zetas (int[128*8]) = c_rarg1
 //
-//
-static address generate_dilithiumAlmostNtt_avx512(StubGenerator *stubgen,
-                                                  MacroAssembler *_masm) {
-
+static address generate_dilithiumAlmostNtt_avx(StubGenerator *stubgen,
+                                               int vector_len, MacroAssembler *_masm) {
   __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_dilithiumAlmostNtt_id;
   StubCodeMark mark(stubgen, stub_id);
   address start = __ pc();
   __ enter();
 
-  Label L_loop, L_end;
-
   const Register coeffs = c_rarg0;
   const Register zetas = c_rarg1;
-  const Register iterations = c_rarg2;
-
-  const Register perms = r11;
-
-  __ lea(perms, ExternalAddress(dilithiumAvx512PermsAddr()));
-
-  __ evmovdqul(montMulPerm, Address(perms, montMulPermsIdx), Assembler::AVX_512bit);
+  const Register scratch = r10;
 
   // Each level represents one iteration of the outer for loop of the Java version
   // In each of these iterations half of the coefficients are (Montgomery)
   // multiplied by a zeta corresponding to the coefficient and then these
   // products will be added to and subtracted from the other half of the
-  // coefficients. In each level we just collect the coefficients (using
-  // evpermi2d() instructions where necessary, i.e. in levels 4-7) that need to
+  // coefficients. In each level we just shuffle the coefficients that need to
   // be multiplied by the zetas in one set, the rest to another set of vector
   // registers, then redistribute the addition/substraction results.
 
   // For levels 0 and 1 the zetas are not different within the 4 xmm registers
-  // that we would use for them, so we use only one, xmm29.
-  loadXmm29(zetas, 0, _masm);
+  // that we would use for them, so we use only one register.
+
+  // AVX2 version uses the first half of these arrays
+  const XMMRegister Coeffs1[] = {xmm0, xmm1, xmm16, xmm17};
+  const XMMRegister Coeffs2[] = {xmm2, xmm3, xmm18, xmm19};
+  const XMMRegister Coeffs3[] = {xmm4, xmm5, xmm20, xmm21};
+  const XMMRegister Coeffs4[] = {xmm6, xmm7, xmm22, xmm23};
+  const XMMRegister Scratch1[] = {xmm8, xmm9, xmm24, xmm25};
+  const XMMRegister Scratch2[] = {xmm10, xmm11, xmm26, xmm27};
+  const XMMRegister Zetas1[] = {xmm12, xmm12, xmm12, xmm12};
+  const XMMRegister Zetas2[] = {xmm12, xmm12, xmm13, xmm13};
+  const XMMRegister Zetas3[] = {xmm12, xmm13, xmm28, xmm29};
+  const XMMRegister montQInvModR = xmm14;
+  const XMMRegister dilithium_q = xmm15;
+  const XMMRegister unshuffle1 = xmm30;
+  const XMMRegister unshuffle2 = xmm31;
+  KRegister mergeMask1 = k1;
+  KRegister mergeMask2 = k2;
+  // lambdas to hide repeated parameters
+  auto shuffle = whole_shuffle(scratch, mergeMask1, mergeMask2, unshuffle1, unshuffle2, vector_len, _masm);
+  auto montMul64 = whole_montMul(montQInvModR, dilithium_q, mergeMask2, vector_len, _masm);
+
   __ vpbroadcastd(montQInvModR,
                   ExternalAddress(dilithiumAvx512ConstsAddr(montQInvModRIdx)),
-                  Assembler::AVX_512bit, scratch); // q^-1 mod 2^32
+                  vector_len, scratch); // q^-1 mod 2^32
   __ vpbroadcastd(dilithium_q,
                   ExternalAddress(dilithiumAvx512ConstsAddr(dilithium_qIdx)),
-                  Assembler::AVX_512bit, scratch); // q
+                  vector_len, scratch); // q
 
-  // load all coefficients into the vector registers Zmm_0-Zmm_15,
-  // 16 coefficients into each
-  load4Xmms(xmm0_3, coeffs, 0, _masm);
-  load4Xmms(xmm4_7, coeffs, 4 * XMMBYTES, _masm);
-  load4Xmms(xmm8_11, coeffs, 8 * XMMBYTES, _masm);
-  load4Xmms(xmm12_15, coeffs, 12 * XMMBYTES, _masm);
+  if (vector_len == Assembler::AVX_512bit) {
+    // levels 0-3, register shuffles:
+    const XMMRegister Coeffs1_1[] = {xmm0, xmm1, xmm2, xmm3};
+    const XMMRegister Coeffs2_1[] = {xmm16, xmm17, xmm18, xmm19};
+    const XMMRegister Coeffs3_1[] = {xmm4, xmm5, xmm6, xmm7};
+    const XMMRegister Coeffs4_1[] = {xmm20, xmm21, xmm22, xmm23};
+    const XMMRegister Coeffs1_2[] = {xmm0, xmm16, xmm2, xmm18};
+    const XMMRegister Coeffs2_2[] = {xmm1, xmm17, xmm3, xmm19};
+    const XMMRegister Coeffs3_2[] = {xmm4, xmm20, xmm6, xmm22};
+    const XMMRegister Coeffs4_2[] = {xmm5, xmm21, xmm7, xmm23};
 
-  // level 0 and 1 can be done entirely in registers as the zetas on these
-  // levels are the same for all the montmuls that we can do in parallel
+    // Constants for shuffle and montMul64
+    __ mov64(scratch, 0b1010101010101010);
+    __ kmovwl(mergeMask1, scratch);
+    __ knotwl(mergeMask2, mergeMask1);
+    __ vmovdqu(unshuffle1, ExternalAddress(unshufflePermsAddr(0)), vector_len, scratch);
+    __ vmovdqu(unshuffle2, ExternalAddress(unshufflePermsAddr(1)), vector_len, scratch);
 
-  // level 0
-  montMul64(xmm16_19, xmm8_11, xmm29_29, xmm16_27, _masm);
-  sub_add(xmm8_11, xmm0_3, xmm0_3, xmm16_19, _masm);
-  montMul64(xmm16_19, xmm12_15, xmm29_29, xmm16_27, _masm);
-  loadXmm29(zetas, 512, _masm); // for level 1
-  sub_add(xmm12_15, xmm4_7, xmm4_7, xmm16_19, _masm);
+    int memStep = 4 * 64; // 4*64-byte registers
+    loadXmms(Coeffs1, coeffs, 0*memStep, vector_len, _masm);
+    loadXmms(Coeffs2, coeffs, 1*memStep, vector_len, _masm);
+    loadXmms(Coeffs3, coeffs, 2*memStep, vector_len, _masm);
+    loadXmms(Coeffs4, coeffs, 3*memStep, vector_len, _masm);
 
-  // level 1
+    // level 0-3 can be done by shuffling registers (also notice fewer zetas loads, they repeat)
+    // level 0 - 128
+    // scratch1 = coeffs3 * zetas1
+    // coeffs3, coeffs1 = coeffs1 ± scratch1
+    // scratch1 = coeffs4 * zetas1
+    // coeffs4, coeffs2 = coeffs2 ± scratch1
+    __ vmovdqu(Zetas1[0], Address(zetas, 0), vector_len);
+    montMul64(Scratch1, Coeffs3, Zetas1, Coeffs3, Scratch2);
+    sub_add(Coeffs3, Coeffs1, Coeffs1, Scratch1, vector_len, _masm);
+    montMul64(Scratch1, Coeffs4, Zetas1, Coeffs4, Scratch2);
+    sub_add(Coeffs4, Coeffs2, Coeffs2, Scratch1, vector_len, _masm);
 
-  montMul64(xmm16_19, xmm4_7, xmm29_29, xmm16_27, _masm);
-  loadXmm29(zetas, 768, _masm);
-  sub_add(xmm4_7, xmm0_3, xmm0_3, xmm16_19, _masm);
-  montMul64(xmm16_19, xmm12_15, xmm29_29, xmm16_27, _masm);
-  sub_add(xmm12_15, xmm8_11, xmm8_11, xmm16_19, _masm);
+    // level 1 - 64
+    __ vmovdqu(Zetas1[0], Address(zetas,        512), vector_len);
+    montMul64(Scratch1, Coeffs2, Zetas1, Coeffs2, Scratch2);
+    sub_add(Coeffs2, Coeffs1, Coeffs1, Scratch1, vector_len, _masm);
 
-  // levels 2 to 7 are done in 2 batches, by first saving half of the coefficients
-  // from level 1 into memory, doing all the level 2 to level 7 computations
-  // on the remaining half in the vector registers, saving the result to
-  // memory after level 7, then loading back the coefficients that we saved after
-  // level 1 and do the same computation with those
+    __ vmovdqu(Zetas1[0], Address(zetas, 4*64 + 512), vector_len);
+    montMul64(Scratch1, Coeffs4, Zetas1, Coeffs4, Scratch2);
+    sub_add(Coeffs4, Coeffs3, Coeffs3, Scratch1, vector_len, _masm);
 
-  store4Xmms(coeffs, 8 * XMMBYTES, xmm8_11, _masm);
-  store4Xmms(coeffs, 12 * XMMBYTES, xmm12_15, _masm);
+    // level 2 - 32
+    __ vmovdqu(Zetas2[0], Address(zetas,        2 * 512), vector_len);
+    __ vmovdqu(Zetas2[2], Address(zetas, 2*64 + 2 * 512), vector_len);
+    montMul64(Scratch1, Coeffs2_1, Zetas2, Coeffs2_1, Scratch2);
+    sub_add(Coeffs2_1, Coeffs1_1, Coeffs1_1, Scratch1, vector_len, _masm);
 
-  __ movl(iterations, 2);
+    __ vmovdqu(Zetas2[0], Address(zetas, 4*64 + 2 * 512), vector_len);
+    __ vmovdqu(Zetas2[2], Address(zetas, 6*64 + 2 * 512), vector_len);
+    montMul64(Scratch1, Coeffs4_1, Zetas2, Coeffs4_1, Scratch2);
+    sub_add(Coeffs4_1, Coeffs3_1, Coeffs3_1, Scratch1, vector_len, _masm);
 
-  __ align(OptoLoopAlignment);
-  __ BIND(L_loop);
+    // level 3 - 16
+    loadXmms(Zetas3, zetas, 3 * 512, vector_len, _masm);
+    montMul64(Scratch1, Coeffs2_2, Zetas3, Coeffs2_2, Scratch2);
+    sub_add(Coeffs2_2, Coeffs1_2, Coeffs1_2, Scratch1, vector_len, _masm);
 
-  __ subl(iterations, 1);
+    loadXmms(Zetas3, zetas, 4*64 + 3 * 512, vector_len, _masm);
+    montMul64(Scratch1, Coeffs4_2, Zetas3, Coeffs4_2, Scratch2);
+    sub_add(Coeffs4_2, Coeffs3_2, Coeffs3_2, Scratch1, vector_len, _masm);
 
-  // level 2
-  load4Xmms(xmm12_15, zetas, 2 * 512, _masm);
-  montMul64(xmm16_19, xmm2367, xmm12_15, xmm16_27, _masm);
-  load4Xmms(xmm12_15, zetas, 3 * 512, _masm); // for level 3
-  sub_add(xmm2367, xmm0145, xmm0145, xmm16_19, _masm);
+    for (int level = 4, distance = 8; level<8; level++, distance /= 2) {
+      // zetas = load(level * 512)
+      // coeffs1_2, scratch1 = shuffle(coeffs1_2, coeffs2_2)
+      // scratch1 = scratch1 * zetas
+      // coeffs2_2 = coeffs1_2 - scratch1
+      // coeffs1_2 = coeffs1_2 + scratch1
+      loadXmms(Zetas3, zetas, level * 512, vector_len, _masm);
+      shuffle(Scratch1, Coeffs1_2, Coeffs2_2, distance * 32); // Coeffs2_2 freed
+      montMul64(Scratch1, Scratch1, Zetas3, Coeffs2_2, Scratch2, level==7);
+      sub_add(Coeffs2_2, Coeffs1_2, Coeffs1_2, Scratch1, vector_len, _masm);
 
-  // level 3
+      loadXmms(Zetas3, zetas, 4*64 + level * 512, vector_len, _masm);
+      shuffle(Scratch1, Coeffs3_2, Coeffs4_2, distance * 32); // Coeffs4_2 freed
+      montMul64(Scratch1, Scratch1, Zetas3, Coeffs4_2, Scratch2, level==7);
+      sub_add(Coeffs4_2, Coeffs3_2, Coeffs3_2, Scratch1, vector_len, _masm);
+    }
 
-  montMul64(xmm16_19, xmm1357, xmm12_15, xmm16_27, _masm);
-  sub_add(xmm1357, xmm0246, xmm0246, xmm16_19, _masm);
+    // Constants for final unshuffle
+    __ vmovdqu(unshuffle1, ExternalAddress(unshufflePermsAddr(2)), vector_len, scratch);
+    __ vmovdqu(unshuffle2, ExternalAddress(unshufflePermsAddr(3)), vector_len, scratch);
+    shuffle(Scratch1, Coeffs1_2, Coeffs2_2, 0);
+    shuffle(Scratch1, Coeffs3_2, Coeffs4_2, 0);
 
-  // level 4
-  loadPerm(xmm16_19, perms, nttL4PermsIdx, _masm);
-  loadPerm(xmm12_15, perms, nttL4PermsIdx + 64, _masm);
-  load4Xmms(xmm24_27, zetas, 4 * 512, _masm);
+    storeXmms(coeffs, 0*memStep, Coeffs1, vector_len, _masm);
+    storeXmms(coeffs, 1*memStep, Coeffs2, vector_len, _masm);
+    storeXmms(coeffs, 2*memStep, Coeffs3, vector_len, _masm);
+    storeXmms(coeffs, 3*memStep, Coeffs4, vector_len, _masm);
+  } else { // Assembler::AVX_256bit
+    // levels 0-4, register shuffles:
+    const XMMRegister Coeffs1_1[] = {xmm0, xmm2};
+    const XMMRegister Coeffs2_1[] = {xmm1, xmm3};
+    const XMMRegister Coeffs3_1[] = {xmm4, xmm6};
+    const XMMRegister Coeffs4_1[] = {xmm5, xmm7};
 
-  for (int i = 0; i < 8; i += 2) {
-    __ evpermi2d(xmm(i/2 + 16), xmm(i), xmm(i + 1), Assembler::AVX_512bit);
+    const XMMRegister Coeffs1_2[] = {xmm0, xmm1, xmm2, xmm3};
+    const XMMRegister Coeffs2_2[] = {xmm4, xmm5, xmm6, xmm7};
+
+    // Since we cannot fit the entire payload into registers, we process the
+    // input in two stages. For the first half, load 8 registers, each 32 integers
+    // apart. With one load, we can process level 0-2 (128-, 64- and 32-integers
+    // apart). For the remaining levels, load 8 registers from consecutive memory
+    // (16-, 8-, 4-, 2-, 1-integer apart)
+    // Levels 5, 6, 7 (4-, 2-, 1-integer apart) require shuffles within registers.
+    // On the other levels, shuffles can be done by rearranging the register order
+
+    // Four batches of 8 registers each, 128 bytes apart
+    for (int i=0; i<4; i++) {
+      loadXmms(Coeffs1_2, coeffs, i*32 + 0*128, vector_len, _masm, 4, 128);
+      loadXmms(Coeffs2_2, coeffs, i*32 + 4*128, vector_len, _masm, 4, 128);
+
+      // level 0-2 can be done by shuffling registers (also notice fewer zetas loads, they repeat)
+      // level 0 - 128
+      __ vmovdqu(Zetas1[0], Address(zetas, 0), vector_len);
+      montMul64(Scratch1, Coeffs3, Zetas1, Coeffs3, Scratch2);
+      sub_add(Coeffs3, Coeffs1, Coeffs1, Scratch1, vector_len, _masm);
+      montMul64(Scratch1, Coeffs4, Zetas1, Coeffs4, Scratch2);
+      sub_add(Coeffs4, Coeffs2, Coeffs2, Scratch1, vector_len, _masm);
+
+      // level 1 - 64
+      __ vmovdqu(Zetas1[0], Address(zetas,        512), vector_len);
+      montMul64(Scratch1, Coeffs2, Zetas1, Coeffs2, Scratch2);
+      sub_add(Coeffs2, Coeffs1, Coeffs1, Scratch1, vector_len, _masm);
+
+      __ vmovdqu(Zetas1[0], Address(zetas, 4*64 + 512), vector_len);
+      montMul64(Scratch1, Coeffs4, Zetas1, Coeffs4, Scratch2);
+      sub_add(Coeffs4, Coeffs3, Coeffs3, Scratch1, vector_len, _masm);
+
+      // level 2 - 32
+      loadXmms(Zetas3, zetas, 2 * 512, vector_len, _masm, 2, 128);
+      montMul64(Scratch1, Coeffs2_1, Zetas3, Coeffs2_1, Scratch2);
+      sub_add(Coeffs2_1, Coeffs1_1, Coeffs1_1, Scratch1, vector_len, _masm);
+
+      loadXmms(Zetas3, zetas, 4*64 + 2 * 512, vector_len, _masm, 2, 128);
+      montMul64(Scratch1, Coeffs4_1, Zetas3, Coeffs4_1, Scratch2);
+      sub_add(Coeffs4_1, Coeffs3_1, Coeffs3_1, Scratch1, vector_len, _masm);
+
+      storeXmms(coeffs, i*32 + 0*128, Coeffs1_2, vector_len, _masm, 4, 128);
+      storeXmms(coeffs, i*32 + 4*128, Coeffs2_2, vector_len, _masm, 4, 128);
+    }
+
+    // Four batches of 8 registers, consecutive loads
+    for (int i=0; i<4; i++) {
+      loadXmms(Coeffs1_2, coeffs,       i*256, vector_len, _masm, 4);
+      loadXmms(Coeffs2_2, coeffs, 128 + i*256, vector_len, _masm, 4);
+
+      // level 3 - 16
+      __ vmovdqu(Zetas1[0], Address(zetas, i*128 + 3 * 512), vector_len);
+      montMul64(Scratch1, Coeffs2, Zetas1, Coeffs2, Scratch2);
+      sub_add(Coeffs2, Coeffs1, Coeffs1, Scratch1, vector_len, _masm);
+
+      __ vmovdqu(Zetas1[0], Address(zetas, i*128 + 64 + 3 * 512), vector_len);
+      montMul64(Scratch1, Coeffs4, Zetas1, Coeffs4, Scratch2);
+      sub_add(Coeffs4, Coeffs3, Coeffs3, Scratch1, vector_len, _masm);
+
+      // level 4 - 8
+      loadXmms(Zetas3, zetas, i*128 + 4 * 512, vector_len, _masm);
+      montMul64(Scratch1, Coeffs2_1, Zetas3, Coeffs2_1, Scratch2);
+      sub_add(Coeffs2_1, Coeffs1_1, Coeffs1_1, Scratch1, vector_len, _masm);
+
+      loadXmms(Zetas3, zetas, i*128 + 64 + 4 * 512, vector_len, _masm);
+      montMul64(Scratch1, Coeffs4_1, Zetas3, Coeffs4_1, Scratch2);
+      sub_add(Coeffs4_1, Coeffs3_1, Coeffs3_1, Scratch1, vector_len, _masm);
+
+      for (int level = 5, distance = 4; level<8; level++, distance /= 2) {
+        // zetas = load(level * 512)
+        // coeffs1_2, scratch1 = shuffle(coeffs1_2, coeffs2_2)
+        // scratch1 = scratch1 * zetas
+        // coeffs2_2 = coeffs1_2 - scratch1
+        // coeffs1_2 = coeffs1_2 + scratch1
+        loadXmms(Zetas3, zetas, i*128 + level * 512, vector_len, _masm);
+        shuffle(Scratch1, Coeffs1_1, Coeffs2_1, distance * 32); //Coeffs2_2 freed
+        montMul64(Scratch1, Scratch1, Zetas3, Coeffs2_1, Scratch2, level==7);
+        sub_add(Coeffs2_1, Coeffs1_1, Coeffs1_1, Scratch1, vector_len, _masm);
+
+        loadXmms(Zetas3, zetas, i*128 + 64 + level * 512, vector_len, _masm);
+        shuffle(Scratch1, Coeffs3_1, Coeffs4_1, distance * 32); //Coeffs4_2 freed
+        montMul64(Scratch1, Scratch1, Zetas3, Coeffs4_1, Scratch2, level==7);
+        sub_add(Coeffs4_1, Coeffs3_1, Coeffs3_1, Scratch1, vector_len, _masm);
+      }
+
+      shuffle(Scratch1, Coeffs1_1, Coeffs2_1, 0);
+      shuffle(Scratch1, Coeffs3_1, Coeffs4_1, 0);
+
+      storeXmms(coeffs,       i*256, Coeffs1_2, vector_len, _masm, 4);
+      storeXmms(coeffs, 128 + i*256, Coeffs2_2, vector_len, _masm, 4);
+    }
   }
-  for (int i = 0; i < 8; i += 2) {
-    __ evpermi2d(xmm(i / 2 + 12), xmm(i), xmm(i + 1), Assembler::AVX_512bit);
-  }
-
-  montMul64(xmm12_15, xmm12_15, xmm24_27, xmm4_20_24, _masm);
-  sub_add(xmm1357, xmm0246, xmm16_19, xmm12_15, _masm);
-
-  // level 5
-  loadPerm(xmm16_19, perms, nttL5PermsIdx, _masm);
-  loadPerm(xmm12_15, perms, nttL5PermsIdx + 64, _masm);
-  load4Xmms(xmm24_27, zetas, 5 * 512, _masm);
-
-  for (int i = 0; i < 8; i += 2) {
-    __ evpermi2d(xmm(i/2 + 16), xmm(i), xmm(i + 1), Assembler::AVX_512bit);
-  }
-  for (int i = 0; i < 8; i += 2) {
-    __ evpermi2d(xmm(i / 2 + 12), xmm(i), xmm(i + 1), Assembler::AVX_512bit);
-  }
-
-  montMul64(xmm12_15, xmm12_15, xmm24_27, xmm4_20_24, _masm);
-  sub_add(xmm1357, xmm0246, xmm16_19, xmm12_15, _masm);
-
-  // level 6
-  loadPerm(xmm16_19, perms, nttL6PermsIdx, _masm);
-  loadPerm(xmm12_15, perms, nttL6PermsIdx + 64, _masm);
-  load4Xmms(xmm24_27, zetas, 6 * 512, _masm);
-
-  for (int i = 0; i < 8; i += 2) {
-    __ evpermi2d(xmm(i/2 + 16), xmm(i), xmm(i + 1), Assembler::AVX_512bit);
-  }
-  for (int i = 0; i < 8; i += 2) {
-    __ evpermi2d(xmm(i / 2 + 12), xmm(i), xmm(i + 1), Assembler::AVX_512bit);
-  }
-
-  montMul64(xmm12_15, xmm12_15, xmm24_27, xmm4_20_24, _masm);
-  sub_add(xmm1357, xmm0246, xmm16_19, xmm12_15, _masm);
-
-  // level 7
-  loadPerm(xmm16_19, perms, nttL7PermsIdx, _masm);
-  loadPerm(xmm12_15, perms, nttL7PermsIdx + 64, _masm);
-  load4Xmms(xmm24_27, zetas, 7 * 512, _masm);
-
-  for (int i = 0; i < 8; i += 2) {
-    __ evpermi2d(xmm(i / 2 + 16), xmm(i), xmm(i + 1), Assembler::AVX_512bit);
-  }
-  for (int i = 0; i < 8; i += 2) {
-    __ evpermi2d(xmm(i / 2 + 12), xmm(i), xmm(i + 1), Assembler::AVX_512bit);
-  }
-
-  montMul64(xmm12_15, xmm12_15, xmm24_27, xmm4_20_24, true, _masm);
-  loadPerm(xmm0246, perms, nttL7PermsIdx + 2 * XMMBYTES, _masm);
-  loadPerm(xmm1357, perms, nttL7PermsIdx + 3 * XMMBYTES, _masm);
-  sub_add(xmm21232527, xmm20222426, xmm16_19, xmm12_15, _masm);
-
-  for (int i = 0; i < 8; i += 2) {
-    __ evpermi2d(xmm(i), xmm(i + 20), xmm(i + 21), Assembler::AVX_512bit);
-    __ evpermi2d(xmm(i + 1), xmm(i + 20), xmm(i + 21), Assembler::AVX_512bit);
-  }
-
-  __ cmpl(iterations, 0);
-  __ jcc(Assembler::equal, L_end);
-
-  store4Xmms(coeffs, 0, xmm0_3, _masm);
-  store4Xmms(coeffs, 4 * XMMBYTES, xmm4_7, _masm);
-
-  load4Xmms(xmm0_3, coeffs, 8 * XMMBYTES, _masm);
-  load4Xmms(xmm4_7, coeffs, 12 * XMMBYTES, _masm);
-
-  __ addptr(zetas, 4 * XMMBYTES);
-
-  __ jmp(L_loop);
-
-  __ BIND(L_end);
-
-  store4Xmms(coeffs, 8 * XMMBYTES, xmm0_3, _masm);
-  store4Xmms(coeffs, 12 * XMMBYTES, xmm4_7, _masm);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ mov64(rax, 0); // return 0
@@ -459,172 +654,233 @@ static address generate_dilithiumAlmostNtt_avx512(StubGenerator *stubgen,
 // static int implDilithiumAlmostInverseNtt(int[] coeffs, int[] zetas) {}
 //
 // coeffs (int[256]) = c_rarg0
-// zetas (int[256]) = c_rarg1
-static address generate_dilithiumAlmostInverseNtt_avx512(StubGenerator *stubgen,
-                                                         MacroAssembler *_masm) {
-
+// zetas (int[128*8]) = c_rarg1
+static address generate_dilithiumAlmostInverseNtt_avx(StubGenerator *stubgen,
+                                        int vector_len, MacroAssembler *_masm) {
   __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_dilithiumAlmostInverseNtt_id;
   StubCodeMark mark(stubgen, stub_id);
   address start = __ pc();
   __ enter();
 
-  Label L_loop, L_end;
-
   const Register coeffs = c_rarg0;
   const Register zetas = c_rarg1;
+  const Register scratch = r10;
 
-  const Register iterations = c_rarg2;
+  // AVX2 version uses the first half of these arrays
+  const XMMRegister Coeffs1[] = {xmm0, xmm1, xmm16, xmm17};
+  const XMMRegister Coeffs2[] = {xmm2, xmm3, xmm18, xmm19};
+  const XMMRegister Coeffs3[] = {xmm4, xmm5, xmm20, xmm21};
+  const XMMRegister Coeffs4[] = {xmm6, xmm7, xmm22, xmm23};
+  const XMMRegister Scratch1[] = {xmm8, xmm9, xmm24, xmm25};
+  const XMMRegister Scratch2[] = {xmm10, xmm11, xmm26, xmm27};
+  const XMMRegister Zetas1[] = {xmm12, xmm12, xmm12, xmm12};
+  const XMMRegister Zetas2[] = {xmm12, xmm12, xmm13, xmm13};
+  const XMMRegister Zetas3[] = {xmm12, xmm13, xmm28, xmm29};
+  const XMMRegister montQInvModR = xmm14;
+  const XMMRegister dilithium_q = xmm15;
+  const XMMRegister unshuffle1 = xmm30;
+  const XMMRegister unshuffle2 = xmm31;
+  KRegister mergeMask1 = k1;
+  KRegister mergeMask2 = k2;
+  // lambdas to hide repeated parameters
+  auto shuffle = whole_shuffle(scratch, mergeMask1, mergeMask2, unshuffle1, unshuffle2, vector_len, _masm);
+  auto montMul64 = whole_montMul(montQInvModR, dilithium_q, mergeMask2, vector_len, _masm);
 
-  const Register perms = r11;
-
-  __ lea(perms, ExternalAddress(dilithiumAvx512PermsAddr()));
-
-  __ evmovdqul(montMulPerm, Address(perms, montMulPermsIdx), Assembler::AVX_512bit);
   __ vpbroadcastd(montQInvModR,
                   ExternalAddress(dilithiumAvx512ConstsAddr(montQInvModRIdx)),
-                  Assembler::AVX_512bit, scratch); // q^-1 mod 2^32
+                  vector_len, scratch); // q^-1 mod 2^32
   __ vpbroadcastd(dilithium_q,
                   ExternalAddress(dilithiumAvx512ConstsAddr(dilithium_qIdx)),
-                  Assembler::AVX_512bit, scratch); // q
+                  vector_len, scratch); // q
 
   // Each level represents one iteration of the outer for loop of the
   // Java version.
   // In each of these iterations half of the coefficients are added to and
   // subtracted from the other half of the coefficients then the result of
-  // the substartion is (Montgomery) multiplied by the corresponding zetas.
-  // In each level we just collect the coefficients (using evpermi2d()
-  // instructions where necessary, i.e. on levels 0-4) so that the results of
+  // the subtraction is (Montgomery) multiplied by the corresponding zetas.
+  // In each level we just shuffle the coefficients so that the results of
   // the additions and subtractions go to the vector registers so that they
   // align with each other and the zetas.
 
-  // We do levels 0-6 in two batches, each batch entirely in the vector registers
-  load4Xmms(xmm0_3, coeffs, 0, _masm);
-  load4Xmms(xmm4_7, coeffs, 4 * XMMBYTES, _masm);
+  if (vector_len == Assembler::AVX_512bit) {
+    // levels 4-7, register shuffles:
+    const XMMRegister Coeffs1_1[] = {xmm0, xmm1, xmm2, xmm3};
+    const XMMRegister Coeffs2_1[] = {xmm16, xmm17, xmm18, xmm19};
+    const XMMRegister Coeffs3_1[] = {xmm4, xmm5, xmm6, xmm7};
+    const XMMRegister Coeffs4_1[] = {xmm20, xmm21, xmm22, xmm23};
+    const XMMRegister Coeffs1_2[] = {xmm0, xmm16, xmm2, xmm18};
+    const XMMRegister Coeffs2_2[] = {xmm1, xmm17, xmm3, xmm19};
+    const XMMRegister Coeffs3_2[] = {xmm4, xmm20, xmm6, xmm22};
+    const XMMRegister Coeffs4_2[] = {xmm5, xmm21, xmm7, xmm23};
 
-  __ movl(iterations, 2);
+    // Constants for shuffle and montMul64
+    __ mov64(scratch, 0b1010101010101010);
+    __ kmovwl(mergeMask1, scratch);
+    __ knotwl(mergeMask2, mergeMask1);
+    __ vmovdqu(unshuffle1, ExternalAddress(unshufflePermsAddr(4)), vector_len, scratch);
+    __ vmovdqu(unshuffle2, ExternalAddress(unshufflePermsAddr(5)), vector_len, scratch);
 
-  __ align(OptoLoopAlignment);
-  __ BIND(L_loop);
+    int memStep = 4 * 64;
+    loadXmms(Coeffs1, coeffs, 0*memStep, vector_len, _masm);
+    loadXmms(Coeffs2, coeffs, 1*memStep, vector_len, _masm);
+    loadXmms(Coeffs3, coeffs, 2*memStep, vector_len, _masm);
+    loadXmms(Coeffs4, coeffs, 3*memStep, vector_len, _masm);
 
-  __ subl(iterations, 1);
+    shuffle(Scratch1, Coeffs1_2, Coeffs2_2, 1);
+    shuffle(Scratch1, Coeffs3_2, Coeffs4_2, 1);
 
-  // level 0
-  loadPerm(xmm8_11, perms, nttInvL0PermsIdx, _masm);
-  loadPerm(xmm12_15, perms, nttInvL0PermsIdx + 64, _masm);
+    // Constants for shuffle(128)
+    __ vmovdqu(unshuffle1, ExternalAddress(unshufflePermsAddr(0)), vector_len, scratch);
+    __ vmovdqu(unshuffle2, ExternalAddress(unshufflePermsAddr(1)), vector_len, scratch);
+    for (int level = 0, distance = 1; level<4; level++, distance *= 2) {
+      // zetas = load(level * 512)
+      // coeffs1_2 = coeffs1_2 + coeffs2_2
+      // scratch1 = coeffs1_2 - coeffs2_2
+      // scratch1 = scratch1 * zetas
+      // coeffs1_2, coeffs2_2 = shuffle(coeffs1_2, scratch1)
+      loadXmms(Zetas3, zetas, level * 512, vector_len, _masm);
+      sub_add(Scratch1, Coeffs1_2, Coeffs1_2, Coeffs2_2, vector_len, _masm); // Coeffs2_2 freed
+      montMul64(Scratch1, Scratch1, Zetas3, Coeffs2_2, Scratch2, level==0);
+      shuffle(Coeffs2_2, Coeffs1_2, Scratch1, distance * 32);
 
-  for (int i = 0; i < 8; i += 2) {
-    __ evpermi2d(xmm(i / 2 + 8), xmm(i), xmm(i + 1), Assembler::AVX_512bit);
-    __ evpermi2d(xmm(i / 2 + 12), xmm(i), xmm(i + 1), Assembler::AVX_512bit);
+      loadXmms(Zetas3, zetas, 4*64 + level * 512, vector_len, _masm);
+      sub_add(Scratch1, Coeffs3_2, Coeffs3_2, Coeffs4_2, vector_len, _masm); // Coeffs4_2 freed
+      montMul64(Scratch1, Scratch1, Zetas3, Coeffs4_2, Scratch2, level==0);
+      shuffle(Coeffs4_2, Coeffs3_2, Scratch1, distance * 32);
+    }
+
+    // level 4
+    loadXmms(Zetas3, zetas, 4 * 512, vector_len, _masm);
+    sub_add(Scratch1, Coeffs1_2, Coeffs1_2, Coeffs2_2, vector_len, _masm); // Coeffs2_2 freed
+    montMul64(Coeffs2_2, Scratch1, Zetas3, Scratch1, Scratch2);
+
+    loadXmms(Zetas3, zetas, 4*64 + 4 * 512, vector_len, _masm);
+    sub_add(Scratch1, Coeffs3_2, Coeffs3_2, Coeffs4_2, vector_len, _masm); // Coeffs4_2 freed
+    montMul64(Coeffs4_2, Scratch1, Zetas3, Scratch1, Scratch2);
+
+    // level 5
+    __ vmovdqu(Zetas2[0], Address(zetas,        5 * 512), vector_len);
+    __ vmovdqu(Zetas2[2], Address(zetas, 2*64 + 5 * 512), vector_len);
+    sub_add(Scratch1, Coeffs1_1, Coeffs1_1, Coeffs2_1, vector_len, _masm); // Coeffs2_1 freed
+    montMul64(Coeffs2_1, Scratch1, Zetas2, Scratch1, Scratch2);
+
+    __ vmovdqu(Zetas2[0], Address(zetas, 4*64 + 5 * 512), vector_len);
+    __ vmovdqu(Zetas2[2], Address(zetas, 6*64 + 5 * 512), vector_len);
+    sub_add(Scratch1, Coeffs3_1, Coeffs3_1, Coeffs4_1, vector_len, _masm); // Coeffs4_1 freed
+    montMul64(Coeffs4_1, Scratch1, Zetas2, Scratch1, Scratch2);
+
+    // level 6
+    __ vmovdqu(Zetas1[0], Address(zetas,        6 * 512), vector_len);
+    sub_add(Scratch1, Coeffs1, Coeffs1, Coeffs2, vector_len, _masm); // Coeffs2 freed
+    montMul64(Coeffs2, Scratch1, Zetas1, Scratch1, Scratch2);
+
+    __ vmovdqu(Zetas1[0], Address(zetas, 4*64 + 6 * 512), vector_len);
+    sub_add(Scratch1, Coeffs3, Coeffs3, Coeffs4, vector_len, _masm); // Coeffs4 freed
+    montMul64(Coeffs4, Scratch1, Zetas1, Scratch1, Scratch2);
+
+    // level 7
+    __ vmovdqu(Zetas1[0], Address(zetas, 7 * 512), vector_len);
+    sub_add(Scratch1, Coeffs1, Coeffs1, Coeffs3, vector_len, _masm); // Coeffs3 freed
+    montMul64(Coeffs3, Scratch1, Zetas1, Scratch1, Scratch2);
+    sub_add(Scratch1, Coeffs2, Coeffs2, Coeffs4, vector_len, _masm); // Coeffs4 freed
+    montMul64(Coeffs4, Scratch1, Zetas1, Scratch1, Scratch2);
+
+    storeXmms(coeffs, 0*memStep, Coeffs1, vector_len, _masm);
+    storeXmms(coeffs, 1*memStep, Coeffs2, vector_len, _masm);
+    storeXmms(coeffs, 2*memStep, Coeffs3, vector_len, _masm);
+    storeXmms(coeffs, 3*memStep, Coeffs4, vector_len, _masm);
+  } else { // Assembler::AVX_256bit
+    // Permutations of Coeffs1, Coeffs2, Coeffs3 and Coeffs4
+    const XMMRegister Coeffs1_1[] = {xmm0, xmm2};
+    const XMMRegister Coeffs2_1[] = {xmm1, xmm3};
+    const XMMRegister Coeffs3_1[] = {xmm4, xmm6};
+    const XMMRegister Coeffs4_1[] = {xmm5, xmm7};
+
+    const XMMRegister Coeffs1_2[] = {xmm0, xmm1, xmm2, xmm3};
+    const XMMRegister Coeffs2_2[] = {xmm4, xmm5, xmm6, xmm7};
+
+    // Four batches of 8 registers, consecutive loads
+    for (int i=0; i<4; i++) {
+      loadXmms(Coeffs1_2, coeffs,       i*256, vector_len, _masm, 4);
+      loadXmms(Coeffs2_2, coeffs, 128 + i*256, vector_len, _masm, 4);
+
+      shuffle(Scratch1, Coeffs1_1, Coeffs2_1, 1);
+      shuffle(Scratch1, Coeffs3_1, Coeffs4_1, 1);
+
+      for (int level = 0, distance = 1; level <= 2; level++, distance *= 2) {
+        // zetas = load(level * 512)
+        // coeffs1_2 = coeffs1_2 + coeffs2_2
+        // scratch1 = coeffs1_2 - coeffs2_2
+        // scratch1 = scratch1 * zetas
+        // coeffs1_2, coeffs2_2 = shuffle(coeffs1_2, scratch1)
+        loadXmms(Zetas3, zetas, i*128 + level * 512, vector_len, _masm);
+        sub_add(Scratch1, Coeffs1_1, Coeffs1_1, Coeffs2_1, vector_len, _masm); // Coeffs2_1 freed
+        montMul64(Scratch1, Scratch1, Zetas3, Coeffs2_1, Scratch2, level==0);
+        shuffle(Coeffs2_1, Coeffs1_1, Scratch1, distance * 32);
+
+        loadXmms(Zetas3, zetas, i*128 + 64 + level * 512, vector_len, _masm);
+        sub_add(Scratch1, Coeffs3_1, Coeffs3_1, Coeffs4_1, vector_len, _masm); // Coeffs4_1 freed
+        montMul64(Scratch1, Scratch1, Zetas3, Coeffs4_1, Scratch2, level==0);
+        shuffle(Coeffs4_1, Coeffs3_1, Scratch1, distance * 32);
+      }
+
+      // level 3
+      loadXmms(Zetas3, zetas, i*128 + 3 * 512, vector_len, _masm);
+      sub_add(Scratch1, Coeffs1_1, Coeffs1_1, Coeffs2_1, vector_len, _masm); // Coeffs2_1 freed
+      montMul64(Coeffs2_1, Scratch1, Zetas3, Scratch1, Scratch2);
+
+      loadXmms(Zetas3, zetas, i*128 + 64 + 3 * 512, vector_len, _masm);
+      sub_add(Scratch1, Coeffs3_1, Coeffs3_1, Coeffs4_1, vector_len, _masm); // Coeffs4_1 freed
+      montMul64(Coeffs4_1, Scratch1, Zetas3, Scratch1, Scratch2);
+
+      // level 4
+      __ vmovdqu(Zetas1[0], Address(zetas, i*128 + 4 * 512), vector_len);
+      sub_add(Scratch1, Coeffs1, Coeffs1, Coeffs2, vector_len, _masm); // Coeffs2 freed
+      montMul64(Coeffs2, Scratch1, Zetas1, Scratch1, Scratch2);
+
+      __ vmovdqu(Zetas1[0], Address(zetas, i*128 + 64 + 4 * 512), vector_len);
+      sub_add(Scratch1, Coeffs3, Coeffs3, Coeffs4, vector_len, _masm); // Coeffs4 freed
+      montMul64(Coeffs4, Scratch1, Zetas1, Scratch1, Scratch2);
+
+      storeXmms(coeffs,       i*256, Coeffs1_2, vector_len, _masm, 4);
+      storeXmms(coeffs, 128 + i*256, Coeffs2_2, vector_len, _masm, 4);
+    }
+
+    // Four batches of 8 registers each, 128 bytes apart
+    for (int i=0; i<4; i++) {
+      loadXmms(Coeffs1_2, coeffs, i*32 + 0*128, vector_len, _masm, 4, 128);
+      loadXmms(Coeffs2_2, coeffs, i*32 + 4*128, vector_len, _masm, 4, 128);
+
+      // level 5
+      loadXmms(Zetas3, zetas, 5 * 512, vector_len, _masm, 2, 128);
+      sub_add(Scratch1, Coeffs1_1, Coeffs1_1, Coeffs2_1, vector_len, _masm); // Coeffs2_1 freed
+      montMul64(Coeffs2_1, Scratch1, Zetas3, Scratch1, Scratch2);
+
+      loadXmms(Zetas3, zetas, 4*64 + 5 * 512, vector_len, _masm, 2, 128);
+      sub_add(Scratch1, Coeffs3_1, Coeffs3_1, Coeffs4_1, vector_len, _masm); // Coeffs4_1 freed
+      montMul64(Coeffs4_1, Scratch1, Zetas3, Scratch1, Scratch2);
+
+      // level 6
+      __ vmovdqu(Zetas1[0], Address(zetas,        6 * 512), vector_len);
+      sub_add(Scratch1, Coeffs1, Coeffs1, Coeffs2, vector_len, _masm); // Coeffs2 freed
+      montMul64(Coeffs2, Scratch1, Zetas1, Scratch1, Scratch2);
+
+      __ vmovdqu(Zetas1[0], Address(zetas, 4*64 + 6 * 512), vector_len);
+      sub_add(Scratch1, Coeffs3, Coeffs3, Coeffs4, vector_len, _masm); // Coeffs4 freed
+      montMul64(Coeffs4, Scratch1, Zetas1, Scratch1, Scratch2);
+
+      // level 7
+      __ vmovdqu(Zetas1[0], Address(zetas, 7 * 512), vector_len);
+      sub_add(Scratch1, Coeffs1, Coeffs1, Coeffs3, vector_len, _masm); // Coeffs3 freed
+      montMul64(Coeffs3, Scratch1, Zetas1, Scratch1, Scratch2);
+      sub_add(Scratch1, Coeffs2, Coeffs2, Coeffs4, vector_len, _masm); // Coeffs4 freed
+      montMul64(Coeffs4, Scratch1, Zetas1, Scratch1, Scratch2);
+
+      storeXmms(coeffs, i*32 + 0*128, Coeffs1_2, vector_len, _masm, 4, 128);
+      storeXmms(coeffs, i*32 + 4*128, Coeffs2_2, vector_len, _masm, 4, 128);
+    }
   }
-
-  load4Xmms(xmm4_7, zetas, 0, _masm);
-  sub_add(xmm24_27, xmm0_3, xmm8_11, xmm12_15, _masm);
-  montMul64(xmm4_7, xmm4_7, xmm24_27, xmm16_27, true, _masm);
-
-  // level 1
-  loadPerm(xmm8_11, perms, nttInvL1PermsIdx, _masm);
-  loadPerm(xmm12_15, perms, nttInvL1PermsIdx + 64, _masm);
-
-  for (int i = 0; i < 4; i++) {
-    __ evpermi2d(xmm(i + 8), xmm(i), xmm(i + 4), Assembler::AVX_512bit);
-    __ evpermi2d(xmm(i + 12), xmm(i), xmm(i + 4), Assembler::AVX_512bit);
-  }
-
-  load4Xmms(xmm4_7, zetas, 512, _masm);
-  sub_add(xmm24_27, xmm0_3, xmm8_11, xmm12_15, _masm);
-  montMul64(xmm4_7, xmm24_27, xmm4_7, xmm16_27, _masm);
-
-  // level 2
-  loadPerm(xmm8_11, perms, nttInvL2PermsIdx, _masm);
-  loadPerm(xmm12_15, perms, nttInvL2PermsIdx + 64, _masm);
-
-  for (int i = 0; i < 4; i++) {
-    __ evpermi2d(xmm(i + 8), xmm(i), xmm(i + 4), Assembler::AVX_512bit);
-    __ evpermi2d(xmm(i + 12), xmm(i), xmm(i + 4), Assembler::AVX_512bit);
-  }
-
-  load4Xmms(xmm4_7, zetas, 2 * 512, _masm);
-  sub_add(xmm24_27, xmm0_3, xmm8_11, xmm12_15, _masm);
-  montMul64(xmm4_7, xmm24_27, xmm4_7, xmm16_27, _masm);
-
-  // level 3
-  loadPerm(xmm8_11, perms, nttInvL3PermsIdx, _masm);
-  loadPerm(xmm12_15, perms, nttInvL3PermsIdx + 64, _masm);
-
-  for (int i = 0; i < 4; i++) {
-    __ evpermi2d(xmm(i + 8), xmm(i), xmm(i + 4), Assembler::AVX_512bit);
-    __ evpermi2d(xmm(i + 12), xmm(i), xmm(i + 4), Assembler::AVX_512bit);
-  }
-
-  load4Xmms(xmm4_7, zetas, 3 * 512, _masm);
-  sub_add(xmm24_27, xmm0_3, xmm8_11, xmm12_15, _masm);
-  montMul64(xmm4_7, xmm24_27, xmm4_7, xmm16_27, _masm);
-
-  // level 4
-  loadPerm(xmm8_11, perms, nttInvL4PermsIdx, _masm);
-  loadPerm(xmm12_15, perms, nttInvL4PermsIdx + 64, _masm);
-
-  for (int i = 0; i < 4; i++) {
-    __ evpermi2d(xmm(i + 8), xmm(i), xmm(i + 4), Assembler::AVX_512bit);
-    __ evpermi2d(xmm(i + 12), xmm(i), xmm(i + 4), Assembler::AVX_512bit);
-  }
-
-  load4Xmms(xmm4_7, zetas, 4 * 512, _masm);
-  sub_add(xmm24_27, xmm0_3, xmm8_11, xmm12_15, _masm);
-  montMul64(xmm4_7, xmm24_27, xmm4_7, xmm16_27, _masm);
-
-  // level 5
-  load4Xmms(xmm12_15, zetas, 5 * 512, _masm);
-  sub_add(xmm8_11, xmm0_3, xmm0426, xmm1537, _masm);
-  montMul64(xmm4_7, xmm8_11, xmm12_15, xmm16_27, _masm);
-
-  // level 6
-  load4Xmms(xmm12_15, zetas, 6 * 512, _masm);
-  sub_add(xmm8_11, xmm0_3, xmm0145, xmm2367, _masm);
-  montMul64(xmm4_7, xmm8_11, xmm12_15, xmm16_27, _masm);
-
-  __ cmpl(iterations, 0);
-  __ jcc(Assembler::equal, L_end);
-
-  // save the coefficients of the first batch, adjust the zetas
-  // and load the second batch of coefficients
-  store4Xmms(coeffs, 0, xmm0_3, _masm);
-  store4Xmms(coeffs, 4 * XMMBYTES, xmm4_7, _masm);
-
-  __ addptr(zetas, 4 * XMMBYTES);
-
-  load4Xmms(xmm0_3, coeffs, 8 * XMMBYTES, _masm);
-  load4Xmms(xmm4_7, coeffs, 12 * XMMBYTES, _masm);
-
-  __ jmp(L_loop);
-
-  __ BIND(L_end);
-
-  // load the coeffs of the first batch of coefficients that were saved after
-  // level 6 into Zmm_8-Zmm_15 and do the last level entirely in the vector
-  // registers
-  load4Xmms(xmm8_11, coeffs, 0, _masm);
-  load4Xmms(xmm12_15, coeffs, 4 * XMMBYTES, _masm);
-
-  // level 7
-
-  loadXmm29(zetas, 7 * 512, _masm);
-
-  for (int i = 0; i < 8; i++) {
-    __ evpaddd(xmm(i + 16), k0, xmm(i), xmm(i + 8), false, Assembler::AVX_512bit);
-  }
-
-  for (int i = 0; i < 8; i++) {
-    __ evpsubd(xmm(i), k0, xmm(i + 8), xmm(i), false, Assembler::AVX_512bit);
-  }
-
-  store4Xmms(coeffs, 0, xmm16_19, _masm);
-  store4Xmms(coeffs, 4 * XMMBYTES, xmm20_23, _masm);
-  montMul64(xmm0_3, xmm0_3, xmm29_29, xmm16_27, _masm);
-  montMul64(xmm4_7, xmm4_7, xmm29_29, xmm16_27, _masm);
-  store4Xmms(coeffs, 8 * XMMBYTES, xmm0_3, _masm);
-  store4Xmms(coeffs, 12 * XMMBYTES, xmm4_7, _masm);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ mov64(rax, 0); // return 0
@@ -641,8 +897,8 @@ static address generate_dilithiumAlmostInverseNtt_avx512(StubGenerator *stubgen,
 // result (int[256]) = c_rarg0
 // poly1 (int[256]) = c_rarg1
 // poly2 (int[256]) = c_rarg2
-static address generate_dilithiumNttMult_avx512(StubGenerator *stubgen,
-                                                MacroAssembler *_masm) {
+static address generate_dilithiumNttMult_avx(StubGenerator *stubgen,
+                                     int vector_len, MacroAssembler *_masm) {
 
   __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_dilithiumNttMult_id;
@@ -655,40 +911,60 @@ static address generate_dilithiumNttMult_avx512(StubGenerator *stubgen,
   const Register result = c_rarg0;
   const Register poly1 = c_rarg1;
   const Register poly2 = c_rarg2;
-
-  const Register perms = r10; // scratch reused after not needed any more
+  const Register scratch = r10;
   const Register len = r11;
 
-  const XMMRegister montRSquareModQ = xmm29;
+  const XMMRegister montQInvModR = xmm8;
+  const XMMRegister dilithium_q = xmm9;
+
+  const XMMRegister Poly1[] = {xmm0, xmm1, xmm16, xmm17};
+  const XMMRegister Poly2[] = {xmm2, xmm3, xmm18, xmm19};
+  const XMMRegister Scratch1[] = {xmm4, xmm5, xmm20, xmm21};
+  const XMMRegister Scratch2[] = {xmm6, xmm7, xmm22, xmm23};
+  const XMMRegister MontRSquareModQ[] = {xmm10, xmm10, xmm10, xmm10};
+  KRegister mergeMask = k1;
+  // lambda to hide repeated parameters
+  auto montMul64 = whole_montMul(montQInvModR, dilithium_q, mergeMask, vector_len, _masm);
 
   __ vpbroadcastd(montQInvModR,
                   ExternalAddress(dilithiumAvx512ConstsAddr(montQInvModRIdx)),
-                  Assembler::AVX_512bit, scratch); // q^-1 mod 2^32
+                  vector_len, scratch); // q^-1 mod 2^32
   __ vpbroadcastd(dilithium_q,
                   ExternalAddress(dilithiumAvx512ConstsAddr(dilithium_qIdx)),
-                  Assembler::AVX_512bit, scratch); // q
-  __ vpbroadcastd(montRSquareModQ,
+                  vector_len, scratch); // q
+  __ vpbroadcastd(MontRSquareModQ[0],
                   ExternalAddress(dilithiumAvx512ConstsAddr(montRSquareModQIdx)),
-                  Assembler::AVX_512bit, scratch); // 2^64 mod q
+                  vector_len, scratch); // 2^64 mod q
+  if (vector_len == Assembler::AVX_512bit) {
+    __ mov64(scratch, 0b0101010101010101);
+    __ kmovwl(mergeMask, scratch);
+  }
 
-  __ lea(perms, ExternalAddress(dilithiumAvx512PermsAddr()));
-  __ evmovdqul(montMulPerm, Address(perms, montMulPermsIdx), Assembler::AVX_512bit);
+  // Total payload is 256*int32s.
+  // - memStep is number of bytes one iteration processes.
+  // - loopCnt is number of iterations it will take to process entire payload.
+  int loopCnt = 4;
+  int memStep = 4 * 64;
+  if (vector_len == Assembler::AVX_256bit) {
+    loopCnt = 16;
+    memStep = 2 * 32;
+  }
 
-  __ movl(len, 4);
+  __ movl(len, loopCnt);
 
   __ align(OptoLoopAlignment);
   __ BIND(L_loop);
 
-  load4Xmms(xmm4_7, poly2, 0, _masm);
-  load4Xmms(xmm0_3, poly1, 0, _masm);
-  montMul64(xmm4_7, xmm4_7, xmm29_29, xmm16_27, _masm);
-  montMul64(xmm0_3, xmm0_3, xmm4_7, xmm16_27, true, _masm);
-  store4Xmms(result, 0, xmm0_3, _masm);
+  loadXmms(Poly2, poly2, 0, vector_len, _masm);
+  loadXmms(Poly1, poly1, 0, vector_len, _masm);
+  montMul64(Poly2, Poly2, MontRSquareModQ, Scratch1, Scratch2);
+  montMul64(Poly1, Poly1, Poly2,           Scratch1, Scratch2, true);
+  storeXmms(result, 0, Poly1, vector_len, _masm);
 
   __ subl(len, 1);
-  __ addptr(poly1, 4 * XMMBYTES);
-  __ addptr(poly2, 4 * XMMBYTES);
-  __ addptr(result, 4 * XMMBYTES);
+  __ addptr(poly1, memStep);
+  __ addptr(poly2, memStep);
+  __ addptr(result, memStep);
   __ cmpl(len, 0);
   __ jcc(Assembler::notEqual, L_loop);
 
@@ -705,8 +981,8 @@ static address generate_dilithiumNttMult_avx512(StubGenerator *stubgen,
 //
 // coeffs (int[256]) = c_rarg0
 // constant (int) = c_rarg1
-static address generate_dilithiumMontMulByConstant_avx512(StubGenerator *stubgen,
-                                                          MacroAssembler *_masm) {
+static address generate_dilithiumMontMulByConstant_avx(StubGenerator *stubgen,
+                                        int vector_len, MacroAssembler *_masm) {
 
   __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_dilithiumMontMulByConstant_id;
@@ -718,38 +994,64 @@ static address generate_dilithiumMontMulByConstant_avx512(StubGenerator *stubgen
 
   const Register coeffs = c_rarg0;
   const Register rConstant = c_rarg1;
-
-  const Register perms = c_rarg2; // not used for argument
+  const Register scratch = r10;
   const Register len = r11;
 
-  const XMMRegister constant = xmm29;
+  const XMMRegister montQInvModR = xmm8;
+  const XMMRegister dilithium_q = xmm9;
 
-  __ lea(perms, ExternalAddress(dilithiumAvx512PermsAddr()));
+  const XMMRegister Coeffs1[] = {xmm0, xmm1, xmm16, xmm17};
+  const XMMRegister Coeffs2[] = {xmm2, xmm3, xmm18, xmm19};
+  const XMMRegister Scratch1[] = {xmm4, xmm5, xmm20, xmm21};
+  const XMMRegister Scratch2[] = {xmm6, xmm7, xmm22, xmm23};
+  const XMMRegister Constant[] = {xmm10, xmm10, xmm10, xmm10};
+  XMMRegister constant = Constant[0];
+  KRegister mergeMask = k1;
+  // lambda to hide repeated parameters
+  auto montMul64 = whole_montMul(montQInvModR, dilithium_q, mergeMask, vector_len, _masm);
 
-  // the following four vector registers are used in montMul64
+  // load constants for montMul64
   __ vpbroadcastd(montQInvModR,
                   ExternalAddress(dilithiumAvx512ConstsAddr(montQInvModRIdx)),
-                  Assembler::AVX_512bit, scratch); // q^-1 mod 2^32
+                  vector_len, scratch); // q^-1 mod 2^32
   __ vpbroadcastd(dilithium_q,
                   ExternalAddress(dilithiumAvx512ConstsAddr(dilithium_qIdx)),
-                  Assembler::AVX_512bit, scratch); // q
-  __ evmovdqul(montMulPerm, Address(perms, montMulPermsIdx), Assembler::AVX_512bit);
-  __ evpbroadcastd(constant, rConstant, Assembler::AVX_512bit); // constant multiplier
+                  vector_len, scratch); // q
+  if (vector_len == Assembler::AVX_256bit) {
+    __ movdl(constant, rConstant);
+    __ vpbroadcastd(constant, constant, vector_len); // constant multiplier
+  } else {
+    __ evpbroadcastd(constant, rConstant, Assembler::AVX_512bit); // constant multiplier
 
-  __ movl(len, 2);
+    __ mov64(scratch, 0b0101010101010101); //dw-mask
+    __ kmovwl(mergeMask, scratch);
+  }
+
+  // Total payload is 256*int32s.
+  // - memStep is number of bytes one montMul64 processes.
+  // - loopCnt is number of iterations it will take to process entire payload.
+  // - (two memSteps per loop)
+  int memStep = 4 * 64;
+  int loopCnt = 2;
+  if (vector_len == Assembler::AVX_256bit) {
+    memStep = 2 * 32;
+    loopCnt = 8;
+  }
+
+  __ movl(len, loopCnt);
 
   __ align(OptoLoopAlignment);
   __ BIND(L_loop);
 
-  load4Xmms(xmm0_3, coeffs, 0, _masm);
-  load4Xmms(xmm4_7, coeffs, 4 * XMMBYTES, _masm);
-  montMul64(xmm0_3, xmm0_3, xmm29_29, xmm16_27, _masm);
-  montMul64(xmm4_7, xmm4_7, xmm29_29, xmm16_27, _masm);
-  store4Xmms(coeffs, 0, xmm0_3, _masm);
-  store4Xmms(coeffs, 4 * XMMBYTES, xmm4_7, _masm);
+  loadXmms(Coeffs1, coeffs, 0,       vector_len, _masm);
+  loadXmms(Coeffs2, coeffs, memStep, vector_len, _masm);
+  montMul64(Coeffs1, Coeffs1, Constant, Scratch1, Scratch2);
+  montMul64(Coeffs2, Coeffs2, Constant, Scratch1, Scratch2);
+  storeXmms(coeffs, 0,       Coeffs1, vector_len, _masm);
+  storeXmms(coeffs, memStep, Coeffs2, vector_len, _masm);
 
   __ subl(len, 1);
-  __ addptr(coeffs, 512);
+  __ addptr(coeffs, 2 * memStep);
   __ cmpl(len, 0);
   __ jcc(Assembler::notEqual, L_loop);
 
@@ -769,9 +1071,8 @@ static address generate_dilithiumMontMulByConstant_avx512(StubGenerator *stubgen
 // highPart (int[256]) = c_rarg2
 // twoGamma2  (int) = c_rarg3
 // multiplier (int) = c_rarg4
-static address generate_dilithiumDecomposePoly_avx512(StubGenerator *stubgen,
-                                                      MacroAssembler *_masm) {
-
+static address generate_dilithiumDecomposePoly_avx(StubGenerator *stubgen,
+                                      int vector_len, MacroAssembler *_masm) {
   __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_dilithiumDecomposePoly_id;
   StubCodeMark mark(stubgen, stub_id);
@@ -785,26 +1086,45 @@ static address generate_dilithiumDecomposePoly_avx512(StubGenerator *stubgen,
   const Register highPart = c_rarg2;
   const Register rTwoGamma2 = c_rarg3;
 
+  const Register scratch = r10;
   const Register len = r11;
-  const XMMRegister zero = xmm24;
-  const XMMRegister one = xmm25;
-  const XMMRegister qMinus1 = xmm26;
-  const XMMRegister gamma2 = xmm27;
-  const XMMRegister twoGamma2 = xmm28;
-  const XMMRegister barrettMultiplier = xmm29;
-  const XMMRegister barrettAddend = xmm30;
 
-  __ vpxor(zero, zero, zero, Assembler::AVX_512bit); // 0
-  __ vpternlogd(xmm0, 0xff, xmm0, xmm0, Assembler::AVX_512bit); // -1
-  __ vpsubd(one, zero, xmm0, Assembler::AVX_512bit); // 1
+  const XMMRegister one = xmm0;
+  const XMMRegister gamma2 = xmm1;
+  const XMMRegister twoGamma2 = xmm2;
+  const XMMRegister barrettMultiplier = xmm3;
+  const XMMRegister barrettAddend = xmm4;
+  const XMMRegister dilithium_q = xmm5;
+  const XMMRegister zero = xmm29;     // AVX512-only
+  const XMMRegister minusOne = xmm30; // AVX512-only
+  const XMMRegister qMinus1 = xmm31;  // AVX512-only
+
+  XMMRegister RPlus[] = {xmm6, xmm7, xmm16, xmm17};
+  XMMRegister Quotient[] = {xmm8, xmm9, xmm18, xmm19};
+  XMMRegister R0[] = {xmm10, xmm11, xmm20, xmm21};
+  XMMRegister Mask[] = {xmm12, xmm13, xmm22, xmm23};
+  XMMRegister Tmp1[] = {xmm14, xmm15, xmm24, xmm25};
+
   __ vpbroadcastd(dilithium_q,
                   ExternalAddress(dilithiumAvx512ConstsAddr(dilithium_qIdx)),
-                  Assembler::AVX_512bit, scratch); // q
+                  vector_len, scratch); // q
   __ vpbroadcastd(barrettAddend,
                   ExternalAddress(dilithiumAvx512ConstsAddr(barrettAddendIdx)),
-                  Assembler::AVX_512bit, scratch); // addend for Barrett reduction
+                  vector_len, scratch); // addend for Barrett reduction
+  if (vector_len == Assembler::AVX_512bit) {
+    __ vpxor(zero, zero, zero, vector_len); // 0
+    __ vpternlogd(minusOne, 0xff, minusOne, minusOne, vector_len); // -1
+    __ vpsrld(one, minusOne, 31, vector_len);
+    __ vpsubd(qMinus1, dilithium_q, one, vector_len); // q - 1
+    __ evpbroadcastd(twoGamma2, rTwoGamma2, vector_len); // 2 * gamma2
+  } else {
+    __ vpcmpeqd(one, one, one, vector_len);
+    __ vpsrld(one, one, 31, vector_len);
+    __ movdl(twoGamma2, rTwoGamma2);
+    __ vpbroadcastd(twoGamma2, twoGamma2, vector_len); // 2 * gamma2
+  }
 
-  __ evpbroadcastd(twoGamma2, rTwoGamma2, Assembler::AVX_512bit); // 2 * gamma2
+  __ vpsrad(gamma2, twoGamma2, 1, vector_len); // gamma2
 
   #ifndef _WIN64
     const Register rMultiplier = c_rarg4;
@@ -813,201 +1133,185 @@ static address generate_dilithiumDecomposePoly_avx512(StubGenerator *stubgen,
     const Register rMultiplier = c_rarg3; // arg3 is already consumed, reused here
     __ movptr(rMultiplier, multiplier_mem);
   #endif
-  __ evpbroadcastd(barrettMultiplier, rMultiplier,
-                   Assembler::AVX_512bit); // multiplier for mod 2 * gamma2 reduce
+  if (vector_len == Assembler::AVX_512bit) {
+    __ evpbroadcastd(barrettMultiplier, rMultiplier,
+                  vector_len); // multiplier for mod 2 * gamma2 reduce
+  } else {
+    __ movdl(barrettMultiplier, rMultiplier);
+    __ vpbroadcastd(barrettMultiplier, barrettMultiplier, vector_len);
+  }
 
-  __ evpsubd(qMinus1, k0, dilithium_q, one, false, Assembler::AVX_512bit); // q - 1
-  __ evpsrad(gamma2, k0, twoGamma2, 1, false, Assembler::AVX_512bit); // gamma2
+  // Total payload is 1024 bytes
+  int memStep = 4 * 64; // Number of bytes per loop iteration
+  int regCnt = 4; // Register array length
+  if (vector_len == Assembler::AVX_256bit) {
+    memStep = 2 * 32;
+    regCnt = 2;
+  }
 
   __ movl(len, 1024);
 
   __ align(OptoLoopAlignment);
   __ BIND(L_loop);
 
-  load4Xmms(xmm0_3, input, 0, _masm);
+  loadXmms(RPlus, input, 0, vector_len, _masm);
 
-  __ addptr(input, 4 * XMMBYTES);
+  __ addptr(input, memStep);
 
-  // rplus in xmm0
   // rplus = rplus - ((rplus + 5373807) >> 23) * dilithium_q;
-  __ evpaddd(xmm4, k0, xmm0, barrettAddend, false, Assembler::AVX_512bit);
-  __ evpaddd(xmm5, k0, xmm1, barrettAddend, false, Assembler::AVX_512bit);
-  __ evpaddd(xmm6, k0, xmm2, barrettAddend, false, Assembler::AVX_512bit);
-  __ evpaddd(xmm7, k0, xmm3, barrettAddend, false, Assembler::AVX_512bit);
+  for (int i = 0; i < regCnt; i++) {
+    __ vpaddd(Tmp1[i], RPlus[i], barrettAddend, vector_len);
+  }
 
-  __ evpsrad(xmm4, k0, xmm4, 23, false, Assembler::AVX_512bit);
-  __ evpsrad(xmm5, k0, xmm5, 23, false, Assembler::AVX_512bit);
-  __ evpsrad(xmm6, k0, xmm6, 23, false, Assembler::AVX_512bit);
-  __ evpsrad(xmm7, k0, xmm7, 23, false, Assembler::AVX_512bit);
+  for (int i = 0; i < regCnt; i++) {
+    __ vpsrad(Tmp1[i], Tmp1[i], 23, vector_len);
+  }
 
-  __ evpmulld(xmm4, k0, xmm4, dilithium_q, false, Assembler::AVX_512bit);
-  __ evpmulld(xmm5, k0, xmm5, dilithium_q, false, Assembler::AVX_512bit);
-  __ evpmulld(xmm6, k0, xmm6, dilithium_q, false, Assembler::AVX_512bit);
-  __ evpmulld(xmm7, k0, xmm7, dilithium_q, false, Assembler::AVX_512bit);
+  for (int i = 0; i < regCnt; i++) {
+    __ vpmulld(Tmp1[i], Tmp1[i], dilithium_q, vector_len);
+  }
 
-  __ evpsubd(xmm0, k0, xmm0, xmm4, false, Assembler::AVX_512bit);
-  __ evpsubd(xmm1, k0, xmm1, xmm5, false, Assembler::AVX_512bit);
-  __ evpsubd(xmm2, k0, xmm2, xmm6, false, Assembler::AVX_512bit);
-  __ evpsubd(xmm3, k0, xmm3, xmm7, false, Assembler::AVX_512bit);
-  // rplus in xmm0
+  for (int i = 0; i < regCnt; i++) {
+    __ vpsubd(RPlus[i], RPlus[i], Tmp1[i], vector_len);
+  }
+
   // rplus = rplus + ((rplus >> 31) & dilithium_q);
-  __ evpsrad(xmm4, k0, xmm0, 31, false, Assembler::AVX_512bit);
-  __ evpsrad(xmm5, k0, xmm1, 31, false, Assembler::AVX_512bit);
-  __ evpsrad(xmm6, k0, xmm2, 31, false, Assembler::AVX_512bit);
-  __ evpsrad(xmm7, k0, xmm3, 31, false, Assembler::AVX_512bit);
+  for (int i = 0; i < regCnt; i++) {
+    __ vpsrad(Tmp1[i], RPlus[i], 31, vector_len);
+  }
 
-  __ evpandd(xmm4, k0, xmm4, dilithium_q, false, Assembler::AVX_512bit);
-  __ evpandd(xmm5, k0, xmm5, dilithium_q, false, Assembler::AVX_512bit);
-  __ evpandd(xmm6, k0, xmm6, dilithium_q, false, Assembler::AVX_512bit);
-  __ evpandd(xmm7, k0, xmm7, dilithium_q, false, Assembler::AVX_512bit);
+  for (int i = 0; i < regCnt; i++) {
+    __ vpand(Tmp1[i], Tmp1[i], dilithium_q, vector_len);
+  }
 
-  __ evpaddd(xmm0, k0, xmm0, xmm4, false, Assembler::AVX_512bit);
-  __ evpaddd(xmm1, k0, xmm1, xmm5, false, Assembler::AVX_512bit);
-  __ evpaddd(xmm2, k0, xmm2, xmm6, false, Assembler::AVX_512bit);
-  __ evpaddd(xmm3, k0, xmm3, xmm7, false, Assembler::AVX_512bit);
-  // rplus in xmm0
+  for (int i = 0; i < regCnt; i++) {
+    __ vpaddd(RPlus[i], RPlus[i], Tmp1[i], vector_len);
+  }
+
   // int quotient = (rplus * barrettMultiplier) >> 22;
-  __ evpmulld(xmm4, k0, xmm0, barrettMultiplier, false, Assembler::AVX_512bit);
-  __ evpmulld(xmm5, k0, xmm1, barrettMultiplier, false, Assembler::AVX_512bit);
-  __ evpmulld(xmm6, k0, xmm2, barrettMultiplier, false, Assembler::AVX_512bit);
-  __ evpmulld(xmm7, k0, xmm3, barrettMultiplier, false, Assembler::AVX_512bit);
+  for (int i = 0; i < regCnt; i++) {
+    __ vpmulld(Quotient[i], RPlus[i], barrettMultiplier, vector_len);
+  }
 
-  __ evpsrad(xmm4, k0, xmm4, 22, false, Assembler::AVX_512bit);
-  __ evpsrad(xmm5, k0, xmm5, 22, false, Assembler::AVX_512bit);
-  __ evpsrad(xmm6, k0, xmm6, 22, false, Assembler::AVX_512bit);
-  __ evpsrad(xmm7, k0, xmm7, 22, false, Assembler::AVX_512bit);
-  // quotient in xmm4
+  for (int i = 0; i < regCnt; i++) {
+    __ vpsrad(Quotient[i], Quotient[i], 22, vector_len);
+  }
+
   // int r0 = rplus - quotient * twoGamma2;
-  __ evpmulld(xmm8, k0, xmm4, twoGamma2, false, Assembler::AVX_512bit);
-  __ evpmulld(xmm9, k0, xmm5, twoGamma2, false, Assembler::AVX_512bit);
-  __ evpmulld(xmm10, k0, xmm6, twoGamma2, false, Assembler::AVX_512bit);
-  __ evpmulld(xmm11, k0, xmm7, twoGamma2, false, Assembler::AVX_512bit);
+  for (int i = 0; i < regCnt; i++) {
+    __ vpmulld(R0[i], Quotient[i], twoGamma2, vector_len);
+  }
 
-  __ evpsubd(xmm8, k0, xmm0, xmm8, false, Assembler::AVX_512bit);
-  __ evpsubd(xmm9, k0, xmm1, xmm9, false, Assembler::AVX_512bit);
-  __ evpsubd(xmm10, k0, xmm2, xmm10, false, Assembler::AVX_512bit);
-  __ evpsubd(xmm11, k0, xmm3, xmm11, false, Assembler::AVX_512bit);
-  // r0 in xmm8
+  for (int i = 0; i < regCnt; i++) {
+    __ vpsubd(R0[i], RPlus[i], R0[i], vector_len);
+  }
+
   // int mask = (twoGamma2 - r0) >> 22;
-  __ evpsubd(xmm12, k0, twoGamma2, xmm8, false, Assembler::AVX_512bit);
-  __ evpsubd(xmm13, k0, twoGamma2, xmm9, false, Assembler::AVX_512bit);
-  __ evpsubd(xmm14, k0, twoGamma2, xmm10, false, Assembler::AVX_512bit);
-  __ evpsubd(xmm15, k0, twoGamma2, xmm11, false, Assembler::AVX_512bit);
+  for (int i = 0; i < regCnt; i++) {
+    __ vpsubd(Mask[i], twoGamma2, R0[i], vector_len);
+  }
 
-  __ evpsrad(xmm12, k0, xmm12, 22, false, Assembler::AVX_512bit);
-  __ evpsrad(xmm13, k0, xmm13, 22, false, Assembler::AVX_512bit);
-  __ evpsrad(xmm14, k0, xmm14, 22, false, Assembler::AVX_512bit);
-  __ evpsrad(xmm15, k0, xmm15, 22, false, Assembler::AVX_512bit);
-  // mask in xmm12
+  for (int i = 0; i < regCnt; i++) {
+    __ vpsrad(Mask[i], Mask[i], 22, vector_len);
+  }
+
   // r0 -= (mask & twoGamma2);
-  __ evpandd(xmm16, k0, xmm12, twoGamma2, false, Assembler::AVX_512bit);
-  __ evpandd(xmm17, k0, xmm13, twoGamma2, false, Assembler::AVX_512bit);
-  __ evpandd(xmm18, k0, xmm14, twoGamma2, false, Assembler::AVX_512bit);
-  __ evpandd(xmm19, k0, xmm15, twoGamma2, false, Assembler::AVX_512bit);
+  for (int i = 0; i < regCnt; i++) {
+    __ vpand(Tmp1[i], Mask[i], twoGamma2, vector_len);
+  }
 
-  __ evpsubd(xmm8, k0, xmm8, xmm16, false, Assembler::AVX_512bit);
-  __ evpsubd(xmm9, k0, xmm9, xmm17, false, Assembler::AVX_512bit);
-  __ evpsubd(xmm10, k0, xmm10, xmm18, false, Assembler::AVX_512bit);
-  __ evpsubd(xmm11, k0, xmm11, xmm19, false, Assembler::AVX_512bit);
-  // r0 in xmm8
+  for (int i = 0; i < regCnt; i++) {
+    __ vpsubd(R0[i], R0[i], Tmp1[i], vector_len);
+  }
+
   // quotient += (mask & 1);
-  __ evpandd(xmm16, k0, xmm12, one, false, Assembler::AVX_512bit);
-  __ evpandd(xmm17, k0, xmm13, one, false, Assembler::AVX_512bit);
-  __ evpandd(xmm18, k0, xmm14, one, false, Assembler::AVX_512bit);
-  __ evpandd(xmm19, k0, xmm15, one, false, Assembler::AVX_512bit);
+  for (int i = 0; i < regCnt; i++) {
+    __ vpand(Tmp1[i], Mask[i], one, vector_len);
+  }
 
-  __ evpaddd(xmm4, k0, xmm4, xmm16, false, Assembler::AVX_512bit);
-  __ evpaddd(xmm5, k0, xmm5, xmm17, false, Assembler::AVX_512bit);
-  __ evpaddd(xmm6, k0, xmm6, xmm18, false, Assembler::AVX_512bit);
-  __ evpaddd(xmm7, k0, xmm7, xmm19, false, Assembler::AVX_512bit);
+  for (int i = 0; i < regCnt; i++) {
+    __ vpaddd(Quotient[i], Quotient[i], Tmp1[i], vector_len);
+  }
 
   // mask = (twoGamma2 / 2 - r0) >> 31;
-  __ evpsubd(xmm12, k0, gamma2, xmm8, false, Assembler::AVX_512bit);
-  __ evpsubd(xmm13, k0, gamma2, xmm9, false, Assembler::AVX_512bit);
-  __ evpsubd(xmm14, k0, gamma2, xmm10, false, Assembler::AVX_512bit);
-  __ evpsubd(xmm15, k0, gamma2, xmm11, false, Assembler::AVX_512bit);
+  for (int i = 0; i < regCnt; i++) {
+    __ vpsubd(Mask[i], gamma2, R0[i], vector_len);
+  }
 
-  __ evpsrad(xmm12, k0, xmm12, 31, false, Assembler::AVX_512bit);
-  __ evpsrad(xmm13, k0, xmm13, 31, false, Assembler::AVX_512bit);
-  __ evpsrad(xmm14, k0, xmm14, 31, false, Assembler::AVX_512bit);
-  __ evpsrad(xmm15, k0, xmm15, 31, false, Assembler::AVX_512bit);
+  for (int i = 0; i < regCnt; i++) {
+    __ vpsrad(Mask[i], Mask[i], 31, vector_len);
+  }
 
   // r0 -= (mask & twoGamma2);
-  __ evpandd(xmm16, k0, xmm12, twoGamma2, false, Assembler::AVX_512bit);
-  __ evpandd(xmm17, k0, xmm13, twoGamma2, false, Assembler::AVX_512bit);
-  __ evpandd(xmm18, k0, xmm14, twoGamma2, false, Assembler::AVX_512bit);
-  __ evpandd(xmm19, k0, xmm15, twoGamma2, false, Assembler::AVX_512bit);
+  for (int i = 0; i < regCnt; i++) {
+    __ vpand(Tmp1[i], Mask[i], twoGamma2, vector_len);
+  }
 
-  __ evpsubd(xmm8, k0, xmm8, xmm16, false, Assembler::AVX_512bit);
-  __ evpsubd(xmm9, k0, xmm9, xmm17, false, Assembler::AVX_512bit);
-  __ evpsubd(xmm10, k0, xmm10, xmm18, false, Assembler::AVX_512bit);
-  __ evpsubd(xmm11, k0, xmm11, xmm19, false, Assembler::AVX_512bit);
-  // r0 in xmm8
+  for (int i = 0; i < regCnt; i++) {
+    __ vpsubd(R0[i], R0[i], Tmp1[i], vector_len);
+  }
+
   // quotient += (mask & 1);
-  __ evpandd(xmm16, k0, xmm12, one, false, Assembler::AVX_512bit);
-  __ evpandd(xmm17, k0, xmm13, one, false, Assembler::AVX_512bit);
-  __ evpandd(xmm18, k0, xmm14, one, false, Assembler::AVX_512bit);
-  __ evpandd(xmm19, k0, xmm15, one, false, Assembler::AVX_512bit);
+  for (int i = 0; i < regCnt; i++) {
+    __ vpand(Tmp1[i], Mask[i], one, vector_len);
+  }
 
-  __ evpaddd(xmm4, k0, xmm4, xmm16, false, Assembler::AVX_512bit);
-  __ evpaddd(xmm5, k0, xmm5, xmm17, false, Assembler::AVX_512bit);
-  __ evpaddd(xmm6, k0, xmm6, xmm18, false, Assembler::AVX_512bit);
-  __ evpaddd(xmm7, k0, xmm7, xmm19, false, Assembler::AVX_512bit);
-  // quotient in xmm4
+  for (int i = 0; i < regCnt; i++) {
+    __ vpaddd(Quotient[i], Quotient[i], Tmp1[i], vector_len);
+  }
+  // r1 in RPlus
   // int r1 = rplus - r0 - (dilithium_q - 1);
-  __ evpsubd(xmm16, k0, xmm0, xmm8, false, Assembler::AVX_512bit);
-  __ evpsubd(xmm17, k0, xmm1, xmm9, false, Assembler::AVX_512bit);
-  __ evpsubd(xmm18, k0, xmm2, xmm10, false, Assembler::AVX_512bit);
-  __ evpsubd(xmm19, k0, xmm3, xmm11, false, Assembler::AVX_512bit);
-
-  __ evpsubd(xmm16, k0, xmm16, xmm26, false, Assembler::AVX_512bit);
-  __ evpsubd(xmm17, k0, xmm17, xmm26, false, Assembler::AVX_512bit);
-  __ evpsubd(xmm18, k0, xmm18, xmm26, false, Assembler::AVX_512bit);
-  __ evpsubd(xmm19, k0, xmm19, xmm26, false, Assembler::AVX_512bit);
-  // r1 in xmm16
   // r1 = (r1 | (-r1)) >> 31; // 0 if rplus - r0 == (dilithium_q - 1), -1 otherwise
-  __ evpsubd(xmm20, k0, zero, xmm16, false, Assembler::AVX_512bit);
-  __ evpsubd(xmm21, k0, zero, xmm17, false, Assembler::AVX_512bit);
-  __ evpsubd(xmm22, k0, zero, xmm18, false, Assembler::AVX_512bit);
-  __ evpsubd(xmm23, k0, zero, xmm19, false, Assembler::AVX_512bit);
+  for (int i = 0; i < regCnt; i++) {
+    __ vpsubd(RPlus[i], RPlus[i], R0[i], vector_len);
+  }
 
-  __ evporq(xmm16, k0, xmm16, xmm20, false, Assembler::AVX_512bit);
-  __ evporq(xmm17, k0, xmm17, xmm21, false, Assembler::AVX_512bit);
-  __ evporq(xmm18, k0, xmm18, xmm22, false, Assembler::AVX_512bit);
-  __ evporq(xmm19, k0, xmm19, xmm23, false, Assembler::AVX_512bit);
+  if (vector_len == Assembler::AVX_512bit) {
+    KRegister EqMsk[] = {k1, k2, k3, k4};
+    for (int i = 0; i < regCnt; i++) {
+      __ evpcmpeqd(EqMsk[i], k0, RPlus[i], qMinus1, vector_len);
+    }
 
-  __ evpsubd(xmm12, k0, zero, one, false, Assembler::AVX_512bit); // -1
+    // r0 += ~r1; // add -1 or keep as is, using EqMsk as filter
+    for (int i = 0; i < regCnt; i++) {
+      __ evpaddd(R0[i], EqMsk[i], R0[i], minusOne, true, vector_len);
+    }
 
-  __ evpsrad(xmm0, k0, xmm16, 31, false, Assembler::AVX_512bit);
-  __ evpsrad(xmm1, k0, xmm17, 31, false, Assembler::AVX_512bit);
-  __ evpsrad(xmm2, k0, xmm18, 31, false, Assembler::AVX_512bit);
-  __ evpsrad(xmm3, k0, xmm19, 31, false, Assembler::AVX_512bit);
-  // r1 in xmm0
-  // r0 += ~r1;
-  __ evpxorq(xmm20, k0, xmm0, xmm12, false, Assembler::AVX_512bit);
-  __ evpxorq(xmm21, k0, xmm1, xmm12, false, Assembler::AVX_512bit);
-  __ evpxorq(xmm22, k0, xmm2, xmm12, false, Assembler::AVX_512bit);
-  __ evpxorq(xmm23, k0, xmm3, xmm12, false, Assembler::AVX_512bit);
+    // r1 in Quotient
+    // r1 = r1 & quotient; // copy 0 or keep as is, using EqMsk as filter
+    for (int i = 0; i < regCnt; i++) {
+      __ evpandd(Quotient[i], EqMsk[i], Quotient[i], zero, true, vector_len);
+    }
+  } else {
+    const XMMRegister qMinus1 = Tmp1[0];
+    __ vpsubd(qMinus1, dilithium_q, one, vector_len); // q - 1
 
-  __ evpaddd(xmm8, k0, xmm8, xmm20, false, Assembler::AVX_512bit);
-  __ evpaddd(xmm9, k0, xmm9, xmm21, false, Assembler::AVX_512bit);
-  __ evpaddd(xmm10, k0, xmm10, xmm22, false, Assembler::AVX_512bit);
-  __ evpaddd(xmm11, k0, xmm11, xmm23, false, Assembler::AVX_512bit);
-  // r0 in xmm8
-  // r1 = r1 & quotient;
-  __ evpandd(xmm0, k0, xmm4, xmm0, false, Assembler::AVX_512bit);
-  __ evpandd(xmm1, k0, xmm5, xmm1, false, Assembler::AVX_512bit);
-  __ evpandd(xmm2, k0, xmm6, xmm2, false, Assembler::AVX_512bit);
-  __ evpandd(xmm3, k0, xmm7, xmm3, false, Assembler::AVX_512bit);
-  // r1 in xmm0
+    for (int i = 0; i < regCnt; i++) {
+      __ vpcmpeqd(Mask[i], RPlus[i], qMinus1, vector_len);
+    }
+
+    // r0 += ~r1;
+    // Mask already negated
+    for (int i = 0; i < regCnt; i++) {
+      __ vpaddd(R0[i], R0[i], Mask[i], vector_len);
+    }
+
+    // r1 in Quotient
+    // r1 = r1 & quotient;
+    for (int i = 0; i < regCnt; i++) {
+      __ vpandn(Quotient[i], Mask[i], Quotient[i], vector_len);
+    }
+  }
+
+  // r1 in Quotient
   // lowPart[m] = r0;
   // highPart[m] = r1;
-  store4Xmms(highPart, 0, xmm0_3, _masm);
-  store4Xmms(lowPart, 0, xmm8_11, _masm);
+  storeXmms(highPart, 0, Quotient, vector_len, _masm);
+  storeXmms(lowPart, 0, R0, vector_len, _masm);
 
-  __ addptr(highPart, 4 * XMMBYTES);
-  __ addptr(lowPart, 4 * XMMBYTES);
-  __ subl(len, 4 * XMMBYTES);
+  __ addptr(highPart, memStep);
+  __ addptr(lowPart, memStep);
+  __ subl(len, memStep);
   __ jcc(Assembler::notEqual, L_loop);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
@@ -1018,17 +1322,21 @@ static address generate_dilithiumDecomposePoly_avx512(StubGenerator *stubgen,
 }
 
 void StubGenerator::generate_dilithium_stubs() {
+  int vector_len = Assembler::AVX_256bit;
+  if (VM_Version::supports_evex() && VM_Version::supports_avx512bw()) {
+    vector_len = Assembler::AVX_512bit;
+  }
   // Generate Dilithium intrinsics code
   if (UseDilithiumIntrinsics) {
-      StubRoutines::_dilithiumAlmostNtt =
-        generate_dilithiumAlmostNtt_avx512(this, _masm);
-      StubRoutines::_dilithiumAlmostInverseNtt =
-        generate_dilithiumAlmostInverseNtt_avx512(this, _masm);
-      StubRoutines::_dilithiumNttMult =
-        generate_dilithiumNttMult_avx512(this, _masm);
-      StubRoutines::_dilithiumMontMulByConstant =
-        generate_dilithiumMontMulByConstant_avx512(this, _masm);
-      StubRoutines::_dilithiumDecomposePoly =
-        generate_dilithiumDecomposePoly_avx512(this, _masm);
+    StubRoutines::_dilithiumAlmostNtt =
+        generate_dilithiumAlmostNtt_avx(this, vector_len, _masm);
+    StubRoutines::_dilithiumAlmostInverseNtt =
+        generate_dilithiumAlmostInverseNtt_avx(this, vector_len, _masm);
+    StubRoutines::_dilithiumNttMult =
+        generate_dilithiumNttMult_avx(this, vector_len, _masm);
+    StubRoutines::_dilithiumMontMulByConstant =
+        generate_dilithiumMontMulByConstant_avx(this, vector_len, _masm);
+    StubRoutines::_dilithiumDecomposePoly =
+        generate_dilithiumDecomposePoly_avx(this, vector_len, _masm);
   }
 }
