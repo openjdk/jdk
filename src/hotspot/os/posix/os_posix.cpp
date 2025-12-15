@@ -1352,6 +1352,10 @@ bool os::Posix::is_root(uid_t uid){
     return ROOT_UID == uid;
 }
 
+bool os::Posix::is_current_user_root(){
+    return is_root(geteuid());
+}
+
 bool os::Posix::matches_effective_uid_or_root(uid_t uid) {
     return is_root(uid) || geteuid() == uid;
 }

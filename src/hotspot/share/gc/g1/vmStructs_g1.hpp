@@ -70,8 +70,8 @@
   nonstatic_field(G1HeapRegionSetBase,   _length,       uint)                 \
                                                                               \
   nonstatic_field(SATBMarkQueue,       _active,         bool)                 \
-  nonstatic_field(PtrQueue,            _buf,            void**)               \
-  nonstatic_field(PtrQueue,            _index,          size_t)
+  nonstatic_field(SATBMarkQueue,       _buf,            void**)               \
+  nonstatic_field(SATBMarkQueue,       _index,          size_t)
 
 #define VM_INT_CONSTANTS_G1GC(declare_constant, declare_constant_with_value)  \
   declare_constant(G1HeapRegionType::FreeTag)                                 \
@@ -96,7 +96,6 @@
   declare_toplevel_type(G1HeapRegionManager)                                  \
   declare_toplevel_type(G1HeapRegionSetBase)                                  \
   declare_toplevel_type(G1MonitoringSupport)                                  \
-  declare_toplevel_type(PtrQueue)                                             \
   declare_toplevel_type(G1HeapRegionType)                                     \
   declare_toplevel_type(SATBMarkQueue)                                        \
                                                                               \
