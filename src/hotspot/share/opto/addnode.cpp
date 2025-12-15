@@ -1401,6 +1401,10 @@ static ConstAddOperands as_add_with_constant(Node* n) {
 }
 
 Node* MaxNode::IdealI(PhaseGVN* phase, bool can_reshape) {
+  Node* n = AddNode::Ideal(phase, can_reshape);
+  if (n != nullptr) {
+    return n;
+  }
   int opcode = Opcode();
   assert(opcode == Op_MinI || opcode == Op_MaxI, "Unexpected opcode");
   // Try to transform the following pattern, in any of its four possible
@@ -1456,10 +1460,6 @@ Node* MaxNode::IdealI(PhaseGVN* phase, bool can_reshape) {
 
 // Ideal transformations for MaxINode
 Node* MaxINode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  Node* n = AddNode::Ideal(phase, can_reshape);
-  if (n != nullptr) {
-    return n;
-  }
   return IdealI(phase, can_reshape);
 }
 
@@ -1493,10 +1493,6 @@ const Type *MaxINode::add_ring( const Type *t0, const Type *t1 ) const {
 // MINs show up in range-check loop limit calculations.  Look for
 // "MIN2(x+c0,MIN2(y,x+c1))".  Pick the smaller constant: "MIN2(x+c0,y)"
 Node* MinINode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  Node* n = AddNode::Ideal(phase, can_reshape);
-  if (n != nullptr) {
-    return n;
-  }
   return IdealI(phase, can_reshape);
 }
 
