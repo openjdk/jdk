@@ -1217,6 +1217,12 @@ relativeError));
                 flatMap(fa -> DOUBLE_GENERATORS.stream().skip(1).map(fb -> List.of(fa, fb))).
                 collect(Collectors.toList());
 
+    @DataProvider
+    public Object[][] boolUnaryOpProvider() {
+        return BOOL_ARRAY_GENERATORS.stream().
+                map(f -> new Object[]{f}).
+                toArray(Object[][]::new);
+    }
 
     static final List<List<IntFunction<double[]>>> DOUBLE_GENERATOR_TRIPLES =
         DOUBLE_GENERATOR_PAIRS.stream().
