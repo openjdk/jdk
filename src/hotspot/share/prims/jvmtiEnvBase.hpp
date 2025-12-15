@@ -29,7 +29,7 @@
 #include "prims/jvmtiEnvThreadState.hpp"
 #include "prims/jvmtiEventController.hpp"
 #include "prims/jvmtiThreadState.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/fieldDescriptor.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/javaThread.hpp"
@@ -328,11 +328,11 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   }
 
   JvmtiTagMap* tag_map_acquire() {
-    return Atomic::load_acquire(&_tag_map);
+    return AtomicAccess::load_acquire(&_tag_map);
   }
 
   void release_set_tag_map(JvmtiTagMap* tag_map) {
-    Atomic::release_store(&_tag_map, tag_map);
+    AtomicAccess::release_store(&_tag_map, tag_map);
   }
 
   // return true if event is enabled globally or for any thread

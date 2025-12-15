@@ -194,14 +194,6 @@ void ZNMethodTable::register_nmethod(nmethod* nm) {
   }
 }
 
-void ZNMethodTable::wait_until_iteration_done() {
-  assert(CodeCache_lock->owned_by_self(), "Lock must be held");
-
-  while (_iteration.in_progress() || _iteration_secondary.in_progress()) {
-    CodeCache_lock->wait_without_safepoint_check();
-  }
-}
-
 void ZNMethodTable::unregister_nmethod(nmethod* nm) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 

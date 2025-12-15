@@ -49,10 +49,7 @@
  * @run driver TestTransparentHugePagesHeap Serial
 */
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.Scanner;
@@ -61,6 +58,8 @@ import jdk.test.lib.os.linux.HugePageConfiguration;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Platform;
+import jdk.test.lib.os.linux.Smaps;
+import jdk.test.lib.os.linux.Smaps.Range;
 
 import jtreg.SkippedException;
 
@@ -98,55 +97,38 @@ public class TestTransparentHugePagesHeap {
     class VerifyTHPEnabledForHeap {
 
         public static void main(String args[]) throws Exception {
-            String heapAddress = readHeapAddressInLog();
-            Path smaps = makeSmapsCopy();
+            // Extract the heap start from pagesize logging
+            String heapStart = extractHeapStartFromLog();
 
-            final Pattern heapSection = Pattern.compile("^" + heapAddress + ".*");
-            final Pattern thpEligible = Pattern.compile("THPeligible:\\s+(\\d)\\s*");
+            Smaps smaps = Smaps.parseSelf();
 
-            Scanner smapsFile = new Scanner(smaps);
-            while (smapsFile.hasNextLine()) {
-                Matcher heapMatcher = heapSection.matcher(smapsFile.nextLine());
-
-                if (heapMatcher.matches()) {
-                    // Found the first heap section, verify that it is THP eligible
-                    while (smapsFile.hasNextLine()) {
-                        Matcher m = thpEligible.matcher(smapsFile.nextLine());
-                        if (m.matches()) {
-                            if (Integer.parseInt(m.group(1)) == 1) {
-                                // THPeligible is 1, heap can be backed by huge pages
-                                return;
-                            }
-
-                            throw new RuntimeException("First heap section at 0x" + heapAddress + " is not THPeligible");
-                        }
-                    }
-                }
+            Range range = smaps.getRange(heapStart);
+            if (range == null) {
+                throw new AssertionError("Could not find heap section in smaps file. No memory range found for heap start: " + heapStart);
             }
 
-            // Failed to verify THP for heap
-            throw new RuntimeException("Could not find heap section in smaps file");
+            if (!range.isTransparentHuge()) {
+                // Failed to verify THP for heap
+                throw new RuntimeException("The address range 0x" + range.getStart().toString(16)
+                        + "-0x" + range.getEnd().toString(16)
+                        + " that contains the heap start" + heapStart
+                        + " is not THPeligible");
+            }
         }
 
-        private static String readHeapAddressInLog() throws Exception {
-            final Pattern heapAddress = Pattern.compile(".* Heap: .*base=(0x[0-9A-Fa-f]*).*");
+        private static String extractHeapStartFromLog() throws Exception {
+            // [0.041s][info][pagesize] Heap:  min=128M max=128M base=0x0000ffff5c600000 size=128M page_size=2M
+            final Pattern heapAddress = Pattern.compile(".* Heap: .*base=0x([0-9A-Fa-f]*).*");
 
             Scanner logFile = new Scanner(Paths.get("thp-" + ProcessHandle.current().pid() + ".log"));
             while (logFile.hasNextLine()) {
                 Matcher m = heapAddress.matcher(logFile.nextLine());
                 if (m.matches()) {
-                    return Long.toHexString(Long.decode(m.group(1)));
+                    return m.group(1);
                 }
             }
-            throw new RuntimeException("Failed to parse heap address, failing test");
-        }
 
-        private static Path makeSmapsCopy() throws Exception {
-            Path src = Paths.get("/proc/self/smaps");
-            Path dest = Paths.get("smaps-copy-" +  ProcessHandle.current().pid() + ".txt");
-            Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
-            return dest;
+            throw new RuntimeException("Failed to find heap start");
         }
     }
 }
-

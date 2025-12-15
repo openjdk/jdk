@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,32 +62,32 @@ public class UnmodifiableHeaders extends Headers {
 
     @Override
     public List<String> put(String key, List<String> value) {
-        throw new UnsupportedOperationException ("unsupported operation");
+        throw new UnsupportedOperationException("unsupported operation");
     }
 
     @Override
     public void add(String key, String value) {
-        throw new UnsupportedOperationException ("unsupported operation");
+        throw new UnsupportedOperationException("unsupported operation");
     }
 
     @Override
     public void set(String key, String value) {
-        throw new UnsupportedOperationException ("unsupported operation");
+        throw new UnsupportedOperationException("unsupported operation");
     }
 
     @Override
     public List<String> remove(Object key) {
-        throw new UnsupportedOperationException ("unsupported operation");
+        throw new UnsupportedOperationException("unsupported operation");
     }
 
     @Override
     public void putAll(Map<? extends String,? extends List<String>> t)  {
-        throw new UnsupportedOperationException ("unsupported operation");
+        throw new UnsupportedOperationException("unsupported operation");
     }
 
     @Override
     public void clear() {
-        throw new UnsupportedOperationException ("unsupported operation");
+        throw new UnsupportedOperationException("unsupported operation");
     }
 
     @Override
@@ -106,19 +106,19 @@ public class UnmodifiableHeaders extends Headers {
 
     @Override
     public boolean replace(String key, List<String> oldValue, List<String> newValue) {
-        throw new UnsupportedOperationException ("unsupported operation");
+        throw new UnsupportedOperationException("unsupported operation");
     }
 
     @Override
     public void replaceAll(BiFunction<? super String, ? super List<String>, ? extends List<String>> function) {
-        throw new UnsupportedOperationException ("unsupported operation");
+        throw new UnsupportedOperationException("unsupported operation");
     }
 
     @Override
-    public boolean equals(Object o) {return headers.equals(o);}
+    public boolean equals(Object o) { return headers.equals(o); }
 
     @Override
-    public int hashCode() {return headers.hashCode();}
+    public int hashCode() { return headers.hashCode(); }
 
     @Override
     public String toString() {

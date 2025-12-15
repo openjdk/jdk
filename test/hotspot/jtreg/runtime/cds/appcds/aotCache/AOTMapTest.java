@@ -26,26 +26,30 @@
  * @bug 8362566
  * @summary Test the contents of -Xlog:aot+map with AOT workflow
  * @requires vm.cds.supports.aot.class.linking
- * @library /test/lib /test/hotspot/jtreg/runtime/cds
- * @build AOTMapTest
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
+ * @build AOTMapTest Hello
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar AOTMapTestApp
- * @run driver AOTMapTest AOT --two-step-training
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar cust.jar Hello
+ * @run driver/timeout=240 AOTMapTest AOT --two-step-training
  */
 
 /**
  * @test id=dynamic
  * @bug 8362566
- * @summary Test the contents of -Xlog:aot+map with AOT workflow
+ * @summary Test the contents of -Xlog:aot+map with dynamic CDS archive
  * @requires vm.cds.supports.aot.class.linking
- * @library /test/lib /test/hotspot/jtreg/runtime/cds
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @build AOTMapTest
+ * @build AOTMapTest Hello
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar AOTMapTestApp
- * @run  main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. AOTMapTest DYNAMIC
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar cust.jar Hello
+ * @run main/othervm/timeout=240 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. AOTMapTest DYNAMIC
  */
 
-
+import java.io.File;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import jdk.test.lib.cds.CDSAppTester;
 import jdk.test.lib.helpers.ClassFileInstaller;
@@ -54,6 +58,7 @@ import jdk.test.lib.Platform;
 public class AOTMapTest {
     static final String appJar = ClassFileInstaller.getJarPath("app.jar");
     static final String mainClass = "AOTMapTestApp";
+    static final String classLoadLogFile = "production.class.load.log";
 
     public static void main(String[] args) throws Exception {
         doTest(args);
@@ -63,13 +68,25 @@ public class AOTMapTest {
         Tester tester = new Tester();
         tester.run(args);
 
-        validate(tester.dumpMapFile);
-        validate(tester.runMapFile);
+        if (tester.isDynamicWorkflow()) {
+            // For dynamic workflow, the AOT map file doesn't include classes in the base archive, so
+            // AOTMapReader.validateClasses() will fail.
+            validate(tester.dumpMapFile, false);
+        } else {
+            validate(tester.dumpMapFile, true);
+        }
+        validate(tester.runMapFile, true);
     }
 
-    static void validate(String mapFileName) {
-        CDSMapReader.MapFile mapFile = CDSMapReader.read(mapFileName);
-        CDSMapReader.validate(mapFile);
+    static void validate(String mapFileName, boolean checkClases) throws Exception {
+        AOTMapReader.MapFile mapFile = AOTMapReader.read(mapFileName);
+        if (checkClases) {
+            AOTMapReader.validate(mapFile, classLoadLogFile);
+        } else {
+            AOTMapReader.validate(mapFile, null);
+        }
+        mapFile.shouldHaveClass("AOTMapTestApp"); // built-in class
+        mapFile.shouldHaveClass("Hello"); // unregistered class
     }
 
     static class Tester extends CDSAppTester {
@@ -97,12 +114,13 @@ public class AOTMapTest {
 
             // filesize=0 ensures that a large map file not broken up in multiple files.
             String logMapPrefix = "-Xlog:aot+map=debug,aot+map+oops=trace:file=";
-            String logMapSuffix = ":none:filesize=0";
+            String logSuffix = ":none:filesize=0";
 
             if (runMode == RunMode.ASSEMBLY || runMode == RunMode.DUMP_DYNAMIC) {
-                vmArgs.add(logMapPrefix + dumpMapFile + logMapSuffix);
+                vmArgs.add(logMapPrefix + dumpMapFile + logSuffix);
             } else if (runMode == RunMode.PRODUCTION) {
-                vmArgs.add(logMapPrefix + runMapFile + logMapSuffix);
+                vmArgs.add(logMapPrefix + runMapFile + logSuffix);
+                vmArgs.add("-Xlog:class+load:file=" + classLoadLogFile + logSuffix);
             }
 
             return vmArgs.toArray(new String[vmArgs.size()]);
@@ -118,7 +136,16 @@ public class AOTMapTest {
 }
 
 class AOTMapTestApp {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         System.out.println("Hello AOTMapTestApp");
+        testCustomLoader();
+    }
+
+    static void testCustomLoader() throws Exception {
+        File custJar = new File("cust.jar");
+        URL[] urls = new URL[] {custJar.toURI().toURL()};
+        URLClassLoader loader = new URLClassLoader(urls, AOTMapTestApp.class.getClassLoader());
+        Class<?> c = loader.loadClass("Hello");
+        System.out.println(c);
     }
 }

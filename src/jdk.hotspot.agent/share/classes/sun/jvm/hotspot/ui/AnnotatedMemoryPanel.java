@@ -626,7 +626,7 @@ public class AnnotatedMemoryPanel extends JPanel {
 
   public static void main(String[] args) {
     JFrame frame = new JFrame();
-    DummyDebugger debugger = new DummyDebugger(new MachineDescriptionIntelX86());
+    DummyDebugger debugger = new DummyDebugger(new MachineDescriptionAMD64());
     AnnotatedMemoryPanel anno = new AnnotatedMemoryPanel(debugger);
     frame.getContentPane().add(anno);
     anno.addAnnotation(new Annotation(debugger.parseAddress("0x80000000"),

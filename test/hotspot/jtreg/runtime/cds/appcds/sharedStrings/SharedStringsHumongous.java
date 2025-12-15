@@ -26,7 +26,7 @@
  * @test
  * @summary Use a shared string allocated in a humongous G1 region.
  * @comment -- the following implies that G1 is used (by command-line or by default)
- * @requires vm.cds.write.archived.java.heap
+ * @requires vm.cds.write.mapped.java.heap
  * @requires vm.gc.G1
  *
  * @library /test/hotspot/jtreg/runtime/cds/appcds /test/lib
@@ -35,6 +35,11 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. SharedStringsHumongous
  */
+
+// The problem with humongous strings, or humongous objects in general, does not
+// exist with the streaming heap loader. Therefore, this test requres the mapping mode.
+// Further more, humongous regions are a bit specific to G1, so G1 is needed.
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;

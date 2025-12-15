@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import java.security.interfaces.EdECPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.EdDSAParameterSpec;
 import java.security.spec.NamedParameterSpec;
+import java.util.Arrays;
 import java.util.function.Function;
 
 public class EdDSASignature extends SignatureSpi {
@@ -92,7 +93,7 @@ public class EdDSASignature extends SignatureSpi {
         }
     }
 
-    private byte[] privateKey;
+    private EdECPrivateKey privateKey;
     private AffinePoint publicKeyPoint;
     private byte[] publicKeyBytes;
     private EdDSAOperations ops;
@@ -141,11 +142,13 @@ public class EdDSASignature extends SignatureSpi {
         if (!(privateKey instanceof EdECPrivateKey)) {
             throw new InvalidKeyException("Unsupported key type");
         }
-        EdECPrivateKey edKey = (EdECPrivateKey) privateKey;
+        this.privateKey = (EdECPrivateKey) privateKey;
 
-        initImpl(edKey.getParams());
-        this.privateKey = edKey.getBytes().orElseThrow(
-        () -> new InvalidKeyException("No private key value"));
+        initImpl(this.privateKey.getParams());
+        byte[] tmp = this.privateKey.getBytes().orElseThrow(
+                () -> new InvalidKeyException("No private key value"));
+        Arrays.fill(tmp, (byte)0);
+
         this.publicKeyPoint = null;
         this.publicKeyBytes = null;
     }
@@ -199,10 +202,14 @@ public class EdDSASignature extends SignatureSpi {
             throw new SignatureException("Missing private key");
         }
         ensureMessageInit();
-        byte[] result = ops.sign(this.sigParams, this.privateKey,
-            message.getMessage());
-        message = null;
-        return result;
+        byte[] bytes = this.privateKey.getBytes().get();
+        try {
+            return ops.sign(this.sigParams, bytes,
+                    message.getMessage());
+        } finally {
+            Arrays.fill(bytes, (byte)0);
+            message = null;
+        }
     }
 
     @Override

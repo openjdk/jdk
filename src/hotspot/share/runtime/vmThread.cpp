@@ -34,7 +34,7 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/verifyOopClosure.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/cpuTimeCounters.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -68,17 +68,17 @@ void VMOperationTimeoutTask::task() {
 }
 
 bool VMOperationTimeoutTask::is_armed() {
-  return Atomic::load_acquire(&_armed) != 0;
+  return AtomicAccess::load_acquire(&_armed) != 0;
 }
 
 void VMOperationTimeoutTask::arm(const char* vm_op_name) {
   _vm_op_name = vm_op_name;
   _arm_time = os::javaTimeNanos();
-  Atomic::release_store_fence(&_armed, 1);
+  AtomicAccess::release_store_fence(&_armed, 1);
 }
 
 void VMOperationTimeoutTask::disarm() {
-  Atomic::release_store_fence(&_armed, 0);
+  AtomicAccess::release_store_fence(&_armed, 0);
 
   // The two stores to `_armed` are counted in VM-op, but they should be
   // insignificant compared to the actual VM-op duration.
@@ -157,7 +157,7 @@ void VMThread::run() {
   // Notify_lock wait checks on is_running() to rewait in
   // case of spurious wakeup, it should wait on the last
   // value set prior to the notify
-  Atomic::store(&_is_running, true);
+  AtomicAccess::store(&_is_running, true);
 
   {
     MutexLocker ml(Notify_lock);

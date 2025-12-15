@@ -26,7 +26,6 @@
 #define SHARE_OOPS_TRAININGDATA_HPP
 
 #include "cds/cdsConfig.hpp"
-#include "classfile/classLoaderData.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/compilerDefinitions.hpp"
@@ -98,7 +97,9 @@ public:
   // It supports recursive locking and a read-only mode (in which case no locks are taken).
   // It is also a part of the TD collection termination protocol (see the "snapshot" field).
   class TrainingDataLocker {
+#if INCLUDE_CDS
     static volatile bool _snapshot; // If true we're not allocating new training data
+#endif
     static int _lock_mode;
     const bool _recursive;
     static void lock() {
@@ -150,6 +151,11 @@ public:
     static void initialize() {
 #if INCLUDE_CDS
       _lock_mode = need_data() ? +1 : -1;   // if -1, we go lock-free
+#endif
+    }
+    static void assert_locked_or_snapshotted() {
+#if INCLUDE_CDS
+      assert(safely_locked() || _snapshot, "use under TrainingDataLocker or after snapshot");
 #endif
     }
     static void assert_locked() {
@@ -338,20 +344,24 @@ private:
     }
 
     int length() const {
+      TrainingDataLocker::assert_locked_or_snapshotted();
       return (_deps_dyn != nullptr ? _deps_dyn->length()
               : _deps   != nullptr ? _deps->length()
               : 0);
     }
     E* adr_at(int i) const {
+      TrainingDataLocker::assert_locked_or_snapshotted();
       return (_deps_dyn != nullptr ? _deps_dyn->adr_at(i)
               : _deps   != nullptr ? _deps->adr_at(i)
               : nullptr);
     }
     E at(int i) const {
+      TrainingDataLocker::assert_locked_or_snapshotted();
       assert(i >= 0 && i < length(), "oob");
       return *adr_at(i);
     }
     bool append_if_missing(E dep) {
+      TrainingDataLocker::assert_can_add();
       if (_deps_dyn == nullptr) {
         _deps_dyn = new GrowableArrayCHeap<E, mtCompiler>(10);
         _deps_dyn->append(dep);
@@ -361,23 +371,27 @@ private:
       }
     }
     bool remove_if_existing(E dep) {
+      TrainingDataLocker::assert_can_add();
       if (_deps_dyn != nullptr) {
         return _deps_dyn->remove_if_existing(dep);
       }
       return false;
     }
     void clear() {
+      TrainingDataLocker::assert_can_add();
       if (_deps_dyn != nullptr)  {
         _deps_dyn->clear();
       }
     }
     void append(E dep) {
+      TrainingDataLocker::assert_can_add();
       if (_deps_dyn == nullptr) {
         _deps_dyn = new GrowableArrayCHeap<E, mtCompiler>(10);
       }
       _deps_dyn->append(dep);
     }
     bool contains(E dep) {
+      TrainingDataLocker::assert_locked();
       for (int i = 0; i < length(); i++) {
         if (dep == at(i)) {
           return true; // found
@@ -391,7 +405,7 @@ private:
       _deps_dyn = nullptr;
     }
 #endif
-    void prepare(ClassLoaderData* loader_data);
+    void prepare();
     void metaspace_pointers_do(MetaspaceClosure *iter);
   };
 
@@ -468,10 +482,6 @@ class KlassTrainingData : public TrainingData {
   }
   virtual KlassTrainingData* as_KlassTrainingData() const { return const_cast<KlassTrainingData*>(this); };
 
-  ClassLoaderData* class_loader_data() {
-    assert(has_holder(), "");
-    return holder()->class_loader_data();
-  }
   void notice_fully_initialized() NOT_CDS_RETURN;
 
   void print_on(outputStream* st, bool name_only) const;
@@ -591,6 +601,7 @@ public:
       DepList<Record> _data;
     public:
       OptionalReturnType find(const Args&... args) {
+        TrainingDataLocker l;
         ArgumentsType a(args...);
         for (int i = 0; i < _data.length(); i++) {
           if (_data.at(i).arguments() == a) {
@@ -599,14 +610,17 @@ public:
         }
         return OptionalReturnType(false, ReturnType());
       }
-      bool append_if_missing(const ReturnType& result, const Args&... args) {
-        return _data.append_if_missing(Record(result, ArgumentsType(args...)));
+      void append_if_missing(const ReturnType& result, const Args&... args) {
+        TrainingDataLocker l;
+        if (l.can_add()) {
+          _data.append_if_missing(Record(result, ArgumentsType(args...)));
+        }
       }
 #if INCLUDE_CDS
       void remove_unshareable_info() { _data.remove_unshareable_info(); }
 #endif
-      void prepare(ClassLoaderData* loader_data) {
-        _data.prepare(loader_data);
+      void prepare() {
+        _data.prepare();
       }
       void metaspace_pointers_do(MetaspaceClosure *iter) {
         _data.metaspace_pointers_do(iter);
@@ -624,8 +638,8 @@ public:
       ciMethod__inline_instructions_size.remove_unshareable_info();
     }
 #endif
-    void prepare(ClassLoaderData* loader_data) {
-      ciMethod__inline_instructions_size.prepare(loader_data);
+    void prepare() {
+      ciMethod__inline_instructions_size.prepare();
     }
     void metaspace_pointers_do(MetaspaceClosure *iter) {
       ciMethod__inline_instructions_size.metaspace_pointers_do(iter);
@@ -675,7 +689,7 @@ public:
   }
   void dec_init_deps_left_release(KlassTrainingData* ktd);
   int init_deps_left_acquire() const {
-    return Atomic::load_acquire(&_init_deps_left);
+    return AtomicAccess::load_acquire(&_init_deps_left);
   }
   uint compute_init_deps_left(bool count_initialized = false);
 
@@ -734,6 +748,9 @@ class MethodTrainingData : public TrainingData {
   MethodCounters* _final_counters;
   MethodData*     _final_profile;
 
+  int _invocation_count;
+  int _backedge_count;
+
   MethodTrainingData();
   MethodTrainingData(Method* method, KlassTrainingData* ktd) : TrainingData(method) {
     _klass = ktd;
@@ -744,6 +761,8 @@ class MethodTrainingData : public TrainingData {
     _highest_top_level = CompLevel_none;
     _level_mask = 0;
     _was_toplevel = false;
+    _invocation_count = 0;
+    _backedge_count = 0;
   }
 
   static int level_mask(int level) {
@@ -758,6 +777,8 @@ class MethodTrainingData : public TrainingData {
   bool saw_level(CompLevel l) const { return (_level_mask & level_mask(l)) != 0; }
   int highest_top_level()     const { return _highest_top_level; }
   MethodData* final_profile() const { return _final_profile; }
+  int invocation_count() const { return _invocation_count; }
+  int backedge_count() const { return _backedge_count; }
 
   Symbol* name() const {
     precond(has_holder());

@@ -197,7 +197,7 @@ int BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr) {
     // a very rare event.
     if (DeoptimizeNMethodBarriersALot && !nm->is_osr_method()) {
       static volatile uint32_t counter=0;
-      if (Atomic::add(&counter, 1u) % 10 == 0) {
+      if (AtomicAccess::add(&counter, 1u) % 10 == 0) {
         may_enter = false;
       }
     }

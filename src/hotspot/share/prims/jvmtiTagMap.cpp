@@ -36,6 +36,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/constantPool.inline.hpp"
+#include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -56,9 +57,9 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/mountUnmountDisabler.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/reflectionUtils.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/timerTrace.hpp"
@@ -429,8 +430,8 @@ int ClassFieldMap::interfaces_field_count(InstanceKlass* ik) {
   const Array<InstanceKlass*>* interfaces = ik->transitive_interfaces();
   int count = 0;
   for (int i = 0; i < interfaces->length(); i++) {
-    FilteredJavaFieldStream fld(interfaces->at(i));
-    count += fld.field_count();
+    count += interfaces->at(i)->java_fields_count();
+
   }
   return count;
 }
@@ -452,11 +453,10 @@ ClassFieldMap* ClassFieldMap::create_map_of_static_fields(Klass* k) {
   // Need to calculate start index of this class fields: number of fields in all interfaces and superclasses.
   int index = interfaces_field_count(ik);
   for (InstanceKlass* super_klass = ik->super(); super_klass != nullptr; super_klass = super_klass->super()) {
-    FilteredJavaFieldStream super_fld(super_klass);
-    index += super_fld.field_count();
+    index += super_klass->java_fields_count();
   }
 
-  for (FilteredJavaFieldStream fld(ik); !fld.done(); fld.next(), index++) {
+  for (JavaFieldStream fld(ik); !fld.done(); fld.next(), index++) {
     // ignore instance fields
     if (!fld.access_flags().is_static()) {
       continue;
@@ -479,13 +479,12 @@ ClassFieldMap* ClassFieldMap::create_map_of_instance_fields(oop obj) {
   // fields of the superclasses are reported first, so need to know total field number to calculate field indices
   int total_field_number = interfaces_field_count(ik);
   for (InstanceKlass* klass = ik; klass != nullptr; klass = klass->super()) {
-    FilteredJavaFieldStream fld(klass);
-    total_field_number += fld.field_count();
+    total_field_number += klass->java_fields_count();
   }
 
   for (InstanceKlass* klass = ik; klass != nullptr; klass = klass->super()) {
-    FilteredJavaFieldStream fld(klass);
-    int start_index = total_field_number - fld.field_count();
+    JavaFieldStream fld(klass);
+    int start_index = total_field_number - klass->java_fields_count();
     for (int index = 0; !fld.done(); fld.next(), index++) {
       // ignore static fields
       if (fld.access_flags().is_static()) {
@@ -2192,6 +2191,39 @@ class SimpleRootsClosure : public OopClosure {
   virtual void do_oop(narrowOop* obj_p) { ShouldNotReachHere(); }
 };
 
+// A supporting closure used to process ClassLoaderData roots.
+class CLDRootsClosure: public OopClosure {
+private:
+  bool _continue;
+public:
+  CLDRootsClosure(): _continue(true) {}
+
+  inline bool stopped() {
+    return !_continue;
+  }
+
+  void do_oop(oop* obj_p) {
+    if (stopped()) {
+      return;
+    }
+
+    oop o = NativeAccess<AS_NO_KEEPALIVE>::oop_load(obj_p);
+    // ignore null
+    if (o == nullptr) {
+      return;
+    }
+
+    jvmtiHeapReferenceKind kind = JVMTI_HEAP_REFERENCE_OTHER;
+    if (o->klass() == vmClasses::Class_klass()) {
+      kind = JVMTI_HEAP_REFERENCE_SYSTEM_CLASS;
+    }
+
+    // invoke the callback
+    _continue = CallbackInvoker::report_simple_root(kind, o);
+  }
+  virtual void do_oop(narrowOop* obj_p) { ShouldNotReachHere(); }
+};
+
 // A supporting closure used to process JNI locals
 class JNILocalRootsClosure : public OopClosure {
  private:
@@ -2778,10 +2810,10 @@ inline bool VM_HeapWalkOperation::collect_simple_roots() {
   }
 
   // Preloaded classes and loader from the system dictionary
-  blk.set_kind(JVMTI_HEAP_REFERENCE_SYSTEM_CLASS);
-  CLDToOopClosure cld_closure(&blk, ClassLoaderData::_claim_none);
+  CLDRootsClosure cld_roots_closure;
+  CLDToOopClosure cld_closure(&cld_roots_closure, ClassLoaderData::_claim_none);
   ClassLoaderDataGraph::always_strong_cld_do(&cld_closure);
-  if (blk.stopped()) {
+  if (cld_roots_closure.stopped()) {
     return false;
   }
 
@@ -2997,7 +3029,7 @@ void JvmtiTagMap::iterate_over_reachable_objects(jvmtiHeapRootCallback heap_root
                                                  jvmtiObjectReferenceCallback object_ref_callback,
                                                  const void* user_data) {
   // VTMS transitions must be disabled before the EscapeBarrier.
-  JvmtiVTMSTransitionDisabler disabler;
+  MountUnmountDisabler disabler;
 
   JavaThread* jt = JavaThread::current();
   EscapeBarrier eb(true, jt);
@@ -3025,7 +3057,7 @@ void JvmtiTagMap::iterate_over_objects_reachable_from_object(jobject object,
   Arena dead_object_arena(mtServiceability);
   GrowableArray<jlong> dead_objects(&dead_object_arena, 10, 0, 0);
 
-  JvmtiVTMSTransitionDisabler disabler;
+  MountUnmountDisabler disabler;
 
   {
     MutexLocker ml(Heap_lock);
@@ -3045,7 +3077,7 @@ void JvmtiTagMap::follow_references(jint heap_filter,
                                     const void* user_data)
 {
   // VTMS transitions must be disabled before the EscapeBarrier.
-  JvmtiVTMSTransitionDisabler disabler;
+  MountUnmountDisabler disabler;
 
   oop obj = JNIHandles::resolve(object);
   JavaThread* jt = JavaThread::current();

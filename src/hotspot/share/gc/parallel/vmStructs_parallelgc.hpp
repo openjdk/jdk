@@ -40,6 +40,7 @@
   /* Parallel GC fields */                                                                                                           \
   /**********************/                                                                                                           \
   nonstatic_field(PSVirtualSpace,              _alignment,                                    const size_t)                          \
+  nonstatic_field(PSVirtualSpace,              _page_size,                                    const size_t)                          \
   nonstatic_field(PSVirtualSpace,              _reserved_low_addr,                            char*)                                 \
   nonstatic_field(PSVirtualSpace,              _reserved_high_addr,                           char*)                                 \
   nonstatic_field(PSVirtualSpace,              _committed_low_addr,                           char*)                                 \
@@ -63,8 +64,8 @@
   nonstatic_field(PSOldGen,                    _max_gen_size,                                 const size_t)                          \
                                                                                                                                      \
                                                                                                                                      \
-     static_field(ParallelScavengeHeap,        _young_gen,                                    PSYoungGen*)                           \
-     static_field(ParallelScavengeHeap,        _old_gen,                                      PSOldGen*)                             \
+  nonstatic_field(ParallelScavengeHeap,        _young_gen,                                    PSYoungGen*)                           \
+  nonstatic_field(ParallelScavengeHeap,        _old_gen,                                      PSOldGen*)                             \
                                                                                                                                      \
 
 #define VM_TYPES_PARALLELGC(declare_type,                                 \

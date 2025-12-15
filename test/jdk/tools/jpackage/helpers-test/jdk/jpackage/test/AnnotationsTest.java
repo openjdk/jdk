@@ -95,6 +95,18 @@ public class AnnotationsTest extends JUnitAdapter {
             recordTestCase(a, b, other);
         }
 
+        enum Tack {
+            STARBOARD,
+            PORTSIDE;
+        }
+
+        @Test
+        @Parameter({"STARBOARD"})
+        @Parameter({"PORTSIDE", "STARBOARD"})
+        public void testEnumVarArg(Tack ... cource) {
+            recordTestCase((Object[]) cource);
+        }
+
         @Test
         @ParameterSupplier("dateSupplier")
         @ParameterSupplier("jdk.jpackage.test.AnnotationsTest.dateSupplier")
@@ -118,6 +130,8 @@ public class AnnotationsTest extends JUnitAdapter {
                     "().testVarArg2(-89, bar, [more, moore](length=2))",
                     "().testVarArg2(-89, bar, [more](length=1))",
                     "().testVarArg2(12, foo, [](length=0))",
+                    "().testEnumVarArg(STARBOARD)",
+                    "().testEnumVarArg(PORTSIDE, STARBOARD)",
                     "().testDates(2018-05-05)",
                     "().testDates(2018-07-11)",
                     "().testDates(2034-05-05)",

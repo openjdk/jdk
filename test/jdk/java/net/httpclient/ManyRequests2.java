@@ -24,11 +24,11 @@
 /*
  * @test
  * @bug 8087112 8180044 8256459
- * @modules java.net.http
+ * @modules java.net.http/jdk.internal.net.http.common
  *          java.logging
  *          jdk.httpserver
- * @library /test/lib
- * @build jdk.test.lib.net.SimpleSSLContext
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestServerConfigurator
  * @compile ../../../com/sun/net/httpserver/LogFilter.java
  * @compile ../../../com/sun/net/httpserver/EchoHandler.java
  * @compile ../../../com/sun/net/httpserver/FileServerHandler.java

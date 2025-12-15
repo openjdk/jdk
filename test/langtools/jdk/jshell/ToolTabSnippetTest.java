@@ -103,8 +103,8 @@ public class ToolTabSnippetTest extends UITesting {
             inputSink.write("(" + TAB);
             waitOutput(out, "\\(\n" +
                             resource("jshell.console.completion.current.signatures") + "\n" +
-                            "JShellTest\\(String str\\)\n" +
-                            "JShellTest\\(String str, int i\\)\n" +
+                            "JShellTest\\(\\u001B\\[1mString str\\u001B\\[0m\\)\n" +
+                            "JShellTest\\(\\u001B\\[1mString str\\u001B\\[0m, int i\\)\n" +
                             "\n" +
                             resource("jshell.console.see.documentation") +
                             REDRAW_PROMPT + "new JShellTest\\(");
@@ -138,8 +138,8 @@ public class ToolTabSnippetTest extends UITesting {
                             "str   \n" +
                             "\n" +
                             resource("jshell.console.completion.current.signatures") + "\n" +
-                            "JShellTest\\(String str\\)\n" +
-                            "JShellTest\\(String str, int i\\)\n" +
+                            "JShellTest\\(\\u001B\\[1mString str\\u001B\\[0m\\)\n" +
+                            "JShellTest\\(\\u001B\\[1mString str\\u001B\\[0m, int i\\)\n" +
                             "\n" +
                             resource("jshell.console.see.documentation") +
                             REDRAW_PROMPT + "new JShellTest\\(");
@@ -342,6 +342,26 @@ public class ToolTabSnippetTest extends UITesting {
 
             inputSink.write("new Instant" + TAB);
             waitOutput(out, PROMPT + "new InstantiationE");
+        });
+    }
+
+    @Test
+    public void testAnnotation() throws Exception {
+        doRunTest((inputSink, out) -> {
+            inputSink.write("@interface Ann1 { public java.lang.annotation.Retention[] value(); }\n");
+            waitOutput(out, "\n\\u001B\\[\\?2004h" + PROMPT);
+
+            //-> <tab>
+            inputSink.write("@Ann1(" + TAB);
+            waitOutput(out, ".*@java.lang.annotation.Retention\\(.*value =.*" +
+                            REDRAW_PROMPT + "@Ann1\\(");
+            inputSink.write("@" + TAB);
+            waitOutput(out, "^@java.lang.annotation.Retention\\(");
+            inputSink.write(TAB);
+            waitOutput(out, ".*java.lang.annotation.RetentionPolicy.*java.lang.annotation.RetentionPolicy.CLASS.*" +
+                            REDRAW_PROMPT + "@Ann1\\(@java.lang.annotation.Retention\\(");
+            inputSink.write("CL" + TAB);
+            waitOutput(out, "CL\\u001B\\[2Djava.lang.annotation.RetentionPolicy.CLASS \\u0008");
         });
     }
 }

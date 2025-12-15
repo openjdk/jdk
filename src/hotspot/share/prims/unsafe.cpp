@@ -489,7 +489,7 @@ static jlong find_known_instance_field_offset(jclass clazz, jstring name, TRAPS)
   ResourceMark rm(THREAD);
   char *utf_name = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(name));
 
-  InstanceKlass* k = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz)));
+  InstanceKlass* k = java_lang_Class::as_InstanceKlass(JNIHandles::resolve_non_null(clazz));
 
   jint offset = -1; // Not found
   for (JavaFieldStream fs(k); !fs.done(); fs.next()) {
@@ -737,13 +737,13 @@ UNSAFE_ENTRY(jobject, Unsafe_CompareAndExchangeReference(JNIEnv *env, jobject un
 UNSAFE_ENTRY_SCOPED(jint, Unsafe_CompareAndExchangeInt(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jint e, jint x)) {
   oop p = JNIHandles::resolve(obj);
   volatile jint* addr = (volatile jint*)index_oop_from_field_offset_long(p, offset);
-  return Atomic::cmpxchg(addr, e, x);
+  return AtomicAccess::cmpxchg(addr, e, x);
 } UNSAFE_END
 
 UNSAFE_ENTRY_SCOPED(jlong, Unsafe_CompareAndExchangeLong(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jlong e, jlong x)) {
   oop p = JNIHandles::resolve(obj);
   volatile jlong* addr = (volatile jlong*)index_oop_from_field_offset_long(p, offset);
-  return Atomic::cmpxchg(addr, e, x);
+  return AtomicAccess::cmpxchg(addr, e, x);
 } UNSAFE_END
 
 UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSetReference(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jobject e_h, jobject x_h)) {
@@ -758,13 +758,13 @@ UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSetReference(JNIEnv *env, jobject unsafe
 UNSAFE_ENTRY_SCOPED(jboolean, Unsafe_CompareAndSetInt(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jint e, jint x)) {
   oop p = JNIHandles::resolve(obj);
   volatile jint* addr = (volatile jint*)index_oop_from_field_offset_long(p, offset);
-  return Atomic::cmpxchg(addr, e, x) == e;
+  return AtomicAccess::cmpxchg(addr, e, x) == e;
 } UNSAFE_END
 
 UNSAFE_ENTRY_SCOPED(jboolean, Unsafe_CompareAndSetLong(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jlong e, jlong x)) {
   oop p = JNIHandles::resolve(obj);
   volatile jlong* addr = (volatile jlong*)index_oop_from_field_offset_long(p, offset);
-  return Atomic::cmpxchg(addr, e, x) == e;
+  return AtomicAccess::cmpxchg(addr, e, x) == e;
 } UNSAFE_END
 
 static void post_thread_park_event(EventThreadPark* event, const oop obj, jlong timeout_nanos, jlong until_epoch_millis) {

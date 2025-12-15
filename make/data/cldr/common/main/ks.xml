@@ -923,7 +923,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="iso8601">ISO-8601 کیلنڈر</type>
 			<type key="calendar" type="japanese">جاپٲنؠ کیلنڑَر</type>
 			<type key="calendar" type="roc">جموٗریٲتی چیٖنی کیلَنڑَر</type>
-			<type key="collation" type="big5han">رؠوٲتی چیٖنی تِرتیٖب</type>
 			<type key="collation" type="phonebook">فون بُک تَرتیٖب</type>
 			<type key="collation" type="pinyin">آسان بَناونہٕ آمُت چیٖنی پیٖنیَن تَرتیٖب</type>
 			<type key="collation" type="standard">معیٲری ترتیٖب آڈر</type>
@@ -2175,9 +2174,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>نوم پؠنہہ</exemplarCity>
 			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>اؠنڑربیری</exemplarCity>
-			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>کِرِتِماتی</exemplarCity>
 			</zone>
@@ -2846,9 +2842,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>مغربی افریٖقا ٹایِم</generic>
-					<standard>مغربی افریٖقا سٹینڈرڈ ٹایِم</standard>
-					<daylight>مغربی افریٖقا سَمَر ٹایِم</daylight>
+					<standard>مغربی افریٖقا ٹایِم</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -3222,6 +3216,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Guyana">
 				<long>
 					<standard>گُیَنا ٹایِم</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>حَواے اؠلیوٗٹِیَن سٹینڑاڑ ٹایِم</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -3667,6 +3666,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Truk">
 				<long>
 					<standard>ٹٔرک ٹایِم</standard>
+				</long>
+			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>تُرکی ٹایِم</generic>
+					<standard>تُرکی سٹینڑاڑ ٹایِم</standard>
+					<daylight>تُرکی سَمَر ٹایِم</daylight>
 				</long>
 			</metazone>
 			<metazone type="Turkmenistan">

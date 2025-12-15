@@ -682,7 +682,7 @@ public class BasicMenuItemUI extends MenuItemUI
         g.setFont(mi.getFont());
 
         Rectangle viewRect = new Rectangle(0, 0, mi.getWidth(), mi.getHeight());
-        applyInsets(viewRect, mi.getInsets());
+        SwingUtilities3.applyInsets(viewRect, mi.getInsets());
 
         MenuItemLayoutHelper lh = new MenuItemLayoutHelper(mi, checkIcon,
                 arrowIcon, viewRect, defaultTextIconGap, acceleratorDelimiter,
@@ -739,10 +739,6 @@ public class BasicMenuItemUI extends MenuItemUI
                                 MenuItemLayoutHelper.LayoutResult lr,
                                 Color foreground) {
         SwingUtilities3.paintArrowIcon(g, lh, lr, foreground);
-    }
-
-    private void applyInsets(Rectangle rect, Insets insets) {
-        SwingUtilities3.applyInsets(rect, insets);
     }
 
     /**

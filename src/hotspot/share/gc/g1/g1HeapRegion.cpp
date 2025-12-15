@@ -39,11 +39,12 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/iterator.inline.hpp"
+#include "memory/memRegion.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -137,9 +138,19 @@ void G1HeapRegion::hr_clear(bool clear_space) {
   if (clear_space) clear(SpaceDecorator::Mangle);
 }
 
-void G1HeapRegion::clear_cardtable() {
+void G1HeapRegion::clear_card_table() {
   G1CardTable* ct = G1CollectedHeap::heap()->card_table();
   ct->clear_MemRegion(MemRegion(bottom(), end()));
+}
+
+void G1HeapRegion::clear_refinement_table() {
+  G1CardTable* ct = G1CollectedHeap::heap()->refinement_table();
+  ct->clear_MemRegion(MemRegion(bottom(), end()));
+}
+
+void G1HeapRegion::clear_both_card_tables() {
+  clear_card_table();
+  clear_refinement_table();
 }
 
 void G1HeapRegion::set_free() {
@@ -288,16 +299,12 @@ void G1HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
 }
 
 void G1HeapRegion::note_self_forward_chunk_done(size_t garbage_bytes) {
-  Atomic::add(&_garbage_bytes, garbage_bytes, memory_order_relaxed);
+  AtomicAccess::add(&_garbage_bytes, garbage_bytes, memory_order_relaxed);
 }
 
 // Code roots support
 void G1HeapRegion::add_code_root(nmethod* nm) {
   rem_set()->add_code_root(nm);
-}
-
-void G1HeapRegion::remove_code_root(nmethod* nm) {
-  rem_set()->remove_code_root(nm);
 }
 
 void G1HeapRegion::code_roots_do(NMethodClosure* blk) const {
@@ -417,7 +424,7 @@ bool G1HeapRegion::verify_code_roots(VerifyOption vo) const {
 void G1HeapRegion::print() const { print_on(tty); }
 
 void G1HeapRegion::print_on(outputStream* st) const {
-  st->print("|%4u", this->_hrm_index);
+  st->print("|%5u", this->_hrm_index);
   st->print("|" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT,
             p2i(bottom()), p2i(top()), p2i(end()));
   st->print("|%3d%%", (int) ((double) used() * 100 / capacity()));
@@ -431,7 +438,7 @@ void G1HeapRegion::print_on(outputStream* st) const {
     st->print("|  ");
   }
   G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
-  st->print("|TAMS " PTR_FORMAT "| PB " PTR_FORMAT "| %s ",
+  st->print("|TAMS " PTR_FORMAT "| PB " PTR_FORMAT "| %-9s ",
             p2i(cm->top_at_mark_start(this)), p2i(parsable_bottom_acquire()), rem_set()->get_state_str());
   if (UseNUMA) {
     G1NUMA* numa = G1NUMA::numa();
@@ -441,7 +448,7 @@ void G1HeapRegion::print_on(outputStream* st) const {
       st->print("|-");
     }
   }
-  st->print("|%3zu", Atomic::load(&_pinned_object_count));
+  st->print("|%3zu", AtomicAccess::load(&_pinned_object_count));
   st->print_cr("");
 }
 
@@ -591,8 +598,12 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
 
     G1HeapRegion* _from;
     G1HeapRegion* _to;
-    CardValue _cv_obj;
-    CardValue _cv_field;
+
+    CardValue _cv_obj_ct;    // In card table.
+    CardValue _cv_field_ct;
+
+    CardValue _cv_obj_rt;    // In refinement table.
+    CardValue _cv_field_rt;
 
     RemSetChecker(G1VerifyFailureCounter* failures, oop containing_obj, T* p, oop obj)
       : Checker<T>(failures, containing_obj, p, obj) {
@@ -600,19 +611,23 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
       _to = this->_g1h->heap_region_containing(obj);
 
       CardTable* ct = this->_g1h->card_table();
-      _cv_obj = *ct->byte_for_const(this->_containing_obj);
-      _cv_field = *ct->byte_for_const(p);
+      _cv_obj_ct = *ct->byte_for_const(this->_containing_obj);
+      _cv_field_ct = *ct->byte_for_const(p);
+
+      ct = this->_g1h->refinement_table();
+      _cv_obj_rt = *ct->byte_for_const(this->_containing_obj);
+      _cv_field_rt = *ct->byte_for_const(p);
     }
 
     bool failed() const {
       if (_from != _to && !_from->is_young() &&
           _to->rem_set()->is_complete() &&
           _from->rem_set()->cset_group() != _to->rem_set()->cset_group()) {
-        const CardValue dirty = G1CardTable::dirty_card_val();
+        const CardValue clean = G1CardTable::clean_card_val();
         return !(_to->rem_set()->contains_reference(this->_p) ||
                  (this->_containing_obj->is_objArray() ?
-                  _cv_field == dirty :
-                  _cv_obj == dirty || _cv_field == dirty));
+                  (_cv_field_ct != clean || _cv_field_rt != clean) :
+                  (_cv_obj_ct != clean || _cv_field_ct != clean || _cv_obj_rt != clean || _cv_field_rt != clean)));
       }
       return false;
     }
@@ -630,7 +645,8 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
       log.error("Missing rem set entry:");
       this->print_containing_obj(&ls, _from);
       this->print_referenced_obj(&ls, _to, "");
-      log.error("Obj head CV = %d, field CV = %d.", _cv_obj, _cv_field);
+      log.error("CT obj head CV = %d, field CV = %d.", _cv_obj_ct, _cv_field_ct);
+      log.error("RT Obj head CV = %d, field CV = %d.", _cv_obj_rt, _cv_field_rt);
       log.error("----------");
     }
   };
@@ -767,23 +783,13 @@ void G1HeapRegion::fill_range_with_dead_objects(HeapWord* start, HeapWord* end) 
   // possible that there is a pinned object that is not any more referenced by
   // Java code (only by native).
   //
-  // In this case we must not zap contents of such an array but we can overwrite
-  // the header; since only pinned typearrays are allowed, this fits nicely with
-  // putting filler arrays into the dead range as the object header sizes match and
-  // no user data is overwritten.
+  // In this case we should not zap, because that would overwrite
+  // user-observable data. Memory corresponding to obj-header is safe to
+  // change, since it's not directly user-observable.
   //
   // In particular String Deduplication might change the reference to the character
   // array of the j.l.String after native code obtained a raw reference to it (via
   // GetStringCritical()).
-  CollectedHeap::fill_with_objects(start, range_size, !has_pinned_objects());
-  HeapWord* current = start;
-  do {
-    // Update the BOT if the a threshold is crossed.
-    size_t obj_size = cast_to_oop(current)->size();
-    update_bot_for_block(current, current + obj_size);
-
-    // Advance to the next object.
-    current += obj_size;
-    guarantee(current <= end, "Should never go past end");
-  } while (current != end);
+  CollectedHeap::fill_with_object(start, range_size, !has_pinned_objects());
+  update_bot_for_block(start, start + range_size);
 }

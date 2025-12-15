@@ -43,6 +43,7 @@ G1FullGCMarker::G1FullGCMarker(G1FullCollector* collector,
     _cld_closure(mark_closure(), ClassLoaderData::_claim_stw_fullgc_mark),
     _mark_stats_cache(mark_stats, G1RegionMarkStatsCache::RegionMarkStatsCacheSize) {
   ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_mark);
+  _mark_stats_cache.reset();
 }
 
 G1FullGCMarker::~G1FullGCMarker() {

@@ -38,18 +38,18 @@ class os::win32 {
   friend class os;
 
  protected:
-  static int    _processor_type;
-  static int    _processor_level;
-  static size_t _physical_memory;
-  static bool   _is_windows_server;
-  static bool   _has_exit_bug;
-  static bool   _processor_group_warning_displayed;
-  static bool   _job_object_processor_group_warning_displayed;
+  static int                       _processor_type;
+  static int                       _processor_level;
+  static physical_memory_size_type _physical_memory;
+  static bool                      _is_windows_server;
+  static bool                      _has_exit_bug;
+  static bool                      _processor_group_warning_displayed;
+  static bool                      _job_object_processor_group_warning_displayed;
 
-  static int    _major_version;
-  static int    _minor_version;
-  static int    _build_number;
-  static int    _build_minor;
+  static int                       _major_version;
+  static int                       _minor_version;
+  static int                       _build_number;
+  static int                       _build_minor;
 
   static void print_windows_version(outputStream* st);
   static void print_uptime_info(outputStream* st);
@@ -102,9 +102,9 @@ class os::win32 {
   static int processor_level() {
     return _processor_level;
   }
-  static bool available_memory(size_t& value);
-  static bool free_memory(size_t& value);
-  static size_t physical_memory() { return _physical_memory; }
+  static bool available_memory(physical_memory_size_type& value);
+  static bool free_memory(physical_memory_size_type& value);
+  static physical_memory_size_type physical_memory() { return _physical_memory; }
 
   // load dll from Windows system directory or Windows directory
   static HINSTANCE load_Windows_dll(const char* name, char *ebuf, int ebuflen);
@@ -150,6 +150,8 @@ public:
   // signal support
   static void* install_signal_handler(int sig, signal_handler_t handler);
   static void* user_handler();
+
+  static void context_set_pc(CONTEXT* uc, address pc);
 };
 
 #endif // OS_WINDOWS_OS_WINDOWS_HPP

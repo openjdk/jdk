@@ -25,6 +25,7 @@
  * @bug 8328877
  * @summary Test warning for GetStringUTFLength and functionality of GetStringUTFLengthAsLong
  * @requires vm.bits == 64
+ * @requires os.maxMemory > 15g
  * @library /test/lib
  * @modules java.management
  * @run main/native TestLargeUTF8Length launch

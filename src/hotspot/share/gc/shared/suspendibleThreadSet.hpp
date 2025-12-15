@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_GC_SHARED_SUSPENDIBLETHREADSET_HPP
 
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 // A SuspendibleThreadSet is a set of threads that can be suspended.
 // A thread can join and later leave the set, and periodically yield.
@@ -59,7 +59,7 @@ private:
 
 public:
   // Returns true if an suspension is in progress.
-  static bool should_yield() { return Atomic::load(&_suspend_all); }
+  static bool should_yield() { return AtomicAccess::load(&_suspend_all); }
 
   // Suspends the current thread if a suspension is in progress.
   static void yield() {

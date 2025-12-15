@@ -37,7 +37,7 @@
 #include "jfr/utilities/jfrSignal.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "logging/log.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/safepoint.hpp"
 

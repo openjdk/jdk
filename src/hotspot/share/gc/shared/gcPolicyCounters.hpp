@@ -31,8 +31,6 @@
 // that track a generation
 
 class GCPolicyCounters: public CHeapObj<mtGC> {
-  friend class VMStructs;
-
   // Constant PerfData types don't need to retain a reference.
   // However, it's a good idea to document them here.
   // PerfStringConstant* _name;

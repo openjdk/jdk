@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,9 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-// SunJSSE does not support dynamic system properties, no way to re-use
-// system properties in samevm/agentvm mode.
 
 /*
  * @test
@@ -52,7 +49,6 @@ import jdk.test.lib.hexdump.HexPrinter;
  */
 public class DTLSOverDatagram {
 
-    private static final int SOCKET_TIMEOUT = 10 * 1000; // in millis
     private static final int BUFFER_SIZE = 1024;
     private static final int MAXIMUM_PACKET_SIZE = 1024;
 
@@ -78,6 +74,7 @@ public class DTLSOverDatagram {
     private final AtomicBoolean exceptionOccurred = new AtomicBoolean(false);
 
     private final CountDownLatch serverStarted = new CountDownLatch(1);
+    private int socketTimeout = 10 * 1000; // in millis
     /*
      * =============================================================
      * The test case
@@ -132,8 +129,15 @@ public class DTLSOverDatagram {
      * The remainder is support stuff for DTLS operations.
      */
     SSLEngine createSSLEngine(boolean isClient) throws Exception {
-        SSLContext context = getDTLSContext();
-        SSLEngine engine = context.createSSLEngine();
+        SSLContext context =
+                isClient ? getClientDTLSContext() : getServerDTLSContext();
+
+        // Note: client and server ports are not to be used for network
+        // communication, but only to be set in client and server SSL engines.
+        // We must use the same context, host and port for initial and resuming
+        // sessions when testing session resumption (abbreviated handshake).
+        SSLEngine engine = context.createSSLEngine("localhost",
+                isClient ? 51111 : 52222);
 
         SSLParameters paras = engine.getSSLParameters();
         paras.setMaximumPacketSize(MAXIMUM_PACKET_SIZE);
@@ -476,6 +480,10 @@ public class DTLSOverDatagram {
         return null;
     }
 
+    public void setSocketTimeout(int socketTimeout) {
+        this.socketTimeout = socketTimeout;
+    }
+
     // run delegated tasks
     void runDelegatedTasks(SSLEngine engine) throws Exception {
         Runnable runnable;
@@ -503,7 +511,7 @@ public class DTLSOverDatagram {
     }
 
     // get DTSL context
-    SSLContext getDTLSContext() throws Exception {
+    static SSLContext getDTLSContext() throws Exception {
         String passphrase = "passphrase";
         return SSLContextBuilder.builder()
                 .trustStore(KeyStoreUtils.loadKeyStore(TRUST_FILENAME, passphrase))
@@ -511,6 +519,14 @@ public class DTLSOverDatagram {
                 .kmfPassphrase(passphrase)
                 .protocol("DTLS")
                 .build();
+    }
+
+    protected SSLContext getServerDTLSContext() throws Exception {
+        return getDTLSContext();
+    }
+
+    protected SSLContext getClientDTLSContext() throws Exception {
+        return getDTLSContext();
     }
 
 
@@ -529,8 +545,8 @@ public class DTLSOverDatagram {
         try (DatagramSocket serverSocket = new DatagramSocket(serverSocketAddress);
                 DatagramSocket clientSocket = new DatagramSocket(clientSocketAddress)) {
 
-            serverSocket.setSoTimeout(SOCKET_TIMEOUT);
-            clientSocket.setSoTimeout(SOCKET_TIMEOUT);
+            serverSocket.setSoTimeout(socketTimeout);
+            clientSocket.setSoTimeout(socketTimeout);
 
             InetSocketAddress serverSocketAddr = new InetSocketAddress(
                     InetAddress.getLoopbackAddress(), serverSocket.getLocalPort());
