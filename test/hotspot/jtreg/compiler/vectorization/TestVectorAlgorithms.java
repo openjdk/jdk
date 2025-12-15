@@ -89,8 +89,6 @@ public class TestVectorAlgorithms {
 
     public static void main(String[] args) {
         TestFramework framework = new TestFramework();
-        // TODO: run with and without SuperWord, and also some intrinsics should be disabled in a run.
-        //       make sure that all those flags are also mentioned in the JMH.
         framework.addFlags("--add-modules=jdk.incubator.vector", "-XX:CompileCommand=inline,*VectorAlgorithmsImpl::*");
         switch (args[0]) {
             case "vanilla"        -> { /* no extra flags */ }
@@ -278,8 +276,10 @@ public class TestVectorAlgorithms {
     @Test
     @IR(counts = {IRNode.POPULATE_INDEX, "> 0",
                   IRNode.STORE_VECTOR,   "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx2", "true", "sve", "true"},
         applyIf = {"UseSuperWord", "true"})
+    // Note: the Vector API example below can also vectorize for AVX,
+    //       because it does not use a PopulateIndex.
     public Object iotaI_loop(int[] r) {
         return VectorAlgorithmsImpl.iotaI_loop(r);
     }
@@ -385,7 +385,8 @@ public class TestVectorAlgorithms {
     @IR(counts = {IRNode.LOAD_VECTOR_I,    "> 0",
                   IRNode.REARRANGE_VI,     "> 0",
                   IRNode.AND_VI,           "> 0",
-                  IRNode.ADD_VI,           "> 0"},
+                  IRNode.ADD_VI,           "> 0",
+                  IRNode.STORE_VECTOR,     "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"MaxVectorSize", ">=64"})
     public Object scanAddI_VectorAPI_permute_add(int[] a, int[] r) {
@@ -400,6 +401,12 @@ public class TestVectorAlgorithms {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,   "> 0",
+                  IRNode.VECTOR_MASK_CMP, "> 0",
+                  IRNode.VECTOR_BLEND_I,  "> 0",
+                  IRNode.MIN_REDUCTION_V, "> 0",
+                  IRNode.ADD_VI,          "> 0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
     public int findMinIndexI_VectorAPI(int[] a) {
         return VectorAlgorithmsImpl.findMinIndexI_VectorAPI(a);
     }
@@ -412,6 +419,10 @@ public class TestVectorAlgorithms {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,   "> 0",
+                  IRNode.VECTOR_MASK_CMP, "> 0",
+                  IRNode.VECTOR_TEST,     "> 0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
     public int findI_VectorAPI(int[] a, int e) {
         return VectorAlgorithmsImpl.findI_VectorAPI(a, e);
     }
@@ -425,6 +436,11 @@ public class TestVectorAlgorithms {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,    "> 0",
+                  IRNode.REARRANGE_VI,     "> 0",
+                  IRNode.AND_VI,           "> 0",
+                  IRNode.STORE_VECTOR,     "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     public Object reverseI_VectorAPI(int[] a, int[] r) {
         return VectorAlgorithmsImpl.reverseI_VectorAPI(a, r);
     }
@@ -437,6 +453,12 @@ public class TestVectorAlgorithms {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,       "> 0",
+                  IRNode.VECTOR_MASK_CMP,     "> 0",
+                  IRNode.VECTOR_TEST,         "> 0",
+                  IRNode.VECTOR_LONG_TO_MASK, "> 0",
+                  IRNode.STORE_VECTOR_MASKED, "> 0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
     public Object filterI_VectorAPI(int[] a, int[] r, int threshold) {
         return VectorAlgorithmsImpl.filterI_VectorAPI(a, r, threshold);
     }
@@ -449,6 +471,14 @@ public class TestVectorAlgorithms {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,             "> 0",
+                  IRNode.VECTOR_MASK_CMP,           "> 0",
+                  IRNode.VECTOR_TEST,               "> 0",
+                  IRNode.LOAD_VECTOR_GATHER_MASKED, "> 0",
+                  IRNode.OR_V_MASK,                 "> 0",
+                  IRNode.ADD_VI,                    "> 0",
+                  IRNode.ADD_REDUCTION_VI,          "> 0"},
+        applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
     public int reduceAddIFieldsX4_VectorAPI(int[] oops, int[] mem) {
         return VectorAlgorithmsImpl.reduceAddIFieldsX4_VectorAPI(oops, mem);
     }

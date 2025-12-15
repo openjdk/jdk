@@ -41,6 +41,8 @@ import org.openjdk.jmh.annotations.*;
  *      -XX:+UnlockDiagnosticVMOptions -XX:AutoVectorizationOverrideProfitability=0
  *  - Smaller vector size:
  *      -XX:MaxVectorSize=16
+ *  - Disable fill loop detection, so we don't use intrinsic but auto vectorization:
+ *      -XX:-OptimizeFill
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)

@@ -258,16 +258,16 @@ public class VectorAlgorithmsImpl {
 
     public static int findMinIndexI_VectorAPI(int[] a) {
         // Main approach: have partial results in mins and idxs.
-        var mins = IntVector.broadcast(SPECIES_I512, a[0]);
-        var idxs = IntVector.broadcast(SPECIES_I512, 0);
-        var iota = IntVector.broadcast(SPECIES_I512, 0).addIndex(1);
+        var mins = IntVector.broadcast(SPECIES_I, a[0]);
+        var idxs = IntVector.broadcast(SPECIES_I, 0);
+        var iota = IntVector.broadcast(SPECIES_I, 0).addIndex(1);
         int i = 0;
-        for (; i < SPECIES_I512.loopBound(a.length); i += SPECIES_I512.length()) {
-            IntVector v = IntVector.fromArray(SPECIES_I512, a, i);
+        for (; i < SPECIES_I.loopBound(a.length); i += SPECIES_I.length()) {
+            IntVector v = IntVector.fromArray(SPECIES_I, a, i);
             var mask = v.compare(VectorOperators.LT, mins);
             mins = mins.blend(v, mask);
             idxs = idxs.blend(iota, mask);
-            iota = iota.add(SPECIES_I512.length());
+            iota = iota.add(SPECIES_I.length());
         }
         // Reduce the vectors down
         int min = mins.reduceLanes(VectorOperators.MIN);
