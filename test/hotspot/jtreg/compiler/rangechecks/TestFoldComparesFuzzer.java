@@ -116,6 +116,14 @@ public class TestFoldComparesFuzzer {
         final int B_HI = gen.next();
         final int B_LO = gen.next();
 
+        // TODO: brainstorming
+        //
+        // - All permutations of tests. All comparisons.
+        // - Cases where we are always in/out / mixed.
+        // - Cases with array length.
+        // - Cases with switch
+        // - limits: constant, range, array.length
+        // - type: int and long
         var testMethodTemplate = Template.make("methodName", (String methodName) -> scope(
             let("N_HI", N_HI),
             let("N_LO", N_LO),
@@ -145,6 +153,7 @@ public class TestFoldComparesFuzzer {
             """
         ));
 
+        // TODO: Xcomp or not?
         var testTemplate = Template.make(() -> scope(
             """
             // --- $test start ---
