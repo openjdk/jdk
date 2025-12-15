@@ -72,7 +72,6 @@ public class TestSharedCloseJvmti {
 
         static final CountDownLatch MAIN_LATCH = new CountDownLatch(1);
         static final CountDownLatch TARGET_LATCH = new CountDownLatch(1);
-        static final MemorySegment OTHER_SEGMENT = Arena.global().allocate(4);
 
         static volatile int SINK;
 
@@ -107,7 +106,9 @@ public class TestSharedCloseJvmti {
                 addFrames(0);
             } else {
                 reentrant = true;
-                SINK = OTHER_SEGMENT.get(ValueLayout.JAVA_INT, 0);
+                try (Arena arena = Arena.ofConfined()) {
+                    SINK = arena.allocate(4).get(ValueLayout.JAVA_INT, 0);
+                }
                 reentrant = false;
             }
         }

@@ -25,10 +25,10 @@ package jdk.jpackage.test;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
-import static java.util.stream.Collectors.toCollection;
 import static jdk.jpackage.test.AdditionalLauncher.forEachAdditionalLauncher;
 
 import java.io.FileOutputStream;
@@ -306,24 +306,16 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             TKit.trace(String.format("Init fake runtime in [%s] directory",
                     fakeRuntimeDir));
 
-            Files.createDirectories(fakeRuntimeDir);
-
-            if (TKit.isLinux()) {
-                // Need to make the code in rpm spec happy as it assumes there is
-                // always something in application image.
-                fakeRuntimeDir.resolve("bin").toFile().mkdir();
-            }
-
             if (TKit.isOSX()) {
                 // Make MacAppImageBuilder happy
                 createBulkFile.accept(fakeRuntimeDir.resolve(Path.of(
                         "lib/jli/libjli.dylib")));
             }
 
-            // Mak sure fake runtime takes some disk space.
+            // Make sure fake runtime takes some disk space.
             // Package bundles with 0KB size are unexpected and considered
             // an error by PackageTest.
-            createBulkFile.accept(fakeRuntimeDir.resolve(Path.of("bin", "bulk")));
+            createBulkFile.accept(fakeRuntimeDir.resolve(Path.of("lib", "bulk")));
 
             cmd.setArgumentValue("--runtime-image", fakeRuntimeDir);
         });
@@ -872,6 +864,14 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         };
     }
 
+    public static CannedFormattedString makeError(CannedFormattedString v) {
+        return v.addPrefix("message.error-header");
+    }
+
+    public static CannedFormattedString makeAdvice(CannedFormattedString v) {
+        return v.addPrefix("message.advice-header");
+    }
+
     public String getValue(CannedFormattedString str) {
         return new CannedFormattedString(str.formatter(), str.key(), Stream.of(str.args()).map(arg -> {
             if (arg instanceof CannedArgument cannedArg) {
@@ -1227,9 +1227,30 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                 MacHelper.verifyUnsignedBundleSignature(cmd);
             }
         }),
+        MAC_RUNTIME_PLIST_JDK_KEY(cmd -> {
+            if (TKit.isOSX()) {
+                var appLayout = cmd.appLayout();
+                var plistPath = appLayout.runtimeDirectory().resolve("Contents/Info.plist");
+                var keyName = "JavaVM";
+                var keyValue = MacHelper.readPList(plistPath).findDictValue(keyName);
+                if (cmd.isRuntime() || Files.isDirectory(appLayout.runtimeHomeDirectory().resolve("bin"))) {
+                    // There are native launchers in the runtime
+                    TKit.assertTrue(keyValue.isPresent(), String.format(
+                            "Check the runtime plist file [%s] contains '%s' key",
+                            plistPath, keyName));
+                } else {
+                    TKit.assertTrue(keyValue.isEmpty(), String.format(
+                            "Check the runtime plist file [%s] contains NO '%s' key",
+                            plistPath, keyName));
+                }
+            }
+        }),
         PREDEFINED_APP_IMAGE_COPY(cmd -> {
             Optional.ofNullable(cmd.getArgumentValue("--app-image")).filter(_ -> {
                 return !TKit.isOSX() || !MacHelper.signPredefinedAppImage(cmd);
+            }).filter(_ -> {
+                // Don't examine the contents of the output app image if this is Linux package installing in the "/usr" subtree.
+                return Optional.<Boolean>ofNullable(cmd.onLinuxPackageInstallDir(null, _ -> false)).orElse(true);
             }).map(Path::of).ifPresent(predefinedAppImage -> {
 
                 TKit.trace(String.format(
@@ -1272,7 +1293,12 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
                 TKit.trace("Done");
             });
-        })
+        }),
+        LINUX_APPLAUNCHER_LIB(cmd -> {
+            if (TKit.isLinux() && !cmd.isRuntime()) {
+                TKit.assertFileExists(cmd.appLayout().libapplauncher());
+            }
+        }),
         ;
 
         StandardAssert(Consumer<JPackageCommand> action) {

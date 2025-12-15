@@ -24,16 +24,16 @@
 
 #include "cds/aotClassLocation.hpp"
 #include "cds/aotLogging.hpp"
+#include "cds/aotMappedHeapLoader.hpp"
+#include "cds/aotMappedHeapWriter.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
-#include "cds/archiveHeapLoader.inline.hpp"
-#include "cds/archiveHeapWriter.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.hpp"
+#include "cds/heapShared.inline.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
@@ -216,11 +216,14 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   _obj_alignment = ObjectAlignmentInBytes;
   _compact_strings = CompactStrings;
   _compact_headers = UseCompactObjectHeaders;
+#if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
-    _narrow_oop_mode = CompressedOops::mode();
-    _narrow_oop_base = CompressedOops::base();
-    _narrow_oop_shift = CompressedOops::shift();
+    _object_streaming_mode = HeapShared::is_writing_streaming_mode();
+    _narrow_oop_mode = AOTMappedHeapWriter::narrow_oop_mode();
+    _narrow_oop_base = AOTMappedHeapWriter::narrow_oop_base();
+    _narrow_oop_shift = AOTMappedHeapWriter::narrow_oop_shift();
   }
+#endif
   _compressed_oops = UseCompressedOops;
   _compressed_class_ptrs = UseCompressedClassPointers;
   if (UseCompressedClassPointers) {
@@ -283,40 +286,51 @@ void FileMapHeader::print(outputStream* st) {
   }
   st->print_cr("============ end regions ======== ");
 
-  st->print_cr("- core_region_alignment:          %zu", _core_region_alignment);
-  st->print_cr("- obj_alignment:                  %d", _obj_alignment);
-  st->print_cr("- narrow_oop_base:                " INTPTR_FORMAT, p2i(_narrow_oop_base));
-  st->print_cr("- narrow_oop_shift                %d", _narrow_oop_shift);
-  st->print_cr("- compact_strings:                %d", _compact_strings);
-  st->print_cr("- compact_headers:                %d", _compact_headers);
-  st->print_cr("- max_heap_size:                  %zu", _max_heap_size);
-  st->print_cr("- narrow_oop_mode:                %d", _narrow_oop_mode);
-  st->print_cr("- compressed_oops:                %d", _compressed_oops);
-  st->print_cr("- compressed_class_ptrs:          %d", _compressed_class_ptrs);
-  st->print_cr("- narrow_klass_pointer_bits:      %d", _narrow_klass_pointer_bits);
-  st->print_cr("- narrow_klass_shift:             %d", _narrow_klass_shift);
-  st->print_cr("- cloned_vtables_offset:          0x%zx", _cloned_vtables_offset);
-  st->print_cr("- early_serialized_data_offset:   0x%zx", _early_serialized_data_offset);
-  st->print_cr("- serialized_data_offset:         0x%zx", _serialized_data_offset);
-  st->print_cr("- jvm_ident:                      %s", _jvm_ident);
-  st->print_cr("- class_location_config_offset:   0x%zx", _class_location_config_offset);
-  st->print_cr("- verify_local:                   %d", _verify_local);
-  st->print_cr("- verify_remote:                  %d", _verify_remote);
-  st->print_cr("- has_platform_or_app_classes:    %d", _has_platform_or_app_classes);
-  st->print_cr("- requested_base_address:         " INTPTR_FORMAT, p2i(_requested_base_address));
-  st->print_cr("- mapped_base_address:            " INTPTR_FORMAT, p2i(_mapped_base_address));
-  st->print_cr("- heap_root_segments.roots_count: %d" , _heap_root_segments.roots_count());
-  st->print_cr("- heap_root_segments.base_offset: 0x%zx", _heap_root_segments.base_offset());
-  st->print_cr("- heap_root_segments.count:       %zu", _heap_root_segments.count());
-  st->print_cr("- heap_root_segments.max_size_elems: %d", _heap_root_segments.max_size_in_elems());
-  st->print_cr("- heap_root_segments.max_size_bytes: %d", _heap_root_segments.max_size_in_bytes());
-  st->print_cr("- _heap_oopmap_start_pos:         %zu", _heap_oopmap_start_pos);
-  st->print_cr("- _heap_ptrmap_start_pos:         %zu", _heap_ptrmap_start_pos);
-  st->print_cr("- _rw_ptrmap_start_pos:           %zu", _rw_ptrmap_start_pos);
-  st->print_cr("- _ro_ptrmap_start_pos:           %zu", _ro_ptrmap_start_pos);
-  st->print_cr("- use_optimized_module_handling:  %d", _use_optimized_module_handling);
-  st->print_cr("- has_full_module_graph           %d", _has_full_module_graph);
-  st->print_cr("- has_aot_linked_classes          %d", _has_aot_linked_classes);
+  st->print_cr("- core_region_alignment:                    %zu", _core_region_alignment);
+  st->print_cr("- obj_alignment:                            %d", _obj_alignment);
+  st->print_cr("- narrow_oop_base:                          " INTPTR_FORMAT, p2i(_narrow_oop_base));
+  st->print_cr("- narrow_oop_shift                          %d", _narrow_oop_shift);
+  st->print_cr("- compact_strings:                          %d", _compact_strings);
+  st->print_cr("- compact_headers:                          %d", _compact_headers);
+  st->print_cr("- max_heap_size:                            %zu", _max_heap_size);
+  st->print_cr("- narrow_oop_mode:                          %d", _narrow_oop_mode);
+  st->print_cr("- compressed_oops:                          %d", _compressed_oops);
+  st->print_cr("- compressed_class_ptrs:                    %d", _compressed_class_ptrs);
+  st->print_cr("- narrow_klass_pointer_bits:                %d", _narrow_klass_pointer_bits);
+  st->print_cr("- narrow_klass_shift:                       %d", _narrow_klass_shift);
+  st->print_cr("- cloned_vtables_offset:                    0x%zx", _cloned_vtables_offset);
+  st->print_cr("- early_serialized_data_offset:             0x%zx", _early_serialized_data_offset);
+  st->print_cr("- serialized_data_offset:                   0x%zx", _serialized_data_offset);
+  st->print_cr("- jvm_ident:                                %s", _jvm_ident);
+  st->print_cr("- class_location_config_offset:             0x%zx", _class_location_config_offset);
+  st->print_cr("- verify_local:                             %d", _verify_local);
+  st->print_cr("- verify_remote:                            %d", _verify_remote);
+  st->print_cr("- has_platform_or_app_classes:              %d", _has_platform_or_app_classes);
+  st->print_cr("- requested_base_address:                   " INTPTR_FORMAT, p2i(_requested_base_address));
+  st->print_cr("- mapped_base_address:                      " INTPTR_FORMAT, p2i(_mapped_base_address));
+
+  st->print_cr("- object_streaming_mode:                    %d", _object_streaming_mode);
+  st->print_cr("- mapped_heap_header");
+  st->print_cr("  - root_segments");
+  st->print_cr("    - roots_count:                          %d", _mapped_heap_header.root_segments().roots_count());
+  st->print_cr("    - base_offset:                          0x%zx", _mapped_heap_header.root_segments().base_offset());
+  st->print_cr("    - count:                                %zu", _mapped_heap_header.root_segments().count());
+  st->print_cr("    - max_size_elems:                       %d", _mapped_heap_header.root_segments().max_size_in_elems());
+  st->print_cr("    - max_size_bytes:                       %zu", _mapped_heap_header.root_segments().max_size_in_bytes());
+  st->print_cr("  - oopmap_start_pos:                       %zu", _mapped_heap_header.oopmap_start_pos());
+  st->print_cr("  - oopmap_ptrmap_pos:                      %zu", _mapped_heap_header.ptrmap_start_pos());
+  st->print_cr("- streamed_heap_header");
+  st->print_cr("  - forwarding_offset:                      %zu", _streamed_heap_header.forwarding_offset());
+  st->print_cr("  - roots_offset:                           %zu", _streamed_heap_header.roots_offset());
+  st->print_cr("  - num_roots:                              %zu", _streamed_heap_header.num_roots());
+  st->print_cr("  - root_highest_object_index_table_offset: %zu", _streamed_heap_header.root_highest_object_index_table_offset());
+  st->print_cr("  - num_archived_objects:                   %zu", _streamed_heap_header.num_archived_objects());
+
+  st->print_cr("- _rw_ptrmap_start_pos:                     %zu", _rw_ptrmap_start_pos);
+  st->print_cr("- _ro_ptrmap_start_pos:                     %zu", _ro_ptrmap_start_pos);
+  st->print_cr("- use_optimized_module_handling:            %d", _use_optimized_module_handling);
+  st->print_cr("- has_full_module_graph                     %d", _has_full_module_graph);
+  st->print_cr("- has_aot_linked_classes                    %d", _has_aot_linked_classes);
 }
 
 bool FileMapInfo::validate_class_location() {
@@ -765,7 +779,9 @@ void FileMapInfo::open_as_output() {
   }
   _fd = fd;
   _file_open = true;
+}
 
+void FileMapInfo::prepare_for_writing() {
   // Seek past the header. We will write the header after all regions are written
   // and their CRCs computed.
   size_t header_bytes = header()->header_size();
@@ -896,12 +912,14 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
     assert(CDSConfig::is_dumping_heap(), "sanity");
 #if INCLUDE_CDS_JAVA_HEAP
     assert(!CDSConfig::is_dumping_dynamic_archive(), "must be");
-    requested_base = (char*)ArchiveHeapWriter::requested_address();
-    if (UseCompressedOops) {
-      mapping_offset = (size_t)((address)requested_base - CompressedOops::base());
-      assert((mapping_offset >> CompressedOops::shift()) << CompressedOops::shift() == mapping_offset, "must be");
+    if (HeapShared::is_writing_mapping_mode()) {
+      requested_base = (char*)AOTMappedHeapWriter::requested_address();
+      if (UseCompressedOops) {
+        mapping_offset = (size_t)((address)requested_base - AOTMappedHeapWriter::narrow_oop_base());
+        assert((mapping_offset >> CompressedOops::shift()) << CompressedOops::shift() == mapping_offset, "must be");
+      }
     } else {
-      mapping_offset = 0; // not used with !UseCompressedOops
+      requested_base = nullptr;
     }
 #endif // INCLUDE_CDS_JAVA_HEAP
   } else {
@@ -954,7 +972,10 @@ size_t FileMapInfo::remove_bitmap_zeros(CHeapBitMap* map) {
   return first_set;
 }
 
-char* FileMapInfo::write_bitmap_region(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_ptrmap, ArchiveHeapInfo* heap_info,
+char* FileMapInfo::write_bitmap_region(CHeapBitMap* rw_ptrmap,
+                                       CHeapBitMap* ro_ptrmap,
+                                       ArchiveMappedHeapInfo* mapped_heap_info,
+                                       ArchiveStreamedHeapInfo* streamed_heap_info,
                                        size_t &size_in_bytes) {
   size_t removed_rw_leading_zeros = remove_bitmap_zeros(rw_ptrmap);
   size_t removed_ro_leading_zeros = remove_bitmap_zeros(ro_ptrmap);
@@ -962,22 +983,27 @@ char* FileMapInfo::write_bitmap_region(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_p
   header()->set_ro_ptrmap_start_pos(removed_ro_leading_zeros);
   size_in_bytes = rw_ptrmap->size_in_bytes() + ro_ptrmap->size_in_bytes();
 
-  if (heap_info->is_used()) {
+  if (mapped_heap_info != nullptr && mapped_heap_info->is_used()) {
     // Remove leading and trailing zeros
-    size_t removed_oop_leading_zeros = remove_bitmap_zeros(heap_info->oopmap());
-    size_t removed_ptr_leading_zeros = remove_bitmap_zeros(heap_info->ptrmap());
-    header()->set_heap_oopmap_start_pos(removed_oop_leading_zeros);
-    header()->set_heap_ptrmap_start_pos(removed_ptr_leading_zeros);
+    assert(HeapShared::is_writing_mapping_mode(), "unexpected dumping mode");
+    size_t removed_oop_leading_zeros = remove_bitmap_zeros(mapped_heap_info->oopmap());
+    size_t removed_ptr_leading_zeros = remove_bitmap_zeros(mapped_heap_info->ptrmap());
+    mapped_heap_info->set_oopmap_start_pos(removed_oop_leading_zeros);
+    mapped_heap_info->set_ptrmap_start_pos(removed_ptr_leading_zeros);
 
-    size_in_bytes += heap_info->oopmap()->size_in_bytes();
-    size_in_bytes += heap_info->ptrmap()->size_in_bytes();
+    size_in_bytes += mapped_heap_info->oopmap()->size_in_bytes();
+    size_in_bytes += mapped_heap_info->ptrmap()->size_in_bytes();
+  } else if (streamed_heap_info != nullptr && streamed_heap_info->is_used()) {
+    assert(HeapShared::is_writing_streaming_mode(), "unexpected dumping mode");
+
+    size_in_bytes += streamed_heap_info->oopmap()->size_in_bytes();
   }
 
   // The bitmap region contains up to 4 parts:
-  // rw_ptrmap:           metaspace pointers inside the read-write region
-  // ro_ptrmap:           metaspace pointers inside the read-only region
-  // heap_info->oopmap(): Java oop pointers in the heap region
-  // heap_info->ptrmap(): metaspace pointers in the heap region
+  // rw_ptrmap:                  metaspace pointers inside the read-write region
+  // ro_ptrmap:                  metaspace pointers inside the read-only region
+  // *_heap_info->oopmap():      Java oop pointers in the heap region
+  // mapped_heap_info->ptrmap(): metaspace pointers in the heap region
   char* buffer = NEW_C_HEAP_ARRAY(char, size_in_bytes, mtClassShared);
   size_t written = 0;
 
@@ -987,27 +1013,44 @@ char* FileMapInfo::write_bitmap_region(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_p
   region_at(AOTMetaspace::ro)->init_ptrmap(written, ro_ptrmap->size());
   written = write_bitmap(ro_ptrmap, buffer, written);
 
-  if (heap_info->is_used()) {
+  if (mapped_heap_info != nullptr && mapped_heap_info->is_used()) {
+    assert(HeapShared::is_writing_mapping_mode(), "unexpected dumping mode");
     FileMapRegion* r = region_at(AOTMetaspace::hp);
 
-    r->init_oopmap(written, heap_info->oopmap()->size());
-    written = write_bitmap(heap_info->oopmap(), buffer, written);
+    r->init_oopmap(written, mapped_heap_info->oopmap()->size());
+    written = write_bitmap(mapped_heap_info->oopmap(), buffer, written);
 
-    r->init_ptrmap(written, heap_info->ptrmap()->size());
-    written = write_bitmap(heap_info->ptrmap(), buffer, written);
+    r->init_ptrmap(written, mapped_heap_info->ptrmap()->size());
+    written = write_bitmap(mapped_heap_info->ptrmap(), buffer, written);
+  } else if (streamed_heap_info != nullptr && streamed_heap_info->is_used()) {
+    assert(HeapShared::is_writing_streaming_mode(), "unexpected dumping mode");
+    FileMapRegion* r = region_at(AOTMetaspace::hp);
+
+    r->init_oopmap(written, streamed_heap_info->oopmap()->size());
+    written = write_bitmap(streamed_heap_info->oopmap(), buffer, written);
   }
 
   write_region(AOTMetaspace::bm, (char*)buffer, size_in_bytes, /*read_only=*/true, /*allow_exec=*/false);
   return buffer;
 }
 
-size_t FileMapInfo::write_heap_region(ArchiveHeapInfo* heap_info) {
+#if INCLUDE_CDS_JAVA_HEAP
+size_t FileMapInfo::write_mapped_heap_region(ArchiveMappedHeapInfo* heap_info) {
   char* buffer_start = heap_info->buffer_start();
   size_t buffer_size = heap_info->buffer_byte_size();
   write_region(AOTMetaspace::hp, buffer_start, buffer_size, false, false);
-  header()->set_heap_root_segments(heap_info->heap_root_segments());
+  header()->set_mapped_heap_header(heap_info->create_header());
   return buffer_size;
 }
+
+size_t FileMapInfo::write_streamed_heap_region(ArchiveStreamedHeapInfo* heap_info) {
+  char* buffer_start = heap_info->buffer_start();
+  size_t buffer_size = heap_info->buffer_byte_size();
+  write_region(AOTMetaspace::hp, buffer_start, buffer_size, true, false);
+  header()->set_streamed_heap_header(heap_info->create_header());
+  return buffer_size;
+}
+#endif // INCLUDE_CDS_JAVA_HEAP
 
 // Dump bytes to file -- at the current file position.
 
@@ -1076,7 +1119,7 @@ void FileMapInfo::close() {
  * Same as os::map_memory() but also pretouches if AlwaysPreTouch is enabled.
  */
 static char* map_memory(int fd, const char* file_name, size_t file_offset,
-                        char *addr, size_t bytes, bool read_only,
+                        char* addr, size_t bytes, bool read_only,
                         bool allow_exec, MemTag mem_tag) {
   char* mem = os::map_memory(fd, file_name, file_offset, addr, bytes,
                              mem_tag, AlwaysPreTouch ? false : read_only,
@@ -1085,6 +1128,17 @@ static char* map_memory(int fd, const char* file_name, size_t file_offset,
     os::pretouch_memory(mem, mem + bytes);
   }
   return mem;
+}
+
+char* FileMapInfo::map_heap_region(FileMapRegion* r, char* addr, size_t bytes) {
+  return ::map_memory(_fd,
+                    _full_path,
+                    r->file_offset(),
+                    addr,
+                    bytes,
+                    r->read_only(),
+                    r->allow_exec(),
+                    mtJavaHeap);
 }
 
 // JVM/TI RedefineClasses() support:
@@ -1254,35 +1308,40 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
 }
 
 // The return value is the location of the archive relocation bitmap.
-char* FileMapInfo::map_bitmap_region() {
-  FileMapRegion* r = region_at(AOTMetaspace::bm);
+char* FileMapInfo::map_auxiliary_region(int region_index, bool read_only) {
+  FileMapRegion* r = region_at(region_index);
   if (r->mapped_base() != nullptr) {
     return r->mapped_base();
   }
-  bool read_only = true, allow_exec = false;
+  const char* region_name = shared_region_name[region_index];
+  bool allow_exec = false;
   char* requested_addr = nullptr; // allow OS to pick any location
-  char* bitmap_base = map_memory(_fd, _full_path, r->file_offset(),
+  char* mapped_base = map_memory(_fd, _full_path, r->file_offset(),
                                  requested_addr, r->used_aligned(), read_only, allow_exec, mtClassShared);
-  if (bitmap_base == nullptr) {
-    AOTMetaspace::report_loading_error("failed to map relocation bitmap");
+  if (mapped_base == nullptr) {
+    AOTMetaspace::report_loading_error("failed to map %d region", region_index);
     return nullptr;
   }
 
-  if (VerifySharedSpaces && !r->check_region_crc(bitmap_base)) {
-    aot_log_error(aot)("relocation bitmap CRC error");
-    if (!os::unmap_memory(bitmap_base, r->used_aligned())) {
-      fatal("os::unmap_memory of relocation bitmap failed");
+  if (VerifySharedSpaces && !r->check_region_crc(mapped_base)) {
+    aot_log_error(aot)("region %d CRC error", region_index);
+    if (!os::unmap_memory(mapped_base, r->used_aligned())) {
+      fatal("os::unmap_memory of region %d failed", region_index);
     }
     return nullptr;
   }
 
   r->set_mapped_from_file(true);
-  r->set_mapped_base(bitmap_base);
-  aot_log_info(aot)("Mapped %s region #%d at base " INTPTR_FORMAT " top " INTPTR_FORMAT " (%s)",
+  r->set_mapped_base(mapped_base);
+  aot_log_info(aot)("Mapped %s region #%d at base %zu top %zu (%s)",
                 is_static() ? "static " : "dynamic",
-                AOTMetaspace::bm, p2i(r->mapped_base()), p2i(r->mapped_end()),
-                shared_region_name[AOTMetaspace::bm]);
-  return bitmap_base;
+                region_index, p2i(r->mapped_base()), p2i(r->mapped_end()),
+                region_name);
+  return mapped_base;
+}
+
+char* FileMapInfo::map_bitmap_region() {
+  return map_auxiliary_region(AOTMetaspace::bm, false);
 }
 
 bool FileMapInfo::map_aot_code_region(ReservedSpace rs) {
@@ -1429,64 +1488,57 @@ size_t FileMapInfo::readonly_total() {
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
-MemRegion FileMapInfo::_mapped_heap_memregion;
 
 bool FileMapInfo::has_heap_region() {
   return (region_at(AOTMetaspace::hp)->used() > 0);
 }
 
-// Returns the address range of the archived heap region computed using the
-// current oop encoding mode. This range may be different than the one seen at
-// dump time due to encoding mode differences. The result is used in determining
-// if/how these regions should be relocated at run time.
-MemRegion FileMapInfo::get_heap_region_requested_range() {
-  FileMapRegion* r = region_at(AOTMetaspace::hp);
-  size_t size = r->used();
-  assert(size > 0, "must have non-empty heap region");
+static void on_heap_region_loading_error() {
+  if (CDSConfig::is_using_aot_linked_classes()) {
+    // It's too late to recover -- we have already committed to use the archived metaspace objects, but
+    // the archived heap objects cannot be loaded, so we don't have the archived FMG to guarantee that
+    // all AOT-linked classes are visible.
+    //
+    // We get here because the heap is too small. The app will fail anyway. So let's quit.
+    aot_log_error(aot)("%s has aot-linked classes but the archived "
+                       "heap objects cannot be loaded. Try increasing your heap size.",
+                       CDSConfig::type_of_archive_being_loaded());
+    AOTMetaspace::unrecoverable_loading_error();
+  }
+  CDSConfig::stop_using_full_module_graph();
+}
 
-  address start = heap_region_requested_address();
-  address end = start + size;
-  aot_log_info(aot)("Requested heap region [" INTPTR_FORMAT " - " INTPTR_FORMAT "] = %8zu bytes",
-                p2i(start), p2i(end), size);
+void FileMapInfo::stream_heap_region() {
+  assert(object_streaming_mode(), "This should only be done for the streaming approach");
 
-  return MemRegion((HeapWord*)start, (HeapWord*)end);
+  if (map_auxiliary_region(AOTMetaspace::hp, /*readonly=*/true) != nullptr) {
+    HeapShared::initialize_streaming();
+  } else {
+    on_heap_region_loading_error();
+  }
 }
 
 void FileMapInfo::map_or_load_heap_region() {
+  assert(!object_streaming_mode(), "This should only be done for the mapping approach");
   bool success = false;
 
-  if (can_use_heap_region()) {
-    if (ArchiveHeapLoader::can_map()) {
-      success = map_heap_region();
-    } else if (ArchiveHeapLoader::can_load()) {
-      success = ArchiveHeapLoader::load_heap_region(this);
-    } else {
-      if (!UseCompressedOops && !ArchiveHeapLoader::can_map()) {
-        AOTMetaspace::report_loading_error("Cannot use CDS heap data. Selected GC not compatible -XX:-UseCompressedOops");
-      } else {
-        AOTMetaspace::report_loading_error("Cannot use CDS heap data. UseEpsilonGC, UseG1GC, UseSerialGC, UseParallelGC, or UseShenandoahGC are required.");
-      }
-    }
+  if (AOTMappedHeapLoader::can_map()) {
+    success = AOTMappedHeapLoader::map_heap_region(this);
+  } else if (AOTMappedHeapLoader::can_load()) {
+    success = AOTMappedHeapLoader::load_heap_region(this);
   }
 
   if (!success) {
-    if (CDSConfig::is_using_aot_linked_classes()) {
-      // It's too late to recover -- we have already committed to use the archived metaspace objects, but
-      // the archived heap objects cannot be loaded, so we don't have the archived FMG to guarantee that
-      // all AOT-linked classes are visible.
-      //
-      // We get here because the heap is too small. The app will fail anyway. So let's quit.
-      aot_log_error(aot)("%s has aot-linked classes but the archived "
-                     "heap objects cannot be loaded. Try increasing your heap size.",
-                     CDSConfig::type_of_archive_being_loaded());
-      AOTMetaspace::unrecoverable_loading_error();
-    }
-    CDSConfig::stop_using_full_module_graph("archive heap loading failed");
+    on_heap_region_loading_error();
   }
 }
 
 bool FileMapInfo::can_use_heap_region() {
   if (!has_heap_region()) {
+    return false;
+  }
+  if (!object_streaming_mode() && !Universe::heap()->can_load_archived_objects() && !UseG1GC) {
+    // Incompatible object format
     return false;
   }
   if (JvmtiExport::should_post_class_file_load_hook() && JvmtiExport::has_early_class_hook_env()) {
@@ -1503,7 +1555,7 @@ bool FileMapInfo::can_use_heap_region() {
   }
 
   // We pre-compute narrow Klass IDs with the runtime mapping start intended to be the base, and a shift of
-  // ArchiveBuilder::precomputed_narrow_klass_shift. We enforce this encoding at runtime (see
+  // HeapShared::precomputed_narrow_klass_shift. We enforce this encoding at runtime (see
   // CompressedKlassPointers::initialize_for_given_encoding()). Therefore, the following assertions must
   // hold:
   address archive_narrow_klass_base = (address)header()->mapped_base_address();
@@ -1512,21 +1564,28 @@ bool FileMapInfo::can_use_heap_region() {
 
   aot_log_info(aot)("CDS archive was created with max heap size = %zuM, and the following configuration:",
                 max_heap_size()/M);
+
   aot_log_info(aot)("    narrow_klass_base at mapping start address, narrow_klass_pointer_bits = %d, narrow_klass_shift = %d",
                 archive_narrow_klass_pointer_bits, archive_narrow_klass_shift);
-  aot_log_info(aot)("    narrow_oop_mode = %d, narrow_oop_base = " PTR_FORMAT ", narrow_oop_shift = %d",
-                narrow_oop_mode(), p2i(narrow_oop_base()), narrow_oop_shift());
+  if (UseCompressedOops) {
+    aot_log_info(aot)("    narrow_oop_mode = %d, narrow_oop_base = " PTR_FORMAT ", narrow_oop_shift = %d",
+                      narrow_oop_mode(), p2i(narrow_oop_base()), narrow_oop_shift());
+  }
   aot_log_info(aot)("The current max heap size = %zuM, G1HeapRegion::GrainBytes = %zu",
                 MaxHeapSize/M, G1HeapRegion::GrainBytes);
   aot_log_info(aot)("    narrow_klass_base = " PTR_FORMAT ", arrow_klass_pointer_bits = %d, narrow_klass_shift = %d",
                 p2i(CompressedKlassPointers::base()), CompressedKlassPointers::narrow_klass_pointer_bits(), CompressedKlassPointers::shift());
-  aot_log_info(aot)("    narrow_oop_mode = %d, narrow_oop_base = " PTR_FORMAT ", narrow_oop_shift = %d",
-                CompressedOops::mode(), p2i(CompressedOops::base()), CompressedOops::shift());
-  aot_log_info(aot)("    heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
-                UseCompressedOops ? p2i(CompressedOops::begin()) :
-                                    UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved().start()) : 0L,
-                UseCompressedOops ? p2i(CompressedOops::end()) :
-                                    UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved().end()) : 0L);
+  if (UseCompressedOops) {
+    aot_log_info(aot)("    narrow_oop_mode = %d, narrow_oop_base = " PTR_FORMAT ", narrow_oop_shift = %d",
+                      CompressedOops::mode(), p2i(CompressedOops::base()), CompressedOops::shift());
+  }
+  if (!object_streaming_mode()) {
+    aot_log_info(aot)("    heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
+                      UseCompressedOops ? p2i(CompressedOops::begin()) :
+                      UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved().start()) : 0L,
+                      UseCompressedOops ? p2i(CompressedOops::end()) :
+                      UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved().end()) : 0L);
+  }
 
   int err = 0;
   if ( archive_narrow_klass_base != CompressedKlassPointers::base() ||
@@ -1570,203 +1629,9 @@ bool FileMapInfo::can_use_heap_region() {
   return true;
 }
 
-// The actual address of this region during dump time.
-address FileMapInfo::heap_region_dumptime_address() {
-  FileMapRegion* r = region_at(AOTMetaspace::hp);
-  assert(CDSConfig::is_using_archive(), "runtime only");
-  assert(is_aligned(r->mapping_offset(), sizeof(HeapWord)), "must be");
-  if (UseCompressedOops) {
-    return /*dumptime*/ (address)((uintptr_t)narrow_oop_base() + r->mapping_offset());
-  } else {
-    return heap_region_requested_address();
-  }
-}
-
-// The address where this region can be mapped into the runtime heap without
-// patching any of the pointers that are embedded in this region.
-address FileMapInfo::heap_region_requested_address() {
-  assert(CDSConfig::is_using_archive(), "runtime only");
-  FileMapRegion* r = region_at(AOTMetaspace::hp);
-  assert(is_aligned(r->mapping_offset(), sizeof(HeapWord)), "must be");
-  assert(ArchiveHeapLoader::can_use(), "GC must support mapping or loading");
-  if (UseCompressedOops) {
-    // We can avoid relocation if each region's offset from the runtime CompressedOops::base()
-    // is the same as its offset from the CompressedOops::base() during dumptime.
-    // Note that CompressedOops::base() may be different between dumptime and runtime.
-    //
-    // Example:
-    // Dumptime base = 0x1000 and shift is 0. We have a region at address 0x2000. There's a
-    // narrowOop P stored in this region that points to an object at address 0x2200.
-    // P's encoded value is 0x1200.
-    //
-    // Runtime base = 0x4000 and shift is also 0. If we map this region at 0x5000, then
-    // the value P can remain 0x1200. The decoded address = (0x4000 + (0x1200 << 0)) = 0x5200,
-    // which is the runtime location of the referenced object.
-    return /*runtime*/ (address)((uintptr_t)CompressedOops::base() + r->mapping_offset());
-  } else {
-    // This was the hard-coded requested base address used at dump time. With uncompressed oops,
-    // the heap range is assigned by the OS so we will most likely have to relocate anyway, no matter
-    // what base address was picked at duump time.
-    return (address)ArchiveHeapWriter::NOCOOPS_REQUESTED_BASE;
-  }
-}
-
-bool FileMapInfo::map_heap_region() {
-  if (map_heap_region_impl()) {
-#ifdef ASSERT
-    // The "old" regions must be parsable -- we cannot have any unused space
-    // at the start of the lowest G1 region that contains archived objects.
-    assert(is_aligned(_mapped_heap_memregion.start(), G1HeapRegion::GrainBytes), "must be");
-
-    // Make sure we map at the very top of the heap - see comments in
-    // init_heap_region_relocation().
-    MemRegion heap_range = G1CollectedHeap::heap()->reserved();
-    assert(heap_range.contains(_mapped_heap_memregion), "must be");
-
-    address heap_end = (address)heap_range.end();
-    address mapped_heap_region_end = (address)_mapped_heap_memregion.end();
-    assert(heap_end >= mapped_heap_region_end, "must be");
-    assert(heap_end - mapped_heap_region_end < (intx)(G1HeapRegion::GrainBytes),
-           "must be at the top of the heap to avoid fragmentation");
-#endif
-
-    ArchiveHeapLoader::set_mapped();
-    return true;
-  } else {
-    return false;
-  }
-}
-
-bool FileMapInfo::map_heap_region_impl() {
-  assert(UseG1GC, "the following code assumes G1");
-
-  FileMapRegion* r = region_at(AOTMetaspace::hp);
-  size_t size = r->used();
-  if (size == 0) {
-    return false; // no archived java heap data
-  }
-
-  size_t word_size = size / HeapWordSize;
-  address requested_start = heap_region_requested_address();
-
-  aot_log_info(aot)("Preferred address to map heap data (to avoid relocation) is " INTPTR_FORMAT, p2i(requested_start));
-
-  // allocate from java heap
-  HeapWord* start = G1CollectedHeap::heap()->alloc_archive_region(word_size, (HeapWord*)requested_start);
-  if (start == nullptr) {
-    AOTMetaspace::report_loading_error("UseSharedSpaces: Unable to allocate java heap region for archive heap.");
-    return false;
-  }
-
-  _mapped_heap_memregion = MemRegion(start, word_size);
-
-  // Map the archived heap data. No need to call MemTracker::record_virtual_memory_tag()
-  // for mapped region as it is part of the reserved java heap, which is already recorded.
-  char* addr = (char*)_mapped_heap_memregion.start();
-  char* base;
-
-  if (AOTMetaspace::use_windows_memory_mapping() || UseLargePages) {
-    // With UseLargePages, memory mapping may fail on some OSes if the size is not
-    // large page aligned, so let's use read() instead. In this case, the memory region
-    // is already commited by G1 so we don't need to commit it again.
-    if (!read_region(AOTMetaspace::hp, addr,
-                     align_up(_mapped_heap_memregion.byte_size(), os::vm_page_size()),
-                     /* do_commit = */ !UseLargePages)) {
-      dealloc_heap_region();
-      aot_log_error(aot)("Failed to read archived heap region into " INTPTR_FORMAT, p2i(addr));
-      return false;
-    }
-    // Checks for VerifySharedSpaces is already done inside read_region()
-    base = addr;
-  } else {
-    base = map_memory(_fd, _full_path, r->file_offset(),
-                      addr, _mapped_heap_memregion.byte_size(), r->read_only(),
-                      r->allow_exec(), mtJavaHeap);
-    if (base == nullptr || base != addr) {
-      dealloc_heap_region();
-      AOTMetaspace::report_loading_error("UseSharedSpaces: Unable to map at required address in java heap. "
-                                            INTPTR_FORMAT ", size = %zu bytes",
-                                            p2i(addr), _mapped_heap_memregion.byte_size());
-      return false;
-    }
-
-    if (VerifySharedSpaces && !r->check_region_crc(base)) {
-      dealloc_heap_region();
-      AOTMetaspace::report_loading_error("UseSharedSpaces: mapped heap region is corrupt");
-      return false;
-    }
-  }
-
-  r->set_mapped_base(base);
-
-  // If the requested range is different from the range allocated by GC, then
-  // the pointers need to be patched.
-  address mapped_start = (address) _mapped_heap_memregion.start();
-  ptrdiff_t delta = mapped_start - requested_start;
-  if (UseCompressedOops &&
-      (narrow_oop_mode() != CompressedOops::mode() ||
-       narrow_oop_shift() != CompressedOops::shift())) {
-    _heap_pointers_need_patching = true;
-  }
-  if (delta != 0) {
-    _heap_pointers_need_patching = true;
-  }
-  ArchiveHeapLoader::init_mapped_heap_info(mapped_start, delta, narrow_oop_shift());
-
-  if (_heap_pointers_need_patching) {
-    char* bitmap_base = map_bitmap_region();
-    if (bitmap_base == nullptr) {
-      AOTMetaspace::report_loading_error("CDS heap cannot be used because bitmap region cannot be mapped");
-      dealloc_heap_region();
-      _heap_pointers_need_patching = false;
-      return false;
-    }
-  }
-  aot_log_info(aot)("Heap data mapped at " INTPTR_FORMAT ", size = %8zu bytes",
-                p2i(mapped_start), _mapped_heap_memregion.byte_size());
-  aot_log_info(aot)("CDS heap data relocation delta = %zd bytes", delta);
-  return true;
-}
-
-narrowOop FileMapInfo::encoded_heap_region_dumptime_address() {
-  assert(CDSConfig::is_using_archive(), "runtime only");
-  assert(UseCompressedOops, "sanity");
-  FileMapRegion* r = region_at(AOTMetaspace::hp);
-  return CompressedOops::narrow_oop_cast(r->mapping_offset() >> narrow_oop_shift());
-}
-
-void FileMapInfo::patch_heap_embedded_pointers() {
-  if (!ArchiveHeapLoader::is_mapped() || !_heap_pointers_need_patching) {
-    return;
-  }
-
-  char* bitmap_base = map_bitmap_region();
-  assert(bitmap_base != nullptr, "must have already been mapped");
-
-  FileMapRegion* r = region_at(AOTMetaspace::hp);
-  ArchiveHeapLoader::patch_embedded_pointers(
-      this, _mapped_heap_memregion,
-      (address)(region_at(AOTMetaspace::bm)->mapped_base()) + r->oopmap_offset(),
-      r->oopmap_size_in_bits());
-}
-
-void FileMapInfo::fixup_mapped_heap_region() {
-  if (ArchiveHeapLoader::is_mapped()) {
-    assert(!_mapped_heap_memregion.is_empty(), "sanity");
-
-    // Populate the archive regions' G1BlockOffsetTables. That ensures
-    // fast G1BlockOffsetTable::block_start operations for any given address
-    // within the archive regions when trying to find start of an object
-    // (e.g. during card table scanning).
-    G1CollectedHeap::heap()->populate_archive_regions_bot(_mapped_heap_memregion);
-  }
-}
-
-// dealloc the archive regions from java heap
-void FileMapInfo::dealloc_heap_region() {
-  G1CollectedHeap::heap()->dealloc_archive_regions(_mapped_heap_memregion);
-}
 #endif // INCLUDE_CDS_JAVA_HEAP
+
+// Unmap a memory region in the address space.
 
 void FileMapInfo::unmap_regions(int regions[], int num_regions) {
   for (int r = 0; r < num_regions; r++) {
@@ -1774,8 +1639,6 @@ void FileMapInfo::unmap_regions(int regions[], int num_regions) {
     unmap_region(idx);
   }
 }
-
-// Unmap a memory region in the address space.
 
 void FileMapInfo::unmap_region(int i) {
   FileMapRegion* r = region_at(i);
@@ -1808,7 +1671,6 @@ void FileMapInfo::assert_mark(bool check) {
 
 FileMapInfo* FileMapInfo::_current_info = nullptr;
 FileMapInfo* FileMapInfo::_dynamic_archive_info = nullptr;
-bool FileMapInfo::_heap_pointers_need_patching = false;
 bool FileMapInfo::_memory_mapping_failed = false;
 
 // Open the shared archive file, read and validate the header

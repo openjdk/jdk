@@ -150,6 +150,7 @@ java/awt/EventQueue/PushPopDeadlock/PushPopDeadlock.java 8024034 generic-all
 java/awt/grab/EmbeddedFrameTest1/EmbeddedFrameTest1.java 7080150 macosx-all
 java/awt/event/InputEvent/EventWhenTest/EventWhenTest.java 8168646 generic-all
 java/awt/List/KeyEventsTest/KeyEventsTest.java 8201307 linux-all
+java/awt/List/NoEvents/ProgrammaticChange.java 8201307 linux-all
 java/awt/Paint/ListRepaint.java 8201307 linux-all
 java/awt/Mixing/AWT_Mixing/HierarchyBoundsListenerMixingTest.java 8049405 macosx-all
 java/awt/Mixing/AWT_Mixing/OpaqueOverlapping.java 8370584 windows-x64
@@ -179,7 +180,7 @@ java/awt/Mixing/AWT_Mixing/JSliderInGlassPaneOverlapping.java 8158801 windows-al
 java/awt/Mixing/AWT_Mixing/JSliderOverlapping.java 8158801 windows-all
 java/awt/Mixing/AWT_Mixing/JSpinnerInGlassPaneOverlapping.java 8158801 windows-all
 java/awt/Mixing/AWT_Mixing/JSpinnerOverlapping.java 8158801 windows-all
-java/awt/Mixing/AWT_Mixing/JTableInGlassPaneOverlapping.java 8158801 windows-all
+java/awt/Mixing/AWT_Mixing/JTableInGlassPaneOverlapping.java 8158801,8357360 windows-all,linux-all
 java/awt/Mixing/AWT_Mixing/JTableOverlapping.java 8158801 windows-all
 java/awt/Mixing/AWT_Mixing/JTextAreaInGlassPaneOverlapping.java 8158801 windows-all
 java/awt/Mixing/AWT_Mixing/JTextAreaOverlapping.java 8158801 windows-all
@@ -500,6 +501,7 @@ java/awt/GraphicsDevice/DisplayModes/UnknownRefrshRateTest.java 8286436 macosx-a
 java/awt/image/multiresolution/MultiresolutionIconTest.java 8291979 linux-x64,windows-all
 java/awt/event/SequencedEvent/MultipleContextsFunctionalTest.java 8305061 macosx-x64
 sun/java2d/DirectX/OnScreenRenderingResizeTest/OnScreenRenderingResizeTest.java 8301177 linux-x64
+sun/awt/image/bug8038000.java 8373065 generic-all
 
 # Several tests which fail on some hidpi systems/macosx12-aarch64 system
 java/awt/Window/8159168/SetShapeTest.java 8274106 macosx-aarch64
@@ -586,7 +588,6 @@ java/net/MulticastSocket/Test.java                              7145658,8308807 
 
 # jdk_nio
 
-java/nio/channels/Channels/SocketChannelStreams.java            8317838 aix-ppc64
 java/nio/channels/AsyncCloseAndInterrupt.java                   8368290 macosx-26.0.1
 
 java/nio/channels/DatagramChannel/AdaptorMulticasting.java      8308807,8144003 aix-ppc64,macosx-all
@@ -640,18 +641,8 @@ sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8316183 linux-pp
 ############################################################################
 
 # jdk_sound
-javax/sound/sampled/DirectAudio/bug6372428.java                      8055097 generic-all
-javax/sound/sampled/Clip/bug5070081.java                             8055097 generic-all
-javax/sound/sampled/DataLine/LongFramePosition.java                  8055097 generic-all
 
 javax/sound/sampled/Clip/Drain/ClipDrain.java          7062792 generic-all
-
-javax/sound/sampled/Mixers/DisabledAssertionCrash.java 7067310 generic-all
-
-javax/sound/midi/Sequencer/Recording.java 8167580,8265485 linux-all,macosx-aarch64
-javax/sound/midi/Sequencer/Looping.java 8136897 generic-all
-javax/sound/sampled/Clip/ClipIsRunningAfterStop.java 8307574 linux-x64
-javax/sound/sampled/Clip/ClipFlushCrash.java 8308395 linux-x64
 
 ############################################################################
 
@@ -748,9 +739,10 @@ jdk/incubator/vector/LoadJsvmlTest.java                         8305390 windows-
 # jdk_jfr
 
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8338127 generic-all
+jdk/jfr/event/oldobject/TestEmergencyDumpAtOOM.java             8371014 aix-ppc64,linux-ppc64le
 jdk/jfr/event/oldobject/TestShenandoah.java                     8342951 generic-all
 jdk/jfr/event/runtime/TestResidentSetSizeEvent.java             8309846 aix-ppc64
-jdk/jfr/jvm/TestWaste.java                                      8369949 generic-all
+jdk/jfr/jvm/TestWaste.java                                      8371630 generic-all
 
 ############################################################################
 
@@ -780,7 +772,6 @@ java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter_1.java 7131438,802
 java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter_2.java 7131438,8022539 generic-all
 java/awt/Modal/WsDisabledStyle/CloseBlocker/CloseBlocker.java 7187741 linux-all,macosx-all
 java/awt/xembed/server/TestXEmbedServerJava.java 8001150,8004031 generic-all
-java/awt/Modal/PrintDialogsTest/PrintDialogsTest.java 8068378 generic-all
 java/awt/image/VolatileImage/VolatileImageConfigurationTest.java 8171069 macosx-all,linux-all
 java/awt/Modal/InvisibleParentTest/InvisibleParentTest.java 8172245 linux-all
 java/awt/Frame/FrameStateTest/FrameStateTest.java 8203920 macosx-all,linux-all
@@ -816,3 +807,4 @@ java/awt/Cursor/CursorDragTest/ListDragCursor.java 7177297 macosx-all
 # jdk_since_checks
 
 tools/sincechecker/modules/jdk.management.jfr/JdkManagementJfrCheckSince.java 8354921 generic-all
+tools/sincechecker/modules/java.base/JavaBaseCheckSince.java 8372801 generic-all
