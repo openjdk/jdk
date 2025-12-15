@@ -2312,7 +2312,7 @@ CPUTime_t os::detailed_thread_cpu_time(Thread* t) {
   };
 #else
   Unimplemented();
-  return {0,0};
+  return {0, 0};
 #endif
 }
 

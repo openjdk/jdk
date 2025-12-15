@@ -75,7 +75,7 @@ GCTraceCPUTime::GCTraceCPUTime(GCTracer* tracer) :
           (tracer != nullptr && tracer->should_report_cpu_time_event())),
   _starting_user_time(0),
   _starting_system_time(0),
-  _starting_real_time(os::elapsedTime()),
+  _starting_real_time(0.0),
   _tracer(tracer)
 {
   if (_active) {
@@ -84,6 +84,7 @@ GCTraceCPUTime::GCTraceCPUTime(GCTracer* tracer) :
     CPUTime_t cpu_time_stringdedup = CPUTimeUsage::GC::detailed_stringdedup();
     _starting_user_time = cpu_time_vm.user + cpu_time_gc.user + cpu_time_stringdedup.user;
     _starting_system_time = cpu_time_vm.system + cpu_time_gc.system + cpu_time_stringdedup.system;
+    _starting_real_time = os::elapsedTime();
     if (CPUTimeUsage::Error::has_error()) {
       log_warning(gc, cpu)("TraceCPUTime: CPUTimeUsage may contain invalid results");
       _active = false;

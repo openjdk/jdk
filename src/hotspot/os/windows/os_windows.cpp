@@ -4898,7 +4898,10 @@ CPUTime_t os::detailed_thread_cpu_time(Thread* t) {
 
   if (GetThreadTimes(t->osthread()->thread_handle(), &CreationTime,
                       &ExitTime, &KernelTime, &UserTime) == 0) {
-    return {-1,-1};
+    return {
+      -1,
+      -1
+    };
   }
 
   return {
