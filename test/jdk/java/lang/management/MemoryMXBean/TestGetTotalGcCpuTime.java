@@ -78,11 +78,14 @@
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.ThreadMXBean;
+import java.util.ArrayList;
 
 public class TestGetTotalGcCpuTime {
     static final ThreadMXBean mxThreadBean = ManagementFactory.getThreadMXBean();
     static final MemoryMXBean mxMemoryBean = ManagementFactory.getMemoryMXBean();
     static final boolean usingEpsilonGC = ManagementFactory.getRuntimeMXBean().getInputArguments().stream().anyMatch(p -> p.contains("-XX:+UseEpsilonGC"));
+
+    private static ArrayList<Object> objs = null;
 
     public static void main(String[] args) throws Exception {
         try {
@@ -96,7 +99,15 @@ public class TestGetTotalGcCpuTime {
             return;
         }
 
-        System.gc();
+        // Add some tracing work to ensure OSs with slower update rates would report usage
+        for (int i = 0; i < 200; i++) {
+            objs = new ArrayList<Object>();
+            for (int j = 0; j < 5000; j++) {
+                objs.add(new Object());
+            }
+            System.gc();
+        }
+
         long gcCpuTimeFromThread = mxMemoryBean.getTotalGcCpuTime();
 
         if (usingEpsilonGC) {

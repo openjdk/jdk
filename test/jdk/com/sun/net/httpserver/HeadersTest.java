@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -62,6 +65,8 @@ import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotEquals;
+import static org.testng.Assert.assertNotSame;
+import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 
@@ -288,7 +293,14 @@ public class HeadersTest {
         final var list = new ArrayList<String>();
         list.add(null);
         assertThrows(NPE, () -> h0.putAll(Map.of("a", list)));
+        assertThrows(IAE, () -> h0.putAll(Map.of("a", List.of("\r"))));
         assertThrows(IAE, () -> h0.putAll(Map.of("a", List.of("\n"))));
+        assertThrows(IAE, () -> h0.putAll(Map.of("a", List.of("a\r"))));
+        assertThrows(IAE, () -> h0.putAll(Map.of("a", List.of("a\n"))));
+        assertThrows(IAE, () -> h0.putAll(Map.of("\r", List.of("a"))));
+        assertThrows(IAE, () -> h0.putAll(Map.of("\n", List.of("a"))));
+        assertThrows(IAE, () -> h0.putAll(Map.of("a\r", List.of("a"))));
+        assertThrows(IAE, () -> h0.putAll(Map.of("a\n", List.of("a"))));
 
         final var h1 = new Headers();
         h1.put("a", List.of("1"));
@@ -441,6 +453,82 @@ public class HeadersTest {
         assertEquals(h.size(), 2);
         List.of("a", "b").forEach(n -> assertTrue(h.containsKey(n)));
         List.of(List.of("1"), List.of("1", "2", "3")).forEach(v -> assertTrue(h.containsValue(v)));
+    }
+
+    @Test
+    public static void testNormalizeOnNull() {
+        assertThrows(NullPointerException.class, () -> normalize(null));
+    }
+
+    @DataProvider
+    public static Object[][] illegalKeys() {
+        var illegalChars = List.of('\r', '\n');
+        var illegalStrings = Stream
+                // Insert an illegal char at every possible position of following strings
+                .of("Ab", "ab", "_a", "2a")
+                .flatMap(s -> IntStream
+                        .range(0, s.length() + 1)
+                        .boxed()
+                        .flatMap(i -> illegalChars
+                                .stream()
+                                .map(c -> s.substring(0, i) + c + s.substring(i))));
+        return Stream
+                .concat(illegalChars.stream().map(c -> "" + c), illegalStrings)
+                .map(s -> new Object[]{s})
+                .toArray(Object[][]::new);
+    }
+
+    @Test(dataProvider = "illegalKeys")
+    public static void testNormalizeOnIllegalKeys(String illegalKey) {
+        assertThrows(IllegalArgumentException.class, () -> normalize(illegalKey));
+    }
+
+    @DataProvider
+    public static Object[][] normalizedKeys() {
+        return new Object[][]{
+                // Empty string
+                {""},
+                // Non-alpha prefix
+                {"_"},
+                {"0"},
+                {"_xy-@"},
+                {"0xy-@"},
+                // Upper-case prefix
+                {"A"},
+                {"B"},
+                {"Ayz-@"},
+                {"Byz-@"},
+        };
+    }
+
+    @Test(dataProvider = "normalizedKeys")
+    public static void testNormalizeOnNormalizedKeys(String normalizedKey) {
+        // Verify that the fast-path is taken
+        assertSame(normalize(normalizedKey), normalizedKey);
+    }
+
+    @DataProvider
+    public static Object[][] notNormalizedKeys() {
+        return new Object[][]{
+                {"a"},
+                {"b"},
+                {"axy-@"},
+                {"bxy-@"},
+        };
+    }
+
+    @Test(dataProvider = "notNormalizedKeys")
+    public static void testNormalizeOnNotNormalizedKeys(String notNormalizedKey) {
+        var normalizedKey = normalize(notNormalizedKey);
+        // Verify that the fast-path is *not* taken
+        assertNotSame(normalizedKey, notNormalizedKey);
+        // Verify the result
+        var expectedNormalizedKey = normalizedKey.substring(0, 1).toUpperCase() + normalizedKey.substring(1);
+        assertEquals(normalizedKey, expectedNormalizedKey);
+    }
+
+    private static String normalize(String key) {
+        return Headers.of(key, "foo").keySet().iterator().next();
     }
 
     // Immutability tests in UnmodifiableHeadersTest.java

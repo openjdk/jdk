@@ -30,6 +30,7 @@ import static java.util.ServiceLoader.load;
 /**
  * @test
  * @bug 8058115
+ * @key sound
  * @summary MidiDeviceProvider shouldn't returns incorrect results in case of
  *          unsupported MidiDevice.Info
  * @author Sergey Bylokhov

@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/singleWriterSynchronizer.hpp"
@@ -258,15 +259,15 @@ private:
 
 private:
   const char* _name;
-  ActiveArray* _active_array;
+  Atomic<ActiveArray*> _active_array;
   AllocationList _allocation_list;
-  Block* volatile _deferred_updates;
+  Atomic<Block*> _deferred_updates;
   Mutex* _allocation_mutex;
   Mutex* _active_mutex;
   NumDeadCallback _num_dead_callback;
 
-  // Volatile for racy unlocked accesses.
-  volatile size_t _allocation_count;
+  // Atomic for racy unlocked accesses.
+  Atomic<size_t> _allocation_count;
 
   // Protection for _active_array.
   mutable SingleWriterSynchronizer _protect_active;
@@ -278,7 +279,7 @@ private:
   MemTag _mem_tag;
 
   // Flag indicating this storage object is a candidate for empty block deletion.
-  volatile bool _needs_cleanup;
+  Atomic<bool> _needs_cleanup;
 
   // Clients construct via "create" factory function.
   OopStorage(const char* name, MemTag mem_tag);

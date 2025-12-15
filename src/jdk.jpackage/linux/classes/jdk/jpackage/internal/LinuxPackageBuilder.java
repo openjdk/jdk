@@ -32,12 +32,11 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.ApplicationLayout;
-import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.LinuxApplication;
 import jdk.jpackage.internal.model.LinuxPackage;
-import jdk.jpackage.internal.model.RuntimeLayout;
 import jdk.jpackage.internal.model.LinuxPackageMixin;
 import jdk.jpackage.internal.model.Package;
+import jdk.jpackage.internal.model.RuntimeLayout;
 import jdk.jpackage.internal.model.StandardPackageType;
 
 final class LinuxPackageBuilder {
@@ -46,20 +45,17 @@ final class LinuxPackageBuilder {
         this.pkgBuilder = Objects.requireNonNull(pkgBuilder);
     }
 
-    LinuxPackage create() throws ConfigException {
-        if (literalName != null) {
-            pkgBuilder.name(literalName);
-        } else {
+    LinuxPackage create() {
+        pkgBuilder.name(Optional.ofNullable(literalName).orElseGet(() -> {
             // Lower case and turn spaces/underscores into dashes
-            pkgBuilder.name(pkgBuilder.create().packageName().toLowerCase().replaceAll("[ _]", "-"));
-        }
+            return pkgBuilder.create().packageName().toLowerCase().replaceAll("[ _]", "-");
+        }));
 
         final var tmpPkg = pkgBuilder.create();
 
-        final var stdPkgType = tmpPkg.asStandardPackageType();
-        if (stdPkgType.isPresent()) {
-            validatePackageName(tmpPkg.packageName(), stdPkgType.orElseThrow());
-        }
+        tmpPkg.asStandardPackageType().ifPresent(stdPkgType -> {
+            validatePackageName(tmpPkg.packageName(), stdPkgType);
+        });
 
         final AppImageLayout relativeInstalledLayout;
         if (create(tmpPkg).isInstallDirInUsrTree()) {
@@ -81,7 +77,7 @@ final class LinuxPackageBuilder {
                 .create());
     }
 
-    private LinuxPackage create(Package pkg) throws ConfigException {
+    private LinuxPackage create(Package pkg) {
         return LinuxPackage.create(pkg, new LinuxPackageMixin.Stub(
                 Optional.ofNullable(menuGroupName).orElseGet(DEFAULTS::menuGroupName),
                 category(),
@@ -137,8 +133,7 @@ final class LinuxPackageBuilder {
                 lib.resolve("lib/libapplauncher.so"));
     }
 
-    private static void validatePackageName(String packageName,
-            StandardPackageType pkgType) throws ConfigException {
+    private static void validatePackageName(String packageName, StandardPackageType pkgType) {
         switch (pkgType) {
             case LINUX_DEB -> {
                 //

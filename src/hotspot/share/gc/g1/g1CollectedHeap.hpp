@@ -917,6 +917,9 @@ public:
   // specified by the policy object.
   jint initialize() override;
 
+  // Returns whether concurrent mark threads (and the VM) are about to terminate.
+  bool concurrent_mark_is_terminating() const;
+
   void safepoint_synchronize_begin() override;
   void safepoint_synchronize_end() override;
 
