@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -261,6 +261,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
                 region == Region.TREE);
     }
 
+    @Override
     public UIDefaults getDefaults() {
         // We need to call super for basic's properties file.
         UIDefaults table = super.getDefaults();
@@ -301,6 +302,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
                              "com.sun.java.swing.plaf.gtk.resources.gtk");
     }
 
+    @Override
     protected void initComponentDefaults(UIDefaults table) {
         // For compatibility with apps expecting certain defaults we'll
         // populate the table with the values from basic.
@@ -511,6 +513,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
             FontLazyValue(Region region) {
                 this.region = region;
             }
+            @Override
             public Object createValue(UIDefaults table) {
                 SynthStyleFactory factory = getStyleFactory();
                 GTKStyle style = (GTKStyle)factory.getStyle(null, region);
@@ -556,6 +559,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
 
             "ColorChooser.showPreviewPanelText", Boolean.FALSE,
             "ColorChooser.panels", new UIDefaults.ActiveValue() {
+                @Override
                 public Object createValue(UIDefaults table) {
                     return new AbstractColorChooserPanel[] {
                                        new GTKColorChooserPanel() };
@@ -1168,6 +1172,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
 
             "TitledBorder.titleColor", controlText,
             "TitledBorder.border", new UIDefaults.LazyValue() {
+                @Override
                 public Object createValue(UIDefaults table) {
                     return new GTKPainter.TitledBorder();
                 }
@@ -1184,6 +1189,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
 
             "ToolBar.separatorSize", new DimensionUIResource(10, 10),
             "ToolBar.handleIcon", new UIDefaults.ActiveValue() {
+                @Override
                 public Object createValue(UIDefaults table) {
                     return GTKIconFactory.getToolBarHandleIcon();
                 }
@@ -1312,6 +1318,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
         }
     }
 
+    @Override
     protected void initSystemColorDefaults(UIDefaults table) {
         SynthStyleFactory factory = getStyleFactory();
         GTKStyle windowStyle =
@@ -1492,6 +1499,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
 
         public String getKey() { return key; }
 
+        @Override
         public void propertyChange(final PropertyChangeEvent pce) {
             final GTKLookAndFeel lnf = get();
 
@@ -1504,6 +1512,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
                 // We are using invokeLater here because we are getting called
                 // on the AWT-Motif thread which can cause a deadlock.
                 SwingUtilities.invokeLater(new Runnable() {
+                    @Override
                     public void run() {
                         String name = pce.getPropertyName();
                         /* We are listening for GTK desktop text AA settings:
@@ -1531,30 +1540,36 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
         }
     }
 
+    @Override
     public boolean isSupportedLookAndFeel() {
         Toolkit toolkit = Toolkit.getDefaultToolkit();
         return (toolkit instanceof SunToolkit &&
                 ((SunToolkit)toolkit).isNativeGTKAvailable());
     }
 
+    @Override
     public boolean isNativeLookAndFeel() {
         return true;
     }
 
+    @Override
     public String getDescription() {
         return "GTK look and feel";
     }
 
+    @Override
     public String getName() {
         return "GTK look and feel";
     }
 
+    @Override
     public String getID() {
         return "GTK";
     }
 
     // Subclassed to pass in false to the superclass, we don't want to try
     // and load the system colors.
+    @Override
     protected void loadSystemColors(UIDefaults table, String[] systemColors, boolean useNative) {
         super.loadSystemColors(table, systemColors, false);
     }
@@ -1663,6 +1678,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
      * <code>SynthStyles</code> from the <code>SynthStyleFactory</code>
      * when the ancestor changed.
      */
+    @Override
     public boolean shouldUpdateStyleOnAncestorChanged() {
         return true;
     }
@@ -1670,6 +1686,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
     /**
      * {@inheritDoc}
      */
+    @Override
     public LayoutStyle getLayoutStyle() {
         return GnomeLayoutStyle.INSTANCE;
     }
