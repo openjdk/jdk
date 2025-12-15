@@ -33,10 +33,7 @@
                           constraint)                                       \
   product(bool, UseMaximumCompactionOnSystemGC, true,                       \
           "Use maximum compaction in the Parallel Old garbage collector "   \
-          "for a system GC")                                                \
-                                                                            \
-  product(bool, PSChunkLargeArrays, true,                                   \
-          "(Deprecated) Process large arrays in chunks")
+          "for a system GC")
 
 // end of GC_PARALLEL_FLAGS
 
