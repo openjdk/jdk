@@ -311,9 +311,12 @@ void ShenandoahDegenGC::op_degenerated() {
   const bool progress = metrics.is_good_progress();
   ShenandoahCollectorPolicy* policy = heap->shenandoah_policy();
   policy->record_degenerated(_generation->is_young(), _abbreviated, progress);
-  if (progress) {
+  if (progress || (heap->mode()->is_generational() && !policy->generational_should_upgrade_degenerated_gc())) {
+    // If we are not upgrading to full gc when no progress, count this as a successful degen.
     heap->notify_gc_progress();
+    _generation->heuristics()->record_success_degenerated();
   } else if (!heap->mode()->is_generational() || policy->generational_should_upgrade_degenerated_gc()) {
+    // Upgrade to full GC, register full-GC impact on heuristics.
     op_degenerated_futile();
   }
 }
