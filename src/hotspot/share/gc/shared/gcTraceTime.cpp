@@ -97,7 +97,7 @@ GCTraceCPUTime::~GCTraceCPUTime() {
     CPUTime_t cpu_time_gc = CPUTimeUsage::GC::detailed_gc_threads();
     CPUTime_t cpu_time_stringdedup = CPUTimeUsage::GC::detailed_stringdedup();
 
-    double real_time = os::elapsedTime();
+    double real_time = os::elapsedTime() - _starting_real_time;
     jlong user_time = cpu_time_vm.user + cpu_time_gc.user + cpu_time_stringdedup.user;
     jlong system_time = cpu_time_vm.system + cpu_time_gc.system + cpu_time_stringdedup.system;
 

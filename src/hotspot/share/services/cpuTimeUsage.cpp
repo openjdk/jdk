@@ -39,7 +39,10 @@ static inline CPUTime_t detailed_thread_cpu_time_or_zero(Thread* thread) {
   CPUTime_t cpu_time = os::detailed_thread_cpu_time(thread);
   if (cpu_time.system == -1 || cpu_time.user == -1) {
     CPUTimeUsage::Error::mark_error();
-    return {0, 0};
+    return {
+      0,
+      0
+    };
   }
   return cpu_time;
 }
@@ -66,7 +69,10 @@ public:
 
 class DetailedCPUTimeThreadClosure : public ThreadClosure {
 private:
-  CPUTime_t _cpu_time = {0, 0};
+  CPUTime_t _cpu_time = {
+    0,
+    0
+  };
 
 public:
   virtual void do_thread(Thread* thread) {
@@ -113,7 +119,10 @@ CPUTime_t CPUTimeUsage::GC::detailed_stringdedup() {
   if (UseStringDeduplication) {
     return detailed_thread_cpu_time_or_zero((Thread*)StringDedup::_processor->_thread);
   }
-  return {0, 0};
+  return {
+    0,
+    0
+  };
 }
 
 bool CPUTimeUsage::Error::has_error() {

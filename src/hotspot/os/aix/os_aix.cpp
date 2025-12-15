@@ -2469,7 +2469,10 @@ CPUTime_t os::detailed_thread_cpu_time(Thread* t) {
   jlong user_time;
 
   if (!thread_cpu_time_unchecked(t, &sys_time, &user_time)) {
-    return {-1, -1};
+    return {
+      -1,
+      -1
+    };
   }
 
   return {

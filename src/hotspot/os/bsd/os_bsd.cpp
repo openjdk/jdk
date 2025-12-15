@@ -2300,7 +2300,10 @@ CPUTime_t os::detailed_thread_cpu_time(Thread* t) {
   mach_thread = t->osthread()->thread_id();
   kr = thread_info(mach_thread, THREAD_BASIC_INFO, (thread_info_t)&tinfo, &tcount);
   if (kr != KERN_SUCCESS) {
-    return {-1, -1};
+    return {
+      -1,
+      -1
+    };
   }
 
   return {
