@@ -50,6 +50,9 @@ import compiler.lib.verify.*;
 import static compiler.lib.generators.Generators.G;
 import compiler.lib.generators.Generator;
 
+/**
+ * TODO: link to fuzzer, explain that we do no result verification here, except that we don't hit exceptions.
+ */
 public class TestFoldCompares {
     public static boolean FLAG_FALSE = false;
 
@@ -313,5 +316,4 @@ public class TestFoldCompares {
         }
         throw new RuntimeException("should not be reached");
     }
-
 }
