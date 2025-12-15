@@ -467,9 +467,9 @@ void CgroupV1MemoryController::print_version_specific_info(outputStream* st, phy
     kmem_max_usage.set_value(temp);
   }
 
-  OSContainer::print_container_helper(st, kmem_limit, "kernel_memory_limit_in_bytes");
-  OSContainer::print_container_helper(st, kmem_usage, "kernel_memory_usage_in_bytes");
-  OSContainer::print_container_helper(st, kmem_max_usage, "kernel_memory_max_usage_in_bytes");
+  OSContainer::print_container_helper(st, kmem_limit, "kernel_memory_limit");
+  OSContainer::print_container_helper(st, kmem_usage, "kernel_memory_usage");
+  OSContainer::print_container_helper(st, kmem_max_usage, "kernel_memory_max_usage");
 }
 
 char* CgroupV1Subsystem::cpu_cpuset_cpus() {
