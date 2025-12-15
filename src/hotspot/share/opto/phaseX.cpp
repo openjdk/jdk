@@ -1708,6 +1708,13 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     //   java -XX:VerifyIterativeGVN=1110 -Xcomp --version
     case Op_CmpP:
       return false;
+
+    // MinINode::Ideal
+    // Did not investigate, but there are some patterns that might
+    // need more notification.
+    case Op_MinI:
+    case Op_MaxI: // preemptively removed it as well.
+      return false;
   }
 
   if (n->is_Load()) {
