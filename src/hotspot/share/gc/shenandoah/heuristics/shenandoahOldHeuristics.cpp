@@ -327,7 +327,6 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
   size_t live_data = 0;
 
   RegionData* candidates = _region_data;
-  size_t old_memory_allocated_during_old_marking = 0;
   for (size_t i = 0; i < num_regions; i++) {
     ShenandoahHeapRegion* region = heap->get_region(i);
     if (!region->is_old()) {
@@ -337,6 +336,9 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
     size_t garbage = region->garbage();
     size_t live_bytes = region->get_live_data_bytes();
     if (!region->was_promoted_in_place()) {
+      // As currently implemented, region->get_live_data_bytes() represents bytes concurrently marked.
+      // Expansion of the region by promotion during concurrent marking is above TAMS, and is not included
+      // as live-data at [start of] old marking.
       live_data += live_bytes;
     }
     // else, regions that were promoted in place had 0 old live data at mark start
@@ -378,7 +380,6 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
     }
   }
 
-  // As currently implemented, region->get_live_data_bytes() represents bytes concurrently marked.  This is SATB value
   _old_generation->set_live_bytes_at_last_mark(live_data);
 
   // Unlike young, we are more interested in efficiently packing OLD-gen than in reclaiming garbage first.  We sort by live-data.
