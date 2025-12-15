@@ -71,7 +71,8 @@ ShenandoahOldHeuristics::ShenandoahOldHeuristics(ShenandoahOldGeneration* genera
   _growth_trigger(false),
   _fragmentation_density(0.0),
   _fragmentation_first_old_region(0),
-  _fragmentation_last_old_region(0)
+  _fragmentation_last_old_region(0),
+  _old_garbage_threshold(ShenandoahOldGarbageThreshold)
 {
 }
 
@@ -373,7 +374,8 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
     }
   }
 
-  _old_generation->set_live_bytes_after_last_mark(live_data);
+  // TODO: subtract from live_data bytes promoted during concurrent GC.
+  _old_generation->set_live_bytes_at_last_mark(live_data);
 
   // Unlike young, we are more interested in efficiently packing OLD-gen than in reclaiming garbage first.  We sort by live-data.
   // Some regular regions may have been promoted in place with no garbage but also with very little live data.  When we "compact"
@@ -385,7 +387,7 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
   const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
 
   // The convention is to collect regions that have more than this amount of garbage.
-  const size_t garbage_threshold = region_size_bytes * ShenandoahOldGarbageThreshold / 100;
+  const size_t garbage_threshold = region_size_bytes * get_old_garbage_threshold() / 100;
 
   // Enlightened interpretation: collect regions that have less than this amount of live.
   const size_t live_threshold = region_size_bytes - garbage_threshold;
@@ -655,6 +657,7 @@ bool ShenandoahOldHeuristics::should_start_gc() {
     const double percent = percent_of(old_gen_capacity, heap_capacity);
     log_trigger("Expansion failure, current size: %zu%s which is %.1f%% of total heap size",
                  byte_size_in_proper_unit(old_gen_capacity), proper_unit_for_byte_size(old_gen_capacity), percent);
+    adjust_old_garbage_threshold();
     return true;
   }
 
@@ -677,6 +680,7 @@ bool ShenandoahOldHeuristics::should_start_gc() {
                 "%zu to %zu (%zu), density: %.1f%%",
                 byte_size_in_proper_unit(fragmented_free), proper_unit_for_byte_size(fragmented_free),
                 first_old_region, last_old_region, span_of_old_regions, density * 100);
+    adjust_old_garbage_threshold();
     return true;
   }
 
@@ -699,12 +703,13 @@ bool ShenandoahOldHeuristics::should_start_gc() {
                     consecutive_young_cycles);
       _growth_trigger = false;
     } else if (current_usage > trigger_threshold) {
-      const size_t live_at_previous_old = _old_generation->get_live_bytes_after_last_mark();
+      const size_t live_at_previous_old = _old_generation->get_live_bytes_at_last_mark();
       const double percent_growth = percent_of(current_usage - live_at_previous_old, live_at_previous_old);
       log_trigger("Old has overgrown, live at end of previous OLD marking: "
                   "%zu%s, current usage: %zu%s, percent growth: %.1f%%",
                   byte_size_in_proper_unit(live_at_previous_old), proper_unit_for_byte_size(live_at_previous_old),
                   byte_size_in_proper_unit(current_usage), proper_unit_for_byte_size(current_usage), percent_growth);
+      adjust_old_garbage_threshold();
       return true;
     } else {
       // Mixed evacuations have decreased current_usage such that old-growth trigger is no longer relevant.
@@ -713,7 +718,41 @@ bool ShenandoahOldHeuristics::should_start_gc() {
   }
 
   // Otherwise, defer to inherited heuristic for gc trigger.
-  return this->ShenandoahHeuristics::should_start_gc();
+  bool result = this->ShenandoahHeuristics::should_start_gc();
+  if (result) {
+    adjust_old_garbage_threshold();
+  }
+  return result;
+}
+
+void ShenandoahOldHeuristics::adjust_old_garbage_threshold() {
+  const uintx MinimumOldGarbageThreshold = 10;
+  const uintx InterventionPercentage = 50;
+
+  const ShenandoahHeap* heap = ShenandoahHeap::heap();
+  size_t old_regions_size = _old_generation->used_regions_size();
+  size_t soft_max_size = heap->soft_max_capacity();
+  uintx percent_used = (uintx) ((old_regions_size * 100) / soft_max_size);
+  _old_garbage_threshold = ShenandoahOldGarbageThreshold;
+  if (percent_used > InterventionPercentage) {
+    uintx severity = percent_used - InterventionPercentage;    // ranges from 0 to 50
+    if (MinimumOldGarbageThreshold < ShenandoahOldGarbageThreshold) {
+      uintx adjustment_potential = ShenandoahOldGarbageThreshold - MinimumOldGarbageThreshold;
+      // With default values:
+      //   if percent_used > 80, garbage_threshold is 10
+      //   else if percent_used > 65, garbage_threshold is 15
+      //   else if percent_used > 50, garbage_threshold is 20
+      if (severity > 30) {
+        _old_garbage_threshold = ShenandoahOldGarbageThreshold - adjustment_potential;
+      } else if (severity > 15) {
+        _old_garbage_threshold = ShenandoahOldGarbageThreshold - 2 * adjustment_potential / 3;
+      } else {
+        _old_garbage_threshold = ShenandoahOldGarbageThreshold - adjustment_potential / 3;
+      }
+      log_info(gc)("Adjusting old garbage threshold to %lu because Old Generation used regions represents %lu%% of heap",
+                   _old_garbage_threshold, percent_used);
+    }
+  }
 }
 
 void ShenandoahOldHeuristics::record_success_concurrent() {
