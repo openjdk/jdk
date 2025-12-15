@@ -11500,12 +11500,13 @@ instruct mulI_rReg_rReg_mem_ndd(rRegI dst, rRegI src1, memory src2, rFlagsReg cr
 instruct mulI_mem_imm(rRegI dst, memory src, immI imm, rFlagsReg cr)
 %{
   match(Set dst (MulI (LoadI src) imm));
-  effect(KILL cr);
+  effect(KILL cr, TEMP dst);
 
   ins_cost(300);
   format %{ "imull   $dst, $src, $imm\t# int" %}
   ins_encode %{
-    __ imull($dst$$Register, $src$$Address, $imm$$constant);
+    __ movl($dst$$Register, $src$$Address);
+    __ imullq_imm(T_INT, $dst$$Register, $dst$$Register, $imm$$constant);
   %}
   ins_pipe(ialu_reg_mem_alu0);
 %}
@@ -11594,12 +11595,13 @@ instruct mulL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2, rFlagsReg cr
 instruct mulL_mem_imm(rRegL dst, memory src, immL32 imm, rFlagsReg cr)
 %{
   match(Set dst (MulL (LoadL src) imm));
-  effect(KILL cr);
+  effect(KILL cr, TEMP dst);
 
   ins_cost(300);
   format %{ "imulq   $dst, $src, $imm\t# long" %}
   ins_encode %{
-    __ imulq($dst$$Register, $src$$Address, $imm$$constant);
+    __ movq($dst$$Register, $src$$Address);
+    __ imullq_imm(T_LONG, $dst$$Register, $dst$$Register, $imm$$constant);
   %}
   ins_pipe(ialu_reg_mem_alu0);
 %}
