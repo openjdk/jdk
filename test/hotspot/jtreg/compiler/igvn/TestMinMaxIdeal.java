@@ -39,9 +39,9 @@ import compiler.lib.template_framework.library.CodeGenerationDataNameType;
 import compiler.lib.template_framework.library.PrimitiveType;
 import compiler.lib.template_framework.library.TestFrameworkClass;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.scope;
@@ -62,12 +62,9 @@ public class TestMinMaxIdeal {
 
     private static String generate(CompileFramework comp) {
         // Create a list to collect all tests.
-        List<TemplateToken> testTemplateTokens = new ArrayList<>();
-
-        testTemplateTokens.add(new TestGenerator(Op.MIN_I).generate());
-        testTemplateTokens.add(new TestGenerator(Op.MAX_I).generate());
-        testTemplateTokens.add(new TestGenerator(Op.MIN_L).generate());
-        testTemplateTokens.add(new TestGenerator(Op.MAX_L).generate());
+        List<TemplateToken> testTemplateTokens = Stream.of(Op.values())
+            .map(op -> new TestGenerator(op).generate())
+            .toList();
 
         // Create the test class, which runs all testTemplateTokens.
         return TestFrameworkClass.render(
