@@ -21,7 +21,9 @@ import jdk.test.whitebox.WhiteBox;
  *      -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
  *      -XX:ShenandoahGenerationalMinTenuringAge=1 -XX:ShenandoahGenerationalMaxTenuringAge=1
- *      -XX:ShenandoahLearningSteps=0 -ea
+ *      -XX:ShenandoahLearningSteps=0 -XX:ShenandoahIgnoreOldGrowthBelowPercentage=100
+ *      -XX:-UseCompressedOops
+ *      -Xmx128M -Xms128M -ea
  *      gc.shenandoah.generational.TestGenerationalReferenceProcessing young
  */
 
@@ -38,8 +40,7 @@ import jdk.test.whitebox.WhiteBox;
  *      -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
  *      -XX:ShenandoahGenerationalMinTenuringAge=1 -XX:ShenandoahGenerationalMaxTenuringAge=1
- *      -XX:ShenandoahLearningSteps=0
- *      -XX:ShenandoahIgnoreGarbageThreshold=0 -XX:ShenandoahOldGarbageThreshold=0 -XX:ShenandoahGarbageThreshold=0
+ *      -XX:ShenandoahLearningSteps=0 -XX:ShenandoahIgnoreOldGrowthBelowPercentage=100
  *      -XX:-UseCompressedOops
  *      -Xmx128M -Xms128M -ea
  *      gc.shenandoah.generational.TestGenerationalReferenceProcessing old

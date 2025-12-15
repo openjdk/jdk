@@ -406,15 +406,11 @@ void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(const She
       return;
     }
     case ShenandoahOldGeneration::WAITING_FOR_BOOTSTRAP:
+      // Configure the young generation for bootstrapping the old mark
+      young_generation->prepare_for_bootstrap(old_generation);
       old_generation->transition_to(ShenandoahOldGeneration::BOOTSTRAPPING);
     case ShenandoahOldGeneration::BOOTSTRAPPING: {
-      // Configure the young generation's concurrent mark to put objects in
-      // old regions into the concurrent mark queues associated with the old
-      // generation. The young cycle will run as normal except that rather than
-      // ignore old references it will mark and enqueue them in the old concurrent
-      // task queues but it will not traverse them.
       set_gc_mode(bootstrapping_old);
-      young_generation->set_old_gen_task_queues(old_generation->task_queues());
       service_concurrent_cycle(young_generation, request.cause, true);
       _heap->process_gc_stats();
       if (_heap->cancelled_gc()) {
@@ -560,10 +556,10 @@ void ShenandoahGenerationalControlThread::service_concurrent_cycle(ShenandoahGen
       }
     }
   } else {
-    assert(generation->is_global(), "If not young, must be GLOBAL");
-    assert(!do_old_gc_bootstrap, "Do not bootstrap with GLOBAL GC");
+    assert(generation->is_global(), "If not young, must be Global");
+    assert(!do_old_gc_bootstrap, "Do not bootstrap with Global GC");
     if (_heap->cancelled_gc()) {
-      msg = "At end of Interrupted Concurrent GLOBAL GC";
+      msg = "At end of Interrupted Concurrent Global GC";
     } else {
       // We only record GC results if GC was successful
       msg = "At end of Concurrent Global GC";

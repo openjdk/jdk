@@ -686,7 +686,7 @@ void ShenandoahConcurrentGC::op_init_mark() {
   if (heap->mode()->is_generational()) {
 
     if (_generation->is_global()) {
-      heap->old_generation()->cancel_gc();
+      heap->old_generation()->abandon_gc();
     } else if (heap->is_concurrent_old_mark_in_progress()) {
       // Purge the SATB buffers, transferring any valid, old pointers to the
       // old generation mark queue. Any pointers in a young region will be
@@ -717,26 +717,17 @@ void ShenandoahConcurrentGC::op_init_mark() {
 
   start_mark();
 
-  if (!_do_old_gc_bootstrap) {
-    // Update region state for only young regions
+  {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_update_region_states);
     ShenandoahInitMarkUpdateRegionStateClosure cl;
-    _generation->parallel_heap_region_iterate(&cl);
-  } else {
-    shenandoah_assert_generational();
-    assert(_generation->is_young(), "Expect young for bootstrap");
-    assert(_generation->ref_processor()->get_old_generation_ref_processor() == nullptr,
-           "Young ref processor should not have old ref processor here");
-
-    // Update region state for both young and old regions
-    ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_update_region_states);
-    ShenandoahInitMarkUpdateRegionStateClosure cl;
-    heap->parallel_heap_region_iterate(&cl);
-
-    // Configure old ref processor for bootstrap and old marking
-    ShenandoahReferenceProcessor* old_ref_processor = heap->old_generation()->ref_processor();
-    old_ref_processor->reset_thread_locals();
-    _generation->ref_processor()->set_old_generation_ref_processor(old_ref_processor);
+    if (_do_old_gc_bootstrap) {
+      // Update region state for both young and old regions
+      shenandoah_assert_generational();
+      heap->parallel_heap_region_iterate(&cl);
+    } else {
+      // Update region state for only current generation regions
+      _generation->parallel_heap_region_iterate(&cl);
+    }
   }
 
   // Weak reference processing

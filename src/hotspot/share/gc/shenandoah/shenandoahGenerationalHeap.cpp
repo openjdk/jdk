@@ -1045,6 +1045,12 @@ void ShenandoahGenerationalHeap::final_update_refs_update_region_states() {
 
 void ShenandoahGenerationalHeap::complete_degenerated_cycle() {
   shenandoah_assert_heaplocked_or_safepoint();
+
+  if (young_generation()->is_bootstrap_cycle()) {
+    // Once the bootstrap cycle is completed, the young generation is no longer obliged to mark old
+    young_generation()->clear_bootstrap_configuration();
+  }
+
   if (is_concurrent_old_mark_in_progress()) {
     // This is still necessary for degenerated cycles because the degeneration point may occur
     // after final mark of the young generation. See ShenandoahConcurrentGC::op_final_update_refs for
@@ -1062,6 +1068,11 @@ void ShenandoahGenerationalHeap::complete_degenerated_cycle() {
 }
 
 void ShenandoahGenerationalHeap::complete_concurrent_cycle() {
+  if (young_generation()->is_bootstrap_cycle()) {
+    // Once the bootstrap cycle is completed, the young generation is no longer obliged to mark old
+    young_generation()->clear_bootstrap_configuration();
+  }
+
   if (!old_generation()->is_parsable()) {
     // Class unloading may render the card offsets unusable, so we must rebuild them before
     // the next remembered set scan. We _could_ let the control thread do this sometime after
