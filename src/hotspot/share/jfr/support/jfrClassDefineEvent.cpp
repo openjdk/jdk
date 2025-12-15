@@ -171,6 +171,7 @@ void JfrClassDefineEvent::on_creation(const InstanceKlass* ik, const ClassFilePa
   }
 }
 
+#if INCLUDE_CDS
 void JfrClassDefineEvent::on_restoration(const InstanceKlass* ik, JavaThread* jt) {
   assert(ik != nullptr, "invariant");
   assert(ik->trace_id() != 0, "invariant");
@@ -186,3 +187,4 @@ void JfrClassDefineEvent::on_restoration(const InstanceKlass* ik, JavaThread* jt
     send_event(ik, cl->is_modules_image() ? module_path(ik, jt) : get_source(cl, jt));
   }
 }
+#endif

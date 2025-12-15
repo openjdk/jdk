@@ -99,7 +99,8 @@ ArrayKlass::ArrayKlass(Symbol* name, KlassKind kind) :
   set_name(name);
   set_super(Universe::is_bootstrapping() ? nullptr : vmClasses::Object_klass());
   set_layout_helper(Klass::_lh_neutral_value);
-  set_is_cloneable(); // All arrays are considered to be cloneable (See JLS 20.1.5)
+  // All arrays are considered to be cloneable (See JLS 20.1.5)
+  set_is_cloneable_fast();
   JFR_ONLY(INIT_ID(this);)
   log_array_class_load(this);
 }

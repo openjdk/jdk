@@ -164,6 +164,24 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
 
   ifeq ($(USE_EXTERNAL_LIBPNG), false)
     LIBSPLASHSCREEN_HEADER_DIRS += libsplashscreen/libpng
+    LIBSPLASHSCREEN_CFLAGS += -DPNG_NO_MMX_CODE -DPNG_ARM_NEON_OPT=0
+      -DPNG_ARM_NEON_IMPLEMENTATION=0 -DPNG_LOONGARCH_LSX_OPT=0
+
+    ifeq ($(call isTargetOs, linux)+$(call isTargetCpuArch, ppc), true+true)
+      LIBSPLASHSCREEN_CFLAGS += -DPNG_POWERPC_VSX_OPT=0
+    endif
+
+    # The libpng bundled with jdk is a reduced version which does not
+    # contain .png_init_filter_functions_vsx.
+    # Therefore we need to disable PNG_POWERPC_VSX_OPT explicitly by setting
+    # it to 0. If this define is not set, it would be automatically set to 2,
+    # because
+    #   "#if defined(__PPC64__) && defined(__ALTIVEC__) && defined(__VSX__)"
+    # expands to true. This would results in the fact that
+    # .png_init_filter_functions_vsx is needed in libpng.
+    ifeq ($(call isTargetOs, aix), true)
+      LIBSPLASHSCREEN_CFLAGS += -DPNG_POWERPC_VSX_OPT=0
+    endif
   else
     LIBSPLASHSCREEN_EXCLUDES += libpng
   endif
@@ -176,25 +194,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
     LIBSPLASHSCREEN_STATIC_LIB_EXCLUDE_OBJS += $(LIBZIP_OBJS)
   endif
 
-  LIBSPLASHSCREEN_CFLAGS += -DSPLASHSCREEN -DPNG_NO_MMX_CODE \
-      -DPNG_ARM_NEON_OPT=0 -DPNG_ARM_NEON_IMPLEMENTATION=0 \
-      -DPNG_LOONGARCH_LSX_OPT=0
-
-  ifeq ($(call isTargetOs, linux)+$(call isTargetCpuArch, ppc), true+true)
-    LIBSPLASHSCREEN_CFLAGS += -DPNG_POWERPC_VSX_OPT=0
-  endif
-
-  # The external libpng submitted in the jdk is a reduced version
-  # which does not contain .png_init_filter_functions_vsx.
-  # Therefore we need to disable PNG_POWERPC_VSX_OPT explicitly by setting
-  # it to 0. If this define is not set, it would be automatically set to 2,
-  # because
-  #   "#if defined(__PPC64__) && defined(__ALTIVEC__) && defined(__VSX__)"
-  # expands to true. This would results in the fact that
-  # .png_init_filter_functions_vsx is needed in libpng.
-  ifeq ($(call isTargetOs, aix), true)
-    LIBSPLASHSCREEN_CFLAGS += -DPNG_POWERPC_VSX_OPT=0
-  endif
+  LIBSPLASHSCREEN_CFLAGS += -DSPLASHSCREEN
 
   ifeq ($(call isTargetOs, macosx), true)
     # libsplashscreen on macosx does not use the unix code

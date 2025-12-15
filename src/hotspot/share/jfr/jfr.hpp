@@ -79,7 +79,7 @@ class Jfr : AllStatic {
   static void initialize_main_thread(JavaThread* jt);
   static bool has_sample_request(JavaThread* jt);
   static void check_and_process_sample_request(JavaThread* jt);
-  static void on_restoration(const Klass* k, JavaThread* jt);
+  CDS_ONLY(static void on_restoration(const Klass* k, JavaThread* jt);)
 };
 
 #endif // SHARE_JFR_JFR_HPP
