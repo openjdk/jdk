@@ -1120,6 +1120,12 @@ public class IntMaxVectorTests extends AbstractVectorTest {
                     .flatMap(pair -> INT_SATURATING_GENERATORS_ASSOC.stream().map(f -> List.of(pair.get(0), pair.get(1), f)))
                     .collect(Collectors.toList());
 
+    @DataProvider
+    public Object[][] boolUnaryOpProvider() {
+        return BOOL_ARRAY_GENERATORS.stream().
+                map(f -> new Object[]{f}).
+                toArray(Object[][]::new);
+    }
 
     static final List<List<IntFunction<int[]>>> INT_GENERATOR_TRIPLES =
         INT_GENERATOR_PAIRS.stream().
@@ -4552,7 +4558,7 @@ public class IntMaxVectorTests extends AbstractVectorTest {
         return res;
     }
 
-    @Test(dataProvider = "boolMaskUnaryOpProvider")
+    @Test(dataProvider = "boolUnaryOpProvider")
     static void anyTrueIntMaxVectorTests(IntFunction<boolean[]> fm) {
         boolean[] mask = fm.apply(SPECIES.length());
         boolean[] r = fmr.apply(SPECIES.length());
@@ -4576,7 +4582,7 @@ public class IntMaxVectorTests extends AbstractVectorTest {
         return res;
     }
 
-    @Test(dataProvider = "boolMaskUnaryOpProvider")
+    @Test(dataProvider = "boolUnaryOpProvider")
     static void allTrueIntMaxVectorTests(IntFunction<boolean[]> fm) {
         boolean[] mask = fm.apply(SPECIES.length());
         boolean[] r = fmr.apply(SPECIES.length());
