@@ -230,10 +230,11 @@ public class HttpsUrlConnClient {
     /*
      * Define the server side of the test.
      *
-     * If the server prematurely exits, serverReady will be countdown
+     * If the server prematurely exits, serverReady will be counted down
      * to avoid infinite hangs.
      */
-    void doServerSide(ServerParameters servParams, CountDownLatch serverReady) throws Exception {
+    void doServerSide(ServerParameters servParams, CountDownLatch serverReady)
+            throws Exception {
 
         // Selectively enable or disable the feature
         System.setProperty("jdk.tls.server.enableStatusRequestExtension",
@@ -317,10 +318,11 @@ public class HttpsUrlConnClient {
     /*
      * Define the client side of the test.
      *
-     * If the server prematurely exits, serverReady will be countdown
+     * If the server prematurely exits, serverReady will be counted down
      * to avoid infinite hangs.
      */
-    void doClientSide(ClientParameters cliParams, CountDownLatch serverReady) throws Exception {
+    void doClientSide(ClientParameters cliParams, CountDownLatch serverReady)
+            throws Exception {
 
         serverReady.await();
 
@@ -378,8 +380,8 @@ public class HttpsUrlConnClient {
      *
      * Fork off the other side, then do your work.
      */
-    HttpsUrlConnClient(ClientParameters cliParams,
-            ServerParameters servParams, CountDownLatch serverReady) throws Exception {
+    HttpsUrlConnClient(ClientParameters cliParams, ServerParameters servParams,
+            CountDownLatch serverReady) throws Exception {
         Exception startException = null;
         try {
             if (separateServerThread) {
@@ -458,8 +460,8 @@ public class HttpsUrlConnClient {
         return tr;
     }
 
-    final void startServer(ServerParameters servParams, boolean newThread, CountDownLatch serverReady)
-            throws Exception {
+    final void startServer(ServerParameters servParams, boolean newThread,
+            CountDownLatch serverReady) throws IOException {
         if (newThread) {
             serverThread = new Thread() {
                 @Override
@@ -492,8 +494,8 @@ public class HttpsUrlConnClient {
         }
     }
 
-    final void startClient(ClientParameters cliParams, boolean newThread, CountDownLatch serverReady)
-            throws Exception {
+    final void startClient(ClientParameters cliParams, boolean newThread,
+            CountDownLatch serverReady) throws Exception {
         if (newThread) {
             clientThread = new Thread() {
                 @Override
