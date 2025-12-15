@@ -261,11 +261,16 @@ public class TestVectorAlgorithms {
     }
 
     @Test
+    @IR(counts = {IRNode.REPLICATE_I,  "= 1",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     public Object fillI_VectorAPI(int[] r) {
         return VectorAlgorithmsImpl.fillI_VectorAPI(r);
     }
 
     @Test
+    // Arrays.fill is not necessarily inlined, so we can't check
+    // for vectors in the IR.
     public Object fillI_Arrays(int[] r) {
         return VectorAlgorithmsImpl.fillI_Arrays(r);
     }
@@ -280,6 +285,9 @@ public class TestVectorAlgorithms {
     }
 
     @Test
+    @IR(counts = {IRNode.ADD_VI,       "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     public Object iotaI_VectorAPI(int[] r) {
         return VectorAlgorithmsImpl.iotaI_VectorAPI(r);
     }
@@ -294,11 +302,17 @@ public class TestVectorAlgorithms {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     public Object copyI_VectorAPI(int[] a, int[] r) {
         return VectorAlgorithmsImpl.copyI_VectorAPI(a, r);
     }
 
     @Test
+    @IR(counts = {".*CallLeafNoFP.*arrayof_jint_disjoint_arraycopy.*", "= 1"},
+        phase = CompilePhase.BEFORE_MATCHING,
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     public Object copyI_System_arraycopy(int[] a, int[] r) {
         return VectorAlgorithmsImpl.copyI_System_arraycopy(a, r);
     }
@@ -314,6 +328,10 @@ public class TestVectorAlgorithms {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.MUL_VI,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     public Object mapI_VectorAPI(int[] a, int[] r) {
         return VectorAlgorithmsImpl.mapI_VectorAPI(a, r);
     }
@@ -334,16 +352,26 @@ public class TestVectorAlgorithms {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,    "> 0",
+                  IRNode.ADD_REDUCTION_VI, "> 0"}, // reduceLanes inside loop
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     public int reduceAddI_VectorAPI_naive(int[] a) {
         return VectorAlgorithmsImpl.reduceAddI_VectorAPI_naive(aI);
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,    "> 0",
+                  IRNode.ADD_REDUCTION_VI, "> 0",
+                  IRNode.ADD_VI,           "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     public int reduceAddI_VectorAPI_reduction_after_loop(int[] a) {
         return VectorAlgorithmsImpl.reduceAddI_VectorAPI_reduction_after_loop(aI);
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
+                  IRNode.STORE_VECTOR,  "= 0"})
+    // Currently does not vectorize, but might in the future.
     public Object scanAddI_loop(int[] a, int[] r) {
         return VectorAlgorithmsImpl.scanAddI_loop(a, r);
     }
@@ -354,11 +382,19 @@ public class TestVectorAlgorithms {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,    "> 0",
+                  IRNode.REARRANGE_VI,     "> 0",
+                  IRNode.AND_VI,           "> 0",
+                  IRNode.ADD_VI,           "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"MaxVectorSize", ">=64"})
     public Object scanAddI_VectorAPI_permute_add(int[] a, int[] r) {
         return VectorAlgorithmsImpl.scanAddI_VectorAPI_permute_add(a, r);
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0"})
+    // Currently does not vectorize, but might in the future.
     public int findMinIndexI_loop(int[] a) {
         return VectorAlgorithmsImpl.findMinIndexI_loop(a);
     }
@@ -369,6 +405,8 @@ public class TestVectorAlgorithms {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0"})
+    // Currently does not vectorize, but might in the future.
     public int findI_loop(int[] a, int e) {
         return VectorAlgorithmsImpl.findI_loop(a, e);
     }
@@ -379,6 +417,9 @@ public class TestVectorAlgorithms {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
+                  IRNode.STORE_VECTOR,  "= 0"})
+    // Currently does not vectorize, but might in the future.
     public Object reverseI_loop(int[] a, int[] r) {
         return VectorAlgorithmsImpl.reverseI_loop(a, r);
     }
@@ -389,6 +430,8 @@ public class TestVectorAlgorithms {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
+                  IRNode.STORE_VECTOR,  "= 0"})
     public Object filterI_loop(int[] a, int[] r, int threshold) {
         return VectorAlgorithmsImpl.filterI_loop(a, r, threshold);
     }
@@ -399,6 +442,8 @@ public class TestVectorAlgorithms {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0"})
+    // Currently does not vectorize, but might in the future.
     public int reduceAddIFieldsX4_loop(int[] oops, int[] mem) {
         return VectorAlgorithmsImpl.reduceAddIFieldsX4_loop(oops, mem);
     }

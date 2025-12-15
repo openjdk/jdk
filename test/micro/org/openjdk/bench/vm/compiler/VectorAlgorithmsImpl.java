@@ -48,7 +48,7 @@ public class VectorAlgorithmsImpl {
     }
 
     public static Object fillI_VectorAPI(int[] r) {
-        var v = IntVector.broadcast(SPECIES_I512, 42);
+        var v = IntVector.broadcast(SPECIES_I, 42);
         int i = 0;
         for (; i < SPECIES_I.loopBound(r.length); i += SPECIES_I.length()) {
             v.intoArray(r, i);
@@ -94,7 +94,7 @@ public class VectorAlgorithmsImpl {
     public static Object copyI_VectorAPI(int[] a, int[] r) {
         int i = 0;
         for (; i < SPECIES_I.loopBound(r.length); i += SPECIES_I.length()) {
-            IntVector v = IntVector.fromArray(SPECIES_I512, a, i);
+            IntVector v = IntVector.fromArray(SPECIES_I, a, i);
             v.intoArray(r, i);
         }
         for (; i < r.length; i++) {
@@ -113,7 +113,7 @@ public class VectorAlgorithmsImpl {
     public static Object mapI_VectorAPI(int[] a, int[] r) {
         int i = 0;
         for (; i < SPECIES_I.loopBound(r.length); i += SPECIES_I.length()) {
-            IntVector v = IntVector.fromArray(SPECIES_I512, a, i);
+            IntVector v = IntVector.fromArray(SPECIES_I, a, i);
             v = v.mul(42);
             v.intoArray(r, i);
         }
@@ -298,7 +298,7 @@ public class VectorAlgorithmsImpl {
         var es = IntVector.broadcast(SPECIES_I, e);
         int i = 0;
         for (; i < SPECIES_I.loopBound(a.length); i += SPECIES_I.length()) {
-            IntVector v = IntVector.fromArray(SPECIES_I512, a, i);
+            IntVector v = IntVector.fromArray(SPECIES_I, a, i);
             var mask = v.compare(VectorOperators.EQ, es);
             if (mask.anyTrue()) {
                 var ml = mask.toLong();
