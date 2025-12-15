@@ -21,7 +21,7 @@
  * questions.
  */
 
-package compiler.c2.irTests.constantFold;
+package compiler.jsr292;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -29,7 +29,6 @@ import java.lang.invoke.VarHandle;
 import compiler.lib.ir_framework.Check;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
-import compiler.lib.ir_framework.Run;
 import compiler.lib.ir_framework.Test;
 import compiler.lib.ir_framework.TestFramework;
 
@@ -38,8 +37,7 @@ import compiler.lib.ir_framework.TestFramework;
  * @bug 8160821
  * @summary Verify constant folding is possible for mismatched VarHandle access
  * @library /test/lib /
- * @requires vm.compiler2.enabled
- * @run driver compiler.c2.irTests.constantFold.VarHandleMismatchedTypeFold
+ * @run driver ${test.main.class}
  */
 public class VarHandleMismatchedTypeFold {
 
@@ -63,6 +61,7 @@ public class VarHandleMismatchedTypeFold {
     @Test
     @IR(failOn = {IRNode.ADD_L, IRNode.LOAD_L})
     public long testSum() {
+        // This long get() must be the only get mode with ()J signature in this class file
         return 2L + (long) vh.get();
     }
 

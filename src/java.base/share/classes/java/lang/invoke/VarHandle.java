@@ -2025,19 +2025,20 @@ public abstract sealed class VarHandle implements Constable
         final Class<?> caller;
 
         // Adaption mechanism to reduce overhead for non-exact access.
-        // This heuristic assumes that each sigpoly VH call site usually sees
-        // exactly one VarHandle instance.  Each sigpoly VH call site already
-        // has a dedicated AccessDescriptor.
+        // This heuristic assumes that each sigpoly VH signatures usually sees
+        // exactly one VarHandle instance.  In one class file, each sigpoly
+        // signature has one AccessDescriptor.
         // (See MethodHandleNatives::varHandleOperationLinkerMethod)
-        // However, for correctness, we must verify the incoming VarHandle;
-        // adaptedMethodHandle may be inlined by different callers.
+        // For correctness, we must verify the incoming VarHandle; different
+        // sites with the same signature may exist, and adaptedMethodHandle
+        // may be inlined by different callers.
         // In the long run, we wish to put a specific-type invoker that converts
         // from one fixed type (symbolicMethodTypeInvoker) to another (the
         // invocation type of the underlying MemberName, or MH for indirect VH),
         // perform a foldable lookup with a hash table, and hope C2 inline it
-        // all.
+        // all. Such an optimization applies for general MethodHandle.asType.
 
-        // Object indirection is the only way to ensure the vh and mh are not
+        // Object indirection is the best way to ensure the vh and mh are not
         // from two writes (they must not be tearable)
         private record Adaption(VarHandle vh, MethodHandle mh) {}
         // The adaption must not cause classloader leaks

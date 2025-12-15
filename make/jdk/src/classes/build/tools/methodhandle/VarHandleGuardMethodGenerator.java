@@ -126,10 +126,7 @@ public final class VarHandleGuardMethodGenerator {
                         }
                     }""";
 
-    // Currently this void version is needed because otherwise
-    // TestZGCBarrierElision.testAtomicThenAtomicAnotherField fails
-    // However, testArrayAtomicThenAtomic, testAtomicThenAtomic, and
-    // testArrayAtomicThenAtomicAtUnknownIndices works
+    // The void bypass is necessary if a sigpoly signature (name + type) is shared by multiple handle instances
     static final String GUARD_METHOD_TEMPLATE_V =
             """
                     @ForceInline
