@@ -315,7 +315,7 @@ void ShenandoahDegenGC::op_degenerated() {
     // If we are not upgrading to full gc when no progress, count this as a successful degen.
     heap->notify_gc_progress();
     _generation->heuristics()->record_success_degenerated();
-  } else if (!heap->mode()->is_generational() || policy->generational_should_upgrade_degenerated_gc()) {
+  } else {
     // Upgrade to full GC, register full-GC impact on heuristics.
     op_degenerated_futile();
   }
