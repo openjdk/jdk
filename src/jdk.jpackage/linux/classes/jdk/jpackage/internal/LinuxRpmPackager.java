@@ -92,7 +92,7 @@ final class LinuxRpmPackager extends LinuxPackager<LinuxRpmPackage> {
     @Override
     protected void initLibProvidersLookup(LibProvidersLookup libProvidersLookup) {
         libProvidersLookup.setPackageLookup(file -> {
-            return Executor.of(sysEnv.rpm().toString(),
+            return env.objectFactory().executor(sysEnv.rpm().toString(),
                 "-q", "--queryformat", "%{name}\\n",
                 "-q", "--whatprovides", file.toString()
             ).saveOutput(true).executeExpectSuccess().getOutput().stream();
@@ -114,7 +114,7 @@ final class LinuxRpmPackager extends LinuxPackager<LinuxRpmPackage> {
                         "APPLICATION_RELEASE", specFileName),
                 new PackageProperty("Arch", pkg.arch(), null, specFileName));
 
-        var actualValues = Executor.of(
+        var actualValues = env.objectFactory().executor(
                 sysEnv.rpm().toString(),
                 "-qp",
                 "--queryformat", properties.stream().map(e -> String.format("%%{%s}", e.name)).collect(joining("\\n")),
@@ -136,7 +136,7 @@ final class LinuxRpmPackager extends LinuxPackager<LinuxRpmPackage> {
         Log.verbose(I18N.format("message.outputting-bundle-location", rpmFile.getParent()));
 
         //run rpmbuild
-        Executor.of(sysEnv.rpmbuild().toString(),
+        env.objectFactory().executor(sysEnv.rpmbuild().toString(),
                 "-bb", specFile().toAbsolutePath().toString(),
                 "--define", String.format("%%_sourcedir %s",
                         env.appImageDir().toAbsolutePath()),

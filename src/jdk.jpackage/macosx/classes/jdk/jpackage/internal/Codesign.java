@@ -31,7 +31,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -67,9 +66,17 @@ public final class Codesign {
                 cmdline.add("--force");
             }
 
-            return new Codesign(cmdline, quiet ? exec -> {
-                exec.setQuiet(true);
-            } : null);
+            var defaultExecutorFactory = executorFactory;
+            ExecutorFactory theExecutorFactory;
+            if (quiet) {
+                theExecutorFactory = () -> {
+                    return defaultExecutorFactory.executor().setQuiet(true);
+                };
+            } else {
+                theExecutorFactory = defaultExecutorFactory;
+            }
+
+            return new Codesign(cmdline, theExecutorFactory);
         }
 
         public Builder force(boolean v) {
@@ -82,9 +89,15 @@ public final class Codesign {
             return this;
         }
 
+        public Builder executorFactory(ExecutorFactory v) {
+            executorFactory = v;
+            return this;
+        }
+
         private final Supplier<List<String>> args;
         private boolean force;
         private boolean quiet;
+        private ExecutorFactory executorFactory;
     }
 
     public static Builder build(Supplier<List<String>> args) {
@@ -93,8 +106,7 @@ public final class Codesign {
 
     public void applyTo(Path path) throws IOException, CodesignException {
 
-        var exec = Executor.of(cmdline).args(path.toString()).saveOutput(true);
-        configureExecutor.ifPresent(configure -> configure.accept(exec));
+        var exec = executorFactory.executor(cmdline).args(path.toString()).saveOutput(true);
 
         var result = exec.execute();
         if (result.getExitCode() != 0) {
@@ -106,11 +118,11 @@ public final class Codesign {
         return toConsumer(this::applyTo);
     }
 
-    private Codesign(List<String> cmdline, Consumer<Executor> configureExecutor) {
+    private Codesign(List<String> cmdline, ExecutorFactory executorFactory) {
         this.cmdline = Objects.requireNonNull(cmdline);
-        this.configureExecutor = Optional.ofNullable(configureExecutor);
+        this.executorFactory = Objects.requireNonNull(executorFactory);
     }
 
     private final List<String> cmdline;
-    private final Optional<Consumer<Executor>> configureExecutor;
+    private final ExecutorFactory executorFactory;
 }

@@ -34,7 +34,6 @@ import static jdk.jpackage.internal.util.PListWriter.writeString;
 import static jdk.jpackage.internal.util.PListWriter.writeStringArray;
 import static jdk.jpackage.internal.util.PListWriter.writeStringOptional;
 import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
-import static jdk.jpackage.internal.util.function.ThrowingBiConsumer.toBiConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 import java.io.IOException;
@@ -467,12 +466,15 @@ final class MacPackagingPipeline {
             codesignConfigBuilder.entitlements(entitlementsFile);
         }
 
+        final var objectFactory = env.env().objectFactory();
+
         final Runnable signAction = () -> {
-            AppImageSigner.createSigner(app, codesignConfigBuilder.create()).accept(MacBundle.fromAppImageLayout(env.resolvedLayout()).orElseThrow());
+            var macBundle = MacBundle.fromAppImageLayout(env.resolvedLayout()).orElseThrow();
+            AppImageSigner.createSigner(app, codesignConfigBuilder.create(), objectFactory).accept(macBundle);
         };
 
         app.signingConfig().flatMap(AppImageSigningConfig::keychain).map(Keychain::new).ifPresentOrElse(keychain -> {
-            toBiConsumer(TempKeychain::withKeychain).accept(unused -> signAction.run(), keychain);
+            TempKeychain.withKeychain(_ -> signAction.run(), keychain, objectFactory);
         }, signAction);
     }
 

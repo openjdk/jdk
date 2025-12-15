@@ -24,15 +24,12 @@
  */
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.LinuxSystemEnvironment.mixin;
+import jdk.jpackage.internal.util.RetryExecutor;
 
-import jdk.jpackage.internal.util.Result;
+@FunctionalInterface
+interface RetryExecutorFactory {
 
-public interface LinuxDebSystemEnvironment extends LinuxSystemEnvironment, LinuxDebSystemEnvironmentMixin {
+    <T, E extends Exception> RetryExecutor<T, E> retryExecutor(Class<? extends E> exceptionType);
 
-    static Result<LinuxDebSystemEnvironment> create(Result<LinuxSystemEnvironment> base, ExecutorFactory ef) {
-        return mixin(LinuxDebSystemEnvironment.class, base, () -> {
-            return LinuxDebSystemEnvironmentMixin.create(ef);
-        });
-    }
+    static final RetryExecutorFactory DEFAULT = RetryExecutor::new;
 }

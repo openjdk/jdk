@@ -81,6 +81,7 @@ final class BuildEnvFromOptions {
 
         final var builder = new BuildEnvBuilder(TEMP_ROOT.getFrom(options));
 
+        builder.objectFactory(OptionUtils.objectFactory(options));
         RESOURCE_DIR.ifPresentIn(options, builder::resourceDir);
         VERBOSE.ifPresentIn(options, builder::verbose);
 

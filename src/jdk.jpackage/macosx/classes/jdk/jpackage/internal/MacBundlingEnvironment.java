@@ -36,17 +36,24 @@ import java.util.Optional;
 import jdk.jpackage.internal.cli.Options;
 import jdk.jpackage.internal.model.MacPackage;
 import jdk.jpackage.internal.model.Package;
-import jdk.jpackage.internal.util.Result;
 
 public class MacBundlingEnvironment extends DefaultBundlingEnvironment {
 
-    public MacBundlingEnvironment() {
-        super(build()
-                .defaultOperation(CREATE_MAC_DMG)
+    public MacBundlingEnvironment(ObjectFactory objectFactory) {
+        super(build(objectFactory).mutate(builder -> {
+            var dmgSysEnv = runOnce(() -> {
+                return MacDmgSystemEnvironment.create(objectFactory);
+            });
+
+            builder.bundler(CREATE_MAC_DMG, dmgSysEnv, MacBundlingEnvironment::createDmdPackage);
+        }).defaultOperation(CREATE_MAC_DMG)
                 .bundler(SIGN_MAC_APP_IMAGE, MacBundlingEnvironment::signAppImage)
                 .bundler(CREATE_MAC_APP_IMAGE, MacBundlingEnvironment::createAppImage)
-                .bundler(CREATE_MAC_DMG, LazyLoad::dmgSysEnv, MacBundlingEnvironment::createDmdPackage)
                 .bundler(CREATE_MAC_PKG, MacBundlingEnvironment::createPkgPackage));
+    }
+
+    public MacBundlingEnvironment() {
+        this(ObjectFactory.DEFAULT);
     }
 
     private static void createDmdPackage(Options options, MacDmgSystemEnvironment sysEnv) {
@@ -97,14 +104,5 @@ public class MacBundlingEnvironment extends DefaultBundlingEnvironment {
         return new BuildEnvFromOptions()
                 .predefinedAppImageLayout(APPLICATION_LAYOUT)
                 .predefinedRuntimeImageLayout(MacPackage::guessRuntimeLayout);
-    }
-
-    private static final class LazyLoad {
-
-        static Result<MacDmgSystemEnvironment> dmgSysEnv() {
-            return DMG_SYS_ENV;
-        }
-
-        private static final Result<MacDmgSystemEnvironment> DMG_SYS_ENV = MacDmgSystemEnvironment.create();
     }
 }

@@ -93,7 +93,7 @@ class ScriptRunner {
             pb.directory(directory.toFile());
         }
 
-        Executor.of(pb).executeExpectSuccess();
+        env.objectFactory().executor(pb).executeExpectSuccess();
     }
 
     private static String shell() {

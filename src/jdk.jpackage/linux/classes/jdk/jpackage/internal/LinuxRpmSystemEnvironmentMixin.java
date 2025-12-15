@@ -39,12 +39,14 @@ public interface LinuxRpmSystemEnvironmentMixin {
     record Stub(Path rpm, Path rpmbuild) implements LinuxRpmSystemEnvironmentMixin {
     }
 
-    static Result<LinuxRpmSystemEnvironmentMixin> create() {
+    static Result<LinuxRpmSystemEnvironmentMixin> create(ExecutorFactory ef) {
 
         final var errors = Stream.of(
                 Internal.createRpmbuildToolValidator(),
                 new ToolValidator(Internal.TOOL_RPM)
-        ).map(ToolValidator::validate).filter(Objects::nonNull).toList();
+        ).map(validator -> {
+            return validator.executorFactory(ef);
+        }).map(ToolValidator::validate).filter(Objects::nonNull).toList();
 
         if (errors.isEmpty()) {
             return Result.ofValue(new Stub(Internal.TOOL_RPM, Internal.TOOL_RPMBUILD));

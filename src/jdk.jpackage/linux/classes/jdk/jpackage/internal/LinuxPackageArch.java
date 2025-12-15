@@ -24,23 +24,21 @@
  */
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
-
 import java.io.IOException;
-import java.util.stream.Stream;
-import jdk.jpackage.internal.model.JPackageException;
+import java.util.ArrayList;
 import jdk.jpackage.internal.model.StandardPackageType;
+import jdk.jpackage.internal.util.CommandOutputControl;
 import jdk.jpackage.internal.util.Result;
 
-final class LinuxPackageArch {
+public record LinuxPackageArch(String value) {
 
-    static String getValue(StandardPackageType pkgType) {
+    static Result<LinuxPackageArch> create(StandardPackageType pkgType, ExecutorFactory ef) {
         switch (pkgType) {
             case LINUX_RPM -> {
-                return RpmPackageArch.VALUE;
+                return rpm(ef).map(LinuxPackageArch::new);
             }
             case LINUX_DEB -> {
-                return DebPackageArch.VALUE;
+                return deb(ef).map(LinuxPackageArch::new);
             }
             default -> {
                 throw new IllegalArgumentException();
@@ -48,49 +46,51 @@ final class LinuxPackageArch {
         }
     }
 
-    private static class DebPackageArch {
-
-        static final String VALUE = toSupplier(DebPackageArch::getValue).get();
-
-        private static String getValue() throws IOException {
-            return Executor.of("dpkg", "--print-architecture").saveOutput(true)
-                    .executeExpectSuccess().getOutput().get(0);
-        }
+    private static Result<String> deb(ExecutorFactory ef) {
+        var exec = ef.executor("dpkg", "--print-architecture").saveOutput(true);
+        return Result.of(exec::executeExpectSuccess, IOException.class)
+                .flatMap(LinuxPackageArch::getStdoutFirstLine);
     }
 
-    private static class RpmPackageArch {
-
-        /*
-         * Various ways to get rpm arch. Needed to address JDK-8233143. rpmbuild is mandatory for
-         * rpm packaging, try it first. rpm is optional and may not be available, use as the last
-         * resort.
-         */
-        private static enum RpmArchReader {
-            Rpmbuild("rpmbuild", "--eval=%{_target_cpu}"),
-            Rpm("rpm", "--eval=%{_target_cpu}");
-
-            RpmArchReader(String... cmdline) {
-                this.cmdline = cmdline;
+    private static Result<String> rpm(ExecutorFactory ef) {
+        var errors = new ArrayList<Exception>();
+        for (var tool : RpmArchReader.values()) {
+            var result = tool.getRpmArch(ef);
+            if (result.hasValue()) {
+                return result;
+            } else {
+                errors.addAll(result.errors());
             }
-
-            Result<String> getRpmArch() {
-                return Result.of(Executor.of(cmdline).saveOutput(true)::executeExpectSuccess, IOException.class).flatMap(result -> {
-                    return Result.of(result.stdout()::getFirst);
-                });
-            }
-
-            private final String[] cmdline;
         }
 
-        static final String VALUE = toSupplier(RpmPackageArch::getValue).get();
+        return Result.ofErrors(errors);
+    }
 
-        private static String getValue() {
-            return Stream.of(RpmArchReader.values())
-                    .map(RpmArchReader::getRpmArch)
-                    .filter(Result::hasValue)
-                    .map(Result::orElseThrow).findFirst().orElseThrow(() -> {
-                        return new JPackageException(I18N.getString("error.rpm-arch-not-detected"));
-                    });
+    /*
+     * Various ways to get rpm arch. Needed to address JDK-8233143. rpmbuild is mandatory for
+     * rpm packaging, try it first. rpm is optional and may not be available, use as the last
+     * resort.
+     */
+    private enum RpmArchReader {
+        RPMBUILD("rpmbuild", "--eval=%{_target_cpu}"),
+        RPM("rpm", "--eval=%{_target_cpu}");
+
+        RpmArchReader(String... cmdline) {
+            this.cmdline = cmdline;
         }
+
+        Result<String> getRpmArch(ExecutorFactory ef) {
+            var exec = ef.executor(cmdline).saveOutput(true);
+            return Result.of(exec::executeExpectSuccess, IOException.class)
+                    .flatMap(LinuxPackageArch::getStdoutFirstLine);
+        }
+
+        private final String[] cmdline;
+    }
+
+    private static Result<String> getStdoutFirstLine(CommandOutputControl.Result result) {
+        return Result.of(() -> {
+            return result.stdout().stream().findFirst().orElseThrow(result::unexpected);
+        }, IOException.class);
     }
 }

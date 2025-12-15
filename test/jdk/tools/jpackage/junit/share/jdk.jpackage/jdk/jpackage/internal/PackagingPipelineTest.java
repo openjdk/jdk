@@ -663,7 +663,13 @@ public class PackagingPipelineTest {
     }
 
     private static BuildEnv dummyBuildEnv() {
-        return BuildEnv.create(Path.of("foo"), Optional.empty(), false, PackagingPipeline.class, RuntimeLayout.DEFAULT);
+        return BuildEnv.create(
+                Path.of("foo"),
+                Optional.empty(),
+                false,
+                ObjectFactory.DEFAULT,
+                PackagingPipeline.class,
+                RuntimeLayout.DEFAULT);
     }
 
     private static PackagingPipeline.Builder buildPipeline() {

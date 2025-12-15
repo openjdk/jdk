@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.function.UnaryOperator;
 import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.CommandLineFormat;
@@ -49,19 +50,19 @@ import jdk.jpackage.internal.util.function.ExceptionBox;
 
 final class Executor {
 
-    static Executor of(String... cmdline) {
-        return of(List.of(cmdline));
+    public Executor() {
+        commandOutputControl = new CommandOutputControl();
+        args = new ArrayList<>();
     }
 
-    static Executor of(List<String> cmdline) {
-        return of(new ProcessBuilder(cmdline));
-    }
-
-    static Executor of(ProcessBuilder pb) {
-        return new Executor().processBuilder(pb);
-    }
-
-    private Executor() {
+    private Executor(Executor other) {
+        commandOutputControl = other.commandOutputControl.copy();
+        quietCommand = other.quietCommand;
+        args = new ArrayList<>(other.args);
+        processBuilder = other.processBuilder;
+        toolProvider = other.toolProvider;
+        timeout = other.timeout;
+        mapper = other.mapper;
     }
 
     Executor saveOutput(boolean v) {
@@ -125,10 +126,18 @@ final class Executor {
         return this;
     }
 
+    Optional<ToolProvider> toolProvider() {
+        return Optional.ofNullable(toolProvider);
+    }
+
     Executor processBuilder(ProcessBuilder v) {
         processBuilder = Objects.requireNonNull(v);
         toolProvider = null;
         return this;
+    }
+
+    Optional<ProcessBuilder> processBuilder() {
+        return Optional.ofNullable(processBuilder);
     }
 
     Executor args(List<String> v) {
@@ -140,12 +149,41 @@ final class Executor {
         return args(List.of(args));
     }
 
+    List<String> args() {
+        return args;
+    }
+
     Executor setQuiet(boolean v) {
         quietCommand = v;
         return this;
     }
 
+    Executor mapper(UnaryOperator<Executor> v) {
+        mapper = v;
+        return this;
+    }
+
+    Optional<UnaryOperator<Executor>> mapper() {
+        return Optional.ofNullable(mapper);
+    }
+
+    Executor retryExecutorFactory(RetryExecutorFactory v) {
+        retryExecutorFactory = v;
+        return this;
+    }
+
+    Executor copy() {
+        return new Executor(this);
+    }
+
     Result execute() throws IOException {
+        if (mapper != null) {
+            var mappedExecutor = Objects.requireNonNull(mapper.apply(this));
+            if (mappedExecutor != this) {
+                return mappedExecutor.execute();
+            }
+        }
+
         var coc = commandOutputControl.copy();
 
         final CommandOutputControl.Executable exec;
@@ -197,7 +235,8 @@ final class Executor {
     }
 
     RetryExecutor<Result, IOException> retry() {
-        return new RetryExecutor<Result, IOException>(IOException.class).setExecutable(this::executeExpectSuccess);
+        return retryExecutorFactory().<Result, IOException>retryExecutor(IOException.class)
+                .setExecutable(this::executeExpectSuccess);
     }
 
     RetryExecutor<Result, IOException> retryOnKnownErrorMessage(String msg) {
@@ -212,7 +251,7 @@ final class Executor {
         });
     }
 
-    private List<String> commandLine() {
+    List<String> commandLine() {
         if (processBuilder != null) {
             return Stream.of(processBuilder.command(), args).flatMap(Collection::stream).toList();
         } else if (toolProvider != null) {
@@ -238,6 +277,10 @@ final class Executor {
 
     private boolean dumpOutput() {
         return Log.isVerbose() && !quietCommand;
+    }
+
+    private RetryExecutorFactory retryExecutorFactory() {
+        return Optional.ofNullable(retryExecutorFactory).orElse(RetryExecutorFactory.DEFAULT);
     }
 
     private static void log(Result result, ByteArrayOutputStream outputSink, Charset outputSinkCharset) throws IOException {
@@ -283,10 +326,12 @@ final class Executor {
         }
     }
 
-    private final CommandOutputControl commandOutputControl = new CommandOutputControl();
+    private final CommandOutputControl commandOutputControl;
     private boolean quietCommand;
-    private List<String> args = new ArrayList<>();
+    private final List<String> args;
     private ProcessBuilder processBuilder;
     private ToolProvider toolProvider;
     private Duration timeout;
+    private UnaryOperator<Executor> mapper;
+    private RetryExecutorFactory retryExecutorFactory;
 }

@@ -27,7 +27,6 @@ package jdk.jpackage.internal;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import jdk.jpackage.internal.model.PackageType;
@@ -38,26 +37,30 @@ import jdk.jpackage.internal.util.Result;
 public interface LinuxSystemEnvironment extends SystemEnvironment {
     boolean soLookupAvailable();
     PackageType nativePackageType();
+    LinuxPackageArch packageArch();
 
-    static Result<LinuxSystemEnvironment> create() {
-        return detectNativePackageType().map(LinuxSystemEnvironment::create).orElseGet(() -> {
+    static Result<LinuxSystemEnvironment> create(ExecutorFactory ef) {
+        return detectNativePackageType(ef).map(nativePackageType -> {
+            return create(nativePackageType, ef);
+        }).orElseGet(() -> {
             return Result.ofError(new RuntimeException("Unknown native package type"));
         });
     }
 
-    static Optional<PackageType> detectNativePackageType() {
-        if (Internal.isDebian()) {
+    static Optional<StandardPackageType> detectNativePackageType(ExecutorFactory ef) {
+        if (Internal.isDebian(ef)) {
             return Optional.of(StandardPackageType.LINUX_DEB);
-        } else if (Internal.isRpm()) {
+        } else if (Internal.isRpm(ef)) {
             return Optional.of(StandardPackageType.LINUX_RPM);
         } else {
             return Optional.empty();
         }
     }
 
-    static Result<LinuxSystemEnvironment> create(PackageType nativePackageType) {
-        return Result.ofValue(new Stub(LibProvidersLookup.supported(),
-                Objects.requireNonNull(nativePackageType)));
+    static Result<LinuxSystemEnvironment> create(StandardPackageType nativePackageType, ExecutorFactory ef) {
+        return LinuxPackageArch.create(nativePackageType, ef).map(arch -> {
+            return new Stub(LibProvidersLookup.supported(ef), nativePackageType, arch);
+        });
     }
 
     static <T, U extends LinuxSystemEnvironment> U createWithMixin(Class<U> type, LinuxSystemEnvironment base, T mixin) {
@@ -79,16 +82,16 @@ public interface LinuxSystemEnvironment extends SystemEnvironment {
         }
     }
 
-    record Stub(boolean soLookupAvailable, PackageType nativePackageType) implements LinuxSystemEnvironment {
+    record Stub(boolean soLookupAvailable, PackageType nativePackageType, LinuxPackageArch packageArch) implements LinuxSystemEnvironment {
     }
 
     static final class Internal {
 
-        private static boolean isDebian() {
+        private static boolean isDebian(ExecutorFactory ef) {
             // we are just going to run "dpkg -s coreutils" and assume Debian
             // or derivative if no error is returned.
             try {
-                Executor.of("dpkg", "-s", "coreutils").executeExpectSuccess();
+                ef.executor("dpkg", "-s", "coreutils").executeExpectSuccess();
                 return true;
             } catch (IOException e) {
                 // just fall thru
@@ -96,11 +99,11 @@ public interface LinuxSystemEnvironment extends SystemEnvironment {
             }
         }
 
-        private static boolean isRpm() {
+        private static boolean isRpm(ExecutorFactory ef) {
             // we are just going to run "rpm -q rpm" and assume RPM
             // or derivative if no error is returned.
             try {
-                Executor.of("rpm", "-q", "rpm").executeExpectSuccess();
+                ef.executor("rpm", "-q", "rpm").executeExpectSuccess();
                 return true;
             } catch (IOException e) {
                 // just fall thru
