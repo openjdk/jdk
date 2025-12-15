@@ -80,6 +80,17 @@
 #define SPELL_REG_SP "rsp"
 #define SPELL_REG_FP "rbp"
 
+asm (R"(
+    .globl  _ZN2os21current_stack_pointerEv
+    .hidden _ZN2os21current_stack_pointerEv
+    .type   _ZN2os21current_stack_pointerEv, @function
+_ZN2os21current_stack_pointerEv:
+    .intel_syntax noprefix
+    lea     rax, [rsp+8]
+    ret
+    .att_syntax prefix
+)");
+
 char* os::non_memory_address_word() {
   // Must never look like an address returned by reserve_memory,
   // even in its subfields (as defined by the CPU immediate fields,
