@@ -23,8 +23,7 @@
 
 /*
  * @test
- * @summary Test functionality of Verify implementations.
- *          Vector incubator classes are tested in TestVerifyIncubatorVector.java.
+ * @summary Test basic functionality of Verify implementations.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @run driver ${test.main.class}

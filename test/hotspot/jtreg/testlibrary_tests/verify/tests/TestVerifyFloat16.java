@@ -24,8 +24,7 @@
 /*
  * @test
  * @key randomness
- * @summary Test functionality of Verify implementations for vector incubator classes.
- *          All non-incubator cases are tested in TestVerify.java.
+ * @summary Test functionality of Verify implementations for Float16.
  * @modules jdk.incubator.vector
  * @library /test/lib /
  * @run driver ${test.main.class}
@@ -41,7 +40,7 @@ import jdk.incubator.vector.Float16;
 
 import compiler.lib.verify.*;
 
-public class TestVerifyIncubatorVector {
+public class TestVerifyFloat16 {
     private static final Random RANDOM = Utils.getRandomInstance();
 
     public static void main(String[] args) {
