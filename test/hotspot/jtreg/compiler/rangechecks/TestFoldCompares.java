@@ -149,6 +149,8 @@ public class TestFoldCompares {
 
     // ------------------- IR tests to check that optimization was performed ------------------------
 
+    // The following tests with constant bounds are expected to fold to a single CmpU.
+
     @Test
     @IR(counts = {IRNode.CMP_I, "= 2", IRNode.CMP_U, "= 0"}, phase = CompilePhase.AFTER_PARSING)
     @IR(counts = {IRNode.CMP_I, "= 0", IRNode.CMP_U, "= 1"})
@@ -228,4 +230,88 @@ public class TestFoldCompares {
             throw new RuntimeException();
         }
     }
+
+    // The following tests can completely remove the test and branches, we can prove that
+    // the path cannot be taken.
+
+    @Setup
+    public static Object[] range256(SetupInfo info) {
+        return new Object[]{info.invocationCounter() & 255};
+    }
+
+    @Setup
+    public static Object[] rangeM128P127(SetupInfo info) {
+        return new Object[]{(info.invocationCounter() & 255) - 128};
+    }
+
+    @Test
+    @IR(counts = {IRNode.CMP_I, "= 2", IRNode.CMP_U, "= 0"}, phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {IRNode.CMP_I, "= 0", IRNode.CMP_U, "= 0"})
+    @Arguments(setup = "rangeM128P127")
+    // Case from JDK-8135069. We used to do the CmpI->CmpU trick, but we can also constant fold
+    // this directly!
+    public static void test_empty_0(int i) {
+        if (i < 0 || i > -1) {
+            return; // always success
+        }
+        throw new RuntimeException("should not be reached");
+    }
+
+    @Test
+    @IR(counts = {IRNode.CMP_I, "= 2", IRNode.CMP_U, "= 0"}, phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {IRNode.CMP_I, "= 0", IRNode.CMP_U, "= 0"})
+    @Arguments(setup = "range256")
+    public static void test_empty_1(int i) {
+        if (i < 100 || i > 50) {
+            return; // always success
+        }
+        throw new RuntimeException("should not be reached");
+    }
+
+    @Test
+    @IR(counts = {IRNode.CMP_I, "= 2", IRNode.CMP_U, "= 0"}, phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {IRNode.CMP_I, "= 0", IRNode.CMP_U, "= 0"})
+    @Arguments(setup = "range256")
+    public static void test_empty_2(int i) {
+        if (i <= 100 || i >= 101) {
+            return; // always success
+        }
+        throw new RuntimeException("should not be reached");
+    }
+
+    @Test
+    @IR(counts = {IRNode.CMP_I, "= 1", IRNode.CMP_U, "= 0"}, phase = CompilePhase.AFTER_PARSING)
+    // Note: the two CmpI->Bool pairs are already canonicallized and commoned to a single pair.
+    @IR(counts = {IRNode.CMP_I, "= 0", IRNode.CMP_U, "= 0"})
+    @Arguments(setup = "range256")
+    public static void test_empty_3(int i) {
+        if (i <= 100 || i > 100) {
+            return; // always success
+        }
+        throw new RuntimeException("should not be reached");
+    }
+
+    @Test
+    @IR(counts = {IRNode.CMP_I, "= 1", IRNode.CMP_U, "= 0"}, phase = CompilePhase.AFTER_PARSING)
+    // Note: the two CmpI->Bool pairs are already canonicallized and commoned to a single pair.
+    @IR(counts = {IRNode.CMP_I, "= 0", IRNode.CMP_U, "= 0"})
+    @Arguments(setup = "range256")
+    public static void test_empty_4(int i) {
+        if (i < 101 || i >= 101) {
+            return; // always success
+        }
+        throw new RuntimeException("should not be reached");
+    }
+
+    @Test
+    @IR(counts = {IRNode.CMP_I, "= 2", IRNode.CMP_U, "= 0"}, phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {IRNode.CMP_I, "= 0", IRNode.CMP_U, "= 0"})
+    @Arguments(setup = "range256")
+    public static void test_empty_5(int i) {
+        if (i < 101 || i > 100) {
+            return; // always success
+        }
+        throw new RuntimeException("should not be reached");
+    }
+
 }
