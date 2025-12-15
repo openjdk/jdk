@@ -35,9 +35,8 @@ import jdk.internal.util.ByteArrayLittleEndian;
  * A class that represents an immutable Universally Unique IDentifier (UUID).
  * A UUID represents a 128-bit value.
  *
- * <p> There exist different variants of these UUIDs.  The methods
- * of this class are for manipulating the Leach-Salz variant, although the
- * constructors allow the creation of any variant of UUID (described below).
+ * <p> This class is primarily designed for manipulating Leach-Salz variant UUIDs,
+ * but it also supports the creation of UUIDs of other variants.
  *
  * <p> The layout of a variant 2 (Leach-Salz) UUID is as follows:
  *
