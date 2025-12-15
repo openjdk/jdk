@@ -164,7 +164,7 @@ dbgsysExec(char *cmdLine)
     cmdLine = skipWhitespace(cmdLine);
 
     /*LINTED*/
-    args = jvmtiAllocate((jint)strlen(cmdLine)+1);
+    args = (char*)jvmtiAllocate((jint)strlen(cmdLine)+1);
     if (args == NULL) {
         return SYS_NOMEM;
     }
@@ -183,7 +183,7 @@ dbgsysExec(char *cmdLine)
     }
 
     /*LINTED*/
-    argv = jvmtiAllocate((argc + 1) * (jint)sizeof(char *));
+    argv = (char**)jvmtiAllocate((argc + 1) * (jint)sizeof(char *));
     if (argv == 0) {
         jvmtiDeallocate(args);
         return SYS_NOMEM;

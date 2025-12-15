@@ -70,7 +70,7 @@ createGlobalRefs(JNIEnv *env, InvokeRequest *request)
 
     if ( request->argumentCount > 0 ) {
         /*LINTED*/
-        argRefs = jvmtiAllocate((jint)(request->argumentCount*sizeof(jobject)));
+        argRefs = (jobject*)jvmtiAllocate((jint)(request->argumentCount*sizeof(jobject)));
         if ( argRefs==NULL ) {
             error = AGENT_ERROR_OUT_OF_MEMORY;
         } else {
@@ -80,14 +80,14 @@ createGlobalRefs(JNIEnv *env, InvokeRequest *request)
     }
 
     if ( error == JVMTI_ERROR_NONE ) {
-        saveGlobalRef(env, request->clazz, &clazz);
+        clazz = (jclass)newGlobalRef(env, request->clazz);
         if (clazz == NULL) {
             error = AGENT_ERROR_OUT_OF_MEMORY;
         }
     }
 
     if ( error == JVMTI_ERROR_NONE && request->instance != NULL ) {
-        saveGlobalRef(env, request->instance, &instance);
+        instance = newGlobalRef(env, request->instance);
         if (instance == NULL) {
             error = AGENT_ERROR_OUT_OF_MEMORY;
         }
@@ -102,7 +102,7 @@ createGlobalRefs(JNIEnv *env, InvokeRequest *request)
             if (isReferenceTag(argumentTag)) {
                 /* Create a global ref for any non-null argument */
                 if (argument->l != NULL) {
-                    saveGlobalRef(env, argument->l, &argRefs[argIndex]);
+                    argRefs[argIndex] = newGlobalRef(env, argument->l);
                     if (argRefs[argIndex] == NULL) {
                         error = AGENT_ERROR_OUT_OF_MEMORY;
                         break;
@@ -144,15 +144,15 @@ createGlobalRefs(JNIEnv *env, InvokeRequest *request)
     } else {
         /* Delete global references */
         if ( clazz != NULL ) {
-            tossGlobalRef(env, &clazz);
+            deleteGlobalRef(env, clazz);
         }
         if ( instance != NULL ) {
-            tossGlobalRef(env, &instance);
+            deleteGlobalRef(env, instance);
         }
         if ( argRefs!=NULL ) {
             for ( argIndex=0; argIndex < request->argumentCount; argIndex++ ) {
                 if ( argRefs[argIndex] != NULL ) {
-                    tossGlobalRef(env, &argRefs[argIndex]);
+                    deleteGlobalRef(env, argRefs[argIndex]);
                 }
             }
             jvmtiDeallocate(argRefs);
@@ -176,17 +176,20 @@ deleteGlobalArgumentRefs(JNIEnv *env, InvokeRequest *request)
     methodSignature_init(request->methodSignature, &cursor);
 
     if (request->clazz != NULL) {
-        tossGlobalRef(env, &(request->clazz));
+        deleteGlobalRef(env, request->clazz);
+        request->clazz = NULL;
     }
     if (request->instance != NULL) {
-        tossGlobalRef(env, &(request->instance));
+        deleteGlobalRef(env, request->instance);
+        request->instance = NULL;
     }
     /* Delete global argument references */
     while (methodSignature_nextArgumentExists(&cursor, &argumentTag) &&
            argIndex < request->argumentCount) {
         if (isReferenceTag(argumentTag)) {
             if (argument->l != NULL) {
-                tossGlobalRef(env, &(argument->l));
+                deleteGlobalRef(env, argument->l);
+                argument->l = NULL;
             }
         }
         argument++;

@@ -295,7 +295,7 @@ jint uniqueID(void);
 jbyte referenceTypeTag(jclass clazz);
 jbyte specificTypeKey(JNIEnv *env, jobject object);
 jboolean isObjectTag(jbyte tag);
-jvmtiError spawnNewThread(jvmtiStartFunction func, void *arg, char *name);
+jvmtiError spawnNewThread(jvmtiStartFunction func, void *arg, const char *name);
 void writeCodeLocation(struct PacketOutputStream *out, jclass clazz,
                        jmethodID method, jlocation location);
 
@@ -345,7 +345,7 @@ jint jvmtiMinorVersion(void);
 jint jvmtiMicroVersion(void);
 jvmtiError getSourceDebugExtension(jclass clazz, char **extensionPtr);
 
-jrawMonitorID debugMonitorCreate(char *name);
+jrawMonitorID debugMonitorCreate(const char *name);
 void debugMonitorEnter(jrawMonitorID theLock);
 void debugMonitorExit(jrawMonitorID theLock);
 void debugMonitorWait(jrawMonitorID theLock);
@@ -378,7 +378,7 @@ jvmtiError allLoadedClasses(jclass **ppclasses, jint *count);
 jvmtiError allClassLoaderClasses(jobject loader, jclass **ppclasses, jint *count);
 jvmtiError allNestedClasses(jclass clazz, jclass **ppnested, jint *pcount);
 
-void setAgentPropertyValue(JNIEnv *env, char *propertyName, char* propertyValue);
+void setAgentPropertyValue(JNIEnv *env, const char *propertyName, const char* propertyValue);
 
 #ifdef DEBUG
 // APIs that can be called when debugging the debug agent
@@ -393,7 +393,7 @@ void *jvmtiAllocate(jint numBytes);
 void jvmtiDeallocate(void *buffer);
 
 void             eventIndexInit(void);
-char*            eventIndex2EventName(EventIndex ei);
+const char*      eventIndex2EventName(EventIndex ei);
 jdwpEvent        eventIndex2jdwp(EventIndex i);
 jvmtiEvent       eventIndex2jvmti(EventIndex i);
 EventIndex       jdwp2EventIndex(jdwpEvent eventType);
@@ -423,6 +423,9 @@ void createLocalRefSpace(JNIEnv *env, jint capacity);
 #define END_WITH_LOCAL_REFS(env) \
         JNI_FUNC_PTR(env,PopLocalFrame)(env, NULL); \
     } /* END OF WITH SCOPE */
+
+jobject newGlobalRef(JNIEnv *env, jobject obj);
+void deleteGlobalRef(JNIEnv *env, jobject obj);
 
 void saveGlobalRef(JNIEnv *env, jobject obj, jobject *pobj);
 void tossGlobalRef(JNIEnv *env, jobject *pobj);

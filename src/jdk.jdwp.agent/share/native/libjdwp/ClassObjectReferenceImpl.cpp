@@ -48,7 +48,7 @@ reflectedType(PacketInputStream *in, PacketOutputStream *out)
      *
      */
 
-    tag = referenceTypeTag(object);
+    tag = referenceTypeTag((jclass)object);
     (void)outStream_writeByte(out, tag);
     (void)outStream_writeObjectRef(env, out, object);
 

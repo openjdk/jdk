@@ -48,9 +48,16 @@
     #define JVMTI_ENV_PTR(e,name)    (e)
 #endif
 
-#define FUNC_PTR(e,name)       (*((*(e))->name))
-#define JVM_FUNC_PTR(e,name)   FUNC_PTR(JVM_ENV_PTR  (e,name),name)
-#define JNI_FUNC_PTR(e,name)   FUNC_PTR(JNI_ENV_PTR  (e,name),name)
-#define JVMTI_FUNC_PTR(e,name) FUNC_PTR(JVMTI_ENV_PTR(e,name),name)
+#ifdef __cplusplus
+    #define FUNC_PTR(e,name)       (((e)->functions)->name)
+    #define JVM_FUNC_PTR(e,name)   FUNC_PTR(JVM_ENV_PTR  (e,name),name)
+    #define JNI_FUNC_PTR(e,name)   FUNC_PTR(JNI_ENV_PTR  (e,name),name)
+    #define JVMTI_FUNC_PTR(e,name) FUNC_PTR(JVMTI_ENV_PTR(e,name),name)
+#else
+    #define FUNC_PTR(e,name)       (*((*(e))->name))
+    #define JVM_FUNC_PTR(e,name)   FUNC_PTR(JVM_ENV_PTR  (e,name),name)
+    #define JNI_FUNC_PTR(e,name)   FUNC_PTR(JNI_ENV_PTR  (e,name),name)
+    #define JVMTI_FUNC_PTR(e,name) FUNC_PTR(JVMTI_ENV_PTR(e,name),name)
+#endif
 
 #endif

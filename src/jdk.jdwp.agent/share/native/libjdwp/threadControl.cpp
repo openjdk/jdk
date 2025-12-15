@@ -403,7 +403,7 @@ insertThread(JNIEnv *env, ThreadList *list, jthread thread)
 
     node = findThread(list, thread);
     if (node == NULL) {
-        node = jvmtiAllocate(sizeof(*node));
+        node = (ThreadNode*)jvmtiAllocate(sizeof(*node));
         if (node == NULL) {
             EXIT_ERROR(AGENT_ERROR_OUT_OF_MEMORY,"thread table entry");
             return NULL;
@@ -486,7 +486,7 @@ insertThread(JNIEnv *env, ThreadList *list, jthread thread)
             }
         }
 
-        node->current_ei = 0;
+        node->current_ei = (EventIndex)0;
         node->is_vthread = is_vthread;
         node->instructionStepMode = JVMTI_DISABLE;
         node->eventBag = eventBag;
@@ -499,7 +499,7 @@ insertThread(JNIEnv *env, ThreadList *list, jthread thread)
          *   on otherThreads when the TLS lookup fails.
          */
         if (list != &otherThreads) {
-            setThreadLocalStorage(node->thread, (void*)node);
+            setThreadLocalStorage(node->thread, node);
         }
     }
 
@@ -703,7 +703,7 @@ addDeferredEventMode(JNIEnv *env, jvmtiEventMode mode, EventIndex ei, jthread th
     DeferredEventMode *eventMode;
 
     /*LINTED*/
-    eventMode = jvmtiAllocate((jint)sizeof(DeferredEventMode));
+    eventMode = (DeferredEventMode*)jvmtiAllocate((jint)sizeof(DeferredEventMode));
     if (eventMode == NULL) {
         return AGENT_ERROR_OUT_OF_MEMORY;
     }
@@ -918,7 +918,7 @@ commonSuspendByNode(ThreadNode *node)
  * deferred suspend without changing the bookkeeping that is already
  * in place.
  */
-static jint
+static jvmtiError
 deferredSuspendThreadByNode(ThreadNode *node)
 {
     jvmtiError error;
@@ -1235,12 +1235,12 @@ commonResumeList(JNIEnv *env)
     }
 
     /*LINTED*/
-    reqList = newArray(reqCnt, sizeof(jthread));
+    reqList = (jthread*)newArray(reqCnt, sizeof(jthread));
     if (reqList == NULL) {
         EXIT_ERROR(AGENT_ERROR_OUT_OF_MEMORY,"resume request list");
     }
     /*LINTED*/
-    results = newArray(reqCnt, sizeof(jvmtiError));
+    results = (jvmtiError*)newArray(reqCnt, sizeof(jvmtiError));
     if (results == NULL) {
         EXIT_ERROR(AGENT_ERROR_OUT_OF_MEMORY,"resume list");
     }
@@ -1297,7 +1297,7 @@ commonSuspendList(JNIEnv *env, jint initCount, jthread *initList)
 
     error   = JVMTI_ERROR_NONE;
     reqCnt  = 0;
-    reqList = newArray(initCount, sizeof(jthread));
+    reqList = (jthread*)newArray(initCount, sizeof(jthread));
     if (reqList == NULL) {
         EXIT_ERROR(AGENT_ERROR_OUT_OF_MEMORY,"request list");
     }
@@ -1341,7 +1341,7 @@ commonSuspendList(JNIEnv *env, jint initCount, jthread *initList)
     }
 
     if (reqCnt > 0) {
-        jvmtiError *results = newArray(reqCnt, sizeof(jvmtiError));
+        jvmtiError *results = (jvmtiError*)newArray(reqCnt, sizeof(jvmtiError));
 
         if (results == NULL) {
             EXIT_ERROR(AGENT_ERROR_OUT_OF_MEMORY,"suspend list results");
@@ -1697,7 +1697,7 @@ threadControl_resumeAll(void)
             enumerateOverThreadList(env, &runningVThreads, excludeCountHelper,
                                     &excludeCnt);
             if (excludeCnt > 0) {
-                excludeList = newArray(excludeCnt, sizeof(jthread));
+                excludeList = (jthread*)newArray(excludeCnt, sizeof(jthread));
                 if (excludeList == NULL) {
                     EXIT_ERROR(AGENT_ERROR_OUT_OF_MEMORY,"exclude list");
                 }
@@ -2171,7 +2171,7 @@ checkForPopFrameEvents(JNIEnv *env, EventIndex ei, jthread thread)
 }
 
 struct bag *
-threadControl_onEventHandlerEntry(jbyte sessionID, EventInfo *evinfo, jobject currentException)
+threadControl_onEventHandlerEntry(jbyte sessionID, EventInfo *evinfo, jthrowable currentException)
 {
     ThreadNode *node;
     JNIEnv     *env;
@@ -2211,7 +2211,7 @@ threadControl_onEventHandlerEntry(jbyte sessionID, EventInfo *evinfo, jobject cu
     if (node != NULL) {
         moveNode(&otherThreads, (node->is_vthread ? &runningVThreads : &runningThreads), node);
         /* Now that we know the thread has started, we can set its TLS.*/
-        setThreadLocalStorage(thread, (void*)node);
+        setThreadLocalStorage(thread, node);
     } else {
         /*
          * Get a thread node for the reporting thread. For thread start
@@ -2284,7 +2284,7 @@ doPendingTasks(JNIEnv *env, jthread thread, int pendingInterrupt, jobject pendin
 
 void
 threadControl_onEventHandlerExit(EventIndex ei, jthread thread,
-                                 struct bag *eventBag, jobject currentException)
+                                 struct bag *eventBag, jthrowable currentException)
 {
     ThreadNode *node;
     JNIEnv *env = getEnv();
@@ -2311,7 +2311,7 @@ threadControl_onEventHandlerExit(EventIndex ei, jthread thread,
             // Just clear these two fields. Others are not set yet. Also no need to
             // worry about pending tasks like we do below for other event types.
             node->eventBag = eventBag;
-            node->current_ei = 0;
+            node->current_ei = (EventIndex)0;
        }
        debugMonitorExit(threadLock);
        eventHandler_unlock();
@@ -2328,7 +2328,7 @@ threadControl_onEventHandlerExit(EventIndex ei, jthread thread,
         node->pendingInterrupt = JNI_FALSE;
         node->pendingStop = NULL;
         node->eventBag = eventBag;
-        node->current_ei = 0;
+        node->current_ei = (EventIndex)0;
         node = NULL; // We're exiting the threadLock. No longer safe to access.
         // doPendingTasks() may do an upcall to java, and we don't want to hold any
         // locks when doing that. Thus we got all our node updates done first
@@ -2410,9 +2410,10 @@ threadControl_clearCLEInfo(JNIEnv *env, jthread thread)
 
     node = findRunningThread(thread);
     if (node != NULL) {
-        node->cleInfo.ei = 0;
+        node->cleInfo.ei = (EventIndex)0;
         if (node->cleInfo.clazz != NULL) {
-            tossGlobalRef(env, &(node->cleInfo.clazz));
+            deleteGlobalRef(env, node->cleInfo.clazz);
+            node->cleInfo.clazz = NULL;
         }
     }
 
@@ -2456,7 +2457,7 @@ threadControl_saveCLEInfo(JNIEnv *env, jthread thread, EventIndex ei,
         node->cleInfo.ei = ei;
         /* Create a class ref that will live beyond */
         /* the end of this call */
-        saveGlobalRef(env, clazz, &(node->cleInfo.clazz));
+        node->cleInfo.clazz = (jclass)newGlobalRef(env, clazz);
         /* if returned clazz is NULL, we just won't match */
         node->cleInfo.method    = method;
         node->cleInfo.location  = location;
@@ -2673,6 +2674,9 @@ threadControl_currentThread(void)
 {
     jthread thread = NULL;
     jvmtiError error = JVMTI_FUNC_PTR(gdata->jvmti,GetCurrentThread)(gdata->jvmti, &thread);
+    if (error != JVMTI_ERROR_NONE) {
+        EXIT_ERROR(error, "cannot get current thread");
+    }
     return thread;
 }
 
@@ -2700,11 +2704,9 @@ threadControl_getFrameGeneration(jthread thread)
 jthread *
 threadControl_allVThreads(jint *numVThreads)
 {
-    JNIEnv *env;
     ThreadNode *node;
     jthread* vthreads;
 
-    env = getEnv();
     debugMonitorEnter(threadLock);
     *numVThreads = numRunningVThreads;
 
@@ -2718,7 +2720,7 @@ threadControl_allVThreads(jint *numVThreads)
     }
 
     /* Allocate and fill in the vthreads array. */
-    vthreads = jvmtiAllocate(numRunningVThreads * sizeof(jthread*));
+    vthreads = (jthread*)jvmtiAllocate(numRunningVThreads * sizeof(jthread*));
     if (vthreads != NULL) {
         int i = 0;
         for (node = runningVThreads.first; node != NULL;  node = node->next) {

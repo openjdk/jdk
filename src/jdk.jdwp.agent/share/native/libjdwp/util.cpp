@@ -42,50 +42,54 @@ BackendGlobalData *gdata = NULL;
 /* Forward declarations */
 static jboolean isInterface(jclass clazz);
 static jboolean isArrayClass(jclass clazz);
-static char * getPropertyUTF8(JNIEnv *env, char *propertyName);
+static char * getPropertyUTF8(JNIEnv *env, const char *propertyName);
 
 /* Save an object reference for use later (create a NewGlobalRef) */
+jobject newGlobalRef(JNIEnv *env, jobject obj) {
+    jobject newobj;
+    if ( env == NULL ) {
+        EXIT_ERROR(AGENT_ERROR_ILLEGAL_ARGUMENT,"newGlobalRef env");
+    }
+    if ( obj == NULL ) {
+        EXIT_ERROR(AGENT_ERROR_ILLEGAL_ARGUMENT,"newGlobalRef obj");
+    }
+    newobj = JNI_FUNC_PTR(env,NewGlobalRef)(env, obj);
+    if ( newobj == NULL ) {
+        EXIT_ERROR(AGENT_ERROR_NULL_POINTER,"NewGlobalRef");
+    }
+    return newobj;
+}
+
+void deleteGlobalRef(JNIEnv *env, jobject obj) {
+    if ( env == NULL ) {
+        EXIT_ERROR(AGENT_ERROR_ILLEGAL_ARGUMENT,"deleteGlobalRef env");
+    }
+    if ( obj == NULL ) {
+        EXIT_ERROR(AGENT_ERROR_NULL_POINTER,"deleteGlobalRef obj");
+    }
+    JNI_FUNC_PTR(env,DeleteGlobalRef)(env, obj);
+}
+
 void
 saveGlobalRef(JNIEnv *env, jobject obj, jobject *pobj)
 {
-    jobject newobj;
-
     if ( pobj == NULL ) {
         EXIT_ERROR(AGENT_ERROR_ILLEGAL_ARGUMENT,"saveGlobalRef pobj");
     }
     if ( *pobj != NULL ) {
         EXIT_ERROR(AGENT_ERROR_ILLEGAL_ARGUMENT,"saveGlobalRef *pobj");
     }
-    if ( env == NULL ) {
-        EXIT_ERROR(AGENT_ERROR_ILLEGAL_ARGUMENT,"saveGlobalRef env");
-    }
-    if ( obj == NULL ) {
-        EXIT_ERROR(AGENT_ERROR_ILLEGAL_ARGUMENT,"saveGlobalRef obj");
-    }
-    newobj = JNI_FUNC_PTR(env,NewGlobalRef)(env, obj);
-    if ( newobj == NULL ) {
-        EXIT_ERROR(AGENT_ERROR_NULL_POINTER,"NewGlobalRef");
-    }
-    *pobj = newobj;
+    *pobj = newGlobalRef(env, obj);
 }
 
 /* Toss a previously saved object reference */
 void
 tossGlobalRef(JNIEnv *env, jobject *pobj)
 {
-    jobject obj;
-
     if ( pobj == NULL ) {
         EXIT_ERROR(AGENT_ERROR_ILLEGAL_ARGUMENT,"tossGlobalRef pobj");
     }
-    obj = *pobj;
-    if ( env == NULL ) {
-        EXIT_ERROR(AGENT_ERROR_ILLEGAL_ARGUMENT,"tossGlobalRef env");
-    }
-    if ( obj == NULL ) {
-        EXIT_ERROR(AGENT_ERROR_NULL_POINTER,"tossGlobalRef obj");
-    }
-    JNI_FUNC_PTR(env,DeleteGlobalRef)(env, obj);
+    deleteGlobalRef(env, *pobj);
     *pobj = NULL;
 }
 
@@ -171,12 +175,6 @@ util_initialize(JNIEnv *env)
     WITH_LOCAL_REFS(env, 6) {
 
         jvmtiError error;
-        jclass localClassClass;
-        jclass localThreadClass;
-        jclass localThreadGroupClass;
-        jclass localClassLoaderClass;
-        jclass localStringClass;
-        jclass localSystemClass;
         jclass localPropertiesClass;
         jclass localVMSupportClass;
         jobject localAgentProperties;
@@ -187,22 +185,13 @@ util_initialize(JNIEnv *env)
 
         /* Find some standard classes */
 
-        localClassClass         = findClass(env,"java/lang/Class");
-        localThreadClass        = findClass(env,"java/lang/Thread");
-        localThreadGroupClass   = findClass(env,"java/lang/ThreadGroup");
-        localClassLoaderClass   = findClass(env,"java/lang/ClassLoader");
-        localStringClass        = findClass(env,"java/lang/String");
-        localSystemClass        = findClass(env,"java/lang/System");
+        gdata->classClass       = (jclass)newGlobalRef(env, findClass(env,"java/lang/Class"));
+        gdata->threadClass      = (jclass)newGlobalRef(env, findClass(env,"java/lang/Thread"));
+        gdata->threadGroupClass = (jclass)newGlobalRef(env, findClass(env,"java/lang/ThreadGroup"));
+        gdata->classLoaderClass = (jclass)newGlobalRef(env, findClass(env,"java/lang/ClassLoader"));
+        gdata->stringClass      = (jclass)newGlobalRef(env, findClass(env,"java/lang/String"));
+        gdata->systemClass      = (jclass)newGlobalRef(env, findClass(env,"java/lang/System"));
         localPropertiesClass    = findClass(env,"java/util/Properties");
-
-        /* Save references */
-
-        saveGlobalRef(env, localClassClass,       &(gdata->classClass));
-        saveGlobalRef(env, localThreadClass,      &(gdata->threadClass));
-        saveGlobalRef(env, localThreadGroupClass, &(gdata->threadGroupClass));
-        saveGlobalRef(env, localClassLoaderClass, &(gdata->classLoaderClass));
-        saveGlobalRef(env, localStringClass,      &(gdata->stringClass));
-        saveGlobalRef(env, localSystemClass,      &(gdata->systemClass));
 
         /* Find some standard methods */
 
@@ -554,7 +543,7 @@ sharedInvoke(PacketInputStream *in, PacketOutputStream *out)
     if ( argumentCount > 0 ) {
         int i;
         /*LINTED*/
-        arguments = jvmtiAllocate(argumentCount * (jint)sizeof(*arguments));
+        arguments = (jvalue*)jvmtiAllocate(argumentCount * (jint)sizeof(*arguments));
         if (arguments == NULL) {
             outStream_setError(out, JDWP_ERROR(OUT_OF_MEMORY));
             return JNI_TRUE;
@@ -831,7 +820,7 @@ getEnv(void)
 }
 
 jvmtiError
-spawnNewThread(jvmtiStartFunction func, void *arg, char *name)
+spawnNewThread(jvmtiStartFunction func, void *arg, const char *name)
 {
     JNIEnv *env = getEnv();
     jvmtiError error;
@@ -1089,7 +1078,7 @@ debugMonitorNotifyAll(jrawMonitorID monitor)
 }
 
 jrawMonitorID
-debugMonitorCreate(char *name)
+debugMonitorCreate(const char *name)
 {
     jrawMonitorID monitor;
     jvmtiError error;
@@ -1484,7 +1473,7 @@ createLocalRefSpace(JNIEnv *env, jint capacity)
      * the calls below. Note we must depend on space in the existing
      * frame because asking for a new frame may generate an exception.
      */
-    jobject throwable = JNI_FUNC_PTR(env,ExceptionOccurred)(env);
+    jthrowable throwable = JNI_FUNC_PTR(env,ExceptionOccurred)(env);
 
     /*
      * Use the current frame if necessary; otherwise create a new one
@@ -1573,7 +1562,7 @@ isArray(jobject object)
  * Return property value as jstring
  */
 static jstring
-getPropertyValue(JNIEnv *env, char *propertyName)
+getPropertyValue(JNIEnv *env, const char *propertyName)
 {
     jstring valueString;
     jstring nameString;
@@ -1587,7 +1576,7 @@ getPropertyValue(JNIEnv *env, char *propertyName)
         /* NULL will be returned below */
     } else {
         /* Call valueString = System.getProperty(nameString) */
-        valueString = JNI_FUNC_PTR(env,CallStaticObjectMethod)
+        valueString = (jstring)JNI_FUNC_PTR(env,CallStaticObjectMethod)
             (env, gdata->systemClass, gdata->systemGetProperty, nameString);
         if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
             JNI_FUNC_PTR(env,ExceptionClear)(env);
@@ -1601,7 +1590,7 @@ getPropertyValue(JNIEnv *env, char *propertyName)
  * Set an agent property
  */
 void
-setAgentPropertyValue(JNIEnv *env, char *propertyName, char* propertyValue)
+setAgentPropertyValue(JNIEnv *env, const char *propertyName, const char* propertyValue)
 {
     jstring nameString;
     jstring valueString;
@@ -1824,7 +1813,7 @@ printThreadInfo(jthread thread) {
  * Return property value as JDWP allocated string in UTF8 encoding
  */
 static char *
-getPropertyUTF8(JNIEnv *env, char *propertyName)
+getPropertyUTF8(JNIEnv *env, const char *propertyName)
 {
     jvmtiError  error;
     char       *value;
@@ -1844,7 +1833,7 @@ getPropertyUTF8(JNIEnv *env, char *propertyName)
             /* Get the UTF8 encoding for this property value string */
             utf = JNI_FUNC_PTR(env,GetStringUTFChars)(env, valueString, NULL);
             /* Make a copy for returning, release the JNI copy */
-            value = jvmtiAllocate((int)strlen(utf) + 1);
+            value = (char*)jvmtiAllocate((int)strlen(utf) + 1);
             if (value != NULL) {
                 (void)strcpy(value, utf);
             }
@@ -1940,7 +1929,7 @@ jvmtiDeallocate(void *ptr)
         return;
     }
     error = JVMTI_FUNC_PTR(gdata->jvmti,Deallocate)
-                (gdata->jvmti, ptr);
+                (gdata->jvmti, (unsigned char *)ptr);
     if (error != JVMTI_ERROR_NONE ) {
         EXIT_ERROR(error, "Can't deallocate jvmti memory");
     }
@@ -2085,7 +2074,7 @@ eventIndexInit(void)
     index2jvmti[EI_THREAD_START       -EI_min] = JVMTI_EVENT_THREAD_START;
     index2jvmti[EI_THREAD_END         -EI_min] = JVMTI_EVENT_THREAD_END;
     index2jvmti[EI_CLASS_PREPARE      -EI_min] = JVMTI_EVENT_CLASS_PREPARE;
-    index2jvmti[EI_CLASS_UNLOAD       -EI_min] = 0; // No mapping to JVMTI event
+    index2jvmti[EI_CLASS_UNLOAD       -EI_min] = (jvmtiEvent)0; // No mapping to JVMTI event
     index2jvmti[EI_CLASS_LOAD         -EI_min] = JVMTI_EVENT_CLASS_LOAD;
     index2jvmti[EI_FIELD_ACCESS       -EI_min] = JVMTI_EVENT_FIELD_ACCESS;
     index2jvmti[EI_FIELD_MODIFICATION -EI_min] = JVMTI_EVENT_FIELD_MODIFICATION;
@@ -2142,7 +2131,7 @@ eventIndex2jdwp(EventIndex ei)
 jvmtiEvent
 eventIndex2jvmti(EventIndex ei)
 {
-    jvmtiEvent event = 0;
+    jvmtiEvent event = (jvmtiEvent)0;
     if (ei >= EI_min && ei <= EI_max) {
         event = index2jvmti[ei - EI_min];
     }
@@ -2152,7 +2141,7 @@ eventIndex2jvmti(EventIndex ei)
     return event;
 }
 
-char*
+const char*
 eventIndex2EventName(EventIndex ei)
 {
     switch ( ei ) {

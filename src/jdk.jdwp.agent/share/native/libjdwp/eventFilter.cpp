@@ -158,7 +158,7 @@ eventFilterRestricted_alloc(jint filterCount)
     size_t size = offsetof(EventFilterPrivate_HandlerNode, ef) +
                   offsetof(EventFilters, filters) +
                   (filterCount * (int)sizeof(Filter));
-    HandlerNode *node = jvmtiAllocate((jint)size);
+    HandlerNode *node = (HandlerNode*)jvmtiAllocate((jint)size);
 
     if (node != NULL) {
         int i;
@@ -200,23 +200,28 @@ clearFilters(HandlerNode *node)
                 }
                 break;
             case JDWP_REQUEST_MODIFIER(LocationOnly):
-                tossGlobalRef(env, &(filter->u.LocationOnly.clazz));
+                deleteGlobalRef(env, filter->u.LocationOnly.clazz);
+                filter->u.LocationOnly.clazz = NULL;
                 break;
             case JDWP_REQUEST_MODIFIER(FieldOnly):
-                tossGlobalRef(env, &(filter->u.FieldOnly.clazz));
+                deleteGlobalRef(env, filter->u.FieldOnly.clazz);
+                filter->u.FieldOnly.clazz = NULL;
                 break;
             case JDWP_REQUEST_MODIFIER(ExceptionOnly):
                 if ( filter->u.ExceptionOnly.exception != NULL ) {
-                    tossGlobalRef(env, &(filter->u.ExceptionOnly.exception));
+                    deleteGlobalRef(env, filter->u.ExceptionOnly.exception);
+                    filter->u.ExceptionOnly.exception = NULL;
                 }
                 break;
             case JDWP_REQUEST_MODIFIER(InstanceOnly):
                 if ( filter->u.InstanceOnly.instance != NULL ) {
-                    tossGlobalRef(env, &(filter->u.InstanceOnly.instance));
+                    deleteGlobalRef(env, filter->u.InstanceOnly.instance);
+                    filter->u.InstanceOnly.instance = NULL;
                 }
                 break;
             case JDWP_REQUEST_MODIFIER(ClassOnly):
-                tossGlobalRef(env, &(filter->u.ClassOnly.clazz));
+                deleteGlobalRef(env, filter->u.ClassOnly.clazz);
+                filter->u.ClassOnly.clazz = NULL;
                 break;
             case JDWP_REQUEST_MODIFIER(ClassMatch):
                 jvmtiDeallocate(filter->u.ClassMatch.classPattern);
@@ -228,7 +233,8 @@ clearFilters(HandlerNode *node)
                 jthread thread = filter->u.Step.thread;
                 error = stepControl_endStep(thread);
                 if (error == JVMTI_ERROR_NONE) {
-                    tossGlobalRef(env, &(filter->u.Step.thread));
+                    deleteGlobalRef(env, filter->u.Step.thread);
+                    filter->u.Step.thread = NULL;
                 }
                 break;
             }
@@ -457,7 +463,7 @@ eventFilterRestricted_passesFilter(JNIEnv *env,
 
                 /* do we care about exception class */
                 if (filter->u.ExceptionOnly.exception != NULL) {
-                    jclass exception = evinfo->object;
+                    jobject exception = evinfo->object;
 
                     /* do we want this exception class */
                     if (!JNI_FUNC_PTR(env,IsInstanceOf)(env, exception,
@@ -732,7 +738,7 @@ eventFilter_setCountFilter(HandlerNode *node, jint index,
         return AGENT_ERROR_ILLEGAL_ARGUMENT;
     }
     if (count <= 0) {
-        return JDWP_ERROR(INVALID_COUNT);
+        return AGENT_ERROR_INVALID_COUNT;
     } else {
         FILTER(node, index).modifier = JDWP_REQUEST_MODIFIER(Count);
         filter->count = count;
@@ -781,7 +787,7 @@ eventFilter_setLocationOnlyFilter(HandlerNode *node, jint index,
 
     /* Create a class ref that will live beyond */
     /* the end of this call */
-    saveGlobalRef(env, clazz, &(filter->clazz));
+    filter->clazz = (jclass)newGlobalRef(env, clazz);
     FILTER(node, index).modifier = JDWP_REQUEST_MODIFIER(LocationOnly);
     filter->method = method;
     filter->location = location;
@@ -805,7 +811,7 @@ eventFilter_setFieldOnlyFilter(HandlerNode *node, jint index,
 
     /* Create a class ref that will live beyond */
     /* the end of this call */
-    saveGlobalRef(env, clazz, &(filter->clazz));
+    filter->clazz = (jclass)newGlobalRef(env, clazz);
     FILTER(node, index).modifier = JDWP_REQUEST_MODIFIER(FieldOnly);
     filter->field = field;
     return JVMTI_ERROR_NONE;
@@ -830,7 +836,7 @@ eventFilter_setClassOnlyFilter(HandlerNode *node, jint index,
 
     /* Create a class ref that will live beyond */
     /* the end of this call */
-    saveGlobalRef(env, clazz, &(filter->clazz));
+    filter->clazz = (jclass)newGlobalRef(env, clazz);
     FILTER(node, index).modifier = JDWP_REQUEST_MODIFIER(ClassOnly);
     return JVMTI_ERROR_NONE;
 }
@@ -854,7 +860,7 @@ eventFilter_setExceptionOnlyFilter(HandlerNode *node, jint index,
     if (exceptionClass != NULL) {
         /* Create a class ref that will live beyond */
         /* the end of this call */
-        saveGlobalRef(env, exceptionClass, &(filter->exception));
+        filter->exception = (jclass)newGlobalRef(env, exceptionClass);
     }
     FILTER(node, index).modifier =
                        JDWP_REQUEST_MODIFIER(ExceptionOnly);
@@ -976,7 +982,7 @@ eventFilter_setSourceNameMatchFilter(HandlerNode *node,
 
 jvmtiError eventFilter_setPlatformThreadsOnlyFilter(HandlerNode *node, jint index)
 {
-    PlatformThreadsFilter *filter = &FILTER(node, index).u.PlatformThreadsOnly;
+    //PlatformThreadsFilter *filter = &FILTER(node, index).u.PlatformThreadsOnly;
     if (index >= FILTER_COUNT(node)) {
         return AGENT_ERROR_ILLEGAL_ARGUMENT;
     }

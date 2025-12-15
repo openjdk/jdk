@@ -73,10 +73,10 @@ writeBooleanComponents(JNIEnv *env, PacketOutputStream *out,
 {
     jboolean *components;
 
-    components = newComponents(out, length, sizeof(jboolean));
+    components = (jboolean*)newComponents(out, length, sizeof(jboolean));
     if (components != NULL) {
         jint i;
-        JNI_FUNC_PTR(env,GetBooleanArrayRegion)(env, array, index, length, components);
+        JNI_FUNC_PTR(env,GetBooleanArrayRegion)(env, (jbooleanArray)array, index, length, components);
         for (i = 0; i < length; i++) {
             (void)outStream_writeBoolean(out, components[i]);
         }
@@ -90,10 +90,10 @@ writeByteComponents(JNIEnv *env, PacketOutputStream *out,
 {
     jbyte *components;
 
-    components = newComponents(out, length, sizeof(jbyte));
+    components = (jbyte*)newComponents(out, length, sizeof(jbyte));
     if (components != NULL) {
         jint i;
-        JNI_FUNC_PTR(env,GetByteArrayRegion)(env, array, index, length, components);
+        JNI_FUNC_PTR(env,GetByteArrayRegion)(env, (jbyteArray)array, index, length, components);
         for (i = 0; i < length; i++) {
             (void)outStream_writeByte(out, components[i]);
         }
@@ -107,10 +107,10 @@ writeCharComponents(JNIEnv *env, PacketOutputStream *out,
 {
     jchar *components;
 
-    components = newComponents(out, length, sizeof(jchar));
+    components = (jchar*)newComponents(out, length, sizeof(jchar));
     if (components != NULL) {
         jint i;
-        JNI_FUNC_PTR(env,GetCharArrayRegion)(env, array, index, length, components);
+        JNI_FUNC_PTR(env,GetCharArrayRegion)(env, (jcharArray)array, index, length, components);
         for (i = 0; i < length; i++) {
             (void)outStream_writeChar(out, components[i]);
         }
@@ -124,10 +124,10 @@ writeShortComponents(JNIEnv *env, PacketOutputStream *out,
 {
     jshort *components;
 
-    components = newComponents(out, length, sizeof(jshort));
+    components = (jshort*)newComponents(out, length, sizeof(jshort));
     if (components != NULL) {
         jint i;
-        JNI_FUNC_PTR(env,GetShortArrayRegion)(env, array, index, length, components);
+        JNI_FUNC_PTR(env,GetShortArrayRegion)(env, (jshortArray)array, index, length, components);
         for (i = 0; i < length; i++) {
             (void)outStream_writeShort(out, components[i]);
         }
@@ -141,10 +141,10 @@ writeIntComponents(JNIEnv *env, PacketOutputStream *out,
 {
     jint *components;
 
-    components = newComponents(out, length, sizeof(jint));
+    components = (jint*)newComponents(out, length, sizeof(jint));
     if (components != NULL) {
         jint i;
-        JNI_FUNC_PTR(env,GetIntArrayRegion)(env, array, index, length, components);
+        JNI_FUNC_PTR(env,GetIntArrayRegion)(env, (jintArray)array, index, length, components);
         for (i = 0; i < length; i++) {
             (void)outStream_writeInt(out, components[i]);
         }
@@ -158,10 +158,10 @@ writeLongComponents(JNIEnv *env, PacketOutputStream *out,
 {
     jlong *components;
 
-    components = newComponents(out, length, sizeof(jlong));
+    components = (jlong*)newComponents(out, length, sizeof(jlong));
     if (components != NULL) {
         jint i;
-        JNI_FUNC_PTR(env,GetLongArrayRegion)(env, array, index, length, components);
+        JNI_FUNC_PTR(env,GetLongArrayRegion)(env, (jlongArray)array, index, length, components);
         for (i = 0; i < length; i++) {
             (void)outStream_writeLong(out, components[i]);
         }
@@ -175,10 +175,10 @@ writeFloatComponents(JNIEnv *env, PacketOutputStream *out,
 {
     jfloat *components;
 
-    components = newComponents(out, length, sizeof(jfloat));
+    components = (jfloat*)newComponents(out, length, sizeof(jfloat));
     if (components != NULL) {
         jint i;
-        JNI_FUNC_PTR(env,GetFloatArrayRegion)(env, array, index, length, components);
+        JNI_FUNC_PTR(env,GetFloatArrayRegion)(env, (jfloatArray)array, index, length, components);
         for (i = 0; i < length; i++) {
             (void)outStream_writeFloat(out, components[i]);
         }
@@ -192,10 +192,10 @@ writeDoubleComponents(JNIEnv *env, PacketOutputStream *out,
 {
     jdouble *components;
 
-    components = newComponents(out, length, sizeof(jdouble));
+    components = (jdouble*)newComponents(out, length, sizeof(jdouble));
     if (components != NULL) {
         jint i;
-        JNI_FUNC_PTR(env,GetDoubleArrayRegion)(env, array, index, length, components);
+        JNI_FUNC_PTR(env,GetDoubleArrayRegion)(env, (jdoubleArray)array, index, length, components);
         for (i = 0; i < length; i++) {
             (void)outStream_writeDouble(out, components[i]);
         }
@@ -214,7 +214,7 @@ writeObjectComponents(JNIEnv *env, PacketOutputStream *out,
         jobject component;
 
         for (i = 0; i < length; i++) {
-            component = JNI_FUNC_PTR(env,GetObjectArrayElement)(env, array, index + i);
+            component = JNI_FUNC_PTR(env,GetObjectArrayElement)(env, (jobjectArray)array, index + i);
             if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
                 /* cleared by caller */
                 break;
@@ -349,7 +349,7 @@ readBooleanComponents(JNIEnv *env, PacketInputStream *in,
 
     for (i = 0; (i < length) && !inStream_error(in); i++) {
         component = inStream_readBoolean(in);
-        JNI_FUNC_PTR(env,SetBooleanArrayRegion)(env, array, index + i, 1, &component);
+        JNI_FUNC_PTR(env,SetBooleanArrayRegion)(env, (jbooleanArray)array, index + i, 1, &component);
     }
     return inStream_error(in);
 }
@@ -363,7 +363,7 @@ readByteComponents(JNIEnv *env, PacketInputStream *in,
 
     for (i = 0; (i < length) && !inStream_error(in); i++) {
         component = inStream_readByte(in);
-        JNI_FUNC_PTR(env,SetByteArrayRegion)(env, array, index + i, 1, &component);
+        JNI_FUNC_PTR(env,SetByteArrayRegion)(env, (jbyteArray)array, index + i, 1, &component);
     }
     return inStream_error(in);
 }
@@ -377,7 +377,7 @@ readCharComponents(JNIEnv *env, PacketInputStream *in,
 
     for (i = 0; (i < length) && !inStream_error(in); i++) {
         component = inStream_readChar(in);
-        JNI_FUNC_PTR(env,SetCharArrayRegion)(env, array, index + i, 1, &component);
+        JNI_FUNC_PTR(env,SetCharArrayRegion)(env, (jcharArray)array, index + i, 1, &component);
     }
     return inStream_error(in);
 }
@@ -391,7 +391,7 @@ readShortComponents(JNIEnv *env, PacketInputStream *in,
 
     for (i = 0; (i < length) && !inStream_error(in); i++) {
         component = inStream_readShort(in);
-        JNI_FUNC_PTR(env,SetShortArrayRegion)(env, array, index + i, 1, &component);
+        JNI_FUNC_PTR(env,SetShortArrayRegion)(env, (jshortArray)array, index + i, 1, &component);
     }
     return inStream_error(in);
 }
@@ -405,7 +405,7 @@ readIntComponents(JNIEnv *env, PacketInputStream *in,
 
     for (i = 0; (i < length) && !inStream_error(in); i++) {
         component = inStream_readInt(in);
-        JNI_FUNC_PTR(env,SetIntArrayRegion)(env, array, index + i, 1, &component);
+        JNI_FUNC_PTR(env,SetIntArrayRegion)(env, (jintArray)array, index + i, 1, &component);
     }
     return inStream_error(in);
 }
@@ -415,14 +415,11 @@ readLongComponents(JNIEnv *env, PacketInputStream *in,
                    jarray array, int index, int length)
 {
     int i;
-#if defined (_WIN32) && defined (_MSC_VER)
-    _Alignas(8)
-#endif
     jlong component;
 
     for (i = 0; (i < length) && !inStream_error(in); i++) {
         component = inStream_readLong(in);
-        JNI_FUNC_PTR(env,SetLongArrayRegion)(env, array, index + i, 1, &component);
+        JNI_FUNC_PTR(env,SetLongArrayRegion)(env, (jlongArray)array, index + i, 1, &component);
     }
     return inStream_error(in);
 }
@@ -436,7 +433,7 @@ readFloatComponents(JNIEnv *env, PacketInputStream *in,
 
     for (i = 0; (i < length) && !inStream_error(in); i++) {
         component = inStream_readFloat(in);
-        JNI_FUNC_PTR(env,SetFloatArrayRegion)(env, array, index + i, 1, &component);
+        JNI_FUNC_PTR(env,SetFloatArrayRegion)(env, (jfloatArray)array, index + i, 1, &component);
     }
     return inStream_error(in);
 }
@@ -446,14 +443,11 @@ readDoubleComponents(JNIEnv *env, PacketInputStream *in,
                    jarray array, int index, int length)
 {
     int i;
-#if defined (_WIN32) && defined (_MSC_VER)
-    _Alignas(8)
-#endif
     jdouble component;
 
     for (i = 0; (i < length) && !inStream_error(in); i++) {
         component = inStream_readDouble(in);
-        JNI_FUNC_PTR(env,SetDoubleArrayRegion)(env, array, index + i, 1, &component);
+        JNI_FUNC_PTR(env,SetDoubleArrayRegion)(env, (jdoubleArray)array, index + i, 1, &component);
     }
     return inStream_error(in);
 }
@@ -469,7 +463,7 @@ readObjectComponents(JNIEnv *env, PacketInputStream *in,
     for (i = 0; i < length; i++) {
         jobject object = inStream_readObjectRef(env, in);
 
-        JNI_FUNC_PTR(env,SetObjectArrayElement)(env, array, index + i, object);
+        JNI_FUNC_PTR(env,SetObjectArrayElement)(env, (jobjectArray)array, index + i, object);
         if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
             /* caller will clear */
             break;

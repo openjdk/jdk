@@ -123,7 +123,7 @@ tty_message(const char *format, ...)
 
 /* Print assertion error message to stderr. */
 void
-jdiAssertionFailed(char *fileName, int lineNumber, char *msg)
+jdiAssertionFailed(const char *fileName, int lineNumber, const char *msg)
 {
     LOG_MISC(("ASSERT FAILED: %s : %d - %s\n", fileName, lineNumber, msg));
     print_message(stderr, "ASSERT FAILED: ", "\n",

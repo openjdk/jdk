@@ -59,7 +59,7 @@
 #define JDWP_INVOKE_OPTIONS(name) \
            JDWP_InvokeOptions_INVOKE_ ## name
 #define JDWP_ERROR(name) \
-           JDWP_Error_ ## name
+           ((jdwpError)JDWP_Error_ ## name)
 #define JDWP_HIGHEST_COMMAND_SET 18
 #define JDWP_REQUEST_NONE        -1
 

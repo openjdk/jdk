@@ -77,7 +77,7 @@ bagDestroyBag(struct bag *theBag)
 void *
 bagFind(struct bag *theBag, void *key)
 {
-    char *items = theBag->items;
+    char *items = (char*)theBag->items;
     int itemSize = theBag->itemSize;
     char *itemsEnd = items + (itemSize * theBag->used);
 
@@ -146,7 +146,7 @@ bagSize(struct bag *theBag)
 jboolean
 bagEnumerateOver(struct bag *theBag, bagEnumerateFunction func, void *arg)
 {
-    char *items = theBag->items;
+    char *items = (char*)theBag->items;
     int itemSize = theBag->itemSize;
     char *itemsEnd = items + (itemSize * theBag->used);
 

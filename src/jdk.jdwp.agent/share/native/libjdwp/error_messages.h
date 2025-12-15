@@ -36,7 +36,7 @@ void print_message(FILE *fp, const char *prefix,  const char *suffix,
                    const char *format, ...);
 void error_message(const char *, ...);
 void tty_message(const char *, ...);
-void jdiAssertionFailed(char *fileName, int lineNumber, char *msg);
+void jdiAssertionFailed(const char *fileName, int lineNumber, const char *msg);
 
 const char * jvmtiErrorText(jvmtiError);
 const char * eventText(int);

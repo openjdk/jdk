@@ -275,7 +275,7 @@ frames(PacketInputStream *in, PacketOutputStream *out)
 
     (void)outStream_writeInt(out, length);
 
-    frames = jvmtiAllocate(sizeof(jvmtiFrameInfo) * length);
+    frames = (jvmtiFrameInfo*)jvmtiAllocate(sizeof(jvmtiFrameInfo) * length);
 
     if (frames == NULL) {
         outStream_setError(out, JDWP_ERROR(OUT_OF_MEMORY));

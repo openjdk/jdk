@@ -265,7 +265,7 @@ enqueue(jdwpPacket *packet)
     struct PacketList *pL;
     struct PacketList *walker;
 
-    pL = jvmtiAllocate((jint)sizeof(struct PacketList));
+    pL = (PacketList*)jvmtiAllocate((jint)sizeof(struct PacketList));
     if (pL == NULL) {
         EXIT_ERROR(AGENT_ERROR_OUT_OF_MEMORY,"packet list");
     }

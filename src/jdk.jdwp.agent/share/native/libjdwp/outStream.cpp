@@ -97,9 +97,9 @@ outStream_command(PacketOutputStream *stream)
 }
 
 static jdwpError
-writeBytes(PacketOutputStream *stream, void *source, int size)
+writeBytes(PacketOutputStream *stream, const void *source, int size)
 {
-    jbyte *bytes = (jbyte *)source;
+    const jbyte *bytes = (const jbyte *)source;
 
     if (stream->error) {
         return stream->error;
@@ -108,8 +108,8 @@ writeBytes(PacketOutputStream *stream, void *source, int size)
         jint count;
         if (stream->left == 0) {
             jint segSize = SMALLEST(2 * stream->segment->length, MAX_SEGMENT_SIZE);
-            jbyte *newSeg = jvmtiAllocate(segSize);
-            struct PacketData *newHeader = jvmtiAllocate(sizeof(*newHeader));
+            jbyte *newSeg = (jbyte*)jvmtiAllocate(segSize);
+            PacketData *newHeader = (PacketData *)jvmtiAllocate(sizeof(*newHeader));
             if ((newSeg == NULL) || (newHeader == NULL)) {
                 jvmtiDeallocate(newSeg);
                 jvmtiDeallocate(newHeader);
@@ -223,7 +223,7 @@ outStream_writeObjectRef(JNIEnv *env, PacketOutputStream *stream, jobject val)
         }
 
         /* Track the common ref in case we need to release it on a future error */
-        idPtr = bagAdd(stream->ids);
+        idPtr = (jlong*)bagAdd(stream->ids);
         if (idPtr == NULL) {
             commonRef_release(env, id);
             stream->error = JDWP_ERROR(OUT_OF_MEMORY);
@@ -295,14 +295,14 @@ outStream_writeLocation(PacketOutputStream *stream, jlocation val)
 
 jdwpError
 outStream_writeByteArray(PacketOutputStream*stream, jint length,
-                         jbyte *bytes)
+                         const jbyte *bytes)
 {
     (void)outStream_writeInt(stream, length);
     return writeBytes(stream, bytes, length);
 }
 
 jdwpError
-outStream_writeString(PacketOutputStream *stream, char *string)
+outStream_writeString(PacketOutputStream *stream, const char *string)
 {
     jdwpError error;
     jint      length = string != NULL ? (int)strlen(string) : 0;
@@ -310,21 +310,21 @@ outStream_writeString(PacketOutputStream *stream, char *string)
     /* Options utf8=y/n controls if we want Standard UTF-8 or Modified */
     if ( gdata->modifiedUtf8 ) {
         (void)outStream_writeInt(stream, length);
-        error = writeBytes(stream, (jbyte *)string, length);
+        error = writeBytes(stream, string, length);
     } else {
         jint      new_length;
 
-        new_length = utf8mToUtf8sLength((jbyte*)string, length);
+        new_length = utf8mToUtf8sLength((const jbyte*)string, length);
         if ( new_length == length ) {
             (void)outStream_writeInt(stream, length);
-            error = writeBytes(stream, (jbyte *)string, length);
+            error = writeBytes(stream, string, length);
         } else {
             char *new_string;
 
-            new_string = jvmtiAllocate(new_length+1);
-            utf8mToUtf8s((jbyte*)string, length, (jbyte*)new_string, new_length);
+            new_string = (char*)jvmtiAllocate(new_length+1);
+            utf8mToUtf8s((const jbyte*)string, length, (jbyte*)new_string, new_length);
             (void)outStream_writeInt(stream, new_length);
-            error = writeBytes(stream, (jbyte *)new_string, new_length);
+            error = writeBytes(stream, new_string, new_length);
             jvmtiDeallocate(new_string);
         }
     }
@@ -434,7 +434,7 @@ outStream_send(PacketOutputStream *stream) {
         segment = segment->next;
     } while (segment != NULL);
 
-    data = jvmtiAllocate(len);
+    data = (jbyte*)jvmtiAllocate(len);
     if (data == NULL) {
         return JDWP_ERROR(OUT_OF_MEMORY);
     }
@@ -489,7 +489,7 @@ outStream_sendCommand(PacketOutputStream *stream)
 static jboolean
 releaseID(void *elementPtr, void *arg)
 {
-    jlong *idPtr = elementPtr;
+    jlong *idPtr = (jlong*)elementPtr;
     commonRef_release(getEnv(), *idPtr);
     return JNI_TRUE;
 }

@@ -34,15 +34,15 @@
 #include "SDE.h"
 #include "FrameID.h"
 
-static char *versionName = "Java Debug Wire Protocol (Reference Implementation)";
+static const char *versionName = "Java Debug Wire Protocol (Reference Implementation)";
 
 static jboolean
 version(PacketInputStream *in, PacketOutputStream *out)
 {
     char buf[500];
-    char *vmName;
-    char *vmVersion;
-    char *vmInfo;
+    const char *vmName;
+    const char *vmVersion;
+    const char *vmInfo;
 
     /* Now the JDWP versions are the same as JVMTI versions */
     int majorVersion = jvmtiMajorVersion();
@@ -363,7 +363,7 @@ instanceCounts(PacketInputStream *in, PacketOutputStream *out)
         return JNI_TRUE;
     }
     env = getEnv();
-    classes = jvmtiAllocate(classCount * (int)sizeof(jclass));
+    classes = (jclass*)jvmtiAllocate(classCount * (int)sizeof(jclass));
     for (ii = 0; ii < classCount; ii++) {
         jdwpError errorCode;
         classes[ii] = inStream_readClassRef(env, in);
@@ -389,7 +389,7 @@ instanceCounts(PacketInputStream *in, PacketOutputStream *out)
         jlong      *counts;
         jvmtiError error;
 
-        counts = jvmtiAllocate(classCount * (int)sizeof(jlong));
+        counts = (jlong*)jvmtiAllocate(classCount * (int)sizeof(jlong));
         /* Iterate over heap getting info on these classes */
         error = classInstanceCounts(classCount, classes, counts);
         if (error != JVMTI_ERROR_NONE) {
@@ -428,7 +428,7 @@ redefineClasses(PacketInputStream *in, PacketOutputStream *out)
         return JNI_TRUE;
     }
     /*LINTED*/
-    classDefs = jvmtiAllocate(classCount*(int)sizeof(jvmtiClassDefinition));
+    classDefs = (jvmtiClassDefinition*)jvmtiAllocate(classCount*(int)sizeof(jvmtiClassDefinition));
     if (classDefs == NULL) {
         outStream_setError(out, JDWP_ERROR(OUT_OF_MEMORY));
         return JNI_TRUE;
@@ -819,10 +819,10 @@ capabilitiesNew(PacketInputStream *in, PacketOutputStream *out)
 }
 
 static int
-countPaths(char *string) {
+countPaths(const char *string) {
     int cnt = 1; /* always have one */
-    char *pos = string;
-    char *ps;
+    const char *pos = string;
+    const char *ps;
 
     ps = gdata->property_path_separator;
     if ( ps == NULL ) {
@@ -836,14 +836,14 @@ countPaths(char *string) {
 }
 
 static void
-writePaths(PacketOutputStream *out, char *string) {
-    char *pos;
-    char *ps;
+writePaths(PacketOutputStream *out, const char *string) {
+    const char *pos;
+    const char *ps;
     char *buf;
     int   npaths;
     int   i;
 
-    buf = jvmtiAllocate((int)strlen(string)+1);
+    buf = (char*)jvmtiAllocate((int)strlen(string)+1);
 
     npaths = countPaths(string);
     (void)outStream_writeInt(out, npaths);
@@ -855,7 +855,7 @@ writePaths(PacketOutputStream *out, char *string) {
 
     pos = string;
     for ( i = 0 ; i < npaths && pos != NULL; i++ ) {
-        char *psPos;
+        const char *psPos;
         int   plen;
 
         psPos = strchr(pos, ps[0]);
@@ -877,8 +877,8 @@ writePaths(PacketOutputStream *out, char *string) {
 static jboolean
 classPaths(PacketInputStream *in, PacketOutputStream *out)
 {
-    char *ud;
-    char *cp;
+    const char *ud;
+    const char *cp;
 
     ud = gdata->property_user_dir;
     if ( ud == NULL ) {

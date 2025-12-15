@@ -76,7 +76,7 @@ static char *launchOnInit = NULL;           /* launch this app during init */
 static jboolean suspendOnInit = JNI_TRUE;   /* suspend all app threads after init */
 static jboolean dopause = JNI_FALSE;        /* pause for debugger attach */
 static jboolean docoredump = JNI_FALSE;     /* core dump on exit */
-static char *logfile = NULL;                /* Name of logfile (if logging) */
+static const char* logfile = NULL;          /* Name of logfile (if logging) */
 static unsigned logflags = 0;               /* Log flags */
 
 static char *names;                         /* strings derived from OnLoad options */
@@ -149,6 +149,7 @@ compatible_versions(jint major_runtime,     jint minor_runtime,
 JNIEXPORT jint JNICALL
 DEF_Agent_OnLoad(JavaVM *vm, char *options, void *reserved)
 {
+    jint jvm_error;
     jvmtiError error;
     jvmtiCapabilities needed_capabilities;
     jvmtiCapabilities potential_capabilities;
@@ -189,13 +190,13 @@ DEF_Agent_OnLoad(JavaVM *vm, char *options, void *reserved)
                                         >> JVMTI_VERSION_SHIFT_MICRO;
 
     /* Get the JVMTI Env, IMPORTANT: Do this first! For jvmtiAllocate(). */
-    error = JVM_FUNC_PTR(vm,GetEnv)
+    jvm_error = JVM_FUNC_PTR(vm,GetEnv)
                 (vm, (void **)&(gdata->jvmti), JVMTI_VERSION);
-    if (error != JNI_OK) {
+    if (jvm_error != JNI_OK) {
         ERROR_MESSAGE(("JDWP unable to access JVMTI Version %d.%d.%d (0x%x)."
                        " JNIEnv's GetEnv() returned %d.",
                        jvmtiCompileTimeMajorVersion, jvmtiCompileTimeMinorVersion,
-                       jvmtiCompileTimeMicroVersion, JVMTI_VERSION, error));
+                       jvmtiCompileTimeMicroVersion, JVMTI_VERSION, jvm_error));
         forceExit(1); /* Kill entire process, no core dump */
     }
 
@@ -522,8 +523,8 @@ typedef struct EnumerateArg {
 static jboolean
 startTransport(void *item, void *arg)
 {
-    TransportSpec *transport = item;
-    EnumerateArg *enumArg = arg;
+    TransportSpec *transport = (TransportSpec*)item;
+    EnumerateArg *enumArg = (EnumerateArg*)arg;
     jdwpError serror;
 
     LOG_MISC(("Begin startTransport"));
@@ -601,7 +602,7 @@ jniFatalError(JNIEnv *env, const char *msg, jvmtiError error, int exit_code)
         msg = "UNKNOWN REASON";
     vm = gdata->jvm;
     if ( env==NULL && vm!=NULL ) {
-        jint rc = (*((*vm)->GetEnv))(vm, (void **)&env, JNI_VERSION_1_2);
+        jint rc = JVM_FUNC_PTR(vm,GetEnv)(vm, (void **)&env, JNI_VERSION_1_2);
         if (rc != JNI_OK ) {
             env = NULL;
         }
@@ -613,7 +614,7 @@ jniFatalError(JNIEnv *env, const char *msg, jvmtiError error, int exit_code)
         (void)snprintf(buf, sizeof(buf), "JDWP %s", msg);
     }
     if (env != NULL) {
-        (*((*env)->FatalError))(env, buf);
+        JNI_FUNC_PTR(env,FatalError)(env, buf);
     } else {
         /* Should rarely ever reach here, means VM is really dead */
         print_message(stderr, "ERROR: JDWP: ", "\n",
@@ -930,8 +931,8 @@ add_to_options(char *options, char *new_options)
      * comma in between.
      */
     originalLength = strlen(options);
-    combinedOptions = jvmtiAllocate((jint)originalLength + 1 +
-                                (jint)strlen(new_options) + 1);
+    combinedOptions = (char*)jvmtiAllocate((jint)originalLength + 1 +
+                                           (jint)strlen(new_options) + 1);
     if (combinedOptions == NULL) {
         return NULL;
     }
@@ -977,7 +978,7 @@ parseOptions(char *options)
     char *current;
     int length;
     char *str;
-    char *errmsg;
+    const char *errmsg;
 
     /* Set defaults */
     gdata->assertOn     = DEFAULT_ASSERT_ON;
@@ -993,7 +994,8 @@ parseOptions(char *options)
 
     /* Options being NULL will end up being an error. */
     if (options == NULL) {
-        options = "";
+        char empty_str[] = "";
+        options = empty_str;
     }
 
     /* Check for "help" BEFORE we add any environmental settings */
@@ -1023,12 +1025,12 @@ parseOptions(char *options)
          * Also keep a copy of the options in gdata->options.
          */
         length = (int)strlen(options);
-        gdata->options = jvmtiAllocate(length + 1);
+        gdata->options = (char*)jvmtiAllocate(length + 1);
         if (gdata->options == NULL) {
             EXIT_ERROR(AGENT_ERROR_OUT_OF_MEMORY,"options");
         }
         (void)strcpy(gdata->options, options);
-        names = jvmtiAllocate(length + 1);
+        names = (char*)jvmtiAllocate(length + 1);
         if (names == NULL) {
             EXIT_ERROR(AGENT_ERROR_OUT_OF_MEMORY,"options");
         }
@@ -1050,7 +1052,7 @@ parseOptions(char *options)
             goto syntax_error;
         }
         if (strcmp(buf, "transport") == 0) {
-            currentTransport = bagAdd(transports);
+            currentTransport = (TransportSpec*)bagAdd(transports);
             /*LINTED*/
             if (!get_tok(&str, current, (int)(end - current), ',')) {
                 goto syntax_error;

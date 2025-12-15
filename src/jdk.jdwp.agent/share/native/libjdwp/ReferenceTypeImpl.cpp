@@ -111,7 +111,7 @@ getClassLoader(PacketInputStream *in, PacketOutputStream *out)
 static jboolean
 getModule(PacketInputStream *in, PacketOutputStream *out)
 {
-    jobject clazz;
+    jclass clazz;
     jobject module;
     JNIEnv *env;
 

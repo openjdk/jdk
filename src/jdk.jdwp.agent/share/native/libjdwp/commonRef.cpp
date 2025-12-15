@@ -113,8 +113,8 @@ createNode(JNIEnv *env, jobject ref)
         strongOrWeakRef = JNI_FUNC_PTR(env,NewWeakGlobalRef)(env, ref);
 
         // NewWeakGlobalRef can throw OOM, clear exception here.
-        if ((*env)->ExceptionCheck(env)) {
-            (*env)->ExceptionClear(env);
+        if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
+            JNI_FUNC_PTR(env,ExceptionClear)(env);
             jvmtiDeallocate(node);
             return NULL;
         }
@@ -210,8 +210,8 @@ weakenNode(JNIEnv *env, RefNode *node, jboolean isUnpinAll)
 
         weakRef = JNI_FUNC_PTR(env,NewWeakGlobalRef)(env, node->ref);
         // NewWeakGlobalRef can throw OOM, clear exception here.
-        if ((*env)->ExceptionCheck(env)) {
-            (*env)->ExceptionClear(env);
+        if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
+            JNI_FUNC_PTR(env,ExceptionClear)(env);
         }
 
         if (weakRef != NULL) {

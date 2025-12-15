@@ -71,7 +71,8 @@ printLastError(jdwpTransportEnv *t, jdwpTransportError err)
 
     msg     = NULL;
     utf8msg = NULL;
-    rv = (*t)->GetLastError(t, &msg); /* This is a platform encoded string */
+    //rv = (*t)->GetLastError(t, &msg); /* This is a platform encoded string */
+	rv = t->GetLastError(&msg); /* This is a platform encoded string */
     if ( msg != NULL ) {
         int len;
         int maxlen;
@@ -292,7 +293,8 @@ connectionInitiated(jdwpTransportEnv *t)
              * Another transport got a connection - multiple transports
              * not fully supported yet so shouldn't get here.
              */
-            (*t)->Close(t);
+            //(*t)->Close(t);
+            t->Close();
             JDI_ASSERT(JNI_FALSE);
         }
     }
@@ -314,8 +316,8 @@ connectionInitiated(jdwpTransportEnv *t)
  * specified value.
  */
 static void
-setTransportProperty(JNIEnv* env, char* value) {
-    char* prop_value = (value == NULL) ? "" : value;
+setTransportProperty(JNIEnv* env, const char* value) {
+    const char* prop_value = (value == NULL) ? "" : value;
     setAgentPropertyValue(env, "sun.jdwp.listenerAddress", prop_value);
 }
 
@@ -351,7 +353,8 @@ acceptThread(jvmtiEnv* jvmti_env, JNIEnv* jni_env, void* arg)
 
     info = (TransportInfo*)arg;
     t = info->transport;
-    rc = (*t)->Accept(t, info->timeout, 0);
+    //rc = (*t)->Accept(t, info->timeout, 0);
+    rc = t->Accept(info->timeout, 0);
 
     /* System property no longer needed */
     setTransportProperty(jni_env, NULL);
@@ -364,10 +367,12 @@ acceptThread(jvmtiEnv* jvmti_env, JNIEnv* jni_env, void* arg)
          * We thus exit the VM after stopping the listener.
          */
         printLastError(t, rc);
-        (*t)->StopListening(t);
+        //(*t)->StopListening(t);
+        t->StopListening();
         EXIT_ERROR(JVMTI_ERROR_NONE, "could not connect, timeout or fatal error");
     } else {
-        (*t)->StopListening(t);
+        //(*t)->StopListening(t);
+        t->StopListening();
         connectionInitiated(t);
     }
 
@@ -411,8 +416,10 @@ transport_reset(void)
      */
     if (transport != NULL) {
         setTransportProperty(getEnv(), NULL);
-        (*transport)->StopListening(transport);
-        (*transport)->Close(transport);
+        //(*transport)->StopListening(transport);
+        //(*transport)->Close(transport);
+        transport->StopListening();
+        transport->Close();
     }
 }
 
@@ -425,9 +432,9 @@ launch(char *command, char *name, char *address)
     int  len;
 
     /* Construct complete command line (all in UTF-8) */
-    commandLine = jvmtiAllocate((int)strlen(command) +
-                                 (int)strlen(name) +
-                                 (int)strlen(address) + 3);
+    commandLine = (char*)jvmtiAllocate((int)strlen(command) +
+                                       (int)strlen(name) +
+                                       (int)strlen(address) + 3);
     if (commandLine == NULL) {
         return JDWP_ERROR(OUT_OF_MEMORY);
     }
@@ -439,7 +446,7 @@ launch(char *command, char *name, char *address)
 
     /* Convert commandLine from UTF-8 to platform encoding */
     len = (int)strlen(commandLine);
-    buf = jvmtiAllocate(len*3+3);
+    buf = (char*)jvmtiAllocate(len*3+3);
     if (buf == NULL) {
         jvmtiDeallocate(commandLine);
         return JDWP_ERROR(OUT_OF_MEMORY);
@@ -466,13 +473,13 @@ transport_startTransport(jboolean isServer, char *name, char *address,
 {
     jvmtiStartFunction func;
     char threadName[MAXPATHLEN + 100];
-    jint err;
+    jdwpTransportError err;
     jdwpError serror;
     jdwpTransportConfiguration cfg = {0};
     TransportInfo *info;
     jdwpTransportEnv *trans;
 
-    info = jvmtiAllocate(sizeof(*info));
+    info = (TransportInfo*)jvmtiAllocate(sizeof(*info));
     if (info == NULL) {
         return JDWP_ERROR(OUT_OF_MEMORY);
     }
@@ -511,7 +518,7 @@ transport_startTransport(jboolean isServer, char *name, char *address,
 
         info->timeout = timeout;
 
-        info->name = jvmtiAllocate((int)strlen(name)+1);
+        info->name = (char*)jvmtiAllocate((int)strlen(name)+1);
         if (info->name == NULL) {
             serror = JDWP_ERROR(OUT_OF_MEMORY);
             goto handleError;
@@ -519,7 +526,7 @@ transport_startTransport(jboolean isServer, char *name, char *address,
         (void)strcpy(info->name, name);
 
         if (address != NULL) {
-            info->address = jvmtiAllocate((int)strlen(address)+1);
+            info->address = (char*)jvmtiAllocate((int)strlen(address)+1);
             if (info->address == NULL) {
                 serror = JDWP_ERROR(OUT_OF_MEMORY);
                 goto handleError;
@@ -538,7 +545,7 @@ transport_startTransport(jboolean isServer, char *name, char *address,
              * as the version 1.0 does not support the 'allow' option.
              */
             if (allowed_peers != NULL) {
-                info->allowed_peers = jvmtiAllocate((int)strlen(allowed_peers) + 1);
+                info->allowed_peers = (char*)jvmtiAllocate((int)strlen(allowed_peers) + 1);
                 if (info->allowed_peers == NULL) {
                     serror = JDWP_ERROR(OUT_OF_MEMORY);
                     goto handleError;
@@ -546,7 +553,8 @@ transport_startTransport(jboolean isServer, char *name, char *address,
                 (void)strcpy(info->allowed_peers, allowed_peers);
             }
             cfg.allowed_peers = info->allowed_peers;
-            err = (*trans)->SetTransportConfiguration(trans, &cfg);
+            //err = (*trans)->SetTransportConfiguration(trans, &cfg);
+            err = trans->SetTransportConfiguration(&cfg);
             if (err != JDWPTRANSPORT_ERROR_NONE) {
                 printLastError(trans, err);
                 serror = JDWP_ERROR(TRANSPORT_INIT);
@@ -554,7 +562,8 @@ transport_startTransport(jboolean isServer, char *name, char *address,
             }
         }
 
-        err = (*trans)->StartListening(trans, address, &retAddress);
+        //err = (*trans)->StartListening(trans, address, &retAddress);
+        err = trans->StartListening(address, &retAddress);
         if (err != JDWPTRANSPORT_ERROR_NONE) {
             printLastError(trans, err);
             serror = JDWP_ERROR(TRANSPORT_INIT);
@@ -611,6 +620,7 @@ handleError:
         }
         freeTransportInfo(info);
     } else {
+        jvmtiError jvmti_err;
         /*
          * Note that we don't attempt to do a launch here. Launching
          * is currently supported only in server mode.
@@ -621,7 +631,8 @@ handleError:
          * any concurrent listens, so its ok if we block here in this
          * thread, waiting for the attach to finish.
          */
-         err = (*trans)->Attach(trans, address, timeout, 0);
+         //err = (*trans)->Attach(trans, address, timeout, 0);
+         err = trans->Attach(address, timeout, 0);
          if (err != JDWPTRANSPORT_ERROR_NONE) {
              printLastError(trans, err);
              serror = JDWP_ERROR(TRANSPORT_INIT);
@@ -639,8 +650,8 @@ handleError:
          (void)strcat(threadName, name);
 
          func = &attachThread;
-         err = spawnNewThread(func, (void*)info, threadName);
-         serror = map2jdwpError(err);
+         jvmti_err = spawnNewThread(func, (void*)info, threadName);
+         serror = map2jdwpError(jvmti_err);
     }
     return serror;
 }
@@ -649,7 +660,8 @@ void
 transport_close(void)
 {
     if ( transport != NULL ) {
-        (*transport)->Close(transport);
+        //(*transport)->Close(transport);
+        transport->Close();
     }
 }
 
@@ -659,7 +671,8 @@ transport_is_open(void)
     jboolean is_open = JNI_FALSE;
 
     if ( transport != NULL ) {
-        is_open = (*transport)->IsOpen(transport);
+        //is_open = (*transport)->IsOpen(transport);
+        is_open = transport->IsOpen();
     }
     return is_open;
 }
@@ -670,14 +683,13 @@ transport_sendPacket(jdwpPacket *packet)
     jdwpTransportError err = JDWPTRANSPORT_ERROR_NONE;
     jint rc = 0;
 
-    if (transport != NULL) {
-        if ( (*transport)->IsOpen(transport) ) {
-            debugMonitorEnter(sendLock);
-            err = (*transport)->WritePacket(transport, packet);
-            debugMonitorExit(sendLock);
-        }
+    if (transport_is_open()) {
+        debugMonitorEnter(sendLock);
+        //err = (*transport)->WritePacket(transport, packet);
+        err = transport->WritePacket(packet);
+        debugMonitorExit(sendLock);
         if (err != JDWPTRANSPORT_ERROR_NONE) {
-            if ((*transport)->IsOpen(transport)) {
+            if (transport_is_open()) {
                 printLastError(transport, err);
             }
 
@@ -698,12 +710,13 @@ transport_receivePacket(jdwpPacket *packet)
 {
     jdwpTransportError err;
 
-    err = (*transport)->ReadPacket(transport, packet);
+    //err = (*transport)->ReadPacket(transport, packet);
+    err = transport->ReadPacket(packet);
     if (err != JDWPTRANSPORT_ERROR_NONE) {
         /*
          * If transport has been closed return EOF
          */
-        if (!(*transport)->IsOpen(transport)) {
+        if (!transport_is_open()) {
             packet->type.cmd.len = 0;
             return 0;
         }

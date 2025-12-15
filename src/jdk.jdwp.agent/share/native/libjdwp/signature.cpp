@@ -59,7 +59,7 @@ void methodSignature_init(char *signature, void **cursor)
 
 jboolean methodSignature_nextArgumentExists(void **cursor, jbyte *argumentTag)
 {
-    char *tagPtr = *cursor;
+    char *tagPtr = (char *)(*cursor);
     jbyte nextType = (jbyte)*tagPtr;
 
     if (*tagPtr != SIGNATURE_END_ARGS) {

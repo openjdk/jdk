@@ -37,7 +37,7 @@
 
 // Platform independent part
 
-static void utfError(char *file, int line, char *message) {
+static void utfError(const char *file, int line, const char *message) {
     (void)fprintf(stderr, "UTF ERROR [\"%s\":%d]: %s\n", file, line, message);
     abort();
 }
@@ -49,7 +49,7 @@ static void utfError(char *file, int line, char *message) {
  *    Note: Accepts Modified UTF-8 also, no verification on the
  *          correctness of Standard UTF-8 is done. e,g, 0xC080 input is ok.
  */
-int JNICALL utf8sToUtf8mLength(jbyte *string, int length) {
+int JNICALL utf8sToUtf8mLength(const jbyte *string, int length) {
   int newLength;
   int i;
 
@@ -105,7 +105,7 @@ int JNICALL utf8sToUtf8mLength(jbyte *string, int length) {
  *    Note: Accepts Modified UTF-8 also, no verification on the
  *          correctness of Standard UTF-8 is done. e,g, 0xC080 input is ok.
  */
-void JNICALL utf8sToUtf8m(jbyte *string, int length, jbyte *newString, int newLength) {
+void JNICALL utf8sToUtf8m(const jbyte *string, int length, jbyte *newString, int newLength) {
     int i;
     int j;
 
@@ -167,13 +167,13 @@ void JNICALL utf8sToUtf8m(jbyte *string, int length, jbyte *newString, int newLe
  *   Note: No validation is made that this is indeed Modified UTF-8 coming in.
  *
  */
-int JNICALL utf8mToUtf8sLength(jbyte *string, int length) {
+int JNICALL utf8mToUtf8sLength(const jbyte *string, int length) {
     int newLength;
     int i;
 
     newLength = 0;
     for ( i = 0 ; i < length ; i++ ) {
-        unsigned byte1, byte2, byte3, byte4, byte5, byte6;
+        unsigned byte1, byte2, /*byte3,*/ byte4, byte5, byte6;
 
         byte1 = (unsigned char)string[i];
         if ( (byte1 & 0x80) == 0 ) { /* 1byte encoding */
@@ -196,7 +196,8 @@ int JNICALL utf8mToUtf8sLength(jbyte *string, int length) {
                 break; /* Error condition */
             }
             byte2 = (unsigned char)string[++i];
-            byte3 = (unsigned char)string[++i];
+            //byte3 = (unsigned char)string[++i];
+            ++i; // byte3 is unused
             newLength += 3;
             /* Possible process a second 3byte encoding */
             if ( (i+3) < length && byte1 == 0xED && (byte2 & 0xF0) == 0xA0 ) {
@@ -232,7 +233,7 @@ int JNICALL utf8mToUtf8sLength(jbyte *string, int length) {
  *   Note: No validation is made that this is indeed Modified UTF-8 coming in.
  *
  */
-void JNICALL utf8mToUtf8s(jbyte *string, int length, jbyte *newString, int newLength) {
+void JNICALL utf8mToUtf8s(const jbyte *string, int length, jbyte *newString, int newLength) {
     int i;
     int j;
 
@@ -325,7 +326,7 @@ static UINT getCodepage() {
 /*
  * Get wide string  (assumes len>0)
  */
-static WCHAR* getWideString(UINT codePage, char* str, int len, int *pwlen) {
+static WCHAR* getWideString(UINT codePage, const char* str, int len, int *pwlen) {
     int wlen;
     WCHAR* wstr;
 
@@ -352,7 +353,7 @@ static WCHAR* getWideString(UINT codePage, char* str, int len, int *pwlen) {
  * Convert UTF-8 to a platform string
  * NOTE: outputBufSize includes the space for the trailing 0.
  */
-int JNICALL utf8ToPlatform(jbyte *utf8, int len, char* output, int outputBufSize) {
+int JNICALL utf8ToPlatform(const jbyte *utf8, int len, char* output, int outputBufSize) {
     int wlen;
     int plen;
     WCHAR* wstr;
@@ -400,7 +401,7 @@ just_copy_bytes:
  * Convert Platform Encoding to UTF-8.
  * NOTE: outputBufSize includes the space for the trailing 0.
  */
-int JNICALL utf8FromPlatform(char *str, int len, jbyte *output, int outputBufSize) {
+int JNICALL utf8FromPlatform(const char *str, int len, jbyte *output, int outputBufSize) {
     int wlen;
     int plen;
     WCHAR* wstr;
@@ -459,7 +460,7 @@ typedef enum {TO_UTF8, FROM_UTF8} conv_direction;
  *    Returns length or -1 if output overflows.
  * NOTE: outputBufSize includes the space for the trailing 0.
  */
-static int iconvConvert(conv_direction drn, char *bytes, size_t len, char *output, size_t outputBufSize) {
+static int iconvConvert(conv_direction drn, const char *bytes, size_t len, char *output, size_t outputBufSize) {
 
     static char *codeset = 0;
     iconv_t func;
@@ -506,12 +507,12 @@ static int iconvConvert(conv_direction drn, char *bytes, size_t len, char *outpu
     }
 
     // perform conversion
-    inbuf = bytes;
+    inbuf = (char*)bytes; // iconv requires non-const pointer
     outbuf = output;
     inLeft = len;
     outLeft = outputMaxLen;
 
-    bytes_converted = iconv(func, (void*)&inbuf, &inLeft, &outbuf, &outLeft);
+    bytes_converted = iconv(func, &inbuf, &inLeft, &outbuf, &outLeft);
     if (bytes_converted == (size_t) -1 || bytes_converted == 0 || inLeft != 0) {
         // Input string is invalid, not able to convert entire string
         // or some other iconv error happens.
@@ -537,8 +538,8 @@ just_copy_bytes:
  *    Returns length or -1 if output overflows.
  * NOTE: outputBufSize includes the space for the trailing 0.
  */
-int JNICALL utf8ToPlatform(jbyte *utf8, int len, char *output, int outputBufSize) {
-    return iconvConvert(FROM_UTF8, (char*)utf8, len, output, outputBufSize);
+int JNICALL utf8ToPlatform(const jbyte *utf8, int len, char *output, int outputBufSize) {
+    return iconvConvert(FROM_UTF8, (const char*)utf8, len, output, outputBufSize);
 }
 
 /*
@@ -546,7 +547,7 @@ int JNICALL utf8ToPlatform(jbyte *utf8, int len, char *output, int outputBufSize
  *    Returns length or -1 if output overflows.
  * NOTE: outputBufSize includes the space for the trailing 0.
  */
-int JNICALL utf8FromPlatform(char *str, int len, jbyte *output, int outputBufSize) {
+int JNICALL utf8FromPlatform(const char *str, int len, jbyte *output, int outputBufSize) {
     return iconvConvert(TO_UTF8, str, len, (char*) output, outputBufSize);
 }
 

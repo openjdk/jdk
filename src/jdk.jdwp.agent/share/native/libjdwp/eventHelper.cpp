@@ -490,8 +490,10 @@ handleFrameEventCommandSingle(JNIEnv* env, PacketOutputStream *out,
             tossGlobalRef(env, &(command->returnValue.l));
         }
     }
-    tossGlobalRef(env, &(command->thread));
-    tossGlobalRef(env, &(command->clazz));
+    deleteGlobalRef(env, command->thread);
+    command->thread = NULL;
+    deleteGlobalRef(env, command->clazz);
+    command->clazz = NULL;
 }
 
 static void
@@ -785,7 +787,9 @@ eventHelper_unlock(void)
 
 void commandLoop_exitVmDeathLockOnError()
 {
+#ifdef JDWP_LOGGING // to avoid "unused variable" warning
     const char* MSG_BASE = "exitVmDeathLockOnError: error in JVMTI %s: %d\n";
+#endif
     jthread cur_thread = NULL;
     jvmtiThreadInfo thread_info;
     jvmtiError err = JVMTI_ERROR_NONE;
@@ -823,67 +827,43 @@ commandLoop_sync(void)
 static void
 saveEventInfoRefs(JNIEnv *env, EventInfo *evinfo)
 {
-    jthread *pthread;
-    jclass *pclazz;
-    jobject *pobject;
-    jthread thread;
-    jclass clazz;
-    jobject object;
     char sig;
 
     JNI_FUNC_PTR(env,ExceptionClear)(env);
 
     if ( evinfo->thread != NULL ) {
-        pthread = &(evinfo->thread);
-        thread = *pthread;
-        *pthread = NULL;
-        saveGlobalRef(env, thread, pthread);
+        evinfo->thread = (jthread)newGlobalRef(env, evinfo->thread);
     }
     if ( evinfo->clazz != NULL ) {
-        pclazz = &(evinfo->clazz);
-        clazz = *pclazz;
-        *pclazz = NULL;
-        saveGlobalRef(env, clazz, pclazz);
+        evinfo->clazz = (jclass)newGlobalRef(env, evinfo->clazz);
     }
     if ( evinfo->object != NULL ) {
-        pobject = &(evinfo->object);
-        object = *pobject;
-        *pobject = NULL;
-        saveGlobalRef(env, object, pobject);
+        evinfo->object = newGlobalRef(env, evinfo->object);
     }
 
     switch (evinfo->ei) {
         case EI_FIELD_MODIFICATION:
             if ( evinfo->u.field_modification.field_clazz != NULL ) {
-                pclazz = &(evinfo->u.field_modification.field_clazz);
-                clazz = *pclazz;
-                *pclazz = NULL;
-                saveGlobalRef(env, clazz, pclazz);
+                evinfo->u.field_modification.field_clazz
+                    = (jclass)newGlobalRef(env, evinfo->u.field_modification.field_clazz);
             }
             sig = evinfo->u.field_modification.signature_type;
             if (isReferenceTag(sig)) {
                 if ( evinfo->u.field_modification.new_value.l != NULL ) {
-                    pobject = &(evinfo->u.field_modification.new_value.l);
-                    object = *pobject;
-                    *pobject = NULL;
-                    saveGlobalRef(env, object, pobject);
+                    evinfo->u.field_modification.new_value.l
+                        = newGlobalRef(env, evinfo->u.field_modification.new_value.l);
                 }
             }
             break;
         case EI_FIELD_ACCESS:
             if ( evinfo->u.field_access.field_clazz != NULL ) {
-                pclazz = &(evinfo->u.field_access.field_clazz);
-                clazz = *pclazz;
-                *pclazz = NULL;
-                saveGlobalRef(env, clazz, pclazz);
+                evinfo->u.field_access.field_clazz
+                    = (jclass)newGlobalRef(env, evinfo->u.field_access.field_clazz);
             }
             break;
         case EI_EXCEPTION:
             if ( evinfo->u.exception.catch_clazz != NULL ) {
-                pclazz = &(evinfo->u.exception.catch_clazz);
-                clazz = *pclazz;
-                *pclazz = NULL;
-                saveGlobalRef(env, clazz, pclazz);
+                evinfo->u.exception.catch_clazz = (jclass)newGlobalRef(env, evinfo->u.exception.catch_clazz);
             }
             break;
         default:
@@ -900,34 +880,41 @@ tossEventInfoRefs(JNIEnv *env, EventInfo *evinfo)
 {
     char sig;
     if ( evinfo->thread != NULL ) {
-        tossGlobalRef(env, &(evinfo->thread));
+        deleteGlobalRef(env, evinfo->thread);
+        evinfo->thread = NULL;
     }
     if ( evinfo->clazz != NULL ) {
-        tossGlobalRef(env, &(evinfo->clazz));
+        deleteGlobalRef(env, evinfo->clazz);
+        evinfo->clazz = NULL;
     }
     if ( evinfo->object != NULL ) {
-        tossGlobalRef(env, &(evinfo->object));
+        deleteGlobalRef(env, evinfo->object);
+        evinfo->object = NULL;
     }
     switch (evinfo->ei) {
         case EI_FIELD_MODIFICATION:
             if ( evinfo->u.field_modification.field_clazz != NULL ) {
-                tossGlobalRef(env, &(evinfo->u.field_modification.field_clazz));
+                deleteGlobalRef(env, evinfo->u.field_modification.field_clazz);
+                evinfo->u.field_modification.field_clazz = NULL;
             }
             sig = evinfo->u.field_modification.signature_type;
             if (isReferenceTag(sig)) {
                 if ( evinfo->u.field_modification.new_value.l != NULL ) {
-                    tossGlobalRef(env, &(evinfo->u.field_modification.new_value.l));
+                    deleteGlobalRef(env, evinfo->u.field_modification.new_value.l);
+                    evinfo->u.field_modification.new_value.l = NULL;
                 }
             }
             break;
         case EI_FIELD_ACCESS:
             if ( evinfo->u.field_access.field_clazz != NULL ) {
-                tossGlobalRef(env, &(evinfo->u.field_access.field_clazz));
+                deleteGlobalRef(env, evinfo->u.field_access.field_clazz);
+                evinfo->u.field_access.field_clazz = NULL;
             }
             break;
         case EI_EXCEPTION:
             if ( evinfo->u.exception.catch_clazz != NULL ) {
-                tossGlobalRef(env, &(evinfo->u.exception.catch_clazz));
+                deleteGlobalRef(env, evinfo->u.exception.catch_clazz);
+                evinfo->u.exception.catch_clazz = NULL;
             }
             break;
         default:
@@ -946,9 +933,9 @@ eventHelper_createEventBag(void)
 static jboolean
 enumForCombinedSuspendPolicy(void *cv, void *arg)
 {
-    CommandSingle *command = cv;
+    CommandSingle *command = (CommandSingle*)cv;
     jbyte thisPolicy;
-    jbyte *policy = arg;
+    jbyte *policy = (jbyte*)arg;
 
     switch(command->singleKind) {
         case COMMAND_SINGLE_EVENT:
@@ -981,8 +968,8 @@ enumForCombinedSuspendPolicy(void *cv, void *arg)
 static jboolean
 enumForVMDeath(void *cv, void *arg)
 {
-    CommandSingle *command = cv;
-    jboolean *reportingVMDeath = arg;
+    CommandSingle *command = (CommandSingle*)cv;
+    jboolean *reportingVMDeath = (jboolean*)arg;
 
     if (command->singleKind == COMMAND_SINGLE_EVENT) {
         if (command->u.eventCommand.info.ei == EI_VM_DEATH) {
@@ -1030,7 +1017,7 @@ eventHelper_reportEvents(jbyte sessionID, struct bag *eventBag)
     /*LINTED*/
     command_size = (int)(sizeof(HelperCommand) +
                          sizeof(CommandSingle)*(size-1));
-    command = jvmtiAllocate(command_size);
+    command = (HelperCommand*)jvmtiAllocate(command_size);
     (void)memset(command, 0, command_size);
     command->commandKind = COMMAND_REPORT_EVENT_COMPOSITE;
     command->sessionID = sessionID;
@@ -1057,7 +1044,7 @@ eventHelper_recordEvent(EventInfo *evinfo, jint id, jbyte suspendPolicy,
                         struct bag *eventBag)
 {
     JNIEnv *env = getEnv();
-    CommandSingle *command = bagAdd(eventBag);
+    CommandSingle *command = (CommandSingle*)bagAdd(eventBag);
     if (command == NULL) {
         EXIT_ERROR(AGENT_ERROR_OUT_OF_MEMORY,"bagAdd(eventBag)");
     }
@@ -1077,7 +1064,7 @@ eventHelper_recordEvent(EventInfo *evinfo, jint id, jbyte suspendPolicy,
 void
 eventHelper_recordClassUnload(jint id, char *signature, struct bag *eventBag)
 {
-    CommandSingle *command = bagAdd(eventBag);
+    CommandSingle *command = (CommandSingle*)bagAdd(eventBag);
     if (command == NULL) {
         EXIT_ERROR(AGENT_ERROR_OUT_OF_MEMORY,"bagAdd(eventBag)");
     }
@@ -1096,7 +1083,7 @@ eventHelper_recordFrameEvent(jint id, jbyte suspendPolicy, EventIndex ei,
 {
     JNIEnv *env = getEnv();
     FrameEventCommandSingle *frameCommand;
-    CommandSingle *command = bagAdd(eventBag);
+    CommandSingle *command = (CommandSingle*)bagAdd(eventBag);
     jvmtiError err = JVMTI_ERROR_NONE;
     if (command == NULL) {
         EXIT_ERROR(AGENT_ERROR_OUT_OF_MEMORY,"bagAdd(eventBag)");
@@ -1107,8 +1094,8 @@ eventHelper_recordFrameEvent(jint id, jbyte suspendPolicy, EventIndex ei,
     frameCommand->suspendPolicy = suspendPolicy;
     frameCommand->id = id;
     frameCommand->ei = ei;
-    saveGlobalRef(env, thread, &(frameCommand->thread));
-    saveGlobalRef(env, clazz, &(frameCommand->clazz));
+    frameCommand->thread = (jthread)newGlobalRef(env, thread);
+    frameCommand->clazz = (jclass)newGlobalRef(env, clazz);
     frameCommand->method = method;
     frameCommand->location = location;
     if (needReturnValue) {
@@ -1137,7 +1124,7 @@ void
 eventHelper_reportInvokeDone(jbyte sessionID, jthread thread)
 {
     JNIEnv *env = getEnv();
-    HelperCommand *command = jvmtiAllocate(sizeof(*command));
+    HelperCommand *command = (HelperCommand*)jvmtiAllocate(sizeof(*command));
     if (command == NULL) {
         EXIT_ERROR(AGENT_ERROR_OUT_OF_MEMORY,"HelperCommand");
     }
@@ -1155,7 +1142,7 @@ eventHelper_reportInvokeDone(jbyte sessionID, jthread thread)
 void
 eventHelper_reportVMInit(JNIEnv *env, jbyte sessionID, jthread thread, jbyte suspendPolicy)
 {
-    HelperCommand *command = jvmtiAllocate(sizeof(*command));
+    HelperCommand *command = (HelperCommand*)jvmtiAllocate(sizeof(*command));
     if (command == NULL) {
         EXIT_ERROR(AGENT_ERROR_OUT_OF_MEMORY,"HelperCommmand");
     }
@@ -1171,7 +1158,7 @@ void
 eventHelper_suspendThread(jbyte sessionID, jthread thread)
 {
     JNIEnv *env = getEnv();
-    HelperCommand *command = jvmtiAllocate(sizeof(*command));
+    HelperCommand *command = (HelperCommand*)jvmtiAllocate(sizeof(*command));
     if (command == NULL) {
         EXIT_ERROR(AGENT_ERROR_OUT_OF_MEMORY,"HelperCommmand");
     }

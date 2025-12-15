@@ -48,7 +48,7 @@ static void dll_build_name(char* buffer, size_t buflen,
     char *path, *paths_copy, *next_token;
     *buffer = '\0';
 
-    paths_copy = jvmtiAllocate((int)strlen(paths) + 1);
+    paths_copy = (char*)jvmtiAllocate((int)strlen(paths) + 1);
     if (paths_copy == NULL) {
         return;
     }

@@ -45,7 +45,7 @@ typedef struct PacketOutputStream {
     jint left;
     struct PacketData *segment;
     struct PacketData firstSegment;
-    jvmtiError error;
+    jdwpError error;
     jboolean sent;
     jdwpPacket packet;
     jbyte initialSegment[INITIAL_SEGMENT_SIZE];
@@ -74,8 +74,8 @@ jdwpError outStream_writeFrameID(PacketOutputStream *stream, FrameID val);
 jdwpError outStream_writeMethodID(PacketOutputStream *stream, jmethodID val);
 jdwpError outStream_writeFieldID(PacketOutputStream *stream, jfieldID val);
 jdwpError outStream_writeLocation(PacketOutputStream *stream, jlocation val);
-jdwpError outStream_writeByteArray(PacketOutputStream*stream, jint length, jbyte *bytes);
-jdwpError outStream_writeString(PacketOutputStream *stream, char *string);
+jdwpError outStream_writeByteArray(PacketOutputStream*stream, jint length, const jbyte *bytes);
+jdwpError outStream_writeString(PacketOutputStream *stream, const char *string);
 jdwpError outStream_writeValue(JNIEnv *env, struct PacketOutputStream *out,
                           jbyte typeKey, jvalue value);
 jdwpError outStream_skipBytes(PacketOutputStream *stream, jint count);

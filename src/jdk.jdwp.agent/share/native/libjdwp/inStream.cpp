@@ -207,7 +207,7 @@ inStream_readObjectRef(JNIEnv *env, PacketInputStream *stream)
         return NULL;
     }
 
-    refPtr = bagAdd(stream->refs);
+    refPtr = (jobject*)bagAdd(stream->refs);
     if (refPtr == NULL) {
         commonRef_idToRef_delete(env, ref);
         return NULL;
@@ -244,7 +244,7 @@ inStream_readClassRef(JNIEnv *env, PacketInputStream *stream)
         stream->error = JDWP_ERROR(INVALID_CLASS);
         return NULL;
     }
-    return object;
+    return (jclass)object;
 }
 
 jthread
@@ -262,7 +262,7 @@ inStream_readThreadRef(JNIEnv *env, PacketInputStream *stream)
         stream->error = JDWP_ERROR(INVALID_THREAD);
         return NULL;
     }
-    return object;
+    return (jthread)object;
 }
 
 jthreadGroup
@@ -280,7 +280,7 @@ inStream_readThreadGroupRef(JNIEnv *env, PacketInputStream *stream)
         stream->error = JDWP_ERROR(INVALID_THREAD_GROUP);
         return NULL;
     }
-    return object;
+    return (jthreadGroup)object;
 }
 
 jstring
@@ -298,10 +298,10 @@ inStream_readStringRef(JNIEnv *env, PacketInputStream *stream)
         stream->error = JDWP_ERROR(INVALID_STRING);
         return NULL;
     }
-    return object;
+    return (jstring)object;
 }
 
-jclass
+jobject
 inStream_readClassLoaderRef(JNIEnv *env, PacketInputStream *stream)
 {
     jobject object = inStream_readObjectRef(env, stream);
@@ -334,7 +334,7 @@ inStream_readArrayRef(JNIEnv *env, PacketInputStream *stream)
         stream->error = JDWP_ERROR(INVALID_ARRAY);
         return NULL;
     }
-    return object;
+    return (jarray)object;
 }
 
 /*
@@ -390,7 +390,7 @@ inStream_readString(PacketInputStream *stream)
     char *string;
 
     length = inStream_readInt(stream);
-    string = jvmtiAllocate(length + 1);
+    string = (char *)jvmtiAllocate(length + 1);
     if (string != NULL) {
         int new_length;
 
@@ -402,7 +402,7 @@ inStream_readString(PacketInputStream *stream)
         if ( new_length != length ) {
             char *new_string;
 
-            new_string = jvmtiAllocate(new_length+1);
+            new_string = (char *)jvmtiAllocate(new_length+1);
             utf8sToUtf8m((jbyte*)string, length, (jbyte*)new_string, new_length);
             jvmtiDeallocate(string);
             return new_string;
@@ -479,8 +479,8 @@ inStream_readValue(PacketInputStream *stream)
 static jboolean
 deleteRef(void *elementPtr, void *arg)
 {
-    JNIEnv *env = arg;
-    jobject *refPtr = elementPtr;
+    JNIEnv *env = (JNIEnv*)arg;
+    jobject *refPtr = (jobject*)elementPtr;
     commonRef_idToRef_delete(env, *refPtr);
     return JNI_TRUE;
 }

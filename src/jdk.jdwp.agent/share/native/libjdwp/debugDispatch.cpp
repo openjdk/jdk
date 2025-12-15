@@ -54,7 +54,7 @@ debugDispatch_initialize(void)
      * Zero the table so that unknown CommandSets do not
      * cause random errors.
      */
-    cmdSetsArray = jvmtiAllocate((JDWP_HIGHEST_COMMAND_SET+1) * sizeof(CommandSet *));
+    cmdSetsArray = (CommandSet**)jvmtiAllocate((JDWP_HIGHEST_COMMAND_SET+1) * sizeof(CommandSet *));
 
     if (cmdSetsArray == NULL) {
         EXIT_ERROR(AGENT_ERROR_OUT_OF_MEMORY,"command set array");

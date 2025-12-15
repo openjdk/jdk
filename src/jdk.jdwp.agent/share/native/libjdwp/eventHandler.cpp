@@ -481,7 +481,7 @@ eventHandler_synthesizeUnloadEvent(char *signature, JNIEnv *env)
     /* Signature needs to last, so convert extra copy to
      * classname
      */
-    classname = jvmtiAllocate((int)strlen(signature)+1);
+    classname = (char*)jvmtiAllocate((int)strlen(signature)+1);
     (void)strcpy(classname, signature);
     convertSignatureToClassname(classname);
 
@@ -500,7 +500,7 @@ eventHandler_synthesizeUnloadEvent(char *signature, JNIEnv *env)
              * be freed when the event helper thread has written
              * it.  So each event needs a separate allocation.
              */
-            char *durableSignature = jvmtiAllocate((int)strlen(signature)+1);
+            char *durableSignature = (char*)jvmtiAllocate((int)strlen(signature)+1);
             (void)strcpy(durableSignature, signature);
 
             eventHelper_recordClassUnload(node->handlerID,
@@ -519,7 +519,7 @@ eventHandler_synthesizeUnloadEvent(char *signature, JNIEnv *env)
     debugMonitorExit(handlerLock);
 
     if (eventBag != NULL) {
-        reportEvents(env, eventSessionID, (jthread)NULL, 0,
+        reportEvents(env, eventSessionID, (jthread)NULL, (EventIndex)0,
                             (jclass)NULL, (jmethodID)NULL, 0, eventBag);
 
         /*
@@ -1495,7 +1495,7 @@ void
 eventHandler_initialize(jbyte sessionID)
 {
     jvmtiError error;
-    jint i;
+    int i;
 
     requestIdCounter = 1;
     currentSessionID = sessionID;
@@ -1511,7 +1511,7 @@ eventHandler_initialize(jbyte sessionID)
     handlerLock = debugMonitorCreate("JDWP Event Handler Lock");
 
     for (i = EI_min; i <= EI_max; ++i) {
-        getHandlerChain(i)->first = NULL;
+        getHandlerChain((EventIndex)i)->first = NULL;
     }
 
     /*
@@ -1715,7 +1715,7 @@ eventHandler_reset(jbyte sessionID)
 
     /* delete all handlers */
     for (i = EI_min; i <= EI_max; i++) {
-        (void)freeHandlerChain(getHandlerChain(i));
+        (void)freeHandlerChain(getHandlerChain((EventIndex)i));
     }
 
     requestIdCounter = 1;
@@ -1902,7 +1902,7 @@ eventHandler_dumpAllHandlers(jboolean dumpPermanent)
 {
     int ei;
     for (ei = EI_min; ei <= EI_max; ++ei) {
-        eventHandler_dumpHandlers(ei, dumpPermanent);
+        eventHandler_dumpHandlers((EventIndex)ei, dumpPermanent);
     }
 }
 

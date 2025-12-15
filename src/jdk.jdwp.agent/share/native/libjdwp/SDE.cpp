@@ -30,7 +30,9 @@
 
 #ifdef __APPLE__
 /* use setjmp/longjmp versions that do not save/restore the signal mask */
+#undef setjmp
 #define setjmp _setjmp
+#undef longjmp
 #define longjmp _longjmp
 #endif
 
@@ -68,7 +70,7 @@ typedef struct {
 } LineTableRecord;
 
 typedef struct {
-    String id;
+    const String id;
     int fileIndex;
     int lineIndex;
 } StratumTableRecord;
@@ -123,7 +125,7 @@ private jboolean isValid(void);
 
             /* Delete existing info */
             if ( cachedClass != null ) {
-                tossGlobalRef(env, &cachedClass);
+                deleteGlobalRef(env, cachedClass);
                 cachedClass = null;
             }
             if ( sourceDebugExtension!=null ) {
@@ -156,8 +158,7 @@ private jboolean isValid(void);
                 }
             }
 
-            cachedClass = null;
-            saveGlobalRef(env, clazz, &cachedClass);
+            cachedClass = (jclass)newGlobalRef(env, clazz);
         }
     }
 
@@ -289,7 +290,7 @@ private jboolean isValid(void);
     }
 
 
-    private void syntax(String msg) {
+    private void syntax(const char* msg) {
         char buf[200];
         (void)snprintf(buf, sizeof(buf),
                 "bad SourceDebugExtension syntax - position %d - %s\n",
@@ -329,7 +330,7 @@ private jboolean isValid(void);
                                   INIT_SIZE_LINE :
                                   lineTableSize * 2;
             allocSize = new_lineTableSize * (int)sizeof(LineTableRecord);
-            new_lineTable = jvmtiAllocate((jint)allocSize);
+            new_lineTable = (LineTableRecord*)jvmtiAllocate((jint)allocSize);
             if ( new_lineTable == NULL ) {
                 EXIT_ERROR(AGENT_ERROR_OUT_OF_MEMORY, "SDE line table");
             }
@@ -353,7 +354,7 @@ private jboolean isValid(void);
                                   INIT_SIZE_FILE :
                                   fileTableSize * 2;
             allocSize = new_fileTableSize * (int)sizeof(FileTableRecord);
-            new_fileTable = jvmtiAllocate((jint)allocSize);
+            new_fileTable = (FileTableRecord*)jvmtiAllocate((jint)allocSize);
             if ( new_fileTable == NULL ) {
                 EXIT_ERROR(AGENT_ERROR_OUT_OF_MEMORY, "SDE file table");
             }
@@ -377,7 +378,7 @@ private jboolean isValid(void);
                                   INIT_SIZE_STRATUM :
                                   stratumTableSize * 2;
             allocSize = new_stratumTableSize * (int)sizeof(StratumTableRecord);
-            new_stratumTable = jvmtiAllocate((jint)allocSize);
+            new_stratumTable = (StratumTableRecord*)jvmtiAllocate((jint)allocSize);
             if ( new_stratumTable == NULL ) {
                 EXIT_ERROR(AGENT_ERROR_OUT_OF_MEMORY, "SDE stratum table");
             }
@@ -586,7 +587,7 @@ private jboolean isValid(void);
      * Until the next stratum section, everything after this
      * is in stratumId - so, store the current indices.
      */
-    private void storeStratum(String stratumId) {
+    private void storeStratum(const String stratumId) {
         /* remove redundant strata */
         if (stratumIndex > 0) {
             if ((stratumTable[stratumIndex-1].fileIndex
@@ -716,19 +717,6 @@ private jboolean isValid(void);
         return lineTable[lti].njplsStart +
                 (((jplsLine - lineTable[lti].jplsStart) /
                                    lineTable[lti].jplsLineInc));
-    }
-
-    private int fileTableIndex(int sti, int fileId) {
-        int i;
-        int fileIndexStart = stratumTable[sti].fileIndex;
-        /* one past end */
-        int fileIndexEnd = stratumTable[sti+1].fileIndex;
-        for (i = fileIndexStart; i < fileIndexEnd; ++i) {
-            if (fileTable[i].fileId == fileId) {
-                return i;
-            }
-        }
-        return -1;
     }
 
     private jboolean isValid(void) {

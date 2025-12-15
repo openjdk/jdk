@@ -46,7 +46,7 @@ value(PacketInputStream *in, PacketOutputStream *out)
         char *utf;
 
         utf = (char *)JNI_FUNC_PTR(env,GetStringUTFChars)(env, string, NULL);
-        if (!(*env)->ExceptionCheck(env)) {
+        if (!JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
             (void)outStream_writeString(out, utf);
             JNI_FUNC_PTR(env,ReleaseStringUTFChars)(env, string, utf);
         }
