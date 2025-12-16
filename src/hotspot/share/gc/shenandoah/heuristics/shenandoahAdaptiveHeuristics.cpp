@@ -192,6 +192,14 @@ void ShenandoahAdaptiveHeuristics::record_success_degenerated() {
   adjust_spike_threshold(DEGENERATE_PENALTY_SD);
 }
 
+void ShenandoahAdaptiveHeuristics::record_unsuccessful_degenerated() {
+  ShenandoahHeuristics::record_unsuccessful_degenerated();
+  // Adjust both trigger's parameters in the case of a degenerated GC because
+  // either of them should have triggered earlier to avoid this case.
+  adjust_margin_of_error(DEGENERATE_PENALTY_SD);
+  adjust_spike_threshold(DEGENERATE_PENALTY_SD);
+}
+
 void ShenandoahAdaptiveHeuristics::record_success_full() {
   ShenandoahHeuristics::record_success_full();
   // Adjust both trigger's parameters in the case of a full GC because

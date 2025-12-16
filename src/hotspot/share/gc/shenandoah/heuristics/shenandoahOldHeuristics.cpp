@@ -767,6 +767,12 @@ void ShenandoahOldHeuristics::record_success_degenerated() {
   this->ShenandoahHeuristics::record_success_degenerated();
 }
 
+void ShenandoahOldHeuristics::record_unsuccessful_degenerated() {
+  // Forget any triggers that occurred while OLD GC was ongoing.  If we really need to start another, it will retrigger.
+  clear_triggers();
+  this->ShenandoahHeuristics::record_unsuccessful_degenerated();
+}
+
 void ShenandoahOldHeuristics::record_success_full() {
   // Forget any triggers that occurred while OLD GC was ongoing.  If we really need to start another, it will retrigger.
   clear_triggers();
