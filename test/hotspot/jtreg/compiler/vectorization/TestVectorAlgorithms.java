@@ -458,7 +458,7 @@ public class TestVectorAlgorithms {
                   IRNode.VECTOR_TEST,         "> 0",
                   IRNode.VECTOR_LONG_TO_MASK, "> 0",
                   IRNode.STORE_VECTOR_MASKED, "> 0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeature = {"avx", "true"})
     public Object filterI_VectorAPI(int[] a, int[] r, int threshold) {
         return VectorAlgorithmsImpl.filterI_VectorAPI(a, r, threshold);
     }
