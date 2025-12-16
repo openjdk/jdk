@@ -28,7 +28,6 @@
  *          Auto_Vectorization_Check, and so it should not be used for the auto vectorization
  *          aliasing check, to avoid a bad (circular) graph.
  * @run main/othervm
- *      -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:CompileCommand=compileonly,*TestAliasingCheckVPointerVariablesNotAvailable::test
  *      -XX:-TieredCompilation
  *      -Xcomp
