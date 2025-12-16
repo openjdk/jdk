@@ -37,7 +37,7 @@ class GCTracer;
 
 class GCTraceCPUTime : public StackObj {
   bool _active;                  // True if times will be measured and printed
-  CPUTime _starting_cpu_time; // User and system time at start of measurement
+  CPUTime _starting_cpu_time;    // User and system time at start of measurement
   double _starting_real_time;    // Real time at start of measurement
   GCTracer* _tracer;
 public:
