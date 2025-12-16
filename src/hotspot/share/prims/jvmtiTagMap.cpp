@@ -1204,8 +1204,8 @@ void JvmtiTagMap::flush_object_free_events() {
   assert_not_at_safepoint();
   if (env()->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
     {
-      // If another thread is posting events, let it finish.
-      // This another thread might have safepoints during event callbacks.
+      // The other thread can block for safepoints during event callbacks, so ensure we
+      // are safepoint-safe while waiting.
       ThreadBlockInVM tbivm(JavaThread::current());
       MonitorLocker ml(lock(), Mutex::_no_safepoint_check_flag);
       while (_posting_events) {
