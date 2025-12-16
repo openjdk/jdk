@@ -25,6 +25,7 @@
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
+
 #include "opto/cfgnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/loopnode.hpp"
@@ -32,6 +33,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
 #include "opto/type.hpp"
+#include "opto/vectornode.hpp"
 #include "utilities/checkedCast.hpp"
 
 const ConstraintCastNode::DependencyType ConstraintCastNode::DependencyType::FloatingNarrowing(true, true, "floating narrowing dependency"); // not pinned, narrows type
@@ -112,8 +114,115 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return this;
   }
   if (in(1) != nullptr && phase->type(in(1)) != Type::TOP) {
-    return TypeNode::Ideal(phase, can_reshape);
+    Node* res = TypeNode::Ideal(phase, can_reshape);
+    if (res != nullptr) {
+      return res;
+    }
   }
+  if (can_reshape && Opcode() != Op_CastPP) {
+    PhaseIterGVN* igvn = phase->is_IterGVN();
+    const Type* t = Value(phase);
+    if (t->singleton() && t != Type::TOP && !_dependency.narrows_type()) {
+      ResourceMark rm;
+      Node_Stack stack(0);
+      VectorSet visited;
+      Node_List clones;
+      stack.push(this, 0);
+      visited.set(_idx);
+      do {
+        Node* node = stack.node();
+        const Type* node_t = node->bottom_type();
+        assert(node_t != Type::MEMORY && node_t != Type::CONTROL && node_t != Type::ABIO, "");
+        uint index = stack.index();
+        if (index < node->outcnt()) {
+          stack.set_index(index+1);
+          Node* use = node->raw_out(index);
+          if (!use->is_CFG() && !visited.test_set(use->_idx)) {
+            if (use->is_Mem()) {
+              if (use->in(MemNode::Address) != node) {
+                assert((use->is_Store() && use->in(MemNode::ValueIn) == node) ||
+                  (use->is_StoreVectorMasked() && use->in(StoreVectorMaskedNode::Mask) == node) ||
+                  (use->is_LoadVectorMasked() && use->in(LoadNode::Address+1) == node), "");
+                continue;
+              }
+              if (!use->depends_only_on_test()) {
+                continue;
+              }
+              Node* addr = use->in(MemNode::Address);
+              const Type* addr_t = phase->type(addr);
+              assert(addr_t->make_oopptr()->isa_aryptr(), "");
+              uint phi_idx = 0;
+              for (phi_idx = 0; phi_idx < stack.size() && !stack.node_at(phi_idx)->is_Phi(); ++phi_idx);
+              if (phi_idx < stack.size()) {
+                PhiNode* phi = stack.node_at(phi_idx)->as_Phi();
+                const Type* phi_t = phase->type(phi);
+                Node* new_cast = igvn->register_new_node_with_optimizer(make_cast_for_type(phi->in(0), phi, phi_t, UnconditionalDependency, nullptr));
+                Node* prev = phi;
+                Node* prev_new = new_cast;
+                for (uint i = phi_idx+1; i < stack.size(); ++i) {
+                  Node* n = stack.node_at(i);
+                  Node* clone = n->clone();
+                  clone->replace_edge(prev, prev_new);
+                  clone = igvn->register_new_node_with_optimizer(clone);
+                  prev = n;
+                  prev_new = clone;
+                }
+                phase->is_IterGVN()->replace_input_of(use, MemNode::Address, prev_new);
+              } else {
+                assert(addr->is_AddP(), "");
+                assert(clones.size() == 0, "");
+                Node* base = addr->in(AddPNode::Base);
+                while (addr->is_AddP()) {
+                  clones.push(addr);
+                  assert(base == addr->in(AddPNode::Base), "");
+                  addr = addr->in(AddPNode::Address);
+                }
+                Node* new_cast = igvn->register_new_node_with_optimizer(new CastPPNode(in(0), base, phase->type(base), UnconditionalDependency));
+                Node* prev = nullptr;
+                while (clones.size() > 0) {
+                  Node* addp = clones.pop();
+                  Node* clone = addp->clone();
+                  clone->set_req(AddPNode::Base, new_cast);
+                  if (prev == nullptr) {
+                    assert(clone->in(AddPNode::Address) == base, "");
+                    clone->set_req(AddPNode::Address, new_cast);
+                  } else {
+                    clone->set_req(AddPNode::Address, prev);
+                  }
+                  clone = igvn->register_new_node_with_optimizer(clone);
+                  prev = clone;
+                }
+                phase->is_IterGVN()->replace_input_of(use, MemNode::Address, prev);
+              }
+              continue;
+            }
+            if (use->is_Phi()) {
+              continue;
+            }
+            int op = use->Opcode();
+            // if (op == Op_DivI || op == Op_DivL || op == Op_ModI || op == Op_ModL) {
+            //   if (use->in(2) != node) {
+            //     assert(use->in(1) == node, "");
+            //     continue;
+            //   }
+            //   // ShouldNotReachHere();
+            // }
+            if (op == Op_StrInflatedCopy || op == Op_CacheWB || op == Op_PrefetchAllocation || op == Op_ClearArray) {
+              continue;
+            }
+            if (use->is_CMove() && use->in(1) == node) {
+              continue;
+            }
+            stack.push(use, 0);
+          }
+        } else {
+          stack.pop();
+        }
+      } while (stack.is_nonempty());
+
+    }
+  }
+
   return nullptr;
 }
 
