@@ -1590,10 +1590,10 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         DrainingConnection draining = new DrainingConnection(connection.connectionIds(), idleTimeout);
         // we can ignore stateless reset in the draining state.
         remapPeerIssuedResetToken(connection, draining);
-        draining.startTimer();
 
         connection.connectionIds().forEach((id) ->
                 connections.compute(id, (i, r) -> remapDraining(i, r, draining)));
+        draining.startTimer();
         assert !connections.containsValue(connection) : connection;
     }
 
@@ -1627,10 +1627,10 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         connection.localConnectionIdManager().close();
         var closingConnection = new ClosingConnection(connection.connectionIds(), idleTimeout, datagram);
         remapPeerIssuedResetToken(connection, closingConnection);
-        closingConnection.startTimer();
 
         connection.connectionIds().forEach((id) ->
                 connections.compute(id, (i, r) -> remapClosing(i, r, closingConnection)));
+        closingConnection.startTimer();
         assert !connections.containsValue(connection) : connection;
     }
 
