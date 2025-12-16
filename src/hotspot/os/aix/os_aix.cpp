@@ -2464,15 +2464,12 @@ static bool thread_cpu_time_unchecked(Thread* thread, jlong* p_sys_time, jlong* 
   return true;
 }
 
-CPUTime_t os::detailed_thread_cpu_time(Thread* t) {
+cpu_time_t os::detailed_thread_cpu_time(Thread* t) {
   jlong sys_time;
   jlong user_time;
 
   if (!thread_cpu_time_unchecked(t, &sys_time, &user_time)) {
-    return {
-      -1,
-      -1
-    };
+    return { -1, -1 };
   }
 
   return {
@@ -2480,15 +2477,6 @@ CPUTime_t os::detailed_thread_cpu_time(Thread* t) {
     sys_time
   };
 }
-
-jlong os::thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
-  CPUTime_t cpu_time = detailed_thread_cpu_time(thread);
-  if (cpu_time.user == -1) {
-    return -1;
-  }
-  return user_sys_cpu_time ? cpu_time.user + cpu_time.system : cpu_time.user;
-}
-
 void os::current_thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
   info_ptr->max_value = all_bits_jlong;    // will not wrap in less than 64 bits
   info_ptr->may_skip_backward = false;     // elapsed time not wall time

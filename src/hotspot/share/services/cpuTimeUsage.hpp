@@ -39,11 +39,11 @@ namespace CPUTimeUsage {
     static jlong stringdedup();
 
     // user and system reported separately
-    static CPUTime_t detailed_gc_threads();
+    static cpu_time_t detailed_gc_threads();
     // detailed_gc_operation_vm_thread assumes it is called
     // during the start and end of a GC safepoint.
-    static CPUTime_t detailed_gc_operation_vm_thread();
-    static CPUTime_t detailed_stringdedup();
+    static cpu_time_t detailed_gc_operation_vm_thread();
+    static cpu_time_t detailed_stringdedup();
   };
 
   class Error : public AllStatic {

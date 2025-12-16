@@ -79,9 +79,9 @@ GCTraceCPUTime::GCTraceCPUTime(GCTracer* tracer) :
   _tracer(tracer)
 {
   if (_active) {
-    CPUTime_t cpu_time_vm = CPUTimeUsage::GC::detailed_gc_operation_vm_thread();
-    CPUTime_t cpu_time_gc = CPUTimeUsage::GC::detailed_gc_threads();
-    CPUTime_t cpu_time_stringdedup = CPUTimeUsage::GC::detailed_stringdedup();
+    cpu_time_t cpu_time_vm = CPUTimeUsage::GC::detailed_gc_operation_vm_thread();
+    cpu_time_t cpu_time_gc = CPUTimeUsage::GC::detailed_gc_threads();
+    cpu_time_t cpu_time_stringdedup = CPUTimeUsage::GC::detailed_stringdedup();
     _starting_user_time = cpu_time_vm.user + cpu_time_gc.user + cpu_time_stringdedup.user;
     _starting_system_time = cpu_time_vm.system + cpu_time_gc.system + cpu_time_stringdedup.system;
     _starting_real_time = os::elapsedTime();
@@ -94,9 +94,9 @@ GCTraceCPUTime::GCTraceCPUTime(GCTracer* tracer) :
 
 GCTraceCPUTime::~GCTraceCPUTime() {
   if (_active) {
-    CPUTime_t cpu_time_vm = CPUTimeUsage::GC::detailed_gc_operation_vm_thread();
-    CPUTime_t cpu_time_gc = CPUTimeUsage::GC::detailed_gc_threads();
-    CPUTime_t cpu_time_stringdedup = CPUTimeUsage::GC::detailed_stringdedup();
+    cpu_time_t cpu_time_vm = CPUTimeUsage::GC::detailed_gc_operation_vm_thread();
+    cpu_time_t cpu_time_gc = CPUTimeUsage::GC::detailed_gc_threads();
+    cpu_time_t cpu_time_stringdedup = CPUTimeUsage::GC::detailed_stringdedup();
 
     double real_time = os::elapsedTime() - _starting_real_time;
     jlong user_time = cpu_time_vm.user + cpu_time_gc.user + cpu_time_stringdedup.user;

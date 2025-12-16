@@ -4890,7 +4890,9 @@ bool os::same_files(const char* file1, const char* file2) {
 #define FT2INT64(ft) \
   ((jlong)((jlong)(ft).dwHighDateTime << 32 | (julong)(ft).dwLowDateTime))
 
-CPUTime_t os::detailed_thread_cpu_time(Thread* t) {
+constexpr jlong filetime_interval = 100;
+
+cpu_time_t os::detailed_thread_cpu_time(Thread* t) {
   FILETIME CreationTime;
   FILETIME ExitTime;
   FILETIME KernelTime;
@@ -4898,15 +4900,12 @@ CPUTime_t os::detailed_thread_cpu_time(Thread* t) {
 
   if (GetThreadTimes(t->osthread()->thread_handle(), &CreationTime,
                       &ExitTime, &KernelTime, &UserTime) == 0) {
-    return {
-      -1,
-      -1
-    };
+    return { -1, -1 };
   }
 
   return {
-    FT2INT64(UserTime) * 100,
-    FT2INT64(KernelTime) * 100
+    FT2INT64(UserTime) * filetime_interval,
+    FT2INT64(KernelTime) * filetime_interval
   };
 }
 
@@ -4930,14 +4929,6 @@ jlong os::thread_cpu_time(Thread* thread) {
 
 jlong os::current_thread_cpu_time(bool user_sys_cpu_time) {
   return os::thread_cpu_time(Thread::current(), user_sys_cpu_time);
-}
-
-jlong os::thread_cpu_time(Thread* thread, bool user_sys_cpu_time) {
-  CPUTime_t cpu_time = detailed_thread_cpu_time(thread);
-  if (cpu_time.user == -1) {
-    return -1;
-  }
-  return user_sys_cpu_time ? cpu_time.user + cpu_time.system : cpu_time.user;
 }
 
 void os::current_thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {

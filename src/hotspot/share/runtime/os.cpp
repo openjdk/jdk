@@ -506,6 +506,13 @@ void os::terminate_signal_thread() {
     signal_notify(sigexitnum_pd());
 }
 
+jlong os::thread_cpu_time(Thread* thread, bool user_sys_cpu_time) {
+  cpu_time_t cpu_time = detailed_thread_cpu_time(thread);
+  if (cpu_time.user == -1) {
+    return -1;
+  }
+  return user_sys_cpu_time ? cpu_time.user + cpu_time.system : cpu_time.user;
+}
 
 // --------------------- loading libraries ---------------------
 

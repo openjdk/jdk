@@ -2290,7 +2290,7 @@ int os::open(const char *path, int oflag, int mode) {
   return fd;
 }
 
-CPUTime_t os::detailed_thread_cpu_time(Thread* t) {
+cpu_time_t os::detailed_thread_cpu_time(Thread* t) {
 #ifdef __APPLE__
   struct thread_basic_info tinfo;
   mach_msg_type_number_t tcount = THREAD_INFO_MAX;
@@ -2300,19 +2300,16 @@ CPUTime_t os::detailed_thread_cpu_time(Thread* t) {
   mach_thread = t->osthread()->thread_id();
   kr = thread_info(mach_thread, THREAD_BASIC_INFO, (thread_info_t)&tinfo, &tcount);
   if (kr != KERN_SUCCESS) {
-    return {
-      -1,
-      -1
-    };
+    return { -1, -1 };
   }
 
   return {
-    ((jlong) tinfo.user_time.seconds * (jlong)1000000000) + ((jlong) tinfo.user_time.microseconds * (jlong)1000),
-    ((jlong) tinfo.system_time.seconds * (jlong)1000000000) + ((jlong)tinfo.system_time.microseconds * (jlong)1000)
+    ((jlong) tinfo.user_time.seconds * NANOSECS_PER_SEC) + ((jlong) tinfo.user_time.microseconds * MICROS_PER_SEC),
+    ((jlong) tinfo.system_time.seconds * NANOSECS_PER_SEC) + ((jlong)tinfo.system_time.microseconds * MICROS_PER_SEC)
   };
 #else
   Unimplemented();
-  return {0, 0};
+  return { 0, 0 };
 #endif
 }
 
@@ -2349,20 +2346,6 @@ jlong os::current_thread_cpu_time(bool user_sys_cpu_time) {
   return 0;
 #endif
 }
-
-jlong os::thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
-#ifdef __APPLE__
-  CPUTime_t cpu_time = detailed_thread_cpu_time(thread);
-  if (cpu_time.user == -1) {
-    return -1;
-  }
-  return user_sys_cpu_time ? cpu_time.user + cpu_time.system : cpu_time.user;
-#else
-  Unimplemented();
-  return 0;
-#endif
-}
-
 
 void os::current_thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
   info_ptr->max_value = all_bits_jlong;    // will not wrap in less than 64 bits
