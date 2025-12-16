@@ -50,6 +50,7 @@ private:
   friend class AccessAnalyzer;
 
 protected:
+  const TypeX* _offset_range;
 #ifdef ASSERT
   const TypePtr* _adr_type;     // What kind of memory is being addressed?
 #endif
@@ -72,7 +73,8 @@ protected:
       _unaligned_access(false),
       _mismatched_access(false),
       _unsafe_access(false),
-      _barrier_data(0) {
+      _barrier_data(0),
+      _offset_range(TypeX_X) {
     init_class_id(Class_Mem);
     DEBUG_ONLY(_adr_type=at; adr_type();)
   }
@@ -81,7 +83,8 @@ protected:
       _unaligned_access(false),
       _mismatched_access(false),
       _unsafe_access(false),
-      _barrier_data(0) {
+      _barrier_data(0),
+      _offset_range(TypeX_X) {
     init_class_id(Class_Mem);
     DEBUG_ONLY(_adr_type=at; adr_type();)
   }
@@ -90,7 +93,8 @@ protected:
       _unaligned_access(false),
       _mismatched_access(false),
       _unsafe_access(false),
-      _barrier_data(0) {
+      _barrier_data(0),
+      _offset_range(TypeX_X) {
     init_class_id(Class_Mem);
     DEBUG_ONLY(_adr_type=at; adr_type();)
   }
@@ -152,6 +156,10 @@ public:
 
   uint8_t barrier_data() { return _barrier_data; }
   void set_barrier_data(uint8_t barrier_data) { _barrier_data = barrier_data; }
+
+  void set_offset_range(const TypeX* range) {
+    _offset_range = range;
+  }
 
   // Search through memory states which precede this node (load or store).
   // Look for an exact match for the address, with no intervening

@@ -955,7 +955,8 @@ bool LoadNode::cmp(const Node &n) const {
   LoadNode& load = (LoadNode &)n;
   return Type::equals(_type, load._type) &&
          _control_dependency == load._control_dependency &&
-         _mo == load._mo;
+         _mo == load._mo &&
+         _offset_range == load._offset_range;
 }
 const Type *LoadNode::bottom_type() const { return _type; }
 uint LoadNode::ideal_reg() const {

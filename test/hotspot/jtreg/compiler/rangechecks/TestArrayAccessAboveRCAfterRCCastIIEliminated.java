@@ -164,6 +164,10 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
             test38(0, 9, 1, false, false, false);
             inlined38_2(9, 1, 0, arrayField38, true, 0, false);
             inlined38_3(0, 0);
+            test39(0, 9, 1, true, false, false);
+            test39(0, 9, 1, false, false, false);
+            inlined39_2(9, 1, 0, arrayField39, true, 0, false);
+            inlined39_3(0, 0);
         }
         try {
             test1(-1, 10, 1, true);
@@ -1887,6 +1891,7 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
         return arrayField37[0] + array2[k] * (j - 10);
     }
 
+    static final int[] test38Array = new int[100];
     private static void test38(int k, int j, int flag, boolean flag2, boolean flag3, boolean flag4) {
         int l = 0;
         for (; l < 10; l++);
@@ -1894,15 +1899,14 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
 
         int i = inlined38(k);
         j = Integer.min(j, 9);
-        int[] array = new int[100];
-        notInlined(array);
+        notInlined(test38Array);
         if (flag == 0) {
             throw new RuntimeException("never taken");
         }
         if (flag2) {
-            inlined38_2(j, flag, i, array, flag3, m, flag4);
+            inlined38_2(j, flag, i, test38Array, flag3, m, flag4);
         } else {
-            inlined38_2(j, flag, i, array, flag3, m, flag4);
+            inlined38_2(j, flag, i, test38Array, flag3, m, flag4);
         }
     }
 
@@ -1943,6 +1947,62 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
             }
         }
         return arrayField38[0] + array2[k] * (j - 10);
+    }
+
+    static final int[] test39Array = new int[100];
+    private static void test39(int k, int j, int flag, boolean flag2, boolean flag3, boolean flag4) {
+        int l = 0;
+        for (; l < 10; l++);
+        int m = inlined39_3(j, l); // 1
+
+        int i = inlined39(k);
+        j = Integer.min(j, 9);
+        notInlined(test39Array);
+        if (flag == 0) {
+            throw new RuntimeException("never taken");
+        }
+        inlined39_2(j, flag, i, test39Array, flag3, m, flag4);
+    }
+
+    private static int inlined39_3(int j, int l) {
+        if (l == 10) {
+            j = 1;
+        }
+        return j;
+    }
+
+    private static void inlined39_2(int j, int flag, int i, int[] array, boolean flag3, int m, boolean flag4) {
+        if (flag3) {
+            float[] newArray = new float[j + 1]; // j + 1 in [min+1..10]
+            // RC i <u (CastII j [min..max]) + 1
+            float v = newArray[i + m]; // i + m <u j + 1
+            if (flag4) {
+                throw new RuntimeException("never taken " + v);
+            }
+            float[] otherArray = new float[i + m];
+            if (flag == 0) {
+                throw new RuntimeException("never taken");
+            }
+            intField = array[otherArray.length]; // array.length >= 10, otherArray.length < 10
+        } else {
+            volatileField = 42;
+        }
+    }
+
+    static int[] arrayField39 = new int[10];
+
+    // produces Integer.MAX_VALUE - 5 after macro expansion
+    private static int inlined39(int k) {
+        k = Integer.max(0, Integer.min(k, 9));
+        arrayField39[0] = Integer.MAX_VALUE - 5;
+        int[] array2 = new int[10];
+        int j;
+        for (j = 0; j < 10; j++) {
+            for (int i = 0; i < 10; i++) {
+
+            }
+        }
+        return arrayField39[0] + array2[k] * (j - 10);
     }
 
     private static void notInlined(Object array) {

@@ -156,7 +156,7 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
               if (phi_idx < stack.size()) {
                 PhiNode* phi = stack.node_at(phi_idx)->as_Phi();
                 const Type* phi_t = phase->type(phi);
-                Node* new_cast = igvn->register_new_node_with_optimizer(make_cast_for_type(phi->in(0), phi, phi_t, UnconditionalDependency, nullptr));
+                Node* new_cast = igvn->register_new_node_with_optimizer(make_cast_for_type(phi->in(0), phi, phi_t, DependencyType::NonFloatingNonNarrowing, nullptr));
                 Node* prev = phi;
                 Node* prev_new = new_cast;
                 for (uint i = phi_idx+1; i < stack.size(); ++i) {
@@ -177,7 +177,7 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
                   assert(base == addr->in(AddPNode::Base), "");
                   addr = addr->in(AddPNode::Address);
                 }
-                Node* new_cast = igvn->register_new_node_with_optimizer(new CastPPNode(in(0), base, phase->type(base), UnconditionalDependency));
+                Node* new_cast = igvn->register_new_node_with_optimizer(new CastPPNode(in(0), base, phase->type(base), DependencyType::NonFloatingNonNarrowing));
                 Node* prev = nullptr;
                 while (clones.size() > 0) {
                   Node* addp = clones.pop();
