@@ -1224,7 +1224,7 @@ void ShenandoahFreeSet::move_unaffiliated_regions_from_collector_to_old_collecto
   size_t collector_capacity = _partitions.get_capacity(ShenandoahFreeSetPartitionId::Collector);
   if (count > 0) {
     size_t ucount = count;
-    size_t bytes_moved = count * region_size_bytes;
+    size_t bytes_moved = ucount * region_size_bytes;
     assert(collector_capacity >= bytes_moved, "Cannot transfer");
     assert(_partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::Collector) >= ucount,
            "Cannot transfer %zu of %zu", ucount, _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::Collector));
@@ -1234,7 +1234,7 @@ void ShenandoahFreeSet::move_unaffiliated_regions_from_collector_to_old_collecto
     _partitions.increase_empty_region_counts(ShenandoahFreeSetPartitionId::OldCollector, ucount);
   } else if (count < 0) {
     size_t ucount = -count;
-    size_t bytes_moved = count * region_size_bytes;
+    size_t bytes_moved = ucount * region_size_bytes;
     assert(old_capacity >= bytes_moved, "Cannot transfer");
     assert(_partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::OldCollector) >= ucount,
            "Cannot transfer %zu of %zu", ucount, _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::OldCollector));
