@@ -682,35 +682,43 @@ public:
   // A negative argument results in moving from old_collector to collector
   void move_unaffiliated_regions_from_collector_to_old_collector(ssize_t regions);
 
-  size_t global_unaffiliated_regions() {
+  inline size_t global_unaffiliated_regions() {
     return _global_unaffiliated_regions;
   }
 
-  size_t young_unaffiliated_regions() {
+  inline size_t young_unaffiliated_regions() {
     return _young_unaffiliated_regions;
   }
 
-  size_t old_unaffiliated_regions() {
+  inline size_t collector_unaffiliated_regions() {
+    return _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::Collector);
+  }
+
+  inline size_t old_collector_unaffiliated_regions() {
     return _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::OldCollector);
   }
 
-  size_t young_affiliated_regions() {
+  inline size_t old_unaffiliated_regions() {
+    return _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::OldCollector);
+  }
+
+  inline size_t young_affiliated_regions() {
     return _young_affiliated_regions;
   }
 
-  size_t old_affiliated_regions() {
+  inline size_t old_affiliated_regions() {
     return _old_affiliated_regions;
   }
 
-  size_t global_affiliated_regions() {
+  inline size_t global_affiliated_regions() {
     return _global_affiliated_regions;
   }
 
-  size_t total_young_regions() {
+  inline size_t total_young_regions() {
     return _total_young_regions;
   }
 
-  size_t total_old_regions() {
+  inline size_t total_old_regions() {
     return _partitions.get_capacity(ShenandoahFreeSetPartitionId::OldCollector) / ShenandoahHeapRegion::region_size_bytes();
   }
 

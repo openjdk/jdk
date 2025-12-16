@@ -52,6 +52,7 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
                                                               size_t cur_young_garbage) const {
   shenandoah_assert_heaplocked_or_safepoint();
   auto heap = ShenandoahGenerationalHeap::heap();
+  auto free_set = heap->free_set();
   size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
   size_t capacity = heap->soft_max_capacity();
 
@@ -63,9 +64,9 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
   size_t old_evac_reserve = heap->old_generation()->get_evacuation_reserve();
   size_t old_promo_reserve = heap->old_generation()->get_promoted_reserve();
 
-  size_t unaffiliated_young_regions = heap->young_generation()->free_unaffiliated_regions();
+  size_t unaffiliated_young_regions = free_set->collector_unaffiliated_regions();
   size_t unaffiliated_young_memory = unaffiliated_young_regions * region_size_bytes;
-  size_t unaffiliated_old_regions = heap->old_generation()->free_unaffiliated_regions();
+  size_t unaffiliated_old_regions = free_set->old_collector_unaffiliated_regions();
   size_t unaffiliated_old_memory = unaffiliated_old_regions * region_size_bytes;
 
   // Figure out how many unaffiliated regions are dedicated to Collector and OldCollector reserves.  Let these
@@ -77,7 +78,7 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
   // Truncate reserves to only target unaffiliated memory
   size_t shared_reserve_regions = 0;
   if (young_evac_reserve > unaffiliated_young_memory) {
-    shared_reserve_regions += unaffiliated_young_memory / region_size_bytes;
+    shared_reserve_regions += unaffiliated_young_regions;
   } else {
     size_t delta_regions = young_evac_reserve / region_size_bytes;
     shared_reserve_regions += delta_regions;
@@ -86,13 +87,27 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
   size_t total_old_reserve = old_evac_reserve + old_promo_reserve;
   if (total_old_reserve > unaffiliated_old_memory) {
     // Give all the unaffiliated memory to the shared reserves.  Leave the rest for promo reserve.
-    shared_reserve_regions += unaffiliated_old_memory / region_size_bytes;
+    shared_reserve_regions += unaffiliated_old_regions;
     old_promo_reserve = total_old_reserve - unaffiliated_old_memory;
   } else {
     size_t delta_regions = old_evac_reserve / region_size_bytes;
     shared_reserve_regions += delta_regions;
   }
   old_evac_reserve = 0;
+
+  // KELVIN note to self:
+  //  i'm seeing an assertion failure because _partitions.get_empty_region_counts(Collector) < unaffiliated_young_regions when
+  //    we eventually get to the point of moving regions from young to old collector below
+  //  if there was any immediate garbage, have i accounted for that already, or is it lost to me?
+  //  If that happens, the immediate garbage was not part of the "reserve", so we might just count it as additional
+  //   mutator runway.
+  //  Is the problem that the unaffiliated young regions include some unaffiliated young that were in the mutator partition
+  //   rather than the Collector partition?
+  //  This is probably the problem.
+
+  assert(shared_reserve_regions <=
+         (heap->young_generation()->free_unaffiliated_regions() + heap->old_generation()->free_unaffiliated_regions()),
+         "simple math");
 
   size_t shared_reserves = shared_reserve_regions * region_size_bytes;
   size_t committed_from_shared_reserves = 0;
@@ -220,7 +235,7 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
   }
 
   // Consider the effects of round-off:
-  //  1. We know that the sume over each evacuation mutiplied by Evacuation Waste is <= total evacuation reserve
+  //  1. We know that the sum over each evacuation mutiplied by Evacuation Waste is <= total evacuation reserve
   //  2. However, the reserve for each individual evacuation may be rounded down.  In the worst case, we will be over budget
   //     by the number of regions evacuated, since each region's reserve might be under-estimated by at most 1
   //  3. Likewise, if we take the sum of bytes evacuated and multiply this by the Evacuation Waste and then round down
@@ -235,7 +250,6 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
   assert(young_evac_reserve + old_evac_reserve + old_promo_reserve <=
          heap->young_generation()->get_evacuation_reserve() + heap->old_generation()->get_evacuation_reserve() +
          heap->old_generation()->get_promoted_reserve(), "Exceeded budget");
-
 
   if (heap->young_generation()->get_evacuation_reserve() < young_evac_reserve) {
     size_t delta_bytes = young_evac_reserve - heap->young_generation()->get_evacuation_reserve();
