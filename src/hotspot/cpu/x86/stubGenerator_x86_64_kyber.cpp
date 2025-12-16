@@ -64,30 +64,22 @@ static address kyberAvx512ConstsAddr(int offset) {
 
 const Register scratch = r10;
 
-ATTRIBUTE_ALIGNED(64) static const uint16_t kyberAvx512_12To16PermOut[] = {
-// 0 - 31
-    0, 1, 2, 2, 3, 4, 5, 5, 6, 7, 8, 8, 9, 10, 11, 11, 12, 13, 14, 14, 15, 16,
-    17, 17, 18, 19, 20, 20, 21, 22, 23, 23
+ATTRIBUTE_ALIGNED(64) static const uint8_t kyberAvx512_12To16Swap[] = {
+// 0 - 63
+    47, 46, 46, 45, 44, 43, 43, 42, 41, 40, 40, 39, 38, 37, 37, 36, 35, 34, 34,
+    33, 32, 31, 31, 30, 29, 28, 28, 27, 26, 25, 25, 24, 23, 22, 22, 21, 20, 19,
+    19, 18, 17, 16, 16, 15, 14, 13, 13, 12, 11, 10, 10, 9, 8, 7, 7, 6, 5, 4, 4,
+    3, 2, 1, 1, 0
   };
 
-static address kyberAvx512_12To16PermOutAddr() {
-  return (address) kyberAvx512_12To16PermOut;
-}
-
-ATTRIBUTE_ALIGNED(64) static const uint16_t kyberAvx512_12To16PermTmp[] = {
-// 0 - 31
-    0, 0, 1, 2, 3, 3, 4, 5, 6, 6, 7, 8, 9, 9, 10, 11, 12, 12, 13, 14, 15, 15,
-    16, 17, 18, 18, 19, 20, 21, 21, 22, 23
-  };
-
-static address kyberAvx512_12To16PermTmpAddr() {
-  return (address) kyberAvx512_12To16PermTmp;
+static address kyberAvx512_12To16SwapAddr() {
+  return (address) kyberAvx512_12To16Swap;
 }
 
 ATTRIBUTE_ALIGNED(64) static const uint16_t kyberAvx512_12To16Shift[] = {
 // 0 - 31
-    0, 4, 8, 12, 0, 4, 8, 12, 0, 4, 8, 12, 0, 4, 8, 12, 0, 4, 8, 12, 0, 4, 8,
-    12, 0, 4, 8, 12, 0, 4, 8, 12
+    4, 0, 4, 0, 4, 0, 4, 0, 4, 0, 4, 0, 4, 0, 4, 0, 4, 0, 4, 0, 4, 0, 4, 0, 4,
+    0, 4, 0, 4, 0, 4, 0
   };
 
 static address kyberAvx512_12To16ShiftAddr() {
@@ -872,17 +864,14 @@ address generate_kyber12To16_avx512(StubGenerator *stubgen,
     __ mov64(rax, 0x0000FFFFFFFFFFFF);
     __ kmovql(k1, rax);
 
-    __ lea(perms, ExternalAddress(kyberAvx512_12To16PermOutAddr()));
-    __ evmovdquw(xmm20, Address(perms), Assembler::AVX_512bit);
-
-    __ lea(perms, ExternalAddress(kyberAvx512_12To16PermTmpAddr()));
-    __ evmovdquw(xmm21, Address(perms), Assembler::AVX_512bit);
+    __ lea(perms, ExternalAddress(kyberAvx512_12To16SwapAddr()));
+    __ evmovdqub(xmm20, Address(perms), Assembler::AVX_512bit);
 
     __ lea(perms, ExternalAddress(kyberAvx512_12To16ShiftAddr()));
-    __ evmovdquw(xmm22, Address(perms), Assembler::AVX_512bit);
+    __ evmovdquw(xmm21, Address(perms), Assembler::AVX_512bit);
 
     __ lea(perms, ExternalAddress(kyberAvx512_12To16AndAddr()));
-    __ evmovdquq(xmm23, Address(perms), Assembler::AVX_512bit);
+    __ evmovdquq(xmm22, Address(perms), Assembler::AVX_512bit);
 
     __ BIND(VBMILoop);
 
@@ -895,32 +884,27 @@ address generate_kyber12To16_avx512(StubGenerator *stubgen,
       __ evmovdqub(xmm3, k1, Address(condensed, 144), false,
                    Assembler::AVX_512bit);
 
-      __ evpermw(xmm4, k0, xmm20, xmm0, false, Assembler::AVX_512bit);
-      __ evpermw(xmm5, k0, xmm20, xmm1, false, Assembler::AVX_512bit);
-      __ evpermw(xmm6, k0, xmm20, xmm2, false, Assembler::AVX_512bit);
-      __ evpermw(xmm7, k0, xmm20, xmm3, false, Assembler::AVX_512bit);
+      __ evpermb(xmm4, k0, xmm20, xmm0, false, Assembler::AVX_512bit);
+      __ evpermb(xmm5, k0, xmm20, xmm1, false, Assembler::AVX_512bit);
+      __ evpermb(xmm6, k0, xmm20, xmm2, false, Assembler::AVX_512bit);
+      __ evpermb(xmm7, k0, xmm20, xmm3, false, Assembler::AVX_512bit);
 
-      __ evpermw(xmm8, k0, xmm21, xmm0, false, Assembler::AVX_512bit);
-      __ evpermw(xmm9, k0, xmm21, xmm1, false, Assembler::AVX_512bit);
-      __ evpermw(xmm10, k0, xmm21, xmm2, false, Assembler::AVX_512bit);
-      __ evpermw(xmm11, k0, xmm21, xmm3, false, Assembler::AVX_512bit);
+      __ evpsrlvw(xmm4, k0, xmm21, xmm4, false, Assembler::AVX_512bit);
+      __ evpsrlvw(xmm5, k0, xmm21, xmm5, false, Assembler::AVX_512bit);
+      __ evpsrlvw(xmm6, k0, xmm21, xmm6, false, Assembler::AVX_512bit);
+      __ evpsrlvw(xmm7, k0, xmm21, xmm7, false, Assembler::AVX_512bit);
 
-      __ vpshldvw(xmm4, xmm8, xmm22, Assembler::AVX_512bit);
-      __ vpshldvw(xmm5, xmm9, xmm22, Assembler::AVX_512bit);
-      __ vpshldvw(xmm6, xmm10, xmm22, Assembler::AVX_512bit);
-      __ vpshldvw(xmm7, xmm11, xmm22, Assembler::AVX_512bit);
-
-      __ evpandq(xmm0, k0, xmm23, xmm4, false, Assembler::AVX_512bit);
-      __ evpandq(xmm1, k0, xmm23, xmm5, false, Assembler::AVX_512bit);
-      __ evpandq(xmm2, k0, xmm23, xmm6, false, Assembler::AVX_512bit);
-      __ evpandq(xmm3, k0, xmm23, xmm7, false, Assembler::AVX_512bit);
+      __ evpandq(xmm0, k0, xmm22, xmm4, false, Assembler::AVX_512bit);
+      __ evpandq(xmm1, k0, xmm22, xmm5, false, Assembler::AVX_512bit);
+      __ evpandq(xmm2, k0, xmm22, xmm6, false, Assembler::AVX_512bit);
+      __ evpandq(xmm3, k0, xmm22, xmm7, false, Assembler::AVX_512bit);
 
       store4regs(parsed, 0, xmm0_3, _masm);
 
       __ addptr(condensed, 192);
       __ addptr(parsed, 256);
       __ subl(parsedLength, 128);
-    __ jcc(Assembler::greater, VBMILoop);
+      __ jcc(Assembler::greater, VBMILoop);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ mov64(rax, 0); // return 0
