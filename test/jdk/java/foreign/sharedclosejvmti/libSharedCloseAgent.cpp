@@ -72,28 +72,27 @@ void method_exit(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread, jmethodID
     return;
   }
 
-  if (strcmp(method_name, INTERCEPT_METHOD_NAME) != 0) {
-    jvmti_env->Deallocate((unsigned char*) method_name);
+  bool is_intercept_method = strcmp(method_name, INTERCEPT_METHOD_NAME) == 0;
+  jvmti_env->Deallocate((unsigned char*) method_name);
+  if (!is_intercept_method) {
     return;
   }
 
   jclass cls;
   err = jvmti_env->GetMethodDeclaringClass(method, &cls);
   if (err != JVMTI_ERROR_NONE) {
-    jvmti_env->Deallocate((unsigned char*) method_name);
     return;
   }
 
   char* class_sig = nullptr;
   err = jvmti_env->GetClassSignature(cls, &class_sig, nullptr);
   if (err != JVMTI_ERROR_NONE) {
-    jvmti_env->Deallocate((unsigned char*) method_name);
     return;
   }
 
-  if (strcmp(class_sig, INTERCEPT_CLASS_NAME) != 0) {
-    jvmti_env->Deallocate((unsigned char*) method_name);
-    jvmti_env->Deallocate((unsigned char*) class_sig);
+  bool is_intercept_class = strcmp(class_sig, INTERCEPT_CLASS_NAME) == 0;
+  jvmti_env->Deallocate((unsigned char*) class_sig);
+  if (!is_intercept_class) {
     return;
   }
 
@@ -111,9 +110,6 @@ void method_exit(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread, jmethodID
     // else, another exception was thrown. Let the java logic handle the lack of
     // ScopedAccessError
   }
-
-  jvmti_env->Deallocate((unsigned char*) method_name);
-  jvmti_env->Deallocate((unsigned char*) class_sig);
 }
 
 JNIEXPORT jint JNICALL
