@@ -136,32 +136,25 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
             inlined29_2(9, 1, 0, 0, longArrayField29, 0, true, true, false);
             inlined29_2(9, 1, 0, 0, longArrayField29, 0, false, true, false);
             inlined29_3(0, 0);
-            test30(0, 9, 1, true, false);
-            test30(0, 9, 1, false, false);
+            test30(0, 9, 1, false);
             inlined30_2(9, 1, 1, true, 0);
             inlined30_3(0, 0);
-            test31(0, 9, 1, true, false);
-            test31(0, 9, 1, false, false);
+            test31(0, 9, 1, false);
             inlined31_2(9, 1, 1, true, 0);
             inlined31_3(0, 0);
-            test32(0, 9, 1, true, false);
-            test32(0, 9, 1, false, false);
+            test32(0, 9, 1, false);
             inlined32_2(9, 1, 1, true, 0);
             inlined32_3(0, 0);
-            test33(0, 9, 1, true, false);
-            test33(0, 9, 1, false, false);
+            test33(0, 9, 1, false);
             inlined33_2(9, 1, 1, true, 0);
             inlined33_3(0, 0);
-            test34(0, 9, 1, true, false);
-            test34(0, 9, 1, false, false);
+            test34(0, 9, 1, false);
             inlined34_2(9, 1, 1, true, 0);
             inlined34_3(0, 0);
-            test35(0, 9, 1, true, false);
-            test35(0, 9, 1, false, false);
+            test35(0, 9, 1, false);
             inlined35_2(9, 1, 1, true, 0);
             inlined35_3(0, 0);
-            test36(0, 9, 1, true, false);
-            test36(0, 9, 1, false, false);
+            test36(0, 9, 1, false);
             inlined36_2(9, 1, 1, true, 0);
             inlined36_3(0, 0);
         }
@@ -1450,7 +1443,7 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
         return arrayField29[0] + array2[k] * (j - 10);
     }
 
-    private static void test30(int k, int j, int flag, boolean flag2, boolean flag3) {
+    private static void test30(int k, int j, int flag, boolean flag3) {
         int l = 0;
         for (; l < 10; l++);
         int m = inlined30_3(j, l);
@@ -1503,7 +1496,7 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
         return arrayField30[0] + array2[k] * (j - 10);
     }
 
-    private static void test31(int k, int j, int flag, boolean flag2, boolean flag3) {
+    private static void test31(int k, int j, int flag, boolean flag3) {
         int l = 0;
         for (; l < 10; l++);
         int m = inlined31_3(j, l);
@@ -1558,7 +1551,7 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
         return arrayField31[0] + array2[k] * (j - 10);
     }
 
-    private static void test32(int k, int j, int flag, boolean flag2, boolean flag3) {
+    private static void test32(int k, int j, int flag, boolean flag3) {
         int l = 0;
         for (; l < 10; l++);
         int m = inlined32_3(j, l);
@@ -1613,7 +1606,7 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
         return arrayField32[0] + array2[k] * (j - 10);
     }
 
-    private static void test33(int k, int j, int flag, boolean flag2, boolean flag3) {
+    private static void test33(int k, int j, int flag, boolean flag3) {
         int l = 0;
         for (; l < 10; l++);
         int m = inlined33_3(j, l);
@@ -1668,7 +1661,7 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
         return arrayField33[0] + array2[k] * (j - 10);
     }
 
-    private static void test34(int k, int j, int flag, boolean flag2, boolean flag3) {
+    private static void test34(int k, int j, int flag, boolean flag3) {
         int l = 0;
         for (; l < 10; l++);
         int m = inlined34_3(j, l);
@@ -1723,7 +1716,7 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
         return arrayField34[0] + array2[k] * (j - 10);
     }
 
-    private static void test35(int k, int j, int flag, boolean flag2, boolean flag3) {
+    private static void test35(int k, int j, int flag, boolean flag3) {
         int l = 0;
         for (; l < 10; l++);
         int m = inlined35_3(j, l);
@@ -1777,7 +1770,7 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
         return arrayField35[0] + array2[k] * (j - 10);
     }
 
-    private static void test36(int k, int j, int flag, boolean flag2, boolean flag3) {
+    private static void test36(int k, int j, int flag, boolean flag3) {
         int l = 0;
         for (; l < 10; l++);
         int m = inlined36_3(j, l);
@@ -1832,7 +1825,7 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
         return arrayField36[0] + array2[k] * (j - 10);
     }
 
-    private static void test37(int k, int j, int flag, boolean flag2, boolean flag3) {
+    private static void test37(int k, int j, int flag, boolean flag3) {
         int l = 0;
         for (; l < 10; l++);
         int m = inlined37_3(j, l);
