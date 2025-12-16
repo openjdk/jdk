@@ -4189,7 +4189,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         if (scale == 0)                      // zero scale is trivial
             return unscaledString();
 
-        long intCompact = this.intCompact;
+        long intCompact = this.intCompact, adjusted;
         int signum, coeffLen;
         // the significand as an absolute value
         String coeff;
@@ -4200,8 +4200,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 return scale2((int) intCompact);
             }
             coeffLen = DecimalDigits.stringSize(intCompactAbs);
-            signum = signum();
-            long adjusted = -(long)scale + (coeffLen -1);
+            signum = Long.signum(intCompact);
+            adjusted = -(long)scale + (coeffLen -1);
             if ((scale >= 0) & (adjusted >= -6)) { // plain number
                 return getCompactValueString(signum, intCompactAbs, coeffLen, scale);
             }
@@ -4209,19 +4209,20 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             DecimalDigits.uncheckedGetCharsLatin1(intCompactAbs, buf.length, buf);
             coeff = JLA.uncheckedNewStringWithLatin1Bytes(buf);
         } else {
-            signum = signum();
+            signum = intVal.signum();
             coeff = intVal.abs().toString();
             coeffLen = coeff.length();
+
+            // Construct a buffer, with sufficient capacity for all cases.
+            // If E-notation is needed, length will be: +1 if negative, +1
+            // if '.' needed, +2 for "E+", + up to 10 for adjusted exponent.
+            // Otherwise it could have +1 if negative, plus leading "0.00000"
+            adjusted = -(long) scale + (coeffLen - 1);
+            if ((scale >= 0) && (adjusted >= -6)) { // plain number
+                return getValueString(signum, coeff, scale);
+            }
         }
 
-        // Construct a buffer, with sufficient capacity for all cases.
-        // If E-notation is needed, length will be: +1 if negative, +1
-        // if '.' needed, +2 for "E+", + up to 10 for adjusted exponent.
-        // Otherwise it could have +1 if negative, plus leading "0.00000"
-        long adjusted = -(long) scale + (coeffLen - 1);
-        if ((scale >= 0) && (adjusted >= -6)) { // plain number
-            return getValueString(signum, coeff, scale);
-        }
         // E-notation is needed
         return layoutCharsE(sci, coeff, coeffLen, adjusted);
     }
