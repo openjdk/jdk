@@ -139,8 +139,6 @@ private:
   oop _pending_list;
   void* _pending_list_tail; // T*
 
-  volatile uint _iterate_discovered_list_id;
-
   ReferenceProcessorStats _stats;
 
   ShenandoahGeneration* _generation;
@@ -166,7 +164,7 @@ private:
   template <typename T>
   oop drop(oop reference, ReferenceType type);
   template <typename T>
-  T* keep(oop reference, ReferenceType type, uint worker_id);
+  T* keep(oop reference, ReferenceType type);
 
   template <typename T>
   void process_references(ShenandoahRefProcThreadLocal& refproc_data, uint worker_id);
@@ -217,15 +215,13 @@ public:
   // we have this method to traverse the discovered lists after young evacuation is
   // complete. It will replace any forwarded entries in the discovered list with the
   // forwardee.
-  void heal_discovered_lists() const;
+  void heal_discovered_lists(ShenandoahPhaseTimings::Phase phase, WorkerThreads* workers, bool concurrent);
 
   bool discover_reference(oop obj, ReferenceType type) override;
 
   void process_references(ShenandoahPhaseTimings::Phase phase, WorkerThreads* workers, bool concurrent);
 
-  const ReferenceProcessorStats& reference_process_stats() { return _stats; }
-
-  void work();
+  const ReferenceProcessorStats& reference_process_stats() const { return _stats; }
 
   void abandon_partial_discovery();
 };

@@ -179,6 +179,49 @@ static void soft_reference_update_clock() {
   java_lang_ref_SoftReference::set_clock(now);
 }
 
+template <typename CallbackT>
+class ShenandoahReferenceProcessorTask : public WorkerTask {
+private:
+  bool const                          _concurrent;
+  ShenandoahPhaseTimings::Phase const _phase;
+  ShenandoahRefProcThreadLocal* const _ref_proc_thread_locals;
+  CallbackT _callback;
+  volatile uint _iterate_discovered_list_id;
+
+public:
+  ShenandoahReferenceProcessorTask(ShenandoahPhaseTimings::Phase phase, bool concurrent,
+                                   ShenandoahRefProcThreadLocal* ref_proc_thread_locals, CallbackT callback) :
+    WorkerTask("ShenandoahReferenceProcessorTask"),
+    _concurrent(concurrent),
+    _phase(phase),
+    _ref_proc_thread_locals(ref_proc_thread_locals),
+    _callback(callback),
+    _iterate_discovered_list_id(0) {
+  }
+
+  virtual void work(uint worker_id) {
+    if (_concurrent) {
+      ShenandoahConcurrentWorkerSession worker_session(worker_id);
+      ShenandoahWorkerTimingsTracker x(_phase, ShenandoahPhaseTimings::WeakRefProc, worker_id, true);
+      do_work();
+    } else {
+      ShenandoahParallelWorkerSession worker_session(worker_id);
+      ShenandoahWorkerTimingsTracker x(_phase, ShenandoahPhaseTimings::WeakRefProc, worker_id, true);
+      do_work();
+    }
+  }
+
+  void do_work() {
+    const uint max_workers = ShenandoahHeap::heap()->max_workers();
+    uint worker_id = AtomicAccess::add(&_iterate_discovered_list_id, 1U, memory_order_relaxed) - 1;
+    while (worker_id < max_workers) {
+      ShenandoahRefProcThreadLocal& ref_proc_data = _ref_proc_thread_locals[worker_id];
+      _callback(ref_proc_data, worker_id);
+      worker_id = AtomicAccess::add(&_iterate_discovered_list_id, 1U, memory_order_relaxed) - 1;
+    }
+  }
+};
+
 ShenandoahRefProcThreadLocal::ShenandoahRefProcThreadLocal() :
   _discovered_list(nullptr),
   _encountered_count(),
@@ -252,7 +295,6 @@ ShenandoahReferenceProcessor::ShenandoahReferenceProcessor(ShenandoahGeneration*
   _ref_proc_thread_locals(NEW_C_HEAP_ARRAY(ShenandoahRefProcThreadLocal, max_workers, mtGC)),
   _pending_list(nullptr),
   _pending_list_tail(&_pending_list),
-  _iterate_discovered_list_id(0U),
   _generation(generation),
   _old_generation_ref_processor(nullptr) {
   for (size_t i = 0; i < max_workers; i++) {
@@ -284,14 +326,17 @@ void ShenandoahReferenceProcessor::set_soft_reference_policy(bool clear) {
   _soft_reference_policy->setup();
 }
 
-void ShenandoahReferenceProcessor::heal_discovered_lists() const {
-  for (uint i = 0; i < ShenandoahHeap::heap()->max_workers(); i++) {
-    if (UseCompressedOops) {
-      _ref_proc_thread_locals[i].heal_discovered_list<narrowOop>();
-    } else {
-      _ref_proc_thread_locals[i].heal_discovered_list<oop>();
-    }
-  }
+void ShenandoahReferenceProcessor::heal_discovered_lists(ShenandoahPhaseTimings::Phase phase, WorkerThreads* workers, bool concurrent) {
+    ShenandoahReferenceProcessorTask heal_lists_task(phase, concurrent, _ref_proc_thread_locals,
+[&](ShenandoahRefProcThreadLocal& ref_proc_data, uint worker_id) {
+         if (UseCompressedOops) {
+           ref_proc_data.heal_discovered_list<narrowOop>();
+         } else {
+           ref_proc_data.heal_discovered_list<oop>();
+         }
+       }
+    );
+  workers->run_task(&heal_lists_task);
 }
 
 
@@ -494,11 +539,8 @@ oop ShenandoahReferenceProcessor::drop(oop reference, ReferenceType type) {
 }
 
 template <typename T>
-T* ShenandoahReferenceProcessor::keep(oop reference, ReferenceType type, uint worker_id) {
+T* ShenandoahReferenceProcessor::keep(oop reference, ReferenceType type) {
   log_trace(gc, ref)("Enqueued Reference: " PTR_FORMAT " (%s)", p2i(reference), reference_type_name(type));
-
-  // Update statistics
-  _ref_proc_thread_locals[worker_id].inc_enqueued(type);
 
   // Make reference inactive
   make_inactive<T>(reference, type);
@@ -529,7 +571,11 @@ void ShenandoahReferenceProcessor::process_references(ShenandoahRefProcThreadLoc
     if (should_drop<T>(reference, type)) {
       set_oop_field(p, drop<T>(reference, type));
     } else {
-      p = keep<T>(reference, type, worker_id);
+      // Update statistics
+      refproc_data.inc_enqueued(type);
+
+      // Keep this reference on the list and make it inactive
+      p = keep<T>(reference, type);
     }
 
     const oop discovered = lrb(reference_discovered<T>(reference));
@@ -557,53 +603,18 @@ void ShenandoahReferenceProcessor::process_references(ShenandoahRefProcThreadLoc
   }
 }
 
-void ShenandoahReferenceProcessor::work() {
-  // Process discovered references
-  uint max_workers = ShenandoahHeap::heap()->max_workers();
-  uint worker_id = AtomicAccess::add(&_iterate_discovered_list_id, 1U, memory_order_relaxed) - 1;
-  while (worker_id < max_workers) {
-    if (UseCompressedOops) {
-      process_references<narrowOop>(_ref_proc_thread_locals[worker_id], worker_id);
-    } else {
-      process_references<oop>(_ref_proc_thread_locals[worker_id], worker_id);
-    }
-    worker_id = AtomicAccess::add(&_iterate_discovered_list_id, 1U, memory_order_relaxed) - 1;
-  }
-}
-
-class ShenandoahReferenceProcessorTask : public WorkerTask {
-private:
-  bool const                          _concurrent;
-  ShenandoahPhaseTimings::Phase const _phase;
-  ShenandoahReferenceProcessor* const _reference_processor;
-
-public:
-  ShenandoahReferenceProcessorTask(ShenandoahPhaseTimings::Phase phase, bool concurrent, ShenandoahReferenceProcessor* reference_processor) :
-    WorkerTask("ShenandoahReferenceProcessorTask"),
-    _concurrent(concurrent),
-    _phase(phase),
-    _reference_processor(reference_processor) {
-  }
-
-  virtual void work(uint worker_id) {
-    if (_concurrent) {
-      ShenandoahConcurrentWorkerSession worker_session(worker_id);
-      ShenandoahWorkerTimingsTracker x(_phase, ShenandoahPhaseTimings::WeakRefProc, worker_id);
-      _reference_processor->work();
-    } else {
-      ShenandoahParallelWorkerSession worker_session(worker_id);
-      ShenandoahWorkerTimingsTracker x(_phase, ShenandoahPhaseTimings::WeakRefProc, worker_id);
-      _reference_processor->work();
-    }
-  }
-};
-
 void ShenandoahReferenceProcessor::process_references(ShenandoahPhaseTimings::Phase phase, WorkerThreads* workers, bool concurrent) {
 
-  AtomicAccess::release_store_fence(&_iterate_discovered_list_id, 0U);
+  auto process_refs = [&](ShenandoahRefProcThreadLocal& ref_proc_data, uint worker_id) {
+    if (UseCompressedOops) {
+      process_references<narrowOop>(ref_proc_data, worker_id);
+    } else {
+      process_references<oop>(ref_proc_data, worker_id);
+    }
+  };
 
   // Process discovered lists
-  ShenandoahReferenceProcessorTask task(phase, concurrent, this);
+  ShenandoahReferenceProcessorTask task(phase, concurrent, _ref_proc_thread_locals, process_refs);
   workers->run_task(&task);
 
   // Update SoftReference clock
