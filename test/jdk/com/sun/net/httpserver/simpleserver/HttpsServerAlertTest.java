@@ -61,6 +61,10 @@ public class HttpsServerAlertTest {
 
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
 
+    static {
+        SSLContext.setDefault(sslContext);
+    }
+
     @BeforeTest
     public void setup() throws IOException {
         if (ENABLE_LOGGING) {
@@ -69,7 +73,6 @@ public class HttpsServerAlertTest {
             ch.setLevel(Level.ALL);
             LOGGER.addHandler(ch);
         }
-        SSLContext.setDefault(sslContext);
     }
 
     @Test

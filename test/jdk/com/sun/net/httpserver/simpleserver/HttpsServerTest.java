@@ -40,7 +40,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -69,6 +68,10 @@ public class HttpsServerTest {
 
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
 
+    static {
+        SSLContext.setDefault(sslContext);
+    }
+
     @BeforeTest
     public void setup() throws IOException {
         if (ENABLE_LOGGING) {
@@ -77,7 +80,6 @@ public class HttpsServerTest {
             ch.setLevel(Level.ALL);
             LOGGER.addHandler(ch);
         }
-        SSLContext.setDefault(sslContext);
     }
 
     @Test
