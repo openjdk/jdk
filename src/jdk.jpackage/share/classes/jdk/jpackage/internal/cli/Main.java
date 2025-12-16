@@ -48,6 +48,7 @@ import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.Log;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.JPackageException;
+import jdk.jpackage.internal.util.Slot;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 
 /**
@@ -103,26 +104,36 @@ public final class Main {
 
         Log.setPrintWriter(out, err);
 
+        final var runner = new Runner(t -> {
+            new ErrorReporter(_ -> {
+                t.printStackTrace(err);
+            }, Log::fatalError, Log.isVerbose()).reportError(t);
+        });
+
         try {
-            try {
-                args = CommandLine.parse(args);
-            } catch (FileNotFoundException|NoSuchFileException ex) {
-                Log.fatalError(I18N.format("ERR_CannotParseOptions", ex.getMessage()));
-                return 1;
-            } catch (IOException ex) {
-                throw ExceptionBox.rethrowUnchecked(ex);
+            var mappedArgs = Slot.<String[]>createEmpty();
+
+            int preprocessStatus = runner.run(() -> {
+                try {
+                    mappedArgs.set(CommandLine.parse(args));
+                    return List.of();
+                } catch (FileNotFoundException|NoSuchFileException ex) {
+                    return List.of(new JPackageException(I18N.format("ERR_CannotParseOptions", ex.getMessage()), ex));
+                } catch (IOException ex) {
+                    return List.of(ex);
+                }
+            });
+
+            if (preprocessStatus != 0) {
+                return preprocessStatus;
             }
 
             final var bundlingEnv = ServiceLoader.load(CliBundlingEnvironment.class,
                     CliBundlingEnvironment.class.getClassLoader()).findFirst().orElseThrow();
 
-            final var parseResult = Utils.buildParser(OperatingSystem.current(), bundlingEnv).create().apply(args);
+            final var parseResult = Utils.buildParser(OperatingSystem.current(), bundlingEnv).create().apply(mappedArgs.get());
 
-            return new Runner(t -> {
-                new ErrorReporter(_ -> {
-                    t.printStackTrace(err);
-                }, Log::fatalError, Log.isVerbose()).reportError(t);
-            }).run(() -> {
+            return runner.run(() -> {
                 final var parsedOptionsBuilder = parseResult.orElseThrow();
 
                 final var options = parsedOptionsBuilder.create();
