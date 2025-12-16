@@ -45,6 +45,12 @@ public class BasicObjectsTest {
         errors += testIsNull();
         errors += testNonNull();
         errors += testNonNullOf();
+
+        errors += testRequireNonNullWithNullSupplier();
+        errors += testRequireNonNullWithSupplierThrowingException();
+        errors += testRequireNonNullElseBothNull();
+        errors += testRequireNonNullElseGetWithNullSupplier();
+        errors += testRequireNonNullElseGetWithSupplierReturningNull();
         if (errors > 0 )
             throw new RuntimeException();
     }
@@ -303,6 +309,126 @@ public class BasicObjectsTest {
         } catch (NullPointerException npe) {
             // expected
             errors += npe.getMessage().equals("supplier") ? 0 : 1;
+        }
+        return errors;
+    }
+
+    /**
+     * Test requireNonNull with null Supplier parameter.
+     * Should throw NullPointerException with null message (as per API spec).
+     */
+    private static int testRequireNonNullWithNullSupplier() {
+        int errors = 0;
+        try {
+            Objects.requireNonNull("test", (Supplier<String>) null);
+            // Should not reach here for non-null object
+            // But we're testing the supplier parameter
+            Objects.requireNonNull(null, (Supplier<String>) null);
+            System.err.println("testRequireNonNullWithNullSupplier: " +
+                            "failed to throw NPE");
+            errors++;
+        } catch (NullPointerException e) {
+            String msg = e.getMessage();
+            // According to Objects.java implementation, when messageSupplier is null,
+            // the exception message is also null
+            if (msg != null) {
+                System.err.println("testRequireNonNullWithNullSupplier: " +
+                                "expected null message but got: " + msg);
+                errors++;
+            }
+        }
+        return errors;
+    }
+
+    /**
+     * Test requireNonNull with Supplier that throws exception.
+     * The exception from supplier should be thrown, not wrapped.
+     */
+    private static int testRequireNonNullWithSupplierThrowingException() {
+        int errors = 0;
+        try {
+            Objects.requireNonNull(null, () -> {
+                throw new RuntimeException("Supplier exception");
+            });
+            System.err.println("testRequireNonNullWithSupplierThrowingException: " +
+                            "failed to throw exception");
+            errors++;
+        } catch (RuntimeException e) {
+            if (!"Supplier exception".equals(e.getMessage())) {
+                System.err.println("testRequireNonNullWithSupplierThrowingException: " +
+                                "wrong exception: " + e.getMessage());
+                errors++;
+            }
+        } catch (Exception e) {
+            System.err.println("testRequireNonNullWithSupplierThrowingException: " +
+                            "unexpected exception type: " + e.getClass());
+            errors++;
+        }
+        return errors;
+    }
+
+    /**
+     * Test requireNonNullElse with both arguments null.
+     * Should throw NullPointerException with message "defaultObj".
+     */
+    private static int testRequireNonNullElseBothNull() {
+        int errors = 0;
+        try {
+            Objects.requireNonNullElse(null, null);
+            System.err.println("testRequireNonNullElseBothNull: " +
+                            "failed to throw NPE");
+            errors++;
+        } catch (NullPointerException e) {
+            String msg = e.getMessage();
+            if (msg == null || !msg.equals("defaultObj")) {
+                System.err.println("testRequireNonNullElseBothNull: " +
+                                "wrong exception message: " + msg);
+                errors++;
+            }
+        }
+        return errors;
+    }
+
+    /**
+     * Test requireNonNullElseGet with null supplier.
+     * Should throw NullPointerException with message "supplier".
+     */
+    private static int testRequireNonNullElseGetWithNullSupplier() {
+        int errors = 0;
+        try {
+            Objects.requireNonNullElseGet(null, null);
+            System.err.println("testRequireNonNullElseGetWithNullSupplier: " +
+                            "failed to throw NPE");
+            errors++;
+        } catch (NullPointerException e) {
+            String msg = e.getMessage();
+            if (msg == null || !msg.equals("supplier")) {
+                System.err.println("testRequireNonNullElseGetWithNullSupplier: " +
+                                "wrong exception message: " + msg);
+                errors++;
+            }
+        }
+        return errors;
+    }
+
+    /**
+     * Test requireNonNullElseGet with supplier returning null.
+     * Should throw NullPointerException with message "supplier.get()".
+     */
+    private static int testRequireNonNullElseGetWithSupplierReturningNull() {
+        int errors = 0;
+        try {
+            Objects.requireNonNullElseGet(null, () -> null);
+            System.err.println("testRequireNonNullElseGetWithSupplierReturningNull: " +
+                            "failed to throw NPE");
+            errors++;
+        } catch (NullPointerException e) {
+            String msg = e.getMessage();
+            if (msg == null || !msg.equals("supplier.get()")) {
+                System.err.println("testRequireNonNullElseGetWithSupplierReturningNull: " +
+                                "wrong exception message: " + msg);
+                errors++;
+            }
         }
         return errors;
     }
