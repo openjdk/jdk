@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ public class NativeStrike extends PhysicalStrike {
         throw new RuntimeException("NativeFont not used on Windows");
     }
 
-
     @Override
     void getGlyphImagePtrs(int[] glyphCodes, long[] images,int  len) {
     }
@@ -81,14 +80,9 @@ public class NativeStrike extends PhysicalStrike {
     Rectangle2D.Float getGlyphOutlineBounds(int glyphCode) {
         return null;
     }
+
     @Override
     GeneralPath getGlyphOutline(int glyphCode, float x, float y) {
         return null;
     }
-
-    @Override
-    GeneralPath getGlyphVectorOutline(int[] glyphs, float x, float y) {
-        return null;
-    }
-
 }
