@@ -25,7 +25,7 @@
  * @test
  * @bug 8373524
  * @summary C2: no reachable node should have no use
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileCommand=compileonly,TestNodeWithNoUseAfterPhiIdeal.test ${test.main.class}
+ * @run main/othervm -Xbatch ${test.main.class}
  * @run main ${test.main.class}
  */
 
