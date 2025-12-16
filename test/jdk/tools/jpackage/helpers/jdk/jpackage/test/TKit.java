@@ -234,7 +234,7 @@ public final class TKit {
                 } catch (Exception ex) {
                     throw ExceptionBox.unbox(ex);
                 }
-            } catch (Exception|AssertionError t) {
+            } catch (Exception | AssertionError t) {
                 printStackTrace(t);
             }
         };
