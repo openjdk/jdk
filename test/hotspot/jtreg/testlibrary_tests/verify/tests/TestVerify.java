@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @summary Test functionality of IntGenerator implementations.
+ * @summary Test basic functionality of Verify implementations.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver verify.tests.TestVerify
+ * @run driver ${test.main.class}
  */
 
 package verify.tests;
