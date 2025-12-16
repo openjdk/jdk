@@ -755,7 +755,7 @@ public class VMProps implements Callable<Map<String, String>> {
     private String explodedImage() {
         try {
             Path jmodFile = Path.of(System.getProperty("java.home"), "jmods", "java.base.jmod");
-            if (jmodFile.toFile().exists()) {
+            if (Files.exists(jmodFile)) {
                 return Boolean.FALSE.toString();
             } else {
                 return Boolean.TRUE.toString();
