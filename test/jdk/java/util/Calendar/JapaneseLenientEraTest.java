@@ -42,7 +42,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class JapaneseLenientEraTest {
 
-    Object[][] names() {
+    Object[][] lenientEra() {
         return new Object[][] {
             // lenient era/year, strict era/year
             { "Meiji 123", "Heisei 2" },
@@ -52,7 +52,7 @@ public class JapaneseLenientEraTest {
     }
 
     @ParameterizedTest
-    @MethodSource("names")
+    @MethodSource("lenientEra")
     public void testLenientEra(String lenient, String strict) throws Exception {
         Calendar c = new Calendar.Builder()
             .setCalendarType("japanese")
