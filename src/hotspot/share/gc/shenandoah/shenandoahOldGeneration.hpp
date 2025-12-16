@@ -179,7 +179,7 @@ public:
   void log_failed_promotion(LogStream& ls, Thread* thread, size_t size) const;
 
   // A successful evacuation re-dirties the cards and registers the object with the remembered set
-  void handle_evacuation(HeapWord* obj, size_t words, bool promotion);
+  void handle_evacuation(HeapWord* obj, size_t words) const;
 
   // Clear the flag after it is consumed by the control thread
   bool clear_failed_evacuation() {
@@ -228,26 +228,27 @@ public:
   // Abandons all old gc state and transitions to the idle state
   void abandon_gc();
 
-  // We leave the SATB barrier on for the entirety of the old generation
-  // marking phase. In some cases, this can cause a write to a perfectly
-  // reachable oop to enqueue a pointer that later becomes garbage (because
-  // it points at an object that is later chosen for the collection set). There are
-  // also cases where the referent of a weak reference ends up in the SATB
-  // and is later collected. In these cases the oop in the SATB buffer becomes
-  // invalid and the _next_ cycle will crash during its marking phase. To
-  // avoid this problem, we "purge" the SATB buffers during the final update
-  // references phase if (and only if) an old generation mark is in progress.
-  // At this stage we can safely determine if any of the oops in the SATB
-  // buffer belong to trashed regions (before they are recycled). As it
-  // happens, flushing a SATB queue also filters out oops which have already
-  // been marked - which is the case for anything that is being evacuated
-  // from the collection set.
+  // The SATB barrier will be "enabled" until old marking completes. This means it is
+  // possible for an entire young collection cycle to execute while the SATB barrier is enabled.
+  // Consider a situation like this, where we have a pointer 'B' at an object 'A' which is in
+  // the young collection set:
   //
-  // Alternatively, we could inspect the state of the heap and the age of the
-  // object at the barrier, but we reject this approach because it is likely
-  // the performance impact would be too severe.
+  //      +--Young, CSet------+     +--Young, Regular----+
+  //      |                   |     |                    |
+  //      |                   |     |                    |
+  //      |       A <--------------------+ B             |
+  //      |                   |     |                    |
+  //      |                   |     |                    |
+  //      +-------------------+     +--------------------+
+  //
+  // If a mutator thread overwrites pointer B, the SATB barrier will dutifully enqueue
+  // object A. However, this object will be trashed when the young cycle completes. We must,
+  // therefore, filter this object from the SATB buffer before any old mark threads see it.
+  // We do this with a handshake before final-update-refs (see shenandoahConcurrentGC.cpp).
+  //
+  // This method is here only for degenerated cycles. A concurrent cycle may be cancelled before
+  // we have a chance to execute the handshake to flush the SATB in final-update-refs.
   void transfer_pointers_from_satb() const;
-  void concurrent_transfer_pointers_from_satb() const;
 
   // True if there are old regions waiting to be selected for a mixed collection
   bool has_unprocessed_collection_candidates();
@@ -286,28 +287,23 @@ public:
 private:
   State _state;
 
-  static const size_t FRACTIONAL_DENOMINATOR = 65536;
-
   // During initialization of the JVM, we search for the correct old-gen size by initially performing old-gen
-  // collection when old-gen usage is 50% more (INITIAL_GROWTH_BEFORE_COMPACTION) than the initial old-gen size
-  // estimate (3.125% of heap).  The next old-gen trigger occurs when old-gen grows 25% larger than its live
-  // memory at the end of the first old-gen collection.  Then we trigger again when old-gen grows 12.5%
-  // more than its live memory at the end of the previous old-gen collection.  Thereafter, we trigger each time
-  // old-gen grows more than 12.5% following the end of its previous old-gen collection.
-  static const size_t INITIAL_GROWTH_BEFORE_COMPACTION = FRACTIONAL_DENOMINATOR / 2;        //  50.0%
+  // collection when old-gen usage is 50% more (INITIAL_GROWTH_PERCENT_BEFORE_COLLECTION) than the initial old-gen size
+  // estimate (16% of heap).  With each successive old-gen collection, we divide the growth trigger by two, but
+  // never use a growth trigger smaller than ShenandoahMinOldGenGrowthPercent.
+  static const size_t INITIAL_GROWTH_PERCENT_BEFORE_COLLECTION = 50;
 
-  // INITIAL_LIVE_FRACTION represents the initial guess of how large old-gen should be.  We estimate that old-gen
-  // needs to consume 6.25% of the total heap size.  And we "pretend" that we start out with this amount of live
+  // INITIAL_LIVE_PERCENT represents the initial guess of how large old-gen should be.  We estimate that old gen
+  // needs to consume 16% of the total heap size.  And we "pretend" that we start out with this amount of live
   // old-gen memory.  The first old-collection trigger will occur when old-gen occupies 50% more than this initial
-  // approximation of the old-gen memory requirement, in other words when old-gen usage is 150% of 6.25%, which
-  // is 9.375% of the total heap size.
-  static const uint16_t INITIAL_LIVE_FRACTION = FRACTIONAL_DENOMINATOR / 16;                //   6.25%
+  // approximation of the old-gen memory requirement, in other words when old-gen usage is 150% of 16%, which
+  // is 24% of the heap size.
+  static const size_t INITIAL_LIVE_PERCENT = 16;
 
-  size_t _live_bytes_after_last_mark;
+  size_t _live_bytes_at_last_mark;
 
-  // How much growth in usage before we trigger old collection, per FRACTIONAL_DENOMINATOR (65_536)
-  size_t _growth_before_compaction;
-  const size_t _min_growth_before_compaction;                                               // Default is 12.5%
+  // How much growth in usage before we trigger old collection as a percent of soft_max_capacity
+  size_t _growth_percent_before_collection;
 
   void validate_transition(State new_state) NOT_DEBUG_RETURN;
 
@@ -322,8 +318,8 @@ public:
 
   void transition_to(State new_state);
 
-  size_t get_live_bytes_after_last_mark() const;
-  void set_live_bytes_after_last_mark(size_t new_live);
+  size_t get_live_bytes_at_last_mark() const;
+  void set_live_bytes_at_last_mark(size_t new_live);
 
   size_t usage_trigger_threshold() const;
 

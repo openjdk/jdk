@@ -28,6 +28,7 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
+#include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -254,7 +255,7 @@ void CDSHeapVerifier::add_shared_secret_accessors() {
 
 CDSHeapVerifier::~CDSHeapVerifier() {
   if (_problems > 0) {
-    log_error(aot, heap)("Scanned %d objects. Found %d case(s) where "
+    log_error(aot, heap)("Scanned %zu objects. Found %d case(s) where "
                          "an object points to a static field that "
                          "may hold a different value at runtime.", _archived_objs, _problems);
     log_error(aot, heap)("Please see cdsHeapVerifier.cpp and aotClassInitializer.cpp for details");
@@ -386,7 +387,7 @@ inline bool CDSHeapVerifier::do_entry(OopHandle& orig_obj_handle, HeapShared::Ca
   if (java_lang_String::is_instance(orig_obj) && HeapShared::is_dumped_interned_string(orig_obj)) {
     // It's quite often for static fields to have interned strings. These are most likely not
     // problematic (and are hard to filter). So we will ignore them.
-    return true; /* keep on iterating */
+    return true;
   }
 
   StaticFieldInfo* info = _table.get(orig_obj);

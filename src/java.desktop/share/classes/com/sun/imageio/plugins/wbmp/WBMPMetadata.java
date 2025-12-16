@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,10 +50,12 @@ public class WBMPMetadata extends IIOMetadata {
               null, null);
     }
 
+    @Override
     public boolean isReadOnly() {
         return true;
     }
 
+    @Override
     public Node getAsTree(String formatName) {
         if (formatName.equals(nativeMetadataFormatName)) {
             return getNativeTree();
@@ -76,14 +78,17 @@ public class WBMPMetadata extends IIOMetadata {
         return root;
     }
 
+    @Override
     public void setFromTree(String formatName, Node root) {
         throw new IllegalStateException(I18N.getString("WBMPMetadata1"));
     }
 
+    @Override
     public void mergeTree(String formatName, Node root) {
         throw new IllegalStateException(I18N.getString("WBMPMetadata1"));
     }
 
+    @Override
     public void reset() {
         throw new IllegalStateException(I18N.getString("WBMPMetadata1"));
     }
@@ -101,6 +106,7 @@ public class WBMPMetadata extends IIOMetadata {
     }
 
 
+    @Override
     protected IIOMetadataNode getStandardChromaNode() {
 
         IIOMetadataNode node = new IIOMetadataNode("Chroma");
@@ -112,6 +118,7 @@ public class WBMPMetadata extends IIOMetadata {
     }
 
 
+    @Override
     protected IIOMetadataNode getStandardDimensionNode() {
         IIOMetadataNode dimension_node = new IIOMetadataNode("Dimension");
         IIOMetadataNode node = null; // scratch node

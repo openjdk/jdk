@@ -168,6 +168,7 @@ class MacroAssembler: public Assembler {
     Register oop_result,               // where an oop-result ends up if any; use noreg otherwise
     Register java_thread,              // the thread if computed before     ; use noreg otherwise
     Register last_java_sp,             // to set up last_Java_frame in stubs; use noreg otherwise
+    Label*   return_pc,                // to set up last_Java_frame; use nullptr otherwise
     address  entry_point,              // the entry point
     int      number_of_arguments,      // the number of arguments (w/o thread) to pop after the call
     bool     check_exceptions          // whether to check for pending exceptions after return
@@ -663,6 +664,24 @@ class MacroAssembler: public Assembler {
   void cmov_cmp_fp_ge(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
   void cmov_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
   void cmov_cmp_fp_gt(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
+
+  void cmov_fp_eq(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_ne(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_le(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_leu(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_ge(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_geu(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_lt(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_ltu(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_gt(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_gtu(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single);
+
+  void cmov_fp_cmp_fp_eq(FloatRegister cmp1, FloatRegister cmp2, FloatRegister dst, FloatRegister src, bool cmp_single, bool cmov_single);
+  void cmov_fp_cmp_fp_ne(FloatRegister cmp1, FloatRegister cmp2, FloatRegister dst, FloatRegister src, bool cmp_single, bool cmov_single);
+  void cmov_fp_cmp_fp_le(FloatRegister cmp1, FloatRegister cmp2, FloatRegister dst, FloatRegister src, bool cmp_single, bool cmov_single);
+  void cmov_fp_cmp_fp_ge(FloatRegister cmp1, FloatRegister cmp2, FloatRegister dst, FloatRegister src, bool cmp_single, bool cmov_single);
+  void cmov_fp_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2, FloatRegister dst, FloatRegister src, bool cmp_single, bool cmov_single);
+  void cmov_fp_cmp_fp_gt(FloatRegister cmp1, FloatRegister cmp2, FloatRegister dst, FloatRegister src, bool cmp_single, bool cmov_single);
 
  public:
   // We try to follow risc-v asm menomics.
@@ -1638,8 +1657,8 @@ private:
   void store_conditional(Register dst, Register new_val, Register addr, Assembler::operand_size size, Assembler::Aqrl release);
 
 public:
-  void lightweight_lock(Register basic_lock, Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow);
-  void lightweight_unlock(Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow);
+  void fast_lock(Register basic_lock, Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow);
+  void fast_unlock(Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow);
 
 public:
   enum {

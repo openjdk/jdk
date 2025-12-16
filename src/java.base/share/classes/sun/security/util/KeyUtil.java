@@ -36,12 +36,14 @@ import javax.crypto.interfaces.DHKey;
 import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPublicKeySpec;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.security.auth.DestroyFailedException;
 import jdk.internal.access.SharedSecrets;
 
 import com.sun.crypto.provider.PBKDF2KeyImpl;
 import sun.security.jca.JCAUtil;
+import sun.security.pkcs.PKCS8Key;
 import sun.security.x509.AlgorithmId;
 
 /**
@@ -431,7 +433,7 @@ public final class KeyUtil {
      * @return the hash algorithm
      * @throws NoSuchAlgorithmException if key is from an unknown configuration
      */
-    public static String hashAlgFromHSS(PublicKey publicKey)
+    public static ObjectIdentifier hashAlgFromHSS(PublicKey publicKey)
             throws NoSuchAlgorithmException {
         try {
             DerValue val = new DerValue(publicKey.getEncoded());
@@ -450,7 +452,7 @@ public final class KeyUtil {
                     + ((rawKey[6] & 0xff) << 8) + (rawKey[7] & 0xff);
             return switch (num) {
                 // RFC 8554 only supports SHA_256 hash algorithm
-                case 5, 6, 7, 8, 9 -> "SHA-256";
+                case 5, 6, 7, 8, 9 -> AlgorithmId.SHA256_oid;
                 default -> throw new NoSuchAlgorithmException("Unknown LMS type: " + num);
             };
         } catch (IOException e) {
@@ -548,6 +550,22 @@ public final class KeyUtil {
         throw new IOException("No algorithm detected");
     }
 
-
+    // Generic method for zeroing arrays and objects
+    public static void clear(Object... list) {
+        for (Object o: list) {
+            switch (o) {
+                case byte[] b -> Arrays.fill(b, (byte)0);
+                case char[] c -> Arrays.fill(c, (char)0);
+                case PKCS8Key p8 -> p8.clear();
+                case PKCS8EncodedKeySpec p8 ->
+                    SharedSecrets.getJavaSecuritySpecAccess().clearEncodedKeySpec(p8);
+                case PBEKeySpec pbe -> pbe.clearPassword();
+                case null -> {}
+                default ->
+                    throw new IllegalArgumentException(
+                    o.getClass().getName() + " not defined in KeyUtil.clear()");
+            }
+        }
+    }
 }
 

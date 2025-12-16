@@ -1369,6 +1369,7 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(int, SpecTrapLimitExtraEntries,  3, EXPERIMENTAL,                 \
           "Extra method data trap entries for speculation")                 \
+          range(0, 100)                                                     \
                                                                             \
   product(double, InlineFrequencyRatio, 0.25, DIAGNOSTIC,                   \
           "Ratio of call site execution to caller method invocation")       \
@@ -1671,8 +1672,9 @@ const int ObjectAlignmentInBytes = 8;
           "putback")                                                        \
                                                                             \
   /* new oopmap storage allocation */                                       \
-  develop(intx, MinOopMapAllocation,     8,                                 \
+  develop(int, MinOopMapAllocation, 8,                                      \
           "Minimum number of OopMap entries in an OopMapSet")               \
+          range(0, max_jint)                                                \
                                                                             \
   /* recompilation */                                                       \
   product_pd(intx, CompileThreshold,                                        \
@@ -1954,14 +1956,14 @@ const int ObjectAlignmentInBytes = 8;
              "fence. Add cleanliness checks.")                              \
                                                                             \
   product(bool, UseObjectMonitorTable, false, DIAGNOSTIC,                   \
-          "With Lightweight Locking mode, use a table to record inflated "  \
-          "monitors rather than the first word of the object.")             \
+          "Use a table to record inflated monitors rather than the first "  \
+          "word of the object.")                                            \
                                                                             \
-  product(int, LightweightFastLockingSpins, 13, DIAGNOSTIC,                 \
-          "Specifies the number of times lightweight fast locking will "    \
-          "attempt to CAS the markWord before inflating. Between each "     \
-          "CAS it will spin for exponentially more time, resulting in "     \
-          "a total number of spins on the order of O(2^value)")             \
+  product(int, FastLockingSpins, 13, DIAGNOSTIC,                            \
+          "Specifies the number of times fast locking will attempt to "     \
+          "CAS the markWord before inflating. Between each CAS it will "    \
+          "spin for exponentially more time, resulting in a total number "  \
+          "of spins on the order of O(2^value)")                            \
           range(1, 30)                                                      \
                                                                             \
   product(uint, TrimNativeHeapInterval, 0,                                  \

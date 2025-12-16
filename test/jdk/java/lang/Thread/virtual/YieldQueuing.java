@@ -28,15 +28,23 @@
  * @run junit/othervm -Djdk.virtualThreadScheduler.maxPoolSize=1 YieldQueuing
  */
 
+import java.lang.invoke.MethodHandles;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeAll;
 import static org.junit.jupiter.api.Assertions.*;
 
 class YieldQueuing {
+
+    @BeforeAll
+    static void setup() throws Exception {
+        // waiting for LockSupport to be initialized can change the scheduling
+        MethodHandles.lookup().ensureInitialized(LockSupport.class);
+    }
 
     /**
      * Test Thread.yield submits the task for the current virtual thread to a scheduler

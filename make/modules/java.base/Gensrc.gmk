@@ -120,3 +120,25 @@ $(INTPOLY_GEN_DONE): $(INTPLOY_HEADER) $(BUILD_TOOLS_JDK)
 TARGETS += $(INTPOLY_GEN_DONE)
 
 ################################################################################
+
+RELEASE_FILE_TEMPLATE := $(TOPDIR)/src/java.base/share/classes/jdk/internal/misc/resources/release.txt.template
+RELEASE_FILE_TARGET := $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/jdk/internal/misc/resources/release.txt
+
+RELEASE_FILE_VARDEPS := $(COMPANY_NAME) $(VERSION_STRING) $(VERSION_DATE)
+RELEASE_FILE_VARDEPS_FILE := $(call DependOnVariable, RELEASE_FILE_VARDEPS, \
+    $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/jlink_release_txt.vardeps)
+
+$(eval $(call SetupTextFileProcessing, BUILD_RELEASE_FILE, \
+    SOURCE_FILES := $(RELEASE_FILE_TEMPLATE), \
+    OUTPUT_FILE := $(RELEASE_FILE_TARGET), \
+    REPLACEMENTS := \
+        @@COMPANY_NAME@@ => $(COMPANY_NAME) ; \
+        @@VERSION_STRING@@ => $(VERSION_STRING) ; \
+        @@VERSION_DATE@@ => $(VERSION_DATE) , \
+))
+
+$(BUILD_RELEASE_FILE): $(RELEASE_FILE_VARDEPS_FILE)
+
+TARGETS += $(BUILD_RELEASE_FILE)
+
+################################################################################

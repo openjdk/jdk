@@ -203,7 +203,7 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
 
     @Override
     public HttpRequest.Builder POST(BodyPublisher body) {
-        return method0("POST", requireNonNull(body));
+        return method0("POST", requireNonNull(body, "BodyPublisher must be non-null"));
     }
 
     @Override
@@ -218,12 +218,12 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
 
     @Override
     public HttpRequest.Builder PUT(BodyPublisher body) {
-        return method0("PUT", requireNonNull(body));
+        return method0("PUT", requireNonNull(body, "BodyPublisher must be non-null"));
     }
 
     @Override
     public HttpRequest.Builder method(String method, BodyPublisher body) {
-        requireNonNull(method);
+        requireNonNull(method, "HTTP method must be non-null");
         if (method.isEmpty())
             throw newIAE("illegal method <empty string>");
         if (method.equals("CONNECT"))
@@ -234,7 +234,7 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
                     .replace("\r", "\\r")
                     .replace("\t", "\\t")
                     + "\"");
-        return method0(method, requireNonNull(body));
+        return method0(method, requireNonNull(body, "BodyPublisher must be non-null"));
     }
 
     private HttpRequest.Builder method0(String method, BodyPublisher body) {

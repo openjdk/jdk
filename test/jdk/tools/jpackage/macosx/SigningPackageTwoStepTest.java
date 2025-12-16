@@ -199,10 +199,8 @@ public class SigningPackageTwoStepTest {
 
             test.forTypes(signPackage.keySet()).addRunOnceInitializer(() -> {
                 appImageCmd.setArgumentValue("--dest", TKit.createTempDirectory("appimage")).execute(0);
-            }).addInitializer(cmd -> {
+            }).usePredefinedAppImage(appImageCmd).addInitializer(cmd -> {
                 MacHelper.useKeychain(cmd, keychain);
-                cmd.addArguments("--app-image", appImageCmd.outputBundle());
-                cmd.removeArgumentWithValue("--input");
                 Optional.ofNullable(signPackage.get(cmd.packageType())).ifPresent(signOption -> {
                     signOption.setTo(cmd);
                 });

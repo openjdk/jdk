@@ -428,7 +428,7 @@
           "0=print nothing except PhasePrintLevel directives, "             \
           "6=all details printed. "                                         \
           "Level of detail of printouts can be set on a per-method level "  \
-          "as well by using CompileCommand=PrintPhaseLevel.")                        \
+          "as well by using CompileCommand=PhasePrintLevel.")               \
           range(-1, 6)                                                      \
                                                                             \
   develop(bool, PrintIdealGraph, false,                                     \
@@ -697,7 +697,8 @@
           "Print progress during Iterative Global Value Numbering")         \
                                                                             \
   develop(uint, VerifyIterativeGVN, 0,                                      \
-          "Verify Iterative Global Value Numbering =DCBA, with:"            \
+          "Verify Iterative Global Value Numbering =EDCBA, with:"           \
+          "  E: verify node specific invariants"                            \
           "  D: verify Node::Identity did not miss opportunities"           \
           "  C: verify Node::Ideal did not miss opportunities"              \
           "  B: verify that type(n) == n->Value() after IGVN"               \

@@ -1831,9 +1831,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Bishkek">
 				<exemplarCity draft="unconfirmed">Biszkek</exemplarCity>
 			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity draft="unconfirmed">Enderbury</exemplarCity>
-			</zone>
 			<zone type="Indian/Comoro">
 				<exemplarCity draft="unconfirmed">Kōmory</exemplarCity>
 			</zone>
@@ -2195,9 +2192,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic draft="unconfirmed">zachodnioafrykański czas</generic>
-					<standard draft="unconfirmed">zachodnioafrykański sztandardowy czas</standard>
-					<daylight draft="unconfirmed">zachodnioafrykański latowy czas</daylight>
+					<standard draft="unconfirmed">zachodnioafrykański czas</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -2559,6 +2554,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Guyana">
 				<long>
 					<standard draft="unconfirmed">Gujana</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard draft="unconfirmed">Hawaje-Aleuty (sztandardowy czas)</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -2953,9 +2953,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern draft="contributed">#,##0.00 ¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -3069,7 +3071,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">milimole na liter</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} milimola na liter</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName draft="unconfirmed">czyńści na milijōn</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} czyńści na milijōn</unitPattern>
 			</unit>
@@ -3681,7 +3683,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">milimole/liter</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} mmol/l</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName draft="unconfirmed">czyńści/miliōn</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} cz/mln</unitPattern>
 			</unit>
