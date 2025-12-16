@@ -84,7 +84,7 @@ private:
   bool _is_unreachable_region;
   LoopStatus _loop_status;
 
-  bool is_possible_unsafe_loop(const PhaseGVN* phase) const;
+  bool is_possible_unsafe_loop() const;
   bool is_unreachable_from_root(const PhaseGVN* phase) const;
 public:
   // Node layout (parallels PhiNode):
@@ -183,6 +183,7 @@ class PhiNode : public TypeNode {
   bool is_split_through_mergemem_terminating() const;
 
   void verify_type_stability(const PhaseGVN* phase, const Type* union_of_input_types, const Type* new_type) const NOT_DEBUG_RETURN;
+  bool wait_for_cast_input_igvn(const PhaseIterGVN* igvn) const;
 
 public:
   // Node layout (parallels RegionNode):
