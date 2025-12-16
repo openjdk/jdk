@@ -96,14 +96,13 @@ public class TestMinMaxIdeal {
     record TestGenerator(Op op) {
         TemplateToken generate() {
             var template = Template.make(() -> scope(
-                let("irNodeName", op.name()),
                 let("boxedTypeName", op.type.boxedTypeName()),
                 let("op", op.name()),
                 let("type", op.type.name()),
                 let("functionName", op.functionName),
                 """
                 @Test
-                @IR(counts = {IRNode.#irNodeName, "= 1"},
+                @IR(counts = {IRNode.#op, "= 1"},
                     phase = CompilePhase.BEFORE_MACRO_EXPANSION)
                 @Arguments(values = {Argument.NUMBER_42, Argument.NUMBER_42})
                 public #type test_commute_#op(#type a, #type b) {
@@ -111,7 +110,7 @@ public class TestMinMaxIdeal {
                 }
 
                 @Test
-                @IR(counts = {IRNode.#irNodeName, "= 1"},
+                @IR(counts = {IRNode.#op, "= 1"},
                     phase = CompilePhase.BEFORE_MACRO_EXPANSION)
                 @Arguments(values = {Argument.NUMBER_42})
                 public #type test_flatten_#op(#type a) {
@@ -119,7 +118,7 @@ public class TestMinMaxIdeal {
                 }
 
                 @Test
-                @IR(counts = {IRNode.#irNodeName, "= 2"},
+                @IR(counts = {IRNode.#op, "= 2"},
                     phase = CompilePhase.BEFORE_MACRO_EXPANSION)
                 @Arguments(values = {Argument.NUMBER_42, Argument.NUMBER_42})
                 public #type test_push_constant_left_#op(#type a, #type b) {
@@ -127,7 +126,7 @@ public class TestMinMaxIdeal {
                 }
 
                 @Test
-                @IR(counts = {IRNode.#irNodeName, "= 2"},
+                @IR(counts = {IRNode.#op, "= 2"},
                     phase = CompilePhase.BEFORE_MACRO_EXPANSION)
                 @Arguments(values = {Argument.NUMBER_42, Argument.NUMBER_42})
                 public #type test_push_constant_right_#op(#type a, #type b) {
