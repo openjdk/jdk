@@ -182,6 +182,7 @@ class PhiNode : public TypeNode {
 
   bool is_split_through_mergemem_terminating() const;
 
+  void verify_type_stability(const PhaseGVN* phase, const Type* union_of_input_types, const Type* new_type) const NOT_DEBUG_RETURN;
   bool wait_for_cast_input_igvn(const PhaseIterGVN* igvn) const;
 
 public:
