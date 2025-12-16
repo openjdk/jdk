@@ -25,7 +25,6 @@
  * @test
  * @bug 8373480
  * @summary Optimize multiplication by constant multiplier using LEA instructions
- * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @compile ../../compiler/lib/ir_framework/TestFramework.java
  * @compile ../../compiler/lib/generators/Generators.java
@@ -65,11 +64,9 @@ public class TestConstantMultiplier {
         // Compile the source file.
         comp.compile();
 
-        // p.xyz.InnterTest.main(new String[] {});
         comp.invoke("c2.compiler.ConstantMultiplierTest", "main", new Object[] {new String[] {}});
 
         // We can also pass VM flags for the Test VM.
-        // p.xyz.InnterTest.main(new String[] {"-Xbatch"});
         comp.invoke("c2.compiler.ConstantMultiplierTest", "main", new Object[] {new String[] {"-Xbatch"}});
     }
 
