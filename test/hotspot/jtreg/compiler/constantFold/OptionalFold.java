@@ -21,7 +21,7 @@
  * questions.
  */
 
-package compiler.c2.irTests.constantFold;
+package compiler.constantFold;
 
 import java.util.Optional;
 
@@ -34,20 +34,14 @@ import compiler.lib.ir_framework.TestFramework;
 /*
  * @test
  * @bug 8372696
- * @summary Verify constant folding for Optional
+ * @summary Verify constant folding for Optional, both present and absent
  * @library /test/lib /
- * @requires vm.compiler2.enabled
- * @run driver compiler.c2.irTests.constantFold.TestOptional
+ * @run driver ${test.main.class}
  */
-public class TestOptional {
+public class OptionalFold {
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags(
-            "-XX:+UnlockExperimentalVMOptions",
-            "-XX:CompileCommand=inline,java.util.Optional::orElse",
-            "-XX:CompileCommand=inline,java.lang.Integer::intValue",
-            "-XX:CompileCommand=inline,java.lang.Integer::valueOf"
-        );
+        TestFramework.run();
     }
 
     // Ensure both present and empty values can fold
@@ -60,7 +54,7 @@ public class TestOptional {
     }
 
     @Check(test = "testSum")
-    public static void checkTestSum(int res) {
+    public void checkTestSum(int res) {
         if (res != 5 + 12) {
             throw new RuntimeException("incorrect result: " + res);
         }
