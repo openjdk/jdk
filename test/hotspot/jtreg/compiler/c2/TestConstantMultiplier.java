@@ -21,289 +21,114 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 8373480
+ * @summary Optimize multiplication by constant multiplier using LEA instructions
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib /
+ * @compile ../../compiler/lib/ir_framework/TestFramework.java
+ * @compile ../../compiler/lib/generators/Generators.java
+ * @compile ../../compiler/lib/verify/Verify.java
+ * @run driver compiler.c2.TestConstantMultiplier
+ */
+
 package compiler.c2;
+
+import java.util.List;
+import java.util.Set;
+import java.util.stream.IntStream;
 
 import compiler.lib.ir_framework.*;
 import compiler.lib.verify.*;
 import compiler.lib.ir_framework.Test;
 
-import java.util.Random;
+import compiler.lib.compile_framework.*;
+import compiler.lib.generators.Generators;
 
-/*
- * @test
- * @bug 8373480
- * @summary Optimize multiplication by constant multiplier using LEA instructions
- * @library /test/lib /
- * @run driver compiler.c2.TestConstantMultiplier
- */
+import compiler.lib.template_framework.Template;
+import compiler.lib.template_framework.TemplateToken;
+import static compiler.lib.template_framework.Template.scope;
+import static compiler.lib.template_framework.Template.let;
+
+import compiler.lib.template_framework.library.TestFrameworkClass;
+
 public class TestConstantMultiplier {
-    private static final Random RANDOM = AbstractInfo.getRandom();
 
     public static void main(String[] args) {
-        TestFramework.run();
+        // Create a new CompileFramework instance.
+        CompileFramework comp = new CompileFramework();
+
+        // Add a java source file.
+        comp.addJavaSourceCode("c2.compilerr.ConstantMultiplierTest", generate(comp));
+
+        // Compile the source file.
+        comp.compile();
+
+        // p.xyz.InnterTest.main(new String[] {});
+        comp.invoke("c2.compiler.ConstantMultiplierTest", "main", new Object[] {new String[] {}});
+
+        // We can also pass VM flags for the Test VM.
+        // p.xyz.InnterTest.main(new String[] {"-Xbatch"});
+        comp.invoke("c2.compiler.ConstantMultiplierTest", "main", new Object[] {new String[] {"-Xbatch"}});
     }
 
-    @Test
-    @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_MULT_IMM_I, "1"})
-    private static int testMultBy81I(int num) {
-        return num * 81;
-    }
 
-    @Run(test = "testMultBy81I")
-    private static void runMultBy81II() {
-        int multiplicand = RANDOM.nextInt();
-        Verify.checkEQ(81 * multiplicand, testMultBy81I(multiplicand));
-    }
+    // Generate a source Java file as String
+    public static String generate(CompileFramework comp) {
+        var testHeader = Template.make(() -> scope(
+            """
+                public static Random RANDOM = new Random(1023);
 
-    @Test
-    @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_MULT_IMM_I, "1"})
-    private static int testMultBy73I(int num) {
-        return num * 73;
-    }
+            """
+        ));
+        var testTemplate = Template.make(() -> scope(
+            IntStream.of(81, 73, 45, 41, 37, 27, 25, 21, 19, 13, 11).mapToObj(
+                multiplier -> scope(
+                    let("multiplier", multiplier),
+                    """
+                        @Test
+                        @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_MULT_IMM_I, "1"})
+                        private static int testMultBy#{multiplier}I(int num) {
+                            return num * #{multiplier};
+                        }
 
-    @Run(test = "testMultBy73I")
-    private static void runMultBy73II() {
-        int multiplicand = RANDOM.nextInt();
-        Verify.checkEQ(73 * multiplicand, testMultBy73I(multiplicand));
-    }
+                        @Run(test = "testMultBy#{multiplier}I")
+                        private static void runMultBy#{multiplier}II() {
+                            int multiplicand = RANDOM.nextInt();
+                            Verify.checkEQ(#{multiplier} * multiplicand, testMultBy#{multiplier}I(multiplicand));
+                        }
 
-    @Test
-    @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_MULT_IMM_I, "1"})
-    private static int testMultBy45I(int num) {
-        return num * 45;
-    }
+                        @Test
+                        @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_MULT_IMM_L, "1"})
+                        private static long testMultBy#{multiplier}L(long num) {
+                            return num * #{multiplier};
+                        }
 
-    @Run(test = "testMultBy45I")
-    private static void runMultBy45II() {
-        int multiplicand = RANDOM.nextInt();
-        Verify.checkEQ(45 * multiplicand, testMultBy45I(multiplicand));
-    }
+                        @Run(test = "testMultBy#{multiplier}L")
+                        private static void runMultBy#{multiplier}L() {
+                            long multiplicand = RANDOM.nextInt();
+                            Verify.checkEQ(#{multiplier} * multiplicand, testMultBy#{multiplier}L(multiplicand));
+                        }
+                    """
+            )).toList()
+        ));
 
-    @Test
-    @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_MULT_IMM_I, "1"})
-    private static int testMultBy41I(int num) {
-        return num * 41;
-    }
+        var testClass = Template.make(() -> scope(
+            testHeader.asToken(),
+            testTemplate.asToken()
+        ));
 
-    @Run(test = "testMultBy41I")
-    private static void runMultBy41II() {
-        int multiplicand = RANDOM.nextInt();
-        Verify.checkEQ(41 * multiplicand, testMultBy41I(multiplicand));
-    }
+        List<TemplateToken> testTemplateTokens = List.of(testClass.asToken());
 
-    @Test
-    @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_MULT_IMM_I, "1"})
-    private static int testMultBy37I(int num) {
-        return num * 37;
-    }
-
-    @Run(test = "testMultBy37I")
-    private static void runMultBy37II() {
-        int multiplicand = RANDOM.nextInt();
-        Verify.checkEQ(37 * multiplicand, testMultBy37I(multiplicand));
-    }
-
-    @Test
-    @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_MULT_IMM_I, "1"})
-    private static int testMultBy27I(int num) {
-        return num * 27;
-    }
-
-    @Run(test = "testMultBy27I")
-    private static void runMultBy27II() {
-        int multiplicand = RANDOM.nextInt();
-        Verify.checkEQ(27 * multiplicand, testMultBy27I(multiplicand));
-    }
-
-    @Test
-    @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_MULT_IMM_I, "1"})
-    private static int testMultBy25I(int num) {
-        return num * 25;
-    }
-
-    @Run(test = "testMultBy25I")
-    private static void runMultBy25II() {
-        int multiplicand = RANDOM.nextInt();
-        Verify.checkEQ(25 * multiplicand, testMultBy25I(multiplicand));
-    }
-
-    @Test
-    @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_MULT_IMM_I, "1"})
-    private static int testMultBy21I(int num) {
-        return num * 21;
-    }
-
-    @Run(test = "testMultBy21I")
-    private static void runMultBy21II() {
-        int multiplicand = RANDOM.nextInt();
-        Verify.checkEQ(21 * multiplicand, testMultBy21I(multiplicand));
-    }
-
-    @Test
-    @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_MULT_IMM_I, "1"})
-    private static int testMultBy19I(int num) {
-        return num * 19;
-    }
-
-    @Run(test = "testMultBy19I")
-    private static void runMultBy19II() {
-        int multiplicand = RANDOM.nextInt();
-        Verify.checkEQ(19 * multiplicand, testMultBy19I(multiplicand));
-    }
-
-    @Test
-    @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_MULT_IMM_I, "1"})
-    private static int testMultBy13I(int num) {
-        return num * 13;
-    }
-
-    @Run(test = "testMultBy13I")
-    private static void runMultBy13I() {
-        int multiplicand = RANDOM.nextInt();
-        Verify.checkEQ(13 * multiplicand, testMultBy13I(multiplicand));
-    }
-
-    @Test
-    @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_MULT_IMM_I, "1"})
-    private static int testMultBy11I(int num) {
-        return num * 11;
-    }
-
-    @Run(test = "testMultBy11I")
-    private static void runMultBy11I() {
-        int multiplicand = RANDOM.nextInt();
-        Verify.checkEQ(11 * multiplicand, testMultBy11I(multiplicand));
-    }
-
-    @Test
-    @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_MULT_IMM_L, "1"})
-    private static long testMultBy81L(long num) {
-        return num * 81;
-    }
-
-    @Run(test = "testMultBy81L")
-    private static void runMultBy81L() {
-        long multiplicand = RANDOM.nextInt();
-        Verify.checkEQ(81 * multiplicand, testMultBy81L(multiplicand));
-    }
-
-    @Test
-    @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_MULT_IMM_L, "1"})
-    private static long testMultBy73L(long num) {
-        return num * 73;
-    }
-
-    @Run(test = "testMultBy73L")
-    private static void runMultBy73L() {
-        long multiplicand = RANDOM.nextInt();
-        Verify.checkEQ(73 * multiplicand, testMultBy73L(multiplicand));
-    }
-
-    @Test
-    @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_MULT_IMM_L, "1"})
-    private static long testMultBy45L(long num) {
-        return num * 45;
-    }
-
-    @Run(test = "testMultBy45L")
-    private static void runMultBy45L() {
-        long multiplicand = RANDOM.nextInt();
-        Verify.checkEQ(45 * multiplicand, testMultBy45L(multiplicand));
-    }
-
-    @Test
-    @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_MULT_IMM_L, "1"})
-    private static long testMultBy41L(long num) {
-        return num * 41;
-    }
-
-    @Run(test = "testMultBy41L")
-    private static void runMultBy41L() {
-        long multiplicand = RANDOM.nextInt();
-        Verify.checkEQ(41 * multiplicand, testMultBy41L(multiplicand));
-    }
-
-    @Test
-    @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_MULT_IMM_L, "1"})
-    private static long testMultBy37L(long num) {
-        return num * 37;
-    }
-
-    @Run(test = "testMultBy37L")
-    private static void runMultBy37L() {
-        long multiplicand = RANDOM.nextInt();
-        Verify.checkEQ(37 * multiplicand, testMultBy37L(multiplicand));
-    }
-
-    @Test
-    @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_MULT_IMM_L, "1"})
-    private static long testMultBy27L(long num) {
-        return num * 27;
-    }
-
-    @Run(test = "testMultBy27L")
-    private static void runMultBy27L() {
-        long multiplicand = RANDOM.nextInt();
-        Verify.checkEQ(27 * multiplicand, testMultBy27L(multiplicand));
-    }
-
-    @Test
-    @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_MULT_IMM_L, "1"})
-    private static long testMultBy25L(long num) {
-        return num * 25;
-    }
-
-    @Run(test = "testMultBy25L")
-    private static void runMultBy25L() {
-        long multiplicand = RANDOM.nextInt();
-        Verify.checkEQ(25 * multiplicand, testMultBy25L(multiplicand));
-    }
-
-    @Test
-    @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_MULT_IMM_L, "1"})
-    private static long testMultBy21L(long num) {
-        return num * 21;
-    }
-
-    @Run(test = "testMultBy21L")
-    private static void runMultBy21L() {
-        long multiplicand = RANDOM.nextInt();
-        Verify.checkEQ(21 * multiplicand, testMultBy21L(multiplicand));
-    }
-
-    @Test
-    @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_MULT_IMM_L, "1"})
-    private static long testMultBy19L(long num) {
-        return num * 19;
-    }
-
-    @Run(test = "testMultBy19L")
-    private static void runMultBy19L() {
-        long multiplicand = RANDOM.nextInt();
-        Verify.checkEQ(19 * multiplicand, testMultBy19L(multiplicand));
-    }
-
-    @Test
-    @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_MULT_IMM_L, "1"})
-    private static long testMultBy13L(long num) {
-        return num * 13;
-    }
-
-    @Run(test = "testMultBy13L")
-    private static void runMultBy13L() {
-        long multiplicand = RANDOM.nextInt();
-        Verify.checkEQ(13 * multiplicand, testMultBy13L(multiplicand));
-    }
-
-    @Test
-    @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_MULT_IMM_L, "1"})
-    private static long testMultBy11L(long num) {
-        return num * 11;
-    }
-
-    @Run(test = "testMultBy11L")
-    private static void runMultBy11L() {
-        long multiplicand = RANDOM.nextInt();
-        Verify.checkEQ(11 * multiplicand, testMultBy11L(multiplicand));
+        return TestFrameworkClass.render(
+            // package and class name.
+            "c2.compiler", "ConstantMultiplierTest",
+            // Set of imports.
+            Set.of("java.util.Random","compiler.lib.verify.*"),
+            // classpath, so the Test VM has access to the compiled class files.
+            comp.getEscapedClassPathOfCompiledClasses(),
+            // The list of tests.
+            testTemplateTokens);
     }
 }
