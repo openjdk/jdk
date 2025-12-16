@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,22 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_JFR_UTILITIES_JFRSPINLOCKHELPER_HPP
-#define SHARE_JFR_UTILITIES_JFRSPINLOCKHELPER_HPP
+/*
+ * @test
+ * @bug 8364490
+ * @summary "Hello world" sanity test for SpecTrapLimitExtraEntries
+ *
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:SpecTrapLimitExtraEntries=0 compiler.arguments.TestSpecTrapLimitExtraEntries
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:SpecTrapLimitExtraEntries=100 compiler.arguments.TestSpecTrapLimitExtraEntries
+ */
 
-#include "runtime/javaThread.hpp"
+package compiler.arguments;
 
-class JfrSpinlockHelper {
- private:
-  volatile int* const _lock;
+public class TestSpecTrapLimitExtraEntries {
 
- public:
-  JfrSpinlockHelper(volatile int* lock) : _lock(lock) {
-    Thread::SpinAcquire(_lock);
-  }
-
-  ~JfrSpinlockHelper() {
-    Thread::SpinRelease(_lock);
-  }
-};
-
-#endif // SHARE_JFR_UTILITIES_JFRSPINLOCKHELPER_HPP
+    public static void main(String[] args) {
+        System.out.println("Passed");
+    }
+}

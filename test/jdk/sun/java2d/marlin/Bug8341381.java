@@ -89,13 +89,13 @@ public final class Bug8341381 {
     static final AtomicBoolean isMarlin = new AtomicBoolean();
     static final CountDownLatch latch = new CountDownLatch(1);
 
+    // initialize j.u.l Logger:
+    static final Logger log = Logger.getLogger("sun.java2d.marlin");
     public static void main(final String[] args) {
         Locale.setDefault(Locale.US);
 
         // FIRST: Get Marlin runtime state from its log:
 
-        // initialize j.u.l Logger:
-        final Logger log = Logger.getLogger("sun.java2d.marlin");
         log.addHandler(new Handler() {
             @Override
             public void publish(LogRecord record) {
