@@ -43,6 +43,9 @@ import org.openjdk.jmh.annotations.*;
  *      -XX:MaxVectorSize=16
  *  - Disable fill loop detection, so we don't use intrinsic but auto vectorization:
  *      -XX:-OptimizeFill
+ *  - Lilliput can also have an effect, because it can change alignment and have
+ *    an impact on which exact intrinsic is chosen (e.g. fill and copy):
+ *      -XX:+UseCompactObjectHeaders
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)

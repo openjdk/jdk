@@ -248,11 +248,11 @@ public class TestVectorAlgorithms {
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIfAnd = {"UseSuperWord", "true", "OptimizeFill", "false"})
-    @IR(counts = {".*CallLeafNoFP.*arrayof_jint_fill.*", "= 1"},
+    @IR(counts = {".*CallLeafNoFP.*jint_fill.*", "= 1"},
         phase = CompilePhase.BEFORE_MATCHING,
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"OptimizeFill", "true"})
-    // By default, the fill intrinsic "arrayof_jint_fill" is used, but we can disable
+    // By default, the fill intrinsic "jint_fill" is used, but we can disable
     // the detection of the fill loop, and then we auto vectorize.
     public Object fillI_loop(int[] r) {
         return VectorAlgorithmsImpl.fillI_loop(r);
@@ -310,7 +310,7 @@ public class TestVectorAlgorithms {
     }
 
     @Test
-    @IR(counts = {".*CallLeafNoFP.*arrayof_jint_disjoint_arraycopy.*", "= 1"},
+    @IR(counts = {".*CallLeafNoFP.*jint_disjoint_arraycopy.*", "= 1"},
         phase = CompilePhase.BEFORE_MATCHING,
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     public Object copyI_System_arraycopy(int[] a, int[] r) {
