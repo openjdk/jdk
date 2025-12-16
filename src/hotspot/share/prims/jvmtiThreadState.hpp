@@ -74,67 +74,6 @@ class JvmtiEnvThreadStateIterator : public StackObj {
 
 ///////////////////////////////////////////////////////////////
 //
-// class JvmtiVTMSTransitionDisabler
-//
-// Virtual Thread Mount State Transition (VTMS transition) mechanism
-//
-class JvmtiVTMSTransitionDisabler : public AnyObj {
- private:
-  static volatile int _VTMS_transition_disable_for_one_count; // transitions for one virtual thread are disabled while it is positive
-  static volatile int _VTMS_transition_disable_for_all_count; // transitions for all virtual threads are disabled while it is positive
-  static volatile bool _SR_mode;                         // there is an active suspender or resumer
-  static volatile int _sync_protocol_enabled_count;      // current number of JvmtiVTMSTransitionDisablers enabled sync protocol
-  static volatile bool _sync_protocol_enabled_permanently; // seen a suspender: JvmtiVTMSTransitionDisabler protocol is enabled permanently
-
-  bool _is_SR;                                           // is suspender or resumer
-  bool _is_virtual;                                      // target thread is virtual
-  bool _is_self;                                         // JvmtiVTMSTransitionDisabler is a no-op for current platform, carrier or virtual thread
-  jthread _thread;                                       // virtual thread to disable transitions for, no-op if it is a platform thread
-
-  DEBUG_ONLY(static void print_info();)
-  void VTMS_transition_disable_for_one();
-  void VTMS_transition_disable_for_all();
-  void VTMS_transition_enable_for_one();
-  void VTMS_transition_enable_for_all();
-
- public:
-  static bool _VTMS_notify_jvmti_events;                 // enable notifications from VirtualThread about VTMS events
-  static bool VTMS_notify_jvmti_events()             { return _VTMS_notify_jvmti_events; }
-  static void set_VTMS_notify_jvmti_events(bool val) { _VTMS_notify_jvmti_events = val; }
-
-  static void inc_sync_protocol_enabled_count()      { AtomicAccess::inc(&_sync_protocol_enabled_count); }
-  static void dec_sync_protocol_enabled_count()      { AtomicAccess::dec(&_sync_protocol_enabled_count); }
-  static int  sync_protocol_enabled_count()          { return AtomicAccess::load(&_sync_protocol_enabled_count); }
-  static bool sync_protocol_enabled_permanently()    { return AtomicAccess::load(&_sync_protocol_enabled_permanently); }
-
-  static bool sync_protocol_enabled()                { return sync_protocol_enabled_permanently() || sync_protocol_enabled_count() > 0; }
-
-  // parameter is_SR: suspender or resumer
-  JvmtiVTMSTransitionDisabler(bool is_SR = false);
-  JvmtiVTMSTransitionDisabler(jthread thread);
-  ~JvmtiVTMSTransitionDisabler();
-
-  // set VTMS transition bit value in JavaThread and java.lang.VirtualThread object
-  static void set_is_in_VTMS_transition(JavaThread* thread, jobject vthread, bool in_trans);
-
-  static void start_VTMS_transition(jthread vthread, bool is_mount);
-  static void finish_VTMS_transition(jthread vthread, bool is_mount);
-
-  static void VTMS_vthread_start(jobject vthread);
-  static void VTMS_vthread_end(jobject vthread);
-
-  static void VTMS_vthread_mount(jobject vthread, bool hide);
-  static void VTMS_vthread_unmount(jobject vthread, bool hide);
-
-  static void VTMS_mount_begin(jobject vthread);
-  static void VTMS_mount_end(jobject vthread);
-
-  static void VTMS_unmount_begin(jobject vthread, bool last_unmount);
-  static void VTMS_unmount_end(jobject vthread);
-};
-
-///////////////////////////////////////////////////////////////
-//
 // class VirtualThreadList
 //
 // Used for Virtual Threads Suspend/Resume management.

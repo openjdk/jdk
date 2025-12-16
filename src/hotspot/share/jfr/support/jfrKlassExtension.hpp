@@ -40,6 +40,5 @@
 #define EVENT_STICKY_BIT       8192
 #define IS_EVENT_KLASS(ptr) (((ptr)->trace_id() & (JDK_JFR_EVENT_KLASS | JDK_JFR_EVENT_SUBKLASS)) != 0)
 #define IS_EVENT_OR_HOST_KLASS(ptr) (((ptr)->trace_id() & (JDK_JFR_EVENT_KLASS | JDK_JFR_EVENT_SUBKLASS | EVENT_HOST_KLASS)) != 0)
-#define ON_KLASS_CREATION(k, p, t) Jfr::on_klass_creation(k, p, t)
 
 #endif // SHARE_JFR_SUPPORT_JFRKLASSEXTENSION_HPP
