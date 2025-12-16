@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,62 @@
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
 #include "prims/vectorSupport.hpp"
+
+//=======================Notes-for-VectorMask-Representation=======================
+//
+// There are three distinct representations for vector masks based on platform and
+// use scenarios:
+//
+// - BVectMask: Platform-independent mask stored in a vector register with 8-bit
+//   lanes containing 1/0 values. The corresponding type is TypeVectA ~ TypeVectZ.
+//
+// - NVectMask: Platform-specific mask stored in vector registers with N-bit lanes,
+//   where all bits in each lane are either set (true) or unset (false). Generated
+//   on architectures without predicate/mask feature, such as AArch64 NEON, x86
+//   AVX2, etc. The corresponding type is TypeVectA ~ TypeVectZ.
+//
+// - PVectMask: Platform-specific mask stored in predicate/mask registers. Generated
+//   on architectures with predicate/mask feature, such as AArch64 SVE, x86 AVX-512,
+//   and RISC-V Vector Extension (RVV). The corresponding type is TypeVectMask.
+//
+// NVectMask and PVectMask encode element data type and vector length information.
+// They are the primary mask representations used in most mask and masked vector
+// operations. While BVectMask primarily represents mask values loaded from or
+// stored to Java boolean memory, and is currently used in certain mask operations
+// (i.e. VectorMaskOpNode).
+//
+//=========================Notes-for-Masked-Vector-Nodes===========================
+//
+// Each lane-wise and cross-lane (reduction) ALU node supports both non-masked
+// and masked operations.
+//
+// Currently masked vector nodes are only used to implement the Vector API's masked
+// operations (which might also be used for auto-vectorization in future), such as:
+//   Vector<E> lanewise(VectorOperators.Binary op, Vector<E> v, VectorMask<E> m)
+//
+// They are generated during intrinsification for Vector API, only on architectures
+// that support the relevant predicated instructions. The compiler uses
+// "Matcher::match_rule_supported_vector_masked()" to check whether the current
+// platform supports the predicated/masked vector instructions for an operation. It
+// generates the masked vector node for the operation if supported. Otherwise, it
+// generates the unpredicated vector node and implements the masked operation with
+// the help of a VectorBlendNode. Please see more details from API intrinsification
+// in vectorIntrinsics.cpp.
+//
+// To differentiate the masked and non-masked nodes, flag "Flag_is_predicated_vector"
+// is set for the masked version. Meanwhile, there is an additional mask input for
+// the masked nodes.
+//
+// For example, "AddVBNode" might have two versions:
+//   - Non-masked version:
+//          in1  in2
+//           \   /
+//         AddVBNode
+//
+//   - Masked version (with "Flag_is_predicated_vector" being set):
+//       in1  in2  mask
+//         \   |   /
+//         AddVBNode
 
 //------------------------------VectorNode-------------------------------------
 // Vector Operation
@@ -103,6 +159,8 @@ class VectorNode : public TypeNode {
   static bool implemented(int opc, uint vlen, BasicType bt);
   static bool is_shift(Node* n);
   static bool is_vshift_cnt(Node* n);
+  // Returns true if the lower vlen bits (bits [0, vlen-1]) of the long value
+  // are all 1s or all 0s, indicating a "mask all" or "mask none" pattern.
   static bool is_maskall_type(const TypeLong* type, int vlen);
   static bool is_muladds2i(const Node* n);
   static bool is_roundopD(Node* n);
@@ -1051,6 +1109,7 @@ class CompressVNode: public VectorNode {
   virtual int Opcode() const;
 };
 
+// Vector mask compress
 class CompressMNode: public VectorNode {
  public:
   CompressMNode(Node* mask, const TypeVect* vt) :
@@ -1326,6 +1385,8 @@ class VectorCmpMaskedNode : public TypeNode {
 };
 
 //------------------------------VectorMaskGenNode----------------------------------
+// Generate a vector mask based on the given length. Lanes with indices in
+// [0, length) are set to true, while the remaining lanes are set to false.
 class VectorMaskGenNode : public TypeNode {
  public:
   VectorMaskGenNode(Node* length, const Type* ty): TypeNode(ty, 2) {
@@ -1339,6 +1400,8 @@ class VectorMaskGenNode : public TypeNode {
 };
 
 //------------------------------VectorMaskOpNode-----------------------------------
+// Base class for certain vector mask operations. The supported input mask can be
+// either "BVectMask" or "PVectMask" depending on the platform.
 class VectorMaskOpNode : public TypeNode {
  private:
   int _mopc;
@@ -1359,6 +1422,7 @@ class VectorMaskOpNode : public TypeNode {
   static Node* make(Node* mask, const Type* ty, int mopc);
 };
 
+// Count the number of true (set) lanes in the vector mask.
 class VectorMaskTrueCountNode : public VectorMaskOpNode {
  public:
   VectorMaskTrueCountNode(Node* mask, const Type* ty):
@@ -1366,6 +1430,8 @@ class VectorMaskTrueCountNode : public VectorMaskOpNode {
   virtual int Opcode() const;
 };
 
+// Returns the index of the first true (set) lane in the vector mask.
+// If no lanes are set, returns the vector length.
 class VectorMaskFirstTrueNode : public VectorMaskOpNode {
  public:
   VectorMaskFirstTrueNode(Node* mask, const Type* ty):
@@ -1373,6 +1439,8 @@ class VectorMaskFirstTrueNode : public VectorMaskOpNode {
   virtual int Opcode() const;
 };
 
+// Returns the index of the last true (set) lane in the vector mask.
+// If no lanes are set, returns -1 .
 class VectorMaskLastTrueNode : public VectorMaskOpNode {
  public:
   VectorMaskLastTrueNode(Node* mask, const Type* ty):
@@ -1380,6 +1448,10 @@ class VectorMaskLastTrueNode : public VectorMaskOpNode {
   virtual int Opcode() const;
 };
 
+// Pack the mask lane values into a long value, supporting at most the
+// first 64 lanes. Each mask lane is packed into one bit in the long
+// value, ordered from the least significant bit to the most significant
+// bit.
 class VectorMaskToLongNode : public VectorMaskOpNode {
  public:
   VectorMaskToLongNode(Node* mask, const Type* ty):
@@ -1391,6 +1463,9 @@ class VectorMaskToLongNode : public VectorMaskOpNode {
   virtual Node* Identity(PhaseGVN* phase);
 };
 
+// Unpack bits from a long value into vector mask lane values. Each bit
+// in the long value is unpacked into one mask lane, ordered from the
+// least significant bit to the sign bit.
 class VectorLongToMaskNode : public VectorNode {
  public:
   VectorLongToMaskNode(Node* mask, const TypeVect* ty):
@@ -1400,28 +1475,37 @@ class VectorLongToMaskNode : public VectorNode {
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
-//-------------------------- Vector mask broadcast -----------------------------------
+//-------------------------- Vector mask broadcast ------------------------------
+// Broadcast a scalar value to all lanes of a vector mask. All lanes are set
+// to true if the input value is non-zero, or false if the input value is zero.
+// This node is only used to generate a mask with "PVectMask" layout.
 class MaskAllNode : public VectorNode {
  public:
   MaskAllNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {}
   virtual int Opcode() const;
 };
 
-//--------------------------- Vector mask logical and --------------------------------
+//--------------------------- Vector mask logical and ---------------------------
+// Perform a bitwise AND operation between two vector masks. This node is only
+// used for vector masks with "PVectMask" layout.
 class AndVMaskNode : public AndVNode {
  public:
   AndVMaskNode(Node* in1, Node* in2, const TypeVect* vt) : AndVNode(in1, in2, vt) {}
   virtual int Opcode() const;
 };
 
-//--------------------------- Vector mask logical or ---------------------------------
+//--------------------------- Vector mask logical or ----------------------------
+// Perform a bitwise OR operation between two vector masks. This node is only
+// used for vector masks with "PVectMask" layout.
 class OrVMaskNode : public OrVNode {
  public:
   OrVMaskNode(Node* in1, Node* in2, const TypeVect* vt) : OrVNode(in1, in2, vt) {}
   virtual int Opcode() const;
 };
 
-//--------------------------- Vector mask logical xor --------------------------------
+//--------------------------- Vector mask logical xor ---------------------------
+// Perform a bitwise XOR operation between two vector masks. This node is only
+// used for vector masks with "PVectMask" layout.
 class XorVMaskNode : public XorVNode {
  public:
   XorVMaskNode(Node* in1, Node* in2, const TypeVect* vt) : XorVNode(in1, in2, vt) {}
@@ -1653,6 +1737,9 @@ public:
                                Node* mask, uint truth_table, const TypeVect* vt);
 };
 
+//------------------------------VectorMaskCmpNode-------------------------------
+// Compare two vectors lane-wise using the specified predicate and produce a
+// vector mask.
 class VectorMaskCmpNode : public VectorNode {
  private:
   BoolTest::mask _predicate;
@@ -1697,6 +1784,9 @@ class VectorMaskWrapperNode : public VectorNode {
   Node* vector_mask() const { return in(2); }
 };
 
+//------------------------------VectorTestNode-------------------------------
+// Test whether all or any lanes in the first input vector mask is true,
+// based on the specified predicate.
 class VectorTestNode : public CmpNode {
  private:
   BoolTest::mask _predicate;
@@ -1719,6 +1809,10 @@ class VectorTestNode : public CmpNode {
   }
 };
 
+//------------------------------VectorBlendNode-------------------------------
+// Blend two vectors based on a vector mask. For each lane, select the value
+// from the first input vector (vec1) if the corresponding mask lane is set,
+// otherwise select from the second input vector (vec2).
 class VectorBlendNode : public VectorNode {
  public:
   VectorBlendNode(Node* vec1, Node* vec2, Node* mask)
@@ -1736,14 +1830,12 @@ class VectorRearrangeNode : public VectorNode {
  public:
   VectorRearrangeNode(Node* vec1, Node* shuffle)
     : VectorNode(vec1, shuffle, vec1->bottom_type()->is_vect()) {
-    // assert(mask->is_VectorMask(), "VectorBlendNode requires that third argument be a mask");
   }
 
   virtual int Opcode() const;
   Node* vec1() const { return in(1); }
   Node* vec_shuffle() const { return in(2); }
 };
-
 
 // Select elements from two source vectors based on the wrapped indexes held in
 // the first vector.
@@ -1758,13 +1850,16 @@ public:
   virtual int Opcode() const;
 };
 
-// The target may not directly support the rearrange operation for an element type. In those cases,
-// we can transform the rearrange into a different element type. For example, on x86 before AVX512,
-// there is no rearrange instruction for short elements, what we will then do is to transform the
-// shuffle vector into one that we can do byte rearrange such that it would provide the same
-// result. This could have been done in VectorRearrangeNode during code emission but we eagerly
-// expand this out because it is often the case that an index vector is reused in many rearrange
-// operations. This allows the index preparation to be GVN-ed as well as hoisted out of loops, etc.
+//------------------------------VectorLoadShuffleNode------------------------------
+// The target may not directly support the rearrange operation for an element type.
+// In those cases, we can transform the rearrange into a different element type.
+// For example, on x86 before AVX512, there is no rearrange instruction for short
+// elements, what we will then do is to transform the shuffle vector into one that
+// we can do byte rearrange such that it would provide the same result. This could
+// have been done in VectorRearrangeNode during code emission but we eagerly expand
+// this out because it is often the case that an index vector is reused in many
+// rearrange operations. This allows the index preparation to be GVN-ed as well as
+// hoisted out of loops, etc.
 class VectorLoadShuffleNode : public VectorNode {
  public:
   VectorLoadShuffleNode(Node* in, const TypeVect* vt)
@@ -1773,6 +1868,9 @@ class VectorLoadShuffleNode : public VectorNode {
   virtual int Opcode() const;
 };
 
+//------------------------------VectorLoadMaskNode---------------------------------
+// Convert a "BVectMask" into a platform-specific vector mask (either "NVectMask"
+// or "PVectMask").
 class VectorLoadMaskNode : public VectorNode {
  public:
   VectorLoadMaskNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {
@@ -1784,6 +1882,9 @@ class VectorLoadMaskNode : public VectorNode {
   Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
+//------------------------------VectorStoreMaskNode--------------------------------
+// Convert a platform-specific vector mask (either "NVectMask" or "PVectMask")
+// into a "BVectMask".
 class VectorStoreMaskNode : public VectorNode {
  protected:
   VectorStoreMaskNode(Node* in1, ConINode* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
@@ -1795,6 +1896,9 @@ class VectorStoreMaskNode : public VectorNode {
   static VectorStoreMaskNode* make(PhaseGVN& gvn, Node* in, BasicType in_type, uint num_elem);
 };
 
+//------------------------------VectorMaskCastNode----------------------------------
+// Lane-wise type cast a vector mask to the given vector type. The vector length
+// of the input and output must be the same.
 class VectorMaskCastNode : public VectorNode {
  public:
   VectorMaskCastNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {
