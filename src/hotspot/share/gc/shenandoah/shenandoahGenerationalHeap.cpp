@@ -1040,14 +1040,7 @@ void ShenandoahGenerationalHeap::final_update_refs_update_region_states() {
 void ShenandoahGenerationalHeap::complete_degenerated_cycle() {
   shenandoah_assert_heaplocked_or_safepoint();
 
-  if (young_generation()->is_bootstrap_cycle()) {
-    // Once the bootstrap cycle is completed, the young generation is no longer obliged to mark old
-    young_generation()->clear_bootstrap_configuration();
-  }
-
-  // In case degeneration interrupted concurrent evacuation or update references, we need to clean up
-  // transient state. Otherwise, these actions have no effect.
-  reset_generation_reserves();
+  complete_cycle();
 
   if (!old_generation()->is_parsable()) {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_coalesce_and_fill);
@@ -1056,10 +1049,7 @@ void ShenandoahGenerationalHeap::complete_degenerated_cycle() {
 }
 
 void ShenandoahGenerationalHeap::complete_concurrent_cycle() {
-  if (young_generation()->is_bootstrap_cycle()) {
-    // Once the bootstrap cycle is completed, the young generation is no longer obliged to mark old
-    young_generation()->clear_bootstrap_configuration();
-  }
+  complete_cycle();
 
   if (!old_generation()->is_parsable()) {
     // Class unloading may render the card offsets unusable, so we must rebuild them before
@@ -1071,6 +1061,17 @@ void ShenandoahGenerationalHeap::complete_concurrent_cycle() {
     // throw off the heuristics.
     entry_global_coalesce_and_fill();
   }
+
+}
+
+void ShenandoahGenerationalHeap::complete_cycle() {
+  if (young_generation()->is_bootstrap_cycle()) {
+    // Once the bootstrap cycle is completed, the young generation is no longer obliged to mark old
+    young_generation()->clear_bootstrap_configuration();
+  }
+
+  // In case degeneration interrupted concurrent evacuation or update references, we need to clean up
+  // transient state. Otherwise, these actions have no effect.
   reset_generation_reserves();
 }
 
