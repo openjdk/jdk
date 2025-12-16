@@ -30,3 +30,35 @@
  *    ../../share/jdk.jpackage/jdk/jpackage/internal/model/ApplicationLayoutTest.java
  * @run junit jdk.jpackage/jdk.jpackage.internal.LinuxApplicationLayoutTest
  */
+
+/* @test
+ * @summary Test LinuxSystemEnvironment
+ * @requires (os.family == "linux")
+ * @library /test/jdk/tools/jpackage/helpers
+ * @build jdk.jpackage.test.mock.*
+ * @compile/module=jdk.jpackage -Xlint:all -Werror
+ *    jdk/jpackage/internal/LinuxSystemEnvironmentTest.java
+ *    ../../share/jdk.jpackage/jdk/jpackage/internal/MockUtils.java
+ * @run junit jdk.jpackage/jdk.jpackage.internal.LinuxSystemEnvironmentTest
+ */
+
+/* @test
+ * @summary Test LibProvidersLookup
+ * @requires (os.family == "linux")
+ * @library /test/jdk/tools/jpackage/helpers
+ * @build jdk.jpackage.test.mock.*
+ * @compile/module=jdk.jpackage -Xlint:all -Werror
+ *    jdk/jpackage/internal/LibProvidersLookupTest.java
+ * @run junit jdk.jpackage/jdk.jpackage.internal.LibProvidersLookupTest
+ */
+
+/* @test
+ * @summary Test LinuxPackageArch
+ * @requires (os.family == "linux")
+ * @library /test/jdk/tools/jpackage/helpers
+ * @build jdk.jpackage.test.mock.*
+ * @compile/module=jdk.jpackage -Xlint:all -Werror
+ *    jdk/jpackage/internal/LinuxPackageArchTest.java
+ *    ../../share/jdk.jpackage/jdk/jpackage/internal/MockUtils.java
+ * @run junit jdk.jpackage/jdk.jpackage.internal.LinuxPackageArchTest
+ */

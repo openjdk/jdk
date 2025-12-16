@@ -30,3 +30,25 @@
  *    ../../share/jdk.jpackage/jdk/jpackage/internal/model/ApplicationLayoutTest.java
  * @run junit jdk.jpackage/jdk.jpackage.internal.MacApplicationLayoutTest
  */
+
+/* @test
+ * @summary Test MacDmgSystemEnvironmentTest
+ * @requires (os.family == "mac")
+ * @library /test/jdk/tools/jpackage/helpers
+ * @build jdk.jpackage.test.mock.*
+ * @compile/module=jdk.jpackage -Xlint:all -Werror
+ *    jdk/jpackage/internal/MacDmgSystemEnvironmentTest.java
+ *    ../../share/jdk.jpackage/jdk/jpackage/internal/MockUtils.java
+ * @run junit jdk.jpackage/jdk.jpackage.internal.MacDmgSystemEnvironmentTest
+ */
+
+/* @test
+ * @summary Test MacDmgPackagerTest
+ * @requires (os.family == "mac")
+ * @library /test/jdk/tools/jpackage/helpers
+ * @build jdk.jpackage.test.mock.*
+ * @compile/module=jdk.jpackage -Xlint:all -Werror
+ *    jdk/jpackage/internal/MacDmgPackagerTest.java
+ *    ../../share/jdk.jpackage/jdk/jpackage/internal/MockUtils.java
+ * @run junit jdk.jpackage/jdk.jpackage.internal.MacDmgPackagerTest
+ */
