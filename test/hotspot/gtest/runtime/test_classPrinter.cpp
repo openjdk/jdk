@@ -84,9 +84,6 @@ TEST_VM(ClassPrinter, print_methods) {
   ASSERT_THAT(o2, HasSubstr("method wait : (JI)V")) << "must find java/lang/Object::wait(long,int)";
   ASSERT_THAT(o2, Not(HasSubstr("method wait : ()V"))) << "must not find java/lang/Object::wait()";
 
-#ifndef PRODUCT
-  // These are available only in debug builds
-  //
   // 0x02 is PRINT_BYTECODE
   // 0x04 is PRINT_BYTECODE_ADDRESS
   // 0x40 is PRINT_METHOD_DETAILS
@@ -94,19 +91,22 @@ TEST_VM(ClassPrinter, print_methods) {
   ClassPrinter::print_methods("java.lang.Object", "wait:()V", 0x46, &s3);
   const char* o3 = s3.freeze();
   ASSERT_THAT(o3, HasSubstr("method wait : ()V")) << "must find java/lang/Object::wait()";
-  ASSERT_THAT(o3, HasSubstr("{method}")) << "must print Method metadata";
 
+#ifndef PRODUCT
+  // PRINT_METHOD_DETAILS -- available only in debug builds
+  ASSERT_THAT(o3, HasSubstr("{method}")) << "must print Method metadata";
 #if GTEST_USES_POSIX_RE
   // Complex regex not available on Windows
-  ASSERT_THAT(o3, ContainsRegex("method holder:.*'java/lang/Object'")) << "must print Method metadata";
-  ASSERT_THAT(o3, ContainsRegex("name: *'wait'")) << "must print Method metadata";
+  ASSERT_THAT(o3, ContainsRegex("method holder:.*'java/lang/Object'")) << "must print Method metadata details";
+  ASSERT_THAT(o3, ContainsRegex("name: *'wait'")) << "must print Method metadata details";
+#endif
+#endif
 
+#if GTEST_USES_POSIX_RE
   // Bytecodes: we should have at least one 'return' bytecide for Object.wait()
   // The print out should look like this:
   // 0x000000004adf73ad    5 return
   ASSERT_THAT(o3, ContainsRegex("0x[0-9a-f]+ +[0-9]+ +return")) << "must print return bytecode";
-#endif // GTEST_USES_POSIX_RE
-
-#endif // PRODUCT
+#endif
 
 }
