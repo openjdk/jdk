@@ -40,7 +40,6 @@ import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -73,11 +72,9 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import org.junit.jupiter.api.AfterAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -119,11 +116,14 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
         return String.format("[%d s, %d ms, %d ns] ", secs, mill, nan);
     }
 
-    record Heart(AtomicBoolean beat) implements TestWatcher, BeforeEachCallback {
+    final static class TestStopper implements TestWatcher, BeforeEachCallback {
+        final AtomicReference<String> failed = new AtomicReference<>();
+        TestStopper() { }
         @Override
         public void testFailed(ExtensionContext context, Throwable cause) {
             if (stopAfterFirstFailure()) {
-                beat.set(false);
+                String msg = "Aborting due to: " + cause;
+                failed.compareAndSet(null, msg);
                 FAILURES.putIfAbsent(context.getDisplayName(), cause);
                 System.out.printf("%nTEST FAILED: %s%s%n\tAborting due to %s%n%n",
                         now(), context.getDisplayName(), cause);
@@ -134,12 +134,13 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
 
         @Override
         public void beforeEach(ExtensionContext context) {
-            Assumptions.assumeTrue(beat.get(), "It's dead, Jim.");
+            String msg = failed.get();
+            Assumptions.assumeTrue(msg == null, msg);
         }
     }
 
     @RegisterExtension
-    static final Heart heart = new Heart(new AtomicBoolean(true));
+    static final TestStopper stopper = new TestStopper();
 
     static final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
     private static volatile HttpClient sharedClient;
@@ -171,12 +172,6 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
     protected static boolean stopAfterFirstFailure() {
         return Boolean.getBoolean("jdk.internal.httpclient.debug");
     }
-
-//    static String name(ITestResult result) {
-//        var params = result.getParameters();
-//        return result.getName()
-//                + (params == null ? "()" : Arrays.toString(result.getParameters()));
-//    }
 
     static Version version(String uri) {
         if (uri.contains("/http1/") || uri.contains("/https1/"))
