@@ -1099,12 +1099,6 @@ void ShenandoahConcurrentGC::op_init_update_refs() {
 
 void ShenandoahConcurrentGC::op_update_refs() const {
   ShenandoahHeap::heap()->update_heap_references(_generation, true /*concurrent*/);
-
-  ShenandoahReferenceProcessor* old = _generation->ref_processor()->get_old_generation_ref_processor();
-  if (old != nullptr) {
-    assert(_generation->is_young(), "Only young ref processor can have an old ref processor");
-    old->heal_discovered_lists();
-  }
 }
 
 class ShenandoahUpdateThreadHandshakeClosure : public HandshakeClosure {

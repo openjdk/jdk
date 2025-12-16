@@ -943,6 +943,14 @@ private:
 
 void ShenandoahGenerationalHeap::update_heap_references(ShenandoahGeneration* generation, bool concurrent) {
   assert(!is_full_gc_in_progress(), "Only for concurrent and degenerated GC");
+
+
+  ShenandoahReferenceProcessor* old = young_generation()->ref_processor()->get_old_generation_ref_processor();
+  if (old != nullptr) {
+    // TODO: Might as well leth the workers do this
+    old->heal_discovered_lists();
+  }
+
   const uint nworkers = workers()->active_workers();
   ShenandoahRegionChunkIterator work_list(nworkers);
   if (concurrent) {
