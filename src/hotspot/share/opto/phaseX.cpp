@@ -2586,16 +2586,10 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     }
   }
   // Check for max(a, max(b, c)) patterns
-  if (use_op == Op_MinD || use_op == Op_MaxD ||
-      use_op == Op_MinF || use_op == Op_MaxF ||
-      use_op == Op_MinI || use_op == Op_MaxI ||
-      use_op == Op_MinL || use_op == Op_MaxL) {
+  if (use->is_MinMax()) {
     for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
       Node* u = use->fast_out(i2);
-      if (use_op == Op_MinD || use_op == Op_MaxD ||
-          use_op == Op_MinF || use_op == Op_MaxF ||
-          use_op == Op_MinI || use_op == Op_MaxI ||
-          use_op == Op_MinL || use_op == Op_MaxL) {
+      if (u->is_MinMax()) {
         worklist.push(u);
       }
     }
