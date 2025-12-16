@@ -215,7 +215,7 @@ protected:
   enum class StaticLookupMode   { find, skip };
   enum class PrivateLookupMode  { find, skip };
 
-  virtual bool is_klass() const { return true; }
+  bool is_klass() const override { return true; }
 
   // super() cannot be InstanceKlass* -- Java arrays are covariant, and _super is used
   // to implement that. NB: the _super of "[Ljava/lang/Integer;" is "[Ljava/lang/Number;"
@@ -649,9 +649,6 @@ public:
   // actual oop size of obj in memory in word size.
   virtual size_t oop_size(oop obj) const = 0;
 
-  // Size of klass in word size.
-  virtual int size() const = 0;
-
   // Returns the Java name for a class (Resource allocated)
   // For arrays, this returns the name of the element with a leading '['.
   // For classes, this returns the name with the package separators
@@ -728,8 +725,8 @@ public:
 
   JFR_ONLY(DEFINE_TRACE_ID_METHODS;)
 
-  virtual void metaspace_pointers_do(MetaspaceClosure* iter);
-  virtual MetaspaceObj::Type type() const { return ClassType; }
+  void metaspace_pointers_do(MetaspaceClosure* iter) override;
+  MetaspaceObj::Type type() const override { return ClassType; }
 
   inline bool is_loader_alive() const;
   inline bool is_loader_present_and_alive() const;
@@ -764,14 +761,12 @@ public:
   virtual jint jvmti_class_status() const;
 
   // Printing
-  virtual void print_on(outputStream* st) const;
+  void print_on(outputStream* st) const override;
 
   virtual void oop_print_value_on(oop obj, outputStream* st);
   virtual void oop_print_on      (oop obj, outputStream* st);
 
   void print_secondary_supers_on(outputStream* st) const;
-
-  virtual const char* internal_name() const = 0;
 
   // Verification
   virtual void verify_on(outputStream* st);
