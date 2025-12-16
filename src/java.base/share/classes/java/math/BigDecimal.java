@@ -3459,13 +3459,13 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             if (scale == 2 & (int) intCompact == intCompactAbs) { // intCompact >= 0 && intCompact <= Integer.MAX_VALUE
                 return scale2((int) intCompact);
             }
-            return getValueString(signum, intCompactAbs, DecimalDigits.stringSize(intCompactAbs), scale);
+            return getCompactValueString(signum, intCompactAbs, DecimalDigits.stringSize(intCompactAbs), scale);
         }
 
         return getValueString(signum, intVal.abs().toString(), scale);
     }
 
-    private static String getValueString(int signum, long intCompactAbs, int intCompactAbsSize, int scale) {
+    private static String getCompactValueString(int signum, long intCompactAbs, int intCompactAbsSize, int scale) {
         /* Insert decimal point */
         int insertionPoint = intCompactAbsSize - scale;
         byte[] buf;
@@ -4202,7 +4202,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             signum = signum();
             long adjusted = -(long)scale + (coeffLen -1);
             if ((scale >= 0) & (adjusted >= -6)) { // plain number
-                return getValueString(signum, intCompactAbs, coeffLen, scale);
+                return getCompactValueString(signum, intCompactAbs, coeffLen, scale);
             }
             byte[] buf = new byte[coeffLen];
             DecimalDigits.uncheckedGetCharsLatin1(intCompactAbs, buf.length, buf);
