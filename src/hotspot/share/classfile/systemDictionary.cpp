@@ -1859,7 +1859,7 @@ Symbol* SystemDictionary::find_resolution_error(const constantPoolHandle& pool, 
 
 void SystemDictionary::add_nest_host_error(const constantPoolHandle& pool,
                                            int which,
-                                           const char* message) {
+                                           const stringStream& message) {
   {
     MutexLocker ml(Thread::current(), SystemDictionary_lock);
     ResolutionErrorEntry* entry = ResolutionErrorTable::find_entry(pool, which);
@@ -1868,14 +1868,19 @@ void SystemDictionary::add_nest_host_error(const constantPoolHandle& pool,
       // constant pool index. In this case resolution succeeded but there's an error in this nest host
       // that we use the table to record.
       assert(pool->resolved_klass_at(which) != nullptr, "klass should be resolved if there is no entry");
-      ResolutionErrorTable::add_entry(pool, which, message);
+      ResolutionErrorTable::add_entry(pool, which, message.as_string(true /* on C-heap */));
     } else {
       // An existing entry means we had a true resolution failure (LinkageError) with our nest host, but we
       // still want to add the error message for the higher-level access checks to report. We should
       // only reach here under the same error condition, so we can ignore the potential race with setting
-      // the message, and set it again.
-      assert(entry->nest_host_error() == nullptr || strcmp(entry->nest_host_error(), message) == 0, "should be the same message");
-      entry->set_nest_host_error(message);
+      // the message.
+      const char* nhe = entry->nest_host_error();
+      if (nhe == nullptr) {
+        entry->set_nest_host_error(message.as_string(true /* on C-heap */));
+      } else {
+        DEBUG_ONLY(const char* msg = message.base();)
+        assert(strcmp(nhe, msg) == 0, "New message %s, differs from original %s", msg, nhe);
+      }
     }
   }
 }
