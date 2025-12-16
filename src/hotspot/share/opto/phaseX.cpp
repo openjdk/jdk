@@ -2585,6 +2585,21 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       }
     }
   }
+  // Check for max(a, max(b, c)) patterns
+  if (use_op == Op_MinD || use_op == Op_MaxD ||
+      use_op == Op_MinF || use_op == Op_MaxF ||
+      use_op == Op_MinI || use_op == Op_MaxI ||
+      use_op == Op_MinL || use_op == Op_MaxL) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (use_op == Op_MinD || use_op == Op_MaxD ||
+          use_op == Op_MinF || use_op == Op_MaxF ||
+          use_op == Op_MinI || use_op == Op_MaxI ||
+          use_op == Op_MinL || use_op == Op_MaxL) {
+        worklist.push(u);
+      }
+    }
+  }
   auto enqueue_init_mem_projs = [&](ProjNode* proj) {
     add_users_to_worklist0(proj, worklist);
   };
