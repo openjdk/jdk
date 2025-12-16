@@ -629,6 +629,7 @@ private:
   void establish_old_collector_alloc_bias();
   size_t get_usable_free_words(size_t free_bytes) const;
 
+  void log_freeset_stats(ShenandoahFreeSetPartitionId partition_id, LogStream& ls);
   // log status, assuming lock has already been acquired by the caller.
   void log_status();
 

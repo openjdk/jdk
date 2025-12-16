@@ -374,7 +374,7 @@ MountUnmountDisabler::enable_transition_for_all() {
   OrderAccess::release();
 
   MonitorLocker ml(VThreadTransition_lock);
-  if (exclusive_operation_ongoing()) {
+  if (_is_exclusive) {
     set_exclusive_operation_ongoing(false);
   }
   dec_active_disablers();
