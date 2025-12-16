@@ -99,7 +99,7 @@ public class EntitlementsTest {
         }),
         ;
 
-        EntitlementsSource(ThrowingConsumer<JPackageCommand> initializer) {
+        EntitlementsSource(ThrowingConsumer<JPackageCommand, ? extends Exception> initializer) {
             this.initializer = toConsumer(initializer);
         }
 

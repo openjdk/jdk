@@ -37,15 +37,16 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.util.function.ExceptionBox;
 
 
 public final class Main {
 
-    public static void main(String... args) throws Throwable {
+    public static void main(String... args) throws Exception {
         main(TestBuilder.build(), args);
     }
 
-    public static void main(TestBuilder.Builder builder, String... args) throws Throwable {
+    public static void main(TestBuilder.Builder builder, String... args) throws Exception {
         boolean listTests = false;
         List<TestInstance> tests = new ArrayList<>();
         try (TestBuilder testBuilder = builder.testConsumer(tests::add).create()) {
@@ -86,8 +87,8 @@ public final class Main {
                 try {
                     testBuilder.processCmdLineArg(arg);
                     success = true;
-                } catch (Throwable throwable) {
-                    TKit.unbox(throwable);
+                } catch (Exception ex) {
+                    throw ExceptionBox.unbox(ex);
                 } finally {
                     if (!success) {
                         TKit.log(String.format("Error processing parameter=[%s]", arg));

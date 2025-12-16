@@ -110,7 +110,7 @@ public final class Main {
                 Log.fatalError(I18N.format("ERR_CannotParseOptions", ex.getMessage()));
                 return 1;
             } catch (IOException ex) {
-                throw ExceptionBox.rethrowUnchecked(ex);
+                throw ExceptionBox.toUnchecked(ex);
             }
 
             final var bundlingEnv = ServiceLoader.load(CliBundlingEnvironment.class,

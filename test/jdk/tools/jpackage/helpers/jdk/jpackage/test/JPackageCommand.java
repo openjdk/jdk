@@ -291,7 +291,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     public JPackageCommand setFakeRuntime() {
         verifyMutable();
 
-        ThrowingConsumer<Path> createBulkFile = path -> {
+        ThrowingConsumer<Path, IOException> createBulkFile = path -> {
             Files.createDirectories(path.getParent());
             try (FileOutputStream out = new FileOutputStream(path.toFile())) {
                 byte[] bytes = new byte[4 * 1024];
@@ -328,12 +328,12 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                 .removeArgumentWithValue("--input");
     }
 
-    JPackageCommand addPrerequisiteAction(ThrowingConsumer<JPackageCommand> action) {
+    JPackageCommand addPrerequisiteAction(ThrowingConsumer<JPackageCommand, ? extends Exception> action) {
         prerequisiteActions.add(action);
         return this;
     }
 
-    JPackageCommand addVerifyAction(ThrowingConsumer<JPackageCommand> action) {
+    JPackageCommand addVerifyAction(ThrowingConsumer<JPackageCommand, ? extends Exception> action) {
         return addVerifyAction(action, ActionRole.DEFAULT);
     }
 
@@ -343,12 +343,12 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         ;
     }
 
-    JPackageCommand addVerifyAction(ThrowingConsumer<JPackageCommand> action, ActionRole actionRole) {
+    JPackageCommand addVerifyAction(ThrowingConsumer<JPackageCommand, ? extends Exception> action, ActionRole actionRole) {
         verifyActions.add(action, actionRole);
         return this;
     }
 
-    Stream<ThrowingConsumer<JPackageCommand>> getVerifyActionsWithRole(ActionRole actionRole) {
+    Stream<ThrowingConsumer<JPackageCommand, ? extends Exception>> getVerifyActionsWithRole(ActionRole actionRole) {
         return verifyActions.actionsWithRole(actionRole);
     }
 
@@ -1648,16 +1648,16 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             actions.addAll(other.actions);
         }
 
-        void add(ThrowingConsumer<JPackageCommand> action) {
+        void add(ThrowingConsumer<JPackageCommand, ? extends Exception> action) {
             add(action, ActionRole.DEFAULT);
         }
 
-        void add(ThrowingConsumer<JPackageCommand> action, ActionRole role) {
+        void add(ThrowingConsumer<JPackageCommand, ? extends Exception> action, ActionRole role) {
             verifyMutable();
             actions.add(new Action(action, role));
         }
 
-        Stream<ThrowingConsumer<JPackageCommand>> actionsWithRole(ActionRole role) {
+        Stream<ThrowingConsumer<JPackageCommand, ? extends Exception>> actionsWithRole(ActionRole role) {
             Objects.requireNonNull(role);
             return actions.stream().filter(action -> {
                 return Objects.equals(action.role(), role);
@@ -1666,7 +1666,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
         private static final class Action implements Consumer<JPackageCommand> {
 
-            Action(ThrowingConsumer<JPackageCommand> impl, ActionRole role) {
+            Action(ThrowingConsumer<JPackageCommand, ? extends Exception> impl, ActionRole role) {
                 this.impl = Objects.requireNonNull(impl);
                 this.role = Objects.requireNonNull(role);
             }
@@ -1675,7 +1675,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                 return role;
             }
 
-            ThrowingConsumer<JPackageCommand> impl() {
+            ThrowingConsumer<JPackageCommand, ? extends Exception> impl() {
                 return impl;
             }
 
@@ -1688,7 +1688,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             }
 
             private final ActionRole role;
-            private final ThrowingConsumer<JPackageCommand> impl;
+            private final ThrowingConsumer<JPackageCommand, ? extends Exception> impl;
             private boolean executed;
         }
 

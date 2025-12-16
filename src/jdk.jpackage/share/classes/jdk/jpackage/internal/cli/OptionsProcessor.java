@@ -87,7 +87,7 @@ final class OptionsProcessor {
         final var untypedOptions = optionsBuilder.create();
 
         // Create command line structure analyzer.
-        final var analyzerResult = Result.create(() -> new OptionsAnalyzer(untypedOptions, bundlingEnv));
+        final var analyzerResult = Result.of(() -> new OptionsAnalyzer(untypedOptions, bundlingEnv));
         if (analyzerResult.hasErrors()) {
             // Failed to derive the bundling operation from the command line.
             allErrors.addAll(analyzerResult.mapErrors().errors());

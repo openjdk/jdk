@@ -42,6 +42,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateNotYetValidException;
@@ -526,7 +527,7 @@ public final class MacSign {
 
     private record CertificateStats(List<ResolvedCertificateRequest> allResolvedCertificateRequests,
             List<CertificateRequest> knownCertificateRequests,
-            Map<X509Certificate, Throwable> unmappedCertificates) {
+            Map<X509Certificate, Exception> unmappedCertificates) {
 
         static CertificateStats get(KeychainWithCertsSpec spec) {
             return CACHE.computeIfAbsent(spec, CertificateStats::create);
@@ -560,7 +561,7 @@ public final class MacSign {
         private static CertificateStats create(KeychainWithCertsSpec spec) {
             final var allCertificates = spec.keychain().findCertificates();
             final List<ResolvedCertificateRequest> allResolvedCertificateRequests = new ArrayList<>();
-            final Map<X509Certificate, Throwable> unmappedCertificates = new HashMap<>();
+            final Map<X509Certificate, Exception> unmappedCertificates = new HashMap<>();
 
             withTempDirectory(workDir -> {
                 for (final var cert : allCertificates) {
@@ -568,13 +569,7 @@ public final class MacSign {
                     try {
                         resolvedCertificateRequest = new ResolvedCertificateRequest(cert);
                     } catch (RuntimeException ex) {
-                        final Throwable t;
-                        if (ex instanceof ExceptionBox) {
-                            t = ex.getCause();
-                        } else {
-                            t = ex;
-                        }
-                        unmappedCertificates.put(cert, t);
+                        unmappedCertificates.put(cert, ExceptionBox.unbox(ex));
                         continue;
                     }
 
@@ -635,13 +630,13 @@ public final class MacSign {
         SHA1(20, () -> MessageDigest.getInstance("SHA-1")),
         SHA256(32, () -> MessageDigest.getInstance("SHA-256"));
 
-        DigestAlgorithm(int hashLength, ThrowingSupplier<MessageDigest> createDigest) {
+        DigestAlgorithm(int hashLength, ThrowingSupplier<MessageDigest, NoSuchAlgorithmException> createDigest) {
             this.hashLength = hashLength;
             this.createDigest = createDigest;
         }
 
         final int hashLength;
-        final ThrowingSupplier<MessageDigest> createDigest;
+        final ThrowingSupplier<MessageDigest, NoSuchAlgorithmException> createDigest;
     }
 
     public record CertificateHash(byte[] value, DigestAlgorithm alg) {
@@ -1223,7 +1218,7 @@ public final class MacSign {
         }).map(KeychainWithCertsSpec::keychain);
     }
 
-    private static void withTempDirectory(ThrowingConsumer<Path> callback) {
+    private static void withTempDirectory(ThrowingConsumer<Path, ? extends Exception> callback) {
         try {
             final var dir = Files.createTempDirectory("jdk.jpackage.test");
             try {

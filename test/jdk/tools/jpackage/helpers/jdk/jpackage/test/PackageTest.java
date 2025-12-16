@@ -22,7 +22,7 @@
  */
 package jdk.jpackage.test;
 
-import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
+import static jdk.jpackage.internal.util.function.ExceptionBox.toUnchecked;
 import static jdk.jpackage.internal.util.function.ThrowingBiConsumer.toBiConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
@@ -143,7 +143,7 @@ public final class PackageTest extends RunnablePackageTest {
         return this;
     }
 
-    private PackageTest addInitializer(ThrowingConsumer<JPackageCommand> v, String id) {
+    private PackageTest addInitializer(ThrowingConsumer<JPackageCommand, ? extends Exception> v, String id) {
         Objects.requireNonNull(v);
         if (id != null) {
             if (namedInitializers.contains(id)) {
@@ -156,11 +156,11 @@ public final class PackageTest extends RunnablePackageTest {
         return this;
     }
 
-    private PackageTest addRunOnceInitializer(ThrowingRunnable v, String id) {
+    private PackageTest addRunOnceInitializer(ThrowingRunnable<? extends Exception> v, String id) {
         Objects.requireNonNull(v);
-        return addInitializer(new ThrowingConsumer<JPackageCommand>() {
+        return addInitializer(new ThrowingConsumer<JPackageCommand, Exception>() {
             @Override
-            public void accept(JPackageCommand unused) throws Throwable {
+            public void accept(JPackageCommand unused) throws Exception {
                 if (!executed) {
                     executed = true;
                     v.run();
@@ -171,21 +171,21 @@ public final class PackageTest extends RunnablePackageTest {
         }, id);
     }
 
-    public PackageTest addInitializer(ThrowingConsumer<JPackageCommand> v) {
+    public PackageTest addInitializer(ThrowingConsumer<JPackageCommand, ? extends Exception> v) {
         return addInitializer(v, null);
     }
 
-    public PackageTest addRunOnceInitializer(ThrowingRunnable v) {
+    public PackageTest addRunOnceInitializer(ThrowingRunnable<? extends Exception> v) {
         return addRunOnceInitializer(v, null);
     }
 
-    public PackageTest addBundleVerifier(ThrowingBiConsumer<JPackageCommand, Executor.Result> v) {
+    public PackageTest addBundleVerifier(ThrowingBiConsumer<JPackageCommand, Executor.Result, ? extends Exception> v) {
         Objects.requireNonNull(v);
         currentTypes.forEach(type -> handlers.get(type).addBundleVerifier(toBiConsumer(v)));
         return this;
     }
 
-    public PackageTest addBundleVerifier(ThrowingConsumer<JPackageCommand> v) {
+    public PackageTest addBundleVerifier(ThrowingConsumer<JPackageCommand, ? extends Exception> v) {
         Objects.requireNonNull(v);
         return addBundleVerifier((cmd, unused) -> toConsumer(v).accept(cmd));
     }
@@ -222,13 +222,13 @@ public final class PackageTest extends RunnablePackageTest {
         return this;
     }
 
-    public PackageTest addInstallVerifier(ThrowingConsumer<JPackageCommand> v) {
+    public PackageTest addInstallVerifier(ThrowingConsumer<JPackageCommand, ? extends Exception> v) {
         currentTypes.forEach(type -> handlers.get(type).addInstallVerifier(
                 toConsumer(v)));
         return this;
     }
 
-    public PackageTest addUninstallVerifier(ThrowingConsumer<JPackageCommand> v) {
+    public PackageTest addUninstallVerifier(ThrowingConsumer<JPackageCommand, ? extends Exception> v) {
         currentTypes.forEach(type -> handlers.get(type).addUninstallVerifier(
                 toConsumer(v)));
         return this;
@@ -259,7 +259,7 @@ public final class PackageTest extends RunnablePackageTest {
     }
 
     static void withFileAssociationsTestRuns(FileAssociations fa,
-            ThrowingBiConsumer<FileAssociations.TestRun, List<Path>> consumer) {
+            ThrowingBiConsumer<FileAssociations.TestRun, List<Path>, ? extends Exception> consumer) {
         Objects.requireNonNull(consumer);
         for (var testRun : fa.getTestRuns()) {
             TKit.withTempDirectory("fa-test-files", tempDir -> {
@@ -860,7 +860,7 @@ public final class PackageTest extends RunnablePackageTest {
                                 "Check the package has %d top installation directories",
                                 expectedRootCount));
             } catch (IOException ex) {
-                rethrowUnchecked(ex);
+                throw toUnchecked(ex);
             }
         }
 

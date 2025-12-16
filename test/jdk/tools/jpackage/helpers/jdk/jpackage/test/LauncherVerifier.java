@@ -102,7 +102,7 @@ public final class LauncherVerifier {
         EXECUTE_LAUNCHER(LauncherVerifier::executeLauncher),
         ;
 
-        Action(ThrowingBiConsumer<LauncherVerifier, JPackageCommand> action) {
+        Action(ThrowingBiConsumer<LauncherVerifier, JPackageCommand, ? extends Exception> action) {
             this.action = ThrowingBiConsumer.toBiConsumer(action);
         }
 

@@ -33,7 +33,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -110,7 +109,7 @@ public final class TKit {
         throw throwUnknownPlatformError();
     }).get();
 
-    static void withExtraLogStream(ThrowingRunnable action) {
+    static void withExtraLogStream(ThrowingRunnable<? extends Exception> action) {
         if (state().extraLogStream != null) {
             ThrowingRunnable.toRunnable(action).run();
         } else {
@@ -120,19 +119,19 @@ public final class TKit {
         }
     }
 
-    static void withExtraLogStream(ThrowingRunnable action, PrintStream logStream) {
+    static void withExtraLogStream(ThrowingRunnable<? extends Exception> action, PrintStream logStream) {
         withNewState(action, stateBuilder -> {
             stateBuilder.extraLogStream(logStream);
         });
     }
 
-    public static void withMainLogStream(ThrowingRunnable action, PrintStream logStream) {
+    public static void withMainLogStream(ThrowingRunnable<? extends Exception> action, PrintStream logStream) {
         withNewState(action, stateBuilder -> {
             stateBuilder.mainLogStream(logStream);
         });
     }
 
-    public static void withStackTraceStream(ThrowingRunnable action, PrintStream logStream) {
+    public static void withStackTraceStream(ThrowingRunnable<? extends Exception> action, PrintStream logStream) {
         withNewState(action, stateBuilder -> {
             stateBuilder.stackTraceStream(logStream);
         });
@@ -146,7 +145,7 @@ public final class TKit {
         STATE.set(Objects.requireNonNull(v));
     }
 
-    private static void withNewState(ThrowingRunnable action, Consumer<State.Builder> stateBuilderMutator) {
+    private static void withNewState(ThrowingRunnable<? extends Exception> action, Consumer<State.Builder> stateBuilderMutator) {
         Objects.requireNonNull(action);
         Objects.requireNonNull(stateBuilderMutator);
 
@@ -198,7 +197,7 @@ public final class TKit {
         });
     }
 
-    static <T> T runAdhocTest(ThrowingSupplier<T> action) {
+    static <T> T runAdhocTest(ThrowingSupplier<T, ? extends Exception> action) {
         final List<T> box = new ArrayList<>();
         runAdhocTest(() -> {
             box.add(action.get());
@@ -206,7 +205,7 @@ public final class TKit {
         return box.getFirst();
     }
 
-    static void runAdhocTest(ThrowingRunnable action) {
+    static void runAdhocTest(ThrowingRunnable<? extends Exception> action) {
         Objects.requireNonNull(action);
 
         final Path workDir = toSupplier(() -> Files.createTempDirectory("jdk.jpackage-test")).get();
@@ -227,26 +226,18 @@ public final class TKit {
         runTests(List.of(test), Set.of(RunTestMode.FAIL_FAST));
     }
 
-    static Runnable ignoreExceptions(ThrowingRunnable action) {
+    static Runnable ignoreExceptions(ThrowingRunnable<? extends Exception> action) {
         return () -> {
             try {
                 try {
                     action.run();
-                } catch (Throwable ex) {
-                    unbox(ex);
+                } catch (Exception ex) {
+                    throw ExceptionBox.unbox(ex);
                 }
-            } catch (Throwable throwable) {
-                printStackTrace(throwable);
+            } catch (Exception | AssertionError t) {
+                printStackTrace(t);
             }
         };
-    }
-
-    static void unbox(Throwable throwable) throws Throwable {
-        try {
-            throw throwable;
-        } catch (ExceptionBox | InvocationTargetException ex) {
-            unbox(ex.getCause());
-        }
     }
 
     public static Path workDir() {
@@ -440,7 +431,7 @@ public final class TKit {
         return createTempPath(role, Files::createFile);
     }
 
-    private static Path createTempPath(Path templatePath, ThrowingUnaryOperator<Path> createPath) {
+    private static Path createTempPath(Path templatePath, ThrowingUnaryOperator<Path, IOException> createPath) {
         if (templatePath.isAbsolute()) {
             throw new IllegalArgumentException();
         }
@@ -458,13 +449,11 @@ public final class TKit {
             return createPath.apply(path);
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
-        } catch (Throwable t) {
-            throw ExceptionBox.rethrowUnchecked(t);
         }
     }
 
     public static Path withTempDirectory(String role,
-            ThrowingConsumer<Path> action) {
+            ThrowingConsumer<Path, ? extends Exception> action) {
         final Path tempDir = ThrowingSupplier.toSupplier(
                 () -> createTempDirectory(role)).get();
         boolean keepIt = true;

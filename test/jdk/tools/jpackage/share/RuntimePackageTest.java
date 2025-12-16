@@ -30,7 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.function.Predicate;
-import jdk.jpackage.internal.util.function.ThrowingSupplier;
+import java.util.function.Supplier;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
@@ -114,7 +114,7 @@ public class RuntimePackageTest {
         return init(JPackageCommand::createInputRuntimeImage);
     }
 
-    private static PackageTest init(ThrowingSupplier<Path> createRuntime) {
+    private static PackageTest init(Supplier<Path> createRuntime) {
         Objects.requireNonNull(createRuntime);
 
         final Path[] runtimeImageDir = new Path[1];

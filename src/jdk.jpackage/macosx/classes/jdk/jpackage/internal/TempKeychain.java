@@ -35,7 +35,7 @@ import jdk.jpackage.internal.util.function.ThrowingConsumer;
 
 final class TempKeychain implements Closeable {
 
-    static void withKeychains(ThrowingConsumer<List<Keychain>> keychainConsumer, List<Keychain> keychains) throws Throwable {
+    static void withKeychains(ThrowingConsumer<List<Keychain>, ? extends Exception> keychainConsumer, List<Keychain> keychains) throws Exception {
         keychains.forEach(Objects::requireNonNull);
         if (keychains.isEmpty() || OSVersion.current().compareTo(new OSVersion(10, 12)) < 0) {
             keychainConsumer.accept(keychains);
@@ -47,7 +47,7 @@ final class TempKeychain implements Closeable {
         }
     }
 
-    static void withKeychain(ThrowingConsumer<Keychain> keychainConsumer, Keychain keychain) throws Throwable {
+    static void withKeychain(ThrowingConsumer<Keychain, ? extends Exception> keychainConsumer, Keychain keychain) throws Exception {
         Objects.requireNonNull(keychainConsumer);
         withKeychains(keychains -> {
             keychainConsumer.accept(keychains.getFirst());

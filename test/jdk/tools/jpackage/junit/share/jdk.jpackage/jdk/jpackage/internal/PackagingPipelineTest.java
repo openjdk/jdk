@@ -23,7 +23,7 @@
 
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
+import static jdk.jpackage.internal.util.function.ExceptionBox.toUnchecked;
 import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -412,7 +412,7 @@ public class PackagingPipelineTest {
 
         final var expectedException = new Exception("foo");
         final var ex = testExceptionRethrow(expectedException, ExceptionBox.class, () -> {
-            rethrowUnchecked(expectedException);
+            throw toUnchecked(expectedException);
         });
         assertSame(expectedException, ex.getCause());
     }
