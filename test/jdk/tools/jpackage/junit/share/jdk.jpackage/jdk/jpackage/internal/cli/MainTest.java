@@ -368,7 +368,7 @@ public class MainTest extends JUnitAdapter.TestSrcInitializer {
             Objects.requireNonNull(formatter);
             return ex -> {
                 var msg = formatter.apply(ex);
-                return I18N.format("message.error-header", msg)  + System.lineSeparator();
+                return I18N.format("message.error-header", msg) + System.lineSeparator();
             };
         }
 
