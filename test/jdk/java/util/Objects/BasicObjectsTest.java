@@ -23,40 +23,20 @@
 
 /*
  * @test
- * @bug 6797535 6889858 6891113 8013712 8011800 8014365 8280168
+ * @bug 6797535 6889858 6891113 8013712 8011800 8014365 8280168 8373661
  * @summary Basic tests for methods in java.util.Objects
+ * @run junit BasicObjectsTest
  */
 
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 import java.util.*;
 import java.util.function.*;
 
 public class BasicObjectsTest {
-    public static void main(String... args) {
-        int errors = 0;
-        errors += testEquals();
-        errors += testDeepEquals();
-        errors += testHashCode();
-        errors += testHash();
-        errors += testToString();
-        errors += testToString2();
-        errors += testToIdentityString();
-        errors += testCompare();
-        errors += testRequireNonNull();
-        errors += testIsNull();
-        errors += testNonNull();
-        errors += testNonNullOf();
 
-        errors += testRequireNonNullWithNullSupplier();
-        errors += testRequireNonNullWithSupplierThrowingException();
-        errors += testRequireNonNullElseBothNull();
-        errors += testRequireNonNullElseGetWithNullSupplier();
-        errors += testRequireNonNullElseGetWithSupplierReturningNull();
-        if (errors > 0 )
-            throw new RuntimeException();
-    }
-
-    private static int testEquals() {
-        int errors = 0;
+    @Test
+    public void testEquals() {
         Object[] values = {null, "42", 42};
         for(int i = 0; i < values.length; i++)
             for(int j = 0; j < values.length; j++) {
@@ -64,17 +44,14 @@ public class BasicObjectsTest {
                 Object a = values[i];
                 Object b = values[j];
                 boolean result = Objects.equals(a, b);
-                if (result != expected) {
-                    errors++;
-                    System.err.printf("When equating %s to %s, got %b instead of %b%n.",
-                                      a, b, result, expected);
-                }
+                assertEquals(expected, result,
+                    String.format("When equating %s to %s, got %b instead of %b",
+                                  a, b, result, expected));
             }
-        return errors;
     }
 
-    private static int testDeepEquals() {
-        int errors = 0;
+    @Test
+    public void testDeepEquals() {
         Object[] values = {null,
                            null, // Change to values later
                            new byte[]  {(byte)1},
@@ -93,65 +70,63 @@ public class BasicObjectsTest {
                 Object a = values[i];
                 Object b = values[j];
                 boolean result = Objects.deepEquals(a, b);
-                if (result != expected) {
-                    errors++;
-                    System.err.printf("When equating %s to %s, got %b instead of %b%n.",
-                                      a, b, result, expected);
-                }
+                assertEquals(expected, result,
+                    String.format("When equating %s to %s, got %b instead of %b",
+                                  a, b, result, expected));
             }
-
-        return errors;
     }
 
-    private static int testHashCode() {
-        int errors = 0;
-        errors += (Objects.hashCode(null) == 0 ) ? 0 : 1;
+    @Test
+    public void testHashCode() {
+        assertEquals(0, Objects.hashCode(null),
+            "hashCode(null) should return 0");
         String s = "42";
-        errors += (Objects.hashCode(s) == s.hashCode() ) ? 0 : 1;
-        return errors;
+        assertEquals(s.hashCode(), Objects.hashCode(s),
+            "hashCode(s) should return s.hashCode()");
     }
 
-    private static int testHash() {
-        int errors = 0;
-
+    @Test
+    public void testHash() {
         Object[] data = new String[]{"perfect", "ham", "THC"};
 
-        errors += ((Objects.hash((Object[])null) == 0) ? 0 : 1);
+        assertEquals(0, Objects.hash((Object[])null),
+            "hash(null) should return 0");
 
-        errors += (Objects.hash("perfect", "ham", "THC") ==
-                   Arrays.hashCode(data)) ? 0 : 1;
-
-        return errors;
+        assertEquals(Arrays.hashCode(data),
+                     Objects.hash("perfect", "ham", "THC"),
+                     "hash should match Arrays.hashCode");
     }
 
-    private static int testToString() {
-        int errors = 0;
-        errors += ("null".equals(Objects.toString(null)) ) ? 0 : 1;
+    @Test
+    public void testToString() {
+        assertEquals("null", Objects.toString(null),
+            "toString(null) should return 'null'");
         String s = "Some string";
-        errors += (s.equals(Objects.toString(s)) ) ? 0 : 1;
-        return errors;
+        assertEquals(s, Objects.toString(s),
+            "toString(s) should return s");
     }
 
-    private static int testToString2() {
-        int errors = 0;
+    @Test
+    public void testToString2() {
         String s = "not the default";
-        errors += (s.equals(Objects.toString(null, s)) ) ? 0 : 1;
-        errors += (s.equals(Objects.toString(s, "another string")) ) ? 0 : 1;
-        return errors;
+        assertEquals(s, Objects.toString(null, s),
+            "toString(null, default) should return default");
+        assertEquals(s, Objects.toString(s, "another string"),
+            "toString(s, default) should return s when s is not null");
     }
 
-    private static int testToIdentityString() {
-        int errors = 0;
+    @Test
+    public void testToIdentityString() {
         // Test null behavior
-        try {
-            Objects.toIdentityString(null);
-            errors++;
-        } catch (NullPointerException npe) {
-            ; // Expected
-        }
+        assertThrows(NullPointerException.class,
+            () -> Objects.toIdentityString(null),
+            "toIdentityString(null) should throw NullPointerException");
+
         // Behavior on typical objects
         Object o = new Object(){};
-        errors += (Objects.toIdentityString(o).equals(o.toString()))? 0 : 1;
+        assertEquals(o.toString(), Objects.toIdentityString(o),
+            "toIdentityString(o) should equal o.toString()");
+
         // Verify object's toString *not* called
         Object badToString = new Object() {
                 @Override
@@ -159,7 +134,10 @@ public class BasicObjectsTest {
                     throw new RuntimeException();
                 }
             };
-        Objects.toIdentityString(badToString);
+        // Should not throw RuntimeException from toString
+        assertDoesNotThrow(() -> Objects.toIdentityString(badToString),
+            "toIdentityString should not call toString()");
+
         // Verify object's hashCode *not* called
         Object badHashCode = new Object() {
                 @Override
@@ -167,41 +145,36 @@ public class BasicObjectsTest {
                     throw new RuntimeException("0xDEADBEFF");
                 }
             };
-        Objects.toIdentityString(badHashCode);
-        return errors;
+        // Should not throw RuntimeException from hashCode
+        assertDoesNotThrow(() -> Objects.toIdentityString(badHashCode),
+            "toIdentityString should not call hashCode()");
     }
 
-    private static int testCompare() {
-        int errors = 0;
+    @Test
+    public void testCompare() {
         String[] values = {"e. e. cummings", "zzz"};
         String[] VALUES = {"E. E. Cummings", "ZZZ"};
-        errors += compareTest(null, null, 0);
+        compareTest(null, null, 0);
         for(int i = 0; i < values.length; i++) {
             String a = values[i];
-            errors += compareTest(a, a, 0);
+            compareTest(a, a, 0);
             for(int j = 0; j < VALUES.length; j++) {
                 int expected = Integer.compare(i, j);
                 String b = VALUES[j];
-                errors += compareTest(a, b, expected);
+                compareTest(a, b, expected);
             }
         }
-        return errors;
     }
 
-    private static int compareTest(String a, String b, int expected) {
-        int errors = 0;
+    private void compareTest(String a, String b, int expected) {
         int result = Objects.compare(a, b, String.CASE_INSENSITIVE_ORDER);
-        if (Integer.signum(result) != Integer.signum(expected)) {
-            errors++;
-            System.err.printf("When comparing %s to %s, got %d instead of %d%n.",
-                              a, b, result, expected);
-        }
-        return errors;
+        assertEquals(Integer.signum(expected), Integer.signum(result),
+            String.format("When comparing %s to %s, got %d instead of %d",
+                          a, b, result, expected));
     }
 
-    private static int testRequireNonNull() {
-        int errors = 0;
-
+    @Test
+    public void testRequireNonNull() {
         final String RNN_1 = "1-arg requireNonNull";
         final String RNN_2 = "2-arg requireNonNull";
         final String RNN_3 = "Supplier requireNonNull";
@@ -210,226 +183,171 @@ public class BasicObjectsTest {
         Function<String, String> rnn2 = s -> Objects.requireNonNull(s, "trousers");
         Function<String, String> rnn3 = s -> Objects.requireNonNull(s, () -> "trousers");
 
-        errors += testRNN_NonNull(rnn1, RNN_1);
-        errors += testRNN_NonNull(rnn2, RNN_2);
-        errors += testRNN_NonNull(rnn3, RNN_3);
+        testRNN_NonNull(rnn1, RNN_1);
+        testRNN_NonNull(rnn2, RNN_2);
+        testRNN_NonNull(rnn3, RNN_3);
 
-        errors += testRNN_Null(rnn1, RNN_1, null);
-        errors += testRNN_Null(rnn2, RNN_2, "trousers");
-        errors += testRNN_Null(rnn3, RNN_3, "trousers");
-        return errors;
+        testRNN_Null(rnn1, RNN_1, null);
+        testRNN_Null(rnn2, RNN_2, "trousers");
+        testRNN_Null(rnn3, RNN_3, "trousers");
     }
 
-    private static int testRNN_NonNull(Function<String, String> testFunc,
-                                       String testFuncName) {
-        int errors = 0;
-        try {
-            String s = testFunc.apply("pants");
-            if (s != "pants") {
-                System.err.printf(testFuncName + " failed to return its arg");
-                errors++;
-            }
-        } catch (NullPointerException e) {
-            System.err.printf(testFuncName + " threw unexpected NPE");
-            errors++;
-        }
-        return errors;
+    private void testRNN_NonNull(Function<String, String> testFunc,
+                                 String testFuncName) {
+        String s = testFunc.apply("pants");
+        assertSame("pants", s,
+            testFuncName + " should return its arg");
     }
 
-    private static int testRNN_Null(Function<String, String> testFunc,
-                                    String testFuncName,
-                                    String expectedMessage) {
-        int errors = 0;
-        try {
-            String s = testFunc.apply(null);
-            System.err.printf(testFuncName + " failed to throw NPE");
-            errors++;
-        } catch (NullPointerException e) {
-            if (e.getMessage() != expectedMessage) {
-                System.err.printf(testFuncName + " threw NPE w/ bad detail msg");
-                errors++;
-            }
-        }
-        return errors;
+    private void testRNN_Null(Function<String, String> testFunc,
+                              String testFuncName,
+                              String expectedMessage) {
+        NullPointerException npe = assertThrows(
+            NullPointerException.class,
+            () -> testFunc.apply(null),
+            testFuncName + " should throw NPE");
+        assertEquals(expectedMessage, npe.getMessage(),
+            testFuncName + " should have correct exception message");
     }
 
-    private static int testIsNull() {
-        int errors = 0;
-
-        errors += Objects.isNull(null) ? 0 : 1;
-        errors += Objects.isNull(Objects.class) ? 1 : 0;
-
-        return errors;
+    @Test
+    public void testIsNull() {
+        assertTrue(Objects.isNull(null),
+            "isNull(null) should return true");
+        assertFalse(Objects.isNull(Objects.class),
+            "isNull(Objects.class) should return false");
     }
 
-    private static int testNonNull() {
-        int errors = 0;
-
-        errors += Objects.nonNull(null) ? 1 : 0;
-        errors += Objects.nonNull(Objects.class) ? 0 : 1;
-
-        return errors;
+    @Test
+    public void testNonNull() {
+        assertFalse(Objects.nonNull(null),
+            "nonNull(null) should return false");
+        assertTrue(Objects.nonNull(Objects.class),
+            "nonNull(Objects.class) should return true");
     }
 
-    private static int testNonNullOf() {
-        int errors = 0;
+    @Test
+    public void testNonNullOf() {
         String defString = new String("default");
         String nullString = null;
         String nonNullString = "non-null";
 
         // Confirm the compile time return type matches
         String result = Objects.requireNonNullElse(nullString, defString);
-        errors += (result == defString) ? 0 : 1;
-        errors += (Objects.requireNonNullElse(nonNullString, defString) == nonNullString) ? 0 : 1;
-        errors += (Objects.requireNonNullElse(nonNullString, null) == nonNullString) ? 0 : 1;
-        try {
-            Objects.requireNonNullElse(null, null);
-            errors += 1;
-        } catch (NullPointerException npe) {
-            // expected
-            errors += npe.getMessage().equals("defaultObj") ? 0 : 1;
-        }
+        assertSame(defString, result,
+            "requireNonNullElse(null, default) should return default");
 
+        assertSame(nonNullString, Objects.requireNonNullElse(nonNullString, defString),
+            "requireNonNullElse(non-null, default) should return non-null");
+
+        assertSame(nonNullString, Objects.requireNonNullElse(nonNullString, null),
+            "requireNonNullElse(non-null, null) should return non-null");
+
+        NullPointerException npe1 = assertThrows(
+            NullPointerException.class,
+            () -> Objects.requireNonNullElse(null, null),
+            "requireNonNullElse(null, null) should throw NPE");
+        assertEquals("defaultObj", npe1.getMessage(),
+            "Exception message should be 'defaultObj'");
 
         // Test requireNonNullElseGet with a supplier
-        errors += (Objects.requireNonNullElseGet(nullString, () -> defString) == defString) ? 0 : 1;
-        errors += (Objects.requireNonNullElseGet(nonNullString, () -> defString) == nonNullString) ? 0 : 1;
-        errors += (Objects.requireNonNullElseGet(nonNullString, () -> null) == nonNullString) ? 0 : 1;
+        assertSame(defString, Objects.requireNonNullElseGet(nullString, () -> defString),
+            "requireNonNullElseGet(null, supplier) should return supplier result");
 
-        try {
-            Objects.requireNonNullElseGet(null, () -> null);
-            errors += 1;
-        } catch (NullPointerException npe) {
-            // expected
-            errors += npe.getMessage().equals("supplier.get()") ? 0 : 1;
-        }
-        try {       // supplier is null
-            Objects.requireNonNullElseGet(null, null);
-            errors += 1;
-        } catch (NullPointerException npe) {
-            // expected
-            errors += npe.getMessage().equals("supplier") ? 0 : 1;
-        }
-        return errors;
+        assertSame(nonNullString, Objects.requireNonNullElseGet(nonNullString, () -> defString),
+            "requireNonNullElseGet(non-null, supplier) should return non-null");
+
+        assertSame(nonNullString, Objects.requireNonNullElseGet(nonNullString, () -> null),
+            "requireNonNullElseGet(non-null, null-supplier) should return non-null");
+
+        NullPointerException npe2 = assertThrows(
+            NullPointerException.class,
+            () -> Objects.requireNonNullElseGet(null, () -> null),
+            "requireNonNullElseGet(null, null-returning supplier) should throw NPE");
+        assertEquals("supplier.get()", npe2.getMessage(),
+            "Exception message should be 'supplier.get()'");
+
+        NullPointerException npe3 = assertThrows(
+            NullPointerException.class,
+            () -> Objects.requireNonNullElseGet(null, null),
+            "requireNonNullElseGet(null, null supplier) should throw NPE");
+        assertEquals("supplier", npe3.getMessage(),
+            "Exception message should be 'supplier'");
     }
 
     /**
      * Test requireNonNull with null Supplier parameter.
      * Should throw NullPointerException with null message (as per API spec).
      */
-    private static int testRequireNonNullWithNullSupplier() {
-        int errors = 0;
-        try {
-            Objects.requireNonNull("test", (Supplier<String>) null);
-            // Should not reach here for non-null object
-            // But we're testing the supplier parameter
-            Objects.requireNonNull(null, (Supplier<String>) null);
-            System.err.println("testRequireNonNullWithNullSupplier: " +
-                            "failed to throw NPE");
-            errors++;
-        } catch (NullPointerException e) {
-            String msg = e.getMessage();
-            // According to Objects.java implementation, when messageSupplier is null,
-            // the exception message is also null
-            if (msg != null) {
-                System.err.println("testRequireNonNullWithNullSupplier: " +
-                                "expected null message but got: " + msg);
-                errors++;
-            }
-        }
-        return errors;
+    @Test
+    public void testRequireNonNullWithNullSupplier() {
+        // Test with null object and null supplier
+        NullPointerException npe = assertThrows(
+            NullPointerException.class,
+            () -> Objects.requireNonNull(null, (Supplier<String>) null),
+            "requireNonNull(null, null supplier) should throw NPE");
+        // According to Objects.java implementation, when messageSupplier is null,
+        // the exception message is also null
+        assertNull(npe.getMessage(),
+            "Exception message should be null when messageSupplier is null");
     }
 
     /**
      * Test requireNonNull with Supplier that throws exception.
      * The exception from supplier should be thrown, not wrapped.
      */
-    private static int testRequireNonNullWithSupplierThrowingException() {
-        int errors = 0;
-        try {
-            Objects.requireNonNull(null, () -> {
+    @Test
+    public void testRequireNonNullWithSupplierThrowingException() {
+        // The exception from supplier should be thrown directly, not wrapped
+        RuntimeException re = assertThrows(
+            RuntimeException.class,
+            () -> Objects.requireNonNull(null, () -> {
                 throw new RuntimeException("Supplier exception");
-            });
-            System.err.println("testRequireNonNullWithSupplierThrowingException: " +
-                            "failed to throw exception");
-            errors++;
-        } catch (RuntimeException e) {
-            if (!"Supplier exception".equals(e.getMessage())) {
-                System.err.println("testRequireNonNullWithSupplierThrowingException: " +
-                                "wrong exception: " + e.getMessage());
-                errors++;
-            }
-        } catch (Exception e) {
-            System.err.println("testRequireNonNullWithSupplierThrowingException: " +
-                            "unexpected exception type: " + e.getClass());
-            errors++;
-        }
-        return errors;
+            }),
+            "requireNonNull should throw exception from supplier");
+        assertEquals("Supplier exception", re.getMessage(),
+            "Exception message should match the supplier's exception message");
     }
 
     /**
      * Test requireNonNullElse with both arguments null.
      * Should throw NullPointerException with message "defaultObj".
      */
-    private static int testRequireNonNullElseBothNull() {
-        int errors = 0;
-        try {
-            Objects.requireNonNullElse(null, null);
-            System.err.println("testRequireNonNullElseBothNull: " +
-                            "failed to throw NPE");
-            errors++;
-        } catch (NullPointerException e) {
-            String msg = e.getMessage();
-            if (msg == null || !msg.equals("defaultObj")) {
-                System.err.println("testRequireNonNullElseBothNull: " +
-                                "wrong exception message: " + msg);
-                errors++;
-            }
-        }
-        return errors;
+    @Test
+    public void testRequireNonNullElseBothNull() {
+        NullPointerException npe = assertThrows(
+            NullPointerException.class,
+            () -> Objects.requireNonNullElse(null, null),
+            "requireNonNullElse(null, null) should throw NPE");
+        assertEquals("defaultObj", npe.getMessage(),
+            "Exception message should be 'defaultObj' when both arguments are null");
     }
 
     /**
      * Test requireNonNullElseGet with null supplier.
      * Should throw NullPointerException with message "supplier".
      */
-    private static int testRequireNonNullElseGetWithNullSupplier() {
-        int errors = 0;
-        try {
-            Objects.requireNonNullElseGet(null, null);
-            System.err.println("testRequireNonNullElseGetWithNullSupplier: " +
-                            "failed to throw NPE");
-            errors++;
-        } catch (NullPointerException e) {
-            String msg = e.getMessage();
-            if (msg == null || !msg.equals("supplier")) {
-                System.err.println("testRequireNonNullElseGetWithNullSupplier: " +
-                                "wrong exception message: " + msg);
-                errors++;
-            }
-        }
-        return errors;
+    @Test
+    public void testRequireNonNullElseGetWithNullSupplier() {
+        NullPointerException npe = assertThrows(
+            NullPointerException.class,
+            () -> Objects.requireNonNullElseGet(null, null),
+            "requireNonNullElseGet(null, null supplier) should throw NPE");
+        assertEquals("supplier", npe.getMessage(),
+            "Exception message should be 'supplier' when supplier is null");
     }
 
     /**
      * Test requireNonNullElseGet with supplier returning null.
      * Should throw NullPointerException with message "supplier.get()".
      */
-    private static int testRequireNonNullElseGetWithSupplierReturningNull() {
-        int errors = 0;
-        try {
-            Objects.requireNonNullElseGet(null, () -> null);
-            System.err.println("testRequireNonNullElseGetWithSupplierReturningNull: " +
-                            "failed to throw NPE");
-            errors++;
-        } catch (NullPointerException e) {
-            String msg = e.getMessage();
-            if (msg == null || !msg.equals("supplier.get()")) {
-                System.err.println("testRequireNonNullElseGetWithSupplierReturningNull: " +
-                                "wrong exception message: " + msg);
-                errors++;
-            }
-        }
-        return errors;
+    @Test
+    public void testRequireNonNullElseGetWithSupplierReturningNull() {
+        NullPointerException npe = assertThrows(
+            NullPointerException.class,
+            () -> Objects.requireNonNullElseGet(null, () -> null),
+            "requireNonNullElseGet(null, null-returning supplier) should throw NPE");
+        assertEquals("supplier.get()", npe.getMessage(),
+            "Exception message should be 'supplier.get()' when supplier returns null");
     }
 }
