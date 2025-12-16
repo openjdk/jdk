@@ -1174,7 +1174,7 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
     if ( nn ) return nn;
   }
 
-  if (n->is_ConstraintCast()) {
+  if (n->is_ConstraintCast() && n->as_ConstraintCast()->dependency().narrows_type()) {
     Node* dom_cast = n->as_ConstraintCast()->dominating_cast(&_igvn, this);
     // ConstraintCastNode::dominating_cast() uses node control input to determine domination.
     // Node control inputs don't necessarily agree with loop control info (due to
@@ -1837,7 +1837,7 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
               if (in != nullptr && ctrl_is_member(n_loop, in)) {
                 const Type* in_t = _igvn.type(in);
                 cast = ConstraintCastNode::make_cast_for_type(x_ctrl, in, in_t,
-                                                              ConstraintCastNode::UnconditionalDependency, nullptr);
+                                                              ConstraintCastNode::DependencyType::NonFloatingNonNarrowing, nullptr);
               }
               if (cast != nullptr) {
                 Node* prev = _igvn.hash_find_insert(cast);
