@@ -233,6 +233,12 @@ bool ShenandoahHeuristics::should_degenerate_cycle() {
 void ShenandoahHeuristics::adjust_penalty(intx step) {
   assert(0 <= _gc_time_penalties && _gc_time_penalties <= 100,
          "In range before adjustment: %zd", _gc_time_penalties);
+
+#ifdef KELVIN_DEGEN_TRACE
+  log_info(gc)("adjust_penalty(), _most_recent_declined_trigger_count %zu, Penalty_Free_Declinations: %zu, step: %zd",
+               _most_recent_declined_trigger_count, Penalty_Free_Declinations, step);
+#endif
+
   if ((_most_recent_declined_trigger_count <= Penalty_Free_Declinations) && (step > 0)) {
     // Don't penalize if heuristics are not responsible for a negative outcome.  Allow Penalty_Free_Declinations following
     // previous GC for self calibration without penalty.
@@ -279,6 +285,11 @@ void ShenandoahHeuristics::record_success_concurrent() {
 
 void ShenandoahHeuristics::record_success_degenerated() {
   adjust_penalty(Degenerated_Penalty);
+#define KELVIN_DEGEN_TRACE
+#ifdef KELVIN_DEGEN_TRACE
+  log_info(gc)("record_success_degenerated(), adjusts penalty by %zd, new penalty: %zd",
+               Degenerated_Penalty, _gc_time_penalties);
+#endif
 }
 
 void ShenandoahHeuristics::record_success_full() {

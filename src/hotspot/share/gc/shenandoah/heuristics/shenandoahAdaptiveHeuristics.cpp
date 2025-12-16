@@ -328,8 +328,6 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
     size_t new_garbage = cur_garbage + r->garbage();
 
     if (new_cset > max_cset) {
-      // TODO: might want to change this to continue.  Some other region may have less garbage but also less live data, so would still
-      // qualify to be placed into the cset.
       break;
     }
 
@@ -515,9 +513,7 @@ void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
 
 void ShenandoahAdaptiveHeuristics::record_success_degenerated() {
   ShenandoahHeuristics::record_success_degenerated();
-
   add_degenerated_gc_time(_precursor_cycle_start, elapsed_degenerated_cycle_time());
-
   // Adjust both trigger's parameters in the case of a degenerated GC because
   // either of them should have triggered earlier to avoid this case.
   adjust_margin_of_error(DEGENERATE_PENALTY_SD);
@@ -526,7 +522,6 @@ void ShenandoahAdaptiveHeuristics::record_success_degenerated() {
 
 void ShenandoahAdaptiveHeuristics::record_success_full() {
   ShenandoahHeuristics::record_success_full();
-
   // Adjust both trigger's parameters in the case of a full GC because
   // either of them should have triggered earlier to avoid this case.
   adjust_margin_of_error(FULL_PENALTY_SD);
@@ -620,7 +615,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                "Spike Time to Deplete Available (s)");                                          \
   for (size_t __j = 0; __j < rejected_trigger_count; __j++) {                                   \
     size_t __index = (first_rejected_trigger + __j) % MaxRejectedTriggers;                      \
-    log_info(gc)("\n%.6f, %zu, %zu, %zu, %zu, %zu, "                                            \
+    log_info(gc)("%.6f, %zu, %zu, %zu, %zu, %zu, "                                            \
                  "%.3f, %zu, %.3f, %.3f, %zu, %.3f, %.3f, %zu, %.3f, %.3f, %.3f, %.3f, "        \
                  "%s, %.3f, %.3f",                                                              \
                  rejected_trigger_log[__index].time_stamp,                                      \
@@ -692,7 +687,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 #define AppendTriggerInfo(ts, cap, avail, alloced, mt, ls, \
                           aar, aw, act, pfagt, awsls, irwps, crba, ca, accel, pfgt, fpgt, attda, is, sr, sttda)     ;
 #endif
-  size_t capacity = _space_info->soft_max_capacity();
+  size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
   size_t available = _space_info->soft_available();
   size_t allocated = _free_set->get_bytes_allocated_since_gc_start();
 
@@ -733,10 +728,17 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   log_info(gc)("should_start_gc? did not trigger for minimum threshold");
 #endif
 
+#ifdef KELVIN_START_GC
+  size_t learned_steps = _gc_times_learned;
+#endif
+#define KELVIN_TRACE_START
+#ifdef KELVIN_TRACE_START
+  log_info(gc)("should_start?  learning steps: %zu, capacity: %zu", _gc_times_learned, capacity);
+#endif
+
   // Check if we need to learn a bit about the application
   const size_t max_learn = ShenandoahLearningSteps;
-  size_t learned_steps = _gc_times_learned;
-  if (learned_steps < max_learn) {
+  if (_gc_times_learned < max_learn) {
     size_t init_threshold = capacity / 100 * ShenandoahInitFreeThreshold;
     if (available < init_threshold) {
       log_trigger("Learning %zu of %zu. Free (%zu%s) is below initial threshold (%zu%s)",
@@ -957,6 +959,25 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                 byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate));
   size_t allocatable_bytes = allocatable_words * HeapWordSize;
   double avg_time_to_deplete_available = allocatable_bytes / avg_alloc_rate;
+
+#define KELVIN_TRACE_START
+#ifdef KELVIN_TRACE_START
+  {
+    log_info(gc)
+      ("should_start(), rate: %.3f MB/s, capacity: %zu, available: %zu, allocated: %zu, avg_cycle: %.3f s, avg_rate: %.3f MB/s",
+       rate, capacity, available, allocated, avg_cycle_time, avg_alloc_rate);
+    size_t spike_headroom = capacity / 100 * ShenandoahAllocSpikeFactor;
+    size_t penalties      = capacity / 100 * _gc_time_penalties;
+    size_t allocation_headroom = available;
+    allocation_headroom -= MIN2(allocation_headroom, spike_headroom);
+    allocation_headroom -= MIN2(allocation_headroom, penalties);
+    log_info(gc)("  allocation_headroom: %zu, spike_headroom: %zu, penalties: %zu",
+                 allocation_headroom, spike_headroom, penalties);
+  }
+#endif
+
+
+
   if (future_planned_gc_time > avg_time_to_deplete_available) {
     log_trigger("%s GC time (%.2f ms) is above the time for average allocation rate (%.0f %sB/s)"
                 " to deplete free headroom (%zu%s) (margin of error = %.2f)",
