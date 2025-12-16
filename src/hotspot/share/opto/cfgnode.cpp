@@ -2321,8 +2321,8 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         // We can't return top if we are in Parse phase - cut inputs only
         // to stop further optimizations for this phi. Identity will return TOP.
         assert(req() == 3, "only diamond merge phi here");
-        set_req_X(1, top, phase);
-        set_req_X(2, top, phase);
+        set_req(1, top);
+        set_req(2, top);
         return nullptr;
       } else {
         return opt;
@@ -2674,7 +2674,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
             igvn->register_new_node_with_optimizer(new_ii);
           }
         }
-        new_phi->set_req_X(i, new_ii, phase);
+        new_phi->set_req(i, new_ii);
       }
       igvn->register_new_node_with_optimizer(new_phi, this);
       if (is_decodeN) {
