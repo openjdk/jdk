@@ -945,10 +945,11 @@ void ShenandoahGenerationalHeap::update_heap_references(ShenandoahGeneration* ge
   assert(!is_full_gc_in_progress(), "Only for concurrent and degenerated GC");
 
 
-  ShenandoahReferenceProcessor* old = young_generation()->ref_processor()->get_old_generation_ref_processor();
-  if (old != nullptr) {
-    // TODO: Might as well leth the workers do this
-    old->heal_discovered_lists();
+  ShenandoahReferenceProcessor* old_ref_processor = young_generation()->ref_processor()->get_old_generation_ref_processor();
+  if (old_ref_processor != nullptr) {
+    // Discovered lists may have young references with old referents. These references will be
+    // processed at the end of old marking. We need to update them.
+    old_ref_processor->heal_discovered_lists();
   }
 
   const uint nworkers = workers()->active_workers();
