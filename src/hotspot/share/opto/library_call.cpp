@@ -6235,16 +6235,24 @@ bool LibraryCallKit::inline_encodeISOArray(bool ascii) {
   // 'src_start' points to src array + scaled offset
   // 'dst_start' points to dst array + scaled offset
 
+  // See GraphKit::compress_string
   const TypePtr* adr_type;
-  Node* mem = capture_memory(adr_type, TypeAryPtr::get_array_body_type(src_elem), TypeAryPtr::BYTES);
+  Node* mem = capture_memory(adr_type, src_type, dst_type);
   Node* enc = new EncodeISOArrayNode(control(), mem, adr_type, src_start, dst_start, length, ascii);
   enc = _gvn.transform(enc);
   Node* res_mem = _gvn.transform(new SCMemProjNode(enc));
+  set_memory(res_mem, dst_type);
   if (adr_type == TypePtr::BOTTOM) {
-    set_all_memory(res_mem);
-  } else {
-    set_memory(res_mem, adr_type);
+    Node* all_mem = reset_memory();
+    set_all_memory(all_mem);
+    Node* membar = new MemBarCPUOrderNode(C, C->get_alias_index(src_type), nullptr);
+    membar->init_req(TypeFunc::Control, control());
+    membar->init_req(TypeFunc::Memory, all_mem);
+    membar = _gvn.transform(membar);
+    set_control(_gvn.transform(new ProjNode(membar, TypeFunc::Control)));
+    set_memory(_gvn.transform(new ProjNode(membar, TypeFunc::Memory)), src_type);
   }
+
   set_result(enc);
   clear_upper_avx();
 
