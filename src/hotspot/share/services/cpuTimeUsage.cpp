@@ -35,8 +35,8 @@
 
 volatile bool CPUTimeUsage::Error::_has_error = false;
 
-static inline cpu_time_t detailed_thread_cpu_time_or_zero(Thread* thread) {
-  cpu_time_t cpu_time = os::detailed_thread_cpu_time(thread);
+static inline CPUTime detailed_thread_cpu_time_or_zero(Thread* thread) {
+  CPUTime cpu_time = os::detailed_thread_cpu_time(thread);
   if (cpu_time.system == -1 || cpu_time.user == -1) {
     CPUTimeUsage::Error::mark_error();
     return { 0, 0 };
@@ -66,15 +66,15 @@ public:
 
 class DetailedCPUTimeThreadClosure : public ThreadClosure {
 private:
-  cpu_time_t _cpu_time = { 0, 0 };
+  CPUTime _cpu_time = { 0, 0 };
 
 public:
   virtual void do_thread(Thread* thread) {
-    cpu_time_t new_value = detailed_thread_cpu_time_or_zero(thread);
+    CPUTime new_value = detailed_thread_cpu_time_or_zero(thread);
     _cpu_time.user += new_value.user;
     _cpu_time.system += new_value.system;
   }
-  cpu_time_t cpu_time() { return _cpu_time; };
+  CPUTime cpu_time() { return _cpu_time; };
 };
 
 jlong CPUTimeUsage::GC::total() {
@@ -98,18 +98,18 @@ jlong CPUTimeUsage::GC::stringdedup() {
   return 0;
 }
 
-cpu_time_t CPUTimeUsage::GC::detailed_gc_threads() {
+CPUTime CPUTimeUsage::GC::detailed_gc_threads() {
   DetailedCPUTimeThreadClosure cl;
   Universe::heap()->gc_threads_do(&cl);
   return cl.cpu_time();
 }
 
-cpu_time_t CPUTimeUsage::GC::detailed_gc_operation_vm_thread() {
+CPUTime CPUTimeUsage::GC::detailed_gc_operation_vm_thread() {
   assert_at_safepoint();
   return detailed_thread_cpu_time_or_zero((Thread*)VMThread::vm_thread());
 }
 
-cpu_time_t CPUTimeUsage::GC::detailed_stringdedup() {
+CPUTime CPUTimeUsage::GC::detailed_stringdedup() {
   if (UseStringDeduplication) {
     return detailed_thread_cpu_time_or_zero((Thread*)StringDedup::_processor->_thread);
   }

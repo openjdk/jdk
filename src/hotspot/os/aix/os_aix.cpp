@@ -2464,7 +2464,7 @@ static bool thread_cpu_time_unchecked(Thread* thread, jlong* p_sys_time, jlong* 
   return true;
 }
 
-cpu_time_t os::detailed_thread_cpu_time(Thread* t) {
+CPUTime os::detailed_thread_cpu_time(Thread* t) {
   jlong sys_time;
   jlong user_time;
 

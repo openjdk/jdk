@@ -2290,7 +2290,7 @@ int os::open(const char *path, int oflag, int mode) {
   return fd;
 }
 
-cpu_time_t os::detailed_thread_cpu_time(Thread* t) {
+CPUTime os::detailed_thread_cpu_time(Thread* t) {
 #ifdef __APPLE__
   struct thread_basic_info tinfo;
   mach_msg_type_number_t tcount = THREAD_INFO_MAX;

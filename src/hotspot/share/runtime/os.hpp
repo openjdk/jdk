@@ -167,11 +167,13 @@ public:
   int saved_errno() { return _e; }
 };
 
-struct cpu_time {
-  jlong user;
-  jlong system;
+class CPUTime {
+public:
+  long user;
+  long system;
+  CPUTime(long user, long system);
+  CPUTime operator-=(const CPUTime &n);
 };
-typedef struct cpu_time cpu_time_t;
 
 class os: AllStatic {
   friend class JVMCIVMStructs;
@@ -1000,7 +1002,7 @@ class os: AllStatic {
   static jlong current_thread_cpu_time(bool user_sys_cpu_time);
   static jlong thread_cpu_time(Thread* t, bool user_sys_cpu_time);
 
-  static cpu_time_t detailed_thread_cpu_time(Thread* t);
+  static CPUTime detailed_thread_cpu_time(Thread* t);
 
   // Return a bunch of info about the timers.
   // Note that the returned info for these two functions may be different

@@ -4892,7 +4892,7 @@ bool os::same_files(const char* file1, const char* file2) {
 
 constexpr jlong filetime_interval = 100;
 
-cpu_time_t os::detailed_thread_cpu_time(Thread* t) {
+CPUTime os::detailed_thread_cpu_time(Thread* t) {
   FILETIME CreationTime;
   FILETIME ExitTime;
   FILETIME KernelTime;

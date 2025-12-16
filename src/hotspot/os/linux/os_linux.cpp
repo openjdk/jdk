@@ -4998,7 +4998,7 @@ static jlong total_thread_cpu_time(Thread *thread) {
   return success ? os::Linux::thread_cpu_time(clockid) : -1;
 }
 
-cpu_time_t os::detailed_thread_cpu_time(Thread* t) {
+CPUTime os::detailed_thread_cpu_time(Thread* t) {
   jlong user = user_thread_cpu_time(t);
   jlong total = total_thread_cpu_time(t);
   return {

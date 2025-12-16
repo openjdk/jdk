@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_GCTRACETIME_HPP
 
 #include "gc/shared/gcCause.hpp"
+#include "runtime/os.hpp"
 #include "logging/log.hpp"
 #include "logging/logHandle.hpp"
 #include "logging/logStream.hpp"
@@ -35,10 +36,9 @@
 class GCTracer;
 
 class GCTraceCPUTime : public StackObj {
-  bool _active;                 // True if times will be measured and printed
-  jlong _starting_user_time;    // User time at start of measurement
-  jlong _starting_system_time;  // System time at start of measurement
-  double _starting_real_time;   // Real time at start of measurement
+  bool _active;                  // True if times will be measured and printed
+  CPUTime _starting_cpu_time; // User and system time at start of measurement
+  double _starting_real_time;    // Real time at start of measurement
   GCTracer* _tracer;
 public:
   GCTraceCPUTime(GCTracer* tracer);

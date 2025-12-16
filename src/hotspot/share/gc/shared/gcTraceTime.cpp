@@ -70,20 +70,24 @@ void GCTraceTimeLoggerImpl::log_end(Ticks end) {
   out.print_cr(" %.3fms", duration_in_ms);
 }
 
+static CPUTime sample_detailed_cpu_time() {
+  CPUTime cpu_time_vm = CPUTimeUsage::GC::detailed_gc_operation_vm_thread();
+  CPUTime cpu_time_gc = CPUTimeUsage::GC::detailed_gc_threads();
+  CPUTime cpu_time_stringdedup = CPUTimeUsage::GC::detailed_stringdedup();
+  return {
+    cpu_time_vm.user + cpu_time_gc.user + cpu_time_stringdedup.user,
+    cpu_time_vm.system + cpu_time_gc.system + cpu_time_stringdedup.system
+  };
+}
+
 GCTraceCPUTime::GCTraceCPUTime(GCTracer* tracer) :
   _active(log_is_enabled(Info, gc, cpu) ||
           (tracer != nullptr && tracer->should_report_cpu_time_event())),
-  _starting_user_time(0),
-  _starting_system_time(0),
+  _starting_cpu_time(0,0),
   _starting_real_time(0.0),
-  _tracer(tracer)
-{
+  _tracer(tracer) {
   if (_active) {
-    cpu_time_t cpu_time_vm = CPUTimeUsage::GC::detailed_gc_operation_vm_thread();
-    cpu_time_t cpu_time_gc = CPUTimeUsage::GC::detailed_gc_threads();
-    cpu_time_t cpu_time_stringdedup = CPUTimeUsage::GC::detailed_stringdedup();
-    _starting_user_time = cpu_time_vm.user + cpu_time_gc.user + cpu_time_stringdedup.user;
-    _starting_system_time = cpu_time_vm.system + cpu_time_gc.system + cpu_time_stringdedup.system;
+    _starting_cpu_time = sample_detailed_cpu_time();
     _starting_real_time = os::elapsedTime();
     if (CPUTimeUsage::Error::has_error()) {
       log_warning(gc, cpu)("TraceCPUTime: CPUTimeUsage may contain invalid results");
@@ -94,23 +98,17 @@ GCTraceCPUTime::GCTraceCPUTime(GCTracer* tracer) :
 
 GCTraceCPUTime::~GCTraceCPUTime() {
   if (_active) {
-    cpu_time_t cpu_time_vm = CPUTimeUsage::GC::detailed_gc_operation_vm_thread();
-    cpu_time_t cpu_time_gc = CPUTimeUsage::GC::detailed_gc_threads();
-    cpu_time_t cpu_time_stringdedup = CPUTimeUsage::GC::detailed_stringdedup();
-
-    double real_time = os::elapsedTime() - _starting_real_time;
-    jlong user_time = cpu_time_vm.user + cpu_time_gc.user + cpu_time_stringdedup.user;
-    jlong system_time = cpu_time_vm.system + cpu_time_gc.system + cpu_time_stringdedup.system;
+    double real_time = os::elapsedTime();
+    CPUTime cpu_time = sample_detailed_cpu_time();
 
     if (!CPUTimeUsage::Error::has_error()) {
-      user_time -= _starting_user_time;
-      system_time -= _starting_system_time;
+      cpu_time -= _starting_cpu_time;
       real_time -= _starting_real_time;
-      double user_time_seconds = 1.0 * user_time / NANOSECS_PER_SEC;
-      double system_time_seconds = 1.0 * system_time / NANOSECS_PER_SEC;
+      double user_time_seconds = 1.0 * cpu_time.user / NANOSECS_PER_SEC;
+      double system_time_seconds = 1.0 * cpu_time.system / NANOSECS_PER_SEC;
       log_info(gc, cpu)("User=%3.2fs Sys=%3.2fs Real=%3.2fs", user_time_seconds, system_time_seconds, real_time);
       if (_tracer != nullptr) {
-        _tracer->report_cpu_time_event(user_time, system_time, real_time);
+        _tracer->report_cpu_time_event(user_time_seconds, system_time_seconds, real_time);
       }
     } else {
       log_warning(gc, cpu)("TraceCPUTime: CPUTimeUsage may contain invalid results");

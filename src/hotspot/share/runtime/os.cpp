@@ -100,6 +100,15 @@ os::PageSizes     os::_page_sizes;
 
 DEBUG_ONLY(bool os::_mutex_init_done = false;)
 
+CPUTime::CPUTime(long user, long system) :
+  user(user), system(system) {};
+
+CPUTime CPUTime::operator-=(const CPUTime &n) {
+  user -= n.user;
+  system -= n.system;
+  return *this;
+}
+
 int os::snprintf(char* buf, size_t len, const char* fmt, ...) {
   va_list args;
   va_start(args, fmt);
@@ -507,7 +516,7 @@ void os::terminate_signal_thread() {
 }
 
 jlong os::thread_cpu_time(Thread* thread, bool user_sys_cpu_time) {
-  cpu_time_t cpu_time = detailed_thread_cpu_time(thread);
+  CPUTime cpu_time = detailed_thread_cpu_time(thread);
   if (cpu_time.user == -1) {
     return -1;
   }
