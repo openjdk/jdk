@@ -1,4 +1,4 @@
-/*
+ /*
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -47,22 +47,22 @@ import static org.objectweb.asm.Opcodes.*;
 
 public class NestedAnnotations {
     static void test() throws Exception {
-	    var cw = new ClassWriter(0);
-	    cw.visit(V17, 0, "Annotations", null, "java/lang/Object", null);
-	    final int number_of_annotations = 65535;
-	    var av = cw.visitAnnotation("LTest;", true);
-	    var stack = new ArrayList<AnnotationVisitor>(number_of_annotations + 1);
-	    stack.add(av);
-	    for (int i = 0; i < number_of_annotations; i++) {
-		    stack.add(av = av.visitAnnotation("value", "LTest;"));
-	    }
-	    for (int i = number_of_annotations; i != 0;) {
-		    stack.get(--i).visitEnd();
-	    }
+        var cw = new ClassWriter(0);
+        cw.visit(V17, 0, "Annotations", null, "java/lang/Object", null);
+        final int number_of_annotations = 65535;
+        var av = cw.visitAnnotation("LTest;", true);
+        var stack = new ArrayList<AnnotationVisitor>(number_of_annotations + 1);
+        stack.add(av);
+        for (int i = 0; i < number_of_annotations; i++) {
+            stack.add(av = av.visitAnnotation("value", "LTest;"));
+        }
+        for (int i = number_of_annotations; i != 0;) {
+            stack.get(--i).visitEnd();
+        }
 
-	    cw.visitEnd();
-	    // Does not matter whether the class is hidden, used for simplicity’s sake.
-	    MethodHandles.lookup().defineHiddenClass(cw.toByteArray(), true);
+        cw.visitEnd();
+        // Does not matter whether the class is hidden, used for simplicity’s sake.
+        MethodHandles.lookup().defineHiddenClass(cw.toByteArray(), true);
     }
 
     public static void main(String[] args) throws Exception {
