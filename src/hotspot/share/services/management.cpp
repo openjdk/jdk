@@ -2032,7 +2032,11 @@ JVM_ENTRY(void, jmm_GetDiagnosticCommandInfo(JNIEnv *env, jobjectArray cmds,
     infoArray[i].description = info->description();
     infoArray[i].impact = info->impact();
     infoArray[i].num_arguments = info->num_arguments();
-    infoArray[i].enabled = info->is_enabled();
+
+    // All registered DCmds are always enabled. We set the dcmdInfo::enabled
+    // field to true to be compatible with the Java API
+    // com.sun.management.internal.DiagnosticCommandInfo.
+    infoArray[i].enabled = true;
   }
 JVM_END
 
