@@ -73,16 +73,24 @@ void ShenandoahGenerationalControlThread::run_service() {
 
     if (request.cause != GCCause::_no_gc) {
       run_gc_cycle(request);
+      log_debug(gc, thread)("After cycle, cancelled cause: %s", GCCause::to_string(_heap->cancelled_cause()));
     }
 
     // If the cycle was cancelled, continue the next iteration to deal with it. Otherwise,
     // if there was no other cycle requested, cleanup and wait for the next request.
     if (!_heap->cancelled_gc()) {
       MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
+      log_debug(gc, thread)("After lock, cancelled cause: %s", GCCause::to_string(_heap->cancelled_cause()));
       if (_requested_gc_cause == GCCause::_no_gc) {
         set_gc_mode(ml, none);
         ml.wait();
+      } else {
+        log_debug(gc, thread)("Not waiting because requested gc: %s, cancelled cause: %s", 
+            GCCause::to_string(_requested_gc_cause),
+            GCCause::to_string(_heap->cancelled_cause()));
       }
+    } else {
+      log_debug(gc, thread)("Not waiting because cancelled gc: %s", GCCause::to_string(_heap->cancelled_cause()));
     }
   }
 
@@ -111,22 +119,29 @@ void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest&
     // the cancellation cause.
     request.cause = _heap->clear_cancellation(GCCause::_shenandoah_concurrent_gc);
     if (request.cause == GCCause::_shenandoah_concurrent_gc) {
+      log_debug(gc, thread)("Old gc was cancelled to run a young GC");
       request.generation = _heap->young_generation();
+    } else {
+      log_debug(gc, thread)("Using generation " PTR_FORMAT " on previous request", p2i(request.generation));
     }
   } else {
+    if (_requested_generation == nullptr) {
+      log_debug(gc, thread)("Woke up to check for request (%s), but requested generation is nullptr", GCCause::to_string(_requested_gc_cause));
+    }
+
     request.cause = _requested_gc_cause;
     request.generation = _requested_generation;
-
-    // Only clear these if we made a request from them. In the case of a cancelled gc,
-    // we do not want to inadvertently lose this pending request.
-    _requested_gc_cause = GCCause::_no_gc;
-    _requested_generation = nullptr;
   }
+
+  _requested_gc_cause = GCCause::_no_gc;
+  _requested_generation = nullptr;
+  log_debug(gc, thread)("Cleared pending request");
 
   if (request.cause == GCCause::_no_gc || request.cause == GCCause::_shenandoah_stop_vm) {
     return;
   }
 
+  assert(request.generation != nullptr, "Must know the generation here, cause is: %s", GCCause::to_string(request.cause));
   GCMode mode;
   if (ShenandoahCollectorPolicy::is_allocation_failure(request.cause)) {
     mode = prepare_for_allocation_failure_gc(request);
