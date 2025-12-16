@@ -162,8 +162,8 @@ public final class Recording implements Closeable {
      * After a successful invocation of this method, this recording is in the
      * {@code RUNNING} state.
      *
-     * @throws IllegalStateException if recording is already started, is in the
-     *         {@code CLOSED} state, or if the flight recorder is shutdown
+     * @throws IllegalStateException if recording is already started or is in the
+     *         {@code CLOSED} state
      */
     public void start() {
         internal.start();

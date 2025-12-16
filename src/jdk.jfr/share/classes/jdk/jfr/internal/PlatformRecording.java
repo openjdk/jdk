@@ -93,6 +93,7 @@ public final class PlatformRecording implements AutoCloseable {
     private Duration flushInterval = Duration.ofSeconds(1);
     private long finalStartChunkNanos = Long.MIN_VALUE;
     private long startNanos = -1;
+    private boolean dummyRecording = false;
 
     PlatformRecording(PlatformRecorder recorder, long id) {
         this.id = id;
@@ -104,10 +105,6 @@ public final class PlatformRecording implements AutoCloseable {
         RecordingState oldState;
         RecordingState newState;
         synchronized (recorder) {
-            if (PlatformRecorder.isInShutDown()) {
-                throw new IllegalStateException("Flight recorder is already shutdown");
-            }
-
             oldState = getState();
             if (!Utils.isBefore(state, RecordingState.RUNNING)) {
                 throw new IllegalStateException("Recording can only be started once.");
@@ -117,6 +114,16 @@ public final class PlatformRecording implements AutoCloseable {
                 startTask = null;
                 startTime = null;
             }
+
+            if (PlatformRecorder.isInShutDown()) {
+                dummyRecording = true;
+                startTime = Instant.now();
+                newState = RecordingState.RUNNING;
+                setState(newState);
+                notifyIfStateChanged(oldState, newState);
+                return (startTime.getEpochSecond() * 1_000_000_000) + startTime.getNano();
+            }
+
             startNanos = recorder.start(this);
             if (Logger.shouldLog(LogTag.JFR, LogLevel.INFO)) {
                 // Only print non-default values so it easy to see
@@ -162,6 +169,12 @@ public final class PlatformRecording implements AutoCloseable {
             if (stopTask != null) {
                 stopTask.cancel();
                 stopTask = null;
+            }
+            if (dummyRecording) {
+                newState = RecordingState.STOPPED;
+                setState(newState);
+                notifyIfStateChanged(oldState, newState);
+                return true;
             }
             recorder.stop(this);
             String endText = reason == null ? "" : ". Reason \"" + reason + "\".";
@@ -361,6 +374,7 @@ public final class PlatformRecording implements AutoCloseable {
         clone.setToDisk(true);
         clone.setMaxAge(getMaxAge());
         clone.setMaxSize(getMaxSize());
+        clone.setDummyRecording(isDummyRecording());
         // We purposely don't clone settings here, since
         // a union a == a
         if (!isToDisk()) {
@@ -512,7 +526,7 @@ public final class PlatformRecording implements AutoCloseable {
         }
         synchronized (recorder) {
             this.settings = new LinkedHashMap<>(settings);
-            if (getState() == RecordingState.RUNNING && update) {
+            if (getState() == RecordingState.RUNNING && update && !dummyRecording) {
                 recorder.updateSettings(true);
             }
         }
@@ -568,7 +582,7 @@ public final class PlatformRecording implements AutoCloseable {
             throw new Error("not finished chunk " + chunk.getStartTime());
         }
         synchronized (recorder) {
-            if (!toDisk) {
+            if (!toDisk || dummyRecording) {
                 return;
             }
             if (maxAge != null) {
@@ -721,9 +735,20 @@ public final class PlatformRecording implements AutoCloseable {
         return shouldWriteActiveRecordingEvent;
     }
 
+    boolean isDummyRecording() {
+        return dummyRecording;
+    }
+
+    void setDummyRecording(boolean dummyRecording) {
+        this.dummyRecording = dummyRecording;
+    }
+
     // Dump running and stopped recordings
     public void dump(WriteablePath writeablePath) throws IOException {
         synchronized (recorder) {
+            if (dummyRecording) {
+                return;
+            }
             try(PlatformRecording p = newSnapshotClone("Dumped by user", null))  {
                 p.dumpStopped(writeablePath);
             }
@@ -732,6 +757,9 @@ public final class PlatformRecording implements AutoCloseable {
 
     public void dumpStopped(WriteablePath path) throws IOException {
         synchronized (recorder) {
+            if (dummyRecording) {
+                return;
+            }
             transferChunksWithRetry(path);
         }
     }
@@ -749,6 +777,10 @@ public final class PlatformRecording implements AutoCloseable {
     }
 
     private void transferChunks(WriteablePath path) throws IOException {
+        if (dummyRecording) {
+            return;
+        }
+
         // Before writing, wipe the file if it already exists.
         try (ChunksChannel cc = new ChunksChannel(chunks); FileChannel fc = FileChannel.open(path.getReal(), StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING,  StandardOpenOption.CREATE)) {
             // Mitigate races against other processes

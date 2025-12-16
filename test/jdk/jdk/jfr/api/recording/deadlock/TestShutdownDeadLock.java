@@ -31,7 +31,12 @@
  */
 package jdk.jfr.api.recording.deadlock;
 
+import java.time.Duration;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import jdk.jfr.Recording;
+
 import jdk.test.lib.Asserts;
 
 public class TestShutdownDeadLock {
@@ -44,15 +49,24 @@ public class TestShutdownDeadLock {
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             Exception thrownException = null;
+            Path temp;
+
             try {
                 Thread.sleep(100);
-                new Recording().start();
+
+                Recording recording = new Recording();
+                recording.scheduleStart(Duration.ofSeconds(100));
+                recording.start();
+                temp = Files.createTempFile("", ".tmp");
+                temp.toFile().deleteOnExit();
+                recording.dump(temp);
+                recording.copy(false);
+                recording.stop();
             } catch (Exception e) {
                 thrownException = e;
+                e.printStackTrace(System.err);
             }
-            Asserts.assertNotNull(thrownException);
-            Asserts.assertEquals(thrownException.getClass(), IllegalStateException.class);
-            Asserts.assertEquals(thrownException.getMessage(), "Flight recorder is already shutdown");
+            Asserts.assertNull(thrownException);
         }));
 
         System.out.println("Exiting");
