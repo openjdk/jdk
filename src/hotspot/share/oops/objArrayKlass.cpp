@@ -185,15 +185,6 @@ oop ObjArrayKlass::multi_allocate(int rank, jint* sizes, TRAPS) {
   return h_array();
 }
 
-static void throw_array_null_pointer_store_exception(arrayOop src, arrayOop dst, TRAPS) {
-  ResourceMark rm(THREAD);
-  Klass* bound = ObjArrayKlass::cast(dst->klass())->element_klass();
-  stringStream ss;
-  ss.print("arraycopy: can not copy null values into %s[]",
-           bound->external_name());
-  THROW_MSG(vmSymbols::java_lang_NullPointerException(), ss.as_string());
-}
-
 static void throw_array_store_exception(arrayOop src, arrayOop dst, TRAPS) {
   ResourceMark rm(THREAD);
   Klass* bound = ObjArrayKlass::cast(dst->klass())->element_klass();
