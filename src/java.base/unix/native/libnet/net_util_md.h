@@ -81,17 +81,14 @@ void NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
                                   const char *defaultDetail);
 
 /**
- * Invokes call in a loop, setting RET to return value.
- * Invokes PREDICATE for condition to break from loop
- * If PREDICATE fails, and errno is not EINTR, loop breaks also
- * Continue loop otherwise.
- *
- * NB. It is assumed that if PREDICATE fails then errno is set
+ * Invokes CALL in a loop, setting RET to return value.
+ * Invokes PREDICATE for condition to restart CALL (in loop)
+ * Return RET otherwise
  */
 #define NET_RESTARTABLE(RET,CALL,PREDICATE)     \
     while (1) {                                 \
-        RET = CALL;                     \
-        if (PREDICATE || errno != EINTR) {      \
+        RET = CALL;                             \
+        if (!(PREDICATE)) {                     \
             break;                              \
         }                                       \
     }

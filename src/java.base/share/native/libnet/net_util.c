@@ -59,6 +59,7 @@ DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
     jmethodID mid;
     jstring s;
     jint preferIPv4Stack;
+
     if ((*vm)->GetEnv(vm, (void**) &env, JNI_VERSION_1_2) != JNI_OK) {
         return JNI_EVERSION; /* JNI version not supported */
     }
@@ -85,7 +86,6 @@ DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
 
     /* check if SO_REUSEPORT is supported on this platform */
     REUSEPORT_available = reuseport_supported(IPv6_available);
-
 
     return JNI_VERSION_1_2;
 }

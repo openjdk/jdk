@@ -227,7 +227,8 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     hints.ai_flags = AI_CANONNAME;
     hints.ai_family = lookupCharacteristicsToAddressFamily(characteristics);
 
-    NET_RESTARTABLE(error, getaddrinfo(hostname, NULL, &hints, &res), error != EAI_SYSTEM)
+    NET_RESTARTABLE(error, getaddrinfo(hostname, NULL, &hints, &res),
+                                      error == EAI_SYSTEM && errno == EINTR);
 
     if (error) {
 #if defined(MACOSX)
@@ -433,7 +434,7 @@ Java_java_net_Inet6AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
     int r;
 
     NET_RESTARTABLE(r, getnameinfo(&sa.sa, len, host, sizeof(host), NULL, 0, NI_NAMEREQD),
-                    r != EAI_SYSTEM)
+                    r == EAI_SYSTEM && errno == EINTR);
 
     if (r == 0) {
         ret = (*env)->NewStringUTF(env, host);
@@ -488,7 +489,7 @@ tcp_ping6(JNIEnv *env, SOCKETADDRESS *sa, SOCKETADDRESS *netif, jint timeout,
 
     sa->sa6.sin6_port = htons(7); // echo port
     NET_RESTARTABLE(connect_rv, connect(fd, &sa->sa, sizeof(struct sockaddr_in6)),
-                    connect_rv != -1);
+                    connect_rv == -1 && errno == EINTR);
 
     // connection established or refused immediately, either way it means
     // we were able to reach the host!
@@ -611,7 +612,7 @@ ping6(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
         // send it
 
         NET_RESTARTABLE(n, sendto(fd, sendbuf, plen, 0, &sa->sa, sizeof(struct sockaddr_in6)),
-                        n != -1)
+                        n == -1 && errno == EINTR);
 
         if (n < 0 && errno != EINPROGRESS) {
 #if defined(__linux__)
@@ -637,7 +638,8 @@ ping6(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
             if (tmout2 >= 0) {
                 len = sizeof(sa_recv);
                 NET_RESTARTABLE(n, recvfrom(fd, recvbuf, sizeof(recvbuf), 0,
-                                   (struct sockaddr *)&sa_recv, &len), n == -1);
+                                   (struct sockaddr *)&sa_recv, &len),
+                                   n == -1 && errno == EINTR);
                 // check if we received enough data
                 if (n < (jint)sizeof(struct icmp6_hdr)) {
                     continue;
