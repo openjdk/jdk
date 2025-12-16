@@ -28,7 +28,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
@@ -107,7 +107,7 @@ void DependencyContext::add_dependent_nmethod(nmethod* nm) {
   // to skip list scans. The individual method checks are cheap, but walking the large
   // list of dependencies gets expensive.
 
-  nmethodBucket* head = Atomic::load(_dependency_context_addr);
+  nmethodBucket* head = AtomicAccess::load(_dependency_context_addr);
   if (head != nullptr && nm == head->get_nmethod()) {
     return;
   }
@@ -121,10 +121,10 @@ void DependencyContext::add_dependent_nmethod(nmethod* nm) {
   nmethodBucket* new_head = new nmethodBucket(nm, nullptr);
   for (;;) {
     new_head->set_next(head);
-    if (Atomic::cmpxchg(_dependency_context_addr, head, new_head) == head) {
+    if (AtomicAccess::cmpxchg(_dependency_context_addr, head, new_head) == head) {
       break;
     }
-    head = Atomic::load(_dependency_context_addr);
+    head = AtomicAccess::load(_dependency_context_addr);
   }
   if (UsePerfData) {
     _perf_total_buckets_allocated_count->inc();
@@ -142,9 +142,9 @@ void DependencyContext::release(nmethodBucket* b) {
     // Mark the context as having stale entries, since it is not safe to
     // expunge the list right now.
     for (;;) {
-      nmethodBucket* purge_list_head = Atomic::load(&_purge_list);
+      nmethodBucket* purge_list_head = AtomicAccess::load(&_purge_list);
       b->set_purge_list_next(purge_list_head);
-      if (Atomic::cmpxchg(&_purge_list, purge_list_head, b) == purge_list_head) {
+      if (AtomicAccess::cmpxchg(&_purge_list, purge_list_head, b) == purge_list_head) {
         break;
       }
     }
@@ -196,7 +196,7 @@ void DependencyContext::remove_all_dependents() {
   // purge list when calling this.
   assert(!delete_on_release(), "should not delete on release");
 
-  nmethodBucket* first = Atomic::load_acquire(_dependency_context_addr);
+  nmethodBucket* first = AtomicAccess::load_acquire(_dependency_context_addr);
   if (first == nullptr) {
     return;
   }
@@ -211,10 +211,10 @@ void DependencyContext::remove_all_dependents() {
   }
 
   // Add the whole list to the purge list at once.
-  nmethodBucket* old_purge_list_head = Atomic::load(&_purge_list);
+  nmethodBucket* old_purge_list_head = AtomicAccess::load(&_purge_list);
   for (;;) {
     last->set_purge_list_next(old_purge_list_head);
-    nmethodBucket* next_purge_list_head = Atomic::cmpxchg(&_purge_list, old_purge_list_head, first);
+    nmethodBucket* next_purge_list_head = AtomicAccess::cmpxchg(&_purge_list, old_purge_list_head, first);
     if (old_purge_list_head == next_purge_list_head) {
       break;
     }
@@ -264,16 +264,16 @@ bool DependencyContext::is_dependent_nmethod(nmethod* nm) {
 // dependency context was cleaned. GC threads claim cleanup tasks by performing
 // a CAS on this value.
 bool DependencyContext::claim_cleanup() {
-  uint64_t cleaning_epoch = Atomic::load(&_cleaning_epoch);
-  uint64_t last_cleanup = Atomic::load(_last_cleanup_addr);
+  uint64_t cleaning_epoch = AtomicAccess::load(&_cleaning_epoch);
+  uint64_t last_cleanup = AtomicAccess::load(_last_cleanup_addr);
   if (last_cleanup >= cleaning_epoch) {
     return false;
   }
-  return Atomic::cmpxchg(_last_cleanup_addr, last_cleanup, cleaning_epoch) == last_cleanup;
+  return AtomicAccess::cmpxchg(_last_cleanup_addr, last_cleanup, cleaning_epoch) == last_cleanup;
 }
 
 bool DependencyContext::delete_on_release() {
-  return Atomic::load(&_cleaning_epoch) == 0;
+  return AtomicAccess::load(&_cleaning_epoch) == 0;
 }
 
 // Retrieve the first nmethodBucket that has a dependent that does not correspond to
@@ -282,17 +282,17 @@ bool DependencyContext::delete_on_release() {
 nmethodBucket* DependencyContext::dependencies_not_unloading() {
   for (;;) {
     // Need acquire because the read value could come from a concurrent insert.
-    nmethodBucket* head = Atomic::load_acquire(_dependency_context_addr);
+    nmethodBucket* head = AtomicAccess::load_acquire(_dependency_context_addr);
     if (head == nullptr || !head->get_nmethod()->is_unloading()) {
       return head;
     }
     nmethodBucket* head_next = head->next();
     OrderAccess::loadload();
-    if (Atomic::load(_dependency_context_addr) != head) {
+    if (AtomicAccess::load(_dependency_context_addr) != head) {
       // Unstable load of head w.r.t. head->next
       continue;
     }
-    if (Atomic::cmpxchg(_dependency_context_addr, head, head_next) == head) {
+    if (AtomicAccess::cmpxchg(_dependency_context_addr, head, head_next) == head) {
       // Release is_unloading entries if unlinking was claimed
       DependencyContext::release(head);
     }
@@ -301,11 +301,11 @@ nmethodBucket* DependencyContext::dependencies_not_unloading() {
 
 // Relaxed accessors
 void DependencyContext::set_dependencies(nmethodBucket* b) {
-  Atomic::store(_dependency_context_addr, b);
+  AtomicAccess::store(_dependency_context_addr, b);
 }
 
 nmethodBucket* DependencyContext::dependencies() {
-  return Atomic::load(_dependency_context_addr);
+  return AtomicAccess::load(_dependency_context_addr);
 }
 
 // After the gc_prologue, the dependency contexts may be claimed by the GC
@@ -314,7 +314,7 @@ nmethodBucket* DependencyContext::dependencies() {
 void DependencyContext::cleaning_start() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be");
   uint64_t epoch = ++_cleaning_epoch_monotonic;
-  Atomic::store(&_cleaning_epoch, epoch);
+  AtomicAccess::store(&_cleaning_epoch, epoch);
 }
 
 // The epilogue marks the end of dependency context cleanup by the GC,
@@ -324,7 +324,7 @@ void DependencyContext::cleaning_start() {
 // was called. That allows dependency contexts to be cleaned concurrently.
 void DependencyContext::cleaning_end() {
   uint64_t epoch = 0;
-  Atomic::store(&_cleaning_epoch, epoch);
+  AtomicAccess::store(&_cleaning_epoch, epoch);
 }
 
 // This function skips over nmethodBuckets in the list corresponding to
@@ -336,17 +336,17 @@ nmethodBucket* nmethodBucket::next_not_unloading() {
   for (;;) {
     // Do not need acquire because the loaded entry can never be
     // concurrently inserted.
-    nmethodBucket* next = Atomic::load(&_next);
+    nmethodBucket* next = AtomicAccess::load(&_next);
     if (next == nullptr || !next->get_nmethod()->is_unloading()) {
       return next;
     }
-    nmethodBucket* next_next = Atomic::load(&next->_next);
+    nmethodBucket* next_next = AtomicAccess::load(&next->_next);
     OrderAccess::loadload();
-    if (Atomic::load(&_next) != next) {
+    if (AtomicAccess::load(&_next) != next) {
       // Unstable load of next w.r.t. next->next
       continue;
     }
-    if (Atomic::cmpxchg(&_next, next, next_next) == next) {
+    if (AtomicAccess::cmpxchg(&_next, next, next_next) == next) {
       // Release is_unloading entries if unlinking was claimed
       DependencyContext::release(next);
     }
@@ -355,17 +355,17 @@ nmethodBucket* nmethodBucket::next_not_unloading() {
 
 // Relaxed accessors
 nmethodBucket* nmethodBucket::next() {
-  return Atomic::load(&_next);
+  return AtomicAccess::load(&_next);
 }
 
 void nmethodBucket::set_next(nmethodBucket* b) {
-  Atomic::store(&_next, b);
+  AtomicAccess::store(&_next, b);
 }
 
 nmethodBucket* nmethodBucket::purge_list_next() {
-  return Atomic::load(&_purge_list_next);
+  return AtomicAccess::load(&_purge_list_next);
 }
 
 void nmethodBucket::set_purge_list_next(nmethodBucket* b) {
-  Atomic::store(&_purge_list_next, b);
+  AtomicAccess::store(&_purge_list_next, b);
 }

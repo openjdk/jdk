@@ -118,6 +118,11 @@
   develop(bool, ZVerifyOops, false,                                         \
           "Verify accessed oops")                                           \
                                                                             \
+  develop(size_t, ZFailLargerCommits, 0,                                    \
+          "Commits larger than ZFailLargerCommits will be truncated, "      \
+          "used to stress page allocation commit failure paths "            \
+          "(0: Disabled)")                                                  \
+                                                                            \
   develop(uint, ZFakeNUMA, 1,                                               \
           "ZFakeNUMA is used to test the internal NUMA memory support "     \
           "without the need for UseNUMA")                                   \

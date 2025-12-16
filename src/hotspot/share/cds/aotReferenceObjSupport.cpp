@@ -153,6 +153,9 @@ void AOTReferenceObjSupport::stabilize_cached_reference_objects(TRAPS) {
 
       _keep_alive_objs_array = OopHandle(Universe::vm_global(), result.get_oop());
     }
+
+    // Trigger a GC to prune eligible referents that were not kept alive
+    Universe::heap()->collect(GCCause::_java_lang_system_gc);
   }
 }
 
@@ -209,7 +212,7 @@ bool AOTReferenceObjSupport::check_if_ref_obj(oop obj) {
       log_error(aot, heap)("%s", (referent == nullptr) ?
                            "referent cannot be null" : "referent is not registered with CDS.keepAlive()");
       HeapShared::debug_trace();
-      MetaspaceShared::unrecoverable_writing_error();
+      AOTMetaspace::unrecoverable_writing_error();
     }
 
     if (log_is_enabled(Info, aot, ref)) {

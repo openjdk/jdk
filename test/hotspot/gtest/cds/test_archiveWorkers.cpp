@@ -32,11 +32,11 @@ private:
 public:
   TestArchiveWorkerTask() : ArchiveWorkerTask("Test"), _sum(0), _max(0) {}
   void work(int chunk, int max_chunks) override {
-    Atomic::add(&_sum, chunk);
-    Atomic::store(&_max, max_chunks);
+    AtomicAccess::add(&_sum, chunk);
+    AtomicAccess::store(&_max, max_chunks);
   }
-  int sum() { return Atomic::load(&_sum); }
-  int max() { return Atomic::load(&_max); }
+  int sum() { return AtomicAccess::load(&_sum); }
+  int max() { return AtomicAccess::load(&_max); }
 };
 
 // Test a repeated cycle of workers init/shutdown without task works.

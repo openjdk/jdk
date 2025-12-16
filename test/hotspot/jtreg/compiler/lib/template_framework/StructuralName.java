@@ -24,6 +24,7 @@
 package compiler.lib.template_framework;
 
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * {@link StructuralName}s represent things like method and class names, and can be added to the local
@@ -89,16 +90,34 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
             this(null, null);
         }
 
+        // Wrap the FilteredSet as a Predicate.
+        private record StructuralNamePredicate(FilteredSet fs) implements NameSet.Predicate {
+            public boolean check(Name type) {
+                return fs.check(type);
+            }
+            public String toString() {
+                return fs.toString();
+            }
+        }
+
         NameSet.Predicate predicate() {
             if (subtype == null && supertype == null) {
                 throw new UnsupportedOperationException("Must first call 'subtypeOf', 'supertypeOf', or 'exactOf'.");
             }
-            return (Name name) -> {
-                if (!(name instanceof StructuralName structuralName)) { return false; }
-                if (subtype != null && !structuralName.type().isSubtypeOf(subtype)) { return false; }
-                if (supertype != null && !supertype.isSubtypeOf(structuralName.type())) { return false; }
-                return true;
-            };
+            return new StructuralNamePredicate(this);
+        }
+
+        boolean check(Name name) {
+            if (!(name instanceof StructuralName structuralName)) { return false; }
+            if (subtype != null && !structuralName.type().isSubtypeOf(subtype)) { return false; }
+            if (supertype != null && !supertype.isSubtypeOf(structuralName.type())) { return false; }
+            return true;
+        }
+
+        public String toString() {
+            String msg1 = (subtype == null) ? "" : " subtypeOf(" + subtype + ")";
+            String msg2 = (supertype == null) ? "" : " supertypeOf(" + supertype + ")";
+            return "StructuralName.FilteredSet(" + msg1 + msg2 + ")";
         }
 
         /**
@@ -146,55 +165,125 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
 
         /**
          * Samples a random {@link StructuralName} from the filtered set, according to the weights
-         * of the contained {@link StructuralName}s.
+         * of the contained {@link StructuralName}s, making the sampled {@link StructuralName}
+         * available to an inner scope.
          *
-         * @return The sampled {@link StructuralName}.
-         * @throws UnsupportedOperationException If the type was not constrained with either of
-         *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
-         * @throws RendererException If the set was empty.
-         */
-        public StructuralName sample() {
-            StructuralName n = (StructuralName)Renderer.getCurrent().sampleName(predicate());
-            if (n == null) {
-                String msg1 = (subtype == null) ? "" : " subtypeOf(" + subtype + ")";
-                String msg2 = (supertype == null) ? "" : " supertypeOf(" + supertype + ")";
-                throw new RendererException("No variable:" + msg1 + msg2 + ".");
-            }
-            return n;
-        }
-
-        /**
-         * Counts the number of {@link StructuralName}s in the filtered set.
-         *
-         * @return The number of {@link StructuralName}s in the filtered set.
+         * @param function The {@link Function} that creates the inner {@link ScopeToken} given
+         *                 the sampled {@link StructuralName}.
+         * @return a token that represents the sampling and inner scope.
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
-        public int count() {
-            return Renderer.getCurrent().countNames(predicate());
+        public Token sample(Function<StructuralName, ScopeToken> function) {
+            return new NameSampleToken<>(predicate(), null, null, function);
         }
 
         /**
-         * Checks if there are any {@link StructuralName}s in the filtered set.
+         * Samples a random {@link StructuralName} from the filtered set, according to the weights
+         * of the contained {@link StructuralName}s, and makes a hashtag replacement for both
+         * the name and type of the {@link StructuralName}, in the current scope.
          *
-         * @return Returns {@code true} iff there is at least one {@link StructuralName} in the filtered set.
+         * @param name the key of the hashtag replacement for the {@link StructuralName} name.
+         * @param type the key of the hashtag replacement for the {@link StructuralName} type.
+         * @return a token that represents the sampling and hashtag replacement definition.
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
-        public boolean hasAny() {
-            return Renderer.getCurrent().hasAnyNames(predicate());
+        public Token sampleAndLetAs(String name, String type) {
+            return new NameSampleToken<StructuralName>(predicate(), name, type, n -> Template.transparentScope());
         }
 
         /**
-         * Collects all {@link StructuralName}s in the filtered set.
+         * Samples a random {@link StructuralName} from the filtered set, according to the weights
+         * of the contained {@link StructuralName}s, and makes a hashtag replacement for the
+         * name of the {@link StructuralName}, in the current scope.
          *
+         * @param name the key of the hashtag replacement for the {@link StructuralName} name.
+         * @return a token that represents the sampling and hashtag replacement definition.
+         * @throws UnsupportedOperationException If the type was not constrained with either of
+         *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
+         */
+        public Token sampleAndLetAs(String name) {
+            return new NameSampleToken<StructuralName>(predicate(), name, null, n -> Template.transparentScope());
+        }
+
+        /**
+         * Counts the number of {@link StructuralName}s in the filtered set, making the count
+         * available to an inner scope.
+         *
+         * @param function The {@link Function} that creates the inner {@link ScopeToken} given
+         *                 the count.
+         * @return a token that represents the counting and inner scope.
+         * @throws UnsupportedOperationException If the type was not constrained with either of
+         *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
+         */
+        public Token count(Function<Integer, ScopeToken> function) {
+            return new NameCountToken(predicate(), function);
+        }
+
+        /**
+         * Checks if there are any {@link StructuralName}s in the filtered set, making the resulting boolean
+         * available to an inner scope.
+         *
+         * @param function The {@link Function} that creates the inner {@link ScopeToken} given
+         *                 the boolean indicating iff there are any {@link StructuralName}s in the filtered set.
+         * @return a token that represents the checking and inner scope.
+         * @throws UnsupportedOperationException If the type was not constrained with either of
+         *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
+         */
+        public Token hasAny(Function<Boolean, ScopeToken> function) {
+            return new NameHasAnyToken(predicate(), function);
+        }
+        /**
+         * Collects all {@link StructuralName}s in the filtered set, making the collected list
+         * available to an inner scope.
+         *
+         * @param function The {@link Function} that creates the inner {@link ScopeToken} given
+         *                 the list of {@link StructuralName}.
          * @return A {@link List} of all {@link StructuralName}s in the filtered set.
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
-        public List<StructuralName> toList() {
-            List<Name> list = Renderer.getCurrent().listNames(predicate());
-            return list.stream().map(n -> (StructuralName)n).toList();
+        public Token toList(Function<List<StructuralName>, ScopeToken> function) {
+            return new NamesToListToken<>(predicate(), function);
+        }
+
+        /**
+         * Calls the provided {@code function} for each {@link StructuralName}s in the filtered set,
+         * making each of these {@link StructuralName}s available to a separate inner scope.
+         *
+         * @param function The {@link Function} that is called to create the inner {@link ScopeToken}s
+         *                 for each of the {@link StructuralName}s in the filtereds set.
+         * @return The token representing the for-each execution and the respective inner scopes.
+         * @throws UnsupportedOperationException If the type was not constrained with either of
+         *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
+         */
+        public Token forEach(Function<StructuralName, ScopeToken> function) {
+            return new NameForEachToken<>(predicate(), null, null, function);
+        }
+
+        /**
+         * Calls the provided {@code function} for each {@link StructuralName}s in the filtered set,
+         * making each of these {@link StructuralName}s available to a separate inner scope, and additionally
+         * setting hashtag replacements for the {@code name} and {@code type} of the respective
+         * {@link StructuralName}s.
+         *
+         * <p>
+         * Note, to avoid duplication of the {@code name} and {@code type}
+         * hashtag replacements, the scope created by the provided {@code function} should be
+         * non-transparent to hashtag replacements, for example {@link Template#scope} or
+         * {@link Template#hashtagScope}.
+         *
+         * @param name the key of the hashtag replacement for each individual {@link StructuralName} name.
+         * @param type the key of the hashtag replacement for each individual {@link StructuralName} type.
+         * @param function The {@link Function} that is called to create the inner {@link ScopeToken}s
+         *                 for each of the {@link StructuralName}s in the filtereds set.
+         * @return The token representing the for-each execution and the respective inner scopes.
+         * @throws UnsupportedOperationException If the type was not constrained with either of
+         *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
+         */
+        public Token forEach(String name, String type, Function<StructuralName, ScopeToken> function) {
+            return new NameForEachToken<>(predicate(), name, type, function);
         }
     }
 }

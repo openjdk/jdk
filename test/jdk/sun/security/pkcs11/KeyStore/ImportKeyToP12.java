@@ -42,7 +42,7 @@ import javax.crypto.spec.SecretKeySpec;
  *          applied to PKCS #12 keystores
  * @library /test/lib ..
  * @modules java.base/sun.security.util
- * @run main/othervm/timeout=30 ImportKeyToP12
+ * @run main/othervm/timeout=120 ImportKeyToP12
  */
 
 public final class ImportKeyToP12 extends PKCS11Test {

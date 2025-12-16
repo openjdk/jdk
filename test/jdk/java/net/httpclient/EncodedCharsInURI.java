@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
  */
 //*        -Djdk.internal.httpclient.debug=true
 
+import jdk.httpclient.test.lib.http3.Http3TestServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterTest;
@@ -78,6 +79,8 @@ import static java.lang.System.err;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static org.testng.Assert.assertEquals;
@@ -92,6 +95,7 @@ public class EncodedCharsInURI implements HttpServerAdapters {
     HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
     DummyServer    httpDummyServer;   // HTTP/1.1    [ 2 servers ]
     DummyServer    httpsDummyServer;  // HTTPS/1.1
+    HttpTestServer http3TestServer;   // HTTP/3 ( h3  )
     String httpURI_fixed;
     String httpURI_chunk;
     String httpsURI_fixed;
@@ -100,6 +104,9 @@ public class EncodedCharsInURI implements HttpServerAdapters {
     String http2URI_chunk;
     String https2URI_fixed;
     String https2URI_chunk;
+    String http3URI_fixed;
+    String http3URI_chunk;
+    String http3URI_head;
     String httpDummy;
     String httpsDummy;
 
@@ -169,6 +176,8 @@ public class EncodedCharsInURI implements HttpServerAdapters {
         return new String[] {
                 httpDummy,
                 httpsDummy,
+                http3URI_fixed,
+                http3URI_chunk,
                 httpURI_fixed,
                 httpURI_chunk,
                 httpsURI_fixed,
@@ -202,12 +211,39 @@ public class EncodedCharsInURI implements HttpServerAdapters {
             return HTTP_1_1;
         if (uri.contains("/http2/") || uri.contains("/https2/"))
             return HTTP_2;
+        if (uri.contains("/http3/"))
+            return HTTP_3;
         return null;
+    }
+
+    HttpRequest.Builder newRequestBuilder(String uri) {
+        var builder = HttpRequest.newBuilder(URI.create(uri));
+        if (version(uri) == HTTP_3) {
+            builder.version(HTTP_3);
+            builder.setOption(H3_DISCOVERY, http3TestServer.h3DiscoveryConfig());
+        }
+        return builder;
+    }
+
+    HttpResponse<String> headRequest(HttpClient client)
+            throws IOException, InterruptedException
+    {
+        out.println("\n" + now() + "--- Sending HEAD request ----\n");
+        err.println("\n" + now() + "--- Sending HEAD request ----\n");
+
+        var request = newRequestBuilder(http3URI_head)
+                .HEAD().version(HTTP_2).build();
+        var response = client.send(request, BodyHandlers.ofString());
+        assertEquals(response.statusCode(), 200);
+        assertEquals(response.version(), HTTP_2);
+        out.println("\n" + now() + "--- HEAD request succeeded ----\n");
+        err.println("\n" + now() + "--- HEAD request succeeded ----\n");
+        return response;
     }
 
     private HttpClient makeNewClient() {
         clientCount.incrementAndGet();
-        return HttpClient.newBuilder()
+        return newClientBuilderForH3()
                 .executor(executor)
                 .proxy(NO_PROXY)
                 .sslContext(sslContext)
@@ -246,11 +282,14 @@ public class EncodedCharsInURI implements HttpServerAdapters {
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null) {
                 client = newHttpClient(sameClient);
+                if (!sameClient && version(uri) == HTTP_3) {
+                    headRequest(client);
+                }
             }
             try (var cl = new CloseableClient(client, sameClient)) {
                 BodyPublisher bodyPublisher = BodyPublishers.ofString(uri);
 
-                HttpRequest req = HttpRequest.newBuilder(URI.create(uri))
+                HttpRequest req = newRequestBuilder(uri)
                         .POST(bodyPublisher)
                         .build();
                 BodyHandler<String> handler = BodyHandlers.ofString();
@@ -314,15 +353,27 @@ public class EncodedCharsInURI implements HttpServerAdapters {
         httpDummy = "http://" + httpDummyServer.serverAuthority() + "/http1/dummy/x";
         httpsDummy = "https://" + httpsDummyServer.serverAuthority() + "/https1/dummy/x";
 
+        // HTTP/3
+        HttpTestHandler h3_fixedLengthHandler = new HTTP_FixedLengthHandler();
+        HttpTestHandler h3_chunkedHandler = new HTTP_ChunkedHandler();
+        http3TestServer = HttpTestServer.create(HTTP_3, sslContext);
+        http3TestServer.addHandler(h3_fixedLengthHandler, "/http3/fixed");
+        http3TestServer.addHandler(h3_chunkedHandler, "/http3/chunk");
+        http3TestServer.addHandler(new HttpHeadOrGetHandler(), "/http3/head");
+        http3URI_fixed = "https://" + http3TestServer.serverAuthority() + "/http3/fixed/x";
+        http3URI_chunk = "https://" + http3TestServer.serverAuthority() + "/http3/chunk/x";
+        http3URI_head = "https://" + http3TestServer.serverAuthority() + "/http3/head/x";
+
         err.println(now() + "Starting servers");
 
-        serverCount.addAndGet(6);
+        serverCount.addAndGet(7);
         httpTestServer.start();
         httpsTestServer.start();
         http2TestServer.start();
         https2TestServer.start();
         httpDummyServer.start();
         httpsDummyServer.start();
+        http3TestServer.start();
 
         out.println("HTTP/1.1 dummy server (http) listening at: " + httpDummyServer.serverAuthority());
         out.println("HTTP/1.1 dummy server (TLS)  listening at: " + httpsDummyServer.serverAuthority());
@@ -330,6 +381,11 @@ public class EncodedCharsInURI implements HttpServerAdapters {
         out.println("HTTP/1.1 server       (TLS)  listening at: " + httpsTestServer.serverAuthority());
         out.println("HTTP/2   server       (h2c)  listening at: " + http2TestServer.serverAuthority());
         out.println("HTTP/2   server       (h2)   listening at: " + https2TestServer.serverAuthority());
+        out.println("HTTP/3   server       (h2)   listening at: " + http3TestServer.serverAuthority());
+        out.println(" + alt endpoint       (h3)   listening at: " + http3TestServer.getH3AltService()
+                .map(Http3TestServer::getAddress));
+
+        headRequest(newHttpClient(true));
 
         out.println(now() + "setup done");
         err.println(now() + "setup done");
@@ -342,6 +398,7 @@ public class EncodedCharsInURI implements HttpServerAdapters {
         httpsTestServer.stop();
         http2TestServer.stop();
         https2TestServer.stop();
+        http3TestServer.stop();
         httpDummyServer.stopServer();
         httpsDummyServer.stopServer();
     }

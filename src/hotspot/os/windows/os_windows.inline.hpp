@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,8 +61,6 @@ inline void os::map_stack_shadow_pages(address sp) {
          "shadow_zone_safe_limit=" INTPTR_FORMAT, p2i(original_sp), p2i(state->shadow_zone_safe_limit()));
   state->set_shadow_zone_growth_watermark(original_sp);
 }
-
-inline bool os::numa_has_group_homing()     { return false;  }
 
 // Platform Mutex/Monitor implementation
 

@@ -39,7 +39,8 @@
 #include "utilities/hashTable.hpp"
 #include "utilities/resizableHashTable.hpp"
 
-class ArchiveHeapInfo;
+class ArchiveMappedHeapInfo;
+class ArchiveStreamedHeapInfo;
 class CHeapBitMap;
 class FileMapInfo;
 class Klass;
@@ -93,6 +94,8 @@ constexpr size_t SharedSpaceObjectAlignment = Metaspace::min_allocation_alignmen
 //    buffered_address + _buffer_to_requested_delta == requested_address
 //
 class ArchiveBuilder : public StackObj {
+  friend class AOTMapLogger;
+
 protected:
   DumpRegion* _current_dump_region;
   address _buffer_bottom;                      // for writing the contents of rw/ro regions
@@ -202,8 +205,6 @@ private:
     SourceObjInfo* at(int i) const { return objs()->at(i); }
   };
 
-  class CDSMapLogger;
-
   static const int INITIAL_TABLE_SIZE = 15889;
   static const int MAX_TABLE_SIZE     = 1000000;
 
@@ -245,9 +246,11 @@ private:
     size_t _num_nulled_ptrs;
   } _relocated_ptr_info;
 
-  void print_region_stats(FileMapInfo *map_info, ArchiveHeapInfo* heap_info);
+  void print_region_stats(FileMapInfo *map_info,
+                          ArchiveMappedHeapInfo* mapped_heap_info,
+                          ArchiveStreamedHeapInfo* streamed_heap_info);
   void print_bitmap_region_stats(size_t size, size_t total_size);
-  void print_heap_region_stats(ArchiveHeapInfo* heap_info, size_t total_size);
+  void print_heap_region_stats(char* start, size_t size, size_t total_size);
 
   // For global access.
   static ArchiveBuilder* _current;
@@ -316,6 +319,12 @@ public:
     return (T)(address(obj) + _buffer_to_requested_delta);
   }
 
+  template <typename T> T requested_to_buffered(T obj) const {
+    T b = (T)(address(obj) - _buffer_to_requested_delta);
+    assert(is_in_buffer_space(b), "must be");
+    return b;
+  }
+
   static intx get_buffer_to_requested_delta() {
     return current()->buffer_to_requested_delta();
   }
@@ -376,7 +385,6 @@ public:
   bool gather_klass_and_symbol(MetaspaceClosure::Ref* ref, bool read_only);
   bool gather_one_source_obj(MetaspaceClosure::Ref* ref, bool read_only);
   void remember_embedded_pointer_in_enclosing_obj(MetaspaceClosure::Ref* ref);
-  static void serialize_dynamic_archivable_items(SerializeClosure* soc);
 
   DumpRegion* pz_region() { return &_pz_region; }
   DumpRegion* rw_region() { return &_rw_region; }
@@ -429,7 +437,9 @@ public:
   void make_klasses_shareable();
   void make_training_data_shareable();
   void relocate_to_requested();
-  void write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_info);
+  void write_archive(FileMapInfo* mapinfo,
+                     ArchiveMappedHeapInfo* mapped_heap_info,
+                     ArchiveStreamedHeapInfo* streamed_heap_info);
   void write_region(FileMapInfo* mapinfo, int region_idx, DumpRegion* dump_region,
                     bool read_only,  bool allow_exec);
 
@@ -497,6 +507,7 @@ public:
     return (Symbol*)current()->get_buffered_addr((address)src_symbol);
   }
 
+  static void log_as_hex(address base, address top, address requested_base, bool is_heap = false);
   void print_stats();
   void report_out_of_space(const char* name, size_t needed_bytes);
 

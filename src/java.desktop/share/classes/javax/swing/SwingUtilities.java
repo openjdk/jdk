@@ -49,10 +49,6 @@ import sun.awt.AWTAccessor.MouseEventAccessor;
  */
 public class SwingUtilities implements SwingConstants
 {
-    // These states are system-wide, rather than AppContext wide.
-    private static boolean canAccessEventQueue = false;
-    private static boolean eventQueueTested = false;
-
     /**
      * Indicates if we should change the drop target when a
      * {@code TransferHandler} is set.
@@ -1817,6 +1813,9 @@ public class SwingUtilities implements SwingConstants
 
         while (map != null) {
             InputMap parent = map.getParent();
+            if (uiInputMap == null) {
+                map.clear();
+            }
             if (parent == null || (parent instanceof UIResource)) {
                 map.setParent(uiInputMap);
                 return;
@@ -1841,6 +1840,9 @@ public class SwingUtilities implements SwingConstants
 
         while (map != null) {
             ActionMap parent = map.getParent();
+            if (uiActionMap == null) {
+                map.clear();
+            }
             if (parent == null || (parent instanceof UIResource)) {
                 map.setParent(uiActionMap);
                 return;

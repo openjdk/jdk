@@ -234,12 +234,10 @@ void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
 void MonitorExitStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   // Move address of the BasicObjectLock into Z_R1_scratch.
-  if (_compute_lock) {
-    // Lock_reg was destroyed by fast unlocking attempt => recompute it.
-    ce->monitor_address(_monitor_ix, FrameMap::as_opr(Z_R1_scratch));
-  } else {
-    __ lgr_if_needed(Z_R1_scratch, _lock_reg->as_register());
-  }
+
+  // Lock_reg was destroyed by fast unlocking attempt => recompute it.
+  ce->monitor_address(_monitor_ix, FrameMap::as_opr(Z_R1_scratch));
+
   // Note: non-blocking leaf routine => no call info needed.
   StubId exit_id;
   if (ce->compilation()->has_fpu_code()) {

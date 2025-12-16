@@ -40,7 +40,7 @@
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
@@ -300,7 +300,7 @@ JvmtiBreakpoints *JvmtiCurrentBreakpoints::_jvmti_breakpoints  = nullptr;
 JvmtiBreakpoints& JvmtiCurrentBreakpoints::get_jvmti_breakpoints() {
   if (_jvmti_breakpoints == nullptr) {
     JvmtiBreakpoints* breakpoints = new JvmtiBreakpoints();
-    if (!Atomic::replace_if_null(&_jvmti_breakpoints, breakpoints)) {
+    if (!AtomicAccess::replace_if_null(&_jvmti_breakpoints, breakpoints)) {
       // already created concurently
       delete breakpoints;
     }

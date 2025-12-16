@@ -155,7 +155,7 @@ public class TestAlwaysPreTouchBehavior {
         }
         if (available > requiredAvailable) {
             Asserts.assertGreaterThan(rss, minRequiredRss, "RSS of this process(" + rss + "b) should be bigger " +
-                                      "than or equal to heap size(" + heapSize + "b) (available memory: " + available + ")");
+                                      "than or equal to heap size(" + heapSize + "b) (available memory: " + available + "). On Linux Kernel < 4.14 RSS can be inaccurate");
         }
     }
 }

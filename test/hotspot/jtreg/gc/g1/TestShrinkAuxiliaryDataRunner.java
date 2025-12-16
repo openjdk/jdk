@@ -29,6 +29,7 @@ package gc.g1;
  * @bug 8038423 8061715
  * @summary Checks that decommitment occurs for JVM with different ObjectAlignmentInBytes values
  * @requires vm.gc.G1
+ * @requires !vm.opt.final.UseLargePages
  * @library /test/lib
  * @library /
  * @modules java.base/jdk.internal.misc

@@ -481,6 +481,8 @@ void PhaseIdealLoop::do_multiversioning(IdealLoopTree* lpt, Node_List& old_new) 
 //                                                         |
 //                                                      slow_path
 //
+// For more descriptions on multiversioning:
+// See: PhaseIdealLoop::maybe_multiversion_for_auto_vectorization_runtime_checks
 IfTrueNode* PhaseIdealLoop::create_new_if_for_multiversion(IfTrueNode* multiversioning_fast_proj) {
   // Give all nodes in the old sub-graph a name.
   IfNode* multiversion_if = multiversioning_fast_proj->in(0)->as_If();
@@ -518,9 +520,12 @@ IfTrueNode* PhaseIdealLoop::create_new_if_for_multiversion(IfTrueNode* multivers
   region->add_req(new_if_false);
   register_control(region, lp, new_multiversion_slow_proj);
 
-  // Hook region into slow_path, in stead of the multiversion_slow_proj.
+  // Hook region into slow_path, instead of the multiversion_slow_proj.
   // This also moves all other dependencies of the multiversion_slow_proj to the region.
-  _igvn.replace_node(multiversion_slow_proj, region);
+  // The replace_node_and_forward_ctrl ensures that any get_ctrl that used to have
+  // multiversion_slow_proj as their control are forwarded to the new region node as
+  // their control.
+  replace_node_and_forward_ctrl(multiversion_slow_proj, region);
 
   return new_if_true;
 }

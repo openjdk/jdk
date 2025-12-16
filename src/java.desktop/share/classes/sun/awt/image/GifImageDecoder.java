@@ -343,6 +343,7 @@ public class GifImageDecoder extends ImageDecoder {
     private short[] prefix  = new short[4096];
     private byte[]  suffix  = new byte[4096];
     private byte[]  outCode = new byte[4097];
+    private boolean isSavedModelReliable = true;
 
     private static native void initIDs();
 
@@ -396,7 +397,7 @@ public class GifImageDecoder extends ImageDecoder {
         int off = y * global_width + x2;
         boolean save = (curframe.disposal_method == GifFrame.DISPOSAL_SAVE);
         if (trans_pixel >= 0 && !curframe.initialframe) {
-            if (saved_image != null && model.equals(saved_model)) {
+            if (saved_image != null && model.equals(saved_model) && isSavedModelReliable) {
                 for (int i = rasbeg; i < rasend; i++, off++) {
                     byte pixel = rasline[i];
                     if ((pixel & 0xff) == trans_pixel) {
@@ -406,6 +407,8 @@ public class GifImageDecoder extends ImageDecoder {
                     }
                 }
             } else {
+                isSavedModelReliable = false;
+
                 // We have to do this the hard way - only transmit
                 // the non-transparent sections of the line...
                 // Fix for 6301050: the interlacing is ignored in this case
@@ -597,6 +600,7 @@ public class GifImageDecoder extends ImageDecoder {
             }
             return false;
         }
+
         boolean ret = parseImage(x, y, width, height,
                                  interlace, initCodeSize,
                                  block, rasline, model);

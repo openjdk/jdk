@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,28 +25,29 @@
  * @test
  * @summary Test input/output
  * @build KullaTesting TestingInputStream
- * @run testng IOTest
+ * @run junit IOTest
  */
 
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
-import static org.testng.Assert.assertEquals;
-
-@Test
 public class IOTest extends KullaTesting {
 
     String LINE_SEPARATOR = System.getProperty("line.separator");
 
+    @Test
     public void testOutput() {
         assertEval("System.out.println(\"Test\");");
-        assertEquals(getOutput(), "Test" + LINE_SEPARATOR);
+        assertEquals("Test" + LINE_SEPARATOR, getOutput());
     }
 
+    @Test
     public void testErrorOutput() {
         assertEval("System.err.println(\"Oops\");");
-        assertEquals(getErrorOutput(), "Oops" + LINE_SEPARATOR);
+        assertEquals("Oops" + LINE_SEPARATOR, getErrorOutput());
     }
 
+    @Test
     public void testInput() {
         setInput("x");
         assertEval("(char)System.in.read();", "'x'");

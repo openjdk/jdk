@@ -24,6 +24,7 @@
 
 #include "runtime/threadLocalStorage.hpp"
 #include "utilities/debug.hpp"
+
 #include <pthread.h>
 
 static pthread_key_t _thread_key;

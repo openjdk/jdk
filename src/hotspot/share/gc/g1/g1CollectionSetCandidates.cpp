@@ -27,7 +27,7 @@
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "utilities/growableArray.hpp"
 
-uint G1CSetCandidateGroup::_next_group_id = 2;
+uint G1CSetCandidateGroup::_next_group_id = G1CSetCandidateGroup::InitialId;
 
 G1CSetCandidateGroup::G1CSetCandidateGroup(G1CardSetConfiguration* config, G1MonotonicArenaFreePool* card_set_freelist_pool, uint group_id) :
   _candidates(4, mtGCCardSet),
@@ -59,6 +59,7 @@ void G1CSetCandidateGroup::calculate_efficiency() {
 }
 
 double G1CSetCandidateGroup::liveness_percent() const {
+  assert(length() > 0, "must be");
   size_t capacity = length() * G1HeapRegion::GrainBytes;
   return ((capacity - _reclaimable_bytes) * 100.0) / capacity;
 }
@@ -266,8 +267,6 @@ void G1CollectionSetCandidates::set_candidates_from_marking(G1HeapRegion** candi
   // the same MixedGC.
   uint group_limit = p->calc_min_old_cset_length(num_candidates);
 
-  uint num_added_to_group = 0;
-
   G1CSetCandidateGroup::reset_next_group_id();
   G1CSetCandidateGroup* current = nullptr;
 
@@ -278,7 +277,7 @@ void G1CollectionSetCandidates::set_candidates_from_marking(G1HeapRegion** candi
     assert(!contains(r), "must not contain region %u", r->hrm_index());
     _contains_map[r->hrm_index()] = CandidateOrigin::Marking;
 
-    if (num_added_to_group == group_limit) {
+    if (current->length() == group_limit) {
       if (group_limit != G1OldCSetGroupSize) {
         group_limit = G1OldCSetGroupSize;
       }
@@ -286,10 +285,8 @@ void G1CollectionSetCandidates::set_candidates_from_marking(G1HeapRegion** candi
       _from_marking_groups.append(current);
 
       current = new G1CSetCandidateGroup();
-      num_added_to_group = 0;
     }
     current->add(r);
-    num_added_to_group++;
   }
 
   _from_marking_groups.append(current);

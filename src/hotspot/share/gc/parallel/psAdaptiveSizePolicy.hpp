@@ -61,8 +61,7 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
 
   // NEEDS_CLEANUP this is a singleton object
   PSAdaptiveSizePolicy(size_t space_alignment,
-                       double gc_pause_goal_sec,
-                       uint gc_time_ratio);
+                       double gc_pause_goal_sec);
 
   // Methods indicating events of interest to the adaptive size policy,
   // called by GC algorithms. It is the responsibility of users of this

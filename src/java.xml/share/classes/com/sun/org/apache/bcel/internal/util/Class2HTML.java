@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -53,7 +53,7 @@ import com.sun.org.apache.bcel.internal.classfile.Utility;
  * All subfiles reference each other appropriately, e.g. clicking on a method in the Method's frame will jump to the
  * appropriate method in the Code frame.
  *
- * @LastModified: Feb 2023
+ * @LastModified: Sept 2025
  */
 public class Class2HTML {
 
@@ -73,7 +73,7 @@ public class Class2HTML {
         basicTypes.add("float");
     }
 
-    public static void _main(final String[] argv) throws IOException {
+    public static void main(final String[] argv) throws IOException {
         final String[] fileName = new String[argv.length];
         int files = 0;
         ClassParser parser = null;
@@ -89,7 +89,7 @@ public class Class2HTML {
                 if (argv[i].equals("-d")) { // Specify target directory, default '.'
                     dir = argv[++i];
                     if (!dir.endsWith("" + sep)) {
-                        dir = dir + sep;
+                        dir += sep;
                     }
                     final File store = new File(dir);
                     if (!store.isDirectory()) {
@@ -115,7 +115,7 @@ public class Class2HTML {
                 if (zipFile == null) {
                     parser = new ClassParser(fileName[i]); // Create parser object from file
                 } else {
-                    parser = new ClassParser(zipFile, fileName[i]); // Create parser object from zip file
+                    parser = new ClassParser(zipFile, fileName[i]); // Create parser object from ZIP file
                 }
                 javaClass = parser.parse();
                 new Class2HTML(javaClass, dir);

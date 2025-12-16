@@ -45,7 +45,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import jdk.internal.loader.NativeLibraries;
@@ -206,7 +205,7 @@ public interface JavaLangAccess {
      * Updates the readability so that module m1 reads m2. The new read edge
      * does not result in a strong reference to m2 (m2 can be GC'ed).
      *
-     * This method is the same as m1.addReads(m2) but without a permission check.
+     * This method is the same as m1.addReads(m2) but without a caller check.
      */
     void addReads(Module m1, Module m2);
 
@@ -260,11 +259,11 @@ public interface JavaLangAccess {
     /**
      * Updates module m to allow access to restricted methods.
      */
-    Module addEnableNativeAccess(Module m);
+    void addEnableNativeAccess(Module m);
 
     /**
-     * Updates module named {@code name} in layer {@code layer} to allow access to restricted methods.
-     * Returns true iff the given module exists in the given layer.
+     * Updates module named {@code name} in layer {@code layer} to allow access to
+     * restricted methods. Returns true iff the given module exists in the given layer.
      */
     boolean addEnableNativeAccess(ModuleLayer layer, String name);
 
@@ -274,7 +273,8 @@ public interface JavaLangAccess {
     void addEnableNativeAccessToAllUnnamed();
 
     /**
-     * Ensure that the given module has native access. If not, warn or throw exception depending on the configuration.
+     * Ensure that the given module has native access. If not, warn or throw exception
+     * depending on the configuration.
      * @param m the module in which native access occurred
      * @param owner the owner of the restricted method being called (or the JNI method being bound)
      * @param methodName the name of the restricted method being called (or the JNI method being bound)
@@ -282,6 +282,31 @@ public interface JavaLangAccess {
      * @param jni {@code true}, if this event is related to a JNI method being bound
      */
     void ensureNativeAccess(Module m, Class<?> owner, String methodName, Class<?> currentClass, boolean jni);
+
+    /**
+     * Enable code in all unnamed modules to mutate final instance fields.
+     */
+    void addEnableFinalMutationToAllUnnamed();
+
+    /**
+     * Enable code in a given module to mutate final instance fields.
+     */
+    boolean tryEnableFinalMutation(Module m);
+
+    /**
+     * Return true if code in a given module is allowed to mutate final instance fields.
+     */
+    boolean isFinalMutationEnabled(Module m);
+
+    /**
+     * Return true if a given module has statically exported the given package to a given other module.
+     */
+    boolean isStaticallyExported(Module module, String pn, Module other);
+
+    /**
+     * Return true if a given module has statically opened the given package to a given other module.
+     */
+    boolean isStaticallyOpened(Module module, String pn, Module other);
 
     /**
      * Returns the ServicesCatalog for the given Layer.
@@ -332,7 +357,7 @@ public interface JavaLangAccess {
 
     /**
      * Constructs a new {@code String} by decoding the specified byte array
-     * using the specified {@linkplain java.nio.charset.Charset charset}.
+     * using the specified {@code Charset}.
      * <p>
      * <b>WARNING: The caller of this method shall relinquish and transfer the
      * ownership of the byte array to the callee</b>, since the latter will not
@@ -342,26 +367,24 @@ public interface JavaLangAccess {
      * @param cs the Charset
      * @return the newly created string
      * @throws CharacterCodingException for malformed or unmappable bytes
+     * @throws NullPointerException If {@code bytes} or {@code cs} is null
      */
-    String uncheckedNewStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException;
+    String uncheckedNewStringOrThrow(byte[] bytes, Charset cs) throws CharacterCodingException;
 
     /**
-     * Encode the given string into a sequence of bytes using the specified
-     * {@linkplain java.nio.charset.Charset charset}.
+     * {@return the sequence of bytes obtained by encoding the given string in
+     * the specified {@code Charset}}
      * <p>
      * <b>WARNING: This method returns the {@code byte[]} backing the provided
      * {@code String}, if the input is ASCII. Hence, the returned byte array
      * must not be modified.</b>
-     * <p>
-     * This method throws {@code CharacterCodingException} instead of replacing
-     * when malformed input or unmappable characters are encountered.
      *
      * @param s the string to encode
      * @param cs the charset
-     * @return the encoded bytes
+     * @throws NullPointerException If {@code s} or {@code cs} is null
      * @throws CharacterCodingException for malformed input or unmappable characters
      */
-    byte[] uncheckedGetBytesNoRepl(String s, Charset cs) throws CharacterCodingException;
+    byte[] uncheckedGetBytesOrThrow(String s, Charset cs) throws CharacterCodingException;
 
     /**
      * Get the {@code char} at {@code index} in a {@code byte[]} in internal
@@ -387,13 +410,13 @@ public interface JavaLangAccess {
     void uncheckedPutCharUTF16(byte[] bytes, int index, int ch);
 
     /**
-     * Encode the given string into a sequence of bytes using utf8.
+     * {@return the sequence of bytes obtained by encoding the given string in UTF-8}
      *
      * @param s the string to encode
-     * @return the encoded bytes in utf8
-     * @throws IllegalArgumentException for malformed surrogates
+     * @throws NullPointerException If {@code s} is null
+     * @throws CharacterCodingException For malformed input or unmappable characters
      */
-    byte[] getBytesUTF8NoRepl(String s);
+    byte[] getBytesUTF8OrThrow(String s) throws CharacterCodingException;
 
     /**
      * Inflated copy from {@code byte[]} to {@code char[]}, as defined by
@@ -454,21 +477,6 @@ public interface JavaLangAccess {
      * Get a method handle of string concat helper method
      */
     MethodHandle stringConcatHelper(String name, MethodType methodType);
-
-    /**
-     * Get the string concat initial coder
-     */
-    long stringConcatInitialCoder();
-
-    /**
-     * Update lengthCoder for constant
-     */
-    long stringConcatMix(long lengthCoder, String constant);
-
-    /**
-     * Mix value length and coder into current length and coder.
-     */
-    long stringConcatMix(long lengthCoder, char value);
 
     /**
      * Creates helper for string concatenation.

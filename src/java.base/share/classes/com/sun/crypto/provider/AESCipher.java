@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import java.util.Arrays;
  *
  * @author Valerie Peng
  *
- * @see AESCrypt
+ * @see AES_Crypt
  * @see CipherBlockChaining
  * @see ElectronicCodeBook
  * @see CipherFeedback
@@ -174,7 +174,7 @@ class AESCipher extends CipherSpi {
      * PKCS5Padding.
      */
     protected AESCipher(int keySize) {
-        core = new CipherCore(new AESCrypt(), AESConstants.AES_BLOCK_SIZE);
+        core = new CipherCore(new AES_Crypt(), AESConstants.AES_BLOCK_SIZE);
         fixedKeySize = keySize;
     }
 
@@ -504,7 +504,7 @@ class AESCipher extends CipherSpi {
     protected int engineGetKeySize(Key key) throws InvalidKeyException {
         byte[] encoded = key.getEncoded();
         Arrays.fill(encoded, (byte)0);
-        if (!AESCrypt.isKeySizeValid(encoded.length)) {
+        if (!AES_Crypt.isKeySizeValid(encoded.length)) {
             throw new InvalidKeyException("Invalid AES key length: " +
                                           encoded.length + " bytes");
         }

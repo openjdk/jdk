@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,11 @@
 /*
  * @test
  * @summary Testing Signatures.
- * @bug 8321540 8319463 8357955
+ * @bug 8321540 8319463 8357955 8368050 8367585 8368331
  * @run junit SignaturesTest
  */
 import java.io.IOException;
+import java.lang.classfile.attribute.SignatureAttribute;
 import java.lang.constant.ClassDesc;
 import java.net.URI;
 import java.nio.file.FileSystem;
@@ -35,6 +36,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -48,10 +50,12 @@ import java.lang.classfile.Attributes;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import static helpers.ClassRecord.assertEqualsDeep;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static java.lang.constant.ConstantDescs.*;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 class SignaturesTest {
 
@@ -63,7 +67,7 @@ class SignaturesTest {
                 ClassSignature.of(
                         ClassTypeSig.of(
                                 ClassTypeSig.of(ClassDesc.of("java.util.LinkedHashMap"), TypeArg.of(TypeVarSig.of("K")), TypeArg.of(TypeVarSig.of("V"))),
-                                ClassDesc.of("LinkedHashIterator")),
+                                "LinkedHashIterator"),
                         ClassTypeSig.of(ClassDesc.of("java.util.Iterator"),
                                 TypeArg.of(ClassTypeSig.of(ClassDesc.of("java.util.Map$Entry"), TypeArg.of(TypeVarSig.of("K")), TypeArg.of(TypeVarSig.of("V")))))),
                 ClassSignature.parseFrom("Ljava/util/LinkedHashMap<TK;TV;>.LinkedHashIterator;Ljava/util/Iterator<Ljava/util/Map$Entry<TK;TV;>;>;"));
@@ -117,6 +121,81 @@ class SignaturesTest {
         assertEqualsDeep(
                 ArrayTypeSig.of(2, TypeVarSig.of("E")),
                 Signature.parseFrom("[[TE;"));
+
+        assertEqualsDeep(
+                MethodSignature.of(
+                        List.of(TypeParam.of("A", ClassTypeSig.of("one/Two")), // /
+                                TypeParam.of("B", ClassTypeSig.of(ClassTypeSig.of("Outer"), "Inner")), // .
+                                TypeParam.of("C", ArrayTypeSig.of(BaseTypeSig.of('I'))), // [
+                                TypeParam.of("D", ClassTypeSig.of("Generic", TypeArg.unbounded())), // <
+                                TypeParam.of("E", TypeVarSig.of("A")), // ;
+                                TypeParam.of("F", (ClassTypeSig) null), // :
+                                TypeParam.of("G", (ClassTypeSig) null)), // >
+                        List.of(),
+                        BaseTypeSig.of('V')),
+                MethodSignature.parseFrom("<A:Lone/Two;B:LOuter.Inner;C:[ID:LGeneric<*>;E:TA;F:G:>()V")
+        );
+    }
+
+    @Test
+    void testGenericCreationChecks() {
+        var weirdNameClass = ClassDesc.of("<Unsupported>");
+        var voidSig = BaseTypeSig.of('V');
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Signature.of(weirdNameClass));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> BaseTypeSig.of(CD_Object));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> BaseTypeSig.of(CD_int.arrayType()));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ClassTypeSig.of(CD_int));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ClassTypeSig.of(CD_Object.arrayType()));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ClassTypeSig.of(weirdNameClass));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ArrayTypeSig.of(voidSig));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ArrayTypeSig.of(255, voidSig));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> MethodSignature.of(voidSig, voidSig));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> MethodSignature.of(List.of(), List.of(), voidSig, voidSig));
+    }
+
+    static Stream<String> goodIdentifiers() {
+        return Stream.of("T", "Hello", "Mock", "(Weird)", " Huh? ");
+    }
+
+    static Stream<String> badIdentifiers() {
+        return Stream.of("", ";", ".", "/", "<", ">", "[", ":",
+                "<Unsupported>", "has.chars", "/Outer", "test/", "test//Outer");
+    }
+
+    static Stream<String> slashedIdentifiers() {
+        return Stream.of("test/Outer", "java/lang/Integer");
+    }
+
+    @ParameterizedTest
+    @MethodSource({"badIdentifiers", "slashedIdentifiers"})
+    void testBadSimpleIdentifier(String st) {
+        ClassTypeSig outer = ClassTypeSig.of("test/Outer");
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ClassTypeSig.of(outer, st));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> TypeVarSig.of(st));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> TypeParam.of(st, (RefTypeSig) null));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> TypeParam.of(st, Optional.empty()));
+    }
+
+    @ParameterizedTest
+    @MethodSource("goodIdentifiers")
+    void testGoodSimpleIdentifier(String st) {
+        ClassTypeSig outer = ClassTypeSig.of("test/Outer");
+        ClassTypeSig.of(outer, st);
+        TypeVarSig.of(st);
+        TypeParam.of(st, (RefTypeSig) null);
+        TypeParam.of(st, Optional.empty());
+    }
+
+    @ParameterizedTest
+    @MethodSource("badIdentifiers")
+    void testBadSlashedIdentifier(String st) {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ClassTypeSig.of(st));
+    }
+
+    @ParameterizedTest
+    @MethodSource({"goodIdentifiers", "slashedIdentifiers"})
+    void testGoodSlashedIdentifier(String st) {
+        ClassTypeSig.of(st);
     }
 
     @Test
@@ -192,112 +271,134 @@ class SignaturesTest {
                 "ClassDesc derived from signature");
     }
 
-    @Test
-    void testBadTypeSignatures() {
-        """
-        LObject
-        LObject;B
-        LIterable<LFoo>
-        LIterable<<
-        TBar
-        TBar<LFoo;>
-        B<LFoo;>
-        B<LFoo;>;V
-        X
-        [LObject
-        [LIterable<LFoo>
-        [LIterable<<
-        [TBar
-        [TBar<LFoo;>
-        [B<LFoo;>
-        [X
-        LSet<+Kind<**>;>;
-        LSet<?Kind<*>;>;
-        ()V
-        Ljava/util/Opt<Ljava/lang/Integer;>ional;
-        Lcom/example/Outer<Ljava/lang/String;>.package/Inner<[I>;
-        LSample>;
-        LSample:Other;
-        LOuter<[JTT;>.[Inner;
-        TA:J;
-        LEmpty<>;
-        L
-        Lcom
-        Lcom/example/
-        Lcom/example/Outer<
-        Lcom/example/Outer<Ljava/
-        Lcom/example/Outer<Ljava/lang/String
-        Lcom/example/Outer<Ljava/lang/String;
-        Lcom/example/Outer<Ljava/lang/String;>
-        Lcom/example/Outer<Ljava/lang/String;>.
-        Lcom/example/Outer<Ljava/lang/String;>.Inner<[I>
-        """.lines().forEach(assertThrows(Signature::parseFrom));
+    static Stream<String> badTypeSignatures() {
+        return """
+                LObject
+                LObject;B
+                LIterable<LFoo>
+                LIterable<<
+                TBar
+                TBar<LFoo;>
+                B<LFoo;>
+                B<LFoo;>;V
+                X
+                [LObject
+                [LIterable<LFoo>
+                [LIterable<<
+                [TBar
+                [TBar<LFoo;>
+                [B<LFoo;>
+                [X
+                LSet<+Kind<**>;>;
+                LSet<?Kind<*>;>;
+                ()V
+                Ljava/util/Opt<Ljava/lang/Integer;>ional;
+                Lcom/example/Outer<Ljava/lang/String;>.package/Inner<[I>;
+                LSample>;
+                LSample:Other;
+                LOuter<[JTT;>.[Inner;
+                TA:J;
+                LEmpty<>;
+                L
+                Lcom
+                Lcom/example/
+                Lcom/example/Outer<
+                Lcom/example/Outer<Ljava/
+                Lcom/example/Outer<Ljava/lang/String
+                Lcom/example/Outer<Ljava/lang/String;
+                Lcom/example/Outer<Ljava/lang/String;>
+                Lcom/example/Outer<Ljava/lang/String;>.
+                Lcom/example/Outer<Ljava/lang/String;>.Inner<[I>
+                [V
+                """.lines();
     }
 
-    @Test
-    void testGoodTypeSignatures() {
-        """
-        Ljava/util/Optional<Ljava/lang/Integer;>;
-        Lcom/example/Outer<Ljava/lang/Integer;>.Inner<[I>;
-        LSample;
-        LOuter<[JTT;>.Inner;
-        LOuter.Inner;
-        """.lines().forEach(Signature::parseFrom);
+    @ParameterizedTest
+    @MethodSource("badTypeSignatures")
+    void testBadTypeSignatures(String s) {
+        assertThrows(IllegalArgumentException.class, () -> Signature.parseFrom(s));
     }
 
-    @Test
-    void testBadClassSignatures() {
-        """
-        Ljava/lang/Object;Ljava/lang/Iterable<LFoo;>
-        LObject
-        LObject;B
-        LIterable<LFoo>
-        LIterable<<
-        TBar
-        TBar<LFoo;>
-        B<LFoo;>
-        B<LFoo;>;V
-        X
-        LFoo<TK;>.It;L
-        <K+LObject;>LFoo<TK;;>;LFoo<TK;>;LBar;
-        <K:LObject;>>LFoo<TK;>;
-        <K:LObject;>LFoo<+>;
-        ()V
-        <K:Ljava/lang/Object;>Ljava/lang/Object;TK;
-        Ljava/lang/Object;[Ljava/lang/Object;
-        [Ljava/util/Optional<[I>;
-        [I
-        <K:Ljava/lang/Object;>TK;
-        <K;Q:Ljava/lang/Object;>Ljava/lang/Object;
-        <:Ljava/lang/Object;>Ljava/lang/Object;
-        <>Ljava/lang/Object;
-        """.lines().forEach(assertThrows(ClassSignature::parseFrom));
+    static Stream<String> goodTypeSignatures() {
+        return """
+                Ljava/util/Optional<Ljava/lang/Integer;>;
+                Lcom/example/Outer<Ljava/lang/Integer;>.Inner<[I>;
+                LSample;
+                LOuter<[JTT;>.Inner;
+                LOuter.Inner;
+                """.lines();
     }
 
-    @Test
-    void testBadMethodSignatures() {
-        """
-        LObject;
-        B
-        ()V^
-        ()V^B
-        ()V^X
-        (LObject;)
-        (LObject)V
-        ()LIterable<LFoo>
-        ()LIterable<<
-        ()TBar
-        ()TBar;B
-        (TBar<LFoo;>)V
-        (B<LFoo;>)V
-        (X)
-        ()X
-        ()VB
-        ()LSet<+Kind<**>;>;
-        (LSet<?Kind<*>;>;)V
-        <T::LA>()V
-        (TT;I)VI
-        """.lines().forEach(assertThrows(MethodSignature::parseFrom));
+    @ParameterizedTest
+    @MethodSource("goodTypeSignatures")
+    void testGoodTypeSignature(String s) {
+        Signature.parseFrom(s);
+    }
+
+    static Stream<String> badClassSignatures() {
+        return """
+                Ljava/lang/Object;Ljava/lang/Iterable<LFoo;>
+                LObject
+                LObject;B
+                LIterable<LFoo>
+                LIterable<<
+                TBar
+                TBar<LFoo;>
+                B<LFoo;>
+                B<LFoo;>;V
+                X
+                LFoo<TK;>.It;L
+                <K+LObject;>LFoo<TK;;>;LFoo<TK;>;LBar;
+                <K:LObject;>>LFoo<TK;>;
+                <K:LObject;>LFoo<+>;
+                ()V
+                <K:Ljava/lang/Object;>Ljava/lang/Object;TK;
+                Ljava/lang/Object;[Ljava/lang/Object;
+                [Ljava/util/Optional<[I>;
+                [I
+                <K:Ljava/lang/Object;>TK;
+                <K;Q:Ljava/lang/Object;>Ljava/lang/Object;
+                <:Ljava/lang/Object;>Ljava/lang/Object;
+                <>Ljava/lang/Object;
+                """.lines();
+    }
+
+    @ParameterizedTest
+    @MethodSource("badClassSignatures")
+    void testBadClassSignature(String s) {
+        assertThrows(IllegalArgumentException.class, () -> ClassSignature.parseFrom(s));
+    }
+
+    static Stream<String> badMethodSignatures() {
+        return """
+                LObject;
+                B
+                ()V^
+                ()V^B
+                ()V^X
+                (LObject;)
+                (LObject)V
+                ()LIterable
+                ()LIterable
+                ()TBar
+                ()TBar;B
+                (TBar<LFoo;
+                (B<LFoo;>)V
+                (X)
+                ()X
+                ()VB
+                ()LSet<+Kin
+                (LSet<?Kind
+                <T::LA>()V
+                (TT;I)VI
+                (V)V
+                """.lines();
+    }
+
+    @ParameterizedTest
+    @MethodSource("badMethodSignatures")
+    void testBadMethodSignature(String s) {
+        assertThrows(IllegalArgumentException.class, () -> MethodSignature.parseFrom(s));
     }
 
     @Test
@@ -305,16 +406,76 @@ class SignaturesTest {
         var sig = Signature.parseFrom("I");
         var arrSig = Signature.parseFrom("[I");
         for (int dim : List.of(256, -1, 0))
-            Assertions.assertThrows(IllegalArgumentException.class, () -> Signature.ArrayTypeSig.of(dim, sig));
+            assertThrows(IllegalArgumentException.class, () -> Signature.ArrayTypeSig.of(dim, sig));
         for (int dim : List.of(255, -1, 0))
-            Assertions.assertThrows(IllegalArgumentException.class, () -> Signature.ArrayTypeSig.of(dim, arrSig));
+            assertThrows(IllegalArgumentException.class, () -> Signature.ArrayTypeSig.of(dim, arrSig));
         for (int dim : List.of(255, 1))
             Signature.ArrayTypeSig.of(dim, sig);
         for (int dim : List.of(254, 1))
             Signature.ArrayTypeSig.of(dim, arrSig);
     }
 
-    private Consumer<String> assertThrows(Function<String, ?> parser) {
-        return s -> Assertions.assertThrows(IllegalArgumentException.class, () -> parser.apply(s), s);
+    static Stream<Signature> longTypeSignatures() {
+        var longAsciiName = "A" + "a".repeat(65536);
+        var longCharName = "§".repeat(32768);
+        var simpleClassSig = ClassTypeSig.of(longAsciiName);
+        var nestedSig = ClassTypeSig.of(simpleClassSig, longCharName);
+        var typeVarSig = TypeVarSig.of(longCharName);
+        var parameterizedSig = ClassTypeSig.of(longCharName, TypeArg.of(nestedSig), TypeArg.unbounded());
+        var parameterizedNestedSig = ClassTypeSig.of(nestedSig, longAsciiName, TypeArg.superOf(simpleClassSig));
+        return Stream.of(simpleClassSig, nestedSig, typeVarSig, parameterizedSig, parameterizedNestedSig);
+    }
+
+    @ParameterizedTest
+    @MethodSource("longTypeSignatures")
+    void testLongTypeSignature(Signature sig) {
+        var st = sig.signatureString();
+        Signature.parseFrom(st); // Valid signature
+        assertThrows(IllegalArgumentException.class, () -> SignatureAttribute.of(sig)); // Cannot write to class
+    }
+
+    static Stream<ClassSignature> longClassSignatures() {
+        var longAsciiName = "A" + "a".repeat(65536);
+        var longCharName = "§".repeat(32768);
+        var simpleClassSig = ClassTypeSig.of(longAsciiName);
+        var longSuperClass = ClassSignature.of(simpleClassSig);
+        var longNameParam = TypeParam.of(longCharName, ClassTypeSig.of(CD_String));
+        var longBoundParam = TypeParam.of("T", simpleClassSig);
+        var longNameParamClass = ClassSignature.of(List.of(longNameParam), ClassTypeSig.of(CD_Object));
+        var longBoundParamClass = ClassSignature.of(List.of(longBoundParam), ClassTypeSig.of(CD_Number));
+        return Stream.of(longSuperClass, longNameParamClass, longBoundParamClass);
+    }
+
+    @ParameterizedTest
+    @MethodSource("longClassSignatures")
+    void testLongClassSignature(ClassSignature sig) {
+        var st = sig.signatureString();
+        ClassSignature.parseFrom(st); // Valid signature
+        assertThrows(IllegalArgumentException.class, () -> SignatureAttribute.of(sig)); // Cannot write to class
+    }
+
+    static Stream<MethodSignature> longMethodSignatures() {
+        var longAsciiName = "A" + "a".repeat(65536);
+        var longCharName = "§".repeat(32768);
+        var simpleClassSig = ClassTypeSig.of(longAsciiName);
+        var longNameTypeVar = TypeVarSig.of(longCharName);
+        var longReturnMethod = MethodSignature.of(simpleClassSig);
+        var longNameParam = TypeParam.of(longCharName, ClassTypeSig.of(CD_String));
+        var longNameParamMethod = MethodSignature.of(List.of(longNameParam), List.of(), BaseTypeSig.of(CD_void));
+        var longThrowMethod = MethodSignature.of(List.of(), List.of(longNameTypeVar), ClassTypeSig.of(CD_Number));
+        var longParameterMethod = MethodSignature.of(BaseTypeSig.of(CD_int), simpleClassSig);
+
+        var eachParameter = ClassTypeSig.of("A" + "a".repeat(250));
+        var parameterArray = Collections.nCopies(300, eachParameter).toArray(Signature[]::new);
+        var manyParameterMethod = MethodSignature.of(BaseTypeSig.of(CD_void), parameterArray);
+        return Stream.of(longReturnMethod, longNameParamMethod, longThrowMethod, longParameterMethod, manyParameterMethod);
+    }
+
+    @ParameterizedTest
+    @MethodSource("longMethodSignatures")
+    void testLongMethodSignature(MethodSignature sig) {
+        var st = sig.signatureString();
+        MethodSignature.parseFrom(st); // Valid signature
+        assertThrows(IllegalArgumentException.class, () -> SignatureAttribute.of(sig)); // Cannot write to class
     }
 }

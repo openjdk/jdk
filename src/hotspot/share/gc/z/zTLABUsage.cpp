@@ -23,24 +23,24 @@
 
 #include "gc/z/zTLABUsage.hpp"
 #include "logging/log.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 ZTLABUsage::ZTLABUsage()
   : _used(0),
     _used_history() {}
 
 void ZTLABUsage::increase_used(size_t size) {
-  Atomic::add(&_used, size, memory_order_relaxed);
+  AtomicAccess::add(&_used, size, memory_order_relaxed);
 }
 
 void ZTLABUsage::decrease_used(size_t size) {
   precond(size <= _used);
 
-  Atomic::sub(&_used, size, memory_order_relaxed);
+  AtomicAccess::sub(&_used, size, memory_order_relaxed);
 }
 
 void ZTLABUsage::reset() {
-  const size_t used = Atomic::xchg(&_used, (size_t) 0);
+  const size_t used = AtomicAccess::xchg(&_used, (size_t) 0);
 
   // Avoid updates when nothing has been allocated since the last YC
   if (used == 0) {

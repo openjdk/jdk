@@ -27,8 +27,6 @@ package javax.imageio.stream;
 
 import java.io.InputStream;
 import java.io.IOException;
-import sun.java2d.Disposer;
-import sun.java2d.DisposerRecord;
 
 /**
  * An implementation of {@code ImageInputStream} that gets its
@@ -48,12 +46,6 @@ public class MemoryCacheImageInputStream extends ImageInputStreamImpl {
 
     private MemoryCache cache = new MemoryCache();
 
-    /** The referent to be registered with the Disposer. */
-    private final Object disposerReferent = new Object();
-
-    /** The DisposerRecord that resets the underlying MemoryCache. */
-    private final DisposerRecord disposerRecord;
-
     /**
      * Constructs a {@code MemoryCacheImageInputStream} that will read
      * from a given {@code InputStream}.
@@ -68,9 +60,6 @@ public class MemoryCacheImageInputStream extends ImageInputStreamImpl {
             throw new IllegalArgumentException("stream == null!");
         }
         this.stream = stream;
-
-        disposerRecord = new StreamDisposerRecord(cache);
-        Disposer.addRecord(disposerReferent, disposerRecord);
     }
 
     public int read() throws IOException {
@@ -165,23 +154,8 @@ public class MemoryCacheImageInputStream extends ImageInputStreamImpl {
      */
     public void close() throws IOException {
         super.close();
-        disposerRecord.dispose(); // this resets the MemoryCache
         stream = null;
+        cache.reset();
         cache = null;
-    }
-
-    private static class StreamDisposerRecord implements DisposerRecord {
-        private MemoryCache cache;
-
-        public StreamDisposerRecord(MemoryCache cache) {
-            this.cache = cache;
-        }
-
-        public synchronized void dispose() {
-            if (cache != null) {
-                cache.reset();
-                cache = null;
-            }
-        }
     }
 }

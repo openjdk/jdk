@@ -46,7 +46,9 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This class represents the main entry point to the test framework whose main purpose is to perform regex-based checks on
@@ -325,12 +327,82 @@ public class TestFramework {
 
         for (Scenario scenario : scenarios) {
             int scenarioIndex = scenario.getIndex();
-            TestFormat.checkNoThrow(scenarioIndices.add(scenarioIndex),
-                             "Cannot define two scenarios with the same index " + scenarioIndex);
+            if (!scenarioIndices.add(scenarioIndex)) {
+                TestFormat.failNoThrow("Cannot define two scenarios with the same index " + scenarioIndex);
+                continue;
+            }
             this.scenarios.add(scenario);
         }
         TestFormat.throwIfAnyFailures();
         return this;
+    }
+
+    /**
+     * Add the cross-product (cartesian product) of sets of flags as Scenarios. Unlike when constructing
+     * scenarios directly a string can contain multiple flags separated with a space. This allows grouping
+     * flags that have to be specified together. Further, an empty string in a set stands in for "no flag".
+     * <p>
+     * Passing a single set will create a scenario for each of the provided flags in the set (i.e. the same as
+     * passing an additional set with an empty string only).
+     * <p>
+     * Example:
+     * <pre>
+     *     addCrossProductScenarios(Set.of("", "-Xint", "-Xbatch -XX:-TieredCompilation"),
+     *                              Set.of("-XX:+UseNewCode", "-XX:UseNewCode2"))
+     * </pre>
+     *   produces the following Scenarios
+     * <pre>
+     *     Scenario(0, "-XX:+UseNewCode")
+     *     Scenario(1, "-XX:+UseNewCode2")
+     *     Scenario(2, "-Xint", "-XX:+UseNewCode")
+     *     Scenario(3, "-Xint", "-XX:+UseNewCode2")
+     *     Scenario(4, "-Xbatch -XX:-TieredCompilation", "-XX:+UseNewCode")
+     *     Scenario(5, "-Xbatch -XX:-TieredCompilation", "-XX:+UseNewCode2")
+     * </pre>
+     *
+     * @param flagSets sets of flags to generate the cross product for.
+     * @return the same framework instance.
+     */
+    @SafeVarargs
+    final public TestFramework addCrossProductScenarios(Set<String>... flagSets) {
+        TestFormat.checkAndReport(flagSets != null &&
+                                  Arrays.stream(flagSets).noneMatch(Objects::isNull) &&
+                                  Arrays.stream(flagSets).flatMap(Set::stream).noneMatch(Objects::isNull),
+                                  "Flags must not be null");
+        if (flagSets.length == 0) {
+            return this;
+        }
+
+        int initIdx = 0;
+        if (this.scenarioIndices != null && !this.scenarioIndices.isEmpty()) {
+            initIdx = this.scenarioIndices.stream().max(Comparator.comparingInt(Integer::intValue)).get() + 1;
+        }
+        AtomicInteger idx = new AtomicInteger(initIdx);
+
+        Stream<List<String>> crossProduct = Arrays.stream(flagSets)
+            .reduce(
+                Stream.of(Collections.emptyList()), // Initialize Stream<List<String>> acc with a Stream containing an empty list of Strings.
+                (Stream<List<String>> acc, Set<String> set) ->
+                    acc.flatMap(lAcc -> // For each List<String>> lAcc in acc...
+                        set.stream().map(flag -> { // ...and each flag in the current set...
+                            List<String> newList = new ArrayList<>(lAcc); // ...create a new list containing lAcc...
+                            newList.add(flag); // ...and append the flag.
+                            return newList;
+                        }) // This results in one List<List<String>> for each lAcc...
+                    ), // ...that get flattened into one big List<List<String>>.
+                Stream::concat); // combiner; if any reduction steps are executed in parallel, just concat two streams.
+
+        Scenario[] newScenarios = crossProduct
+            .map(flags -> new Scenario( // For each List<String> flags in crossProduct create a new Scenario.
+                idx.getAndIncrement(),
+                flags.stream() // Process flags
+                     .map(s -> Set.of(s.split("[ ]"))) // Split multiple flags in the same string into separate strings.
+                     .flatMap(Collection::stream) // Flatten the Stream<List<String>> into Stream<String>>.
+                     .filter(s -> !s.isEmpty()) // Remove empty string flags.
+                     .toList()
+                     .toArray(new String[0])))
+            .toList().toArray(new Scenario[0]);
+        return addScenarios(newScenarios);
     }
 
     /**
