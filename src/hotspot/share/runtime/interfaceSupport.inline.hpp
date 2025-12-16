@@ -93,7 +93,7 @@ class ThreadStateTransition : public StackObj {
   // We never install asynchronous exceptions when coming (back) in to the runtime
   // from native code because the runtime is not set up to handle exceptions floating
   // around at arbitrary points.
-  static inline void transition_from_native(JavaThread *thread, JavaThreadState to, bool check_asyncs = true, bool with_exit_check = true) {
+  static inline void transition_from_native(JavaThread *thread, JavaThreadState to, bool check_asyncs = true) {
     assert(thread->thread_state() == _thread_in_native, "coming from wrong thread state");
     assert(to == _thread_in_vm || to == _thread_in_Java, "invalid transition");
     assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native transition");
@@ -103,11 +103,7 @@ class ThreadStateTransition : public StackObj {
     } else {
       thread->set_thread_state(_thread_in_vm);
     }
-    if (with_exit_check) {
-      SafepointMechanism::process_if_requested_with_exit_check(thread, to != _thread_in_Java ? false : check_asyncs);
-    } else {
-      SafepointMechanism::process_if_requested(thread, true /* allow_suspend */, to != _thread_in_Java ? false : check_asyncs);
-    }
+    SafepointMechanism::process_if_requested_with_exit_check(thread, to != _thread_in_Java ? false : check_asyncs);
     thread->set_thread_state(to);
   }
 
@@ -184,18 +180,6 @@ class ThreadInVMfromNative : public ThreadStateTransition {
   }
 };
 
-class ThreadInVMfromNativeNoExitCheck : public ThreadStateTransition {
-  ResetNoHandleMark __rnhm;
- public:
-  ThreadInVMfromNativeNoExitCheck(JavaThread* thread) : ThreadStateTransition(thread) {
-    transition_from_native(thread, _thread_in_vm, true /* check asyncs */, false /* with_exit_check */);
-  }
-  ~ThreadInVMfromNativeNoExitCheck() {
-    // We cannot assert !_thread->owns_locks() since we have valid cases where
-    // we call known native code using this wrapper holding locks.
-    transition_from_vm(_thread, _thread_in_native);
-  }
-};
 
 class ThreadToNativeFromVM : public ThreadStateTransition {
  public:
@@ -378,17 +362,6 @@ extern "C" {                                                         \
     ThreadInVMfromNative __tiv(thread);                              \
     DEBUG_ONLY(VMNativeEntryWrapper __vew;)                          \
     VM_ENTRY_BASE(result_type, header, thread)
-
-#define JNI_CRITICAL_RELEASE_ENTRY(result_type, header)              \
-extern "C" {                                                         \
-  result_type JNICALL header {                                       \
-    JavaThread* thread=JavaThread::thread_from_jni_environment(env); \
-    assert(thread == Thread::current(), "JNIEnv is only valid in same thread"); \
-    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));        \
-    ThreadInVMfromNativeNoExitCheck __tiv(thread);                   \
-    DEBUG_ONLY(VMNativeEntryWrapper __vew;)                          \
-    VM_ENTRY_BASE(result_type, header, thread)                       \
-    WeakPreserveExceptionMark __wem(thread);
 
 
 #define JNI_LEAF(result_type, header)                                \
