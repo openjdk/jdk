@@ -3453,10 +3453,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         }
 
         long intCompact = this.intCompact;
-        // currency fast path
         if (intCompact != INFLATED) {
             long intCompactAbs = Math.abs(intCompact);
             if (scale == 2 & (int) intCompact == intCompactAbs) { // intCompact >= 0 && intCompact <= Integer.MAX_VALUE
+                // currency fast path
                 return scale2((int) intCompact);
             }
             return getCompactValueString(signum, intCompactAbs, DecimalDigits.stringSize(intCompactAbs), scale);
@@ -4195,7 +4195,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         String coeff;
         if (intCompact != INFLATED) {
             long intCompactAbs = Math.abs(intCompact);
-            if (scale == 2 && (int) intCompact == intCompactAbs) { // intCompact >= 0 && intCompact <= Integer.MAX_VALUE
+            if (scale == 2 && (int) intCompact == intCompactAbs) {
+                // currency fast path
                 return scale2((int) intCompact);
             }
             coeffLen = DecimalDigits.stringSize(intCompactAbs);
@@ -4276,6 +4277,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         return buf.toString();
     }
 
+    /**
+     * currency fast path
+     */
     private static String scale2(int intCompact) {
         int highInt = intCompact / 100;
         int lowInt = intCompact - highInt * 100;
@@ -4286,6 +4290,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         DecimalDigits.uncheckedGetCharsLatin1(highInt, highIntSize, buf);
         return JLA.uncheckedNewStringWithLatin1Bytes(buf);
     }
+
     private String unscaledString() {
         return intCompact != INFLATED
                 ? Long.toString(intCompact)
