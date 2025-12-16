@@ -86,7 +86,7 @@ asm (R"(
 _ZN2os21current_stack_pointerEv:
     mv      a0, sp
     ret
-)")
+)");
 
 char* os::non_memory_address_word() {
   // Must never look like an address returned by reserve_memory,
