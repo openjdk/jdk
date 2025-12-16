@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import com.sun.net.httpserver.*;
 import com.sun.net.httpserver.spi.*;
 
 class ChunkedInputStream extends LeftOverInputStream {
-    ChunkedInputStream (ExchangeImpl t, InputStream src) {
+    ChunkedInputStream(ExchangeImpl t, InputStream src) {
         super (t, src);
     }
 
@@ -48,7 +48,7 @@ class ChunkedInputStream extends LeftOverInputStream {
      */
     private static final int MAX_CHUNK_HEADER_SIZE = 2050;
 
-    private int numeric (char[] arr, int nchars) throws IOException {
+    private int numeric(char[] arr, int nchars) throws IOException {
         assert arr.length >= nchars;
         int len = 0;
         for (int i=0; i<nchars; i++) {
@@ -61,7 +61,7 @@ class ChunkedInputStream extends LeftOverInputStream {
             } else if (c>='A' && c<= 'F') {
                 val = c - 'A' + 10;
             } else {
-                throw new IOException ("invalid chunk length");
+                throw new IOException("invalid chunk length");
             }
             len = len * 16 + val;
         }
@@ -71,10 +71,10 @@ class ChunkedInputStream extends LeftOverInputStream {
     /* read the chunk header line and return the chunk length
      * any chunk extensions are ignored
      */
-    private int readChunkHeader () throws IOException {
+    private int readChunkHeader() throws IOException {
         boolean gotCR = false;
         int c;
-        char[] len_arr = new char [16];
+        char[] len_arr = new char[16];
         int len_size = 0;
         boolean end_of_len = false;
         int read = 0;
@@ -85,11 +85,11 @@ class ChunkedInputStream extends LeftOverInputStream {
             if ((len_size == len_arr.length -1) ||
                 (read > MAX_CHUNK_HEADER_SIZE))
             {
-                throw new IOException ("invalid chunk header");
+                throw new IOException("invalid chunk header");
             }
             if (gotCR) {
                 if (ch == LF) {
-                    int l = numeric (len_arr, len_size);
+                    int l = numeric(len_arr, len_size);
                     return l;
                 } else {
                     gotCR = false;
@@ -107,10 +107,10 @@ class ChunkedInputStream extends LeftOverInputStream {
                 }
             }
         }
-        throw new IOException ("end of stream reading chunk header");
+        throw new IOException("end of stream reading chunk header");
     }
 
-    protected int readImpl (byte[]b, int off, int len) throws IOException {
+    protected int readImpl(byte[] b, int off, int len) throws IOException {
         if (eof) {
             return -1;
         }
@@ -119,7 +119,7 @@ class ChunkedInputStream extends LeftOverInputStream {
             if (remaining == 0) {
                 eof = true;
                 consumeCRLF();
-                t.getServerImpl().requestCompleted (t.getConnection());
+                t.getServerImpl().requestCompleted(t.getConnection());
                 return -1;
             }
             needToReadHeader = false;
@@ -140,15 +140,15 @@ class ChunkedInputStream extends LeftOverInputStream {
         return n;
     }
 
-    private void consumeCRLF () throws IOException {
+    private void consumeCRLF() throws IOException {
         char c;
         c = (char)in.read(); /* CR */
         if (c != CR) {
-            throw new IOException ("invalid chunk end");
+            throw new IOException("invalid chunk end");
         }
         c = (char)in.read(); /* LF */
         if (c != LF) {
-            throw new IOException ("invalid chunk end");
+            throw new IOException("invalid chunk end");
         }
     }
 
@@ -158,7 +158,7 @@ class ChunkedInputStream extends LeftOverInputStream {
      * limitation for the moment. It only affects potential efficiency
      * rather than correctness.
      */
-    public int available () throws IOException {
+    public int available() throws IOException {
         if (eof || closed) {
             return 0;
         }
@@ -170,17 +170,17 @@ class ChunkedInputStream extends LeftOverInputStream {
      * have been read from the underlying channel
      * and buffered internally
      */
-    public boolean isDataBuffered () throws IOException {
+    public boolean isDataBuffered() throws IOException {
         assert eof;
         return in.available() > 0;
     }
 
-    public boolean markSupported () {return false;}
+    public boolean markSupported() {return false;}
 
-    public void mark (int l) {
+    public void mark(int l) {
     }
 
-    public void reset () throws IOException {
-        throw new IOException ("mark/reset not supported");
+    public void reset() throws IOException {
+        throw new IOException("mark/reset not supported");
     }
 }
