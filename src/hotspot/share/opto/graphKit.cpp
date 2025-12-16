@@ -4156,7 +4156,19 @@ void GraphKit::store_String_coder(Node* str, Node* value) {
                   value, TypeInt::BYTE, T_BYTE, IN_HEAP | MO_UNORDERED);
 }
 
-// Capture src and dst memory state with a MergeMemNode
+// If input and output memory types differ, capture the whole memory to preserve
+// the dependency between preceding and subsequent loads/stores.
+// For example, the following program:
+//  StoreB
+//  compress_string
+//  LoadB
+// has this memory graph (use->def):
+//  LoadB -> compress_string -> CharMem
+//             ... -> StoreB -> ByteMem
+// The intrinsic hides the dependency between LoadB and StoreB, causing
+// the load to read from memory not containing the result of the StoreB.
+// The correct memory graph should look like this:
+//  LoadB -> compress_string -> MergeMem -> StoreB
 Node* GraphKit::capture_memory(const TypePtr*& combined_type, const TypePtr* src_type, const TypePtr* dst_type) {
   if (src_type == dst_type) {
     // Types are equal, we don't need a MergeMemNode
@@ -4169,44 +4181,24 @@ Node* GraphKit::capture_memory(const TypePtr*& combined_type, const TypePtr* src
   return mem;
 }
 
-Node* GraphKit::compress_string(Node* src, const TypeAryPtr* src_type, Node* dst, Node* count) {
-  assert(Matcher::match_rule_supported(Op_StrCompressedCopy), "Intrinsic not supported");
-  assert(src_type == TypeAryPtr::BYTES || src_type == TypeAryPtr::CHARS, "invalid source type");
-  // If input and output memory types differ, capture the whole memory to preserve
-  // the dependency between preceding and subsequent loads/stores.
-  // For example, the following program:
-  //  StoreB
-  //  compress_string
-  //  LoadB
-  // has this memory graph (use->def):
-  //  LoadB -> compress_string -> CharMem
-  //             ... -> StoreB -> ByteMem
-  // The intrinsic hides the dependency between LoadB and StoreB, causing
-  // the load to read from memory not containing the result of the StoreB.
-  // The correct memory graph should look like this:
-  //  LoadB -> compress_string -> MergeMem -> StoreB
-  const TypePtr* dst_type = TypeAryPtr::BYTES;
-  const TypePtr* adr_type;
-  Node* mem = capture_memory(adr_type, src_type, dst_type);
-  StrCompressedCopyNode* str = new StrCompressedCopyNode(control(), mem, adr_type, src, dst, count);
-  Node* res_mem = _gvn.transform(new SCMemProjNode(_gvn.transform(str)));
+// If dst_type and src_type are different, str may have an anti-dependency with another node
+// consuming src_type.
+// For example:
+//  compress_string
+//  StoreC
+// has this memory graph (use->def):
+//  compress_string -> MergeMem -> CharMem
+//                       StoreC
+// The scheduler needs to ensure that compress_string is not executed after StoreC, or it will read
+// the wrong memory. For normal loads, the scheduler computes its anti-dependencies to ensure the
+// memory it reads from is not killed. Since we do not compute anti-dependencies for
+// StrCompressedCopyNode, manually insert a MemBar so the anti-dependency becomes use-def
+// dependency:
+//  StoreC -> MemBar -> MergeMem -> compress_string -> MergeMem -> CharMem
+//                               -------------------------------->
+void GraphKit::memory_effect(Node* res_mem, const TypePtr* src_type, const TypePtr* dst_type) {
   set_memory(res_mem, dst_type);
-  if (adr_type == TypePtr::BOTTOM) {
-    // If dst_type and src_type are different, str may have an anti-dependency with another node
-    // consuming src_type
-    // For example:
-    //  compress_string
-    //  StoreC
-    // has this memory graph (use->def):
-    //  compress_string -> MergeMem -> CharMem
-    //                       StoreC
-    // The scheduler needs to ensure that compress_string is not executed after StoreC, or it will
-    // read the wrong memory. For normal loads, the scheduler computes its anti-dependencies to
-    // ensure the memory it reads from is not killed. Since we do not compute anti-dependencies for
-    // StrCompressedCopyNode, manually insert a MemBar so the anti-dependency becomes use-def
-    // dependency:
-    //  StoreC -> MemBar -> MergeMem -> compress_string -> MergeMem -> CharMem
-    //                               -------------------------------->
+  if (src_type != dst_type) {
     Node* all_mem = reset_memory();
     set_all_memory(all_mem);
     Node* membar = new MemBarCPUOrderNode(C, C->get_alias_index(src_type), nullptr);
@@ -4216,29 +4208,29 @@ Node* GraphKit::compress_string(Node* src, const TypeAryPtr* src_type, Node* dst
     set_control(_gvn.transform(new ProjNode(membar, TypeFunc::Control)));
     set_memory(_gvn.transform(new ProjNode(membar, TypeFunc::Memory)), src_type);
   }
+}
+
+Node* GraphKit::compress_string(Node* src, const TypeAryPtr* src_type, Node* dst, Node* count) {
+  assert(Matcher::match_rule_supported(Op_StrCompressedCopy), "Intrinsic not supported");
+  assert(src_type == TypeAryPtr::BYTES || src_type == TypeAryPtr::CHARS, "invalid source type");
+  const TypePtr* dst_type = TypeAryPtr::BYTES;
+  const TypePtr* adr_type;
+  Node* mem = capture_memory(adr_type, src_type, dst_type);
+  StrCompressedCopyNode* str = new StrCompressedCopyNode(control(), mem, adr_type, src, dst, count);
+  Node* res_mem = _gvn.transform(new SCMemProjNode(_gvn.transform(str)));
+  memory_effect(res_mem, src_type, dst_type);
   return str;
 }
 
 void GraphKit::inflate_string(Node* src, Node* dst, const TypeAryPtr* dst_type, Node* count) {
   assert(Matcher::match_rule_supported(Op_StrInflatedCopy), "Intrinsic not supported");
   assert(dst_type == TypeAryPtr::BYTES || dst_type == TypeAryPtr::CHARS, "invalid dest type");
-  // Similar to compress_string
   const TypePtr* src_type = TypeAryPtr::BYTES;
   const TypePtr* adr_type;
   Node* mem = capture_memory(adr_type, src_type, dst_type);
   StrInflatedCopyNode* str = new StrInflatedCopyNode(control(), mem, adr_type, src, dst, count);
   Node* res_mem = _gvn.transform(str);
-  set_memory(res_mem, dst_type);
-  if (adr_type == TypePtr::BOTTOM) {
-    Node* all_mem = reset_memory();
-    set_all_memory(all_mem);
-    Node* membar = new MemBarCPUOrderNode(C, C->get_alias_index(src_type), nullptr);
-    membar->init_req(TypeFunc::Control, control());
-    membar->init_req(TypeFunc::Memory, all_mem);
-    membar = _gvn.transform(membar);
-    set_control(_gvn.transform(new ProjNode(membar, TypeFunc::Control)));
-    set_memory(_gvn.transform(new ProjNode(membar, TypeFunc::Memory)), src_type);
-  }
+  memory_effect(res_mem, src_type, dst_type);
 }
 
 void GraphKit::inflate_string_slow(Node* src, Node* dst, Node* start, Node* count) {
