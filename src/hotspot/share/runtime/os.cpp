@@ -100,7 +100,7 @@ os::PageSizes     os::_page_sizes;
 
 DEBUG_ONLY(bool os::_mutex_init_done = false;)
 
-CPUTime::CPUTime(long user, long system) :
+CPUTime::CPUTime(int64_t user, int64_t system) :
   user(user), system(system) {};
 
 CPUTime CPUTime::operator-=(const CPUTime &n) {

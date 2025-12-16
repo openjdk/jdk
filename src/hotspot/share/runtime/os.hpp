@@ -169,9 +169,9 @@ public:
 
 class CPUTime {
 public:
-  long user;
-  long system;
-  CPUTime(long user, long system);
+  int64_t user;
+  int64_t system;
+  CPUTime(int64_t user, int64_t system);
   CPUTime operator-=(const CPUTime &n);
 };
 
