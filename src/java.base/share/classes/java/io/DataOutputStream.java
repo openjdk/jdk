@@ -27,6 +27,7 @@
 package java.io;
 
 import java.lang.runtime.ExactConversionsSupport;
+import java.util.Objects;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
@@ -285,6 +286,7 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @see        java.io.FilterOutputStream#out
      */
     public final void writeBytes(String s) throws IOException {
+        Objects.requireNonNull(s, "s");
         int len = s.length();
         for (int i = 0 ; i < len ; i++) {
             out.write((byte)s.charAt(i));
