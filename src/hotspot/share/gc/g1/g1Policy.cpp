@@ -1378,7 +1378,7 @@ void G1Policy::update_gc_pause_time_ratios(G1GCPauseType gc_type, double start_t
   double pause_time_sec = end_time_sec - start_time_sec;
   double pause_time_ms = pause_time_sec * 1000.0;
 
-  _analytics->update_gc_time_ratios(end_time_sec, pause_time_ms);
+  _analytics->update_gc_time_ratios(end_time_sec, pause_time_ms, GCCause::is_user_requested_gc(_g1h->gc_cause()));
 
   if (gc_type == G1GCPauseType::Cleanup || gc_type == G1GCPauseType::Remark) {
     _analytics->append_prev_collection_pause_end_ms(pause_time_ms);
