@@ -57,14 +57,12 @@ public class VarHandleTestReflection extends VarHandleBaseTest {
     @ParameterizedTest
     @MethodSource("accessModesProvider")
     public void methodInvocationArgumentMismatch(VarHandle.AccessMode accessMode) throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            VarHandle v = handle();
+        VarHandle v = handle();
 
-            // Try a reflective invoke using a Method, with no arguments
+        // Try a reflective invoke using a Method, with no arguments
 
-            Method vhm = VarHandle.class.getMethod(accessMode.methodName(), Object[].class);
-            vhm.invoke(v, new Object[]{});
-        });
+        Method vhm = VarHandle.class.getMethod(accessMode.methodName(), Object[].class);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> vhm.invoke(v, new Object[]{}));
     }
 
     @ParameterizedTest
@@ -76,28 +74,25 @@ public class VarHandleTestReflection extends VarHandleBaseTest {
 
         Method vhm = VarHandle.class.getMethod(accessMode.methodName(), Object[].class);
         Object arg = new Object[0];
-        try {
-            vhm.invoke(v, arg);
-        } catch (InvocationTargetException e) {
-            if (!(e.getCause() instanceof UnsupportedOperationException)) {
-                throw new RuntimeException("expected UnsupportedOperationException but got: "
-                                           + e.getCause().getClass().getName(), e);
-            }
+        var e = Assertions.assertThrows(InvocationTargetException.class, () -> vhm.invoke(v, arg));
+        if (!(e.getCause() instanceof UnsupportedOperationException)) {
+            throw new RuntimeException("expected UnsupportedOperationException but got: "
+                    + e.getCause().getClass().getName(), e);
         }
     }
 
     @ParameterizedTest
     @MethodSource("accessModesProvider")
     public void methodHandleInvoke(VarHandle.AccessMode accessMode) throws Throwable {
+        VarHandle v = handle();
+
+        // Try a reflective invoke using a MethodHandle
+
+        MethodHandle mh = MethodHandles.lookup().unreflect(
+                VarHandle.class.getMethod(accessMode.methodName(), Object[].class));
+        // Use invoke to avoid WrongMethodTypeException for
+        // non-signature-polymorphic return types
         Assertions.assertThrows(UnsupportedOperationException.class, () -> {
-            VarHandle v = handle();
-
-            // Try a reflective invoke using a MethodHandle
-
-            MethodHandle mh = MethodHandles.lookup().unreflect(
-                    VarHandle.class.getMethod(accessMode.methodName(), Object[].class));
-            // Use invoke to avoid WrongMethodTypeException for
-            // non-signature-polymorphic return types
             Object o = (Object) mh.invoke(v, new Object[]{});
         });
     }
@@ -105,16 +100,16 @@ public class VarHandleTestReflection extends VarHandleBaseTest {
     @ParameterizedTest
     @MethodSource("accessModesProvider")
     public void methodInvocationFromMethodInfo(VarHandle.AccessMode accessMode) throws Exception {
+        VarHandle v = handle();
+
+        // Try a reflective invoke using a Method obtained from cracking
+        // a MethodHandle
+
+        MethodHandle mh = MethodHandles.lookup().unreflect(
+                VarHandle.class.getMethod(accessMode.methodName(), Object[].class));
+        MethodHandleInfo info = MethodHandles.lookup().revealDirect(mh);
+        Method im = info.reflectAs(Method.class, MethodHandles.lookup());
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            VarHandle v = handle();
-
-            // Try a reflective invoke using a Method obtained from cracking
-            // a MethodHandle
-
-            MethodHandle mh = MethodHandles.lookup().unreflect(
-                    VarHandle.class.getMethod(accessMode.methodName(), Object[].class));
-            MethodHandleInfo info = MethodHandles.lookup().revealDirect(mh);
-            Method im = info.reflectAs(Method.class, MethodHandles.lookup());
             im.invoke(v, new Object[]{});
         });
     }
@@ -122,30 +117,26 @@ public class VarHandleTestReflection extends VarHandleBaseTest {
     @ParameterizedTest
     @MethodSource("accessModesProvider")
     public void reflectAsFromVarHandleInvoker(VarHandle.AccessMode accessMode) throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            VarHandle v = handle();
+        VarHandle v = handle();
 
-            MethodHandle mh = MethodHandles.varHandleInvoker(
-                    accessMode, v.accessModeType(accessMode));
+        MethodHandle mh = MethodHandles.varHandleInvoker(
+                accessMode, v.accessModeType(accessMode));
 
-            MethodHandleInfo info = MethodHandles.lookup().revealDirect(mh);
+        MethodHandleInfo info = MethodHandles.lookup().revealDirect(mh);
 
-            info.reflectAs(Method.class, MethodHandles.lookup());
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> info.reflectAs(Method.class, MethodHandles.lookup()));
     }
 
     @ParameterizedTest
     @MethodSource("accessModesProvider")
     public void reflectAsFromFindVirtual(VarHandle.AccessMode accessMode) throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            VarHandle v = handle();
+        VarHandle v = handle();
 
-            MethodHandle mh = MethodHandles.publicLookup().findVirtual(
-                    VarHandle.class, accessMode.methodName(), v.accessModeType(accessMode));
+        MethodHandle mh = MethodHandles.publicLookup().findVirtual(
+                VarHandle.class, accessMode.methodName(), v.accessModeType(accessMode));
 
-            MethodHandleInfo info = MethodHandles.lookup().revealDirect(mh);
+        MethodHandleInfo info = MethodHandles.lookup().revealDirect(mh);
 
-            info.reflectAs(Method.class, MethodHandles.lookup());
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> info.reflectAs(Method.class, MethodHandles.lookup()));
     }
 }
