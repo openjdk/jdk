@@ -30,6 +30,7 @@
  */
 
 package compiler.c2;
+
 public class TestNodeWithNoUseAfterPhiIdeal {
     volatile boolean _mutatorToggle;
 
