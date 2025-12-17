@@ -702,6 +702,7 @@ WB_END
 #endif // INCLUDE_G1GC
 
 #if INCLUDE_SHENANDOAHGC
+
 WB_ENTRY(jint, WB_ShenandoahRegionSize(JNIEnv* env, jobject o))
   if (UseShenandoahGC) {
     return ShenandoahHeapRegion::region_size_bytes_jint();
@@ -738,7 +739,7 @@ WB_ENTRY(jboolean, WB_ShenandoahOldGC(JNIEnv* env, jobject o))
 THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_ShenandoahRegionSize: Shenandoah GC is not enabled");
 WB_END
 
-#endif
+#endif // INCLUDE_SHENANDOAHGC
 
 // Alloc memory using the test memory tag so that we can use that to see if
 // NMT picks it up correctly
@@ -2934,9 +2935,7 @@ static JNINativeMethod methods[] = {
   {CC"shenandoahRegionCount",  CC"()I",                   (void*)&WB_ShenandoahRegionCount },
   {CC"shenandoahRegionIndex",  CC"(Ljava/lang/Object;)I", (void*)&WB_ShenandoahRegionIndex },
   {CC"shenandoahOldGC",        CC"()Z",                   (void*)&WB_ShenandoahOldGC },
-
 #endif
-
   {CC"NMTMalloc",           CC"(J)J",                 (void*)&WB_NMTMalloc          },
   {CC"NMTMallocWithPseudoStack", CC"(JI)J",           (void*)&WB_NMTMallocWithPseudoStack},
   {CC"NMTMallocWithPseudoStackAndType", CC"(JII)J",   (void*)&WB_NMTMallocWithPseudoStackAndType},
