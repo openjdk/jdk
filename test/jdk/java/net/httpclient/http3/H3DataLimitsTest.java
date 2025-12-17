@@ -164,7 +164,6 @@ public class H3DataLimitsTest implements HttpServerAdapters {
                 .proxy(HttpClient.Builder.NO_PROXY)
                 .executor(executor)
                 .sslContext(sslContext)
-                .connectTimeout(Duration.ofSeconds(10))
                 .build();
         return client;
     }

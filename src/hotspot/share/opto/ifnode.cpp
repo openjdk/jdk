@@ -82,7 +82,7 @@ const Type* IfNode::Value(PhaseGVN* phase) const {
 }
 
 const RegMask &IfNode::out_RegMask() const {
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 //------------------------------split_if---------------------------------------

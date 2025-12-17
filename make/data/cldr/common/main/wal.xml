@@ -340,7 +340,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<traditional>ethi</traditional>
 		</otherNumberingSystems>
 		<symbols numberSystem="latn">
-			<group draft="unconfirmed">’</group>
+			<group draft="unconfirmed">'</group>
 		</symbols>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>

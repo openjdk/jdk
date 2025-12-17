@@ -108,6 +108,8 @@ void InterpreterMacroAssembler::dispatch_prolog(TosState state, int bcp_incr) {
 // own dispatch. The dispatch address in R24_dispatch_addr is used for the
 // dispatch.
 void InterpreterMacroAssembler::dispatch_epilog(TosState state, int bcp_incr) {
+  assert(nonvolatile_accross_vthread_preemtion(R24_dispatch_addr),
+         "Requirement of field accesses (e.g. putstatic)");
   if (bcp_incr) { addi(R14_bcp, R14_bcp, bcp_incr); }
   mtctr(R24_dispatch_addr);
   bcctr(bcondAlways, 0, bhintbhBCCTRisNotPredictable);
@@ -468,33 +470,33 @@ void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Registe
   add(cache, cache, index);
 }
 
-void InterpreterMacroAssembler::load_field_entry(Register cache, Register index, int bcp_offset) {
+void InterpreterMacroAssembler::load_field_or_method_entry(bool is_method, Register cache, Register index, int bcp_offset, bool for_fast_bytecode) {
+  const int entry_size     = is_method ? sizeof(ResolvedMethodEntry) : sizeof(ResolvedFieldEntry),
+            base_offset    = is_method ? Array<ResolvedMethodEntry>::base_offset_in_bytes() : Array<ResolvedFieldEntry>::base_offset_in_bytes(),
+            entries_offset = is_method ? in_bytes(ConstantPoolCache::method_entries_offset()) : in_bytes(ConstantPoolCache::field_entries_offset());
+
   // Get index out of bytecode pointer
   get_cache_index_at_bcp(index, bcp_offset, sizeof(u2));
   // Take shortcut if the size is a power of 2
-  if (is_power_of_2(sizeof(ResolvedFieldEntry))) {
+  if (is_power_of_2(entry_size)) {
     // Scale index by power of 2
-    sldi(index, index, log2i_exact(sizeof(ResolvedFieldEntry)));
+    sldi(index, index, log2i_exact(entry_size));
   } else {
     // Scale the index to be the entry index * sizeof(ResolvedFieldEntry)
-    mulli(index, index, sizeof(ResolvedFieldEntry));
+    mulli(index, index, entry_size);
   }
   // Get address of field entries array
-  ld_ptr(cache, in_bytes(ConstantPoolCache::field_entries_offset()), R27_constPoolCache);
-  addi(cache, cache, Array<ResolvedFieldEntry>::base_offset_in_bytes());
+  ld_ptr(cache, entries_offset, R27_constPoolCache);
+  addi(cache, cache, base_offset);
   add(cache, cache, index);
-}
 
-void InterpreterMacroAssembler::load_method_entry(Register cache, Register index, int bcp_offset) {
-  // Get index out of bytecode pointer
-  get_cache_index_at_bcp(index, bcp_offset, sizeof(u2));
-  // Scale the index to be the entry index * sizeof(ResolvedMethodEntry)
-  mulli(index, index, sizeof(ResolvedMethodEntry));
-
-  // Get address of field entries array
-  ld_ptr(cache, ConstantPoolCache::method_entries_offset(), R27_constPoolCache);
-  addi(cache, cache, Array<ResolvedMethodEntry>::base_offset_in_bytes());
-  add(cache, cache, index); // method_entries + base_offset + scaled index
+  if (for_fast_bytecode) {
+    // Prevent speculative loading from ResolvedFieldEntry/ResolvedMethodEntry as it can miss the info written by another thread.
+    // TemplateTable::patch_bytecode uses release-store.
+    // We reached here via control dependency (Bytecode dispatch has used the rewritten Bytecode).
+    // So, we can use control-isync based ordering.
+    isync();
+  }
 }
 
 // Load object from cpool->resolved_references(index).
@@ -862,6 +864,9 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
                                                   bool install_monitor_exception) {
   BLOCK_COMMENT("remove_activation {");
 
+  asm_assert_mem8_is_zero(in_bytes(JavaThread::preempt_alternate_return_offset()), R16_thread,
+                          "remove_activation: should not have alternate return address set");
+
   unlock_if_synchronized_method(state, throw_monitor_exception, install_monitor_exception);
 
   // The below poll is for the stack watermark barrier. It allows fixing up frames lazily,
@@ -953,7 +958,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
   assert_different_registers(header, tmp);
 
-  lightweight_lock(monitor, object, header, tmp, slow_case);
+  fast_lock(monitor, object, header, tmp, slow_case);
   b(done);
 
   bind(slow_case);
@@ -982,7 +987,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
   // The object address from the monitor is in object.
   ld(object, in_bytes(BasicObjectLock::obj_offset()), monitor);
 
-  lightweight_unlock(object, header, slow_case);
+  fast_unlock(object, header, slow_case);
 
   b(free_slot);
 
@@ -2014,35 +2019,67 @@ void InterpreterMacroAssembler::call_VM(Register oop_result, address entry_point
 }
 
 void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result, address entry_point,
-                                        Register arg_1, bool check_exceptions) {
+                                                    Register arg_1,
+                                                    bool check_exceptions) {
   if (!Continuations::enabled()) {
     call_VM(oop_result, entry_point, arg_1, check_exceptions);
     return;
   }
+  call_VM_preemptable(oop_result, entry_point, arg_1, noreg /* arg_2 */, check_exceptions);
+}
+
+void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result, address entry_point,
+                                                    Register arg_1, Register arg_2,
+                                                    bool check_exceptions) {
+  if (!Continuations::enabled()) {
+    call_VM(oop_result, entry_point, arg_1, arg_2, check_exceptions);
+    return;
+  }
 
   Label resume_pc, not_preempted;
+  Register tmp = R11_scratch1;
+  assert_different_registers(arg_1, tmp);
+  assert_different_registers(arg_2, tmp);
 
-  DEBUG_ONLY(ld(R0, in_bytes(JavaThread::preempt_alternate_return_offset()), R16_thread));
-  DEBUG_ONLY(cmpdi(CR0, R0, 0));
-  asm_assert_eq("Should not have alternate return address set");
+#ifdef ASSERT
+  asm_assert_mem8_is_zero(in_bytes(JavaThread::preempt_alternate_return_offset()), R16_thread,
+                          "Should not have alternate return address set");
+  // We check this counter in patch_return_pc_with_preempt_stub() during freeze.
+  lwa(tmp, in_bytes(JavaThread::interp_at_preemptable_vmcall_cnt_offset()), R16_thread);
+  addi(tmp, tmp, 1);
+  cmpwi(CR0, tmp, 0);
+  stw(tmp, in_bytes(JavaThread::interp_at_preemptable_vmcall_cnt_offset()), R16_thread);
+  asm_assert(gt, "call_VM_preemptable: should be > 0");
+#endif // ASSERT
 
   // Preserve 2 registers
-  assert(nonvolatile_accross_vthread_preemtion(R31) && nonvolatile_accross_vthread_preemtion(R22), "");
+  assert(nonvolatile_accross_vthread_preemtion(R31) && nonvolatile_accross_vthread_preemtion(R24), "");
   ld(R3_ARG1, _abi0(callers_sp), R1_SP); // load FP
   std(R31, _ijava_state_neg(lresult), R3_ARG1);
-  std(R22, _ijava_state_neg(fresult), R3_ARG1);
+  std(R24, _ijava_state_neg(fresult), R3_ARG1);
 
   // We set resume_pc as last java pc. It will be saved if the vthread gets preempted.
   // Later execution will continue right there.
   mr_if_needed(R4_ARG2, arg_1);
+  assert(arg_2 != R4_ARG2, "smashed argument");
+  mr_if_needed(R5_ARG3, arg_2, true /* allow_noreg */);
   push_cont_fastpath();
-  call_VM(oop_result, entry_point, false /*check_exceptions*/, &resume_pc /* last_java_pc */);
+  call_VM(noreg /* oop_result */, entry_point, false /*check_exceptions*/, &resume_pc /* last_java_pc */);
   pop_cont_fastpath();
+
+#ifdef ASSERT
+  lwa(tmp, in_bytes(JavaThread::interp_at_preemptable_vmcall_cnt_offset()), R16_thread);
+  addi(tmp, tmp, -1);
+  cmpwi(CR0, tmp, 0);
+  stw(tmp, in_bytes(JavaThread::interp_at_preemptable_vmcall_cnt_offset()), R16_thread);
+  asm_assert(ge, "call_VM_preemptable: should be >= 0");
+#endif // ASSERT
 
   // Jump to handler if the call was preempted
   ld(R0, in_bytes(JavaThread::preempt_alternate_return_offset()), R16_thread);
   cmpdi(CR0, R0, 0);
   beq(CR0, not_preempted);
+  // Preempted. Frames are already frozen on heap.
   mtlr(R0);
   li(R0, 0);
   std(R0, in_bytes(JavaThread::preempt_alternate_return_offset()), R16_thread);
@@ -2050,21 +2087,21 @@ void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result, address
 
   bind(resume_pc); // Location to resume execution
   restore_after_resume(noreg /* fp */);
+
   bind(not_preempted);
+  if (check_exceptions) {
+    check_and_forward_exception(R11_scratch1, R12_scratch2);
+  }
+  if (oop_result->is_valid()) {
+    get_vm_result_oop(oop_result);
+  }
 }
 
 void InterpreterMacroAssembler::restore_after_resume(Register fp) {
-  if (!Continuations::enabled()) return;
-
   const address resume_adapter = TemplateInterpreter::cont_resume_interpreter_adapter();
   add_const_optimized(R31, R29_TOC, MacroAssembler::offset_to_global_toc(resume_adapter));
   mtctr(R31);
   bctrl();
-  // Restore registers that are preserved across vthread preemption
-  assert(nonvolatile_accross_vthread_preemtion(R31) && nonvolatile_accross_vthread_preemtion(R22), "");
-  ld(R3_ARG1, _abi0(callers_sp), R1_SP); // load FP
-  ld(R31, _ijava_state_neg(lresult), R3_ARG1);
-  ld(R22, _ijava_state_neg(fresult), R3_ARG1);
 #ifdef ASSERT
   // Assert FP is in R11_scratch1 (see generate_cont_resume_interpreter_adapter())
   {

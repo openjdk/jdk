@@ -48,8 +48,8 @@ class RegionsTree : public VMATree {
 
   ReservedMemoryRegion find_reserved_region(address addr);
 
-  SummaryDiff commit_region(address addr, size_t size, const NativeCallStack& stack);
-  SummaryDiff uncommit_region(address addr, size_t size);
+  void commit_region(address addr, size_t size, const NativeCallStack& stack, SummaryDiff& diff);
+  void uncommit_region(address addr, size_t size, SummaryDiff& diff);
 
   using Node = VMATree::TNode;
 

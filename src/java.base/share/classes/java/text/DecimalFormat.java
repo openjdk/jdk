@@ -2335,9 +2335,10 @@ public class DecimalFormat extends NumberFormat {
             // (bug 4162852).
             if (multiplier != 1 && gotDouble) {
                 longResult = (long)doubleResult;
-                gotDouble = ((doubleResult != (double)longResult) ||
-                            (doubleResult == 0.0 && 1/doubleResult < 0.0)) &&
-                            !isParseIntegerOnly();
+                gotDouble = ((doubleResult >= Long.MAX_VALUE || doubleResult <= Long.MIN_VALUE) ||
+                        (doubleResult != (double)longResult) ||
+                        (doubleResult == 0.0 && 1/doubleResult < 0.0)) &&
+                        !isParseIntegerOnly();
             }
 
             // cast inside of ?: because of binary numeric promotion, JLS 15.25

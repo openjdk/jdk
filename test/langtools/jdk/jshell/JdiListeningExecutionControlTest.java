@@ -39,6 +39,6 @@ public class JdiListeningExecutionControlTest extends ExecutionControlTestBase {
     @BeforeEach
     @Override
     public void setUp() {
-        setUp(builder -> builder.executionEngine("jdi"));
+        setUp(builder -> builder.executionEngine(Presets.TEST_JDI_EXECUTION));
     }
 }

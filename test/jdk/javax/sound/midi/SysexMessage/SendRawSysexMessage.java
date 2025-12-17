@@ -35,6 +35,7 @@ import static javax.sound.midi.SysexMessage.SYSTEM_EXCLUSIVE;
 /**
  * @test
  * @bug 8074211 8237495 8301310
+ * @key sound
  * @summary fail with memory errors when asked to send a sysex message starting
  *          with 0xF7
  */
