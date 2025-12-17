@@ -29,7 +29,7 @@
  * @run main ${test.main.class}
  */
 
-package compiler.c2;
+package compiler.igvn;
 
 public class TestNodeWithNoUseAfterPhiIdeal {
     volatile boolean _mutatorToggle;
