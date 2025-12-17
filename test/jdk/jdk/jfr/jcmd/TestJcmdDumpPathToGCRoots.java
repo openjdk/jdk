@@ -28,7 +28,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.*;
+import java.util.List;
 import java.util.Map;
 
 import jdk.jfr.Enabled;
@@ -40,76 +40,14 @@ import jdk.jfr.internal.test.WhiteBox;
 import jdk.test.lib.jfr.EventNames;
 
 /**
- * @test id=path-to-gc-roots-true-cutoff-inf
- * @requires vm.hasJFR & vm.flagless
- * @modules jdk.jfr/jdk.jfr.internal.test
- * @library /test/lib /test/jdk
- * @run main/othervm -XX:TLABSize=2k -Xmx256M -XX:ErrorLogTimeout=1 jdk.jfr.jcmd.TestJcmdDumpPathToGCRoots true infinity true
- */
-
-/**
- * @test id=path-to-gc-roots-true-cutoff-0
- * @requires vm.hasJFR & vm.flagless
- * @modules jdk.jfr/jdk.jfr.internal.test
- * @library /test/lib /test/jdk
- * @run main/othervm -XX:TLABSize=2k -Xmx256M -XX:ErrorLogTimeout=1 jdk.jfr.jcmd.TestJcmdDumpPathToGCRoots true 0 true
- */
-
-/**
  * @test
- * @test id=path-to-gc-roots-true-cutoff-default
- * @requires vm.hasJFR & vm.flagless
+ * @summary Start a recording with or without path-to-gc-roots
+ * @requires vm.hasJFR
  * @modules jdk.jfr/jdk.jfr.internal.test
  * @library /test/lib /test/jdk
- * @run main/othervm -XX:TLABSize=2k -Xmx256M -XX:ErrorLogTimeout=1 jdk.jfr.jcmd.TestJcmdDumpPathToGCRoots true - true
- */
-
-/**
- * @test id=path-to-gc-roots-false-cutoff-inf
- * @requires vm.hasJFR & vm.flagless
- * @modules jdk.jfr/jdk.jfr.internal.test
- * @library /test/lib /test/jdk
- * @run main/othervm -XX:TLABSize=2k -Xmx256M -XX:ErrorLogTimeout=1 jdk.jfr.jcmd.TestJcmdDumpPathToGCRoots false infinity false
- */
-
-/**
- * @test id=path-to-gc-roots-false-cutoff-0
- * @requires vm.hasJFR & vm.flagless
- * @modules jdk.jfr/jdk.jfr.internal.test
- * @library /test/lib /test/jdk
- * @run main/othervm -XX:TLABSize=2k -Xmx256M -XX:ErrorLogTimeout=1 jdk.jfr.jcmd.TestJcmdDumpPathToGCRoots false 0 false
- */
-
-/**
- * @test id=path-to-gc-roots-false-cutoff-default
- * @requires vm.hasJFR & vm.flagless
- * @modules jdk.jfr/jdk.jfr.internal.test
- * @library /test/lib /test/jdk
- * @run main/othervm -XX:TLABSize=2k -Xmx256M -XX:ErrorLogTimeout=1 jdk.jfr.jcmd.TestJcmdDumpPathToGCRoots false - false
- */
-
-/**
- * @test id=path-to-gc-roots-default-cutoff-inf
- * @requires vm.hasJFR & vm.flagless
- * @modules jdk.jfr/jdk.jfr.internal.test
- * @library /test/lib /test/jdk
- * @run main/othervm -XX:TLABSize=2k -Xmx512M -XX:ErrorLogTimeout=1 jdk.jfr.jcmd.TestJcmdDumpPathToGCRoots - infinity true
- */
-
-/**
- * @test id=path-to-gc-roots-default-cutoff-0
- * @requires vm.hasJFR & vm.flagless
- * @modules jdk.jfr/jdk.jfr.internal.test
- * @library /test/lib /test/jdk
- * @run main/othervm -XX:TLABSize=2k -Xmx512M -XX:ErrorLogTimeout=1 jdk.jfr.jcmd.TestJcmdDumpPathToGCRoots - 0 false
- */
-
-/**
- * @test id=path-to-gc-roots-default-cutoff-default
- * @requires vm.hasJFR & vm.flagless
- * @modules jdk.jfr/jdk.jfr.internal.test
- * @library /test/lib /test/jdk
- * @run main/othervm -XX:TLABSize=2k -Xmx512M -XX:ErrorLogTimeout=1 jdk.jfr.jcmd.TestJcmdDumpPathToGCRoots - - false
+ * @requires vm.flagless
+ *
+ * @run main/othervm -XX:TLABSize=2k jdk.jfr.jcmd.TestJcmdDumpPathToGCRoots
  */
 public class TestJcmdDumpPathToGCRoots {
 
@@ -119,30 +57,20 @@ public class TestJcmdDumpPathToGCRoots {
     public static void main(String[] args) throws Exception {
         WhiteBox.setWriteAllObjectSamples(true);
 
-        if (args.length != 3) {
-            throw new RuntimeException("Expected 2 arguments");
-        }
-
         String settingName = EventNames.OldObjectSample + "#" + "cutoff";
 
-        final String ptgcr =
-            switch (args[0]) {
-                case "-" -> "";
-                default -> "path-to-gc-roots=" + args[0];
-            };
-
-        final Map settings = switch (args[1]) {
-            case "infinity" -> Collections.singletonMap(settingName, "infinity");
-            case "0" -> Collections.singletonMap(settingName, "0 ns");
-            case "-" -> Collections.emptyMap();
-            default -> throw new RuntimeException("Invalid " + args[1]);
-        };
-
-        final boolean expectChains = Boolean.valueOf(args[2]);
-
         // dump parameter trumps previous setting
-        testDump(ptgcr, settings, expectChains);
+        testDump("path-to-gc-roots=true", Collections.singletonMap(settingName, "infinity"), true);
+        testDump("path-to-gc-roots=true", Collections.singletonMap(settingName, "0 ns"), true);
+        testDump("path-to-gc-roots=true", Collections.emptyMap(), true);
 
+        testDump("path-to-gc-roots=false", Collections.singletonMap(settingName, "infinity"), false);
+        testDump("path-to-gc-roots=false", Collections.singletonMap(settingName, "0 ns"), false);
+        testDump("path-to-gc-roots=false", Collections.emptyMap(), false);
+
+        testDump("", Collections.singletonMap(settingName, "infinity"), true);
+        testDump("", Collections.singletonMap(settingName, "0 ns"), false);
+        testDump("", Collections.emptyMap(), false);
     }
 
     private static void testDump(String pathToGcRoots, Map<String, String> settings, boolean expectedChains) throws Exception {
@@ -162,7 +90,7 @@ public class TestJcmdDumpPathToGCRoots {
                 buildLeak();
                 System.gc();
                 System.gc();
-                File recording = new File("TestJcmdDumpPathToGCRoots.jfr");
+                File recording = new File("TestJcmdDumpPathToGCRoots" + r.getId() + ".jfr");
                 recording.delete();
                 JcmdHelper.jcmd("JFR.dump", "name=dodo", pathToGcRoots, "filename=" + recording.getAbsolutePath());
                 r.setSettings(Collections.emptyMap());
