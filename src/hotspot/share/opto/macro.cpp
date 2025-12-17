@@ -288,23 +288,17 @@ bool src_elem_not_modified_after_arraycopy(const ArrayCopyNode* ac, const Node* 
         return src_elem_not_modified_after_arraycopy(ac, start, call->memory(), offset, phase);
       }
 
-      // TODO: arraycopy to different part of array at constant pos, constant length
-      // TODO: arraycopy to different part of array at variable pos, constant length
-
       return false;
     }
   } else if (const MergeMemNode* mm = mem->isa_MergeMem(); mm != nullptr) {
     return src_elem_not_modified_after_arraycopy(ac, start, mm->memory_at(src_alias_idx), offset, phase) &&
-           src_elem_not_modified_after_arraycopy(ac, start, mm->base_memory(), offset, phase); // TODO: really needed
+           src_elem_not_modified_after_arraycopy(ac, start, mm->base_memory(), offset, phase); // TODO: really needed?
   } else if (const StoreNode* store = mem->isa_Store(); store != nullptr) {
     const TypePtr* store_ptr_ty = store->adr_type();
     const int store_alias_idx = phase->C->get_alias_index(store_ptr_ty);
-    if (store_alias_idx != src_alias_idx) {
+    if (store_alias_idx != src_alias_idx || offset == Type::OffsetBot || store_ptr_ty->offset() == Type::OffsetBot || offset != store_ptr_ty->offset()) {
       return src_elem_not_modified_after_arraycopy(ac, start, store->in(StoreNode::Memory), offset, phase);
     }
-
-    // TODO: check if store is within the region of the source array that was copied, constant base, constant length
-    // TODO: check if store is within the region of the source array that was copied, variable base, constant length
 
     return false;
   }
@@ -318,7 +312,7 @@ bool src_elem_not_modified_after_arraycopy(const ArrayCopyNode* ac, const Node* 
 
 // Generate loads from source of the arraycopy for fields of
 // destination needed at a deoptimization point
-Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, Node* ctl, Node* mem, BasicType ft, const Type *ftype, AllocateNode *alloc) {
+Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, Node* sfpt, intptr_t offset, Node* ctl, Node* mem, BasicType ft, const Type *ftype, AllocateNode *alloc) {
   BasicType bt = ft;
   const Type *type = ftype;
   if (ft == T_NARROWOOP) {
@@ -370,6 +364,13 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
           // determine the value
           return nullptr;
         }
+      }
+      // Ensure that pinning rematerialization load inside the uncommon path is safe.
+      if (mem != ac->memory() && ctl->is_Proj() && ctl->as_Proj()->is_uncommon_trap_proj() &&
+          !src_elem_not_modified_after_arraycopy(ac, sfpt, mem, adr_type->offset(), &_igvn)) {
+        tty->print_cr("used not safe path");
+        // Not safe: use control and memory from the arraycopy to ensure correct memory state.
+        return make_arraycopy_load(ac, sfpt, offset, ac->control(), ac->memory(), ft, ftype, alloc);
       }
       MergeMemNode* mergemen = _igvn.transform(MergeMemNode::make(mem))->as_MergeMem();
       BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
@@ -468,7 +469,7 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
         assert(false, "Object is not scalar replaceable if a LoadStore node accesses its field");
         return nullptr;
       } else if (val->is_ArrayCopy()) {
-        Node* res = make_arraycopy_load(val->as_ArrayCopy(), offset, val->in(0), val->in(TypeFunc::Memory), ft, phi_type, alloc);
+        Node* res = make_arraycopy_load(val->as_ArrayCopy(), val, offset, val->in(0), val->in(TypeFunc::Memory), ft, phi_type, alloc);
         if (res == nullptr) {
           return nullptr;
         }
@@ -599,13 +600,12 @@ Node *PhaseMacroExpand::value_from_mem(Node *origin, Node* ctl, BasicType ft, co
       Node* ac_ctl = ac->control();
       Node* ac_mem = ac->memory();
       int ac_src_alias_idx = C->get_alias_index(ac->in(ArrayCopyNode::Src)->get_ptr_type());
-      if (ctl->is_Proj() && ctl->as_Proj()->is_uncommon_trap_proj() &&
-          src_elem_not_modified_after_arraycopy(ac, origin, orig_mem, offset, &_igvn)) {
+      if (ctl->is_Proj() && ctl->as_Proj()->is_uncommon_trap_proj()) {
         // pin the loads in the uncommon trap path
         ac_ctl = ctl;
         ac_mem = orig_mem;
       }
-      return make_arraycopy_load(ac, offset, ac_ctl, ac_mem, ft, ftype, alloc);
+      return make_arraycopy_load(ac, origin, offset, ac_ctl, ac_mem, ft, ftype, alloc);
     }
   }
   // Something go wrong.
