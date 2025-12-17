@@ -119,8 +119,8 @@
 #include "gc/serial/serialHeap.hpp"
 #endif // INCLUDE_SERIALGC
 #if INCLUDE_SHENANDOAHGC
-#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
+#include "gc/shenandoah/shenandoahHeap.hpp"
 #endif // INCLUDE_SHENANDOAHGC
 #if INCLUDE_ZGC
 #include "gc/z/zAddress.inline.hpp"
