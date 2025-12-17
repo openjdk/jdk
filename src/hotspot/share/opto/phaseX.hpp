@@ -490,9 +490,10 @@ public:
   void optimize();
 #ifdef ASSERT
   void verify_optimize();
-  bool verify_Value_for(Node* n);
-  bool verify_Ideal_for(Node* n, bool can_reshape);
-  bool verify_Identity_for(Node* n);
+
+  void verify_Value_for(Node *n);
+  void verify_Ideal_for(Node *n, bool can_reshape);
+  void verify_Identity_for(Node *n);
   void verify_empty_worklist(Node* n);
 #endif
 
