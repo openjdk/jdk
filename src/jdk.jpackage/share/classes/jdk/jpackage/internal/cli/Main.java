@@ -117,7 +117,7 @@ public final class Main {
                 try {
                     mappedArgs.set(CommandLine.parse(args));
                     return List.of();
-                } catch (FileNotFoundException|NoSuchFileException ex) {
+                } catch (FileNotFoundException | NoSuchFileException ex) {
                     return List.of(new JPackageException(I18N.format("ERR_CannotParseOptions", ex.getMessage()), ex));
                 } catch (IOException ex) {
                     return List.of(ex);
