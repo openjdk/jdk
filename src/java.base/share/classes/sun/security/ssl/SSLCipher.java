@@ -392,7 +392,7 @@ enum SSLCipher {
                 if (values[1].contains(tag[0])) {
                     index = 0;
                 } else {
-                    if (SSLLogger.logging &&
+                    if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                         SSLLogger.fine("jdk.tls.keyLimits:  Unknown action:  " +
                                 entry);
@@ -414,14 +414,14 @@ enum SSLCipher {
                             "Length exceeded limits");
                     }
                 } catch (NumberFormatException e) {
-                    if (SSLLogger.logging &&
+                    if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                         SSLLogger.fine("jdk.tls.keyLimits:  " + e.getMessage() +
                                 ":  " +  entry);
                     }
                     continue;
                 }
-                if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.fine("jdk.tls.keyLimits:  entry = " + entry +
                             ". " + values[0] + ":" + tag[index] + " = " + size);
                 }
@@ -470,7 +470,7 @@ enum SSLCipher {
             Cipher.getInstance(transformation);
             return true;
         } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-            if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.fine("Transformation " + transformation + " is" +
                         " not available.");
             }
@@ -862,7 +862,7 @@ enum SSLCipher {
                         "JCE provider " + cipher.getProvider().getName(), sbe);
                 }
                 pt.position(pos);
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
                     SSLLogger.fine(
                             "Plaintext after DECRYPTION", pt.duplicate());
@@ -933,7 +933,7 @@ enum SSLCipher {
                     authenticator.increaseSequenceNumber();
                 }
 
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
                     SSLLogger.finest(
                         "Padded plaintext before ENCRYPTION", bb.duplicate());
@@ -1054,7 +1054,7 @@ enum SSLCipher {
                         "JCE provider " + cipher.getProvider().getName(), sbe);
                 }
 
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
                     SSLLogger.fine(
                             "Padded plaintext after DECRYPTION",
@@ -1187,7 +1187,7 @@ enum SSLCipher {
                 int len = addPadding(bb, blockSize);
                 bb.position(pos);
 
-                if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
                     SSLLogger.fine(
                             "Padded plaintext before ENCRYPTION",
                             bb.duplicate());
@@ -1331,7 +1331,7 @@ enum SSLCipher {
                         "JCE provider " + cipher.getProvider().getName(), sbe);
                 }
 
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
                     SSLLogger.fine("Padded plaintext after DECRYPTION",
                         pt.duplicate().position(pos));
@@ -1484,7 +1484,7 @@ enum SSLCipher {
                 int len = addPadding(bb, blockSize);
                 bb.position(pos);
 
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
                     SSLLogger.fine(
                             "Padded plaintext before ENCRYPTION",
@@ -1657,7 +1657,7 @@ enum SSLCipher {
                 pt.position(pos);
                 pt.limit(pos + len);
 
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
                     SSLLogger.fine(
                             "Plaintext after DECRYPTION", pt.duplicate());
@@ -1745,7 +1745,7 @@ enum SSLCipher {
 
                 // DON'T encrypt the nonce for AEAD mode.
                 int len, pos = bb.position();
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
                     SSLLogger.fine(
                             "Plaintext before ENCRYPTION",
@@ -1832,7 +1832,7 @@ enum SSLCipher {
 
                 keyLimitCountdown = cipherLimits.getOrDefault(
                     algorithm.toUpperCase(Locale.ENGLISH) + ":" + tag[0], 0L);
-                if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.fine("KeyLimit read side: algorithm = " +
                             algorithm + ":" + tag[0] +
                             "\ncountdown value = " + keyLimitCountdown);
@@ -1941,7 +1941,7 @@ enum SSLCipher {
                 contentType = pt.get(i);
                 pt.limit(i);
 
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
                     SSLLogger.fine(
                             "Plaintext after DECRYPTION", pt.duplicate());
@@ -1994,7 +1994,7 @@ enum SSLCipher {
 
                 keyLimitCountdown = cipherLimits.getOrDefault(
                     algorithm.toUpperCase(Locale.ENGLISH) + ":" + tag[0], 0L);
-                if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.fine("KeyLimit write side: algorithm = "
                             + algorithm + ":" + tag[0] +
                             "\ncountdown value = " + keyLimitCountdown);
@@ -2036,7 +2036,7 @@ enum SSLCipher {
                 cipher.updateAAD(aad);
 
                 int len, pos = bb.position();
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
                     SSLLogger.fine(
                             "Plaintext before ENCRYPTION",
@@ -2193,7 +2193,7 @@ enum SSLCipher {
                 pt.position(pos);
                 pt.limit(pos + len);
 
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
                     SSLLogger.fine(
                             "Plaintext after DECRYPTION", pt.duplicate());
@@ -2243,7 +2243,7 @@ enum SSLCipher {
 
                 keyLimitCountdown = cipherLimits.getOrDefault(
                     algorithm.toUpperCase(Locale.ENGLISH) + ":" + tag[0], 0L);
-                if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.fine("algorithm = " + algorithm +
                             ":" + tag[0] + "\ncountdown value = " +
                             keyLimitCountdown);
@@ -2285,7 +2285,7 @@ enum SSLCipher {
 
                 // DON'T encrypt the nonce for AEAD mode.
                 int pos = bb.position();
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
                     SSLLogger.fine(
                             "Plaintext before ENCRYPTION",
@@ -2463,7 +2463,7 @@ enum SSLCipher {
                 contentType = pt.get(i);
                 pt.limit(i);
 
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
                     SSLLogger.fine(
                             "Plaintext after DECRYPTION", pt.duplicate());
@@ -2513,7 +2513,7 @@ enum SSLCipher {
 
                 keyLimitCountdown = cipherLimits.getOrDefault(
                     algorithm.toUpperCase(Locale.ENGLISH) + ":" + tag[0], 0L);
-                if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.fine("algorithm = " + algorithm +
                             ":" + tag[0] + "\ncountdown value = " +
                             keyLimitCountdown);
@@ -2555,7 +2555,7 @@ enum SSLCipher {
                 cipher.updateAAD(aad);
 
                 int pos = bb.position();
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
                     SSLLogger.fine(
                             "Plaintext before ENCRYPTION",

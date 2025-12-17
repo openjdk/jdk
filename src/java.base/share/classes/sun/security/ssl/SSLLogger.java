@@ -41,6 +41,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
+import jdk.internal.vm.annotation.ForceInline;
 import sun.security.util.HexDumpEncoder;
 import sun.security.util.Debug;
 import sun.security.x509.*;
@@ -63,7 +64,7 @@ public final class SSLLogger {
     // high level boolean to track whether "all" or "ssl" option
     // is specified. Further checks may be necessary to determine
     // if data is logged
-    public static final boolean logging;
+    private static final boolean logging;
 
     static {
         String p = System.getProperty("javax.net.debug");
@@ -199,7 +200,7 @@ public final class SSLLogger {
     // Logs a warning message and always returns false. This method
     // can be used as an OR Predicate to add a log in a stream filter.
     public static boolean logWarning(Opt option, String s) {
-        if (SSLLogger.logging && option.on) {
+        if (SSLLogger.isOn() && option.on) {
             SSLLogger.warning(s);
         }
         return false;
@@ -243,6 +244,11 @@ public final class SSLLogger {
         System.err.printf("%nIf \"ssl\" is specified by itself," +
                 " all non-widening filters are enabled.%n%n");
         System.exit(0);
+    }
+
+    @ForceInline
+    public static boolean isOn() {
+        return logging;
     }
 
     /**

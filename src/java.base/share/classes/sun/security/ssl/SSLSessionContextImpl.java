@@ -339,7 +339,7 @@ final class SSLSessionContextImpl implements SSLSessionContext {
                     if (t < 0 ||
                             t > NewSessionTicket.MAX_TICKET_LIFETIME) {
                         timeout = DEFAULT_SESSION_TIMEOUT;
-                        if (SSLLogger.logging &&
+                        if (SSLLogger.isOn() &&
                                 SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                             SSLLogger.warning("Invalid timeout given " +
                                     "jdk.tls.server.sessionTicketTimeout: " + t +
@@ -350,7 +350,7 @@ final class SSLSessionContextImpl implements SSLSessionContext {
                     }
                 } catch (NumberFormatException e) {
                     setSessionTimeout(DEFAULT_SESSION_TIMEOUT);
-                    if (SSLLogger.logging &&
+                    if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                         SSLLogger.warning("Invalid timeout for " +
                                 "jdk.tls.server.sessionTicketTimeout: " + s +
@@ -365,7 +365,7 @@ final class SSLSessionContextImpl implements SSLSessionContext {
 
             if (defaultCacheLimit >= 0) {
                 return defaultCacheLimit;
-            } else if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
+            } else if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.warning(
                     "invalid System Property javax.net.ssl.sessionCacheSize, " +
                     "use the default session cache size (" +
@@ -373,7 +373,7 @@ final class SSLSessionContextImpl implements SSLSessionContext {
             }
         } catch (Exception e) {
             // unlikely, log it for safe
-            if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.warning(
                     "the System Property javax.net.ssl.sessionCacheSize is " +
                     "not available, use the default value (" +

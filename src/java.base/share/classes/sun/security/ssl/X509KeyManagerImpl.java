@@ -228,7 +228,7 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
                 || (secondDot - firstDot < 2)
                 || (alias.length() - secondDot < 2)) {
 
-            if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.KEYMANAGER)) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.KEYMANAGER)) {
                 SSLLogger.warning("Invalid alias format: " + alias);
             }
             return null;
@@ -255,7 +255,7 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
                  NoSuchAlgorithmException |
                  IndexOutOfBoundsException e) {
             // ignore and only log exception
-            if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.KEYMANAGER)) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.KEYMANAGER)) {
                 SSLLogger.warning("Exception thrown while getting an alias " +
                                   alias + ": " + e);
             }
@@ -295,7 +295,7 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
                 if (results != null) {
                     for (EntryStatus status : results) {
                         if (status.checkResult == CheckResult.OK) {
-                            if (SSLLogger.logging
+                            if (SSLLogger.isOn()
                                     && SSLLogger.isOn(SSLLogger.Opt.KEYMANAGER)) {
                                 SSLLogger.fine("Choosing key: " + status);
                             }
@@ -312,13 +312,13 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
             }
         }
         if (allResults == null) {
-            if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.KEYMANAGER)) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.KEYMANAGER)) {
                 SSLLogger.fine("No matching key found");
             }
             return null;
         }
         Collections.sort(allResults);
-        if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.KEYMANAGER)) {
+        if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.KEYMANAGER)) {
             SSLLogger.fine(
                     "No good matching key found, "
                     + "returning best match out of", allResults);
@@ -358,13 +358,13 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
             }
         }
         if (allResults == null || allResults.isEmpty()) {
-            if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.KEYMANAGER)) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.KEYMANAGER)) {
                 SSLLogger.fine("No matching alias found");
             }
             return null;
         }
         Collections.sort(allResults);
-        if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.KEYMANAGER)) {
+        if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.KEYMANAGER)) {
             SSLLogger.fine("Getting aliases", allResults);
         }
         return toAliases(allResults);

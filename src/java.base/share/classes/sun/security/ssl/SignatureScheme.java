@@ -34,7 +34,6 @@ import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -205,7 +204,7 @@ enum SignatureScheme {
                     NoSuchAlgorithmException | RuntimeException exp) {
                 // Signature.getParameters() may throw RuntimeException.
                 mediator = false;
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.warning(
                         "RSASSA-PSS signature with " + hash +
@@ -299,7 +298,7 @@ enum SignatureScheme {
                     Signature.getInstance(algorithm);
                 } catch (Exception e) {
                     mediator = false;
-                    if (SSLLogger.logging &&
+                    if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.warning(
                             "Signature algorithm, " + algorithm +
@@ -435,7 +434,7 @@ enum SignatureScheme {
 
         for (SignatureScheme ss: schemesToCheck) {
             if (!ss.isAvailable) {
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                     SSLLogger.finest(
                         "Ignore unsupported signature scheme: " + ss.name);
@@ -454,12 +453,12 @@ enum SignatureScheme {
             if (isMatch) {
                 if (ss.isPermitted(constraints, scopes)) {
                     supported.add(ss);
-                } else if (SSLLogger.logging &&
+                } else if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                     SSLLogger.finest(
                         "Ignore disabled signature scheme: " + ss.name);
                 }
-            } else if (SSLLogger.logging &&
+            } else if (SSLLogger.isOn() &&
                     SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                 SSLLogger.finest(
                     "Ignore inactive signature scheme: " + ss.name);
@@ -479,7 +478,7 @@ enum SignatureScheme {
         for (int ssid : algorithmIds) {
             SignatureScheme ss = SignatureScheme.valueOf(ssid);
             if (ss == null) {
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.warning(
                             "Unsupported signature scheme: " +
@@ -490,7 +489,7 @@ enum SignatureScheme {
                     && ss.isAllowed(constraints, protocolVersion, scopes)) {
                 supported.add(ss);
             } else {
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.warning(
                             "Unsupported signature scheme: " + ss.name);
@@ -550,7 +549,7 @@ enum SignatureScheme {
                         }
                     }
 
-                    if (SSLLogger.logging &&
+                    if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                         SSLLogger.finest(
                             "Ignore the signature algorithm (" + ss +
@@ -579,7 +578,7 @@ enum SignatureScheme {
                         }
                     }
 
-                    if (SSLLogger.logging &&
+                    if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                         SSLLogger.finest(
                             "Ignore the legacy signature algorithm (" + ss +
@@ -665,7 +664,7 @@ enum SignatureScheme {
             return signer;
         } catch (NoSuchAlgorithmException | InvalidKeyException |
                 InvalidAlgorithmParameterException nsae) {
-            if (SSLLogger.logging &&
+            if (SSLLogger.isOn() &&
                     SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                 SSLLogger.finest(
                     "Ignore unsupported signature algorithm (" +

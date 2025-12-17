@@ -157,7 +157,7 @@ final class AlpnExtension {
 
             // Is it a supported and enabled extension?
             if (!chc.sslConfig.isAvailable(SSLExtension.CH_ALPN)) {
-                if (SSLLogger.logging
+                if (SSLLogger.isOn()
                         && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.info(
                             "Ignore client unavailable extension: " +
@@ -171,7 +171,7 @@ final class AlpnExtension {
 
             String[] laps = chc.sslConfig.applicationProtocols;
             if ((laps == null) || (laps.length == 0)) {
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.info(
                             "No available application protocols");
@@ -185,7 +185,7 @@ final class AlpnExtension {
                 int length = ap.getBytes(alpnCharset).length;
                 if (length == 0) {
                     // log the configuration problem
-                    if (SSLLogger.logging &&
+                    if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.severe(
                                 "Application protocol name cannot be empty");
@@ -200,7 +200,7 @@ final class AlpnExtension {
                     listLength += (length + 1);
                 } else {
                     // log the configuration problem
-                    if (SSLLogger.logging &&
+                    if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.severe(
                                 "Application protocol name (" + ap +
@@ -216,7 +216,7 @@ final class AlpnExtension {
 
                 if (listLength > MAX_AP_LIST_LENGTH) {
                     // log the configuration problem
-                    if (SSLLogger.logging &&
+                    if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.severe(
                                 "The configured application protocols (" +
@@ -271,7 +271,7 @@ final class AlpnExtension {
             if (!shc.sslConfig.isAvailable(SSLExtension.CH_ALPN)) {
                 shc.applicationProtocol = "";
                 shc.conContext.applicationProtocol = "";
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.info(
                             "Ignore server unavailable extension: " +
@@ -294,7 +294,7 @@ final class AlpnExtension {
             if (noAPSelector && noAlpnProtocols) {
                 shc.applicationProtocol = "";
                 shc.conContext.applicationProtocol = "";
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine(
                             "Ignore server unenabled extension: " +
@@ -385,7 +385,7 @@ final class AlpnExtension {
                     (AlpnSpec)shc.handshakeExtensions.get(SSLExtension.CH_ALPN);
             if (requestedAlps == null) {
                 // Ignore, this extension was not requested and accepted.
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine(
                             "Ignore unavailable extension: " +
@@ -431,7 +431,7 @@ final class AlpnExtension {
                 // Ignore, no negotiated application layer protocol.
                 shc.applicationProtocol = "";
                 shc.conContext.applicationProtocol = "";
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.warning(
                         "Ignore, no negotiated application layer protocol");

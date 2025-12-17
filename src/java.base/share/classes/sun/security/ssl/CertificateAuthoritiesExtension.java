@@ -192,7 +192,7 @@ final class CertificateAuthoritiesExtension {
             // Is it a supported and enabled extension?
             if (!chc.sslConfig.isAvailable(
                     SSLExtension.CH_CERTIFICATE_AUTHORITIES)) {
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine(
                             "Ignore unavailable " +
@@ -206,7 +206,7 @@ final class CertificateAuthoritiesExtension {
             X509Certificate[] caCerts =
                     chc.sslContext.getX509TrustManager().getAcceptedIssuers();
             if (caCerts.length == 0) {
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine(
                             "No available certificate authorities");
@@ -218,7 +218,7 @@ final class CertificateAuthoritiesExtension {
             List<byte[]> encodedCAs =
                     CertificateAuthoritiesSpec.getEncodedAuthorities(caCerts);
             if (encodedCAs.isEmpty()) {
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.warning(
                             "The number of CAs exceeds the maximum size " +
@@ -273,7 +273,7 @@ final class CertificateAuthoritiesExtension {
             // Is it a supported and enabled extension?
             if (!shc.sslConfig.isAvailable(
                     SSLExtension.CH_CERTIFICATE_AUTHORITIES)) {
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine(
                             "Ignore unavailable " +
@@ -323,7 +323,7 @@ final class CertificateAuthoritiesExtension {
             // Is it a supported and enabled extension?
             if (!shc.sslConfig.isAvailable(
                     SSLExtension.CR_CERTIFICATE_AUTHORITIES)) {
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine(
                             "Ignore unavailable " +
@@ -337,7 +337,7 @@ final class CertificateAuthoritiesExtension {
             X509Certificate[] caCerts =
                     shc.sslContext.getX509TrustManager().getAcceptedIssuers();
             if (caCerts.length == 0) {
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine(
                             "No available certificate authorities");
@@ -349,7 +349,7 @@ final class CertificateAuthoritiesExtension {
             List<byte[]> encodedCAs =
                     CertificateAuthoritiesSpec.getEncodedAuthorities(caCerts);
             if (encodedCAs.isEmpty()) {
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.warning(
                         "Too many certificate authorities to use " +
@@ -404,7 +404,7 @@ final class CertificateAuthoritiesExtension {
             // Is it a supported and enabled extension?
             if (!chc.sslConfig.isAvailable(
                     SSLExtension.CR_CERTIFICATE_AUTHORITIES)) {
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine(
                             "Ignore unavailable " +

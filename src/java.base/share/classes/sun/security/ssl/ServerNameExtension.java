@@ -216,7 +216,7 @@ final class ServerNameExtension {
 
             // Is it a supported and enabled extension?
             if (!chc.sslConfig.isAvailable(CH_SERVER_NAME)) {
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.warning(
                         "Ignore unavailable server_name extension");
@@ -262,7 +262,7 @@ final class ServerNameExtension {
                 return extData;
             }
 
-            if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.warning("Unable to indicate server name");
             }
             return null;
@@ -288,7 +288,7 @@ final class ServerNameExtension {
 
             // Is it a supported and enabled extension?
             if (!shc.sslConfig.isAvailable(CH_SERVER_NAME)) {
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine(
                         "Ignore unavailable extension: " + CH_SERVER_NAME.name);
@@ -307,7 +307,7 @@ final class ServerNameExtension {
             if (!shc.sslConfig.sniMatchers.isEmpty()) {
                 sni = chooseSni(shc.sslConfig.sniMatchers, spec.serverNames);
                 if (sni != null) {
-                    if (SSLLogger.logging &&
+                    if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.fine(
                                 "server name indication (" +
@@ -325,7 +325,7 @@ final class ServerNameExtension {
                 // connection with a "missing_extension" alert.
                 //
                 // We do not reject client without SNI extension currently.
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine(
                             "no server name matchers, " +
@@ -351,7 +351,7 @@ final class ServerNameExtension {
                     // so don't include the pre-shared key in the
                     // ServerHello handshake message
                     shc.handshakeExtensions.remove(SH_PRE_SHARED_KEY);
-                    if (SSLLogger.logging &&
+                    if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.fine(
                                 "abort session resumption, " +
@@ -446,7 +446,7 @@ final class ServerNameExtension {
             CHServerNamesSpec spec = (CHServerNamesSpec)
                     shc.handshakeExtensions.get(CH_SERVER_NAME);
             if (spec == null) {
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.finest(
                         "Ignore unavailable extension: " + SH_SERVER_NAME.name);
@@ -457,7 +457,7 @@ final class ServerNameExtension {
             // When resuming a session, the server MUST NOT include a
             // server_name extension in the server hello.
             if (shc.isResumption || shc.negotiatedServerName == null) {
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.finest(
                         "No expected server name indication response");
@@ -535,7 +535,7 @@ final class ServerNameExtension {
             CHServerNamesSpec spec = (CHServerNamesSpec)
                     shc.handshakeExtensions.get(CH_SERVER_NAME);
             if (spec == null) {
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.finest(
                         "Ignore unavailable extension: " + EE_SERVER_NAME.name);
@@ -546,7 +546,7 @@ final class ServerNameExtension {
             // When resuming a session, the server MUST NOT include a
             // server_name extension in the server hello.
             if (shc.isResumption || shc.negotiatedServerName == null) {
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.finest(
                         "No expected server name indication response");

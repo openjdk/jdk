@@ -176,7 +176,7 @@ final class MaxFragExtension {
 
             // Is it a supported and enabled extension?
             if (!chc.sslConfig.isAvailable(CH_MAX_FRAGMENT_LENGTH)) {
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine(
                         "Ignore unavailable max_fragment_length extension");
@@ -214,7 +214,7 @@ final class MaxFragExtension {
             } else {
                 // log and ignore, no MFL extension.
                 chc.maxFragmentLength = -1;
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine(
                         "No available max_fragment_length extension can " +
@@ -245,7 +245,7 @@ final class MaxFragExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             if (!shc.sslConfig.isAvailable(CH_MAX_FRAGMENT_LENGTH)) {
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine(
                         "Ignore unavailable max_fragment_length extension");
@@ -291,7 +291,7 @@ final class MaxFragExtension {
             MaxFragLenSpec spec = (MaxFragLenSpec)
                     shc.handshakeExtensions.get(CH_MAX_FRAGMENT_LENGTH);
             if (spec == null) {
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.finest(
                         "Ignore unavailable max_fragment_length extension");
@@ -309,7 +309,7 @@ final class MaxFragExtension {
                     // For better interoperability, abort the maximum
                     // fragment length negotiation, rather than terminate
                     // the connection with a fatal alert.
-                    if (SSLLogger.logging &&
+                    if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.fine(
                             "Abort the maximum fragment length negotiation, " +
@@ -418,7 +418,7 @@ final class MaxFragExtension {
                     // For better interoperability, abort the maximum
                     // fragment length negotiation, rather than terminate
                     // the connection with a fatal alert.
-                    if (SSLLogger.logging &&
+                    if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.fine(
                             "Abort the maximum fragment length negotiation, " +
@@ -461,7 +461,7 @@ final class MaxFragExtension {
             MaxFragLenSpec spec = (MaxFragLenSpec)
                     shc.handshakeExtensions.get(CH_MAX_FRAGMENT_LENGTH);
             if (spec == null) {
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.finest(
                         "Ignore unavailable max_fragment_length extension");
@@ -479,7 +479,7 @@ final class MaxFragExtension {
                     // For better interoperability, abort the maximum
                     // fragment length negotiation, rather than terminate
                     // the connection with a fatal alert.
-                    if (SSLLogger.logging &&
+                    if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.fine(
                             "Abort the maximum fragment length negotiation, " +
@@ -586,7 +586,7 @@ final class MaxFragExtension {
                     // For better interoperability, abort the maximum
                     // fragment length negotiation, rather than terminate
                     // the connection with a fatal alert.
-                    if (SSLLogger.logging &&
+                    if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.fine(
                             "Abort the maximum fragment length negotiation, " +

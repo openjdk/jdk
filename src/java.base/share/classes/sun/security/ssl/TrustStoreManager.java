@@ -108,7 +108,7 @@ final class TrustStoreManager {
             this.storeFile = storeFile;
             this.lastModified = lastModified;
 
-            if (SSLLogger.logging &&
+            if (SSLLogger.isOn() &&
                     SSLLogger.isOn(SSLLogger.Opt.TRUSTMANAGER)) {
                 SSLLogger.fine(
                     "trustStore is: " + storeName + "\n" +
@@ -152,7 +152,7 @@ final class TrustStoreManager {
                     }
 
                     // Not break, the file is inaccessible.
-                    if (SSLLogger.logging &&
+                    if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.TRUSTMANAGER)) {
                         SSLLogger.fine(
                                 "Inaccessible trust store: " +
@@ -268,7 +268,7 @@ final class TrustStoreManager {
                 }
 
                 // Reload a new key store.
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.TRUSTMANAGER)) {
                     SSLLogger.fine("Reload the trust store");
                 }
@@ -323,7 +323,7 @@ final class TrustStoreManager {
 
                 // Reload the trust store if needed.
                 if (ks == null) {
-                    if (SSLLogger.logging &&
+                    if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.TRUSTMANAGER)) {
                         SSLLogger.fine("Reload the trust store");
                     }
@@ -332,13 +332,13 @@ final class TrustStoreManager {
                 }
 
                 // Reload trust certs from the key store.
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.TRUSTMANAGER)) {
                     SSLLogger.fine("Reload trust certs");
                 }
 
                 certs = loadTrustedCerts(ks);
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.TRUSTMANAGER)) {
                     SSLLogger.fine("Reloaded " + certs.size() + " trust certs");
                 }
@@ -360,7 +360,7 @@ final class TrustStoreManager {
                     descriptor.storeFile == null) {
 
                 // No file available, no KeyStore available.
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.TRUSTMANAGER)) {
                     SSLLogger.fine("No available key store");
                 }
@@ -388,7 +388,7 @@ final class TrustStoreManager {
                     ks.load(bis, password);
                 } catch (FileNotFoundException fnfe) {
                     // No file available, no KeyStore available.
-                    if (SSLLogger.logging &&
+                    if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.TRUSTMANAGER)) {
                         SSLLogger.fine(
                             "Not available key store: " + descriptor.storeName);

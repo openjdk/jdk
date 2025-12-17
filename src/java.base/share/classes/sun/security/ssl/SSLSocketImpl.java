@@ -370,7 +370,7 @@ public final class SSLSocketImpl
             // start handshaking, if failed, the connection will be closed.
             ensureNegotiated(false);
         } catch (IOException ioe) {
-            if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.severe("handshake failed", ioe);
             }
 
@@ -573,7 +573,7 @@ public final class SSLSocketImpl
             return;
         }
 
-        if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
+        if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
             SSLLogger.fine("duplex close of SSLSocket");
         }
 
@@ -591,7 +591,7 @@ public final class SSLSocketImpl
             }
         } catch (IOException ioe) {
             // ignore the exception
-            if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.warning("SSLSocket duplex close failed. Debug info only. Exception details:", ioe);
             }
         } finally {
@@ -601,7 +601,7 @@ public final class SSLSocketImpl
                     closeSocket(false);
                 } catch (IOException ioe) {
                     // ignore the exception
-                    if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
+                    if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                         SSLLogger.warning("SSLSocket close failed. Debug info only. Exception details:", ioe);
                     }
                 } finally {
@@ -696,7 +696,7 @@ public final class SSLSocketImpl
                                     "close_notify message cannot be sent.");
                         } else {
                             super.shutdownOutput();
-                            if (SSLLogger.logging &&
+                            if (SSLLogger.isOn() &&
                                     SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                                 SSLLogger.warning(
                                     "SSLSocket output duplex close failed: " +
@@ -718,7 +718,7 @@ public final class SSLSocketImpl
                     // failed to send the close_notify message.
                     //
                     conContext.conSession.invalidate();
-                    if (SSLLogger.logging &&
+                    if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                         SSLLogger.warning(
                                 "Invalidate the session: SO_LINGER timeout, " +
@@ -834,7 +834,7 @@ public final class SSLSocketImpl
             return;
         }
 
-        if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
+        if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
             SSLLogger.fine("close inbound of SSLSocket");
         }
 
@@ -870,7 +870,7 @@ public final class SSLSocketImpl
             return;
         }
 
-        if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
+        if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
             SSLLogger.fine("close outbound of SSLSocket");
         }
         conContext.closeOutbound();
@@ -1029,7 +1029,7 @@ public final class SSLSocketImpl
             // filed is checked here, in case the closing process is
             // still in progress.
             if (hasDepleted) {
-                if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.fine("The input stream has been depleted");
                 }
 
@@ -1050,7 +1050,7 @@ public final class SSLSocketImpl
 
                 // Double check if the input stream has been depleted.
                 if (hasDepleted) {
-                    if (SSLLogger.logging &&
+                    if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                         SSLLogger.fine("The input stream is closing");
                     }
@@ -1137,7 +1137,7 @@ public final class SSLSocketImpl
 
         @Override
         public void close() throws IOException {
-            if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.finest("Closing input stream");
             }
 
@@ -1145,7 +1145,7 @@ public final class SSLSocketImpl
                 SSLSocketImpl.this.close();
             } catch (IOException ioe) {
                 // ignore the exception
-                if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.warning("input stream close failed. Debug info only. Exception details:", ioe);
                 }
             }
@@ -1221,7 +1221,7 @@ public final class SSLSocketImpl
                 socketInputRecord.deplete(
                     conContext.isNegotiated && (getSoTimeout() > 0));
             } catch (Exception ex) {
-                if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.warning(
                         "input stream close depletion failed", ex);
                 }
@@ -1330,7 +1330,7 @@ public final class SSLSocketImpl
 
         @Override
         public void close() throws IOException {
-            if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.finest("Closing output stream");
             }
 
@@ -1338,7 +1338,7 @@ public final class SSLSocketImpl
                 SSLSocketImpl.this.close();
             } catch (IOException ioe) {
                 // ignore the exception
-                if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.warning("output stream close failed. Debug info only. Exception details:", ioe);
                 }
             }
@@ -1546,7 +1546,7 @@ public final class SSLSocketImpl
         if ((conContext.handshakeContext == null) &&
                 !conContext.isOutboundClosed() &&
                 !conContext.isBroken) {
-            if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.finest("trigger key update");
             }
             startHandshake();
@@ -1565,7 +1565,7 @@ public final class SSLSocketImpl
             !conContext.isOutboundClosed() &&
             !conContext.isInboundClosed() &&
             !conContext.isBroken) {
-            if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.finest("trigger new session ticket");
             }
             conContext.conSession.updateNST = false;
@@ -1673,7 +1673,7 @@ public final class SSLSocketImpl
      * This method never returns normally, it always throws an IOException.
      */
     private void handleException(Exception cause) throws IOException {
-        if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
+        if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
             SSLLogger.warning("handling exception", cause);
         }
 
@@ -1750,7 +1750,7 @@ public final class SSLSocketImpl
     @Override
     public void shutdown() throws IOException {
         if (!isClosed()) {
-            if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.fine("close the underlying socket");
             }
 
@@ -1776,7 +1776,7 @@ public final class SSLSocketImpl
     }
 
     private void closeSocket(boolean selfInitiated) throws IOException {
-        if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
+        if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
             SSLLogger.fine("close the SSL connection " +
                 (selfInitiated ? "(initiative)" : "(passive)"));
         }
@@ -1831,7 +1831,7 @@ public final class SSLSocketImpl
     * transport without waiting for the responding close_notify.
     */
     private void waitForClose() throws IOException {
-        if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
+        if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
             SSLLogger.fine("wait for close_notify or alert");
         }
 
@@ -1841,7 +1841,7 @@ public final class SSLSocketImpl
                 try {
                     Plaintext plainText = decode(null);
                     // discard and continue
-                    if (SSLLogger.logging &&
+                    if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                         SSLLogger.finest(
                                 "discard plaintext while waiting for close",

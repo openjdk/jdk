@@ -138,7 +138,7 @@ final class RenegoInfoExtension {
 
             // Is it a supported and enabled extension?
             if (!chc.sslConfig.isAvailable(CH_RENEGOTIATION_INFO)) {
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine(
                             "Ignore unavailable renegotiation_info extension");
@@ -183,7 +183,7 @@ final class RenegoInfoExtension {
                 return extData;
             } else {    // not secure renegotiation
                 if (HandshakeContext.allowUnsafeRenegotiation) {
-                    if (SSLLogger.logging &&
+                    if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.warning("Using insecure renegotiation");
                     }
@@ -218,7 +218,7 @@ final class RenegoInfoExtension {
 
             // Is it a supported and enabled extension?
             if (!shc.sslConfig.isAvailable(CH_RENEGOTIATION_INFO)) {
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine("Ignore unavailable extension: " +
                             CH_RENEGOTIATION_INFO.name);
@@ -283,7 +283,7 @@ final class RenegoInfoExtension {
                 for (int id : clientHello.cipherSuiteIds) {
                     if (id ==
                             CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV.id) {
-                        if (SSLLogger.logging &&
+                        if (SSLLogger.isOn() &&
                                 SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                             SSLLogger.finest(
                                 "Safe renegotiation, using the SCSV signaling");
@@ -298,7 +298,7 @@ final class RenegoInfoExtension {
                         "Failed to negotiate the use of secure renegotiation");
                 }   // otherwise, allow legacy hello message
 
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.warning("Warning: No renegotiation " +
                         "indication in ClientHello, allow legacy ClientHello");
@@ -311,14 +311,14 @@ final class RenegoInfoExtension {
                         "Inconsistent secure renegotiation indication");
             } else {    // renegotiation, not secure
                 if (HandshakeContext.allowUnsafeRenegotiation) {
-                    if (SSLLogger.logging &&
+                    if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.warning("Using insecure renegotiation");
                     }
                 } else {
                     // Unsafe renegotiation should have been aborted in
                     // earlier processes.
-                    if (SSLLogger.logging &&
+                    if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.fine("Terminate insecure renegotiation");
                     }
@@ -352,7 +352,7 @@ final class RenegoInfoExtension {
             if (requestedSpec == null && !shc.conContext.secureRenegotiation) {
                 // Ignore, no renegotiation_info extension or SCSV signaling
                 // requested.
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.finest(
                         "Ignore unavailable renegotiation_info extension");
@@ -362,7 +362,7 @@ final class RenegoInfoExtension {
 
             if (!shc.conContext.secureRenegotiation) {
                 // Ignore, no secure renegotiation is negotiated.
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.finest(
                         "No secure renegotiation has been negotiated");
@@ -524,7 +524,7 @@ final class RenegoInfoExtension {
                         "Failed to negotiate the use of secure renegotiation");
                 }   // otherwise, allow legacy hello message
 
-                if (SSLLogger.logging &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.warning("Warning: No renegotiation " +
                         "indication in ServerHello, allow legacy ServerHello");
@@ -537,14 +537,14 @@ final class RenegoInfoExtension {
                         "Inconsistent secure renegotiation indication");
             } else {    // renegotiation, not secure
                 if (HandshakeContext.allowUnsafeRenegotiation) {
-                    if (SSLLogger.logging &&
+                    if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.warning("Using insecure renegotiation");
                     }
                 } else {
                     // Unsafe renegotiation should have been aborted in
                     // earlier processes.
-                    if (SSLLogger.logging &&
+                    if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.fine("Terminate insecure renegotiation");
                     }
