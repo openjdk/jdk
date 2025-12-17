@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ endif
 
 default: tars
 
-tars : $(TAR_FILE)
+tars: $(TAR_FILE)
 
 $(TAR_FILE): $(shell find $(SRC_DIR) -type f)
 	@echo 'Creating compiler package $@'
