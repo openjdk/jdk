@@ -21,7 +21,7 @@
  * questions.
  */
 
-package compiler.constantFold;
+package compiler.corelibs;
 
 import java.util.Optional;
 
