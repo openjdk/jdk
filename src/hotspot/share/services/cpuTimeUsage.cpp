@@ -70,9 +70,7 @@ private:
 
 public:
   virtual void do_thread(Thread* thread) {
-    CPUTime new_value = detailed_thread_cpu_time_or_zero(thread);
-    _cpu_time.user += new_value.user;
-    _cpu_time.system += new_value.system;
+    _cpu_time += detailed_thread_cpu_time_or_zero(thread);
   }
   CPUTime cpu_time() { return _cpu_time; };
 };

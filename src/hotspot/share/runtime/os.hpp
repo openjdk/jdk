@@ -171,8 +171,9 @@ class CPUTime {
 public:
   int64_t user;
   int64_t system;
-  CPUTime(int64_t user, int64_t system);
-  CPUTime operator-=(const CPUTime &n);
+  CPUTime(jlong user, jlong system);
+  CPUTime& operator+=(const CPUTime &other);
+  CPUTime& operator-=(const CPUTime &other);
 };
 
 class os: AllStatic {

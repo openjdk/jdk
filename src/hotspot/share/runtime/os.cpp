@@ -100,12 +100,18 @@ os::PageSizes     os::_page_sizes;
 
 DEBUG_ONLY(bool os::_mutex_init_done = false;)
 
-CPUTime::CPUTime(int64_t user, int64_t system) :
-  user(user), system(system) {};
+CPUTime::CPUTime(jlong user, jlong system) :
+  user(static_cast<int64_t>(user)), system(static_cast<int64_t>(system)) {};
 
-CPUTime CPUTime::operator-=(const CPUTime &n) {
-  user -= n.user;
-  system -= n.system;
+CPUTime& CPUTime::operator+=(const CPUTime &other) {
+  user += other.user;
+  system += other.system;
+  return *this;
+}
+
+CPUTime& CPUTime::operator-=(const CPUTime &other) {
+  user -= other.user;
+  system -= other.system;
   return *this;
 }
 
