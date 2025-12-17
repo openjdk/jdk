@@ -93,10 +93,12 @@ JAVADOC_DISABLED_DOCLINT_WARNINGS := missing
 JAVADOC_DISABLED_DOCLINT_PACKAGES := org.w3c.* javax.smartcardio
 
 # The initial set of options for javadoc
+# -XDaccessInternalAPI is a temporary workaround, see 8373909
 JAVADOC_OPTIONS := -use -keywords -notimestamp \
     -serialwarn -encoding utf-8 -docencoding utf-8 -breakiterator \
     -splitIndex --system none -javafx --expand-requires transitive \
-    --override-methods=summary
+    --override-methods=summary \
+    -XDaccessInternalAPI
 
 # The reference options must stay stable to allow for comparisons across the
 # development cycle.
@@ -369,11 +371,9 @@ define SetupApiDocsGenerationBody
 
   ifeq ($$($1_JAVADOC_CMD), )
     $1_JAVADOC_CMD := $$(JAVA) -Djava.awt.headless=true $$($1_JAVA_ARGS) \
-        --add-exports jdk.javadoc.interim/jdk.javadoc.internal.doclets.formats.html=ALL-UNNAMED \
         $$(NEW_JAVADOC)
   else
-    $1_OPTIONS += $$(addprefix -J, $$($1_JAVA_ARGS)) \
-        --add-exports jdk.javadoc/jdk.javadoc.internal.doclets.formats.html=ALL-UNNAMED
+    $1_OPTIONS += $$(addprefix -J, $$($1_JAVA_ARGS))
 
   endif
 
