@@ -47,7 +47,7 @@ class Request {
     private InputStream is;
     private OutputStream os;
     private final int maxReqHeaderSize;
-    private final  boolean firstClearRequest;
+    private final boolean firstClearRequest;
 
     Request(InputStream rawInputStream, OutputStream rawout, boolean firstClearRequest) throws IOException {
         this.maxReqHeaderSize = ServerConfig.getMaxReqHeaderSize();
