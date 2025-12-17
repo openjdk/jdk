@@ -105,13 +105,16 @@ public abstract class VectorType implements CodeGenerationDataNameType {
         public final int length; // lane count
         public final String speciesName;
 
-        // TODO: add shuffle and mask
+        public final Mask maskType;
+        public final Shuffle shuffleType;
 
         private Vector(PrimitiveType elementType, int length) {
             super(vectorTypeName(elementType));
             this.elementType = elementType;
             this.length = length;
             this.speciesName = name() + ".SPECIES_" + (elementType.byteSize() * 8 * length);
+            this.maskType = new Mask(this);
+            this.shuffleType = new Shuffle(this);
         }
 
         @Override
@@ -122,31 +125,36 @@ public abstract class VectorType implements CodeGenerationDataNameType {
         }
     }
 
-//    private static final Generator<Short> GEN_FLOAT16 = Generators.G.float16s();
-//
-//    // We only need one static instance of the class.
-//    static final Float16Type FLOAT16 = new Float16Type();
-//
-//    // Private constructor so nobody can create duplicate instances.
-//    private Float16Type() {}
-//
-//    @Override
-//    public boolean isSubtypeOf(DataName.Type other) {
-//        return other instanceof Float16Type;
-//    }
-//
-//    @Override
-//    public String name() {
-//        return "Float16";
-//    }
-//
-//    @Override
-//    public String toString() {
-//        return name();
-//    }
-//
-//    @Override
-//    public Object con() {
-//        return "Float16.shortBitsToFloat16((short)" + GEN_FLOAT16.next() + ")";
-//    }
+    public static final class Mask extends VectorType {
+        public final Vector vectorType;
+
+        private Mask(Vector vectorType) {
+            super("VectorMask<" + vectorType.elementType.boxedTypeName() + ">");
+            this.vectorType = vectorType;
+        }
+
+        @Override
+        public final Object con() {
+            // TODO: more options?
+            return List.of("VectorMask.fromLong(", vectorType.speciesName, ", ",
+                           CodeGenerationDataNameType.longs().con(), ")");
+        }
+    }
+
+    public static final class Shuffle extends VectorType {
+        public final Vector vectorType;
+
+        private Shuffle(Vector vectorType) {
+            super("VectorShuffle<" + vectorType.elementType.boxedTypeName() + ">");
+            this.vectorType = vectorType;
+        }
+
+        @Override
+        public final Object con() {
+            // TODO: more options?
+            return List.of("VectorShuffle.iota(", vectorType.speciesName, ", ",
+                           CodeGenerationDataNameType.ints().con(), ", ",
+                           CodeGenerationDataNameType.ints().con(), ", true)");
+        }
+    }
 }

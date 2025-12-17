@@ -82,12 +82,16 @@ public class TestVectorTypes {
                 let("elementType", type.elementType),
                 let("length", type.length),
                 let("SPECIES", type.speciesName),
+                let("maskType", type.maskType),
+                let("shuffleType", type.shuffleType),
                 """
                 // #type #elementType #length #SPECIES
                 @Test
                 public static void $test() {
                 """,
                 "    #elementType scalar = ", type.elementType.con(), ";\n",
+                "    #maskType mask = ", type.maskType.con(), ";\n",
+                "    #shuffleType shuffle = ", type.shuffleType.con(), ";\n",
                 """
                     #type zeros = #{type}.zero(#SPECIES);
                     #type zeros2 = #{type}.broadcast(#SPECIES, 0);
@@ -96,6 +100,17 @@ public class TestVectorTypes {
                     Verify.checkEQ(vector, vector.add(zeros));
                     Verify.checkEQ(vector.length(), #length);
                     Verify.checkEQ(vector.lane(#length-1), scalar);
+
+                    #type v1 = zeros.add(vector, mask);
+                    #type v2 = zeros.blend(vector, mask);
+                    Verify.checkEQ(v1, v2);
+
+                    #type iota = zeros.addIndex(1);
+                    #type v3 = iota.rearrange(iota.toShuffle());
+                    Verify.checkEQ(iota, v3);
+                    #type v4 = iota.rearrange(shuffle);
+                    Verify.checkEQ(shuffle, v4.toShuffle());
+                    Verify.checkEQ(shuffle.toVector(), v4);
                 }
                 """
             );
