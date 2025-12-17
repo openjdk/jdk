@@ -21,6 +21,8 @@
  * questions.
  */
 
+import static jdk.jpackage.test.RunnablePackageTest.Action.CREATE_AND_UNPACK;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,17 +33,16 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
-import jdk.jpackage.test.AppImageFile;
-import jdk.jpackage.test.ApplicationLayout;
-import jdk.jpackage.test.PackageFile;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.test.AppImageFile;
+import jdk.jpackage.test.ApplicationLayout;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageCommand.StandardAssert;
+import jdk.jpackage.test.PackageFile;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
-import static jdk.jpackage.test.RunnablePackageTest.Action.CREATE_AND_UNPACK;
 import jdk.jpackage.test.TKit;
 
 /*
@@ -145,11 +146,11 @@ public final class InOutPathTest {
     }
 
     @Test
-    public void test() throws Throwable {
+    public void test() throws Exception {
         runTest(packageTypes, configure);
     }
 
-    private static Envelope wrap(ThrowingConsumer<JPackageCommand> v, String label) {
+    private static Envelope wrap(ThrowingConsumer<JPackageCommand, ? extends Exception> v, String label) {
         return new Envelope(v, label);
     }
 
@@ -158,8 +159,8 @@ public final class InOutPathTest {
     }
 
     private static void runTest(Set<PackageType> packageTypes,
-            ThrowingConsumer<JPackageCommand> configure) throws Throwable {
-        ThrowingConsumer<JPackageCommand> configureWrapper = cmd -> {
+            ThrowingConsumer<JPackageCommand, ? extends Exception> configure) throws Exception {
+        ThrowingConsumer<JPackageCommand, Exception> configureWrapper = cmd -> {
             // Make sure the input directory is empty in every test run.
             // This is needed because jpackage output directories in this test
             // are subdirectories of the input directory.
@@ -268,7 +269,7 @@ public final class InOutPathTest {
         }
     }
 
-    private static final record Envelope(ThrowingConsumer<JPackageCommand> value, String label) {
+    private static final record Envelope(ThrowingConsumer<JPackageCommand, ? extends Exception> value, String label) {
         @Override
         public String toString() {
             // Will produce the same test description for the same label every
@@ -291,7 +292,7 @@ public final class InOutPathTest {
     }
 
     private final Set<PackageType> packageTypes;
-    private final ThrowingConsumer<JPackageCommand> configure;
+    private final ThrowingConsumer<JPackageCommand, ? extends Exception> configure;
 
     // Placing jar file in the "Resources" subdir of the input directory would allow
     // to use the input directory with `--app-content` on OSX.
