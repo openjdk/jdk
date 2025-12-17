@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,26 +32,29 @@
  *        jdk.test.lib.JDKToolLauncher
  *        jdk.test.lib.Platform
  *        jdk.test.lib.process.*
- * @run testng/timeout=300 NonSerializableTest
+ * @run junit/timeout=300 NonSerializableTest
  * @summary Enable serialize of nonSerializable Class descriptor.
  */
 
 import java.nio.file.Paths;
 import java.util.Arrays;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.process.ProcessTools;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class NonSerializableTest {
 
-    @BeforeClass
+    @BeforeAll
     public void setup() throws Exception {
         boolean b = CompilerUtils.compile(
                 Paths.get(System.getProperty("test.src"), "TestEntry.java"),
@@ -59,7 +62,7 @@ public class NonSerializableTest {
         assertTrue(b, "Compilation failed");
     }
 
-    @DataProvider
+    // Test cases to compile and run
     public Object[][] provider() {
         return new String[][][] {
             // Write NonSerial1, Read NonSerial1
@@ -96,8 +99,10 @@ public class NonSerializableTest {
         };
     }
 
-    @Test(dataProvider="provider")
-    public void test(String[] args) throws Exception {
+    @ParameterizedTest
+    @MethodSource("provider")
+    public void test(String[][] argArray) throws Exception {
+        String[] args = argArray[0];
         boolean b = CompilerUtils.compile(Paths.get(System.getProperty("test.src"), args[0]),
                                           Paths.get(System.getProperty("user.dir")));
         assertTrue(b, "Compilation failed");
@@ -105,6 +110,6 @@ public class NonSerializableTest {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(params);
         Process p = ProcessTools.startProcess("Serializable Test", pb);
         int exitValue = p.waitFor();
-        assertEquals(exitValue, 0, "Test failed");
+        assertEquals(0, exitValue, "Test failed");
     }
 }
