@@ -77,7 +77,7 @@ class ImmutableCollections {
 
     @AOTRuntimeSetup
     private static void runtimeSetup() {
-         // to generate a reasonably random and well-mixed SALT, use an arbitrary
+        // to generate a reasonably random and well-mixed SALT, use an arbitrary
         // value (a slice of pi), multiply with a random seed, then pick
         // the mid 32-bits from the product. By picking a SALT value in the
         // [0 ... 0xFFFF_FFFFL == 2^32-1] range, we ensure that for any positive
