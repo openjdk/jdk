@@ -70,6 +70,10 @@ public class StackWalkNativeToJava {
         output.shouldNotContain("java.lang.RuntimeException: Reached statement after obj.wait()");
         output.shouldNotContain("[error occurred during error reporting (printing native stack");
         String[] res = output.getOutput().split("StackWalkNativeToJava\\$TestNativeToJavaNative\\.callNativeMethod\\(\\)V");
+        if (res.length - 1 != 2) {
+            output.reportDiagnosticSummary();
+        }
+
         assertTrue(res.length - 1 == 2, res.length - 1);
         output.shouldNotHaveExitValue(0);
     }
