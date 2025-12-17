@@ -80,4 +80,17 @@ void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
 void NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
                                   const char *defaultDetail);
 
+/**
+ * Invokes CALL in a loop, setting RET to return value.
+ * Invokes PREDICATE for condition to restart CALL (in loop)
+ * Return RET otherwise
+ */
+#define NET_RESTARTABLE(RET,CALL,PREDICATE)     \
+    while (1) {                                 \
+        RET = CALL;                             \
+        if (!(PREDICATE)) {                     \
+            break;                              \
+        }                                       \
+    }
+
 #endif /* NET_UTILS_MD_H */
