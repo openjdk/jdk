@@ -1369,7 +1369,7 @@ template<typename Iter>
 HeapWord* ShenandoahFreeSet::allocate_from_regions(Iter& iterator, ShenandoahAllocRequest &req, bool &in_new_region) {
   for (idx_t idx = iterator.current(); iterator.has_next(); idx = iterator.next()) {
     ShenandoahHeapRegion* r = _heap->get_region(idx);
-    size_t min_size = (req.type() == ShenandoahAllocRequest::_alloc_tlab) ? req.min_size() : req.size();
+    size_t min_size = req.is_lab_alloc() ? req.min_size() : req.size();
     if (alloc_capacity(r) >= min_size * HeapWordSize) {
       HeapWord* result = try_allocate_in(r, req, in_new_region);
       if (result != nullptr) {
@@ -1501,7 +1501,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
 
   if (in_new_region) {
     log_debug(gc, free)("Using new region (%zu) for %s (" PTR_FORMAT ").",
-                        r->index(), ShenandoahAllocRequest::alloc_type_to_string(req.type()), p2i(&req));
+                        r->index(), req.type_string(), p2i(&req));
     assert(!r->is_affiliated(), "New region %zu should be unaffiliated", r->index());
     r->set_affiliation(req.affiliation());
     if (r->is_old()) {
@@ -1520,7 +1520,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     assert(ctx->is_bitmap_range_within_region_clear(ctx->top_bitmap(r), r->end()), "Bitmap above top_bitmap() must be clear");
 #endif
     log_debug(gc, free)("Using new region (%zu) for %s (" PTR_FORMAT ").",
-                        r->index(), ShenandoahAllocRequest::alloc_type_to_string(req.type()), p2i(&req));
+                        r->index(), req.type_string(), p2i(&req));
   } else {
     assert(r->is_affiliated(), "Region %zu that is not new should be affiliated", r->index());
     if (r->affiliation() != req.affiliation()) {
@@ -1534,8 +1534,8 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
   if (req.is_lab_alloc()) {
     size_t adjusted_size = req.size();
     size_t free = r->free();    // free represents bytes available within region r
-    if (req.type() == ShenandoahAllocRequest::_alloc_plab) {
-      // This is a PLAB allocation
+    if (req.is_old()) {
+      // This is a PLAB allocation(lab alloc in old gen)
       assert(_heap->mode()->is_generational(), "PLABs are only for generational mode");
       assert(_partitions.in_free_set(ShenandoahFreeSetPartitionId::OldCollector, r->index()),
              "PLABS must be allocated in old_collector_free regions");
@@ -1596,8 +1596,6 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
       r->set_update_watermark(r->top());
       if (r->is_old()) {
         _partitions.increase_used(ShenandoahFreeSetPartitionId::OldCollector, (req.actual_size() + req.waste()) * HeapWordSize);
-        assert(req.type() != ShenandoahAllocRequest::_alloc_gclab, "old-gen allocations use PLAB or shared allocation");
-        // for plabs, we'll sort the difference between evac and promotion usage when we retire the plab
       } else {
         _partitions.increase_used(ShenandoahFreeSetPartitionId::Collector, (req.actual_size() + req.waste()) * HeapWordSize);
       }
@@ -2923,6 +2921,29 @@ void ShenandoahFreeSet::log_status_under_lock() {
   }
 }
 
+void ShenandoahFreeSet::log_freeset_stats(ShenandoahFreeSetPartitionId partition_id, LogStream& ls) {
+  size_t max = 0;
+  size_t total_free = 0;
+  size_t total_used = 0;
+
+  for (idx_t idx = _partitions.leftmost(partition_id);
+        idx <= _partitions.rightmost(partition_id); idx++) {
+    if (_partitions.in_free_set(partition_id, idx)) {
+      ShenandoahHeapRegion *r = _heap->get_region(idx);
+      size_t free = alloc_capacity(r);
+      max = MAX2(max, free);
+      total_free += free;
+      total_used += r->used();
+    }
+  }
+
+  ls.print(" %s freeset stats: Partition count: %zu, Reserved: " PROPERFMT ", Max free available in a single region: " PROPERFMT ";",
+            partition_name(partition_id),
+            _partitions.count(partition_id),
+            PROPERFMTARGS(total_free), PROPERFMTARGS(max)
+          );
+}
+
 void ShenandoahFreeSet::log_status() {
   shenandoah_assert_heaplocked();
 
@@ -3042,20 +3063,18 @@ void ShenandoahFreeSet::log_status() {
       // retired, the sum of used and capacities within regions that are still in the Mutator free partition may not match
       // my internally tracked values of used() and free().
       assert(free == total_free, "Free memory (%zu) should match calculated memory (%zu)", free, total_free);
-      ls.print("Free: %zu%s, Max: %zu%s regular, %zu%s humongous, ",
-               byte_size_in_proper_unit(total_free),    proper_unit_for_byte_size(total_free),
-               byte_size_in_proper_unit(max),           proper_unit_for_byte_size(max),
-               byte_size_in_proper_unit(max_humongous), proper_unit_for_byte_size(max_humongous)
-      );
+      ls.print("Whole heap stats: Total free: " PROPERFMT ", Total used: " PROPERFMT ", Max free in a single region: " PROPERFMT
+               ", Max humongous: " PROPERFMT "; ",
+               PROPERFMTARGS(total_free), PROPERFMTARGS(total_used), PROPERFMTARGS(max), PROPERFMTARGS(max_humongous));
 
-      ls.print("Frag: ");
+      ls.print("Frag stats: ");
       size_t frag_ext;
       if (total_free_ext > 0) {
         frag_ext = 100 - (100 * max_humongous / total_free_ext);
       } else {
         frag_ext = 0;
       }
-      ls.print("%zu%% external, ", frag_ext);
+      ls.print("External: %zu%%, ", frag_ext);
 
       size_t frag_int;
       if (_partitions.count(ShenandoahFreeSetPartitionId::Mutator) > 0) {
@@ -3064,52 +3083,13 @@ void ShenandoahFreeSet::log_status() {
       } else {
         frag_int = 0;
       }
-      ls.print("%zu%% internal; ", frag_int);
-      ls.print("Used: %zu%s, Mutator Free: %zu",
-               byte_size_in_proper_unit(total_used), proper_unit_for_byte_size(total_used),
-               _partitions.count(ShenandoahFreeSetPartitionId::Mutator));
+      ls.print("Internal: %zu%%; ", frag_int);
     }
 
-    {
-      size_t max = 0;
-      size_t total_free = 0;
-      size_t total_used = 0;
-
-      for (idx_t idx = _partitions.leftmost(ShenandoahFreeSetPartitionId::Collector);
-           idx <= _partitions.rightmost(ShenandoahFreeSetPartitionId::Collector); idx++) {
-        if (_partitions.in_free_set(ShenandoahFreeSetPartitionId::Collector, idx)) {
-          ShenandoahHeapRegion *r = _heap->get_region(idx);
-          size_t free = alloc_capacity(r);
-          max = MAX2(max, free);
-          total_free += free;
-          total_used += r->used();
-        }
-      }
-      ls.print(" Collector Reserve: %zu%s, Max: %zu%s; Used: %zu%s",
-               byte_size_in_proper_unit(total_free), proper_unit_for_byte_size(total_free),
-               byte_size_in_proper_unit(max),        proper_unit_for_byte_size(max),
-               byte_size_in_proper_unit(total_used), proper_unit_for_byte_size(total_used));
-    }
-
+    log_freeset_stats(ShenandoahFreeSetPartitionId::Mutator, ls);
+    log_freeset_stats(ShenandoahFreeSetPartitionId::Collector, ls);
     if (_heap->mode()->is_generational()) {
-      size_t max = 0;
-      size_t total_free = 0;
-      size_t total_used = 0;
-
-      for (idx_t idx = _partitions.leftmost(ShenandoahFreeSetPartitionId::OldCollector);
-           idx <= _partitions.rightmost(ShenandoahFreeSetPartitionId::OldCollector); idx++) {
-        if (_partitions.in_free_set(ShenandoahFreeSetPartitionId::OldCollector, idx)) {
-          ShenandoahHeapRegion *r = _heap->get_region(idx);
-          size_t free = alloc_capacity(r);
-          max = MAX2(max, free);
-          total_free += free;
-          total_used += r->used();
-        }
-      }
-      ls.print_cr(" Old Collector Reserve: %zu%s, Max: %zu%s; Used: %zu%s",
-                  byte_size_in_proper_unit(total_free), proper_unit_for_byte_size(total_free),
-                  byte_size_in_proper_unit(max),        proper_unit_for_byte_size(max),
-                  byte_size_in_proper_unit(total_used), proper_unit_for_byte_size(total_used));
+      log_freeset_stats(ShenandoahFreeSetPartitionId::OldCollector, ls);
     }
   }
 }
