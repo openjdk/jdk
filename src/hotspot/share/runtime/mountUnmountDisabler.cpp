@@ -286,13 +286,13 @@ MountUnmountDisabler::disable_transition_for_one() {
   // carrierThread to float up.
   // This pairs with the release barrier in end_transition().
   OrderAccess::acquire();
-  JavaThread::current()->set_is_vthread_transition_disabler(true);
+  DEBUG_ONLY(JavaThread::current()->set_is_vthread_transition_disabler(true);)
 }
 
 // disable transitions for all virtual threads
 void
 MountUnmountDisabler::disable_transition_for_all() {
-  JavaThread* thread = JavaThread::current();
+  DEBUG_ONLY(JavaThread* thread = JavaThread::current();)
   DEBUG_ONLY(thread->set_is_disabler_at_start(true);)
 
   MonitorLocker ml(VThreadTransition_lock);
@@ -327,7 +327,7 @@ MountUnmountDisabler::disable_transition_for_all() {
   // carrierThread to float up.
   // This pairs with the release barrier in end_transition().
   OrderAccess::acquire();
-  thread->set_is_vthread_transition_disabler(true);
+  DEBUG_ONLY(thread->set_is_vthread_transition_disabler(true);)
   DEBUG_ONLY(thread->set_is_disabler_at_start(false);)
 }
 
@@ -350,7 +350,7 @@ MountUnmountDisabler::enable_transition_for_one() {
   if (java_lang_Thread::vthread_transition_disable_count(_vthread()) == 0) {
     ml.notify_all();
   }
-  JavaThread::current()->set_is_vthread_transition_disabler(false);
+  DEBUG_ONLY(JavaThread::current()->set_is_vthread_transition_disabler(false);)
 }
 
 // enable transitions for all virtual threads
@@ -376,7 +376,7 @@ MountUnmountDisabler::enable_transition_for_all() {
   if (global_vthread_transition_disable_count() == base_disable_count || _is_exclusive) {
     ml.notify_all();
   }
-  thread->set_is_vthread_transition_disabler(false);
+  DEBUG_ONLY(thread->set_is_vthread_transition_disabler(false);)
 }
 
 int MountUnmountDisabler::global_vthread_transition_disable_count() {

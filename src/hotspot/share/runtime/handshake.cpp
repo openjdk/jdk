@@ -521,7 +521,7 @@ HandshakeOperation* HandshakeState::get_op_for_self(bool allow_suspend, bool che
   assert(_lock.owned_by_self(), "Lock must be held");
   assert(allow_suspend || !check_async_exception, "invalid case");
 #if INCLUDE_JVMTI
-  if (allow_suspend && (_handshakee->is_disable_suspend() || _handshakee->is_vthread_transition_disabler())) {
+  if (allow_suspend && _handshakee->is_disable_suspend()) {
     // filter out suspend operations while JavaThread is in disable_suspend mode
     allow_suspend = false;
   }
