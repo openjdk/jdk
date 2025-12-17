@@ -62,6 +62,7 @@ ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :
 void ShenandoahGenerationalControlThread::run_service() {
 
   ShenandoahGCRequest request;
+  request.generation = _heap->young_generation();
   while (!should_terminate()) {
 
     // Figure out if we have pending requests.
@@ -108,8 +109,9 @@ void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest&
 
   request.cause = _requested_gc_cause;
   if (ShenandoahCollectorPolicy::is_allocation_failure(request.cause)) {
-    if (_degen_point == ShenandoahGC::_degenerated_outside_cycle) {
+    if (_degen_point == ShenandoahGC::_degenerated_unset) {
       request.generation = _heap->young_generation();
+      _degen_point = ShenandoahGC::_degenerated_outside_cycle;
     } else {
       assert(request.generation != nullptr, "Must know which generation to use for degenerated cycle");
     }
