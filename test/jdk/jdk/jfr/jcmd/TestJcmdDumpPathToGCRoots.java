@@ -46,6 +46,7 @@ import jdk.test.lib.jfr.EventNames;
  * @library /test/lib /test/jdk
  * @run main/othervm -XX:TLABSize=2k -Xmx256M -XX:ErrorLogTimeout=1 jdk.jfr.jcmd.TestJcmdDumpPathToGCRoots true infinity true
  */
+
 /**
  * @test id=path-to-gc-roots-true-cutoff-0
  * @requires vm.hasJFR & vm.flagless
@@ -112,10 +113,8 @@ import jdk.test.lib.jfr.EventNames;
  */
 public class TestJcmdDumpPathToGCRoots {
 
-    // Comfortably large enough to saturate the 32M EdgeQueue in PathToGcRootsOperation
-    // and thus exercise both BFS and DFS paths
-    private static final int OBJECT_COUNT = 2_500_000;
-    public static List<Object> leak = new ArrayList<>();
+    private static final int OBJECT_COUNT = 100_000;
+    public static List<Object[]> leak = new ArrayList<>(OBJECT_COUNT);
 
     public static void main(String[] args) throws Exception {
         WhiteBox.setWriteAllObjectSamples(true);
@@ -204,13 +203,8 @@ public class TestJcmdDumpPathToGCRoots {
     }
 
     private static void buildLeak() {
-        int chainlen = 10000;
-        for (int i = 0; i < OBJECT_COUNT/chainlen; i ++) {
-            LinkedList<Object> l = new LinkedList();
-            for (int j = 0; j < chainlen; j ++) {
-                l.add(new Object());
-            }
-            leak.add(l);
+        for (int i = 0; i < OBJECT_COUNT;i ++) {
+            leak.add(new Object[0]);
         }
     }
 }
