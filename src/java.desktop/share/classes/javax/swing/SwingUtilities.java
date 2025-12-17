@@ -1813,6 +1813,9 @@ public class SwingUtilities implements SwingConstants
 
         while (map != null) {
             InputMap parent = map.getParent();
+            if (uiInputMap == null) {
+                map.clear();
+            }
             if (parent == null || (parent instanceof UIResource)) {
                 map.setParent(uiInputMap);
                 return;
@@ -1837,6 +1840,9 @@ public class SwingUtilities implements SwingConstants
 
         while (map != null) {
             ActionMap parent = map.getParent();
+            if (uiActionMap == null) {
+                map.clear();
+            }
             if (parent == null || (parent instanceof UIResource)) {
                 map.setParent(uiActionMap);
                 return;

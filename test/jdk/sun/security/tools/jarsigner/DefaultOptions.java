@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,10 @@ public class DefaultOptions {
         keytool("-genkeypair -dname CN=CA -alias ca -keyalg rsa -ext bc:c")
                 .shouldHaveExitValue(0);
         keytool("-alias a -certreq -file a.req");
-        keytool("-alias ca -gencert -infile a.req -outfile a.cert");
+
+        // The start date is set to -1M to prevent the certificate not yet
+        // valid during fast enough execution.
+        keytool("-alias ca -gencert -infile a.req -outfile a.cert -startdate -1M");
         keytool("-alias a -import -file a.cert").shouldHaveExitValue(0);
 
         Files.write(Path.of("js.conf"), List.of(

@@ -29,8 +29,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.lang.System.Logger;
-import java.lang.System.Logger.Level;
 import java.nio.ByteBuffer;
 import java.security.cert.Certificate;
 import java.security.cert.Extension;
@@ -59,7 +57,7 @@ import static sun.security.ssl.Utilities.LINE_SEP;
  * logging mechanisms.  If the system property "javax.net.debug" is defined
  * and non-empty, a private debug logger implemented in this class is used.
  */
-public final class SSLLogger {
+public final class SSLLogger implements System.Logger {
     private static final System.Logger logger;
     // high level boolean to track whether "all" or "ssl" option
     // is specified. Further checks may be necessary to determine
@@ -303,41 +301,30 @@ public final class SSLLogger {
             this.useCompactFormat = useCompactFormat;
         }
 
-        @Override
-        public String getName() {
-            return loggerName;
-        }
-
-        @Override
-        public boolean isLoggable(Level level) {
-            return level != Level.OFF;
-        }
-
-        @Override
-        public void log(Level level,
-                ResourceBundle rb, String message, Throwable thrwbl) {
-            if (isLoggable(level)) {
-                try {
-                    String formatted =
+    @Override
+    public void log(Level level,
+                    ResourceBundle rb, String message, Throwable thrwbl) {
+        if (isLoggable(level)) {
+            try {
+                String formatted =
                         SSLSimpleFormatter.format(this, level, message, thrwbl);
-                    System.err.write(formatted.getBytes(UTF_8));
-                } catch (Exception exp) {
-                    // ignore it, just for debugging.
-                }
+                System.err.write(formatted.getBytes(UTF_8));
+            } catch (Exception exp) {
+                // ignore it, just for debugging.
             }
         }
+    }
 
-        @Override
-        public void log(Level level,
-                ResourceBundle rb, String message, Object... params) {
-            if (isLoggable(level)) {
-                try {
-                    String formatted =
+    @Override
+    public void log(Level level,
+                    ResourceBundle rb, String message, Object... params) {
+        if (isLoggable(level)) {
+            try {
+                String formatted =
                         SSLSimpleFormatter.format(this, level, message, params);
-                    System.err.write(formatted.getBytes(UTF_8));
-                } catch (Exception exp) {
-                    // ignore it, just for debugging.
-                }
+                System.err.write(formatted.getBytes(UTF_8));
+            } catch (Exception exp) {
+                // ignore it, just for debugging.
             }
         }
     }
@@ -362,68 +349,68 @@ public final class SSLLogger {
                 Locale.ENGLISH);
 
         private static final MessageFormat extendedCertFormat =
-            new MessageFormat(
-                    """
-                            "version"            : "v{0}",
-                            "serial number"      : "{1}",
-                            "signature algorithm": "{2}",
-                            "issuer"             : "{3}",
-                            "not before"         : "{4}",
-                            "not  after"         : "{5}",
-                            "subject"            : "{6}",
-                            "subject public key" : "{7}",
-                            "extensions"         : [
-                            {8}
-                            ]
-                            """,
-                Locale.ENGLISH);
+                new MessageFormat(
+                        """
+                                "version"            : "v{0}",
+                                "serial number"      : "{1}",
+                                "signature algorithm": "{2}",
+                                "issuer"             : "{3}",
+                                "not before"         : "{4}",
+                                "not  after"         : "{5}",
+                                "subject"            : "{6}",
+                                "subject public key" : "{7}",
+                                "extensions"         : [
+                                {8}
+                                ]
+                                """,
+                        Locale.ENGLISH);
 
         private static final MessageFormat messageFormatNoParas =
-            new MessageFormat(
-                    """
-                            '{'
-                              "logger"      : "{0}",
-                              "level"       : "{1}",
-                              "thread id"   : "{2}",
-                              "thread name" : "{3}",
-                              "time"        : "{4}",
-                              "caller"      : "{5}",
-                              "message"     : "{6}"
-                            '}'
-                            """,
-                Locale.ENGLISH);
+                new MessageFormat(
+                        """
+                                '{'
+                                  "logger"      : "{0}",
+                                  "level"       : "{1}",
+                                  "thread id"   : "{2}",
+                                  "thread name" : "{3}",
+                                  "time"        : "{4}",
+                                  "caller"      : "{5}",
+                                  "message"     : "{6}"
+                                '}'
+                                """,
+                        Locale.ENGLISH);
 
         private static final MessageFormat messageCompactFormatNoParas =
-            new MessageFormat(
-                "{0}|{1}|{2}|{3}|{4}|{5}|{6}" + LINE_SEP,
-                Locale.ENGLISH);
+                new MessageFormat(
+                        "{0}|{1}|{2}|{3}|{4}|{5}|{6}" + LINE_SEP,
+                        Locale.ENGLISH);
 
         private static final MessageFormat messageFormatWithParas =
-            new MessageFormat(
-                    """
-                            '{'
-                              "logger"      : "{0}",
-                              "level"       : "{1}",
-                              "thread id"   : "{2}",
-                              "thread name" : "{3}",
-                              "time"        : "{4}",
-                              "caller"      : "{5}",
-                              "message"     : "{6}",
-                              "specifics"   : [
-                            {7}
-                              ]
-                            '}'
-                            """,
-                Locale.ENGLISH);
+                new MessageFormat(
+                        """
+                                '{'
+                                  "logger"      : "{0}",
+                                  "level"       : "{1}",
+                                  "thread id"   : "{2}",
+                                  "thread name" : "{3}",
+                                  "time"        : "{4}",
+                                  "caller"      : "{5}",
+                                  "message"     : "{6}",
+                                  "specifics"   : [
+                                {7}
+                                  ]
+                                '}'
+                                """,
+                        Locale.ENGLISH);
 
         private static final MessageFormat messageCompactFormatWithParas =
-            new MessageFormat(
-                    """
-                            {0}|{1}|{2}|{3}|{4}|{5}|{6} (
-                            {7}
-                            )
-                            """,
-                Locale.ENGLISH);
+                new MessageFormat(
+                        """
+                                {0}|{1}|{2}|{3}|{4}|{5}|{6} (
+                                {7}
+                                )
+                                """,
+                        Locale.ENGLISH);
 
         private static final MessageFormat keyObjectFormat = new MessageFormat(
                 """
@@ -436,8 +423,8 @@ public final class SSLLogger {
         //     log message
         //     log message
         //     ...
-        private static String format(SSLConsoleLogger logger, Level level,
-                    String message, Object ... parameters) {
+        private static String format(SSLLogger logger, Level level,
+                                     String message, Object... parameters) {
 
             if (parameters == null || parameters.length == 0) {
                 Object[] messageFields = {
@@ -466,9 +453,9 @@ public final class SSLLogger {
                     formatCaller(),
                     message,
                     (logger.useCompactFormat ?
-                        formatParameters(parameters) :
-                        Utilities.indent(formatParameters(parameters)))
-                };
+                            formatParameters(parameters) :
+                            Utilities.indent(formatParameters(parameters)))
+            };
 
             if (logger.useCompactFormat) {
                 return messageCompactFormatWithParas.format(messageFields);
@@ -486,7 +473,7 @@ public final class SSLLogger {
                 .findFirst().orElse("unknown caller"));
         }
 
-        private static String formatParameters(Object ... parameters) {
+        private static String formatParameters(Object... parameters) {
             StringBuilder builder = new StringBuilder(512);
             boolean isFirst = true;
             for (Object parameter : parameters) {
@@ -497,21 +484,21 @@ public final class SSLLogger {
                 }
 
                 if (parameter instanceof Throwable) {
-                    builder.append(formatThrowable((Throwable)parameter));
+                    builder.append(formatThrowable((Throwable) parameter));
                 } else if (parameter instanceof Certificate) {
-                    builder.append(formatCertificate((Certificate)parameter));
+                    builder.append(formatCertificate((Certificate) parameter));
                 } else if (parameter instanceof ByteArrayInputStream) {
                     builder.append(formatByteArrayInputStream(
-                        (ByteArrayInputStream)parameter));
+                            (ByteArrayInputStream) parameter));
                 } else if (parameter instanceof ByteBuffer) {
-                    builder.append(formatByteBuffer((ByteBuffer)parameter));
+                    builder.append(formatByteBuffer((ByteBuffer) parameter));
                 } else if (parameter instanceof byte[]) {
                     builder.append(formatByteArrayInputStream(
-                        new ByteArrayInputStream((byte[])parameter)));
+                            new ByteArrayInputStream((byte[]) parameter)));
                 } else if (parameter instanceof Map.Entry) {
                     @SuppressWarnings("unchecked")
                     Map.Entry<String, ?> mapParameter =
-                        (Map.Entry<String, ?>)parameter;
+                            (Map.Entry<String, ?>) parameter;
                     builder.append(formatMapEntry(mapParameter));
                 } else {
                     builder.append(formatObject(parameter));
@@ -534,7 +521,7 @@ public final class SSLLogger {
             Object[] fields = {
                     "throwable",
                     builder.toString()
-                };
+            };
 
             return keyObjectFormat.format(fields);
         }
@@ -551,7 +538,7 @@ public final class SSLLogger {
             StringBuilder builder = new StringBuilder(512);
             try {
                 X509CertImpl x509 =
-                    X509CertImpl.toImpl((X509Certificate)certificate);
+                        X509CertImpl.toImpl((X509Certificate) certificate);
                 X509CertInfo certInfo = x509.getInfo();
                 CertificateExtensions certExts = certInfo.getExtensions();
                 if (certExts == null) {
@@ -600,7 +587,7 @@ public final class SSLLogger {
             Object[] fields = {
                     "certificate",
                     builder.toString()
-                };
+            };
 
             return Utilities.indent(keyObjectFormat.format(fields));
         }
@@ -663,13 +650,13 @@ public final class SSLLogger {
                 formatted = builder.toString();
             } else if (value instanceof byte[]) {
                 formatted = "\"" + key + "\": \"" +
-                    Utilities.toHexString((byte[])value) + "\"";
+                        Utilities.toHexString((byte[]) value) + "\"";
             } else if (value instanceof Byte) {
                 formatted = "\"" + key + "\": \"" +
-                        HexFormat.of().toHexDigits((byte)value) + "\"";
+                        HexFormat.of().toHexDigits((byte) value) + "\"";
             } else {
                 formatted = "\"" + key + "\": " +
-                    "\"" + value.toString() + "\"";
+                        "\"" + value.toString() + "\"";
             }
 
             return Utilities.indent(formatted);

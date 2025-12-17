@@ -90,6 +90,7 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
                 List.of("FINE: adding as trusted certificates:"
                             + System.lineSeparator() +
                             "  \"certificate\" : \\{",
+                        "sun.security.ssl.SSLSocketImpl close",
                         "FINE: Produced ClientHello handshake message:" +
                             System.lineSeparator() +
                             "\"ClientHello\": \\{",

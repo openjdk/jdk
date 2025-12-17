@@ -87,7 +87,7 @@ void IdealLoopTree::record_for_igvn() {
     Node* outer_safepoint = l->outer_safepoint();
     assert(outer_safepoint != nullptr, "missing piece of strip mined loop");
     _phase->_igvn._worklist.push(outer_safepoint);
-    Node* cle_out = _head->as_CountedLoop()->loopexit()->proj_out(false);
+    IfFalseNode* cle_out = _head->as_CountedLoop()->loopexit()->false_proj();
     assert(cle_out != nullptr, "missing piece of strip mined loop");
     _phase->_igvn._worklist.push(cle_out);
   }
@@ -107,7 +107,7 @@ void IdealLoopTree::compute_trip_count(PhaseIdealLoop* phase, BasicType loop_bt)
   cl->set_nonexact_trip_count();
 
   // Loop's test should be part of loop.
-  if (!phase->is_member(this, phase->get_ctrl(cl->loopexit()->in(CountedLoopEndNode::TestValue))))
+  if (!phase->ctrl_is_member(this, cl->loopexit()->in(CountedLoopEndNode::TestValue)))
     return; // Infinite loop
 
 #ifdef ASSERT
@@ -611,7 +611,7 @@ void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree* loop, Node_List& old_ne
       if (test_cond != nullptr && // Test?
           !test_cond->is_Con() && // And not already obvious?
           // And condition is not a member of this loop?
-          !loop->is_member(get_loop(get_ctrl(test_cond)))) {
+          !ctrl_is_member(loop, test_cond)) {
         // Walk loop body looking for instances of this test
         for (uint i = 0; i < loop->_body.size(); i++) {
           Node* n = loop->_body.at(i);
@@ -1366,7 +1366,7 @@ Node *PhaseIdealLoop::clone_up_backedge_goo(Node *back_ctrl, Node *preheader_ctr
 // the backedge of the main or post loop is removed, a Div node won't be able to float above the zero trip guard of the
 // loop and can't execute even if the loop is not reached.
 void PhaseIdealLoop::cast_incr_before_loop(Node* incr, Node* ctrl, CountedLoopNode* loop) {
-  Node* castii = new CastIINode(ctrl, incr, TypeInt::INT, ConstraintCastNode::UnconditionalDependency);
+  Node* castii = new CastIINode(ctrl, incr, TypeInt::INT, ConstraintCastNode::DependencyType::NonFloatingNonNarrowing);
   register_new_node(castii, ctrl);
   Node* phi = loop->phi();
   assert(phi->in(LoopNode::EntryControl) == incr, "replacing wrong input?");
@@ -1411,7 +1411,6 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
 
   C->print_method(PHASE_BEFORE_PRE_MAIN_POST, 4, main_head);
 
-  Node *pre_header= main_head->in(LoopNode::EntryControl);
   Node *init      = main_head->init_trip();
   Node *incr      = main_end ->incr();
   Node *limit     = main_end ->limit();
@@ -1465,9 +1464,8 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   pre_end->_prob = PROB_FAIR;
 
   // Find the pre-loop normal exit.
-  Node* pre_exit = pre_end->proj_out(false);
-  assert(pre_exit->Opcode() == Op_IfFalse, "");
-  IfFalseNode *new_pre_exit = new IfFalseNode(pre_end);
+  IfFalseNode* pre_exit = pre_end->false_proj();
+  IfFalseNode* new_pre_exit = new IfFalseNode(pre_end);
   _igvn.register_new_node_with_optimizer(new_pre_exit);
   set_idom(new_pre_exit, pre_end, dd_main_head);
   set_loop(new_pre_exit, outer_loop->_parent);
@@ -1682,7 +1680,7 @@ Node* PhaseIdealLoop::find_last_store_in_outer_loop(Node* store, const IdealLoop
     for (DUIterator_Fast imax, l = last->fast_outs(imax); l < imax; l++) {
       Node* use = last->fast_out(l);
       if (use->is_Store() && use->in(MemNode::Memory) == last) {
-        if (is_member(outer_loop, get_ctrl(use))) {
+        if (ctrl_is_member(outer_loop, use)) {
           assert(unique_next == last, "memory node should only have one usage in the loop body");
           unique_next = use;
         }
@@ -1708,8 +1706,7 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
 
   //------------------------------
   // Step A: Create a new post-Loop.
-  Node* main_exit = outer_main_end->proj_out(false);
-  assert(main_exit->Opcode() == Op_IfFalse, "");
+  IfFalseNode* main_exit = outer_main_end->false_proj();
   int dd_main_exit = dom_depth(main_exit);
 
   // Step A1: Clone the loop body of main. The clone becomes the post-loop.
@@ -1722,7 +1719,7 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
   post_head->set_post_loop(main_head);
 
   // clone_loop() above changes the exit projection
-  main_exit = outer_main_end->proj_out(false);
+  main_exit = outer_main_end->false_proj();
 
   // Reduce the post-loop trip count.
   CountedLoopEndNode* post_end = old_new[main_end->_idx]->as_CountedLoopEnd();
@@ -1787,7 +1784,7 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
   // right after the execution of the inner CountedLoop.
   // We have to make sure that such stores in the post loop have the right memory inputs from the main loop
   // The moved store node is always attached right after the inner loop exit, and just before the safepoint
-  const Node* if_false = main_end->proj_out(false);
+  const IfFalseNode* if_false = main_end->false_proj();
   for (DUIterator j = if_false->outs(); if_false->has_out(j); j++) {
     Node* store = if_false->out(j);
     if (store->is_Store()) {
@@ -1795,7 +1792,7 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
       // as this is when we would normally expect a Phi as input. If the memory input
       // is in the loop body as well, then we can safely assume it is still correct as the entire
       // body was cloned as a unit
-      if (!is_member(outer_loop, get_ctrl(store->in(MemNode::Memory)))) {
+      if (!ctrl_is_member(outer_loop, store->in(MemNode::Memory))) {
         Node* mem_out = find_last_store_in_outer_loop(store, outer_loop);
         Node* store_new = old_new[store->_idx];
         store_new->set_req(MemNode::Memory, mem_out);
@@ -3263,7 +3260,7 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
   Node* cast_ii = ConstraintCastNode::make_cast_for_basic_type(
       cl->in(LoopNode::EntryControl), exact_limit,
       phase->_igvn.type(exact_limit),
-      ConstraintCastNode::UnconditionalDependency, T_INT);
+      ConstraintCastNode::DependencyType::NonFloatingNonNarrowing, T_INT);
   phase->register_new_node(cast_ii, cl->in(LoopNode::EntryControl));
 
   Node* final_iv = new SubINode(cast_ii, cl->stride());
@@ -3285,7 +3282,7 @@ bool IdealLoopTree::empty_loop_candidate(PhaseIdealLoop* phase) const {
   if (!cl->is_valid_counted_loop(T_INT)) {
     return false;   // Malformed loop
   }
-  if (!phase->is_member(this, phase->get_ctrl(cl->loopexit()->in(CountedLoopEndNode::TestValue)))) {
+  if (!phase->ctrl_is_member(this, cl->loopexit()->in(CountedLoopEndNode::TestValue))) {
     return false;   // Infinite loop
   }
   return true;
@@ -3376,7 +3373,7 @@ bool IdealLoopTree::empty_loop_with_extra_nodes_candidate(PhaseIdealLoop* phase)
     return false;
   }
 
-  if (phase->is_member(this, phase->get_ctrl(cl->limit()))) {
+  if (phase->ctrl_is_member(this, cl->limit())) {
     return false;
   }
   return true;
@@ -3945,7 +3942,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
     return false;
   }
 
-  Node* exit = head->loopexit()->proj_out_or_null(0);
+  IfFalseNode* exit = head->loopexit()->false_proj_or_null();
   if (exit == nullptr) {
     return false;
   }
@@ -3989,7 +3986,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
 
   // If the store is on the backedge, it is not executed in the last
   // iteration, and we must subtract 1 from the len.
-  Node* backedge = head->loopexit()->proj_out(1);
+  IfTrueNode* backedge = head->loopexit()->true_proj();
   if (store->in(0) == backedge) {
     len = new SubINode(len, _igvn.intcon(1));
     _igvn.register_new_node_with_optimizer(len);
