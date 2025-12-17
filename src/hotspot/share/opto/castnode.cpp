@@ -313,8 +313,7 @@ void CastIINode::remove_range_check_cast(Compile* C) {
   }
 }
 
-
-bool CastLLNode::is_inner_loop_backedge(ProjNode* proj) {
+bool CastLLNode::is_inner_loop_backedge(IfProjNode* proj) {
   if (proj != nullptr) {
     Node* ctrl_use = proj->unique_ctrl_out_or_null();
     if (ctrl_use != nullptr && ctrl_use->Opcode() == Op_Loop &&
@@ -333,8 +332,8 @@ bool CastLLNode::cmp_used_at_inner_loop_exit_test(CmpNode* cmp) {
       for (DUIterator_Fast jmax, j = bol->fast_outs(jmax); j < jmax; j++) {
         Node* iff = bol->fast_out(j);
         if (iff->Opcode() == Op_If) {
-          ProjNode* true_proj = iff->as_If()->proj_out_or_null(true);
-          ProjNode* false_proj = iff->as_If()->proj_out_or_null(false);
+          IfTrueNode* true_proj = iff->as_If()->true_proj_or_null();
+          IfFalseNode* false_proj = iff->as_If()->false_proj_or_null();
           if (is_inner_loop_backedge(true_proj) || is_inner_loop_backedge(false_proj)) {
             return true;
           }

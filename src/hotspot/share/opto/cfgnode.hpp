@@ -354,7 +354,7 @@ class IfNode : public MultiBranchNode {
   static bool is_dominator_unc(CallStaticJavaNode* dom_unc, CallStaticJavaNode* unc);
 
 protected:
-  ProjNode* range_check_trap_proj(int& flip, Node*& l, Node*& r);
+  IfProjNode* range_check_trap_proj(int& flip, Node*& l, Node*& r) const;
   Node* Ideal_common(PhaseGVN *phase, bool can_reshape);
   Node* search_identical(int dist, PhaseIterGVN* igvn);
 
@@ -432,6 +432,24 @@ public:
   IfNode(Node* control, Node* bol, float p, float fcnt, AssertionPredicateType assertion_predicate_type);
 
   static IfNode* make_with_same_profile(IfNode* if_node_profile, Node* ctrl, Node* bol);
+
+  IfTrueNode* true_proj() const {
+    return proj_out(true)->as_IfTrue();
+  }
+
+  IfTrueNode* true_proj_or_null() const {
+    ProjNode* true_proj = proj_out_or_null(true);
+    return true_proj == nullptr ? nullptr : true_proj->as_IfTrue();
+  }
+
+  IfFalseNode* false_proj() const {
+    return proj_out(false)->as_IfFalse();
+  }
+
+  IfFalseNode* false_proj_or_null() const {
+    ProjNode* false_proj = proj_out_or_null(false);
+    return false_proj == nullptr ? nullptr : false_proj->as_IfFalse();
+  }
 
   virtual int Opcode() const;
   virtual bool pinned() const { return true; }
@@ -523,7 +541,7 @@ class ParsePredicateNode : public IfNode {
 
   // Return the uncommon trap If projection of this Parse Predicate.
   ParsePredicateUncommonProj* uncommon_proj() const {
-    return proj_out(0)->as_IfFalse();
+    return false_proj();
   }
 
   Node* uncommon_trap() const;

@@ -239,7 +239,7 @@ public:
     init_class_id(Class_CastLL);
   }
 
-  static bool is_inner_loop_backedge(ProjNode* proj);
+  static bool is_inner_loop_backedge(IfProjNode* proj);
 
   static bool cmp_used_at_inner_loop_exit_test(CmpNode* cmp);
   bool used_at_inner_loop_exit_test() const;

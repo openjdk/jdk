@@ -607,7 +607,7 @@ public:
   virtual SafePointNode* outer_safepoint() const;
   CountedLoopNode* inner_counted_loop() const { return unique_ctrl_out()->as_CountedLoop(); }
   CountedLoopEndNode* inner_counted_loop_end() const { return  inner_counted_loop()->loopexit(); }
-  IfFalseNode* inner_loop_exit() const { return inner_counted_loop_end()->proj_out(false)->as_IfFalse(); }
+  IfFalseNode* inner_loop_exit() const { return inner_counted_loop_end()->false_proj(); }
 
   void adjust_strip_mined_loop(PhaseIterGVN* igvn);
 
