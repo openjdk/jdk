@@ -36,7 +36,7 @@ import javax.sound.midi.Track;
  * @test
  * @bug 4204105
  * @summary RFE: add loop() method(s) to Sequencer
- * @key intermittent
+ * @key sound
  */
 public class Looping {
 

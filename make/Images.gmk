@@ -282,29 +282,33 @@ else
 endif
 CMDS_TARGET_SUBDIR := bin
 
-# Param 1 - either JDK or JRE
+# Copy debug info files into symbols bundle.
+# In case of Windows and --with-external-symbols-in-bundles=public, take care to remove *.stripped.pdb files
 SetupCopyDebuginfo = \
     $(foreach m, $(ALL_$1_MODULES), \
+      $(eval dbgfiles := $(call FindDebuginfoFiles, $(SUPPORT_OUTPUTDIR)/modules_libs/$m)) \
+      $(eval dbgfiles := $(if $(filter true+public,$(call isTargetOs,windows)+$(SHIP_DEBUG_SYMBOLS)), \
+        $(filter-out %.stripped.pdb,$(dbgfiles)),$(dbgfiles)) \
+      ) \
       $(eval $(call SetupCopyFiles, COPY_$1_LIBS_DEBUGINFO_$m, \
           SRC := $(SUPPORT_OUTPUTDIR)/modules_libs/$m, \
           DEST := $($1_IMAGE_DIR)/$(LIBS_TARGET_SUBDIR), \
-          FILES := $(call FindDebuginfoFiles, \
-              $(SUPPORT_OUTPUTDIR)/modules_libs/$m), \
+          FILES := $(dbgfiles), \
       )) \
       $(eval $1_TARGETS += $$(COPY_$1_LIBS_DEBUGINFO_$m)) \
+      $(eval dbgfiles := $(call FindDebuginfoFiles, $(SUPPORT_OUTPUTDIR)/modules_cmds/$m)) \
+      $(eval dbgfiles := $(if $(filter true+public,$(call isTargetOs,windows)+$(SHIP_DEBUG_SYMBOLS)), \
+        $(filter-out %.stripped.pdb,$(dbgfiles)),$(dbgfiles)) \
+      ) \
       $(eval $(call SetupCopyFiles, COPY_$1_CMDS_DEBUGINFO_$m, \
           SRC := $(SUPPORT_OUTPUTDIR)/modules_cmds/$m, \
           DEST := $($1_IMAGE_DIR)/$(CMDS_TARGET_SUBDIR), \
-          FILES := $(call FindDebuginfoFiles, \
-              $(SUPPORT_OUTPUTDIR)/modules_cmds/$m), \
+          FILES := $(dbgfiles), \
       )) \
       $(eval $1_TARGETS += $$(COPY_$1_CMDS_DEBUGINFO_$m)) \
     )
 
-# No space before argument to avoid having to put $(strip ) everywhere in
-# implementation above.
-$(call SetupCopyDebuginfo,JDK)
-$(call SetupCopyDebuginfo,JRE)
+# No space before argument to avoid having to put $(strip ) everywhere in implementation above.
 $(call SetupCopyDebuginfo,SYMBOLS)
 
 ################################################################################

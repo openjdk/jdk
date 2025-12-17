@@ -102,7 +102,8 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
     return jni_err;
   }
 
-  jvmtiCapabilities capabilities{};
+  jvmtiCapabilities capabilities;
+  memset(&capabilities, 0, sizeof(jvmtiCapabilities));
   capabilities.can_generate_method_exit_events = 1;
 
   jvmtiError err = env->AddCapabilities(&capabilities);
