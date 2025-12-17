@@ -2596,7 +2596,9 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           for (MergeMemStream mms(result); mms.next_non_empty(); ) {
             Node* phi = mms.memory();
             for (uint i = 1; i < req(); ++i) {
-              if (phi->in(i) == this)  phi->set_req_X(i, phi, phase);
+              if (phi->in(i) == this) {
+                phi->set_req_X(i, phi, phase);
+              }
             }
           }
         }
