@@ -59,9 +59,9 @@ public class VarHandleTestReflection extends VarHandleBaseTest {
     public void methodInvocationArgumentMismatch(VarHandle.AccessMode accessMode) throws Exception {
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
             VarHandle v = handle();
-            
+
             // Try a reflective invoke using a Method, with no arguments
-            
+
             Method vhm = VarHandle.class.getMethod(accessMode.methodName(), Object[].class);
             vhm.invoke(v, new Object[]{});
         });
@@ -91,9 +91,9 @@ public class VarHandleTestReflection extends VarHandleBaseTest {
     public void methodHandleInvoke(VarHandle.AccessMode accessMode) throws Throwable {
         Assertions.assertThrows(UnsupportedOperationException.class, () -> {
             VarHandle v = handle();
-            
+
             // Try a reflective invoke using a MethodHandle
-            
+
             MethodHandle mh = MethodHandles.lookup().unreflect(
                     VarHandle.class.getMethod(accessMode.methodName(), Object[].class));
             // Use invoke to avoid WrongMethodTypeException for
@@ -107,10 +107,10 @@ public class VarHandleTestReflection extends VarHandleBaseTest {
     public void methodInvocationFromMethodInfo(VarHandle.AccessMode accessMode) throws Exception {
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
             VarHandle v = handle();
-            
+
             // Try a reflective invoke using a Method obtained from cracking
             // a MethodHandle
-            
+
             MethodHandle mh = MethodHandles.lookup().unreflect(
                     VarHandle.class.getMethod(accessMode.methodName(), Object[].class));
             MethodHandleInfo info = MethodHandles.lookup().revealDirect(mh);
@@ -124,12 +124,12 @@ public class VarHandleTestReflection extends VarHandleBaseTest {
     public void reflectAsFromVarHandleInvoker(VarHandle.AccessMode accessMode) throws Exception {
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
             VarHandle v = handle();
-            
+
             MethodHandle mh = MethodHandles.varHandleInvoker(
                     accessMode, v.accessModeType(accessMode));
-            
+
             MethodHandleInfo info = MethodHandles.lookup().revealDirect(mh);
-            
+
             info.reflectAs(Method.class, MethodHandles.lookup());
         });
     }
@@ -139,12 +139,12 @@ public class VarHandleTestReflection extends VarHandleBaseTest {
     public void reflectAsFromFindVirtual(VarHandle.AccessMode accessMode) throws Exception {
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
             VarHandle v = handle();
-            
+
             MethodHandle mh = MethodHandles.publicLookup().findVirtual(
                     VarHandle.class, accessMode.methodName(), v.accessModeType(accessMode));
-            
+
             MethodHandleInfo info = MethodHandles.lookup().revealDirect(mh);
-            
+
             info.reflectAs(Method.class, MethodHandles.lookup());
         });
     }
