@@ -57,9 +57,7 @@ public class ShareTmpDir {
         try {
             test();
         } finally {
-            if (!DockerTestUtils.RETAIN_IMAGE_AFTER_TEST) {
-                DockerTestUtils.removeDockerImage(imageName);
-            }
+            DockerTestUtils.removeDockerImage(imageName);
         }
     }
 

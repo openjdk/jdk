@@ -24,7 +24,7 @@ package jdk.jpackage.test;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toSet;
-import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
+import static jdk.jpackage.internal.util.function.ExceptionBox.toUnchecked;
 import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
@@ -283,7 +283,7 @@ public final class ObjectMapper {
         try {
             return m.invoke(obj);
         } catch (IllegalAccessException ex) {
-            throw rethrowUnchecked(ex);
+            throw toUnchecked(ex);
         } catch (InvocationTargetException ex) {
             return map(ex.getTargetException());
         }
@@ -724,7 +724,7 @@ public final class ObjectMapper {
                 }
                 xml.writeEndElement();
             } catch (Exception ex) {
-                rethrowUnchecked(ex);
+                throw toUnchecked(ex);
             }
         }
 
@@ -740,7 +740,7 @@ public final class ObjectMapper {
                 }
                 xml.writeEndElement();
             } catch (Exception ex) {
-                rethrowUnchecked(ex);
+                throw toUnchecked(ex);
             }
         }
     }
