@@ -299,8 +299,7 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
     // _min_array_size_for_chunking, and most of them will be arrays.
     // So, the objArray test would be very infrequent.
     if (new_obj_size > _min_array_size_for_chunking &&
-        klass->is_objArray_klass() &&
-        PSChunkLargeArrays) {
+        klass->is_objArray_klass()) {
       push_objArray(o, new_obj);
     } else {
       // we'll just push its contents
@@ -344,7 +343,6 @@ inline void PSPromotionManager::copy_and_push_safe_barrier(T* p) {
 inline void PSPromotionManager::process_popped_location_depth(ScannerTask task,
                                                               bool stolen) {
   if (task.is_partial_array_state()) {
-    assert(PSChunkLargeArrays, "invariant");
     process_array_chunk(task.to_partial_array_state(), stolen);
   } else {
     if (task.is_narrow_oop_ptr()) {

@@ -71,7 +71,7 @@ private:
   // garbage-dense regions, including those that satisfy criteria 1 & 2 below,
   // and whose live bytes will fit within old_available budget:
   // Criterion 1. region age >= tenuring threshold
-  // Criterion 2. region garbage percentage > ShenandoahOldGarbageThreshold
+  // Criterion 2. region garbage percentage > old garbage threshold
   //
   // Identifies regions eligible for promotion in place,
   // being those of at least tenuring_threshold age that have lower garbage
@@ -126,7 +126,7 @@ private:
   // The soft max heap size may be adjusted lower than the max heap size to cause the trigger
   // to believe it has less memory available than is _really_ available. Lowering the soft
   // max heap size will cause the adaptive heuristic to run more frequent cycles.
-  size_t soft_available() const override;
+  size_t soft_mutator_available() const override;
 
   void log_status(const char* msg) const;
 
