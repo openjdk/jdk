@@ -36,7 +36,7 @@ import jdk.test.lib.Utils;
  * @key randomness
  * @summary Auto-vectorization enhancement to support vector conditional move.
  * @library /test/lib /
- * @run driver compiler.c2.irTests.TestConditionalMove
+ * @run driver ${test.main.class}
  */
 
 public class TestConditionalMove {
@@ -601,7 +601,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_F, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveVFGT(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] > b[i]) ? a[i] : b[i];
@@ -619,7 +619,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_F, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveVFGTSwap(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (b[i] > a[i]) ? a[i] : b[i];
@@ -637,7 +637,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_F, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveVFLT(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] < b[i]) ? a[i] : b[i];
@@ -655,7 +655,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_F, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveVFLTSwap(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (b[i] < a[i]) ? a[i] : b[i];
@@ -673,7 +673,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_F, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveVFEQ(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] == b[i]) ? a[i] : b[i];
@@ -691,7 +691,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_D, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveVDLE(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] <= b[i]) ? a[i] : b[i];
@@ -709,7 +709,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_D, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveVDLESwap(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (b[i] <= a[i]) ? a[i] : b[i];
@@ -727,7 +727,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_D, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveVDGE(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] >= b[i]) ? a[i] : b[i];
@@ -745,7 +745,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_D, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveVDGESwap(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (b[i] >= a[i]) ? a[i] : b[i];
@@ -763,7 +763,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_D, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveVDNE(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] != b[i]) ? a[i] : b[i];
@@ -782,7 +782,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_F, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveFGTforFConst(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] > b[i]) ? 0.1f : -0.1f;
@@ -800,7 +800,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_F, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveFGEforFConst(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] >= b[i]) ? 0.1f : -0.1f;
@@ -818,7 +818,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_F, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveFLTforFConst(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] < b[i]) ? 0.1f : -0.1f;
@@ -836,7 +836,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_F, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveFLEforFConst(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] <= b[i]) ? 0.1f : -0.1f;
@@ -854,7 +854,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_F, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveFEQforFConst(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] == b[i]) ? 0.1f : -0.1f;
@@ -872,7 +872,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_F, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveFNEQforFConst(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] != b[i]) ? 0.1f : -0.1f;
@@ -896,7 +896,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_F, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveFLTforFConstH2(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i+=2) {
             c[i+0] = (a[i+0] < b[i+0]) ? 0.1f : -0.1f;
@@ -925,7 +925,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_F, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveFLEforFConstH2(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i+=2) {
             c[i+0] = (a[i+0] <= b[i+0]) ? 0.1f : -0.1f;
@@ -948,7 +948,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_F, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveFYYforFConstH2(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i+=2) {
             c[i+0] = (a[i+0] <= b[i+0]) ? 0.1f : -0.1f;
@@ -967,7 +967,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_F, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveFXXforFConstH2(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i+=2) {
             c[i+0] = (a[i+0] <  b[i+0]) ? 0.1f : -0.1f;
@@ -986,7 +986,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_D, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveDGTforDConst(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] > b[i]) ? 0.1 : -0.1;
@@ -1004,7 +1004,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_D, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveDGEforDConst(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] >= b[i]) ? 0.1 : -0.1;
@@ -1022,7 +1022,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_D, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveDLTforDConst(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] < b[i]) ? 0.1 : -0.1;
@@ -1040,7 +1040,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_D, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveDLEforDConst(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] <= b[i]) ? 0.1 : -0.1;
@@ -1058,7 +1058,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_D, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveDEQforDConst(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] == b[i]) ? 0.1 : -0.1;
@@ -1076,7 +1076,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_D, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveDNEQforDConst(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] != b[i]) ? 0.1 : -0.1;
@@ -1094,7 +1094,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_D, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveDLTforDConstH2(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i+=2) {
             c[i+0] = (a[i+0] < b[i+0]) ? 0.1 : -0.1;
@@ -1113,7 +1113,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_D, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveDLEforDConstH2(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i+=2) {
             c[i+0] = (a[i+0] <= b[i+0]) ? 0.1 : -0.1;
@@ -1132,7 +1132,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_D, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveDYYforDConstH2(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i+=2) {
             c[i+0] = (a[i+0] <= b[i+0]) ? 0.1 : -0.1;
@@ -1151,7 +1151,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_D, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveDXXforDConstH2(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i+=2) {
             c[i+0] = (a[i+0] <  b[i+0]) ? 0.1 : -0.1;
@@ -1351,7 +1351,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_I, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveIEQforF(int[] a, int[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -1373,7 +1373,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_I, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveINEforF(int[] a, int[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -1395,7 +1395,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_I, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveIGTforF(int[] a, int[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -1417,7 +1417,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_I, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveIGEforF(int[] a, int[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -1439,7 +1439,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_I, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveILTforF(int[] a, int[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -1461,7 +1461,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_I, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveILEforF(int[] a, int[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -1476,7 +1476,7 @@ public class TestConditionalMove {
     @IR(failOn = {IRNode.STORE_VECTOR})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_I, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveIEQforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
@@ -1490,7 +1490,7 @@ public class TestConditionalMove {
     @IR(failOn = {IRNode.STORE_VECTOR})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_I, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveINEforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
@@ -1504,7 +1504,7 @@ public class TestConditionalMove {
     @IR(failOn = {IRNode.STORE_VECTOR})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_I, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveIGTforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
@@ -1518,7 +1518,7 @@ public class TestConditionalMove {
     @IR(failOn = {IRNode.STORE_VECTOR})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_I, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveIGEforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
@@ -1532,7 +1532,7 @@ public class TestConditionalMove {
     @IR(failOn = {IRNode.STORE_VECTOR})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_I, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveILTforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
@@ -1546,7 +1546,7 @@ public class TestConditionalMove {
     @IR(failOn = {IRNode.STORE_VECTOR})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_I, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveILEforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
@@ -1731,7 +1731,7 @@ public class TestConditionalMove {
     @IR(failOn = {IRNode.STORE_VECTOR})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_L, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveLEQforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -1745,7 +1745,7 @@ public class TestConditionalMove {
     @IR(failOn = {IRNode.STORE_VECTOR})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_L, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveLNEforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -1759,7 +1759,7 @@ public class TestConditionalMove {
     @IR(failOn = {IRNode.STORE_VECTOR})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_L, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveLGTforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -1773,7 +1773,7 @@ public class TestConditionalMove {
     @IR(failOn = {IRNode.STORE_VECTOR})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_L, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveLGEforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -1787,7 +1787,7 @@ public class TestConditionalMove {
     @IR(failOn = {IRNode.STORE_VECTOR})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_L, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveLLTforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -1801,7 +1801,7 @@ public class TestConditionalMove {
     @IR(failOn = {IRNode.STORE_VECTOR})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_L, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveLLEforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -1824,7 +1824,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_L, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     // Requires avx2, else L is restricted to 16 byte, and D has 32. That leads to a vector elements mismatch of 2 to 4.
     private static void testCMoveLEQforD(long[] a, long[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
@@ -1847,7 +1847,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_L, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     // Requires avx2, else L is restricted to 16 byte, and D has 32. That leads to a vector elements mismatch of 2 to 4.
     private static void testCMoveLNEforD(long[] a, long[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
@@ -1870,7 +1870,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_L, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     // Requires avx2, else L is restricted to 16 byte, and D has 32. That leads to a vector elements mismatch of 2 to 4.
     private static void testCMoveLGTforD(long[] a, long[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
@@ -1893,7 +1893,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_L, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     // Requires avx2, else L is restricted to 16 byte, and D has 32. That leads to a vector elements mismatch of 2 to 4.
     private static void testCMoveLGEforD(long[] a, long[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
@@ -1916,7 +1916,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_L, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     // Requires avx2, else L is restricted to 16 byte, and D has 32. That leads to a vector elements mismatch of 2 to 4.
     private static void testCMoveLLTforD(long[] a, long[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
@@ -1939,7 +1939,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_L, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     // Requires avx2, else L is restricted to 16 byte, and D has 32. That leads to a vector elements mismatch of 2 to 4.
     private static void testCMoveLLEforD(long[] a, long[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
@@ -2134,7 +2134,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_U, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-            applyIfPlatform = {"riscv64", "true"})
+            applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveUIEQforF(int[] a, int[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -2156,7 +2156,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_U, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-            applyIfPlatform = {"riscv64", "true"})
+            applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveUINEforF(int[] a, int[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -2178,7 +2178,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_U, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-            applyIfPlatform = {"riscv64", "true"})
+            applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveUIGTforF(int[] a, int[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -2200,7 +2200,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_U, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-            applyIfPlatform = {"riscv64", "true"})
+            applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveUIGEforF(int[] a, int[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -2222,7 +2222,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_U, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-            applyIfPlatform = {"riscv64", "true"})
+            applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveUILTforF(int[] a, int[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -2244,7 +2244,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_U, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-            applyIfPlatform = {"riscv64", "true"})
+            applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveUILEforF(int[] a, int[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -2259,7 +2259,7 @@ public class TestConditionalMove {
     @IR(failOn = {IRNode.STORE_VECTOR})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_U, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveUIEQforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
@@ -2273,7 +2273,7 @@ public class TestConditionalMove {
     @IR(failOn = {IRNode.STORE_VECTOR})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_U, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveUINEforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
@@ -2287,7 +2287,7 @@ public class TestConditionalMove {
     @IR(failOn = {IRNode.STORE_VECTOR})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_U, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveUIGTforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
@@ -2301,7 +2301,7 @@ public class TestConditionalMove {
     @IR(failOn = {IRNode.STORE_VECTOR})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_U, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveUIGEforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
@@ -2315,7 +2315,7 @@ public class TestConditionalMove {
     @IR(failOn = {IRNode.STORE_VECTOR})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_U, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveUILTforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
@@ -2329,7 +2329,7 @@ public class TestConditionalMove {
     @IR(failOn = {IRNode.STORE_VECTOR})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_U, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveUILEforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
@@ -2514,7 +2514,7 @@ public class TestConditionalMove {
     @IR(failOn = {IRNode.STORE_VECTOR})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_UL, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveULEQforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -2528,7 +2528,7 @@ public class TestConditionalMove {
     @IR(failOn = {IRNode.STORE_VECTOR})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_UL, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveULNEforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -2542,7 +2542,7 @@ public class TestConditionalMove {
     @IR(failOn = {IRNode.STORE_VECTOR})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_UL, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveULGTforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -2556,7 +2556,7 @@ public class TestConditionalMove {
     @IR(failOn = {IRNode.STORE_VECTOR})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_UL, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveULGEforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -2570,7 +2570,7 @@ public class TestConditionalMove {
     @IR(failOn = {IRNode.STORE_VECTOR})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_UL, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveULLTforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -2584,7 +2584,7 @@ public class TestConditionalMove {
     @IR(failOn = {IRNode.STORE_VECTOR})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_UL, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveULLEforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -2607,7 +2607,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_UL, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     // Requires avx2, else L is restricted to 16 byte, and D has 32. That leads to a vector elements mismatch of 2 to 4.
     private static void testCMoveULEQforD(long[] a, long[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
@@ -2630,7 +2630,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_UL, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     // Requires avx2, else L is restricted to 16 byte, and D has 32. That leads to a vector elements mismatch of 2 to 4.
     private static void testCMoveULNEforD(long[] a, long[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
@@ -2653,7 +2653,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_UL, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     // Requires avx2, else L is restricted to 16 byte, and D has 32. That leads to a vector elements mismatch of 2 to 4.
     private static void testCMoveULGTforD(long[] a, long[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
@@ -2676,7 +2676,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_UL, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     // Requires avx2, else L is restricted to 16 byte, and D has 32. That leads to a vector elements mismatch of 2 to 4.
     private static void testCMoveULGEforD(long[] a, long[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
@@ -2699,7 +2699,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_UL, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     // Requires avx2, else L is restricted to 16 byte, and D has 32. That leads to a vector elements mismatch of 2 to 4.
     private static void testCMoveULLTforD(long[] a, long[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
@@ -2722,7 +2722,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_UL, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     // Requires avx2, else L is restricted to 16 byte, and D has 32. That leads to a vector elements mismatch of 2 to 4.
     private static void testCMoveULLEforD(long[] a, long[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
@@ -2772,7 +2772,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_F, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveFGTforF(float[] a, float[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -2786,7 +2786,7 @@ public class TestConditionalMove {
     @IR(failOn = {IRNode.STORE_VECTOR})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_F, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveFGTforD(float[] a, float[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
@@ -2828,7 +2828,7 @@ public class TestConditionalMove {
     @IR(failOn = {IRNode.STORE_VECTOR})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_D, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveDGTforF(double[] a, double[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -2849,7 +2849,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_D, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveDGTforD(double[] a, double[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
@@ -2871,7 +2871,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_F, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveFGTforFCmpCon1(float a, float[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < b.length; i++) {
             float cc = c[i];
@@ -2892,7 +2892,7 @@ public class TestConditionalMove {
         applyIf = {"UseVectorCmov", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_F, ">0"},
         applyIf = {"UseVectorCmov", "false"},
-        applyIfPlatform = {"riscv64", "true"})
+        applyIfPlatformOr = {"riscv64", "true", "x64", "true", "aarch64", "true"})
     private static void testCMoveFGTforFCmpCon2(float[] a, float b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];

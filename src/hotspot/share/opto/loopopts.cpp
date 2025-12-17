@@ -1174,7 +1174,7 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
     if ( nn ) return nn;
   }
 
-  if (n->is_ConstraintCast()) {
+  if (n->is_ConstraintCast() && n->as_ConstraintCast()->dependency().narrows_type()) {
     Node* dom_cast = n->as_ConstraintCast()->dominating_cast(&_igvn, this);
     // ConstraintCastNode::dominating_cast() uses node control input to determine domination.
     // Node control inputs don't necessarily agree with loop control info (due to
@@ -1321,8 +1321,8 @@ bool PhaseIdealLoop::identical_backtoback_ifs(Node *n) {
     return false;
   }
   IfNode* dom_if = dom->as_If();
-  Node* proj_true = dom_if->proj_out(1);
-  Node* proj_false = dom_if->proj_out(0);
+  IfTrueNode* proj_true = dom_if->true_proj();
+  IfFalseNode* proj_false = dom_if->false_proj();
 
   for (uint i = 1; i < region->req(); i++) {
     if (is_dominator(proj_true, region->in(i))) {
@@ -1585,8 +1585,8 @@ bool PhaseIdealLoop::try_merge_identical_ifs(Node* n) {
               dom_if->in(1)->in(1)->as_SubTypeCheck()->method() != nullptr), "only for subtype checks with profile data attached");
       _igvn.replace_input_of(n, 1, dom_if->in(1));
     }
-    ProjNode* dom_proj_true = dom_if->proj_out(1);
-    ProjNode* dom_proj_false = dom_if->proj_out(0);
+    IfTrueNode* dom_proj_true = dom_if->true_proj();
+    IfFalseNode* dom_proj_false = dom_if->false_proj();
 
     // Now split the IF
     RegionNode* new_false_region;
@@ -1630,10 +1630,10 @@ bool PhaseIdealLoop::try_merge_identical_ifs(Node* n) {
     // unrelated control dependency.
     for (uint i = 1; i < new_false_region->req(); i++) {
       if (is_dominator(dom_proj_true, new_false_region->in(i))) {
-        dominated_by(dom_proj_true->as_IfProj(), new_false_region->in(i)->in(0)->as_If());
+        dominated_by(dom_proj_true, new_false_region->in(i)->in(0)->as_If());
       } else {
         assert(is_dominator(dom_proj_false, new_false_region->in(i)), "bad if");
-        dominated_by(dom_proj_false->as_IfProj(), new_false_region->in(i)->in(0)->as_If());
+        dominated_by(dom_proj_false, new_false_region->in(i)->in(0)->as_If());
       }
     }
     return true;
@@ -1837,7 +1837,7 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
               if (in != nullptr && ctrl_is_member(n_loop, in)) {
                 const Type* in_t = _igvn.type(in);
                 cast = ConstraintCastNode::make_cast_for_type(x_ctrl, in, in_t,
-                                                              ConstraintCastNode::UnconditionalDependency, nullptr);
+                                                              ConstraintCastNode::DependencyType::NonFloatingNonNarrowing, nullptr);
               }
               if (cast != nullptr) {
                 Node* prev = _igvn.hash_find_insert(cast);
@@ -2394,7 +2394,7 @@ void PhaseIdealLoop::clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealL
     CountedLoopEndNode* cle = cl->loopexit();
     CountedLoopNode* new_cl = old_new[cl->_idx]->as_CountedLoop();
     CountedLoopEndNode* new_cle = new_cl->as_CountedLoop()->loopexit_or_null();
-    Node* cle_out = cle->proj_out(false);
+    IfFalseNode* cle_out = cle->false_proj();
 
     Node* new_sfpt = nullptr;
     Node* new_cle_out = cle_out->clone();
@@ -2691,7 +2691,7 @@ void PhaseIdealLoop::fix_ctrl_uses(const Node_List& body, const IdealLoopTree* l
           if (use->in(0) == cle) {
             IfFalseNode* cle_out = use->as_IfFalse();
             IfNode* le = cl->outer_loop_end();
-            use = le->proj_out(false);
+            use = le->false_proj();
             use_loop = get_loop(use);
             if (mode == CloneIncludesStripMined) {
               nnn = old_new[le->_idx];
