@@ -58,10 +58,10 @@ public:
     _igvn.register_new_node_with_optimizer(n);
     return n;
   }
-  Node* make_load( Node* ctl, Node* mem, Node* base, int offset,
-                   const Type* value_type, BasicType bt);
-  Node* make_store(Node* ctl, Node* mem, Node* base, int offset,
-                   Node* value, BasicType bt);
+  Node* make_load_raw(Node* ctl, Node* mem, Node* base, int offset,
+                      const Type* value_type, BasicType bt);
+  Node* make_store_raw(Node* ctl, Node* mem, Node* base, int offset,
+                       Node* value, BasicType bt);
 
   Node* make_leaf_call(Node* ctrl, Node* mem,
                        const TypeFunc* call_type, address call_addr,
