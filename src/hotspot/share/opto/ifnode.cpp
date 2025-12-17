@@ -487,7 +487,7 @@ IfNode* IfNode::make_with_same_profile(IfNode* if_node_profile, Node* ctrl, Node
 
 // if this IfNode follows a range check pattern return the projection
 // for the failed path
-ProjNode* IfNode::range_check_trap_proj(int& flip_test, Node*& l, Node*& r) {
+IfProjNode* IfNode::range_check_trap_proj(int& flip_test, Node*& l, Node*& r) const {
   if (outcnt() != 2) {
     return nullptr;
   }
@@ -515,8 +515,10 @@ ProjNode* IfNode::range_check_trap_proj(int& flip_test, Node*& l, Node*& r) {
   //  Flip 1:  If (Bool[<] CmpU(l, LoadRange)) ...
   //  Flip 2:  If (Bool[<=] CmpU(LoadRange, l)) ...
 
-  ProjNode* iftrap = proj_out_or_null(flip_test == 2 ? true : false);
-  return iftrap;
+  if (flip_test == 2) {
+    return true_proj_or_null();
+  }
+  return false_proj_or_null();
 }
 
 
@@ -528,7 +530,7 @@ int RangeCheckNode::is_range_check(Node* &range, Node* &index, jint &offset) {
   int flip_test = 0;
   Node* l = nullptr;
   Node* r = nullptr;
-  ProjNode* iftrap = range_check_trap_proj(flip_test, l, r);
+  IfProjNode* iftrap = range_check_trap_proj(flip_test, l, r);
 
   if (iftrap == nullptr) {
     return 0;
@@ -1875,8 +1877,8 @@ static IfNode* idealize_test(PhaseGVN* phase, IfNode* iff) {
   assert(iff->in(0) != nullptr, "If must be live");
 
   if (iff->outcnt() != 2)  return nullptr; // Malformed projections.
-  Node* old_if_f = iff->proj_out(false);
-  Node* old_if_t = iff->proj_out(true);
+  IfFalseNode* old_if_f = iff->false_proj();
+  IfTrueNode* old_if_t = iff->true_proj();
 
   // CountedLoopEnds want the back-control test to be TRUE, regardless of
   // whether they are testing a 'gt' or 'lt' condition.  The 'gt' condition
@@ -2192,7 +2194,7 @@ void ParsePredicateNode::mark_useless(PhaseIterGVN& igvn) {
 }
 
 Node* ParsePredicateNode::uncommon_trap() const {
-  ParsePredicateUncommonProj* uncommon_proj = proj_out(0)->as_IfFalse();
+  ParsePredicateUncommonProj* uncommon_proj = false_proj();
   Node* uct_region_or_call = uncommon_proj->unique_ctrl_out();
   assert(uct_region_or_call->is_Region() || uct_region_or_call->is_Call(), "must be a region or call uct");
   return uct_region_or_call;

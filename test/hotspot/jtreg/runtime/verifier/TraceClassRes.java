@@ -39,7 +39,7 @@ public class TraceClassRes {
   public static void main(String[] args) throws Exception {
 
     ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-        "-Xlog:class+resolve=debug", "-verify", "-Xshare:off", "-version");
+        "-Xlog:class+resolve=debug", "-Xverify:all", "-Xshare:off", "-version");
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldContain("[class,resolve] java.lang.ClassLoader java.lang.Throwable ClassLoader.java (verification)");
