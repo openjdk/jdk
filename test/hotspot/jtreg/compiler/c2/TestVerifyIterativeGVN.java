@@ -23,11 +23,11 @@
 
 /*
  * @test
- * @bug 8238756
+ * @bug 8238756 8351889
  * @requires vm.debug == true & vm.flavor == "server"
- * @summary Run with -Xcomp to test -XX:VerifyIterativeGVN=1111 in debug builds.
+ * @summary Run with -Xcomp to test -XX:VerifyIterativeGVN=11111 in debug builds.
  *
- * @run main/othervm/timeout=300 -Xcomp -XX:VerifyIterativeGVN=1111 compiler.c2.TestVerifyIterativeGVN
+ * @run main/othervm/timeout=300 -Xcomp -XX:VerifyIterativeGVN=11111 compiler.c2.TestVerifyIterativeGVN
  */
 package compiler.c2;
 

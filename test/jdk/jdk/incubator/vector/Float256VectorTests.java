@@ -1228,6 +1228,12 @@ relativeError));
                 flatMap(fa -> FLOAT_GENERATORS.stream().skip(1).map(fb -> List.of(fa, fb))).
                 collect(Collectors.toList());
 
+    @DataProvider
+    public Object[][] boolUnaryOpProvider() {
+        return BOOL_ARRAY_GENERATORS.stream().
+                map(f -> new Object[]{f}).
+                toArray(Object[][]::new);
+    }
 
     static final List<List<IntFunction<float[]>>> FLOAT_GENERATOR_TRIPLES =
         FLOAT_GENERATOR_PAIRS.stream().
