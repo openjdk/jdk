@@ -70,5 +70,4 @@ public class TestCreateExSunkOutOfLoop {
         thread.start();
         Thread.sleep(Utils.adjustTimeout(4000));
     }
-
 }
