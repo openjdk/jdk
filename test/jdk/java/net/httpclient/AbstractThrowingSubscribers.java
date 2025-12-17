@@ -140,7 +140,7 @@ public abstract class AbstractThrowingSubscribers implements HttpServerAdapters 
     }
 
     @RegisterExtension
-    static final AbstractThrowingPublishers.TestStopper stopper = new AbstractThrowingPublishers.TestStopper();
+    static final TestStopper stopper = new TestStopper();
 
     static final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
     private static volatile HttpClient sharedClient;
@@ -172,12 +172,6 @@ public abstract class AbstractThrowingSubscribers implements HttpServerAdapters 
     protected static boolean stopAfterFirstFailure() {
         return Boolean.getBoolean("jdk.internal.httpclient.debug");
     }
-
-//    static String name(ITestResult result) {
-//        var params = result.getParameters();
-//        return result.getName()
-//                + (params == null ? "()" : Arrays.toString(result.getParameters()));
-//    }
 
     static Version version(String uri) {
         if (uri.contains("/http1/") || uri.contains("/https1/"))
