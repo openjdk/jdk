@@ -77,12 +77,10 @@ void ShenandoahGenerationalControlThread::run_service() {
 
     // If the cycle was cancelled, continue the next iteration to deal with it. Otherwise,
     // if there was no other cycle requested, cleanup and wait for the next request.
-    if (!_heap->cancelled_gc()) {
-      MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
-      if (_requested_gc_cause == GCCause::_no_gc) {
-        set_gc_mode(ml, none);
-        ml.wait();
-      }
+    MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
+    if (_requested_gc_cause == GCCause::_no_gc) {
+      set_gc_mode(ml, none);
+      ml.wait();
     }
   }
 
@@ -108,20 +106,20 @@ void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest&
   log_debug(gc, thread)("cancelled cause: %s, requested cause: %s",
     GCCause::to_string(_heap->cancelled_cause()), GCCause::to_string(_requested_gc_cause));
 
-  if (_heap->cancelled_gc()) {
-    // The previous request was cancelled. Either it was cancelled for an allocation
-    // failure (degenerated cycle), or old marking was cancelled to run a young collection.
-    // In either case, the correct generation for the next cycle can be determined by
-    // the cancellation cause.
-    request.cause = _heap->clear_cancellation(GCCause::_shenandoah_concurrent_gc);
-    if (request.cause == GCCause::_shenandoah_concurrent_gc) {
+  request.cause = _requested_gc_cause;
+  if (ShenandoahCollectorPolicy::is_allocation_failure(request.cause)) {
+    if (_degen_point == ShenandoahGC::_degenerated_outside_cycle) {
       request.generation = _heap->young_generation();
-    } else if (_degen_point == ShenandoahGC::_degenerated_unset) {
-      _degen_point = ShenandoahGC::_degenerated_outside_cycle;
-      request.generation = _heap->young_generation();
+    } else {
+      assert(request.generation != nullptr, "Must know which generation to use for degenerated cycle");
     }
   } else {
-    request.cause = _requested_gc_cause;
+    if (request.cause == GCCause::_shenandoah_concurrent_gc) {
+      // This is a regulator request. It must have request generation set. It is also
+      // possible that the regulator "canceled" an old mark, so we can clear that.
+      // This clear operation will only clear the cancellation if it a regulator request.
+      _heap->clear_cancellation(GCCause::_shenandoah_concurrent_gc);
+    }
     request.generation = _requested_generation;
   }
 
@@ -657,7 +655,8 @@ bool ShenandoahGenerationalControlThread::request_concurrent_gc(ShenandoahGenera
   MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
   if (gc_mode() == servicing_old) {
     if (!preempt_old_marking(generation)) {
-      log_debug(gc, thread)("Cannot start young, old collection is not preemptible");
+      // Global should be able to cause old collection to be abandoned
+      log_debug(gc, thread)("Cannot start %s, old collection is not preemptible", generation->name());
       return false;
     }
 
@@ -665,7 +664,7 @@ bool ShenandoahGenerationalControlThread::request_concurrent_gc(ShenandoahGenera
     log_info(gc)("Preempting old generation mark to allow %s GC", generation->name());
     while (gc_mode() == servicing_old) {
       ShenandoahHeap::heap()->cancel_gc(GCCause::_shenandoah_concurrent_gc);
-      notify_control_thread(ml, GCCause::_shenandoah_concurrent_gc);
+      notify_control_thread(ml, GCCause::_shenandoah_concurrent_gc, generation);
       ml.wait();
     }
     return true;
