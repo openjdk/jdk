@@ -84,7 +84,7 @@ private:
   bool _is_unreachable_region;
   LoopStatus _loop_status;
 
-  bool is_possible_unsafe_loop(const PhaseGVN* phase) const;
+  bool is_possible_unsafe_loop() const;
   bool is_unreachable_from_root(const PhaseGVN* phase) const;
 public:
   // Node layout (parallels PhiNode):
@@ -181,6 +181,9 @@ class PhiNode : public TypeNode {
   bool must_wait_for_region_in_irreducible_loop(PhaseGVN* phase) const;
 
   bool is_split_through_mergemem_terminating() const;
+
+  void verify_type_stability(const PhaseGVN* phase, const Type* union_of_input_types, const Type* new_type) const NOT_DEBUG_RETURN;
+  bool wait_for_cast_input_igvn(const PhaseIterGVN* igvn) const;
 
 public:
   // Node layout (parallels RegionNode):
@@ -313,7 +316,7 @@ public:
     init_class_id(Class_MultiBranch);
   }
   // returns required number of users to be well formed.
-  virtual int required_outcnt() const = 0;
+  virtual uint required_outcnt() const = 0;
 };
 
 //------------------------------IfNode-----------------------------------------
@@ -435,7 +438,7 @@ public:
   virtual const Type *bottom_type() const { return TypeTuple::IFBOTH; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
-  virtual int required_outcnt() const { return 2; }
+  virtual uint required_outcnt() const { return 2; }
   virtual const RegMask &out_RegMask() const;
   Node* fold_compares(PhaseIterGVN* phase);
   static Node* up_one_dom(Node* curr, bool linear_only = false);
@@ -591,7 +594,7 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *bottom_type() const;
   virtual bool pinned() const { return true; }
-  virtual int required_outcnt() const { return _size; }
+  virtual uint required_outcnt() const { return _size; }
 };
 
 //------------------------------JumpNode---------------------------------------
@@ -716,7 +719,7 @@ public:
   virtual const Type *bottom_type() const { return TypeTuple::IFBOTH; }
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual int required_outcnt() const { return 2; }
+  virtual uint required_outcnt() const { return 2; }
   virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const { }
   virtual uint size(PhaseRegAlloc *ra_) const { return 0; }
 #ifndef PRODUCT
@@ -741,7 +744,7 @@ public:
     // Fake the incoming arguments mask for blackholes: accept all registers
     // and all stack slots. This would avoid any redundant register moves
     // for blackhole inputs.
-    return RegMask::All;
+    return RegMask::ALL;
   }
 #ifndef PRODUCT
   virtual void format(PhaseRegAlloc* ra, outputStream* st) const;

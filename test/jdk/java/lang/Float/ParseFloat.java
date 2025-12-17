@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,10 @@
 
 /*
  * @test
- * @bug 4160406 4705734 4707389 6358355 7032154
- * @summary Tests for Float.parseFloat method
+ * @bug 4160406 4705734 4707389 6358355 7032154 8366017
+ * @summary Tests for Float.parseFloat method (use -DallRoundtrips=true
+ *      to additionally check all non-negative, non-NaN float->String->float
+ *      roundtrips)
  */
 
 import java.math.BigDecimal;
@@ -315,6 +317,22 @@ public class ParseFloat {
         check(new BigDecimal(Float.MAX_VALUE).add(new BigDecimal(Math.ulp(Float.MAX_VALUE)).multiply(HALF)).toString());
     }
 
+    private static final int N = Float.floatToIntBits(Float.POSITIVE_INFINITY);
+
+    /* Tests all non-negative, non-NaN float->String->float roundtrips. */
+    private static void testAllRoundtrips() {
+        for (int i = 0; i <= N; ++i) {
+            float v = Float.intBitsToFloat(i);
+            String s = Float.toString(v);
+            float v0 = Float.parseFloat(s);
+            if (v != v0) {
+                fail(s, v0);
+            }
+        }
+    }
+
+    private static final String ALL_ROUNDTRIPS_PROP = "allRoundtrips";
+
     public static void main(String[] args) throws Exception {
         rudimentaryTest();
 
@@ -324,5 +342,9 @@ public class ParseFloat {
         testParsing(paddedBadStrings, true);
 
         testPowers();
+
+        if (Boolean.getBoolean(ALL_ROUNDTRIPS_PROP)) {
+            testAllRoundtrips();
+        }
     }
 }

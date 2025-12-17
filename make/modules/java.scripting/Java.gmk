@@ -27,7 +27,5 @@
 
 DOCLINT += -Xdoclint:all/protected \
     '-Xdoclint/package:java.*,javax.*'
-COPY += .js
-CLEAN += .properties
 
 ################################################################################

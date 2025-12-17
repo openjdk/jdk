@@ -100,6 +100,8 @@ requires.properties= \
     vm.compiler2.enabled \
     vm.cds \
     vm.cds.write.archived.java.heap \
+    vm.cds.write.mapped.java.heap \
+    vm.cds.write.streamed.java.heap \
     vm.continuations \
     vm.musl \
     vm.asan \
@@ -121,7 +123,7 @@ requires.properties= \
     jdk.static
 
 # Minimum jtreg version
-requiredVersion=8+2
+requiredVersion=8.1+1
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../ notation to reach them

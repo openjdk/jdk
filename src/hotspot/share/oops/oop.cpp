@@ -83,7 +83,10 @@ char* oopDesc::print_value_string() {
 
 void oopDesc::print_value_on(outputStream* st) const {
   oop obj = const_cast<oopDesc*>(this);
-  if (java_lang_String::is_instance(obj)) {
+  // We can't use java_lang_String::is_instance since that has klass assertions enabled.
+  // If the klass is garbage we want to just fail the check and continue printing, as
+  // opposed to aborting the VM entirely.
+  if (obj != nullptr && obj->klass_without_asserts() == vmClasses::String_klass()) {
     java_lang_String::print(obj, st);
     print_address_on(st);
   } else {

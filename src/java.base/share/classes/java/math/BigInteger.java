@@ -2768,9 +2768,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @throws ArithmeticException if {@code n} is even and {@code this} is negative.
      * @see #sqrt()
      * @since 26
-     * @apiNote Note that calling {@code nthRoot(2)} is equivalent to calling {@code sqrt()}.
+     * @apiNote Note that calling {@code rootn(2)} is equivalent to calling {@code sqrt()}.
      */
-    public BigInteger nthRoot(int n) {
+    public BigInteger rootn(int n) {
         if (n == 1)
             return this;
 
@@ -2778,7 +2778,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             return sqrt();
 
         checkRootDegree(n);
-        return new MutableBigInteger(this.mag).nthRootRem(n)[0].toBigInteger(signum);
+        return new MutableBigInteger(this.mag).rootnRem(n)[0].toBigInteger(signum);
     }
 
     /**
@@ -2793,12 +2793,12 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @throws ArithmeticException if {@code n} is even and {@code this} is negative.
      * @see #sqrt()
      * @see #sqrtAndRemainder()
-     * @see #nthRoot(int)
+     * @see #rootn(int)
      * @since 26
-     * @apiNote Note that calling {@code nthRootAndRemainder(2)} is equivalent to calling
+     * @apiNote Note that calling {@code rootnAndRemainder(2)} is equivalent to calling
      *          {@code sqrtAndRemainder()}.
      */
-    public BigInteger[] nthRootAndRemainder(int n) {
+    public BigInteger[] rootnAndRemainder(int n) {
         if (n == 1)
             return new BigInteger[] { this, ZERO };
 
@@ -2806,7 +2806,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             return sqrtAndRemainder();
 
         checkRootDegree(n);
-        MutableBigInteger[] rootRem = new MutableBigInteger(this.mag).nthRootRem(n);
+        MutableBigInteger[] rootRem = new MutableBigInteger(this.mag).rootnRem(n);
         return new BigInteger[] {
                 rootRem[0].toBigInteger(signum),
                 rootRem[1].toBigInteger(signum)
@@ -4180,6 +4180,10 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         if (radix < Character.MIN_RADIX || radix > Character.MAX_RADIX)
             radix = 10;
 
+        if (fitsIntoLong()) {
+            return Long.toString(longValue(), radix);
+        }
+
         BigInteger abs = this.abs();
 
         // Ensure buffer capacity sufficient to contain string representation
@@ -5121,10 +5125,14 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @since  1.8
      */
     public long longValueExact() {
-        if (mag.length <= 2 && bitLength() < Long.SIZE)
+        if (fitsIntoLong())
             return longValue();
 
         throw new ArithmeticException("BigInteger out of long range");
+    }
+
+    private boolean fitsIntoLong() {
+        return mag.length <= 2 && bitLength() < Long.SIZE;
     }
 
     /**

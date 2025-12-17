@@ -34,6 +34,7 @@ import jdk.internal.net.quic.QuicTransportException;
 import jdk.internal.net.quic.QuicVersion;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
+import jdk.test.lib.Utils;
 import org.testng.IRetryAnalyzer;
 import org.testng.ITestResult;
 import org.testng.annotations.AfterClass;
@@ -70,6 +71,7 @@ import static org.testng.Assert.*;
 
 /*
  * @test
+ * @bug 8373409
  * @key intermittent
  * @comment testResetControlStream may fail if the client doesn't read the stream type
  *              before the stream is reset,
@@ -802,7 +804,7 @@ public class H3ErrorHandlingTest implements HttpServerAdapters {
             final HttpResponse<Void> response = client.sendAsync(
                             request,
                             BodyHandlers.discarding())
-                    .get(10, TimeUnit.SECONDS);
+                    .get(Utils.adjustTimeout(10), TimeUnit.SECONDS);
             fail("Expected the request to fail, got " + response);
         } catch (Exception e) {
             final String expectedMsg = "stateless reset from peer";
@@ -943,7 +945,7 @@ public class H3ErrorHandlingTest implements HttpServerAdapters {
             final HttpResponse<Void> response = client.sendAsync(
                             request,
                             BodyHandlers.discarding())
-                    .get(10, TimeUnit.SECONDS);
+                    .get(Utils.adjustTimeout(10), TimeUnit.SECONDS);
             fail("Expected the request to fail, got " + response);
         } catch (ExecutionException e) {
             System.out.println("Client exception [expected]: " + e);
@@ -966,13 +968,13 @@ public class H3ErrorHandlingTest implements HttpServerAdapters {
             final HttpResponse<Void> response = client.sendAsync(
                     request,
                     BodyHandlers.discarding())
-                    .get(10, TimeUnit.SECONDS);
+                    .get(Utils.adjustTimeout(20), TimeUnit.SECONDS);
             fail("Expected the request to fail, got " + response);
         } catch (ExecutionException e) {
             System.out.println("Client exception [expected]: " + e);
             var cause = e.getCause();
             assertTrue(cause instanceof ProtocolException, "Expected ProtocolException");
-            TerminationCause terminationCause = errorCF.get(10, TimeUnit.SECONDS);
+            TerminationCause terminationCause = errorCF.get(Utils.adjustTimeout(10), TimeUnit.SECONDS);
             System.out.println("Server reason: \"" + terminationCause.getPeerVisibleReason()+'"');
             final long actual = terminationCause.getCloseCode();
             // expected
@@ -989,13 +991,13 @@ public class H3ErrorHandlingTest implements HttpServerAdapters {
             final HttpResponse<Void> response = client.sendAsync(
                             request,
                             BodyHandlers.discarding())
-                    .get(10, TimeUnit.SECONDS);
+                    .get(Utils.adjustTimeout(10), TimeUnit.SECONDS);
             fail("Expected the request to fail, got " + response);
         } catch (ExecutionException e) {
             System.out.println("Client exception [expected]: " + e);
             var cause = e.getCause();
             assertTrue(cause instanceof ProtocolException, "Expected ProtocolException");
-            TerminationCause terminationCause = errorCF.get(10, TimeUnit.SECONDS);
+            TerminationCause terminationCause = errorCF.get(Utils.adjustTimeout(10), TimeUnit.SECONDS);
             System.out.println("Server reason: \"" + terminationCause.getPeerVisibleReason()+'"');
             final long actual = terminationCause.getCloseCode();
             // expected
@@ -1019,13 +1021,13 @@ public class H3ErrorHandlingTest implements HttpServerAdapters {
                     BodyHandlers.discarding(),
                     (initiatingRequest, pushPromiseRequest, acceptor) ->
                             acceptor.apply(BodyHandlers.discarding())
-            ).get(10, TimeUnit.SECONDS);
+            ).get(Utils.adjustTimeout(10), TimeUnit.SECONDS);
             fail("Expected the request to fail, got " + response);
         } catch (ExecutionException e) {
             System.out.println("Client exception [expected]: " + e);
             var cause = e.getCause();
             assertTrue(cause instanceof ProtocolException, "Expected ProtocolException");
-            TerminationCause terminationCause = errorCF.get(10, TimeUnit.SECONDS);
+            TerminationCause terminationCause = errorCF.get(Utils.adjustTimeout(10), TimeUnit.SECONDS);
             System.out.println("Server reason: \"" + terminationCause.getPeerVisibleReason()+'"');
             final long actual = terminationCause.getCloseCode();
             // expected

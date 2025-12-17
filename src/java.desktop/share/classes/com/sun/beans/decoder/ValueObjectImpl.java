@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,7 @@ final class ValueObjectImpl implements ValueObject {
      *
      * @return the result of method execution
      */
+    @Override
     public Object getValue() {
         return this.value;
     }
@@ -82,6 +83,7 @@ final class ValueObjectImpl implements ValueObject {
      * @return {@code true} if value should be ignored,
      *         {@code false} otherwise
      */
+    @Override
     public boolean isVoid() {
         return this.isVoid;
     }

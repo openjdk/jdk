@@ -43,7 +43,8 @@
 ShenandoahControlThread::ShenandoahControlThread() :
   ShenandoahController(),
   _requested_gc_cause(GCCause::_no_gc),
-  _degen_point(ShenandoahGC::_degenerated_outside_cycle) {
+  _degen_point(ShenandoahGC::_degenerated_outside_cycle),
+  _control_lock(Mutex::nosafepoint - 2, "ShenandoahGCRequest_lock", true) {
   set_name("Shenandoah Control Thread");
   create_and_start();
 }
@@ -201,26 +202,8 @@ void ShenandoahControlThread::run_service() {
         heuristics->clear_metaspace_oom();
       }
 
-      // Commit worker statistics to cycle data
-      heap->phase_timings()->flush_par_workers_to_cycle();
-
-      // Print GC stats for current cycle
-      {
-        LogTarget(Info, gc, stats) lt;
-        if (lt.is_enabled()) {
-          ResourceMark rm;
-          LogStream ls(lt);
-          heap->phase_timings()->print_cycle_on(&ls);
-          if (ShenandoahEvacTracking) {
-            ShenandoahEvacuationTracker* evac_tracker = heap->evac_tracker();
-            ShenandoahCycleStats         evac_stats   = evac_tracker->flush_cycle_to_global();
-            evac_tracker->print_evacuations_on(&ls, &evac_stats.workers, &evac_stats.mutators);
-          }
-        }
-      }
-
-      // Commit statistics to globals
-      heap->phase_timings()->flush_cycle_to_global();
+      // Manage and print gc stats
+      heap->process_gc_stats();
 
       // Print Metaspace change following GC (if logging is enabled).
       MetaspaceUtils::print_metaspace_change(meta_sizes);
@@ -246,7 +229,9 @@ void ShenandoahControlThread::run_service() {
       sleep = MIN2<int>(ShenandoahControlIntervalMax, MAX2(1, sleep * 2));
       last_sleep_adjust_time = current;
     }
-    os::naked_short_sleep(sleep);
+
+    MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
+    ml.wait(sleep);
   }
 }
 
@@ -361,6 +346,16 @@ void ShenandoahControlThread::request_gc(GCCause::Cause cause) {
   }
 }
 
+void ShenandoahControlThread::notify_control_thread(GCCause::Cause cause) {
+  // Although setting gc request is under _controller_lock, the read side (run_service())
+  // does not take the lock. We need to enforce following order, so that read side sees
+  // latest requested gc cause when the flag is set.
+  MonitorLocker controller(&_control_lock, Mutex::_no_safepoint_check_flag);
+  _requested_gc_cause = cause;
+  _gc_requested.set();
+  controller.notify();
+}
+
 void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
   if (should_terminate()) {
     log_info(gc)("Control thread is terminating, no more GCs");
@@ -372,8 +367,7 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
   // The whitebox caller thread will arrange for itself to wait until the GC notifies
   // it that has reached the requested breakpoint (phase in the GC).
   if (cause == GCCause::_wb_breakpoint) {
-    _requested_gc_cause = cause;
-    _gc_requested.set();
+    notify_control_thread(cause);
     return;
   }
 
@@ -390,12 +384,7 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
   size_t current_gc_id = get_gc_id();
   size_t required_gc_id = current_gc_id + 1;
   while (current_gc_id < required_gc_id && !should_terminate()) {
-    // Although setting gc request is under _gc_waiters_lock, but read side (run_service())
-    // does not take the lock. We need to enforce following order, so that read side sees
-    // latest requested gc cause when the flag is set.
-    _requested_gc_cause = cause;
-    _gc_requested.set();
-
+    notify_control_thread(cause);
     ml.wait();
     current_gc_id = get_gc_id();
   }

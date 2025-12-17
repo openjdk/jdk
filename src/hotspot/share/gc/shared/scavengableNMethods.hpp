@@ -33,8 +33,6 @@ class nmethod;
 class NMethodToOopClosure;
 
 class ScavengableNMethods : public AllStatic {
-  friend class VMStructs;
-
   static nmethod*           _head;
   static BoolObjectClosure* _is_scavengable;
 

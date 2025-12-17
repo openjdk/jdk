@@ -1209,9 +1209,12 @@ bool Node::has_special_unique_user() const {
   if (this->is_Store()) {
     // Condition for back-to-back stores folding.
     return n->Opcode() == op && n->in(MemNode::Memory) == this;
-  } else if (this->is_Load() || this->is_DecodeN() || this->is_Phi()) {
+  } else if ((this->is_Load() || this->is_DecodeN() || this->is_Phi()) && n->Opcode() == Op_MemBarAcquire) {
     // Condition for removing an unused LoadNode or DecodeNNode from the MemBarAcquire precedence input
-    return n->Opcode() == Op_MemBarAcquire;
+    return true;
+  } else if (this->is_Load() && n->is_Move()) {
+    // Condition for MoveX2Y (LoadX mem) => LoadY mem
+    return true;
   } else if (op == Op_AddL) {
     // Condition for convL2I(addL(x,y)) ==> addI(convL2I(x),convL2I(y))
     return n->Opcode() == Op_ConvL2I && n->in(1) == this;
@@ -2602,7 +2605,7 @@ void Node::dump(const char* suffix, bool mark, outputStream* st, DumpConfig* dc)
     t->dump_on(st);
   } else if (t == Type::MEMORY) {
     st->print("  Memory:");
-    MemNode::dump_adr_type(this, adr_type(), st);
+    MemNode::dump_adr_type(adr_type(), st);
   } else if (Verbose || WizardMode) {
     st->print("  Type:");
     if (t) {
@@ -2800,12 +2803,12 @@ uint Node::match_edge(uint idx) const {
 // Register classes are defined for specific machines
 const RegMask &Node::out_RegMask() const {
   ShouldNotCallThis();
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 const RegMask &Node::in_RegMask(uint) const {
   ShouldNotCallThis();
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 void Node_Array::grow(uint i) {
@@ -2889,6 +2892,20 @@ Node* Node::find_similar(int opc) {
   return nullptr;
 }
 
+Node* Node::unique_multiple_edges_out_or_null() const {
+  Node* use = nullptr;
+  for (DUIterator_Fast kmax, k = fast_outs(kmax); k < kmax; k++) {
+    Node* u = fast_out(k);
+    if (use == nullptr) {
+      use = u; // first use
+    } else if (u != use) {
+      return nullptr; // not unique
+    } else {
+      // secondary use
+    }
+  }
+  return use;
+}
 
 //--------------------------unique_ctrl_out_or_null-------------------------
 // Return the unique control out if only one. Null if none or more than one.

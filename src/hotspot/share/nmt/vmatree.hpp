@@ -241,6 +241,9 @@ public:
   struct SummaryDiff {
     SingleDiff tag[mt_number_of_tags];
     SummaryDiff() {
+      clear();
+    }
+    void clear() {
       for (int i = 0; i < mt_number_of_tags; i++) {
         tag[i] = SingleDiff{0, 0};
       }
@@ -283,7 +286,7 @@ public:
   };
 
  private:
-  SummaryDiff register_mapping(position A, position B, StateType state, const RegionData& metadata, bool use_tag_inplace = false);
+  void register_mapping(position A, position B, StateType state, const RegionData& metadata, SummaryDiff& diff, bool use_tag_inplace = false);
   StateType get_new_state(const StateType existinting_state, const RequestInfo& req) const;
   MemTag get_new_tag(const MemTag existinting_tag, const RequestInfo& req) const;
   SIndex get_new_reserve_callstack(const SIndex existinting_stack, const StateType ex, const RequestInfo& req) const;
@@ -298,12 +301,12 @@ public:
   }
 
  public:
-  SummaryDiff reserve_mapping(position from, size size, const RegionData& metadata) {
-    return register_mapping(from, from + size, StateType::Reserved, metadata, false);
+  void reserve_mapping(position from, size size, const RegionData& metadata, SummaryDiff& diff ) {
+    register_mapping(from, from + size, StateType::Reserved, metadata, diff, false);
   }
 
-  SummaryDiff commit_mapping(position from, size size, const RegionData& metadata, bool use_tag_inplace = false) {
-    return register_mapping(from, from + size, StateType::Committed, metadata, use_tag_inplace);
+  void commit_mapping(position from, size size, const RegionData& metadata, SummaryDiff& diff, bool use_tag_inplace = false) {
+    register_mapping(from, from + size, StateType::Committed, metadata, diff, use_tag_inplace);
   }
 
   // Given an interval and a tag, find all reserved and committed ranges at least
@@ -312,12 +315,12 @@ public:
   // Released regions are ignored.
   SummaryDiff set_tag(position from, size size, MemTag tag);
 
-  SummaryDiff uncommit_mapping(position from, size size, const RegionData& metadata) {
-    return register_mapping(from, from + size, StateType::Reserved, metadata, true);
+  void uncommit_mapping(position from, size size, const RegionData& metadata, SummaryDiff& diff) {
+    register_mapping(from, from + size, StateType::Reserved, metadata, diff, true);
   }
 
-  SummaryDiff release_mapping(position from, position sz) {
-    return register_mapping(from, from + sz, StateType::Released, VMATree::empty_regiondata);
+  void release_mapping(position from, position sz, SummaryDiff& diff) {
+    register_mapping(from, from + sz, StateType::Released, VMATree::empty_regiondata, diff);
   }
 
 public:

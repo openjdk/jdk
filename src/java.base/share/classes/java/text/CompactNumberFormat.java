@@ -250,38 +250,43 @@ public final class CompactNumberFormat extends NumberFormat {
 
     /**
      * List of positive prefix patterns of this formatter's
-     * compact number patterns.
+     * compact number patterns. This field is a read-only
+     * constant once initialized.
      */
     private transient List<Patterns> positivePrefixPatterns;
 
     /**
      * List of negative prefix patterns of this formatter's
-     * compact number patterns.
+     * compact number patterns. This field is a read-only
+     * constant once initialized.
      */
     private transient List<Patterns> negativePrefixPatterns;
 
     /**
      * List of positive suffix patterns of this formatter's
-     * compact number patterns.
+     * compact number patterns. This field is a read-only
+     * constant once initialized.
      */
     private transient List<Patterns> positiveSuffixPatterns;
 
     /**
      * List of negative suffix patterns of this formatter's
-     * compact number patterns.
+     * compact number patterns. This field is a read-only
+     * constant once initialized.
      */
     private transient List<Patterns> negativeSuffixPatterns;
 
     /**
      * List of divisors of this formatter's compact number patterns.
      * Divisor can be either Long or BigInteger (if the divisor value goes
-     * beyond long boundary)
+     * beyond long boundary). This field is a read-only constant
+     * once initialized.
      */
     private transient List<Number> divisors;
 
     /**
      * List of place holders that represent minimum integer digits at each index
-     * for each count.
+     * for each count. This field is a read-only constant once initialized.
      */
     private transient List<Patterns> placeHolderPatterns;
 
@@ -374,7 +379,7 @@ public final class CompactNumberFormat extends NumberFormat {
 
     /**
      * The map for plural rules that maps LDML defined tags (e.g. "one") to
-     * its rule.
+     * its rule. This field is a read-only constant once initialized.
      */
     private transient Map<String, String> rulesMap;
 
@@ -1515,7 +1520,7 @@ public final class CompactNumberFormat extends NumberFormat {
         }
     }
 
-    private final transient DigitList digitList = new DigitList();
+    private transient DigitList digitList = new DigitList();
     private static final int STATUS_INFINITE = 0;
     private static final int STATUS_POSITIVE = 1;
     private static final int STATUS_LENGTH   = 2;
@@ -2506,8 +2511,14 @@ public final class CompactNumberFormat extends NumberFormat {
     @Override
     public CompactNumberFormat clone() {
         CompactNumberFormat other = (CompactNumberFormat) super.clone();
+
+        // Cloning reference fields. Other fields (e.g., "positivePrefixPatterns")
+        // are not cloned since they are read-only constants after initialization.
         other.compactPatterns = compactPatterns.clone();
         other.symbols = (DecimalFormatSymbols) symbols.clone();
+        other.decimalFormat = (DecimalFormat) decimalFormat.clone();
+        other.defaultDecimalFormat = (DecimalFormat) defaultDecimalFormat.clone();
+        other.digitList = (DigitList) digitList.clone();
         return other;
     }
 

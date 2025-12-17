@@ -294,12 +294,6 @@ inline NativeGeneralJump* nativeGeneralJump_at(address addr) {
   return jump;
 }
 
-class NativeIllegalInstruction: public NativeInstruction {
- public:
-  // Insert illegal opcode as specific address
-  static void insert(address code_pos);
-};
-
 inline bool NativeInstruction::is_nop() const {
   uint32_t insn = Assembler::ld_instr(addr_at(0));
   return insn == 0x13;
@@ -317,12 +311,19 @@ inline bool NativeInstruction::is_jump_or_nop() {
 // can store an offset from the initial nop to the nmethod.
 class NativePostCallNop: public NativeInstruction {
 public:
+  enum RISCV_specific_constants {
+    // The two parts should be checked separately to prevent out of bounds access in
+    // case the return address points to the deopt handler stub code entry point
+    // which could be at the end of page.
+    first_check_size = instruction_size
+  };
+
   bool check() const {
     // Check for two instructions: nop; lui zr, hi20
     // These instructions only ever appear together in a post-call
     // NOP, so it's unnecessary to check that the third instruction is
     // an addiw as well.
-    return is_nop() && MacroAssembler::is_lui_to_zr_at(addr_at(4));
+    return is_nop() && MacroAssembler::is_lui_to_zr_at(addr_at(first_check_size));
   }
   bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const;
   bool patch(int32_t oopmap_slot, int32_t cb_offset);
@@ -353,14 +354,7 @@ class NativeDeoptInstruction: public NativeInstruction {
   address instruction_address() const       { return addr_at(instruction_offset); }
   address next_instruction_address() const  { return addr_at(instruction_size); }
 
-  void verify();
-
-  static bool is_deopt_at(address instr) {
-    assert(instr != nullptr, "");
-    uint32_t value = Assembler::ld_instr(instr);
-    // 0xc0201073 encodes CSRRW x0, instret, x0
-    return value == 0xc0201073;
-  }
+  static bool is_deopt_at(address instr);
 
   // MT-safe patching
   static void insert(address code_pos);

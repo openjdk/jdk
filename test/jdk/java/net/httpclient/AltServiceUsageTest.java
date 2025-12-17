@@ -23,16 +23,12 @@
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.channels.DatagramChannel;
-import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.OptionalLong;
@@ -47,6 +43,8 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.H3_DISCOVERY;
+import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 
 /*
@@ -125,7 +123,7 @@ public class AltServiceUsageTest implements HttpServerAdapters {
     public void afterClass() throws Exception {
         safeStop(originServer);
         safeStop(altServer);
-        udpNotResponding.close();
+        safeClose(udpNotResponding);
     }
 
     private static void safeStop(final HttpTestServer server) {
@@ -139,6 +137,19 @@ public class AltServiceUsageTest implements HttpServerAdapters {
         } catch (Exception e) {
             System.err.println("Ignoring exception: " + e.getMessage() + " that occurred " +
                     "during stop of server: " + serverAddr);
+        }
+    }
+
+    private static void safeClose(final DatagramChannel channel) {
+        if (channel == null) {
+            return;
+        }
+        try {
+            System.out.println("Closing DatagramChannel " + channel.getLocalAddress());
+            channel.close();
+        } catch (Exception e) {
+            System.err.println("Ignoring exception: " + e.getMessage() + " that occurred " +
+                    "during close of DatagramChannel: " + channel);
         }
     }
 
@@ -258,9 +269,10 @@ public class AltServiceUsageTest implements HttpServerAdapters {
         // send a HTTP3 request to a server which is expected to respond back
         // with a 200 response and an alt-svc header pointing to another/different H3 server
         final URI reqURI = URI.create("https://" + toHostPort(originServer) + "/foo/");
-        final HttpRequest request = HttpRequest.newBuilder()
+        final HttpRequest request = HttpRequest.newBuilder(reqURI)
                 .GET()
-                .uri(reqURI).build();
+                .setOption(H3_DISCOVERY, ALT_SVC)
+                .build();
         System.out.println("Issuing request " + reqURI);
         final HttpResponse<String> response = client.send(request,
                 HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
@@ -304,7 +316,10 @@ public class AltServiceUsageTest implements HttpServerAdapters {
                 .version(HTTP_3)
                 .build();
         final URI reqURI = URI.create("https://" + toHostPort(originServer) + "/foo421/");
-        final HttpRequest request = HttpRequest.newBuilder().GET().uri(reqURI).build();
+        final HttpRequest request = HttpRequest.newBuilder(reqURI)
+                .GET()
+                .setOption(H3_DISCOVERY, ALT_SVC)
+                .build();
         System.out.println("Issuing request " + reqURI);
         final HttpResponse<String> response = client.send(request,
                 HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
@@ -352,7 +367,10 @@ public class AltServiceUsageTest implements HttpServerAdapters {
         // send a HTTP3 request to a server which is expected to respond back
         // with a 200 response and an alt-svc header pointing to another/different H3 server
         final URI reqURI = URI.create("https://" + toHostPort(originServer) + "/bar/");
-        final HttpRequest request = HttpRequest.newBuilder().GET().uri(reqURI).build();
+        final HttpRequest request = HttpRequest.newBuilder(reqURI)
+                .GET()
+                .setOption(H3_DISCOVERY, ALT_SVC)
+                .build();
         System.out.println("Issuing request " + reqURI);
         final HttpResponse<String> response = client.send(request,
                 HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
@@ -404,7 +422,10 @@ public class AltServiceUsageTest implements HttpServerAdapters {
         // send a HTTP3 request to a server which is expected to respond back
         // with a 200 response and an alt-svc header pointing to another/different H3 server
         final URI reqURI = URI.create("https://" + toHostPort(originServer) + "/maxAgeAltSvc/");
-        final HttpRequest request = HttpRequest.newBuilder().GET().uri(reqURI).build();
+        final HttpRequest request = HttpRequest.newBuilder(reqURI)
+                .GET()
+                .setOption(H3_DISCOVERY, ALT_SVC)
+                .build();
         System.out.println("Issuing request " + reqURI);
         final HttpResponse<String> response = client.send(request,
                 HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));

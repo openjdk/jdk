@@ -109,7 +109,7 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
     }
 
     @Override
-    protected final boolean isMultiFramesTest(){
+    protected final boolean isMultiFramesTest() {
         return false;
     }
 
@@ -196,7 +196,7 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
     }
 
     @Override
-    protected void cleanup(){
+    protected void cleanup() {
         f.dispose();
     }
 }

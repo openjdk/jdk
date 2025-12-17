@@ -771,7 +771,7 @@ Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller, int lookup
         assert(!HAS_PENDING_EXCEPTION, "");
         if (ref_kind == JVM_REF_invokeStatic) {
           LinkResolver::resolve_static_call(result,
-                        link_info, false, THREAD);
+                        link_info, ClassInitMode::dont_init, THREAD);
         } else if (ref_kind == JVM_REF_invokeInterface) {
           LinkResolver::resolve_interface_call(result, Handle(), defc,
                         link_info, false, THREAD);
@@ -833,7 +833,7 @@ Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller, int lookup
       {
         assert(!HAS_PENDING_EXCEPTION, "");
         LinkInfo link_info(defc, name, type, caller, LinkInfo::AccessCheck::skip, loader_constraint_check);
-        LinkResolver::resolve_field(result, link_info, Bytecodes::_nop, false, THREAD);
+        LinkResolver::resolve_field(result, link_info, Bytecodes::_nop, ClassInitMode::dont_init, THREAD);
         if (HAS_PENDING_EXCEPTION) {
           if (speculative_resolve) {
             CLEAR_PENDING_EXCEPTION;

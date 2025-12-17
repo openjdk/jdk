@@ -103,8 +103,6 @@ public class H3HeaderSizeLimitTest implements HttpServerAdapters {
         final HttpClient client = newClientBuilderForH3()
                 .proxy(HttpClient.Builder.NO_PROXY)
                 .version(Version.HTTP_3)
-                // the server drops 1 packet out of two!
-                .connectTimeout(Duration.ofSeconds(Utils.adjustTimeout(10)))
                 .sslContext(sslContext).build();
         final URI reqURI = new URI(requestURIBase + "/hello");
         final HttpRequest.Builder reqBuilder = HttpRequest.newBuilder(reqURI)
