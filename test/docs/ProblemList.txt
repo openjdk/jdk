@@ -41,5 +41,3 @@
 #############################################################################
 
 jdk/javadoc/doccheck/checks/jdkCheckLinks.java 8370249 generic-all
-jdk/javadoc/doccheck/checks/jdkCheckHtml.java 8370970 generic-all
-jdk/javadoc/doccheck/checks/jdkDoctypeBadcharsCheck.java 8370970 generic-all
