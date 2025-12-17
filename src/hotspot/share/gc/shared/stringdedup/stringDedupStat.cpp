@@ -98,13 +98,13 @@ void StringDedup::Stat::log_summary(const Stat* last_stat, const Stat* total_sta
     "%zu/" STRDEDUP_BYTES_FORMAT_NS " (new unknown), "
     "%zu/" STRDEDUP_BYTES_FORMAT_NS " (deduped), "
     "total avg deduped/new unknown bytes " STRDEDUP_PERCENT_FORMAT_NS ", "
-    "%zu (total deduped), %zu (total new unknown), "
+    STRDEDUP_BYTES_FORMAT_NS " (total deduped)," STRDEDUP_BYTES_FORMAT_NS " (total new unknown), "
     STRDEDUP_ELAPSED_FORMAT_MS " of " STRDEDUP_ELAPSED_FORMAT_MS,
     last_stat->_inspected,
     last_stat->_new, STRDEDUP_BYTES_PARAM(last_stat->_new_bytes),
     last_stat->_deduped, STRDEDUP_BYTES_PARAM(last_stat->_deduped_bytes),
     percent_of(total_stat->_deduped_bytes, total_stat->_new_bytes),
-    total_stat->_deduped_bytes, total_stat->_new_bytes,
+    STRDEDUP_BYTES_PARAM(total_stat->_deduped_bytes), STRDEDUP_BYTES_PARAM(total_stat->_new_bytes),
     strdedup_elapsed_param_ms(last_stat->_process_elapsed),
     strdedup_elapsed_param_ms(last_stat->_active_elapsed));
 }
