@@ -81,7 +81,7 @@ public class ClearTextServerSSL {
     public void test() throws Exception {
         var sslContext = new SimpleSSLContext().get();
         var handler = new TestHandler();
-        var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR,0), 0);
+        var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR, 0), 0);
         server.createContext(path(""), handler);
         server.start();
         try (var client = HttpClient.newBuilder()
