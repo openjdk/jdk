@@ -1260,9 +1260,13 @@ public class ForkJoinPool extends AbstractExecutorService
             if (a != null &&
                 ((room = a.length - size) > 0 || (a = growArray(s)) != null) &&
                 (cap = a.length) > 0) {
-                a[(m = cap - 1) & s] = task;
-                if (!internal)
+                long pos = slotOffset((m = cap - 1) & s);
+                if (internal)
+                    U.getAndSetReference(a, pos, task); // fully fenced
+                else {
+                    U.putReference(a, pos, task);       // inside lock
                     unlockPhase();
+                }
                 if ((U.getReferenceAcquire(a, slotOffset(m & (s - 1))) == null ||
                      room <= 0) && pool != null)
                     pool.signalWork(this, s);   // may have appeared empty
@@ -2025,11 +2029,11 @@ public class ForkJoinPool extends AbstractExecutorService
                                     }
                                 }
                                 else if (U.compareAndSetReference(a, bp, t, null)) {
-                                    q.base = nb;
-                                    U.storeFence();
-                                    rescans = 1;
-                                    if (taken++ == 0 || qid != src)
+                                    q.updateBase(nb);
+                                    if (qid != src)
                                         w.source = src = qid;
+                                    rescans = 1;
+                                    ++taken;
                                     if (U.getReferenceAcquire(a, np) != null)
                                         signalWork(q, nb); // propagate
                                     w.topLevelExec(t, fifo);
@@ -2044,8 +2048,10 @@ public class ForkJoinPool extends AbstractExecutorService
                     if ((inactive = deactivate(w, taken)) != 0)
                         taken = 0;
                 }
-                else if (awaitWork(w) == 0)
+                else if (awaitWork(w) == 0) {
                     inactive = rescans = 0;
+                    src = -1;
+                }
                 else
                     break;
             }
