@@ -739,7 +739,7 @@ class ServerImpl {
                 try {
                     req = new Request(rawin, rawout, newconnection && !https);
                 } catch (ProtocolException pe) {
-                    logger.log(Level.DEBUG, "closing due to: " + pe.toString());
+                    logger.log(Level.DEBUG, "closing due to: " + pe);
                     reject(Code.HTTP_BAD_REQUEST, "", pe.getMessage());
                     return;
                 }
