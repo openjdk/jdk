@@ -4111,6 +4111,15 @@ bool ClearArrayNode::step_through(Node** np, uint instance_id, PhaseValues* phas
   return true;
 }
 
+Node* ClearArrayNode::make_address(Node* dest, Node* offset, PhaseGVN* phase) {
+  Node* base = dest;
+  if (phase->type(dest)->isa_oopptr() == nullptr) {
+    // May be called as part of the initialization of a just allocated object
+    base = phase->C->top();
+  }
+  return phase->transform(new AddPNode(base, dest, offset));
+}
+
 //----------------------------clear_memory-------------------------------------
 // Generate code to initialize object storage to zero.
 Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
@@ -4121,12 +4130,7 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
 
   int unit = BytesPerLong;
   if ((offset % unit) != 0) {
-    Node* base = dest;
-    if (phase->type(dest)->isa_oopptr() == nullptr) {
-      base = phase->C->top();
-    }
-    Node* adr = new AddPNode(base, dest, phase->MakeConX(offset));
-    adr = phase->transform(adr);
+    Node* adr = make_address(dest, phase->MakeConX(offset), phase);
     const TypePtr* atp = TypeRawPtr::BOTTOM;
     mem = StoreNode::make(*phase, ctl, mem, adr, atp, phase->zerocon(T_INT), T_INT, MemNode::unordered);
     mem = phase->transform(mem);
@@ -4160,11 +4164,7 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
 
   // Bulk clear double-words
   Node* zsize = phase->transform(new SubXNode(zend, zbase) );
-  Node* base = dest;
-  if (phase->type(dest)->isa_oopptr() == nullptr) {
-    base = phase->C->top();
-  }
-  Node* adr = phase->transform(new AddPNode(base, dest, start_offset));
+  Node* adr = make_address(dest, start_offset, phase);
   mem = new ClearArrayNode(ctl, mem, zsize, adr, false);
   return phase->transform(mem);
 }
@@ -4188,12 +4188,7 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
                        start_offset, phase->MakeConX(done_offset), phase);
   }
   if (done_offset < end_offset) { // emit the final 32-bit store
-    Node* base = dest;
-    if (phase->type(dest)->isa_oopptr() == nullptr) {
-      base = phase->C->top();
-    }
-    Node* adr = new AddPNode(base, dest, phase->MakeConX(done_offset));
-    adr = phase->transform(adr);
+    Node* adr = make_address(dest, phase->MakeConX(done_offset), phase);
     const TypePtr* atp = TypeRawPtr::BOTTOM;
     mem = StoreNode::make(*phase, ctl, mem, adr, atp, phase->zerocon(T_INT), T_INT, MemNode::unordered);
     mem = phase->transform(mem);
