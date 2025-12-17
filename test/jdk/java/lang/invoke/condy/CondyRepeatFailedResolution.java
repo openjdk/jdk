@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,28 +26,27 @@
  * @bug 8186211
  * @summary Test basic invocation of multiple ldc's of the same dynamic constant that fail resolution
  * @library /java/lang/invoke/common
- * @run testng CondyRepeatFailedResolution
- * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyRepeatFailedResolution
+ * @run junit CondyRepeatFailedResolution
+ * @run junit/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyRepeatFailedResolution
  */
 
 import java.lang.classfile.ClassFile;
-import org.testng.Assert;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-
 import java.lang.constant.*;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-@Test
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
 public class CondyRepeatFailedResolution {
     // Counter used to determine if a given BSM is invoked more than once
     static int bsm_called = 0;
 
     // Generated class with methods containing condy ldc
-    Class<?> gc;
+    static Class<?> gc;
 
     // Bootstrap method used to represent primitive values
     // that cannot be represented directly in the constant pool,
@@ -90,8 +89,8 @@ public class CondyRepeatFailedResolution {
         }
     }
 
-    @BeforeClass
-    public void generateClass() throws Exception {
+    @BeforeAll
+    public static void generateClass() throws Exception {
         String genClassName = CondyRepeatFailedResolution.class.getSimpleName() + "$Code";
         String bsmClassDesc = CondyRepeatFailedResolution.class.descriptorString();
         String bsmMethodName = "intConversion";
@@ -321,27 +320,27 @@ public class CondyRepeatFailedResolution {
         bsm_called = 0;
         try {
             Object r1 = m.invoke(null);
-            Assert.fail("InvocationTargetException expected to be thrown after first invocation");
+            Assertions.fail("InvocationTargetException expected to be thrown after first invocation");
         } catch (InvocationTargetException e1) {
             // bsm_called should have been incremented prior to the exception
-            Assert.assertEquals(bsm_called, 1);
-            Assert.assertTrue(e1.getCause() instanceof BootstrapMethodError);
+            Assertions.assertEquals(1, bsm_called);
+            Assertions.assertTrue(e1.getCause() instanceof BootstrapMethodError);
             // Try invoking method again to ensure that the bootstrap
             // method is not invoked twice and a resolution failure
             // results.
             try {
                 Object r2 = m.invoke(null);
-                Assert.fail("InvocationTargetException expected to be thrown after second invocation");
+                Assertions.fail("InvocationTargetException expected to be thrown after second invocation");
             } catch (InvocationTargetException e2) {
                 // bsm_called should remain at 1 since the bootstrap
                 // method should not have been invoked.
-                Assert.assertEquals(bsm_called, 1);
-                Assert.assertTrue(e2.getCause() instanceof BootstrapMethodError);
+                Assertions.assertEquals(1, bsm_called);
+                Assertions.assertTrue(e2.getCause() instanceof BootstrapMethodError);
             } catch (Throwable t2) {
-                Assert.fail("InvocationTargetException expected to be thrown");
+                Assertions.fail("InvocationTargetException expected to be thrown");
             }
         } catch (Throwable t1) {
-                Assert.fail("InvocationTargetException expected to be thrown");
+                Assertions.fail("InvocationTargetException expected to be thrown");
         }
     }
 }

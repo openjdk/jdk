@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,18 @@
 
 /* @test
  * @summary basic tests for MethodHandle.invokeWithArguments
- * @run testng test.java.lang.invoke.InvokeWithArgumentsTest
+ * @run junit test.java.lang.invoke.InvokeWithArgumentsTest
  */
 
 package test.java.lang.invoke;
-
-import org.testng.Assert;
-import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.WrongMethodTypeException;
 
 import static java.lang.invoke.MethodType.methodType;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class InvokeWithArgumentsTest {
     static final MethodHandles.Lookup L = MethodHandles.lookup();
@@ -49,10 +48,7 @@ public class InvokeWithArgumentsTest {
         MethodHandle mh = L.findStatic(L.lookupClass(), "arity",
                                        methodType(Object[].class, Object.class, Object.class, Object[].class));
 
-        try {
-            mh.invokeWithArguments("");
-            Assert.fail("WrongMethodTypeException expected");
-        } catch (WrongMethodTypeException e) {}
+        Assertions.assertThrows(WrongMethodTypeException.class, () -> mh.invokeWithArguments(""));
     }
 
     static Object[] passThrough(String... a) {
@@ -74,8 +70,8 @@ public class InvokeWithArgumentsTest {
         // unpacked and then packed into a new array before invoking the method
         String[] expected = (String[]) mh.invokeWithArguments(actual);
 
-        Assert.assertTrue(actual != expected, "Array should not pass through");
-        Assert.assertEquals(actual, expected, "Array contents should be equal");
+        Assertions.assertTrue(actual != expected, "Array should not pass through");
+        Assertions.assertArrayEquals(expected, actual, "Array contents should be equal");
     }
 
     @Test
@@ -89,8 +85,8 @@ public class InvokeWithArgumentsTest {
         // will cast to Object become the single element of a new Object[] array
         Object[] expected = (Object[]) mh.invokeWithArguments("", actual);
 
-        Assert.assertEquals(1, expected.length, "Array should contain just one element");
-        Assert.assertTrue(actual == expected[0], "Array should pass through");
+        Assertions.assertEquals(1, expected.length, "Array should contain just one element");
+        Assertions.assertTrue(actual == expected[0], "Array should pass through");
     }
 
     static void intArray(int... a) {
@@ -100,20 +96,14 @@ public class InvokeWithArgumentsTest {
     public void testPrimitiveArrayWithNull() throws Throwable {
         MethodHandle mh = L.findStatic(L.lookupClass(), "intArray",
                                        methodType(void.class, int[].class));
-        try {
-            mh.invokeWithArguments(null, null);
-            Assert.fail("NullPointerException expected");
-        } catch (NullPointerException e) {}
+        Assertions.assertThrows(NullPointerException.class, () -> mh.invokeWithArguments(null, null));
     }
 
     @Test
     public void testPrimitiveArrayWithRef() throws Throwable {
         MethodHandle mh = L.findStatic(L.lookupClass(), "intArray",
                                        methodType(void.class, int[].class));
-        try {
-            mh.invokeWithArguments("A", "B");
-            Assert.fail("ClassCastException expected");
-        } catch (ClassCastException e) {}
+        Assertions.assertThrows(ClassCastException.class, () -> mh.invokeWithArguments("A", "B"));
     }
 
 
@@ -127,9 +117,6 @@ public class InvokeWithArgumentsTest {
         // All numbers, should not throw
         mh.invokeWithArguments(1, 1.0, 1.0F, 1L);
 
-        try {
-            mh.invokeWithArguments("A");
-            Assert.fail("ClassCastException expected");
-        } catch (ClassCastException e) {}
+        Assertions.assertThrows(ClassCastException.class, () -> mh.invokeWithArguments("A"));
     }
 }

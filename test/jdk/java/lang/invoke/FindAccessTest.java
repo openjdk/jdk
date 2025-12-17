@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 8139885
- * @run testng/othervm -ea -esa test.java.lang.invoke.FindAccessTest
+ * @run junit/othervm -ea -esa test.java.lang.invoke.FindAccessTest
  */
 
 package test.java.lang.invoke;
@@ -33,9 +33,8 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 
-import static org.testng.AssertJUnit.*;
-
-import org.testng.annotations.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for Lookup.findClass/accessClass extensions added in JEP 274.
@@ -45,34 +44,27 @@ public class FindAccessTest {
     static final Lookup LOOKUP = MethodHandles.lookup();
 
     @Test
-    public static void testFindSpecial() throws Throwable {
+    public void testFindSpecial() throws Throwable {
         FindSpecial.C c = new FindSpecial.C();
-        assertEquals("I1.m", c.m());
+        Assertions.assertEquals("I1.m", c.m());
         MethodType t = MethodType.methodType(String.class);
         MethodHandle ci1m = LOOKUP.findSpecial(FindSpecial.I1.class, "m", t, FindSpecial.C.class);
-        assertEquals("I1.m", (String) ci1m.invoke(c));
+        Assertions.assertEquals("I1.m", (String) ci1m.invoke(c));
     }
 
     @Test
-    public static void testFindSpecialAbstract() throws Throwable {
+    public void testFindSpecialAbstract() throws Throwable {
         FindSpecial.C c = new FindSpecial.C();
-        assertEquals("q", c.q());
+        Assertions.assertEquals("q", c.q());
         MethodType t = MethodType.methodType(String.class);
-        boolean caught = false;
-        try {
-            MethodHandle ci3q = LOOKUP.findSpecial(FindSpecial.I3.class, "q", t, FindSpecial.C.class);
-        } catch (Throwable thrown) {
-            if (!(thrown instanceof IllegalAccessException) || !FindSpecial.ABSTRACT_ERROR.equals(thrown.getMessage())) {
-                throw new AssertionError(thrown.getMessage(), thrown);
-            }
-            caught = true;
-        }
-        assertTrue(caught);
+        var thrown = Assertions.assertThrows(IllegalAccessException.class,
+                () -> LOOKUP.findSpecial(FindSpecial.I3.class, "q", t, FindSpecial.C.class));
+        Assertions.assertEquals(FindSpecial.ABSTRACT_ERROR, thrown.getMessage());
     }
 
-    @Test(expectedExceptions = {ClassNotFoundException.class})
-    public static void testFindClassCNFE() throws ClassNotFoundException, IllegalAccessException {
-        LOOKUP.findClass("does.not.Exist");
+    @Test
+    public void testFindClassCNFE() throws ClassNotFoundException, IllegalAccessException {
+        Assertions.assertThrows(ClassNotFoundException.class, () -> LOOKUP.findClass("does.not.Exist"));
     }
 
     static class FindSpecial {

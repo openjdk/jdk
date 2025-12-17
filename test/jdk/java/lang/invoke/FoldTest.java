@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 8139885
- * @run testng/othervm -ea -esa test.java.lang.invoke.FoldTest
+ * @run junit/othervm -ea -esa test.java.lang.invoke.FoldTest
  */
 
 package test.java.lang.invoke;
@@ -36,9 +36,8 @@ import java.lang.invoke.MethodType;
 
 import static java.lang.invoke.MethodType.methodType;
 
-import static org.testng.AssertJUnit.*;
-
-import org.testng.annotations.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for the new fold method handle combinator added in JEP 274.
@@ -48,48 +47,48 @@ public class FoldTest {
     static final Lookup LOOKUP = MethodHandles.lookup();
 
     @Test
-    public static void testFold0a() throws Throwable {
+    public void testFold0a() throws Throwable {
         // equivalence to foldArguments(MethodHandle,MethodHandle)
         MethodHandle fold = MethodHandles.foldArguments(Fold.MH_multer, 0, Fold.MH_adder);
-        assertEquals(Fold.MT_folded1, fold.type());
-        assertEquals(720, (int) fold.invoke(3, 4, 5));
+        Assertions.assertEquals(Fold.MT_folded1, fold.type());
+        Assertions.assertEquals(720, (int) fold.invoke(3, 4, 5));
     }
 
     @Test
-    public static void testFold1a() throws Throwable {
+    public void testFold1a() throws Throwable {
         // test foldArguments for folding position 1
         MethodHandle fold = MethodHandles.foldArguments(Fold.MH_multer, 1, Fold.MH_adder1);
-        assertEquals(Fold.MT_folded1, fold.type());
-        assertEquals(540, (int) fold.invoke(3, 4, 5));
+        Assertions.assertEquals(Fold.MT_folded1, fold.type());
+        Assertions.assertEquals(540, (int) fold.invoke(3, 4, 5));
     }
 
     @Test
-    public static void testFold0b() throws Throwable {
+    public void testFold0b() throws Throwable {
         // test foldArguments equivalence with multiple types
         MethodHandle fold = MethodHandles.foldArguments(Fold.MH_str, 0, Fold.MH_comb);
-        assertEquals(Fold.MT_folded2, fold.type());
-        assertEquals(23, (int) fold.invoke("true", true, 23));
+        Assertions.assertEquals(Fold.MT_folded2, fold.type());
+        Assertions.assertEquals(23, (int) fold.invoke("true", true, 23));
     }
 
     @Test
-    public static void testFold1b() throws Throwable {
+    public void testFold1b() throws Throwable {
         // test folgArguments for folding position 1, with multiple types
         MethodHandle fold = MethodHandles.foldArguments(Fold.MH_str, 1, Fold.MH_comb2);
-        assertEquals(Fold.MT_folded3, fold.type());
-        assertEquals(1, (int) fold.invoke(true, true, 1));
-        assertEquals(-1, (int) fold.invoke(true, false, -1));
+        Assertions.assertEquals(Fold.MT_folded3, fold.type());
+        Assertions.assertEquals(1, (int) fold.invoke(true, true, 1));
+        Assertions.assertEquals(-1, (int) fold.invoke(true, false, -1));
     }
 
     @Test
-    public static void testFoldArgumentsExample() throws Throwable {
+    public void testFoldArgumentsExample() throws Throwable {
         // test the JavaDoc foldArguments-with-pos example
         StringWriter swr = new StringWriter();
         MethodHandle trace = LOOKUP.findVirtual(StringWriter.class, "write", methodType(void.class, String.class)).bindTo(swr);
         MethodHandle cat = LOOKUP.findVirtual(String.class, "concat", methodType(String.class, String.class));
-        assertEquals("boojum", (String) cat.invokeExact("boo", "jum"));
+        Assertions.assertEquals("boojum", (String) cat.invokeExact("boo", "jum"));
         MethodHandle catTrace = MethodHandles.foldArguments(cat, 1, trace);
-        assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
-        assertEquals("jum", swr.toString());
+        Assertions.assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
+        Assertions.assertEquals("jum", swr.toString());
     }
 
     static class Fold {

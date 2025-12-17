@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,9 @@
  * @summary Test invalid name in name and type
  * @library /java/lang/invoke/common
  * @build test.java.lang.invoke.lib.InstructionHelper
- * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyTypeValidationTest
+ * @run junit/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyTypeValidationTest
  */
 
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import test.java.lang.invoke.lib.InstructionHelper;
 
 import java.lang.invoke.MethodHandle;
@@ -43,14 +40,16 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.invoke.MethodType.methodType;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class CondyTypeValidationTest {
     static final MethodHandles.Lookup L = MethodHandles.lookup();
     static final String BSM_TYPE = methodType(Object.class, MethodHandles.Lookup.class, String.class, Object.class)
             .toMethodDescriptorString();
 
-    @DataProvider
-    public Object[][] invalidTypesProvider() {
+    public static Object[][] invalidTypesProvider() {
         return Stream.of(
 //                         ByteCode API checks for the following invalid types
 //                         "",
@@ -66,7 +65,8 @@ public class CondyTypeValidationTest {
         ).toArray(Object[][]::new);
     }
 
-    @Test(dataProvider = "invalidTypesProvider")
+    @ParameterizedTest
+    @MethodSource("invalidTypesProvider")
     public void testInvalidTypes(String type, String errMessContent) throws Exception {
         try {
             MethodHandle mh = InstructionHelper.ldcDynamicConstant(
@@ -74,12 +74,11 @@ public class CondyTypeValidationTest {
                     "bsm", BSM_TYPE
             );
         } catch (IllegalArgumentException e) {
-            Assert.assertTrue(e.getMessage().contains(errMessContent));
+            Assertions.assertTrue(e.getMessage().contains(errMessContent));
         }
     }
 
-    @DataProvider
-    public Object[][] validTypesProvider() {
+    public static Object[][] validTypesProvider() {
         List<String> t = new ArrayList<>(List.of("B", "C", "D", "F", "I", "J", "Ljava/lang/Object;", "S", "Z"));
         int l = t.size();
         for (int i = 0; i < l; i++) {
@@ -90,7 +89,8 @@ public class CondyTypeValidationTest {
                 .map(e -> new Object[]{e}).toArray(Object[][]::new);
     }
 
-    @Test(dataProvider = "validTypesProvider")
+    @ParameterizedTest
+    @MethodSource("validTypesProvider")
     public void testValidTypes(String type) throws Exception {
         MethodHandle mh = InstructionHelper.ldcDynamicConstant(
                 L, "name", type,
