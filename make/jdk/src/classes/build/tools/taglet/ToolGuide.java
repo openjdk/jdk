@@ -147,7 +147,7 @@ public class ToolGuide implements Taglet {
             ThreadLocal<?> tl = (ThreadLocal<?>) c.getField("CURRENT_PATH").get(null);
             return (String) tl.get();
         } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Cannot determine current path", e);
         }
     }
 

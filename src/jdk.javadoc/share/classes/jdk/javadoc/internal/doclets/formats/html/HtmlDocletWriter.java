@@ -246,6 +246,7 @@ public abstract class HtmlDocletWriter {
         CURRENT_PATH.set(path.getPath());
     }
 
+    /** Temporary workaround to share current path with taglets, see 8373909 */
     public static final ThreadLocal<String> CURRENT_PATH = new ThreadLocal<>();
 
     /**
