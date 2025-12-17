@@ -860,7 +860,7 @@ bool IfNode::has_only_uncommon_traps(IfProjNode* proj, IfProjNode*& success, IfP
     }
 
     CallStaticJavaNode* unc = nullptr;
-    IfProjNode* unc_proj = uncommon_trap_proj(unc)->as_IfProj();
+    ProjNode* unc_proj = uncommon_trap_proj(unc);
     if (unc_proj != nullptr && unc_proj->outcnt() == 1) {
       if (dom_unc == unc) {
         // Allow the uncommon trap to be shared through a region
@@ -887,8 +887,8 @@ bool IfNode::has_only_uncommon_traps(IfProjNode* proj, IfProjNode*& success, IfP
           !igvn->C->too_many_traps(dom_method, dom_bci, Deoptimization::Reason_range_check) &&
           // Return true if c2 manages to reconcile with UnstableIf optimization. See the comments for it.
           igvn->C->remove_unstable_if_trap(dom_unc, true/*yield*/)) {
-        success = unc_proj;
-        fail = unc_proj->other_if_proj();
+        success = unc_proj->as_IfProj();
+        fail = unc_proj->as_IfProj()->other_if_proj();
         return true;
       }
     }
