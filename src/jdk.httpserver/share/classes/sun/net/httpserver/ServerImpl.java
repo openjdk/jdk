@@ -739,8 +739,7 @@ class ServerImpl {
                 try {
                     req = new Request(rawin, rawout, newconnection && !https);
                 } catch (ProtocolException pe) {
-                    logger.log(Level.DEBUG, pe.toString());
-                    logger.log(Level.DEBUG, "Bad first char in request line: closing");
+                    logger.log(Level.DEBUG, "closing due to: " + pe.toString());
                     reject(Code.HTTP_BAD_REQUEST, "", pe.getMessage());
                     return;
                 }
