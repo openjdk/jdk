@@ -298,15 +298,16 @@ public class BasicObjectsTest {
      */
     @Test
     public void testRequireNonNullWithSupplierThrowingException() {
-        // The exception from supplier should be thrown directly, not wrapped
-        RuntimeException re = assertThrows(
+        // Allocate exception outside of lambda to verify same instance is thrown
+        RuntimeException expectedException = new RuntimeException("Supplier exception");
+        RuntimeException actualException = assertThrows(
             RuntimeException.class,
             () -> Objects.requireNonNull(null, () -> {
-                throw new RuntimeException("Supplier exception");
+                throw expectedException;
             }),
             "requireNonNull should throw exception from supplier");
-        assertEquals("Supplier exception", re.getMessage(),
-            "Exception message should match the supplier's exception message");
+        assertSame(expectedException, actualException,
+            "The exception from supplier should be thrown directly, not wrapped");
     }
 
     /**
