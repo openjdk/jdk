@@ -79,11 +79,25 @@ public class TestVectorTypes {
 
         var vectorTemplate = Template.make("type", (VectorType.Vector type) -> {
             return scope(
+                let("elementType", type.elementType),
+                let("length", type.length),
+                let("SPECIES", type.speciesName),
                 """
-                // #type
+                // #type #elementType #length #SPECIES
+                @Test
+                public static void $test() {
                 """,
-                "static #type $v = ", type.con(), ";\n"
-                // TODO: real test
+                "    #elementType scalar = ", type.elementType.con(), ";\n",
+                """
+                    #type zeros = #{type}.zero(#SPECIES);
+                    #type zeros2 = #{type}.broadcast(#SPECIES, 0);
+                    #type vector = #{type}.broadcast(#SPECIES, scalar);
+                    Verify.checkEQ(zeros, zeros2);
+                    Verify.checkEQ(vector, vector.add(zeros));
+                    Verify.checkEQ(vector.length(), #length);
+                    Verify.checkEQ(vector.lane(#length-1), scalar);
+                }
+                """
             );
         });
 
