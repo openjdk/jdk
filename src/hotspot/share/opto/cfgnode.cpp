@@ -933,8 +933,8 @@ bool RegionNode::optimize_trichotomy(PhaseIterGVN* igvn) {
   }
   // At this point we know that region->in(idx1) and region->(idx2) map to the same
   // value and control flow. Now search for ifs that feed into these region inputs.
-  ProjNode* proj1 = region->in(idx1)->isa_Proj();
-  ProjNode* proj2 = region->in(idx2)->isa_Proj();
+  IfProjNode* proj1 = region->in(idx1)->isa_IfProj();
+  IfProjNode* proj2 = region->in(idx2)->isa_IfProj();
   if (proj1 == nullptr || proj1->outcnt() != 1 ||
       proj2 == nullptr || proj2->outcnt() != 1) {
     return false; // No projection inputs with region as unique user found
