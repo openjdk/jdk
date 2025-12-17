@@ -1256,27 +1256,27 @@ public class ForkJoinPool extends AbstractExecutorService
         final void push(ForkJoinTask<?> task, ForkJoinPool pool, boolean internal) {
             int s = top++;                      // back out on failure
             ForkJoinTask<?>[] a = array;
-            int size = s - base + 1, m;
-            if (((a != null && a.length > size) || (a = growArray(a, s)) != null) &&
-                (m = a.length - 1) >= 0) {
-                a[m & s] = task;
+            int size = s - base + 1, room, cap, m;
+            if (a != null &&
+                ((room = a.length - size) > 0 || (a = growArray(s)) != null) &&
+                (cap = a.length) > 0) {
+                a[(m = cap - 1) & s] = task;
                 if (!internal)
                     unlockPhase();
-                if (U.getReferenceAcquire(a, slotOffset(m & (s - 1))) == null &&
-                    pool != null)
+                if ((U.getReferenceAcquire(a, slotOffset(m & (s - 1))) == null ||
+                     room <= 0) && pool != null)
                     pool.signalWork(this, s);   // may have appeared empty
             }
         }
 
         /**
          * Resizes the queue array unless out of memory.
-         * @param a old array
-         * @param s current top
+         * @param s current (in-progress) top
          * @return new array (or throws on OOME)
          */
-        private ForkJoinTask<?>[] growArray(ForkJoinTask<?>[] a, int s) {
-            int cap, newCap;
-            if (a != null && (cap = a.length) > 0 &&
+        private ForkJoinTask<?>[] growArray(int s) {
+            ForkJoinTask<?>[] a; int cap, newCap;
+            if ((a = array) != null && (cap = a.length) > 0 &&
                 (newCap = (cap >= 1 << 16) ? cap << 1 : cap << 2) > 0) {
                 ForkJoinTask<?>[] newArray = null;
                 try {
@@ -2026,11 +2026,11 @@ public class ForkJoinPool extends AbstractExecutorService
                                 }
                                 else if (U.compareAndSetReference(a, bp, t, null)) {
                                     q.base = nb;
-                                    Object nt = U.getReferenceAcquire(a, np);
+                                    U.storeFence();
                                     rescans = 1;
                                     if (taken++ == 0 || qid != src)
                                         w.source = src = qid;
-                                    if (nt != null && q.base == nb)
+                                    if (U.getReferenceAcquire(a, np) != null)
                                         signalWork(q, nb); // propagate
                                     w.topLevelExec(t, fifo);
                                 }
