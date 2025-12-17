@@ -39,6 +39,9 @@ import static compiler.lib.template_framework.library.PrimitiveType.FLOATS;
 import static compiler.lib.template_framework.library.PrimitiveType.DOUBLES;
 import static compiler.lib.template_framework.library.PrimitiveType.BOOLEANS;
 import static compiler.lib.template_framework.library.Float16Type.FLOAT16;
+import static compiler.lib.template_framework.library.CodeGenerationDataNameType.PRIMITIVE_TYPES;
+import static compiler.lib.template_framework.library.CodeGenerationDataNameType.INTEGRAL_TYPES;
+import static compiler.lib.template_framework.library.CodeGenerationDataNameType.FLOATING_TYPES;
 
 /**
  * This class provides various lists of {@link Expression}s, that represent Java operators or library
@@ -51,6 +54,8 @@ public final class Operations {
 
     private static Expression.Info WITH_ARITHMETIC_EXCEPTION = new Expression.Info().withExceptions(Set.of("ArithmeticException"));
     private static Expression.Info WITH_NONDETERMINISTIC_RESULT = new Expression.Info().withNondeterministicResult();
+    private static Expression.Info WITH_ILLEGAL_ARGUMENT_EXCEPTION = new Expression.Info().withExceptions(Set.of("IllegalArgumentException"));
+    private static Expression.Info WITH_OUT_OF_BOUNDS_EXCEPTION = new Expression.Info().withExceptions(Set.of("IndexOutOfBoundsException"));
 
 
     /**
@@ -316,6 +321,322 @@ public final class Operations {
         ops.add(Expression.make(FLOAT16, "Float16.sqrt(", FLOAT16, ")"));
         ops.add(Expression.make(FLOAT16, "Float16.subtract(", FLOAT16, ",", FLOAT16, ")"));
         ops.add(Expression.make(FLOAT16, "Float16.ulp(", FLOAT16, ")"));
+
+        // Make sure the list is not modifiable.
+        return List.copyOf(ops);
+    }
+
+    private enum VOPType {
+        UNARY,
+        BINARY,
+        ASSOCIATIVE, // Binary and associative - safe for reductions of any type
+        INTEGRAL_ASSOCIATIVE, // Binary - but only safe for integral reductions
+        TERNARY
+    }
+    private record VOP(String name, VOPType type, List<PrimitiveType> elementTypes) {}
+
+    // TODO: consider some floating results as inexact, and handle it accordingly?
+    private static final List<VOP> VECTOR_API_OPS = List.of(
+        new VOP("ABS",                  VOPType.UNARY, PRIMITIVE_TYPES),
+        //new VOP("ACOS",                 VOPType.UNARY, FLOATING_TYPES),
+        new VOP("ADD",                  VOPType.INTEGRAL_ASSOCIATIVE, PRIMITIVE_TYPES),
+        new VOP("AND",                  VOPType.ASSOCIATIVE, INTEGRAL_TYPES),
+        new VOP("AND_NOT",              VOPType.BINARY, INTEGRAL_TYPES),
+        new VOP("ASHR",                 VOPType.BINARY, INTEGRAL_TYPES),
+        //new VOP("ASIN",                 VOPType.UNARY, FLOATING_TYPES),
+        //new VOP("ATAN",                 VOPType.UNARY, FLOATING_TYPES),
+        //new VOP("ATAN2",                VOPType.BINARY, FLOATING_TYPES),
+        new VOP("BIT_COUNT",            VOPType.UNARY, INTEGRAL_TYPES),
+        new VOP("BITWISE_BLEND",        VOPType.TERNARY, INTEGRAL_TYPES),
+        //new VOP("CBRT",                 VOPType.UNARY, FLOATING_TYPES),
+        new VOP("COMPRESS_BITS",        VOPType.BINARY, Type.INT_LONG_TYPES),
+        //new VOP("COS",                  VOPType.UNARY, FLOATING_TYPES),
+        //new VOP("COSH",                 VOPType.UNARY, FLOATING_TYPES),
+        new VOP("DIV",                  VOPType.BINARY, FLOATING_TYPES),
+        //new VOP("EXP",                  VOPType.UNARY, FLOATING_TYPES),
+        new VOP("EXPAND_BITS",          VOPType.BINARY, Type.INT_LONG_TYPES),
+        //new VOP("EXPM1",                VOPType.UNARY, FLOATING_TYPES),
+
+        // TODO: add back after JDK-8351941 [Graal]
+        //new VOP("FIRST_NONZERO",        VOPType.ASSOCIATIVE, PRIMITIVE_TYPES),
+
+        new VOP("FMA",                  VOPType.TERNARY, FLOATING_TYPES),
+        //new VOP("HYPOT",                VOPType.BINARY, FLOATING_TYPES),
+        new VOP("LEADING_ZEROS_COUNT",  VOPType.UNARY, INTEGRAL_TYPES),
+        //new VOP("LOG",                  VOPType.UNARY, FLOATING_TYPES),
+        //new VOP("LOG10",                VOPType.UNARY, FLOATING_TYPES),
+        //new VOP("LOG1P",                VOPType.UNARY, FLOATING_TYPES),
+        new VOP("LSHL",                 VOPType.BINARY, INTEGRAL_TYPES),
+        new VOP("LSHR",                 VOPType.BINARY, INTEGRAL_TYPES),
+
+        // TODO: add back after JDK-8351950
+        //new VOP("MIN",                  VOPType.ASSOCIATIVE, PRIMITIVE_TYPES),
+        //new VOP("MAX",                  VOPType.ASSOCIATIVE, PRIMITIVE_TYPES),
+
+        new VOP("MUL",                  VOPType.INTEGRAL_ASSOCIATIVE, PRIMITIVE_TYPES),
+        new VOP("NEG",                  VOPType.UNARY, PRIMITIVE_TYPES),
+        new VOP("NOT",                  VOPType.UNARY, INTEGRAL_TYPES),
+        new VOP("OR",                   VOPType.ASSOCIATIVE, INTEGRAL_TYPES),
+        //new VOP("POW",                  VOPType.BINARY, FLOATING_TYPES),
+        new VOP("REVERSE",              VOPType.UNARY, INTEGRAL_TYPES),
+        new VOP("REVERSE_BYTES",        VOPType.UNARY, INTEGRAL_TYPES),
+
+        // TODO: add back in after fix of JDK-8351627
+        // new VOP("ROL",                  VOPType.BINARY, INTEGRAL_TYPES),
+        // new VOP("ROR",                  VOPType.BINARY, INTEGRAL_TYPES),
+
+        new VOP("SADD",                 VOPType.BINARY, INTEGRAL_TYPES),
+        //new VOP("SIN",                  VOPType.UNARY, FLOATING_TYPES),
+        //new VOP("SINH",                 VOPType.UNARY, FLOATING_TYPES),
+        //new VOP("SQRT",                 VOPType.UNARY, FLOATING_TYPES),
+        new VOP("SSUB",                 VOPType.BINARY, INTEGRAL_TYPES),
+        new VOP("SUADD",                VOPType.BINARY, INTEGRAL_TYPES),
+        new VOP("SUB",                  VOPType.BINARY, PRIMITIVE_TYPES),
+        new VOP("SUSUB",                VOPType.BINARY, INTEGRAL_TYPES),
+        //new VOP("TAN",                  VOPType.UNARY, FLOATING_TYPES),
+        //new VOP("TANH",                 VOPType.UNARY, FLOATING_TYPES),
+        new VOP("TRAILING_ZEROS_COUNT", VOPType.UNARY, INTEGRAL_TYPES),
+        new VOP("UMAX",                 VOPType.ASSOCIATIVE, INTEGRAL_TYPES),
+        new VOP("UMIN",                 VOPType.ASSOCIATIVE, INTEGRAL_TYPES),
+        new VOP("XOR",                  VOPType.ASSOCIATIVE, INTEGRAL_TYPES),
+        new VOP("ZOMO",                 VOPType.UNARY, INTEGRAL_TYPES)
+    );
+
+    private static final List<VOP> VECTOR_API_CMP = List.of(
+        new VOP("EQ",                   VOPType.ASSOCIATIVE, PRIMITIVE_TYPES),
+        new VOP("GE",                   VOPType.ASSOCIATIVE, PRIMITIVE_TYPES),
+        new VOP("GT",                   VOPType.ASSOCIATIVE, PRIMITIVE_TYPES),
+        new VOP("LE",                   VOPType.ASSOCIATIVE, PRIMITIVE_TYPES),
+        new VOP("LT",                   VOPType.ASSOCIATIVE, PRIMITIVE_TYPES),
+        new VOP("NE",                   VOPType.ASSOCIATIVE, PRIMITIVE_TYPES),
+        new VOP("UGE",                  VOPType.ASSOCIATIVE, INTEGRAL_TYPES),
+        new VOP("UGT",                  VOPType.ASSOCIATIVE, INTEGRAL_TYPES),
+        new VOP("ULE",                  VOPType.ASSOCIATIVE, INTEGRAL_TYPES),
+        new VOP("ULT",                  VOPType.ASSOCIATIVE, INTEGRAL_TYPES)
+    );
+
+    private static final List<VOP> VECTOR_API_TEST = List.of(
+        new VOP("IS_DEFAULT",           VOPType.UNARY, PRIMITIVE_TYPES),
+        new VOP("IS_NEGATIVE",          VOPType.UNARY, PRIMITIVE_TYPES),
+        new VOP("IS_FINITE",            VOPType.UNARY, FLOATING_TYPES),
+        new VOP("IS_NAN",               VOPType.UNARY, FLOATING_TYPES),
+        new VOP("IS_INFINITE",          VOPType.UNARY, FLOATING_TYPES)
+    );
+
+    private static List<Expression> generateVectorOperations() {
+        List<Expression> ops = new ArrayList<>();
+
+        for (var type : CodeGenerationDataNameType.VECTOR_ALL_VECTOR_TYPES) {
+            ops.add(Expression.make(type, "", type, ".abs()"));
+            ops.add(Expression.make(type, "", type, ".add(", type.elementType, ")"));
+            ops.add(Expression.make(type, "", type, ".add(", type.elementType, ", ", type.maskType, ")"));
+            ops.add(Expression.make(type, "", type, ".add(", type, ")"));
+            ops.add(Expression.make(type, "", type, ".add(", type, ", ", type.maskType, ")"));
+
+            // If VLENGTH*scale overflows, then a IllegalArgumentException is thrown.
+            ops.add(Expression.make(type, "", type, ".addIndex(1)"));
+            ops.add(Expression.make(type, "", type, ".addIndex(", INTS, ")", WITH_ILLEGAL_ARGUMENT_EXCEPTION));
+
+            if (!type.elementType.isFloating()) {
+                ops.add(Expression.make(type, "", type, ".and(", type.elementType, ")"));
+                ops.add(Expression.make(type, "", type, ".and(", type, ")"));
+                ops.add(Expression.make(type, "", type, ".bitwiseBlend(", type.elementType, ", ", type.elementType, ")"));
+                ops.add(Expression.make(type, "", type, ".bitwiseBlend(", type.elementType, ", ", type,             ")"));
+                ops.add(Expression.make(type, "", type, ".bitwiseBlend(", type,             ", ", type.elementType, ")"));
+                ops.add(Expression.make(type, "", type, ".bitwiseBlend(", type,             ", ", type,             ")"));
+                ops.add(Expression.make(type, "", type, ".not()"));
+                ops.add(Expression.make(type, "", type, ".or(", type.elementType, ")"));
+                ops.add(Expression.make(type, "", type, ".or(", type, ")"));
+            }
+
+            ops.add(Expression.make(type, "", type, ".blend(", type.elementType, ", ", type.maskType, ")"));
+            ops.add(Expression.make(type, "", type, ".blend(", LONGS, ", ", type.maskType, ")", WITH_ILLEGAL_ARGUMENT_EXCEPTION));
+            ops.add(Expression.make(type, "", type, ".blend(", type, ", ", type.maskType, ")"));
+
+            ops.add(Expression.make(type, type.name() + ".broadcast(" + type.speciesName + ", ", type.elementType, ")"));
+            ops.add(Expression.make(type, type.name() + ".broadcast(" + type.speciesName + ", ", LONGS, ")", WITH_ILLEGAL_ARGUMENT_EXCEPTION));
+
+            // TODO: non zero parts
+            for (var type2 : CodeGenerationDataNameType.VECTOR_ALL_VECTOR_TYPES) {
+                ops.add(Expression.make(type, "((" + type.name() + ")", type2 , ".castShape(" + type.speciesName + ", 0))"));
+            }
+
+            // Note: check works on class / species, leaving them out.
+
+            for (VOP cmp : VECTOR_API_CMP) {
+                if (cmp.elementTypes().contains(type.elementType)) {
+                    ops.add(Expression.make(type.maskType, "", type, ".compare(VectorOperators." + cmp.name() + ", ", type.elementType, ")"));
+                    ops.add(Expression.make(type.maskType, "", type, ".compare(VectorOperators." + cmp.name() + ", ", type.elementType, ", ", type.maskType, ")"));
+                    ops.add(Expression.make(type.maskType, "", type, ".compare(VectorOperators." + cmp.name() + ", ", LONGS, ")", WITH_ILLEGAL_ARGUMENT_EXCEPTION));
+                    ops.add(Expression.make(type.maskType, "", type, ".compare(VectorOperators." + cmp.name() + ", ", LONGS, ", ", type.maskType, ")", WITH_ILLEGAL_ARGUMENT_EXCEPTION));
+                    ops.add(Expression.make(type.maskType, "", type, ".compare(VectorOperators." + cmp.name() + ", ", type, ")"));
+                }
+            }
+
+            ops.add(Expression.make(type, "", type, ".compress(", type.maskType, ")"));
+
+            // TODO: non zero parts
+            for (var type2 : CodeGenerationDataNameType.VECTOR_ALL_VECTOR_TYPES) {
+                // "convert" keeps the same shape, i.e. length of the vector in bits.
+                if (type.sizeInBits() == type2.sizeInBits()) {
+                    ops.add(Expression.make(type,
+                                                "((" + type.name() + ")",
+                                                type2 ,
+                                                ".convert(VectorOperators.Conversion.ofCast("
+                                                    + type2.elementType.name() +  ".class, "
+                                                    + type.elementType.name() + ".class), 0))",
+                                                null));
+                    // Reinterpretation FROM floating is not safe, because of different NaN encodings.
+                    if (!type2.elementType.isFloating()) {
+                        ops.add(Expression.make(type,
+                                                    "((" + type.name() + ")",
+                                                    type2 ,
+                                                    ".convert(VectorOperators.Conversion.ofReinterpret("
+                                                        + type2.elementType.name() +  ".class, "
+                                                        + type.elementType.name() + ".class), 0))",
+                                                    null));
+                        if (type.elementType == BYTES) {
+                            ops.add(Expression.make(type, "", type2, ".reinterpretAsBytes()"));
+                        }
+                        if (type.elementType == SHORTS) {
+                            ops.add(Expression.make(type, "", type2, ".reinterpretAsShorts()"));
+                        }
+                        if (type.elementType == INTS) {
+                            ops.add(Expression.make(type, "", type2, ".reinterpretAsInts()"));
+                        }
+                        if (type.elementType == LONGS) {
+                            ops.add(Expression.make(type, "", type2, ".reinterpretAsLongs()"));
+                        }
+                        if (type.elementType == FLOATS) {
+                            ops.add(Expression.make(type, "", type2, ".reinterpretAsFloats()"));
+                        }
+                        if (type.elementType == DOUBLES) {
+                            ops.add(Expression.make(type, "", type2, ".reinterpretAsDoubles()"));
+                        }
+                        if (type.elementType.isFloating() && type.elementType.sizeInBits() == type2.elementType.sizeInBits()) {
+                            ops.add(Expression.make(type, "", type2, ".viewAsFloatingLanes()"));
+                        }
+                        if (!type.elementType.isFloating() && type.elementType.sizeInBits() == type2.elementType.sizeInBits()) {
+                            ops.add(Expression.make(type, "", type2, ".viewAsIntegralLanes()"));
+                        }
+                    }
+                }
+                // TODO: convertShape
+                // TODO: reinterpretShape
+            }
+
+            ops.add(Expression.make(type, "", type, ".div(", type.elementType, ")", WITH_ARITHMETIC_EXCEPTION));
+            ops.add(Expression.make(type, "", type, ".div(", type.elementType, ", ", type.maskType, ")", WITH_ARITHMETIC_EXCEPTION));
+            ops.add(Expression.make(type, "", type, ".div(", type, ")", WITH_ARITHMETIC_EXCEPTION));
+            ops.add(Expression.make(type, "", type, ".div(", type.elementType, ", ", type.maskType, ")", WITH_ARITHMETIC_EXCEPTION));
+
+            ops.add(Expression.make(type.maskType, "", type, ".eq(", type.elementType, ")"));
+            ops.add(Expression.make(type.maskType, "", type, ".eq(", type, ")"));
+
+            ops.add(Expression.make(type, "", type, ".expand(", type.maskType, ")"));
+
+            // TODO: ensure we use all variants of fromArray and fromMemorySegment, plus intoArray and intoMemorySegment. Also: toArray and type variants.
+
+            // TODO: lane case that is allowed to throw java.lang.IllegalArgumentException for out of bonds.
+            ops.add(Expression.make(type.elementType, "", type, ".lane(", INTS, " & " + (type.length-1) + ")"));
+
+            for (VOP vop : VECTOR_API_OPS) {
+                if (vop.elementTypes().contains(type.elementType)) {
+                    switch(vop.type()) {
+                    case VOPType.UNARY:
+                        ops.add(Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ")"));
+                        ops.add(Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type.maskType, ")"));
+                        break;
+                    case VOPType.ASSOCIATIVE:
+                    case VOPType.INTEGRAL_ASSOCIATIVE:
+                        if (vop.type() == VOPType.ASSOCIATIVE || !type.elementType.isFloating()) {
+                            ops.add(Expression.make(type.elementType, "", type, ".reduceLanes(VectorOperators." + vop.name() + ")"));
+                            ops.add(Expression.make(type.elementType, "", type, ".reduceLanes(VectorOperators." + vop.name() + ", ", type.maskType, ")"));
+                        }
+                        // fall-through
+                    case VOPType.BINARY:
+                        ops.add(Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type.elementType, ")"));
+                        ops.add(Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type.elementType, ", ", type.maskType, ")"));
+                        ops.add(Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", LONGS, ")", WITH_ILLEGAL_ARGUMENT_EXCEPTION));
+                        ops.add(Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", LONGS, ", ", type.maskType, ")", WITH_ILLEGAL_ARGUMENT_EXCEPTION));
+                        ops.add(Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type, ")"));
+                        ops.add(Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type, ", ", type.maskType, ")"));
+                        break;
+                    case VOPType.TERNARY:
+                        ops.add(Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type.elementType, ", ", type.elementType, ")"));
+                        ops.add(Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type.elementType, ", ", type.elementType, ", ", type.maskType, ")"));
+                        ops.add(Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type.elementType, ", ", type, ")"));
+                        ops.add(Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type.elementType, ", ", type, ", ", type.maskType, ")"));
+                        ops.add(Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type, ", ", type.elementType, ")"));
+                        ops.add(Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type, ", ", type.elementType, ", ", type.maskType, ")"));
+                        ops.add(Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type, ", ", type, ")"));
+                        ops.add(Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type, ", ", type, ", ", type.maskType, ")"));
+                        break;
+                    }
+                }
+            }
+
+            ops.add(Expression.make(type.maskType, "", type, ".lt(", type.elementType, ")"));
+            ops.add(Expression.make(type.maskType, "", type, ".lt(", type, ")"));
+
+            ops.add(Expression.make(type, "", type, ".max(", type.elementType, ")"));
+            ops.add(Expression.make(type, "", type, ".max(", type, ")"));
+            ops.add(Expression.make(type, "", type, ".min(", type.elementType, ")"));
+            ops.add(Expression.make(type, "", type, ".min(", type, ")"));
+
+            ops.add(Expression.make(type, "", type, ".mul(", type.elementType, ")"));
+            ops.add(Expression.make(type, "", type, ".mul(", type.elementType, ", ", type.maskType, ")"));
+            ops.add(Expression.make(type, "", type, ".mul(", type, ")"));
+            ops.add(Expression.make(type, "", type, ".mul(", type, ", ", type.maskType, ")"));
+
+            ops.add(Expression.make(type, "", type, ".neg()"));
+
+            ops.add(Expression.make(type, "", type, ".rearrange(", type.shuffleType, ")"));
+            ops.add(Expression.make(type, "", type, ".rearrange(", type.shuffleType, ", ", type, ")"));
+            ops.add(Expression.make(type, "", type, ".rearrange(", type.shuffleType, ", ", type.maskType, ")"));
+
+            ops.add(Expression.make(type, "", type, ".selectFrom(", type, ")"));
+            ops.add(Expression.make(type, "", type, ".selectFrom(", type, ", ", type, ")"));
+            ops.add(Expression.make(type, "", type, ".selectFrom(", type, ", ", type.maskType, ")"));
+
+            ops.add(Expression.make(type, "", type, ".slice(", INTS, ")", WITH_OUT_OF_BOUNDS_EXCEPTION));
+            ops.add(Expression.make(type, "", type, ".slice(", INTS, ", ", type, ")", WITH_OUT_OF_BOUNDS_EXCEPTION));
+            ops.add(Expression.make(type, "", type, ".slice(", INTS, ", ", type, ", ", type.maskType, ")", WITH_OUT_OF_BOUNDS_EXCEPTION));
+
+            ops.add(Expression.make(type, "", type, ".sub(", type.elementType, ")"));
+            ops.add(Expression.make(type, "", type, ".sub(", type.elementType, ", ", type.maskType, ")"));
+            ops.add(Expression.make(type, "", type, ".sub(", type, ")"));
+            ops.add(Expression.make(type, "", type, ".sub(", type, ", ", type.maskType, ")"));
+
+
+            for (VOP test : VECTOR_API_TEST) {
+                if (test.elementTypes().contains(type.elementType)) {
+                    ops.add(Expression.make(type.maskType, "", type, ".test(VectorOperators." + test.name() + ")"));
+                    ops.add(Expression.make(type.maskType, "", type, ".test(VectorOperators." + test.name() + ", ", type.maskType, ")"));
+                }
+            }
+
+            // TODO: non-zero part
+            ops.add(Expression.make(type, "", type, ".unslice(", INTS, ")", WITH_OUT_OF_BOUNDS_EXCEPTION));
+            ops.add(Expression.make(type, "", type, ".unslice(", INTS, ", ", type, ", 0)", WITH_OUT_OF_BOUNDS_EXCEPTION));
+            ops.add(Expression.make(type, "", type, ".unslice(", INTS, ", ", type, ", 0, ", type.maskType, ")", WITH_OUT_OF_BOUNDS_EXCEPTION));
+
+            ops.add(Expression.make(type, "", type, ".withLane(", INTS, ", ", type.elementType, ")", WITH_ILLEGAL_ARGUMENT_EXCEPTION));
+
+            if (type.elementType.isFloating()) {
+                ops.add(Expression.make(type, "", type, ".fma(", type.elementType, ", ", type.elementType, ")"));
+                ops.add(Expression.make(type, "", type, ".fma(", type, ", ", type, ")"));
+
+                // TODO: precision?
+                // ops.add(Expression.make(type, "", type, ".pow(", type.elementType, ")"));
+                // ops.add(Expression.make(type, "", type, ".pow(", type, ")"));
+                // ops.add(Expression.make(type, "", type, ".sqrt(", type, ")"));
+            }
+
+            ops.add(Expression.make(type.shuffleType, "", type, ".toShuffle()"));
+
+            // TODO: rest of the ops from ShuffleVector.
+        }
 
         // Make sure the list is not modifiable.
         return List.copyOf(ops);
