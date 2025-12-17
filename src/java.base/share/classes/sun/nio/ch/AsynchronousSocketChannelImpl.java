@@ -41,7 +41,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.locks.*;
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
-import sun.net.NetHooks;
 import sun.net.ext.ExtendedSocketOptions;
 
 /**
@@ -447,7 +446,6 @@ abstract class AsynchronousSocketChannelImpl
                     throw new AlreadyBoundException();
                 InetSocketAddress isa = (local == null) ?
                     new InetSocketAddress(0) : Net.checkAddress(local);
-                NetHooks.beforeTcpBind(fd, isa.getAddress(), isa.getPort());
                 Net.bind(fd, isa.getAddress(), isa.getPort());
                 localAddress = Net.localAddress(fd);
             }

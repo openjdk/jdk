@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4899022 8003887
+ * @bug 4899022 8003887 8355342
  * @summary Look for erroneous representation of drive letter
  * @run junit GetCanonicalPath
  */
@@ -33,6 +33,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Assumptions;
@@ -125,6 +126,52 @@ public class GetCanonicalPath {
     void driveLetter() throws IOException {
         String path = new File("c:/").getCanonicalPath();
         assertFalse(path.length() > 3, "Drive letter incorrectly represented");
+    }
+
+    @Test
+    @EnabledOnOs(OS.WINDOWS)
+    void mappedDrive() throws IOException {
+        // find the first unused drive letter
+        char drive = '[';
+        var roots = Set.of(new File(".").listRoots());
+        for (int i = 4; i < 26; i++) {
+            char c = (char)('A' + i);
+            if (!roots.contains(new File(c + ":\\"))) {
+                drive = c;
+                break;
+            }
+        }
+        assertFalse(drive == '['); // '[' is next after 'Z'
+
+        // map the first unused drive letter to the cwd
+        String cwd = System.getProperty("user.dir");
+        Runtime rt = Runtime.getRuntime();
+        String share =
+            "\\\\localhost\\" + cwd.charAt(0) + "$" + cwd.substring(2);
+        try {
+            Process p = rt.exec(new String[] {"net", "use", drive + ":", share});
+            assertEquals(0, p.waitFor());
+        } catch (InterruptedException x) {
+            fail(x);
+        }
+
+        // check that the canonical path name and its content are as expected
+        try {
+            final String filename = "file.txt";
+            final String text = "This is some text";
+            Files.writeString(Path.of(share, filename), text);
+            File file = new File(drive + ":\\" + filename);
+            String canonicalPath = file.getCanonicalPath();
+            assertEquals(drive + ":\\" + filename, canonicalPath);
+            assertEquals(text, Files.readString(Path.of(canonicalPath)));
+        } finally {
+            try {
+                Process p = rt.exec(new String[] {"net", "use", drive + ":", "/Delete"});
+                assertEquals(0, p.waitFor());
+            } catch (InterruptedException x) {
+                fail(x);
+            }
+        }
     }
 
     // Create a File with the given pathname and return the File as a Path

@@ -82,7 +82,14 @@ JfrCPUTimeTraceQueue::~JfrCPUTimeTraceQueue() {
 bool JfrCPUTimeTraceQueue::enqueue(JfrCPUTimeSampleRequest& request) {
   assert(JavaThread::current()->jfr_thread_local()->is_cpu_time_jfr_enqueue_locked(), "invariant");
   assert(&JavaThread::current()->jfr_thread_local()->cpu_time_jfr_queue() == this, "invariant");
-  _data[_head++] = request;
+  u4 elementIndex;
+  do {
+    elementIndex = AtomicAccess::load_acquire(&_head);
+    if (elementIndex >= _capacity) {
+      return false;
+    }
+  } while (AtomicAccess::cmpxchg(&_head, elementIndex, elementIndex + 1) != elementIndex);
+  _data[elementIndex] = request;
   return true;
 }
 
@@ -94,19 +101,19 @@ JfrCPUTimeSampleRequest& JfrCPUTimeTraceQueue::at(u4 index) {
 static volatile u4 _lost_samples_sum = 0;
 
 u4 JfrCPUTimeTraceQueue::size() const {
-  return _head;
+  return AtomicAccess::load_acquire(&_head);
 }
 
 void JfrCPUTimeTraceQueue::set_size(u4 size) {
-  _head = size;
+  AtomicAccess::release_store(&_head, size);
 }
 
 u4 JfrCPUTimeTraceQueue::capacity() const {
-  return _capacity;
+  return AtomicAccess::load_acquire(&_capacity);
 }
 
 void JfrCPUTimeTraceQueue::set_capacity(u4 capacity) {
-  if (capacity == _capacity) {
+  if (capacity == AtomicAccess::load(&_capacity)) {
     return;
   }
   _head = 0;
@@ -119,15 +126,15 @@ void JfrCPUTimeTraceQueue::set_capacity(u4 capacity) {
   } else {
     _data = nullptr;
   }
-  _capacity = capacity;
+  AtomicAccess::release_store(&_capacity, capacity);
 }
 
 bool JfrCPUTimeTraceQueue::is_empty() const {
-  return _head == 0;
+  return AtomicAccess::load_acquire(&_head) == 0;
 }
 
 u4 JfrCPUTimeTraceQueue::lost_samples() const {
-  return _lost_samples;
+  return AtomicAccess::load(&_lost_samples);
 }
 
 void JfrCPUTimeTraceQueue::increment_lost_samples() {
@@ -136,7 +143,7 @@ void JfrCPUTimeTraceQueue::increment_lost_samples() {
 }
 
 void JfrCPUTimeTraceQueue::increment_lost_samples_due_to_queue_full() {
-  _lost_samples_due_to_queue_full++;
+  AtomicAccess::inc(&_lost_samples_due_to_queue_full);
 }
 
 u4 JfrCPUTimeTraceQueue::get_and_reset_lost_samples() {
@@ -144,9 +151,7 @@ u4 JfrCPUTimeTraceQueue::get_and_reset_lost_samples() {
 }
 
 u4 JfrCPUTimeTraceQueue::get_and_reset_lost_samples_due_to_queue_full() {
-  u4 lost = _lost_samples_due_to_queue_full;
-  _lost_samples_due_to_queue_full = 0;
-  return lost;
+  return AtomicAccess::xchg(&_lost_samples_due_to_queue_full, (u4)0);
 }
 
 void JfrCPUTimeTraceQueue::init() {
@@ -154,7 +159,7 @@ void JfrCPUTimeTraceQueue::init() {
 }
 
 void JfrCPUTimeTraceQueue::clear() {
-  _head = 0;
+  AtomicAccess::release_store(&_head, (u4)0);
 }
 
 void JfrCPUTimeTraceQueue::resize_if_needed() {
@@ -162,8 +167,9 @@ void JfrCPUTimeTraceQueue::resize_if_needed() {
   if (lost_samples_due_to_queue_full == 0) {
     return;
   }
-  if (_capacity < CPU_TIME_QUEUE_MAX_CAPACITY) {
-    float ratio = (float)lost_samples_due_to_queue_full / (float)_capacity;
+  u4 capacity = AtomicAccess::load(&_capacity);
+  if (capacity < CPU_TIME_QUEUE_MAX_CAPACITY) {
+    float ratio = (float)lost_samples_due_to_queue_full / (float)capacity;
     int factor = 1;
     if (ratio > 8) { // idea is to quickly scale the queue in the worst case
       factor = ratio;
@@ -175,7 +181,7 @@ void JfrCPUTimeTraceQueue::resize_if_needed() {
       factor = 2;
     }
     if (factor > 1) {
-      u4 new_capacity = MIN2(CPU_TIME_QUEUE_MAX_CAPACITY, _capacity * factor);
+      u4 new_capacity = MIN2(CPU_TIME_QUEUE_MAX_CAPACITY, capacity * factor);
       set_capacity(new_capacity);
     }
   }

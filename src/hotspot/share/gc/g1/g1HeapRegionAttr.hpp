@@ -33,15 +33,15 @@
 struct G1HeapRegionAttr {
 public:
   typedef int8_t region_type_t;
-  // remset_is_tracked_t is essentially bool, but we need precise control
+  // is_remset_tracked_t is essentially bool, but we need precise control
   // on the size, and sizeof(bool) is implementation specific.
-  typedef uint8_t remset_is_tracked_t;
+  typedef uint8_t is_remset_tracked_t;
   // _is_pinned_t is essentially bool, but we want precise control
   // on the size, and sizeof(bool) is implementation specific.
   typedef uint8_t is_pinned_t;
 
 private:
-  remset_is_tracked_t _remset_is_tracked;
+  is_remset_tracked_t _is_remset_tracked;
   region_type_t _type;
   is_pinned_t _is_pinned;
 
@@ -63,8 +63,8 @@ public:
   static const region_type_t Old          =   1;    // The region is in the collection set and an old region.
   static const region_type_t Num          =   2;
 
-  G1HeapRegionAttr(region_type_t type = NotInCSet, bool remset_is_tracked = false, bool is_pinned = false) :
-    _remset_is_tracked(remset_is_tracked ? 1 : 0), _type(type), _is_pinned(is_pinned ? 1 : 0) {
+  G1HeapRegionAttr(region_type_t type = NotInCSet, bool is_remset_tracked = false, bool is_pinned = false) :
+    _is_remset_tracked(is_remset_tracked ? 1 : 0), _type(type), _is_pinned(is_pinned ? 1 : 0) {
     assert(is_valid(), "Invalid type %d", _type);
   }
 
@@ -82,9 +82,8 @@ public:
     }
   }
 
-  bool remset_is_tracked() const     { return _remset_is_tracked != 0; }
+  bool is_remset_tracked() const     { return _is_remset_tracked != 0; }
 
-  void set_new_survivor()              { _type = NewSurvivor; }
   bool is_pinned() const               { return _is_pinned != 0; }
 
   void set_old()                       { _type = Old; }
@@ -93,7 +92,7 @@ public:
     _type = NotInCSet;
   }
 
-  void set_remset_is_tracked(bool value)      { _remset_is_tracked = value ? 1 : 0; }
+  void set_is_remset_tracked(bool value)      { _is_remset_tracked = value ? 1 : 0; }
   void set_is_pinned(bool value)       { _is_pinned = value ? 1 : 0; }
 
   bool is_in_cset_or_humongous_candidate() const { return is_in_cset() || is_humongous_candidate(); }
@@ -126,26 +125,26 @@ class G1HeapRegionAttrBiasedMappedArray : public G1BiasedMappedArray<G1HeapRegio
  protected:
   G1HeapRegionAttr default_value() const { return G1HeapRegionAttr(G1HeapRegionAttr::NotInCSet); }
  public:
-  void set_optional(uintptr_t index, bool remset_is_tracked) {
+  void set_optional(uintptr_t index, bool is_remset_tracked) {
     assert(get_by_index(index).is_default(),
            "Region attributes at index " INTPTR_FORMAT " should be default but is %s", index, get_by_index(index).get_type_str());
-    set_by_index(index, G1HeapRegionAttr(G1HeapRegionAttr::Optional, remset_is_tracked));
+    set_by_index(index, G1HeapRegionAttr(G1HeapRegionAttr::Optional, is_remset_tracked));
   }
 
-  void set_new_survivor_region(uintptr_t index) {
+  void set_new_survivor_region(uintptr_t index, bool region_is_pinned) {
     assert(get_by_index(index).is_default(),
            "Region attributes at index " INTPTR_FORMAT " should be default but is %s", index, get_by_index(index).get_type_str());
-    get_ref_by_index(index)->set_new_survivor();
+    set_by_index(index, G1HeapRegionAttr(G1HeapRegionAttr::NewSurvivor, true, region_is_pinned));
   }
 
   void set_humongous_candidate(uintptr_t index) {
     assert(get_by_index(index).is_default(),
            "Region attributes at index " INTPTR_FORMAT " should be default but is %s", index, get_by_index(index).get_type_str());
     // Humongous candidates must have complete remset.
-    const bool remset_is_tracked = true;
+    const bool is_remset_tracked = true;
     // Humongous candidates can not be pinned.
     const bool region_is_pinned = false;
-    set_by_index(index, G1HeapRegionAttr(G1HeapRegionAttr::HumongousCandidate, remset_is_tracked, region_is_pinned));
+    set_by_index(index, G1HeapRegionAttr(G1HeapRegionAttr::HumongousCandidate, is_remset_tracked, region_is_pinned));
   }
 
   void clear_humongous_candidate(uintptr_t index) {
@@ -156,8 +155,8 @@ class G1HeapRegionAttrBiasedMappedArray : public G1BiasedMappedArray<G1HeapRegio
     return get_ref_by_index(index)->is_humongous_candidate();
   }
 
-  void set_remset_is_tracked(uintptr_t index, bool remset_is_tracked) {
-    get_ref_by_index(index)->set_remset_is_tracked(remset_is_tracked);
+  void set_is_remset_tracked(uintptr_t index, bool is_remset_tracked) {
+    get_ref_by_index(index)->set_is_remset_tracked(is_remset_tracked);
   }
 
   void set_is_pinned(uintptr_t index, bool is_pinned) {
@@ -170,12 +169,10 @@ class G1HeapRegionAttrBiasedMappedArray : public G1BiasedMappedArray<G1HeapRegio
     set_by_index(index, G1HeapRegionAttr(G1HeapRegionAttr::Young, true, is_pinned));
   }
 
-  void set_in_old(uintptr_t index, bool remset_is_tracked) {
+  void set_in_old(uintptr_t index, bool is_remset_tracked, bool is_pinned) {
     assert(get_by_index(index).is_default(),
            "Region attributes at index " INTPTR_FORMAT " should be default but is %s", index, get_by_index(index).get_type_str());
-    // We do not select regions with pinned objects into the collection set.
-    const bool region_is_pinned = false;
-    set_by_index(index, G1HeapRegionAttr(G1HeapRegionAttr::Old, remset_is_tracked, region_is_pinned));
+    set_by_index(index, G1HeapRegionAttr(G1HeapRegionAttr::Old, is_remset_tracked, is_pinned));
   }
 
   bool is_in_cset_or_humongous_candidate(HeapWord* addr) const { return at(addr).is_in_cset_or_humongous_candidate(); }

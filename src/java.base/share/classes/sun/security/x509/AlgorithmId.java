@@ -308,6 +308,14 @@ public class AlgorithmId implements Serializable, DerEncoder {
     }
 
     /**
+     * Returns true if this AlgorithmID only has the specified ObjectIdentifier
+     * and a NULL params. Note the encoded params might be ASN.1 NULL or absent.
+     */
+    public boolean equalsOID(ObjectIdentifier oid) {
+        return algid.equals(oid) && encodedParams == null;
+    }
+
+    /**
      * Compares this AlgorithmID to another.  If algorithm parameters are
      * available, they are compared.  Otherwise, just the object IDs
      * for the algorithm are compared.
@@ -627,6 +635,12 @@ public class AlgorithmId implements Serializable, DerEncoder {
 
     public static final ObjectIdentifier SHA3_512_oid =
             ObjectIdentifier.of(KnownOIDs.SHA3_512);
+
+    public static final ObjectIdentifier SHAKE128_256_oid =
+            ObjectIdentifier.of(KnownOIDs.SHAKE128_256);
+
+    public static final ObjectIdentifier SHAKE256_512_oid =
+            ObjectIdentifier.of(KnownOIDs.SHAKE256_512);
 
     public static final ObjectIdentifier DSA_oid =
             ObjectIdentifier.of(KnownOIDs.DSA);

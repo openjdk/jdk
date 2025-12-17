@@ -99,7 +99,7 @@ public:
     return ::as_FloatRegister(reg(ra_, node, idx));
   }
 
-#if defined(IA32) || defined(AMD64)
+#if defined(AMD64)
   KRegister  as_KRegister(PhaseRegAlloc *ra_, const Node *node)   const {
     return ::as_KRegister(reg(ra_, node));
   }
@@ -266,6 +266,7 @@ public:
   int  operand_index(uint operand) const;
   int  operand_index(const MachOper *oper) const;
   int  operand_index(Node* m) const;
+  int  operand_num_edges(uint operand) const;
 
   // Register class input is expected in
   virtual const RegMask &in_RegMask(uint) const;

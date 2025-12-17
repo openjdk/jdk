@@ -607,7 +607,7 @@ public class CancelRequestTest implements HttpServerAdapters {
             } else if (failed instanceof IOException) {
                 out.println(uriStr + ": got IOException: " + failed);
                 // that could be OK if the main thread was interrupted
-                // from the main thread: the interrupt status could have
+                // from the main thread: the interrupted status could have
                 // been caught by writing to the socket from the main
                 // thread.
                 if (interruptingThread.isDone() && interruptingThread.get() == main) {

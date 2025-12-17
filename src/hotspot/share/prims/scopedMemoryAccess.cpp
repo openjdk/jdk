@@ -22,9 +22,11 @@
  *
  */
 
+#include "classfile/moduleEntry.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "jni.h"
 #include "jvm.h"
+#include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/logStream.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -36,7 +38,7 @@
 #include "runtime/vframe.inline.hpp"
 
 template<typename Func>
-static bool for_scoped_method(JavaThread* jt, const Func& func) {
+static void for_scoped_methods(JavaThread* jt, bool agents_loaded, const Func& func) {
   ResourceMark rm;
 #ifdef ASSERT
   LogMessage(foreign) msg;
@@ -44,12 +46,26 @@ static bool for_scoped_method(JavaThread* jt, const Func& func) {
   if (ls.is_enabled()) {
     ls.print_cr("Walking thread: %s", jt->name());
   }
+
+  bool would_have_bailed = false;
 #endif
 
-  const int max_critical_stack_depth = 10;
-  int depth = 0;
   for (vframeStream stream(jt); !stream.at_end(); stream.next()) {
     Method* m = stream.method();
+
+    if (!agents_loaded &&
+      (m->method_holder()->module()->name() != vmSymbols::java_base())) {
+      // Stop walking if we see a frame outside of java.base.
+
+      // If any JVMTI agents are loaded, we also have to keep walking, since
+      // agents can add arbitrary Java frames to the stack inside a @Scoped method.
+#ifndef ASSERT
+      return;
+#else
+      would_have_bailed = true;
+#endif
+    }
+
     bool is_scoped = m->is_scoped();
 
 #ifdef ASSERT
@@ -60,36 +76,43 @@ static bool for_scoped_method(JavaThread* jt, const Func& func) {
 #endif
 
     if (is_scoped) {
-      assert(depth < max_critical_stack_depth, "can't have more than %d critical frames", max_critical_stack_depth);
-      return func(stream);
+      assert(!would_have_bailed, "would have missed scoped method on release build");
+      bool done = func(stream);
+      if (done || !agents_loaded) {
+        // We may also have to keep walking after finding a @Scoped method,
+        // since there may be multiple @Scoped methods active on the stack
+        // if a JVMTI agent callback runs during a scoped access and calls
+        // back into Java code that then itself does a scoped access.
+        return;
+      }
     }
-    depth++;
-
-#ifndef ASSERT
-    // On debug builds, just keep searching the stack
-    // in case we missed an @Scoped method further up
-    if (depth >= max_critical_stack_depth) {
-      break;
-    }
-#endif
   }
-  return false;
 }
 
 static bool is_accessing_session(JavaThread* jt, oop session, bool& in_scoped) {
-  return for_scoped_method(jt, [&](vframeStream& stream){
+  bool agents_loaded = JvmtiEnv::environments_might_exist();
+  if (!agents_loaded && jt->is_throwing_unsafe_access_error()) {
+    // Ignore this thread. It is in the process of throwing another exception
+    // already.
+    return false;
+  }
+
+  bool is_accessing_session = false;
+  for_scoped_methods(jt, agents_loaded, [&](vframeStream& stream){
     in_scoped = true;
     StackValueCollection* locals = stream.asJavaVFrame()->locals();
     for (int i = 0; i < locals->size(); i++) {
       StackValue* var = locals->at(i);
       if (var->type() == T_OBJECT) {
         if (var->get_obj() == session) {
+          is_accessing_session = true;
           return true;
         }
       }
     }
     return false;
   });
+  return is_accessing_session;
 }
 
 static frame get_last_frame(JavaThread* jt) {

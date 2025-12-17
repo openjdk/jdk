@@ -116,9 +116,8 @@ void VM_Version::initialize() {
   }
 
   // Enable error context decoding on known platforms
-#if defined(IA32) || defined(AMD64) || defined(ARM) || \
-    defined(AARCH64) || defined(PPC) || defined(RISCV) || \
-    defined(S390)
+#if defined(AMD64) || defined(ARM) || defined(AARCH64) || \
+    defined(PPC) || defined(RISCV) || defined(S390)
   if (FLAG_IS_DEFAULT(DecodeErrorContext)) {
     FLAG_SET_DEFAULT(DecodeErrorContext, true);
   }

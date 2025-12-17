@@ -908,12 +908,13 @@ public abstract class HtmlDocletWriter {
      * @param refMemName the name of the member being referenced.  This should
      * be null or empty string if no member is being referenced.
      * @param label the label for the external link.
+     * @param title the title for the link
      * @param style optional style for the link.
      * @param code true if the label should be code font.
      * @return the link
      */
     public Content getCrossClassLink(TypeElement classElement, String refMemName,
-                                     Content label, HtmlStyle style, boolean code) {
+                                     Content label, String title, HtmlStyle style, boolean code) {
         if (classElement != null) {
             String className = utils.getSimpleName(classElement);
             PackageElement packageElement = utils.containingPackage(classElement);
@@ -931,9 +932,7 @@ public abstract class HtmlDocletWriter {
                 DocLink link = configuration.extern.getExternalLink(packageElement, pathToRoot,
                                 className + ".html", refMemName);
                 return links.createLink(link,
-                    (label == null) || label.isEmpty() ? defaultLabel : label, style,
-                    resources.getText("doclet.Href_Class_Or_Interface_Title",
-                        getLocalizedPackageName(packageElement)), true);
+                    (label == null) || label.isEmpty() ? defaultLabel : label, style, title, true);
             }
         }
         return null;

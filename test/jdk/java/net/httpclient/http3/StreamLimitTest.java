@@ -56,7 +56,10 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
 /*
  * @test
  * @summary verifies that when the Quic stream limit is reached
- *          then HTTP3 requests are retried on newer connection
+ *          then HTTP3 requests are retried on newer connection.
+ *          This test uses an HTTP/3 only test server, which is
+ *          configured to allow the test to control when a new
+ *          MAX_STREAMS frames is sent to the client.
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.common.HttpServerAdapters

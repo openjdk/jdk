@@ -54,6 +54,7 @@
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmOperations.hpp"
 #include "services/classLoadingService.hpp"
+#include "services/cpuTimeUsage.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "services/diagnosticFramework.hpp"
 #include "services/finalizerService.hpp"
@@ -889,6 +890,21 @@ static jint get_num_flags() {
   return count;
 }
 
+static jlong get_gc_cpu_time() {
+  if (!os::is_thread_cpu_time_supported()) {
+    return -1;
+  }
+
+  {
+    MutexLocker hl(Heap_lock);
+    if (Universe::heap()->is_shutting_down()) {
+      return -1;
+    }
+
+    return CPUTimeUsage::GC::total();
+  }
+}
+
 static jlong get_long_attribute(jmmLongAttribute att) {
   switch (att) {
   case JMM_CLASS_LOADED_COUNT:
@@ -914,6 +930,9 @@ static jlong get_long_attribute(jmmLongAttribute att) {
 
   case JMM_JVM_UPTIME_MS:
     return Management::ticks_to_ms(os::elapsed_counter());
+
+  case JMM_TOTAL_GC_CPU_TIME:
+    return get_gc_cpu_time();
 
   case JMM_COMPILE_TOTAL_TIME_MS:
     return Management::ticks_to_ms(CompileBroker::total_compilation_ticks());
@@ -2013,7 +2032,11 @@ JVM_ENTRY(void, jmm_GetDiagnosticCommandInfo(JNIEnv *env, jobjectArray cmds,
     infoArray[i].description = info->description();
     infoArray[i].impact = info->impact();
     infoArray[i].num_arguments = info->num_arguments();
-    infoArray[i].enabled = info->is_enabled();
+
+    // All registered DCmds are always enabled. We set the dcmdInfo::enabled
+    // field to true to be compatible with the Java API
+    // com.sun.management.internal.DiagnosticCommandInfo.
+    infoArray[i].enabled = true;
   }
 JVM_END
 

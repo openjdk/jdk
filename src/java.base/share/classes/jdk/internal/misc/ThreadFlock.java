@@ -379,7 +379,7 @@ public class ThreadFlock implements AutoCloseable {
      * <p> This method may only be invoked by the flock owner.
      *
      * <p> If interrupted then this method continues to wait until all threads
-     * finish, before completing with the interrupt status set.
+     * finish, before completing with the interrupted status set.
      *
      * <p> A ThreadFlock is intended to be used in a <em>structured manner</em>. If
      * this method is called to close a flock before nested flocks are closed then it
