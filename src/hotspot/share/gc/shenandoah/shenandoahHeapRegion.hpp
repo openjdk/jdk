@@ -447,7 +447,7 @@ public:
     return (bottom() <= p) && (p < top());
   }
 
-  inline void adjust_alloc_metadata(ShenandoahAllocRequest::Type type, size_t);
+  inline void adjust_alloc_metadata(const ShenandoahAllocRequest &req, size_t);
   void reset_alloc_metadata();
   size_t get_shared_allocs() const;
   size_t get_tlab_allocs() const;

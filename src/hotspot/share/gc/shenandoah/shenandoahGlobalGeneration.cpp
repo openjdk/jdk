@@ -49,11 +49,9 @@ size_t ShenandoahGlobalGeneration::used() const {
   return _free_set->global_used();
 }
 
-#ifdef KELVIN_DEPRECATE
 size_t ShenandoahGlobalGeneration::bytes_allocated_since_gc_start() const {
   return _free_set->get_bytes_allocated_since_gc_start();
 }
-#endif
 
 size_t ShenandoahGlobalGeneration::get_affiliated_region_count() const {
   return _free_set->global_affiliated_regions();
@@ -78,15 +76,6 @@ size_t ShenandoahGlobalGeneration::available() const {
   // at what is available to the mutator when reporting how much memory is available.
   size_t available = this->ShenandoahGeneration::available();
   return MIN2(available, ShenandoahHeap::heap()->free_set()->available());
-}
-
-size_t ShenandoahGlobalGeneration::soft_available() const {
-  size_t available = this->available();
-
-  // Make sure the code below treats available without the soft tail.
-  assert(max_capacity() >= ShenandoahHeap::heap()->soft_max_capacity(), "Max capacity must be greater than soft max capacity.");
-  size_t soft_tail = max_capacity() - ShenandoahHeap::heap()->soft_max_capacity();
-  return (available > soft_tail) ? (available - soft_tail) : 0;
 }
 
 void ShenandoahGlobalGeneration::set_concurrent_mark_in_progress(bool in_progress) {

@@ -123,6 +123,7 @@ public class VM {
   private int          invocationEntryBCI;
   private ReversePtrs  revPtrs;
   private VMRegImpl    vmregImpl;
+  private int          reserveForAllocationPrefetch;
   private int          labAlignmentReserve;
 
   // System.getProperties from debuggee VM
@@ -446,6 +447,8 @@ public class VM {
     boolType = (CIntegerType) db.lookupType("bool");
 
     Type threadLocalAllocBuffer = db.lookupType("ThreadLocalAllocBuffer");
+    CIntegerField reserveForAllocationPrefetchField = threadLocalAllocBuffer.getCIntegerField("_reserve_for_allocation_prefetch");
+    reserveForAllocationPrefetch = (int)reserveForAllocationPrefetchField.getCInteger(intType);
 
     Type collectedHeap = db.lookupType("CollectedHeap");
     CIntegerField labAlignmentReserveField = collectedHeap.getCIntegerField("_lab_alignment_reserve");
@@ -910,6 +913,10 @@ public class VM {
   // returns null, if not available.
   public String getVMInternalInfo() {
     return vmInternalInfo;
+  }
+
+  public int getReserveForAllocationPrefetch() {
+    return reserveForAllocationPrefetch;
   }
 
   public int getLabAlignmentReserve() {

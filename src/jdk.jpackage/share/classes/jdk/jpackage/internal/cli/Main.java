@@ -31,6 +31,7 @@ import static jdk.jpackage.internal.cli.StandardOption.VERSION;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.nio.file.NoSuchFileException;
@@ -65,6 +66,21 @@ public final class Main {
         public int run(PrintWriter out, PrintWriter err, String... args) {
             return Main.run(out, err, args);
         }
+
+        @Override
+        public int run(PrintStream out, PrintStream err, String... args) {
+            PrintWriter outWriter = new PrintWriter(out, true);
+            PrintWriter errWriter = new PrintWriter(err, true);
+            try {
+                try {
+                    return run(outWriter, errWriter, args);
+                } finally {
+                    outWriter.flush();
+                }
+            } finally {
+                errWriter.flush();
+            }
+        }
     }
 
 
@@ -78,6 +94,10 @@ public final class Main {
     }
 
     public static int run(PrintWriter out, PrintWriter err, String... args) {
+        Objects.requireNonNull(args);
+        for (String arg : args) {
+            Objects.requireNonNull(arg);
+        }
         Objects.requireNonNull(out);
         Objects.requireNonNull(err);
 

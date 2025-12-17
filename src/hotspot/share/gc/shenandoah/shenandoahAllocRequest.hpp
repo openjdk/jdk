@@ -83,16 +83,15 @@ public:
         return "PLAB";
       default:
         ShouldNotReachHere();
-        return "";
     }
   }
 
 private:
   // When ShenandoahElasticTLAB is enabled, the request cannot be made smaller than _min_size.
-  size_t _min_size;
+  size_t const _min_size;
 
   // The size of the request in words.
-  size_t _requested_size;
+  size_t const _requested_size;
 
   // The allocation may be increased for padding or decreased to fit in the remaining space of a region.
   size_t _actual_size;
@@ -104,7 +103,7 @@ private:
   size_t _waste;
 
   // This is the type of the request.
-  Type _alloc_type;
+  Type const _alloc_type;
 
 #ifdef ASSERT
   // Check that this is set before being read.
@@ -207,6 +206,10 @@ public:
 
   inline bool is_young() const {
     return (_alloc_type & bit_old_alloc) == 0;
+  }
+
+  inline bool is_cds() const {
+    return _alloc_type == _alloc_cds;
   }
 
   inline ShenandoahAffiliation affiliation() const {

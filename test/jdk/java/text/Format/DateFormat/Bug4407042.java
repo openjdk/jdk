@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,29 +27,31 @@
  * @summary Make sure that cloned SimpleDateFormat objects work
  * independently in multiple threads.
  * @library /java/text/testlib
- * @run main Bug4407042 10
+ * @run junit Bug4407042
  */
+
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.Test;
 
 import java.io.*;
 import java.text.*;
 import java.util.*;
 
-// Usage: java Bug4407042 [duration]
 public class Bug4407042 {
 
     static final String TIME_STRING = "2000/11/18 00:01:00";
     static final long UTC_LONG = 974534460000L;
     static SimpleDateFormat masterFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
     static boolean runrun = true;
-    static int duration = 100;
+    static int duration = 10;
 
+    @Test
     void test() {
         Locale locale = Locale.getDefault();
-        if (!TestUtils.usesAsciiDigits(locale)
-                || !TestUtils.usesGregorianCalendar(locale)) {
-            System.out.println("Skipping this test because locale is " + locale);
-            return;
-        }
+        Assumptions.assumeTrue(TestUtils.usesAsciiDigits(locale),
+                locale + " does not use ASCII digits");
+        Assumptions.assumeTrue(TestUtils.usesGregorianCalendar(locale),
+                locale + " does not use a Gregorian calendar");
 
         masterFormat.setTimeZone(TimeZone.getTimeZone("America/Los_Angeles"));
         DateParseThread d1 = new DateParseThread();
@@ -123,12 +125,5 @@ public class Bug4407042 {
                 }
             }
         }
-    }
-
-    public static void main (String[] args) {
-        if (args.length == 1) {
-            duration = Math.max(10, Integer.parseInt(args[0]));
-        }
-        new Bug4407042().test();
     }
 }
