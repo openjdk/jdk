@@ -1871,20 +1871,20 @@ void C2_MacroAssembler::neon_reduce_mul_fp(FloatRegister dst, BasicType bt,
       // instructions.
       case T_SHORT:
         fmulh(dst, fsrc, vsrc);
-        ins(vtmp, H, vsrc, 0, 1);
+        ext(vtmp, T8B, vsrc, vsrc, 2);
         fmulh(dst, dst, vtmp);
-        ins(vtmp, H, vsrc, 0, 2);
+        ext(vtmp, T8B, vsrc, vsrc, 4);
         fmulh(dst, dst, vtmp);
-        ins(vtmp, H, vsrc, 0, 3);
+        ext(vtmp, T8B, vsrc, vsrc, 6);
         fmulh(dst, dst, vtmp);
         if (isQ) {
-          ins(vtmp, H, vsrc, 0, 4);
+          ext(vtmp, T16B, vsrc, vsrc, 8);
           fmulh(dst, dst, vtmp);
-          ins(vtmp, H, vsrc, 0, 5);
+          ext(vtmp, T16B, vsrc, vsrc, 10);
           fmulh(dst, dst, vtmp);
-          ins(vtmp, H, vsrc, 0, 6);
+          ext(vtmp, T16B, vsrc, vsrc, 12);
           fmulh(dst, dst, vtmp);
-          ins(vtmp, H, vsrc, 0, 7);
+          ext(vtmp, T16B, vsrc, vsrc, 14);
           fmulh(dst, dst, vtmp);
         }
         break;
@@ -1920,20 +1920,20 @@ void C2_MacroAssembler::neon_reduce_add_fp16(FloatRegister dst, FloatRegister fs
 
   BLOCK_COMMENT("neon_reduce_add_fp16 {");
     faddh(dst, fsrc, vsrc);
-    ins(vtmp, H, vsrc, 0, 1);
+    ext(vtmp, T8B, vsrc, vsrc, 2);
     faddh(dst, dst, vtmp);
-    ins(vtmp, H, vsrc, 0, 2);
+    ext(vtmp, T8B, vsrc, vsrc, 4);
     faddh(dst, dst, vtmp);
-    ins(vtmp, H, vsrc, 0, 3);
+    ext(vtmp, T8B, vsrc, vsrc, 6);
     faddh(dst, dst, vtmp);
       if (isQ) {
-        ins(vtmp, H, vsrc, 0, 4);
+        ext(vtmp, T16B, vsrc, vsrc, 8);
         faddh(dst, dst, vtmp);
-        ins(vtmp, H, vsrc, 0, 5);
+        ext(vtmp, T16B, vsrc, vsrc, 10);
         faddh(dst, dst, vtmp);
-        ins(vtmp, H, vsrc, 0, 6);
+        ext(vtmp, T16B, vsrc, vsrc, 12);
         faddh(dst, dst, vtmp);
-        ins(vtmp, H, vsrc, 0, 7);
+        ext(vtmp, T16B, vsrc, vsrc, 14);
         faddh(dst, dst, vtmp);
       }
   BLOCK_COMMENT("} neon_reduce_add_fp16");

@@ -1398,21 +1398,21 @@ ReductionNode* ReductionNode::make(int opc, Node* ctrl, Node* n1, Node* n2, Basi
   guarantee(vopc != opc, "Vector for '%s' is not implemented", NodeClassNames[opc]);
 
   switch (vopc) {
-  case Op_AddReductionVI:  return new AddReductionVINode(ctrl, n1, n2);
-  case Op_AddReductionVL:  return new AddReductionVLNode(ctrl, n1, n2);
+  case Op_AddReductionVI: return new AddReductionVINode(ctrl, n1, n2);
+  case Op_AddReductionVL: return new AddReductionVLNode(ctrl, n1, n2);
   case Op_AddReductionVHF: return new AddReductionVHFNode(ctrl, n1, n2, requires_strict_order);
-  case Op_AddReductionVF:  return new AddReductionVFNode(ctrl, n1, n2, requires_strict_order);
-  case Op_AddReductionVD:  return new AddReductionVDNode(ctrl, n1, n2, requires_strict_order);
-  case Op_MulReductionVI:  return new MulReductionVINode(ctrl, n1, n2);
-  case Op_MulReductionVL:  return new MulReductionVLNode(ctrl, n1, n2);
+  case Op_AddReductionVF: return new AddReductionVFNode(ctrl, n1, n2, requires_strict_order);
+  case Op_AddReductionVD: return new AddReductionVDNode(ctrl, n1, n2, requires_strict_order);
+  case Op_MulReductionVI: return new MulReductionVINode(ctrl, n1, n2);
+  case Op_MulReductionVL: return new MulReductionVLNode(ctrl, n1, n2);
   case Op_MulReductionVHF: return new MulReductionVHFNode(ctrl, n1, n2, requires_strict_order);
-  case Op_MulReductionVF:  return new MulReductionVFNode(ctrl, n1, n2, requires_strict_order);
-  case Op_MulReductionVD:  return new MulReductionVDNode(ctrl, n1, n2, requires_strict_order);
-  case Op_MinReductionV:   return new MinReductionVNode (ctrl, n1, n2);
-  case Op_MaxReductionV:   return new MaxReductionVNode (ctrl, n1, n2);
-  case Op_AndReductionV:   return new AndReductionVNode (ctrl, n1, n2);
-  case Op_OrReductionV:    return new OrReductionVNode  (ctrl, n1, n2);
-  case Op_XorReductionV:   return new XorReductionVNode (ctrl, n1, n2);
+  case Op_MulReductionVF: return new MulReductionVFNode(ctrl, n1, n2, requires_strict_order);
+  case Op_MulReductionVD: return new MulReductionVDNode(ctrl, n1, n2, requires_strict_order);
+  case Op_MinReductionV:  return new MinReductionVNode (ctrl, n1, n2);
+  case Op_MaxReductionV:  return new MaxReductionVNode (ctrl, n1, n2);
+  case Op_AndReductionV:  return new AndReductionVNode (ctrl, n1, n2);
+  case Op_OrReductionV:   return new OrReductionVNode  (ctrl, n1, n2);
+  case Op_XorReductionV:  return new XorReductionVNode (ctrl, n1, n2);
   default:
     assert(false, "unknown node: %s", NodeClassNames[vopc]);
     return nullptr;
@@ -1654,6 +1654,8 @@ bool ReductionNode::auto_vectorization_requires_strict_order(int vopc) {
       // These are cases that all have associative operations, which can
       // thus be reordered, allowing non-strict order reductions.
       return false;
+    case Op_AddReductionVHF:
+    case Op_MulReductionVHF:
     case Op_AddReductionVF:
     case Op_MulReductionVF:
     case Op_AddReductionVD:

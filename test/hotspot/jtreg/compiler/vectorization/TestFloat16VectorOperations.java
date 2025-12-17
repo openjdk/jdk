@@ -461,11 +461,11 @@ public class TestFloat16VectorOperations {
     @IR(counts = {IRNode.ADD_REDUCTION_VHF, " >0 "},
         applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     public short vectorAddReductionFloat16() {
-    short result = (short) 0;
-       for (int i = 0; i < LEN; i++) {
-           result = float16ToRawShortBits(Float16.add(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(input1[i])));
-       }
-       return result;
+        short result = (short) 0;
+        for (int i = 0; i < LEN; i++) {
+            result = float16ToRawShortBits(Float16.add(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(input1[i])));
+        }
+        return result;
     }
 
     @Check(test="vectorAddReductionFloat16")
@@ -483,11 +483,11 @@ public class TestFloat16VectorOperations {
         applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"},
         applyIf = {"MaxVectorSize", "<=16"})
     public short vectorMulReductionFloat16() {
-       short result = floatToFloat16(1.0f);
-       for (int i = 0; i < LEN; i++) {
-           result = float16ToRawShortBits(Float16.multiply(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(input1[i])));
-       }
-       return result;
+        short result = floatToFloat16(1.0f);
+        for (int i = 0; i < LEN; i++) {
+            result = float16ToRawShortBits(Float16.multiply(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(input1[i])));
+        }
+        return result;
     }
 
     @Check(test="vectorMulReductionFloat16")
@@ -507,14 +507,14 @@ public class TestFloat16VectorOperations {
     @IR(counts = {"reduce_addFHF_masked", " >0 "}, phase = {CompilePhase.FINAL_CODE},
         applyIfCPUFeature = {"sve", "true"})
     public short vectorAddReductionFloat16Partial() {
-       short result = (short) 0;
-       for (int i = 0; i < LEN; i+=8) {
-           result = float16ToRawShortBits(Float16.add(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(input1[i])));
-           result = float16ToRawShortBits(Float16.add(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(input1[i+1])));
-           result = float16ToRawShortBits(Float16.add(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(input1[i+2])));
-           result = float16ToRawShortBits(Float16.add(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(input1[i+3])));
-       }
-       return result;
+        short result = (short) 0;
+        for (int i = 0; i < LEN; i+=8) {
+            result = float16ToRawShortBits(Float16.add(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(input1[i])));
+            result = float16ToRawShortBits(Float16.add(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(input1[i+1])));
+            result = float16ToRawShortBits(Float16.add(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(input1[i+2])));
+            result = float16ToRawShortBits(Float16.add(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(input1[i+3])));
+        }
+        return result;
     }
 
     @Check(test="vectorAddReductionFloat16Partial")
@@ -534,14 +534,14 @@ public class TestFloat16VectorOperations {
     @Test
     @Warmup(500)
     public short vectorMulReductionFloat16Partial() {
-       short result = floatToFloat16(1.0f);
-       for (int i = 0; i < LEN; i+=8) {
-           result = float16ToRawShortBits(Float16.multiply(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(input1[i])));
-           result = float16ToRawShortBits(Float16.multiply(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(input1[i+1])));
-           result = float16ToRawShortBits(Float16.multiply(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(input1[i+2])));
-           result = float16ToRawShortBits(Float16.multiply(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(input1[i+3])));
-       }
-       return result;
+        short result = floatToFloat16(1.0f);
+        for (int i = 0; i < LEN; i+=8) {
+            result = float16ToRawShortBits(Float16.multiply(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(input1[i])));
+            result = float16ToRawShortBits(Float16.multiply(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(input1[i+1])));
+            result = float16ToRawShortBits(Float16.multiply(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(input1[i+2])));
+            result = float16ToRawShortBits(Float16.multiply(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(input1[i+3])));
+        }
+        return result;
     }
 
     @Check(test="vectorMulReductionFloat16Partial")

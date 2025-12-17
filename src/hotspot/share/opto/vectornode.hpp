@@ -336,8 +336,8 @@ public:
 
   virtual uint size_of() const { return sizeof(*this); }
 
-  virtual const Type* bottom_type() const { return Type::HALF_FLOAT; }
-  virtual uint ideal_reg() const { return Op_RegF; }
+  const Type* bottom_type() const override { return Type::HALF_FLOAT; }
+  uint ideal_reg() const override { return Op_RegF; }
 };
 
 //------------------------------AddReductionVFNode--------------------------------------
@@ -610,8 +610,8 @@ public:
 
   virtual uint size_of() const { return sizeof(*this); }
 
-  virtual const Type* bottom_type() const { return Type::HALF_FLOAT; }
-  virtual uint ideal_reg() const { return Op_RegF; }
+  const Type* bottom_type() const override { return Type::HALF_FLOAT; }
+  uint ideal_reg() const override { return Op_RegF; }
 };
 
 //------------------------------MulReductionVFNode--------------------------------------
