@@ -120,14 +120,11 @@ public class MainTest extends JUnitAdapter.TestSrcInitializer {
                     },
                     // ExceptionBox
                     ex -> {
-                        try {
-                            throw ExceptionBox.rethrowUnchecked(ex);
-                        } catch (RuntimeException rex) {
-                            if (rex != ex) {
-                                return rex;
-                            } else {
-                                return null;
-                            }
+                        var rex = ExceptionBox.toUnchecked(ex);
+                        if (rex != ex) {
+                            return rex;
+                        } else {
+                            return null;
                         }
                     }
             )) {
