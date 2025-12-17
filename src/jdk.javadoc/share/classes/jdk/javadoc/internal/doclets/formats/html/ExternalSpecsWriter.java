@@ -123,7 +123,7 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
                             tabPanel.querySelectorAll("div.external-specs").forEach(function(elem) {
                                 elem.style.display = elem.classList.contains(selectedClass) ? "" : "none";
                                 if (elem.style.display === "") {
-                                    let isEvenRow = count++ % (4) < 2;
+                                    let isEvenRow = count++ % 4 < 2;
                                     toggleStyle(elem.classList, isEvenRow, evenRowColor, oddRowColor);
                                 }
                             });
