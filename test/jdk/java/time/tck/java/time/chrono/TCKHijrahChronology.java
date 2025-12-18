@@ -148,9 +148,7 @@ public class TCKHijrahChronology {
     @ParameterizedTest
     @MethodSource("data_badDates")
     public void test_badDates(int year, int month, int dom) {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            HijrahChronology.INSTANCE.date(year, month, dom);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> HijrahChronology.INSTANCE.date(year, month, dom));
     }
 
     // Negative test or dateYearDay with day too large

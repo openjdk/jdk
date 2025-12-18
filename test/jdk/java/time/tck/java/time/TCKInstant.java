@@ -215,9 +215,7 @@ public class TCKInstant extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void now_Clock_nullClock() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Instant.now(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Instant.now(null));
     }
 
     @Test
@@ -285,16 +283,12 @@ public class TCKInstant extends AbstractDateTimeTest {
 
     @Test
     public void factory_seconds_long_long_tooBig() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            Instant.ofEpochSecond(MAX_SECOND, 1000000000);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> Instant.ofEpochSecond(MAX_SECOND, 1000000000));
     }
 
     @Test
     public void factory_seconds_long_long_tooBigBig() {
-        Assertions.assertThrows(ArithmeticException.class, () -> {
-            Instant.ofEpochSecond(Long.MAX_VALUE, Long.MAX_VALUE);
-        });
+        Assertions.assertThrows(ArithmeticException.class, () -> Instant.ofEpochSecond(Long.MAX_VALUE, Long.MAX_VALUE));
     }
 
     //-----------------------------------------------------------------------
@@ -388,25 +382,19 @@ public class TCKInstant extends AbstractDateTimeTest {
     @ParameterizedTest
     @MethodSource("provider_factory_parseFailures")
     public void factory_parseFailures(String text) {
-        Assertions.assertThrows(DateTimeParseException.class, () -> {
-            Instant.parse(text);
-        });
+        Assertions.assertThrows(DateTimeParseException.class, () -> Instant.parse(text));
     }
 
     @ParameterizedTest
     @MethodSource("provider_factory_parseFailures")
     public void factory_parseFailures_comma(String text) {
         var commaText = text.replace('.', ',');
-        Assertions.assertThrows(DateTimeParseException.class, () -> {
-            Instant.parse(commaText);
-        });
+        Assertions.assertThrows(DateTimeParseException.class, () -> Instant.parse(commaText));
     }
 
     @Test
     public void factory_parse_nullText() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Instant.parse(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Instant.parse(null));
     }
 
     //-----------------------------------------------------------------------
@@ -458,9 +446,7 @@ public class TCKInstant extends AbstractDateTimeTest {
 
     @Test
     public void test_query_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_12345_123456789.query(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_12345_123456789.query(null));
     }
 
     //-----------------------------------------------------------------------
@@ -697,16 +683,12 @@ public class TCKInstant extends AbstractDateTimeTest {
     @ParameterizedTest
     @MethodSource("data_truncatedToInvalid")
     public void test_truncatedTo_invalid(Instant input, TemporalUnit unit) {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            input.truncatedTo(unit);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> input.truncatedTo(unit));
     }
 
     @Test
     public void test_truncatedTo_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_12345_123456789.truncatedTo(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_12345_123456789.truncatedTo(null));
     }
 
     //-----------------------------------------------------------------------
@@ -1351,9 +1333,7 @@ public class TCKInstant extends AbstractDateTimeTest {
     @ParameterizedTest
     @MethodSource("provider_plusSaturating_null")
     public void test_plusSaturating_null(Instant i) {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            i.plusSaturating(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> i.plusSaturating(null));
     }
 
     //-----------------------------------------------------------------------
@@ -2077,23 +2057,17 @@ public class TCKInstant extends AbstractDateTimeTest {
 
     @Test
     public void test_until_TemporalUnit_unsupportedUnit() {
-        Assertions.assertThrows(UnsupportedTemporalTypeException.class, () -> {
-            TEST_12345_123456789.until(TEST_12345_123456789, MONTHS);
-        });
+        Assertions.assertThrows(UnsupportedTemporalTypeException.class, () -> TEST_12345_123456789.until(TEST_12345_123456789, MONTHS));
     }
 
     @Test
     public void test_until_TemporalUnit_nullEnd() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_12345_123456789.until(null, HOURS);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_12345_123456789.until(null, HOURS));
     }
 
     @Test
     public void test_until_TemporalUnit_nullUnit() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_12345_123456789.until(TEST_12345_123456789, null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_12345_123456789.until(TEST_12345_123456789, null));
     }
 
     //-----------------------------------------------------------------------
@@ -2115,9 +2089,7 @@ public class TCKInstant extends AbstractDateTimeTest {
 
     @Test
     public void test_atOffset_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_12345_123456789.atOffset(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_12345_123456789.atOffset(null));
     }
 
     //-----------------------------------------------------------------------
@@ -2139,9 +2111,7 @@ public class TCKInstant extends AbstractDateTimeTest {
 
     @Test
     public void test_atZone_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_12345_123456789.atZone(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_12345_123456789.atZone(null));
     }
 
     //-----------------------------------------------------------------------
@@ -2167,30 +2137,22 @@ public class TCKInstant extends AbstractDateTimeTest {
 
     @Test
     public void test_toEpochMilli_tooBig() {
-        Assertions.assertThrows(ArithmeticException.class, () -> {
-            Instant.ofEpochSecond(Long.MAX_VALUE / 1000 + 1).toEpochMilli();
-        });
+        Assertions.assertThrows(ArithmeticException.class, () -> Instant.ofEpochSecond(Long.MAX_VALUE / 1000 + 1).toEpochMilli());
     }
 
     @Test
     public void test_toEpochMilli_tooSmall() {
-        Assertions.assertThrows(ArithmeticException.class, () -> {
-            Instant.ofEpochSecond(Long.MIN_VALUE / 1000 - 1).toEpochMilli();
-        });
+        Assertions.assertThrows(ArithmeticException.class, () -> Instant.ofEpochSecond(Long.MIN_VALUE / 1000 - 1).toEpochMilli());
     }
 
     @Test
     public void test_toEpochMillis_overflow() {
-        Assertions.assertThrows(ArithmeticException.class, () -> {
-            Instant.ofEpochSecond(Long.MAX_VALUE / 1000, 809_000_000).toEpochMilli();
-        });
+        Assertions.assertThrows(ArithmeticException.class, () -> Instant.ofEpochSecond(Long.MAX_VALUE / 1000, 809_000_000).toEpochMilli());
     }
 
     @Test
     public void test_toEpochMillis_overflow2() {
-        Assertions.assertThrows(ArithmeticException.class, () -> {
-            Instant.ofEpochSecond(-9223372036854776L, 1).toEpochMilli();
-        });
+        Assertions.assertThrows(ArithmeticException.class, () -> Instant.ofEpochSecond(-9223372036854776L, 1).toEpochMilli());
     }
 
     //-----------------------------------------------------------------------

@@ -122,9 +122,7 @@ public class TCKDateTimeFormatters {
     //-----------------------------------------------------------------------
     @Test
     public void test_format_nullTemporalAccessor() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            DateTimeFormatter.ISO_DATE.format((TemporalAccessor) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> DateTimeFormatter.ISO_DATE.format((TemporalAccessor) null));
     }
 
     //-----------------------------------------------------------------------
@@ -141,16 +139,12 @@ public class TCKDateTimeFormatters {
 
     @Test
     public void test_pattern_String_invalid() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            DateTimeFormatter.ofPattern("p");
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> DateTimeFormatter.ofPattern("p"));
     }
 
     @Test
     public void test_pattern_String_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            DateTimeFormatter.ofPattern(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> DateTimeFormatter.ofPattern(null));
     }
 
     //-----------------------------------------------------------------------
@@ -165,23 +159,17 @@ public class TCKDateTimeFormatters {
 
     @Test
     public void test_pattern_StringLocale_invalid() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            DateTimeFormatter.ofPattern("p", Locale.UK);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> DateTimeFormatter.ofPattern("p", Locale.UK));
     }
 
     @Test
     public void test_pattern_StringLocale_nullPattern() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            DateTimeFormatter.ofPattern(null, Locale.UK);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> DateTimeFormatter.ofPattern(null, Locale.UK));
     }
 
     @Test
     public void test_pattern_StringLocale_nullLocale() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            DateTimeFormatter.ofPattern("yyyy", null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> DateTimeFormatter.ofPattern("yyyy", null));
     }
 
     //-----------------------------------------------------------------------
@@ -282,9 +270,7 @@ public class TCKDateTimeFormatters {
 
     @Test
     public void test_parse_isoLocalDate_1000000000_failedCreate() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            LocalDate.parse("+1000000000-08-06");
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> LocalDate.parse("+1000000000-08-06"));
     }
 
     @Test
@@ -302,9 +288,7 @@ public class TCKDateTimeFormatters {
 
     @Test
     public void test_parse_isoLocalDate_M1000000000_failedCreate() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            LocalDate.parse("-1000000000-08-06");
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> LocalDate.parse("-1000000000-08-06"));
     }
 
     @Test

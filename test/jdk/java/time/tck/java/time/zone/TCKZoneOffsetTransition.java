@@ -90,37 +90,27 @@ public class TCKZoneOffsetTransition extends AbstractTCKTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_factory_nullTransition() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZoneOffsetTransition.of(null, OFFSET_0100, OFFSET_0200);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZoneOffsetTransition.of(null, OFFSET_0100, OFFSET_0200));
     }
 
     @Test
     public void test_factory_nullOffsetBefore() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZoneOffsetTransition.of(LocalDateTime.of(2010, 12, 3, 11, 30), null, OFFSET_0200);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZoneOffsetTransition.of(LocalDateTime.of(2010, 12, 3, 11, 30), null, OFFSET_0200));
     }
 
     @Test
     public void test_factory_nullOffsetAfter() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZoneOffsetTransition.of(LocalDateTime.of(2010, 12, 3, 11, 30), OFFSET_0200, null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZoneOffsetTransition.of(LocalDateTime.of(2010, 12, 3, 11, 30), OFFSET_0200, null));
     }
 
     @Test
     public void test_factory_sameOffset() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            ZoneOffsetTransition.of(LocalDateTime.of(2010, 12, 3, 11, 30), OFFSET_0200, OFFSET_0200);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ZoneOffsetTransition.of(LocalDateTime.of(2010, 12, 3, 11, 30), OFFSET_0200, OFFSET_0200));
     }
 
     @Test
     public void test_factory_noNanos() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            ZoneOffsetTransition.of(LocalDateTime.of(2010, 12, 3, 11, 30, 0, 500), OFFSET_0200, OFFSET_0300);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ZoneOffsetTransition.of(LocalDateTime.of(2010, 12, 3, 11, 30, 0, 500), OFFSET_0200, OFFSET_0300));
     }
 
     //-----------------------------------------------------------------------

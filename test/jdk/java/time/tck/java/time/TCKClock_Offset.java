@@ -101,16 +101,12 @@ public class TCKClock_Offset extends AbstractTCKTest {
 
     @Test
     public void test_offset_ClockDuration_nullClock() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Clock.offset(null, Duration.ZERO);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Clock.offset(null, Duration.ZERO));
     }
 
     @Test
     public void test_offset_ClockDuration_nullDuration() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Clock.offset(Clock.systemUTC(), null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Clock.offset(Clock.systemUTC(), null));
     }
 
     //-------------------------------------------------------------------------
@@ -131,9 +127,7 @@ public class TCKClock_Offset extends AbstractTCKTest {
 
     @Test
     public void test_withZone_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Clock.offset(Clock.system(PARIS), OFFSET).withZone(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Clock.offset(Clock.system(PARIS), OFFSET).withZone(null));
     }
 
     //-----------------------------------------------------------------------

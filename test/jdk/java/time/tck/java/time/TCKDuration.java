@@ -204,9 +204,7 @@ public class TCKDuration extends AbstractTCKTest {
 
     @Test
     public void factory_seconds_long_long_tooBig() {
-        Assertions.assertThrows(ArithmeticException.class, () -> {
-            Duration.ofSeconds(Long.MAX_VALUE, 1000000000);
-        });
+        Assertions.assertThrows(ArithmeticException.class, () -> Duration.ofSeconds(Long.MAX_VALUE, 1000000000));
     }
 
     //-----------------------------------------------------------------------
@@ -300,16 +298,12 @@ public class TCKDuration extends AbstractTCKTest {
 
     @Test
     public void factory_minutes_tooBig() {
-        Assertions.assertThrows(ArithmeticException.class, () -> {
-            Duration.ofMinutes(Long.MAX_VALUE / 60 + 1);
-        });
+        Assertions.assertThrows(ArithmeticException.class, () -> Duration.ofMinutes(Long.MAX_VALUE / 60 + 1));
     }
 
     @Test
     public void factory_minutes_tooSmall() {
-        Assertions.assertThrows(ArithmeticException.class, () -> {
-            Duration.ofMinutes(Long.MIN_VALUE / 60 - 1);
-        });
+        Assertions.assertThrows(ArithmeticException.class, () -> Duration.ofMinutes(Long.MIN_VALUE / 60 - 1));
     }
 
     //-----------------------------------------------------------------------
@@ -338,16 +332,12 @@ public class TCKDuration extends AbstractTCKTest {
 
     @Test
     public void factory_hours_tooBig() {
-        Assertions.assertThrows(ArithmeticException.class, () -> {
-            Duration.ofHours(Long.MAX_VALUE / 3600 + 1);
-        });
+        Assertions.assertThrows(ArithmeticException.class, () -> Duration.ofHours(Long.MAX_VALUE / 3600 + 1));
     }
 
     @Test
     public void factory_hours_tooSmall() {
-        Assertions.assertThrows(ArithmeticException.class, () -> {
-            Duration.ofHours(Long.MIN_VALUE / 3600 - 1);
-        });
+        Assertions.assertThrows(ArithmeticException.class, () -> Duration.ofHours(Long.MIN_VALUE / 3600 - 1));
     }
 
     //-----------------------------------------------------------------------
@@ -376,16 +366,12 @@ public class TCKDuration extends AbstractTCKTest {
 
     @Test
     public void factory_days_tooBig() {
-        Assertions.assertThrows(ArithmeticException.class, () -> {
-            Duration.ofDays(Long.MAX_VALUE / 86400 + 1);
-        });
+        Assertions.assertThrows(ArithmeticException.class, () -> Duration.ofDays(Long.MAX_VALUE / 86400 + 1));
     }
 
     @Test
     public void factory_days_tooSmall() {
-        Assertions.assertThrows(ArithmeticException.class, () -> {
-            Duration.ofDays(Long.MIN_VALUE / 86400 - 1);
-        });
+        Assertions.assertThrows(ArithmeticException.class, () -> Duration.ofDays(Long.MIN_VALUE / 86400 - 1));
     }
 
     //-----------------------------------------------------------------------
@@ -472,23 +458,17 @@ public class TCKDuration extends AbstractTCKTest {
     @ParameterizedTest
     @MethodSource("provider_factory_of_longTemporalUnit_outOfRange")
     public void factory_of_longTemporalUnit_outOfRange(long amount, TemporalUnit unit) {
-        Assertions.assertThrows(ArithmeticException.class, () -> {
-            Duration.of(amount, unit);
-        });
+        Assertions.assertThrows(ArithmeticException.class, () -> Duration.of(amount, unit));
     }
 
     @Test
     public void factory_of_longTemporalUnit_estimatedUnit() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            Duration.of(2, WEEKS);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> Duration.of(2, WEEKS));
     }
 
     @Test
     public void factory_of_longTemporalUnit_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Duration.of(1, (TemporalUnit) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Duration.of(1, (TemporalUnit) null));
     }
 
     //-----------------------------------------------------------------------
@@ -559,16 +539,12 @@ public class TCKDuration extends AbstractTCKTest {
 
     @Test
     public void factory_from_TemporalAmount_Period() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            Duration.from(Period.ZERO);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> Duration.from(Period.ZERO));
     }
 
     @Test
     public void factory_from_TemporalAmount_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Duration.from(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Duration.from(null));
     }
 
     //-----------------------------------------------------------------------
@@ -814,53 +790,39 @@ public class TCKDuration extends AbstractTCKTest {
     @ParameterizedTest
     @MethodSource("data_parseFailure")
     public void factory_parseFailures(String text) {
-        Assertions.assertThrows(DateTimeParseException.class, () -> {
-            Duration.parse(text);
-        });
+        Assertions.assertThrows(DateTimeParseException.class, () -> Duration.parse(text));
     }
 
     @ParameterizedTest
     @MethodSource("data_parseFailure")
     public void factory_parseFailures_comma(String text) {
         var commaText = text.replace('.', ',');
-        Assertions.assertThrows(DateTimeParseException.class, () -> {
-            Duration.parse(commaText);
-        });
+        Assertions.assertThrows(DateTimeParseException.class, () -> Duration.parse(commaText));
     }
 
     @Test
     public void factory_parse_tooBig() {
-        Assertions.assertThrows(DateTimeParseException.class, () -> {
-            Duration.parse("PT" + Long.MAX_VALUE + "1S");
-        });
+        Assertions.assertThrows(DateTimeParseException.class, () -> Duration.parse("PT" + Long.MAX_VALUE + "1S"));
     }
 
     @Test
     public void factory_parse_tooBig_decimal() {
-        Assertions.assertThrows(DateTimeParseException.class, () -> {
-            Duration.parse("PT" + Long.MAX_VALUE + "1.1S");
-        });
+        Assertions.assertThrows(DateTimeParseException.class, () -> Duration.parse("PT" + Long.MAX_VALUE + "1.1S"));
     }
 
     @Test
     public void factory_parse_tooSmall() {
-        Assertions.assertThrows(DateTimeParseException.class, () -> {
-            Duration.parse("PT" + Long.MIN_VALUE + "1S");
-        });
+        Assertions.assertThrows(DateTimeParseException.class, () -> Duration.parse("PT" + Long.MIN_VALUE + "1S"));
     }
 
     @Test
     public void factory_parse_tooSmall_decimal() {
-        Assertions.assertThrows(DateTimeParseException.class, () -> {
-            Duration.parse("PT" + Long.MIN_VALUE + ".1S");
-        });
+        Assertions.assertThrows(DateTimeParseException.class, () -> Duration.parse("PT" + Long.MIN_VALUE + ".1S"));
     }
 
     @Test
     public void factory_parse_nullText() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Duration.parse(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Duration.parse(null));
     }
 
     //-----------------------------------------------------------------------
@@ -2589,16 +2551,12 @@ public class TCKDuration extends AbstractTCKTest {
     @ParameterizedTest
     @MethodSource("data_truncatedToInvalid")
     public void test_truncatedTo_invalid(Duration input, TemporalUnit unit) {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            input.truncatedTo(unit);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> input.truncatedTo(unit));
     }
 
     @Test
     public void test_truncatedTo_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Duration.ofSeconds(1234).truncatedTo(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Duration.ofSeconds(1234).truncatedTo(null));
     }
 
     //-----------------------------------------------------------------------
@@ -2792,9 +2750,7 @@ public class TCKDuration extends AbstractTCKTest {
 
     @Test
     public void test_negated_overflow() {
-        Assertions.assertThrows(ArithmeticException.class, () -> {
-            Duration.ofSeconds(Long.MIN_VALUE).negated();
-        });
+        Assertions.assertThrows(ArithmeticException.class, () -> Duration.ofSeconds(Long.MIN_VALUE).negated());
     }
 
     //-----------------------------------------------------------------------
@@ -2814,9 +2770,7 @@ public class TCKDuration extends AbstractTCKTest {
 
     @Test
     public void test_abs_overflow() {
-        Assertions.assertThrows(ArithmeticException.class, () -> {
-            Duration.ofSeconds(Long.MIN_VALUE).abs();
-        });
+        Assertions.assertThrows(ArithmeticException.class, () -> Duration.ofSeconds(Long.MIN_VALUE).abs());
     }
 
     //-----------------------------------------------------------------------

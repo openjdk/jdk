@@ -97,9 +97,7 @@ public class TCKLocalizedPrinterParser {
     //-----------------------------------------------------------------------
     @Test
     public void test_parse_negativePosition() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            builder.appendLocalized(null, null);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendLocalized(null, null));
     }
 
     //-----------------------------------------------------------------------

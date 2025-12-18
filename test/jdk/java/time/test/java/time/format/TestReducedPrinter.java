@@ -100,9 +100,7 @@ public class TestReducedPrinter extends AbstractTestPrinterParser {
     //-----------------------------------------------------------------------
     @Test
     public void test_print_emptyCalendrical() throws Exception {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            getFormatter0(YEAR, 2, 2010).formatTo(EMPTY_DTA, buf);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> getFormatter0(YEAR, 2, 2010).formatTo(EMPTY_DTA, buf));
     }
 
     //-----------------------------------------------------------------------

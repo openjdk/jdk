@@ -139,16 +139,12 @@ public class TCKDayOfWeek extends AbstractDateTimeTest {
 
     @Test
     public void test_factory_int_valueTooLow() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            DayOfWeek.of(0);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> DayOfWeek.of(0));
     }
 
     @Test
     public void test_factory_int_valueTooHigh() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            DayOfWeek.of(8);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> DayOfWeek.of(8));
     }
 
     //-----------------------------------------------------------------------
@@ -159,16 +155,12 @@ public class TCKDayOfWeek extends AbstractDateTimeTest {
 
     @Test
     public void test_factory_CalendricalObject_invalid_noDerive() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            DayOfWeek.from(LocalTime.of(12, 30));
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> DayOfWeek.from(LocalTime.of(12, 30)));
     }
 
     @Test
     public void test_factory_CalendricalObject_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            DayOfWeek.from((TemporalAccessor) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> DayOfWeek.from((TemporalAccessor) null));
     }
 
     //-----------------------------------------------------------------------
@@ -251,9 +243,7 @@ public class TCKDayOfWeek extends AbstractDateTimeTest {
 
     @Test
     public void test_query_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            DayOfWeek.FRIDAY.query(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> DayOfWeek.FRIDAY.query(null));
     }
 
     //-----------------------------------------------------------------------
@@ -266,16 +256,12 @@ public class TCKDayOfWeek extends AbstractDateTimeTest {
 
     @Test
     public void test_getText_nullStyle() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            DayOfWeek.MONDAY.getDisplayName(null, Locale.US);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> DayOfWeek.MONDAY.getDisplayName(null, Locale.US));
     }
 
     @Test
     public void test_getText_nullLocale() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            DayOfWeek.MONDAY.getDisplayName(TextStyle.FULL, null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> DayOfWeek.MONDAY.getDisplayName(TextStyle.FULL, null));
     }
 
     //-----------------------------------------------------------------------
@@ -370,9 +356,7 @@ public class TCKDayOfWeek extends AbstractDateTimeTest {
 
     @Test
     public void test_adjustInto_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            DayOfWeek.MONDAY.adjustInto((Temporal) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> DayOfWeek.MONDAY.adjustInto((Temporal) null));
     }
 
     //-----------------------------------------------------------------------

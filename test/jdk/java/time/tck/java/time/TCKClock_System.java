@@ -132,9 +132,7 @@ public class TCKClock_System extends AbstractTCKTest {
 
     @Test
     public void test_zoneId_nullZoneId() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Clock.system(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Clock.system(null));
     }
 
     //-------------------------------------------------------------------------
@@ -162,9 +160,7 @@ public class TCKClock_System extends AbstractTCKTest {
 
     @Test
     public void test_withZone_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Clock.systemUTC().withZone(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Clock.systemUTC().withZone(null));
     }
 
     //-----------------------------------------------------------------------

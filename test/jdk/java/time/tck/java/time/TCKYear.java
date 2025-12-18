@@ -176,9 +176,7 @@ public class TCKYear extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void now_ZoneId_nullZoneId() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Year.now((ZoneId) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Year.now((ZoneId) null));
     }
 
     @Test
@@ -209,9 +207,7 @@ public class TCKYear extends AbstractDateTimeTest {
 
     @Test
     public void now_Clock_nullClock() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Year.now((Clock) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Year.now((Clock) null));
     }
 
     //-----------------------------------------------------------------------
@@ -226,16 +222,12 @@ public class TCKYear extends AbstractDateTimeTest {
 
     @Test
     public void test_factory_int_tooLow() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            Year.of(Year.MIN_VALUE - 1);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> Year.of(Year.MIN_VALUE - 1));
     }
 
     @Test
     public void test_factory_int_tooHigh() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            Year.of(Year.MAX_VALUE + 1);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> Year.of(Year.MAX_VALUE + 1));
     }
 
     //-----------------------------------------------------------------------
@@ -246,16 +238,12 @@ public class TCKYear extends AbstractDateTimeTest {
 
     @Test
     public void test_from_TemporalAccessor_invalid_noDerive() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            Year.from(LocalTime.of(12, 30));
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> Year.from(LocalTime.of(12, 30)));
     }
 
     @Test
     public void test_from_TemporalAccessor_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Year.from((TemporalAccessor) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Year.from((TemporalAccessor) null));
     }
 
     //-----------------------------------------------------------------------
@@ -341,9 +329,7 @@ public class TCKYear extends AbstractDateTimeTest {
 
     @Test
     public void factory_parse_nullText() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Year.parse(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Year.parse(null));
     }
 
     //-----------------------------------------------------------------------
@@ -366,9 +352,7 @@ public class TCKYear extends AbstractDateTimeTest {
 
     @Test
     public void factory_parse_formatter_nullFormatter() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Year.parse("ANY", null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Year.parse("ANY", null));
     }
 
     //-----------------------------------------------------------------------
@@ -479,9 +463,7 @@ public class TCKYear extends AbstractDateTimeTest {
 
     @Test
     public void test_query_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_2008.query(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_2008.query(null));
     }
 
     //-----------------------------------------------------------------------
@@ -559,16 +541,12 @@ public class TCKYear extends AbstractDateTimeTest {
     @ParameterizedTest
     @MethodSource("data_plusInvalidUnit")
     public void test_plusInvalidUnit(TemporalAmount amount) {
-        Assertions.assertThrows(UnsupportedTemporalTypeException.class, () -> {
-            TEST_2008.plus(amount);
-        });
+        Assertions.assertThrows(UnsupportedTemporalTypeException.class, () -> TEST_2008.plus(amount));
     }
 
     @Test
     public void test_plus_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_2008.plus(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_2008.plus(null));
     }
 
     //-----------------------------------------------------------------------
@@ -602,30 +580,22 @@ public class TCKYear extends AbstractDateTimeTest {
 
     @Test
     public void test_plusYears_max() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            Year.of(Year.MAX_VALUE).plusYears(1);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> Year.of(Year.MAX_VALUE).plusYears(1));
     }
 
     @Test
     public void test_plusYears_maxLots() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            Year.of(Year.MAX_VALUE).plusYears(1000);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> Year.of(Year.MAX_VALUE).plusYears(1000));
     }
 
     @Test
     public void test_plusYears_min() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            Year.of(Year.MIN_VALUE).plusYears(-1);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> Year.of(Year.MIN_VALUE).plusYears(-1));
     }
 
     @Test
     public void test_plusYears_minLots() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            Year.of(Year.MIN_VALUE).plusYears(-1000);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> Year.of(Year.MIN_VALUE).plusYears(-1000));
     }
 
     //-----------------------------------------------------------------------
@@ -703,16 +673,12 @@ public class TCKYear extends AbstractDateTimeTest {
     @ParameterizedTest
     @MethodSource("data_minusInvalidUnit")
     public void test_minusInvalidUnit(TemporalAmount amount) {
-        Assertions.assertThrows(UnsupportedTemporalTypeException.class, () -> {
-            TEST_2008.minus(amount);
-        });
+        Assertions.assertThrows(UnsupportedTemporalTypeException.class, () -> TEST_2008.minus(amount));
     }
 
     @Test
     public void test_minus_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_2008.minus(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_2008.minus(null));
     }
 
     //-----------------------------------------------------------------------
@@ -746,30 +712,22 @@ public class TCKYear extends AbstractDateTimeTest {
 
     @Test
     public void test_minusYears_max() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            Year.of(Year.MAX_VALUE).minusYears(-1);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> Year.of(Year.MAX_VALUE).minusYears(-1));
     }
 
     @Test
     public void test_minusYears_maxLots() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            Year.of(Year.MAX_VALUE).minusYears(-1000);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> Year.of(Year.MAX_VALUE).minusYears(-1000));
     }
 
     @Test
     public void test_minusYears_min() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            Year.of(Year.MIN_VALUE).minusYears(1);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> Year.of(Year.MIN_VALUE).minusYears(1));
     }
 
     @Test
     public void test_minusYears_minLots() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            Year.of(Year.MIN_VALUE).minusYears(1000);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> Year.of(Year.MIN_VALUE).minusYears(1000));
     }
 
     //-----------------------------------------------------------------------
@@ -1033,23 +991,17 @@ public class TCKYear extends AbstractDateTimeTest {
 
     @Test
     public void test_until_TemporalUnit_unsupportedUnit() {
-        Assertions.assertThrows(UnsupportedTemporalTypeException.class, () -> {
-            TEST_2008.until(TEST_2008, MONTHS);
-        });
+        Assertions.assertThrows(UnsupportedTemporalTypeException.class, () -> TEST_2008.until(TEST_2008, MONTHS));
     }
 
     @Test
     public void test_until_TemporalUnit_nullEnd() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_2008.until(null, DAYS);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_2008.until(null, DAYS));
     }
 
     @Test
     public void test_until_TemporalUnit_nullUnit() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_2008.until(TEST_2008, null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_2008.until(TEST_2008, null));
     }
 
     //-----------------------------------------------------------------------
@@ -1064,9 +1016,7 @@ public class TCKYear extends AbstractDateTimeTest {
 
     @Test
     public void test_format_formatter_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Year.of(2010).format(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Year.of(2010).format(null));
     }
 
     //-----------------------------------------------------------------------

@@ -126,58 +126,42 @@ public class TCKClock_Tick extends AbstractTCKTest {
 
     @Test
     public void test_tick_ClockDuration_maxDuration() {
-        Assertions.assertThrows(ArithmeticException.class, () -> {
-            Clock.tick(Clock.systemUTC(), Duration.ofSeconds(Long.MAX_VALUE));
-        });
+        Assertions.assertThrows(ArithmeticException.class, () -> Clock.tick(Clock.systemUTC(), Duration.ofSeconds(Long.MAX_VALUE)));
     }
 
     @Test
     public void test_tick_ClockDuration_subMilliNotDivisible_123ns() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            Clock.tick(Clock.systemUTC(), Duration.ofSeconds(0, 123));
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Clock.tick(Clock.systemUTC(), Duration.ofSeconds(0, 123)));
     }
 
     @Test
     public void test_tick_ClockDuration_subMilliNotDivisible_999ns() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            Clock.tick(Clock.systemUTC(), Duration.ofSeconds(0, 999));
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Clock.tick(Clock.systemUTC(), Duration.ofSeconds(0, 999)));
     }
 
     @Test
     public void test_tick_ClockDuration_subMilliNotDivisible_999_999_999ns() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            Clock.tick(Clock.systemUTC(), Duration.ofSeconds(0, 999_999_999));
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Clock.tick(Clock.systemUTC(), Duration.ofSeconds(0, 999_999_999)));
     }
 
     @Test
     public void test_tick_ClockDuration_negative1ns() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            Clock.tick(Clock.systemUTC(), Duration.ofSeconds(0, -1));
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Clock.tick(Clock.systemUTC(), Duration.ofSeconds(0, -1)));
     }
 
     @Test
     public void test_tick_ClockDuration_negative1s() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            Clock.tick(Clock.systemUTC(), Duration.ofSeconds(-1));
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Clock.tick(Clock.systemUTC(), Duration.ofSeconds(-1)));
     }
 
     @Test
     public void test_tick_ClockDuration_nullClock() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Clock.tick(null, Duration.ZERO);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Clock.tick(null, Duration.ZERO));
     }
 
     @Test
     public void test_tick_ClockDuration_nullDuration() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Clock.tick(Clock.systemUTC(), null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Clock.tick(Clock.systemUTC(), null));
     }
 
     //-----------------------------------------------------------------------
@@ -190,9 +174,7 @@ public class TCKClock_Tick extends AbstractTCKTest {
 
     @Test
     public void test_tickMillis_ZoneId_nullZoneId() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Clock.tickMillis(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Clock.tickMillis(null));
     }
     //-----------------------------------------------------------------------
     @Test
@@ -206,9 +188,7 @@ public class TCKClock_Tick extends AbstractTCKTest {
 
     @Test
     public void test_tickSeconds_ZoneId_nullZoneId() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Clock.tickSeconds(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Clock.tickSeconds(null));
     }
 
     //-----------------------------------------------------------------------
@@ -223,9 +203,7 @@ public class TCKClock_Tick extends AbstractTCKTest {
 
     @Test
     public void test_tickMinutes_ZoneId_nullZoneId() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Clock.tickMinutes(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Clock.tickMinutes(null));
     }
 
     //-------------------------------------------------------------------------
@@ -246,9 +224,7 @@ public class TCKClock_Tick extends AbstractTCKTest {
 
     @Test
     public void test_withZone_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Clock.tick(Clock.system(PARIS), Duration.ofMillis(500)).withZone(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Clock.tick(Clock.system(PARIS), Duration.ofMillis(500)).withZone(null));
     }
 
     //-----------------------------------------------------------------------

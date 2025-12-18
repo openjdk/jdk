@@ -181,9 +181,7 @@ public class TestIsoChronology {
     @ParameterizedTest
     @MethodSource("data_badDates")
     public void test_badDates(int year, int month, int dom) {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            IsoChronology.INSTANCE.date(year, month, dom);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> IsoChronology.INSTANCE.date(year, month, dom));
     }
 
     @Test
@@ -205,9 +203,7 @@ public class TestIsoChronology {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Test
     public void test_date_withEra_withWrongEra() {
-        Assertions.assertThrows(ClassCastException.class, () -> {
-            IsoChronology.INSTANCE.date((Era) HijrahEra.AH, 1, 1, 1);
-        });
+        Assertions.assertThrows(ClassCastException.class, () -> IsoChronology.INSTANCE.date((Era) HijrahEra.AH, 1, 1, 1));
     }
 
     //-----------------------------------------------------------------------

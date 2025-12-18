@@ -629,9 +629,7 @@ public class TCKDateTimeFormatter {
 
     @Test
     public void test_parse_Query_String_nullText() throws Exception {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            DATE_FORMATTER.parse((String) null, LocalDate::from);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> DATE_FORMATTER.parse((String) null, LocalDate::from));
     }
 
     @Test
@@ -975,9 +973,7 @@ public class TCKDateTimeFormatter {
 
     @Test
     public void test_toFormat_Query() throws Exception {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            BASIC_FORMATTER.toFormat(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> BASIC_FORMATTER.toFormat(null));
     }
 
 }

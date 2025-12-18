@@ -269,9 +269,7 @@ public class TCKThaiBuddhistChronology {
     @ParameterizedTest
     @MethodSource("data_badDates")
     public void test_badDates(int year, int month, int dom) {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            ThaiBuddhistChronology.INSTANCE.date(year, month, dom);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> ThaiBuddhistChronology.INSTANCE.date(year, month, dom));
     }
 
     //-----------------------------------------------------------------------

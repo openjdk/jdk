@@ -337,23 +337,17 @@ public class TCKChronoLocalDateTime {
 
     @Test
     public void test_from_TemporalAccessor_dateOnly() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            ChronoLocalDateTime.from(LocalDate.of(2013, 1, 1));
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> ChronoLocalDateTime.from(LocalDate.of(2013, 1, 1)));
     }
 
     @Test
     public void test_from_TemporalAccessor_timeOnly() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            ChronoLocalDateTime.from(LocalTime.of(12, 30));
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> ChronoLocalDateTime.from(LocalTime.of(12, 30)));
     }
 
     @Test
     public void test_from_TemporalAccessor_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ChronoLocalDateTime.from(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ChronoLocalDateTime.from(null));
     }
 
     //-----------------------------------------------------------------------

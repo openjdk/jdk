@@ -163,9 +163,7 @@ public class TestDateTimeFormatterBuilder {
 
     @Test
     public void test_appendValue_1arg_null() throws Exception {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            builder.appendValue(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> builder.appendValue(null));
     }
 
     //-----------------------------------------------------------------------
@@ -178,23 +176,17 @@ public class TestDateTimeFormatterBuilder {
 
     @Test
     public void test_appendValue_2arg_null() throws Exception {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            builder.appendValue(null, 3);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> builder.appendValue(null, 3));
     }
 
     @Test
     public void test_appendValue_2arg_widthTooSmall() throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            builder.appendValue(DAY_OF_MONTH, 0);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendValue(DAY_OF_MONTH, 0));
     }
 
     @Test
     public void test_appendValue_2arg_widthTooBig() throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            builder.appendValue(DAY_OF_MONTH, 20);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendValue(DAY_OF_MONTH, 20));
     }
 
     //-----------------------------------------------------------------------
@@ -207,51 +199,37 @@ public class TestDateTimeFormatterBuilder {
 
     @Test
     public void test_appendValue_3arg_nullField() throws Exception {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            builder.appendValue(null, 2, 3, SignStyle.NORMAL);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> builder.appendValue(null, 2, 3, SignStyle.NORMAL));
     }
 
     @Test
     public void test_appendValue_3arg_minWidthTooSmall() throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            builder.appendValue(DAY_OF_MONTH, 0, 2, SignStyle.NORMAL);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendValue(DAY_OF_MONTH, 0, 2, SignStyle.NORMAL));
     }
 
     @Test
     public void test_appendValue_3arg_minWidthTooBig() throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            builder.appendValue(DAY_OF_MONTH, 20, 2, SignStyle.NORMAL);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendValue(DAY_OF_MONTH, 20, 2, SignStyle.NORMAL));
     }
 
     @Test
     public void test_appendValue_3arg_maxWidthTooSmall() throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            builder.appendValue(DAY_OF_MONTH, 2, 0, SignStyle.NORMAL);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendValue(DAY_OF_MONTH, 2, 0, SignStyle.NORMAL));
     }
 
     @Test
     public void test_appendValue_3arg_maxWidthTooBig() throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            builder.appendValue(DAY_OF_MONTH, 2, 20, SignStyle.NORMAL);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendValue(DAY_OF_MONTH, 2, 20, SignStyle.NORMAL));
     }
 
     @Test
     public void test_appendValue_3arg_maxWidthMinWidth() throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            builder.appendValue(DAY_OF_MONTH, 4, 2, SignStyle.NORMAL);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendValue(DAY_OF_MONTH, 4, 2, SignStyle.NORMAL));
     }
 
     @Test
     public void test_appendValue_3arg_nullSignStyle() throws Exception {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            builder.appendValue(DAY_OF_MONTH, 2, 3, null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> builder.appendValue(DAY_OF_MONTH, 2, 3, null));
     }
 
     //-----------------------------------------------------------------------
@@ -302,9 +280,7 @@ public class TestDateTimeFormatterBuilder {
     //-----------------------------------------------------------------------
     @Test
     public void test_appendValueReduced_null() throws Exception {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            builder.appendValueReduced(null, 2, 2, 2000);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> builder.appendValueReduced(null, 2, 2, 2000));
     }
 
     @Test
@@ -340,51 +316,37 @@ public class TestDateTimeFormatterBuilder {
 
     @Test
     public void test_appendFraction_4arg_nullRule() throws Exception {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            builder.appendFraction(null, 1, 9, false);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> builder.appendFraction(null, 1, 9, false));
     }
 
     @Test
     public void test_appendFraction_4arg_invalidRuleNotFixedSet() throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            builder.appendFraction(DAY_OF_MONTH, 1, 9, false);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendFraction(DAY_OF_MONTH, 1, 9, false));
     }
 
     @Test
     public void test_appendFraction_4arg_minTooSmall() throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            builder.appendFraction(MINUTE_OF_HOUR, -1, 9, false);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendFraction(MINUTE_OF_HOUR, -1, 9, false));
     }
 
     @Test
     public void test_appendFraction_4arg_minTooBig() throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            builder.appendFraction(MINUTE_OF_HOUR, 10, 9, false);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendFraction(MINUTE_OF_HOUR, 10, 9, false));
     }
 
     @Test
     public void test_appendFraction_4arg_maxTooSmall() throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            builder.appendFraction(MINUTE_OF_HOUR, 0, -1, false);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendFraction(MINUTE_OF_HOUR, 0, -1, false));
     }
 
     @Test
     public void test_appendFraction_4arg_maxTooBig() throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            builder.appendFraction(MINUTE_OF_HOUR, 1, 10, false);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendFraction(MINUTE_OF_HOUR, 1, 10, false));
     }
 
     @Test
     public void test_appendFraction_4arg_maxWidthMinWidth() throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            builder.appendFraction(MINUTE_OF_HOUR, 9, 3, false);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendFraction(MINUTE_OF_HOUR, 9, 3, false));
     }
 
     //-----------------------------------------------------------------------
@@ -399,9 +361,7 @@ public class TestDateTimeFormatterBuilder {
 
     @Test
     public void test_appendText_1arg_null() throws Exception {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            builder.appendText(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> builder.appendText(null));
     }
 
     //-----------------------------------------------------------------------
@@ -414,16 +374,12 @@ public class TestDateTimeFormatterBuilder {
 
     @Test
     public void test_appendText_2arg_nullRule() throws Exception {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            builder.appendText(null, TextStyle.SHORT);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> builder.appendText(null, TextStyle.SHORT));
     }
 
     @Test
     public void test_appendText_2arg_nullStyle() throws Exception {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            builder.appendText(MONTH_OF_YEAR, (TextStyle) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> builder.appendText(MONTH_OF_YEAR, (TextStyle) null));
     }
 
     //-----------------------------------------------------------------------
@@ -449,16 +405,12 @@ public class TestDateTimeFormatterBuilder {
 
     @Test
     public void test_appendTextMap_nullRule() throws Exception {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            builder.appendText(null, new HashMap<Long, String>());
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> builder.appendText(null, new HashMap<Long, String>()));
     }
 
     @Test
     public void test_appendTextMap_nullStyle() throws Exception {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            builder.appendText(MONTH_OF_YEAR, (Map<Long, String>) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> builder.appendText(MONTH_OF_YEAR, (Map<Long, String>) null));
     }
 
     //-----------------------------------------------------------------------
@@ -553,23 +505,17 @@ public class TestDateTimeFormatterBuilder {
     @ParameterizedTest
     @MethodSource("data_badOffsetPatterns")
     public void test_appendOffset_badPattern(String pattern) throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            builder.appendOffset(pattern, "Z");
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendOffset(pattern, "Z"));
     }
 
     @Test
     public void test_appendOffset_3arg_nullText() throws Exception {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            builder.appendOffset("+HH:MM", null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> builder.appendOffset("+HH:MM", null));
     }
 
     @Test
     public void test_appendOffset_3arg_nullPattern() throws Exception {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            builder.appendOffset(null, "Z");
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> builder.appendOffset(null, "Z"));
     }
 
     //-----------------------------------------------------------------------
@@ -591,9 +537,7 @@ public class TestDateTimeFormatterBuilder {
 
     @Test
     public void test_appendZoneText_1arg_nullText() throws Exception {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            builder.appendZoneText(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> builder.appendZoneText(null));
     }
 
     //-----------------------------------------------------------------------
@@ -608,9 +552,7 @@ public class TestDateTimeFormatterBuilder {
 
     @Test
     public void test_appendDayPeriodText_1arg_nullText() throws Exception {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            builder.appendDayPeriodText(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> builder.appendDayPeriodText(null));
     }
 
     Object[][] data_dayPeriodFormat() {
@@ -964,9 +906,7 @@ public class TestDateTimeFormatterBuilder {
 
     @Test
     public void test_padNext_1arg_invalidWidth() throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            builder.padNext(0);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.padNext(0));
     }
 
     //-----------------------------------------------------------------------
@@ -978,9 +918,7 @@ public class TestDateTimeFormatterBuilder {
 
     @Test
     public void test_padNext_2arg_invalidWidth() throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            builder.padNext(0, '-');
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.padNext(0, '-'));
     }
 
     //-----------------------------------------------------------------------
@@ -1056,9 +994,7 @@ public class TestDateTimeFormatterBuilder {
 
     @Test
     public void test_optionalEnd_noStart() throws Exception {
-        Assertions.assertThrows(IllegalStateException.class, () -> {
-            builder.optionalEnd();
-        });
+        Assertions.assertThrows(IllegalStateException.class, () -> builder.optionalEnd());
     }
 
     //-----------------------------------------------------------------------
@@ -1350,23 +1286,17 @@ public class TestDateTimeFormatterBuilder {
 
     @Test
     public void test_getLocalizedDateTimePatternIAE() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            DateTimeFormatterBuilder.getLocalizedDateTimePattern(null, null, IsoChronology.INSTANCE, Locale.US);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> DateTimeFormatterBuilder.getLocalizedDateTimePattern(null, null, IsoChronology.INSTANCE, Locale.US));
     }
 
     @Test
     public void test_getLocalizedChronoNPE() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            DateTimeFormatterBuilder.getLocalizedDateTimePattern(FormatStyle.SHORT, FormatStyle.SHORT, null, Locale.US);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> DateTimeFormatterBuilder.getLocalizedDateTimePattern(FormatStyle.SHORT, FormatStyle.SHORT, null, Locale.US));
     }
 
     @Test
     public void test_getLocalizedLocaleNPE() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            DateTimeFormatterBuilder.getLocalizedDateTimePattern(FormatStyle.SHORT, FormatStyle.SHORT, IsoChronology.INSTANCE, null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> DateTimeFormatterBuilder.getLocalizedDateTimePattern(FormatStyle.SHORT, FormatStyle.SHORT, IsoChronology.INSTANCE, null));
     }
 
     /**

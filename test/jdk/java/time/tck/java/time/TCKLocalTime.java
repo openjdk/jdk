@@ -237,9 +237,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void now_ZoneId_nullZoneId() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            LocalTime.now((ZoneId) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> LocalTime.now((ZoneId) null));
     }
 
     @Test
@@ -255,9 +253,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void now_Clock_nullClock() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            LocalTime.now((Clock) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> LocalTime.now((Clock) null));
     }
 
     @Test
@@ -318,30 +314,22 @@ public class TCKLocalTime extends AbstractDateTimeTest {
 
     @Test
     public void factory_time_2ints_hourTooLow() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            LocalTime.of(-1, 0);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> LocalTime.of(-1, 0));
     }
 
     @Test
     public void factory_time_2ints_hourTooHigh() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            LocalTime.of(24, 0);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> LocalTime.of(24, 0));
     }
 
     @Test
     public void factory_time_2ints_minuteTooLow() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            LocalTime.of(0, -1);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> LocalTime.of(0, -1));
     }
 
     @Test
     public void factory_time_2ints_minuteTooHigh() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            LocalTime.of(0, 60);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> LocalTime.of(0, 60));
     }
 
     //-----------------------------------------------------------------------
@@ -353,44 +341,32 @@ public class TCKLocalTime extends AbstractDateTimeTest {
 
     @Test
     public void factory_time_3ints_hourTooLow() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            LocalTime.of(-1, 0, 0);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> LocalTime.of(-1, 0, 0));
     }
 
     @Test
     public void factory_time_3ints_hourTooHigh() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            LocalTime.of(24, 0, 0);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> LocalTime.of(24, 0, 0));
     }
 
     @Test
     public void factory_time_3ints_minuteTooLow() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            LocalTime.of(0, -1, 0);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> LocalTime.of(0, -1, 0));
     }
 
     @Test
     public void factory_time_3ints_minuteTooHigh() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            LocalTime.of(0, 60, 0);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> LocalTime.of(0, 60, 0));
     }
 
     @Test
     public void factory_time_3ints_secondTooLow() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            LocalTime.of(0, 0, -1);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> LocalTime.of(0, 0, -1));
     }
 
     @Test
     public void factory_time_3ints_secondTooHigh() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            LocalTime.of(0, 0, 60);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> LocalTime.of(0, 0, 60));
     }
 
     //-----------------------------------------------------------------------
@@ -404,58 +380,42 @@ public class TCKLocalTime extends AbstractDateTimeTest {
 
     @Test
     public void factory_time_4ints_hourTooLow() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            LocalTime.of(-1, 0, 0, 0);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> LocalTime.of(-1, 0, 0, 0));
     }
 
     @Test
     public void factory_time_4ints_hourTooHigh() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            LocalTime.of(24, 0, 0, 0);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> LocalTime.of(24, 0, 0, 0));
     }
 
     @Test
     public void factory_time_4ints_minuteTooLow() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            LocalTime.of(0, -1, 0, 0);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> LocalTime.of(0, -1, 0, 0));
     }
 
     @Test
     public void factory_time_4ints_minuteTooHigh() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            LocalTime.of(0, 60, 0, 0);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> LocalTime.of(0, 60, 0, 0));
     }
 
     @Test
     public void factory_time_4ints_secondTooLow() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            LocalTime.of(0, 0, -1, 0);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> LocalTime.of(0, 0, -1, 0));
     }
 
     @Test
     public void factory_time_4ints_secondTooHigh() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            LocalTime.of(0, 0, 60, 0);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> LocalTime.of(0, 0, 60, 0));
     }
 
     @Test
     public void factory_time_4ints_nanoTooLow() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            LocalTime.of(0, 0, 0, -1);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> LocalTime.of(0, 0, 0, -1));
     }
 
     @Test
     public void factory_time_4ints_nanoTooHigh() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            LocalTime.of(0, 0, 0, 1000000000);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> LocalTime.of(0, 0, 0, 1000000000));
     }
 
      //-----------------------------------------------------------------------
@@ -482,16 +442,12 @@ public class TCKLocalTime extends AbstractDateTimeTest {
 
      @Test
      public void factory_ofInstant_nullInstant() {
-         Assertions.assertThrows(NullPointerException.class, () -> {
-             LocalTime.ofInstant((Instant) null, ZONE_PARIS);
-        });
+         Assertions.assertThrows(NullPointerException.class, () -> LocalTime.ofInstant((Instant) null, ZONE_PARIS));
      }
 
      @Test
      public void factory_ofInstant_nullZone() {
-         Assertions.assertThrows(NullPointerException.class, () -> {
-             LocalTime.ofInstant(Instant.EPOCH, (ZoneId) null);
-        });
+         Assertions.assertThrows(NullPointerException.class, () -> LocalTime.ofInstant(Instant.EPOCH, (ZoneId) null));
      }
 
     //-----------------------------------------------------------------------
@@ -505,16 +461,12 @@ public class TCKLocalTime extends AbstractDateTimeTest {
 
     @Test
     public void factory_ofSecondOfDay_tooLow() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            LocalTime.ofSecondOfDay(-1);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> LocalTime.ofSecondOfDay(-1));
     }
 
     @Test
     public void factory_ofSecondOfDay_tooHigh() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            LocalTime.ofSecondOfDay(24 * 60 * 60);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> LocalTime.ofSecondOfDay(24 * 60 * 60));
     }
 
     //-----------------------------------------------------------------------
@@ -528,16 +480,12 @@ public class TCKLocalTime extends AbstractDateTimeTest {
 
     @Test
     public void factory_ofNanoOfDay_tooLow() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            LocalTime.ofNanoOfDay(-1);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> LocalTime.ofNanoOfDay(-1));
     }
 
     @Test
     public void factory_ofNanoOfDay_tooHigh() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            LocalTime.ofNanoOfDay(24 * 60 * 60 * 1000000000L);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> LocalTime.ofNanoOfDay(24 * 60 * 60 * 1000000000L));
     }
 
     //-----------------------------------------------------------------------
@@ -551,16 +499,12 @@ public class TCKLocalTime extends AbstractDateTimeTest {
 
     @Test
     public void factory_from_TemporalAccessor_invalid_noDerive() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            LocalTime.from(LocalDate.of(2007, 7, 15));
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> LocalTime.from(LocalDate.of(2007, 7, 15)));
     }
 
     @Test
     public void factory_from_TemporalAccessor_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            LocalTime.from((TemporalAccessor) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> LocalTime.from((TemporalAccessor) null));
     }
 
     //-----------------------------------------------------------------------
@@ -594,39 +538,29 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     @ParameterizedTest
     @MethodSource("provider_sampleBadParse")
     public void factory_parse_invalidText(String unparsable) {
-        Assertions.assertThrows(DateTimeParseException.class, () -> {
-            LocalTime.parse(unparsable);
-        });
+        Assertions.assertThrows(DateTimeParseException.class, () -> LocalTime.parse(unparsable));
     }
 
     //-----------------------------------------------------------------------s
     @Test
     public void factory_parse_illegalHour() {
-        Assertions.assertThrows(DateTimeParseException.class, () -> {
-            LocalTime.parse("25:00");
-        });
+        Assertions.assertThrows(DateTimeParseException.class, () -> LocalTime.parse("25:00"));
     }
 
     @Test
     public void factory_parse_illegalMinute() {
-        Assertions.assertThrows(DateTimeParseException.class, () -> {
-            LocalTime.parse("12:60");
-        });
+        Assertions.assertThrows(DateTimeParseException.class, () -> LocalTime.parse("12:60"));
     }
 
     @Test
     public void factory_parse_illegalSecond() {
-        Assertions.assertThrows(DateTimeParseException.class, () -> {
-            LocalTime.parse("12:12:60");
-        });
+        Assertions.assertThrows(DateTimeParseException.class, () -> LocalTime.parse("12:12:60"));
     }
 
     //-----------------------------------------------------------------------s
     @Test
     public void factory_parse_nullTest() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            LocalTime.parse((String) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> LocalTime.parse((String) null));
     }
 
     //-----------------------------------------------------------------------
@@ -649,9 +583,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
 
     @Test
     public void factory_parse_formatter_nullFormatter() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            LocalTime.parse("ANY", null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> LocalTime.parse("ANY", null));
     }
 
     //-----------------------------------------------------------------------
@@ -780,9 +712,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
 
     @Test
     public void test_query_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_12_30_40_987654321.query(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_12_30_40_987654321.query(null));
     }
 
     //-----------------------------------------------------------------------
@@ -881,9 +811,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
 
     @Test
     public void test_with_adjustment_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_12_30_40_987654321.with((TemporalAdjuster) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_12_30_40_987654321.with((TemporalAdjuster) null));
     }
 
     //-----------------------------------------------------------------------
@@ -1159,9 +1087,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     // All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
     @Test
     public void test_with_longTemporalField_otherChronoField() {
-        Assertions.assertThrows(UnsupportedTemporalTypeException.class, () -> {
-            TEST_12_30_40_987654321.with(ChronoField.DAY_OF_MONTH, 1);
-        });
+        Assertions.assertThrows(UnsupportedTemporalTypeException.class, () -> TEST_12_30_40_987654321.with(ChronoField.DAY_OF_MONTH, 1));
     }
 
     // If the field is not a {@code ChronoField}, then the result of this method
@@ -1210,9 +1136,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
 
     @Test
     public void test_with_longTemporalField_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_12_30_40_987654321.with((TemporalField) null, 1);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_12_30_40_987654321.with((TemporalField) null, 1));
     }
 
     //-----------------------------------------------------------------------
@@ -1247,16 +1171,12 @@ public class TCKLocalTime extends AbstractDateTimeTest {
 
     @Test
     public void test_withHour_hourTooLow() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            TEST_12_30_40_987654321.withHour(-1);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> TEST_12_30_40_987654321.withHour(-1));
     }
 
     @Test
     public void test_withHour_hourTooHigh() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            TEST_12_30_40_987654321.withHour(24);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> TEST_12_30_40_987654321.withHour(24));
     }
 
     //-----------------------------------------------------------------------
@@ -1291,16 +1211,12 @@ public class TCKLocalTime extends AbstractDateTimeTest {
 
     @Test
     public void test_withMinute_minuteTooLow() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            TEST_12_30_40_987654321.withMinute(-1);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> TEST_12_30_40_987654321.withMinute(-1));
     }
 
     @Test
     public void test_withMinute_minuteTooHigh() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            TEST_12_30_40_987654321.withMinute(60);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> TEST_12_30_40_987654321.withMinute(60));
     }
 
     //-----------------------------------------------------------------------
@@ -1335,16 +1251,12 @@ public class TCKLocalTime extends AbstractDateTimeTest {
 
     @Test
     public void test_withSecond_secondTooLow() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            TEST_12_30_40_987654321.withSecond(-1);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> TEST_12_30_40_987654321.withSecond(-1));
     }
 
     @Test
     public void test_withSecond_secondTooHigh() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            TEST_12_30_40_987654321.withSecond(60);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> TEST_12_30_40_987654321.withSecond(60));
     }
 
     //-----------------------------------------------------------------------
@@ -1383,16 +1295,12 @@ public class TCKLocalTime extends AbstractDateTimeTest {
 
     @Test
     public void test_withNanoOfSecond_nanoTooLow() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            TEST_12_30_40_987654321.withNano(-1);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> TEST_12_30_40_987654321.withNano(-1));
     }
 
     @Test
     public void test_withNanoOfSecond_nanoTooHigh() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            TEST_12_30_40_987654321.withNano(1000000000);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> TEST_12_30_40_987654321.withNano(1000000000));
     }
 
     //-----------------------------------------------------------------------
@@ -1502,16 +1410,12 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     @ParameterizedTest
     @MethodSource("data_truncatedToInvalid")
     public void test_truncatedTo_invalid(LocalTime input, TemporalUnit unit) {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            input.truncatedTo(unit);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> input.truncatedTo(unit));
     }
 
     @Test
     public void test_truncatedTo_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_12_30_40_987654321.truncatedTo(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_12_30_40_987654321.truncatedTo(null));
     }
 
     //-----------------------------------------------------------------------
@@ -1555,9 +1459,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
 
     @Test
     public void test_plus_TemporalAmount_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_12_30_40_987654321.plus((TemporalAmount) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_12_30_40_987654321.plus((TemporalAmount) null));
     }
 
     //-----------------------------------------------------------------------
@@ -1595,9 +1497,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
 
     @Test
     public void test_plus_longTemporalUnit_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_12_30_40_987654321.plus(1, (TemporalUnit) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_12_30_40_987654321.plus(1, (TemporalUnit) null));
     }
 
     //-----------------------------------------------------------------------
@@ -1987,9 +1887,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
 
     @Test
     public void test_minus_TemporalAmount_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_12_30_40_987654321.minus((TemporalAmount) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_12_30_40_987654321.minus((TemporalAmount) null));
     }
 
     //-----------------------------------------------------------------------
@@ -2027,9 +1925,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
 
     @Test
     public void test_minus_longTemporalUnit_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_12_30_40_987654321.minus(1, (TemporalUnit) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_12_30_40_987654321.minus(1, (TemporalUnit) null));
     }
 
     //-----------------------------------------------------------------------
@@ -2476,23 +2372,17 @@ public class TCKLocalTime extends AbstractDateTimeTest {
 
     @Test
     public void test_until_TemporalUnit_unsupportedUnit() {
-        Assertions.assertThrows(UnsupportedTemporalTypeException.class, () -> {
-            TEST_12_30_40_987654321.until(TEST_12_30_40_987654321, DAYS);
-        });
+        Assertions.assertThrows(UnsupportedTemporalTypeException.class, () -> TEST_12_30_40_987654321.until(TEST_12_30_40_987654321, DAYS));
     }
 
     @Test
     public void test_until_TemporalUnit_nullEnd() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_12_30_40_987654321.until(null, HOURS);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_12_30_40_987654321.until(null, HOURS));
     }
 
     @Test
     public void test_until_TemporalUnit_nullUnit() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_12_30_40_987654321.until(TEST_12_30_40_987654321, null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_12_30_40_987654321.until(TEST_12_30_40_987654321, null));
     }
 
     //-----------------------------------------------------------------------
@@ -2507,9 +2397,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
 
     @Test
     public void test_format_formatter_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            LocalTime.of(11, 30, 45).format(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> LocalTime.of(11, 30, 45).format(null));
     }
 
     //-----------------------------------------------------------------------
@@ -2523,9 +2411,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
 
     @Test
     public void test_atDate_nullDate() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_12_30_40_987654321.atDate((LocalDate) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_12_30_40_987654321.atDate((LocalDate) null));
     }
 
     //-----------------------------------------------------------------------
@@ -2683,23 +2569,17 @@ public class TCKLocalTime extends AbstractDateTimeTest {
 
     @Test
     public void test_compareTo_ObjectNull() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_12_30_40_987654321.compareTo(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_12_30_40_987654321.compareTo(null));
     }
 
     @Test
     public void test_isBefore_ObjectNull() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_12_30_40_987654321.isBefore(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_12_30_40_987654321.isBefore(null));
     }
 
     @Test
     public void test_isAfter_ObjectNull() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_12_30_40_987654321.isAfter(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_12_30_40_987654321.isAfter(null));
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})

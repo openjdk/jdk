@@ -595,72 +595,52 @@ public class TCKOffsetPrinterParser {
     //-----------------------------------------------------------------------
     @Test
     public void test_print_pattern_X6rejected() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            builder.appendPattern("XXXXXX");
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendPattern("XXXXXX"));
     }
 
     @Test
     public void test_print_pattern_x6rejected() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            builder.appendPattern("xxxxxx");
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendPattern("xxxxxx"));
     }
 
     @Test
     public void test_print_pattern_Z6rejected() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            builder.appendPattern("ZZZZZZ");
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendPattern("ZZZZZZ"));
     }
 
     @Test
     public void test_print_pattern_O2rejected() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            builder.appendPattern("OO");
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendPattern("OO"));
     }
 
     @Test
     public void test_print_pattern_O3rejected() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            builder.appendPattern("OOO");
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendPattern("OOO"));
     }
 
     @Test
     public void test_print_pattern_O5rejected() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            builder.appendPattern("OOOOO");
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendPattern("OOOOO"));
     }
 
     @Test
     public void test_print_pattern_localzed_full_standline() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            builder.appendLocalizedOffset(TextStyle.FULL_STANDALONE);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendLocalizedOffset(TextStyle.FULL_STANDALONE));
     }
 
     @Test
     public void test_print_pattern_localzed_short_standalone() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            builder.appendLocalizedOffset(TextStyle.SHORT_STANDALONE);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendLocalizedOffset(TextStyle.SHORT_STANDALONE));
     }
 
     @Test
     public void test_print_pattern_localzed_narrow() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            builder.appendLocalizedOffset(TextStyle.NARROW);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendLocalizedOffset(TextStyle.NARROW));
     }
 
     @Test
     public void test_print_pattern_localzed_narrow_standalone() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            builder.appendLocalizedOffset(TextStyle.NARROW_STANDALONE);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendLocalizedOffset(TextStyle.NARROW_STANDALONE));
     }
 
 }

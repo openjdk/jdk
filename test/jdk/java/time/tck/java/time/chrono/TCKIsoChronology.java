@@ -151,9 +151,7 @@ public class TCKIsoChronology {
 
     @Test
     public void factory_from_TemporalAccessor_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Chronology.from(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Chronology.from(null));
     }
 
     //-----------------------------------------------------------------------
@@ -189,9 +187,7 @@ public class TCKIsoChronology {
 
     @Test
     public void test_date_TemporalAccessor_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            IsoChronology.INSTANCE.date(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> IsoChronology.INSTANCE.date(null));
     }
 
     //-----------------------------------------------------------------------
@@ -233,9 +229,7 @@ public class TCKIsoChronology {
 
     @Test
     public void test_localDateTime_TemporalAccessor_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            IsoChronology.INSTANCE.localDateTime(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> IsoChronology.INSTANCE.localDateTime(null));
     }
 
     //-----------------------------------------------------------------------
@@ -287,9 +281,7 @@ public class TCKIsoChronology {
 
     @Test
     public void test_zonedDateTime_TemporalAccessor_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            IsoChronology.INSTANCE.zonedDateTime(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> IsoChronology.INSTANCE.zonedDateTime(null));
     }
 
     //-----------------------------------------------------------------------
@@ -753,9 +745,7 @@ public class TCKIsoChronology {
     @ParameterizedTest
     @MethodSource("bad_data_epochSecond")
     public void test_epochSecond_bad(int y, int m, int d, int h , int min, int s, ZoneOffset offset) {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            IsoChronology.INSTANCE.epochSecond(y, m, d, h, min, s, offset);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> IsoChronology.INSTANCE.epochSecond(y, m, d, h, min, s, offset));
     }
 
     Object[][] data_era_epochSecond() {
@@ -794,9 +784,7 @@ public class TCKIsoChronology {
 
     @Test
     public void test_era_epochSecond_bad() {
-        Assertions.assertThrows(ClassCastException.class, () -> {
-            IsoChronology.INSTANCE.epochSecond(HijrahEra.AH, 2009, 2, 29, 1, 2, 2, OFFSET_P0100);
-        });
+        Assertions.assertThrows(ClassCastException.class, () -> IsoChronology.INSTANCE.epochSecond(HijrahEra.AH, 2009, 2, 29, 1, 2, 2, OFFSET_P0100));
     }
 
 

@@ -99,9 +99,7 @@ public class TCKTemporalAdjusters {
 
     @Test
     public void factory_ofDateAdjuster_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TemporalAdjusters.ofDateAdjuster(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TemporalAdjusters.ofDateAdjuster(null));
     }
 
 
@@ -319,9 +317,7 @@ public class TCKTemporalAdjusters {
 
     @Test
     public void factory_dayOfWeekInMonth_nullDayOfWeek() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TemporalAdjusters.dayOfWeekInMonth(1, null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TemporalAdjusters.dayOfWeekInMonth(1, null));
     }
 
     Object[][] data_dayOfWeekInMonth_positive() {
@@ -419,9 +415,7 @@ public class TCKTemporalAdjusters {
 
     @Test
     public void factory_firstInMonth_nullDayOfWeek() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TemporalAdjusters.firstInMonth(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TemporalAdjusters.firstInMonth(null));
     }
 
     @ParameterizedTest
@@ -444,9 +438,7 @@ public class TCKTemporalAdjusters {
 
     @Test
     public void factory_lastInMonth_nullDayOfWeek() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TemporalAdjusters.lastInMonth(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TemporalAdjusters.lastInMonth(null));
     }
 
     @ParameterizedTest
@@ -469,9 +461,7 @@ public class TCKTemporalAdjusters {
 
     @Test
     public void factory_next_nullDayOfWeek() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TemporalAdjusters.next(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TemporalAdjusters.next(null));
     }
 
     @Test
@@ -510,9 +500,7 @@ public class TCKTemporalAdjusters {
 
     @Test
     public void factory_nextOrCurrent_nullDayOfWeek() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TemporalAdjusters.nextOrSame(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TemporalAdjusters.nextOrSame(null));
     }
 
     @Test
@@ -553,9 +541,7 @@ public class TCKTemporalAdjusters {
 
     @Test
     public void factory_previous_nullDayOfWeek() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TemporalAdjusters.previous(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TemporalAdjusters.previous(null));
     }
 
     @Test
@@ -594,9 +580,7 @@ public class TCKTemporalAdjusters {
 
     @Test
     public void factory_previousOrCurrent_nullDayOfWeek() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TemporalAdjusters.previousOrSame(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TemporalAdjusters.previousOrSame(null));
     }
 
     @Test

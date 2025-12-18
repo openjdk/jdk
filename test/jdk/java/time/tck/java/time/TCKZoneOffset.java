@@ -191,9 +191,7 @@ public class TCKZoneOffset extends AbstractDateTimeTest {
 
     @Test
     public void test_factory_string_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZoneOffset.of((String) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZoneOffset.of((String) null));
     }
 
     //-----------------------------------------------------------------------
@@ -310,16 +308,12 @@ public class TCKZoneOffset extends AbstractDateTimeTest {
 
     @Test
     public void test_factory_int_hours_tooBig() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            ZoneOffset.ofHours(19);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> ZoneOffset.ofHours(19));
     }
 
     @Test
     public void test_factory_int_hours_tooSmall() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            ZoneOffset.ofHours(-19);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> ZoneOffset.ofHours(-19));
     }
 
     //-----------------------------------------------------------------------
@@ -341,16 +335,12 @@ public class TCKZoneOffset extends AbstractDateTimeTest {
 
     @Test
     public void test_factory_int_hours_minutes_tooBig() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            ZoneOffset.ofHoursMinutes(19, 0);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> ZoneOffset.ofHoursMinutes(19, 0));
     }
 
     @Test
     public void test_factory_int_hours_minutes_tooSmall() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            ZoneOffset.ofHoursMinutes(-19, 0);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> ZoneOffset.ofHoursMinutes(-19, 0));
     }
 
     //-----------------------------------------------------------------------
@@ -375,107 +365,77 @@ public class TCKZoneOffset extends AbstractDateTimeTest {
 
     @Test
     public void test_factory_int_hours_minutes_seconds_plusHoursMinusMinutes() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            ZoneOffset.ofHoursMinutesSeconds(1, -1, 0);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> ZoneOffset.ofHoursMinutesSeconds(1, -1, 0));
     }
 
     @Test
     public void test_factory_int_hours_minutes_seconds_plusHoursMinusSeconds() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            ZoneOffset.ofHoursMinutesSeconds(1, 0, -1);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> ZoneOffset.ofHoursMinutesSeconds(1, 0, -1));
     }
 
     @Test
     public void test_factory_int_hours_minutes_seconds_minusHoursPlusMinutes() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            ZoneOffset.ofHoursMinutesSeconds(-1, 1, 0);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> ZoneOffset.ofHoursMinutesSeconds(-1, 1, 0));
     }
 
     @Test
     public void test_factory_int_hours_minutes_seconds_minusHoursPlusSeconds() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            ZoneOffset.ofHoursMinutesSeconds(-1, 0, 1);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> ZoneOffset.ofHoursMinutesSeconds(-1, 0, 1));
     }
 
     @Test
     public void test_factory_int_hours_minutes_seconds_zeroHoursMinusMinutesPlusSeconds() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            ZoneOffset.ofHoursMinutesSeconds(0, -1, 1);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> ZoneOffset.ofHoursMinutesSeconds(0, -1, 1));
     }
 
     @Test
     public void test_factory_int_hours_minutes_seconds_zeroHoursPlusMinutesMinusSeconds() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            ZoneOffset.ofHoursMinutesSeconds(0, 1, -1);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> ZoneOffset.ofHoursMinutesSeconds(0, 1, -1));
     }
 
     @Test
     public void test_factory_int_hours_minutes_seconds_minutesTooLarge() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            ZoneOffset.ofHoursMinutesSeconds(0, 60, 0);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> ZoneOffset.ofHoursMinutesSeconds(0, 60, 0));
     }
 
     @Test
     public void test_factory_int_hours_minutes_seconds_minutesTooSmall() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            ZoneOffset.ofHoursMinutesSeconds(0, -60, 0);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> ZoneOffset.ofHoursMinutesSeconds(0, -60, 0));
     }
 
     @Test
     public void test_factory_int_hours_minutes_seconds_secondsTooLarge() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            ZoneOffset.ofHoursMinutesSeconds(0, 0, 60);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> ZoneOffset.ofHoursMinutesSeconds(0, 0, 60));
     }
 
     @Test
     public void test_factory_int_hours_minutes_seconds_secondsTooSmall() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            ZoneOffset.ofHoursMinutesSeconds(0, 0, 60);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> ZoneOffset.ofHoursMinutesSeconds(0, 0, 60));
     }
 
     @Test
     public void test_factory_int_hours_minutes_seconds_hoursTooBig() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            ZoneOffset.ofHoursMinutesSeconds(19, 0, 0);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> ZoneOffset.ofHoursMinutesSeconds(19, 0, 0));
     }
 
     @Test
     public void test_factory_int_hours_minutes_seconds_hoursTooSmall() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            ZoneOffset.ofHoursMinutesSeconds(-19, 0, 0);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> ZoneOffset.ofHoursMinutesSeconds(-19, 0, 0));
     }
 
     @Test
     public void test_factory_int_hours_minutes_seconds_minutesMinValue() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            ZoneOffset.ofHoursMinutesSeconds(0, Integer.MIN_VALUE, -1);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> ZoneOffset.ofHoursMinutesSeconds(0, Integer.MIN_VALUE, -1));
     }
 
     @Test
     public void test_factory_int_hours_minutes_seconds_secondsMinValue() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            ZoneOffset.ofHoursMinutesSeconds(0, 0, Integer.MIN_VALUE);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> ZoneOffset.ofHoursMinutesSeconds(0, 0, Integer.MIN_VALUE));
     }
 
     @Test
     public void test_factory_int_hours_minutes_seconds_minutesAndSecondsMinValue() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            ZoneOffset.ofHoursMinutesSeconds(0, Integer.MIN_VALUE, Integer.MIN_VALUE);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> ZoneOffset.ofHoursMinutesSeconds(0, Integer.MIN_VALUE, Integer.MIN_VALUE));
     }
 
     //-----------------------------------------------------------------------
@@ -488,23 +448,17 @@ public class TCKZoneOffset extends AbstractDateTimeTest {
 
     @Test
     public void test_factory_ofTotalSeconds_tooLarge() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            ZoneOffset.ofTotalSeconds(18 * 60 * 60 + 1);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> ZoneOffset.ofTotalSeconds(18 * 60 * 60 + 1));
     }
 
     @Test
     public void test_factory_ofTotalSeconds_tooSmall() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            ZoneOffset.ofTotalSeconds(-18 * 60 * 60 - 1);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> ZoneOffset.ofTotalSeconds(-18 * 60 * 60 - 1));
     }
 
     @Test
     public void test_factory_ofTotalSeconds_minValue() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            ZoneOffset.ofTotalSeconds(Integer.MIN_VALUE);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> ZoneOffset.ofTotalSeconds(Integer.MIN_VALUE));
     }
 
     //-----------------------------------------------------------------------
@@ -518,16 +472,12 @@ public class TCKZoneOffset extends AbstractDateTimeTest {
 
     @Test
     public void test_factory_CalendricalObject_invalid_noDerive() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            ZoneOffset.from(LocalTime.of(12, 30));
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> ZoneOffset.from(LocalTime.of(12, 30)));
     }
 
     @Test
     public void test_factory_CalendricalObject_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZoneOffset.from((TemporalAccessor) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZoneOffset.from((TemporalAccessor) null));
     }
 
     //-----------------------------------------------------------------------
@@ -621,9 +571,7 @@ public class TCKZoneOffset extends AbstractDateTimeTest {
 
     @Test
     public void test_query_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZoneOffset.UTC.query(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZoneOffset.UTC.query(null));
     }
 
     //-----------------------------------------------------------------------

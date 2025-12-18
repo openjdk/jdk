@@ -188,9 +188,7 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void now_ZoneId_nullZoneId() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            YearMonth.now((ZoneId) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> YearMonth.now((ZoneId) null));
     }
 
     @Test
@@ -222,9 +220,7 @@ public class TCKYearMonth extends AbstractDateTimeTest {
 
     @Test
     public void now_Clock_nullClock() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            YearMonth.now((Clock) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> YearMonth.now((Clock) null));
     }
 
     //-----------------------------------------------------------------------
@@ -236,23 +232,17 @@ public class TCKYearMonth extends AbstractDateTimeTest {
 
     @Test
     public void test_factory_intsMonth_yearTooLow() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            YearMonth.of(Year.MIN_VALUE - 1, Month.JANUARY);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> YearMonth.of(Year.MIN_VALUE - 1, Month.JANUARY));
     }
 
     @Test
     public void test_factory_intsMonth_dayTooHigh() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            YearMonth.of(Year.MAX_VALUE + 1, Month.JANUARY);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> YearMonth.of(Year.MAX_VALUE + 1, Month.JANUARY));
     }
 
     @Test
     public void factory_intsMonth_nullMonth() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            YearMonth.of(2008, null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> YearMonth.of(2008, null));
     }
 
     //-----------------------------------------------------------------------
@@ -264,30 +254,22 @@ public class TCKYearMonth extends AbstractDateTimeTest {
 
     @Test
     public void test_factory_ints_yearTooLow() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            YearMonth.of(Year.MIN_VALUE - 1, 2);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> YearMonth.of(Year.MIN_VALUE - 1, 2));
     }
 
     @Test
     public void test_factory_ints_dayTooHigh() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            YearMonth.of(Year.MAX_VALUE + 1, 2);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> YearMonth.of(Year.MAX_VALUE + 1, 2));
     }
 
     @Test
     public void test_factory_ints_monthTooLow() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            YearMonth.of(2008, 0);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> YearMonth.of(2008, 0));
     }
 
     @Test
     public void test_factory_ints_monthTooHigh() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            YearMonth.of(2008, 13);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> YearMonth.of(2008, 13));
     }
 
     //-----------------------------------------------------------------------
@@ -298,16 +280,12 @@ public class TCKYearMonth extends AbstractDateTimeTest {
 
     @Test
     public void test_from_TemporalAccessor_invalid_noDerive() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            YearMonth.from(LocalTime.of(12, 30));
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> YearMonth.from(LocalTime.of(12, 30)));
     }
 
     @Test
     public void test_from_TemporalAccessor_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            YearMonth.from((TemporalAccessor) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> YearMonth.from((TemporalAccessor) null));
     }
 
     //-----------------------------------------------------------------------
@@ -388,16 +366,12 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void factory_parse_illegalValue_Month() {
-        Assertions.assertThrows(DateTimeParseException.class, () -> {
-            YearMonth.parse("2008-13");
-        });
+        Assertions.assertThrows(DateTimeParseException.class, () -> YearMonth.parse("2008-13"));
     }
 
     @Test
     public void factory_parse_nullText() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            YearMonth.parse(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> YearMonth.parse(null));
     }
 
     //-----------------------------------------------------------------------
@@ -420,9 +394,7 @@ public class TCKYearMonth extends AbstractDateTimeTest {
 
     @Test
     public void factory_parse_formatter_nullFormatter() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            YearMonth.parse("ANY", null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> YearMonth.parse("ANY", null));
     }
 
     //-----------------------------------------------------------------------
@@ -536,9 +508,7 @@ public class TCKYearMonth extends AbstractDateTimeTest {
 
     @Test
     public void test_query_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_2008_06.query(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_2008_06.query(null));
     }
 
     //-----------------------------------------------------------------------
@@ -1165,9 +1135,7 @@ public class TCKYearMonth extends AbstractDateTimeTest {
 
     @Test
     public void test_adjustDate_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_2008_06.adjustInto((LocalDate) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_2008_06.adjustInto((LocalDate) null));
     }
 
     //-----------------------------------------------------------------------
@@ -1364,23 +1332,17 @@ public class TCKYearMonth extends AbstractDateTimeTest {
 
     @Test
     public void test_until_TemporalUnit_unsupportedUnit() {
-        Assertions.assertThrows(UnsupportedTemporalTypeException.class, () -> {
-            TEST_2008_06.until(TEST_2008_06, HOURS);
-        });
+        Assertions.assertThrows(UnsupportedTemporalTypeException.class, () -> TEST_2008_06.until(TEST_2008_06, HOURS));
     }
 
     @Test
     public void test_until_TemporalUnit_nullEnd() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_2008_06.until(null, DAYS);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_2008_06.until(null, DAYS));
     }
 
     @Test
     public void test_until_TemporalUnit_nullUnit() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_2008_06.until(TEST_2008_06, null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_2008_06.until(TEST_2008_06, null));
     }
 
     //-----------------------------------------------------------------------
@@ -1395,9 +1357,7 @@ public class TCKYearMonth extends AbstractDateTimeTest {
 
     @Test
     public void test_format_formatter_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            YearMonth.of(2010, 12).format(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> YearMonth.of(2010, 12).format(null));
     }
 
     //-----------------------------------------------------------------------
@@ -1510,23 +1470,17 @@ public class TCKYearMonth extends AbstractDateTimeTest {
 
     @Test
     public void test_compareTo_ObjectNull() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_2008_06.compareTo(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_2008_06.compareTo(null));
     }
 
     @Test
     public void test_isBefore_ObjectNull() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_2008_06.isBefore(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_2008_06.isBefore(null));
     }
 
     @Test
     public void test_isAfter_ObjectNull() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_2008_06.isAfter(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_2008_06.isAfter(null));
     }
 
     //-----------------------------------------------------------------------

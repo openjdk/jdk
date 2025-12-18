@@ -131,16 +131,12 @@ public class TCKMonth extends AbstractDateTimeTest {
 
     @Test
     public void test_factory_int_tooLow() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            Month.of(0);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> Month.of(0));
     }
 
     @Test
     public void test_factory_int_tooHigh() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            Month.of(13);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> Month.of(13));
     }
 
     //-----------------------------------------------------------------------
@@ -151,16 +147,12 @@ public class TCKMonth extends AbstractDateTimeTest {
 
     @Test
     public void test_factory_CalendricalObject_invalid_noDerive() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            Month.from(LocalTime.of(12, 30));
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> Month.from(LocalTime.of(12, 30)));
     }
 
     @Test
     public void test_factory_CalendricalObject_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Month.from((TemporalAccessor) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Month.from((TemporalAccessor) null));
     }
 
     //-----------------------------------------------------------------------
@@ -243,9 +235,7 @@ public class TCKMonth extends AbstractDateTimeTest {
 
     @Test
     public void test_query_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Month.JUNE.query(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Month.JUNE.query(null));
     }
 
     //-----------------------------------------------------------------------
@@ -258,16 +248,12 @@ public class TCKMonth extends AbstractDateTimeTest {
 
     @Test
     public void test_getText_nullStyle() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Month.JANUARY.getDisplayName(null, Locale.US);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Month.JANUARY.getDisplayName(null, Locale.US));
     }
 
     @Test
     public void test_getText_nullLocale() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Month.JANUARY.getDisplayName(TextStyle.FULL, null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Month.JANUARY.getDisplayName(TextStyle.FULL, null));
     }
 
     //-----------------------------------------------------------------------

@@ -249,9 +249,7 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void now_ZoneId_nullZoneId() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZonedDateTime.now((ZoneId) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZonedDateTime.now((ZoneId) null));
     }
 
     @Test
@@ -267,9 +265,7 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void now_Clock_nullClock() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZonedDateTime.now((Clock) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZonedDateTime.now((Clock) null));
     }
 
     @Test
@@ -373,23 +369,17 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
 
     @Test
     public void factory_of_LocalDateLocalTime_nullDate() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZonedDateTime.of((LocalDate) null, LocalTime.of(11, 30, 10, 500), ZONE_PARIS);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZonedDateTime.of((LocalDate) null, LocalTime.of(11, 30, 10, 500), ZONE_PARIS));
     }
 
     @Test
     public void factory_of_LocalDateLocalTime_nullTime() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZonedDateTime.of(LocalDate.of(2008, 6, 30), (LocalTime) null, ZONE_PARIS);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZonedDateTime.of(LocalDate.of(2008, 6, 30), (LocalTime) null, ZONE_PARIS));
     }
 
     @Test
     public void factory_of_LocalDateLocalTime_nullZone() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZonedDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 10, 500), null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZonedDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 10, 500), null));
     }
 
     //-----------------------------------------------------------------------
@@ -416,9 +406,7 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
 
     @Test
     public void factory_of_LocalDateTime_nullDateTime() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZonedDateTime.of((LocalDateTime) null, ZONE_PARIS);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZonedDateTime.of((LocalDateTime) null, ZONE_PARIS));
     }
 
     @Test
@@ -618,16 +606,12 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
 
     @Test
     public void factory_ofInstant_Instant_nullInstant() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZonedDateTime.ofInstant((Instant) null, ZONE_0100);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZonedDateTime.ofInstant((Instant) null, ZONE_0100));
     }
 
     @Test
     public void factory_ofInstant_Instant_nullZone() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZonedDateTime.ofInstant(Instant.EPOCH, null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZonedDateTime.ofInstant(Instant.EPOCH, null));
     }
 
     //-----------------------------------------------------------------------
@@ -678,23 +662,17 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
 
     @Test
     public void factory_ofStrict_LDT_ZI_ZO_nullLDT() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZonedDateTime.ofStrict((LocalDateTime) null, OFFSET_0100, ZONE_PARIS);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZonedDateTime.ofStrict((LocalDateTime) null, OFFSET_0100, ZONE_PARIS));
     }
 
     @Test
     public void factory_ofStrict_LDT_ZI_ZO_nullZO() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZonedDateTime.ofStrict(TEST_LOCAL_2008_06_30_11_30_59_500, null, ZONE_PARIS);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZonedDateTime.ofStrict(TEST_LOCAL_2008_06_30_11_30_59_500, null, ZONE_PARIS));
     }
 
     @Test
     public void factory_ofStrict_LDT_ZI_ZO_nullZI() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZonedDateTime.ofStrict(TEST_LOCAL_2008_06_30_11_30_59_500, OFFSET_0100, null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZonedDateTime.ofStrict(TEST_LOCAL_2008_06_30_11_30_59_500, OFFSET_0100, null));
     }
 
     //-----------------------------------------------------------------------
@@ -755,16 +733,12 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
 
     @Test
     public void factory_from_TemporalAccessor_invalid_noDerive() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            ZonedDateTime.from(LocalTime.of(12, 30));
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> ZonedDateTime.from(LocalTime.of(12, 30)));
     }
 
     @Test
     public void factory_from_TemporalAccessor_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZonedDateTime.from((TemporalAccessor) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZonedDateTime.from((TemporalAccessor) null));
     }
 
     //-----------------------------------------------------------------------
@@ -819,23 +793,17 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
 
     @Test
     public void factory_parse_illegalValue() {
-        Assertions.assertThrows(DateTimeParseException.class, () -> {
-            ZonedDateTime.parse("2008-06-32T11:15+01:00[Europe/Paris]");
-        });
+        Assertions.assertThrows(DateTimeParseException.class, () -> ZonedDateTime.parse("2008-06-32T11:15+01:00[Europe/Paris]"));
     }
 
     @Test
     public void factory_parse_invalidValue() {
-        Assertions.assertThrows(DateTimeParseException.class, () -> {
-            ZonedDateTime.parse("2008-06-31T11:15+01:00[Europe/Paris]");
-        });
+        Assertions.assertThrows(DateTimeParseException.class, () -> ZonedDateTime.parse("2008-06-31T11:15+01:00[Europe/Paris]"));
     }
 
     @Test
     public void factory_parse_nullText() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZonedDateTime.parse((String) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZonedDateTime.parse((String) null));
     }
 
     //-----------------------------------------------------------------------
@@ -858,9 +826,7 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
 
     @Test
     public void factory_parse_formatter_nullFormatter() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZonedDateTime.parse("ANY", null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZonedDateTime.parse("ANY", null));
     }
 
     //-----------------------------------------------------------------------
@@ -1046,9 +1012,7 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
 
     @Test
     public void test_query_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_DATE_TIME.query(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_DATE_TIME.query(null));
     }
 
     //-----------------------------------------------------------------------
@@ -1481,16 +1445,12 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
 
     @Test
     public void test_withMonth_tooBig() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            TEST_DATE_TIME.withMonth(13);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> TEST_DATE_TIME.withMonth(13));
     }
 
     @Test
     public void test_withMonth_tooSmall() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            TEST_DATE_TIME.withMonth(0);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> TEST_DATE_TIME.withMonth(0));
     }
 
     //-----------------------------------------------------------------------
@@ -1512,23 +1472,17 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
 
     @Test
     public void test_withDayOfMonth_tooBig() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            LocalDateTime.of(2007, 7, 2, 11, 30).atZone(ZONE_PARIS).withDayOfMonth(32);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> LocalDateTime.of(2007, 7, 2, 11, 30).atZone(ZONE_PARIS).withDayOfMonth(32));
     }
 
     @Test
     public void test_withDayOfMonth_tooSmall() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            TEST_DATE_TIME.withDayOfMonth(0);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> TEST_DATE_TIME.withDayOfMonth(0));
     }
 
     @Test
     public void test_withDayOfMonth_invalid31() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            LocalDateTime.of(2007, 6, 2, 11, 30).atZone(ZONE_PARIS).withDayOfMonth(31);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> LocalDateTime.of(2007, 6, 2, 11, 30).atZone(ZONE_PARIS).withDayOfMonth(31));
     }
 
     //-----------------------------------------------------------------------
@@ -1551,23 +1505,17 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
 
     @Test
     public void test_withDayOfYear_tooBig() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            TEST_DATE_TIME.withDayOfYear(367);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> TEST_DATE_TIME.withDayOfYear(367));
     }
 
     @Test
     public void test_withDayOfYear_tooSmall() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            TEST_DATE_TIME.withDayOfYear(0);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> TEST_DATE_TIME.withDayOfYear(0));
     }
 
     @Test
     public void test_withDayOfYear_invalid366() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            LocalDateTime.of(2007, 2, 2, 11, 30).atZone(ZONE_PARIS).withDayOfYear(366);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> LocalDateTime.of(2007, 2, 2, 11, 30).atZone(ZONE_PARIS).withDayOfYear(366));
     }
 
     //-----------------------------------------------------------------------
@@ -1650,9 +1598,7 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
 
     @Test
     public void test_truncatedTo_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_DATE_TIME.truncatedTo(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_DATE_TIME.truncatedTo(null));
     }
 
     //-----------------------------------------------------------------------
@@ -1748,9 +1694,7 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
 
     @Test
     public void test_plus_TemporalAmount_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_DATE_TIME.plus((TemporalAmount) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_DATE_TIME.plus((TemporalAmount) null));
     }
 
     //-----------------------------------------------------------------------
@@ -1788,9 +1732,7 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
 
     @Test
     public void test_plus_longUnit_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_DATE_TIME_PARIS.plus(0, null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_DATE_TIME_PARIS.plus(0, null));
     }
 
     //-----------------------------------------------------------------------
@@ -1970,9 +1912,7 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
 
     @Test
     public void test_minus_TemporalAmount_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_DATE_TIME.minus((TemporalAmount) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_DATE_TIME.minus((TemporalAmount) null));
     }
 
     //-----------------------------------------------------------------------
@@ -2176,23 +2116,17 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
 
     @Test
     public void test_until_differentType() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            TEST_DATE_TIME_PARIS.until(TEST_LOCAL_2008_06_30_11_30_59_500, DAYS);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> TEST_DATE_TIME_PARIS.until(TEST_LOCAL_2008_06_30_11_30_59_500, DAYS));
     }
 
     @Test
     public void test_until_nullTemporal() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_DATE_TIME_PARIS.until(null, DAYS);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_DATE_TIME_PARIS.until(null, DAYS));
     }
 
     @Test
     public void test_until_nullUnit() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_DATE_TIME_PARIS.until(TEST_DATE_TIME_PARIS, null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_DATE_TIME_PARIS.until(TEST_DATE_TIME_PARIS, null));
     }
 
     //-----------------------------------------------------------------------
@@ -2207,9 +2141,7 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
 
     @Test
     public void test_format_formatter_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZonedDateTime.of(dateTime(2010, 12, 3, 11, 30), ZONE_PARIS).format(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZonedDateTime.of(dateTime(2010, 12, 3, 11, 30), ZONE_PARIS).format(null));
     }
 
     //-----------------------------------------------------------------------

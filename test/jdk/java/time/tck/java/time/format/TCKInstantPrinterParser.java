@@ -469,16 +469,12 @@ public class TCKInstantPrinterParser {
     //-----------------------------------------------------------------------
     @Test
     public void test_appendInstant_tooSmall() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            new DateTimeFormatterBuilder().appendInstant(-2);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new DateTimeFormatterBuilder().appendInstant(-2));
     }
 
     @Test
     public void test_appendInstant_tooBig() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            new DateTimeFormatterBuilder().appendInstant(10);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new DateTimeFormatterBuilder().appendInstant(10));
     }
 
     //------------------------------------------------------------------------

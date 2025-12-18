@@ -84,18 +84,14 @@ public class TestNarrowMonthNamesAndDayNames {
     @ParameterizedTest
     @MethodSource("monthNameData")
     public void compareMonthNarrowValues(String[] monthNarrowExpected) {
-        LOCARR.forEach((loc) -> {
-            TEXTSTYLELIST.forEach((style) -> {
-                MONTHVALUES.forEach((value) -> {
-                    String result = value.getDisplayName(style, loc);
-                    int index = value.ordinal();
-                    assertEquals(monthNarrowExpected[index], result, "Test failed"
-                            + " for COMPAT Provider for locale "
-                            + loc + " for style " + style.name()
-                            + " with Month value " + value.name());
-                });
-            });
-        });
+        LOCARR.forEach((loc) -> TEXTSTYLELIST.forEach((style) -> MONTHVALUES.forEach((value) -> {
+            String result = value.getDisplayName(style, loc);
+            int index = value.ordinal();
+            assertEquals(monthNarrowExpected[index], result, "Test failed"
+                    + " for COMPAT Provider for locale "
+                    + loc + " for style " + style.name()
+                    + " with Month value " + value.name());
+        })));
     }
 
     /**
@@ -116,15 +112,13 @@ public class TestNarrowMonthNamesAndDayNames {
     @ParameterizedTest
     @MethodSource("dayNameData")
     public void compareDayNarrowValues(Locale locale, String[] dayNarrowExpected) {
-        TEXTSTYLELIST.forEach((style) -> {
-            DAYVALUES.forEach((value) -> {
-                String result = value.getDisplayName(style, locale);
-                int index = value.ordinal();
-                assertEquals(dayNarrowExpected[index], result, "Test failed"
-                        + " for COMPAT Provider for locale "
-                        + locale + " for style " + style.name()
-                        + " with Day value " + value.name());
-            });
-        });
+        TEXTSTYLELIST.forEach((style) -> DAYVALUES.forEach((value) -> {
+            String result = value.getDisplayName(style, locale);
+            int index = value.ordinal();
+            assertEquals(dayNarrowExpected[index], result, "Test failed"
+                    + " for COMPAT Provider for locale "
+                    + locale + " for style " + style.name()
+                    + " with Day value " + value.name());
+        }));
     }
 }

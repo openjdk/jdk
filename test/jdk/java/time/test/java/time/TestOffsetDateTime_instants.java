@@ -85,9 +85,7 @@ public class TestOffsetDateTime_instants {
     //-----------------------------------------------------------------------
     @Test
     public void factory_ofInstant_nullInstant() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            OffsetDateTime.ofInstant((Instant) null, OFFSET_PONE);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> OffsetDateTime.ofInstant((Instant) null, OFFSET_PONE));
     }
 
     @Test

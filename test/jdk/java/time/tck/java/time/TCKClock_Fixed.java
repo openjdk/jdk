@@ -91,16 +91,12 @@ public class TCKClock_Fixed extends AbstractTCKTest {
 
     @Test
     public void test_fixed_InstantZoneId_nullInstant() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Clock.fixed(null, PARIS);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Clock.fixed(null, PARIS));
     }
 
     @Test
     public void test_fixed_InstantZoneId_nullZoneId() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Clock.fixed(INSTANT, null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Clock.fixed(INSTANT, null));
     }
 
     //-------------------------------------------------------------------------
@@ -121,9 +117,7 @@ public class TCKClock_Fixed extends AbstractTCKTest {
 
     @Test
     public void test_withZone_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Clock.fixed(INSTANT, PARIS).withZone(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Clock.fixed(INSTANT, PARIS).withZone(null));
     }
 
     //-----------------------------------------------------------------------

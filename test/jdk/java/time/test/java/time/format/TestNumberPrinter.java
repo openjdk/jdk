@@ -86,9 +86,7 @@ public class TestNumberPrinter extends AbstractTestPrinterParser {
     //-----------------------------------------------------------------------
     @Test
     public void test_print_emptyCalendrical() throws Exception {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            getFormatter(DAY_OF_MONTH, 1, 2, SignStyle.NEVER).formatTo(EMPTY_DTA, buf);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> getFormatter(DAY_OF_MONTH, 1, 2, SignStyle.NEVER).formatTo(EMPTY_DTA, buf));
     }
 
     @Test

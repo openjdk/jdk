@@ -286,8 +286,6 @@ public class TCKLocalizedFieldParser extends AbstractTestPrinterParser {
     @ParameterizedTest
     @MethodSource("provider_invalidPatterns")
     public void test_invalidPatterns(String pattern, String value) {
-        Assertions.assertThrows(DateTimeParseException.class, () -> {
-            DateTimeFormatter.ofPattern(pattern).parse(value);
-        });
+        Assertions.assertThrows(DateTimeParseException.class, () -> DateTimeFormatter.ofPattern(pattern).parse(value));
     }
 }

@@ -142,8 +142,6 @@ public class TCKJapaneseEra {
     @ParameterizedTest
     @MethodSource("data_of_invalid_eras")
     public void test_outofrange(int era) {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            JapaneseChronology.INSTANCE.eraOf(era);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> JapaneseChronology.INSTANCE.eraOf(era));
     }
 }

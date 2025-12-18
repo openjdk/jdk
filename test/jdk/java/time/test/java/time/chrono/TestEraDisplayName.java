@@ -179,13 +179,9 @@ public class TestEraDisplayName {
     @MethodSource("allEras")
     public void test_noEmptyEraNames(Era era) {
         Arrays.stream(Locale.getAvailableLocales())
-            .forEach(l -> {
-                Arrays.stream(TextStyle.values())
-                    .forEach(s -> {
-                        assertFalse(era.getDisplayName(s, l).isEmpty(),
-                            "getDisplayName() returns empty display name for era: " + era
-                            + ", style: " + s + ", locale: " + l);
-                    });
-            });
+            .forEach(l -> Arrays.stream(TextStyle.values())
+                .forEach(s -> assertFalse(era.getDisplayName(s, l).isEmpty(),
+                    "getDisplayName() returns empty display name for era: " + era
+                    + ", style: " + s + ", locale: " + l)));
     }
 }

@@ -169,9 +169,7 @@ public class TCKMonthDay extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void now_ZoneId_nullZoneId() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            MonthDay.now((ZoneId) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> MonthDay.now((ZoneId) null));
     }
 
     @Test
@@ -203,9 +201,7 @@ public class TCKMonthDay extends AbstractDateTimeTest {
 
     @Test
     public void now_Clock_nullClock() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            MonthDay.now((Clock) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> MonthDay.now((Clock) null));
     }
 
     //-----------------------------------------------------------------------
@@ -216,23 +212,17 @@ public class TCKMonthDay extends AbstractDateTimeTest {
 
     @Test
     public void test_factory_intMonth_dayTooLow() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            MonthDay.of(Month.JANUARY, 0);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> MonthDay.of(Month.JANUARY, 0));
     }
 
     @Test
     public void test_factory_intMonth_dayTooHigh() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            MonthDay.of(Month.JANUARY, 32);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> MonthDay.of(Month.JANUARY, 32));
     }
 
     @Test
     public void factory_intMonth_nullMonth() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            MonthDay.of(null, 15);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> MonthDay.of(null, 15));
     }
 
     //-----------------------------------------------------------------------
@@ -243,31 +233,23 @@ public class TCKMonthDay extends AbstractDateTimeTest {
 
     @Test
     public void test_factory_ints_dayTooLow() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            MonthDay.of(1, 0);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> MonthDay.of(1, 0));
     }
 
     @Test
     public void test_factory_ints_dayTooHigh() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            MonthDay.of(1, 32);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> MonthDay.of(1, 32));
     }
 
 
     @Test
     public void test_factory_ints_monthTooLow() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            MonthDay.of(0, 1);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> MonthDay.of(0, 1));
     }
 
     @Test
     public void test_factory_ints_monthTooHigh() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            MonthDay.of(13, 1);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> MonthDay.of(13, 1));
     }
 
     //-----------------------------------------------------------------------
@@ -278,16 +260,12 @@ public class TCKMonthDay extends AbstractDateTimeTest {
 
     @Test
     public void test_factory_CalendricalObject_invalid_noDerive() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            MonthDay.from(LocalTime.of(12, 30));
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> MonthDay.from(LocalTime.of(12, 30)));
     }
 
     @Test
     public void test_factory_CalendricalObject_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            MonthDay.from((TemporalAccessor) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> MonthDay.from((TemporalAccessor) null));
     }
 
     //-----------------------------------------------------------------------
@@ -358,30 +336,22 @@ public class TCKMonthDay extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void factory_parse_illegalValue_Day() {
-        Assertions.assertThrows(DateTimeParseException.class, () -> {
-            MonthDay.parse("--06-32");
-        });
+        Assertions.assertThrows(DateTimeParseException.class, () -> MonthDay.parse("--06-32"));
     }
 
     @Test
     public void factory_parse_invalidValue_Day() {
-        Assertions.assertThrows(DateTimeParseException.class, () -> {
-            MonthDay.parse("--06-31");
-        });
+        Assertions.assertThrows(DateTimeParseException.class, () -> MonthDay.parse("--06-31"));
     }
 
     @Test
     public void factory_parse_illegalValue_Month() {
-        Assertions.assertThrows(DateTimeParseException.class, () -> {
-            MonthDay.parse("--13-25");
-        });
+        Assertions.assertThrows(DateTimeParseException.class, () -> MonthDay.parse("--13-25"));
     }
 
     @Test
     public void factory_parse_nullText() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            MonthDay.parse(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> MonthDay.parse(null));
     }
 
     //-----------------------------------------------------------------------
@@ -404,9 +374,7 @@ public class TCKMonthDay extends AbstractDateTimeTest {
 
     @Test
     public void factory_parse_formatter_nullFormatter() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            MonthDay.parse("ANY", null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> MonthDay.parse("ANY", null));
     }
 
     //-----------------------------------------------------------------------
@@ -491,9 +459,7 @@ public class TCKMonthDay extends AbstractDateTimeTest {
 
     @Test
     public void test_query_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_07_15.query(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_07_15.query(null));
     }
 
     //-----------------------------------------------------------------------
@@ -546,9 +512,7 @@ public class TCKMonthDay extends AbstractDateTimeTest {
 
     @Test
     public void test_with_Month_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            MonthDay.of(6, 30).with((Month) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> MonthDay.of(6, 30).with((Month) null));
     }
 
     //-----------------------------------------------------------------------
@@ -577,16 +541,12 @@ public class TCKMonthDay extends AbstractDateTimeTest {
 
     @Test
     public void test_withMonth_tooLow() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            MonthDay.of(6, 30).withMonth(0);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> MonthDay.of(6, 30).withMonth(0));
     }
 
     @Test
     public void test_withMonth_tooHigh() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            MonthDay.of(6, 30).withMonth(13);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> MonthDay.of(6, 30).withMonth(13));
     }
 
     //-----------------------------------------------------------------------
@@ -599,9 +559,7 @@ public class TCKMonthDay extends AbstractDateTimeTest {
 
     @Test
     public void test_withDayOfMonth_invalid() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            MonthDay.of(6, 30).withDayOfMonth(31);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> MonthDay.of(6, 30).withDayOfMonth(31));
     }
 
     @Test
@@ -617,16 +575,12 @@ public class TCKMonthDay extends AbstractDateTimeTest {
 
     @Test
     public void test_withDayOfMonth_tooLow() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            MonthDay.of(6, 30).withDayOfMonth(0);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> MonthDay.of(6, 30).withDayOfMonth(0));
     }
 
     @Test
     public void test_withDayOfMonth_tooHigh() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            MonthDay.of(6, 30).withDayOfMonth(32);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> MonthDay.of(6, 30).withDayOfMonth(32));
     }
 
     //-----------------------------------------------------------------------
@@ -655,9 +609,7 @@ public class TCKMonthDay extends AbstractDateTimeTest {
 
     @Test
     public void test_adjustDate_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_07_15.adjustInto((LocalDate) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_07_15.adjustInto((LocalDate) null));
     }
 
     //-----------------------------------------------------------------------
@@ -693,9 +645,7 @@ public class TCKMonthDay extends AbstractDateTimeTest {
 
     @Test
     public void test_format_formatter_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            MonthDay.of(12, 3).format(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> MonthDay.of(12, 3).format(null));
     }
 
     //-----------------------------------------------------------------------
@@ -763,23 +713,17 @@ public class TCKMonthDay extends AbstractDateTimeTest {
 
     @Test
     public void test_compareTo_ObjectNull() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_07_15.compareTo(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_07_15.compareTo(null));
     }
 
     @Test
     public void test_isBefore_ObjectNull() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_07_15.isBefore(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_07_15.isBefore(null));
     }
 
     @Test
     public void test_isAfter_ObjectNull() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_07_15.isAfter(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_07_15.isAfter(null));
     }
 
     //-----------------------------------------------------------------------

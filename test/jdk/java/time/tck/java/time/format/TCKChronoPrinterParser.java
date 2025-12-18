@@ -98,16 +98,12 @@ public class TCKChronoPrinterParser {
     //-----------------------------------------------------------------------
     @Test
     public void test_parse_negativePosition() {
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> {
-            builder.appendChronologyId().toFormatter().parseUnresolved("ISO", new ParsePosition(-1));
-        });
+        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> builder.appendChronologyId().toFormatter().parseUnresolved("ISO", new ParsePosition(-1)));
     }
 
     @Test
     public void test_parse_offEndPosition() {
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> {
-            builder.appendChronologyId().toFormatter().parseUnresolved("ISO", new ParsePosition(4));
-        });
+        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> builder.appendChronologyId().toFormatter().parseUnresolved("ISO", new ParsePosition(4)));
     }
 
     //-----------------------------------------------------------------------

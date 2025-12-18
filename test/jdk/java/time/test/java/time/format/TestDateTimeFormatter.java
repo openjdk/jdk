@@ -330,9 +330,7 @@ public class TestDateTimeFormatter {
         if (expected != null) {
             assertEquals(expected, LocalDate.parse(weekDate, f));
         } else {
-            assertThrows(DateTimeException.class, () -> {
-                LocalDate.parse(weekDate, f);
-            });
+            assertThrows(DateTimeException.class, () -> LocalDate.parse(weekDate, f));
         }
     }
 }

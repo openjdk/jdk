@@ -146,9 +146,7 @@ public class TestChronoField {
 
     @Test
     public void test_nullLocaleChronoFieldDisplayName() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ChronoField.YEAR.getDisplayName((Locale)null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ChronoField.YEAR.getDisplayName((Locale)null));
     }
 
     @Test

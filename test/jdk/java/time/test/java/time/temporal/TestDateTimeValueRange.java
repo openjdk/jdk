@@ -119,9 +119,7 @@ public class TestDateTimeValueRange extends AbstractTest {
 
     @Test
     public void test_of_longlong_minGtMax() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            ValueRange.of(12, 1);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ValueRange.of(12, 1));
     }
 
     //-----------------------------------------------------------------------
@@ -140,23 +138,17 @@ public class TestDateTimeValueRange extends AbstractTest {
 
     @Test
     public void test_of_longlonglong_minGtMax() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            ValueRange.of(12, 1, 2);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ValueRange.of(12, 1, 2));
     }
 
     @Test
     public void test_of_longlonglong_smallestmaxminGtMax() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            ValueRange.of(1, 31, 28);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ValueRange.of(1, 31, 28));
     }
 
     @Test
     public void test_of_longlonglong_minGtSmallestMax() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            ValueRange.of(5, 2, 10);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ValueRange.of(5, 2, 10));
     }
 
     //-----------------------------------------------------------------------
@@ -209,9 +201,7 @@ public class TestDateTimeValueRange extends AbstractTest {
     @ParameterizedTest
     @MethodSource("data_invalid")
     public void test_of_longlonglonglong_invalid(long sMin, long lMin, long sMax, long lMax) {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            ValueRange.of(sMin, lMin, sMax, lMax);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ValueRange.of(sMin, lMin, sMax, lMax));
     }
 
     //-----------------------------------------------------------------------

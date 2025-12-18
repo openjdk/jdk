@@ -95,9 +95,7 @@ public class TCKZoneRulesProvider {
 
     @Test
     public void test_getAvailableGroupIds_modifyZoneId() {
-        Assertions.assertThrows(UnsupportedOperationException.class, () -> {
-            ZoneRulesProvider.getAvailableZoneIds().clear();
-        });
+        Assertions.assertThrows(UnsupportedOperationException.class, () -> ZoneRulesProvider.getAvailableZoneIds().clear());
     }
 
     //-----------------------------------------------------------------------
@@ -113,16 +111,12 @@ public class TCKZoneRulesProvider {
 
     @Test
     public void test_getRules_StringBoolean_unknownId() {
-        Assertions.assertThrows(ZoneRulesException.class, () -> {
-            ZoneRulesProvider.getRules("Europe/Lon", false);
-        });
+        Assertions.assertThrows(ZoneRulesException.class, () -> ZoneRulesProvider.getRules("Europe/Lon", false));
     }
 
     @Test
     public void test_getRules_StringBoolean_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZoneRulesProvider.getRules(null, false);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZoneRulesProvider.getRules(null, false));
     }
 
     @Test
@@ -158,16 +152,12 @@ public class TCKZoneRulesProvider {
 
     @Test
     public void test_getVersions_String_unknownId() {
-        Assertions.assertThrows(ZoneRulesException.class, () -> {
-            ZoneRulesProvider.getVersions("Europe/Lon");
-        });
+        Assertions.assertThrows(ZoneRulesException.class, () -> ZoneRulesProvider.getVersions("Europe/Lon"));
     }
 
     @Test
     public void test_getVersions_String_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZoneRulesProvider.getVersions(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZoneRulesProvider.getVersions(null));
     }
 
     //-----------------------------------------------------------------------

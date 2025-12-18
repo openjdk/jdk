@@ -152,9 +152,7 @@ public class TestInstant extends AbstractTest {
 
     @Test
     public void test_until_1arg_NPE() {
-        assertThrows(NullPointerException.class, () -> {
-            Instant.now().until(null);
-        });
+        assertThrows(NullPointerException.class, () -> Instant.now().until(null));
     }
 
     private Object[][] valid_instants() {

@@ -343,7 +343,7 @@ public class TCKChronology {
         Assertions.assertThrows(DateTimeException.class, () -> {
             Locale.Builder builder = new Locale.Builder().setLanguage("en").setRegion("CA");
             builder.setUnicodeLocaleKeyword("ca", "xxx");
-            
+
             Locale locale = builder.build();
             Chronology.ofLocale(locale);
         });
@@ -425,9 +425,7 @@ public class TCKChronology {
     @ParameterizedTest
     @MethodSource("bad_data_epochSecond")
     public void test_bad_epochSecond(Chronology chrono, int y, int m, int d, int h, int min, int s, ZoneOffset offset) {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            chrono.epochSecond(y, m, d, h, min, s, offset);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> chrono.epochSecond(y, m, d, h, min, s, offset));
     }
 
     Object[][]  data_isIsoBased() {

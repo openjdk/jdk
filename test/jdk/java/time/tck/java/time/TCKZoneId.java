@@ -373,16 +373,12 @@ public class TCKZoneId extends AbstractTCKTest {
 
     @Test
     public void test_nullPrefixOfOffset() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZoneId.ofOffset(null, ZoneOffset.ofTotalSeconds(1));
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZoneId.ofOffset(null, ZoneOffset.ofTotalSeconds(1)));
     }
 
     @Test
     public void test_nullOffsetOfOffset() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZoneId.ofOffset("GMT", null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZoneId.ofOffset("GMT", null));
     }
 
     //-----------------------------------------------------------------------
@@ -457,9 +453,7 @@ public class TCKZoneId extends AbstractTCKTest {
     @ParameterizedTest
     @MethodSource("data_offsetBasedInvalid")
     public void factory_of_String_offsetBasedInvalid_prefixUTC(String id) {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            ZoneId.of("UTC" + id);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> ZoneId.of("UTC" + id));
     }
 
     @ParameterizedTest
@@ -503,9 +497,7 @@ public class TCKZoneId extends AbstractTCKTest {
     @ParameterizedTest
     @MethodSource("data_regionBasedInvalid")
     public void factory_of_String_regionBasedInvalid(String id) {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            ZoneId.of(id);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> ZoneId.of(id));
     }
 
     //-----------------------------------------------------------------------
@@ -520,23 +512,17 @@ public class TCKZoneId extends AbstractTCKTest {
     //-----------------------------------------------------------------------
     @Test
     public void factory_of_String_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZoneId.of(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZoneId.of(null));
     }
 
     @Test
     public void factory_of_String_badFormat() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            ZoneId.of("Unknown rule");
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> ZoneId.of("Unknown rule"));
     }
 
     @Test
     public void factory_of_String_unknown() {
-        Assertions.assertThrows(ZoneRulesException.class, () -> {
-            ZoneId.of("Unknown");
-        });
+        Assertions.assertThrows(ZoneRulesException.class, () -> ZoneId.of("Unknown"));
     }
 
     //-----------------------------------------------------------------------
@@ -573,16 +559,12 @@ public class TCKZoneId extends AbstractTCKTest {
 
     @Test
     public void factory_from_TemporalAccessor_invalid_noDerive() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            ZoneId.from(LocalTime.of(12, 30));
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> ZoneId.from(LocalTime.of(12, 30)));
     }
 
     @Test
     public void factory_from_TemporalAccessor_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZoneId.from(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZoneId.from(null));
     }
 
     //-----------------------------------------------------------------------

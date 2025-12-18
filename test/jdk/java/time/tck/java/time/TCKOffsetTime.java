@@ -268,16 +268,12 @@ public class TCKOffsetTime extends AbstractDateTimeTest {
 
     @Test
     public void now_Clock_nullZoneId() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            OffsetTime.now((ZoneId) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> OffsetTime.now((ZoneId) null));
     }
 
     @Test
     public void now_Clock_nullClock() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            OffsetTime.now((Clock) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> OffsetTime.now((Clock) null));
     }
 
     //-----------------------------------------------------------------------
@@ -314,9 +310,7 @@ public class TCKOffsetTime extends AbstractDateTimeTest {
 
     @Test
     public void factory_LocalTimeZoneOffset_nullTime() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            OffsetTime.of((LocalTime) null, OFFSET_PONE);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> OffsetTime.of((LocalTime) null, OFFSET_PONE));
     }
 
     @Test
@@ -332,9 +326,7 @@ public class TCKOffsetTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void factory_ofInstant_nullInstant() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            OffsetTime.ofInstant((Instant) null, ZoneOffset.UTC);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> OffsetTime.ofInstant((Instant) null, ZoneOffset.UTC));
     }
 
     @Test
@@ -404,16 +396,12 @@ public class TCKOffsetTime extends AbstractDateTimeTest {
 
     @Test
     public void factory_from_TemporalAccessor_invalid_noDerive() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            OffsetTime.from(LocalDate.of(2007, 7, 15));
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> OffsetTime.from(LocalDate.of(2007, 7, 15)));
     }
 
     @Test
     public void factory_from_TemporalAccessor_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            OffsetTime.from((TemporalAccessor) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> OffsetTime.from((TemporalAccessor) null));
     }
 
     //-----------------------------------------------------------------------
@@ -444,31 +432,23 @@ public class TCKOffsetTime extends AbstractDateTimeTest {
     @ParameterizedTest
     @MethodSource("provider_sampleBadParse")
     public void factory_parse_invalidText(String unparsable) {
-        Assertions.assertThrows(DateTimeParseException.class, () -> {
-            OffsetTime.parse(unparsable);
-        });
+        Assertions.assertThrows(DateTimeParseException.class, () -> OffsetTime.parse(unparsable));
     }
 
     //-----------------------------------------------------------------------s
     @Test
     public void factory_parse_illegalHour() {
-        Assertions.assertThrows(DateTimeParseException.class, () -> {
-            OffsetTime.parse("25:00+01:00");
-        });
+        Assertions.assertThrows(DateTimeParseException.class, () -> OffsetTime.parse("25:00+01:00"));
     }
 
     @Test
     public void factory_parse_illegalMinute() {
-        Assertions.assertThrows(DateTimeParseException.class, () -> {
-            OffsetTime.parse("12:60+01:00");
-        });
+        Assertions.assertThrows(DateTimeParseException.class, () -> OffsetTime.parse("12:60+01:00"));
     }
 
     @Test
     public void factory_parse_illegalSecond() {
-        Assertions.assertThrows(DateTimeParseException.class, () -> {
-            OffsetTime.parse("12:12:60+01:00");
-        });
+        Assertions.assertThrows(DateTimeParseException.class, () -> OffsetTime.parse("12:12:60+01:00"));
     }
 
     //-----------------------------------------------------------------------
@@ -491,9 +471,7 @@ public class TCKOffsetTime extends AbstractDateTimeTest {
 
     @Test
     public void factory_parse_formatter_nullFormatter() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            OffsetTime.parse("ANY", null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> OffsetTime.parse("ANY", null));
     }
 
     //-----------------------------------------------------------------------
@@ -501,16 +479,12 @@ public class TCKOffsetTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void constructor_nullTime() throws Throwable  {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            OffsetTime.of(null, OFFSET_PONE);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> OffsetTime.of(null, OFFSET_PONE));
     }
 
     @Test
     public void constructor_nullOffset() throws Throwable  {
-       Assertions.assertThrows(NullPointerException.class, () -> {
-           OffsetTime.of(LocalTime.of(11, 30, 0, 0), null);
-        });
+       Assertions.assertThrows(NullPointerException.class, () -> OffsetTime.of(LocalTime.of(11, 30, 0, 0), null));
     }
 
     //-----------------------------------------------------------------------
@@ -659,9 +633,7 @@ public class TCKOffsetTime extends AbstractDateTimeTest {
 
     @Test
     public void test_query_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_11_30_59_500_PONE.query(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_11_30_59_500_PONE.query(null));
     }
 
     //-----------------------------------------------------------------------
@@ -801,9 +773,7 @@ public class TCKOffsetTime extends AbstractDateTimeTest {
 
     @Test
     public void test_with_adjustment_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_11_30_59_500_PONE.with((TemporalAdjuster) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_11_30_59_500_PONE.with((TemporalAdjuster) null));
     }
 
     //-----------------------------------------------------------------------
@@ -824,16 +794,12 @@ public class TCKOffsetTime extends AbstractDateTimeTest {
 
     @Test
     public void test_with_TemporalField_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_11_30_59_500_PONE.with((TemporalField) null, 0);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_11_30_59_500_PONE.with((TemporalField) null, 0));
     }
 
     @Test
     public void test_with_TemporalField_invalidField() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            TEST_11_30_59_500_PONE.with(ChronoField.YEAR, 0);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> TEST_11_30_59_500_PONE.with(ChronoField.YEAR, 0));
     }
 
     //-----------------------------------------------------------------------
@@ -916,9 +882,7 @@ public class TCKOffsetTime extends AbstractDateTimeTest {
 
     @Test
     public void test_truncatedTo_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_11_30_59_500_PONE.truncatedTo(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_11_30_59_500_PONE.truncatedTo(null));
     }
 
     //-----------------------------------------------------------------------
@@ -945,9 +909,7 @@ public class TCKOffsetTime extends AbstractDateTimeTest {
 
     @Test
     public void test_plus_PlusAdjuster_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_11_30_59_500_PONE.plus((TemporalAmount) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_11_30_59_500_PONE.plus((TemporalAmount) null));
     }
 
     //-----------------------------------------------------------------------
@@ -1042,9 +1004,7 @@ public class TCKOffsetTime extends AbstractDateTimeTest {
 
     @Test
     public void test_minus_MinusAdjuster_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            TEST_11_30_59_500_PONE.minus((TemporalAmount) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> TEST_11_30_59_500_PONE.minus((TemporalAmount) null));
     }
 
     //-----------------------------------------------------------------------
@@ -1195,9 +1155,7 @@ public class TCKOffsetTime extends AbstractDateTimeTest {
 
     @Test
     public void test_format_formatter_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            OffsetTime.of(11, 30, 0, 0, OFFSET_PONE).format(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> OffsetTime.of(11, 30, 0, 0, OFFSET_PONE).format(null));
     }
 
     //-----------------------------------------------------------------------

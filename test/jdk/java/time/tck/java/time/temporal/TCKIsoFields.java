@@ -487,9 +487,7 @@ public class TCKIsoFields {
     @ParameterizedTest
     @MethodSource("data_isofields")
     public void test_nonisofields_rangerefinedby(TemporalField field, int value, ValueRange valueRange) {
-        Assertions.assertThrows(UnsupportedTemporalTypeException.class, () -> {
-            field.rangeRefinedBy(HijrahDate.now());
-        });
+        Assertions.assertThrows(UnsupportedTemporalTypeException.class, () -> field.rangeRefinedBy(HijrahDate.now()));
     }
 
     //-----------------------------------------------------------------------
@@ -505,9 +503,7 @@ public class TCKIsoFields {
     @ParameterizedTest
     @MethodSource("data_isofields")
     public void test_nonisofields_getFrom(TemporalField field, int value, ValueRange valueRange) {
-        Assertions.assertThrows(UnsupportedTemporalTypeException.class, () -> {
-            field.getFrom(HijrahDate.now());
-        });
+        Assertions.assertThrows(UnsupportedTemporalTypeException.class, () -> field.getFrom(HijrahDate.now()));
     }
 
     //-----------------------------------------------------------------------

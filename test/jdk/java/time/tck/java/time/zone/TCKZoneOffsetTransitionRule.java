@@ -89,101 +89,79 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_factory_nullMonth() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZoneOffsetTransitionRule.of(
-                    null, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                    OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZoneOffsetTransitionRule.of(
+                null, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
+                OFFSET_0200, OFFSET_0200, OFFSET_0300));
     }
 
     @Test
     public void test_factory_nullTime() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZoneOffsetTransitionRule.of(
-                    Month.MARCH, 20, DayOfWeek.SUNDAY, null, false, TimeDefinition.WALL,
-                    OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZoneOffsetTransitionRule.of(
+                Month.MARCH, 20, DayOfWeek.SUNDAY, null, false, TimeDefinition.WALL,
+                OFFSET_0200, OFFSET_0200, OFFSET_0300));
     }
 
     @Test
     public void test_factory_nullTimeDefinition() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZoneOffsetTransitionRule.of(
-                    Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, null,
-                    OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZoneOffsetTransitionRule.of(
+                Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, null,
+                OFFSET_0200, OFFSET_0200, OFFSET_0300));
     }
 
     @Test
     public void test_factory_nullStandardOffset() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZoneOffsetTransitionRule.of(
-                    Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                    null, OFFSET_0200, OFFSET_0300);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZoneOffsetTransitionRule.of(
+                Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
+                null, OFFSET_0200, OFFSET_0300));
     }
 
     @Test
     public void test_factory_nullOffsetBefore() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZoneOffsetTransitionRule.of(
-                    Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                    OFFSET_0200, null, OFFSET_0300);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZoneOffsetTransitionRule.of(
+                Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
+                OFFSET_0200, null, OFFSET_0300));
     }
 
     @Test
     public void test_factory_nullOffsetAfter() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ZoneOffsetTransitionRule.of(
-                    Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                    OFFSET_0200, OFFSET_0200, null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> ZoneOffsetTransitionRule.of(
+                Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
+                OFFSET_0200, OFFSET_0200, null));
     }
 
     @Test
     public void test_factory_invalidDayOfMonthIndicator_tooSmall() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            ZoneOffsetTransitionRule.of(
-                    Month.MARCH, -29, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                    OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ZoneOffsetTransitionRule.of(
+                Month.MARCH, -29, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
+                OFFSET_0200, OFFSET_0200, OFFSET_0300));
     }
 
     @Test
     public void test_factory_invalidDayOfMonthIndicator_zero() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            ZoneOffsetTransitionRule.of(
-                    Month.MARCH, 0, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                    OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ZoneOffsetTransitionRule.of(
+                Month.MARCH, 0, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
+                OFFSET_0200, OFFSET_0200, OFFSET_0300));
     }
 
     @Test
     public void test_factory_invalidDayOfMonthIndicator_tooLarge() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            ZoneOffsetTransitionRule.of(
-                    Month.MARCH, 32, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                    OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ZoneOffsetTransitionRule.of(
+                Month.MARCH, 32, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
+                OFFSET_0200, OFFSET_0200, OFFSET_0300));
     }
 
     @Test
     public void test_factory_invalidMidnightFlag() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            ZoneOffsetTransitionRule.of(
-                    Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, true, TimeDefinition.WALL,
-                    OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ZoneOffsetTransitionRule.of(
+                Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, true, TimeDefinition.WALL,
+                OFFSET_0200, OFFSET_0200, OFFSET_0300));
     }
 
     @Test
     public void test_factory_nonZeroTimeNanos() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            ZoneOffsetTransitionRule.of(
-                    Month.MARCH, 20, DayOfWeek.SUNDAY, LocalTime.of(1, 2, 3, 400_000_000),
-                    false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ZoneOffsetTransitionRule.of(
+                Month.MARCH, 20, DayOfWeek.SUNDAY, LocalTime.of(1, 2, 3, 400_000_000),
+                false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300));
     }
 
     //-----------------------------------------------------------------------

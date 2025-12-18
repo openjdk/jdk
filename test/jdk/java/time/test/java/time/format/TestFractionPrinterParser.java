@@ -97,9 +97,7 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
     //-----------------------------------------------------------------------
     @Test
     public void test_print_emptyCalendrical() throws Exception {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            getFormatter(NANO_OF_SECOND, 0, 9, true).formatTo(EMPTY_DTA, buf);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> getFormatter(NANO_OF_SECOND, 0, 9, true).formatTo(EMPTY_DTA, buf));
     }
 
     Object[][] provider_oob_nanos() {
@@ -117,9 +115,7 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
     @ParameterizedTest
     @MethodSource("provider_oob_nanos")
     public void test_print_oob_nanos(long value) throws Exception {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            getFormatter(NANO_OF_SECOND, 0, 9, true).formatTo(new MockFieldValue(NANO_OF_SECOND, value), buf);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> getFormatter(NANO_OF_SECOND, 0, 9, true).formatTo(new MockFieldValue(NANO_OF_SECOND, value), buf));
     }
 
     Object[][] provider_oob_micros() {
@@ -137,9 +133,7 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
     @ParameterizedTest
     @MethodSource("provider_oob_micros")
     public void test_print_oob_micros(long value) throws Exception {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            getFormatter(MICRO_OF_SECOND, 0, 9, true).formatTo(new MockFieldValue(MICRO_OF_SECOND, value), buf);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> getFormatter(MICRO_OF_SECOND, 0, 9, true).formatTo(new MockFieldValue(MICRO_OF_SECOND, value), buf));
     }
 
     @Test
@@ -530,13 +524,11 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
     @MethodSource("provider_parseMinWidth")
     public void test_parse_minWidth(TemporalField field, int min, int max, boolean decimalPoint, String text) throws Exception {
         Assertions
-            .assertThrows(DateTimeException.class, () -> {
-                builder
-                        .appendFraction(field, min, max, decimalPoint)
-                        .appendLiteral("x")
-                        .toFormatter(locale)
-                        .parse(text);
-        });
+            .assertThrows(DateTimeException.class, () -> builder
+                    .appendFraction(field, min, max, decimalPoint)
+                    .appendLiteral("x")
+                    .toFormatter(locale)
+                    .parse(text));
     }
 
     //-----------------------------------------------------------------------

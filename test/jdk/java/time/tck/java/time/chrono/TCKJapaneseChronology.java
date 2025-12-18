@@ -370,9 +370,7 @@ public class TCKJapaneseChronology {
     @ParameterizedTest
     @MethodSource("data_badDates")
     public void test_badDates(int year, int month, int dom) {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            JapaneseChronology.INSTANCE.date(year, month, dom);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> JapaneseChronology.INSTANCE.date(year, month, dom));
     }
 
     //-----------------------------------------------------------------------
@@ -440,9 +438,7 @@ public class TCKJapaneseChronology {
     @ParameterizedTest
     @MethodSource("data_prolepticYearError")
     public void test_prolepticYearError(Era era, int yearOfEra) {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            JapaneseChronology.INSTANCE.prolepticYear(era, yearOfEra);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> JapaneseChronology.INSTANCE.prolepticYear(era, yearOfEra));
     }
 
     //-----------------------------------------------------------------------

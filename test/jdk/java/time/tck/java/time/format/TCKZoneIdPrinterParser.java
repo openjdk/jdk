@@ -130,30 +130,22 @@ public class TCKZoneIdPrinterParser {
     //-----------------------------------------------------------------------
     @Test
     public void test_print_pattern_V1rejected() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            builder.appendPattern("V");
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendPattern("V"));
     }
 
     @Test
     public void test_print_pattern_V3rejected() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            builder.appendPattern("VVV");
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendPattern("VVV"));
     }
 
     @Test
     public void test_print_pattern_V4rejected() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            builder.appendPattern("VVVV");
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendPattern("VVVV"));
     }
 
     @Test
     public void test_print_pattern_V5rejected() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            builder.appendPattern("VVVVV");
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendPattern("VVVVV"));
     }
 
     //-----------------------------------------------------------------------

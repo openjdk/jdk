@@ -254,23 +254,17 @@ public class TCKPeriod extends AbstractTCKTest {
 
     @Test
     public void factory_from_TemporalAmount_NonISO() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            Period.from(ThaiBuddhistChronology.INSTANCE.period(1, 1, 1));
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> Period.from(ThaiBuddhistChronology.INSTANCE.period(1, 1, 1)));
     }
 
     @Test
     public void factory_from_TemporalAmount_Duration() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            Period.from(Duration.ZERO);
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> Period.from(Duration.ZERO));
     }
 
     @Test
     public void factory_from_TemporalAmount_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Period.from(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Period.from(null));
     }
 
     //-----------------------------------------------------------------------
@@ -448,9 +442,7 @@ public class TCKPeriod extends AbstractTCKTest {
 
     @Test
     public void factory_parse_null() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Period.parse(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Period.parse(null));
     }
 
     //-----------------------------------------------------------------------
@@ -554,16 +546,12 @@ public class TCKPeriod extends AbstractTCKTest {
 
     @Test
     public void factory_between_LocalDate_nullFirst() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Period.between((LocalDate) null, LocalDate.of(2010, 1, 1));
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Period.between((LocalDate) null, LocalDate.of(2010, 1, 1)));
     }
 
     @Test
     public void factory_between_LocalDate_nullSecond() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Period.between(LocalDate.of(2010, 1, 1), (LocalDate) null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Period.between(LocalDate.of(2010, 1, 1), (LocalDate) null));
     }
 
     //-----------------------------------------------------------------------
@@ -662,9 +650,7 @@ public class TCKPeriod extends AbstractTCKTest {
 
     @Test
     public void test_plus_TemporalAmount_nonISO() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            pymd(4, 5, 6).plus(ThaiBuddhistChronology.INSTANCE.period(1, 0, 0));
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> pymd(4, 5, 6).plus(ThaiBuddhistChronology.INSTANCE.period(1, 0, 0)));
     }
 
     @Test
@@ -823,9 +809,7 @@ public class TCKPeriod extends AbstractTCKTest {
 
     @Test
     public void test_minus_TemporalAmount_nonISO() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            pymd(4, 5, 6).minus(ThaiBuddhistChronology.INSTANCE.period(1, 0, 0));
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> pymd(4, 5, 6).minus(ThaiBuddhistChronology.INSTANCE.period(1, 0, 0)));
     }
 
     @Test
@@ -1004,23 +988,17 @@ public class TCKPeriod extends AbstractTCKTest {
 
     @Test
     public void test_negated_overflow_years() {
-        Assertions.assertThrows(ArithmeticException.class, () -> {
-            Period.ofYears(Integer.MIN_VALUE).negated();
-        });
+        Assertions.assertThrows(ArithmeticException.class, () -> Period.ofYears(Integer.MIN_VALUE).negated());
     }
 
     @Test
     public void test_negated_overflow_months() {
-        Assertions.assertThrows(ArithmeticException.class, () -> {
-            Period.ofMonths(Integer.MIN_VALUE).negated();
-        });
+        Assertions.assertThrows(ArithmeticException.class, () -> Period.ofMonths(Integer.MIN_VALUE).negated());
     }
 
     @Test
     public void test_negated_overflow_days() {
-        Assertions.assertThrows(ArithmeticException.class, () -> {
-            Period.ofDays(Integer.MIN_VALUE).negated();
-        });
+        Assertions.assertThrows(ArithmeticException.class, () -> Period.ofDays(Integer.MIN_VALUE).negated());
     }
 
     //-----------------------------------------------------------------------
@@ -1141,16 +1119,12 @@ public class TCKPeriod extends AbstractTCKTest {
 
     @Test
     public void test_addTo_nullZero() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Period.ZERO.addTo(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Period.ZERO.addTo(null));
     }
 
     @Test
     public void test_addTo_nullNonZero() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Period.ofDays(2).addTo(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Period.ofDays(2).addTo(null));
     }
 
     //-----------------------------------------------------------------------
@@ -1199,16 +1173,12 @@ public class TCKPeriod extends AbstractTCKTest {
 
     @Test
     public void test_subtractFrom_nullZero() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Period.ZERO.subtractFrom(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Period.ZERO.subtractFrom(null));
     }
 
     @Test
     public void test_subtractFrom_nullNonZero() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Period.ofDays(2).subtractFrom(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> Period.ofDays(2).subtractFrom(null));
     }
 
     //-----------------------------------------------------------------------
