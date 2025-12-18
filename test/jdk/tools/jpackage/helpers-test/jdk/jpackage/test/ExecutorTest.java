@@ -210,7 +210,13 @@ public class ExecutorTest extends JUnitAdapter {
 
             assertEquals(0, result[0].getExitCode());
 
-            assertEquals(expectedCapturedSystemOut(commandWithDiscardedStreams), outputCapture.outLines());
+            // If we dump the subprocesses's output, and the command produced both STDOUT and STDERR,
+            // then the captured STDOUT may contain interleaved command's STDOUT and STDERR,
+            // not in sequential order (STDOUT followed by STDERR).
+            // In this case don't check the contents of the captured command's STDOUT.
+            if (toolProvider || outputCapture.outLines().isEmpty() || (command.stdout().isEmpty() || command.stderr().isEmpty())) {
+                assertEquals(expectedCapturedSystemOut(commandWithDiscardedStreams), outputCapture.outLines());
+            }
             assertEquals(expectedCapturedSystemErr(commandWithDiscardedStreams), outputCapture.errLines());
 
             assertEquals(expectedResultStdout(commandWithDiscardedStreams), result[0].stdout().getOutput());
