@@ -30,7 +30,7 @@
  * @modules java.base/sun.net.util
  * @comment Insert -Djavax.net.debug=all into the following lines to enable SSL debugging
  * @run main/othervm SubjectAltNameIP 127.0.0.1
- * @run main/othervm SubjectAltNameIP [::1]
+ * @run main/othervm SubjectAltNameIP ::1
  */
 
 import javax.net.ssl.HandshakeCompletedListener;
@@ -166,14 +166,19 @@ public class SubjectAltNameIP {
     }
 
     public static void main(String[] args) throws Exception {
+        boolean isIpv6Addr = IPAddressUtil.isIPv6LiteralAddress(args[0]);
 
-        if (IPAddressUtil.isIPv6LiteralAddress(args[0]) && !IPSupport.hasIPv6()) {
+        if (isIpv6Addr && !IPSupport.hasIPv6()) {
             throw new SkippedException("Skipping test - IPv6 is not supported");
         }
         /*
          * Start the tests.
          */
-        new SubjectAltNameIP(args[0]);
+        if (isIpv6Addr) { // use the URL notion wrapper
+            new SubjectAltNameIP("[" + args[0] + "]");
+        } else {
+            new SubjectAltNameIP(args[0]);
+        }
     }
 
     Thread serverThread = null;

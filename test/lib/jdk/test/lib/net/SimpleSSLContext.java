@@ -39,6 +39,8 @@ public final class SimpleSSLContext {
 
     private static final String DEFAULT_KEY_STORE_FILE_REL_PATH = "jdk/test/lib/net/testkeys";
 
+    private SimpleSSLContext() {}
+
     /**
      * {@return a new {@link SSLContext} instance by searching for a key store
      * file path, and loading the first found one}
