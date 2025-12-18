@@ -33,6 +33,7 @@ import java.util.*;
 import nsk.share.gc.gp.*;
 import nsk.share.test.ExecutionController;
 import nsk.share.test.Stresser;
+import jdk.test.whitebox.WhiteBox;
 
 /**
  * The <code>ClassUnloader</code> class allows to force VM to unload class(es)
@@ -245,7 +246,7 @@ public class ClassUnloader {
         customClassLoader = null;
 
         // force class unloading by eating memory pool
-        eatMemory(stresser);
+        WhiteBox.getWhiteBox().fullGC();
 
         // force GC to unload marked class loader and its classes
         if (isClassLoaderReclaimed()) {
@@ -267,23 +268,5 @@ public class ClassUnloader {
 
         };
         return unloadClass(stresser);
-    }
-
-     // Stresses memory by allocating arrays of bytes.
-   public static void eatMemory(ExecutionController stresser) {
-       GarbageUtils.eatMemory(stresser, 50, 1024, 2);
-    }
-
-     // Stresses memory by allocating arrays of bytes.
-    public static void eatMemory() {
-        Stresser stresser = new Stresser() {
-
-            @Override
-            public boolean continueExecution() {
-                return true;
-            }
-
-        };
-        eatMemory(stresser);
     }
 }
