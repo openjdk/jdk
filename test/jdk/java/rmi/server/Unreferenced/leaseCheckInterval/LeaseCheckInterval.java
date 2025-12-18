@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,9 @@
  * may be delayed longer than expected.  While this is not a spec violation
  * (because there are no timeliness guarantees for any of these garbage
  * collection-related events), the user might expect that an unreferenced()
- * invocation for an object whose last client has terminated abnorally
+ * invocation for an object whose last client has terminated abnormally
  * should occur on relatively the same time order as the lease value
  * granted.
- * @author Peter Jones
  *
  * @library ../../../testlibrary
  * @modules java.rmi/sun.rmi.registry
@@ -45,24 +44,31 @@
  * @run main/othervm LeaseCheckInterval
  */
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.server.Unreferenced;
+import java.time.Duration;
+import java.time.Instant;
 
 public class LeaseCheckInterval implements Remote, Unreferenced {
 
     public static final String BINDING = "LeaseCheckInterval";
+    // lease expiry time (milliseconds)
     private static final long LEASE_VALUE = 10000;
-    private static final long TIMEOUT = 20000;
+    // the maximum allowed duration between the lease expiration and
+    // the Unreferenced.unreferenced() callback method to be invoked
+    private static final Duration EXPECTED_MAX_DURATION = Duration.ofMinutes(1);
 
-    private Object lock = new Object();
+    private final Object lock = new Object();
     private boolean unreferencedInvoked = false;
 
+    @Override
     public void unreferenced() {
-        System.err.println("unreferenced() method invoked");
+        System.err.println("[" + Instant.now() + "] unreferenced() method invoked");
         synchronized (lock) {
             unreferencedInvoked = true;
             lock.notify();
@@ -70,9 +76,6 @@ public class LeaseCheckInterval implements Remote, Unreferenced {
     }
 
     public static void main(String[] args) throws Exception {
-
-        System.err.println("\nRegression test for bug 4285878\n");
-
         /*
          * Set the duration of leases granted to a very small value, so that
          * we can test if expirations are detected in a roughly comparable
@@ -90,36 +93,47 @@ public class LeaseCheckInterval implements Remote, Unreferenced {
 
             Registry localRegistry = TestLibrary.createRegistryOnEphemeralPort();
             int registryPort = TestLibrary.getRegistryPort(localRegistry);
-            System.err.println("created local registry");
+            System.err.println("created local registry on port " + registryPort);
 
             localRegistry.bind(BINDING, obj);
             System.err.println("bound remote object in local registry");
 
+            Path outputFile = Files.createTempFile(Path.of("."), "4285878-", ".txt");
             synchronized (obj.lock) {
                 System.err.println("starting remote client VM...");
                 jvm = new JavaVM("SelfTerminator", "-Drmi.registry.port=" +
-                            registryPort, "");
+                            registryPort, outputFile.toAbsolutePath().toString());
+                // launch the self terminating java application which will lookup
+                // the bound object and then terminate itself. before terminating
+                // it will write the time at which it is terminating, into the
+                // output file
                 jvm.start();
 
-                System.err.println("waiting for unreferenced() callback...");
-                obj.lock.wait(TIMEOUT);
+                do {
+                    System.err.println("waiting for unreferenced() callback...");
+                    obj.lock.wait();
+                } while (!obj.unreferencedInvoked); // repeat the loop to take into account
+                                                    // spurious wakeups
+                Instant waitEndedAt = Instant.now();
+                // should never happen
+                assert obj.unreferencedInvoked : "unreference() not invoked";
 
-                if (obj.unreferencedInvoked) {
-                    System.err.println("TEST PASSED: " +
-                        "unreferenced() invoked in timely fashion");
+                final String content = Files.readString(outputFile);
+                System.err.println("content in " + outputFile + ": " + content);
+                // parse the time, representing the time at which the SelfTerminator
+                // application termination started
+                final Instant terminationStartedAt = Instant.parse(content);
+                final Duration waitDuration = Duration.between(terminationStartedAt,
+                        waitEndedAt);
+                System.out.println("wait completed in " + waitDuration);
+                if (waitDuration.compareTo(EXPECTED_MAX_DURATION) > 0) {
+                    throw new RuntimeException("Took unexpectedly long (duration=" +
+                            waitDuration + ") to invoke Unreferenced.unreferenced()," +
+                            " expected max duration=" + EXPECTED_MAX_DURATION);
                 } else {
-                    throw new RuntimeException(
-                        "TEST FAILED: unreferenced() not invoked after " +
-                        ((double) TIMEOUT / 1000.0) + " seconds");
+                    System.err.println("TEST PASSED: unreferenced() invoked in timely" +
+                            " fashion (duration=" + waitDuration + ")");
                 }
-            }
-
-        } catch (Exception e) {
-            if (e instanceof RuntimeException) {
-                throw (RuntimeException) e;
-            } else {
-                throw new RuntimeException(
-                    "TEST FAILED: unexpected exception: " + e.toString());
             }
         } finally {
             if (jvm != null) {
