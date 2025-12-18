@@ -207,6 +207,17 @@ void G1Arguments::initialize() {
     FLAG_SET_DEFAULT(GCTimeRatio, 24);
   }
 
+  // Do not interfere with GC-Pressure driven heap resizing unless the user
+  // explicitly sets otherwise. G1 heap sizing should be free to grow or shrink
+  // the heap based on GC pressure, rather than being forced to satisfy
+  // MinHeapFreeRatio or MaxHeapFreeRatio defaults that the user did not set.
+  if (FLAG_IS_DEFAULT(MinHeapFreeRatio)) {
+    FLAG_SET_DEFAULT(MinHeapFreeRatio, 0);
+  }
+  if (FLAG_IS_DEFAULT(MaxHeapFreeRatio)) {
+    FLAG_SET_DEFAULT(MaxHeapFreeRatio, 100);
+  }
+
   // Below, we might need to calculate the pause time interval based on
   // the pause target. When we do so we are going to give G1 maximum
   // flexibility and allow it to do pauses when it needs to. So, we'll
