@@ -191,6 +191,20 @@ inline void ShenandoahBarrierSet::keep_alive_if_weak(DecoratorSet decorators, oo
 template <DecoratorSet decorators, typename T>
 inline void ShenandoahBarrierSet::write_ref_field_post(T* field) {
   assert(ShenandoahCardBarrier, "Should have been checked by caller");
+  if (_heap->is_in_young(field)) {
+    // Young field stores do not require card mark.
+    return;
+  }
+  T heap_oop = RawAccess<>::oop_load(field);
+  if (CompressedOops::is_null(heap_oop)) {
+    // Null reference store do not require card mark.
+    return;
+  }
+  oop obj = CompressedOops::decode_not_null(heap_oop);
+  if (!_heap->is_in_young(obj)) {
+    // Not an old->young reference store.
+    return;
+  }
   volatile CardTable::CardValue* byte = card_table()->byte_for(field);
   *byte = CardTable::dirty_card_val();
 }
