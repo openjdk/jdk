@@ -87,7 +87,8 @@ public class EntriesEvictionTest {
 
         if (insertedId != -1) {
             HeaderField insertedField = dynamicTable.get(insertedId);
-            Assertions.assertEquals(                    new HeaderField(headerToAdd.name(), headerToAdd.value()), insertedField);
+            Assertions.assertEquals(new HeaderField(headerToAdd.name(), headerToAdd.value()),
+                                    insertedField);
         }
     }
 

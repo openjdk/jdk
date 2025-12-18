@@ -86,7 +86,8 @@ public class EncoderDecoderConnectionTest {
         Assertions.assertEquals(capacityToSet, conn.encoderTable().capacity());
         // Since encoder/decoder streams are cross-wired we expect see dynamic
         // table capacity updated for the decoder too
-        Assertions.assertEquals(                conn.encoderTable().capacity(), conn.decoderTable().capacity());
+        Assertions.assertEquals(conn.encoderTable().capacity(),
+                                conn.decoderTable().capacity());
     }
 
     @Test
@@ -159,7 +160,8 @@ public class EncoderDecoderConnectionTest {
 
         // QPACK_ENCODER_STREAM_ERROR is expected on the decoder side
         // since the decoder dynamic table capacity was not updated
-        Assertions.assertEquals(                Http3Error.QPACK_ENCODER_STREAM_ERROR, decoderErrorHandler.http3Error.get());
+        Assertions.assertEquals(Http3Error.QPACK_ENCODER_STREAM_ERROR,
+                                decoderErrorHandler.http3Error.get());
 
         // It is expected that http3 error reported to
         // the decoder error handler only
