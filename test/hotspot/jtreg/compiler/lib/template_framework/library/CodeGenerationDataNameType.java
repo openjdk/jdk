@@ -236,7 +236,7 @@ public interface CodeGenerationDataNameType extends DataName.Type {
         VectorType.DOUBLE_512
     );
 
-    List<VectorType.Vector> VECTOR_ALL_VECTOR_TYPES = concat(
+    List<VectorType.Vector> VECTOR_VECTOR_TYPES = concat(
         VECTOR_BYTE_VECTOR_TYPES,
         VECTOR_SHORT_VECTOR_TYPES,
         VECTOR_INT_VECTOR_TYPES,
@@ -245,5 +245,20 @@ public interface CodeGenerationDataNameType extends DataName.Type {
         VECTOR_DOUBLE_VECTOR_TYPES
     );
 
-    // TODO: rest of vector types
+    List<VectorType.Mask> VECTOR_MASK_TYPES =
+        VECTOR_VECTOR_TYPES.stream().map(t -> t.maskType).toList();
+
+    List<VectorType.Shuffle> VECTOR_SHUFFLE_TYPES =
+        VECTOR_VECTOR_TYPES.stream().map(t -> t.shuffleType).toList();
+
+    List<VectorType> VECTOR_TYPES = concat(
+        VECTOR_VECTOR_TYPES,
+        VECTOR_MASK_TYPES,
+        VECTOR_SHUFFLE_TYPES
+    );
+
+    List<CodeGenerationDataNameType> ALL_TYPES = concat(
+        SCALAR_NUMERIC_TYPES,
+        VECTOR_TYPES
+    );
 }

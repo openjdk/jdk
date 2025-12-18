@@ -404,7 +404,7 @@ public final class Operations {
     private static List<Expression> generateVectorOperations() {
         List<Expression> ops = new ArrayList<>();
 
-        for (var type : CodeGenerationDataNameType.VECTOR_ALL_VECTOR_TYPES) {
+        for (var type : CodeGenerationDataNameType.VECTOR_VECTOR_TYPES) {
             ops.add(Expression.make(type, "", type, ".abs()"));
             ops.add(Expression.make(type, "", type, ".add(", type.elementType, ")"));
             ops.add(Expression.make(type, "", type, ".add(", type.elementType, ", ", type.maskType, ")"));
@@ -435,7 +435,7 @@ public final class Operations {
             ops.add(Expression.make(type, type.name() + ".broadcast(" + type.speciesName + ", ", LONGS, ")", WITH_ILLEGAL_ARGUMENT_EXCEPTION));
 
             // TODO: non zero parts
-            for (var type2 : CodeGenerationDataNameType.VECTOR_ALL_VECTOR_TYPES) {
+            for (var type2 : CodeGenerationDataNameType.VECTOR_VECTOR_TYPES) {
                 ops.add(Expression.make(type, "((" + type.name() + ")", type2 , ".castShape(" + type.speciesName + ", 0))"));
             }
 
@@ -454,7 +454,7 @@ public final class Operations {
             ops.add(Expression.make(type, "", type, ".compress(", type.maskType, ")"));
 
             // TODO: non zero parts
-            for (var type2 : CodeGenerationDataNameType.VECTOR_ALL_VECTOR_TYPES) {
+            for (var type2 : CodeGenerationDataNameType.VECTOR_VECTOR_TYPES) {
                 // "convert" keeps the same shape, i.e. length of the vector in bits.
                 if (type.byteSize() == type2.byteSize()) {
                     ops.add(Expression.make(type,

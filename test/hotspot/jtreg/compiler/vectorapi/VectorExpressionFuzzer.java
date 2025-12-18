@@ -48,9 +48,12 @@ import compiler.lib.template_framework.TemplateToken;
 import static compiler.lib.template_framework.Template.scope;
 import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.$;
+import compiler.lib.template_framework.library.CodeGenerationDataNameType;
 import compiler.lib.template_framework.library.Expression;
 import compiler.lib.template_framework.library.Operations;
 import compiler.lib.template_framework.library.TestFrameworkClass;
+import compiler.lib.template_framework.library.PrimitiveType;
+import compiler.lib.template_framework.library.VectorType;
 
 /**
  * TODO: desc
@@ -79,6 +82,9 @@ public class VectorExpressionFuzzer {
     public static String generate(CompileFramework comp) {
         // Generate a list of test methods.
         List<TemplateToken> tests = new ArrayList<>();
+
+        // We are going to use some random numbers in our tests, so import some good methods for that.
+        tests.add(PrimitiveType.generateLibraryRNG());
 
 //        // Example 1:
 //        // We only use the "expression" once, and so we can conveniently just run it with
@@ -231,6 +237,9 @@ public class VectorExpressionFuzzer {
 //            for (int i = 0; i < 2; i++) { templates.add(template2.withArgs(type)); }
 //        }
 //        return IRTestClass.TEMPLATE.withArgs(info, templates).render();
+
+        for (VectorType.Vector type : CodeGenerationDataNameType.VECTOR_VECTOR_TYPES) {
+        }
 
         // Create the test class, which runs all tests.
         return TestFrameworkClass.render(
