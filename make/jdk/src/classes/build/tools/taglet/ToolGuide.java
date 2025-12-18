@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.lang.reflect.Field;
 
 import javax.lang.model.element.Element;
 
@@ -141,14 +142,21 @@ public class ToolGuide implements Taglet {
         return sb.toString();
     }
 
+    private static ThreadLocal<String> CURRENT_PATH = null;
+
     private String currentPath() {
-        try {
-            Class<?> c = Class.forName("jdk.javadoc.internal.doclets.formats.html.HtmlDocletWriter");
-            ThreadLocal<?> tl = (ThreadLocal<?>) c.getField("CURRENT_PATH").get(null);
-            return (String) tl.get();
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException("Cannot determine current path", e);
+        if (CURRENT_PATH == null) {
+            try {
+                Field f = Class.forName("jdk.javadoc.internal.doclets.formats.html.HtmlDocletWriter")
+                               .getField("CURRENT_PATH");
+                @SuppressWarnings("unchecked")
+                ThreadLocal<String> tl = (ThreadLocal<String>) f.get(null);
+                CURRENT_PATH = tl;
+            } catch (ReflectiveOperationException e) {
+                throw new RuntimeException("Cannot determine current path", e);
+            }
         }
+        return CURRENT_PATH.get();
     }
 
 }
