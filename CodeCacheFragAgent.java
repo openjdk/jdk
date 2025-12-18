@@ -1,0 +1,165 @@
+package vm.agent;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Random;
+import java.util.random.RandomGenerator;
+import jdk.test.whitebox.WhiteBox;
+import jdk.test.whitebox.code.BlobType;
+import jdk.test.whitebox.code.CodeBlob;
+
+public class CodeCacheFragAgent {
+
+  // Configurable variables (can be overridden via system properties)
+  private static int minBlobSize = 500;
+  private static int maxBlobSize = 10000;
+  private static int avgBlobSize = 2000;
+  private static int divBlobSize = 500;
+  private static int requiredStableGcRounds = 3;
+  private static double fillPercent = 50.0;
+
+  private static final WhiteBox WHITEBOX = WhiteBox.getWhiteBox();
+  private static long seed = System.currentTimeMillis();
+
+  // Helper function to read and validate numeric properties
+  private static double readNumericProperty(String propertyName, double defaultValue) {
+    String prop = System.getProperty(propertyName);
+    if (prop == null) {
+      return defaultValue;
+    }
+
+    try {
+      return Double.parseDouble(prop);
+    } catch (NumberFormatException e) {
+      System.out.println("Invalid " + propertyName + ": " + prop +
+                       ". Must be a number. Using default: " + defaultValue);
+      return defaultValue;
+    }
+  }
+
+  // Parse system properties and update configurable variables
+  private static void parseArguments(String args) {
+    minBlobSize = (int) readNumericProperty("MinBlobSize", minBlobSize);
+    maxBlobSize = (int) readNumericProperty("MaxBlobSize", maxBlobSize);
+    avgBlobSize = (int) readNumericProperty("AvgBlobSize", avgBlobSize);
+    divBlobSize = (int) readNumericProperty("DivBlobSize", divBlobSize);
+    requiredStableGcRounds = (int) readNumericProperty("RequiredStableGcRounds", requiredStableGcRounds);
+    fillPercent = readNumericProperty("FillPercentage", fillPercent);
+    seed = (long) readNumericProperty("RandomSeed", seed);
+  }
+
+  public static void premain(String args) {
+    // Parse system properties to configure variables
+    parseArguments(args);
+
+    // Validate FillPercentage
+    if (fillPercent < 0.0 || fillPercent > 100.0) {
+      System.out.println("FillPercentage must be between 0 and 100: " + fillPercent);
+      return;
+    }
+
+    // Ensure no nmethods get added to CodeCache
+    WHITEBOX.lockCompilation();
+
+    // Deoptimized all nmethods
+    WHITEBOX.deoptimizeAll();
+
+    // Trigger GC until the number of non profiled blobs is stable
+    gcUntilNonProfiledStable();
+
+    // Check total size of non profiled heap
+    long nonProfiledSize = BlobType.MethodNonProfiled.getSize();
+    if (nonProfiledSize == 0) {
+      return;
+    }
+
+    // Fill up NonProfiled heap with randomly sized dummy blobs
+    List<Long> blobs = new ArrayList<Long>();
+
+    RandomGenerator blobGen = new Random(seed);
+    while (true) {
+      long addr = generateDummyBlob(blobGen);
+
+      if (addr == -1) {
+        break;
+      }
+
+      blobs.add(addr);
+    }
+
+    // Create list of indices
+    List<Integer> indices = new ArrayList<>();
+    for (int i = 0; i < blobs.size(); i++) {
+      indices.add(i);
+    }
+
+    // Randomize the indicies. Use sort with a random deterministic value
+    // This keeps relative ordering regardless of the number of blobs generated
+    indices.sort(Comparator.comparingLong(i -> new java.util.SplittableRandom(i + seed).nextLong()));
+
+    // Free blobs until we hit the desired fragmentation amount
+    long currentFilled = nonProfiledSize;
+    for (Integer index : indices) {
+      if (100.0 * currentFilled / nonProfiledSize <= fillPercent) {
+        break;
+      }
+
+      long addr = blobs.get(index);
+      currentFilled -= CodeBlob.getCodeBlob(addr).size;
+      WHITEBOX.freeCodeBlob(addr);
+    }
+
+    // Unlock compilation
+    WHITEBOX.unlockCompilation();
+  }
+
+  // Generate a randomly sized code cache blob
+  // Returns the address if successfully created, otherwise returns -1
+  public static long generateDummyBlob(RandomGenerator blobGen) {
+    int size = -1;
+
+    while (size < minBlobSize || size > maxBlobSize) {
+      size = (int) blobGen.nextGaussian(avgBlobSize, divBlobSize);
+    }
+
+    long addr = WHITEBOX.allocateCodeBlob(size, BlobType.MethodNonProfiled.id);
+    if (addr == 0) {
+      return -1;
+    }
+
+    BlobType actualType = CodeBlob.getCodeBlob(addr).code_blob_type;
+    if (actualType.id != BlobType.MethodNonProfiled.id) {
+      WHITEBOX.freeCodeBlob(addr);
+      return -1;
+    }
+
+    return addr;
+  }
+
+  // Returns the number of live CodeBlobs currently present in the
+  // MethodNonProfiled code heap
+  private static int countNonProfiledCodeBlobs() {
+    Object[] entries = WHITEBOX.getCodeHeapEntries(BlobType.MethodNonProfiled.id);
+    return entries == null ? 0 : entries.length;
+  }
+
+  // Run GCs until the MethodNonProfiled code heap blob count stabilizes
+  private static void gcUntilNonProfiledStable() {
+    int previousBlobs = Integer.MAX_VALUE;
+    int stableCount = 0;
+
+    while (stableCount < requiredStableGcRounds) {
+      WHITEBOX.fullGC();
+      int currentBlobs = countNonProfiledCodeBlobs();
+
+      if (currentBlobs < previousBlobs) {
+        stableCount = 0;
+      } else {
+        stableCount++;
+      }
+
+      previousBlobs = currentBlobs;
+    }
+  }
+}
