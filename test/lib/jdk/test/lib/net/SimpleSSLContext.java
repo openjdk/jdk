@@ -43,20 +43,12 @@ public final class SimpleSSLContext {
 
     // Made `public` for backward compatibility
     public SimpleSSLContext() throws IOException {
-        this.ssl = findSSLContextOrNull(DEFAULT_KEY_STORE_FILE_REL_PATH);
+        this.ssl = findSSLContext(DEFAULT_KEY_STORE_FILE_REL_PATH, DEFAULT_PROTOCOL);
     }
 
     // Kept for backward compatibility
     public SimpleSSLContext(String keyStoreFileRelPath) throws IOException {
-        this.ssl = findSSLContextOrNull(Objects.requireNonNull(keyStoreFileRelPath));
-    }
-
-    private static SSLContext findSSLContextOrNull(String keyStoreFileRelPath) throws IOException {
-        try {
-            return findSSLContext(keyStoreFileRelPath, SimpleSSLContext.DEFAULT_PROTOCOL);
-        } catch (RuntimeException re) {
-            throw new IOException(re);
-        }
+        this.ssl = findSSLContext(Objects.requireNonNull(keyStoreFileRelPath), DEFAULT_PROTOCOL);
     }
 
     /**

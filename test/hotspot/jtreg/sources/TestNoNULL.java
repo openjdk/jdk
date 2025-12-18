@@ -24,6 +24,8 @@
 /*
  * @test
  * @bug 8343802
+ * @comment Only need to run this once, in tier1.
+ * @requires vm.flagless & vm.debug
  * @summary Test prevent NULL backsliding in hotspot code and tests
  * @run main TestNoNULL
  */
