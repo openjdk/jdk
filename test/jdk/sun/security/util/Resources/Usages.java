@@ -29,8 +29,11 @@
  *          java.base/sun.security.tools.keytool.resources
  *          jdk.jartool/sun.security.tools.jarsigner.resources
  * @summary Check usages of security-related Resources files
+ * @library /test/lib/
  * @run main/othervm Usages
  */
+
+import jtreg.SkippedException;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -149,7 +152,7 @@ public class Usages {
         if (Files.exists(SRC)) {
             MAP.forEach(Usages::check);
         } else {
-            System.out.println("No src directory. Test skipped.");
+            throw new SkippedException("No src directory");
         }
     }
 
