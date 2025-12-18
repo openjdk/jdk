@@ -212,6 +212,22 @@ public class VectorExpressionFuzzer {
                                 List.of(et.name(), "[] ", name),
                                 List.of(t.name(), ".fromArray(", t.speciesName, ", ", name, ", 0)")
                             ));
+                        } else if (argumentType instanceof VectorType.Mask t) {
+                            arguments.add(new TestArgument(
+                                List.of("boolean[] ", name, " = new boolean[1000];\n",
+                                        "LibraryRNG.fill(", name,");\n"),
+                                name,
+                                List.of("boolean[] ", name),
+                                List.of("VectorMask.fromArray(", t.vectorType.speciesName, ", ", name, ", 0)")
+                            ));
+                        } else if (argumentType instanceof VectorType.Shuffle t) {
+                            arguments.add(new TestArgument(
+                                List.of("int[] ", name, " = new int[1000];\n",
+                                        "LibraryRNG.fill(", name,");\n"),
+                                name,
+                                List.of("int[] ", name),
+                                List.of("VectorShuffle.fromArray(", t.vectorType.speciesName, ", ", name, ", 0)")
+                            ));
                         } else {
                             // We don't know anything special how to create different values
                             // each time, so let's just crate the same constant each time.
@@ -289,103 +305,10 @@ public class VectorExpressionFuzzer {
             );
         });
 
-
-//
-//        var defineArray = Template.make("type", "name", "size", (Type type, String name, Integer size) -> scope(
-//            """
-//            public static #type[] #name = fill(new #type[#size]);
-//            """
-//        ));
-//
-//        // Example 2:
-//        // We use the expression to iterate over arrays, loading from a set of input arrays,
-//        // and storing to an output array.
-//        var template2 = Template.make("type", (VectorAPIType type)-> {
-//            int size = 1000;
-//            Expression expression = Expression.make(type, Type.ALL_BUILTIN_TYPES, 4);
-//            List<Type> types = expression.argTypes();
-//            List<TemplateWithArgs> arrayDefinitions = new ArrayList<>();
-//            List<Object> args = new ArrayList<>();
-//            for (int i = 0; i < types.size(); i++) {
-//                String name = $("array") + "_" + i;
-//                Type argType = types.get(i);
-//                PrimitiveType elementType = null;
-//                if (argType instanceof PrimitiveType t) {
-//                    elementType = t;
-//                    args.add(name + "[0]");
-//                } else if (argType instanceof VectorAPIType vt) {
-//                    elementType = vt.elementType;
-//                    args.add(vt.vectorType + ".fromArray(" + vt.species + ", " + name + ", 0)");
-//                } else if (argType instanceof VectorAPIType.MaskType mt) {
-//                    elementType = Type.booleans();
-//                    args.add("VectorMask.fromArray(" + mt.vectorType.species + ", " + name + ", 0)");
-//                } else if (argType instanceof VectorAPIType.ShuffleType st) {
-//                    elementType = Type.ints();
-//                    args.add("VectorShuffle.fromArray(" + st.vectorType.species + ", " + name + ", 0)");
-//                } else {
-//                    throw new RuntimeException("Not handled: " + argType);
-//                }
-//                arrayDefinitions.add(defineArray.asToken(elementType, name, size));
-//            }
-//            return scope(
-//                let("size", size),
-//                let("elementType", type.elementType),
-//                """
-//                // --- $test start ---
-//                // Using $GOLD
-//                // type: #type
-//                // elementType: #elementType
-//                """,
-//                Library.CLASS_HOOK.set(
-//                    """
-//                    // Input arrays:
-//                    """,
-//                    arrayDefinitions,
-//                    """
-//
-//                    static final Object $GOLD = $test();
-//
-//                    @Test
-//                    public static Object $test() {
-//                        try {
-//                            #elementType[] out = new #elementType[#size];
-//                    """,
-//                    "        ", expression.asToken(args), ".intoArray(out, 0);\n",
-//                    """
-//                            return out;
-//                    """,
-//                    expression.exceptions().stream().map(exception ->
-//                        "} catch (" + exception + " e) { return e;\n"
-//                    ).toList(),
-//                    """
-//                        } finally {
-//                            // Just javac is happy if there are no exceptions to catch.
-//                        }
-//                    }
-//
-//                    @Check(test = "$test")
-//                    public static void $check(Object result) {
-//                        Verify.checkEQ(result, $GOLD);
-//                    }
-//
-//                    // --- $test end   ---
-//                    """
-//                )
-//            );
-//        });
-//
-//        // TODO: add scalar output case for reductions
-//        // TODO: add register stress test
-//        // TODO: add load/store stress test
-//
-//        // Now use the templates and add them into the IRTestClass.
-//        List<TemplateWithArgs> templates = new ArrayList<>();
-//        templates.add(Library.arrayFillMethods());
-//        for (VectorAPIType type : Type.VECTOR_API_VECTOR_TYPES) {
-//            for (int i = 0; i < 2; i++) { templates.add(template1.asToken(type)); }
-//            for (int i = 0; i < 2; i++) { templates.add(template2.asToken(type)); }
-//        }
-//        return IRTestClass.TEMPLATE.asToken(info, templates).render();
+        // TODO: use array for return instead of Vector
+        // TODO: add scalar output case for reductions
+        // TODO: add register stress test
+        // TODO: add load/store stress test
 
         for (VectorType.Vector type : CodeGenerationDataNameType.VECTOR_VECTOR_TYPES) {
             tests.add(template1.asToken(type));
