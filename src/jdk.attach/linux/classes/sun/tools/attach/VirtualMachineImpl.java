@@ -41,6 +41,8 @@ import java.util.regex.Pattern;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import sun.jvmstat.monitor.MonitoredHost;
+
 /*
  * Linux implementation of HotSpotVirtualMachine
  */
@@ -275,9 +277,18 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             } else if (Files.isSameFile(tmpOnProcPidRoot, TMPDIR)) {
                 return TMPDIR.toString();
             } else {
-                throw new AttachNotSupportedException("Unable to access the filesystem of the target process");
+                boolean found = MonitoredHost.getMonitoredHost("//localhost")
+                                             .activeVms()
+                                             .stream()
+                                             .anyMatch(i -> pid == i.intValue());
+                if (found) {
+                    // We can use /tmp because target process is on same host
+                    return TMPDIR.toString();
+                } else {
+                    throw new AttachNotSupportedException("Unable to access the filesystem of the target process");
+                }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new AttachNotSupportedException("Unable to access the filesystem of the target process", e);
         }
     }
