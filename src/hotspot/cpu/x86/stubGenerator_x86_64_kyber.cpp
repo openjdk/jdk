@@ -889,10 +889,10 @@ address generate_kyber12To16_avx512(StubGenerator *stubgen,
       __ evpermb(xmm6, k0, xmm20, xmm2, false, Assembler::AVX_512bit);
       __ evpermb(xmm7, k0, xmm20, xmm3, false, Assembler::AVX_512bit);
 
-      __ evpsrlvw(xmm4, xmm21, xmm4, Assembler::AVX_512bit);
-      __ evpsrlvw(xmm5, xmm21, xmm5, Assembler::AVX_512bit);
-      __ evpsrlvw(xmm6, xmm21, xmm6, Assembler::AVX_512bit);
-      __ evpsrlvw(xmm7, xmm21, xmm7, Assembler::AVX_512bit);
+      __ evpsrlvw(xmm4, xmm4, xmm21, Assembler::AVX_512bit);
+      __ evpsrlvw(xmm5, xmm5, xmm21, Assembler::AVX_512bit);
+      __ evpsrlvw(xmm6, xmm6, xmm21, Assembler::AVX_512bit);
+      __ evpsrlvw(xmm7, xmm7, xmm21, Assembler::AVX_512bit);
 
       __ evpandq(xmm0, xmm22, xmm4, Assembler::AVX_512bit);
       __ evpandq(xmm1, xmm22, xmm5, Assembler::AVX_512bit);
