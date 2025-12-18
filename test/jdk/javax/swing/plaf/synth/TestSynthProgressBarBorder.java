@@ -43,21 +43,21 @@ import javax.swing.JSlider;
 import javax.swing.UIManager;
 
 public class TestSynthProgressBarBorder {
-    
+
     static final String INSTRUCTIONS = """
         A frame containing progress bar will be shown with 50% value
         and "ProgressBar setBorder" checkbox at the top
         and a slider at bottom.
 
-        Please check if 50% progress is rendered in the progress bar 
-        and rest 50% is rendered as blank bar 
+        Please check if 50% progress is rendered in the progress bar
+        and rest 50% is rendered as blank bar
         with Nimbus default background color.
 
         Please verify if "ProgressBar setBorder" checkbox is unchecked,
         the 50% blank bar should not disappear.
         Also, now if you use slider to set progress value to 0%,
         a blank progress bar with 0% value should be rendered and
-        the progress bar should not disappear. 
+        the progress bar should not disappear.
         If this verification is met,  press Pass else press Fail.""";
 
     public static void main(String[] args) throws Exception {
