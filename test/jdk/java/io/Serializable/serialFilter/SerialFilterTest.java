@@ -384,9 +384,11 @@ public class SerialFilterTest implements Serializable {
         Class<?> arrayClass = new int[0].getClass();
         String pattern = String.format("%s=%d;%s=%d", name, value, name, value - 1);
         ObjectInputFilter filter = ObjectInputFilter.Config.createFilter(pattern);
-        Assertions.assertEquals(                ObjectInputFilter.Status.REJECTED, filter.checkInput(new FilterValues(arrayClass, value, value, value, value)),
+        Assertions.assertEquals(ObjectInputFilter.Status.REJECTED,
+                filter.checkInput(new FilterValues(arrayClass, value, value, value, value)),
                 "last limit value not used: " + filter);
-        Assertions.assertEquals(                ObjectInputFilter.Status.UNDECIDED, filter.checkInput(new FilterValues(arrayClass, value-1, value-1, value-1, value-1)),
+        Assertions.assertEquals(ObjectInputFilter.Status.UNDECIDED,
+                filter.checkInput(new FilterValues(arrayClass, value-1, value-1, value-1, value-1)),
                 "last limit value not used: " + filter);
     }
 

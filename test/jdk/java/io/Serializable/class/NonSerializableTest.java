@@ -38,6 +38,7 @@
 
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -63,46 +64,46 @@ public class NonSerializableTest {
     }
 
     // Test cases to compile and run
-    public Object[][] provider() {
-        return new String[][][] {
+    public Object[] provider() {
+        return new List[] {
             // Write NonSerial1, Read NonSerial1
-            {{"NonSerialA_1", "-cp", ".", "TestEntry", "-s", "A"}},
-            {{"NonSerialA_1", "-cp", ".", "TestEntry", "-d"}},
+            List.of("NonSerialA_1", "-cp", ".", "TestEntry", "-s", "A"),
+            List.of("NonSerialA_1", "-cp", ".", "TestEntry", "-d"),
 
             // Write NonSerial1, Read NonSerial2
-            {{"NonSerialA_1", "-cp", ".", "TestEntry", "-s", "A"}},
-            {{"NonSerialA_2", "-cp", ".", "TestEntry", "-d"}},
+            List.of("NonSerialA_1", "-cp", ".", "TestEntry", "-s", "A"),
+            List.of("NonSerialA_2", "-cp", ".", "TestEntry", "-d"),
 
             // Write NonSerial1, Read Serial1
-            {{"NonSerialA_1", "-cp", ".", "TestEntry", "-s", "A"}},
-            {{"SerialA_1", "-cp", ".", "TestEntry", "-d"}},
+            List.of("NonSerialA_1", "-cp", ".", "TestEntry", "-s", "A"),
+            List.of("SerialA_1", "-cp", ".", "TestEntry", "-d"),
 
             // Write Serial1, Read NonSerial1
-            {{"SerialA_1", "-cp", ".", "TestEntry", "-s", "A"}},
-            {{"NonSerialA_1", "-cp", ".", "TestEntry", "-doe"}},
+            List.of("SerialA_1", "-cp", ".", "TestEntry", "-s", "A"),
+            List.of("NonSerialA_1", "-cp", ".", "TestEntry", "-doe"),
 
             // Write Serial1, Read Serial2
-            {{"SerialA_1", "-cp", ".", "TestEntry", "-s", "A"}},
-            {{"SerialA_2", "-cp", ".", "TestEntry", "-d"}},
+            List.of("SerialA_1", "-cp", ".", "TestEntry", "-s", "A"),
+            List.of("SerialA_2", "-cp", ".", "TestEntry", "-d"),
 
             // Write Serial2, Read Serial1
-            {{"SerialA_2", "-cp", ".", "TestEntry", "-s", "A"}},
-            {{"SerialA_1", "-cp", ".", "TestEntry", "-d"}},
+            List.of("SerialA_2", "-cp", ".", "TestEntry", "-s", "A"),
+            List.of("SerialA_1", "-cp", ".", "TestEntry", "-d"),
 
             // Write Serial1, Read Serial3
-            {{"SerialA_1", "-cp", ".", "TestEntry", "-s", "A"}},
-            {{"SerialA_3", "-cp", ".", "TestEntry", "-de"}},
+            List.of("SerialA_1", "-cp", ".", "TestEntry", "-s", "A"),
+            List.of("SerialA_3", "-cp", ".", "TestEntry", "-de"),
 
             // Write Serial3, Read Serial1
-            {{"SerialA_3", "-cp", ".", "TestEntry", "-s", "A"}},
-            {{"SerialA_1", "-cp", ".", "TestEntry", "-de"}},
+            List.of("SerialA_3", "-cp", ".", "TestEntry", "-s", "A"),
+            List.of("SerialA_1", "-cp", ".", "TestEntry", "-de"),
         };
     }
 
     @ParameterizedTest
     @MethodSource("provider")
-    public void test(String[][] argArray) throws Exception {
-        String[] args = argArray[0];
+    public void test(List<String> argList) throws Exception {
+        String[] args = argList.toArray(new String[0]);
         boolean b = CompilerUtils.compile(Paths.get(System.getProperty("test.src"), args[0]),
                                           Paths.get(System.getProperty("user.dir")));
         assertTrue(b, "Compilation failed");
