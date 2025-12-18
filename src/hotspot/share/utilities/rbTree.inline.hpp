@@ -233,6 +233,7 @@ AbstractRBTree<K, NodeType, COMPARATOR>::cursor(const K& key, const NodeType* hi
 
 template <typename K, typename NodeType, typename COMPARATOR>
 inline void AbstractRBTree<K, NodeType, COMPARATOR>::insert_at_cursor(NodeType* node, const Cursor& node_cursor) {
+  assert(node != nullptr, "must be");
   assert(node_cursor.valid() && !node_cursor.found(), "must be");
   _num_nodes++;
 
@@ -543,6 +544,7 @@ AbstractRBTree<K, NodeType, COMPARATOR>::prev(const Cursor& node_cursor) const {
 
 template <typename K, typename NodeType, typename COMPARATOR>
 inline void AbstractRBTree<K, NodeType, COMPARATOR>::replace_at_cursor(NodeType* new_node, const Cursor& node_cursor) {
+  assert(new_node != nullptr, "must be");
   assert(node_cursor.valid() && node_cursor.found(), "must be");
   NodeType* old_node = node_cursor.node();
   if (old_node == new_node) {
