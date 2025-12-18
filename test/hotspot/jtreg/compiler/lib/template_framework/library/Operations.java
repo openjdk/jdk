@@ -58,20 +58,6 @@ public final class Operations {
     private static Expression.Info WITH_ILLEGAL_ARGUMENT_EXCEPTION = new Expression.Info().withExceptions(Set.of("IllegalArgumentException"));
     private static Expression.Info WITH_OUT_OF_BOUNDS_EXCEPTION = new Expression.Info().withExceptions(Set.of("IndexOutOfBoundsException"));
 
-
-    /**
-     * Provides a lits of operations on {@link PrimitiveType}s, such as arithmetic, logical,
-     * and cast operations.
-     */
-    public static final List<Expression> PRIMITIVE_OPERATIONS = generatePrimitiveOperations();
-
-    public static final List<Expression> FLOAT16_OPERATIONS = generateFloat16Operations();
-
-    public static final List<Expression> SCALAR_NUMERIC_OPERATIONS = concat(
-            PRIMITIVE_OPERATIONS,
-            FLOAT16_OPERATIONS
-    );
-
     @SafeVarargs
     private static List<Expression> concat(List<Expression>... lists) {
         return Arrays.stream(lists)
@@ -337,7 +323,7 @@ public final class Operations {
     private record VOP(String name, VOPType type, List<PrimitiveType> elementTypes) {}
 
     // TODO: consider some floating results as inexact, and handle it accordingly?
-    private static final List<VOP> VECTOR_API_OPS = List.of(
+    private static final List<VOP> VECTOR_OPS = List.of(
         new VOP("ABS",                  VOPType.UNARY, PRIMITIVE_TYPES),
         //new VOP("ACOS",                 VOPType.UNARY, FLOATING_TYPES),
         new VOP("ADD",                  VOPType.INTEGRAL_ASSOCIATIVE, PRIMITIVE_TYPES),
@@ -357,10 +343,7 @@ public final class Operations {
         //new VOP("EXP",                  VOPType.UNARY, FLOATING_TYPES),
         new VOP("EXPAND_BITS",          VOPType.BINARY, INT_LONG_TYPES),
         //new VOP("EXPM1",                VOPType.UNARY, FLOATING_TYPES),
-
-        // TODO: add back after JDK-8351941 [Graal]
-        //new VOP("FIRST_NONZERO",        VOPType.ASSOCIATIVE, PRIMITIVE_TYPES),
-
+        new VOP("FIRST_NONZERO",        VOPType.ASSOCIATIVE, PRIMITIVE_TYPES),
         new VOP("FMA",                  VOPType.TERNARY, FLOATING_TYPES),
         //new VOP("HYPOT",                VOPType.BINARY, FLOATING_TYPES),
         new VOP("LEADING_ZEROS_COUNT",  VOPType.UNARY, INTEGRAL_TYPES),
@@ -369,11 +352,8 @@ public final class Operations {
         //new VOP("LOG1P",                VOPType.UNARY, FLOATING_TYPES),
         new VOP("LSHL",                 VOPType.BINARY, INTEGRAL_TYPES),
         new VOP("LSHR",                 VOPType.BINARY, INTEGRAL_TYPES),
-
-        // TODO: add back after JDK-8351950
-        //new VOP("MIN",                  VOPType.ASSOCIATIVE, PRIMITIVE_TYPES),
-        //new VOP("MAX",                  VOPType.ASSOCIATIVE, PRIMITIVE_TYPES),
-
+        new VOP("MIN",                  VOPType.ASSOCIATIVE, PRIMITIVE_TYPES),
+        new VOP("MAX",                  VOPType.ASSOCIATIVE, PRIMITIVE_TYPES),
         new VOP("MUL",                  VOPType.INTEGRAL_ASSOCIATIVE, PRIMITIVE_TYPES),
         new VOP("NEG",                  VOPType.UNARY, PRIMITIVE_TYPES),
         new VOP("NOT",                  VOPType.UNARY, INTEGRAL_TYPES),
@@ -381,11 +361,8 @@ public final class Operations {
         //new VOP("POW",                  VOPType.BINARY, FLOATING_TYPES),
         new VOP("REVERSE",              VOPType.UNARY, INTEGRAL_TYPES),
         new VOP("REVERSE_BYTES",        VOPType.UNARY, INTEGRAL_TYPES),
-
-        // TODO: add back in after fix of JDK-8351627
-        // new VOP("ROL",                  VOPType.BINARY, INTEGRAL_TYPES),
-        // new VOP("ROR",                  VOPType.BINARY, INTEGRAL_TYPES),
-
+        new VOP("ROL",                  VOPType.BINARY, INTEGRAL_TYPES),
+        new VOP("ROR",                  VOPType.BINARY, INTEGRAL_TYPES),
         new VOP("SADD",                 VOPType.BINARY, INTEGRAL_TYPES),
         //new VOP("SIN",                  VOPType.UNARY, FLOATING_TYPES),
         //new VOP("SINH",                 VOPType.UNARY, FLOATING_TYPES),
@@ -403,7 +380,7 @@ public final class Operations {
         new VOP("ZOMO",                 VOPType.UNARY, INTEGRAL_TYPES)
     );
 
-    private static final List<VOP> VECTOR_API_CMP = List.of(
+    private static final List<VOP> VECTOR_CMP = List.of(
         new VOP("EQ",                   VOPType.ASSOCIATIVE, PRIMITIVE_TYPES),
         new VOP("GE",                   VOPType.ASSOCIATIVE, PRIMITIVE_TYPES),
         new VOP("GT",                   VOPType.ASSOCIATIVE, PRIMITIVE_TYPES),
@@ -416,7 +393,7 @@ public final class Operations {
         new VOP("ULT",                  VOPType.ASSOCIATIVE, INTEGRAL_TYPES)
     );
 
-    private static final List<VOP> VECTOR_API_TEST = List.of(
+    private static final List<VOP> VECTOR_TEST = List.of(
         new VOP("IS_DEFAULT",           VOPType.UNARY, PRIMITIVE_TYPES),
         new VOP("IS_NEGATIVE",          VOPType.UNARY, PRIMITIVE_TYPES),
         new VOP("IS_FINITE",            VOPType.UNARY, FLOATING_TYPES),
@@ -464,7 +441,7 @@ public final class Operations {
 
             // Note: check works on class / species, leaving them out.
 
-            for (VOP cmp : VECTOR_API_CMP) {
+            for (VOP cmp : VECTOR_CMP) {
                 if (cmp.elementTypes().contains(type.elementType)) {
                     ops.add(Expression.make(type.maskType, "", type, ".compare(VectorOperators." + cmp.name() + ", ", type.elementType, ")"));
                     ops.add(Expression.make(type.maskType, "", type, ".compare(VectorOperators." + cmp.name() + ", ", type.elementType, ", ", type.maskType, ")"));
@@ -485,8 +462,7 @@ public final class Operations {
                                                 type2 ,
                                                 ".convert(VectorOperators.Conversion.ofCast("
                                                     + type2.elementType.name() +  ".class, "
-                                                    + type.elementType.name() + ".class), 0))",
-                                                null));
+                                                    + type.elementType.name() + ".class), 0))"));
                     // Reinterpretation FROM floating is not safe, because of different NaN encodings.
                     if (!type2.elementType.isFloating()) {
                         ops.add(Expression.make(type,
@@ -494,8 +470,7 @@ public final class Operations {
                                                     type2 ,
                                                     ".convert(VectorOperators.Conversion.ofReinterpret("
                                                         + type2.elementType.name() +  ".class, "
-                                                        + type.elementType.name() + ".class), 0))",
-                                                    null));
+                                                        + type.elementType.name() + ".class), 0))"));
                         if (type.elementType == BYTES) {
                             ops.add(Expression.make(type, "", type2, ".reinterpretAsBytes()"));
                         }
@@ -541,7 +516,7 @@ public final class Operations {
             // TODO: lane case that is allowed to throw java.lang.IllegalArgumentException for out of bonds.
             ops.add(Expression.make(type.elementType, "", type, ".lane(", INTS, " & " + (type.length-1) + ")"));
 
-            for (VOP vop : VECTOR_API_OPS) {
+            for (VOP vop : VECTOR_OPS) {
                 if (vop.elementTypes().contains(type.elementType)) {
                     switch(vop.type()) {
                     case VOPType.UNARY:
@@ -610,7 +585,7 @@ public final class Operations {
             ops.add(Expression.make(type, "", type, ".sub(", type, ", ", type.maskType, ")"));
 
 
-            for (VOP test : VECTOR_API_TEST) {
+            for (VOP test : VECTOR_TEST) {
                 if (test.elementTypes().contains(type.elementType)) {
                     ops.add(Expression.make(type.maskType, "", type, ".test(VectorOperators." + test.name() + ")"));
                     ops.add(Expression.make(type.maskType, "", type, ".test(VectorOperators." + test.name() + ", ", type.maskType, ")"));
@@ -642,4 +617,24 @@ public final class Operations {
         // Make sure the list is not modifiable.
         return List.copyOf(ops);
     }
+
+    /**
+     * Provides a lits of operations on {@link PrimitiveType}s, such as arithmetic, logical,
+     * and cast operations.
+     */
+    public static final List<Expression> PRIMITIVE_OPERATIONS = generatePrimitiveOperations();
+
+    public static final List<Expression> FLOAT16_OPERATIONS = generateFloat16Operations();
+
+    public static final List<Expression> SCALAR_NUMERIC_OPERATIONS = concat(
+        PRIMITIVE_OPERATIONS,
+        FLOAT16_OPERATIONS
+    );
+
+    public static final List<Expression> VECTOR_OPERATIONS = generateVectorOperations();
+
+    public static final List<Expression> ALL_OPERATIONS = concat(
+        SCALAR_NUMERIC_OPERATIONS,
+        VECTOR_OPERATIONS
+    );
 }
