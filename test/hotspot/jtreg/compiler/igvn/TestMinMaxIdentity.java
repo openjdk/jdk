@@ -39,8 +39,9 @@ import compiler.lib.template_framework.library.CodeGenerationDataNameType;
 import compiler.lib.template_framework.library.PrimitiveType;
 import compiler.lib.template_framework.library.TestFrameworkClass;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static compiler.lib.template_framework.Template.let;
@@ -62,23 +63,29 @@ public class TestMinMaxIdentity {
 
     private static String generate(CompileFramework comp) {
         // Create a list to collect all tests.
-        List<TemplateToken> testTemplateTokens = Stream.of(Op.values())
-            .flatMap(op -> new TestGenerator(op).generate())
-            .toList();
+        List<TemplateToken> testTemplateTokens = new ArrayList<>();
+
+        Stream.of(MinMaxOp.values())
+            .flatMap(MinMaxOp::generate)
+            .forEach(testTemplateTokens::add);
+
+        Stream.of(Fp16MinMaxOp.values())
+            .flatMap(Fp16MinMaxOp::generate)
+            .forEach(testTemplateTokens::add);
 
         // Create the test class, which runs all testTemplateTokens.
         return TestFrameworkClass.render(
             // package and class name.
             "compiler.igvn.templated", "MinMaxIdentity",
             // List of imports.
-            Collections.emptySet(),
+            Set.of("jdk.incubator.vector.Float16"),
             // classpath, so the Test VM has access to the compiled class files.
             comp.getEscapedClassPathOfCompiledClasses(),
             // The list of tests.
             testTemplateTokens);
     }
 
-    enum Op {
+    enum MinMaxOp {
         MIN_D("min", CodeGenerationDataNameType.doubles()),
         MAX_D("max", CodeGenerationDataNameType.doubles()),
         MIN_F("min", CodeGenerationDataNameType.floats()),
@@ -91,13 +98,11 @@ public class TestMinMaxIdentity {
         final String functionName;
         final PrimitiveType type;
 
-        Op(String functionName, PrimitiveType type) {
+        MinMaxOp(String functionName, PrimitiveType type) {
             this.functionName = functionName;
             this.type = type;
         }
-    }
 
-    record TestGenerator(Op op) {
         Stream<TemplateToken> generate() {
             return Stream.of(template("a", "b"), template("b", "a")).
                 map(Template.ZeroArgs::asToken);
@@ -105,10 +110,10 @@ public class TestMinMaxIdentity {
 
         private Template.ZeroArgs template(String arg1, String arg2) {
             return Template.make(() -> scope(
-                let("boxedTypeName", op.type.boxedTypeName()),
-                let("op", op.name()),
-                let("type", op.type.name()),
-                let("functionName", op.functionName),
+                let("boxedTypeName", type.boxedTypeName()),
+                let("op", name()),
+                let("type", type.name()),
+                let("functionName", functionName),
                 let("arg1", arg1),
                 let("arg2", arg2),
                 """
@@ -122,6 +127,53 @@ public class TestMinMaxIdentity {
                     }
                     #type c = a * i;
                     return #boxedTypeName.#functionName(a, #boxedTypeName.#functionName(b, c));
+                }
+                """
+            ));
+        }
+    }
+
+    enum Fp16MinMaxOp {
+        MAX_HF("max"),
+        MIN_HF("min");
+
+        final String functionName;
+
+        Fp16MinMaxOp(String functionName) {
+            this.functionName = functionName;
+        }
+
+        Stream<TemplateToken> generate() {
+            return Stream.of(template("a", "b"), template("b", "a")).
+                map(Template.ZeroArgs::asToken);
+        }
+
+        private Template.ZeroArgs template(String arg1, String arg2) {
+            return Template.make(() -> scope(
+                let("op", name()),
+                let("functionName", functionName),
+                let("arg1", arg1),
+                let("arg2", arg2),
+                """
+                @Setup
+                private static Object[] $setup() {
+                    return new Object[] {Float16.valueOf(42), Float16.valueOf(42)};
+                }
+
+                @Test
+                @IR(counts = {IRNode.#op, "= 1"},
+                    phase = CompilePhase.BEFORE_MACRO_EXPANSION,
+                    applyIfCPUFeatureOr = {"avx512_fp16", "true", "zfh", "true"})
+                @IR(counts = {IRNode.#op, "= 1"},
+                    phase = CompilePhase.BEFORE_MACRO_EXPANSION,
+                    applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
+                @Arguments(setup = "$setup")
+                public Float16 $test(Float16 #arg1, Float16 #arg2) {
+                    int i;
+                    for (i = -10; i < 1; i++) {
+                    }
+                    Float16 c = Float16.multiply(a, Float16.valueOf(i));
+                    return Float16.#functionName(a, Float16.#functionName(b, c));
                 }
                 """
             ));
