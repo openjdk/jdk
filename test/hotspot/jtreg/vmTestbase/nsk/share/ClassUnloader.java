@@ -229,23 +229,23 @@ public class ClassUnloader {
 
     /**
      * Forces GC to unload previously loaded classes by cleaning all references
-     * to class loader with its loaded classes and eating memory.
+     * to class loader with its loaded classes.
      *
      * @return  <i>true</i> if classes unloading has been detected
              or <i>false</i> otherwise
      *
      * @throws  Failure if exception other than OutOfMemoryError
-     *           is thrown while eating memory
+     *           is thrown while trigger full GC
      *
-     * @see #eatMemory()
+     * @see WhiteBox.getWhiteBox().fullGC()
      */
-    public boolean unloadClass(ExecutionController stresser) {
+    public boolean unloadClass() {
 
         // free references to class and class loader to be able for collecting by GC
         classObjects.removeAllElements();
         customClassLoader = null;
 
-        // force class unloading by eating memory pool
+        // force class unloading by trigger full GC
         WhiteBox.getWhiteBox().fullGC();
 
         // force GC to unload marked class loader and its classes
@@ -256,17 +256,5 @@ public class ClassUnloader {
 
         // class loader has not been reclaimed
         return false;
-    }
-
-    public boolean unloadClass() {
-        Stresser stresser = new Stresser() {
-
-            @Override
-            public boolean continueExecution() {
-                return true;
-            }
-
-        };
-        return unloadClass(stresser);
     }
 }
