@@ -31,7 +31,6 @@
 #include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
-#include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "logging/log.hpp"
@@ -234,26 +233,27 @@ static double saturate(double value, double min, double max) {
 //    allocation rate computation independent.
 bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
-  size_t available = _space_info->soft_available();
+  size_t available = _space_info->soft_mutator_available();
   size_t allocated = _space_info->bytes_allocated_since_gc_start();
 
-  log_debug(gc)("should_start_gc? available: %zu, soft_max_capacity: %zu"
-                ", allocated: %zu", available, capacity, allocated);
+  log_debug(gc, ergo)("should_start_gc calculation: available: " PROPERFMT ", soft_max_capacity: "  PROPERFMT ", "
+                "allocated_since_gc_start: "  PROPERFMT,
+                PROPERFMTARGS(available), PROPERFMTARGS(capacity), PROPERFMTARGS(allocated));
+
+  // Track allocation rate even if we decide to start a cycle for other reasons.
+  double rate = _allocation_rate.sample(allocated);
 
   if (_start_gc_is_pending) {
     log_trigger("GC start is already pending");
     return true;
   }
 
-  // Track allocation rate even if we decide to start a cycle for other reasons.
-  double rate = _allocation_rate.sample(allocated);
   _last_trigger = OTHER;
 
   size_t min_threshold = min_free_threshold();
   if (available < min_threshold) {
-    log_trigger("Free (%zu%s) is below minimum threshold (%zu%s)",
-                 byte_size_in_proper_unit(available), proper_unit_for_byte_size(available),
-                 byte_size_in_proper_unit(min_threshold), proper_unit_for_byte_size(min_threshold));
+    log_trigger("Free (Soft) (" PROPERFMT ") is below minimum threshold (" PROPERFMT ")",
+                 PROPERFMTARGS(available), PROPERFMTARGS(min_threshold));
     accept_trigger_with_type(OTHER);
     return true;
   }
@@ -360,16 +360,32 @@ ShenandoahAllocationRate::ShenandoahAllocationRate() :
   _rate_avg(int(ShenandoahAdaptiveSampleSizeSeconds * ShenandoahAdaptiveSampleFrequencyHz), ShenandoahAdaptiveDecayFactor) {
 }
 
+double ShenandoahAllocationRate::force_sample(size_t allocated, size_t &unaccounted_bytes_allocated) {
+  const double MinSampleTime = 0.002;    // Do not sample if time since last update is less than 2 ms
+  double now = os::elapsedTime();
+  double time_since_last_update = now -_last_sample_time;
+  if (time_since_last_update < MinSampleTime) {
+    unaccounted_bytes_allocated = allocated - _last_sample_value;
+    _last_sample_value = 0;
+    return 0.0;
+  } else {
+    double rate = instantaneous_rate(now, allocated);
+    _rate.add(rate);
+    _rate_avg.add(_rate.avg());
+    _last_sample_time = now;
+    _last_sample_value = allocated;
+    unaccounted_bytes_allocated = 0;
+    return rate;
+  }
+}
+
 double ShenandoahAllocationRate::sample(size_t allocated) {
   double now = os::elapsedTime();
   double rate = 0.0;
   if (now - _last_sample_time > _interval_sec) {
-    if (allocated >= _last_sample_value) {
-      rate = instantaneous_rate(now, allocated);
-      _rate.add(rate);
-      _rate_avg.add(_rate.avg());
-    }
-
+    rate = instantaneous_rate(now, allocated);
+    _rate.add(rate);
+    _rate_avg.add(_rate.avg());
     _last_sample_time = now;
     _last_sample_value = allocated;
   }

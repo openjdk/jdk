@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -37,7 +37,7 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
  * @see <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.invokedynamic"> The
  *      invokedynamic instruction in The Java Virtual Machine Specification</a>
  * @since 6.0
- * @LastModified: Feb 2023
+ * @LastModified: Sept 2025
  */
 public class INVOKEDYNAMIC extends InvokeInstruction {
 
@@ -104,11 +104,11 @@ public class INVOKEDYNAMIC extends InvokeInstruction {
     }
 
     /**
-     * Since InvokeDynamic doesn't refer to a reference type, just return java.lang.Object, as that is the only type we can
+     * Since InvokeDynamic doesn't refer to a reference type, just return {@link Object}, as that is the only type we can
      * say for sure the reference will be.
      *
      * @param cpg the ConstantPoolGen used to create the instruction
-     * @return an ObjectType for java.lang.Object
+     * @return an ObjectType for {@link Object}
      * @since 6.1
      */
     @Override

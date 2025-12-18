@@ -90,6 +90,12 @@ bool C2Compiler::init_c2_runtime() {
 
   compiler_stubs_init(true /* in_compiler_thread */); // generate compiler's intrinsics stubs
 
+  // If there was an error generating the blob then UseCompiler will
+  // have been unset and we need to skip the remaining initialization
+  if (!UseCompiler) {
+    return false;
+  }
+
   Compile::pd_compiler2_init();
 
   CompilerThread* thread = CompilerThread::current();
@@ -853,11 +859,11 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_VectorBinaryLibOp:
     return EnableVectorSupport && Matcher::supports_vector_calling_convention();
   case vmIntrinsics::_blackhole:
+  case vmIntrinsics::_vthreadEndFirstTransition:
+  case vmIntrinsics::_vthreadStartFinalTransition:
+  case vmIntrinsics::_vthreadStartTransition:
+  case vmIntrinsics::_vthreadEndTransition:
 #if INCLUDE_JVMTI
-  case vmIntrinsics::_notifyJvmtiVThreadStart:
-  case vmIntrinsics::_notifyJvmtiVThreadEnd:
-  case vmIntrinsics::_notifyJvmtiVThreadMount:
-  case vmIntrinsics::_notifyJvmtiVThreadUnmount:
   case vmIntrinsics::_notifyJvmtiVThreadDisableSuspend:
 #endif
     break;

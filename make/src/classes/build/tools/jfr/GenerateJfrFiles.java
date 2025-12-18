@@ -922,8 +922,10 @@ public class GenerateJfrFiles {
         }
         out.write("  using JfrEvent<Event" + event.name
                 + ">::commit; // else commit() is hidden by overloaded versions in this class");
-        printConstructor2(out, event, empty);
-        printCommitMethod(out, event, empty);
+        if (!event.fields.isEmpty()) {
+            printConstructor2(out, event, empty);
+            printCommitMethod(out, event, empty);
+        }
         if (!empty) {
             printVerify(out, event.fields);
         }

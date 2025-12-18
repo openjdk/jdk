@@ -22,7 +22,7 @@
  *
  */
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
@@ -42,7 +42,7 @@ TableRateStatistics::~TableRateStatistics() { };
 void TableRateStatistics::add() {
 #if INCLUDE_JFR
   if (Jfr::is_recording()) {
-    Atomic::inc(&_added_items);
+    AtomicAccess::inc(&_added_items);
   }
 #endif
 }
@@ -50,7 +50,7 @@ void TableRateStatistics::add() {
 void TableRateStatistics::remove() {
 #if INCLUDE_JFR
   if (Jfr::is_recording()) {
-    Atomic::inc(&_removed_items);
+    AtomicAccess::inc(&_removed_items);
   }
 #endif
 }

@@ -27,9 +27,9 @@
 
 #include "gc/shared/workerThread.hpp"
 #include "memory/allocation.hpp"
+#include "oops/annotations.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.hpp"
-#include "oops/annotations.hpp"
 #include "utilities/macros.hpp"
 
 class ParallelObjectIterator;

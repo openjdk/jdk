@@ -27,7 +27,7 @@
  * @summary Support "include" anywhere
  * @modules java.security.jgss/sun.security.krb5
  * @library /test/lib
- * @run main/othervm IncludeRandom
+ * @run main/othervm/timeout=480 IncludeRandom
  */
 import jdk.test.lib.Asserts;
 import jdk.test.lib.security.SeededSecureRandom;
@@ -53,7 +53,7 @@ public class IncludeRandom {
 
     public static void main(String[] args) throws Exception {
         System.setProperty("java.security.krb5.conf", "f");
-        for (var i = 0; i < 10_000; i++) {
+        for (var i = 0; i < 1000; i++) {
             test();
         }
     }

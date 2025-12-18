@@ -160,6 +160,7 @@ public class EventNames {
     public static final String ZUncommit = PREFIX + "ZUncommit";
     public static final String SystemGC = PREFIX + "SystemGC";
     public static final String GCCPUTime = PREFIX + "GCCPUTime";
+    public static final String StringDeduplication = PREFIX + "StringDeduplication";
 
     // Compiler
     public static final String Compilation = PREFIX + "Compilation";
@@ -220,6 +221,7 @@ public class EventNames {
     public static final String VirtualThreadEnd = PREFIX + "VirtualThreadEnd";
     public static final String VirtualThreadPinned = PREFIX + "VirtualThreadPinned";
     public static final String VirtualThreadSubmitFailed = PREFIX + "VirtualThreadSubmitFailed";
+    public static final String FinalFieldMutation = PREFIX + "FinalFieldMutation";
 
     // Containers
     public static final String ContainerConfiguration = PREFIX + "ContainerConfiguration";

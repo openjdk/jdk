@@ -41,7 +41,6 @@ class ClassFileParser;
 
 
 class InstanceMirrorKlass: public InstanceKlass {
-  friend class VMStructs;
   friend class InstanceKlass;
 
  public:
@@ -68,7 +67,7 @@ class InstanceMirrorKlass: public InstanceKlass {
   }
 
   // Returns the size of the instance including the extra static fields.
-  virtual size_t oop_size(oop obj) const;
+  size_t oop_size(oop obj) const override;
 
   // Static field offset is an offset into the Heap, should be converted by
   // based on UseCompressedOop for traversal

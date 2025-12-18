@@ -30,6 +30,47 @@ ifeq ($(INCLUDE), true)
 
 include NativeCompilation.gmk
 
+ifeq ($(call isCompiler, gcc), true)
+  # --disable-new-dtags forces use of RPATH instead of RUNPATH for rpaths.
+  # This protects internal library dependencies within the JDK from being
+  # overridden using LD_LIBRARY_PATH. See JDK-8326891 for more information.
+  SetExecutableOrigin = \
+      -Wl,-rpath,\$(DOLLAR)ORIGIN$1 -Wl,--disable-new-dtags
+  SetSharedLibraryOrigin = \
+      -Wl,-z,origin -Wl,-rpath,\$(DOLLAR)ORIGIN$1 -Wl,--disable-new-dtags
+else ifeq ($(call isCompiler, clang), true)
+  ifeq ($(call isTargetOs, macosx), true)
+    SetExecutableOrigin = \
+        -Wl,-rpath,@loader_path$(or $1,/.)
+    SetSharedLibraryOrigin = \
+        -Wl,-rpath,@loader_path$(or $1,/.)
+  else ifeq ($(call isTargetOs, aix), true)
+    SetExecutableOrigin =
+    SetSharedLibraryOrigin =
+  else
+    ifeq ($(call isTargetOs, linux), true)
+      SetExecutableOrigin = \
+          -Wl,-rpath,\$(DOLLAR)ORIGIN$1 -Wl,--disable-new-dtags
+    else
+      SetExecutableOrigin = \
+          -Wl,-rpath,\$(DOLLAR)ORIGIN$1
+    endif
+
+    ifeq ($(call isTargetOs, arm), true)
+      SetSharedLibraryOrigin = \
+          -Wl,-rpath,\$(DOLLAR)ORIGIN$1
+    else
+      SetSharedLibraryOrigin = \
+          -Wl,-z,origin -Wl,-rpath,\$(DOLLAR)ORIGIN$1
+    endif
+  endif
+else ifeq ($(call isCompiler, microsoft), true)
+  SetExecutableOrigin =
+  SetSharedLibraryOrigin =
+else
+  $(error Unknown toolchain)
+endif
+
 FindSrcDirsForComponent += \
   $(call uniq, $(wildcard \
       $(TOPDIR)/src/$(strip $1)/$(OPENJDK_TARGET_OS)/native/$(strip $2) \
@@ -444,9 +485,9 @@ define SetupJdkNativeCompilationBody
 
   ifneq ($$($1_LD_SET_ORIGIN), false)
     ifeq ($$($1_TYPE), EXECUTABLE)
-      $1_LDFLAGS += $$(call SET_EXECUTABLE_ORIGIN)
+      $1_LDFLAGS += $$(call SetExecutableOrigin)
     else
-      $1_LDFLAGS += $$(call SET_SHARED_LIBRARY_ORIGIN)
+      $1_LDFLAGS += $$(call SetSharedLibraryOrigin)
     endif
   endif
   # APPEND_LDFLAGS, if it exists, must be set after the origin flags

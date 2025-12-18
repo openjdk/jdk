@@ -25,8 +25,8 @@
 #ifndef SHARE_JFR_RECORDER_STORAGE_JFRSTORAGEUTILS_HPP
 #define SHARE_JFR_RECORDER_STORAGE_JFRSTORAGEUTILS_HPP
 
-#include "jfr/recorder/storage/jfrBuffer.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
+#include "jfr/recorder/storage/jfrBuffer.hpp"
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "runtime/javaThread.hpp"

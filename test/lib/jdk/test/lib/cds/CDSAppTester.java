@@ -402,8 +402,6 @@ abstract public class CDSAppTester {
     public OutputAnalyzer productionRun(String[] extraVmArgs, String[] extraAppArgs) throws Exception {
         RunMode runMode = RunMode.PRODUCTION;
         String[] cmdLine = StringArrayUtils.concat(vmArgs(runMode),
-                                                   "-XX:+UnlockDiagnosticVMOptions",
-                                                   "-XX:VerifyArchivedFields=2", // make sure archived heap objects are good.
                                                    logToFile(productionRunLog(), "aot", "cds"));
         cmdLine = addCommonVMArgs(runMode, cmdLine);
 

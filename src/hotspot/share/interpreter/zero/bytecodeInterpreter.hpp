@@ -79,7 +79,6 @@ friend class AbstractInterpreterGenerator;
 friend class ZeroInterpreterGenerator;
 friend class InterpreterMacroAssembler;
 friend class frame;
-friend class VMStructs;
 
 public:
     enum messages {

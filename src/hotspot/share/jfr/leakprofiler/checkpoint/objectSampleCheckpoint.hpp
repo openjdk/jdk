@@ -25,8 +25,8 @@
 #ifndef SHARE_JFR_LEAKPROFILER_CHECKPOINT_OBJECTSAMPLECHECKPOINT_HPP
 #define SHARE_JFR_LEAKPROFILER_CHECKPOINT_OBJECTSAMPLECHECKPOINT_HPP
 
-#include "memory/allStatic.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
+#include "memory/allStatic.hpp"
 
 class EdgeStore;
 class InstanceKlass;

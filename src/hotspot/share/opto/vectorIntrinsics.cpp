@@ -383,7 +383,7 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
   // When using mask, mask use type needs to be VecMaskUseLoad.
   VectorMaskUseType mask_use_type = is_vector_mask(vbox_klass) ? VecMaskUseAll
                                       : is_masked_op ? VecMaskUseLoad : VecMaskNotUsed;
-  if ((sopc != 0) && !arch_supports_vector(sopc, num_elem, elem_bt, mask_use_type)) {
+  if (!arch_supports_vector(sopc, num_elem, elem_bt, mask_use_type)) {
     log_if_needed("  ** not supported: arity=%d opc=%d vlen=%d etype=%s ismask=%d is_masked_op=%d",
                     n, sopc, num_elem, type2name(elem_bt),
                     is_vector_mask(vbox_klass) ? 1 : 0, is_masked_op ? 1 : 0);
@@ -391,7 +391,7 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
   }
 
   // Return true if current platform has implemented the masked operation with predicate feature.
-  bool use_predicate = is_masked_op && sopc != 0 && arch_supports_vector(sopc, num_elem, elem_bt, VecMaskUsePred);
+  bool use_predicate = is_masked_op && arch_supports_vector(sopc, num_elem, elem_bt, VecMaskUsePred);
   if (is_masked_op && !use_predicate && !arch_supports_vector(Op_VectorBlend, num_elem, elem_bt, VecMaskUseLoad)) {
     log_if_needed("  ** not supported: arity=%d opc=%d vlen=%d etype=%s ismask=0 is_masked_op=1",
                     n, sopc, num_elem, type2name(elem_bt));
@@ -622,7 +622,7 @@ bool LibraryCallKit::inline_vector_mask_operation() {
     return false;
   }
 
-  if (mask_vec->bottom_type()->isa_vectmask() == nullptr) {
+  if (!Matcher::mask_op_prefers_predicate(mopc, mask_vec->bottom_type()->is_vect())) {
     mask_vec = gvn().transform(VectorStoreMaskNode::make(gvn(), mask_vec, elem_bt, num_elem));
   }
   const Type* maskoper_ty = mopc == Op_VectorMaskToLong ? (const Type*)TypeLong::LONG : (const Type*)TypeInt::INT;
@@ -708,7 +708,7 @@ bool LibraryCallKit::inline_vector_frombits_coerced() {
 
   if (opc == Op_VectorLongToMask) {
     const TypeVect* vt = TypeVect::makemask(elem_bt, num_elem);
-    if (vt->isa_vectmask()) {
+    if (Matcher::mask_op_prefers_predicate(opc, vt)) {
       broadcast = gvn().transform(new VectorLongToMaskNode(elem, vt));
     } else {
       const TypeVect* mvt = TypeVect::make(T_BOOLEAN, num_elem);
@@ -2502,7 +2502,7 @@ bool LibraryCallKit::inline_vector_extract() {
   if (vector_klass == nullptr || vector_klass->const_oop() == nullptr ||
       elem_klass   == nullptr || elem_klass->const_oop()   == nullptr ||
       vlen         == nullptr || !vlen->is_con() ||
-      idx          == nullptr || !idx->is_con()) {
+      idx          == nullptr) {
     log_if_needed("  ** missing constant: vclass=%s etype=%s vlen=%s",
                     NodeClassNames[argument(0)->Opcode()],
                     NodeClassNames[argument(1)->Opcode()],
@@ -2545,7 +2545,7 @@ bool LibraryCallKit::inline_vector_extract() {
         return false;
       }
       // VectorMaskToLongNode requires the input is either a mask or a vector with BOOLEAN type.
-      if (opd->bottom_type()->isa_vectmask() == nullptr) {
+      if (!Matcher::mask_op_prefers_predicate(Op_VectorMaskToLong, opd->bottom_type()->is_vect())) {
         opd = gvn().transform(VectorStoreMaskNode::make(gvn(), opd, elem_bt, num_elem));
       }
       // ((toLong() >>> pos) & 1L

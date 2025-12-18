@@ -140,13 +140,14 @@ class TestCodeCacheUnloadDuringConcCycleRunner {
                     System.out.println("Compiled " + i + " classes");
                 }
                 i++;
-            } while (i < 200);
+            } while (i < 1000);
             System.out.println("Compilation done, compiled " + i + " classes");
         } catch (Throwable t) {
         }
     }
 
     public static void main(String[] args) throws Exception {
+        System.out.println("Running to breakpoint: " + args[0]);
         try {
             WB.concurrentGCAcquireControl();
             WB.concurrentGCRunTo(args[0]);
@@ -157,9 +158,12 @@ class TestCodeCacheUnloadDuringConcCycleRunner {
 
             WB.concurrentGCRunToIdle();
         } finally {
+            // Make sure that the marker we use to find the expected log message is printed
+            // before we release whitebox control, i.e. before the expected garbage collection
+            // can start.
+            System.out.println(TestCodeCacheUnloadDuringConcCycle.AFTER_FIRST_CYCLE_MARKER);
             WB.concurrentGCReleaseControl();
         }
-        System.out.println(TestCodeCacheUnloadDuringConcCycle.AFTER_FIRST_CYCLE_MARKER);
         Thread.sleep(1000);
         triggerCodeCacheGC();
     }

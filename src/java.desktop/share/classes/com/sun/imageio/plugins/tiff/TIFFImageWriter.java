@@ -2327,6 +2327,7 @@ public class TIFFImageWriter extends ImageWriter {
         if (abortRequested()) {
             resetPositions();
         }
+        stream.flush();
     }
 
     private void writeHeader() throws IOException {

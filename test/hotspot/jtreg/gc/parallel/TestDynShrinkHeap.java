@@ -27,6 +27,7 @@ package gc.parallel;
  * @test TestDynShrinkHeap
  * @bug 8016479
  * @requires vm.gc.Parallel & os.maxMemory > 1G
+ * @requires vm.opt.final.UseAdaptiveSizePolicy
  * @summary Verify that the heap shrinks after full GC according to the current values of the Min/MaxHeapFreeRatio flags
  * @modules java.base/jdk.internal.misc
  * @modules jdk.management

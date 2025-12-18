@@ -292,6 +292,8 @@ public class CtwRunner {
                 "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
                 "--add-exports", "java.base/jdk.internal.reflect=ALL-UNNAMED",
                 "--add-exports", "java.base/jdk.internal.access=ALL-UNNAMED",
+                // Graphics clinits may run, force headless mode
+                "-Djava.awt.headless=true",
                 // enable diagnostic logging
                 "-XX:+LogCompilation",
                 // use phase specific log, hs_err and ciReplay files

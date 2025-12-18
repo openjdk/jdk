@@ -27,8 +27,8 @@
 
 #include "oops/oop.hpp"
 #include "runtime/javaThread.hpp"
-#include "runtime/vmOperation.hpp"
 #include "runtime/threadSMR.hpp"
+#include "runtime/vmOperation.hpp"
 
 class ObjectMonitorsView;
 

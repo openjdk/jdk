@@ -66,20 +66,12 @@ private:
   ShenandoahEvacuations _old;
   ShenandoahEvacuations _promotion;
 
-  bool      _use_age_table;
-  AgeTable* _age_table;
-
  public:
-  ShenandoahEvacuationStats();
-
-  AgeTable* age_table() const;
-
   // Record that the current thread is attempting to copy this many bytes.
   void begin_evacuation(size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to);
 
   // Record that the current thread has completed copying this many bytes.
   void end_evacuation(size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to);
-  void record_age(size_t bytes, uint age);
 
   void print_on(outputStream* st) const;
   void accumulate(const ShenandoahEvacuationStats* other);
@@ -106,7 +98,6 @@ public:
   // Multiple threads may attempt to evacuate the same object, but only the successful thread will end the evacuation.
   // Evacuations that were begun, but not ended are considered 'abandoned'.
   void end_evacuation(Thread* thread, size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to);
-  void record_age(Thread* thread, size_t bytes, uint age);
 
   void print_global_on(outputStream* st);
   void print_evacuations_on(outputStream* st,

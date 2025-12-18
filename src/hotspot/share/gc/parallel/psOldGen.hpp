@@ -108,7 +108,7 @@ class PSOldGen : public CHeapObj<mtGC> {
 
   void shrink(size_t bytes);
 
-  // Invoked by mutators and GC-workers.
+  // Used by GC-workers during GC or for CDS at startup.
   HeapWord* allocate(size_t word_size) {
     HeapWord* res;
     do {
@@ -120,7 +120,6 @@ class PSOldGen : public CHeapObj<mtGC> {
 
   // Invoked by mutators before attempting GC.
   HeapWord* cas_allocate_noexpand(size_t word_size) {
-    assert_locked_or_safepoint(Heap_lock);
     HeapWord* res = object_space()->cas_allocate(word_size);
     if (res != nullptr) {
       _start_array->update_for_block(res, res + word_size);

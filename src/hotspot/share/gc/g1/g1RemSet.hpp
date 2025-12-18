@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1REMSET_HPP
 
 #include "gc/g1/g1CardTable.hpp"
+#include "gc/g1/g1CardTableClaimTable.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1OopClosures.hpp"
@@ -65,20 +66,15 @@ private:
 
   G1CollectedHeap* _g1h;
 
-  G1CardTable*           _ct;
-  G1Policy*              _g1p;
-
-  void print_merge_heap_roots_stats();
+  G1Policy* _g1p;
 
   void assert_scan_top_is_null(uint hrm_index) NOT_DEBUG_RETURN;
-
-  void enqueue_for_reprocessing(CardValue* card_ptr);
 
 public:
   // Initialize data that depends on the heap size being known.
   void initialize(uint max_num_regions);
 
-  G1RemSet(G1CollectedHeap* g1h, G1CardTable* ct);
+  G1RemSet(G1CollectedHeap* g1h);
   ~G1RemSet();
 
   // Scan all cards in the non-collection set regions that potentially contain
@@ -101,7 +97,7 @@ public:
 
   // Print coarsening stats.
   void print_coarsen_stats();
-  // Creates a task for cleaining up temporary data structures and the
+  // Creates a task for cleaning up temporary data structures and the
   // card table, removing temporary duplicate detection information.
   G1AbstractSubTask* create_cleanup_after_scan_heap_roots_task();
   // Excludes the given region from heap root scanning.
@@ -122,16 +118,19 @@ public:
                                           G1GCPhaseTimes::GCParPhases scan_phase,
                                           G1GCPhaseTimes::GCParPhases objcopy_phase);
 
-  // Two methods for concurrent refinement support, executed concurrently to
-  // the mutator:
-  // Cleans the card at "*card_ptr_addr" before refinement, returns true iff the
-  // card needs later refinement.
-  bool clean_card_before_refine(CardValue** const card_ptr_addr);
+  enum RefineResult {
+      HasRefToCSet,          // The (dirty) card has a reference to the collection set.
+      AlreadyToCSet,         // The card is already one marked as having a reference to the collection set.
+      HasRefToOld,           // The dirty card contains references to other old regions (not the collection set).
+      NoCrossRegion,         // There is no interesting reference in the card any more. The mutator changed all
+                             // references to such after dirtying the card.
+      CouldNotParse          // The card is unparsable, need to retry later.
+  };
   // Refine the region corresponding to "card_ptr". Must be called after
   // being filtered by clean_card_before_refine(), and after proper
   // fence/synchronization.
-  void refine_card_concurrently(CardValue* const card_ptr,
-                                const uint worker_id);
+  RefineResult refine_card_concurrently(CardValue* const card_ptr,
+                                        const uint worker_id);
 
   // Print accumulated summary info from the start of the VM.
   void print_summary_info();

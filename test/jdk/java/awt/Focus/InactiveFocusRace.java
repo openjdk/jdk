@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 */
 
 import java.awt.Button;
+import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.KeyboardFocusManager;
@@ -48,19 +49,27 @@ public class InactiveFocusRace {
     Button activeButton, inactiveButton1, inactiveButton2;
     Semaphore sema;
     final static int TIMEOUT = 10000;
+    private static Robot robot;
 
     public static void main(String[] args) throws Exception {
         try {
+            robot = new Robot();
             InactiveFocusRace test = new InactiveFocusRace();
-            test.init();
+            EventQueue.invokeAndWait(() -> {
+                test.init();
+            });
+            robot.waitForIdle();
+            robot.delay(1000);
             test.start();
         } finally {
-            if (activeFrame != null) {
-                activeFrame.dispose();
-            }
-            if (inactiveFrame != null) {
-                inactiveFrame.dispose();
-            }
+            EventQueue.invokeAndWait(() -> {
+                if (activeFrame != null) {
+                    activeFrame.dispose();
+                }
+                if (inactiveFrame != null) {
+                    inactiveFrame.dispose();
+                }
+            });
         }
     }
 
@@ -91,24 +100,40 @@ public class InactiveFocusRace {
                 sema.raise();
             }
         });
+        inactiveFrame.addWindowListener(new WindowAdapter() {
+            public void windowActivated(WindowEvent e) {
+                System.err.println("inactive Window activated");
+                sema.raise();
+            }
+        });
         activeFrame.addWindowListener(new WindowAdapter() {
             public void windowActivated(WindowEvent e) {
                 System.err.println("Window activated");
                 sema.raise();
             }
         });
+        inactiveFrame.setVisible(true);
     }
 
     public void start() {
-        Robot robot = null;
-        try {
-            robot = new Robot();
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to create robot");
-        }
 
-        inactiveFrame.setVisible(true);
-        activeFrame.setVisible(true);
+
+        // Wait for inactive frame to become active
+        try {
+            sema.doWait(TIMEOUT);
+        } catch (InterruptedException ie) {
+            throw new RuntimeException("Wait was interrupted");
+        }
+        if (!sema.getState()) {
+            throw new RuntimeException("Frame doesn't become active on show");
+        }
+        sema.setState(false);
+
+        try {
+            EventQueue.invokeAndWait(() -> activeFrame.setVisible(true));
+        } catch (Exception e) {
+            throw new RuntimeException("Interrupted active frame rendering");
+        }
 
         // Wait for active frame to become active
         try {

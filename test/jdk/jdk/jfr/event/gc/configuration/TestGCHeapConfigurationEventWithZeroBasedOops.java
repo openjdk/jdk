@@ -33,6 +33,8 @@ import jdk.test.lib.jfr.EventVerifier;
  * @requires vm.gc == "Parallel" | vm.gc == null
  * @requires os.family == "linux" | os.family == "windows"
  * @requires sun.arch.data.model == "64"
+ * @comment Asan changes memory layout and we get a different coops mode
+ * @requires !vm.asan
  * @library /test/lib /test/jdk
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -XX:+UseParallelGC -XX:+UseCompressedOops -Xmx4g jdk.jfr.event.gc.configuration.TestGCHeapConfigurationEventWithZeroBasedOops
  */

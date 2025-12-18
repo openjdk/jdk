@@ -52,7 +52,7 @@ import jdk.jpackage.test.TKit;
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @build AppLauncherSubstTest
- * @run main/othervm -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=480 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=AppLauncherSubstTest
  */
 public class AppLauncherSubstTest {

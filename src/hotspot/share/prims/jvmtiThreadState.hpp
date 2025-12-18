@@ -27,6 +27,7 @@
 
 #include "jvmtifiles/jvmti.h"
 #include "memory/allocation.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/oopHandle.hpp"
 #include "prims/jvmtiEventController.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -73,67 +74,6 @@ class JvmtiEnvThreadStateIterator : public StackObj {
 
 ///////////////////////////////////////////////////////////////
 //
-// class JvmtiVTMSTransitionDisabler
-//
-// Virtual Thread Mount State Transition (VTMS transition) mechanism
-//
-class JvmtiVTMSTransitionDisabler : public AnyObj {
- private:
-  static volatile int _VTMS_transition_disable_for_one_count; // transitions for one virtual thread are disabled while it is positive
-  static volatile int _VTMS_transition_disable_for_all_count; // transitions for all virtual threads are disabled while it is positive
-  static volatile bool _SR_mode;                         // there is an active suspender or resumer
-  static volatile int _sync_protocol_enabled_count;      // current number of JvmtiVTMSTransitionDisablers enabled sync protocol
-  static volatile bool _sync_protocol_enabled_permanently; // seen a suspender: JvmtiVTMSTransitionDisabler protocol is enabled permanently
-
-  bool _is_SR;                                           // is suspender or resumer
-  bool _is_virtual;                                      // target thread is virtual
-  bool _is_self;                                         // JvmtiVTMSTransitionDisabler is a no-op for current platform, carrier or virtual thread
-  jthread _thread;                                       // virtual thread to disable transitions for, no-op if it is a platform thread
-
-  DEBUG_ONLY(static void print_info();)
-  void VTMS_transition_disable_for_one();
-  void VTMS_transition_disable_for_all();
-  void VTMS_transition_enable_for_one();
-  void VTMS_transition_enable_for_all();
-
- public:
-  static bool _VTMS_notify_jvmti_events;                 // enable notifications from VirtualThread about VTMS events
-  static bool VTMS_notify_jvmti_events()             { return _VTMS_notify_jvmti_events; }
-  static void set_VTMS_notify_jvmti_events(bool val) { _VTMS_notify_jvmti_events = val; }
-
-  static void inc_sync_protocol_enabled_count()      { Atomic::inc(&_sync_protocol_enabled_count); }
-  static void dec_sync_protocol_enabled_count()      { Atomic::dec(&_sync_protocol_enabled_count); }
-  static int  sync_protocol_enabled_count()          { return Atomic::load(&_sync_protocol_enabled_count); }
-  static bool sync_protocol_enabled_permanently()    { return Atomic::load(&_sync_protocol_enabled_permanently); }
-
-  static bool sync_protocol_enabled()                { return sync_protocol_enabled_permanently() || sync_protocol_enabled_count() > 0; }
-
-  // parameter is_SR: suspender or resumer
-  JvmtiVTMSTransitionDisabler(bool is_SR = false);
-  JvmtiVTMSTransitionDisabler(jthread thread);
-  ~JvmtiVTMSTransitionDisabler();
-
-  // set VTMS transition bit value in JavaThread and java.lang.VirtualThread object
-  static void set_is_in_VTMS_transition(JavaThread* thread, jobject vthread, bool in_trans);
-
-  static void start_VTMS_transition(jthread vthread, bool is_mount);
-  static void finish_VTMS_transition(jthread vthread, bool is_mount);
-
-  static void VTMS_vthread_start(jobject vthread);
-  static void VTMS_vthread_end(jobject vthread);
-
-  static void VTMS_vthread_mount(jobject vthread, bool hide);
-  static void VTMS_vthread_unmount(jobject vthread, bool hide);
-
-  static void VTMS_mount_begin(jobject vthread);
-  static void VTMS_mount_end(jobject vthread);
-
-  static void VTMS_unmount_begin(jobject vthread, bool last_unmount);
-  static void VTMS_unmount_end(jobject vthread);
-};
-
-///////////////////////////////////////////////////////////////
-//
 // class VirtualThreadList
 //
 // Used for Virtual Threads Suspend/Resume management.
@@ -167,6 +107,7 @@ class JvmtiVTSuspender : AllStatic {
  public:
   static void register_all_vthreads_suspend();
   static void register_all_vthreads_resume();
+  static void register_vthread_suspend(int64_t id);
   static void register_vthread_suspend(oop vt);
   static void register_vthread_resume(oop vt);
   static bool is_vthread_suspended(oop vt);
@@ -208,7 +149,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
 
   // Used to send class being redefined/retransformed and kind of transform
   // info to the class file load hook event handler.
-  Klass*                _class_being_redefined;
+  InstanceKlass*        _class_being_redefined;
   JvmtiClassLoadKind    _class_load_kind;
   GrowableArray<Klass*>* _classes_being_redefined;
 
@@ -371,7 +312,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   // when class file load hook event is posted.
   // It is set while loading redefined class and cleared before the
   // class file load hook event is posted.
-  inline void set_class_being_redefined(Klass* k, JvmtiClassLoadKind kind) {
+  inline void set_class_being_redefined(InstanceKlass* k, JvmtiClassLoadKind kind) {
     _class_being_redefined = k;
     _class_load_kind = kind;
   }
@@ -381,7 +322,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
     _class_load_kind = jvmti_class_load_kind_load;
   }
 
-  inline Klass* get_class_being_redefined() {
+  inline InstanceKlass* get_class_being_redefined() {
     return _class_being_redefined;
   }
 
@@ -420,12 +361,12 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   //   used by the verifier, so there is no extra performance issue with it.
 
  private:
-  Klass* _the_class_for_redefinition_verification;
-  Klass* _scratch_class_for_redefinition_verification;
+  InstanceKlass* _the_class_for_redefinition_verification;
+  InstanceKlass* _scratch_class_for_redefinition_verification;
 
  public:
-  inline void set_class_versions_map(Klass* the_class,
-                                     Klass* scratch_class) {
+  inline void set_class_versions_map(InstanceKlass* the_class,
+                                     InstanceKlass* scratch_class) {
     _the_class_for_redefinition_verification = the_class;
     _scratch_class_for_redefinition_verification = scratch_class;
   }
@@ -433,8 +374,8 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   inline void clear_class_versions_map() { set_class_versions_map(nullptr, nullptr); }
 
   static inline
-  Klass* class_to_verify_considering_redefinition(Klass* klass,
-                                                    JavaThread *thread) {
+  InstanceKlass* class_to_verify_considering_redefinition(InstanceKlass* klass,
+                                                          JavaThread* thread) {
     JvmtiThreadState *state = thread->jvmti_thread_state();
     if (state != nullptr && state->_the_class_for_redefinition_verification != nullptr) {
       if (state->_the_class_for_redefinition_verification == klass) {
@@ -443,15 +384,6 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
     }
     return klass;
   }
-
-  // Todo: get rid of this!
- private:
-  bool _debuggable;
- public:
-  // Should the thread be enumerated by jvmtiInternal::GetAllThreads?
-  bool is_debuggable()                 { return _debuggable; }
-  // If a thread cannot be suspended (has no valid last_java_frame) then it gets marked !debuggable
-  void set_debuggable(bool debuggable) { _debuggable = debuggable; }
 
  public:
 

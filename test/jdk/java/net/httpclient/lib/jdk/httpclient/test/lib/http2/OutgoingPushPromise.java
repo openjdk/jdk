@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,8 @@ import jdk.internal.net.http.frame.Http2Frame;
 // will be converted to a PushPromiseFrame in the writeLoop
 // a thread is then created to produce the DataFrames from the InputStream
 public class OutgoingPushPromise extends Http2Frame {
-    final HttpHeaders headers;
+    final HttpHeaders reqHeaders;
+    final HttpHeaders rspHeaders;
     final URI uri;
     final InputStream is;
     final int parentStream; // not the pushed streamid
@@ -42,19 +43,22 @@ public class OutgoingPushPromise extends Http2Frame {
 
     public OutgoingPushPromise(int parentStream,
                                URI uri,
-                               HttpHeaders headers,
+                               HttpHeaders reqHeaders,
+                               HttpHeaders rspHeaders,
                                InputStream is) {
-        this(parentStream, uri, headers, is, List.of());
+        this(parentStream, uri, reqHeaders, rspHeaders, is, List.of());
     }
 
     public OutgoingPushPromise(int parentStream,
                                URI uri,
-                               HttpHeaders headers,
+                               HttpHeaders reqHeaders,
+                               HttpHeaders rspHeaders,
                                InputStream is,
                                List<ContinuationFrame> continuations) {
         super(0,0);
         this.uri = uri;
-        this.headers = headers;
+        this.reqHeaders = reqHeaders;
+        this.rspHeaders = rspHeaders;
         this.is = is;
         this.parentStream = parentStream;
         this.continuations = List.copyOf(continuations);

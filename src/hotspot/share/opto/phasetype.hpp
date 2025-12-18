@@ -50,6 +50,23 @@
   flags(ITER_GVN_AFTER_VECTOR,          "Iter GVN after Vector Box Elimination") \
   flags(BEFORE_LOOP_OPTS,               "Before Loop Optimizations") \
   flags(PHASEIDEAL_BEFORE_EA,           "PhaseIdealLoop before EA") \
+  flags(EA_AFTER_INITIAL_CONGRAPH,          "EA: 1. Intial Connection Graph") \
+  flags(EA_CONNECTION_GRAPH_PROPAGATE_ITER, "EA: 2. Connection Graph Propagate Iter") \
+  flags(EA_COMPLETE_CONNECTION_GRAPH_ITER,  "EA: 2. Complete Connection Graph Iter") \
+  flags(EA_AFTER_COMPLETE_CONGRAPH,         "EA: 2. Complete Connection Graph") \
+  flags(EA_ADJUST_SCALAR_REPLACEABLE_ITER,  "EA: 3. Adjust scalar_replaceable State Iter") \
+  flags(EA_PROPAGATE_NSR_ITER,              "EA: 3. Propagate NSR Iter") \
+  flags(EA_AFTER_PROPAGATE_NSR,             "EA: 3. Propagate NSR") \
+  flags(EA_AFTER_GRAPH_OPTIMIZATION,        "EA: 4. After Graph Optimization") \
+  flags(EA_AFTER_SPLIT_UNIQUE_TYPES_1,      "EA: 5. After split_unique_types Phase 1") \
+  flags(EA_AFTER_SPLIT_UNIQUE_TYPES_3,      "EA: 5. After split_unique_types Phase 3") \
+  flags(EA_AFTER_SPLIT_UNIQUE_TYPES_4,      "EA: 5. After split_unique_types Phase 4") \
+  flags(EA_AFTER_SPLIT_UNIQUE_TYPES,        "EA: 5. After split_unique_types") \
+  flags(EA_AFTER_REDUCE_PHI_ON_SAFEPOINTS,  "EA: 6. After reduce_phi_on_safepoints") \
+  flags(EA_BEFORE_PHI_REDUCTION,            "EA: 5. Before Phi Reduction") \
+  flags(EA_AFTER_PHI_CASTPP_REDUCTION,      "EA: 5. Phi -> CastPP Reduction") \
+  flags(EA_AFTER_PHI_ADDP_REDUCTION,        "EA: 5. Phi -> AddP Reduction") \
+  flags(EA_AFTER_PHI_CMP_REDUCTION,         "EA: 5. Phi -> Cmp Reduction") \
   flags(AFTER_EA,                       "After Escape Analysis") \
   flags(ITER_GVN_AFTER_EA,              "Iter GVN after EA") \
   flags(BEFORE_BEAUTIFY_LOOPS,          "Before Beautify Loops") \
@@ -89,10 +106,9 @@
   flags(PHASEIDEALLOOP2,                "PhaseIdealLoop 2") \
   flags(PHASEIDEALLOOP3,                "PhaseIdealLoop 3") \
   flags(AUTO_VECTORIZATION1_BEFORE_APPLY,                     "AutoVectorization 1, before Apply") \
-  flags(AUTO_VECTORIZATION2_AFTER_REORDER,                    "AutoVectorization 2, after Apply Memop Reordering") \
-  flags(AUTO_VECTORIZATION3_AFTER_ADJUST_LIMIT,               "AutoVectorization 3, after Adjusting Pre-loop Limit") \
-  flags(AUTO_VECTORIZATION4_AFTER_SPECULATIVE_RUNTIME_CHECKS, "AutoVectorization 4, after Adding Speculative Runtime Checks") \
-  flags(AUTO_VECTORIZATION5_AFTER_APPLY,                      "AutoVectorization 5, after Apply") \
+  flags(AUTO_VECTORIZATION3_AFTER_ADJUST_LIMIT,               "AutoVectorization 2, after Adjusting Pre-loop Limit") \
+  flags(AUTO_VECTORIZATION4_AFTER_SPECULATIVE_RUNTIME_CHECKS, "AutoVectorization 3, after Adding Speculative Runtime Checks") \
+  flags(AUTO_VECTORIZATION5_AFTER_APPLY,                      "AutoVectorization 4, after Apply") \
   flags(BEFORE_CCP1,                    "Before PhaseCCP 1") \
   flags(CCP1,                           "PhaseCCP 1") \
   flags(ITER_GVN2,                      "Iter GVN 2") \
@@ -138,36 +154,21 @@ enum CompilerPhaseType {
 };
 #undef table_entry
 
-static const char* phase_descriptions[] = {
-#define array_of_labels(name, description) description,
-       COMPILER_PHASES(array_of_labels)
-#undef array_of_labels
-};
-
-static const char* phase_names[] = {
-#define array_of_labels(name, description) #name,
-       COMPILER_PHASES(array_of_labels)
-#undef array_of_labels
-};
-
 class CompilerPhaseTypeHelper {
-  public:
+ private:
+  static const char* const _phase_descriptions[];
+  static const char* const _phase_names[];
+
+ public:
   static const char* to_name(CompilerPhaseType cpt) {
-    return phase_names[cpt];
+    return _phase_names[cpt];
   }
   static const char* to_description(CompilerPhaseType cpt) {
-    return phase_descriptions[cpt];
+    return _phase_descriptions[cpt];
   }
-};
 
-static CompilerPhaseType find_phase(const char* str) {
-  for (int i = 0; i < PHASE_NUM_TYPES; i++) {
-    if (strcmp(phase_names[i], str) == 0) {
-      return (CompilerPhaseType)i;
-    }
-  }
-  return PHASE_NONE;
-}
+  static CompilerPhaseType find_phase(const char* str);
+};
 
 class PhaseNameValidator {
  private:
@@ -183,7 +184,7 @@ class PhaseNameValidator {
   {
     for (StringUtils::CommaSeparatedStringIterator iter(option); *iter != nullptr && _valid; ++iter) {
 
-      CompilerPhaseType cpt = find_phase(*iter);
+      CompilerPhaseType cpt = CompilerPhaseTypeHelper::find_phase(*iter);
       if (PHASE_NONE == cpt) {
         const size_t len = MIN2<size_t>(strlen(*iter), 63) + 1;  // cap len to a value we know is enough for all phase descriptions
         _bad = NEW_C_HEAP_ARRAY(char, len, mtCompiler);

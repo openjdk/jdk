@@ -228,7 +228,7 @@ class ThreadPerTaskExecutorTest {
     }
 
     /**
-     * Invoke close with interrupt status set.
+     * Invoke close with interrupted status set.
      */
     @ParameterizedTest
     @MethodSource("executors")
@@ -593,7 +593,7 @@ class ThreadPerTaskExecutorTest {
     }
 
     /**
-     * Test invokeAny with interrupt status set.
+     * Test invokeAny with interrupted status set.
      */
     @ParameterizedTest
     @MethodSource("executors")
@@ -822,7 +822,7 @@ class ThreadPerTaskExecutorTest {
     }
 
     /**
-     * Test untimed-invokeAll with interrupt status set.
+     * Test untimed-invokeAll with interrupted status set.
      */
     @ParameterizedTest
     @MethodSource("executors")
@@ -846,7 +846,7 @@ class ThreadPerTaskExecutorTest {
     }
 
     /**
-     * Test timed-invokeAll with interrupt status set.
+     * Test timed-invokeAll with interrupted status set.
      */
     @ParameterizedTest
     @MethodSource("executors")

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
  * @compile -XDignore.symbol.file ChangeDataModel.java
  * @run main ChangeDataModel
  * @summary Verify -d32, -d64 and -J prefixed data-model options are rejected on all platforms
- * @author Joseph D. Darcy, ksrini
  */
 
 import java.util.Arrays;

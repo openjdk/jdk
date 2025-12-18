@@ -27,17 +27,19 @@
  * @summary Sanity test of AOT Code Cache with compressed oops configurations
  * @requires vm.cds.supports.aot.code.caching
  * @requires vm.compMode != "Xcomp"
+ * @requires vm.bits == 64
+ * @requires vm.opt.final.UseCompressedOops
  * @comment The test verifies AOT checks during VM startup and not code generation.
  *          No need to run it with -Xcomp. It takes a lot of time to complete all
  *          subtests with this flag.
  * @library /test/lib /test/setup_aot
  * @build AOTCodeCompressedOopsTest JavacBenchApp
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
+ * @run driver/timeout=480 jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
  *             JavacBenchApp
  *             JavacBenchApp$ClassFile
  *             JavacBenchApp$FileManager
  *             JavacBenchApp$SourceFile
- * @run driver AOTCodeCompressedOopsTest
+ * @run driver/timeout=480 AOTCodeCompressedOopsTest
  */
 
 import java.util.ArrayList;
