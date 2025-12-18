@@ -40,6 +40,8 @@ package compiler.vectorapi;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.Random;
+import jdk.test.lib.Utils;
 
 import compiler.lib.compile_framework.CompileFramework;
 
@@ -59,6 +61,7 @@ import compiler.lib.template_framework.library.VectorType;
  * TODO: desc
  */
 public class VectorExpressionFuzzer {
+    private static final Random RANDOM = Utils.getRandomInstance();
 
     public static void main(String[] args) {
         // Create a new CompileFramework instance.
@@ -86,61 +89,53 @@ public class VectorExpressionFuzzer {
         // We are going to use some random numbers in our tests, so import some good methods for that.
         tests.add(PrimitiveType.generateLibraryRNG());
 
-//        // Example 1:
-//        // We only use the "expression" once, and so we can conveniently just run it with
-//        // random arguments. Those may also generate their own fields under the hood.
-//        //
-//        // Note: we put the expression in a separate Template so that the method and class
-//        // hook are both already set before we call "expression.withRandomArgs", and so that
-//        // we know we can generate fields and local variables.
-//        var template1Body = Template.make("type", (Type type)-> {
-//            Expression expression = Expression.make(type, Type.ALL_BUILTIN_TYPES, 4);
-//            return scope(
-//                """
-//                    try {
-//                """,
-//                "        return ", expression.withRandomArgs(), ";\n",
-//                expression.exceptions().stream().map(exception ->
-//                    "} catch (" + exception + " e) { return e;\n"
-//                ).toList(),
-//                """
-//                    } finally {
-//                        // Just javac is happy if there are no exceptions to catch.
-//                    }
-//                """
-//            );
-//        });
-//        var template1 = Template.make("type", (Type type)-> {
-//            return scope(
-//                """
-//                // --- $test start ---
-//                // Using $GOLD
-//                // type: #type
-//                """,
-//                Library.CLASS_HOOK.set(
-//                    """
-//
-//                    static final Object $GOLD = $test();
-//
-//                    @Test
-//                    public static Object $test() {
-//                    """,
-//                    Library.METHOD_HOOK.set(
-//                        template1Body.withArgs(type)
-//                    ),
-//                    """
-//                    }
-//
-//                    @Check(test = "$test")
-//                    public static void $check(Object result) {
-//                        Verify.checkEQ(result, $GOLD);
-//                    }
-//
-//                    // --- $test end   ---
-//                    """
-//                )
-//            );
-//        });
+        // Example 1:
+        // To start simple, we just call the expression with the same constant arguments
+        // every time. We can still compare the "gold" value optained via interpreter with
+        // later results optained from the compiled method.
+        var template1Body = Template.make("type", (VectorType.Vector type)-> {
+            // The depth determines roughly how many operations are going to be used in the expression.
+            int depth = RANDOM.nextInt(1, 10);
+            Expression expression = Expression.nestRandomly(type, Operations.ALL_OPERATIONS, depth);
+            List<Object> expressionArguments = expression.argumentTypes.stream().map(CodeGenerationDataNameType::con).toList();
+            return scope(
+                """
+                try {
+                """,
+                "    return ", expression.asToken(expressionArguments), ";\n",
+                expression.info.exceptions.stream().map(exception ->
+                    "} catch (" + exception + " e) { return e;\n"
+                ).toList(),
+                """
+                } finally {
+                    // Just javac is happy if there are no exceptions to catch.
+                }
+                """
+            );
+        });
+        var template1 = Template.make("type", (VectorType.Vector type) -> scope(
+            """
+            // --- $test start ---
+            // Using $GOLD
+            // type: #type
+
+            static final Object $GOLD = $test();
+
+            @Test
+            public static Object $test() {
+            """,
+            template1Body.asToken(type),
+            """
+            }
+
+            @Check(test = "$test")
+            public static void $check(Object result) {
+                Verify.checkEQ(result, $GOLD);
+            }
+
+            // --- $test end   ---
+            """
+        ));
 //
 //        var defineArray = Template.make("type", "name", "size", (Type type, String name, Integer size) -> scope(
 //            """
@@ -176,7 +171,7 @@ public class VectorExpressionFuzzer {
 //                } else {
 //                    throw new RuntimeException("Not handled: " + argType);
 //                }
-//                arrayDefinitions.add(defineArray.withArgs(elementType, name, size));
+//                arrayDefinitions.add(defineArray.asToken(elementType, name, size));
 //            }
 //            return scope(
 //                let("size", size),
@@ -201,7 +196,7 @@ public class VectorExpressionFuzzer {
 //                        try {
 //                            #elementType[] out = new #elementType[#size];
 //                    """,
-//                    "        ", expression.withArgs(args), ".intoArray(out, 0);\n",
+//                    "        ", expression.asToken(args), ".intoArray(out, 0);\n",
 //                    """
 //                            return out;
 //                    """,
@@ -233,12 +228,13 @@ public class VectorExpressionFuzzer {
 //        List<TemplateWithArgs> templates = new ArrayList<>();
 //        templates.add(Library.arrayFillMethods());
 //        for (VectorAPIType type : Type.VECTOR_API_VECTOR_TYPES) {
-//            for (int i = 0; i < 2; i++) { templates.add(template1.withArgs(type)); }
-//            for (int i = 0; i < 2; i++) { templates.add(template2.withArgs(type)); }
+//            for (int i = 0; i < 2; i++) { templates.add(template1.asToken(type)); }
+//            for (int i = 0; i < 2; i++) { templates.add(template2.asToken(type)); }
 //        }
-//        return IRTestClass.TEMPLATE.withArgs(info, templates).render();
+//        return IRTestClass.TEMPLATE.asToken(info, templates).render();
 
         for (VectorType.Vector type : CodeGenerationDataNameType.VECTOR_VECTOR_TYPES) {
+            tests.add(template1.asToken(type));
         }
 
         // Create the test class, which runs all tests.
