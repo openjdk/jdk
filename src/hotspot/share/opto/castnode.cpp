@@ -106,6 +106,60 @@ const Type* ConstraintCastNode::Value(PhaseGVN* phase) const {
   return ft;
 }
 
+Node* ConstraintCastNode::uncasted_adds_or_subs(Node* n, PhaseGVN *phase) {
+  Node* uncasted = n->uncast();
+  if (uncasted->Opcode() != Op_AddI && uncasted->Opcode() != Op_SubI) {
+    return uncasted;
+  }
+  ResourceMark rm;
+  Node_Stack stack(0);
+  Node_List clones;
+  stack.push(uncasted, 0);
+  do {
+    Node* m = stack.node();
+    assert(m->Opcode() == Op_AddI || m->Opcode() == Op_SubI, "");
+    uint i = stack.index();
+    if (i >= m->req()) {
+      Node* clone = m;
+      for (uint j = 1; j < m->req(); ++j) {
+        Node* m_in = m->in(j);
+        Node* m_in_uncasted = m_in->uncast();
+        if (clones[m_in_uncasted->_idx] != nullptr) {
+          assert(clones[m_in_uncasted->_idx] != m_in_uncasted, "");
+          if (clone == m) {
+            clone = m->clone();
+          }
+          clone->set_req(j, clones[m_in_uncasted->_idx]);
+        } else if (m_in_uncasted != m_in) {
+          if (clone == m) {
+            clone = m->clone();
+          }
+          clone->set_req(j, m_in_uncasted);
+        }
+      }
+      if (clone != m) {
+        clone = phase->transform(clone);
+        clones.map(m->_idx, clone);
+      }
+      stack.pop();
+    } else {
+      stack.set_index(i + 1);
+      Node* in = m->in(i);
+      if (in != nullptr) {
+        Node* uncasted_in = in->uncast();
+        if (uncasted_in->Opcode() == Op_AddI || uncasted_in->Opcode() == Op_SubI) {
+          stack.push(uncasted_in, 0);
+        }
+      }
+    }
+  } while (stack.size() > 0);
+  if (clones[uncasted->_idx] != nullptr) {
+    return clones[uncasted->_idx];
+  }
+  return uncasted;
+}
+
+
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
@@ -148,12 +202,16 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
               if (!use->depends_only_on_test()) {
                 continue;
               }
+              if (use->in(0) == in(0)) {
+                continue;
+              }
               Node* addr = use->in(MemNode::Address);
               const Type* addr_t = phase->type(addr);
               assert(addr_t->make_oopptr()->isa_aryptr(), "");
               uint phi_idx = 0;
               for (phi_idx = 0; phi_idx < stack.size() && !stack.node_at(phi_idx)->is_Phi(); ++phi_idx);
               if (phi_idx < stack.size()) {
+                ShouldNotReachHere();
                 PhiNode* phi = stack.node_at(phi_idx)->as_Phi();
                 const Type* phi_t = phase->type(phi);
                 Node* new_cast = igvn->register_new_node_with_optimizer(make_cast_for_type(phi->in(0), phi, phi_t, DependencyType::NonFloatingNonNarrowing, nullptr));
@@ -177,6 +235,57 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
                   assert(base == addr->in(AddPNode::Base), "");
                   addr = addr->in(AddPNode::Address);
                 }
+                assert(addr == base, "");
+                Node* mem_ctrl = use->in(0);
+                bool safe_mem_access = false;
+                if (mem_ctrl->is_IfTrue() && mem_ctrl->in(0)->is_RangeCheck() &&
+                    mem_ctrl->in(0)->in(1)->is_Bool() && mem_ctrl->in(0)->in(1)->as_Bool()->_test._test == BoolTest::lt &&
+                    mem_ctrl->in(0)->in(1)->in(1)->Opcode() == Op_CmpU) {
+                  Node* cmpu = mem_ctrl->in(0)->in(1)->in(1);
+                  Node* range_addr = phase->transform(new AddPNode(base, base, phase->MakeConX( arrayOopDesc::length_offset_in_bytes())));
+                  Node* range = phase->transform(new LoadRangeNode(nullptr, phase->C->immutable_memory(), range_addr));
+                  Node* uncasted_range = uncasted_adds_or_subs(range, phase);
+                  Node* uncasted_cmpu_in2 = uncasted_adds_or_subs(cmpu->in(2), phase);
+                  if (uncasted_range == uncasted_cmpu_in2) {
+                    if (clones.size() <= 2) {
+                      const Type* elem_t = addr_t->make_oopptr()->is_aryptr()->elem();
+                      assert(elem_t != Type::BOTTOM, "");
+                      BasicType bt = elem_t->array_element_basic_type();
+                      uint shift  = exact_log2(type2aelembytes(bt));
+                      uint header = arrayOopDesc::base_offset_in_bytes(bt);
+                      assert(clones.size() > 0, "");
+                      jlong con = phase->type(clones.at(0)->in(AddPNode::Offset))->is_intptr_t()->get_con();
+                      if (con == header) {
+                        Node* index = nullptr;
+                        if (clones.size() > 1) {
+                          Node* offset = clones.at(1)->in(AddPNode::Offset);
+                          Node* unshifted_offset = nullptr;
+                          if (shift == 0) {
+                            unshifted_offset = offset;
+                          } else if (offset->Opcode() == Op_LShiftX && offset->in(2)->find_int_con(-1) == (int)shift) {
+                            unshifted_offset = offset->in(1);
+                          }
+                          if (unshifted_offset != nullptr && unshifted_offset->Opcode() == Op_ConvI2L) {
+                            index = unshifted_offset->in(1);
+                            if (index->uncast() == cmpu->in(1)) {
+                              safe_mem_access = true;
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                  if (uncasted_range->outcnt() == 0) {
+                    igvn->remove_dead_node(uncasted_range);
+                  }
+                  if (uncasted_cmpu_in2->outcnt() == 0) {
+                    igvn->remove_dead_node(uncasted_cmpu_in2);
+                  }
+                }
+                if (safe_mem_access) {
+                  clones.clear();
+                  continue;
+                }
                 Node* new_cast = igvn->register_new_node_with_optimizer(new CastPPNode(in(0), base, phase->type(base), DependencyType::NonFloatingNonNarrowing));
                 Node* prev = nullptr;
                 while (clones.size() > 0) {
@@ -192,6 +301,7 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
                   clone = igvn->register_new_node_with_optimizer(clone);
                   prev = clone;
                 }
+                ShouldNotReachHere();
                 phase->is_IterGVN()->replace_input_of(use, MemNode::Address, prev);
               }
               continue;

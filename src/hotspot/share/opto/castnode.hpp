@@ -152,6 +152,8 @@ protected:
   // narrower (or equal) than all the types it carries.
   const TypeTuple* _extra_types;
 
+  static Node* uncasted_adds_or_subs(Node* n, PhaseGVN *phase);
+
   public:
   ConstraintCastNode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency,
                      const TypeTuple* extra_types)
