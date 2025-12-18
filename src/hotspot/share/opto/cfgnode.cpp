@@ -1547,18 +1547,9 @@ Node* PhiNode::Identity(PhaseGVN* phase) {
     Node* phi_reg = region();
     for (DUIterator_Fast imax, i = phi_reg->fast_outs(imax); i < imax; i++) {
       Node* u = phi_reg->fast_out(i);
-      if (u->is_Phi() && u->as_Phi()->type() == Type::MEMORY &&
-          u->adr_type() == TypePtr::BOTTOM && u->in(0) == phi_reg &&
-          u->req() == phi_len) {
-        for (uint j = 1; j < phi_len; j++) {
-          if (in(j) != u->in(j)) {
-            u = nullptr;
-            break;
-          }
-        }
-        if (u != nullptr) {
-          return u;
-        }
+      assert(!u->is_Phi() || u->in(0) == phi_reg, "broken Phi/Region subgraph");
+      if (u->is_Phi() && u->req() == phi_len && can_be_replaced_by(u->as_Phi())) {
+        return u;
       }
     }
   }
@@ -2790,6 +2781,25 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     progress = merge_through_phi(this, phase->is_IterGVN());
   }
 
+  // PhiNode::Identity replaces a non-bottom memory phi with a bottom memory phi with the same inputs, if it exists.
+  // If the bottom memory phi's inputs are changed (so it can now replace the non-bottom memory phi) or if it's created
+  // only after the non-bottom memory phi is processed by igvn, PhiNode::Identity doesn't run and the transformation
+  // doesn't happen.
+  // Look for non-bottom Phis that should be transformed and enqueue them for igvn so that PhiNode::Identity executes for
+  // them.
+  if (can_reshape && type() == Type::MEMORY && adr_type() == TypePtr::BOTTOM) {
+    PhaseIterGVN* igvn = phase->is_IterGVN();
+    uint phi_len = req();
+    Node* phi_reg = region();
+    for (DUIterator_Fast imax, i = phi_reg->fast_outs(imax); i < imax; i++) {
+      Node* u = phi_reg->fast_out(i);
+      assert(!u->is_Phi() || (u->in(0) == phi_reg && u->req() == phi_len), "broken Phi/Region subgraph");
+      if (u->is_Phi() && u->as_Phi()->can_be_replaced_by(this)) {
+        igvn->_worklist.push(u);
+      }
+    }
+  }
+
   return progress;              // Return any progress
 }
 
@@ -2837,6 +2847,11 @@ const TypeTuple* PhiNode::collect_types(PhaseGVN* phase) const {
     flds[i] = types.at(i);
   }
   return TypeTuple::make(types.length(), flds);
+}
+
+bool PhiNode::can_be_replaced_by(const PhiNode* other) const {
+  return type() == Type::MEMORY && other->type() == Type::MEMORY && adr_type() != TypePtr::BOTTOM &&
+    other->adr_type() == TypePtr::BOTTOM && has_same_inputs_as(other);
 }
 
 Node* PhiNode::clone_through_phi(Node* root_phi, const Type* t, uint c, PhaseIterGVN* igvn) {
