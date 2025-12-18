@@ -146,6 +146,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -261,7 +262,8 @@ public class TCKLocalDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // now()
     //-----------------------------------------------------------------------
-    @Test  // TODO: remove when time zone loading is faster
+    @Test // TODO: remove when time zone loading is faster
+    @Timeout(30)
     public void now() {
         final long DELTA = 20_000_000_000L;    // 20 seconds of nanos leeway
         LocalDateTime expected = LocalDateTime.now(Clock.systemDefaultZone());
