@@ -252,7 +252,7 @@ public interface EventRequestManager extends Mirror {
      * would do the following:
      * <pre>{@code
      *     EventRequestManager mgr = myVM.eventRequestManager();
-     *     Steprequest request = mgr.createStepRequest(myThread,
+     *     StepRequest request = mgr.createStepRequest(myThread,
      *                                                 StepRequest.STEP_LINE,
      *                                                 StepRequest.STEP_OVER);
      *     request.addCountFilter(1);  // next step only
