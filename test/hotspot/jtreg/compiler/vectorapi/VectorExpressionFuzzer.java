@@ -93,49 +93,46 @@ public class VectorExpressionFuzzer {
         // To start simple, we just call the expression with the same constant arguments
         // every time. We can still compare the "gold" value optained via interpreter with
         // later results optained from the compiled method.
-        var template1Body = Template.make("type", (VectorType.Vector type)-> {
+        var template1 = Template.make("type", (VectorType.Vector type) -> {
             // The depth determines roughly how many operations are going to be used in the expression.
             int depth = RANDOM.nextInt(1, 10);
             Expression expression = Expression.nestRandomly(type, Operations.ALL_OPERATIONS, depth);
             List<Object> expressionArguments = expression.argumentTypes.stream().map(CodeGenerationDataNameType::con).toList();
             return scope(
                 """
-                try {
+                // --- $test start ---
+                // Using $GOLD
+                // type: #type
+
+                static final Object $GOLD = $test();
+
+                @Test
+                public static Object $test() {
+                    try {
                 """,
-                "    return ", expression.asToken(expressionArguments), ";\n",
+                "        return ", expression.asToken(expressionArguments), ";\n",
                 expression.info.exceptions.stream().map(exception ->
-                    "} catch (" + exception + " e) { return e;\n"
+                    "        } catch (" + exception + " e) { return e;\n"
                 ).toList(),
                 """
-                } finally {
-                    // Just javac is happy if there are no exceptions to catch.
+                    } finally {
+                        // Just javac is happy if there are no exceptions to catch.
+                    }
                 }
+
+                @Check(test = "$test")
+                public static void $check(Object result) {
+                """,
+                expression.info.isResultDeterministic
+                    ? "    Verify.checkEQ(result, $GOLD);\n"
+                    : "    // result not deterministic - don't verify.\n",
+                """
+                }
+
+                // --- $test end   ---
                 """
             );
         });
-        var template1 = Template.make("type", (VectorType.Vector type) -> scope(
-            """
-            // --- $test start ---
-            // Using $GOLD
-            // type: #type
-
-            static final Object $GOLD = $test();
-
-            @Test
-            public static Object $test() {
-            """,
-            template1Body.asToken(type),
-            """
-            }
-
-            @Check(test = "$test")
-            public static void $check(Object result) {
-                Verify.checkEQ(result, $GOLD);
-            }
-
-            // --- $test end   ---
-            """
-        ));
 //
 //        var defineArray = Template.make("type", "name", "size", (Type type, String name, Integer size) -> scope(
 //            """
