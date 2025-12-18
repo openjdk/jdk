@@ -37,14 +37,16 @@ import java.util.logging.Logger;
 import jdk.test.lib.net.URIBuilder;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.SimpleFileServer;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.nio.file.StandardOpenOption.CREATE;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /*
  * @test
@@ -52,8 +54,9 @@ import static org.testng.Assert.assertTrue;
  *          set of binary request sequences
  * @library /test/lib
  * @build jdk.test.lib.net.URIBuilder
- * @run testng/othervm IdempotencyAndCommutativityTest
+ * @run junit/othervm IdempotencyAndCommutativityTest
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class IdempotencyAndCommutativityTest {
 
     static final Path CWD = Path.of(".").toAbsolutePath().normalize();
@@ -69,7 +72,7 @@ public class IdempotencyAndCommutativityTest {
     static final boolean ENABLE_LOGGING = true;
     static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
 
-    @BeforeTest
+    @BeforeAll
     public void setup() throws IOException {
         if (ENABLE_LOGGING) {
             ConsoleHandler ch = new ConsoleHandler();
@@ -89,7 +92,6 @@ public class IdempotencyAndCommutativityTest {
     record ExchangeValues(String method, String resource, int respCode, String contentType) {}
 
     // Creates an exhaustive set of binary exchange sequences
-    @DataProvider
     public Object[][] allBinarySequences() {
         final List<ExchangeValues> sequences =  List.of(
                 new ExchangeValues("GET",     FILE_NAME,         200, "text/plain"),
@@ -108,7 +110,8 @@ public class IdempotencyAndCommutativityTest {
                         .toArray(Object[][]::new);
     }
 
-    @Test(dataProvider = "allBinarySequences")
+    @ParameterizedTest
+    @MethodSource("allBinarySequences")
     public void testBinarySequences(ExchangeValues e1, ExchangeValues e2) throws Exception {
         System.out.println("---");
         System.out.println(e1);
@@ -122,15 +125,15 @@ public class IdempotencyAndCommutativityTest {
                                             .method(e.method(), HttpRequest.BodyPublishers.noBody())
                                             .build();
         var response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        assertEquals(response.statusCode(), e.respCode());
+        assertEquals(e.respCode(), response.statusCode());
         if (e.contentType != null) {
-            assertEquals(response.headers().firstValue("content-type").get(), e.contentType());
+            assertEquals(e.contentType(), response.headers().firstValue("content-type").get());
         } else {
             assertTrue(response.headers().firstValue("content-type").isEmpty());
         }
     }
 
-    @AfterTest
+    @AfterAll
     public static void teardown() {
         server.stop(0);
     }

@@ -28,7 +28,7 @@
  *           with HttpURLConnection and HttpClient
  * @modules jdk.httpserver
  * @library /test/lib
- * @run testng/othervm BasicAuthenticatorRealm
+ * @run junit/othervm BasicAuthenticatorRealm
  */
 
 import com.sun.net.httpserver.BasicAuthenticator;
@@ -47,12 +47,15 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
 
 import jdk.test.lib.net.URIBuilder;
-import org.testng.annotations.Test;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.assertEquals;
 
+import org.junit.jupiter.api.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
+
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class BasicAuthenticatorRealm {
 
     static final String REALM = "U\u00ffU@realm";  // non-ASCII char
@@ -61,7 +64,8 @@ public class BasicAuthenticatorRealm {
     static final InetAddress LOOPBACK_ADDR = InetAddress.getLoopbackAddress();
 
     @Test
-    public static void testURLConnection() throws Exception {
+    @Order(1)
+    public void testURLConnection() throws Exception {
         var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR, 0), 0);
         var handler = HttpHandlers.of(200, Headers.of(), "");
         var context = server.createContext("/test", handler);
@@ -73,15 +77,16 @@ public class BasicAuthenticatorRealm {
             server.start();
             var url = uri(server).toURL();
             var connection = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
-            assertEquals(connection.getResponseCode(), 401);
-            assertEquals(connection.getHeaderField("WWW-Authenticate"), EXPECTED_AUTH_HEADER_VALUE);
+            assertEquals(401, connection.getResponseCode());
+            assertEquals(EXPECTED_AUTH_HEADER_VALUE, connection.getHeaderField("WWW-Authenticate"));
         } finally {
             server.stop(0);
         }
     }
 
     @Test
-    public static void testURLConnectionAuthenticated() throws Exception {
+    @Order(2)
+    public void testURLConnectionAuthenticated() throws Exception {
         var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR, 0), 0);
         var handler = HttpHandlers.of(200, Headers.of(), "foo");
         var context = server.createContext("/test", handler);
@@ -94,15 +99,16 @@ public class BasicAuthenticatorRealm {
             server.start();
             var url = uri(server).toURL();
             var connection = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
-            assertEquals(connection.getResponseCode(), 200);
-            assertEquals(connection.getInputStream().readAllBytes(), "foo".getBytes(UTF_8));
+            assertEquals(200, connection.getResponseCode());
+            Assertions.assertArrayEquals("foo".getBytes(UTF_8), connection.getInputStream().readAllBytes());
         } finally {
             server.stop(0);
         }
     }
 
     @Test
-    public static void testHttpClient() throws Exception {
+    @Order(3)
+    public void testHttpClient() throws Exception {
         var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR, 0), 0);
         var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
         var request = HttpRequest.newBuilder(uri(server)).build();
@@ -115,15 +121,16 @@ public class BasicAuthenticatorRealm {
         try {
             server.start();
             var response = client.send(request, BodyHandlers.ofString(UTF_8));
-            assertEquals(response.statusCode(), 401);
-            assertEquals(response.headers().firstValue("WWW-Authenticate").orElseThrow(), EXPECTED_AUTH_HEADER_VALUE);
+            assertEquals(401, response.statusCode());
+            assertEquals(EXPECTED_AUTH_HEADER_VALUE, response.headers().firstValue("WWW-Authenticate").orElseThrow());
         } finally {
             server.stop(0);
         }
     }
 
     @Test
-    public static void testHttpClientAuthenticated() throws Exception {
+    @Order(4)
+    public void testHttpClientAuthenticated() throws Exception {
         var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR, 0), 0);
         var request = HttpRequest.newBuilder(uri(server)).build();
         var handler = HttpHandlers.of(200, Headers.of(), "foo");
@@ -139,8 +146,8 @@ public class BasicAuthenticatorRealm {
         try {
             server.start();
             var response = client.send(request, BodyHandlers.ofString(UTF_8));
-            assertEquals(response.statusCode(), 200);
-            assertEquals(response.body(), "foo");
+            assertEquals(200, response.statusCode());
+            assertEquals("foo", response.body());
         } finally {
             server.stop(0);
         }

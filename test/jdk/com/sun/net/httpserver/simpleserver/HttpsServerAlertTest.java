@@ -27,15 +27,13 @@
  * @summary Test if HttpsServer sends the TLS alerts produced
  * @library /test/lib
  * @build jdk.test.lib.net.SimpleSSLContext
- * @run testng/othervm HttpsServerAlertTest
+ * @run junit/othervm HttpsServerAlertTest
  */
 
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
@@ -50,8 +48,12 @@ import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class HttpsServerAlertTest {
 
     static final InetSocketAddress LOOPBACK_ADDR = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
@@ -61,7 +63,7 @@ public class HttpsServerAlertTest {
 
     SSLContext sslContext;
 
-    @BeforeTest
+    @BeforeAll
     public void setup() throws IOException {
         if (ENABLE_LOGGING) {
             ConsoleHandler ch = new ConsoleHandler();

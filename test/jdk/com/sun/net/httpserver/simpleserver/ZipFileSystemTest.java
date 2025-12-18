@@ -26,7 +26,7 @@
  * @summary Tests for SimpleFileServer with a root that is of a zip file system
  * @library /test/lib
  * @build jdk.test.lib.Platform jdk.test.lib.net.URIBuilder
- * @run testng/othervm ZipFileSystemTest
+ * @run junit/othervm ZipFileSystemTest
  */
 
 import java.io.IOException;
@@ -51,16 +51,20 @@ import com.sun.net.httpserver.SimpleFileServer;
 import com.sun.net.httpserver.SimpleFileServer.OutputLevel;
 import jdk.test.lib.net.URIBuilder;
 import jdk.test.lib.util.FileUtils;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.CREATE;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
 
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ZipFileSystemTest {
 
     static final Path CWD = Path.of(".").toAbsolutePath();
@@ -71,7 +75,7 @@ public class ZipFileSystemTest {
     static final boolean ENABLE_LOGGING = true;
     static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
 
-    @BeforeTest
+    @BeforeAll
     public void setup() throws Exception {
         if (ENABLE_LOGGING) {
             ConsoleHandler ch = new ConsoleHandler();
@@ -98,11 +102,11 @@ public class ZipFileSystemTest {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
             var request = HttpRequest.newBuilder(uri(server, "aFile.txt")).build();
             var response = client.send(request, BodyHandlers.ofString());
-            assertEquals(response.statusCode(), 200);
-            assertEquals(response.body(), "some text");
-            assertEquals(response.headers().firstValue("content-type").get(), "text/plain");
-            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
-            assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
+            assertEquals(200, response.statusCode());
+            assertEquals("some text", response.body());
+            assertEquals("text/plain", response.headers().firstValue("content-type").get());
+            assertEquals(expectedLength, response.headers().firstValue("content-length").get());
+            assertEquals(lastModified, response.headers().firstValue("last-modified").get());
         } finally {
             server.stop(0);
             root.getFileSystem().close();
@@ -127,11 +131,11 @@ public class ZipFileSystemTest {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
             var request = HttpRequest.newBuilder(uri(server, "")).build();
             var response = client.send(request, BodyHandlers.ofString());
-            assertEquals(response.statusCode(), 200);
-            assertEquals(response.headers().firstValue("content-type").get(), "text/html; charset=UTF-8");
-            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
-            assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
-            assertEquals(response.body(), expectedBody);
+            assertEquals(200, response.statusCode());
+            assertEquals("text/html; charset=UTF-8", response.headers().firstValue("content-type").get());
+            assertEquals(expectedLength, response.headers().firstValue("content-length").get());
+            assertEquals(lastModified, response.headers().firstValue("last-modified").get());
+            assertEquals(expectedBody, response.body());
         } finally {
             server.stop(0);
             root.getFileSystem().close();
@@ -153,11 +157,11 @@ public class ZipFileSystemTest {
             var request = HttpRequest.newBuilder(uri(server, "aFile.txt"))
                     .method("HEAD", BodyPublishers.noBody()).build();
             var response = client.send(request, BodyHandlers.ofString());
-            assertEquals(response.statusCode(), 200);
-            assertEquals(response.headers().firstValue("content-type").get(), "text/plain");
-            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
-            assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
-            assertEquals(response.body(), "");
+            assertEquals(200, response.statusCode());
+            assertEquals("text/plain", response.headers().firstValue("content-type").get());
+            assertEquals(expectedLength, response.headers().firstValue("content-length").get());
+            assertEquals(lastModified, response.headers().firstValue("last-modified").get());
+            assertEquals("", response.body());
         } finally {
             server.stop(0);
             root.getFileSystem().close();
@@ -183,11 +187,11 @@ public class ZipFileSystemTest {
             var request = HttpRequest.newBuilder(uri(server, ""))
                     .method("HEAD", BodyPublishers.noBody()).build();
             var response = client.send(request, BodyHandlers.ofString());
-            assertEquals(response.statusCode(), 200);
-            assertEquals(response.headers().firstValue("content-type").get(), "text/html; charset=UTF-8");
-            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
-            assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
-            assertEquals(response.body(), "");
+            assertEquals(200, response.statusCode());
+            assertEquals("text/html; charset=UTF-8", response.headers().firstValue("content-type").get());
+            assertEquals(expectedLength, response.headers().firstValue("content-length").get());
+            assertEquals(lastModified, response.headers().firstValue("last-modified").get());
+            assertEquals("", response.body());
         } finally {
             server.stop(0);
             root.getFileSystem().close();
@@ -195,7 +199,6 @@ public class ZipFileSystemTest {
         }
     }
 
-    @DataProvider
     public Object[][] indexFiles() {
         var fileContent = openHTML + """
                 <h1>This is an index file</h1>
@@ -212,7 +215,8 @@ public class ZipFileSystemTest {
         };
     }
 
-    @Test(dataProvider = "indexFiles")
+    @ParameterizedTest
+    @MethodSource("indexFiles")
     public void testDirectoryWithIndexGET(String id,
                                           String filename,
                                           String contentType,
@@ -232,11 +236,11 @@ public class ZipFileSystemTest {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
             var request = HttpRequest.newBuilder(uri(server, "")).build();
             var response = client.send(request, BodyHandlers.ofString());
-            assertEquals(response.statusCode(), 200);
-            assertEquals(response.headers().firstValue("content-type").get(), contentType);
-            assertEquals(response.headers().firstValue("content-length").get(), contentLength);
-            assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
-            assertEquals(response.body(), expectedBody);
+            assertEquals(200, response.statusCode());
+            assertEquals(contentType, response.headers().firstValue("content-type").get());
+            assertEquals(contentLength, response.headers().firstValue("content-length").get());
+            assertEquals(lastModified, response.headers().firstValue("last-modified").get());
+            assertEquals(expectedBody, response.body());
         } finally {
             server.stop(0);
             if (serveIndexFile) {
@@ -265,9 +269,9 @@ public class ZipFileSystemTest {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
             var request = HttpRequest.newBuilder(uri(server, "aFile?#.txt")).build();
             var response = client.send(request, BodyHandlers.ofString());
-            assertEquals(response.statusCode(), 404);
-            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
-            assertEquals(response.body(), expectedBody);
+            assertEquals(404, response.statusCode());
+            assertEquals(expectedLength, response.headers().firstValue("content-length").get());
+            assertEquals(expectedBody, response.body());
         } finally {
             server.stop(0);
             root.getFileSystem().close();
@@ -290,9 +294,9 @@ public class ZipFileSystemTest {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
             var request = HttpRequest.newBuilder(uri(server, "doesNotExist.txt")).build();
             var response = client.send(request, BodyHandlers.ofString());
-            assertEquals(response.statusCode(), 404);
-            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
-            assertEquals(response.body(), expectedBody);
+            assertEquals(404, response.statusCode());
+            assertEquals(expectedLength, response.headers().firstValue("content-length").get());
+            assertEquals(expectedBody, response.body());
         } finally {
             server.stop(0);
             root.getFileSystem().close();
@@ -317,9 +321,9 @@ public class ZipFileSystemTest {
             var request = HttpRequest.newBuilder(uri(server, "doesNotExist.txt"))
                     .method("HEAD", BodyPublishers.noBody()).build();
             var response = client.send(request, BodyHandlers.ofString());
-            assertEquals(response.statusCode(), 404);
-            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
-            assertEquals(response.body(), "");
+            assertEquals(404, response.statusCode());
+            assertEquals(expectedLength, response.headers().firstValue("content-length").get());
+            assertEquals("", response.body());
         } finally {
             server.stop(0);
             root.getFileSystem().close();
@@ -339,9 +343,9 @@ public class ZipFileSystemTest {
             var uri = uri(server, "aDirectory");
             var request = HttpRequest.newBuilder(uri).build();
             var response = client.send(request, BodyHandlers.ofString());
-            assertEquals(response.statusCode(), 301);
-            assertEquals(response.headers().firstValue("content-length").get(), "0");
-            assertEquals(response.headers().firstValue("location").get(), "/aDirectory/");
+            assertEquals(301, response.statusCode());
+            assertEquals("0", response.headers().firstValue("content-length").get());
+            assertEquals("/aDirectory/", response.headers().firstValue("location").get());
         } finally {
             server.stop(0);
             root.getFileSystem().close();
@@ -366,7 +370,7 @@ public class ZipFileSystemTest {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
             var request = HttpRequest.newBuilder(uri(server, "beginDelim%3C%3EEndDelim")).build();
             var response = client.send(request, BodyHandlers.ofString());
-            assertEquals(response.statusCode(), 404);
+            assertEquals(404, response.statusCode());
             assertTrue(response.body().contains("beginDelim%3C%3EEndDelim"));
             assertTrue(response.body().contains("File not found"));
         } finally {
@@ -376,7 +380,7 @@ public class ZipFileSystemTest {
         }
     }
 
-    @AfterTest
+    @AfterAll
     public void teardown() throws IOException {
         if (Files.exists(TEST_DIR)) {
             FileUtils.deleteFileTreeWithRetry(TEST_DIR);

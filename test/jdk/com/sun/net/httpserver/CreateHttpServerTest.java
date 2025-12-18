@@ -25,17 +25,17 @@
  * @test
  * @bug 8251496
  * @summary summary
- * @run testng/othervm CreateHttpServerTest
+ * @run junit/othervm CreateHttpServerTest
  */
 
 import com.sun.net.httpserver.HttpServer;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 public class CreateHttpServerTest {
     @Test

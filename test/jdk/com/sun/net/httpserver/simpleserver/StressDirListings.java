@@ -25,7 +25,7 @@
  * @test
  * @summary Test to stress directory listings
  * @library /test/lib
- * @run testng/othervm/timeout=180 StressDirListings
+ * @run junit/othervm/timeout=180 StressDirListings
  */
 
 import java.io.IOException;
@@ -43,13 +43,16 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.SimpleFileServer;
 import com.sun.net.httpserver.SimpleFileServer.OutputLevel;
 import jdk.test.lib.net.URIBuilder;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
-import static org.testng.Assert.assertEquals;
 
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class StressDirListings {
 
     static final Path CWD = Path.of(".").toAbsolutePath();
@@ -68,7 +71,7 @@ public class StressDirListings {
 
     HttpServer simpleFileServer;
 
-    @BeforeTest
+    @BeforeAll
     public void setup() throws IOException {
         out.println(now() + " creating server");
         if (ENABLE_LOGGING) {
@@ -82,7 +85,7 @@ public class StressDirListings {
         out.println(now() + " server started");
     }
 
-    @AfterTest
+    @AfterAll
     public void teardown() {
         out.println(now() + " stopping server");
         simpleFileServer.stop(0);
@@ -105,7 +108,7 @@ public class StressDirListings {
         var request = HttpRequest.newBuilder(uri(simpleFileServer)).build();
         for (int i=0; i<TIMES; i++) {
             var response = client.send(request, BodyHandlers.ofString());
-            assertEquals(response.statusCode(), 200);
+            assertEquals(200, response.statusCode());
             if (i % 100 == 0) {
                 out.print(" " + i + " ");
             }

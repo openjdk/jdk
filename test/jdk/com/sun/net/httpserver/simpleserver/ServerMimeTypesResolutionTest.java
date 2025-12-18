@@ -39,14 +39,15 @@ import java.util.stream.Collectors;
 import jdk.test.lib.net.URIBuilder;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.SimpleFileServer;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import sun.net.www.MimeTable;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 /*
  * @test
@@ -54,8 +55,9 @@ import static org.testng.Assert.assertTrue;
  * @modules java.base/sun.net.www:+open
  * @library /test/lib
  * @build jdk.test.lib.net.URIBuilder
- * @run testng/othervm ServerMimeTypesResolutionTest
+ * @run junit/othervm ServerMimeTypesResolutionTest
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ServerMimeTypesResolutionTest {
 
     static final Path CWD = Path.of(".").toAbsolutePath();
@@ -70,7 +72,7 @@ public class ServerMimeTypesResolutionTest {
     static final boolean ENABLE_LOGGING = true;
     static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
 
-    @BeforeTest
+    @BeforeAll
     public void setup() throws Exception {
         if (ENABLE_LOGGING) {
             ConsoleHandler ch = new ConsoleHandler();
@@ -139,7 +141,7 @@ public class ServerMimeTypesResolutionTest {
     }
 
     @Test
-    public static void testMimeTypeHeaders() throws Exception {
+    public void testMimeTypeHeaders() throws Exception {
         final var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, SimpleFileServer.OutputLevel.VERBOSE);
         server.start();
         try {
@@ -163,8 +165,8 @@ public class ServerMimeTypesResolutionTest {
         final var uri = uri(server, toFileName(extension));
         final var request = HttpRequest.newBuilder(uri).build();
         final var response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        assertEquals(response.statusCode(), 200);
-        assertEquals(response.headers().firstValue("content-type").get(),expectedMimeType);
+        assertEquals(200, response.statusCode());
+        assertEquals(expectedMimeType, response.headers().firstValue("content-type").get());
     }
 
     static URI uri(HttpServer server, String path) {
@@ -176,7 +178,6 @@ public class ServerMimeTypesResolutionTest {
                 .buildUnchecked();
     }
 
-    @DataProvider
     public static Object[][] commonExtensions() {
         Set<String> extensions = Set.of(".aac", ".abw", ".arc", ".avi", ".azw", ".bin", ".bmp", ".bz",
                 ".bz2", ".csh", ".css", ".csv", ".doc", ".docx",".eot", ".epub", ".gz", ".gif", ".htm", ".html", ".ico",

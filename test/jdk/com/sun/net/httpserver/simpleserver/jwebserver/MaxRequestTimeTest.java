@@ -27,7 +27,7 @@
  * @summary Tests the jwebserver's maximum request time
  * @modules jdk.httpserver
  * @library /test/lib
- * @run testng/othervm MaxRequestTimeTest
+ * @run junit/othervm MaxRequestTimeTest
  */
 
 import java.io.IOException;
@@ -47,12 +47,14 @@ import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.FileUtils;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
-import static org.testng.Assert.*;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 /**
  * This test confirms that the jwebserver does not wait indefinitely for
@@ -69,6 +71,7 @@ import static org.testng.Assert.*;
  *    2. an HTTPS request fails due to the server closing the connection
  *    3. another HTTP request is handled successfully.
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class MaxRequestTimeTest {
     static final Path JAVA_HOME = Path.of(System.getProperty("java.home"));
     static final String LOCALE_OPT = "-J-Duser.language=en -J-Duser.country=US";
@@ -80,7 +83,7 @@ public class MaxRequestTimeTest {
 
     static SSLContext sslContext;
 
-    @BeforeTest
+    @BeforeAll
     public void setup() throws IOException {
         if (Files.exists(TEST_DIR)) {
             FileUtils.deleteFileTreeWithRetry(TEST_DIR);
@@ -129,7 +132,7 @@ public class MaxRequestTimeTest {
                 .build();
         var request = HttpRequest.newBuilder(URI.create("http://localhost:" + PORT.get() + "/")).build();
         var response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        assertEquals(response.body(), expectedBody);
+        assertEquals(expectedBody, response.body());
     }
 
     void sendHTTPSRequest() throws IOException, InterruptedException {
@@ -147,7 +150,7 @@ public class MaxRequestTimeTest {
         }
     }
 
-    @AfterTest
+    @AfterAll
     public void teardown() throws IOException {
         if (Files.exists(TEST_DIR)) {
             FileUtils.deleteFileTreeWithRetry(TEST_DIR);

@@ -39,12 +39,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jdk.test.lib.net.URIBuilder;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
 import static java.net.http.HttpResponse.BodyHandlers.ofString;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 /**
  * @test
@@ -53,8 +55,9 @@ import static org.testng.Assert.fail;
  * @modules java.net.http
  * @library /test/lib
  * @build DateFormatterTest
- * @run testng/othervm DateFormatterTest
+ * @run junit/othervm DateFormatterTest
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class DateFormatterTest {
 
     private HttpServer server;
@@ -64,7 +67,7 @@ public class DateFormatterTest {
     static String format;
     static Pattern pattern;
 
-    @BeforeTest
+    @BeforeAll
     public void setUp() throws IOException, URISyntaxException {
         String days = "(Mon|Tue|Wed|Thu|Fri|Sat|Sun)(,)";
         String dayNo = "(\\s\\d\\d\\s)";
@@ -85,7 +88,7 @@ public class DateFormatterTest {
         server.start();
     }
 
-    @AfterTest
+    @AfterAll
     public void cleanUp() {
         server.stop(0);
     }
