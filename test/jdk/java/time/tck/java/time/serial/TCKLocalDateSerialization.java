@@ -59,23 +59,23 @@
  */
 package tck.java.time.serial;
 
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 import tck.java.time.AbstractTCKTest;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.time.LocalDate;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 /**
  * Test LocalDate serialization.
  */
-@Test
 public class TCKLocalDateSerialization extends AbstractTCKTest {
 
     private LocalDate TEST_2007_07_15;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         TEST_2007_07_15 = LocalDate.of(2007, 7, 15);
     }

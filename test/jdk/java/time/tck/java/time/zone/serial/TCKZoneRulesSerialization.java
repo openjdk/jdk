@@ -59,7 +59,6 @@
  */
 package tck.java.time.zone.serial;
 
-import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -68,16 +67,17 @@ import java.io.ObjectOutputStream;
 import java.time.ZoneId;
 import java.time.zone.ZoneRules;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
 import tck.java.time.AbstractTCKTest;
 
 /**
  * Test serialization of ZoneRules.
  */
-@Test
 public class TCKZoneRulesSerialization extends AbstractTCKTest{
 
+    @Test
     public void test_serialization_loaded() throws Exception {
         assertSerialization(europeLondon());
         assertSerialization(europeParis());
@@ -95,7 +95,7 @@ public class TCKZoneRulesSerialization extends AbstractTCKTest{
         ObjectInputStream in = new ObjectInputStream(bais);
         ZoneRules result = (ZoneRules) in.readObject();
 
-        assertEquals(result, test);
+        assertEquals(test, result);
     }
 
     //-----------------------------------------------------------------------

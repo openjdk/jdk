@@ -75,8 +75,10 @@ import java.time.chrono.JapaneseEra;
 import java.time.chrono.MinguoEra;
 import java.time.chrono.ThaiBuddhistEra;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import tck.java.time.AbstractTCKTest;
 
@@ -87,16 +89,15 @@ import tck.java.time.AbstractTCKTest;
  * The serialized form of these types are not tested, only that they are
  * serializable.
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TCKEraSerialization extends AbstractTCKTest {
 
-    static final int JAPANESE_ERA_TYPE = 5;     // java.time.chrono.Ser.JAPANESE_ERA
+    static final int JAPANESE_ERA_TYPE = 5;     // java.time.chrono.Ser.JAPANESE_ERA// java.time.chrono.Ser.JAPANESE_ERA
 
 
     //-----------------------------------------------------------------------
     // Regular data factory for the available Eras
     //-----------------------------------------------------------------------
-    @DataProvider(name = "Eras")
     Era[][] data_of_calendars() {
         return new Era[][] {
                     {HijrahEra.AH},
@@ -109,7 +110,8 @@ public class TCKEraSerialization extends AbstractTCKTest {
         };
     }
 
-    @Test(dataProvider="Eras")
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
     public void test_eraSerialization(Era era) throws IOException, ClassNotFoundException {
         assertSerializableSame(era);
     }
@@ -118,7 +120,7 @@ public class TCKEraSerialization extends AbstractTCKTest {
     // Test JapaneseEra serialization produces exact sequence of bytes
     //-----------------------------------------------------------------------
     @Test
-    private void test_JapaneseErasSerialization() throws Exception {
+    void test_JapaneseErasSerialization() throws Exception {
         for (JapaneseEra era : JapaneseEra.values()) {
             assertSerializableSame(era);
 

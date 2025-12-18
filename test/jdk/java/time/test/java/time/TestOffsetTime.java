@@ -61,12 +61,11 @@ package test.java.time;
 
 import java.time.OffsetTime;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test OffsetTime.
  */
-@Test
 public class TestOffsetTime extends AbstractTest {
 
     @Test

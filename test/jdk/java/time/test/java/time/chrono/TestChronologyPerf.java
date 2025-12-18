@@ -29,7 +29,7 @@ import java.time.chrono.HijrahDate;
 import java.time.temporal.ChronoUnit;
 import java.util.Set;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test the speed of initializing all calendars.

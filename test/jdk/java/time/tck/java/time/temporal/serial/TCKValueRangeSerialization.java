@@ -59,8 +59,8 @@
  */
 package tck.java.time.temporal.serial;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -71,19 +71,20 @@ import java.io.ObjectOutputStream;
 import java.time.temporal.ValueRange;
 import java.util.Arrays;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import tck.java.time.AbstractTCKTest;
 
 /**
  * Test serialization of ValueRange.
  */
-@Test
 public class TCKValueRangeSerialization extends AbstractTCKTest {
 
     //-----------------------------------------------------------------------
     // Serialization
     //-----------------------------------------------------------------------
+    @Test
     public void test_serialization() throws Exception {
         ValueRange range = ValueRange.of(1, 2, 3, 4);
         assertSerializable(range);
@@ -94,6 +95,7 @@ public class TCKValueRangeSerialization extends AbstractTCKTest {
      * Verify Serialized bytes of a ValueRange.
      * @throws IOException if thrown during serialization is an unexpected test tailure
      */
+    @Test
     public void test_valueRangeSerialized() throws IOException {
         byte[] expected = {
             (byte)172, (byte)237,   0,   5, 115, 114,   0,  29, 106,  97, /* \u00ac \u00ed \u0000 \u0005 s r \u0000 \u001d j a */
@@ -118,7 +120,7 @@ public class TCKValueRangeSerialization extends AbstractTCKTest {
             oos.writeObject(range);
 
             byte[] actual = baos.toByteArray();
-            assertEquals(actual, expected, "Serialized bytes incorrect");
+            Assertions.assertArrayEquals(expected, actual, "Serialized bytes incorrect");
         }
     }
 

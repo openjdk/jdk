@@ -66,13 +66,13 @@ import java.time.ZoneOffset;
 import java.time.zone.ZoneOffsetTransitionRule;
 import java.time.zone.ZoneOffsetTransitionRule.TimeDefinition;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+
 import tck.java.time.AbstractTCKTest;
 
 /**
  * Test ZoneOffsetTransitionRule serialization.
  */
-@Test
 public class TCKZoneOffsetTransitionRuleSerialization extends AbstractTCKTest {
 
     private static final LocalTime TIME_0100 = LocalTime.of(1, 0);

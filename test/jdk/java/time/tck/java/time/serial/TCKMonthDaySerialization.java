@@ -59,8 +59,6 @@
  */
 package tck.java.time.serial;
 
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 import tck.java.time.AbstractTCKTest;
 
 import java.io.ByteArrayOutputStream;
@@ -68,15 +66,17 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.time.MonthDay;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 /**
  * Test MonthDay serialization.
  */
-@Test
 public class TCKMonthDaySerialization extends AbstractTCKTest {
 
     private MonthDay TEST_07_15;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         TEST_07_15 = MonthDay.of(7, 15);
     }

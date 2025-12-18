@@ -59,17 +59,17 @@
  */
 package tck.java.time.serial;
 
-import org.testng.annotations.Test;
 import tck.java.time.AbstractTCKTest;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.time.ZoneOffset;
 
+import org.junit.jupiter.api.Test;
+
 /**
  * Test serialization of ZoneOffset.
  */
-@Test
 public class TCKZoneOffsetSerialization extends AbstractTCKTest {
 
 

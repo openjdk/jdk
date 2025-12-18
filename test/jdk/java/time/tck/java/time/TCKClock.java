@@ -59,18 +59,17 @@
  */
 package tck.java.time;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test Clock.
  */
-@Test
 public class TCKClock {
 
     static class MockInstantClock extends Clock {
@@ -117,18 +116,18 @@ public class TCKClock {
     //-----------------------------------------------------------------------
     @Test
     public void test_mockInstantClock_get() {
-        assertEquals(MOCK_INSTANT.instant(), INSTANT);
-        assertEquals(MOCK_INSTANT.millis(), INSTANT.toEpochMilli());
-        assertEquals(MOCK_INSTANT.getZone(), ZONE);
+        assertEquals(INSTANT, MOCK_INSTANT.instant());
+        assertEquals(INSTANT.toEpochMilli(), MOCK_INSTANT.millis());
+        assertEquals(ZONE, MOCK_INSTANT.getZone());
     }
 
     @Test
     public void test_mockInstantClock_withZone() {
         ZoneId london = ZoneId.of("Europe/London");
         Clock changed = MOCK_INSTANT.withZone(london);
-        assertEquals(MOCK_INSTANT.instant(), INSTANT);
-        assertEquals(MOCK_INSTANT.millis(), INSTANT.toEpochMilli());
-        assertEquals(changed.getZone(), london);
+        assertEquals(INSTANT, MOCK_INSTANT.instant());
+        assertEquals(INSTANT.toEpochMilli(), MOCK_INSTANT.millis());
+        assertEquals(london, changed.getZone());
     }
 
 }

@@ -63,13 +63,13 @@ import java.io.IOException;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Chronology;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+
 import tck.java.time.AbstractTCKTest;
 
 /**
  * Tests the serialization of ChronoLocalDate using a CopticDate.
  */
-@Test
 public class TCKCopticSerialization extends AbstractTCKTest {
 
     @Test

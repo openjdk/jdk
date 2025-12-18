@@ -61,12 +61,11 @@ package test.java.time;
 
 import java.time.Year;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test Year.
  */
-@Test
 public class TestYear extends AbstractTest {
 
     @Test

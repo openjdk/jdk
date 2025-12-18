@@ -59,16 +59,15 @@
  */
 package test.java.time.temporal;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.temporal.JulianFields;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test.
  */
-@Test
 public class TestJulianFields {
 
     //-----------------------------------------------------------------------
@@ -76,9 +75,9 @@ public class TestJulianFields {
     //-----------------------------------------------------------------------
     @Test
     public void test_toString() {
-        assertEquals(JulianFields.JULIAN_DAY.toString(), "JulianDay");
-        assertEquals(JulianFields.MODIFIED_JULIAN_DAY.toString(), "ModifiedJulianDay");
-        assertEquals(JulianFields.RATA_DIE.toString(), "RataDie");
+        assertEquals("JulianDay", JulianFields.JULIAN_DAY.toString());
+        assertEquals("ModifiedJulianDay", JulianFields.MODIFIED_JULIAN_DAY.toString());
+        assertEquals("RataDie", JulianFields.RATA_DIE.toString());
     }
 
 }

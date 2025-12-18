@@ -32,17 +32,16 @@ import java.util.LinkedHashSet;
 import java.util.NavigableMap;
 import java.util.Set;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Test;
 
 /**
  * @summary Tests for ZoneRulesProvider class.
  * @bug 8299571 8302983
  */
-@Test
 public class TestZoneRulesProvider {
 
     /**

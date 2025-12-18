@@ -64,20 +64,20 @@ import java.time.chrono.JapaneseChronology;
 import java.time.chrono.MinguoChronology;
 import java.time.chrono.ThaiBuddhistChronology;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import tck.java.time.AbstractTCKTest;
 
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TCKChronologySerialization extends AbstractTCKTest {
 
-    static final int CHRONO_TYPE = 1;            // java.time.chrono.Ser.CHRONO_TYPE
+    static final int CHRONO_TYPE = 1;            // java.time.chrono.Ser.CHRONO_TYPE// java.time.chrono.Ser.CHRONO_TYPE
 
     //-----------------------------------------------------------------------
     // Regular data factory for available calendars
     //-----------------------------------------------------------------------
-    @DataProvider(name = "calendars")
     Chronology[][] data_of_calendars() {
         return new Chronology[][]{
                     {HijrahChronology.INSTANCE},
@@ -90,7 +90,8 @@ public class TCKChronologySerialization extends AbstractTCKTest {
     //-----------------------------------------------------------------------
     // Test Serialization of Calendars
     //-----------------------------------------------------------------------
-    @Test(dataProvider="calendars")
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
     public void test_chronoSerialization(Chronology chrono) throws Exception {
         assertSerializable(chrono);
     }
@@ -98,8 +99,9 @@ public class TCKChronologySerialization extends AbstractTCKTest {
     //-----------------------------------------------------------------------
     // Test that serialization produces exact sequence of bytes
     //-----------------------------------------------------------------------
-    @Test(dataProvider="calendars")
-    private void test_serializationBytes(Chronology chrono) throws Exception {
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
+    void test_serializationBytes(Chronology chrono) throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (DataOutputStream dos = new DataOutputStream(baos) ) {
             dos.writeByte(CHRONO_TYPE);
@@ -113,7 +115,6 @@ public class TCKChronologySerialization extends AbstractTCKTest {
     //-----------------------------------------------------------------------
     // Regular data factory for names and descriptions of available calendars
     //-----------------------------------------------------------------------
-    @DataProvider(name = "invalidSerialformClasses")
     Object[][] invalid_serial_classes() {
         return new Object[][]{
             {IsoChronology.class},
@@ -124,7 +125,8 @@ public class TCKChronologySerialization extends AbstractTCKTest {
         };
     }
 
-    @Test(dataProvider="invalidSerialformClasses")
+    @ParameterizedTest
+    @MethodSource("invalid_serial_classes")
     public void test_invalid_serialform(Class<?> clazz) throws Exception {
         assertNotSerializable(clazz);
     }

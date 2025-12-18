@@ -59,18 +59,17 @@
  */
 package tck.java.time.serial;
 
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 import tck.java.time.AbstractTCKTest;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.time.Instant;
 
+import org.junit.jupiter.api.Test;
+
 /**
  * Test Instant serialization.
  */
-@Test
 public class TCKInstantSerialization extends AbstractTCKTest {
 
     //-----------------------------------------------------------------------

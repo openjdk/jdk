@@ -27,12 +27,11 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test localized behavior of formatter.
  */
-@Test
 public class TCKLocalizedOffsetIdPrinterParser {
     @Test
     public void test_localized_offset_parse() {

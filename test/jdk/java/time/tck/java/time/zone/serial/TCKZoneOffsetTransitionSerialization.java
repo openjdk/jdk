@@ -62,7 +62,6 @@ package tck.java.time.zone.serial;
 import static java.time.temporal.ChronoUnit.HOURS;
 
 import java.time.Duration;
-import org.testng.annotations.Test;
 import tck.java.time.AbstractTCKTest;
 
 import java.time.LocalDateTime;
@@ -70,10 +69,11 @@ import java.time.Year;
 import java.time.ZoneOffset;
 import java.time.zone.ZoneOffsetTransition;
 
+import org.junit.jupiter.api.Test;
+
 /**
  * Test serialization of ZoneOffsetTransition.
  */
-@Test
 public class TCKZoneOffsetTransitionSerialization extends AbstractTCKTest {
 
     private static final ZoneOffset OFFSET_0200 = ZoneOffset.ofHours(2);

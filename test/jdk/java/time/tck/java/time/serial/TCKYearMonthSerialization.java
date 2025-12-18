@@ -59,8 +59,6 @@
  */
 package tck.java.time.serial;
 
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 import tck.java.time.AbstractTCKTest;
 
 import java.io.ByteArrayOutputStream;
@@ -68,15 +66,17 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.time.YearMonth;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 /**
  * Test serialization of YearMonth.
  */
-@Test
 public class TCKYearMonthSerialization extends AbstractTCKTest {
 
     private YearMonth TEST_2008_06;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         TEST_2008_06 = YearMonth.of(2008, 6);
     }

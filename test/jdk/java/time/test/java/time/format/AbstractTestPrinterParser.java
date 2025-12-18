@@ -72,13 +72,11 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 import java.util.Locale;
 
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
 
 /**
  * Abstract PrinterParser test.
  */
-@Test
 public class AbstractTestPrinterParser {
 
     protected StringBuilder buf;
@@ -88,7 +86,7 @@ public class AbstractTestPrinterParser {
     protected DecimalStyle decimalStyle;
 
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         buf = new StringBuilder();
         builder = new DateTimeFormatterBuilder();

@@ -59,17 +59,17 @@
  */
 package tck.java.time.serial;
 
-import org.testng.annotations.Test;
 import tck.java.time.AbstractTCKTest;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.time.LocalDateTime;
 
+import org.junit.jupiter.api.Test;
+
 /**
  * Test serialization of LocalDateTime.
  */
-@Test
 public class TCKLocalDateTimeSerialization extends AbstractTCKTest {
 
     private LocalDateTime TEST_2007_07_15_12_30_40_987654321 = LocalDateTime.of(2007, 7, 15, 12, 30, 40, 987654321);

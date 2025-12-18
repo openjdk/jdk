@@ -59,17 +59,16 @@
  */
 package test.java.time.format;
 
-import static org.testng.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.time.format.DecimalStyle;
 import java.util.Locale;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test DecimalStyle.
  */
-@Test
 public class TestDecimalStyle {
 
     @Test
