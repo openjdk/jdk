@@ -1141,7 +1141,7 @@ void PhaseIterGVN::verify_empty_worklist(Node* node) {
 // (1) Integer "widen" changes, but the range is the same.
 // (2) LoadNode performs deep traversals. Load is not notified for changes far away.
 // (3) CmpPNode performs deep traversals if it compares oopptr. CmpP is not notified for changes far away.
-void PhaseIterGVN::verify_Value_for(Node* n, bool strict) {
+void PhaseIterGVN::verify_Value_for(const Node* n, bool strict) {
   // If we assert inside type(n), because the type is still a null, then maybe
   // the node never went through gvn.transform, which would be a bug.
   const Type* told = type(n);
@@ -1205,7 +1205,7 @@ void PhaseIterGVN::verify_Value_for(Node* n, bool strict) {
 // Check that all Ideal optimizations that could be done were done.
 // Asserts if it found missed optimization opportunities or encountered unexpected changes, and
 //         returns normally otherwise (no missed optimization, or skipped verification).
-void PhaseIterGVN::verify_Ideal_for(Node *n, bool can_reshape) {
+void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
   // First, we check a list of exceptions, where we skip verification,
   // because there are known cases where Ideal can optimize after IGVN.
   // Some may be expected and cannot be fixed, and others should be fixed.
@@ -1888,7 +1888,7 @@ void PhaseIterGVN::verify_Ideal_for(Node *n, bool can_reshape) {
 // Check that all Identity optimizations that could be done were done.
 // Asserts if it found missed optimization opportunities, and
 //         returns normally otherwise (no missed optimization, or skipped verification).
-void PhaseIterGVN::verify_Identity_for(Node *n) {
+void PhaseIterGVN::verify_Identity_for(Node* n) {
   // First, we check a list of exceptions, where we skip verification,
   // because there are known cases where Ideal can optimize after IGVN.
   // Some may be expected and cannot be fixed, and others should be fixed.
@@ -2079,7 +2079,7 @@ void PhaseIterGVN::verify_Identity_for(Node *n) {
 }
 
 // Some other verifications that are not specific to a particular transformation.
-void PhaseIterGVN::verify_node_invariants_for(const Node *n) {
+void PhaseIterGVN::verify_node_invariants_for(const Node* n) {
   if (n->is_AddP()) {
     if (!n->as_AddP()->address_input_has_same_base()) {
       stringStream ss; // Print as a block without tty lock.
