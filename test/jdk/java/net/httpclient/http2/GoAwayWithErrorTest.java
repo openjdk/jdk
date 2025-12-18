@@ -135,6 +135,7 @@ public class GoAwayWithErrorTest {
                 assertEquals(200, response.statusCode(), "unexpected status code");
             } catch (CompletionException e) {
                 failureCount++;
+                e.printStackTrace();
                 if (goawayError == null) {
                     Throwable cause = e.getCause();
                     if (cause != null) {
