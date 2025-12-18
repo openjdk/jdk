@@ -97,7 +97,7 @@ void DFSClosure::drain_probe_stack() {
     const oop pointee = reference.dereference();
     assert(pointee != nullptr, "invariant");
 
-    _depth = psi.d;
+    _depth = psi.depth;
 
     if (_depth == 0 && _ignore_root_set) {
       // Root set is already marked, but we want
@@ -117,8 +117,29 @@ void DFSClosure::drain_probe_stack() {
     }
     assert(_max_depth >= 1, "invariant");
     if (_depth < _max_depth - 1) {
-      _depth++;
-      pointee->oop_iterate(this);
+      _depth++; // increase range for do_oop() to pick up
+
+      if (pointee->is_objArray()) {
+        objArrayOop pointee_oa = (objArrayOop)pointee;
+        const int len = pointee_oa->length();
+        // since our stack items are larger than those of GC marking stacks,
+        // we use a smaller stride
+        const int stridelen = MAX2((uintx)1, ObjArrayMarkingStride / 2);
+        const int begidx = psi.chunk * stridelen;
+        const int endidx = MIN2(len, (psi.chunk + 1) * stridelen);
+        if (endidx > begidx) {
+          if (endidx < len) {
+            ProbeStackItem psi2 = psi;
+            psi2.chunk ++;
+            _probe_stack.push(psi2);
+tty->print_cr("adding cont task %u %d", psi2.depth, psi2.chunk);
+          }
+          pointee_oa->oop_iterate_range(this, begidx, endidx);
+        }
+      } else {
+        pointee->oop_iterate(this);
+      }
+
       assert(_depth > 0, "invariant");
       _depth--;
     }
@@ -156,7 +177,7 @@ void DFSClosure::do_oop(oop* ref) {
   assert(is_aligned(ref, HeapWordSize), "invariant");
   const oop pointee = HeapAccess<AS_NO_KEEPALIVE>::oop_load(ref);
   if (pointee != nullptr) {
-    ProbeStackItem psi { UnifiedOopRef::encode_in_heap(ref), _depth };
+    ProbeStackItem psi { UnifiedOopRef::encode_in_heap(ref), checked_cast<unsigned>(_depth), 0 };
     _probe_stack.push(psi);
   }
 }
@@ -166,7 +187,7 @@ void DFSClosure::do_oop(narrowOop* ref) {
   assert(is_aligned(ref, sizeof(narrowOop)), "invariant");
   const oop pointee = HeapAccess<AS_NO_KEEPALIVE>::oop_load(ref);
   if (pointee != nullptr) {
-    ProbeStackItem psi { UnifiedOopRef::encode_in_heap(ref), _depth };
+    ProbeStackItem psi { UnifiedOopRef::encode_in_heap(ref), checked_cast<unsigned>(_depth), 0 };
     _probe_stack.push(psi);
   }
 }
@@ -175,6 +196,6 @@ void DFSClosure::do_root(UnifiedOopRef ref) {
   assert(!ref.is_null(), "invariant");
   const oop pointee = ref.dereference();
   assert(pointee != nullptr, "invariant");
-  ProbeStackItem psi { ref, _depth };
+  ProbeStackItem psi { ref, checked_cast<unsigned>(_depth), 0 };
   _probe_stack.push(psi);
 }

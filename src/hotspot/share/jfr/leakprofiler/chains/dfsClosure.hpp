@@ -50,7 +50,7 @@ class DFSClosure : public BasicOopIterateClosure {
   size_t _depth;
   bool _ignore_root_set;
 
-  struct ProbeStackItem { UnifiedOopRef r; size_t d; };
+  struct ProbeStackItem { UnifiedOopRef r; unsigned depth; int chunk; };
   Stack<ProbeStackItem, mtTracing> _probe_stack;
 
   DFSClosure(EdgeStore* edge_store, JFRBitSet* mark_bits, const Edge* start_edge);
