@@ -28,10 +28,19 @@
  * @run junit BasicObjectsTest
  */
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.Test;
-import java.util.*;
-import java.util.function.*;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class BasicObjectsTest {
 
@@ -44,9 +53,7 @@ public class BasicObjectsTest {
                 Object a = values[i];
                 Object b = values[j];
                 boolean result = Objects.equals(a, b);
-                assertEquals(expected, result,
-                    String.format("When equating %s to %s, got %b instead of %b",
-                                  a, b, result, expected));
+                assertEquals(expected, result, "testEquals");
             }
     }
 
@@ -70,9 +77,7 @@ public class BasicObjectsTest {
                 Object a = values[i];
                 Object b = values[j];
                 boolean result = Objects.deepEquals(a, b);
-                assertEquals(expected, result,
-                    String.format("When equating %s to %s, got %b instead of %b",
-                                  a, b, result, expected));
+                assertEquals(expected, result, "testDeepEquals");
             }
     }
 
@@ -131,7 +136,8 @@ public class BasicObjectsTest {
         Object badToString = new Object() {
                 @Override
                 public String toString() {
-                    throw new RuntimeException();
+                    fail("toString should not be called");
+                    return null;
                 }
             };
         // Should not throw RuntimeException from toString
@@ -142,7 +148,8 @@ public class BasicObjectsTest {
         Object badHashCode = new Object() {
                 @Override
                 public int hashCode() {
-                    throw new RuntimeException("0xDEADBEFF");
+                    fail("hashCode should not be called");
+                    return 0;
                 }
             };
         // Should not throw RuntimeException from hashCode
@@ -168,9 +175,7 @@ public class BasicObjectsTest {
 
     private void compareTest(String a, String b, int expected) {
         int result = Objects.compare(a, b, String.CASE_INSENSITIVE_ORDER);
-        assertEquals(Integer.signum(expected), Integer.signum(result),
-            String.format("When comparing %s to %s, got %d instead of %d",
-                          a, b, result, expected));
+        assertEquals(Integer.signum(expected), Integer.signum(result), "testCompare");
     }
 
     @Test
@@ -205,7 +210,7 @@ public class BasicObjectsTest {
         NullPointerException npe = assertThrows(
             NullPointerException.class,
             () -> testFunc.apply(null),
-            testFuncName + " should throw NPE");
+            testFuncName);
         assertEquals(expectedMessage, npe.getMessage(),
             testFuncName + " should have correct exception message");
     }
