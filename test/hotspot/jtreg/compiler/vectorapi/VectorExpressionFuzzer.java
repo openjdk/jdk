@@ -82,6 +82,7 @@ public class VectorExpressionFuzzer {
         }});
     }
 
+    // TODO: desc
     record TestArgument(
         Object defineAndFill,
         Object passMethodArgument,
@@ -146,9 +147,18 @@ public class VectorExpressionFuzzer {
         // - For every invocation of the test method, we want to have different inputs for the arguments.
         // - We check correctness with a reference method that does the same but runs in the interpreter.
         // - Input values are delivered via fields or array loads.
-        var template2Body = Template.make("expression", "arguments", (Expression expression, List<TestArgument> arguments) -> scope(
+        var template2Body = Template.make("expression", "arguments", (Expression expression, List<Object> arguments) -> scope(
             """
-            return null;
+            try {
+            """,
+            "return ", expression.asToken(arguments), ";\n",
+            expression.info.exceptions.stream().map(exception ->
+                "} catch (" + exception + " e) { return e;\n"
+            ).toList(),
+            """
+            } finally {
+                // Just javac is happy if there are no exceptions to catch.
+            }
             """
         ));
 
@@ -161,7 +171,7 @@ public class VectorExpressionFuzzer {
             for (int i = 0; i < expression.argumentTypes.size(); i++) {
                 String name = "arg_" + i;
                 CodeGenerationDataNameType argumentType = expression.argumentTypes.get(i);
-                switch(RANDOM.nextInt(2)) {
+                switch(RANDOM.nextInt(4)) {
                     case 0 -> {
                         // Use the constant directly, no argument passing needed.
                         // To make the logic of passing arguments easy, we just pass null and receive an unused argument anyway.
@@ -179,6 +189,10 @@ public class VectorExpressionFuzzer {
                     }
                     default -> {
                         if (argumentType instanceof PrimitiveType t) {
+                            // We can use the LibraryRGN to create a new value for the primitive in each
+                            // invocation. We have to make sure to call the LibraryRNG in the "defineAndFill",
+                            // so we get the same value for both test and reference. If we called LibraryRNG
+                            // for "use", we would get separate values, which is not helpful.
                             arguments.add(new TestArgument(List.of(t.name(), " ", name, " = ", t.callLibraryRNG(), ";\n"),
                                                            name,
                                                            List.of(t.name(), " ", name),
@@ -202,6 +216,8 @@ public class VectorExpressionFuzzer {
             List<Object> receiveArguments = IntStream.range(0, arguments.size() * 2 - 1).mapToObj(i ->
                 (i % 2 == 0) ? arguments.get(i / 2).receiveMethodArgument() : ", "
             ).toList();
+
+            List<Object> useArguments = arguments.stream().map(TestArgument::use).toList();
 
             return scope(
                 """
@@ -237,7 +253,7 @@ public class VectorExpressionFuzzer {
                 """
                 ) {
                 """,
-                template2Body.asToken(expression, arguments),
+                template2Body.asToken(expression, useArguments),
                 """
                 }
 
@@ -248,7 +264,7 @@ public class VectorExpressionFuzzer {
                 """
                 ) {
                 """,
-                template2Body.asToken(expression, arguments),
+                template2Body.asToken(expression, useArguments),
                 """
                 }
                 // --- $test end   ---
