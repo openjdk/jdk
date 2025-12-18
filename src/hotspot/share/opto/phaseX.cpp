@@ -2916,21 +2916,15 @@ void PhaseCCP::verify_analyze(Unique_Node_List& worklist_verify) {
   while (worklist_verify.size()) {
     Node* n = worklist_verify.pop();
 
-    // If we get an assert in verify_Value_for, it means that PhaseCCP is not at fixpoint
+    // An assert in verify_Value_for means that PhaseCCP is not at fixpoint
     // and that the analysis result may be unsound.
-    // Check why the reported nodes were not processed again in CCP.
+    // If this happens, check why the reported nodes were not processed again in CCP.
     // We should either make sure that these nodes are properly added back to the CCP worklist
-    // in PhaseCCP::push_child_nodes_to_worklist() to update their type or add an exception
-    // in the verification code above if that is not possible for some reason (like Load nodes).
+    // in PhaseCCP::push_child_nodes_to_worklist() to update their type in the same round,
+    // or that they are added in PhaseCCP::needs_revisit() so that analysis revisits
+    // them at the end of the round.
     verify_Value_for(n, true);
   }
-  // TODO check comment here
-  // If we get this assert, check why the reported nodes were not processed again in CCP.
-  // We should either make sure that these nodes are properly added back to the CCP worklist
-  // in PhaseCCP::push_child_nodes_to_worklist() to update their type in the same round,
-  // or that they are added in PhaseCCP::needs_revisit() so that analysis revisits
-  // them at the end of the round.
-  assert(!failure, "PhaseCCP not at fixpoint: analysis result may be unsound.");
 }
 #endif
 
