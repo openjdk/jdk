@@ -1254,56 +1254,55 @@ public class ForkJoinPool extends AbstractExecutorService
          * @throws RejectedExecutionException if array could not be resized
          */
         final void push(ForkJoinTask<?> task, ForkJoinPool pool, boolean internal) {
-            int s = top++;                      // back out on failure
-            ForkJoinTask<?>[] a = array;
-            int size = s - base + 1, room, cap, m;
-            if (a != null &&
-                ((room = a.length - size) > 0 || (a = growArray(s)) != null) &&
-                (cap = a.length) > 0) {
-                long pos = slotOffset((m = cap - 1) & s);
-                if (internal)
-                    U.getAndSetReference(a, pos, task); // fully fenced
-                else {
-                    U.putReference(a, pos, task);       // inside lock
-                    unlockPhase();
+            int s = top, b = base, m, cap, room; ForkJoinTask<?>[] a;
+            if ((a = array) != null && (cap = a.length) > 0) { // else disabled
+                if ((room = (m = cap - 1) - (s - b)) >= 0) {
+                    top = s + 1;
+                    long pos = slotOffset(m & s);
+                    if (!internal)
+                        U.putReference(a, pos, task);       // inside lock
+                    else
+                        U.getAndSetReference(a, pos, task); // fully fenced
+                    if (room == 0)
+                        growArray(a, cap, s);
                 }
-                if ((U.getReferenceAcquire(a, slotOffset(m & (s - 1))) == null ||
-                     room <= 0) && pool != null)
-                    pool.signalWork(this, s);   // may have appeared empty
+                if (!internal)
+                    unlockPhase();
+                if (room < 0)
+                    throw new RejectedExecutionException("Queue capacity exceeded");
+                if (pool != null &&
+                    (room == 0 ||
+                     U.getReferenceAcquire(a, slotOffset(m & (s - 1))) == null))
+                    pool.signalWork(this, s);    // may have appeared empty
             }
         }
 
         /**
          * Resizes the queue array unless out of memory.
-         * @param s current (in-progress) top
-         * @return new array (or throws on OOME)
+         * @param a old array
+         * @param cap old array capacity
+         * @param s current top
          */
-        private ForkJoinTask<?>[] growArray(int s) {
-            ForkJoinTask<?>[] a; int cap, newCap;
-            if ((a = array) != null && (cap = a.length) > 0 &&
-                (newCap = (cap >= 1 << 16) ? cap << 1 : cap << 2) > 0) {
-                ForkJoinTask<?>[] newArray = null;
+        private void growArray(ForkJoinTask<?>[] a, int cap, int s) {
+            int newCap = (cap >= 1 << 16) ? cap << 1 : cap << 2;
+            ForkJoinTask<?>[] newArray = null;
+            if (a != null && a.length == cap && cap > 0 && newCap > 0) {
                 try {
                     newArray = new ForkJoinTask<?>[newCap];
                 } catch (OutOfMemoryError ex) {
                 }
-                if (newArray != null) {
+                if (newArray != null) {               // else throw on next push
                     int mask = cap - 1, newMask = newCap - 1;
-                    for (int k = s - 1, j = cap; j > 0; --j, --k) {
+                    for (int k = s, j = cap; j > 0; --j, --k) {
                         ForkJoinTask<?> u;            // poll old, push to new
                         if ((u = (ForkJoinTask<?>)U.getAndSetReference(
                                  a, slotOffset(k & mask), null)) == null)
                             break;                    // lost to pollers
                         newArray[k & newMask] = u;
                     }
-                    updateArray(newArray);            // fully fenced
-                    return newArray;
+                    updateArray(newArray);           // fully fenced
                 }
             }
-            top = s;                                  // back out
-            if ((phase & 1) == 0)                     // unlock if external
-                unlockPhase();
-            throw new RejectedExecutionException("Queue capacity exceeded");
         }
 
         /**
@@ -1673,9 +1672,6 @@ public class ForkJoinPool extends AbstractExecutorService
     private static final Object POOLIDS_BASE;
     private static final long POOLIDS;
 
-    private long getCtlAcquire() {
-        return U.getLongAcquire(this, CTL);
-    }
     private boolean compareAndSetCtl(long c, long v) {
         return U.compareAndSetLong(this, CTL, c, v);
     }
@@ -1849,7 +1845,7 @@ public class ForkJoinPool extends AbstractExecutorService
             (phase = w.phase) != 0 && (phase & IDLE) != 0)
             releaseWaiters();              // ensure released
         if (w == null || w.source != DROPPED) {
-            long c = getCtlAcquire();      // decrement counts
+            long c = ctl;                  // decrement counts
             do {} while (c != (c = compareAndExchangeCtl(
                                    c, ((RC_MASK & (c - RC_UNIT)) |
                                        (TC_MASK & (c - TC_UNIT)) |
@@ -1886,7 +1882,7 @@ public class ForkJoinPool extends AbstractExecutorService
      */
     final void signalWork(WorkQueue q, int qbase) {
         int pc = parallelism;
-        for (long c = getCtlAcquire();;) {
+        for (long c = ctl;;) {
             WorkQueue[] qs = queues;
             long ac = (c + RC_UNIT) & RC_MASK, nc;
             int sp = (int)c, i = sp & SMASK;
@@ -1925,7 +1921,7 @@ public class ForkJoinPool extends AbstractExecutorService
      * Releases all waiting workers. Called only during shutdown.
      */
     private void releaseWaiters() {
-        for (long c = getCtlAcquire();;) {
+        for (long c = ctl;;) {
             WorkQueue[] qs; WorkQueue v; int sp, i;
             if ((sp = (int)c) == 0 || (qs = queues) == null ||
                 qs.length <= (i = sp & SMASK) || (v = qs[i]) == null)
@@ -1952,7 +1948,7 @@ public class ForkJoinPool extends AbstractExecutorService
             boolean swept = false;
             for (long e, prevRunState = 0L; ; prevRunState = e) {
                 DelayScheduler ds;
-                long c = getCtlAcquire();
+                long c = ctl;
                 if (((e = runState) & STOP) != 0L)
                     return 1;                             // terminating
                 else if ((c & RC_MASK) > 0L)
@@ -1995,7 +1991,6 @@ public class ForkJoinPool extends AbstractExecutorService
             WorkQueue[] qs;
             int r = w.stackPred;                          // seed from registerWorker
             int fifo = (int)config & FIFO, rescans = 0, inactive = 0, taken = 0, n;
-            int src = -1;                                 // last queue taken from
             while ((runState & STOP) == 0L && (qs = queues) != null &&
                    (n = qs.length) > 0) {
                 int i = r, step = (r >>> 16) | 1;
@@ -2029,9 +2024,8 @@ public class ForkJoinPool extends AbstractExecutorService
                                     }
                                 }
                                 else if (U.compareAndSetReference(a, bp, t, null)) {
-                                    q.updateBase(nb);
-                                    if (qid != src)
-                                        w.source = src = qid;
+                                    q.base = nb;
+                                    w.source = qid;
                                     rescans = 1;
                                     ++taken;
                                     if (U.getReferenceAcquire(a, np) != null)
@@ -2048,10 +2042,8 @@ public class ForkJoinPool extends AbstractExecutorService
                     if ((inactive = deactivate(w, taken)) != 0)
                         taken = 0;
                 }
-                else if (awaitWork(w) == 0) {
+                else if (awaitWork(w) == 0)
                     inactive = rescans = 0;
-                    src = -1;
-                }
                 else
                     break;
             }
@@ -2070,7 +2062,7 @@ public class ForkJoinPool extends AbstractExecutorService
         if (w != null && (inactive = (phase = w.phase) & IDLE) == 0) {
             long sp = (phase + (IDLE << 1)) & LMASK, pc, c;
             w.phase = phase | IDLE;
-            w.stackPred = (int)(pc = getCtlAcquire());    // set ctl stack link
+            w.stackPred = (int)(pc = ctl);    // set ctl stack link
             if (!compareAndSetCtl(            // try to enqueue
                     pc, c = ((pc - RC_UNIT) & UMASK) | sp))
                 w.phase = phase;              // back out on contention
@@ -2105,7 +2097,7 @@ public class ForkJoinPool extends AbstractExecutorService
         if (w != null) {                         // always true; hoist checks
             int sp = w.stackPred, phase, activePhase; long c;
             if ((inactive = (phase = w.phase) & IDLE) != 0 &&
-                (int)(c = getCtlAcquire()) == (activePhase = phase + IDLE) &&
+                (int)(c = ctl) == (activePhase = phase + IDLE) &&
                 compareAndSetCtl(c, (sp & LMASK) | ((c + RC_UNIT) & UMASK))) {
                 w.phase = activePhase;
                 inactive = 0;
@@ -2133,7 +2125,7 @@ public class ForkJoinPool extends AbstractExecutorService
                         break;
                     boolean trimmable = false;    // use timed wait if trimmable
                     long d = 0L, c;
-                    if (((c = getCtlAcquire()) & RC_MASK) == 0L && (int)c == activePhase) {
+                    if (((c = ctl) & RC_MASK) == 0L && (int)c == activePhase) {
                         long now = System.currentTimeMillis();
                         if (deadline == 0L)
                             deadline = waitTime + now;
@@ -2294,7 +2286,7 @@ public class ForkJoinPool extends AbstractExecutorService
                 if (!rescan) {
                     if ((runState & STOP) != 0L)
                         break;
-                    if (sctl == (sctl = getCtlAcquire()) && (s = tryCompensate(sctl)) >= 0)
+                    if (sctl == (sctl = ctl) && (s = tryCompensate(sctl)) >= 0)
                         break;
                 }
                 rescan = false;
@@ -2374,7 +2366,7 @@ public class ForkJoinPool extends AbstractExecutorService
                 if (!rescan) {
                     if ((runState & STOP) != 0L)
                         break;
-                    if (sctl == (sctl = getCtlAcquire()) &&
+                    if (sctl == (sctl = ctl) &&
                         (!internal || (s = tryCompensate(sctl)) >= 0))
                         break;
                 }
@@ -4034,7 +4026,7 @@ public class ForkJoinPool extends AbstractExecutorService
         String delayed = ((ds = delayScheduler) == null ? "" :
                           ", delayed = " + ds.lastStableSize());
         int pc = parallelism;
-        long c = getCtlAcquire();
+        long c = ctl;
         int tc = (short)(c >>> TC_SHIFT);
         int ac = (short)(c >>> RC_SHIFT);
         if (ac < 0) // ignore transient negative
@@ -4328,7 +4320,7 @@ public class ForkJoinPool extends AbstractExecutorService
         Objects.requireNonNull(blocker);
         for (;;) {
             int comp; boolean done;
-            long c = getCtlAcquire();
+            long c = ctl;
             if (blocker.isReleasable())
                 break;
             if ((runState & STOP) != 0L)
