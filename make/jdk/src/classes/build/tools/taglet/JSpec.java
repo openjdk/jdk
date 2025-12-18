@@ -31,10 +31,9 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.lang.reflect.Field;
 
 import javax.lang.model.element.Element;
-import javax.lang.model.element.PackageElement;
-import javax.lang.model.element.TypeElement;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.LiteralTree;
@@ -160,9 +159,10 @@ public class JSpec implements Taglet  {
             if (m.find()) {
                 String chapter = m.group("chapter");
                 String section = m.group("section");
+                String rootParent = currentPath().replaceAll("[^/]+", "..");
 
-                String url = String.format("%1$s/../specs/%2$s/%2$s-%3$s.html#%2$s-%3$s%4$s",
-                        docRoot(elem), idPrefix, chapter, section);
+                String url = String.format("%1$s/specs/%2$s/%2$s-%3$s.html#%2$s-%3$s%4$s",
+                        rootParent, idPrefix, chapter, section);
 
                 sb.append("<a href=\"")
                         .append(url)
@@ -183,6 +183,22 @@ public class JSpec implements Taglet  {
         return sb.toString();
     }
 
+    private static ThreadLocal<String> CURRENT_PATH = null;
+
+    private String currentPath() {
+        if (CURRENT_PATH == null) {
+            try {
+                Field f = Class.forName("jdk.javadoc.internal.doclets.formats.html.HtmlDocletWriter")
+                               .getField("CURRENT_PATH");
+                @SuppressWarnings("unchecked")
+                ThreadLocal<String> tl = (ThreadLocal<String>) f.get(null);
+                CURRENT_PATH = tl;
+            } catch (ReflectiveOperationException e) {
+                throw new RuntimeException("Cannot determine current path", e);
+            }
+        }
+        return CURRENT_PATH.get();
+    }
 
     private String expand(List<? extends DocTree> trees) {
         return (new SimpleDocTreeVisitor<StringBuilder, StringBuilder>() {
@@ -207,36 +223,6 @@ public class JSpec implements Taglet  {
                         .replace(">", "&gt;");
             }
         }).visit(trees, new StringBuilder()).toString();
-    }
-
-    private String docRoot(Element elem) {
-        switch (elem.getKind()) {
-            case MODULE:
-                return "..";
-
-            case PACKAGE:
-                PackageElement pe = (PackageElement)elem;
-                String pkgPart = pe.getQualifiedName()
-                        .toString()
-                        .replace('.', '/')
-                        .replaceAll("[^/]+", "..");
-                return pe.getEnclosingElement() != null
-                        ? "../" + pkgPart
-                        : pkgPart;
-
-            case CLASS, ENUM, RECORD, INTERFACE, ANNOTATION_TYPE:
-                TypeElement te = (TypeElement)elem;
-                return te.getQualifiedName()
-                        .toString()
-                        .replace('.', '/')
-                        .replaceAll("[^/]+", "..");
-
-            default:
-                var enclosing = elem.getEnclosingElement();
-                if (enclosing == null)
-                    throw new IllegalArgumentException(elem.getKind().toString());
-                return docRoot(enclosing);
-        }
     }
 
 }
