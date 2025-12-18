@@ -214,9 +214,24 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager {
                     getEndpointIdentificationAlgorithm();
         }
 
-        if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.TRUSTMANAGER)) {
-            SSLLogger.fine("Found trusted certificate",
-                    trustedChain[trustedChain.length - 1]);
+        findTrustedCertificate(chain, authType,
+                session, constraints, identityAlg, checkClientTrusted);
+    }
+
+    private void checkTrusted(X509Certificate[] chain,
+            String authType, SSLEngine engine,
+            boolean checkClientTrusted) throws CertificateException {
+
+        SSLSession session = null;
+        AlgorithmConstraints constraints = null;
+        String identityAlg = null;
+
+        if (engine != null) {
+            session = engine.getHandshakeSession();
+            constraints = SSLAlgorithmConstraints.forEngine(
+                    engine, SIGNATURE_CONSTRAINTS_MODE.LOCAL, false);
+            identityAlg = engine.getSSLParameters().
+                    getEndpointIdentificationAlgorithm();
         }
 
         findTrustedCertificate(chain, authType,
@@ -270,49 +285,6 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager {
                     constraints, checkClientTrusted ? null : authType);
 
             // Check endpoint identity
-            if (identityAlg != null && !identityAlg.isEmpty()) {
-                checkIdentity(session, trustedChain,
-                        identityAlg, checkClientTrusted);
-            }
-        } else {
-            trustedChain = v.validate(chain, null, Collections.emptyList(),
-                    null, checkClientTrusted ? null : authType);
-        }
-
-        if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.TRUSTMANAGER)) {
-            SSLLogger.fine("Found trusted certificate",
-                    trustedChain[trustedChain.length - 1]);
-        }
-    }
-
-    private void checkTrusted(X509Certificate[] chain,
-            String authType, SSLEngine engine,
-            boolean checkClientTrusted) throws CertificateException {
-        Validator v = checkTrustedInit(chain, authType, checkClientTrusted);
-
-        X509Certificate[] trustedChain;
-        if (engine != null) {
-
-            SSLSession session = engine.getHandshakeSession();
-            if (session == null) {
-                throw new CertificateException("No handshake session");
-            }
-
-            AlgorithmConstraints constraints = SSLAlgorithmConstraints.forEngine(
-                    engine, SIGNATURE_CONSTRAINTS_MODE.LOCAL, false);
-
-            // Grab any stapled OCSP responses for use in validation
-            List<byte[]> responseList = Collections.emptyList();
-            if (!checkClientTrusted && session instanceof ExtendedSSLSession) {
-                responseList =
-                        ((ExtendedSSLSession)session).getStatusResponses();
-            }
-            trustedChain = v.validate(chain, null, responseList,
-                    constraints, checkClientTrusted ? null : authType);
-
-            // check endpoint identity
-            String identityAlg = engine.getSSLParameters().
-                    getEndpointIdentificationAlgorithm();
             if (identityAlg != null && !identityAlg.isEmpty()) {
                 checkIdentity(session, trustedChain,
                         identityAlg, checkClientTrusted);

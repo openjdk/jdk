@@ -64,6 +64,9 @@ public final class SSLLogger implements System.Logger {
     // if data is logged
     private static final boolean logging;
 
+    private final String loggerName;
+    private final boolean useCompactFormat;
+
     static {
         String p = System.getProperty("javax.net.debug");
         if (p != null) {
@@ -77,8 +80,7 @@ public final class SSLLogger implements System.Logger {
                     help();
                 }
                 // configure expanded logging mode in constructor
-                logger = new SSLConsoleLogger("javax.net.ssl",
-                        !p.contains("expand"));
+                logger = new SSLLogger("javax.net.ssl", p);
                 if (p.contains("all")) {
                     Opt.ALL.on = true;
                 } else {
@@ -134,6 +136,16 @@ public final class SSLLogger implements System.Logger {
         }
     }
 
+    private SSLLogger(String loggerName, String options) {
+        this.loggerName = loggerName;
+        options = options.toLowerCase(Locale.ENGLISH);
+        this.useCompactFormat = !options.contains("expand");
+    }
+
+    @ForceInline
+    public static boolean isOn() {
+        return logging;
+    }
     /**
      * Return true if the specific DebugOption is enabled or ALL is enabled
      */
@@ -143,30 +155,30 @@ public final class SSLLogger implements System.Logger {
     }
 
     public static void severe(String msg, Object... params) {
-        SSLLogger.log(Level.ERROR, msg, params);
+        SSLLogger.log0(Level.ERROR, msg, params);
     }
 
     public static void warning(String msg, Object... params) {
-        SSLLogger.log(Level.WARNING, msg, params);
+        SSLLogger.log0(Level.WARNING, msg, params);
     }
 
     public static void info(String msg, Object... params) {
-        SSLLogger.log(Level.INFO, msg, params);
+        SSLLogger.log0(Level.INFO, msg, params);
     }
 
     public static void fine(String msg, Object... params) {
-        SSLLogger.log(Level.DEBUG, msg, params);
+        SSLLogger.log0(Level.DEBUG, msg, params);
     }
 
     public static void finer(String msg, Object... params) {
-        SSLLogger.log(Level.TRACE, msg, params);
+        SSLLogger.log0(Level.TRACE, msg, params);
     }
 
     public static void finest(String msg, Object... params) {
-        SSLLogger.log(Level.TRACE, msg, params);
+        SSLLogger.log0(Level.TRACE, msg, params);
     }
 
-    private static void log(Level level, String msg, Object... params) {
+    private static void log0(Level level, String msg, Object... params) {
         if (logger != null && logger.isLoggable(level)) {
             if (params == null || params.length == 0) {
                 logger.log(level, msg);
@@ -174,8 +186,8 @@ public final class SSLLogger implements System.Logger {
                 try {
                     String formatted =
                             SSLSimpleFormatter.formatParameters(params);
-                    // use the customized log method for SSLConsoleLogger
-                    if (logger instanceof SSLConsoleLogger) {
+                    // use the customized log method for SSLLogger
+                    if (logger instanceof SSLLogger) {
                         logger.log(level, msg, formatted);
                     } else {
                         logger.log(level, msg + ":" + LINE_SEP + formatted);
@@ -185,23 +197,6 @@ public final class SSLLogger implements System.Logger {
                 }
             }
         }
-    }
-
-    static String toString(Object... params) {
-        try {
-            return SSLSimpleFormatter.formatParameters(params);
-        } catch (Exception exp) {
-            return "unexpected exception thrown: " + exp.getMessage();
-        }
-    }
-
-    // Logs a warning message and always returns false. This method
-    // can be used as an OR Predicate to add a log in a stream filter.
-    public static boolean logWarning(Opt option, String s) {
-        if (SSLLogger.isOn() && option.on) {
-            SSLLogger.warning(s);
-        }
-        return false;
     }
 
     private static void help() {
@@ -244,11 +239,60 @@ public final class SSLLogger implements System.Logger {
         System.exit(0);
     }
 
-    @ForceInline
-    public static boolean isOn() {
-        return logging;
+    static String toString(Object... params) {
+        try {
+            return SSLSimpleFormatter.formatParameters(params);
+        } catch (Exception exp) {
+            return "unexpected exception thrown: " + exp.getMessage();
+        }
     }
 
+    // Logs a warning message and always returns false. This method
+    // can be used as an OR Predicate to add a log in a stream filter.
+    public static boolean logWarning(Opt option, String s) {
+        if (SSLLogger.isOn() && option.on) {
+            SSLLogger.warning(s);
+        }
+        return false;
+    }
+
+    @Override
+    public String getName() {
+        return loggerName;
+    }
+
+    @Override
+    public void log(Level level,
+                    ResourceBundle rb, String message, Throwable thrwbl) {
+        if (isLoggable(level)) {
+            try {
+                String formatted =
+                        SSLSimpleFormatter.format(this, level, message, thrwbl);
+                System.err.write(formatted.getBytes(UTF_8));
+            } catch (Exception exp) {
+                // ignore it, just for debugging.
+            }
+        }
+    }
+
+    @Override
+    public void log(Level level,
+                    ResourceBundle rb, String message, Object... params) {
+        if (isLoggable(level)) {
+            try {
+                String formatted =
+                        SSLSimpleFormatter.format(this, level, message, params);
+                System.err.write(formatted.getBytes(UTF_8));
+            } catch (Exception exp) {
+                // ignore it, just for debugging.
+            }
+        }
+    }
+
+    @Override
+    public boolean isLoggable(Level level) {
+        return level != Level.OFF;
+    }
     /**
      * Enum representing possible debug options for JSSE debugging.
      *
@@ -292,43 +336,6 @@ public final class SSLLogger implements System.Logger {
         }
     }
 
-    private static class SSLConsoleLogger implements Logger {
-        private final String loggerName;
-        private final boolean useCompactFormat;
-
-        SSLConsoleLogger(String loggerName, boolean useCompactFormat) {
-            this.loggerName = loggerName;
-            this.useCompactFormat = useCompactFormat;
-        }
-
-    @Override
-    public void log(Level level,
-                    ResourceBundle rb, String message, Throwable thrwbl) {
-        if (isLoggable(level)) {
-            try {
-                String formatted =
-                        SSLSimpleFormatter.format(this, level, message, thrwbl);
-                System.err.write(formatted.getBytes(UTF_8));
-            } catch (Exception exp) {
-                // ignore it, just for debugging.
-            }
-        }
-    }
-
-    @Override
-    public void log(Level level,
-                    ResourceBundle rb, String message, Object... params) {
-        if (isLoggable(level)) {
-            try {
-                String formatted =
-                        SSLSimpleFormatter.format(this, level, message, params);
-                System.err.write(formatted.getBytes(UTF_8));
-            } catch (Exception exp) {
-                // ignore it, just for debugging.
-            }
-        }
-    }
-
     private static class SSLSimpleFormatter {
         private static final String PATTERN = "yyyy-MM-dd kk:mm:ss.SSS z";
         private static final DateTimeFormatter dateTimeFormat =
@@ -349,68 +356,68 @@ public final class SSLLogger implements System.Logger {
                 Locale.ENGLISH);
 
         private static final MessageFormat extendedCertFormat =
-                new MessageFormat(
-                        """
-                                "version"            : "v{0}",
-                                "serial number"      : "{1}",
-                                "signature algorithm": "{2}",
-                                "issuer"             : "{3}",
-                                "not before"         : "{4}",
-                                "not  after"         : "{5}",
-                                "subject"            : "{6}",
-                                "subject public key" : "{7}",
-                                "extensions"         : [
-                                {8}
-                                ]
-                                """,
-                        Locale.ENGLISH);
+            new MessageFormat(
+                    """
+                            "version"            : "v{0}",
+                            "serial number"      : "{1}",
+                            "signature algorithm": "{2}",
+                            "issuer"             : "{3}",
+                            "not before"         : "{4}",
+                            "not  after"         : "{5}",
+                            "subject"            : "{6}",
+                            "subject public key" : "{7}",
+                            "extensions"         : [
+                            {8}
+                            ]
+                            """,
+                Locale.ENGLISH);
 
         private static final MessageFormat messageFormatNoParas =
-                new MessageFormat(
-                        """
-                                '{'
-                                  "logger"      : "{0}",
-                                  "level"       : "{1}",
-                                  "thread id"   : "{2}",
-                                  "thread name" : "{3}",
-                                  "time"        : "{4}",
-                                  "caller"      : "{5}",
-                                  "message"     : "{6}"
-                                '}'
-                                """,
-                        Locale.ENGLISH);
+            new MessageFormat(
+                    """
+                            '{'
+                              "logger"      : "{0}",
+                              "level"       : "{1}",
+                              "thread id"   : "{2}",
+                              "thread name" : "{3}",
+                              "time"        : "{4}",
+                              "caller"      : "{5}",
+                              "message"     : "{6}"
+                            '}'
+                            """,
+                Locale.ENGLISH);
 
         private static final MessageFormat messageCompactFormatNoParas =
-                new MessageFormat(
-                        "{0}|{1}|{2}|{3}|{4}|{5}|{6}" + LINE_SEP,
-                        Locale.ENGLISH);
+            new MessageFormat(
+                "{0}|{1}|{2}|{3}|{4}|{5}|{6}" + LINE_SEP,
+                Locale.ENGLISH);
 
         private static final MessageFormat messageFormatWithParas =
-                new MessageFormat(
-                        """
-                                '{'
-                                  "logger"      : "{0}",
-                                  "level"       : "{1}",
-                                  "thread id"   : "{2}",
-                                  "thread name" : "{3}",
-                                  "time"        : "{4}",
-                                  "caller"      : "{5}",
-                                  "message"     : "{6}",
-                                  "specifics"   : [
-                                {7}
-                                  ]
-                                '}'
-                                """,
-                        Locale.ENGLISH);
+            new MessageFormat(
+                    """
+                            '{'
+                              "logger"      : "{0}",
+                              "level"       : "{1}",
+                              "thread id"   : "{2}",
+                              "thread name" : "{3}",
+                              "time"        : "{4}",
+                              "caller"      : "{5}",
+                              "message"     : "{6}",
+                              "specifics"   : [
+                            {7}
+                              ]
+                            '}'
+                            """,
+                Locale.ENGLISH);
 
         private static final MessageFormat messageCompactFormatWithParas =
-                new MessageFormat(
-                        """
-                                {0}|{1}|{2}|{3}|{4}|{5}|{6} (
-                                {7}
-                                )
-                                """,
-                        Locale.ENGLISH);
+            new MessageFormat(
+                    """
+                            {0}|{1}|{2}|{3}|{4}|{5}|{6} (
+                            {7}
+                            )
+                            """,
+                Locale.ENGLISH);
 
         private static final MessageFormat keyObjectFormat = new MessageFormat(
                 """
@@ -424,7 +431,7 @@ public final class SSLLogger implements System.Logger {
         //     log message
         //     ...
         private static String format(SSLLogger logger, Level level,
-                                     String message, Object... parameters) {
+                    String message, Object ... parameters) {
 
             if (parameters == null || parameters.length == 0) {
                 Object[] messageFields = {
@@ -453,9 +460,9 @@ public final class SSLLogger implements System.Logger {
                     formatCaller(),
                     message,
                     (logger.useCompactFormat ?
-                            formatParameters(parameters) :
-                            Utilities.indent(formatParameters(parameters)))
-            };
+                        formatParameters(parameters) :
+                        Utilities.indent(formatParameters(parameters)))
+                };
 
             if (logger.useCompactFormat) {
                 return messageCompactFormatWithParas.format(messageFields);
@@ -473,7 +480,7 @@ public final class SSLLogger implements System.Logger {
                 .findFirst().orElse("unknown caller"));
         }
 
-        private static String formatParameters(Object... parameters) {
+        private static String formatParameters(Object ... parameters) {
             StringBuilder builder = new StringBuilder(512);
             boolean isFirst = true;
             for (Object parameter : parameters) {
@@ -484,21 +491,21 @@ public final class SSLLogger implements System.Logger {
                 }
 
                 if (parameter instanceof Throwable) {
-                    builder.append(formatThrowable((Throwable) parameter));
+                    builder.append(formatThrowable((Throwable)parameter));
                 } else if (parameter instanceof Certificate) {
-                    builder.append(formatCertificate((Certificate) parameter));
+                    builder.append(formatCertificate((Certificate)parameter));
                 } else if (parameter instanceof ByteArrayInputStream) {
                     builder.append(formatByteArrayInputStream(
-                            (ByteArrayInputStream) parameter));
+                        (ByteArrayInputStream)parameter));
                 } else if (parameter instanceof ByteBuffer) {
-                    builder.append(formatByteBuffer((ByteBuffer) parameter));
+                    builder.append(formatByteBuffer((ByteBuffer)parameter));
                 } else if (parameter instanceof byte[]) {
                     builder.append(formatByteArrayInputStream(
-                            new ByteArrayInputStream((byte[]) parameter)));
+                        new ByteArrayInputStream((byte[])parameter)));
                 } else if (parameter instanceof Map.Entry) {
                     @SuppressWarnings("unchecked")
                     Map.Entry<String, ?> mapParameter =
-                            (Map.Entry<String, ?>) parameter;
+                        (Map.Entry<String, ?>)parameter;
                     builder.append(formatMapEntry(mapParameter));
                 } else {
                     builder.append(formatObject(parameter));
@@ -650,13 +657,13 @@ public final class SSLLogger implements System.Logger {
                 formatted = builder.toString();
             } else if (value instanceof byte[]) {
                 formatted = "\"" + key + "\": \"" +
-                        Utilities.toHexString((byte[]) value) + "\"";
+                    Utilities.toHexString((byte[])value) + "\"";
             } else if (value instanceof Byte) {
                 formatted = "\"" + key + "\": \"" +
-                        HexFormat.of().toHexDigits((byte) value) + "\"";
+                    HexFormat.of().toHexDigits((byte)value) + "\"";
             } else {
                 formatted = "\"" + key + "\": " +
-                        "\"" + value.toString() + "\"";
+                    "\"" + value.toString() + "\"";
             }
 
             return Utilities.indent(formatted);
