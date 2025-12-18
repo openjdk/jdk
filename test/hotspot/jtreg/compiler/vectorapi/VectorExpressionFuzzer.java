@@ -59,7 +59,7 @@ import compiler.lib.template_framework.library.PrimitiveType;
 import compiler.lib.template_framework.library.VectorType;
 
 /**
- * TODO: desc
+ * Basic Expression Fuzzer for Vector API.
  */
 public class VectorExpressionFuzzer {
     private static final Random RANDOM = Utils.getRandomInstance();
@@ -82,12 +82,12 @@ public class VectorExpressionFuzzer {
         }});
     }
 
-    // TODO: desc
+    // For Example 2 below.
     record TestArgument(
-        Object defineAndFill,
-        Object passMethodArgument,
-        Object receiveMethodArgument,
-        Object use) {}
+        Object defineAndFill,         // used once: to define and fill the input value
+        Object passMethodArgument,    // used twice: to pass argument to test and reference
+        Object receiveMethodArgument, // used twice: to receive argument in test and reference
+        Object use) {}                // used twice: to use the value as expression argument
 
     // Generate a source Java file as String
     public static String generate(CompileFramework comp) {
@@ -147,11 +147,15 @@ public class VectorExpressionFuzzer {
         // - For every invocation of the test method, we want to have different inputs for the arguments.
         // - We check correctness with a reference method that does the same but runs in the interpreter.
         // - Input values are delivered via fields or array loads.
+        // - The final vector is written into an array, and that array is returned.
         var template2Body = Template.make("expression", "arguments", (Expression expression, List<Object> arguments) -> scope(
+            let("elementType", ((VectorType.Vector)expression.returnType).elementType),
             """
             try {
+            #elementType[] out = new #elementType[1000];
             """,
-            "return ", expression.asToken(arguments), ";\n",
+            expression.asToken(arguments), ".intoArray(out, 0);\n",
+            "return out;\n",
             expression.info.exceptions.stream().map(exception ->
                 "} catch (" + exception + " e) { return e;\n"
             ).toList(),
@@ -304,11 +308,6 @@ public class VectorExpressionFuzzer {
                 """
             );
         });
-
-        // TODO: use array for return instead of Vector
-        // TODO: add scalar output case for reductions
-        // TODO: add register stress test
-        // TODO: add load/store stress test
 
         for (VectorType.Vector type : CodeGenerationDataNameType.VECTOR_VECTOR_TYPES) {
             tests.add(template1.asToken(type));
