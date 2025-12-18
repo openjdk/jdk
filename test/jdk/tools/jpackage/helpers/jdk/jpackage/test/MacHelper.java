@@ -81,12 +81,23 @@ public final class MacHelper {
             ThrowingConsumer<Path, ? extends Exception> consumer) {
         cmd.verifyIsOfType(PackageType.MAC_DMG);
 
+        // Mount DMG under random temporary folder to avoid collisions when
+        // mounting DMG with same name asynchroniusly multiple times.
+        // See JDK-8373105. "hdiutil" does not handle such cases very good.
+        final Path mountRoot;
+        try {
+            mountRoot = Files.createTempDirectory("mountRoot");
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+
         // Explode DMG assuming this can require interaction, thus use `yes`.
         String attachCMD[] = {
             "sh", "-c",
             String.join(" ", "yes", "|", "/usr/bin/hdiutil", "attach",
-                        JPackageCommand.escapeAndJoin(
-                                cmd.outputBundle().toString()), "-plist")};
+                    JPackageCommand.escapeAndJoin(cmd.outputBundle().toString()),
+                    "-mountroot", PathUtils.normalizedAbsolutePathString(mountRoot),
+                    "-nobrowse", "-plist")};
         RetryExecutor attachExecutor = new RetryExecutor();
         try {
             // 10 times with 6 second delays.
@@ -162,6 +173,7 @@ public final class MacHelper {
                     }
                 }
             }
+            TKit.deleteDirectoryRecursive(mountRoot, "");
         }
     }
 
