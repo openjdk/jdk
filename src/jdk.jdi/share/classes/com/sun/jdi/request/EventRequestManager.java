@@ -257,7 +257,7 @@ public interface EventRequestManager extends Mirror {
      *                                                 StepRequest.STEP_OVER);
      *     request.addCountFilter(1);  // next step only
      *     request.enable();
-     *     myVM.VirtualMachine.resume();
+     *     myVM.resume();
      * }</pre>
      *
      * @param thread the thread in which to step
