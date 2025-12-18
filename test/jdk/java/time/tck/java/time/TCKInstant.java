@@ -396,9 +396,9 @@ public class TCKInstant extends AbstractDateTimeTest {
     @ParameterizedTest
     @MethodSource("provider_factory_parseFailures")
     public void factory_parseFailures_comma(String text) {
+        var commaText = text.replace('.', ',');
         Assertions.assertThrows(DateTimeParseException.class, () -> {
-            text = text.replace('.', ',');
-            Instant.parse(text);
+            Instant.parse(commaText);
         });
     }
 

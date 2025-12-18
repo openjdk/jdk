@@ -822,9 +822,9 @@ public class TCKDuration extends AbstractTCKTest {
     @ParameterizedTest
     @MethodSource("data_parseFailure")
     public void factory_parseFailures_comma(String text) {
+        var commaText = text.replace('.', ',');
         Assertions.assertThrows(DateTimeParseException.class, () -> {
-            text = text.replace('.', ',');
-            Duration.parse(text);
+            Duration.parse(commaText);
         });
     }
 
