@@ -81,6 +81,13 @@ public class VectorExpressionFuzzer {
         }});
     }
 
+    private interface TestArguments {
+        Object defineAndFill();
+        Object passMethodArgument();
+        Object receiveMethodArgument();
+        Object use();
+    }
+
     // Generate a source Java file as String
     public static String generate(CompileFramework comp) {
         // Generate a list of test methods.
@@ -133,6 +140,57 @@ public class VectorExpressionFuzzer {
                 """
             );
         });
+
+        // Example 2:
+        // Now a more complicated case. We want:
+        // - For every invocation of the test method, we want to have different inputs for the arguments.
+        // - We check correctness with a reference method that does the same but runs in the interpreter.
+        // - Input values are delivered via fields or array loads.
+        var template2Body = Template.make("type", (VectorType.Vector type) -> scope(
+        ));
+
+        var template2 = Template.make("type", (VectorType.Vector type) -> {
+            // The depth determines roughly how many operations are going to be used in the expression.
+            int depth = RANDOM.nextInt(1, 10);
+            Expression expression = Expression.nestRandomly(type, Operations.ALL_OPERATIONS, depth);
+
+            // define/fill
+            // pass arg
+            // receive arg
+            // use arg
+
+            // List<Object> expressionArguments = expression.argumentTypes.stream().map(CodeGenerationDataNameType::con).toList();
+            return scope(
+                """
+                // --- $test start ---
+                // type: #type
+
+                @Run(test = "$test")
+                public void $run() {
+                    Object v0 = $test();
+                    Object v1 = $reference();
+                """,
+                expression.info.isResultDeterministic
+                    ? "    Verify.checkEQ(v0, v1);\n"
+                    : "    // result not deterministic - don't verify.\n",
+                """
+                }
+
+                @Test
+                public static Object $test() {
+                    return null;
+                }
+
+                @DontCompile
+                public static Object $reference() {
+                    return null;
+                }
+                // --- $test end   ---
+                """
+            );
+        });
+
+
 //
 //        var defineArray = Template.make("type", "name", "size", (Type type, String name, Integer size) -> scope(
 //            """
@@ -232,6 +290,7 @@ public class VectorExpressionFuzzer {
 
         for (VectorType.Vector type : CodeGenerationDataNameType.VECTOR_VECTOR_TYPES) {
             tests.add(template1.asToken(type));
+            tests.add(template2.asToken(type));
         }
 
         // Create the test class, which runs all tests.
