@@ -171,7 +171,7 @@ public class TestTextParserWithLocale extends AbstractTestPrinterParser {
     public void test_parse_french_short_strict_short_match() throws Exception {
         setStrict(true);
         ParsePosition pos = new ParsePosition(0);
-        assertEquals(                     1L, getFormatter(MONTH_OF_YEAR, TextStyle.SHORT).withLocale(Locale.FRENCH)
+        assertEquals(1L, getFormatter(MONTH_OF_YEAR, TextStyle.SHORT).withLocale(Locale.FRENCH)
                 .parseUnresolved("janv.", pos)
                 .getLong(MONTH_OF_YEAR));
         assertEquals(5, pos.getIndex());

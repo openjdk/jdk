@@ -257,7 +257,7 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
         ZoneId zone = ZoneId.of("UTC+01:02:03");
         ZonedDateTime expected = ZonedDateTime.now(Clock.system(zone));
         ZonedDateTime test = ZonedDateTime.now(zone);
-        assertEquals(                Duration.ZERO, Duration.between(expected, test).truncatedTo(ChronoUnit.SECONDS));
+        assertEquals(Duration.ZERO, Duration.between(expected, test).truncatedTo(ChronoUnit.SECONDS));
     }
 
     //-----------------------------------------------------------------------

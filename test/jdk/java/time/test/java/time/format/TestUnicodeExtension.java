@@ -853,7 +853,7 @@ public class TestUnicodeExtension {
                 assertEquals(zoneExpected, dtf.getZone());
                 String formatted = dtf.format(ZDT);
                 assertEquals(formatExpected, formatted);
-                assertEquals(                        zoneExpected != null ? ZDT.withZoneSameInstant(zoneExpected) : ZDT, dtf.parse(formatted, ZonedDateTime::from));
+                assertEquals(zoneExpected != null ? ZDT.withZoneSameInstant(zoneExpected) : ZDT, dtf.parse(formatted, ZonedDateTime::from));
             });
         } finally {
             Locale.setDefault(def);
@@ -872,7 +872,7 @@ public class TestUnicodeExtension {
         assertEquals(zoneExpected, dtf.getZone());
         String formatted = dtf.format(ZDT);
         assertEquals(formatExpected, formatted);
-        assertEquals(            zoneExpected != null ? ZDT.withZoneSameInstant(zoneExpected) : ZDT, dtf.parse(formatted, ZonedDateTime::from));
+        assertEquals(zoneExpected != null ? ZDT.withZoneSameInstant(zoneExpected) : ZDT, dtf.parse(formatted, ZonedDateTime::from));
     }
 
     @ParameterizedTest
@@ -900,7 +900,7 @@ public class TestUnicodeExtension {
         assertEquals(zoneExpected, dtf.getZone());
         String formatted = dtf.format(ZDT);
         assertEquals(formatExpected, formatted);
-        assertEquals(            zoneExpected != null ? ZDT.withZoneSameInstant(zoneExpected) : ZDT, dtf.parse(formatted, ZonedDateTime::from));
+        assertEquals(zoneExpected != null ? ZDT.withZoneSameInstant(zoneExpected) : ZDT, dtf.parse(formatted, ZonedDateTime::from));
     }
 
     @ParameterizedTest
@@ -914,7 +914,7 @@ public class TestUnicodeExtension {
         assertEquals(zoneExpected, dtf.getZone());
         String formatted = dtf.format(ZDT);
         assertEquals(formatExpected, formatted);
-        assertEquals(            zoneExpected != null ? ZDT.withZoneSameInstant(zoneExpected) : ZDT, dtf.parse(formatted, ZonedDateTime::from));
+        assertEquals(zoneExpected != null ? ZDT.withZoneSameInstant(zoneExpected) : ZDT, dtf.parse(formatted, ZonedDateTime::from));
     }
 
     @ParameterizedTest
@@ -931,7 +931,7 @@ public class TestUnicodeExtension {
     @MethodSource("getLocalizedDateTimePattern")
     public void test_getLocalizedDateTimePattern(Locale l, FormatStyle s, String expectedPattern) {
         DateTimeFormatterBuilder dtfb = new DateTimeFormatterBuilder();
-        assertEquals(            expectedPattern, dtfb.getLocalizedDateTimePattern(s, s, IsoChronology.INSTANCE, l));
+        assertEquals(expectedPattern, dtfb.getLocalizedDateTimePattern(s, s, IsoChronology.INSTANCE, l));
     }
 
     @ParameterizedTest

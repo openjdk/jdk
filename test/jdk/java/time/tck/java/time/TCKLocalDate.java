@@ -2584,7 +2584,7 @@ public class TCKLocalDate extends AbstractDateTimeTest {
     @MethodSource("provider_datesUntil")
     public void test_datesUntil_count(LocalDate start, LocalDate end) {
         assertEquals(start.until(end, ChronoUnit.DAYS), start.datesUntil(end).count());
-        assertEquals(                start.until(end, ChronoUnit.DAYS), start.datesUntil(end, Period.ofDays(1)).count());
+        assertEquals(start.until(end, ChronoUnit.DAYS), start.datesUntil(end, Period.ofDays(1)).count());
     }
 
     public Object[][] provider_datesUntil_steps() {

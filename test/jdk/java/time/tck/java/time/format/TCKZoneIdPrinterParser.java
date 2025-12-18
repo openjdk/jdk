@@ -328,11 +328,11 @@ public class TCKZoneIdPrinterParser {
         assertEquals(expectedErrorIndex, pos.getErrorIndex(), "Incorrect error index parsing: " + text);
         assertEquals(expectedIndex, pos.getIndex(), "Incorrect index parsing: " + text);
         if (expected != null) {
-            assertEquals(                         expected, parsed.query(TemporalQueries.zoneId()),
+            assertEquals(expected, parsed.query(TemporalQueries.zoneId()),
                          "Incorrect zoneId parsing: " + text);
-            assertEquals(                         isZoneOffset ? expected : null, parsed.query(TemporalQueries.offset()),
+            assertEquals(isZoneOffset ? expected : null, parsed.query(TemporalQueries.offset()),
                          "Incorrect offset parsing: " + text);
-            assertEquals(                         expected, parsed.query(TemporalQueries.zone()),
+            assertEquals(expected, parsed.query(TemporalQueries.zone()),
                          "Incorrect zone parsing: " + text);
         } else {
             assertEquals(null, parsed);

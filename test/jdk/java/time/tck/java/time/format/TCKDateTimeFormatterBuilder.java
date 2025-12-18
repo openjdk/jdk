@@ -1461,12 +1461,12 @@ public class TCKDateTimeFormatterBuilder {
     @ParameterizedTest
     @MethodSource("data_lenient_offset_parse")
     public void test_lenient_offset_parse_1(String pattern, String offset, int offsetSeconds) {
-        assertEquals(                     offsetSeconds, new DateTimeFormatterBuilder().parseLenient().appendOffset(pattern, "Z").toFormatter().parse(offset).get(OFFSET_SECONDS));
+        assertEquals(offsetSeconds, new DateTimeFormatterBuilder().parseLenient().appendOffset(pattern, "Z").toFormatter().parse(offset).get(OFFSET_SECONDS));
     }
 
     @Test
     public void test_lenient_offset_parse_2() {
-        assertEquals(                     3600, new DateTimeFormatterBuilder().parseLenient().appendOffsetId().toFormatter().parse("+01").get(OFFSET_SECONDS));
+        assertEquals(3600, new DateTimeFormatterBuilder().parseLenient().appendOffsetId().toFormatter().parse("+01").get(OFFSET_SECONDS));
     }
 
     @ParameterizedTest

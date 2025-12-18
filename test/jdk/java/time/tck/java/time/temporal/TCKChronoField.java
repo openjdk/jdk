@@ -270,7 +270,7 @@ public class TCKChronoField {
     // matches the minimum and maximum supported epoch second by Instant.
     @Test
     public void testMinMaxInstantSeconds() {
-        assertEquals(                Instant.MIN.getLong(ChronoField.INSTANT_SECONDS), ChronoField.INSTANT_SECONDS.range().getMinimum());
-        assertEquals(                Instant.MAX.getLong(ChronoField.INSTANT_SECONDS), ChronoField.INSTANT_SECONDS.range().getMaximum());
+        assertEquals(Instant.MIN.getLong(ChronoField.INSTANT_SECONDS), ChronoField.INSTANT_SECONDS.range().getMinimum());
+        assertEquals(Instant.MAX.getLong(ChronoField.INSTANT_SECONDS), ChronoField.INSTANT_SECONDS.range().getMaximum());
     }
 }

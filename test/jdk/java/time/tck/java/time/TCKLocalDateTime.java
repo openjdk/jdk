@@ -289,7 +289,7 @@ public class TCKLocalDateTime extends AbstractDateTimeTest {
         ZoneId zone = ZoneId.of("UTC+01:02:03");
         LocalDateTime expected = LocalDateTime.now(Clock.system(zone));
         LocalDateTime test = LocalDateTime.now(zone);
-        assertEquals(                Duration.ZERO, Duration.between(expected, test).truncatedTo(ChronoUnit.SECONDS));
+        assertEquals(Duration.ZERO, Duration.between(expected, test).truncatedTo(ChronoUnit.SECONDS));
     }
 
     //-----------------------------------------------------------------------
@@ -2996,7 +2996,7 @@ public class TCKLocalDateTime extends AbstractDateTimeTest {
     @Test
     public void test_atZone() {
         LocalDateTime t = LocalDateTime.of(2008, 6, 30, 11, 30);
-        assertEquals(                ZonedDateTime.of(LocalDateTime.of(2008, 6, 30, 11, 30), ZONE_PARIS), t.atZone(ZONE_PARIS));
+        assertEquals(ZonedDateTime.of(LocalDateTime.of(2008, 6, 30, 11, 30), ZONE_PARIS), t.atZone(ZONE_PARIS));
     }
 
     @Test
@@ -3008,13 +3008,13 @@ public class TCKLocalDateTime extends AbstractDateTimeTest {
     @Test
     public void test_atZone_dstGap() {
         LocalDateTime t = LocalDateTime.of(2007, 4, 1, 0, 0);
-        assertEquals(                ZonedDateTime.of(LocalDateTime.of(2007, 4, 1, 1, 0), ZONE_GAZA), t.atZone(ZONE_GAZA));
+        assertEquals(ZonedDateTime.of(LocalDateTime.of(2007, 4, 1, 1, 0), ZONE_GAZA), t.atZone(ZONE_GAZA));
     }
 
     @Test
     public void test_atZone_dstOverlap() {
         LocalDateTime t = LocalDateTime.of(2007, 10, 28, 2, 30);
-        assertEquals(                ZonedDateTime.ofStrict(LocalDateTime.of(2007, 10, 28, 2, 30), OFFSET_PTWO, ZONE_PARIS), t.atZone(ZONE_PARIS));
+        assertEquals(ZonedDateTime.ofStrict(LocalDateTime.of(2007, 10, 28, 2, 30), OFFSET_PTWO, ZONE_PARIS), t.atZone(ZONE_PARIS));
     }
 
     @Test

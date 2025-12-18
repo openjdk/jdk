@@ -764,7 +764,7 @@ public class TestDateTimeFormatterBuilder {
                 throw new RuntimeException("DateTimeParseException should be thrown");
             }
         } catch (DateTimeParseException e) {
-            assertEquals(                    "Conflict found: Resolved time " + dayPeriod.substring(0, 5) + " conflicts with " +
+            assertEquals("Conflict found: Resolved time " + dayPeriod.substring(0, 5) + " conflicts with " +
                     "DayPeriod(" + periodRange + ")", e.getCause().getMessage());
         }
     }

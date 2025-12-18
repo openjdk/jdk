@@ -379,7 +379,7 @@ public class TCKChronology {
     @MethodSource("data_epochSecond")
     public void test_epochSecond(Chronology chrono, int y, int m, int d, int h, int min, int s, ZoneOffset offset) {
         ChronoLocalDate chronoLd = chrono.date(y, m, d);
-        assertEquals(                     OffsetDateTime.of(LocalDate.from(chronoLd), LocalTime.of(h, min, s), offset)
+        assertEquals(OffsetDateTime.of(LocalDate.from(chronoLd), LocalTime.of(h, min, s), offset)
                                    .toEpochSecond(), chrono.epochSecond(y, m, d, h, min, s, offset));
     }
 
@@ -406,7 +406,7 @@ public class TCKChronology {
     @MethodSource("data_era_epochSecond")
     public void test_epochSecond(Chronology chrono, Era era, int y, int m, int d, int h, int min, int s, ZoneOffset offset) {
         ChronoLocalDate chronoLd = chrono.date(era, y, m, d);
-        assertEquals(                     OffsetDateTime.of(LocalDate.from(chronoLd), LocalTime.of(h, min, s), offset)
+        assertEquals(OffsetDateTime.of(LocalDate.from(chronoLd), LocalTime.of(h, min, s), offset)
                                    .toEpochSecond(), chrono.epochSecond(era, y, m, d, h, min, s, offset));
     }
 

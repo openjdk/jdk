@@ -245,7 +245,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         ZoneId zone = ZoneId.of("UTC+01:02:03");
         LocalTime expected = LocalTime.now(Clock.system(zone));
         LocalTime test = LocalTime.now(zone);
-        assertEquals(                Duration.ZERO, Duration.between(expected, test).truncatedTo(ChronoUnit.SECONDS));
+        assertEquals(Duration.ZERO, Duration.between(expected, test).truncatedTo(ChronoUnit.SECONDS));
     }
 
     //-----------------------------------------------------------------------

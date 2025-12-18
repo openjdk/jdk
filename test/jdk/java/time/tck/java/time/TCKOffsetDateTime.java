@@ -411,7 +411,7 @@ public class TCKOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_factory_CalendricalObject() {
-        assertEquals(                OffsetDateTime.of(LocalDate.of(2007, 7, 15), LocalTime.of(17, 30), OFFSET_PONE), OffsetDateTime.from(
+        assertEquals(OffsetDateTime.of(LocalDate.of(2007, 7, 15), LocalTime.of(17, 30), OFFSET_PONE), OffsetDateTime.from(
                 OffsetDateTime.of(LocalDate.of(2007, 7, 15), LocalTime.of(17, 30), OFFSET_PONE)));
     }
 
@@ -1236,7 +1236,7 @@ public class TCKOffsetDateTime extends AbstractDateTimeTest {
     @Test
     public void test_atZone() {
         OffsetDateTime t = OffsetDateTime.of(2008, 6, 30, 11, 30, 0, 0, OFFSET_MTWO);
-        assertEquals(                ZonedDateTime.of(2008, 6, 30, 15, 30, 0, 0, ZONE_PARIS), t.atZoneSameInstant(ZONE_PARIS));
+        assertEquals(ZonedDateTime.of(2008, 6, 30, 15, 30, 0, 0, ZONE_PARIS), t.atZoneSameInstant(ZONE_PARIS));
     }
 
     @Test
@@ -1253,13 +1253,13 @@ public class TCKOffsetDateTime extends AbstractDateTimeTest {
     @Test
     public void test_atZoneSimilarLocal() {
         OffsetDateTime t = OffsetDateTime.of(2008, 6, 30, 11, 30, 0, 0, OFFSET_MTWO);
-        assertEquals(                ZonedDateTime.of(2008, 6, 30, 11, 30, 0, 0, ZONE_PARIS), t.atZoneSimilarLocal(ZONE_PARIS));
+        assertEquals(ZonedDateTime.of(2008, 6, 30, 11, 30, 0, 0, ZONE_PARIS), t.atZoneSimilarLocal(ZONE_PARIS));
     }
 
     @Test
     public void test_atZoneSimilarLocal_dstGap() {
         OffsetDateTime t = OffsetDateTime.of(2007, 4, 1, 0, 0, 0, 0, OFFSET_MTWO);
-        assertEquals(                ZonedDateTime.of(2007, 4, 1, 1, 0, 0, 0, ZONE_GAZA), t.atZoneSimilarLocal(ZONE_GAZA));
+        assertEquals(ZonedDateTime.of(2007, 4, 1, 1, 0, 0, 0, ZONE_GAZA), t.atZoneSimilarLocal(ZONE_GAZA));
     }
 
     @Test
