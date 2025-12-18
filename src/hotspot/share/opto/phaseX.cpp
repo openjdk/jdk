@@ -1101,7 +1101,7 @@ void PhaseIterGVN::verify_optimize() {
       if (is_verify_invariants()) {
         verify_node_invariants_for(n);
       }
-      
+
       // traverse all inputs and outputs
       for (uint i = 0; i < n->req(); i++) {
         if (n->in(i) != nullptr) {
