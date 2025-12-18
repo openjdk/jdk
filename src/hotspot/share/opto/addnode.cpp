@@ -1328,6 +1328,10 @@ static ConstAddOperands as_add_with_constant(Node* n) {
 }
 
 Node* MaxNode::IdealI(PhaseGVN* phase, bool can_reshape) {
+  Node* n = AddNode::Ideal(phase, can_reshape);
+  if (n != nullptr) {
+    return n;
+  }
   int opcode = Opcode();
   assert(opcode == Op_MinI || opcode == Op_MaxI, "Unexpected opcode");
   // Try to transform the following pattern, in any of its four possible
