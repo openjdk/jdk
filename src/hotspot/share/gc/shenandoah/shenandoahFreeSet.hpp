@@ -29,6 +29,7 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
+#include "logging/logStream.hpp"
 
 // Each ShenandoahHeapRegion is associated with a ShenandoahFreeSetPartitionId.
 enum class ShenandoahFreeSetPartitionId : uint8_t {
@@ -105,9 +106,6 @@ private:
 
   size_t _used[UIntNumPartitions];
   size_t _available[UIntNumPartitions];
-
-  // Measured in bytes.
-  size_t _allocated_since_gc_start[UIntNumPartitions];
 
   // Some notes:
   //  total_region_counts[p] is _capacity[p] / region_size_bytes
@@ -632,6 +630,7 @@ private:
   void establish_old_collector_alloc_bias();
   size_t get_usable_free_words(size_t free_bytes) const;
 
+  void log_freeset_stats(ShenandoahFreeSetPartitionId partition_id, LogStream& ls);
   // log status, assuming lock has already been acquired by the caller.
   void log_status();
 

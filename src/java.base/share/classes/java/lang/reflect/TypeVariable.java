@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ public interface TypeVariable<D extends GenericDeclaration> extends Type, Annota
     Type[] getBounds();
 
     /**
-     * Returns the {@code GenericDeclaration} object representing the
+     * Returns a {@code GenericDeclaration} object representing the
      * generic declaration declared for this type variable.
      *
      * @return the generic declaration declared for this type variable.

@@ -607,7 +607,7 @@ public:
   virtual SafePointNode* outer_safepoint() const;
   CountedLoopNode* inner_counted_loop() const { return unique_ctrl_out()->as_CountedLoop(); }
   CountedLoopEndNode* inner_counted_loop_end() const { return  inner_counted_loop()->loopexit(); }
-  IfFalseNode* inner_loop_exit() const { return inner_counted_loop_end()->proj_out(false)->as_IfFalse(); }
+  IfFalseNode* inner_loop_exit() const { return inner_counted_loop_end()->false_proj(); }
 
   void adjust_strip_mined_loop(PhaseIterGVN* igvn);
 
@@ -1376,7 +1376,7 @@ public:
   Node* exact_limit( IdealLoopTree *loop );
 
   // Return a post-walked LoopNode
-  IdealLoopTree *get_loop( Node *n ) const {
+  IdealLoopTree* get_loop(const Node* n) const {
     // Dead nodes have no loop, so return the top level loop instead
     if (!has_node(n))  return _ltree_root;
     assert(!has_ctrl(n), "");
@@ -1386,8 +1386,14 @@ public:
   IdealLoopTree* ltree_root() const { return _ltree_root; }
 
   // Is 'n' a (nested) member of 'loop'?
-  int is_member( const IdealLoopTree *loop, Node *n ) const {
-    return loop->is_member(get_loop(n)); }
+  bool is_member(const IdealLoopTree* loop, const Node* n) const {
+    return loop->is_member(get_loop(n));
+  }
+
+  // is the control for 'n' a (nested) member of 'loop'?
+  bool ctrl_is_member(const IdealLoopTree* loop, const Node* n) {
+    return is_member(loop, get_ctrl(n));
+  }
 
   // This is the basic building block of the loop optimizations.  It clones an
   // entire loop body.  It makes an old_new loop body mapping; with this
@@ -1962,6 +1968,8 @@ public:
   void pin_array_access_nodes_dependent_on(Node* ctrl);
 
   Node* ensure_node_and_inputs_are_above_pre_end(CountedLoopEndNode* pre_end, Node* node);
+
+  Node* new_assertion_predicate_opaque_init(Node* entry_control, Node* init, Node* int_zero);
 
   bool try_make_short_running_loop(IdealLoopTree* loop, jint stride_con, const Node_List& range_checks, const uint iters_limit);
 

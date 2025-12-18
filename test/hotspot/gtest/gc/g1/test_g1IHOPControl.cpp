@@ -62,16 +62,16 @@ static void test_update_humongous(G1IHOPControl* ctrl,
 }
 
 // @requires UseG1GC
-TEST_VM(G1StaticIHOPControl, simple) {
+TEST_VM(G1IHOPControl, static_simple) {
   // Test requires G1
   if (!UseG1GC) {
     return;
   }
-
+  const bool is_adaptive = false;
   const size_t initial_ihop = 45;
 
   G1OldGenAllocationTracker alloc_tracker;
-  G1StaticIHOPControl ctrl(initial_ihop, &alloc_tracker);
+  G1IHOPControl ctrl(initial_ihop, &alloc_tracker, is_adaptive, nullptr, 0, 0);
   ctrl.update_target_occupancy(100);
 
   size_t threshold = ctrl.get_conc_mark_start_threshold();
@@ -99,12 +99,13 @@ TEST_VM(G1StaticIHOPControl, simple) {
 }
 
 // @requires UseG1GC
-TEST_VM(G1AdaptiveIHOPControl, simple) {
+TEST_VM(G1IHOPControl, adaptive_simple) {
   // Test requires G1
   if (!UseG1GC) {
     return;
   }
 
+  const bool is_adaptive = true;
   const size_t initial_threshold = 45;
   const size_t young_size = 10;
   const size_t target_size = 100;
@@ -114,7 +115,7 @@ TEST_VM(G1AdaptiveIHOPControl, simple) {
 
   G1OldGenAllocationTracker alloc_tracker;
   G1Predictions pred(0.95);
-  G1AdaptiveIHOPControl ctrl(initial_threshold, &alloc_tracker, &pred, 0, 0);
+  G1IHOPControl ctrl(initial_threshold, &alloc_tracker, is_adaptive, &pred, 0, 0);
   ctrl.update_target_occupancy(target_size);
 
   // First "load".
@@ -177,12 +178,13 @@ TEST_VM(G1AdaptiveIHOPControl, simple) {
   EXPECT_GT(threshold, settled_ihop3);
 }
 
-TEST_VM(G1AdaptiveIHOPControl, humongous) {
+TEST_VM(G1IHOPControl, adaptive_humongous) {
   // Test requires G1
   if (!UseG1GC) {
     return;
   }
 
+  const bool is_adaptive = true;
   const size_t initial_threshold = 45;
   const size_t young_size = 10;
   const size_t target_size = 100;
@@ -191,7 +193,7 @@ TEST_VM(G1AdaptiveIHOPControl, humongous) {
 
   G1OldGenAllocationTracker alloc_tracker;
   G1Predictions pred(0.95);
-  G1AdaptiveIHOPControl ctrl(initial_threshold, &alloc_tracker, &pred, 0, 0);
+  G1IHOPControl ctrl(initial_threshold, &alloc_tracker, is_adaptive, &pred, 0, 0);
   ctrl.update_target_occupancy(target_size);
 
   size_t old_bytes = 100;
@@ -213,7 +215,7 @@ TEST_VM(G1AdaptiveIHOPControl, humongous) {
   EXPECT_EQ(threshold, target_threshold);
 
   // Load 2
-  G1AdaptiveIHOPControl ctrl2(initial_threshold, &alloc_tracker, &pred, 0, 0);
+  G1IHOPControl ctrl2(initial_threshold, &alloc_tracker, is_adaptive, &pred, 0, 0);
   ctrl2.update_target_occupancy(target_size);
   test_update_humongous(&ctrl2, &alloc_tracker, duration, old_bytes, humongous_bytes,
                         humongous_bytes_after_gc, young_size, marking_time);
@@ -229,7 +231,7 @@ TEST_VM(G1AdaptiveIHOPControl, humongous) {
   // Load 3
   humongous_bytes_after_last_gc = humongous_bytes_after_gc;
   humongous_bytes_after_gc = 50;
-  G1AdaptiveIHOPControl ctrl3(initial_threshold, &alloc_tracker, &pred, 0, 0);
+  G1IHOPControl ctrl3(initial_threshold, &alloc_tracker, is_adaptive, &pred, 0, 0);
   ctrl3.update_target_occupancy(target_size);
   test_update_humongous(&ctrl3, &alloc_tracker, duration, old_bytes, humongous_bytes,
                         humongous_bytes_after_gc, young_size, marking_time);

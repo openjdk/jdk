@@ -491,9 +491,10 @@ public:
 #ifdef ASSERT
   void verify_optimize();
 
-  void verify_Value_for(Node *n);
-  void verify_Ideal_for(Node *n, bool can_reshape);
-  void verify_Identity_for(Node *n);
+  void verify_Value_for(Node* n, bool strict = false);
+  void verify_Ideal_for(Node* n, bool can_reshape);
+  void verify_Identity_for(Node* n);
+  void verify_node_invariants_for(const Node* n);
   void verify_empty_worklist(Node* n);
 #endif
 
@@ -617,6 +618,10 @@ public:
     // '-XX:VerifyIterativeGVN=1000'
     return ((VerifyIterativeGVN % 10000) / 1000) == 1;
   }
+  static bool is_verify_invariants() {
+    // '-XX:VerifyIterativeGVN=10000'
+    return ((VerifyIterativeGVN % 100000) / 10000) == 1;
+  }
 protected:
   // Sub-quadratic implementation of '-XX:VerifyIterativeGVN=1' (Use-Def verification).
   julong _verify_counter;
@@ -660,6 +665,8 @@ class PhaseCCP : public PhaseIterGVN {
 
   // Worklist algorithm identifies constants
   void analyze();
+  void analyze_step(Unique_Node_List& worklist, Node* n);
+  bool needs_revisit(Node* n) const;
 #ifdef ASSERT
   void verify_type(Node* n, const Type* tnew, const Type* told);
   // For every node n on verify list, check if type(n) == n->Value()

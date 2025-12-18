@@ -31,6 +31,7 @@ import javax.sound.sampled.TargetDataLine;
 /*
  * @test
  * @bug 6372428
+ * @key sound
  * @summary playback and capture doesn't interrupt after terminating thread that
  *          calls start()
  * @run main bug6372428

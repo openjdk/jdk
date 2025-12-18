@@ -26,6 +26,7 @@
 package sun.security.ec;
 
 import sun.security.pkcs.PKCS8Key;
+import sun.security.util.KeyUtil;
 
 import java.security.*;
 import java.security.interfaces.XECKey;
@@ -159,15 +160,20 @@ public class XDHKeyFactory extends KeyFactorySpi {
                 yield new XDHPublicKeyImpl(params, publicKeySpec.getU());
             }
             case PKCS8EncodedKeySpec p8 -> {
-                PKCS8Key p8key = new XDHPrivateKeyImpl(p8.getEncoded());
-                if (!p8key.hasPublicKey()) {
-                    throw new InvalidKeySpecException("No public key found.");
+                byte[] encoded = p8.getEncoded();
+                PKCS8Key p8key = new XDHPrivateKeyImpl(encoded);
+                try {
+                    if (!p8key.hasPublicKey()) {
+                        throw new InvalidKeySpecException("No public key found.");
+                    }
+                    XDHPublicKeyImpl result =
+                        new XDHPublicKeyImpl(p8key.getPubKeyEncoded());
+                    checkLockedParams(InvalidKeySpecException::new,
+                        result.getParams());
+                    yield result;
+                } finally {
+                    KeyUtil.clear(encoded, p8key);
                 }
-                XDHPublicKeyImpl result =
-                    new XDHPublicKeyImpl(p8key.getPubKeyEncoded());
-                checkLockedParams(InvalidKeySpecException::new,
-                    result.getParams());
-                yield result;
             }
             case null -> throw new InvalidKeySpecException(
                 "keySpec must not be null");

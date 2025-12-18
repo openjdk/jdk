@@ -57,6 +57,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/mountUnmountDisabler.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
@@ -1203,8 +1204,10 @@ void JvmtiTagMap::flush_object_free_events() {
   assert_not_at_safepoint();
   if (env()->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
     {
+      // The other thread can block for safepoints during event callbacks, so ensure we
+      // are safepoint-safe while waiting.
+      ThreadBlockInVM tbivm(JavaThread::current());
       MonitorLocker ml(lock(), Mutex::_no_safepoint_check_flag);
-      // If another thread is posting events, let it finish
       while (_posting_events) {
         ml.wait();
       }
@@ -2190,6 +2193,39 @@ class SimpleRootsClosure : public OopClosure {
   virtual void do_oop(narrowOop* obj_p) { ShouldNotReachHere(); }
 };
 
+// A supporting closure used to process ClassLoaderData roots.
+class CLDRootsClosure: public OopClosure {
+private:
+  bool _continue;
+public:
+  CLDRootsClosure(): _continue(true) {}
+
+  inline bool stopped() {
+    return !_continue;
+  }
+
+  void do_oop(oop* obj_p) {
+    if (stopped()) {
+      return;
+    }
+
+    oop o = NativeAccess<AS_NO_KEEPALIVE>::oop_load(obj_p);
+    // ignore null
+    if (o == nullptr) {
+      return;
+    }
+
+    jvmtiHeapReferenceKind kind = JVMTI_HEAP_REFERENCE_OTHER;
+    if (o->klass() == vmClasses::Class_klass()) {
+      kind = JVMTI_HEAP_REFERENCE_SYSTEM_CLASS;
+    }
+
+    // invoke the callback
+    _continue = CallbackInvoker::report_simple_root(kind, o);
+  }
+  virtual void do_oop(narrowOop* obj_p) { ShouldNotReachHere(); }
+};
+
 // A supporting closure used to process JNI locals
 class JNILocalRootsClosure : public OopClosure {
  private:
@@ -2776,10 +2812,10 @@ inline bool VM_HeapWalkOperation::collect_simple_roots() {
   }
 
   // Preloaded classes and loader from the system dictionary
-  blk.set_kind(JVMTI_HEAP_REFERENCE_SYSTEM_CLASS);
-  CLDToOopClosure cld_closure(&blk, ClassLoaderData::_claim_none);
+  CLDRootsClosure cld_roots_closure;
+  CLDToOopClosure cld_closure(&cld_roots_closure, ClassLoaderData::_claim_none);
   ClassLoaderDataGraph::always_strong_cld_do(&cld_closure);
-  if (blk.stopped()) {
+  if (cld_roots_closure.stopped()) {
     return false;
   }
 
@@ -2995,7 +3031,7 @@ void JvmtiTagMap::iterate_over_reachable_objects(jvmtiHeapRootCallback heap_root
                                                  jvmtiObjectReferenceCallback object_ref_callback,
                                                  const void* user_data) {
   // VTMS transitions must be disabled before the EscapeBarrier.
-  JvmtiVTMSTransitionDisabler disabler;
+  MountUnmountDisabler disabler;
 
   JavaThread* jt = JavaThread::current();
   EscapeBarrier eb(true, jt);
@@ -3023,7 +3059,7 @@ void JvmtiTagMap::iterate_over_objects_reachable_from_object(jobject object,
   Arena dead_object_arena(mtServiceability);
   GrowableArray<jlong> dead_objects(&dead_object_arena, 10, 0, 0);
 
-  JvmtiVTMSTransitionDisabler disabler;
+  MountUnmountDisabler disabler;
 
   {
     MutexLocker ml(Heap_lock);
@@ -3043,7 +3079,7 @@ void JvmtiTagMap::follow_references(jint heap_filter,
                                     const void* user_data)
 {
   // VTMS transitions must be disabled before the EscapeBarrier.
-  JvmtiVTMSTransitionDisabler disabler;
+  MountUnmountDisabler disabler;
 
   oop obj = JNIHandles::resolve(object);
   JavaThread* jt = JavaThread::current();

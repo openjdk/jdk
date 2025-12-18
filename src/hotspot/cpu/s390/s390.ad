@@ -1649,15 +1649,10 @@ source_hpp %{ // Header information of the source block.
 class HandlerImpl {
  public:
 
-  static int emit_exception_handler(C2_MacroAssembler *masm);
   static int emit_deopt_handler(C2_MacroAssembler* masm);
 
-  static uint size_exception_handler() {
-    return NativeJump::max_instruction_size();
-  }
-
   static uint size_deopt_handler() {
-    return NativeCall::max_instruction_size();
+    return NativeCall::max_instruction_size() + MacroAssembler::jump_pcrelative_size();
   }
 };
 
@@ -1672,43 +1667,6 @@ public:
 
 source %{
 
-// This exception handler code snippet is placed after the method's
-// code. It is the return point if an exception occurred. it jumps to
-// the exception blob.
-//
-// If the method gets deoptimized, the method and this code snippet
-// get patched.
-//
-// 1) Trampoline code gets patched into the end of this exception
-//   handler. the trampoline code jumps to the deoptimization blob.
-//
-// 2) The return address in the method's code will get patched such
-//   that it jumps to the trampoline.
-//
-// 3) The handler will get patched such that it does not jump to the
-//   exception blob, but to an entry in the deoptimization blob being
-//   aware of the exception.
-int HandlerImpl::emit_exception_handler(C2_MacroAssembler *masm) {
-  Register temp_reg = Z_R1;
-
-  address base = __ start_a_stub(size_exception_handler());
-  if (base == nullptr) {
-    ciEnv::current()->record_failure("CodeCache is full");
-    return 0;          // CodeBuffer::expand failed
-  }
-
-  int offset = __ offset();
-  // Use unconditional pc-relative jump with 32-bit range here.
-  __ load_const_optimized(temp_reg, (address)OptoRuntime::exception_blob()->content_begin());
-  __ z_br(temp_reg);
-
-  assert(__ offset() - offset <= (int) size_exception_handler(), "overflow");
-
-  __ end_a_stub();
-
-  return offset;
-}
-
 // Emit deopt handler code.
 int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
   address        base = __ start_a_stub(size_deopt_handler());
@@ -1720,14 +1678,24 @@ int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
 
   int offset = __ offset();
 
+  Label start;
+  __ bind(start);
+
   // Size_deopt_handler() must be exact on zarch, so for simplicity
   // we do not use load_const_opt here.
   __ load_const(Z_R1, SharedRuntime::deopt_blob()->unpack());
   __ call(Z_R1);
+
+  int entry_offset = __ offset();
+
+  __ z_bru(start);
+
   assert(__ offset() - offset == (int) size_deopt_handler(), "must be fixed size");
+  assert(__ offset() - entry_offset >= NativePostCallNop::first_check_size,
+         "out of bounds read in post-call NOP check");
 
   __ end_a_stub();
-  return offset;
+  return entry_offset;
 }
 
 //=============================================================================
@@ -1747,6 +1715,8 @@ bool Matcher::match_rule_supported(int opcode) {
   switch (opcode) {
     case Op_ReverseBytesI:
     case Op_ReverseBytesL:
+    case Op_ReverseBytesS:
+    case Op_ReverseBytesUS:
       return UseByteReverseInstruction;
     case Op_PopCountI:
     case Op_PopCountL:
@@ -1806,6 +1776,10 @@ bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
 }
 
 bool Matcher::vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen) {
+  return false;
+}
+
+bool Matcher::mask_op_prefers_predicate(int opcode, const TypeVect* vt) {
   return false;
 }
 
@@ -1890,6 +1864,10 @@ MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* original_opnd,
 
 bool Matcher::is_reg2reg_move(MachNode* m) {
   ShouldNotReachHere();  // generic vector operands not supported
+  return false;
+}
+
+bool Matcher::is_register_biasing_candidate(const MachNode* mdef, int oper_index) {
   return false;
 }
 
@@ -11638,6 +11616,38 @@ instruct vround2D_reg(vecX dst, vecX src, immI8 rmode) %{
 //----------POPULATION COUNT RULES--------------------------------------------
 
 // Byte reverse
+
+instruct bytes_reverse_short(iRegI dst, iRegI src) %{
+  match(Set dst (ReverseBytesS src));
+  predicate(UseByteReverseInstruction);
+  ins_cost(2 * DEFAULT_COST);
+  size(8);
+
+  format %{ "LRVR   $dst, $src\n\t # byte reverse int"
+            "SRA    $dst, 0x0010\t # right shift by 16, sign extended" %}
+
+  ins_encode %{
+    __ z_lrvr($dst$$Register, $src$$Register);
+    __ z_sra($dst$$Register, 0x0010);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct bytes_reverse_unsigned_short(iRegI dst, iRegI src) %{
+  match(Set dst (ReverseBytesUS src));
+  predicate(UseByteReverseInstruction);
+  ins_cost(2 * DEFAULT_COST);
+  size(8);
+
+  format %{ "LRVR   $dst, $src\n\t # byte reverse int"
+            "SRL    $dst, 0x0010\t # right shift by 16, zero extended" %}
+
+  ins_encode %{
+    __ z_lrvr($dst$$Register, $src$$Register);
+    __ z_srl($dst$$Register, 0x0010);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
 
 instruct bytes_reverse_int(iRegI dst, iRegI src) %{
   match(Set dst (ReverseBytesI src));
