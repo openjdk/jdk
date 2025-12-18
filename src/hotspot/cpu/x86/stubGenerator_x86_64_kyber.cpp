@@ -889,15 +889,15 @@ address generate_kyber12To16_avx512(StubGenerator *stubgen,
       __ evpermb(xmm6, k0, xmm20, xmm2, false, Assembler::AVX_512bit);
       __ evpermb(xmm7, k0, xmm20, xmm3, false, Assembler::AVX_512bit);
 
-      __ evpsrlvw(xmm4, k0, xmm21, xmm4, false, Assembler::AVX_512bit);
-      __ evpsrlvw(xmm5, k0, xmm21, xmm5, false, Assembler::AVX_512bit);
-      __ evpsrlvw(xmm6, k0, xmm21, xmm6, false, Assembler::AVX_512bit);
-      __ evpsrlvw(xmm7, k0, xmm21, xmm7, false, Assembler::AVX_512bit);
+      __ evpsrlvw(xmm4, xmm21, xmm4, Assembler::AVX_512bit);
+      __ evpsrlvw(xmm5, xmm21, xmm5, Assembler::AVX_512bit);
+      __ evpsrlvw(xmm6, xmm21, xmm6, Assembler::AVX_512bit);
+      __ evpsrlvw(xmm7, xmm21, xmm7, Assembler::AVX_512bit);
 
-      __ evpandq(xmm0, k0, xmm22, xmm4, false, Assembler::AVX_512bit);
-      __ evpandq(xmm1, k0, xmm22, xmm5, false, Assembler::AVX_512bit);
-      __ evpandq(xmm2, k0, xmm22, xmm6, false, Assembler::AVX_512bit);
-      __ evpandq(xmm3, k0, xmm22, xmm7, false, Assembler::AVX_512bit);
+      __ evpandq(xmm0, xmm22, xmm4, Assembler::AVX_512bit);
+      __ evpandq(xmm1, xmm22, xmm5, Assembler::AVX_512bit);
+      __ evpandq(xmm2, xmm22, xmm6, Assembler::AVX_512bit);
+      __ evpandq(xmm3, xmm22, xmm7, Assembler::AVX_512bit);
 
       store4regs(parsed, 0, xmm0_3, _masm);
 
