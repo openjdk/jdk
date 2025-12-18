@@ -59,7 +59,6 @@ import static java.time.temporal.ChronoField.ERA;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.time.chrono.Era;
 import java.time.chrono.JapaneseChronology;
