@@ -36,8 +36,8 @@
 #include "opto/opaquenode.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/phaseX.hpp"
-#include "opto/subnode.hpp"
 #include "opto/rangeinference.hpp"
+#include "opto/subnode.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/reverse_bits.hpp"
 
