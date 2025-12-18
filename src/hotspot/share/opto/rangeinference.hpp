@@ -388,6 +388,206 @@ public:
       return CT<CTP>::make(TypeIntPrototype<S<CTP>, U<CTP>>{{lo, hi}, {ulo, uhi}, {zeros, ones}}, MAX2(t1->_widen, t2->_widen));
     });
   }
+
+  template <class CTP>
+  static CTP infer_add(CTP t1, CTP t2) {
+    return infer_binary(t1, t2, [&](const TypeIntMirror<S<CTP>, U<CTP>>& st1, const TypeIntMirror<S<CTP>, U<CTP>>& st2) {
+      S<CTP> lo = std::numeric_limits<S<CTP>>::min();
+      S<CTP> hi = std::numeric_limits<S<CTP>>::max();
+      U<CTP> ulo = std::numeric_limits<U<CTP>>::min();
+      U<CTP> uhi = std::numeric_limits<U<CTP>>::max();
+
+      // Reminder: st1 is a simple interval, which means:
+      // - (st1._lo < 0) == (st1._hi < 0)
+      // - st1._lo == st1._ulo
+      // - st1._hi == st1._uhi
+      // The same is true for st2.
+      // Consider unsigned values v1 and v2 satisfying st1 and st2, respectively.
+      if ((st1._lo < S<CTP>(0)) == (st2._lo < S<CTP>(0))) {
+        // All calculations in this section are done on the set of integers, not the set of
+        // congruence classes mod 2^n (the set of values of an intn_t).
+        //
+        // If st1._lo >= 0 and st2._lo >= 0, and since st1._lo == st1._ulo, st1._hi == st1._uhi,
+        // st2._lo == st2._ulo, st2._hi == st2._uhi, we have both:
+        // - 0 <= st1._ulo <= v1 <= st1._uhi <= 2^(n-1) - 1
+        // - 0 <= st2._ulo <= v2 <= st2._uhi <= 2^(n-1) - 1
+        // Which means 0 <= st1._ulo + st2._ulo <= v1 + v2 <= st1._uhi + st2._uhi <= 2^n - 2, so
+        // 0 <= (st1._ulo + st2._ulo) mod 2^n <= (v1 + v2) mod 2^n <= (st1._uhi + st2._uhi) mod 2^n
+        //
+        // Similarly, if st1._lo < 0 and st2._lo < 0, we have:
+        // - 2^(n-1) <= st1._ulo <= v1 <= st1._uhi <= 2^n - 1
+        // - 2^(n-1) <= st2._ulo <= v2 <= st2._uhi <= 2^n - 1
+        // Which means 2^n <= st1._ulo + st2._ulo <= v1 + v2 <= st1._uhi + st2._uhi <= 2^n + 2^n - 2
+        // For all value x such that 2^n <= x <= 2^n + 2^n - 1, we have x mod 2^n == x - 2^n. So:
+        // 0 <= (st1._ulo + st2._ulo) mod 2^n <= (v1 + v2) mod 2^n <= (st1._uhi + st2._uhi) mod 2^n
+        //
+        // In other words, we can calculate the unsigned bounds.
+        ulo = st1._ulo + st2._ulo;
+        uhi = st1._uhi + st2._uhi;
+        // We don't actually need to calculate the signed bounds for the sum, because:
+        // - If the addition of the ranges does not overflow, then the bounds are
+        //   [st1._lo + st2._lo, st1._hi + st2._hi], which is equivalent to the unsigned bounds
+        //   calculation.
+        // - If the addition of the ranges overflows, then the bounds are [min_signed, max_signed].
+        // In both cases, the signed bounds can be inferred from the computed unsigned bounds.
+      } else {
+        // Similarly, in this case, since one of the ranges is negative, and the other is
+        // non-negative, the signed addition does not overflow, we can compute it directly.
+        lo = S<CTP>(st1._ulo + st2._ulo);
+        hi = S<CTP>(st1._uhi + st2._uhi);
+        // We do not need to compute the unsigned bounds because they can be inferred from the
+        // computed signed bounds.
+      }
+
+      // Consider the addition of v1 and v2, denote v[i] the i-th bit of v, since:
+      // - If st1._bits._ones[i] == 1, then v1[i] == 1.
+      // - If st1._bits._zeros[i] == 1, then v1[i] == 0.
+      // We have: st1._bits._ones[i] <= v1[i] <= (~st1._bits._zeros)[i]
+      //
+      // Try to calculate the sum bits by bits:
+      // carry[n - 1] = 0;
+      // for (int i = n - 1; i >= 0; i--) {
+      //   int bit = v1[i] + v2[i] + carry[i];
+      //   sum[i] = bit & 1;
+      //   carry[i - 1] = (bit >= 2);
+      // }
+      //
+      // Then, try to calculate the min and max of carry[i] from the bounds of v1[i] and v2[i]:
+      // min_carry[n - 1] = 0;
+      // max_carry[n - 1] = 0;
+      // for (int i = n - 1; i >= 0; i--) {
+      //   int min_bit = min_v1[i] + min_v2[i] + min_carry[i];
+      //   int max_bit = max_v1[i] + max_v2[i] + max_carry[i];
+      //   min_carry[i - 1] = (min_bit >= 2);
+      //   max_carry[i - 1] = (max_bit >= 2);
+      // }
+      //
+      // In other word:
+      // min_carry[n - 1] = 0;
+      // for (int i = n - 1; i >= 0; i--) {
+      //   int min_bit = min_v1[i] + min_v2[i] + min_carry[i];
+      //   min_carry[i - 1] = (min_bit >= 2);
+      // }
+      //
+      // Since st1._bits._ones[i] <= v1[i], we have:
+      // min_carry[n - 1] = 0;
+      // for (int i = n - 1; i >= 0; i--) {
+      //   int min_bit = st1._bits._ones[i] + st2._bits._ones[i] + min_carry[i];
+      //   min_carry[i - 1] = (min_bit >= 2);
+      // }
+      //
+      // If we gather the min_bits into a value tmp, it is clear that
+      // tmp = st1._bits._ones + st2._bits._ones:
+      // min_carry[n - 1] = 0;
+      // for (int i = n - 1; i >= 0; i--) {
+      //   int min_bit = st1._bits._ones[i] + st2._bits._ones[i] + min_carry[i];
+      //   tmp[i] = min_bit & 1;
+      //   min_carry[i - 1] = (min_bit >= 2)
+      // }
+      //
+      // Since st1._bits._ones[i], st2._bits._ones[i], min_carry[i] can only be 0 or 1,
+      // min_bit >= 2 if and only if either:
+      // - st1._bits._ones[i] == st2._bits._ones[i] == 1
+      // - (st1._bits._ones[i] == 1 || st2._bits._ones[i] == 1) && ((min_bit & 1) == 0)
+      //
+      // In other words:
+      // min_carry[i - 1] == 1 iff either:
+      // - (st1._bits._ones[i] & st2._bits._ones[i]) == 1
+      // - ((st1._bits._ones[i] | st2._bits._ones[i]) & (~tmp[i])) == 1
+      //
+      // As a result, we can calculate min_carry:
+      // min_carry = ((st1._bits._ones & st2._bits._ones) | ((st1._bits._ones | st2._bits._ones) & (~(st1._bits._ones + st2._bits._ones)))) << 1
+      U<CTP> min_carry = ((st1._bits._ones & st2._bits._ones) |
+                          ((st1._bits._ones | st2._bits._ones) & (~(st1._bits._ones + st2._bits._ones))));
+      min_carry = min_carry << 1;
+      // Similarly, we can calculate max_carry from ~st1._bits._zeros and ~st2._bits._zeros
+      U<CTP> max_carry = ((~st1._bits._zeros & ~st2._bits._zeros) |
+                          ((~st1._bits._zeros | ~st2._bits._zeros) & (~(~st1._bits._zeros + ~st2._bits._zeros))));
+      max_carry = max_carry << 1;
+      // A bit carry[i] is known iff min_carry[i] == max_carry[i], or (min_carry[i] ^ max_carry[i]) == 0
+      U<CTP> carry_known_bits = ~(min_carry ^ max_carry);
+      // A bit of sum is only known if the corresponding bit in all of v1, v2, and carry is known,
+      // and the value of sum[i] then would be (v1[i] + v2[i] + carry[i]) & 1, or
+      // (v1[i] ^ v2[i] ^ carry[i])
+      U<CTP> known_bits = (st1._bits._ones | st1._bits._zeros) & (st2._bits._ones | st2._bits._zeros) & carry_known_bits;
+      // Calculate the result and filter in the bit positions that are known
+      U<CTP> res = st1._bits._ones ^ st2._bits._ones ^ min_carry;
+      U<CTP> zeros = known_bits & ~res;
+      U<CTP> ones = known_bits & res;
+      return CT<CTP>::make(TypeIntPrototype<S<CTP>, U<CTP>>{{lo, hi}, {ulo, uhi}, {zeros, ones}}, MAX2(t1->_widen, t2->_widen));
+    });
+  }
+
+  template <class CTP>
+  static CTP infer_sub(CTP t1, CTP t2) {
+    return infer_binary(t1, t2, [&](const TypeIntMirror<S<CTP>, U<CTP>>& st1, const TypeIntMirror<S<CTP>, U<CTP>>& st2) {
+      // The reasoning is very similar to infer_add, so I go through it quickly
+      S<CTP> lo = std::numeric_limits<S<CTP>>::min();
+      S<CTP> hi = std::numeric_limits<S<CTP>>::max();
+      U<CTP> ulo = std::numeric_limits<U<CTP>>::min();
+      U<CTP> uhi = std::numeric_limits<U<CTP>>::max();
+
+      // Consider unsigned values v1 and v2 satisfying st1 and st2, respectively.
+      if ((st1._lo < S<CTP>(0)) == (st2._lo < S<CTP>(0))) {
+        // Signed subtraction of 2 values with the same sign cannot overflow, we can directly
+        // compute the signed bounds.
+        lo = S<CTP>(st1._ulo - st2._uhi);
+        hi = S<CTP>(st1._uhi - st2._ulo);
+        // The unsigned bounds can be inferred from the signed bounds, so there is no need to
+        // compute them.
+      } else {
+        // Unsigned subtraction of 2 values v1, v2 such that 0 <= vi < 2^(n-1) <= vj < 2^n
+        // If i == 1, j == 2, the operation always overflows, and the result in the mod 2^n
+        // arithmetic is always v1 - v2 + 2^n. Which means that we still satisfy:
+        // (st1._ulo - st2._uhi) mod 2^n <= (v1 - v2) mod 2^n <= (st1._uhi - st2._ulo) mod 2^n
+        //
+        // On the other hand, if i == 2, j == 1, the subtraction never overflows, and the bounds
+        // can be computed trivially:
+        // (st1._ulo - st2._uhi) mod 2^n <= (v1 - v2) mod 2^n <= (st1._uhi - st2._ulo) mod 2^n
+        ulo = st1._ulo - st2._uhi;
+        uhi = st1._uhi - st2._ulo;
+        // The signed bounds can be inferred from the unsigned bounds, so there is no need to
+        // compute them.
+      }
+
+      // Bit calculation is similar to infer_add:
+      // max_carry[n - 1] = 0;
+      // for (int i = n - 1; i >= 0; i--) {
+      //   int min_bit = st1._bits._ones[i] - (~st2._bits._zeros)[i] - max_carry[i];
+      //   tmp[i] = min_bit & 1;
+      //   max_carry[i - 1] = (min_bit < 0)
+      // }
+      //
+      // Since st1._bits._ones[i], (~st2._bits._ones)[i], max_carry[i] can only be 0 or 1,
+      // min_bit < 0 if and only if either:
+      // - st1._bits._ones[i] == 0 && (~st2._bits._zeros)[i] == 1
+      // - st1._bits._ones[i] == (~st2._bits._zeros)[i] && ((min_bit & 1) == 1)
+      //
+      // In other words:
+      // max_carry[i - 1] == 1 iff either:
+      // - ((~st1._bits._ones)[i] | (~st2._bits._zeros)[i]) == 1
+      // - ((st1._bits._ones[i] ^ st2._bits._zeros[i]) & tmp[i]) == 1
+      U<CTP> max_carry = ((~st1._bits._ones & ~st2._bits._zeros) |
+                          ((st1._bits._ones ^ st2._bits._zeros) & (st1._bits._ones - (~st2._bits._zeros))));
+      max_carry = max_carry << 1;
+      // Similarly, we can calculate min_carry, just substitute st1._bits._ones and
+      // ~st2._bits._zeros from above with ~st1._bits._zeros and st2._bits._ones, respectively.
+      // Note that x ^ y == ~x ^ ~y.
+      U<CTP> min_carry = ((st1._bits._zeros & st2._bits._ones) |
+                          ((st1._bits._zeros ^ st2._bits._ones) & ((~st1._bits._zeros) - st2._bits._ones)));
+      min_carry = min_carry << 1;
+      // A bit of the result is only known if the corresponding bit in all of v1, v2, and carry is
+      // known.
+      U<CTP> carry_known_bits = ~(min_carry ^ max_carry);
+      U<CTP> known_bits = (st1._bits._ones | st1._bits._zeros) & (st2._bits._ones | st2._bits._zeros) & carry_known_bits;
+      // Calculate the result and filter in the bit positions that are known, carry-less bit
+      // subtraction is also bitwise-xor.
+      U<CTP> res = st1._bits._ones ^ st2._bits._ones ^ min_carry;
+      U<CTP> zeros = known_bits & ~res;
+      U<CTP> ones = known_bits & res;
+      return CT<CTP>::make(TypeIntPrototype<S<CTP>, U<CTP>>{{lo, hi}, {ulo, uhi}, {zeros, ones}}, MAX2(t1->_widen, t2->_widen));
+    });
+  }
 };
 
 #endif // SHARE_OPTO_RANGEINFERENCE_HPP

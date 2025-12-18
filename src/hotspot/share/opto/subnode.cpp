@@ -37,6 +37,7 @@
 #include "opto/opcodes.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
+#include "opto/rangeinference.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/reverse_bits.hpp"
 
@@ -334,21 +335,8 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
 
 //------------------------------sub--------------------------------------------
 // A subtract node differences it's two inputs.
-const Type *SubINode::sub( const Type *t1, const Type *t2 ) const {
-  const TypeInt *r0 = t1->is_int(); // Handy access
-  const TypeInt *r1 = t2->is_int();
-  int32_t lo = java_subtract(r0->_lo, r1->_hi);
-  int32_t hi = java_subtract(r0->_hi, r1->_lo);
-
-  // We next check for 32-bit overflow.
-  // If that happens, we just assume all integers are possible.
-  if( (((r0->_lo ^ r1->_hi) >= 0) ||    // lo ends have same signs OR
-       ((r0->_lo ^      lo) >= 0)) &&   // lo results have same signs AND
-      (((r0->_hi ^ r1->_lo) >= 0) ||    // hi ends have same signs OR
-       ((r0->_hi ^      hi) >= 0)) )    // hi results have same signs
-    return TypeInt::make(lo,hi,MAX2(r0->_widen,r1->_widen));
-  else                          // Overflow; assume all integers
-    return TypeInt::INT;
+const Type* SubINode::sub(const Type* t1, const Type* t2) const {
+  return RangeInference::infer_sub(t1->is_int(), t2->is_int());
 }
 
 //=============================================================================
@@ -511,21 +499,8 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
 //------------------------------sub--------------------------------------------
 // A subtract node differences it's two inputs.
-const Type *SubLNode::sub( const Type *t1, const Type *t2 ) const {
-  const TypeLong *r0 = t1->is_long(); // Handy access
-  const TypeLong *r1 = t2->is_long();
-  jlong lo = java_subtract(r0->_lo, r1->_hi);
-  jlong hi = java_subtract(r0->_hi, r1->_lo);
-
-  // We next check for 32-bit overflow.
-  // If that happens, we just assume all integers are possible.
-  if( (((r0->_lo ^ r1->_hi) >= 0) ||    // lo ends have same signs OR
-       ((r0->_lo ^      lo) >= 0)) &&   // lo results have same signs AND
-      (((r0->_hi ^ r1->_lo) >= 0) ||    // hi ends have same signs OR
-       ((r0->_hi ^      hi) >= 0)) )    // hi results have same signs
-    return TypeLong::make(lo,hi,MAX2(r0->_widen,r1->_widen));
-  else                          // Overflow; assume all integers
-    return TypeLong::LONG;
+const Type* SubLNode::sub(const Type* t1, const Type* t2) const {
+  return RangeInference::infer_sub(t1->is_long(), t2->is_long());
 }
 
 //=============================================================================
