@@ -206,8 +206,8 @@ public class VectorExpressionFuzzer {
                         } else if (argumentType instanceof VectorType.Vector t) {
                             PrimitiveType et = t.elementType;
                             arguments.add(new TestArgument(
-                                List.of(et.name(), "[] ", name, " = new ", et.name(), "[1000];\n"),
-                                // TODO: random values!
+                                List.of(et.name(), "[] ", name, " = new ", et.name(), "[1000];\n",
+                                        "LibraryRNG.fill(", name,");\n"),
                                 name,
                                 List.of(et.name(), "[] ", name),
                                 List.of(t.name(), ".fromArray(", t.speciesName, ", ", name, ", 0)")
