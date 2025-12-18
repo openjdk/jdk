@@ -325,16 +325,16 @@ public:
   AddReductionVHFNode(Node* ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
     ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
 
-  virtual int Opcode() const;
-  virtual bool requires_strict_order() const { return _requires_strict_order; }
+  int Opcode() const override;
+  bool requires_strict_order() const override { return _requires_strict_order; }
 
-  virtual uint hash() const { return Node::hash() + _requires_strict_order; }
+  uint hash() const override { return Node::hash() + _requires_strict_order; }
 
-  virtual bool cmp(const Node& n) const {
+  bool cmp(const Node& n) const override {
     return Node::cmp(n) && _requires_strict_order == ((ReductionNode&)n).requires_strict_order();
   }
 
-  virtual uint size_of() const { return sizeof(*this); }
+  uint size_of() const override { return sizeof(*this); }
 
   const Type* bottom_type() const override { return Type::HALF_FLOAT; }
   uint ideal_reg() const override { return Op_RegF; }
@@ -599,16 +599,16 @@ public:
   MulReductionVHFNode(Node* ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
     ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
 
-  virtual int Opcode() const;
-  virtual bool requires_strict_order() const { return _requires_strict_order; }
+  int Opcode() const override;
+  bool requires_strict_order() const override { return _requires_strict_order; }
 
-  virtual uint hash() const { return Node::hash() + _requires_strict_order; }
+  uint hash() const override { return Node::hash() + _requires_strict_order; }
 
-  virtual bool cmp(const Node& n) const {
+  bool cmp(const Node& n) const override {
     return Node::cmp(n) && _requires_strict_order == ((ReductionNode&)n).requires_strict_order();
   }
 
-  virtual uint size_of() const { return sizeof(*this); }
+  uint size_of() const override { return sizeof(*this); }
 
   const Type* bottom_type() const override { return Type::HALF_FLOAT; }
   uint ideal_reg() const override { return Op_RegF; }
