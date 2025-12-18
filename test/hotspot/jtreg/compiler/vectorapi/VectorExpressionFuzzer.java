@@ -175,17 +175,21 @@ public class VectorExpressionFuzzer {
                     case 0 -> {
                         // Use the constant directly, no argument passing needed.
                         // To make the logic of passing arguments easy, we just pass null and receive an unused argument anyway.
-                        arguments.add(new TestArgument("",
-                                                       "null",
-                                                       "Object unused_" + i,
-                                                       argumentType.con()));
+                        arguments.add(new TestArgument(
+                            "",
+                            "null",
+                            "Object unused_" + i,
+                            argumentType.con()
+                        ));
                     }
                     case 1 -> {
                         // Create the constant outside, and pass it.
-                        arguments.add(new TestArgument(List.of(argumentType.name(), " ", name, " = ", argumentType.con(), ";\n"),
-                                                       name,
-                                                       List.of(argumentType.name(), " ", name),
-                                                       name));
+                        arguments.add(new TestArgument(
+                            List.of(argumentType.name(), " ", name, " = ", argumentType.con(), ";\n"),
+                            name,
+                            List.of(argumentType.name(), " ", name),
+                            name
+                        ));
                     }
                     default -> {
                         if (argumentType instanceof PrimitiveType t) {
@@ -193,17 +197,30 @@ public class VectorExpressionFuzzer {
                             // invocation. We have to make sure to call the LibraryRNG in the "defineAndFill",
                             // so we get the same value for both test and reference. If we called LibraryRNG
                             // for "use", we would get separate values, which is not helpful.
-                            arguments.add(new TestArgument(List.of(t.name(), " ", name, " = ", t.callLibraryRNG(), ";\n"),
-                                                           name,
-                                                           List.of(t.name(), " ", name),
-                                                           name));
+                            arguments.add(new TestArgument(
+                                List.of(t.name(), " ", name, " = ", t.callLibraryRNG(), ";\n"),
+                                name,
+                                List.of(t.name(), " ", name),
+                                name
+                            ));
+                        } else if (argumentType instanceof VectorType.Vector t) {
+                            PrimitiveType et = t.elementType;
+                            arguments.add(new TestArgument(
+                                List.of(et.name(), "[] ", name, " = new ", et.name(), "[1000];\n"),
+                                // TODO: random values!
+                                name,
+                                List.of(et.name(), "[] ", name),
+                                List.of(t.name(), ".fromArray(", t.speciesName, ", ", name, ", 0)")
+                            ));
                         } else {
                             // We don't know anything special how to create different values
                             // each time, so let's just crate the same constant each time.
-                            arguments.add(new TestArgument(List.of(argumentType.name(), " ", name, " = ", argumentType.con(), ";\n"),
-                                                           name,
-                                                           List.of(argumentType.name(), " ", name),
-                                                           name));
+                            arguments.add(new TestArgument(
+                                List.of(argumentType.name(), " ", name, " = ", argumentType.con(), ";\n"),
+                                name,
+                                List.of(argumentType.name(), " ", name),
+                                name
+                            ));
                         }
                     }
                 }
