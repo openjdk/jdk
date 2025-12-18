@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Set;
 import java.util.Random;
 import jdk.test.lib.Utils;
+import java.util.stream.IntStream;
 
 import compiler.lib.compile_framework.CompileFramework;
 
@@ -81,12 +82,11 @@ public class VectorExpressionFuzzer {
         }});
     }
 
-    private interface TestArguments {
-        Object defineAndFill();
-        Object passMethodArgument();
-        Object receiveMethodArgument();
-        Object use();
-    }
+    record TestArgument(
+        Object defineAndFill,
+        Object passMethodArgument,
+        Object receiveMethodArgument,
+        Object use) {}
 
     // Generate a source Java file as String
     public static String generate(CompileFramework comp) {
@@ -146,7 +146,10 @@ public class VectorExpressionFuzzer {
         // - For every invocation of the test method, we want to have different inputs for the arguments.
         // - We check correctness with a reference method that does the same but runs in the interpreter.
         // - Input values are delivered via fields or array loads.
-        var template2Body = Template.make("type", (VectorType.Vector type) -> scope(
+        var template2Body = Template.make("expression", "arguments", (Expression expression, List<TestArgument> arguments) -> scope(
+            """
+            return null;
+            """
         ));
 
         var template2 = Template.make("type", (VectorType.Vector type) -> {
@@ -154,12 +157,52 @@ public class VectorExpressionFuzzer {
             int depth = RANDOM.nextInt(1, 10);
             Expression expression = Expression.nestRandomly(type, Operations.ALL_OPERATIONS, depth);
 
-            // define/fill
-            // pass arg
-            // receive arg
-            // use arg
+            List<TestArgument> arguments = new ArrayList<>();
+            for (int i = 0; i < expression.argumentTypes.size(); i++) {
+                String name = "arg_" + i;
+                CodeGenerationDataNameType argumentType = expression.argumentTypes.get(i);
+                switch(RANDOM.nextInt(2)) {
+                    case 0 -> {
+                        // Use the constant directly, no argument passing needed.
+                        // To make the logic of passing arguments easy, we just pass null and receive an unused argument anyway.
+                        arguments.add(new TestArgument("",
+                                                       "null",
+                                                       "Object unused_" + i,
+                                                       argumentType.con()));
+                    }
+                    case 1 -> {
+                        // Create the constant outside, and pass it.
+                        arguments.add(new TestArgument(List.of(argumentType.name(), " ", name, " = ", argumentType.con(), ";\n"),
+                                                       name,
+                                                       List.of(argumentType.name(), " ", name),
+                                                       name));
+                    }
+                    default -> {
+                        if (argumentType instanceof PrimitiveType t) {
+                            arguments.add(new TestArgument(List.of(t.name(), " ", name, " = ", t.callLibraryRNG(), ";\n"),
+                                                           name,
+                                                           List.of(t.name(), " ", name),
+                                                           name));
+                        } else {
+                            // We don't know anything special how to create different values
+                            // each time, so let's just crate the same constant each time.
+                            arguments.add(new TestArgument(List.of(argumentType.name(), " ", name, " = ", argumentType.con(), ";\n"),
+                                                           name,
+                                                           List.of(argumentType.name(), " ", name),
+                                                           name));
+                        }
+                    }
+                }
+            }
 
-            // List<Object> expressionArguments = expression.argumentTypes.stream().map(CodeGenerationDataNameType::con).toList();
+            // "join" together the arguments to make a comma separated list.
+            List<Object> passArguments = IntStream.range(0, arguments.size() * 2 - 1).mapToObj(i ->
+                (i % 2 == 0) ? arguments.get(i / 2).passMethodArgument() : ", "
+            ).toList();
+            List<Object> receiveArguments = IntStream.range(0, arguments.size() * 2 - 1).mapToObj(i ->
+                (i % 2 == 0) ? arguments.get(i / 2).receiveMethodArgument() : ", "
+            ).toList();
+
             return scope(
                 """
                 // --- $test start ---
@@ -167,23 +210,46 @@ public class VectorExpressionFuzzer {
 
                 @Run(test = "$test")
                 public void $run() {
-                    Object v0 = $test();
-                    Object v1 = $reference();
+                """,
+                arguments.stream().map(TestArgument::defineAndFill).toList(),
+                """
+                Object v0 = $test(
+                """,
+                passArguments,
+                """
+                );
+                Object v1 = $reference(
+                """,
+                passArguments,
+                """
+                );
                 """,
                 expression.info.isResultDeterministic
-                    ? "    Verify.checkEQ(v0, v1);\n"
-                    : "    // result not deterministic - don't verify.\n",
+                    ? "Verify.checkEQ(v0, v1);\n"
+                    : "// result not deterministic - don't verify.\n",
                 """
                 }
 
                 @Test
-                public static Object $test() {
-                    return null;
+                public static Object $test(
+                """,
+                receiveArguments,
+                """
+                ) {
+                """,
+                template2Body.asToken(expression, arguments),
+                """
                 }
 
                 @DontCompile
-                public static Object $reference() {
-                    return null;
+                public static Object $reference(
+                """,
+                receiveArguments,
+                """
+                ) {
+                """,
+                template2Body.asToken(expression, arguments),
+                """
                 }
                 // --- $test end   ---
                 """
