@@ -594,6 +594,8 @@ bool ShenandoahGenerationalControlThread::check_cancellation_or_degen(Shenandoah
   if (ShenandoahCollectorPolicy::is_allocation_failure(_heap->cancelled_cause())) {
     assert(_degen_point == ShenandoahGC::_degenerated_unset,
            "Should not be set yet: %s", ShenandoahGC::degen_point_to_string(_degen_point));
+    MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
+    _requested_gc_cause = _heap->cancelled_cause();
     _degen_point = point;
     log_debug(gc, thread)("Cancellation detected:, reason: %s, degen point: %s",
                           GCCause::to_string(_heap->cancelled_cause()),
